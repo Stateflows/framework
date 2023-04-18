@@ -1,0 +1,16 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Stateflows.Common\Stateflows.Common.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="StateMachines\Observability\" />
+    <Folder Include="StateMachines\Time\" />
+  </ItemGroup>
+
+</Project>

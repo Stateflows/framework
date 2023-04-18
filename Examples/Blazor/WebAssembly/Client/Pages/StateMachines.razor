@@ -1,0 +1,121 @@
+﻿@page "/"
+@inject IStateMachineLocator locator
+
+<PageTitle>State Machines</PageTitle>
+
+<div>
+    <input @bind="StateMachineName" size="50" />
+</div>
+<div>
+    <input @bind="StateMachineInstance" size="50" />
+</div>
+<div>
+    <button class="btn btn-primary" @onclick="Initialize">Locate and initialize</button>
+</div>
+
+@if (message != "")
+{
+    <div style="border: solid thin #eee; padding: 10px; margin-top: 10px; border-radius: 10px;">
+        <strong>@message</strong>
+
+        @if (plantUmlUrl != null)
+        {
+            <div style="display: flex;">
+                <div style="display: flex; flex-direction: column; width: 300px; padding: 10px; border: solid thin #ddd; background-color: #eee; border-radius: 10px; margin-top: 10px">
+                    @if (expectedEvents != null)
+                    {
+                        <span>Events expected in current state:</span>
+                        @foreach (var eventName in expectedEvents)
+                        {
+                            <button class="btn btn-primary" style="margin-top: 5px;" @onclick="() => SendEvent(eventName)">Send <strong>@eventName</strong></button>
+                        }
+                    }
+                </div>
+                <div style="flex-grow: 1; text-align: center;">
+                    <img src="@plantUmlUrl" />
+                </div>
+            </div>
+        }
+    </div>
+}
+
+@code {
+    private string? plantUmlUrl = null;
+    private string? stateMachineName = "stateMachine1";
+    private string? StateMachineName
+    {
+        get => stateMachineName;
+        set
+        {
+            stateMachineName = value;
+            ClearSMInfo();
+        }
+    }
+
+    private string? stateMachineInstance = "x";
+    private string? StateMachineInstance
+    {
+        get => stateMachineInstance;
+        set
+        {
+            stateMachineInstance = value;
+            ClearSMInfo();
+        }
+    }
+
+    private IEnumerable<string>? expectedEvents { get; set; }
+
+    private string message = "";
+
+    private StateMachineId GetCurrentId()
+    {
+        return new StateMachineId(stateMachineName, stateMachineInstance);
+    }
+
+    private void ClearSMInfo()
+    {
+        message = "";
+        plantUmlUrl = null;
+        expectedEvents = null;
+    }
+
+    private async Task RefreshSMInfo(IStateMachine stateMachine)
+    {
+        expectedEvents = await stateMachine.GetExpectedEventsAsync();
+
+        plantUmlUrl = await stateMachine.GetPlantUmlUrlAsync();
+    }
+
+    private async Task Initialize()
+    {
+        if (locator.TryLocateStateMachine(GetCurrentId(), out var stateMachine))
+        {
+            message = await stateMachine.InitializeAsync()
+                ? "State Machine located and initialized"
+                : "State Machine located, it's already initialized";
+
+            await RefreshSMInfo(stateMachine);
+        }
+        else
+        {
+            message = "Unable to locate State Machine";
+        }
+    }
+
+    private async Task SendEvent(string eventName)
+    {
+        var eventType = Type.GetType($"Examples.Common.{eventName}, Examples.Common");
+
+        if (eventType != null)
+        {
+            var @event = System.Activator.CreateInstance(eventType);
+
+            if (locator.TryLocateStateMachine(GetCurrentId(), out var stateMachine))
+            {
+                await stateMachine.SendAsync(@event as Event);
+
+                await RefreshSMInfo(stateMachine);
+            }
+        }
+    }
+}

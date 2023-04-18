@@ -1,0 +1,97 @@
+﻿using System;
+using System.Threading.Tasks;
+using Stateflows.Common;
+using Stateflows.StateMachines;
+using Stateflows.StateMachines.Context.Interfaces;
+
+namespace Stateflows.Testing.StateMachines.Sequence
+{
+    public class ExecutionSequenceObserver : IStateMachineObserver
+    {
+        private IExecutionSequenceBuilder SequenceBuilder;
+
+        public ExecutionSequenceObserver(IExecutionSequenceBuilder sequenceBuilder)
+        {
+            SequenceBuilder = sequenceBuilder;
+        }
+
+        public void Verify(Action<IExecutionSequenceBuilder> sequenceBuilderAction)
+        {
+            var builder = new ExecutionSequence();
+            sequenceBuilderAction(builder);
+            builder.ValidateWith(SequenceBuilder);
+        }
+
+        Task IStateMachineObserver.AfterStateEntryAsync(IStateActionContext context)
+        {
+            SequenceBuilder.StateEntry(context.CurrentState.Name);
+
+            return Task.CompletedTask;
+        }
+
+        Task IStateMachineObserver.AfterStateExitAsync(IStateActionContext context)
+        {
+            SequenceBuilder.StateExit(context.CurrentState.Name);
+
+            return Task.CompletedTask;
+        }
+
+        Task IStateMachineObserver.AfterStateInitializeAsync(IStateActionContext context)
+        {
+            SequenceBuilder.StateInitialize(context.CurrentState.Name);
+
+            return Task.CompletedTask;
+        }
+
+        Task IStateMachineObserver.AfterStateMachineInitializeAsync(IStateMachineActionContext context)
+        {
+            SequenceBuilder.StateMachineInitialize();
+
+            return Task.CompletedTask;
+        }
+
+        Task IStateMachineObserver.AfterTransitionEffectAsync(ITransitionContext<Event> context)
+        {
+            SequenceBuilder.TransitionEffect(context.Event.Name, context.SourceState.Name, context.TargetState.Name);
+
+            return Task.CompletedTask;
+        }
+
+        Task IStateMachineObserver.AfterTransitionGuardAsync(IGuardContext<Event> context, bool guardResult)
+        {
+            SequenceBuilder.TransitionGuard(context.Event.Name, context.SourceState.Name, context.TargetState.Name);
+
+            return Task.CompletedTask;
+        }
+
+        Task IStateMachineObserver.BeforeStateEntryAsync(IStateActionContext context)
+        {
+            return Task.CompletedTask;
+        }
+
+        Task IStateMachineObserver.BeforeStateExitAsync(IStateActionContext context)
+        {
+            return Task.CompletedTask;
+        }
+
+        Task IStateMachineObserver.BeforeStateInitializeAsync(IStateActionContext context)
+        {
+            return Task.CompletedTask;
+        }
+
+        Task IStateMachineObserver.BeforeStateMachineInitializeAsync(IStateMachineActionContext context)
+        {
+            return Task.CompletedTask;
+        }
+
+        Task IStateMachineObserver.BeforeTransitionEffectAsync(ITransitionContext<Event> context)
+        {
+            return Task.CompletedTask;
+        }
+
+        Task IStateMachineObserver.BeforeTransitionGuardAsync(IGuardContext<Event> context)
+        {
+            return Task.CompletedTask;
+        }
+    }
+}
