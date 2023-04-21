@@ -63,7 +63,7 @@ namespace Stateflows.Storage.EntityFrameworkCore.Stateflows
             return result;
         }
 
-        public async Task AddTimeTokens(IEnumerable<TimeToken> timeTokens)
+        public async Task AddTimeTokens(TimeToken[] timeTokens)
         {
             var tokens = new Dictionary<TimeToken, TimeTokenEntity>();
             using (var dbContext = DbContextFactory.CreateDbContext())

@@ -43,7 +43,7 @@ namespace Stateflows.Storage.EntityFramework
             }
         }
 
-        public async Task AddTimeTokens(IEnumerable<TimeToken> timeTokens)
+        public async Task AddTimeTokens(TimeToken[] timeTokens)
         {
             var tokens = new Dictionary<TimeToken, TimeTokenEntity>();
             using (var dbContext = new StateflowsDbContext())
