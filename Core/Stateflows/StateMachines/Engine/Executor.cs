@@ -150,17 +150,11 @@ namespace Stateflows.StateMachines.Engine
 
             if (!Initialized)
             {
-                var context = new EventContext<InitializationRequest>(Context);
-                if (await Observer.BeforeProcessEventAsync(context))
-                {
-                    await DoInitializeAsync(@event);
+                await DoInitializeAsync(@event);
 
-                    await DoInitializeCascadeAsync(Graph.InitialVertex);
+                await DoInitializeCascadeAsync(Graph.InitialVertex);
                     
-                    await Observer.AfterProcessEventAsync(context);
-
-                    return true;
-                }
+                return true;
             }
 
             return false;
@@ -208,14 +202,7 @@ namespace Stateflows.StateMachines.Engine
 
             if (Initialized)
             {
-                var context = new EventContext<TEvent>(Context);
-                if (await Observer.BeforeProcessEventAsync(context))
-                {
-                    result = await DoProcessAsync(@event);
-
-                    await Observer.AfterProcessEventAsync(context);
-                }
-                Context.ClearTemporaryInternalValues();
+                result = await DoProcessAsync(@event);
             }
 
             ServiceProvider = null;

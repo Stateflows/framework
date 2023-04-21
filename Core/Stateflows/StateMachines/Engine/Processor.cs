@@ -33,7 +33,7 @@ namespace Stateflows.StateMachines.Engine
 
         private async Task<bool> TryHandleEventAsync<TEvent>(EventContext<TEvent> context)
             where TEvent : Event, new()
-            => (EventHandlers.TryGetValue(context.Event.Name, out var eventHandler) && await eventHandler.TryHandleEventAsync(context));
+            => EventHandlers.TryGetValue(context.Event.Name, out var eventHandler) && await eventHandler.TryHandleEventAsync(context);
 
         public async Task<bool> ProcessEventAsync<TEvent>(BehaviorId id, TEvent @event)
             where TEvent : Event, new()
@@ -53,11 +53,20 @@ namespace Stateflows.StateMachines.Engine
 
                 if (await executor.Hydrate(context))
                 {
-                    result = await TryHandleEventAsync(new EventContext<TEvent>(context))
-                        ? true
-                        : await executor.ProcessAsync(@event);
+                    var eventContext = new EventContext<TEvent>(context);
 
-                    await Storage.Dehydrate((await executor.Dehydrate()).Context);
+                    if (await executor.Observer.BeforeProcessEventAsync(eventContext))
+                    {
+                        result = await TryHandleEventAsync(eventContext)
+                            ? true
+                            : await executor.ProcessAsync(@event);
+
+                        await executor.Observer.AfterProcessEventAsync(eventContext);
+
+                        context.ClearTemporaryInternalValues();
+
+                        await Storage.Dehydrate((await executor.Dehydrate()).Context);
+                    }
                 }
             }
 
