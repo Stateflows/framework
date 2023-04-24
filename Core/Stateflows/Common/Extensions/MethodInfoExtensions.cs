@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Data;
 using System.Linq;
 using System.Reflection;
 
@@ -6,10 +7,8 @@ namespace Stateflows.Common.Extensions
 {
     internal static class MethodInfoExtensions
     {
-        public static bool IsOverridenIn<TType>(this MethodInfo baseMethod)
-            where TType : class
+        public static bool IsOverridenIn(this MethodInfo baseMethod, Type type)
         {
-            Type type = typeof(TType);
             if (baseMethod == null)
                 throw new ArgumentNullException("baseMethod");
             if (type == null)
@@ -28,5 +27,9 @@ namespace Stateflows.Common.Extensions
             }
             return false;
         }
+
+        public static bool IsOverridenIn<TType>(this MethodInfo baseMethod)
+            where TType : class
+            => baseMethod.IsOverridenIn(typeof(TType));
     }
 }

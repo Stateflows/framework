@@ -7,11 +7,11 @@ namespace Stateflows.StateMachines.Registration.Interfaces
 
     public delegate void StateBuilderAction(IStateBuilder builder);
 
-    public delegate void StateTransitionsBuilderAction(IStateTransitionsBuilder builder);
+    public delegate void StateTransitionsBuilderAction(ITypedStateBuilder builder);
 
     public delegate void CompositeStateBuilderAction(ICompositeStateInitialBuilder builder);
 
-    public delegate void CompositeStateTransitionsBuilderAction(ICompositeStateInitialTransitionsBuilder builder);
+    public delegate void CompositeStateTransitionsBuilderAction(ITypedCompositeStateInitialBuilder builder);
 
     public delegate void TransitionBuilderAction<TEvent>(ITransitionBuilder<TEvent> builder)
         where TEvent : Event, new();

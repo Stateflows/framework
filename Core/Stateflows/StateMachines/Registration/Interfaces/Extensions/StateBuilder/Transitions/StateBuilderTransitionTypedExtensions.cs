@@ -23,9 +23,7 @@ namespace Stateflows.StateMachines
 
             self.AddTransition<TEvent>(
                 targetStateName,
-                t => t
-                    .AddGuard(c => (c as BaseContext).Context.Executor.ServiceProvider.GetTransition<TTransition, TEvent>(c)?.GuardAsync())
-                    .AddEffect(c => (c as BaseContext).Context.Executor.ServiceProvider.GetTransition<TTransition, TEvent>(c)?.EffectAsync())
+                t => t.AddTransitionEvents<TTransition, TEvent>()
             );
 
             return builder;

@@ -5,12 +5,12 @@ using System.Threading.Tasks;
 using System.Collections.Generic;
 using Microsoft.Extensions.DependencyInjection;
 using Stateflows.Common;
+using Stateflows.StateMachines.Models;
 using Stateflows.StateMachines.Events;
 using Stateflows.StateMachines.Registration;
-using Stateflows.StateMachines.Engine;
-using Stateflows.StateMachines.Models;
-using Stateflows.StateMachines.Context;
 using Stateflows.StateMachines.Context.Classes;
+using Stateflows.StateMachines.Context.Interfaces;
+using Stateflows.StateMachines.Registration.Builders;
 
 namespace Stateflows.StateMachines.Engine
 {
@@ -27,10 +27,21 @@ namespace Stateflows.StateMachines.Engine
         public Executor(StateMachinesRegister register, Graph graph, IServiceProvider serviceProvider)
         {
             Register = register;
-            Graph = graph;
-
             Scope = serviceProvider.CreateScope();
             ServiceProvider = Scope.ServiceProvider;
+
+            if (graph.StateMachineType != null)
+            {
+                var stateMachine = ServiceProvider.GetRequiredService(graph.StateMachineType) as StateMachine;
+                var stateMachineBuilder = new TypedStateMachineBuilder(graph.Name, graph.StateMachineType, null);
+                stateMachine.Build(stateMachineBuilder);
+                Graph = stateMachineBuilder.Result;
+                Graph.Build();
+            }
+            else
+            {
+                Graph = graph;
+            }
         }
 
         public RootContext Context { get; private set; }
@@ -372,6 +383,72 @@ namespace Stateflows.StateMachines.Engine
         public void Dispose()
         {
             Scope.Dispose();
+        }
+
+        private IDictionary<Type, StateMachine> StateMachines = new Dictionary<Type, StateMachine>();
+
+        public StateMachine GetStateMachine(Type stateMachineType, IStateMachineActionContext context)
+        {
+            if (!StateMachines.TryGetValue(stateMachineType, out var stateMachine))
+            {
+                stateMachine = ServiceProvider.GetService(stateMachineType) as StateMachine;
+                stateMachine.Context = context;
+
+                StateMachines.Add(stateMachineType, stateMachine);
+            }
+
+            return stateMachine;
+        }
+
+        public TStateMachine GetStateMachine<TStateMachine>(IStateMachineActionContext context)
+            where TStateMachine : StateMachine
+        {
+            if (!StateMachines.TryGetValue(typeof(TStateMachine), out var stateMachine))
+            {
+                stateMachine = ServiceProvider.GetService<TStateMachine>();
+                stateMachine.Context = context;
+
+                StateMachines.Add(typeof(TStateMachine), stateMachine);
+            }
+
+            return stateMachine as TStateMachine;
+        }
+
+        private IDictionary<Type, State> States = new Dictionary<Type, State>();
+
+        public TState GetState<TState>(IStateActionContext context)
+            where TState : State
+        {
+            if (!States.TryGetValue(typeof(TState), out var state))
+            {
+                state = ServiceProvider.GetService<TState>();
+                state.Context = context;
+
+                States.Add(typeof(TState), state);
+            }
+
+            return state as TState;
+        }
+
+        private IDictionary<Type, object> Transitions = new Dictionary<Type, object>();
+
+        public TTransition GetTransition<TTransition, TEvent>(ITransitionContext<TEvent> context)
+            where TTransition : Transition<TEvent>
+            where TEvent : Event
+        {
+            if (!Transitions.TryGetValue(typeof(TTransition), out var transitionObj))
+            {
+                var transition = ServiceProvider.GetService<TTransition>();
+                transition.Context = context;
+
+                Transitions.Add(typeof(TTransition), transition);
+
+                return transition;
+            }
+            else
+            {
+                return transitionObj as TTransition;
+            }
         }
     }
 }

@@ -6,7 +6,6 @@ using Stateflows.Common.Extensions;
 using Stateflows.Common.Interfaces;
 using Stateflows.Common.Registration.Builders;
 using Stateflows.Common.Registration.Interfaces;
-using Stateflows.StateMachines.Engine;
 
 namespace Stateflows
 {

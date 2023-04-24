@@ -8,13 +8,13 @@ namespace Stateflows.StateMachines
 {
     public static class StateTransitionsBuilderTransitionTypedExtensions
     {
-        public static IStateTransitionsBuilder AddTransition<TEvent, TTransition, TTargetState>(this IStateTransitionsBuilder builder)
+        public static ITypedStateBuilder AddTransition<TEvent, TTransition, TTargetState>(this ITypedStateBuilder builder)
             where TEvent : Event, new()
             where TTransition : Transition<TEvent>
             where TTargetState : State
             => AddTransition<TEvent, TTransition>(builder, StateInfo<TTargetState>.Name);
 
-        public static IStateTransitionsBuilder AddTransition<TEvent, TTransition>(this IStateTransitionsBuilder builder, string targetStateName)
+        public static ITypedStateBuilder AddTransition<TEvent, TTransition>(this ITypedStateBuilder builder, string targetStateName)
             where TEvent : Event, new()
             where TTransition : Transition<TEvent>
         {
@@ -23,15 +23,13 @@ namespace Stateflows.StateMachines
 
             self.AddTransition<TEvent>(
                 targetStateName,
-                t => t
-                    .AddGuard(c => (c as BaseContext).Context.Executor.ServiceProvider.GetTransition<TTransition, TEvent>(c)?.GuardAsync())
-                    .AddEffect(c => (c as BaseContext).Context.Executor.ServiceProvider.GetTransition<TTransition, TEvent>(c)?.EffectAsync())
+                t => t.AddTransitionEvents<TTransition, TEvent>()
             );
 
             return builder;
         }
 
-        public static IStateTransitionsBuilder AddTransition<TEvent, TTargetState>(this IStateTransitionsBuilder builder, TransitionBuilderAction<TEvent> transitionBuildAction = null)
+        public static ITypedStateBuilder AddTransition<TEvent, TTargetState>(this ITypedStateBuilder builder, TransitionBuilderAction<TEvent> transitionBuildAction = null)
             where TEvent : Event, new()
             where TTargetState : State
             => builder.AddTransition(StateInfo<TTargetState>.Name, transitionBuildAction);

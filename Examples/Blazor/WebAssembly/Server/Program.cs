@@ -4,13 +4,10 @@ using Examples.Common;
 
 using Stateflows;
 using Stateflows.StateMachines;
-using System.Diagnostics;
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddSignalR();
-
-
 
 builder.Services.AddStateflows(b => b
     .AddPlantUml()

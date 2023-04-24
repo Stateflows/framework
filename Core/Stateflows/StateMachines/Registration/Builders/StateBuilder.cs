@@ -11,7 +11,7 @@ using Stateflows.StateMachines.Registration.Interfaces.Internal;
 
 namespace Stateflows.StateMachines.Registration.Builders
 {
-    internal partial class StateBuilder : IStateBuilder, IStateBuilderInternal, IStateTransitionsBuilder
+    internal partial class StateBuilder : IStateBuilder, IStateBuilderInternal, ITypedStateBuilder
     {
         public Vertex Vertex { get; }
 
@@ -122,14 +122,14 @@ namespace Stateflows.StateMachines.Registration.Builders
             where TEvent : Event, new()
             => AddTransition<TEvent>(Constants.DefaultTransitionTarget, transitionBuildAction);
 
-        IStateTransitionsBuilder IStateTransitionsBuilderBase<IStateTransitionsBuilder>.AddTransition<TEvent>(string targetStateName, TransitionBuilderAction<TEvent> transitionBuildAction)
-            => AddTransition<TEvent>(targetStateName, transitionBuildAction) as IStateTransitionsBuilder;
+        ITypedStateBuilder IStateTransitionsBuilderBase<ITypedStateBuilder>.AddTransition<TEvent>(string targetStateName, TransitionBuilderAction<TEvent> transitionBuildAction)
+            => AddTransition<TEvent>(targetStateName, transitionBuildAction) as ITypedStateBuilder;
 
-        IStateTransitionsBuilder IStateTransitionsBuilderBase<IStateTransitionsBuilder>.AddDefaultTransition(string targetStateName, TransitionBuilderAction<Completion> transitionBuildAction)
-            => AddDefaultTransition(targetStateName, transitionBuildAction) as IStateTransitionsBuilder;
+        ITypedStateBuilder IStateTransitionsBuilderBase<ITypedStateBuilder>.AddDefaultTransition(string targetStateName, TransitionBuilderAction<Completion> transitionBuildAction)
+            => AddDefaultTransition(targetStateName, transitionBuildAction) as ITypedStateBuilder;
 
-        IStateTransitionsBuilder IStateTransitionsBuilderBase<IStateTransitionsBuilder>.AddInternalTransition<TEvent>(TransitionBuilderAction<TEvent> transitionBuildAction)
-            => AddInternalTransition<TEvent>(transitionBuildAction) as IStateTransitionsBuilder;
+        ITypedStateBuilder IStateTransitionsBuilderBase<ITypedStateBuilder>.AddInternalTransition<TEvent>(TransitionBuilderAction<TEvent> transitionBuildAction)
+            => AddInternalTransition<TEvent>(transitionBuildAction) as ITypedStateBuilder;
         #endregion
     }
 }

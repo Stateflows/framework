@@ -7,7 +7,7 @@ namespace Stateflows.StateMachines.Registration.Interfaces
         IStateTransitionsBuilderBase<IStateBuilder>
     { }
 
-    public partial interface IStateTransitionsBuilder : 
-        IStateTransitionsBuilderBase<IStateTransitionsBuilder>
+    public partial interface ITypedStateBuilder : 
+        IStateTransitionsBuilderBase<ITypedStateBuilder>
     { }
 }

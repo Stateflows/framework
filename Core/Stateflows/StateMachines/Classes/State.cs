@@ -5,9 +5,7 @@ namespace Stateflows.StateMachines
 {
     public abstract class State
     {
-        public IStateContext CurrentState { get; internal set; }
-
-        public IStateMachineContext StateMachine { get; internal set; }
+        public IStateActionContext Context { get; internal set; }
 
         public virtual Task OnEntryAsync()
             => Task.CompletedTask;

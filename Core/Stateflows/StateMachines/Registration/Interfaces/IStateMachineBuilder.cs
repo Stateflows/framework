@@ -2,7 +2,7 @@
 
 namespace Stateflows.StateMachines
 {
-    public interface IStateMachineBuilder : 
+    public interface IStateMachineBuilder :
         IStateMachineBuilderBase<IStateMachineBuilder>,
         IStateMachineUtilsBuilderBase<IStateMachineBuilder>,
         IStateMachineEventsBuilderBase<IStateMachineBuilder>
@@ -12,5 +12,16 @@ namespace Stateflows.StateMachines
         IStateMachineInitialBuilderBase<IStateMachineBuilder>,
         IStateMachineUtilsBuilderBase<IStateMachineInitialBuilder>,
         IStateMachineEventsBuilderBase<IStateMachineInitialBuilder>
+    { }
+
+    public interface ITypedStateMachineBuilder :
+        IStateMachineBuilderBase<ITypedStateMachineBuilder>,
+        IStateMachineUtilsBuilderBase<ITypedStateMachineBuilder>,
+        IStateMachineEventsBuilderBase<ITypedStateMachineBuilder>
+    { }
+
+    public interface ITypedStateMachineInitialBuilder :
+        IStateMachineInitialBuilderBase<ITypedStateMachineBuilder>,
+        IStateMachineUtilsBuilderBase<ITypedStateMachineInitialBuilder>
     { }
 }

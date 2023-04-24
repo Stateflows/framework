@@ -15,6 +15,7 @@ namespace Stateflows.StateMachines.Models
         }
 
         public string Name { get; set; }
+        public Type StateMachineType { get; set; }
         public string InitialVertexName { get; set; }
         public Vertex InitialVertex { get; set; }
         public Dictionary<string, Vertex> Vertices { get; set; } = new Dictionary<string, Vertex>();

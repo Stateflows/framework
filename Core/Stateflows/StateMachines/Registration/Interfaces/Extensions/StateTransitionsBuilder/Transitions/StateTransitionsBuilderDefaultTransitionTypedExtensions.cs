@@ -5,16 +5,16 @@ namespace Stateflows.StateMachines
 {
     public static class StateTransitionsBuilderDefaultTransitionTypedExtensions
     {
-        public static IStateTransitionsBuilder AddDefaultTransition<TTransition, TTargetState>(this IStateTransitionsBuilder builder)
+        public static ITypedStateBuilder AddDefaultTransition<TTransition, TTargetState>(this ITypedStateBuilder builder)
             where TTransition : Transition<Completion>
             where TTargetState : State
             => builder.AddDefaultTransition<TTransition>(StateInfo<TTargetState>.Name);
 
-        public static IStateTransitionsBuilder AddDefaultTransition<TTransition>(this IStateTransitionsBuilder builder, string targetStateName)
+        public static ITypedStateBuilder AddDefaultTransition<TTransition>(this ITypedStateBuilder builder, string targetStateName)
             where TTransition : Transition<Completion>
             => builder.AddTransition<Completion, TTransition>(targetStateName);
 
-        public static IStateTransitionsBuilder AddDefaultTransition<TTargetState>(this IStateTransitionsBuilder builder, TransitionBuilderAction<Completion> transitionBuildAction = null)
+        public static ITypedStateBuilder AddDefaultTransition<TTargetState>(this ITypedStateBuilder builder, TransitionBuilderAction<Completion> transitionBuildAction = null)
             where TTargetState : State
             => builder.AddDefaultTransition(StateInfo<TTargetState>.Name, transitionBuildAction);
     }

@@ -23,6 +23,8 @@
         public static readonly string OnExit = nameof(OnExit);
         public static readonly string OnExitAsync = nameof(OnExitAsync);
         public static readonly string Guard = nameof(Guard);
+        public static readonly string GuardAsync = nameof(GuardAsync);
         public static readonly string Effect = nameof(Effect);
+        public static readonly string EffectAsync = nameof(EffectAsync);
     }
 }

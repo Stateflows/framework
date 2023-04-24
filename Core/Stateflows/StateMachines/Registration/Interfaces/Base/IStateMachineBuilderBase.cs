@@ -7,7 +7,7 @@
         #endregion
 
         #region AddCompositeState
-        TReturn AddCompositeState(string stateName, /*string initialStateName, */CompositeStateBuilderAction compositeStateBuildAction);
+        TReturn AddCompositeState(string stateName, CompositeStateBuilderAction compositeStateBuildAction);
         #endregion
     }
 }

@@ -25,9 +25,8 @@ namespace Stateflows.StateMachines
             {
                 if (typeof(StateMachine).IsAssignableFrom(@type) && @type.GetConstructor(Type.EmptyTypes) != null)
                 {
-                    var sm = Activator.CreateInstance(@type) as StateMachine;
                     var attribute = @type.GetCustomAttributes(typeof(StateMachineAttribute)).FirstOrDefault() as StateMachineAttribute;
-                    stateflowsBuilder.EnsureStateMachinesServices().AddStateMachine(attribute?.Name ?? @type.Name, sm.Build);
+                    stateflowsBuilder.EnsureStateMachinesServices().AddStateMachine(attribute?.Name ?? @type.Name, @type);
                 }
             });
 
@@ -60,7 +59,7 @@ namespace Stateflows.StateMachines
 
         [DebuggerHidden]
         public static IStateflowsBuilder AddStateMachine<TStateMachine>(this IStateflowsBuilder stateflowsBuilder, string stateMachineName = null)
-            where TStateMachine : StateMachine, new()
+            where TStateMachine : StateMachine
         {
             stateflowsBuilder.EnsureStateMachinesServices().AddStateMachine<TStateMachine>(stateMachineName ?? StateMachineInfo<TStateMachine>.Name);
 

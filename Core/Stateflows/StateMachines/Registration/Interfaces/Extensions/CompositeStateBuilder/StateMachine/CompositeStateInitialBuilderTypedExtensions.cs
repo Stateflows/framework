@@ -21,9 +21,9 @@ namespace Stateflows.StateMachines
                 stateName,
                 b =>
                 {
-                    b.AddStateEvents<TState, IStateBuilder>(self.Vertex.Graph);
+                    b.AddStateEvents<TState, IStateBuilder>();
 
-                    stateBuildAction?.Invoke(b as IStateTransitionsBuilder);
+                    stateBuildAction?.Invoke(b as ITypedStateBuilder);
                 }
             );
         }
@@ -44,9 +44,9 @@ namespace Stateflows.StateMachines
                 stateName,
                 b =>
                 {
-                    (b as ICompositeStateBuilder).AddStateEvents<TState, ICompositeStateBuilder>(self.Vertex.Graph);
+                    (b as ICompositeStateBuilder).AddStateEvents<TState, ICompositeStateBuilder>();
 
-                    compositeStateBuildAction?.Invoke(b as ICompositeStateInitialTransitionsBuilder);
+                    compositeStateBuildAction?.Invoke(b as ITypedCompositeStateInitialBuilder);
                 }
             );
         }

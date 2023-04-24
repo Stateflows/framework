@@ -16,14 +16,14 @@ namespace Stateflows.StateMachines.Registration.Interfaces
         IStateMachineInitialBuilderBase<ICompositeStateBuilder>
     { }
 
-    public interface ICompositeStateTransitionsBuilder :
-        ICompositeStateEventsBuilderBase<ICompositeStateTransitionsBuilder>,
-        IStateTransitionsBuilderBase<ICompositeStateTransitionsBuilder>,
-        IStateMachineBuilderBase<ICompositeStateTransitionsBuilder>
+    public interface ITypedCompositeStateBuilder :
+        ICompositeStateEventsBuilderBase<ITypedCompositeStateBuilder>,
+        IStateTransitionsBuilderBase<ITypedCompositeStateBuilder>,
+        IStateMachineBuilderBase<ITypedCompositeStateBuilder>
     { }
 
-    public interface ICompositeStateInitialTransitionsBuilder :
-        ICompositeStateEventsBuilderBase<ICompositeStateTransitionsBuilder>,
-        IStateMachineInitialBuilderBase<ICompositeStateTransitionsBuilder>
+    public interface ITypedCompositeStateInitialBuilder :
+        ICompositeStateEventsBuilderBase<ITypedCompositeStateBuilder>,
+        IStateMachineInitialBuilderBase<ITypedCompositeStateBuilder>
     { }
 }

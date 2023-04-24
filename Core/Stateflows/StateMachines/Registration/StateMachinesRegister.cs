@@ -1,11 +1,13 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Diagnostics;
+using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 using Microsoft.Extensions.DependencyInjection;
 using Stateflows.StateMachines.Extensions;
 using Stateflows.StateMachines.Models;
 using Stateflows.StateMachines.Registration.Builders;
 using Stateflows.StateMachines.Registration.Interfaces;
+using System.Runtime.Serialization;
 
 namespace Stateflows.StateMachines.Registration
 {
@@ -42,12 +44,28 @@ namespace Stateflows.StateMachines.Registration
         }
 
         [DebuggerHidden]
-        public void AddStateMachine<TStateMachine>(string stateMachineName)
-            where TStateMachine : StateMachine, new()
+        public void AddStateMachine(string stateMachineName, Type stateMachineType)
         {
-            var sm = new TStateMachine();
-            AddStateMachine(stateMachineName, b => sm.Build(b));
+            if (StateMachines.ContainsKey(stateMachineName))
+            {
+                throw new Exception($"State machine '{stateMachineName}' is already registered");
+            }
+
+            Services.RegisterStateMachine(stateMachineType);
+
+            var sm = FormatterServices.GetUninitializedObject(stateMachineType) as StateMachine;
+
+            var builder = new TypedStateMachineBuilder(stateMachineName, stateMachineType, Services);
+            sm.Build(builder);
+            builder.Result.Build();
+
+            StateMachines.Add(builder.Result.Name, builder.Result);
         }
+
+        [DebuggerHidden]
+        public void AddStateMachine<TStateMachine>(string stateMachineName)
+            where TStateMachine : StateMachine
+            => AddStateMachine(stateMachineName, typeof(TStateMachine));
 
         public void AddGlobalInterceptor(InterceptorFactory interceptorFactory)
             => GlobalInterceptorFactories.Add(interceptorFactory);

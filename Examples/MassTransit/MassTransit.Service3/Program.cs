@@ -27,7 +27,6 @@ builder.Services.AddMassTransit(c => c
     .AddStateflowsTransport(Assembly.GetEntryAssembly()?.GetName().Name)
     .UsingRabbitMq((context, config) =>
     {
-        //config.ConfigureStateflowsTransport(Assembly.GetEntryAssembly()?.GetName().Name);
         config.Host("localhost", "/", h =>
         {
             h.Username("guest");
