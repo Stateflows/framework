@@ -10,7 +10,6 @@ using Stateflows.StateMachines.Events;
 using Stateflows.StateMachines.Registration;
 using Stateflows.StateMachines.Context.Classes;
 using Stateflows.StateMachines.Context.Interfaces;
-using Stateflows.StateMachines.Registration.Builders;
 
 namespace Stateflows.StateMachines.Engine
 {
@@ -29,19 +28,7 @@ namespace Stateflows.StateMachines.Engine
             Register = register;
             Scope = serviceProvider.CreateScope();
             ServiceProvider = Scope.ServiceProvider;
-
-            if (graph.StateMachineType != null)
-            {
-                var stateMachine = ServiceProvider.GetRequiredService(graph.StateMachineType) as StateMachine;
-                var stateMachineBuilder = new TypedStateMachineBuilder(graph.Name, graph.StateMachineType, null);
-                stateMachine.Build(stateMachineBuilder);
-                Graph = stateMachineBuilder.Result;
-                Graph.Build();
-            }
-            else
-            {
-                Graph = graph;
-            }
+            Graph = graph;
         }
 
         public RootContext Context { get; private set; }
@@ -387,12 +374,12 @@ namespace Stateflows.StateMachines.Engine
 
         private IDictionary<Type, StateMachine> StateMachines = new Dictionary<Type, StateMachine>();
 
-        public StateMachine GetStateMachine(Type stateMachineType, IStateMachineActionContext context)
+        public StateMachine GetStateMachine(Type stateMachineType, RootContext context)
         {
             if (!StateMachines.TryGetValue(stateMachineType, out var stateMachine))
             {
                 stateMachine = ServiceProvider.GetService(stateMachineType) as StateMachine;
-                stateMachine.Context = context;
+                stateMachine.Context = new StateMachineActionContext(context);
 
                 StateMachines.Add(stateMachineType, stateMachine);
             }
@@ -400,13 +387,13 @@ namespace Stateflows.StateMachines.Engine
             return stateMachine;
         }
 
-        public TStateMachine GetStateMachine<TStateMachine>(IStateMachineActionContext context)
+        public TStateMachine GetStateMachine<TStateMachine>(RootContext context)
             where TStateMachine : StateMachine
         {
             if (!StateMachines.TryGetValue(typeof(TStateMachine), out var stateMachine))
             {
                 stateMachine = ServiceProvider.GetService<TStateMachine>();
-                stateMachine.Context = context;
+                stateMachine.Context = new StateMachineActionContext(context);
 
                 StateMachines.Add(typeof(TStateMachine), stateMachine);
             }

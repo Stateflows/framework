@@ -22,10 +22,10 @@ namespace Stateflows.StateMachines.Models
         public Dictionary<string, Vertex> AllVertices { get; set; } = new Dictionary<string, Vertex>();
         public List<Edge> AllEdges { get; set; } = new List<Edge>();
 
-        private Action<StateMachineActionAsync> initialize = null;
-        public Action<StateMachineActionAsync> Initialize
+        private Logic<StateMachineActionAsync> initialize = null;
+        public Logic<StateMachineActionAsync> Initialize
             => initialize ?? (
-                initialize = new Action<StateMachineActionAsync>()
+                initialize = new Logic<StateMachineActionAsync>()
                 {
                     Name = Constants.Initialize,
                     Graph = this

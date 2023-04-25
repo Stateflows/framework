@@ -23,7 +23,7 @@ namespace Stateflows.StateMachines
         {
             assembly.GetAttributedTypes<StateMachineAttribute>().ToList().ForEach(@type =>
             {
-                if (typeof(StateMachine).IsAssignableFrom(@type) && @type.GetConstructor(Type.EmptyTypes) != null)
+                if (typeof(StateMachine).IsAssignableFrom(@type))
                 {
                     var attribute = @type.GetCustomAttributes(typeof(StateMachineAttribute)).FirstOrDefault() as StateMachineAttribute;
                     stateflowsBuilder.EnsureStateMachinesServices().AddStateMachine(attribute?.Name ?? @type.Name, @type);

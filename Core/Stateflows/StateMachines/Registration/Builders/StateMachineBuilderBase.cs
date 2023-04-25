@@ -1,9 +1,10 @@
 ﻿using System;
+using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using Stateflows.StateMachines.Models;
 using Stateflows.StateMachines.Extensions;
-using Stateflows.StateMachines.Interfaces;
 using Stateflows.StateMachines.Context.Classes;
+using Stateflows.StateMachines.Context.Interfaces;
 using Stateflows.StateMachines.Registration.Interfaces;
 using Stateflows.StateMachines.Registration.Interfaces.Base;
 using Stateflows.StateMachines.Registration.Interfaces.Internal;
@@ -22,7 +23,7 @@ namespace Stateflows.StateMachines.Registration.Builders
             Result = new Graph(name);
         }
 
-        public IStateMachineBuilder AddOnInitialize(StateMachineActionDelegateAsync actionAsync)
+        public IStateMachineBuilder AddOnInitialize(Func<IStateMachineActionContext, Task> actionAsync)
         {
             if (actionAsync == null)
                 throw new ArgumentNullException("Action not provided");
@@ -153,7 +154,7 @@ namespace Stateflows.StateMachines.Registration.Builders
         IStateMachineInitialBuilder IStateMachineUtilsBuilderBase<IStateMachineInitialBuilder>.AddExceptionHandler<TExceptionHandler>()
             => AddExceptionHandler<TExceptionHandler>() as IStateMachineInitialBuilder;
 
-        IStateMachineInitialBuilder IStateMachineEventsBuilderBase<IStateMachineInitialBuilder>.AddOnInitialize(StateMachineActionDelegateAsync actionAsync)
+        IStateMachineInitialBuilder IStateMachineEventsBuilderBase<IStateMachineInitialBuilder>.AddOnInitialize(Func<IStateMachineActionContext, Task> actionAsync)
             => AddOnInitialize(actionAsync) as IStateMachineInitialBuilder;
     }
 }

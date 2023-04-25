@@ -1,7 +1,7 @@
-﻿using System.Threading.Tasks;
+﻿using System;
+using System.Threading.Tasks;
 using Stateflows.Common;
 using Stateflows.StateMachines.Context.Interfaces;
-using Stateflows.StateMachines.Interfaces;
 
 namespace Stateflows.StateMachines
 {
@@ -15,7 +15,7 @@ namespace Stateflows.StateMachines
             where TEvent : Event, new()
             => Task.FromResult(true);
 
-        public static GuardDelegateAsync<TEvent> ToAsync<TEvent>(this GuardDelegate<TEvent> guard)
+        public static Func<IGuardContext<TEvent>, Task<bool>> ToAsync<TEvent>(this Func<IGuardContext<TEvent>, bool> guard)
             where TEvent : Event, new()
             => c => Task.FromResult(guard(c));
     }

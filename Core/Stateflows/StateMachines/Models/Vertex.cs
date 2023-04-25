@@ -10,14 +10,14 @@ namespace Stateflows.StateMachines.Models
         public Vertex Parent { get; set; }
         public string Name { get; set; }
 
-        private Action<StateMachineActionAsync> initialize = null;
-        public Action<StateMachineActionAsync> Initialize => initialize ?? (initialize = new Action<StateMachineActionAsync>() { Name = Constants.Initialize, Graph = Graph });
+        private Logic<StateMachineActionAsync> initialize = null;
+        public Logic<StateMachineActionAsync> Initialize => initialize ?? (initialize = new Logic<StateMachineActionAsync>() { Name = Constants.Initialize, Graph = Graph });
 
-        private Action<StateMachineActionAsync> entry = null;
-        public Action<StateMachineActionAsync> Entry => entry ?? (entry = new Action<StateMachineActionAsync>() { Name = Constants.Entry, Graph = Graph });
+        private Logic<StateMachineActionAsync> entry = null;
+        public Logic<StateMachineActionAsync> Entry => entry ?? (entry = new Logic<StateMachineActionAsync>() { Name = Constants.Entry, Graph = Graph });
 
-        private Action<StateMachineActionAsync> exit = null;
-        public Action<StateMachineActionAsync> Exit => exit ?? (exit = new Action<StateMachineActionAsync>() { Name = Constants.Exit, Graph = Graph });
+        private Logic<StateMachineActionAsync> exit = null;
+        public Logic<StateMachineActionAsync> Exit => exit ?? (exit = new Logic<StateMachineActionAsync>() { Name = Constants.Exit, Graph = Graph });
 
         public List<Edge> Edges { get; set; } = new List<Edge>();
         public string InitialVertexName { get; set; }

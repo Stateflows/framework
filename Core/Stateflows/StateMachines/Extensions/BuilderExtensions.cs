@@ -14,7 +14,11 @@ namespace Stateflows.StateMachines.Extensions
         {
             if (typeof(StateMachine).GetMethod(Constants.OnInitializeAsync).IsOverridenIn(stateMachineType))
             {
-                builder.AddOnInitialize(c => (c as BaseContext).Context.Executor.GetStateMachine(stateMachineType, c)?.OnInitializeAsync());
+                builder.AddOnInitialize(c =>
+                {
+                    var context = (c as BaseContext).Context;
+                    context.Executor.GetStateMachine(stateMachineType, context)?.OnInitializeAsync();
+                });
             }
         }
 

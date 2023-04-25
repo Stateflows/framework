@@ -1,5 +1,7 @@
 ﻿using System;
+using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
+using Stateflows.StateMachines.Context.Interfaces;
 using Stateflows.StateMachines.Extensions;
 using Stateflows.StateMachines.Interfaces;
 using Stateflows.StateMachines.Registration.Interfaces;
@@ -48,7 +50,7 @@ namespace Stateflows.StateMachines.Registration.Builders
             return this;
         }
 
-        ITypedStateMachineBuilder IStateMachineEventsBuilderBase<ITypedStateMachineBuilder>.AddOnInitialize(StateMachineActionDelegateAsync actionAsync)
+        ITypedStateMachineBuilder IStateMachineEventsBuilderBase<ITypedStateMachineBuilder>.AddOnInitialize(Func<IStateMachineActionContext, Task> actionAsync)
         {
             AddOnInitialize(actionAsync);
             return this;

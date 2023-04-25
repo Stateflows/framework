@@ -1,13 +1,13 @@
 ﻿using System;
+using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using Stateflows.Common;
 using Stateflows.StateMachines.Events;
 using Stateflows.StateMachines.Models;
-using Stateflows.StateMachines.Interfaces;
+using Stateflows.StateMachines.Context.Interfaces;
 using Stateflows.StateMachines.Registration.Interfaces;
 using Stateflows.StateMachines.Registration.Interfaces.Base;
 using Stateflows.StateMachines.Registration.Interfaces.Internal;
-using Stateflows.Common.Utilities;
 
 namespace Stateflows.StateMachines.Registration.Builders
 {
@@ -32,18 +32,18 @@ namespace Stateflows.StateMachines.Registration.Builders
         private StateBuilder Builder { get; set; }
 
         #region Events
-        public ICompositeStateBuilder AddOnEntry(StateActionDelegateAsync actionAsync)
+        public ICompositeStateBuilder AddOnEntry(Func<IStateActionContext, Task> actionAsync)
         {
             Builder.AddOnEntry(actionAsync);
             return this;
         }
-        public ICompositeStateBuilder AddOnInitialize(StateActionDelegateAsync actionAsync)
+        public ICompositeStateBuilder AddOnInitialize(Func<IStateActionContext, Task> actionAsync)
         {
             Builder.AddOnInitialize(actionAsync);
             return this;
         }
 
-        public ICompositeStateBuilder AddOnExit(StateActionDelegateAsync actionAsync)
+        public ICompositeStateBuilder AddOnExit(Func<IStateActionContext, Task> actionAsync)
         {
             Builder.AddOnExit(actionAsync);
             return this;
@@ -142,13 +142,13 @@ namespace Stateflows.StateMachines.Registration.Builders
             => AddInitialCompositeState(stateName, compositeStateBuildAction) as ITypedCompositeStateBuilder;
         #endregion
 
-        ICompositeStateInitialBuilder IStateEventsBuilderBase<ICompositeStateInitialBuilder>.AddOnEntry(StateActionDelegateAsync actionAsync)
+        ICompositeStateInitialBuilder IStateEventsBuilderBase<ICompositeStateInitialBuilder>.AddOnEntry(Func<IStateActionContext, Task> actionAsync)
             => AddOnEntry(actionAsync) as ICompositeStateInitialBuilder;
 
-        ICompositeStateInitialBuilder IStateEventsBuilderBase<ICompositeStateInitialBuilder>.AddOnExit(StateActionDelegateAsync actionAsync)
+        ICompositeStateInitialBuilder IStateEventsBuilderBase<ICompositeStateInitialBuilder>.AddOnExit(Func<IStateActionContext, Task> actionAsync)
             => AddOnExit(actionAsync) as ICompositeStateInitialBuilder;
 
-        ICompositeStateInitialBuilder ICompositeStateEventsBuilderBase<ICompositeStateInitialBuilder>.AddOnInitialize(StateActionDelegateAsync actionAsync)
+        ICompositeStateInitialBuilder ICompositeStateEventsBuilderBase<ICompositeStateInitialBuilder>.AddOnInitialize(Func<IStateActionContext, Task> actionAsync)
             => AddOnInitialize(actionAsync) as ICompositeStateInitialBuilder;
 
         ICompositeStateBuilder IStateMachineInitialBuilderBase<ICompositeStateBuilder>.AddInitialState(string stateName, StateBuilderAction stateBuildAction)
@@ -157,7 +157,7 @@ namespace Stateflows.StateMachines.Registration.Builders
         ICompositeStateBuilder IStateMachineInitialBuilderBase<ICompositeStateBuilder>.AddInitialCompositeState(string stateName, CompositeStateBuilderAction compositeStateBuildAction)
             => AddInitialCompositeState(stateName, compositeStateBuildAction);
 
-        ITypedCompositeStateBuilder ICompositeStateEventsBuilderBase<ITypedCompositeStateBuilder>.AddOnInitialize(StateActionDelegateAsync actionAsync)
+        ITypedCompositeStateBuilder ICompositeStateEventsBuilderBase<ITypedCompositeStateBuilder>.AddOnInitialize(Func<IStateActionContext, Task> actionAsync)
             => AddOnInitialize(actionAsync) as ITypedCompositeStateBuilder;
 
         ICompositeStateInitialBuilder IStateTransitionsBuilderBase<ICompositeStateInitialBuilder>.AddTransition<TEvent>(string targetStateName, TransitionBuilderAction<TEvent> transitionBuildAction)

@@ -1,10 +1,12 @@
 ﻿using System;
+using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using Stateflows.Common;
 using Stateflows.StateMachines.Events;
 using Stateflows.StateMachines.Models;
-using Stateflows.StateMachines.Interfaces;
 using Stateflows.StateMachines.Context.Classes;
+using Stateflows.StateMachines.Context.Interfaces;
+using Stateflows.StateMachines.Registration.Extensions;
 using Stateflows.StateMachines.Registration.Interfaces;
 using Stateflows.StateMachines.Registration.Interfaces.Base;
 using Stateflows.StateMachines.Registration.Interfaces.Internal;
@@ -24,10 +26,12 @@ namespace Stateflows.StateMachines.Registration.Builders
         }
 
         #region Events
-        public IStateBuilder AddOnInitialize(StateActionDelegateAsync stateActionAsync)
+        public IStateBuilder AddOnInitialize(Func<IStateActionContext, Task> stateActionAsync)
         {
             if (stateActionAsync == null)
                 throw new ArgumentNullException("Action not provided");
+
+            stateActionAsync = stateActionAsync.AddStateMachineInvocationContext(Vertex.Graph);
 
             Vertex.Initialize.Actions.Add(async c =>
             {
@@ -46,10 +50,12 @@ namespace Stateflows.StateMachines.Registration.Builders
             return this;
         }
 
-        public IStateBuilder AddOnEntry(StateActionDelegateAsync stateActionAsync)
+        public IStateBuilder AddOnEntry(Func<IStateActionContext, Task> stateActionAsync)
         {
             if (stateActionAsync == null)
                 throw new ArgumentNullException("Action not provided");
+
+            stateActionAsync = stateActionAsync.AddStateMachineInvocationContext(Vertex.Graph);
 
             Vertex.Entry.Actions.Add(async c =>
                 {
@@ -68,10 +74,12 @@ namespace Stateflows.StateMachines.Registration.Builders
             return this;
         }
 
-        public IStateBuilder AddOnExit(StateActionDelegateAsync stateActionAsync)
+        public IStateBuilder AddOnExit(Func<IStateActionContext, Task> stateActionAsync)
         {
             if (stateActionAsync == null)
                 throw new ArgumentNullException("Action not provided");
+
+            stateActionAsync = stateActionAsync.AddStateMachineInvocationContext(Vertex.Graph);
 
             Vertex.Exit.Actions.Add(async c =>
                 {

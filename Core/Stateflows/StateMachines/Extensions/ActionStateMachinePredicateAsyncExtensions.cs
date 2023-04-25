@@ -8,7 +8,7 @@ namespace Stateflows.StateMachines
 {
     internal static class ActionStateMachinePredicateAsyncExtensions
     {
-        public static async Task<bool> WhenAll(this Action<StateMachinePredicateAsync> action, RootContext context)
+        public static async Task<bool> WhenAll(this Logic<StateMachinePredicateAsync> action, RootContext context)
             => (await Task.WhenAll(action.Actions.Select(a => a(context)))).Count(r => r == false) == 0;
     }
 }

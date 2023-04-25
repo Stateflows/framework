@@ -2,7 +2,6 @@
 using System.Threading.Tasks;
 using Stateflows.Common;
 using Stateflows.StateMachines.Context.Interfaces;
-using Stateflows.StateMachines.Interfaces;
 
 namespace Stateflows.StateMachines
 {
@@ -12,7 +11,7 @@ namespace Stateflows.StateMachines
             where TEvent : Event
             => Task.CompletedTask;
 
-        public static EffectDelegateAsync<TEvent> ToAsync<TEvent>(this EffectDelegate<TEvent> transitionEffect)
+        public static Func<ITransitionContext<TEvent>, Task> ToAsync<TEvent>(this Action<ITransitionContext<TEvent>> transitionEffect)
             where TEvent : Event, new()
             => c => Task.Run(() => transitionEffect(c));
     }

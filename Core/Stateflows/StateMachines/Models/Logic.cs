@@ -2,7 +2,7 @@
 
 namespace Stateflows.StateMachines.Models
 {
-    internal class Action<TDelegate>
+    internal class Logic<TDelegate>
     {
         public Graph Graph { get; set; }
 
