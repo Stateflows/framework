@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using System.Diagnostics;
 using System.Collections.Generic;
 using Stateflows.StateMachines.Interfaces;
@@ -63,6 +64,18 @@ namespace Stateflows.StateMachines.Models
                     else
                     {
                         throw new Exception($"Initial state '{vertex.InitialVertexName}' is not registered in composite state '{vertex.Name}' in state machine '{Name}'");
+                    }
+                }
+
+                var vertexTriggers = vertex.Edges
+                    .Where(edge => !string.IsNullOrEmpty(edge.Trigger))
+                    .Select(edge => edge.Trigger);
+
+                foreach (var deferredEvent in vertex.DeferredEvents)
+                {
+                    if (vertexTriggers.Contains(deferredEvent))
+                    {
+                        throw new Exception($"Event '{deferredEvent}' triggers a transition outgoing from state '{vertex.Name}' in state machine '{Name}' and cannot be deferred by that state.");
                     }
                 }
             }

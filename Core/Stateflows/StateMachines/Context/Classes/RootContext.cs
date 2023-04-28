@@ -45,6 +45,28 @@ namespace Stateflows.StateMachines.Context.Classes
             }
         }
 
+        private List<Event> deferredEvents = null;
+        public List<Event> DeferredEvents
+        {
+            get
+            {
+                if (deferredEvents == null)
+                {
+                    if (!Context.Values.TryGetValue(Constants.DeferredEvents, out var deferredEventsObj))
+                    {
+                        deferredEvents = new List<Event>();
+                        Context.Values[Constants.DeferredEvents] = deferredEvents;
+                    }
+                    else
+                    {
+                        deferredEvents = deferredEventsObj as List<Event>;
+                    }
+                }
+
+                return deferredEvents;
+            }
+        }
+
         private Dictionary<string, StateValues> stateValues = null;
         public Dictionary<string, StateValues> StateValues
         {

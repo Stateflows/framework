@@ -22,7 +22,7 @@ namespace Stateflows.StateMachines.Extensions
             }
         }
 
-        public static void AddStateEvents<TState, TReturn>(this IStateEventsBuilderBase<TReturn> builder)
+        public static void AddStateEvents<TState, TReturn>(this IStateBuilderBase<TReturn> builder)
             where TState : State
         {
             if (typeof(State).GetMethod(Constants.OnEntryAsync).IsOverridenIn<TState>())
@@ -36,7 +36,7 @@ namespace Stateflows.StateMachines.Extensions
             }
         }
 
-        public static void AddCompositeStateEvents<TCompositeState, TReturn>(this ICompositeStateEventsBuilderBase<TReturn> builder)
+        public static void AddCompositeStateEvents<TCompositeState, TReturn>(this ICompositeStateBuilderBase<TReturn> builder)
             where TCompositeState : CompositeState
         {
             if (typeof(State).GetMethod(Constants.OnInitializeAsync).IsOverridenIn<TCompositeState>())

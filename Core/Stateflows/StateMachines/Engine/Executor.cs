@@ -38,6 +38,12 @@ namespace Stateflows.StateMachines.Engine
         public Inspector Observer
             => observer ?? (observer = new Inspector(this));
 
+        public async Task<IEnumerable<string>> GetDeferredEventsAsync()
+        {
+            var stack = await GetVerticesStackAsync(false);
+            return stack.SelectMany(vertex => vertex.DeferredEvents);
+        }
+
         private List<Vertex> verticesStack = null;
 
         public async Task<List<Vertex>> GetVerticesStackAsync(bool forceRebuild)
@@ -208,6 +214,31 @@ namespace Stateflows.StateMachines.Engine
             return result;
         }
 
+        private async Task<bool> TryDeferEventAsync<TEvent>(TEvent @event) where TEvent : Event, new()
+        {
+            var deferredEvents = await GetDeferredEventsAsync();
+            if (deferredEvents.Any() && deferredEvents.Contains(@event.Name))
+            {
+                Context.DeferredEvents.Add(@event);
+                return true;
+            }
+            return false;
+        }
+
+        private async Task DispatchNextDeferredEvent()
+        {
+            var deferredEvents = await GetDeferredEventsAsync();
+            foreach (var @event in Context.DeferredEvents)
+            {
+                if (!deferredEvents.Any() || !deferredEvents.Contains(@event.Name))
+                {
+                    Context.DeferredEvents.Remove(@event);
+                    await DoProcessAsync(@event);
+                    break;
+                }
+            }
+        }
+
         private async Task<bool> DoProcessAsync<TEvent>(TEvent @event)
             where TEvent : Event, new()
         {
@@ -216,21 +247,26 @@ namespace Stateflows.StateMachines.Engine
             var currentStack = await GetVerticesStackAsync(true);
             currentStack.Reverse();
 
-            foreach (var vertex in currentStack)
+            if (!await TryDeferEventAsync(@event))
             {
-                foreach (var edge in vertex.Edges)
+                foreach (var vertex in currentStack)
                 {
-                    if (edge.Trigger == @event.Name)
+                    foreach (var edge in vertex.Edges)
                     {
-                        if (await DoGuardAsync(edge, @event))
+                        if (edge.Trigger == @event.Name)
                         {
-                            await DoConsumeAsync<TEvent>(vertex, edge);
+                            if (await DoGuardAsync(edge, @event))
+                            {
+                                await DoConsumeAsync<TEvent>(vertex, edge);
 
-                            return true;
+                                return true;
+                            }
                         }
                     }
                 }
             }
+
+            await DispatchNextDeferredEvent();
 
             return false;
         }

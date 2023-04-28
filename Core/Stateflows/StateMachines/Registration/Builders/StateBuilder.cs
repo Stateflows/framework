@@ -99,6 +99,18 @@ namespace Stateflows.StateMachines.Registration.Builders
         }
         #endregion
 
+        #region Utils
+        public IStateBuilder AddDeferredEvent<TEvent>() where TEvent : Event, new()
+        {
+            if (typeof(TEvent) == typeof(Completion))
+                throw new Exception("Completion event cannot be deferred.");
+
+            Vertex.DeferredEvents.Add(EventInfo<TEvent>.Name);
+
+            return this;
+        }
+        #endregion
+
         #region Transitions
         public IStateBuilder AddTransition<TEvent>(string targetStateName, TransitionBuilderAction<TEvent> transitionBuildAction = null)
             where TEvent : Event, new()

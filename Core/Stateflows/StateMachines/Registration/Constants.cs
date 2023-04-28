@@ -12,6 +12,7 @@
         public static readonly string State = nameof(State);
         public static readonly string StateValues = nameof(StateValues);
         public static readonly string GlobalValues = nameof(GlobalValues);
+        public static readonly string DeferredEvents = nameof(DeferredEvents);
         public static readonly string TimeEventIds = nameof(TimeEventIds);
         public static readonly string Entry = nameof(Entry);
         public static readonly string OnEntry = nameof(OnEntry);

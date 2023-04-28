@@ -3,7 +3,7 @@
 namespace Stateflows.StateMachines.Registration.Interfaces
 {
     public partial interface IStateBuilder : 
-        IStateEventsBuilderBase<IStateBuilder>,
+        IStateBuilderBase<IStateBuilder>,
         IStateTransitionsBuilderBase<IStateBuilder>
     { }
 

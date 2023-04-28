@@ -4,7 +4,7 @@ using Stateflows.StateMachines.Context.Interfaces;
 
 namespace Stateflows.StateMachines.Registration.Interfaces.Base
 {
-    public interface ICompositeStateEventsBuilderBase<TReturn>
+    public interface ICompositeStateBuilderBase<TReturn>
     {
         #region Events
         TReturn AddOnInitialize(Func<IStateActionContext, Task> actionAsync);

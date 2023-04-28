@@ -23,5 +23,6 @@ namespace Stateflows.StateMachines.Models
         public string InitialVertexName { get; set; }
         public Vertex InitialVertex { get; set; }
         public Dictionary<string, Vertex> Vertices { get; set; } = new Dictionary<string, Vertex>();
+        public List<string> DeferredEvents { get; set; } = new List<string>();
     }
 }
