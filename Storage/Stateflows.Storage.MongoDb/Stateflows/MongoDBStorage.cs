@@ -1,6 +1,5 @@
-﻿using MongoDB.Driver;
-using Newtonsoft.Json.Linq;
-using Stateflows.Common.Classes;
+﻿using MongoDB.Bson;
+using MongoDB.Driver;
 using Stateflows.Common.Context;
 using Stateflows.Common.Interfaces;
 using Stateflows.Common.Utilities;
@@ -25,7 +24,7 @@ namespace Stateflows.Storage.MongoDB.Stateflows
 
         public async Task<StateflowsContext> Hydrate(BehaviorId id)
         {
-            var context = await MongoDBSetExtension.FindOrCreate(_mongoDatabase, CollectionNames.Context, id);
+            var context = await MongoDBSetExtension.FindOrCreate(_mongoDatabase, CollectionNames.Context_v1, id);
             StateflowsContext result = StateflowsJsonConverter.DeserializeObject<StateflowsContext>(context?.Data ?? string.Empty)
                 ?? new StateflowsContext() { Id = id };
 
@@ -34,7 +33,7 @@ namespace Stateflows.Storage.MongoDB.Stateflows
 
         public async Task Dehydrate(StateflowsContext context)
         {
-            var contextEntity = await _mongoDatabase.FindOrCreate(CollectionNames.Context, context);
+            var contextEntity = await _mongoDatabase.FindOrCreate(CollectionNames.Context_v1, context);
             contextEntity.Data = StateflowsJsonConverter.SerializeObject(context);
             await UpdateOrInsertContextData(contextEntity);
         }
@@ -44,7 +43,7 @@ namespace Stateflows.Storage.MongoDB.Stateflows
             if (!timeTokens.Any()) return;
 
             var tokens = new Dictionary<TimeToken, TimeTokenEntity>();
-            var collection = _mongoDatabase.GetCollection<TimeTokenEntity>(CollectionNames.TimeToken);
+            var collection = _mongoDatabase.GetCollection<TimeTokenEntity>(CollectionNames.TimeToken_v1);
 
             foreach (var timeToken in timeTokens)
             {
@@ -61,15 +60,17 @@ namespace Stateflows.Storage.MongoDB.Stateflows
 
         public async Task ClearTimeTokens(BehaviorId behaviorId, IEnumerable<string> ids)
         {
-            var collection = _mongoDatabase.GetCollection<TimeTokenEntity>(CollectionNames.TimeToken);
-            var filter = Builders<TimeTokenEntity>.Filter.In("_id", ids);
+            var collection = _mongoDatabase.GetCollection<TimeTokenEntity>(CollectionNames.TimeToken_v1);
+            var objectIds = ids.Select(id => ObjectId.Parse(id)).ToList();
+
+            var filter = Builders<TimeTokenEntity>.Filter.In("_id", objectIds);
 
             await collection.DeleteManyAsync(filter);
         }
 
         public async Task<IEnumerable<TimeToken>> GetTimeTokens(IEnumerable<BehaviorClass> behaviorClasses)
         {
-            var collection = _mongoDatabase.GetCollection<TimeTokenEntity>(CollectionNames.TimeToken);
+            var collection = _mongoDatabase.GetCollection<TimeTokenEntity>(CollectionNames.TimeToken_v1);
             var behaviorClassStrings = behaviorClasses.Select(bc => StateflowsJsonConverter.SerializeObject(bc));
 
             return (await collection.Find(p => behaviorClassStrings.Contains(p.BehaviorClass)).ToListAsync())
@@ -93,7 +94,7 @@ namespace Stateflows.Storage.MongoDB.Stateflows
 
         private async Task UpdateOrInsertContextData(Context_v1 contextEntity)
         {
-            var collection = _mongoDatabase.GetCollection<Context_v1>(CollectionNames.Context);
+            var collection = _mongoDatabase.GetCollection<Context_v1>(CollectionNames.Context_v1);
 
             if (contextEntity.Id == default)
             {
