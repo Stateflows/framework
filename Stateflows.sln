@@ -63,6 +63,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Server", "Server", "{3C4DD6
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Blazor.Server", "Examples\Blazor\Server\Blazor.Server\Blazor.Server.csproj", "{8FC72FEB-1600-444A-9CDE-16329113E370}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Stateflows.Storage.MongoDB", "Storage\Stateflows.Storage.MongoDb\Stateflows.Storage.MongoDB.csproj", "{2BB66169-76AB-45B8-8901-AC0B925890EA}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -149,6 +151,10 @@ Global
 		{8FC72FEB-1600-444A-9CDE-16329113E370}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{8FC72FEB-1600-444A-9CDE-16329113E370}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{8FC72FEB-1600-444A-9CDE-16329113E370}.Release|Any CPU.Build.0 = Release|Any CPU
+		{2BB66169-76AB-45B8-8901-AC0B925890EA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2BB66169-76AB-45B8-8901-AC0B925890EA}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2BB66169-76AB-45B8-8901-AC0B925890EA}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2BB66169-76AB-45B8-8901-AC0B925890EA}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -178,6 +184,7 @@ Global
 		{6DC159C7-D23D-47B0-B640-CB4ABF187145} = {835D16B4-CF1C-491C-8FB7-F33A3D64EC69}
 		{3C4DD667-20B7-482A-98A0-C2CD7552DB32} = {F6B00E1A-ADDE-4F12-9F12-1C3CC9444D92}
 		{8FC72FEB-1600-444A-9CDE-16329113E370} = {3C4DD667-20B7-482A-98A0-C2CD7552DB32}
+		{2BB66169-76AB-45B8-8901-AC0B925890EA} = {82B8FBE5-CA6A-4BB0-BB42-D0F0BDEFEDD4}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {602A9FD6-5053-42E4-AEAE-2813DF169A3C}
