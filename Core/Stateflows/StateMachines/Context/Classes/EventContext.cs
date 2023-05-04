@@ -6,7 +6,7 @@ using Stateflows.StateMachines.Inspection.Interfaces;
 
 namespace Stateflows.StateMachines.Context.Classes
 {
-    internal class EventContext<TEvent> : BaseContext, IEventContext<TEvent>, IEventInspectionContext<TEvent>
+    internal class EventContext<TEvent> : BaseContext, IEventContext<TEvent>, IEventInspectionContext<TEvent>, IRootContext
         where TEvent : Event
     {
         IStateMachineContext IEventContext<TEvent>.StateMachine => StateMachine;

@@ -3,7 +3,7 @@ using Stateflows.StateMachines.Registration.Interfaces;
 
 namespace Stateflows.StateMachines
 {
-    public static class StateTransitionsBuilderDefaultTransitionTypedExtensions
+    public static class TypedStateBuilderDefaultTransitionTypedExtensions
     {
         public static ITypedStateBuilder AddDefaultTransition<TTransition, TTargetState>(this ITypedStateBuilder builder)
             where TTransition : Transition<Completion>

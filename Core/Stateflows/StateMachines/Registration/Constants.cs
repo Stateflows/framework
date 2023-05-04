@@ -14,6 +14,7 @@
         public static readonly string GlobalValues = nameof(GlobalValues);
         public static readonly string DeferredEvents = nameof(DeferredEvents);
         public static readonly string TimeEventIds = nameof(TimeEventIds);
+        public static readonly string SubmachineId = nameof(SubmachineId);
         public static readonly string Entry = nameof(Entry);
         public static readonly string OnEntry = nameof(OnEntry);
         public static readonly string OnEntryAsync = nameof(OnEntryAsync);

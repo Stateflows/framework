@@ -216,6 +216,14 @@ namespace Stateflows.StateMachines.Engine
             where TEvent : Event, new()
             => Interceptors.RunSafe(i => i.BeforeProcessEventAsync(context), nameof(BeforeProcessEventAsync));
 
+        public Task AfterDispatchEventAsync<TEvent>(EventContext<TEvent> context)
+            where TEvent : Event, new()
+            => Interceptors.RunSafe(i => i.AfterDispatchEventAsync(context), nameof(AfterDispatchEventAsync));
+
+        public Task<bool> BeforeDispatchEventAsync<TEvent>(EventContext<TEvent> context)
+            where TEvent : Event, new()
+            => Interceptors.RunSafe(i => i.BeforeDispatchEventAsync(context), nameof(BeforeDispatchEventAsync));
+
         public Task OnStateMachineInitializeExceptionAsync(StateMachineActionContext context, Exception exception)
             => Task.WhenAll(
                 ExceptionHandlers.RunSafe(h => h.OnStateMachineInitializeExceptionAsync(context, exception), nameof(OnStateMachineInitializeExceptionAsync)),

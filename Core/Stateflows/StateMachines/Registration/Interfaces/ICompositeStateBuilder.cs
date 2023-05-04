@@ -3,27 +3,30 @@
 namespace Stateflows.StateMachines.Registration.Interfaces
 {
     public interface ICompositeStateBuilder :
-        IStateBuilderBase<ICompositeStateBuilder>,
+        IStateEventsBuilderBase<ICompositeStateBuilder>,
+        IStateUtilsBuilderBase<ICompositeStateBuilder>,
         ICompositeStateBuilderBase<ICompositeStateBuilder>,
         IStateTransitionsBuilderBase<ICompositeStateBuilder>,
         IStateMachineBuilderBase<ICompositeStateBuilder>
     { }
 
     public interface ICompositeStateInitialBuilder :
-        IStateBuilderBase<ICompositeStateInitialBuilder>,
+        IStateEventsBuilderBase<ICompositeStateInitialBuilder>,
+        IStateUtilsBuilderBase<ICompositeStateInitialBuilder>,
         ICompositeStateBuilderBase<ICompositeStateInitialBuilder>,
         IStateTransitionsBuilderBase<ICompositeStateInitialBuilder>,
         IStateMachineInitialBuilderBase<ICompositeStateBuilder>
     { }
 
     public interface ITypedCompositeStateBuilder :
-        ICompositeStateBuilderBase<ITypedCompositeStateBuilder>,
+        IStateUtilsBuilderBase<ITypedCompositeStateBuilder>,
         IStateTransitionsBuilderBase<ITypedCompositeStateBuilder>,
         IStateMachineBuilderBase<ITypedCompositeStateBuilder>
     { }
 
     public interface ITypedCompositeStateInitialBuilder :
-        ICompositeStateBuilderBase<ITypedCompositeStateBuilder>,
+        IStateUtilsBuilderBase<ITypedCompositeStateInitialBuilder>,
+        IStateTransitionsBuilderBase<ITypedCompositeStateInitialBuilder>,
         IStateMachineInitialBuilderBase<ITypedCompositeStateBuilder>
     { }
 }

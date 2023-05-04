@@ -24,5 +24,8 @@ namespace Stateflows.StateMachines.Models
         public Vertex InitialVertex { get; set; }
         public Dictionary<string, Vertex> Vertices { get; set; } = new Dictionary<string, Vertex>();
         public List<string> DeferredEvents { get; set; } = new List<string>();
+
+        public Dictionary<string, object> SubmachineInitialValues { get; set; }
+        public string SubmachineName { get; set; }
     }
 }

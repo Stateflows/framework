@@ -10,10 +10,15 @@ using Stateflows.StateMachines.Registration.Extensions;
 using Stateflows.StateMachines.Registration.Interfaces;
 using Stateflows.StateMachines.Registration.Interfaces.Base;
 using Stateflows.StateMachines.Registration.Interfaces.Internal;
+using Stateflows.Common.Events;
+using System.Collections.Generic;
 
 namespace Stateflows.StateMachines.Registration.Builders
 {
-    internal partial class StateBuilder : IStateBuilder, IStateBuilderInternal, ITypedStateBuilder
+    internal partial class StateBuilder : 
+        IStateBuilder, ISubmachineStateBuilder, 
+        ITypedStateBuilder, ISubmachineTypedStateBuilder, 
+        IStateBuilderInternal
     {
         public Vertex Vertex { get; }
 
@@ -105,6 +110,9 @@ namespace Stateflows.StateMachines.Registration.Builders
             if (typeof(TEvent) == typeof(Completion))
                 throw new Exception("Completion event cannot be deferred.");
 
+            if (typeof(TEvent) == typeof(Exit))
+                throw new Exception("Exit event cannot be deferred.");
+
             Vertex.DeferredEvents.Add(EventInfo<TEvent>.Name);
 
             return this;
@@ -150,6 +158,22 @@ namespace Stateflows.StateMachines.Registration.Builders
 
         ITypedStateBuilder IStateTransitionsBuilderBase<ITypedStateBuilder>.AddInternalTransition<TEvent>(TransitionBuilderAction<TEvent> transitionBuildAction)
             => AddInternalTransition<TEvent>(transitionBuildAction) as ITypedStateBuilder;
+
+        ITypedStateBuilder IStateUtilsBuilderBase<ITypedStateBuilder>.AddDeferredEvent<TEvent>()
+            => AddDeferredEvent<TEvent>() as ITypedStateBuilder;
+        #endregion
+
+        #region Submachine
+        public ISubmachineStateBuilder AddSubmachine(string submachineName, Dictionary<string, object> submachineInitialValues = null)
+        {
+            Vertex.SubmachineName = submachineName;
+            Vertex.SubmachineInitialValues = submachineInitialValues;
+
+            return this;
+        }
+
+        ISubmachineTypedStateBuilder IStateSubmachineBuilderBase<ISubmachineTypedStateBuilder>.AddSubmachine(string submachineName, Dictionary<string, object> submachineInitialValues)
+            => AddSubmachine(submachineName, submachineInitialValues) as ISubmachineTypedStateBuilder;
         #endregion
     }
 }

@@ -1,9 +1,6 @@
 ﻿using System;
-using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
-using Stateflows.StateMachines.Context.Interfaces;
 using Stateflows.StateMachines.Extensions;
-using Stateflows.StateMachines.Interfaces;
 using Stateflows.StateMachines.Registration.Interfaces;
 using Stateflows.StateMachines.Registration.Interfaces.Base;
 using Stateflows.StateMachines.Registration.Interfaces.Internal;
@@ -21,70 +18,34 @@ namespace Stateflows.StateMachines.Registration.Builders
         }
 
         ITypedStateMachineBuilder IStateMachineBuilderBase<ITypedStateMachineBuilder>.AddState(string stateName, StateBuilderAction stateBuildAction)
-        {
-            AddState(stateName, stateBuildAction);
-            return this;
-        }
+            => AddState(stateName, stateBuildAction) as ITypedStateMachineBuilder;
 
         ITypedStateMachineBuilder IStateMachineBuilderBase<ITypedStateMachineBuilder>.AddCompositeState(string stateName, CompositeStateBuilderAction compositeStateBuildAction)
-        {
-            AddCompositeState(stateName, compositeStateBuildAction);
-            return this;
-        }
+            => AddCompositeState(stateName, compositeStateBuildAction) as ITypedStateMachineBuilder;
 
         ITypedStateMachineBuilder IStateMachineUtilsBuilderBase<ITypedStateMachineBuilder>.AddInterceptor<TInterceptor>()
-        {
-            AddInterceptor<TInterceptor>();
-            return this;
-        }
+            => AddInterceptor<TInterceptor>() as ITypedStateMachineBuilder;
 
         ITypedStateMachineBuilder IStateMachineUtilsBuilderBase<ITypedStateMachineBuilder>.AddObserver<TObserver>()
-        {
-            AddObserver<TObserver>();
-            return this;
-        }
+            => AddObserver<TObserver>() as ITypedStateMachineBuilder;
 
         ITypedStateMachineBuilder IStateMachineUtilsBuilderBase<ITypedStateMachineBuilder>.AddExceptionHandler<TExceptionHandler>()
-        {
-            AddExceptionHandler<TExceptionHandler>();
-            return this;
-        }
-
-        ITypedStateMachineBuilder IStateMachineEventsBuilderBase<ITypedStateMachineBuilder>.AddOnInitialize(Func<IStateMachineActionContext, Task> actionAsync)
-        {
-            AddOnInitialize(actionAsync);
-            return this;
-        }
+            => AddExceptionHandler<TExceptionHandler>() as ITypedStateMachineBuilder;
 
         ITypedStateMachineBuilder IStateMachineInitialBuilderBase<ITypedStateMachineBuilder>.AddInitialState(string stateName, StateBuilderAction stateBuildAction)
-        {
-            AddInitialState(stateName, stateBuildAction);
-            return this;
-        }
+            => AddInitialState(stateName, stateBuildAction) as ITypedStateMachineBuilder;
 
         ITypedStateMachineBuilder IStateMachineInitialBuilderBase<ITypedStateMachineBuilder>.AddInitialCompositeState(string stateName, CompositeStateBuilderAction compositeStateBuildAction)
-        {
-            AddInitialCompositeState(stateName, compositeStateBuildAction);
-            return this;
-        }
+            => AddInitialCompositeState(stateName, compositeStateBuildAction) as ITypedStateMachineBuilder;
 
         ITypedStateMachineInitialBuilder IStateMachineUtilsBuilderBase<ITypedStateMachineInitialBuilder>.AddInterceptor<TInterceptor>()
-        {
-            AddInterceptor<TInterceptor>();
-            return this;
-        }
+            => AddInterceptor<TInterceptor>() as ITypedStateMachineInitialBuilder;
 
         ITypedStateMachineInitialBuilder IStateMachineUtilsBuilderBase<ITypedStateMachineInitialBuilder>.AddObserver<TObserver>()
-        {
-            AddObserver<TObserver>(); 
-            return this;
-        }
+            => AddObserver<TObserver>() as ITypedStateMachineInitialBuilder;
 
         ITypedStateMachineInitialBuilder IStateMachineUtilsBuilderBase<ITypedStateMachineInitialBuilder>.AddExceptionHandler<TExceptionHandler>()
-        {
-            AddExceptionHandler<TExceptionHandler>(); 
-            return this;
-        }
+            => AddExceptionHandler<TExceptionHandler>() as ITypedStateMachineInitialBuilder;
     }
 }
 

@@ -3,6 +3,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using System.Collections.Generic;
 using Stateflows.Common;
+using Stateflows.Common.Events;
 using Stateflows.Common.Classes;
 using Stateflows.Common.Interfaces;
 using Stateflows.StateMachines.Models;
@@ -28,6 +29,11 @@ namespace Stateflows.StateMachines.Engine
         public Observer(ITimeService timeService)
         {
             TimeService = timeService;
+        }
+
+        private StateMachineId GetSubmachineId(string submachineName, StateMachineId hostId, string stateName)
+        {
+            return new StateMachineId(submachineName, $"__submachine:{hostId.Name}:{hostId.Instance}:{stateName}");
         }
 
         public Task AfterHydrateAsync(IStateMachineActionContext context)
@@ -65,11 +71,30 @@ namespace Stateflows.StateMachines.Engine
             }
         }
 
-        public Task AfterStateEntryAsync(IStateActionContext context)
+        public async Task AfterStateEntryAsync(IStateActionContext context)
         {
-            Time_EnteredStates.Add((context as StateActionContext).Vertex);
+            var vertex = (context as StateActionContext).Vertex;
 
-            return Task.CompletedTask;
+            // time events handling
+            Time_EnteredStates.Add(vertex);
+
+            // submachine handling
+            var stateValues = (context as IRootContext).Context.GetStateValues(vertex.Name);
+
+            if (vertex.SubmachineName != null)
+            {
+                var submachineId = GetSubmachineId(
+                    vertex.SubmachineName,
+                    context.StateMachine.Id,
+                    context.CurrentState.Name
+                );
+
+                if (context.TryLocateStateMachine(submachineId, out var stateMachine))
+                {
+                    stateValues.SetSubmachineId(submachineId);
+                    await stateMachine.InitializeAsync(vertex.SubmachineInitialValues);
+                }
+            }
         }
 
         public Task AfterStateExitAsync(IStateActionContext context)
@@ -124,9 +149,28 @@ namespace Stateflows.StateMachines.Engine
             return Task.CompletedTask;
         }
 
-        public Task<bool> BeforeProcessEventAsync(IEventContext<Event> context)
+        public async Task<bool> BeforeProcessEventAsync(IEventContext<Event> context)
         {
-            return Task.FromResult(true);
+            var rootContext = (context as IRootContext).Context;
+            var stateName = rootContext.StatesStack.LastOrDefault();
+            if (
+                stateName != null &&
+                rootContext.Executor.Graph.AllVertices.TryGetValue(stateName, out var vertex) &&
+                vertex.SubmachineName != null
+            )
+            {
+                var stateValues = rootContext.GetStateValues(stateName);
+
+                if (
+                    stateValues.TryGetSubmachineId(out var submachineId) &&
+                    context.TryLocateStateMachine(submachineId, out var stateMachine)
+                )
+                {
+                    return !await stateMachine.SendAsync(context.Event);
+                }
+            }
+
+            return true;
         }
 
         public Task BeforeStateEntryAsync(IStateActionContext context)
@@ -134,9 +178,23 @@ namespace Stateflows.StateMachines.Engine
             return Task.CompletedTask;
         }
 
-        public Task BeforeStateExitAsync(IStateActionContext context)
+        public async Task BeforeStateExitAsync(IStateActionContext context)
         {
-            return Task.CompletedTask;
+            var vertex = (context as StateActionContext).Vertex;
+
+            if (vertex.SubmachineName != null)
+            {
+                var stateValues = (context as IRootContext).Context.GetStateValues(vertex.Name);
+
+                if (
+                    stateValues.TryGetSubmachineId(out var submachineId) &&
+                    context.TryLocateStateMachine(submachineId, out var stateMachine)
+                )
+                {
+                    await stateMachine.SendAsync(new Exit());
+                    stateValues.SetSubmachineId(null);
+                }
+            }
         }
 
         public Task BeforeStateInitializeAsync(IStateActionContext context)
@@ -190,6 +248,16 @@ namespace Stateflows.StateMachines.Engine
                 await TimeService.Clear(Context.Context.Id, Context.GetStateValues(exitedVertex.Name).TimeEventIds);
                 Context.GetStateValues(exitedVertex.Name).TimeEventIds.Clear();
             }
+        }
+
+        public Task<bool> BeforeDispatchEventAsync(IEventContext<Event> context)
+        {
+            return Task.FromResult(true);
+        }
+
+        public Task AfterDispatchEventAsync(IEventContext<Event> context)
+        {
+            return Task.CompletedTask;
         }
     }
 }
