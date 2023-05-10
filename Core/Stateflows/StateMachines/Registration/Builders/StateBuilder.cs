@@ -1,7 +1,9 @@
 ﻿using System;
 using System.Threading.Tasks;
+using System.Collections.Generic;
 using Microsoft.Extensions.DependencyInjection;
 using Stateflows.Common;
+using Stateflows.Common.Events;
 using Stateflows.StateMachines.Events;
 using Stateflows.StateMachines.Models;
 using Stateflows.StateMachines.Context.Classes;
@@ -10,8 +12,6 @@ using Stateflows.StateMachines.Registration.Extensions;
 using Stateflows.StateMachines.Registration.Interfaces;
 using Stateflows.StateMachines.Registration.Interfaces.Base;
 using Stateflows.StateMachines.Registration.Interfaces.Internal;
-using Stateflows.Common.Events;
-using System.Collections.Generic;
 
 namespace Stateflows.StateMachines.Registration.Builders
 {
@@ -174,6 +174,36 @@ namespace Stateflows.StateMachines.Registration.Builders
 
         ISubmachineTypedStateBuilder IStateSubmachineBuilderBase<ISubmachineTypedStateBuilder>.AddSubmachine(string submachineName, Dictionary<string, object> submachineInitialValues)
             => AddSubmachine(submachineName, submachineInitialValues) as ISubmachineTypedStateBuilder;
+
+        ISubmachineStateBuilder IStateEventsBuilderBase<ISubmachineStateBuilder>.AddOnEntry(Func<IStateActionContext, Task> actionAsync)
+            => AddOnEntry(actionAsync) as ISubmachineStateBuilder;
+
+        ISubmachineStateBuilder IStateEventsBuilderBase<ISubmachineStateBuilder>.AddOnExit(Func<IStateActionContext, Task> actionAsync)
+            => AddOnExit(actionAsync) as ISubmachineStateBuilder;
+
+        ISubmachineStateBuilder IStateUtilsBuilderBase<ISubmachineStateBuilder>.AddDeferredEvent<TEvent>()
+            => AddDeferredEvent<TEvent>() as ISubmachineStateBuilder;
+
+        ISubmachineStateBuilder IStateTransitionsBuilderBase<ISubmachineStateBuilder>.AddTransition<TEvent>(string targetStateName, TransitionBuilderAction<TEvent> transitionBuildAction)
+            => AddTransition<TEvent>(targetStateName, transitionBuildAction) as ISubmachineStateBuilder;
+
+        ISubmachineStateBuilder IStateTransitionsBuilderBase<ISubmachineStateBuilder>.AddDefaultTransition(string targetStateName, TransitionBuilderAction<Completion> transitionBuildAction)
+            => AddDefaultTransition(targetStateName, transitionBuildAction) as ISubmachineStateBuilder;
+
+        ISubmachineStateBuilder IStateTransitionsBuilderBase<ISubmachineStateBuilder>.AddInternalTransition<TEvent>(TransitionBuilderAction<TEvent> transitionBuildAction)
+            => AddInternalTransition<TEvent>(transitionBuildAction) as ISubmachineStateBuilder;
+
+        ISubmachineTypedStateBuilder IStateUtilsBuilderBase<ISubmachineTypedStateBuilder>.AddDeferredEvent<TEvent>()
+            => AddDeferredEvent<TEvent>() as ISubmachineTypedStateBuilder;
+
+        ISubmachineTypedStateBuilder IStateTransitionsBuilderBase<ISubmachineTypedStateBuilder>.AddTransition<TEvent>(string targetStateName, TransitionBuilderAction<TEvent> transitionBuildAction)
+            => AddTransition<TEvent>(targetStateName, transitionBuildAction) as ISubmachineTypedStateBuilder;
+
+        ISubmachineTypedStateBuilder IStateTransitionsBuilderBase<ISubmachineTypedStateBuilder>.AddDefaultTransition(string targetStateName, TransitionBuilderAction<Completion> transitionBuildAction)
+            => AddDefaultTransition(targetStateName, transitionBuildAction) as ISubmachineTypedStateBuilder;
+
+        ISubmachineTypedStateBuilder IStateTransitionsBuilderBase<ISubmachineTypedStateBuilder>.AddInternalTransition<TEvent>(TransitionBuilderAction<TEvent> transitionBuildAction)
+            => AddInternalTransition<TEvent>(transitionBuildAction) as ISubmachineTypedStateBuilder;
         #endregion
     }
 }

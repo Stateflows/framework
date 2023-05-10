@@ -122,12 +122,19 @@ namespace Stateflows.StateMachines.Context.Classes
             }
         }
 
+        public bool ForceConsumed
+        {
+            get => Context.Values.TryGetValue(Constants.ForceConsumed, out var consumed) && (bool)consumed;
+            set => Context.Values[Constants.ForceConsumed] = value;
+        }
+
         internal void ClearTemporaryInternalValues()
         {
             Context.Values.Remove(Constants.State);
             Context.Values.Remove(Constants.Event);
             Context.Values.Remove(Constants.SourceState);
             Context.Values.Remove(Constants.TargetState);
+            Context.Values.Remove(Constants.ForceConsumed);
         }
 
         public async Task Send<TEvent>(TEvent @event)

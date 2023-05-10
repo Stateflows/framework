@@ -166,7 +166,9 @@ namespace Stateflows.StateMachines.Engine
                     context.TryLocateStateMachine(submachineId, out var stateMachine)
                 )
                 {
-                    return !await stateMachine.SendAsync(context.Event);
+                    var consumed = await stateMachine.SendAsync(context.Event);
+                    (context as IRootContext).Context.ForceConsumed = consumed;
+                    return !consumed;
                 }
             }
 

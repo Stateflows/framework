@@ -67,6 +67,13 @@ namespace Stateflows.StateMachines.Engine
 
                                 await executor.Observer.AfterProcessEventAsync(eventContext);
                             }
+                            else
+                            {
+                                if (executor.Context.ForceConsumed)
+                                {
+                                    result = true;
+                                }
+                            }
                         }
 
                         await executor.Observer.AfterDispatchEventAsync(eventContext);

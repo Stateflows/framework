@@ -3,6 +3,7 @@
     internal class Constants
     {
         public static readonly string StatesStack = nameof(StatesStack);
+        public static readonly string ForceConsumed = nameof(ForceConsumed);
         public static readonly string DefaultTransitionTarget = string.Empty;
         public static readonly string CompletionEvent = string.Empty;
         public static readonly string SourceState = nameof(SourceState);
