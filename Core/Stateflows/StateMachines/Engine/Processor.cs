@@ -51,21 +51,36 @@ namespace Stateflows.StateMachines.Engine
 
                 context.Context.Values[Constants.Event] = @event;
 
-                if (await executor.Hydrate(context))
+                if (await executor.HydrateAsync(context))
                 {
                     var eventContext = new EventContext<TEvent>(context);
 
-                    if (await executor.Observer.BeforeProcessEventAsync(eventContext))
+                    if (await executor.Observer.BeforeDispatchEventAsync(eventContext))
                     {
-                        result = await TryHandleEventAsync(eventContext)
-                            ? true
-                            : await executor.ProcessAsync(@event);
+                        result = await TryHandleEventAsync(eventContext);
 
-                        await executor.Observer.AfterProcessEventAsync(eventContext);
+                        if (!result)
+                        {
+                            if (await executor.Observer.BeforeProcessEventAsync(eventContext))
+                            {
+                                result = await executor.ProcessAsync(@event);
+
+                                await executor.Observer.AfterProcessEventAsync(eventContext);
+                            }
+                            else
+                            {
+                                if (executor.Context.ForceConsumed)
+                                {
+                                    result = true;
+                                }
+                            }
+                        }
+
+                        await executor.Observer.AfterDispatchEventAsync(eventContext);
 
                         context.ClearTemporaryInternalValues();
 
-                        await Storage.Dehydrate((await executor.Dehydrate()).Context);
+                        await Storage.Dehydrate((await executor.DehydrateAsync()).Context);
                     }
                 }
             }

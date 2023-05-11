@@ -6,15 +6,15 @@ using Stateflows.StateMachines.Registration.Interfaces.Internal;
 
 namespace Stateflows.StateMachines
 {
-    public static class StateTransitionsBuilderTransitionTypedExtensions
+    public static class TypedCompositeStateBuilderTransitionTypedExtensions
     {
-        public static ITypedStateBuilder AddTransition<TEvent, TTransition, TTargetState>(this ITypedStateBuilder builder)
+        public static ITypedCompositeStateBuilder AddTransition<TEvent, TTransition, TTargetState>(this ITypedCompositeStateBuilder builder)
             where TEvent : Event, new()
             where TTransition : Transition<TEvent>
             where TTargetState : State
             => AddTransition<TEvent, TTransition>(builder, StateInfo<TTargetState>.Name);
 
-        public static ITypedStateBuilder AddTransition<TEvent, TTransition>(this ITypedStateBuilder builder, string targetStateName)
+        public static ITypedCompositeStateBuilder AddTransition<TEvent, TTransition>(this ITypedCompositeStateBuilder builder, string targetStateName)
             where TEvent : Event, new()
             where TTransition : Transition<TEvent>
         {
@@ -29,7 +29,7 @@ namespace Stateflows.StateMachines
             return builder;
         }
 
-        public static ITypedStateBuilder AddTransition<TEvent, TTargetState>(this ITypedStateBuilder builder, TransitionBuilderAction<TEvent> transitionBuildAction = null)
+        public static ITypedCompositeStateBuilder AddTransition<TEvent, TTargetState>(this ITypedCompositeStateBuilder builder, TransitionBuilderAction<TEvent> transitionBuildAction = null)
             where TEvent : Event, new()
             where TTargetState : State
             => builder.AddTransition(StateInfo<TTargetState>.Name, transitionBuildAction);

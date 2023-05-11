@@ -138,7 +138,8 @@ namespace Stateflows.StateMachines
                     .AddSingleton<IStateMachineEventHandler, InitializationHandler>()
                     .AddSingleton<IStateMachineEventHandler, InitializedHandler>()
                     .AddSingleton<IStateMachineEventHandler, CurrentStateHandler>()
-                    .AddSingleton<IStateMachineEventHandler, ExpectedEventsHandler>();
+                    .AddSingleton<IStateMachineEventHandler, ExpectedEventsHandler>()
+                    .AddSingleton<IStateMachineEventHandler, ExitHandler>();
             }
 
             if (!Registers.TryGetValue(stateflowsBuilder, out var result))

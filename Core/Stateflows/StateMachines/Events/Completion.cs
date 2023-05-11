@@ -1,5 +1,5 @@
-﻿using Stateflows.StateMachines.Registration;
-using Stateflows.Common;
+﻿using Stateflows.Common;
+using Stateflows.StateMachines.Registration;
 
 namespace Stateflows.StateMachines.Events
 {

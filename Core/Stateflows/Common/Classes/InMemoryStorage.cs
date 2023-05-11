@@ -12,17 +12,25 @@ namespace Stateflows.Common.Classes
 
         public Task<StateflowsContext> Hydrate(BehaviorId id)
         {
-            if (!Contexts.TryGetValue(id.GetHashCode(), out var context))
+            lock (Contexts)
             {
-                context = new StateflowsContext() { Id = id };
-            }
+                if (!Contexts.TryGetValue(id.GetHashCode(), out var context))
+                {
+                    context = new StateflowsContext() { Id = id };
+                }
 
-            return Task.FromResult(context);
+                return Task.FromResult(context);
+            }
         }
 
         public Task Dehydrate(StateflowsContext context)
         {
-            Contexts[context.Id.GetHashCode()] = context;
+            var hash = context.Id.GetHashCode();
+
+            lock (Contexts)
+            {
+                Contexts[hash] = context;
+            }
 
             return Task.CompletedTask;
         }

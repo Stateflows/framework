@@ -4,9 +4,9 @@ using Stateflows.StateMachines.Registration.Interfaces;
 
 namespace Stateflows.StateMachines
 {
-    public static class CompositeStateTransitionsBuilderInternalTransitionTypedExtensions
+    public static class TypedStateBuilderInternalTransitionTypedExtensions
     {
-        public static ITypedCompositeStateBuilder AddInternalTransition<TEvent, TTransition>(this ITypedCompositeStateBuilder builder)
+        public static ITypedStateBuilder AddInternalTransition<TEvent, TTransition>(this ITypedStateBuilder builder)
             where TEvent : Event, new()
             where TTransition : Transition<TEvent>
             => builder.AddTransition<TEvent, TTransition>(Constants.DefaultTransitionTarget);

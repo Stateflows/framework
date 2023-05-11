@@ -22,7 +22,7 @@ namespace Stateflows.StateMachines.Extensions
             }
         }
 
-        public static void AddStateEvents<TState, TReturn>(this IStateBuilderBase<TReturn> builder)
+        public static void AddStateEvents<TState, TReturn>(this IStateEventsBuilderBase<TReturn> builder)
             where TState : State
         {
             if (typeof(State).GetMethod(Constants.OnEntryAsync).IsOverridenIn<TState>())

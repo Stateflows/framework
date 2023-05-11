@@ -10,6 +10,33 @@ namespace Stateflows.StateMachines.Context.Classes
 
         public Dictionary<string, string> Values { get; set; } = new Dictionary<string, string>();
 
+        public bool TryGetSubmachineId(out StateMachineId submachineId)
+        {
+            if (
+                InternalValues.TryGetValue(Constants.SubmachineId, out var submachineIdObj) &&
+                submachineIdObj != null
+            )
+            {
+                submachineId = (StateMachineId)submachineIdObj;
+
+                return true;
+            }
+
+            return false;
+        }
+
+        public void SetSubmachineId(StateMachineId? value)
+        {
+            if (value != null)
+            {
+                InternalValues[Constants.SubmachineId] = value;
+            }
+            else
+            {
+                InternalValues.Remove(Constants.SubmachineId);
+            }
+        }
+
         private List<string> timeEventIds = null;
 
         [JsonIgnore]

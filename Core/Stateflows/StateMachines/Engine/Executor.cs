@@ -115,7 +115,7 @@ namespace Stateflows.StateMachines.Engine
             return stateDescriptor;
         }
 
-        public async Task<bool> Hydrate(RootContext context)
+        public async Task<bool> HydrateAsync(RootContext context)
         {
             Context = context;
             Context.Executor = this;
@@ -125,7 +125,7 @@ namespace Stateflows.StateMachines.Engine
             return true;
         }
 
-        public async Task<RootContext> Dehydrate()
+        public async Task<RootContext> DehydrateAsync()
         {
             Debug.Assert(Context != null, $"Context is unavailable. Is state machine '{Graph.Name}' already dehydrated?");
 
@@ -148,7 +148,7 @@ namespace Stateflows.StateMachines.Engine
             }
         }
 
-        public async Task<bool> Initialize(InitializationRequest @event)
+        public async Task<bool> InitializeAsync(InitializationRequest @event)
         {
             Debug.Assert(Context != null, $"Context is unavailable. Is state machine '{Graph.Name}' hydrated?");
 
@@ -157,11 +157,28 @@ namespace Stateflows.StateMachines.Engine
                 await DoInitializeAsync(@event);
 
                 await DoInitializeCascadeAsync(Graph.InitialVertex);
-                    
+
                 return true;
             }
 
             return false;
+        }
+
+        public async Task ExitAsync()
+        {
+            Debug.Assert(Context != null, $"Context is unavailable. Is state machine '{Graph.Name}' hydrated?");
+
+            if (Initialized)
+            {
+                var currentStack = await GetVerticesStackAsync(false);
+
+                foreach (var vertex in currentStack)
+                {
+                    await DoExitAsync(vertex);
+                }
+
+                Context.StatesStack.Clear();
+            }
         }
 
         private async Task DoInitializeCascadeAsync(Vertex vertex)

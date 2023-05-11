@@ -16,8 +16,7 @@ namespace Stateflows.StateMachines
 
     public interface ITypedStateMachineBuilder :
         IStateMachineBuilderBase<ITypedStateMachineBuilder>,
-        IStateMachineUtilsBuilderBase<ITypedStateMachineBuilder>,
-        IStateMachineEventsBuilderBase<ITypedStateMachineBuilder>
+        IStateMachineUtilsBuilderBase<ITypedStateMachineBuilder>
     { }
 
     public interface ITypedStateMachineInitialBuilder :
