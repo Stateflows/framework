@@ -17,6 +17,7 @@ namespace StateMachine.IntegrationTests.Tests
         {
             builder
                 .AddStateMachine("submachine", b => b
+                    .AddExecutionSequenceObserver()
                     .AddInitialState("state1", b => b
                         .AddSubmachine("nested")
                         .AddTransition<SomeEvent>("state2")
@@ -25,10 +26,11 @@ namespace StateMachine.IntegrationTests.Tests
                 )
 
                 .AddStateMachine("nested", b => b
-                    .AddInitialState("state1", b => b
-                        .AddTransition<SomeEvent>("state2")
+                    .AddExecutionSequenceObserver()
+                    .AddInitialState("stateA", b => b
+                        .AddTransition<SomeEvent>("stateB")
                     )
-                    .AddState("state2")
+                    .AddState("stateB")
                 )
                 ;
         }
@@ -55,6 +57,14 @@ namespace StateMachine.IntegrationTests.Tests
                 currentState2 = (await sm.GetCurrentStateAsync()).Name;
             }
 
+            ExecutionSequence.Verify(b => b
+                .StateEntry("state1")
+                .StateEntry("stateA")
+                .StateExit("stateA")
+                .StateEntry("stateB")
+                .StateExit("stateB")
+                .StateEntry("state2")
+            );
             Assert.IsTrue(initialized);
             Assert.IsTrue(someConsumed1);
             Assert.AreEqual("state1", currentState1);
