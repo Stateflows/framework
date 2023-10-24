@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace Stateflows.Activities
+namespace Stateflows.Common
 {
     public static class ObjectExtensions
     {

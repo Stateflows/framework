@@ -1,5 +1,3 @@
-using Microsoft.AspNetCore.ResponseCompression;
-using Blazor.WebAssembly.Server;
 using Examples.Common;
 
 using Stateflows;

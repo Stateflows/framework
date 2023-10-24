@@ -8,7 +8,6 @@ using Stateflows.StateMachines.Context.Interfaces;
 using Stateflows.StateMachines.Registration.Interfaces;
 using Stateflows.StateMachines.Registration.Interfaces.Base;
 using Stateflows.StateMachines.Registration.Interfaces.Internal;
-using Stateflows.Activities;
 
 namespace Stateflows.StateMachines.Registration.Builders
 {
@@ -40,14 +39,6 @@ namespace Stateflows.StateMachines.Registration.Builders
 
             if (Vertex.Vertices.ContainsKey(stateName))
                 throw new Exception($"State '{stateName}' is already registered");
-
-            //if (Vertex.Graph.AllVertices.ContainsKey(stateName))
-            //    throw new Exception($"State '{stateName}' is already registered");
-
-            //if (type == VertexType.FinalState)
-            //{
-            //    stateName = $"{Vertex.Name}::{stateName}";
-            //}
 
             var vertex = new Vertex()
             {
@@ -107,12 +98,12 @@ namespace Stateflows.StateMachines.Registration.Builders
             return this;
         }
 
-        public ICompositeStateBuilder AddDefaultTransition(string targetVertexName, TransitionBuilderAction<Completion> buildAction = null)
-            => AddTransition<Completion>(targetVertexName, buildAction);
+        public ICompositeStateBuilder AddDefaultTransition(string targetVertexName, TransitionBuilderAction<Completion> transitionBuildAction = null)
+            => AddTransition<Completion>(targetVertexName, transitionBuildAction);
 
-        public ICompositeStateBuilder AddInternalTransition<TEvent>(TransitionBuilderAction<TEvent> buildAction = null)
+        public ICompositeStateBuilder AddInternalTransition<TEvent>(TransitionBuilderAction<TEvent> transitionBuildAction = null)
             where TEvent : Event
-            => AddTransition<TEvent>(Constants.DefaultTransitionTarget, buildAction);
+            => AddTransition<TEvent>(Constants.DefaultTransitionTarget, transitionBuildAction);
 
         ITypedCompositeStateBuilder IStateTransitions<ITypedCompositeStateBuilder>.AddTransition<TEvent>(string targetVertexName, TransitionBuilderAction<TEvent> transitionBuildAction)
             => AddTransition<TEvent>(targetVertexName, transitionBuildAction) as ITypedCompositeStateBuilder;
