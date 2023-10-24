@@ -14,8 +14,7 @@ namespace Stateflows.StateMachines
         public static IStateMachineBuilder AddInitialState<TState>(this IStateMachineInitialBuilder builder, string stateName, StateTransitionsBuilderAction stateBuildAction = null)
             where TState : State
         {
-            var self = builder as IStateMachineBuilderInternal;
-            self.Services.RegisterState<TState>();
+            (builder as IInternal).Services.RegisterState<TState>();
 
             return builder.AddInitialState(
                 stateName,
@@ -37,8 +36,7 @@ namespace Stateflows.StateMachines
         public static IStateMachineBuilder AddInitialCompositeState<TState>(this IStateMachineInitialBuilder builder, string stateName, CompositeStateTransitionsBuilderAction compositeStateBuildAction)
             where TState : State
         {
-            var self = builder as IStateMachineBuilderInternal;
-            self.Services.RegisterState<TState>();
+            (builder as IInternal).Services.RegisterState<TState>();
 
             return builder.AddInitialCompositeState(
                 stateName,

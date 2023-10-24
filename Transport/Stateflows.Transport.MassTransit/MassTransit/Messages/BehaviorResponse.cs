@@ -1,4 +1,4 @@
-﻿using Newtonsoft.Json;
+﻿using Stateflows.Common;
 
 namespace Stateflows.Transport.MassTransit.MassTransit.Messages
 {
@@ -8,8 +8,10 @@ namespace Stateflows.Transport.MassTransit.MassTransit.Messages
 
         public BehaviorId BehaviorId { get; set; }
 
-        public bool Consumed { get; set; }
+        public EventStatus Status { get; set; }
 
         public string ResponseData { get; set; }
+
+        public string ValidationData { get; set; }
     }
 }

@@ -8,15 +8,18 @@ using Stateflows.StateMachines.Context.Interfaces;
 using Stateflows.StateMachines.Registration.Interfaces;
 using Stateflows.StateMachines.Registration.Interfaces.Base;
 using Stateflows.StateMachines.Registration.Interfaces.Internal;
+using Stateflows.Activities;
 
 namespace Stateflows.StateMachines.Registration.Builders
 {
-    internal partial class CompositeStateBuilder : 
-        ICompositeStateInitialBuilder, 
-        ICompositeStateBuilder, 
-        ICompositeStateBuilderInternal,
+    internal class CompositeStateBuilder : 
+        ICompositeStateInitialBuilder,
+        IFinalizedCompositeStateBuilder,
+        ICompositeStateBuilder,
         ITypedCompositeStateBuilder,
-        ITypedCompositeStateInitialBuilder
+        ITypedFinalizedCompositeStateBuilder,
+        ITypedCompositeStateInitialBuilder,
+        IInternal
     {
         public Vertex Vertex { get; }
 
@@ -31,15 +34,53 @@ namespace Stateflows.StateMachines.Registration.Builders
 
         private StateBuilder Builder { get; set; }
 
+        private ICompositeStateBuilder AddVertex(string stateName, VertexType type, Action<Vertex> vertexBuildAction = null)
+        {
+            stateName.ThrowIfNullOrEmpty(nameof(stateName));
+
+            if (Vertex.Vertices.ContainsKey(stateName))
+                throw new Exception($"State '{stateName}' is already registered");
+
+            //if (Vertex.Graph.AllVertices.ContainsKey(stateName))
+            //    throw new Exception($"State '{stateName}' is already registered");
+
+            //if (type == VertexType.FinalState)
+            //{
+            //    stateName = $"{Vertex.Name}::{stateName}";
+            //}
+
+            var vertex = new Vertex()
+            {
+                Name = stateName,
+                Type = type,
+                Parent = Vertex,
+                Graph = Vertex.Graph,
+            };
+
+            vertexBuildAction?.Invoke(vertex);
+
+            Vertex.Vertices.Add(vertex.Name, vertex);
+            Vertex.Graph.AllVertices.Add(vertex.Identifier, vertex);
+
+            return this;
+        }
+
         #region Events
         public ICompositeStateBuilder AddOnEntry(Func<IStateActionContext, Task> actionAsync)
         {
             Builder.AddOnEntry(actionAsync);
             return this;
         }
+
         public ICompositeStateBuilder AddOnInitialize(Func<IStateActionContext, Task> actionAsync)
         {
             Builder.AddOnInitialize(actionAsync);
+            return this;
+        }
+
+        public ICompositeStateBuilder AddOnFinalize(Func<IStateActionContext, Task> actionAsync)
+        {
+            Builder.AddOnFinalize(actionAsync);
             return this;
         }
 
@@ -51,7 +92,7 @@ namespace Stateflows.StateMachines.Registration.Builders
         #endregion
 
         #region Utils
-        public ICompositeStateBuilder AddDeferredEvent<TEvent>() where TEvent : Event, new()
+        public ICompositeStateBuilder AddDeferredEvent<TEvent>() where TEvent : Event
         {
             Builder.AddDeferredEvent<TEvent>();
             return this;
@@ -59,137 +100,151 @@ namespace Stateflows.StateMachines.Registration.Builders
         #endregion
 
         #region Transitions
-        public ICompositeStateBuilder AddTransition<TEvent>(string targetStateName, TransitionBuilderAction<TEvent> transitionBuildAction = null)
-            where TEvent : Event, new()
+        public ICompositeStateBuilder AddTransition<TEvent>(string targetVertexName, TransitionBuilderAction<TEvent> transitionBuildAction = null)
+            where TEvent : Event
         {
-            Builder.AddTransition<TEvent>(targetStateName, transitionBuildAction);
+            Builder.AddTransition<TEvent>(targetVertexName, transitionBuildAction);
             return this;
         }
 
-        public ICompositeStateBuilder AddDefaultTransition(string targetStateName, TransitionBuilderAction<Completion> buildAction = null)
-            => AddTransition<Completion>(targetStateName, buildAction);
+        public ICompositeStateBuilder AddDefaultTransition(string targetVertexName, TransitionBuilderAction<Completion> buildAction = null)
+            => AddTransition<Completion>(targetVertexName, buildAction);
 
         public ICompositeStateBuilder AddInternalTransition<TEvent>(TransitionBuilderAction<TEvent> buildAction = null)
-            where TEvent : Event, new()
+            where TEvent : Event
             => AddTransition<TEvent>(Constants.DefaultTransitionTarget, buildAction);
 
-        ITypedCompositeStateBuilder IStateTransitionsBuilderBase<ITypedCompositeStateBuilder>.AddTransition<TEvent>(string targetStateName, TransitionBuilderAction<TEvent> transitionBuildAction)
-            => AddTransition<TEvent>(targetStateName, transitionBuildAction) as ITypedCompositeStateBuilder;
+        ITypedCompositeStateBuilder IStateTransitions<ITypedCompositeStateBuilder>.AddTransition<TEvent>(string targetVertexName, TransitionBuilderAction<TEvent> transitionBuildAction)
+            => AddTransition<TEvent>(targetVertexName, transitionBuildAction) as ITypedCompositeStateBuilder;
 
-        ITypedCompositeStateBuilder IStateTransitionsBuilderBase<ITypedCompositeStateBuilder>.AddDefaultTransition(string targetStateName, TransitionBuilderAction<Completion> transitionBuildAction)
-            => AddDefaultTransition(targetStateName, transitionBuildAction) as ITypedCompositeStateBuilder;
+        ITypedCompositeStateBuilder IStateTransitions<ITypedCompositeStateBuilder>.AddDefaultTransition(string targetVertexName, TransitionBuilderAction<Completion> transitionBuildAction)
+            => AddDefaultTransition(targetVertexName, transitionBuildAction) as ITypedCompositeStateBuilder;
 
-        ITypedCompositeStateBuilder IStateTransitionsBuilderBase<ITypedCompositeStateBuilder>.AddInternalTransition<TEvent>(TransitionBuilderAction<TEvent> transitionBuildAction)
+        ITypedCompositeStateBuilder IStateTransitions<ITypedCompositeStateBuilder>.AddInternalTransition<TEvent>(TransitionBuilderAction<TEvent> transitionBuildAction)
             => AddInternalTransition<TEvent>(transitionBuildAction) as ITypedCompositeStateBuilder;
         #endregion
 
         #region AddState
         public ICompositeStateBuilder AddState(string stateName, StateBuilderAction stateBuildAction = null)
-        {
-            if (Vertex.Graph.AllVertices.ContainsKey(stateName))
-            {
-                throw new Exception($"State '{stateName}' is already registered");
-            }
+            => AddVertex(stateName, VertexType.State, vertex => stateBuildAction?.Invoke(new StateBuilder(vertex, Services)));
 
-            var vertex = new Vertex()
-            {
-                Name = stateName,
-                Parent = Vertex,
-                Graph = Vertex.Graph,
-            };
-
-            stateBuildAction?.Invoke(new StateBuilder(vertex, Services));
-
-            Vertex.Vertices.Add(vertex.Name, vertex);
-            Vertex.Graph.AllVertices.Add(vertex.Name, vertex);
-
-            return this;
-        }
-
-        ITypedCompositeStateBuilder IStateMachineBuilderBase<ITypedCompositeStateBuilder>.AddState(string stateName, StateBuilderAction stateBuildAction)
+        ITypedCompositeStateBuilder IStateMachine<ITypedCompositeStateBuilder>.AddState(string stateName, StateBuilderAction stateBuildAction)
             => AddState(stateName, stateBuildAction) as ITypedCompositeStateBuilder;
 
-        ITypedCompositeStateBuilder IStateMachineInitialBuilderBase<ITypedCompositeStateBuilder>.AddInitialState(string stateName, StateBuilderAction stateBuildAction)
+        ITypedCompositeStateBuilder IStateMachineInitial<ITypedCompositeStateBuilder>.AddInitialState(string stateName, StateBuilderAction stateBuildAction)
             => AddInitialState(stateName, stateBuildAction) as ITypedCompositeStateBuilder;
         #endregion
 
+        #region AddFinalState
+        public IFinalizedCompositeStateBuilder AddFinalState(string stateName = FinalState.Name)
+            => AddVertex(stateName, VertexType.FinalState) as IFinalizedCompositeStateBuilder;
+
+        ITypedFinalizedCompositeStateBuilder IStateMachineFinal<ITypedFinalizedCompositeStateBuilder>.AddFinalState(string stateName)
+            => AddVertex(stateName, VertexType.FinalState) as ITypedFinalizedCompositeStateBuilder;
+        #endregion
+
         #region AddCompositeState
-        public ICompositeStateBuilder AddCompositeState(string stateName, CompositeStateBuilderAction stateBuildAction)
-        {
-            var vertex = new Vertex()
-            {
-                Name = stateName,
-                Parent = Vertex,
-                Graph = Vertex.Graph,
-            };
-
-            stateBuildAction?.Invoke(new CompositeStateBuilder(vertex, Services));
-
-            Vertex.Vertices.Add(vertex.Name, vertex);
-            Vertex.Graph.AllVertices.Add(vertex.Name, vertex);
-
-            return this;
-        }
+        public ICompositeStateBuilder AddCompositeState(string stateName, CompositeStateBuilderAction compositeStateBuildAction)
+            => AddVertex(stateName, VertexType.CompositeState, vertex => compositeStateBuildAction?.Invoke(new CompositeStateBuilder(vertex, Services)));
 
         public ICompositeStateBuilder AddInitialState(string stateName, StateBuilderAction stateBuildAction = null)
         {
             Vertex.InitialVertexName = stateName;
-            return AddState(stateName, stateBuildAction);
+            return AddVertex(stateName, VertexType.InitialState, vertex => stateBuildAction?.Invoke(new StateBuilder(vertex, Services)));
         }
 
         public ICompositeStateBuilder AddInitialCompositeState(string stateName, CompositeStateBuilderAction compositeStateBuildAction)
         {
             Vertex.InitialVertexName = stateName;
-            return AddCompositeState(stateName, compositeStateBuildAction);
+            return AddVertex(stateName, VertexType.InitialCompositeState, vertex => compositeStateBuildAction?.Invoke(new CompositeStateBuilder(vertex, Services)));
         }
 
-        ITypedCompositeStateBuilder IStateMachineBuilderBase<ITypedCompositeStateBuilder>.AddCompositeState(string stateName, CompositeStateBuilderAction compositeStateBuildAction)
+        ITypedCompositeStateBuilder IStateMachine<ITypedCompositeStateBuilder>.AddCompositeState(string stateName, CompositeStateBuilderAction compositeStateBuildAction)
             => AddCompositeState(stateName, compositeStateBuildAction) as ITypedCompositeStateBuilder;
 
-        ITypedCompositeStateBuilder IStateMachineInitialBuilderBase<ITypedCompositeStateBuilder>.AddInitialCompositeState(string stateName, CompositeStateBuilderAction compositeStateBuildAction)
+        ITypedCompositeStateBuilder IStateMachineInitial<ITypedCompositeStateBuilder>.AddInitialCompositeState(string stateName, CompositeStateBuilderAction compositeStateBuildAction)
             => AddInitialCompositeState(stateName, compositeStateBuildAction) as ITypedCompositeStateBuilder;
         #endregion
 
-        ICompositeStateInitialBuilder IStateEventsBuilderBase<ICompositeStateInitialBuilder>.AddOnEntry(Func<IStateActionContext, Task> actionAsync)
+        ICompositeStateInitialBuilder IStateEntry<ICompositeStateInitialBuilder>.AddOnEntry(Func<IStateActionContext, Task> actionAsync)
             => AddOnEntry(actionAsync) as ICompositeStateInitialBuilder;
 
-        ICompositeStateInitialBuilder IStateEventsBuilderBase<ICompositeStateInitialBuilder>.AddOnExit(Func<IStateActionContext, Task> actionAsync)
+        ICompositeStateInitialBuilder IStateExit<ICompositeStateInitialBuilder>.AddOnExit(Func<IStateActionContext, Task> actionAsync)
             => AddOnExit(actionAsync) as ICompositeStateInitialBuilder;
 
-        ICompositeStateInitialBuilder ICompositeStateBuilderBase<ICompositeStateInitialBuilder>.AddOnInitialize(Func<IStateActionContext, Task> actionAsync)
+        ICompositeStateInitialBuilder ICompositeStateEvents<ICompositeStateInitialBuilder>.AddOnInitialize(Func<IStateActionContext, Task> actionAsync)
             => AddOnInitialize(actionAsync) as ICompositeStateInitialBuilder;
 
-        ICompositeStateBuilder IStateMachineInitialBuilderBase<ICompositeStateBuilder>.AddInitialState(string stateName, StateBuilderAction stateBuildAction)
+        ICompositeStateInitialBuilder ICompositeStateEvents<ICompositeStateInitialBuilder>.AddOnFinalize(Func<IStateActionContext, Task> actionAsync)
+            => AddOnFinalize(actionAsync) as ICompositeStateInitialBuilder;
+
+        ICompositeStateBuilder IStateMachineInitial<ICompositeStateBuilder>.AddInitialState(string stateName, StateBuilderAction stateBuildAction)
             => AddInitialState(stateName, stateBuildAction);
 
-        ICompositeStateBuilder IStateMachineInitialBuilderBase<ICompositeStateBuilder>.AddInitialCompositeState(string stateName, CompositeStateBuilderAction compositeStateBuildAction)
+        ICompositeStateBuilder IStateMachineInitial<ICompositeStateBuilder>.AddInitialCompositeState(string stateName, CompositeStateBuilderAction compositeStateBuildAction)
             => AddInitialCompositeState(stateName, compositeStateBuildAction);
 
-        ICompositeStateInitialBuilder IStateTransitionsBuilderBase<ICompositeStateInitialBuilder>.AddTransition<TEvent>(string targetStateName, TransitionBuilderAction<TEvent> transitionBuildAction)
-            => AddTransition<TEvent>(targetStateName, transitionBuildAction) as ICompositeStateInitialBuilder;
+        ICompositeStateInitialBuilder IStateTransitions<ICompositeStateInitialBuilder>.AddTransition<TEvent>(string targetVertexName, TransitionBuilderAction<TEvent> transitionBuildAction)
+            => AddTransition<TEvent>(targetVertexName, transitionBuildAction) as ICompositeStateInitialBuilder;
 
-        ICompositeStateInitialBuilder IStateTransitionsBuilderBase<ICompositeStateInitialBuilder>.AddDefaultTransition(string targetStateName, TransitionBuilderAction<Completion> transitionBuildAction)
-            => AddDefaultTransition(targetStateName, transitionBuildAction) as ICompositeStateInitialBuilder;
+        ICompositeStateInitialBuilder IStateTransitions<ICompositeStateInitialBuilder>.AddDefaultTransition(string targetVertexName, TransitionBuilderAction<Completion> transitionBuildAction)
+            => AddDefaultTransition(targetVertexName, transitionBuildAction) as ICompositeStateInitialBuilder;
 
-        ICompositeStateInitialBuilder IStateTransitionsBuilderBase<ICompositeStateInitialBuilder>.AddInternalTransition<TEvent>(TransitionBuilderAction<TEvent> transitionBuildAction)
+        ICompositeStateInitialBuilder IStateTransitions<ICompositeStateInitialBuilder>.AddInternalTransition<TEvent>(TransitionBuilderAction<TEvent> transitionBuildAction)
             => AddInternalTransition<TEvent>(transitionBuildAction) as ICompositeStateInitialBuilder;
 
-        ICompositeStateInitialBuilder IStateUtilsBuilderBase<ICompositeStateInitialBuilder>.AddDeferredEvent<TEvent>()
+        ICompositeStateInitialBuilder IStateUtils<ICompositeStateInitialBuilder>.AddDeferredEvent<TEvent>()
             => AddDeferredEvent<TEvent>() as ICompositeStateInitialBuilder;
 
-        ITypedCompositeStateBuilder IStateUtilsBuilderBase<ITypedCompositeStateBuilder>.AddDeferredEvent<TEvent>()
+        ITypedCompositeStateBuilder IStateUtils<ITypedCompositeStateBuilder>.AddDeferredEvent<TEvent>()
             => AddDeferredEvent<TEvent>() as ITypedCompositeStateBuilder;
 
-        ITypedCompositeStateInitialBuilder IStateUtilsBuilderBase<ITypedCompositeStateInitialBuilder>.AddDeferredEvent<TEvent>()
+        ITypedCompositeStateInitialBuilder IStateUtils<ITypedCompositeStateInitialBuilder>.AddDeferredEvent<TEvent>()
             => AddDeferredEvent<TEvent>() as ITypedCompositeStateInitialBuilder;
 
-        ITypedCompositeStateInitialBuilder IStateTransitionsBuilderBase<ITypedCompositeStateInitialBuilder>.AddTransition<TEvent>(string targetStateName, TransitionBuilderAction<TEvent> transitionBuildAction)
-            => AddTransition<TEvent>(targetStateName, transitionBuildAction) as ITypedCompositeStateInitialBuilder;
+        ITypedCompositeStateInitialBuilder IStateTransitions<ITypedCompositeStateInitialBuilder>.AddTransition<TEvent>(string targetVertexName, TransitionBuilderAction<TEvent> transitionBuildAction)
+            => AddTransition<TEvent>(targetVertexName, transitionBuildAction) as ITypedCompositeStateInitialBuilder;
 
-        ITypedCompositeStateInitialBuilder IStateTransitionsBuilderBase<ITypedCompositeStateInitialBuilder>.AddDefaultTransition(string targetStateName, TransitionBuilderAction<Completion> transitionBuildAction)
-            => AddDefaultTransition(targetStateName, transitionBuildAction) as ITypedCompositeStateInitialBuilder;
+        ITypedCompositeStateInitialBuilder IStateTransitions<ITypedCompositeStateInitialBuilder>.AddDefaultTransition(string targetVertexName, TransitionBuilderAction<Completion> transitionBuildAction)
+            => AddDefaultTransition(targetVertexName, transitionBuildAction) as ITypedCompositeStateInitialBuilder;
 
-        ITypedCompositeStateInitialBuilder IStateTransitionsBuilderBase<ITypedCompositeStateInitialBuilder>.AddInternalTransition<TEvent>(TransitionBuilderAction<TEvent> transitionBuildAction)
+        ITypedCompositeStateInitialBuilder IStateTransitions<ITypedCompositeStateInitialBuilder>.AddInternalTransition<TEvent>(TransitionBuilderAction<TEvent> transitionBuildAction)
             => AddInternalTransition<TEvent>(transitionBuildAction) as ITypedCompositeStateInitialBuilder;
+
+        IFinalizedCompositeStateBuilder IStateEntry<IFinalizedCompositeStateBuilder>.AddOnEntry(Func<IStateActionContext, Task> actionAsync)
+            => AddOnEntry(actionAsync) as IFinalizedCompositeStateBuilder;
+
+        IFinalizedCompositeStateBuilder IStateExit<IFinalizedCompositeStateBuilder>.AddOnExit(Func<IStateActionContext, Task> actionAsync)
+            => AddOnEntry(actionAsync) as IFinalizedCompositeStateBuilder;
+
+        IFinalizedCompositeStateBuilder IStateUtils<IFinalizedCompositeStateBuilder>.AddDeferredEvent<TEvent>()
+            => AddDeferredEvent<TEvent>() as IFinalizedCompositeStateBuilder;
+
+        IFinalizedCompositeStateBuilder IStateTransitions<IFinalizedCompositeStateBuilder>.AddTransition<TEvent>(string targetVertexName, TransitionBuilderAction<TEvent> transitionBuildAction)
+            => AddTransition<TEvent>(targetVertexName, transitionBuildAction) as IFinalizedCompositeStateBuilder;
+
+        IFinalizedCompositeStateBuilder IStateTransitions<IFinalizedCompositeStateBuilder>.AddDefaultTransition(string targetVertexName, TransitionBuilderAction<Completion> transitionBuildAction)
+            => AddDefaultTransition(targetVertexName, transitionBuildAction) as IFinalizedCompositeStateBuilder;
+
+        IFinalizedCompositeStateBuilder IStateTransitions<IFinalizedCompositeStateBuilder>.AddInternalTransition<TEvent>(TransitionBuilderAction<TEvent> transitionBuildAction)
+            => AddInternalTransition<TEvent>(transitionBuildAction) as IFinalizedCompositeStateBuilder;
+
+        ITypedFinalizedCompositeStateBuilder IStateUtils<ITypedFinalizedCompositeStateBuilder>.AddDeferredEvent<TEvent>()
+            => AddDeferredEvent<TEvent>() as ITypedFinalizedCompositeStateBuilder;
+
+        ITypedFinalizedCompositeStateBuilder IStateTransitions<ITypedFinalizedCompositeStateBuilder>.AddTransition<TEvent>(string targetVertexName, TransitionBuilderAction<TEvent> transitionBuildAction)
+            => AddTransition<TEvent>(targetVertexName, transitionBuildAction) as ITypedFinalizedCompositeStateBuilder;
+
+        ITypedFinalizedCompositeStateBuilder IStateTransitions<ITypedFinalizedCompositeStateBuilder>.AddDefaultTransition(string targetVertexName, TransitionBuilderAction<Completion> transitionBuildAction)
+            => AddDefaultTransition(targetVertexName, transitionBuildAction) as ITypedFinalizedCompositeStateBuilder;
+
+        ITypedFinalizedCompositeStateBuilder IStateTransitions<ITypedFinalizedCompositeStateBuilder>.AddInternalTransition<TEvent>(TransitionBuilderAction<TEvent> transitionBuildAction)
+            => AddInternalTransition<TEvent>(transitionBuildAction) as ITypedFinalizedCompositeStateBuilder;
+
+        IFinalizedCompositeStateBuilder ICompositeStateEvents<IFinalizedCompositeStateBuilder>.AddOnInitialize(Func<IStateActionContext, Task> actionAsync)
+            => AddOnInitialize(actionAsync) as IFinalizedCompositeStateBuilder;
+
+        IFinalizedCompositeStateBuilder ICompositeStateEvents<IFinalizedCompositeStateBuilder>.AddOnFinalize(Func<IStateActionContext, Task> actionAsync)
+            => AddOnFinalize(actionAsync) as IFinalizedCompositeStateBuilder;
     }
 }

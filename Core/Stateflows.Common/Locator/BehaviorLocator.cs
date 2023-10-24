@@ -1,18 +1,22 @@
 ﻿using System.Threading.Tasks;
 using System.Collections.Generic;
 using Stateflows.Common.Interfaces;
+using Stateflows.Common.Engine;
 
 namespace Stateflows.Common.Locator
 {
     internal class BehaviorLocator : IBehaviorLocator
     {
-        private IEnumerable<IBehaviorProvider> Providers { get; }
+        public IEnumerable<IBehaviorProvider> Providers { get; }
+
+        public ClientInterceptor Interceptor { get; }
 
         private IDictionary<BehaviorClass, IBehaviorProvider> ProvidersByClasses { get; } = new Dictionary<BehaviorClass, IBehaviorProvider>();
 
-        public BehaviorLocator(IEnumerable<IBehaviorProvider> providers)
+        public BehaviorLocator(IEnumerable<IBehaviorProvider> providers, ClientInterceptor interceptor)
         {
             Providers = providers;
+            Interceptor = interceptor;
 
             foreach (var provider in Providers)
             {
@@ -38,10 +42,24 @@ namespace Stateflows.Common.Locator
         public bool TryLocateBehavior(BehaviorId id, out IBehavior behavior)
         {
             behavior = null;
-            
-            return
-                ProvidersByClasses.TryGetValue(id.BehaviorClass, out var provider) &&
-                provider.TryProvideBehavior(id, out behavior);
+
+            var result = false;
+
+            if (ProvidersByClasses.TryGetValue(id.BehaviorClass, out var provider))
+            {
+                if (provider.TryProvideBehavior(id, out behavior))
+                {
+                    result = true;
+                }
+            }
+
+            //var result =
+            //    ProvidersByClasses.TryGetValue(id.BehaviorClass, out var provider) &&
+            //    provider.TryProvideBehavior(id, out behavior);
+
+            behavior = new BehaviorProxy(behavior, Interceptor);
+
+            return result;
         }
     }
 }

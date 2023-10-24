@@ -1,7 +1,7 @@
-﻿namespace Stateflows.Common
+﻿using System.Collections.Generic;
+
+namespace Stateflows.Common
 {
     public class Response : Event
-    {
-        public Response() : base() { }
-    }
+    { }
 }

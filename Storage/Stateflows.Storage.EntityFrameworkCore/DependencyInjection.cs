@@ -10,16 +10,18 @@ namespace Stateflows
 {
     public static class DependencyInjection
     {
-        public static IStateflowsBuilder AddEntityFrameworkCoreStorage(this IStateflowsBuilder builder, Action<DbContextOptionsBuilder>? optionsAction = null)
+        public static IStateflowsBuilder AddEntityFrameworkCoreStorage<TDbContext>(this IStateflowsBuilder builder)
+            where TDbContext : DbContext, IStateflowsDbContext_v1
         {
-            if (builder.Services.IsServiceRegistered<IStateflowsStorage>())
+            if (builder.ServiceCollection.IsServiceRegistered<IStateflowsStorage>())
             {
                 throw new Exception("Another Stateflows storage already registered");
             }
 
-            builder.Services
-                .AddTransient<IStateflowsStorage, EntityFrameworkCoreStorage>()
-                .AddDbContextFactory<StateflowsDbContext>(optionsAction);
+            builder.ServiceCollection
+                .AddScoped<IStateflowsStorage, EntityFrameworkCoreStorage>()
+                .AddScoped<IStateflowsDbContext_v1, TDbContext>()
+            ;
 
             return builder;
         }

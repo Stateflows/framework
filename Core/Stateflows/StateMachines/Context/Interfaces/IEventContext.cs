@@ -1,13 +1,10 @@
 ﻿using Stateflows.Common;
-using Stateflows.Common.Interfaces;
 
 namespace Stateflows.StateMachines.Context.Interfaces
 {
-    public interface IEventContext<out TEvent> : IBehaviorLocator
+    public interface IEventContext<out TEvent> : IStateMachineActionContext
         where TEvent : Event
     {
         TEvent Event { get; }
-
-        IStateMachineContext StateMachine { get; }
     }
 }

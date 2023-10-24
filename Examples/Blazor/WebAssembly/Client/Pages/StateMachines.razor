@@ -83,7 +83,7 @@
 
     private async Task RefreshSMInfo(IStateMachine stateMachine)
     {
-        expectedEvents = await stateMachine.GetExpectedEventsAsync();
+        expectedEvents = (await stateMachine.GetCurrentStateAsync()).ExpectedEvents;
 
         plantUmlUrl = await stateMachine.GetPlantUmlUrlAsync();
     }
@@ -92,7 +92,7 @@
     {
         if (locator.TryLocateStateMachine(GetCurrentId(), out var stateMachine))
         {
-            message = await stateMachine.InitializeAsync()
+            message = (await stateMachine.InitializeAsync()).Response.InitializationSuccessful
                 ? "State Machine located and initialized"
                 : "State Machine located, it's already initialized";
 
@@ -106,7 +106,7 @@
 
     private async Task SendEvent(string eventName)
     {
-        var eventType = Type.GetType($"Examples.Common.{eventName}, Examples.Common");
+        var eventType = Type.GetType($"{eventName}, Examples.Common");
 
         if (eventType != null)
         {

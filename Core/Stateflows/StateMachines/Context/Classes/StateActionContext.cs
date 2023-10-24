@@ -1,12 +1,12 @@
-﻿using System.Diagnostics;
-using Stateflows.StateMachines.Models;
-using Stateflows.StateMachines.Registration;
+﻿using Stateflows.StateMachines.Models;
 using Stateflows.StateMachines.Context.Interfaces;
 using Stateflows.StateMachines.Inspection.Interfaces;
 
 namespace Stateflows.StateMachines.Context.Classes
 {
-    internal class StateActionContext : BaseContext, IStateActionContext, IStateActionInspectionContext, IRootContext
+    internal class StateActionContext : BaseContext,
+        IStateActionInspectionContext,
+        IRootContext
     {
         public Vertex Vertex { get; set; }
 
@@ -23,17 +23,6 @@ namespace Stateflows.StateMachines.Context.Classes
         }
 
         private IStateContext currentState = null;
-        public IStateContext CurrentState
-        {
-            get
-            {
-                if (!Context.Context.Values.TryGetValue(Constants.State, out var stateName))
-                {
-                    Debug.Assert(true, "State name string is not available. Is context set up properly?");
-                }
-
-                return currentState ?? (currentState = new StateContext(stateName as string, Context));
-            }
-        }
+        public IStateContext CurrentState => currentState ??= new StateContext(Vertex, Context);
     }
 }

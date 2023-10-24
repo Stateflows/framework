@@ -2,27 +2,32 @@
 {
     public static class EventExtensions
     {
+        //public static bool Validate(this Event @event)
+        //{
+        //    var validationContext = new ValidationContext(@event, serviceProvider: null, items: null);
+        //    var validationResults = new List<ValidationResult>();
+
+        //    bool isValid = Validator.TryValidateObject(@event, validationContext, validationResults, true);
+
+        //    //@event.Validation = new EventValidation(isValid, validationResults);
+
+        //    return isValid;
+        //}
+
+        //public static void SetValidation(this Event @event, EventValidation validation)
+        //{
+        //    //@event.Validation = validation;
+        //}
+
         public static bool IsRequest(this Event @event)
-        {
-            var type = @event.GetType().BaseType;
-            while (type != null)
-            {
-                if (type.FullName.StartsWith("Stateflows.Common.Request`1"))
-                {
-                    return true;
-                }
+            => @event.GetType().IsSubclassOfRawGeneric(typeof(Request<>));
 
-                type = type.BaseType;
-            }
-
-            return false;
-        }
         public static bool IsInitializationRequest(this Event @event)
         {
             var type = @event.GetType().BaseType;
             while (type != null)
             {
-                if (type.FullName.StartsWith("Stateflows.Common.InitializationRequest`1"))
+                if (type.IsSubclassOf(typeof(InitializationRequest)))
                 {
                     return true;
                 }

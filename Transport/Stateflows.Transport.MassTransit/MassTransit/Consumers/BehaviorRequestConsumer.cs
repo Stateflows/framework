@@ -43,16 +43,18 @@ namespace Stateflows.Transport.MassTransit.MassTransit.Consumers
             {
                 var responseMessage = new BehaviorResponse() { BehaviorId = context.Message.BehaviorId };
 
+                var result = await behavior.SendAsync(@event);
+                responseMessage.Status = result.Status;
+
                 if (@event.IsRequest())
                 {
-                    await behavior.SendAsync(@event);
                     var response = @event.GetResponse();
                     responseMessage.ResponseData = StateflowsJsonConverter.SerializeObject(response);
-                    responseMessage.Consumed = response != null;
                 }
-                else
+
+                if (result.Validation != null)
                 {
-                    responseMessage.Consumed = await behavior.SendAsync(@event);
+                    responseMessage.ValidationData = StateflowsJsonConverter.SerializeObject(result.Validation);
                 }
 
                 context.Respond(responseMessage);

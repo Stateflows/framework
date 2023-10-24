@@ -1,4 +1,6 @@
-﻿using System.Threading.Tasks;
+﻿using Microsoft.Extensions.DependencyInjection;
+using System;
+using System.Threading.Tasks;
 
 namespace Stateflows.Common.Interfaces
 {
@@ -6,7 +8,7 @@ namespace Stateflows.Common.Interfaces
     {
         string BehaviorType { get; }
 
-        Task<bool> ProcessEventAsync<TEvent>(BehaviorId id, TEvent @event)
-            where TEvent : Event, new();
+        Task<EventStatus> ProcessEventAsync<TEvent>(BehaviorId id, TEvent @event, IServiceProvider serviceProvider)
+            where TEvent : Event;
     }
 }

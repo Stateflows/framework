@@ -3,13 +3,13 @@ using Stateflows.Common.Registration.Interfaces;
 
 namespace Stateflows.Common.Registration.Builders
 {
-    public class StateflowsClientBuilder : IStateflowsClientBuilder
+    internal class StateflowsClientBuilder : IStateflowsClientBuilder
     {
-        public IServiceCollection Services { get; private set; }
+        public IServiceCollection ServiceCollection { get; private set; }
 
         public StateflowsClientBuilder(IServiceCollection services)
         {
-            Services = services;
+            ServiceCollection = services;
         }
     }
 }

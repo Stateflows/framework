@@ -21,7 +21,7 @@ namespace Stateflows.Transport.AspNetCore.SignalR.Client
             return result;
         }
 
-        private BehaviorId Id { get; }
+        public BehaviorId Id { get; }
 
         public Behavior(Task<HubConnection> hub, BehaviorId id)
         {
@@ -29,12 +29,26 @@ namespace Stateflows.Transport.AspNetCore.SignalR.Client
             Id = id;
         }
 
-        public async Task<TResponse> RequestAsync<TResponse>(Request<TResponse> request)
-            where TResponse : Response, new()
-            => await (await GetHub()).InvokeAsync<TResponse>("Request", Id, StateflowsJsonConverter.SerializeObject(request));
+        public async Task<SendResult> SendAsync<TEvent>(TEvent @event)
+            where TEvent : Event
+        {
+            var hub = await GetHub();
 
-        public async Task<bool> SendAsync<TEvent>(TEvent @event)
-            where TEvent : Event, new()
-            => await(await GetHub()).InvokeAsync<bool>("Send", Id, StateflowsJsonConverter.SerializeObject(@event));
+            var result = await hub.InvokeAsync<SendResult>("Send", Id, StateflowsJsonConverter.SerializeObject(@event));
+
+            return result;
+        }
+
+        public async Task<RequestResult<TResponse>> RequestAsync<TResponse>(Request<TResponse> request)
+            where TResponse : Response
+        {
+            var hub = await GetHub();
+
+            var result = await hub.InvokeAsync<RequestResult<TResponse>>("Request", Id, StateflowsJsonConverter.SerializeObject(request));
+
+            request.Respond(result.Response);
+
+            return result;
+        }
     }
 }

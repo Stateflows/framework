@@ -1,3 +1,4 @@
+using Stateflows.Common;
 using StateMachine.IntegrationTests.Utils;
 
 namespace StateMachine.IntegrationTests.Tests
@@ -38,6 +39,35 @@ namespace StateMachine.IntegrationTests.Tests
                     )
                     .AddState("state2")
                 )
+
+                .AddStateMachine("sequence", b => b
+                    .AddInitialState("state1", b => b
+                        .AddDeferredEvent<OtherEvent>()
+                        .AddTransition<SomeEvent>("state2")
+                    )
+                    .AddState("state2", b => b
+                        .AddInternalTransition<OtherEvent>(b => b
+                            .AddEffect(c =>
+                            {
+                                if (c.StateMachine.Values.TryGet<int>("c", out var counter))
+                                {
+                                    if (counter == c.Event.AnswerToLifeUniverseAndEverything - 1)
+                                    {
+                                        c.StateMachine.Values.Set<bool>("result", true);
+                                    }
+                                }
+                                else
+                                {
+                                    c.StateMachine.Values.Set<int>("c", c.Event.AnswerToLifeUniverseAndEverything);
+                                }
+                            })
+                        )
+                        .AddDefaultTransition("state3", b => b
+                            .AddGuard(c => c.StateMachine.Values.TryGet<bool>("result", out var result) && result)
+                        )
+                    )
+                    .AddState("state3")
+                )
                 ;
         }
 
@@ -46,23 +76,52 @@ namespace StateMachine.IntegrationTests.Tests
         {
             var initialized = false;
             string currentState = "";
-            var otherConsumed = false;
-            var someConsumed = false;
+            var otherStatus = EventStatus.Rejected;
+            var someStatus = EventStatus.Rejected;
 
             if (Locator.TryLocateStateMachine(new StateMachineId("defer", "x"), out var sm))
             {
-                initialized = await sm.InitializeAsync();
+                initialized = (await sm.InitializeAsync()).Response.InitializationSuccessful;
 
-                otherConsumed = await sm.SendAsync(new OtherEvent());
+                otherStatus = (await sm.SendAsync(new OtherEvent())).Status;
 
-                someConsumed = await sm.SendAsync(new SomeEvent());
+                someStatus = (await sm.SendAsync(new SomeEvent())).Status;
 
-                currentState = (await sm.GetCurrentStateAsync()).Name;
+                currentState = (await sm.GetCurrentStateAsync()).StatesStack.First();
             }
 
             Assert.IsTrue(initialized);
-            Assert.IsTrue(someConsumed);
-            Assert.IsFalse(otherConsumed);
+            Assert.AreEqual(EventStatus.Consumed, someStatus);
+            Assert.AreEqual(EventStatus.Deferred, otherStatus);
+            Assert.AreEqual("state3", currentState);
+        }
+
+        [TestMethod]
+        public async Task SequenceDeferral()
+        {
+            var initialized = false;
+            string currentState = "";
+            var otherStatus1 = EventStatus.Rejected;
+            var otherStatus2 = EventStatus.Rejected;
+            var someStatus = EventStatus.Rejected;
+
+            if (Locator.TryLocateStateMachine(new StateMachineId("sequence", "x"), out var sm))
+            {
+                initialized = (await sm.InitializeAsync()).Response.InitializationSuccessful;
+
+                otherStatus1 = (await sm.SendAsync(new OtherEvent() { AnswerToLifeUniverseAndEverything = 42 })).Status;
+
+                otherStatus2 = (await sm.SendAsync(new OtherEvent() { AnswerToLifeUniverseAndEverything = 43 })).Status;
+
+                someStatus = (await sm.SendAsync(new SomeEvent())).Status;
+
+                currentState = (await sm.GetCurrentStateAsync()).StatesStack.First();
+            }
+
+            Assert.IsTrue(initialized);
+            Assert.AreEqual(EventStatus.Consumed, someStatus);
+            Assert.AreEqual(EventStatus.Deferred, otherStatus1);
+            Assert.AreEqual(EventStatus.Deferred, otherStatus2);
             Assert.AreEqual("state3", currentState);
         }
 
@@ -71,27 +130,27 @@ namespace StateMachine.IntegrationTests.Tests
         {
             var initialized = false;
             string currentState = "";
-            var otherConsumed1 = false;
-            var otherConsumed2 = false;
-            var someConsumed = false;
+            var otherStatus1 = EventStatus.Rejected;
+            var otherStatus2 = EventStatus.Rejected;
+            var someStatus = EventStatus.Rejected;
 
             if (Locator.TryLocateStateMachine(new StateMachineId("nested", "x"), out var sm))
             {
-                initialized = await sm.InitializeAsync();
+                initialized = (await sm.InitializeAsync()).Response.InitializationSuccessful;
 
-                otherConsumed1 = await sm.SendAsync(new OtherEvent());
+                otherStatus1 = (await sm.SendAsync(new OtherEvent())).Status;
 
-                someConsumed = await sm.SendAsync(new SomeEvent());
+                someStatus = (await sm.SendAsync(new SomeEvent())).Status;
 
-                otherConsumed2 = await sm.SendAsync(new OtherEvent());
+                otherStatus2 = (await sm.SendAsync(new OtherEvent())).Status;
 
-                currentState = (await sm.GetCurrentStateAsync()).Name;
+                currentState = (await sm.GetCurrentStateAsync()).StatesStack.First();
             }
 
             Assert.IsTrue(initialized);
-            Assert.IsTrue(someConsumed);
-            Assert.IsFalse(otherConsumed1);
-            Assert.IsFalse(otherConsumed2);
+            Assert.AreEqual(EventStatus.Deferred, otherStatus1);
+            Assert.AreEqual(EventStatus.Consumed, someStatus);
+            Assert.AreEqual(EventStatus.NotConsumed, otherStatus2);
             Assert.AreEqual("state2", currentState);
         }
     }

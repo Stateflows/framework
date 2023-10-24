@@ -6,7 +6,7 @@ namespace Stateflows.Storage.EntityFrameworkCore.EntityFrameworkCore.Entities
 {
     [Table("StateflowsContexts_v1")]
     [Index(nameof(BehaviorId), IsUnique = true)]
-    internal class Context_v1
+    public class Context_v1
     {
         public int Id { get; set; }
 

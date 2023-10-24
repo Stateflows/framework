@@ -1,13 +1,12 @@
 ﻿using System;
 using System.Diagnostics;
 using System.Collections.Generic;
-using System.Runtime.CompilerServices;
+using System.Runtime.Serialization;
 using Microsoft.Extensions.DependencyInjection;
-using Stateflows.StateMachines.Extensions;
 using Stateflows.StateMachines.Models;
+using Stateflows.StateMachines.Extensions;
 using Stateflows.StateMachines.Registration.Builders;
 using Stateflows.StateMachines.Registration.Interfaces;
-using System.Runtime.Serialization;
 
 namespace Stateflows.StateMachines.Registration
 {
@@ -15,11 +14,11 @@ namespace Stateflows.StateMachines.Registration
     {
         private IServiceCollection Services { get; }
 
-        public List<ExceptionHandlerFactory> GlobalExceptionHandlerFactories { get; set; } = new List<ExceptionHandlerFactory>();
+        public List<StateMachineExceptionHandlerFactory> GlobalExceptionHandlerFactories { get; set; } = new List<StateMachineExceptionHandlerFactory>();
 
-        public List<InterceptorFactory> GlobalInterceptorFactories { get; set; } = new List<InterceptorFactory>();
+        public List<StateMachineInterceptorFactory> GlobalInterceptorFactories { get; set; } = new List<StateMachineInterceptorFactory>();
 
-        public List<ObserverFactory> GlobalObserverFactories { get; set; } = new List<ObserverFactory>();
+        public List<StateMachineObserverFactory> GlobalObserverFactories { get; set; } = new List<StateMachineObserverFactory>();
 
         public StateMachinesRegister(IServiceCollection services)
         {
@@ -40,7 +39,7 @@ namespace Stateflows.StateMachines.Registration
             buildAction(builder);
             builder.Result.Build();
 
-            StateMachines.Add(builder.Result.Name, builder.Result);
+            this.StateMachines.Add(builder.Result.Name, builder.Result);
         }
 
         [DebuggerHidden]
@@ -55,7 +54,9 @@ namespace Stateflows.StateMachines.Registration
 
             var sm = FormatterServices.GetUninitializedObject(stateMachineType) as StateMachine;
 
-            var builder = new TypedStateMachineBuilder(stateMachineName, stateMachineType, Services);
+            var builder = new StateMachineBuilder(stateMachineName, Services);
+            builder.AddStateMachineEvents(stateMachineType);
+            builder.Result.StateMachineType = stateMachineType;
             sm.Build(builder);
             builder.Result.Build();
 
@@ -67,7 +68,7 @@ namespace Stateflows.StateMachines.Registration
             where TStateMachine : StateMachine
             => AddStateMachine(stateMachineName, typeof(TStateMachine));
 
-        public void AddGlobalInterceptor(InterceptorFactory interceptorFactory)
+        public void AddGlobalInterceptor(StateMachineInterceptorFactory interceptorFactory)
             => GlobalInterceptorFactories.Add(interceptorFactory);
 
         public void AddGlobalInterceptor<TInterceptor>()
@@ -77,7 +78,7 @@ namespace Stateflows.StateMachines.Registration
             AddGlobalInterceptor(serviceProvider => serviceProvider.GetRequiredService<TInterceptor>());
         }
 
-        public void AddGlobalExceptionHandler(ExceptionHandlerFactory exceptionHandlerFactory)
+        public void AddGlobalExceptionHandler(StateMachineExceptionHandlerFactory exceptionHandlerFactory)
             => GlobalExceptionHandlerFactories.Add(exceptionHandlerFactory);
 
         public void AddGlobalExceptionHandler<TExceptionHandler>()
@@ -87,7 +88,7 @@ namespace Stateflows.StateMachines.Registration
             AddGlobalExceptionHandler(serviceProvider => serviceProvider.GetRequiredService<TExceptionHandler>());
         }
 
-        public void AddGlobalObserver(ObserverFactory observerFactory)
+        public void AddGlobalObserver(StateMachineObserverFactory observerFactory)
             => GlobalObserverFactories.Add(observerFactory);
 
         public void AddGlobalObserver<TObserver>()

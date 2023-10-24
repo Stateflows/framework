@@ -1,5 +1,4 @@
 ﻿using Stateflows.StateMachines.Context.Classes;
-using Stateflows.StateMachines.Models;
 
 namespace Stateflows.StateMachines.Context.Interfaces
 {

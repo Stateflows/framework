@@ -1,6 +1,6 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Threading.Tasks;
+using System.Collections.Generic;
 using Stateflows.Common.Context;
 using Stateflows.Common.Interfaces;
 
@@ -8,13 +8,13 @@ namespace Stateflows.Common.Classes
 {
     public class InMemoryStorage : IStateflowsStorage
     {
-        public Dictionary<int, StateflowsContext> Contexts { get; } = new Dictionary<int, StateflowsContext>();
+        public Dictionary<string, StateflowsContext> Contexts { get; } = new Dictionary<string, StateflowsContext>();
 
         public Task<StateflowsContext> Hydrate(BehaviorId id)
         {
             lock (Contexts)
             {
-                if (!Contexts.TryGetValue(id.GetHashCode(), out var context))
+                if (!Contexts.TryGetValue(id.ToString(), out var context))
                 {
                     context = new StateflowsContext() { Id = id };
                 }
@@ -25,7 +25,7 @@ namespace Stateflows.Common.Classes
 
         public Task Dehydrate(StateflowsContext context)
         {
-            var hash = context.Id.GetHashCode();
+            var hash = context.Id.ToString();
 
             lock (Contexts)
             {

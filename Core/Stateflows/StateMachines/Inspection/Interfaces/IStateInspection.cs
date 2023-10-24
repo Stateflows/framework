@@ -10,6 +10,8 @@ namespace Stateflows.StateMachines.Inspection.Interfaces
 
         bool IsInitial { get; }
 
+        bool IsFinal { get; }
+
         IEnumerable<ITransitionInspection> Transitions { get; }
 
         IEnumerable<IActionInspection> Actions { get; }

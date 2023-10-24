@@ -1,5 +1,6 @@
-﻿using Stateflows.StateMachines.Context.Interfaces;
-using System.Threading.Tasks;
+﻿using System.Threading.Tasks;
+using Stateflows.Common;
+using Stateflows.StateMachines.Context.Interfaces;
 
 namespace Stateflows.StateMachines
 {
@@ -10,12 +11,24 @@ namespace Stateflows.StateMachines
         public virtual Task OnInitializeAsync()
             => Task.CompletedTask;
 
+        public virtual Task OnFinalizeAsync()
+            => Task.CompletedTask;
+
         public abstract void Build(ITypedStateMachineInitialBuilder builder);
     }
 
-    public sealed class StateMachineInfo<TStateMachine>
+    public abstract class StateMachine<TInitializationRequest> : StateMachine
+        where TInitializationRequest : InitializationRequest
+    {
+        public override sealed Task OnInitializeAsync()
+            => base.OnInitializeAsync();
+
+        public abstract Task OnInitializeAsync(TInitializationRequest initializationEvent);
+    }
+
+    public static class StateMachineInfo<TStateMachine>
         where TStateMachine : StateMachine
     {
-        public static string Name { get => typeof(TStateMachine).Name; }
+        public static string Name => typeof(TStateMachine).FullName;
     }
 }

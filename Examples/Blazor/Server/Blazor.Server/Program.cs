@@ -4,6 +4,19 @@ using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
 using Stateflows;
 using Stateflows.StateMachines;
+using Stateflows.Activities;
+using System.Diagnostics;
+using Stateflows.Activities.Context.Interfaces;
+using System.Text;
+using Stateflows.StateMachines.Context.Interfaces;
+using Stateflows.Common;
+using System.ComponentModel.Design;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging.Abstractions;
+using Blazor.Server.Behaviors.Activities.Activity1;
+//using Stateflows.Extensions.Scripting.JS;
+using JavaScriptEngineSwitcher.Jurassic;
+using Blazor.Server.Behaviors.Activities.ExampleActivity;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -17,46 +30,8 @@ builder.Services.AddSignalR();
 builder.Services.AddStateflows(b => b
     .AddPlantUml()
 
-    .AddStateMachine("stateMachine1", b => b
-        .AddInitialState("state1", b => b
-            .AddTransition<SomeEvent>("state2")
-            .AddInternalTransition<ExampleRequest>(b => b
-                .AddEffect(c => c.Event.Respond(new ExampleResponse() { ResponseData = "Example response data" }))
-            )
-        )
-        .AddState("state2", b => b
-            .AddTransition<OtherEvent>("state3", b => b
-                .AddGuard(c => c.Event.AnswerToLifeUniverseAndEverything == 42)
-            )
-        )
-        .AddCompositeState("state3", b => b
-            .AddTransition<SomeEvent>("state4")
-
-            .AddInitialState("state3_1", b => b
-                .AddTransition<SomeEvent>("state3_2")
-            )
-            .AddState("state3_2")
-        )
-        .AddState("state4", b => b
-            .AddDefaultTransition("state5")
-        )
-        .AddState("state5", b => b
-            .AddInternalTransition<ExampleRequest>(b => b
-                .AddEffect(c =>
-                {
-                    var counter = c.SourceState.Values.GetOrDefault<int>("counter", 0);
-                    c.SourceState.Values.Set("counter", counter + 1);
-                })
-            )
-            .AddDefaultTransition("state2", b => b
-                .AddGuard(c =>
-                {
-                    var counter = c.SourceState.Values.GetOrDefault<int>("counter", 0);
-                    return counter > 2;
-                })
-            )
-        )
-    )
+    .AddActivity<Activity1>()
+    .AddActivity<ExampleActivity>()
 );
 
 var app = builder.Build();

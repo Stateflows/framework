@@ -1,12 +1,11 @@
 ﻿using System;
+using System.Collections.Generic;
 
 namespace Stateflows.Common
 {
     public abstract class Request<TResponse> : Event
         where TResponse : Response
     {
-        public Request() : base() { }
-
         public void Respond(TResponse response)
         {
             if (Response != null)

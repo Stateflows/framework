@@ -1,13 +1,16 @@
-﻿using System.Threading.Tasks;
+﻿using Stateflows.Common.Classes;
+using System.Threading.Tasks;
 
 namespace Stateflows.Common.Interfaces
 {
     public interface IBehavior
     {
-        Task<bool> SendAsync<TEvent>(TEvent @event)
-            where TEvent : Event, new();
+        BehaviorId Id { get; }
 
-        Task<TResponse> RequestAsync<TResponse>(Request<TResponse> request)
-            where TResponse : Response, new();
+        Task<SendResult> SendAsync<TEvent>(TEvent @event)
+            where TEvent : Event;
+
+        Task<RequestResult<TResponse>> RequestAsync<TResponse>(Request<TResponse> request)
+            where TResponse : Response;
     }
 }

@@ -1,3 +1,4 @@
+using Stateflows.Common;
 using StateMachine.IntegrationTests.Utils;
 
 namespace StateMachine.IntegrationTests.Tests
@@ -16,6 +17,7 @@ namespace StateMachine.IntegrationTests.Tests
         protected override void InitializeStateflows(IStateflowsBuilder builder)
         {
             builder
+                .AddPlantUml()
                 .AddStateMachine("submachine", b => b
                     .AddExecutionSequenceObserver()
                     .AddInitialState("state1", b => b
@@ -40,21 +42,28 @@ namespace StateMachine.IntegrationTests.Tests
         {
             var initialized = false;
             string currentState1 = "";
+            string currentSubState1 = "";
             string currentState2 = "";
-            var someConsumed1 = false;
-            var someConsumed2 = false;
+            var someStatus1 = EventStatus.Rejected;
+            var someStatus2 = EventStatus.Rejected;
 
             if (Locator.TryLocateStateMachine(new StateMachineId("submachine", "x"), out var sm))
             {
-                initialized = await sm.InitializeAsync();
+                initialized = (await sm.InitializeAsync()).Response.InitializationSuccessful;
 
-                someConsumed1 = await sm.SendAsync(new SomeEvent());
+                someStatus1 = (await sm.SendAsync(new SomeEvent())).Status;
 
-                currentState1 = (await sm.GetCurrentStateAsync()).Name;
+                var uml = await sm.GetPlantUmlAsync();
 
-                someConsumed2 = await sm.SendAsync(new SomeEvent());
+                var currentState = await sm.GetCurrentStateAsync();
 
-                currentState2 = (await sm.GetCurrentStateAsync()).Name;
+                currentState1 = currentState.StatesStack.First();
+
+                currentSubState1 = currentState.StatesStack.Skip(1).First();
+
+                someStatus2 = (await sm.SendAsync(new SomeEvent())).Status;
+
+                currentState2 = (await sm.GetCurrentStateAsync()).StatesStack.First();
             }
 
             ExecutionSequence.Verify(b => b
@@ -66,9 +75,10 @@ namespace StateMachine.IntegrationTests.Tests
                 .StateEntry("state2")
             );
             Assert.IsTrue(initialized);
-            Assert.IsTrue(someConsumed1);
+            Assert.AreEqual(EventStatus.Consumed, someStatus1);
             Assert.AreEqual("state1", currentState1);
-            Assert.IsTrue(someConsumed2);
+            Assert.AreEqual("stateB", currentSubState1);
+            Assert.AreEqual(EventStatus.Consumed, someStatus2);
             Assert.AreEqual("state2", currentState2);
         }
     }

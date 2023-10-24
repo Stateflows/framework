@@ -7,10 +7,14 @@ namespace Stateflows.StateMachines
 {
     public interface IStateMachineInspector
     {
-        Task BeforeStateMachineInitializeAsync(IStateMachineActionInspectionContext context);
-        Task AfterStateMachineInitializeAsync(IStateMachineActionInspectionContext context);
+        Task BeforeStateMachineInitializeAsync(IStateMachineInitializationInspectionContext context);
+        Task AfterStateMachineInitializeAsync(IStateMachineInitializationInspectionContext context);
+        Task BeforeStateMachineFinalizeAsync(IStateMachineActionInspectionContext context);
+        Task AfterStateMachineFinalizeAsync(IStateMachineActionInspectionContext context);
         Task BeforeStateInitializeAsync(IStateActionInspectionContext context);
         Task AfterStateInitializeAsync(IStateActionInspectionContext context);
+        Task BeforeStateFinalizeAsync(IStateActionInspectionContext context);
+        Task AfterStateFinalizeAsync(IStateActionInspectionContext context);
         Task BeforeStateEntryAsync(IStateActionInspectionContext context);
         Task AfterStateEntryAsync(IStateActionInspectionContext context);
         Task BeforeStateExitAsync(IStateActionInspectionContext context);
@@ -20,10 +24,12 @@ namespace Stateflows.StateMachines
         Task BeforeTransitionEffectAsync(ITransitionInspectionContext<Event> context);
         Task AfterTransitionEffectAsync(ITransitionInspectionContext<Event> context);
 
-        Task OnStateMachineInitializeExceptionAsync(IStateMachineActionInspectionContext context, Exception exception);
+        Task OnStateMachineInitializeExceptionAsync(IStateMachineInitializationInspectionContext context, Exception exception);
+        Task OnStateMachineFinalizeExceptionAsync(IStateMachineActionInspectionContext context, Exception exception);
         Task OnTransitionGuardExceptionAsync(IGuardInspectionContext<Event> context, Exception exception);
         Task OnTransitionEffectExceptionAsync(IEventInspectionContext<Event> context, Exception exception);
         Task OnStateInitializeExceptionAsync(IStateActionInspectionContext context, Exception exception);
+        Task OnStateFinalizeExceptionAsync(IStateActionInspectionContext context, Exception exception);
         Task OnStateEntryExceptionAsync(IStateActionInspectionContext context, Exception exception);
         Task OnStateExitExceptionAsync(IStateActionInspectionContext context, Exception exception);
     }

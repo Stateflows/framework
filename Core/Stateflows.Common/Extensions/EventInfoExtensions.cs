@@ -1,6 +1,7 @@
-﻿using System;
+﻿using Stateflows.Common.Extensions;
+using System;
 
-namespace Stateflows.Common.Extensions
+namespace Stateflows.Common
 {
     public static class EventInfoExtensions
     {
@@ -11,7 +12,7 @@ namespace Stateflows.Common.Extensions
                 throw new ArgumentException("Given type is not subclass of Event class");
             }
 
-            var @event = Activator.CreateInstance(@type) as Event;
+            var @event = @type.GetUninitializedInstance() as Event;
             return @event.Name;
         }
     }

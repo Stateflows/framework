@@ -6,7 +6,7 @@ using Stateflows.StateMachines.Context.Interfaces;
 namespace Stateflows.StateMachines.Registration.Interfaces
 {
     public interface ITransitionBuilder<TEvent>
-        where TEvent : Event, new()
+        where TEvent : Event
     {
         ITransitionBuilder<TEvent> AddGuard(Func<IGuardContext<TEvent>, Task<bool>> guardAsync);
 

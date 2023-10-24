@@ -26,7 +26,7 @@ namespace Stateflows.StateMachines
                 if (typeof(StateMachine).IsAssignableFrom(@type))
                 {
                     var attribute = @type.GetCustomAttributes(typeof(StateMachineAttribute)).FirstOrDefault() as StateMachineAttribute;
-                    stateflowsBuilder.EnsureStateMachinesServices().AddStateMachine(attribute?.Name ?? @type.Name, @type);
+                    stateflowsBuilder.EnsureStateMachinesServices().AddStateMachine(attribute?.Name ?? @type.FullName, @type);
                 }
             });
 
@@ -67,7 +67,7 @@ namespace Stateflows.StateMachines
         }
 
         [DebuggerHidden]
-        public static IStateflowsBuilder AddGlobalInterceptor<TInterceptor>(this IStateflowsBuilder stateflowsBuilder)
+        public static IStateflowsBuilder AddStateMachinesInterceptor<TInterceptor>(this IStateflowsBuilder stateflowsBuilder)
             where TInterceptor : class, IStateMachineInterceptor
         {
             stateflowsBuilder.EnsureStateMachinesServices().AddGlobalInterceptor<TInterceptor>();
@@ -76,7 +76,7 @@ namespace Stateflows.StateMachines
         }
 
         [DebuggerHidden]
-        public static IStateflowsBuilder AddGlobalInterceptor(this IStateflowsBuilder stateflowsBuilder, InterceptorFactory interceptorFactory)
+        public static IStateflowsBuilder AddStateMachinesInterceptor(this IStateflowsBuilder stateflowsBuilder, StateMachineInterceptorFactory interceptorFactory)
         {
             stateflowsBuilder.EnsureStateMachinesServices().AddGlobalInterceptor(interceptorFactory);
 
@@ -84,7 +84,7 @@ namespace Stateflows.StateMachines
         }
 
         [DebuggerHidden]
-        public static IStateflowsBuilder AddGlobalExceptionHandler<TExceptionHandler>(this IStateflowsBuilder stateflowsBuilder)
+        public static IStateflowsBuilder AddStateMachinesExceptionHandler<TExceptionHandler>(this IStateflowsBuilder stateflowsBuilder)
             where TExceptionHandler : class, IStateMachineExceptionHandler
         {
             stateflowsBuilder.EnsureStateMachinesServices().AddGlobalExceptionHandler<TExceptionHandler>();
@@ -93,7 +93,7 @@ namespace Stateflows.StateMachines
         }
 
         [DebuggerHidden]
-        public static IStateflowsBuilder AddGlobalExceptionHandler(this IStateflowsBuilder stateflowsBuilder, ExceptionHandlerFactory exceptionHandlerFactory)
+        public static IStateflowsBuilder AddStateMachinesExceptionHandler(this IStateflowsBuilder stateflowsBuilder, StateMachineExceptionHandlerFactory exceptionHandlerFactory)
         {
             stateflowsBuilder.EnsureStateMachinesServices().AddGlobalExceptionHandler(exceptionHandlerFactory);
 
@@ -101,7 +101,7 @@ namespace Stateflows.StateMachines
         }
 
         [DebuggerHidden]
-        public static IStateflowsBuilder AddGlobalObserver<TObserver>(this IStateflowsBuilder stateflowsBuilder)
+        public static IStateflowsBuilder AddStateMachinesObserver<TObserver>(this IStateflowsBuilder stateflowsBuilder)
             where TObserver : class, IStateMachineObserver
         {
             stateflowsBuilder.EnsureStateMachinesServices().AddGlobalObserver<TObserver>();
@@ -110,44 +110,37 @@ namespace Stateflows.StateMachines
         }
 
         [DebuggerHidden]
-        public static IStateflowsBuilder AddGlobalObserver(this IStateflowsBuilder stateflowsBuilder, ObserverFactory observerFactory)
+        public static IStateflowsBuilder AddStateMachinesObserver(this IStateflowsBuilder stateflowsBuilder, StateMachineObserverFactory observerFactory)
         {
             stateflowsBuilder.EnsureStateMachinesServices().AddGlobalObserver(observerFactory);
 
             return stateflowsBuilder;
         }
 
-        private static Dictionary<IStateflowsBuilder, StateMachinesRegister> Registers = new Dictionary<IStateflowsBuilder, StateMachinesRegister>();
+        private readonly static Dictionary<IStateflowsBuilder, StateMachinesRegister> Registers = new Dictionary<IStateflowsBuilder, StateMachinesRegister>();
 
         private static StateMachinesRegister EnsureStateMachinesServices(this IStateflowsBuilder stateflowsBuilder)
         {
-            if (!stateflowsBuilder.Services.Any(x => x.ServiceType == typeof(StateflowsEngine)))
+            if (!Registers.TryGetValue(stateflowsBuilder, out var register))
             {
-                var register = new StateMachinesRegister(stateflowsBuilder.Services);
+                register = new StateMachinesRegister(stateflowsBuilder.ServiceCollection);
                 Registers.Add(stateflowsBuilder, register);
 
                 stateflowsBuilder
                     .EnsureStateflowServices()
-                    .AddGlobalObserver(p => p.GetRequiredService<Observer>())
-                    .AddGlobalInterceptor(p => p.GetRequiredService<Observer>())
-                    .Services
-                    .AddScoped<Observer>()
+                    .ServiceCollection
+                    .AddScoped<IStateMachinePlugin, TimeEvents>()
+                    .AddScoped<IStateMachinePlugin, Submachines>()
                     .AddSingleton(register)
                     .AddSingleton<IEventProcessor, Processor>()
-                    .AddSingleton<IBehaviorProvider, Provider>()
+                    .AddTransient<IBehaviorProvider, Provider>()
                     .AddSingleton<IStateMachineEventHandler, InitializationHandler>()
-                    .AddSingleton<IStateMachineEventHandler, InitializedHandler>()
+                    .AddSingleton<IStateMachineEventHandler, BehaviorStatusHandler>()
                     .AddSingleton<IStateMachineEventHandler, CurrentStateHandler>()
-                    .AddSingleton<IStateMachineEventHandler, ExpectedEventsHandler>()
                     .AddSingleton<IStateMachineEventHandler, ExitHandler>();
             }
 
-            if (!Registers.TryGetValue(stateflowsBuilder, out var result))
-            {
-                Debug.Assert(result != null, "No StateMachineRegister instance available. Are services registered properly?");
-            }
-
-            return result;
+            return register;
         }
     }
 }

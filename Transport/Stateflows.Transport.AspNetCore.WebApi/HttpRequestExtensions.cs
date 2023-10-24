@@ -7,7 +7,7 @@ namespace Stateflows.Transport.AspNetCore.WebApi
     internal static class HttpRequestExtensions
     {
         public static Task<TEvent?> DeserializeEvent<TEvent>(this HttpRequest request)
-            where TEvent : Event, new()
+            where TEvent : Event
             => request.DeserializeObject<TEvent>();
 
         public static async Task<T?> DeserializeObject<T>(this HttpRequest request)

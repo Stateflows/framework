@@ -1,10 +1,9 @@
-﻿using Stateflows.Common.Interfaces;
-using Stateflows.StateMachines.Context.Interfaces;
+﻿using Stateflows.StateMachines.Context.Interfaces;
 
 namespace Stateflows.StateMachines.Inspection.Interfaces
 {
-    public interface IStateMachineActionInspectionContext : IBehaviorLocator
+    public interface IStateMachineActionInspectionContext : IStateMachineActionContext
     {
-        IStateMachineInspectionContext StateMachine { get; }
+        new IStateMachineInspectionContext StateMachine { get; }
     }
 }

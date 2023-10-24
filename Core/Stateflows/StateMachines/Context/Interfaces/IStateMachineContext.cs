@@ -1,4 +1,5 @@
 ﻿using Stateflows.Common;
+using Stateflows.Common.Interfaces;
 
 namespace Stateflows.StateMachines.Context.Interfaces
 {
@@ -6,9 +7,9 @@ namespace Stateflows.StateMachines.Context.Interfaces
     {
         StateMachineId Id { get; }
 
-        IContextValues GlobalValues { get; }
+        IContextValues Values { get; }
 
         void Send<TEvent>(TEvent @event)
-            where TEvent : Event, new();
+            where TEvent : Event;
     }
 }

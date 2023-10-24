@@ -25,5 +25,9 @@ namespace Stateflows.Common.Extensions
         public static IServiceCollection AddServiceType<TType>(this IServiceCollection services)
             where TType : class
             => services.AddServiceType(typeof(TType));
+
+        public static IServiceCollection RegisterClientInterceptor<TClientInterceptor>(this IServiceCollection services)
+            where TClientInterceptor : class, IBehaviorClientInterceptor
+            => services?.AddServiceType<TClientInterceptor>();
     }
 }

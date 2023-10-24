@@ -1,17 +1,27 @@
 ﻿using System;
+using System.Collections.Generic;
+using Stateflows.Common.Extensions;
 
 namespace Stateflows.Common
 {
-    public class Event
+    public abstract class Event
     {
         public Guid Id { get; } = Guid.NewGuid();
 
-        public virtual string Name => GetType().Name;
+        public virtual string Name => GetType().FullName;
+
+        public List<EventHeader> Headers { get; } = new List<EventHeader>();
     }
 
-    public sealed class EventInfo<TEvent>
-        where TEvent : Event, new()
+    public static class EventInfo<TEvent>
+        where TEvent : Event
     {
-        public static string Name => new TEvent().Name;
+        public static string Name => EventInfo.GetName(typeof(TEvent));
+    }
+
+    public static class EventInfo
+    {
+        public static string GetName(Type @type)
+            => (@type.GetUninitializedInstance() as Event).Name;
     }
 }

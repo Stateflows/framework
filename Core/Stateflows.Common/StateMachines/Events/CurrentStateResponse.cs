@@ -1,16 +1,12 @@
 ﻿using Stateflows.Common;
+using System.Collections.Generic;
 
 namespace Stateflows.StateMachines.Events
 {
-    public class StateDescriptor
+    public sealed class CurrentStateResponse : BehaviorStatusResponse
     {
-        public string Name { get; set; }
+        public IEnumerable<string> StatesStack { get; set; }
 
-        public StateDescriptor InnerState { get; set; }
-    }
-
-    public sealed class CurrentStateResponse : Response
-    {
-        public StateDescriptor CurrentState { get; set; }
+        public IEnumerable<string> ExpectedEvents { get; set; }
     }
 }

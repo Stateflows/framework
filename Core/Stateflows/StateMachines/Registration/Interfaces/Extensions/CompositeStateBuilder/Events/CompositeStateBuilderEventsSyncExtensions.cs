@@ -14,6 +14,12 @@ namespace Stateflows.StateMachines
                 .ToAsync()
             );
 
+        public static ICompositeStateBuilder AddOnFinalize(this ICompositeStateBuilder builder, Action<IStateActionContext> stateAction)
+            => builder.AddOnFinalize(stateAction
+                .AddStateMachineInvocationContext((builder as CompositeStateBuilder).Vertex.Graph)
+                .ToAsync()
+            );
+
         public static ICompositeStateBuilder AddOnEntry(this ICompositeStateBuilder builder, Action<IStateActionContext> stateAction)
             => builder.AddOnEntry(stateAction
                 .AddStateMachineInvocationContext((builder as CompositeStateBuilder).Vertex.Graph)

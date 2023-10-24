@@ -13,13 +13,13 @@ using Stateflows.StateMachines.Context.Interfaces;
 
 namespace Stateflows.StateMachines.Engine
 {
-    internal class Executor : IDisposable
+    internal sealed class Executor : IDisposable
     {
         public Graph Graph { get; }
 
         public StateMachinesRegister Register { get; }
 
-        public IServiceProvider ServiceProvider { get; private set; }
+        public IServiceProvider ServiceProvider => Scope.ServiceProvider;
 
         private IServiceScope Scope { get; }
 
@@ -27,44 +27,29 @@ namespace Stateflows.StateMachines.Engine
         {
             Register = register;
             Scope = serviceProvider.CreateScope();
-            ServiceProvider = Scope.ServiceProvider;
             Graph = graph;
         }
 
         public RootContext Context { get; private set; }
 
-        private Inspector observer;
+        private Inspector inspector;
 
-        public Inspector Observer
-            => observer ?? (observer = new Inspector(this));
+        public Inspector Inspector
+            => inspector ??= new Inspector(this);
 
-        public async Task<IEnumerable<string>> GetDeferredEventsAsync()
+        public IEnumerable<string> GetDeferredEvents()
         {
-            var stack = await GetVerticesStackAsync(false);
+            var stack = GetVerticesStack();
             return stack.SelectMany(vertex => vertex.DeferredEvents);
         }
 
         private List<Vertex> verticesStack = null;
 
-        public async Task<List<Vertex>> GetVerticesStackAsync(bool forceRebuild)
+        public List<Vertex> GetVerticesStack(bool forceRebuild = false)
         {
             if (verticesStack == null || forceRebuild)
             {
                 Debug.Assert(Context != null, $"Context is not available. Is state machine '{Graph.Name}' hydrated?");
-
-                verticesStack = BuildVerticesStack();
-
-                if (verticesStack.Count == 0)
-                {
-                    await DoInitializeAsync(new InitializationRequest());
-                }
-                else
-                {
-                    if (verticesStack.Last().Vertices.Count > 0)
-                    {
-                        await DoInitializeCascadeAsync(verticesStack.Last().InitialVertex);
-                    }
-                }
 
                 verticesStack = BuildVerticesStack();
             }
@@ -75,18 +60,16 @@ namespace Stateflows.StateMachines.Engine
         private List<Vertex> BuildVerticesStack()
         {
             var result = new List<Vertex>();
-            var vertices = Graph.Vertices;
-            for (int i = 0; i < Context.StatesStack.Count(); i++)
+            for (int i = 0; i < Context.StatesStack.Count; i++)
             {
                 var vertexName = Context.StatesStack[i];
-                if (vertices.TryGetValue(vertexName, out var vertex))
+                if (Graph.AllVertices.TryGetValue(vertexName, out var vertex))
                 {
                     result.Add(vertex);
-                    vertices = vertex.Vertices;
                 }
                 else
                 {
-                    while (Context.StatesStack.Count() > i)
+                    while (Context.StatesStack.Count > i)
                     {
                         Context.StatesStack.RemoveAt(i);
                     }
@@ -98,29 +81,15 @@ namespace Stateflows.StateMachines.Engine
             return result;
         }
 
-        public async Task<StateDescriptor> GetCurrentStateAsync()
-        {
-            var currentStack = await GetVerticesStackAsync(false);
-            currentStack.Reverse();
-            StateDescriptor stateDescriptor = null;
-            foreach (var vertex in currentStack)
-            {
-                stateDescriptor = new StateDescriptor()
-                {
-                    Name = vertex.Name,
-                    InnerState = stateDescriptor
-                };
-            }
-
-            return stateDescriptor;
-        }
+        public IEnumerable<string> GetStateStack()
+            => GetVerticesStack().Select(vertex => vertex.Name).ToArray();
 
         public async Task<bool> HydrateAsync(RootContext context)
         {
             Context = context;
             Context.Executor = this;
 
-            await Observer.AfterHydrateAsync(new StateMachineActionContext(Context));
+            await Inspector.AfterHydrateAsync(new StateMachineActionContext(Context));
 
             return true;
         }
@@ -129,7 +98,7 @@ namespace Stateflows.StateMachines.Engine
         {
             Debug.Assert(Context != null, $"Context is unavailable. Is state machine '{Graph.Name}' already dehydrated?");
 
-            await Observer.BeforeDehydrateAsync(new StateMachineActionContext(Context));
+            await Inspector.BeforeDehydrateAsync(new StateMachineActionContext(Context));
 
             var result = Context;
             result.Executor = null;
@@ -138,28 +107,40 @@ namespace Stateflows.StateMachines.Engine
             return result;
         }
 
-        public bool Initialized
+        public bool Initialized => Context.StatesStack.Count > 0;
+
+        public bool Finalized
         {
             get
             {
-                Debug.Assert(Context != null, $"Context is unavailable. Is state machine '{Graph.Name}' hydrated?");
-
-                return Context.StatesStack.Count > 0;
+                var stack = GetVerticesStack();
+                return stack.Count == 1 && stack.First().Type == VertexType.FinalState;
             }
         }
 
-        public async Task<bool> InitializeAsync(InitializationRequest @event)
+        public BehaviorStatus BehaviorStatus =>
+            (Initialized, Finalized) switch
+            {
+                (false, false) => BehaviorStatus.NotInitialized,
+                (true, false) => BehaviorStatus.Initialized,
+                (true, true) => BehaviorStatus.Finalized,
+                _ => BehaviorStatus.NotInitialized
+            };
+
+    public async Task<bool> InitializeAsync(InitializationRequest @event)
         {
             Debug.Assert(Context != null, $"Context is unavailable. Is state machine '{Graph.Name}' hydrated?");
 
-            if (!Initialized)
+            if (!Initialized && await DoInitializeStateMachineAsync(@event))
             {
-                await DoInitializeAsync(@event);
-
                 await DoInitializeCascadeAsync(Graph.InitialVertex);
+
+                await DoCompletion();
 
                 return true;
             }
+
+            Debug.WriteLine($"{Context.Id.Instance} initialized already");
 
             return false;
         }
@@ -170,7 +151,7 @@ namespace Stateflows.StateMachines.Engine
 
             if (Initialized)
             {
-                var currentStack = await GetVerticesStackAsync(false);
+                var currentStack = GetVerticesStack();
 
                 foreach (var vertex in currentStack)
                 {
@@ -187,19 +168,19 @@ namespace Stateflows.StateMachines.Engine
             {
                 if (vertex.Parent != null)
                 {
-                    await DoInitializeAsync(vertex.Parent);
+                    await DoInitializeStateAsync(vertex.Parent);
                 }
 
                 await DoEntryAsync(vertex);
-                Context.StatesStack.Add(vertex.Name);
+                Context.StatesStack.Add(vertex.Identifier);
 
                 vertex = vertex.InitialVertex;
             }
         }
 
-        public async Task<IEnumerable<Type>> GetExpectedEventsAsync()
+        public IEnumerable<Type> GetExpectedEvents()
         {
-            var currentStack = await GetVerticesStackAsync(false);
+            var currentStack = GetVerticesStack();
             currentStack.Reverse();
 
             return currentStack.SelectMany(vertex => vertex.Edges).Select(edge => edge.TriggerType).Distinct();
@@ -216,24 +197,23 @@ namespace Stateflows.StateMachines.Engine
             return result;
         }
 
-        public async Task<bool> ProcessAsync<TEvent>(TEvent @event)
-            where TEvent : Event, new()
+        public async Task<EventStatus> ProcessAsync<TEvent>(TEvent @event)
+            where TEvent : Event
         {
-            var result = false;
+            var result = EventStatus.Rejected;
 
             if (Initialized)
             {
                 result = await DoProcessAsync(@event);
             }
 
-            ServiceProvider = null;
-
             return result;
         }
 
-        private async Task<bool> TryDeferEventAsync<TEvent>(TEvent @event) where TEvent : Event, new()
+        private bool TryDeferEvent<TEvent>(TEvent @event)
+            where TEvent : Event
         {
-            var deferredEvents = await GetDeferredEventsAsync();
+            var deferredEvents = GetDeferredEvents();
             if (deferredEvents.Any() && deferredEvents.Contains(@event.Name))
             {
                 Context.DeferredEvents.Add(@event);
@@ -244,131 +224,168 @@ namespace Stateflows.StateMachines.Engine
 
         private async Task DispatchNextDeferredEvent()
         {
-            var deferredEvents = await GetDeferredEventsAsync();
+            var deferredEvents = GetDeferredEvents();
             foreach (var @event in Context.DeferredEvents)
             {
                 if (!deferredEvents.Any() || !deferredEvents.Contains(@event.Name))
                 {
                     Context.DeferredEvents.Remove(@event);
+                    Context.SetEvent(@event);
                     await DoProcessAsync(@event);
+                    Context.ClearEvent();
+
                     break;
                 }
             }
         }
 
-        private async Task<bool> DoProcessAsync<TEvent>(TEvent @event)
-            where TEvent : Event, new()
+        private async Task<EventStatus> DoProcessAsync<TEvent>(TEvent @event)
+            where TEvent : Event
         {
             Debug.Assert(Context != null, $"Context is not available. Is state machine '{Graph.Name}' hydrated?");
 
-            var currentStack = await GetVerticesStackAsync(true);
+            var currentStack = GetVerticesStack(true);
             currentStack.Reverse();
 
-            if (!await TryDeferEventAsync(@event))
+            var deferred = true;
+
+            if (!TryDeferEvent(@event))
             {
+                deferred = false;
+
                 foreach (var vertex in currentStack)
                 {
                     foreach (var edge in vertex.Edges)
                     {
-                        if (edge.Trigger == @event.Name)
-                        {
-                            if (await DoGuardAsync(edge, @event))
-                            {
-                                await DoConsumeAsync<TEvent>(vertex, edge);
+                        Context.SourceState = edge.SourceName;
+                        Context.TargetState = edge.TargetName;
 
-                                return true;
-                            }
+                        if (edge.Trigger == @event.Name && await DoGuardAsync<TEvent>(edge))
+                        {
+                            await DoConsumeAsync<TEvent>(edge);
+
+                            await DoCompletion();
+
+                            return EventStatus.Consumed;
                         }
                     }
                 }
             }
 
-            await DispatchNextDeferredEvent();
+            if (!deferred)
+            {
+                await DispatchNextDeferredEvent();
+            }
 
-            return false;
+            return deferred
+                ? EventStatus.Deferred
+                : EventStatus.NotConsumed;
         }
 
-        private async Task<bool> DoGuardAsync<TEvent>(Edge edge, TEvent @event)
-            where TEvent : Event, new()
+        private async Task<bool> DoGuardAsync<TEvent>(Edge edge)
+            where TEvent : Event
         {
-            Context.Context.Values[Constants.SourceState] = edge.SourceName;
-            Context.Context.Values[Constants.TargetState] = edge.TargetName;
-            Context.Context.Values[Constants.Event] = @event;
-
             var context = new GuardContext<TEvent>(Context, edge);
-            await Observer.BeforeTransitionGuardAsync(context);
+
+            await Inspector.BeforeTransitionGuardAsync(context);
 
             var result = await edge.Guards.WhenAll(Context);
 
-            await Observer.AfterGuardAsync(context, result);
+            await Inspector.AfterGuardAsync(context, result);
 
             return result;
         }
 
         private async Task DoEffectAsync<TEvent>(Edge edge)
-            where TEvent : Event, new()
+            where TEvent : Event
         {
             var context = new TransitionContext<TEvent>(Context, edge);
-            await Observer.BeforeEffectAsync(context);
+
+            await Inspector.BeforeEffectAsync(context);
 
             await edge.Effects.WhenAll(Context);
 
-            await Observer.AfterEffectAsync(context);
+            await Inspector.AfterEffectAsync(context);
         }
 
-        public async Task DoInitializeAsync(InitializationRequest @event)
+        public async Task<bool> DoInitializeStateMachineAsync(InitializationRequest @event)
         {
-            var context = new StateMachineActionContext(Context);
-            await Observer.BeforeStateMachineInitializeAsync(context);
-
-            if (@event.Values != null)
+            if (
+                Graph.Initializers.TryGetValue(@event.Name, out var initializer) ||
+                (
+                    @event.Name == EventInfo<InitializationRequest>.Name &&
+                    !Graph.Initializers.Any()
+                )
+            )
             {
-                foreach (var key in @event.Values.Keys)
+                var context = new StateMachineInitializationContext(@event, Context);
+                await Inspector.BeforeStateMachineInitializeAsync(context);
+
+                if (initializer != null)
                 {
-                    context.StateMachine.GlobalValues.Set(key, @event.Values[key]);
+                    await initializer.WhenAll(Context);
                 }
+
+                await Inspector.AfterStateMachineInitializeAsync(context);
+
+                return true;
             }
 
-            await Graph.Initialize.WhenAll(Context);
-
-            await Observer.AfterStateMachineInitializeAsync(context);
+            return false;
         }
 
-        public async Task DoInitializeAsync(Vertex vertex)
+        public async Task DoFinalizeStateMachineAsync()
         {
-            Context.Context.Values[Constants.State] = vertex.Name;
-            var context = new StateActionContext(Context, vertex, Constants.Entry);
-            await Observer.BeforeStateInitializeAsync(context);
+            var context = new StateMachineActionContext(Context);
+            await Inspector.BeforeStateMachineFinalizeAsync(context);
+
+            await Graph.Finalize.WhenAll(Context);
+
+            await Inspector.AfterStateMachineFinalizeAsync(context);
+        }
+
+        public async Task DoInitializeStateAsync(Vertex vertex)
+        {
+            var context = new StateActionContext(Context, vertex, Constants.Initialize);
+            await Inspector.BeforeStateInitializeAsync(context);
 
             await vertex.Initialize.WhenAll(Context);
 
-            await Observer.AfterStateInitializeAsync(context);
+            await Inspector.AfterStateInitializeAsync(context);
+        }
+
+        public async Task DoFinalizeStateAsync(Vertex vertex)
+        {
+            var context = new StateActionContext(Context, vertex, Constants.Finalize);
+            await Inspector.BeforeStateFinalizeAsync(context);
+
+            await vertex.Finalize.WhenAll(Context);
+
+            await Inspector.AfterStateFinalizeAsync(context);
         }
 
         public async Task DoEntryAsync(Vertex vertex)
         {
-            Context.Context.Values[Constants.State] = vertex.Name;
             var context = new StateActionContext(Context, vertex, Constants.Entry);
-            await Observer.BeforeStateEntryAsync(context);
+            await Inspector.BeforeStateEntryAsync(context);
 
             await vertex.Entry.WhenAll(Context);
 
-            await Observer.AfterStateEntryAsync(context);
+            await Inspector.AfterStateEntryAsync(context);
         }
 
         private async Task DoExitAsync(Vertex vertex)
         {
-            Context.Context.Values[Constants.State] = vertex.Name;
             var context = new StateActionContext(Context, vertex, Constants.Exit);
-            await Observer.BeforeStateExitAsync(context);
+            await Inspector.BeforeStateExitAsync(context);
 
             await vertex.Exit.WhenAll(Context);
 
-            await Observer.AfterStateExitAsync(context);
+            await Inspector.AfterStateExitAsync(context);
         }
 
-        private async Task DoConsumeAsync<TEvent>(Vertex vertex, Edge edge)
-            where TEvent : Event, new()
+        private async Task DoConsumeAsync<TEvent>(Edge edge)
+            where TEvent : Event
         {
             var nextVertex = edge.Target;
             if (nextVertex != null)
@@ -376,7 +393,7 @@ namespace Stateflows.StateMachines.Engine
                 Context.StatesStack.Reverse();
                 foreach (var state in Context.StatesStack)
                 {
-                    if (Graph.AllVertices.TryGetValue(state, out vertex))
+                    if (Graph.AllVertices.TryGetValue(state, out var vertex))
                     {
                         if (vertex == nextVertex.Parent)
                         {
@@ -400,24 +417,48 @@ namespace Stateflows.StateMachines.Engine
                 {
                     if (nextVertex.Parent != null && nextVertex.Parent.InitialVertex == nextVertex)
                     {
-                        await DoInitializeAsync(nextVertex.Parent);
+                        await DoInitializeStateAsync(nextVertex.Parent);
                     }
-                    await DoEntryAsync(nextVertex);
 
-                    previousNextVertex = nextVertex;
-                    nextVertex = nextVertex.InitialVertex;
+                    if (nextVertex.Type == VertexType.FinalState)
+                    {
+                        if (nextVertex.Parent is null)
+                        {
+                            await DoFinalizeStateMachineAsync();
+                        }
+                        else
+                        {
+                            await DoFinalizeStateAsync(nextVertex.Parent);
+                        }
+
+                        nextVertex = null;
+                    }
+                    else
+                    {
+                        await DoEntryAsync(nextVertex);
+
+                        previousNextVertex = nextVertex;
+                        nextVertex = nextVertex.InitialVertex;
+                    }
                 }
 
                 nextVertex = previousNextVertex;
                 while (nextVertex != null)
                 {
-                    Context.StatesStack.Add(nextVertex.Name);
+                    Context.StatesStack.Add(nextVertex.Identifier);
                     nextVertex = nextVertex.Parent;
                 }
                 Context.StatesStack.Reverse();
             }
+        }
 
-            await DoProcessAsync(new Completion());
+        private async Task DoCompletion()
+        {
+            Context.SetEvent(new Completion());
+
+            await DoProcessAsync(Context.Event);
+
+            Context.ClearEvent();
         }
 
         public void Dispose()
@@ -425,52 +466,57 @@ namespace Stateflows.StateMachines.Engine
             Scope.Dispose();
         }
 
-        private IDictionary<Type, StateMachine> StateMachines = new Dictionary<Type, StateMachine>();
+        private readonly IDictionary<Type, StateMachine> StateMachines = new Dictionary<Type, StateMachine>();
 
         public StateMachine GetStateMachine(Type stateMachineType, RootContext context)
         {
-            if (!StateMachines.TryGetValue(stateMachineType, out var stateMachine))
+            lock (StateMachines)
             {
-                stateMachine = ServiceProvider.GetService(stateMachineType) as StateMachine;
-                stateMachine.Context = new StateMachineActionContext(context);
+                if (!StateMachines.TryGetValue(stateMachineType, out var stateMachine))
+                {
+                    stateMachine = ServiceProvider.GetService(stateMachineType) as StateMachine;
+                    stateMachine.Context = new StateMachineActionContext(context);
 
-                StateMachines.Add(stateMachineType, stateMachine);
+                    StateMachines.Add(stateMachineType, stateMachine);
+                }
+
+                return stateMachine;
             }
-
-            return stateMachine;
         }
 
-        public TStateMachine GetStateMachine<TStateMachine>(RootContext context)
-            where TStateMachine : StateMachine
-        {
-            if (!StateMachines.TryGetValue(typeof(TStateMachine), out var stateMachine))
-            {
-                stateMachine = ServiceProvider.GetService<TStateMachine>();
-                stateMachine.Context = new StateMachineActionContext(context);
+        //public TStateMachine GetStateMachine<TStateMachine>(RootContext context)
+        //    where TStateMachine : StateMachine
+        //{
+        //    if (!StateMachines.TryGetValue(typeof(TStateMachine), out var stateMachine))
+        //    {
+        //        stateMachine = ServiceProvider.GetService<TStateMachine>();
 
-                StateMachines.Add(typeof(TStateMachine), stateMachine);
-            }
+        //        stateMachine.Context = new StateMachineActionContext(context);
 
-            return stateMachine as TStateMachine;
-        }
+        //        StateMachines.Add(typeof(TStateMachine), stateMachine);
+        //    }
 
-        private IDictionary<Type, State> States = new Dictionary<Type, State>();
+        //    return stateMachine as TStateMachine;
+        //}
+
+        private readonly IDictionary<Type, BaseState> States = new Dictionary<Type, BaseState>();
 
         public TState GetState<TState>(IStateActionContext context)
-            where TState : State
+            where TState : BaseState
         {
             if (!States.TryGetValue(typeof(TState), out var state))
             {
                 state = ServiceProvider.GetService<TState>();
-                state.Context = context;
 
                 States.Add(typeof(TState), state);
             }
 
+            state.Context = context;
+
             return state as TState;
         }
 
-        private IDictionary<Type, object> Transitions = new Dictionary<Type, object>();
+        private readonly IDictionary<Type, object> Transitions = new Dictionary<Type, object>();
 
         public TTransition GetTransition<TTransition, TEvent>(ITransitionContext<TEvent> context)
             where TTransition : Transition<TEvent>
@@ -479,6 +525,7 @@ namespace Stateflows.StateMachines.Engine
             if (!Transitions.TryGetValue(typeof(TTransition), out var transitionObj))
             {
                 var transition = ServiceProvider.GetService<TTransition>();
+
                 transition.Context = context;
 
                 Transitions.Add(typeof(TTransition), transition);
@@ -487,6 +534,8 @@ namespace Stateflows.StateMachines.Engine
             }
             else
             {
+                (transitionObj as TTransition).Context = context;
+
                 return transitionObj as TTransition;
             }
         }

@@ -12,7 +12,7 @@ namespace Stateflows
             if (baseUriProvider == null)
                 throw new ArgumentNullException(nameof(baseUriProvider));
 
-            builder.Services
+            builder.ServiceCollection
                 .AddSingleton<IBehaviorProvider>(provider => new BehaviorProvider(baseUriProvider(provider)))
                 ;
 

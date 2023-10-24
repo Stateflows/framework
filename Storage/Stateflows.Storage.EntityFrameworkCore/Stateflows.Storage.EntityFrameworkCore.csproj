@@ -4,7 +4,33 @@
     <TargetFramework>net6.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
+    <Title>Entity Framework Core storage for Stateflows framework</Title>
+    <Version>0.1.0-alpha</Version>
+    <Authors>Stateflows</Authors>
+    <PackageProjectUrl>https://www.stateflows.net</PackageProjectUrl>
+    <PackageIcon>stateflows-logo-1024.png</PackageIcon>
+    <RepositoryType>git</RepositoryType>
+    <RepositoryUrl>https://github.com/Stateflows/framework</RepositoryUrl>
+    <PackageTags>Stateflows;state-machine;workflow;EF;EFCore;EntityFrameworkCore;entity-framework-core</PackageTags>
+    <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <PackageLicenseFile>LICENSE</PackageLicenseFile>
   </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="..\..\LICENSE">
+      <Pack>True</Pack>
+      <PackagePath>\</PackagePath>
+    </None>
+    <None Include="..\..\README.md">
+      <Pack>True</Pack>
+      <PackagePath>\</PackagePath>
+    </None>
+    <None Include="C:\Users\milexmik\Downloads\stateflows-logo-1024.png">
+      <Pack>True</Pack>
+      <PackagePath>\</PackagePath>
+    </None>
+  </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="Microsoft.EntityFrameworkCore" Version="7.0.1" />
@@ -13,7 +39,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\Core\Stateflows.Common\Stateflows.Common.csproj" />
+    <ProjectReference Include="..\..\Core\Stateflows\Stateflows.csproj" />
   </ItemGroup>
 
 </Project>

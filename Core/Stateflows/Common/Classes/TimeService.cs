@@ -19,20 +19,20 @@ namespace Stateflows.Common.Classes
 
         public Dictionary<string, TimeToken> TokensByIds { get; set; } = new Dictionary<string, TimeToken>();
 
-        public System.Timers.Timer Timer { get; private set; } = new System.Timers.Timer(1000 * 10) { AutoReset = true, Enabled = false };
+        public System.Timers.Timer Timer { get; } = new System.Timers.Timer(1000 * 10) { AutoReset = true, Enabled = false };
 
         private IStateflowsStorage Storage { get; }
 
-        private IServiceProvider Provider { get; }
+        private IServiceProvider ServiceProvider { get; }
 
         private IBehaviorLocator locator = null;
 
-        private IBehaviorLocator Locator => locator ?? (locator = Provider.GetService<IBehaviorLocator>());
+        private IBehaviorLocator Locator => locator ??= ServiceProvider.GetService<IBehaviorLocator>();
 
-        public TimeService(IStateflowsStorage storage, IBehaviorClassesProvider behaviorClassesProvider, IServiceProvider provider)
+        public TimeService(/*IStateflowsStorage storage, */IBehaviorClassesProvider behaviorClassesProvider, IServiceProvider serviceProvider)
         {
-            Storage = storage;
-            Provider = provider;
+            ServiceProvider = serviceProvider.CreateScope().ServiceProvider;
+            Storage = ServiceProvider.GetRequiredService<IStateflowsStorage>();
 
             Task.Run(async () =>
             {
@@ -52,7 +52,7 @@ namespace Stateflows.Common.Classes
 
         public async Task Clear(BehaviorId behaviorId, IEnumerable<string> ids)
         {
-            if (ids.Count() == 0)
+            if (!ids.Any())
             {
                 return;
             }
@@ -92,7 +92,7 @@ namespace Stateflows.Common.Classes
         private async void Tick(object sender, System.Timers.ElapsedEventArgs e)
         {
             var passedTokens = Tokens.Where(t => t.Event.ShouldTrigger(t.CreatedAt)).ToArray();
-            if (passedTokens.Count() == 0)
+            if (!passedTokens.Any())
             {
                 return;
             }

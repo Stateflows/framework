@@ -6,7 +6,11 @@ namespace Stateflows.Common.Utilities
 {
     public static class StateflowsJsonConverter
     {
-        private static JsonSerializerSettings settings = new JsonSerializerSettings() { TypeNameHandling = TypeNameHandling.All };
+        private static JsonSerializerSettings settings = new JsonSerializerSettings()
+        {
+            TypeNameHandling = TypeNameHandling.All,
+            ReferenceLoopHandling = ReferenceLoopHandling.Ignore
+        };
 
         /// <summary>
         /// Serializes the specified object to a JSON string.

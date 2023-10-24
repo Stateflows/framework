@@ -18,6 +18,7 @@ namespace StateMachine.IntegrationTests.Tests
             builder
                 .AddStateMachine("scale", b => b
                     .AddInitialState("state1")
+                    .AddFinalState()
                 )
                 ;
         }
@@ -27,17 +28,15 @@ namespace StateMachine.IntegrationTests.Tests
         {
             var sequence = Enumerable
                 .Range(0, 10000)
-                .Select(i => Locator.TryLocateStateMachine(new StateMachineId("scale", i.ToString()), out var sm)
-                    ? sm
+                .Select(i => Locator.TryLocateStateMachine(new StateMachineId("scale", i.ToString()), out var stateMachine)
+                    ? stateMachine
                     : null
                 )
-                .Where(sm => sm is not null)
-                .Select(sm => sm.InitializeAsync())
+                .Where(stateMachine => stateMachine is not null)
+                .Select(stateMachine => stateMachine.InitializeAsync())
                 .ToArray();
 
-            var results = await Task.WhenAll(sequence);
-
-            var badResults = results.Count(i => !i);
+            var badResults = (await Task.WhenAll(sequence)).Count(r => !r.Response.InitializationSuccessful);
 
             Assert.AreEqual(0, badResults);
         }

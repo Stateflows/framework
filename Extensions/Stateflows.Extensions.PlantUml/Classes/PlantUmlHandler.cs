@@ -1,32 +1,41 @@
-﻿using System.Threading.Tasks;
+﻿using System;
+using System.Threading.Tasks;
 using Stateflows.Common;
+using Stateflows.Activities;
 using Stateflows.StateMachines;
 using Stateflows.Extensions.PlantUml.Events;
-using Stateflows.StateMachines.Inspection.Interfaces;
 
 namespace Stateflows.Extensions.PlantUml.Classes
 {
-    internal class PlantUmlHandler : IStateMachineEventHandler
+    internal class PlantUmlHandler : IStateMachineEventHandler//, IActivityEventHandler
     {
-        public string EventName => EventInfo<PlantUmlRequest>.Name;
+        public Type EventType => typeof(PlantUmlRequest);
 
-        public Task<bool> TryHandleEventAsync<TEvent>(IEventInspectionContext<TEvent> context)
-            where TEvent : Event, new()
+        public Task<EventStatus> TryHandleEventAsync<TEvent>(Stateflows.StateMachines.Inspection.Interfaces.IEventInspectionContext<TEvent> context)
+            where TEvent : Event
+            => Task.FromResult(HandleEvent(context.Event, () => context.StateMachine.Inspection.GetPlantUml()));
+
+        //public Task<EventStatus> TryHandleEventAsync<TEvent>(Stateflows.Activities.Inspection.Interfaces.IEventInspectionContext<TEvent> context)
+        //    where TEvent : Event
+        //    => Task.FromResult(HandleEvent(context.Event, () => context.Activity.Inspection.GetPlantUml()));
+
+        private EventStatus HandleEvent<TEvent>(TEvent @event, Func<string> plantUmlGenerator)
+            where TEvent : Event
         {
-            if (context.Event is PlantUmlRequest)
+            if (@event is PlantUmlRequest)
             {
-                var plantUml = context.StateMachine.Inspection.GetPlantUml();
-                (context.Event as PlantUmlRequest).Respond(new PlantUmlResponse()
-                    {
-                        PlantUml = plantUml,
-                        PlantUmlUrl = "http://www.plantuml.com/plantuml/png/" + PlantUmlTextEncoder.Encode(plantUml)
-                    }
+                var plantUml = plantUmlGenerator();
+                (@event as PlantUmlRequest).Respond(new PlantUmlResponse()
+                {
+                    PlantUml = plantUml,
+                    PlantUmlUrl = "http://www.plantuml.com/plantuml/png/" + PlantUmlTextEncoder.Encode(plantUml)
+                }
                 );
 
-                return Task.FromResult(true);
+                return EventStatus.Consumed;
             }
 
-            return Task.FromResult(false);
+            return EventStatus.NotConsumed;
         }
     }
 }

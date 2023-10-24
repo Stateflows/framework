@@ -16,21 +16,23 @@ namespace Stateflows.StateMachines.Inspection.Classes
         {
             Executor = executor;
             Vertex = vertex;
-            Executor.Observer.InspectionStates.Add(Vertex, this);
+            Executor.Inspector.InspectionStates.Add(Vertex, this);
         }
 
         public string Name => Vertex.Name;
 
-        public bool Active => Executor.GetVerticesStackAsync(false).GetAwaiter().GetResult().Contains(Vertex);
+        public bool Active => Executor.GetVerticesStack(false).Contains(Vertex);
 
         public bool IsInitial => Vertex.Parent != null
             ? Vertex.Parent.InitialVertex == Vertex
             : Vertex.Graph.InitialVertex == Vertex;
 
+        public bool IsFinal => Vertex.Type == VertexType.FinalState;
+
         private IEnumerable<ITransitionInspection> transitions;
 
         public IEnumerable<ITransitionInspection> Transitions
-            => transitions ?? (transitions = Vertex.Edges.Select(e => new TransitionInspection(Executor, e)).ToArray());
+            => transitions ??= Vertex.Edges.Select(e => new TransitionInspection(Executor, e));
 
         private List<IActionInspection> actions;
 
@@ -60,6 +62,6 @@ namespace Stateflows.StateMachines.Inspection.Classes
         public IEnumerable<IStateInspection> states;
 
         public IEnumerable<IStateInspection> States
-            => states ?? (states = Vertex.Vertices.Values.Select(subVertex => new StateInspection(Executor, subVertex)).ToArray());
+            => states ??= Vertex.Vertices.Values.Select(subVertex => new StateInspection(Executor, subVertex));
     }
 }

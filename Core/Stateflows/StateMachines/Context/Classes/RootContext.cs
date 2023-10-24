@@ -1,4 +1,5 @@
-﻿using System.Threading.Tasks;
+﻿using System.Linq;
+using System.Threading.Tasks;
 using System.Collections.Generic;
 using Microsoft.Extensions.DependencyInjection;
 using Stateflows.Common;
@@ -23,27 +24,7 @@ namespace Stateflows.StateMachines.Context.Classes
             Id = new StateMachineId(Context.Id);
         }
 
-        private Dictionary<string, string> globalValues = null;
-        public Dictionary<string, string> GlobalValues
-        {
-            get
-            {
-                if (globalValues == null)
-                {
-                    if (!Context.Values.TryGetValue(Constants.GlobalValues, out var globalValuesObj))
-                    {
-                        globalValues = new Dictionary<string, string>();
-                        Context.Values[Constants.GlobalValues] = globalValues;
-                    }
-                    else
-                    {
-                        globalValues = globalValuesObj as Dictionary<string, string>;
-                    }
-                }
-
-                return globalValues;
-            }
-        }
+        public Dictionary<string, string> GlobalValues => Context.GlobalValues;
 
         private List<Event> deferredEvents = null;
         public List<Event> DeferredEvents
@@ -122,23 +103,32 @@ namespace Stateflows.StateMachines.Context.Classes
             }
         }
 
-        public bool ForceConsumed
+        public string State { get; set; } = string.Empty;
+
+        private readonly Stack<Event> EventsStack = new Stack<Event>();
+
+        public void SetEvent(Event @event)
         {
-            get => Context.Values.TryGetValue(Constants.ForceConsumed, out var consumed) && (bool)consumed;
-            set => Context.Values[Constants.ForceConsumed] = value;
+            EventsStack.Push(@event);
         }
 
-        internal void ClearTemporaryInternalValues()
+        public void ClearEvent()
         {
-            Context.Values.Remove(Constants.State);
-            Context.Values.Remove(Constants.Event);
-            Context.Values.Remove(Constants.SourceState);
-            Context.Values.Remove(Constants.TargetState);
-            Context.Values.Remove(Constants.ForceConsumed);
+            EventsStack.Pop();
         }
+
+        public Event Event => EventsStack.Any()
+            ? EventsStack.Peek()
+            : null;
+
+        public string SourceState { get; set; } = string.Empty;
+
+        public string TargetState { get; set; } = string.Empty;
+
+        public bool ForceConsumed { get; set; } = false;
 
         public async Task Send<TEvent>(TEvent @event)
-            where TEvent : Event, new()
+            where TEvent : Event
         {
             var locator = Executor.ServiceProvider.GetService<IBehaviorLocator>();
             if (locator != null && locator.TryLocateBehavior(Id.BehaviorId, out var behavior))

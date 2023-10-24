@@ -36,11 +36,11 @@ namespace Stateflows.Testing.StateMachines.Sequence
             }
         }
 
-        public IExecutionSequenceBuilder DefaultTransitionEffect(string sourceStateName, string targetStateName)
-            => TransitionEffect(EventInfo<Completion>.Name, sourceStateName, targetStateName);
+        public IExecutionSequenceBuilder DefaultTransitionEffect(string sourceStateName, string targetVertexName)
+            => TransitionEffect(EventInfo<Completion>.Name, sourceStateName, targetVertexName);
 
-        public IExecutionSequenceBuilder DefaultTransitionGuard(string sourceStateName, string targetStateName)
-            => TransitionGuard(EventInfo<Completion>.Name, sourceStateName, targetStateName);
+        public IExecutionSequenceBuilder DefaultTransitionGuard(string sourceStateName, string targetVertexName)
+            => TransitionGuard(EventInfo<Completion>.Name, sourceStateName, targetVertexName);
 
         public IExecutionSequenceBuilder InternalTransitionEffect(string eventName, string sourceStateName)
             => TransitionEffect(eventName, sourceStateName, "");
@@ -62,25 +62,37 @@ namespace Stateflows.Testing.StateMachines.Sequence
 
         public IExecutionSequenceBuilder StateInitialize(string stateName)
         {
-            Sequence.Add($"{stateName} ( o--initialize-->");
+            Sequence.Add($"{stateName}::initialize");
+            return this;
+        }
+
+        public IExecutionSequenceBuilder StateFinalize(string stateName)
+        {
+            Sequence.Add($"{stateName}::finalize");
             return this;
         }
 
         public IExecutionSequenceBuilder StateMachineInitialize()
         {
-            Sequence.Add($"--initialize-->");
+            Sequence.Add($"StateMachine::initialize");
             return this;
         }
 
-        public IExecutionSequenceBuilder TransitionEffect(string eventName, string sourceStateName, string targetStateName)
+        public IExecutionSequenceBuilder StateMachineFinalize()
         {
-            Sequence.Add($"{sourceStateName}--{eventName}/effect-->{targetStateName}");
+            Sequence.Add($"StateMachine::finalize");
             return this;
         }
 
-        public IExecutionSequenceBuilder TransitionGuard(string eventName, string sourceStateName, string targetStateName)
+        public IExecutionSequenceBuilder TransitionEffect(string eventName, string sourceStateName, string targetVertexName)
         {
-            Sequence.Add($"{sourceStateName}--{eventName}/[guard]-->{targetStateName}");
+            Sequence.Add($"{sourceStateName}--{eventName}/effect-->{targetVertexName}");
+            return this;
+        }
+
+        public IExecutionSequenceBuilder TransitionGuard(string eventName, string sourceStateName, string targetVertexName)
+        {
+            Sequence.Add($"{sourceStateName}--{eventName}/[guard]-->{targetVertexName}");
             return this;
         }
     }

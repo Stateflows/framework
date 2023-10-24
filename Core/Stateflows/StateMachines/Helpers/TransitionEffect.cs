@@ -12,7 +12,7 @@ namespace Stateflows.StateMachines
             => Task.CompletedTask;
 
         public static Func<ITransitionContext<TEvent>, Task> ToAsync<TEvent>(this Action<ITransitionContext<TEvent>> transitionEffect)
-            where TEvent : Event, new()
+            where TEvent : Event
             => c => Task.Run(() => transitionEffect(c));
     }
 }

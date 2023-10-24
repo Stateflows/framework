@@ -1,14 +1,15 @@
-﻿using Stateflows.Common;
-using Stateflows.StateMachines.Inspection.Interfaces;
+﻿using System;
 using System.Threading.Tasks;
+using Stateflows.Common;
+using Stateflows.StateMachines.Inspection.Interfaces;
 
 namespace Stateflows.StateMachines
 {
     public interface IStateMachineEventHandler
     {
-        string EventName { get; }
+        Type EventType { get; }
 
-        Task<bool> TryHandleEventAsync<TEvent>(IEventInspectionContext<TEvent> context)
-            where TEvent : Event, new();
+        Task<EventStatus> TryHandleEventAsync<TEvent>(IEventInspectionContext<TEvent> context)
+            where TEvent : Event;
     }
 }
