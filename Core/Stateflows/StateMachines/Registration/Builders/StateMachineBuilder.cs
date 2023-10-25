@@ -71,7 +71,7 @@ namespace Stateflows.StateMachines.Registration.Builders
         }
 
         public IStateMachineBuilder AddOnInitialize<TInitializationRequest>(Func<IStateMachineInitializationContext<TInitializationRequest>, Task> actionAsync)
-            where TInitializationRequest : InitializationRequest
+            where TInitializationRequest : InitializationRequest, new()
         {
             actionAsync.ThrowIfNull(nameof(actionAsync));
             

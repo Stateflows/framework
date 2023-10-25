@@ -4,17 +4,22 @@ using Stateflows.Common.Extensions;
 
 namespace Stateflows.Common
 {
-    public abstract class Event
+    public class Event
     {
-        public Guid Id { get; } = Guid.NewGuid();
+        public Event()
+        {
+            Id = Guid.NewGuid();
+        }
+
+        public Guid Id { get; set; }
 
         public virtual string Name => GetType().FullName;
 
-        public List<EventHeader> Headers { get; } = new List<EventHeader>();
+        public List<EventHeader> Headers { get; set; } = new List<EventHeader>();
     }
 
     public static class EventInfo<TEvent>
-        where TEvent : Event
+        where TEvent : Event, new()
     {
         public static string Name => EventInfo.GetName(typeof(TEvent));
     }

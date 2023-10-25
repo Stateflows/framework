@@ -19,7 +19,7 @@ namespace Stateflows.StateMachines.Context.Classes
         public IContextValues Values { get; }
 
         public void Send<TEvent>(TEvent @event)
-            where TEvent : Event
+            where TEvent : Event, new()
             => _ = Context.Send(@event);
     }
 }

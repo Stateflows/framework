@@ -1,4 +1,6 @@
-﻿namespace Stateflows.Common.Extensions
+﻿using System;
+
+namespace Stateflows.Common.Extensions
 {
     public static class EventExtensions
     {
@@ -22,31 +24,22 @@
         public static bool IsRequest(this Event @event)
             => @event.GetType().IsSubclassOfRawGeneric(typeof(Request<>));
 
-        public static bool IsInitializationRequest(this Event @event)
-        {
-            var type = @event.GetType().BaseType;
-            while (type != null)
-            {
-                if (type.IsSubclassOf(typeof(InitializationRequest)))
-                {
-                    return true;
-                }
+        public static Type GetResponseType(this Event @event)
+            => @event.GetType().GetGenericParameterOf(typeof(Request<>));
 
-                type = type.BaseType;
-            }
-
-            return false;
-        }
-
-        public static Response GetResponse(this Event @event)
+        public static TResponse GetResponse<TResponse>(this Event @event)
+            where TResponse : Response, new()
         {
             if (!@event.IsRequest())
             {
                 return null;
             }
 
-            return @event.GetType().GetProperty("Response").GetValue(@event) as Response;
+            return @event.GetType().GetProperty("Response").GetValue(@event) as TResponse;
         }
+
+        public static Response GetResponse(this Event @event)
+            => @event.GetResponse<Response>();
 
         public static void Respond(this Event @event, Response response)
         {

@@ -9,6 +9,6 @@ namespace Stateflows.Common.Interfaces
         string BehaviorType { get; }
 
         Task<EventStatus> ProcessEventAsync<TEvent>(BehaviorId id, TEvent @event, IServiceProvider serviceProvider)
-            where TEvent : Event;
+            where TEvent : Event, new();
     }
 }

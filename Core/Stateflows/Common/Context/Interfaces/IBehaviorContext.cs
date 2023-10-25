@@ -9,6 +9,6 @@ namespace Stateflows.Common.Context.Interfaces
         IContextValues GlobalValues { get; }
 
         void Send<TEvent>(TEvent @event)
-            where TEvent : Event;
+            where TEvent : Event, new();
     }
 }

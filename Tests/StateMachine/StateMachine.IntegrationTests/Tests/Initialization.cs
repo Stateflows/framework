@@ -80,7 +80,7 @@ namespace StateMachine.IntegrationTests.Tests
             {
                 status = (await sm.SendAsync(new SomeEvent())).Status;
 
-                currentState = (await sm.GetCurrentStateAsync())?.Name;
+                currentState = (await sm.GetCurrentStateAsync()).Response?.Name;
             }
 
             Assert.AreEqual(EventStatus.Rejected, status);
@@ -98,7 +98,7 @@ namespace StateMachine.IntegrationTests.Tests
             {
                 initialized = (await sm.InitializeAsync()).Response.InitializationSuccessful;
 
-                currentState = (await sm.GetCurrentStateAsync()).StatesStack.First() ?? string.Empty;
+                currentState = (await sm.GetCurrentStateAsync()).Response.StatesStack.First() ?? string.Empty;
             }
 
             Assert.IsTrue(initialized);
@@ -118,7 +118,7 @@ namespace StateMachine.IntegrationTests.Tests
 
                 initialized = (await sm.InitializeAsync()).Response.InitializationSuccessful;
 
-                currentState = (await sm.GetCurrentStateAsync()).StatesStack.First() ?? string.Empty;
+                currentState = (await sm.GetCurrentStateAsync()).Response.StatesStack.First() ?? string.Empty;
             }
 
             Assert.IsFalse(initialized);
@@ -136,7 +136,7 @@ namespace StateMachine.IntegrationTests.Tests
             {
                 initialized = (await sm.InitializeAsync(new ValueInitializationRequest() { Value = "bar" })).Response.InitializationSuccessful;
 
-                currentState = (await sm.GetCurrentStateAsync()).StatesStack.First() ?? string.Empty;
+                currentState = (await sm.GetCurrentStateAsync()).Response.StatesStack.First() ?? string.Empty;
             }
 
             Assert.IsTrue(initialized);
@@ -167,7 +167,7 @@ namespace StateMachine.IntegrationTests.Tests
             {
                 initialized = (await sm.InitializeAsync()).Response.InitializationSuccessful;
 
-                currentState = (await sm.GetCurrentStateAsync()).StatesStack.First() ?? string.Empty;
+                currentState = (await sm.GetCurrentStateAsync()).Response.StatesStack.First() ?? string.Empty;
             }
 
             Assert.IsTrue(initialized);
@@ -184,7 +184,7 @@ namespace StateMachine.IntegrationTests.Tests
             {
                 initialized = (await sm.InitializeAsync()).Response.InitializationSuccessful;
 
-                currentState = (await sm.GetCurrentStateAsync()).StatesStack.Skip(1).First() ?? string.Empty;
+                currentState = (await sm.GetCurrentStateAsync()).Response.StatesStack.Skip(1).First() ?? string.Empty;
             }
 
             Assert.IsTrue(initialized);

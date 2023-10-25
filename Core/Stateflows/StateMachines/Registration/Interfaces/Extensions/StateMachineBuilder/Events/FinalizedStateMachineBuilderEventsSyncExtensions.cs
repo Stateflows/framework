@@ -15,7 +15,7 @@ namespace Stateflows.StateMachines
             );
 
         public static IFinalizedStateMachineBuilder AddOnInitialize<TInitializationRequest>(this IFinalizedStateMachineBuilder builder, Action<IStateMachineInitializationContext<TInitializationRequest>> stateMachineAction)
-            where TInitializationRequest : InitializationRequest
+            where TInitializationRequest : InitializationRequest, new()
             => builder.AddOnInitialize(stateMachineAction
                 .AddStateMachineInvocationContext((builder as StateMachineBuilder).Result)
                 .ToAsync()

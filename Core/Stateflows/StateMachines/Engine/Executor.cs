@@ -198,7 +198,7 @@ namespace Stateflows.StateMachines.Engine
         }
 
         public async Task<EventStatus> ProcessAsync<TEvent>(TEvent @event)
-            where TEvent : Event
+            where TEvent : Event, new()
         {
             var result = EventStatus.Rejected;
 
@@ -211,7 +211,7 @@ namespace Stateflows.StateMachines.Engine
         }
 
         private bool TryDeferEvent<TEvent>(TEvent @event)
-            where TEvent : Event
+            where TEvent : Event, new()
         {
             var deferredEvents = GetDeferredEvents();
             if (deferredEvents.Any() && deferredEvents.Contains(@event.Name))
@@ -240,7 +240,7 @@ namespace Stateflows.StateMachines.Engine
         }
 
         private async Task<EventStatus> DoProcessAsync<TEvent>(TEvent @event)
-            where TEvent : Event
+            where TEvent : Event, new()
         {
             Debug.Assert(Context != null, $"Context is not available. Is state machine '{Graph.Name}' hydrated?");
 
@@ -283,7 +283,7 @@ namespace Stateflows.StateMachines.Engine
         }
 
         private async Task<bool> DoGuardAsync<TEvent>(Edge edge)
-            where TEvent : Event
+            where TEvent : Event, new()
         {
             var context = new GuardContext<TEvent>(Context, edge);
 
@@ -297,7 +297,7 @@ namespace Stateflows.StateMachines.Engine
         }
 
         private async Task DoEffectAsync<TEvent>(Edge edge)
-            where TEvent : Event
+            where TEvent : Event, new()
         {
             var context = new TransitionContext<TEvent>(Context, edge);
 
@@ -385,7 +385,7 @@ namespace Stateflows.StateMachines.Engine
         }
 
         private async Task DoConsumeAsync<TEvent>(Edge edge)
-            where TEvent : Event
+            where TEvent : Event, new()
         {
             var nextVertex = edge.Target;
             if (nextVertex != null)
@@ -520,7 +520,7 @@ namespace Stateflows.StateMachines.Engine
 
         public TTransition GetTransition<TTransition, TEvent>(ITransitionContext<TEvent> context)
             where TTransition : Transition<TEvent>
-            where TEvent : Event
+            where TEvent : Event, new()
         {
             if (!Transitions.TryGetValue(typeof(TTransition), out var transitionObj))
             {

@@ -83,7 +83,7 @@ namespace Stateflows.StateMachines.Registration.Builders
         #endregion
 
         #region Utils
-        public ICompositeStateBuilder AddDeferredEvent<TEvent>() where TEvent : Event
+        public ICompositeStateBuilder AddDeferredEvent<TEvent>() where TEvent : Event, new()
         {
             Builder.AddDeferredEvent<TEvent>();
             return this;
@@ -92,7 +92,7 @@ namespace Stateflows.StateMachines.Registration.Builders
 
         #region Transitions
         public ICompositeStateBuilder AddTransition<TEvent>(string targetVertexName, TransitionBuilderAction<TEvent> transitionBuildAction = null)
-            where TEvent : Event
+            where TEvent : Event, new()
         {
             Builder.AddTransition<TEvent>(targetVertexName, transitionBuildAction);
             return this;
@@ -102,7 +102,7 @@ namespace Stateflows.StateMachines.Registration.Builders
             => AddTransition<Completion>(targetVertexName, transitionBuildAction);
 
         public ICompositeStateBuilder AddInternalTransition<TEvent>(TransitionBuilderAction<TEvent> transitionBuildAction = null)
-            where TEvent : Event
+            where TEvent : Event, new()
             => AddTransition<TEvent>(Constants.DefaultTransitionTarget, transitionBuildAction);
 
         ITypedCompositeStateBuilder IStateTransitions<ITypedCompositeStateBuilder>.AddTransition<TEvent>(string targetVertexName, TransitionBuilderAction<TEvent> transitionBuildAction)

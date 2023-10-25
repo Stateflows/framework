@@ -11,7 +11,7 @@ namespace Stateflows.StateMachines
             => c => Task.Run(() => stateMachineAction(c));
 
         public static Func<IStateMachineInitializationContext<TInitializationRequest>, Task> ToAsync<TInitializationRequest>(this Action<IStateMachineInitializationContext<TInitializationRequest>> stateMachineAction)
-            where TInitializationRequest : InitializationRequest
+            where TInitializationRequest : InitializationRequest, new()
             => c => Task.Run(() => stateMachineAction(c));
 
         public static Func<IStateMachineActionContext, Task> ToAsync(this Action<IStateMachineActionContext> stateMachineAction)

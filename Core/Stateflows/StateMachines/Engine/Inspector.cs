@@ -43,7 +43,7 @@ namespace Stateflows.StateMachines.Engine
 
         public ActionInspection FinalizeInspection;
 
-        public IDictionary<Vertex, StateInspection> InspectionStates { get; } = new Dictionary<Vertex, StateInspection>();
+        public IDictionary<string, StateInspection> InspectionStates { get; } = new Dictionary<string, StateInspection>();
 
         public IDictionary<Edge, TransitionInspection> InspectionTransitions { get; } = new Dictionary<Edge, TransitionInspection>();
 
@@ -128,7 +128,7 @@ namespace Stateflows.StateMachines.Engine
 
         public async Task BeforeStateInitializeAsync(StateActionContext context)
         {
-            if (InspectionStates.TryGetValue(context.Vertex, out var stateInspection))
+            if (InspectionStates.TryGetValue(context.Vertex.Identifier, out var stateInspection))
             {
                 stateInspection.BeginAction(Constants.Initialize);
             }
@@ -144,7 +144,7 @@ namespace Stateflows.StateMachines.Engine
             await Inspectors.RunSafe(i => i.AfterStateInitializeAsync(context), nameof(AfterStateInitializeAsync));
             await Plugins.RunSafe(o => o.AfterStateInitializeAsync(context), nameof(AfterStateInitializeAsync));
 
-            if (InspectionStates.TryGetValue(context.Vertex, out var stateInspection))
+            if (InspectionStates.TryGetValue(context.Vertex.Identifier, out var stateInspection))
             {
                 stateInspection.EndAction(Constants.Initialize);
             }
@@ -152,7 +152,7 @@ namespace Stateflows.StateMachines.Engine
 
         public async Task BeforeStateFinalizeAsync(StateActionContext context)
         {
-            if (InspectionStates.TryGetValue(context.Vertex, out var stateInspection))
+            if (InspectionStates.TryGetValue(context.Vertex.Identifier, out var stateInspection))
             {
                 stateInspection.BeginAction(Constants.Finalize);
             }
@@ -168,7 +168,7 @@ namespace Stateflows.StateMachines.Engine
             await Inspectors.RunSafe(i => i.AfterStateFinalizeAsync(context), nameof(AfterStateFinalizeAsync));
             await Plugins.RunSafe(o => o.AfterStateFinalizeAsync(context), nameof(AfterStateFinalizeAsync));
 
-            if (InspectionStates.TryGetValue(context.Vertex, out var stateInspection))
+            if (InspectionStates.TryGetValue(context.Vertex.Identifier, out var stateInspection))
             {
                 stateInspection.EndAction(Constants.Finalize);
             }
@@ -176,7 +176,7 @@ namespace Stateflows.StateMachines.Engine
 
         public async Task BeforeStateEntryAsync(StateActionContext context)
         {
-            if (InspectionStates.TryGetValue(context.Vertex, out var stateInspection))
+            if (InspectionStates.TryGetValue(context.Vertex.Identifier, out var stateInspection))
             {
                 stateInspection.BeginAction(Constants.Entry);
             }
@@ -192,7 +192,7 @@ namespace Stateflows.StateMachines.Engine
             await Inspectors.RunSafe(i => i.AfterStateEntryAsync(context), nameof(AfterStateEntryAsync));
             await Plugins.RunSafe(o => o.AfterStateEntryAsync(context), nameof(AfterStateEntryAsync));
 
-            if (InspectionStates.TryGetValue(context.Vertex, out var stateInspection))
+            if (InspectionStates.TryGetValue(context.Vertex.Identifier, out var stateInspection))
             {
                 stateInspection.EndAction(Constants.Entry);
             }
@@ -200,7 +200,7 @@ namespace Stateflows.StateMachines.Engine
 
         public async Task BeforeStateExitAsync(StateActionContext context)
         {
-            if (InspectionStates.TryGetValue(context.Vertex, out var stateInspection))
+            if (InspectionStates.TryGetValue(context.Vertex.Identifier, out var stateInspection))
             {
                 stateInspection.BeginAction(Constants.Exit);
             }
@@ -216,14 +216,14 @@ namespace Stateflows.StateMachines.Engine
             await Inspectors.RunSafe(i => i.BeforeStateExitAsync(context), nameof(BeforeStateExitAsync));
             await Plugins.RunSafe(o => o.AfterStateExitAsync(context), nameof(AfterStateExitAsync));
 
-            if (InspectionStates.TryGetValue(context.Vertex, out var stateInspection))
+            if (InspectionStates.TryGetValue(context.Vertex.Identifier, out var stateInspection))
             {
                 stateInspection.EndAction(Constants.Exit);
             }
         }
 
         public async Task BeforeTransitionGuardAsync<TEvent>(GuardContext<TEvent> context)
-            where TEvent : Event
+            where TEvent : Event, new()
         {
             if (InspectionTransitions.TryGetValue(context.Edge, out var stateInspection))
             {
@@ -236,7 +236,7 @@ namespace Stateflows.StateMachines.Engine
         }
 
         public async Task AfterGuardAsync<TEvent>(GuardContext<TEvent> context, bool guardResult)
-            where TEvent : Event
+            where TEvent : Event, new()
         {
             await Observers.RunSafe(o => o.AfterTransitionGuardAsync(context, guardResult), nameof(AfterGuardAsync));
             await Inspectors.RunSafe(i => i.AfterTransitionGuardAsync(context, guardResult), nameof(AfterGuardAsync));
@@ -249,7 +249,7 @@ namespace Stateflows.StateMachines.Engine
         }
 
         public async Task BeforeEffectAsync<TEvent>(TransitionContext<TEvent> context)
-            where TEvent : Event
+            where TEvent : Event, new()
         {
             if (InspectionTransitions.TryGetValue(context.Edge, out var stateInspection))
             {
@@ -262,7 +262,7 @@ namespace Stateflows.StateMachines.Engine
         }
 
         public async Task AfterEffectAsync<TEvent>(TransitionContext<TEvent> context)
-            where TEvent : Event
+            where TEvent : Event, new()
         {
             await Observers.RunSafe(o => o.AfterTransitionEffectAsync(context), nameof(AfterEffectAsync));
             await Inspectors.RunSafe(i => i.AfterTransitionEffectAsync(context), nameof(AfterEffectAsync));
@@ -289,7 +289,7 @@ namespace Stateflows.StateMachines.Engine
         }
 
         public async Task<bool> BeforeProcessEventAsync<TEvent>(Context.Classes.EventContext<TEvent> context)
-            where TEvent : Event
+            where TEvent : Event, new()
         {
             var plugin = await Plugins.RunSafe(i => i.BeforeProcessEventAsync(context), nameof(BeforeProcessEventAsync));
             var global = await GlobalInterceptor.BeforeProcessEventAsync(
@@ -301,7 +301,7 @@ namespace Stateflows.StateMachines.Engine
         }
 
         public async Task AfterProcessEventAsync<TEvent>(Context.Classes.EventContext<TEvent> context)
-            where TEvent : Event
+            where TEvent : Event, new()
         {
             await Interceptors.RunSafe(i => i.AfterProcessEventAsync(context), nameof(AfterProcessEventAsync));
             await GlobalInterceptor.AfterProcessEventAsync(new Common.Context.Classes.EventContext<TEvent>(context.Context.Context, Executor.ServiceProvider, context.Event));
@@ -315,7 +315,7 @@ namespace Stateflows.StateMachines.Engine
             => GlobalInterceptor.AfterExecute(@event);
 
         public async Task OnStateMachineInitializeExceptionAsync<TInitializationRequest>(StateMachineInitializationContext<TInitializationRequest> context, Exception exception)
-            where TInitializationRequest : InitializationRequest
+            where TInitializationRequest : InitializationRequest, new()
         {
             var exceptionContext = new StateMachineInitializationContext(context.InitializationRequest, context.Context);
             await ExceptionHandlers.RunSafe(h => h.OnStateMachineInitializeExceptionAsync(exceptionContext, exception), nameof(OnStateMachineInitializeExceptionAsync));
@@ -329,14 +329,14 @@ namespace Stateflows.StateMachines.Engine
         }
 
         public async Task OnTransitionGuardExceptionAsync<TEvent>(GuardContext<TEvent> context, Exception exception)
-            where TEvent : Event
+            where TEvent : Event, new()
         {
             await ExceptionHandlers.RunSafe(h => h.OnTransitionGuardExceptionAsync(context, exception), nameof(OnTransitionGuardExceptionAsync));
             await Inspectors.RunSafe(i => i.OnTransitionGuardExceptionAsync(context, exception), nameof(OnTransitionGuardExceptionAsync));
         }
 
         public async Task OnTransitionEffectExceptionAsync<TEvent>(TransitionContext<TEvent> context, Exception exception)
-            where TEvent : Event
+            where TEvent : Event, new()
         {
             await ExceptionHandlers.RunSafe(h => h.OnTransitionEffectExceptionAsync(context, exception), nameof(OnTransitionEffectExceptionAsync));
             await Inspectors.RunSafe(h => h.OnTransitionEffectExceptionAsync(context, exception), nameof(OnTransitionEffectExceptionAsync));

@@ -10,6 +10,6 @@ namespace Stateflows.StateMachines.Context.Interfaces
         IContextValues Values { get; }
 
         void Send<TEvent>(TEvent @event)
-            where TEvent : Event;
+            where TEvent : Event, new();
     }
 }

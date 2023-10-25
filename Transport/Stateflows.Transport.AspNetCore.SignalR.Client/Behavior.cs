@@ -2,6 +2,7 @@
 using Stateflows.Common;
 using Stateflows.Common.Utilities;
 using Stateflows.Common.Interfaces;
+using Stateflows.Common.Extensions;
 
 namespace Stateflows.Transport.AspNetCore.SignalR.Client
 {
@@ -30,25 +31,29 @@ namespace Stateflows.Transport.AspNetCore.SignalR.Client
         }
 
         public async Task<SendResult> SendAsync<TEvent>(TEvent @event)
-            where TEvent : Event
+            where TEvent : Event, new()
         {
             var hub = await GetHub();
 
-            var result = await hub.InvokeAsync<SendResult>("Send", Id, StateflowsJsonConverter.SerializeObject(@event));
+            var resultString = await hub.InvokeAsync<string>("Send", Id, StateflowsJsonConverter.SerializeObject(@event));
 
-            return result;
+            var result = StateflowsJsonConverter.DeserializeObject<SendResult>(resultString);
+
+            return new SendResult(@event, result.Status, result.Validation);
         }
 
         public async Task<RequestResult<TResponse>> RequestAsync<TResponse>(Request<TResponse> request)
-            where TResponse : Response
+            where TResponse : Response, new()
         {
             var hub = await GetHub();
 
-            var result = await hub.InvokeAsync<RequestResult<TResponse>>("Request", Id, StateflowsJsonConverter.SerializeObject(request));
+            var resultString = await hub.InvokeAsync<string>("Request", Id, StateflowsJsonConverter.SerializeObject(request));
+
+            var result = StateflowsJsonConverter.DeserializeObject<RequestResult>(resultString);
 
             request.Respond(result.Response);
 
-            return result;
+            return new RequestResult<TResponse>(request, result.Status, result.Validation);
         }
     }
 }

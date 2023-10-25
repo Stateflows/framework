@@ -55,7 +55,7 @@ namespace StateMachine.IntegrationTests.Tests
 
                 var uml = await sm.GetPlantUmlAsync();
 
-                var currentState = await sm.GetCurrentStateAsync();
+                var currentState = (await sm.GetCurrentStateAsync()).Response;
 
                 currentState1 = currentState.StatesStack.First();
 
@@ -63,7 +63,7 @@ namespace StateMachine.IntegrationTests.Tests
 
                 someStatus2 = (await sm.SendAsync(new SomeEvent())).Status;
 
-                currentState2 = (await sm.GetCurrentStateAsync()).StatesStack.First();
+                currentState2 = (await sm.GetCurrentStateAsync()).Response.StatesStack.First();
             }
 
             ExecutionSequence.Verify(b => b

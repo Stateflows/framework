@@ -1,9 +1,7 @@
 ﻿using System.Threading.Tasks;
-using System.Collections.Generic;
-using Stateflows.Common.Classes;
 using Stateflows.Common.Interfaces;
-using Stateflows.StateMachines.Events;
 using Stateflows.StateMachines;
+using Stateflows.StateMachines.Events;
 
 namespace Stateflows.Common.StateMachines.Classes
 {
@@ -18,15 +16,15 @@ namespace Stateflows.Common.StateMachines.Classes
             Behavior = consumer;
         }
 
-        public async Task<CurrentStateResponse> GetCurrentStateAsync()
-            => (await RequestAsync(new CurrentStateRequest())).Response;
+        public Task<RequestResult<CurrentStateResponse>> GetCurrentStateAsync()
+            => RequestAsync(new CurrentStateRequest());
 
         public Task<SendResult> SendAsync<TEvent>(TEvent @event)
-            where TEvent : Event
+            where TEvent : Event, new()
             => Behavior.SendAsync(@event);
 
         public Task<RequestResult<TResponse>> RequestAsync<TResponse>(Request<TResponse> request)
-            where TResponse : Response
+            where TResponse : Response, new()
             => Behavior.RequestAsync(request);
     }
 }

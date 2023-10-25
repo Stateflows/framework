@@ -1,9 +1,8 @@
-﻿using System.Threading.Tasks;
+﻿using System;
+using System.Threading.Tasks;
+using Stateflows.Common.Engine;
 using Stateflows.Common.Utilities;
 using Stateflows.Common.Interfaces;
-using System;
-using Stateflows.Common.Engine;
-using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Stateflows.Common.Classes
@@ -26,42 +25,22 @@ namespace Stateflows.Common.Classes
             Id = id;
         }
 
-        //public async Task<bool> SendAsync<TEvent>(TEvent @event)
-        //    where TEvent : Event
-        //{
-        //    var holder = Engine.EnqueueEvent(Id, @event);
-        //    await holder.Handled.WaitOneAsync();
-        //    return holder.Consumed;
-        //}
-
-        //public async Task<TResponse> RequestAsync<TResponse>(Request<TResponse> request)
-        //    where TResponse : Response
-        //{
-        //    var holder = Engine.EnqueueEvent(Id, request);
-        //    await holder.Handled.WaitOneAsync();
-        //    return request.Response;
-        //}
-
         public async Task<SendResult> SendAsync<TEvent>(TEvent @event)
-            where TEvent : Event
+            where TEvent : Event, new()
         {
-            //await CommonInterceptor.BeforeDispatchEventAsync(@event);
             var holder = Engine.EnqueueEvent(Id, @event, ServiceProvider);
-            //await CommonInterceptor.AfterDispatchEventAsync(@event);
             await holder.Handled.WaitOneAsync();
 
-            return new SendResult(holder.Status, holder.Validation);
+            return new SendResult(@event, holder.Status, holder.Validation);
         }
 
         public async Task<RequestResult<TResponse>> RequestAsync<TResponse>(Request<TResponse> request)
-            where TResponse : Response
+            where TResponse : Response, new()
         {
-            //await CommonInterceptor.BeforeDispatchEventAsync(request);
             var holder = Engine.EnqueueEvent(Id, request, ServiceProvider);
-            //await CommonInterceptor.AfterDispatchEventAsync(request);
             await holder.Handled.WaitOneAsync();
 
-            return new RequestResult<TResponse>(holder.Status, holder.Validation, request.Response);
+            return new RequestResult<TResponse>(request, holder.Status, holder.Validation);
         }
     }
 }

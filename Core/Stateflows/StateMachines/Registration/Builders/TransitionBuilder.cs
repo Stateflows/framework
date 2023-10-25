@@ -11,7 +11,7 @@ using Stateflows.StateMachines.Registration.Extensions;
 namespace Stateflows.StateMachines.Registration.Builders
 {
     internal class TransitionBuilder<TEvent> : ITransitionBuilder<TEvent>
-        where TEvent : Event
+        where TEvent : Event, new()
     {
         public Edge Edge;
        

@@ -48,7 +48,7 @@ namespace StateMachine.IntegrationTests.Tests
             {
                 status = (await sm.SendAsync(new SomeEvent())).Status;
 
-                currentState = (await sm.GetCurrentStateAsync())?.Name;
+                currentState = (await sm.GetCurrentStateAsync()).Response?.Name;
             }
 
             Assert.AreEqual(EventStatus.Rejected, status);
@@ -66,7 +66,7 @@ namespace StateMachine.IntegrationTests.Tests
             {
                 initialized = (await sm.InitializeAsync()).Response.InitializationSuccessful;
 
-                currentState = (await sm.GetCurrentStateAsync()).StatesStack.First();
+                currentState = (await sm.GetCurrentStateAsync()).Response.StatesStack.First();
 
                 finalized = (await sm.GetStatusAsync())?.Response.BehaviorStatus == BehaviorStatus.Finalized;
             }
@@ -89,7 +89,7 @@ namespace StateMachine.IntegrationTests.Tests
             {
                 initialized = (await sm.InitializeAsync()).Response.InitializationSuccessful;
 
-                currentState = (await sm.GetCurrentStateAsync()).StatesStack.Skip(1).First() ?? string.Empty;
+                currentState = (await sm.GetCurrentStateAsync()).Response.StatesStack.Skip(1).First() ?? string.Empty;
             }
 
             ExecutionSequence.Verify(b => b

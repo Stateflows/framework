@@ -29,7 +29,7 @@
                         <span>Events expected in current state:</span>
                         @foreach (var eventName in expectedEvents)
                         {
-                            <button class="btn btn-primary" style="margin-top: 5px;" @onclick="() => SendEvent(eventName)">Send <strong>@eventName</strong></button>
+                            <button class="btn btn-primary" style="margin-top: 5px;" @onclick="() => SendEvent(eventName)">Send <strong>@eventName.Split('.').Last()</strong></button>
                         }
                     }
                 </div>
@@ -83,16 +83,17 @@
 
     private async Task RefreshSMInfo(IStateMachine stateMachine)
     {
-        expectedEvents = (await stateMachine.GetCurrentStateAsync()).ExpectedEvents;
+        expectedEvents = (await stateMachine.GetCurrentStateAsync()).Response.ExpectedEvents;
 
-        plantUmlUrl = await stateMachine.GetPlantUmlUrlAsync();
+        plantUmlUrl = (await stateMachine.GetPlantUmlUrlAsync()).Response.PlantUmlUrl;
     }
 
     private async Task Initialize()
     {
         if (locator.TryLocateStateMachine(GetCurrentId(), out var stateMachine))
         {
-            message = (await stateMachine.InitializeAsync()).Response.InitializationSuccessful
+            var result = await stateMachine.InitializeAsync();
+            message = result.Response.InitializationSuccessful
                 ? "State Machine located and initialized"
                 : "State Machine located, it's already initialized";
 

@@ -7,7 +7,7 @@ namespace Stateflows.StateMachines.Context.Classes
     internal class StateMachineInitializationContext<TInitializationRequest> :
         BaseContext,
         IStateMachineInitializationContext<TInitializationRequest>
-        where TInitializationRequest : InitializationRequest
+        where TInitializationRequest : InitializationRequest, new()
     {
         public StateMachineInitializationContext(TInitializationRequest initializationRequest, RootContext context) : base(context)
         {

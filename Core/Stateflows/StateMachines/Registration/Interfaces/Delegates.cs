@@ -15,7 +15,7 @@ namespace Stateflows.StateMachines.Registration.Interfaces
     public delegate void CompositeStateTransitionsBuilderAction(ITypedCompositeStateInitialBuilder builder);
 
     public delegate void TransitionBuilderAction<TEvent>(ITransitionBuilder<TEvent> builder)
-        where TEvent : Event;
+        where TEvent : Event, new();
 
     public delegate IStateMachineObserver StateMachineObserverFactory(IServiceProvider serviceProvider);
 

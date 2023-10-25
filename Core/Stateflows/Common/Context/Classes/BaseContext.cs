@@ -25,8 +25,5 @@ namespace Stateflows.Common.Context.Classes
 
         public bool TryLocateBehavior(BehaviorId id, out IBehavior behavior)
             => BehaviorLocator.TryLocateBehavior(id, out behavior);
-
-        public IEnumerable<IBehaviorProvider> Providers
-            => BehaviorLocator.Providers;
     }
 }

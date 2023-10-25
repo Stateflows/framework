@@ -50,7 +50,7 @@ namespace Stateflows.Common
         }
 
         public async Task<EventStatus> ProcessEventAsync<TEvent>(BehaviorId id, TEvent @event, IServiceProvider serviceProvider)
-            where TEvent : Event
+            where TEvent : Event, new()
         {
             var result = EventStatus.Undelivered;
 

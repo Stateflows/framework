@@ -10,6 +10,6 @@ namespace Stateflows.StateMachines
         Type EventType { get; }
 
         Task<EventStatus> TryHandleEventAsync<TEvent>(IEventInspectionContext<TEvent> context)
-            where TEvent : Event;
+            where TEvent : Event, new();
     }
 }

@@ -10,7 +10,7 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         TReturn AddOnInitialize(Func<IStateMachineInitializationContext, Task> actionAsync);
 
         TReturn AddOnInitialize<TInitializationRequest>(Func<IStateMachineInitializationContext<TInitializationRequest>, Task> actionAsync)
-            where TInitializationRequest : InitializationRequest;
+            where TInitializationRequest : InitializationRequest, new();
 
         TReturn AddOnFinalize(Func<IStateMachineActionContext, Task> actionAsync);
     }

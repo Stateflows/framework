@@ -1,10 +1,9 @@
 ﻿using System;
-using System.Collections.Generic;
 
 namespace Stateflows.Common
 {
     public abstract class Request<TResponse> : Event
-        where TResponse : Response
+        where TResponse : Response, new()
     {
         public void Respond(TResponse response)
         {

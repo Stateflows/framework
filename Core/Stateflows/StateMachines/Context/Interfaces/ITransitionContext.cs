@@ -3,7 +3,7 @@
 namespace Stateflows.StateMachines.Context.Interfaces
 {
     public interface ITransitionContext<out TEvent> : IEventContext<TEvent>
-        where TEvent : Event
+        where TEvent : Event, new()
     {
         IStateContext SourceState { get; }
 

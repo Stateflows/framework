@@ -11,11 +11,11 @@ namespace Stateflows.Extensions.PlantUml.Classes
         public Type EventType => typeof(PlantUmlRequest);
 
         public Task<EventStatus> TryHandleEventAsync<TEvent>(Stateflows.StateMachines.Inspection.Interfaces.IEventInspectionContext<TEvent> context)
-            where TEvent : Event
+            where TEvent : Event, new()
             => Task.FromResult(HandleEvent(context.Event, () => context.StateMachine.Inspection.GetPlantUml()));
 
         private EventStatus HandleEvent<TEvent>(TEvent @event, Func<string> plantUmlGenerator)
-            where TEvent : Event
+            where TEvent : Event, new()
         {
             if (@event is PlantUmlRequest)
             {

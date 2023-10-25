@@ -9,7 +9,7 @@ namespace Stateflows.StateMachines.Context.Classes
         ITransitionInspectionContext<TEvent>,
         IEdgeContext,
         IRootContext
-        where TEvent : Event
+        where TEvent : Event, new()
     {
         public Edge Edge { get; }
 

@@ -32,7 +32,7 @@ namespace Stateflows.StateMachines.Engine
         }
 
         private Task<EventStatus> TryHandleEventAsync<TEvent>(EventContext<TEvent> context)
-            where TEvent : Event
+            where TEvent : Event, new()
         {
             var eventHandler = EventHandlers.FirstOrDefault(h => h.EventType.IsInstanceOfType(context.Event));
 
@@ -42,7 +42,7 @@ namespace Stateflows.StateMachines.Engine
         }
 
         public async Task<EventStatus> ProcessEventAsync<TEvent>(BehaviorId id, TEvent @event, IServiceProvider serviceProvider)
-            where TEvent : Event
+            where TEvent : Event, new()
         {
             var result = EventStatus.Undelivered;
 

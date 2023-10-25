@@ -16,7 +16,7 @@ namespace Stateflows.StateMachines.Inspection.Classes
         {
             Executor = executor;
             Vertex = vertex;
-            Executor.Inspector.InspectionStates.Add(Vertex, this);
+            Executor.Inspector.InspectionStates.Add(Vertex.Identifier, this);
         }
 
         public string Name => Vertex.Name;
@@ -62,6 +62,6 @@ namespace Stateflows.StateMachines.Inspection.Classes
         public IEnumerable<IStateInspection> states;
 
         public IEnumerable<IStateInspection> States
-            => states ??= Vertex.Vertices.Values.Select(subVertex => new StateInspection(Executor, subVertex));
+            => states ??= Vertex.Vertices.Values.Select(subVertex => new StateInspection(Executor, subVertex)).ToArray();
     }
 }

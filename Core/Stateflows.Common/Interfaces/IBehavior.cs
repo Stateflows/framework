@@ -1,5 +1,4 @@
-﻿using Stateflows.Common.Classes;
-using System.Threading.Tasks;
+﻿using System.Threading.Tasks;
 
 namespace Stateflows.Common.Interfaces
 {
@@ -8,9 +7,9 @@ namespace Stateflows.Common.Interfaces
         BehaviorId Id { get; }
 
         Task<SendResult> SendAsync<TEvent>(TEvent @event)
-            where TEvent : Event;
+            where TEvent : Event, new();
 
         Task<RequestResult<TResponse>> RequestAsync<TResponse>(Request<TResponse> request)
-            where TResponse : Response;
+            where TResponse : Response, new();
     }
 }

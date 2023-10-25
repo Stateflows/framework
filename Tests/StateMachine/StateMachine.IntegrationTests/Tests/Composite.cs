@@ -100,8 +100,8 @@ namespace StateMachine.IntegrationTests.Tests
 
                 status = (await sm.SendAsync(new OtherEvent() { AnswerToLifeUniverseAndEverything = 42 })).Status;
 
-                currentState = (await sm.GetCurrentStateAsync()).StatesStack.First();
-                currentInnerState = (await sm.GetCurrentStateAsync()).StatesStack.Skip(1).First();
+                currentState = (await sm.GetCurrentStateAsync()).Response.StatesStack.First();
+                currentInnerState = (await sm.GetCurrentStateAsync()).Response.StatesStack.Skip(1).First();
             }
 
             ExecutionSequence.Verify(b => b
@@ -130,7 +130,7 @@ namespace StateMachine.IntegrationTests.Tests
 
                 status = (await sm.SendAsync(new OtherEvent() { AnswerToLifeUniverseAndEverything = 42 })).Status;
 
-                currentState = await sm.GetCurrentStateAsync();
+                currentState = (await sm.GetCurrentStateAsync()).Response;
             }
 
             ExecutionSequence.Verify(b => b
@@ -171,7 +171,7 @@ namespace StateMachine.IntegrationTests.Tests
 
                 status = (await sm.SendAsync(new OtherEvent() { AnswerToLifeUniverseAndEverything = 42 })).Status;
 
-                currentState = await sm.GetCurrentStateAsync();
+                currentState = (await sm.GetCurrentStateAsync()).Response;
             }
 
             ExecutionSequence.Verify(b => b
@@ -202,7 +202,7 @@ namespace StateMachine.IntegrationTests.Tests
 
                 status = (await sm.SendAsync(new OtherEvent() { AnswerToLifeUniverseAndEverything = 42 })).Status;
 
-                currentState = await sm.GetCurrentStateAsync();
+                currentState = (await sm.GetCurrentStateAsync()).Response;
             }
 
             ExecutionSequence.Verify(b => b

@@ -80,7 +80,7 @@ namespace Stateflows.StateMachines.Extensions
 
         public static void AddTransitionEvents<TTransition, TEvent>(this ITransitionBuilder<TEvent> builder)
             where TTransition : Transition<TEvent>
-            where TEvent : Event
+            where TEvent : Event, new()
         {
             if (typeof(Transition<TEvent>).GetMethod(Constants.GuardAsync).IsOverridenIn<TTransition>())
             {

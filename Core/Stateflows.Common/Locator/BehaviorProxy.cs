@@ -20,7 +20,7 @@ namespace Stateflows.Common.Locator
         }
 
         public async Task<SendResult> SendAsync<TEvent>(TEvent @event)
-            where TEvent : Event
+            where TEvent : Event, new()
         {
             await Interceptor.BeforeDispatchEventAsync(@event);
 
@@ -32,7 +32,7 @@ namespace Stateflows.Common.Locator
         }
 
         public async Task<RequestResult<TResponse>> RequestAsync<TResponse>(Request<TResponse> request)
-            where TResponse : Response
+            where TResponse : Response, new()
         {
             await Interceptor.BeforeDispatchEventAsync(@request);
 

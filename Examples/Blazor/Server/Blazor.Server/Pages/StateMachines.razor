@@ -84,9 +84,9 @@
 
     private async Task RefreshSMInfo(IStateMachine stateMachine)
     {
-        expectedEvents = (await stateMachine.GetCurrentStateAsync()).ExpectedEvents;
+        expectedEvents = (await stateMachine.GetCurrentStateAsync()).Response.ExpectedEvents;
 
-        plantUmlUrl = await stateMachine.GetPlantUmlUrlAsync();
+        plantUmlUrl = (await stateMachine.GetPlantUmlUrlAsync()).Response.PlantUmlUrl;
     }
 
     private async Task Initialize()
@@ -137,7 +137,7 @@
             {
                 var result = await stateMachine.SendAsync(@event);
 
-                if (!result.Validation.IsValid)
+                if (!(result.Validation?.IsValid ?? true))
                 {
                     message = "Event invalid";
                 }

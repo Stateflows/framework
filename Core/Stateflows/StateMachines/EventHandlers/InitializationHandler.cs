@@ -12,7 +12,7 @@ namespace Stateflows.StateMachines.EventHandlers
         public Type EventType => typeof(InitializationRequest);
 
         public async Task<EventStatus> TryHandleEventAsync<TEvent>(IEventInspectionContext<TEvent> context)
-            where TEvent : Event
+            where TEvent : Event, new()
         {
             if (context.Event is InitializationRequest)
             {

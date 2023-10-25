@@ -126,7 +126,7 @@ namespace Stateflows.StateMachines.Registration.Builders
         #endregion
 
         #region Utils
-        public IStateBuilder AddDeferredEvent<TEvent>() where TEvent : Event
+        public IStateBuilder AddDeferredEvent<TEvent>() where TEvent : Event, new()
         {
             if (typeof(TEvent) == typeof(Completion))
                 throw new Exception("Completion event cannot be deferred.");
@@ -142,7 +142,7 @@ namespace Stateflows.StateMachines.Registration.Builders
 
         #region Transitions
         public IStateBuilder AddTransition<TEvent>(string targetVertexName, TransitionBuilderAction<TEvent> transitionBuildAction = null)
-            where TEvent : Event
+            where TEvent : Event, new()
         {
             var edge = new Edge()
             {
@@ -166,7 +166,7 @@ namespace Stateflows.StateMachines.Registration.Builders
             => AddTransition<Completion>(targetVertexName, transitionBuildAction);
 
         public IStateBuilder AddInternalTransition<TEvent>(TransitionBuilderAction<TEvent> transitionBuildAction = null)
-            where TEvent : Event
+            where TEvent : Event, new()
             => AddTransition<TEvent>(Constants.DefaultTransitionTarget, transitionBuildAction);
 
         ITypedStateBuilder IStateTransitions<ITypedStateBuilder>.AddTransition<TEvent>(string targetVertexName, TransitionBuilderAction<TEvent> transitionBuildAction)

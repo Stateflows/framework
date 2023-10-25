@@ -84,7 +84,7 @@ namespace StateMachine.IntegrationTests.Tests
 
                 status = (await sm.SendAsync(new SomeEvent())).Status;
 
-                currentState = (await sm.GetCurrentStateAsync()).StatesStack.First();
+                currentState = (await sm.GetCurrentStateAsync()).Response.StatesStack.First();
             }
 
             Assert.AreEqual(EventStatus.Consumed, status);
@@ -106,7 +106,7 @@ namespace StateMachine.IntegrationTests.Tests
 
                 status = (await sm.SendAsync(new OtherEvent() { AnswerToLifeUniverseAndEverything = 43 })).Status;
 
-                currentState = (await sm.GetCurrentStateAsync()).StatesStack.First();
+                currentState = (await sm.GetCurrentStateAsync()).Response.StatesStack.First();
             }
 
             Assert.AreEqual(EventStatus.NotConsumed, status);
@@ -127,7 +127,7 @@ namespace StateMachine.IntegrationTests.Tests
 
                 status = (await sm.SendAsync(new SomeEvent())).Status;
 
-                currentState = (await sm.GetCurrentStateAsync()).StatesStack.First();
+                currentState = (await sm.GetCurrentStateAsync()).Response.StatesStack.First();
             }
 
             Assert.AreEqual(EventStatus.Consumed, status);
@@ -146,7 +146,7 @@ namespace StateMachine.IntegrationTests.Tests
 
                 status = (await sm.SendAsync(new SomeEvent())).Status;
 
-                currentState = (await sm.GetCurrentStateAsync()).StatesStack.First();
+                currentState = (await sm.GetCurrentStateAsync()).Response.StatesStack.First();
             }
 
             Assert.AreEqual(EventStatus.Consumed, status);
@@ -167,7 +167,7 @@ namespace StateMachine.IntegrationTests.Tests
 
                 status = (await sm.SendAsync(new SomeEvent())).Status;
 
-                currentState = (await sm.GetCurrentStateAsync()).StatesStack.First();
+                currentState = (await sm.GetCurrentStateAsync()).Response.StatesStack.First();
             }
 
             Assert.AreEqual(EventStatus.Consumed, status);

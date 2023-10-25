@@ -87,7 +87,7 @@ namespace StateMachine.IntegrationTests.Tests
 
                 someStatus = (await sm.SendAsync(new SomeEvent())).Status;
 
-                currentState = (await sm.GetCurrentStateAsync()).StatesStack.First();
+                currentState = (await sm.GetCurrentStateAsync()).Response.StatesStack.First();
             }
 
             Assert.IsTrue(initialized);
@@ -115,7 +115,7 @@ namespace StateMachine.IntegrationTests.Tests
 
                 someStatus = (await sm.SendAsync(new SomeEvent())).Status;
 
-                currentState = (await sm.GetCurrentStateAsync()).StatesStack.First();
+                currentState = (await sm.GetCurrentStateAsync()).Response.StatesStack.First();
             }
 
             Assert.IsTrue(initialized);
@@ -144,7 +144,7 @@ namespace StateMachine.IntegrationTests.Tests
 
                 otherStatus2 = (await sm.SendAsync(new OtherEvent())).Status;
 
-                currentState = (await sm.GetCurrentStateAsync()).StatesStack.First();
+                currentState = (await sm.GetCurrentStateAsync()).Response.StatesStack.First();
             }
 
             Assert.IsTrue(initialized);

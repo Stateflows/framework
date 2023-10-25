@@ -18,7 +18,7 @@ namespace Stateflows.StateMachines
     }
 
     public abstract class StateMachine<TInitializationRequest> : StateMachine
-        where TInitializationRequest : InitializationRequest
+        where TInitializationRequest : InitializationRequest, new()
     {
         public override sealed Task OnInitializeAsync()
             => base.OnInitializeAsync();

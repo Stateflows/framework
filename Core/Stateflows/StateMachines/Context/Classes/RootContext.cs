@@ -128,7 +128,7 @@ namespace Stateflows.StateMachines.Context.Classes
         public bool ForceConsumed { get; set; } = false;
 
         public async Task Send<TEvent>(TEvent @event)
-            where TEvent : Event
+            where TEvent : Event, new()
         {
             var locator = Executor.ServiceProvider.GetService<IBehaviorLocator>();
             if (locator != null && locator.TryLocateBehavior(Id.BehaviorId, out var behavior))

@@ -39,7 +39,7 @@ namespace Stateflows.StateMachines.Inspection.Classes
             {
                 if (
                     source == null &&
-                    Executor.Inspector.InspectionStates.TryGetValue(Edge.Source, out var s)
+                    Executor.Inspector.InspectionStates.TryGetValue(Edge.Source.Identifier, out var s)
                 )
                 {
                     source = s;
@@ -58,7 +58,7 @@ namespace Stateflows.StateMachines.Inspection.Classes
                 if (
                     target == null &&
                     Edge.Target != null &&
-                    Executor.Inspector.InspectionStates.TryGetValue(Edge.Target, out var t)
+                    Executor.Inspector.InspectionStates.TryGetValue(Edge.Target.Identifier, out var t)
                 )
                 {
                     target = t;
