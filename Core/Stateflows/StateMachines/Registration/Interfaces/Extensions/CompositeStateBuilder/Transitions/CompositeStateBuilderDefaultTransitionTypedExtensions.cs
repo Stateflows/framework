@@ -10,9 +10,9 @@ namespace Stateflows.StateMachines
             where TTargetState : State
             => builder.AddDefaultTransition<TTransition>(StateInfo<TTargetState>.Name);
 
-        public static ICompositeStateBuilder AddDefaultTransition<TTransition>(this ICompositeStateBuilder builder, string targetStateName)
+        public static ICompositeStateBuilder AddDefaultTransition<TTransition>(this ICompositeStateBuilder builder, string targetVertexName)
             where TTransition : Transition<Completion>
-            => builder.AddTransition<Completion, TTransition>(targetStateName);
+            => builder.AddTransition<Completion, TTransition>(targetVertexName);
 
         public static ICompositeStateBuilder AddDefaultTransition<TTargetState>(this ICompositeStateBuilder builder, TransitionBuilderAction<Completion> transitionBuildAction = null)
             where TTargetState : State

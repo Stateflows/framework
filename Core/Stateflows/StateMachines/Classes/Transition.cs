@@ -1,12 +1,11 @@
-﻿using System.Collections.Generic;
-using System.Threading.Tasks;
+﻿using System.Threading.Tasks;
 using Stateflows.Common;
 using Stateflows.StateMachines.Context.Interfaces;
 
 namespace Stateflows.StateMachines
 {
     public abstract class Transition<TEvent>
-        where TEvent : Event
+        where TEvent : Event, new()
     {
         public ITransitionContext<TEvent> Context { get; internal set; }
 

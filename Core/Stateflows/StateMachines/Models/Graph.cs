@@ -5,11 +5,14 @@ using System.Collections.Generic;
 using Stateflows.StateMachines.Interfaces;
 using Stateflows.StateMachines.Registration;
 using Stateflows.StateMachines.Registration.Interfaces;
+using Stateflows.Common.Models;
 
 namespace Stateflows.StateMachines.Models
 {
     internal class Graph
     {
+        public Dictionary<string, int> InitCounter = new Dictionary<string, int>();
+
         public Graph(string name)
         {
             Name = name;
@@ -23,21 +26,22 @@ namespace Stateflows.StateMachines.Models
         public Dictionary<string, Vertex> AllVertices { get; set; } = new Dictionary<string, Vertex>();
         public List<Edge> AllEdges { get; set; } = new List<Edge>();
 
-        private Logic<StateMachineActionAsync> initialize = null;
-        public Logic<StateMachineActionAsync> Initialize
-            => initialize ?? (
-                initialize = new Logic<StateMachineActionAsync>()
+        private Dictionary<string, Logic<StateMachineActionAsync>> initializers = null;
+        public Dictionary<string, Logic<StateMachineActionAsync>> Initializers
+            => initializers ??= new Dictionary<string, Logic<StateMachineActionAsync>>();
+
+        private Logic<StateMachineActionAsync> finalize = null;
+        public Logic<StateMachineActionAsync> Finalize
+            => finalize ??= new Logic<StateMachineActionAsync>()
                 {
-                    Name = Constants.Initialize,
-                    Graph = this
-                }
-            );
+                    Name = Constants.Finalize
+                };
 
-        public List<ExceptionHandlerFactory> ExceptionHandlerFactories { get; set; } = new List<ExceptionHandlerFactory>();
+        public List<StateMachineExceptionHandlerFactory> ExceptionHandlerFactories { get; set; } = new List<StateMachineExceptionHandlerFactory>();
 
-        public List<InterceptorFactory> InterceptorFactories { get; set; } = new List<InterceptorFactory>();
+        public List<StateMachineInterceptorFactory> InterceptorFactories { get; set; } = new List<StateMachineInterceptorFactory>();
 
-        public List<ObserverFactory> ObserverFactories { get; set; } = new List<ObserverFactory>();
+        public List<StateMachineObserverFactory> ObserverFactories { get; set; } = new List<StateMachineObserverFactory>();
 
         [DebuggerHidden]
         public void Build()
@@ -55,7 +59,7 @@ namespace Stateflows.StateMachines.Models
 
             foreach (var vertex in AllVertices.Values)
             {
-                if (vertex.InitialVertexName != null && vertex.InitialVertexName != "")
+                if (!string.IsNullOrEmpty(vertex.InitialVertexName))
                 {
                     if (vertex.Vertices.TryGetValue(vertex.InitialVertexName, out initialVertex))
                     {
@@ -82,7 +86,6 @@ namespace Stateflows.StateMachines.Models
 
             foreach (var edge in AllEdges)
             {
-                edge.Source = AllVertices[edge.SourceName];
                 if (edge.TargetName != null && edge.TargetName != Constants.DefaultTransitionTarget)
                 {
                     var vertices = edge.Source.Parent?.Vertices ?? Vertices;
@@ -92,9 +95,9 @@ namespace Stateflows.StateMachines.Models
                     }
                     else
                     {
-                        if (!AllVertices.ContainsKey(edge.TargetName))
+                        if (edge.Source.Parent is null)
                         {
-                            throw new Exception($"Transition target state '{edge.TargetName}' is not registered in state machine '{Name}'");
+                            throw new Exception($"Transition target state '{edge.TargetName}' is not registered in root level of state machine '{Name}'");
                         }
                         else
                         {

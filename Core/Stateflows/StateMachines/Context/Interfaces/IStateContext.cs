@@ -1,4 +1,6 @@
-﻿namespace Stateflows.StateMachines.Context.Interfaces
+﻿using Stateflows.Common.Interfaces;
+
+namespace Stateflows.StateMachines.Context.Interfaces
 {
     public interface IStateContext
     {

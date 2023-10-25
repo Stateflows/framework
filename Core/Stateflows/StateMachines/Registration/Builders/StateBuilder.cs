@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Threading.Tasks;
-using System.Collections.Generic;
 using Microsoft.Extensions.DependencyInjection;
 using Stateflows.Common;
 using Stateflows.Common.Events;
@@ -16,9 +15,11 @@ using Stateflows.StateMachines.Registration.Interfaces.Internal;
 namespace Stateflows.StateMachines.Registration.Builders
 {
     internal partial class StateBuilder : 
-        IStateBuilder, ISubmachineStateBuilder, 
-        ITypedStateBuilder, ISubmachineTypedStateBuilder, 
-        IStateBuilderInternal
+        IStateBuilder,
+        ISubmachineStateBuilder, 
+        ITypedStateBuilder,
+        ISubmachineTypedStateBuilder,
+        IInternal
     {
         public Vertex Vertex { get; }
 
@@ -31,23 +32,22 @@ namespace Stateflows.StateMachines.Registration.Builders
         }
 
         #region Events
-        public IStateBuilder AddOnInitialize(Func<IStateActionContext, Task> stateActionAsync)
+        public IStateBuilder AddOnInitialize(Func<IStateActionContext, Task> actionAsync)
         {
-            if (stateActionAsync == null)
-                throw new ArgumentNullException("Action not provided");
+            actionAsync.ThrowIfNull(nameof(actionAsync));
 
-            stateActionAsync = stateActionAsync.AddStateMachineInvocationContext(Vertex.Graph);
+            actionAsync = actionAsync.AddStateMachineInvocationContext(Vertex.Graph);
 
             Vertex.Initialize.Actions.Add(async c =>
             {
                 var context = new StateActionContext(c, Vertex, Constants.Entry);
                 try
                 {
-                    await stateActionAsync(context);
+                    await actionAsync(context);
                 }
                 catch (Exception e)
                 {
-                    await c.Executor.Observer.OnStateInitializeExceptionAsync(context, e);
+                    await c.Executor.Inspector.OnStateInitializeExceptionAsync(context, e);
                 }
             }
             );
@@ -55,23 +55,45 @@ namespace Stateflows.StateMachines.Registration.Builders
             return this;
         }
 
-        public IStateBuilder AddOnEntry(Func<IStateActionContext, Task> stateActionAsync)
+        public IStateBuilder AddOnFinalize(Func<IStateActionContext, Task> actionAsync)
         {
-            if (stateActionAsync == null)
-                throw new ArgumentNullException("Action not provided");
+            actionAsync.ThrowIfNull(nameof(actionAsync));
 
-            stateActionAsync = stateActionAsync.AddStateMachineInvocationContext(Vertex.Graph);
+            actionAsync = actionAsync.AddStateMachineInvocationContext(Vertex.Graph);
+
+            Vertex.Finalize.Actions.Add(async c =>
+            {
+                var context = new StateActionContext(c, Vertex, Constants.Entry);
+                try
+                {
+                    await actionAsync(context);
+                }
+                catch (Exception e)
+                {
+                    await c.Executor.Inspector.OnStateFinalizeExceptionAsync(context, e);
+                }
+            }
+            );
+
+            return this;
+        }
+
+        public IStateBuilder AddOnEntry(Func<IStateActionContext, Task> actionAsync)
+        {
+            actionAsync.ThrowIfNull(nameof(actionAsync));
+
+            actionAsync = actionAsync.AddStateMachineInvocationContext(Vertex.Graph);
 
             Vertex.Entry.Actions.Add(async c =>
                 {
                     var context = new StateActionContext(c, Vertex, Constants.Entry);
                     try
                     {
-                        await stateActionAsync(context);
+                        await actionAsync(context);
                     }
                     catch (Exception e)
                     {
-                        await c.Executor.Observer.OnStateEntryExceptionAsync(context, e);
+                        await c.Executor.Inspector.OnStateEntryExceptionAsync(context, e);
                     }
                 }
             );
@@ -79,23 +101,22 @@ namespace Stateflows.StateMachines.Registration.Builders
             return this;
         }
 
-        public IStateBuilder AddOnExit(Func<IStateActionContext, Task> stateActionAsync)
+        public IStateBuilder AddOnExit(Func<IStateActionContext, Task> actionAsync)
         {
-            if (stateActionAsync == null)
-                throw new ArgumentNullException("Action not provided");
+            actionAsync.ThrowIfNull(nameof(actionAsync));
 
-            stateActionAsync = stateActionAsync.AddStateMachineInvocationContext(Vertex.Graph);
+            actionAsync = actionAsync.AddStateMachineInvocationContext(Vertex.Graph);
 
             Vertex.Exit.Actions.Add(async c =>
                 {
                     var context = new StateActionContext(c, Vertex, Constants.Exit);
                     try
                     {
-                        await stateActionAsync(context);
+                        await actionAsync(context);
                     }
                     catch (Exception e)
                     {
-                        await c.Executor.Observer.OnStateExitExceptionAsync(context, e);
+                        await c.Executor.Inspector.OnStateExitExceptionAsync(context, e);
                     }
                 }
             );
@@ -120,7 +141,7 @@ namespace Stateflows.StateMachines.Registration.Builders
         #endregion
 
         #region Transitions
-        public IStateBuilder AddTransition<TEvent>(string targetStateName, TransitionBuilderAction<TEvent> transitionBuildAction = null)
+        public IStateBuilder AddTransition<TEvent>(string targetVertexName, TransitionBuilderAction<TEvent> transitionBuildAction = null)
             where TEvent : Event, new()
         {
             var edge = new Edge()
@@ -129,80 +150,78 @@ namespace Stateflows.StateMachines.Registration.Builders
                 TriggerType = typeof(TEvent),
                 Graph = Vertex.Graph,
                 SourceName = Vertex.Name,
-                TargetName = targetStateName,
+                Source = Vertex,
+                TargetName = targetVertexName,
             };
 
             Vertex.Edges.Add(edge);
             Vertex.Graph.AllEdges.Add(edge);
 
-            if (transitionBuildAction != null)
-            {
-                transitionBuildAction(new TransitionBuilder<TEvent>(edge));
-            }
+            transitionBuildAction?.Invoke(new TransitionBuilder<TEvent>(edge));
 
             return this;
         }
 
-        public IStateBuilder AddDefaultTransition(string targetStateName, TransitionBuilderAction<Completion> transitionBuildAction = null)
-            => AddTransition<Completion>(targetStateName, transitionBuildAction);
+        public IStateBuilder AddDefaultTransition(string targetVertexName, TransitionBuilderAction<Completion> transitionBuildAction = null)
+            => AddTransition<Completion>(targetVertexName, transitionBuildAction);
 
         public IStateBuilder AddInternalTransition<TEvent>(TransitionBuilderAction<TEvent> transitionBuildAction = null)
             where TEvent : Event, new()
             => AddTransition<TEvent>(Constants.DefaultTransitionTarget, transitionBuildAction);
 
-        ITypedStateBuilder IStateTransitionsBuilderBase<ITypedStateBuilder>.AddTransition<TEvent>(string targetStateName, TransitionBuilderAction<TEvent> transitionBuildAction)
-            => AddTransition<TEvent>(targetStateName, transitionBuildAction) as ITypedStateBuilder;
+        ITypedStateBuilder IStateTransitions<ITypedStateBuilder>.AddTransition<TEvent>(string targetVertexName, TransitionBuilderAction<TEvent> transitionBuildAction)
+            => AddTransition<TEvent>(targetVertexName, transitionBuildAction) as ITypedStateBuilder;
 
-        ITypedStateBuilder IStateTransitionsBuilderBase<ITypedStateBuilder>.AddDefaultTransition(string targetStateName, TransitionBuilderAction<Completion> transitionBuildAction)
-            => AddDefaultTransition(targetStateName, transitionBuildAction) as ITypedStateBuilder;
+        ITypedStateBuilder IStateTransitions<ITypedStateBuilder>.AddDefaultTransition(string targetVertexName, TransitionBuilderAction<Completion> transitionBuildAction)
+            => AddDefaultTransition(targetVertexName, transitionBuildAction) as ITypedStateBuilder;
 
-        ITypedStateBuilder IStateTransitionsBuilderBase<ITypedStateBuilder>.AddInternalTransition<TEvent>(TransitionBuilderAction<TEvent> transitionBuildAction)
+        ITypedStateBuilder IStateTransitions<ITypedStateBuilder>.AddInternalTransition<TEvent>(TransitionBuilderAction<TEvent> transitionBuildAction)
             => AddInternalTransition<TEvent>(transitionBuildAction) as ITypedStateBuilder;
 
-        ITypedStateBuilder IStateUtilsBuilderBase<ITypedStateBuilder>.AddDeferredEvent<TEvent>()
+        ITypedStateBuilder IStateUtils<ITypedStateBuilder>.AddDeferredEvent<TEvent>()
             => AddDeferredEvent<TEvent>() as ITypedStateBuilder;
         #endregion
 
         #region Submachine
-        public ISubmachineStateBuilder AddSubmachine(string submachineName, Dictionary<string, object> submachineInitialValues = null)
+        public ISubmachineStateBuilder AddSubmachine(string submachineName, StateActionInitializationBuilder initializationBuilder = null)
         {
             Vertex.SubmachineName = submachineName;
-            Vertex.SubmachineInitialValues = submachineInitialValues;
+            Vertex.SubmachineInitializationBuilder = initializationBuilder;
 
             return this;
         }
 
-        ISubmachineTypedStateBuilder IStateSubmachineBuilderBase<ISubmachineTypedStateBuilder>.AddSubmachine(string submachineName, Dictionary<string, object> submachineInitialValues)
-            => AddSubmachine(submachineName, submachineInitialValues) as ISubmachineTypedStateBuilder;
+        ISubmachineTypedStateBuilder IStateSubmachine<ISubmachineTypedStateBuilder>.AddSubmachine(string submachineName, StateActionInitializationBuilder initializationBuilder)
+            => AddSubmachine(submachineName, initializationBuilder) as ISubmachineTypedStateBuilder;
 
-        ISubmachineStateBuilder IStateEventsBuilderBase<ISubmachineStateBuilder>.AddOnEntry(Func<IStateActionContext, Task> actionAsync)
+        ISubmachineStateBuilder IStateEntry<ISubmachineStateBuilder>.AddOnEntry(Func<IStateActionContext, Task> actionAsync)
             => AddOnEntry(actionAsync) as ISubmachineStateBuilder;
 
-        ISubmachineStateBuilder IStateEventsBuilderBase<ISubmachineStateBuilder>.AddOnExit(Func<IStateActionContext, Task> actionAsync)
+        ISubmachineStateBuilder IStateExit<ISubmachineStateBuilder>.AddOnExit(Func<IStateActionContext, Task> actionAsync)
             => AddOnExit(actionAsync) as ISubmachineStateBuilder;
 
-        ISubmachineStateBuilder IStateUtilsBuilderBase<ISubmachineStateBuilder>.AddDeferredEvent<TEvent>()
+        ISubmachineStateBuilder IStateUtils<ISubmachineStateBuilder>.AddDeferredEvent<TEvent>()
             => AddDeferredEvent<TEvent>() as ISubmachineStateBuilder;
 
-        ISubmachineStateBuilder IStateTransitionsBuilderBase<ISubmachineStateBuilder>.AddTransition<TEvent>(string targetStateName, TransitionBuilderAction<TEvent> transitionBuildAction)
-            => AddTransition<TEvent>(targetStateName, transitionBuildAction) as ISubmachineStateBuilder;
+        ISubmachineStateBuilder IStateTransitions<ISubmachineStateBuilder>.AddTransition<TEvent>(string targetVertexName, TransitionBuilderAction<TEvent> transitionBuildAction)
+            => AddTransition<TEvent>(targetVertexName, transitionBuildAction) as ISubmachineStateBuilder;
 
-        ISubmachineStateBuilder IStateTransitionsBuilderBase<ISubmachineStateBuilder>.AddDefaultTransition(string targetStateName, TransitionBuilderAction<Completion> transitionBuildAction)
-            => AddDefaultTransition(targetStateName, transitionBuildAction) as ISubmachineStateBuilder;
+        ISubmachineStateBuilder IStateTransitions<ISubmachineStateBuilder>.AddDefaultTransition(string targetVertexName, TransitionBuilderAction<Completion> transitionBuildAction)
+            => AddDefaultTransition(targetVertexName, transitionBuildAction) as ISubmachineStateBuilder;
 
-        ISubmachineStateBuilder IStateTransitionsBuilderBase<ISubmachineStateBuilder>.AddInternalTransition<TEvent>(TransitionBuilderAction<TEvent> transitionBuildAction)
+        ISubmachineStateBuilder IStateTransitions<ISubmachineStateBuilder>.AddInternalTransition<TEvent>(TransitionBuilderAction<TEvent> transitionBuildAction)
             => AddInternalTransition<TEvent>(transitionBuildAction) as ISubmachineStateBuilder;
 
-        ISubmachineTypedStateBuilder IStateUtilsBuilderBase<ISubmachineTypedStateBuilder>.AddDeferredEvent<TEvent>()
+        ISubmachineTypedStateBuilder IStateUtils<ISubmachineTypedStateBuilder>.AddDeferredEvent<TEvent>()
             => AddDeferredEvent<TEvent>() as ISubmachineTypedStateBuilder;
 
-        ISubmachineTypedStateBuilder IStateTransitionsBuilderBase<ISubmachineTypedStateBuilder>.AddTransition<TEvent>(string targetStateName, TransitionBuilderAction<TEvent> transitionBuildAction)
-            => AddTransition<TEvent>(targetStateName, transitionBuildAction) as ISubmachineTypedStateBuilder;
+        ISubmachineTypedStateBuilder IStateTransitions<ISubmachineTypedStateBuilder>.AddTransition<TEvent>(string targetVertexName, TransitionBuilderAction<TEvent> transitionBuildAction)
+            => AddTransition<TEvent>(targetVertexName, transitionBuildAction) as ISubmachineTypedStateBuilder;
 
-        ISubmachineTypedStateBuilder IStateTransitionsBuilderBase<ISubmachineTypedStateBuilder>.AddDefaultTransition(string targetStateName, TransitionBuilderAction<Completion> transitionBuildAction)
-            => AddDefaultTransition(targetStateName, transitionBuildAction) as ISubmachineTypedStateBuilder;
+        ISubmachineTypedStateBuilder IStateTransitions<ISubmachineTypedStateBuilder>.AddDefaultTransition(string targetVertexName, TransitionBuilderAction<Completion> transitionBuildAction)
+            => AddDefaultTransition(targetVertexName, transitionBuildAction) as ISubmachineTypedStateBuilder;
 
-        ISubmachineTypedStateBuilder IStateTransitionsBuilderBase<ISubmachineTypedStateBuilder>.AddInternalTransition<TEvent>(TransitionBuilderAction<TEvent> transitionBuildAction)
+        ISubmachineTypedStateBuilder IStateTransitions<ISubmachineTypedStateBuilder>.AddInternalTransition<TEvent>(TransitionBuilderAction<TEvent> transitionBuildAction)
             => AddInternalTransition<TEvent>(transitionBuildAction) as ISubmachineTypedStateBuilder;
         #endregion
     }

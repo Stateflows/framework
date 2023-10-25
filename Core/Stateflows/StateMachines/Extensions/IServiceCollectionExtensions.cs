@@ -15,12 +15,12 @@ namespace Stateflows.StateMachines.Extensions
             => services?.AddServiceType(stateMachineType);
 
         public static IServiceCollection RegisterState<TState>(this IServiceCollection services)
-            where TState : State
+            where TState : BaseState
             => services?.AddServiceType<TState>();
 
         public static IServiceCollection RegisterTransition<TTransition, TEvent>(this IServiceCollection services)
             where TTransition : Transition<TEvent>
-            where TEvent : Event
+            where TEvent : Event, new()
             => services?.AddServiceType<TTransition>();
 
         public static IServiceCollection RegisterExceptionHandler<TExceptionHandler>(this IServiceCollection services)

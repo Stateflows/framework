@@ -1,6 +1,9 @@
-﻿using System.Threading.Tasks;
+﻿using System;
+using System.Threading.Tasks;
+using Stateflows.Common.Engine;
 using Stateflows.Common.Utilities;
 using Stateflows.Common.Interfaces;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Stateflows.Common.Classes
 {
@@ -8,28 +11,36 @@ namespace Stateflows.Common.Classes
     {
         public BehaviorId Id { get; }
 
-        private StateflowsEngine Engine { get; set; }
+        private StateflowsEngine Engine { get; }
 
-        public Behavior(StateflowsEngine engine, BehaviorId id)
+        private IServiceProvider ServiceProvider { get; }
+
+        private CommonInterceptor CommonInterceptor { get; }
+
+        public Behavior(StateflowsEngine engine, IServiceProvider serviceProvider, BehaviorId id)
         {
-            Id = id;
             Engine = engine;
+            CommonInterceptor = serviceProvider.GetRequiredService<CommonInterceptor>();
+            ServiceProvider = serviceProvider;
+            Id = id;
         }
 
-        public async Task<bool> SendAsync<TEvent>(TEvent @event)
+        public async Task<SendResult> SendAsync<TEvent>(TEvent @event)
             where TEvent : Event, new()
         {
-            var holder = Engine.EnqueueEvent(Id, @event);
+            var holder = Engine.EnqueueEvent(Id, @event, ServiceProvider);
             await holder.Handled.WaitOneAsync();
-            return holder.Consumed;
+
+            return new SendResult(@event, holder.Status, holder.Validation);
         }
 
-        public async Task<TResponse> RequestAsync<TResponse>(Request<TResponse> request)
+        public async Task<RequestResult<TResponse>> RequestAsync<TResponse>(Request<TResponse> request)
             where TResponse : Response, new()
         {
-            var holder = Engine.EnqueueEvent(Id, request);
+            var holder = Engine.EnqueueEvent(Id, request, ServiceProvider);
             await holder.Handled.WaitOneAsync();
-            return request.Response;
+
+            return new RequestResult<TResponse>(request, holder.Status, holder.Validation);
         }
     }
 }

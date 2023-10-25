@@ -1,7 +1,6 @@
 using Blazor.Server.Data;
 using Examples.Common;
-using Microsoft.AspNetCore.Components;
-using Microsoft.AspNetCore.Components.Web;
+
 using Stateflows;
 using Stateflows.StateMachines;
 
@@ -31,6 +30,7 @@ builder.Services.AddStateflows(b => b
         )
         .AddCompositeState("state3", b => b
             .AddTransition<SomeEvent>("state4")
+            .AddTransition<OneMinuteEvent>("state4")
 
             .AddInitialState("state3_1", b => b
                 .AddTransition<SomeEvent>("state3_2")

@@ -1,11 +1,11 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+﻿using System;
+using Microsoft.Extensions.DependencyInjection;
+using MongoDB.Driver;
 using Stateflows.Common.Interfaces;
 using Stateflows.Common.Extensions;
 using Stateflows.Common.Registration.Interfaces;
 using Stateflows.Storage.MongoDB.Utils;
 using Stateflows.Storage.MongoDB.Stateflows;
-using MongoDB.Driver;
-using System;
 
 namespace Stateflows
 {
@@ -13,12 +13,12 @@ namespace Stateflows
     {
         public static IStateflowsBuilder AddMongoDBStorage(this IStateflowsBuilder builder, Func<IServiceProvider, MongoDatabaseConfiguration> settingProvider)
         {
-            if (builder.Services.IsServiceRegistered<IStateflowsStorage>())
+            if (builder.ServiceCollection.IsServiceRegistered<IStateflowsStorage>())
             {
                 throw new Exception("Another Stateflows storage already registered");
             }
 
-            builder.Services
+            builder.ServiceCollection
                 .AddSingleton<IStateflowsStorage>(provider =>
                 {
                     var settings = settingProvider(provider);

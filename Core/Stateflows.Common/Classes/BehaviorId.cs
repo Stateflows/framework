@@ -39,9 +39,9 @@ namespace Stateflows
 
         public override bool Equals(object obj)
             =>
-                obj is BehaviorId &&
-                BehaviorClass == ((BehaviorId)obj).BehaviorClass &&
-                Instance == ((BehaviorId)obj).Instance;
+                obj is BehaviorId id &&
+                BehaviorClass == id.BehaviorClass &&
+                Instance == id.Instance;
 
         public override int GetHashCode()
             => Tuple.Create(BehaviorClass, Instance).GetHashCode();

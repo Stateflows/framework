@@ -3,6 +3,7 @@ using System.Threading.Tasks;
 using Stateflows.StateMachines.Models;
 using Stateflows.StateMachines.Interfaces;
 using Stateflows.StateMachines.Context.Classes;
+using Stateflows.Common.Models;
 
 namespace Stateflows.StateMachines
 {

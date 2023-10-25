@@ -1,3 +1,4 @@
+using Stateflows.Common;
 using StateMachine.IntegrationTests.Utils;
 
 namespace StateMachine.IntegrationTests.Tests
@@ -74,19 +75,19 @@ namespace StateMachine.IntegrationTests.Tests
         [TestMethod]
         public async Task SimpleTransition()
         {
-            var consumed = false;
+            var status = EventStatus.Rejected;
             string currentState = "state1";
 
             if (Locator.TryLocateStateMachine(new StateMachineId("simple", "x"), out var sm))
             {
                 await sm.InitializeAsync();
 
-                consumed = await sm.SendAsync(new SomeEvent());
+                status = (await sm.SendAsync(new SomeEvent())).Status;
 
-                currentState = (await sm.GetCurrentStateAsync()).Name;
+                currentState = (await sm.GetCurrentStateAsync()).Response.StatesStack.First();
             }
 
-            Assert.IsTrue(consumed);
+            Assert.AreEqual(EventStatus.Consumed, status);
             Assert.IsTrue(StateExited);
             Assert.IsTrue(TransitionHappened);
             Assert.IsTrue(StateEntered);
@@ -96,19 +97,19 @@ namespace StateMachine.IntegrationTests.Tests
         [TestMethod]
         public async Task GuardedTransition()
         {
-            var consumed = false;
+            var status = EventStatus.Rejected;
             string currentState = "state1";
 
             if (Locator.TryLocateStateMachine(new StateMachineId("guarded", "x"), out var sm))
             {
                 await sm.InitializeAsync();
 
-                consumed = await sm.SendAsync(new OtherEvent() { AnswerToLifeUniverseAndEverything = 43 });
+                status = (await sm.SendAsync(new OtherEvent() { AnswerToLifeUniverseAndEverything = 43 })).Status;
 
-                currentState = (await sm.GetCurrentStateAsync()).Name;
+                currentState = (await sm.GetCurrentStateAsync()).Response.StatesStack.First();
             }
 
-            Assert.IsFalse(consumed);
+            Assert.AreEqual(EventStatus.NotConsumed, status);
             Assert.IsNull(StateExited);
             Assert.IsNull(StateEntered);
             Assert.AreNotEqual("state2", currentState);
@@ -117,38 +118,38 @@ namespace StateMachine.IntegrationTests.Tests
         [TestMethod]
         public async Task DefaultTransition()
         {
-            var consumed = false;
+            var status = EventStatus.Rejected;
             string currentState = "state1";
 
             if (Locator.TryLocateStateMachine(new StateMachineId("default", "x"), out var sm))
             {
                 await sm.InitializeAsync();
 
-                consumed = await sm.SendAsync(new SomeEvent());
+                status = (await sm.SendAsync(new SomeEvent())).Status;
 
-                currentState = (await sm.GetCurrentStateAsync()).Name;
+                currentState = (await sm.GetCurrentStateAsync()).Response.StatesStack.First();
             }
 
-            Assert.IsTrue(consumed);
+            Assert.AreEqual(EventStatus.Consumed, status);
             Assert.AreEqual("state3", currentState);
         }
 
         [TestMethod]
         public async Task InternalTransition()
         {
-            var consumed = false;
+            var status = EventStatus.Rejected;
             string currentState = "state1";
 
             if (Locator.TryLocateStateMachine(new StateMachineId("internal", "x"), out var sm))
             {
                 await sm.InitializeAsync();
 
-                consumed = await sm.SendAsync(new SomeEvent());
+                status = (await sm.SendAsync(new SomeEvent())).Status;
 
-                currentState = (await sm.GetCurrentStateAsync()).Name;
+                currentState = (await sm.GetCurrentStateAsync()).Response.StatesStack.First();
             }
 
-            Assert.IsTrue(consumed);
+            Assert.AreEqual(EventStatus.Consumed, status);
             Assert.IsTrue(TransitionHappened);
             Assert.IsNull(StateExited);
             Assert.AreEqual("state1", currentState);
@@ -157,19 +158,19 @@ namespace StateMachine.IntegrationTests.Tests
         [TestMethod]
         public async Task SelfTransition()
         {
-            var consumed = false;
+            var status = EventStatus.Rejected;
             string currentState = "state1";
 
             if (Locator.TryLocateStateMachine(new StateMachineId("self", "x"), out var sm))
             {
                 await sm.InitializeAsync();
 
-                consumed = await sm.SendAsync(new SomeEvent());
+                status = (await sm.SendAsync(new SomeEvent())).Status;
 
-                currentState = (await sm.GetCurrentStateAsync()).Name;
+                currentState = (await sm.GetCurrentStateAsync()).Response.StatesStack.First();
             }
 
-            Assert.IsTrue(consumed);
+            Assert.AreEqual(EventStatus.Consumed, status);
             Assert.IsTrue(TransitionHappened);
             Assert.IsTrue(StateExited);
             Assert.AreEqual("state1", currentState);

@@ -1,5 +1,4 @@
 ﻿using Stateflows.Common;
-using Stateflows.StateMachines.Context.Classes;
 using Stateflows.StateMachines.Extensions;
 using Stateflows.StateMachines.Registration.Interfaces;
 using Stateflows.StateMachines.Registration.Interfaces.Internal;
@@ -14,19 +13,16 @@ namespace Stateflows.StateMachines
             where TTargetState : State
             => AddTransition<TEvent, TTransition>(builder, StateInfo<TTargetState>.Name);
 
-        public static ICompositeStateInitialBuilder AddTransition<TEvent, TTransition>(this ICompositeStateInitialBuilder builder, string targetStateName)
+        public static ICompositeStateInitialBuilder AddTransition<TEvent, TTransition>(this ICompositeStateInitialBuilder builder, string targetVertexName)
             where TEvent : Event, new()
             where TTransition : Transition<TEvent>
         {
-            var self = builder as IStateBuilderInternal;
-            self.Services.RegisterTransition<TTransition, TEvent>();
+            (builder as IInternal).Services.RegisterTransition<TTransition, TEvent>();
 
-            self.AddTransition<TEvent>(
-                targetStateName,
+            return builder.AddTransition<TEvent>(
+                targetVertexName,
                 t => t.AddTransitionEvents<TTransition, TEvent>()
             );
-
-            return builder;
         }
 
         public static ICompositeStateInitialBuilder AddTransition<TEvent, TTargetState>(this ICompositeStateInitialBuilder builder, TransitionBuilderAction<TEvent> transitionBuildAction = null)

@@ -1,12 +1,18 @@
-﻿namespace Stateflows.Transport.AspNetCore.WebApi.Responses
+﻿using Stateflows.Common;
+using Stateflows.Common.Interfaces;
+
+namespace Stateflows.Transport.AspNetCore.WebApi.Responses
 {
     internal class StateflowsSendResponse
     {
-        public StateflowsSendResponse(bool consumed)
+        public StateflowsSendResponse(SendResult result)
         {
-            Consumed = consumed;
+            Status = result.Status;
+            Validation = result.Validation;
         }
 
-        public bool Consumed { get; set; }
+        public EventStatus Status { get; }
+
+        public EventValidation Validation { get; }
     }
 }

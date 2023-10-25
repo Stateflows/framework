@@ -1,4 +1,6 @@
-﻿using System.Threading.Tasks;
+﻿using System;
+using System.Linq;
+using System.Threading.Tasks;
 using Stateflows.Common;
 using Stateflows.StateMachines.Events;
 using Stateflows.StateMachines.Extensions;
@@ -8,19 +10,30 @@ namespace Stateflows.StateMachines.EventHandlers
 {
     internal class CurrentStateHandler : IStateMachineEventHandler
     {
-        public string EventName => EventInfo<CurrentStateRequest>.Name;
+        public Type EventType => typeof(CurrentStateRequest);
 
-        public async Task<bool> TryHandleEventAsync<TEvent>(IEventInspectionContext<TEvent> context)
+        public Task<EventStatus> TryHandleEventAsync<TEvent>(IEventInspectionContext<TEvent> context)
             where TEvent : Event, new()
         {
             if (context.Event is CurrentStateRequest)
             {
-                (context.Event as CurrentStateRequest).Respond(new CurrentStateResponse() { CurrentState = await context.StateMachine.GetExecutor().GetCurrentStateAsync() });
+                var executor = context.StateMachine.GetExecutor();
 
-                return true;
+                (context.Event as CurrentStateRequest).Respond(new CurrentStateResponse()
+                {
+                    StatesStack = executor.GetStateStack(),
+                    ExpectedEvents = executor.GetExpectedEvents()
+                        .Where(type => !type.IsSubclassOf(typeof(TimeEvent)))
+                        .Where(type => type != typeof(Completion))
+                        .Select(type => type.GetEventName())
+                        .ToArray(),
+                    BehaviorStatus = executor.BehaviorStatus
+                });
+
+                return Task.FromResult(EventStatus.Consumed);
             }
 
-            return false;
+            return Task.FromResult(EventStatus.NotConsumed);
         }
     }
 }

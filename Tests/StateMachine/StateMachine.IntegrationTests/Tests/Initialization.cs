@@ -1,7 +1,13 @@
+using Stateflows.Common;
 using StateMachine.IntegrationTests.Utils;
 
 namespace StateMachine.IntegrationTests.Tests
 {
+    public class ValueInitializationRequest : InitializationRequest
+    {
+        public string Value { get; set; }
+    }
+
     [TestClass]
     public class Initialization : StateflowsTestClass
     {
@@ -26,14 +32,39 @@ namespace StateMachine.IntegrationTests.Tests
                 )
 
                 .AddStateMachine("value", b => b
+                    .AddOnInitialize<ValueInitializationRequest>(c =>
+                    {
+                        c.StateMachine.Values.Set<string>("foo", c.InitializationRequest.Value);
+                    })
                     .AddInitialState("state1", b => b
                         .AddOnEntry(c =>
                         {
-                            if (c.StateMachine.GlobalValues.TryGet<string>("foo", out var v))
+                            if (c.StateMachine.Values.TryGet<string>("foo", out var v))
                             {
                                 Value = v;
                             }
                         })
+                    )
+                )
+
+                .AddStateMachine("invalid", b => b
+                    .AddOnInitialize<ValueInitializationRequest>(c => { })
+                    .AddInitialState("state1")
+                )
+
+                .AddStateMachine("completion", b => b
+                    .AddInitialState("state1", b => b
+                        .AddDefaultTransition("state2")
+                    )
+                    .AddState("state2")
+                )
+
+                .AddStateMachine("nested-completion", b => b
+                    .AddInitialCompositeState("state1", b => b
+                        .AddInitialState("state1.1", b => b
+                            .AddDefaultTransition("state1.2")
+                        )
+                        .AddState("state1.2")
                     )
                 )
                 ;
@@ -42,17 +73,17 @@ namespace StateMachine.IntegrationTests.Tests
         [TestMethod]
         public async Task NoInitialization()
         {
-            var consumed = false;
+            var status = EventStatus.Rejected;
             string? currentState = "";
 
             if (Locator.TryLocateStateMachine(new StateMachineId("simple", "x"), out var sm))
             {
-                consumed = await sm.SendAsync(new SomeEvent());
+                status = (await sm.SendAsync(new SomeEvent())).Status;
 
-                currentState = (await sm.GetCurrentStateAsync())?.Name;
+                currentState = (await sm.GetCurrentStateAsync()).Response?.Name;
             }
 
-            Assert.IsFalse(consumed);
+            Assert.AreEqual(EventStatus.Rejected, status);
             Assert.IsNull(StateEntered);
             Assert.AreNotEqual("state1", currentState);
         }
@@ -61,13 +92,13 @@ namespace StateMachine.IntegrationTests.Tests
         public async Task SimpleInitialization()
         {
             var initialized = false;
-            string currentState = "";
+            string currentState = string.Empty;
 
             if (Locator.TryLocateStateMachine(new StateMachineId("simple", "x"), out var sm))
             {
-                initialized = await sm.InitializeAsync();
+                initialized = (await sm.InitializeAsync()).Response.InitializationSuccessful;
 
-                currentState = (await sm.GetCurrentStateAsync()).Name;
+                currentState = (await sm.GetCurrentStateAsync()).Response.StatesStack.First() ?? string.Empty;
             }
 
             Assert.IsTrue(initialized);
@@ -79,15 +110,15 @@ namespace StateMachine.IntegrationTests.Tests
         public async Task DoubleInitialization()
         {
             var initialized = false;
-            string currentState = "";
+            string currentState = string.Empty;
 
             if (Locator.TryLocateStateMachine(new StateMachineId("simple", "x"), out var sm))
             {
                 await sm.InitializeAsync();
 
-                initialized = await sm.InitializeAsync();
+                initialized = (await sm.InitializeAsync()).Response.InitializationSuccessful;
 
-                currentState = (await sm.GetCurrentStateAsync()).Name;
+                currentState = (await sm.GetCurrentStateAsync()).Response.StatesStack.First() ?? string.Empty;
             }
 
             Assert.IsFalse(initialized);
@@ -99,19 +130,65 @@ namespace StateMachine.IntegrationTests.Tests
         public async Task ValueInitialization()
         {
             var initialized = false;
-            string currentState = "";
+            string currentState = string.Empty;
 
             if (Locator.TryLocateStateMachine(new StateMachineId("value", "x"), out var sm))
             {
-                var values = new Dictionary<string, object>() { { "foo", "bar" } };
-                initialized = await sm.InitializeAsync(values);
+                initialized = (await sm.InitializeAsync(new ValueInitializationRequest() { Value = "bar" })).Response.InitializationSuccessful;
 
-                currentState = (await sm.GetCurrentStateAsync()).Name;
+                currentState = (await sm.GetCurrentStateAsync()).Response.StatesStack.First() ?? string.Empty;
             }
 
             Assert.IsTrue(initialized);
             Assert.AreEqual("bar", Value);
             Assert.AreEqual("state1", currentState);
+        }
+
+        [TestMethod]
+        public async Task InvalidInitialization()
+        {
+            var initialized = false;
+
+            if (Locator.TryLocateStateMachine(new StateMachineId("invalid", "x"), out var sm))
+            {
+                initialized = (await sm.InitializeAsync()).Response.InitializationSuccessful;
+            }
+
+            Assert.IsFalse(initialized);
+        }
+
+        [TestMethod]
+        public async Task InitializationWithCompletion()
+        {
+            var initialized = false;
+            string currentState = string.Empty;
+
+            if (Locator.TryLocateStateMachine(new StateMachineId("completion", "x"), out var sm))
+            {
+                initialized = (await sm.InitializeAsync()).Response.InitializationSuccessful;
+
+                currentState = (await sm.GetCurrentStateAsync()).Response.StatesStack.First() ?? string.Empty;
+            }
+
+            Assert.IsTrue(initialized);
+            Assert.AreEqual("state2", currentState);
+        }
+
+        [TestMethod]
+        public async Task InitializationWithNestedCompletion()
+        {
+            var initialized = false;
+            string? currentState = string.Empty;
+
+            if (Locator.TryLocateStateMachine(new StateMachineId("nested-completion", "x"), out var sm))
+            {
+                initialized = (await sm.InitializeAsync()).Response.InitializationSuccessful;
+
+                currentState = (await sm.GetCurrentStateAsync()).Response.StatesStack.Skip(1).First() ?? string.Empty;
+            }
+
+            Assert.IsTrue(initialized);
+            Assert.AreEqual("state1.2", currentState);
         }
     }
 }

@@ -1,32 +1,36 @@
-﻿using System.Threading.Tasks;
+﻿using System;
+using System.Threading.Tasks;
 using Stateflows.Common;
 using Stateflows.StateMachines;
 using Stateflows.Extensions.PlantUml.Events;
-using Stateflows.StateMachines.Inspection.Interfaces;
 
 namespace Stateflows.Extensions.PlantUml.Classes
 {
     internal class PlantUmlHandler : IStateMachineEventHandler
     {
-        public string EventName => EventInfo<PlantUmlRequest>.Name;
+        public Type EventType => typeof(PlantUmlRequest);
 
-        public Task<bool> TryHandleEventAsync<TEvent>(IEventInspectionContext<TEvent> context)
+        public Task<EventStatus> TryHandleEventAsync<TEvent>(Stateflows.StateMachines.Inspection.Interfaces.IEventInspectionContext<TEvent> context)
+            where TEvent : Event, new()
+            => Task.FromResult(HandleEvent(context.Event, () => context.StateMachine.Inspection.GetPlantUml()));
+
+        private EventStatus HandleEvent<TEvent>(TEvent @event, Func<string> plantUmlGenerator)
             where TEvent : Event, new()
         {
-            if (context.Event is PlantUmlRequest)
+            if (@event is PlantUmlRequest)
             {
-                var plantUml = context.StateMachine.Inspection.GetPlantUml();
-                (context.Event as PlantUmlRequest).Respond(new PlantUmlResponse()
+                var plantUml = plantUmlGenerator();
+                (@event as PlantUmlRequest).Respond(new PlantUmlResponse()
                     {
                         PlantUml = plantUml,
                         PlantUmlUrl = "http://www.plantuml.com/plantuml/png/" + PlantUmlTextEncoder.Encode(plantUml)
                     }
                 );
 
-                return Task.FromResult(true);
+                return EventStatus.Consumed;
             }
 
-            return Task.FromResult(false);
+            return EventStatus.NotConsumed;
         }
     }
 }

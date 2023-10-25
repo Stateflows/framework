@@ -2,27 +2,27 @@
 
 namespace Stateflows.StateMachines.Registration.Interfaces
 {
-    public partial interface IStateBuilder :
-        IStateEventsBuilderBase<IStateBuilder>,
-        IStateUtilsBuilderBase<IStateBuilder>,
-        IStateTransitionsBuilderBase<IStateBuilder>,
-        IStateSubmachineBuilderBase<ISubmachineStateBuilder>
+    public interface IStateBuilder :
+        IStateEvents<IStateBuilder>,
+        IStateUtils<IStateBuilder>,
+        IStateTransitions<IStateBuilder>,
+        IStateSubmachine<ISubmachineStateBuilder>
     { }
 
-    public partial interface ISubmachineStateBuilder :
-        IStateEventsBuilderBase<ISubmachineStateBuilder>,
-        IStateUtilsBuilderBase<ISubmachineStateBuilder>,
-        IStateTransitionsBuilderBase<ISubmachineStateBuilder>
+    public interface ISubmachineStateBuilder :
+        IStateEvents<ISubmachineStateBuilder>,
+        IStateUtils<ISubmachineStateBuilder>,
+        IStateTransitions<ISubmachineStateBuilder>
     { }
 
-    public partial interface ITypedStateBuilder :
-        IStateUtilsBuilderBase<ITypedStateBuilder>,
-        IStateTransitionsBuilderBase<ITypedStateBuilder>,
-        IStateSubmachineBuilderBase<ISubmachineTypedStateBuilder>
+    public interface ITypedStateBuilder :
+        IStateUtils<ITypedStateBuilder>,
+        IStateTransitions<ITypedStateBuilder>,
+        IStateSubmachine<ISubmachineTypedStateBuilder>
     { }
 
-    public partial interface ISubmachineTypedStateBuilder :
-        IStateUtilsBuilderBase<ISubmachineTypedStateBuilder>,
-        IStateTransitionsBuilderBase<ISubmachineTypedStateBuilder>
+    public interface ISubmachineTypedStateBuilder :
+        IStateUtils<ISubmachineTypedStateBuilder>,
+        IStateTransitions<ISubmachineTypedStateBuilder>
     { }
 }

@@ -3,10 +3,8 @@
 namespace Stateflows.Common
 {
     public abstract class Request<TResponse> : Event
-        where TResponse : Response
+        where TResponse : Response, new()
     {
-        public Request() : base() { }
-
         public void Respond(TResponse response)
         {
             if (Response != null)

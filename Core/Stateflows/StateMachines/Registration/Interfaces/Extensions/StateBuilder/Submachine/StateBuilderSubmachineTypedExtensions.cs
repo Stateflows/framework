@@ -1,12 +1,11 @@
-﻿using System.Collections.Generic;
-using Stateflows.StateMachines.Registration.Interfaces;
+﻿using Stateflows.StateMachines.Registration.Interfaces;
 
 namespace Stateflows.StateMachines
 {
     public static class StateBuilderSubmachineTypedExtensions
     {
-        public static ISubmachineStateBuilder AddSubmachine<TStateMachine>(this IStateBuilder builder, Dictionary<string, object> submachineInitialValues = null)
+        public static ISubmachineStateBuilder AddSubmachine<TStateMachine>(this IStateBuilder builder, StateActionInitializationBuilder initializationBuilder = null)
             where TStateMachine : StateMachine
-            => builder.AddSubmachine(StateMachineInfo<TStateMachine>.Name, submachineInitialValues);
+            => builder.AddSubmachine(StateMachineInfo<TStateMachine>.Name, initializationBuilder);
     }
 }

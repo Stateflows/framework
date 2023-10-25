@@ -1,14 +1,14 @@
 ﻿using System.Threading.Tasks;
-using System.Collections.Generic;
-using Stateflows.Common;
 using Stateflows.Common.Interfaces;
-using Stateflows.StateMachines.Events;
 using Stateflows.StateMachines;
+using Stateflows.StateMachines.Events;
 
 namespace Stateflows.Common.StateMachines.Classes
 {
     internal class StateMachineWrapper : IStateMachine
     {
+        BehaviorId IBehavior.Id => Behavior.Id;
+
         private IBehavior Behavior { get; }
 
         public StateMachineWrapper(IBehavior consumer)
@@ -16,18 +16,15 @@ namespace Stateflows.Common.StateMachines.Classes
             Behavior = consumer;
         }
 
-        public async Task<bool> SendAsync<TEvent>(TEvent @event)
+        public Task<RequestResult<CurrentStateResponse>> GetCurrentStateAsync()
+            => RequestAsync(new CurrentStateRequest());
+
+        public Task<SendResult> SendAsync<TEvent>(TEvent @event)
             where TEvent : Event, new()
-            => await Behavior.SendAsync(@event);
+            => Behavior.SendAsync(@event);
 
-        public async Task<TResponse> RequestAsync<TResponse>(Request<TResponse> request)
+        public Task<RequestResult<TResponse>> RequestAsync<TResponse>(Request<TResponse> request)
             where TResponse : Response, new()
-            => await Behavior.RequestAsync(request);
-
-        public async Task<StateDescriptor> GetCurrentStateAsync()
-            => (await RequestAsync(new CurrentStateRequest()))?.CurrentState ?? null;
-
-        public async Task<IEnumerable<string>> GetExpectedEventsAsync()
-            => (await RequestAsync(new ExpectedEventsRequest()))?.ExpectedEvents ?? new List<string>();
+            => Behavior.RequestAsync(request);
     }
 }

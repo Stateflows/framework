@@ -14,7 +14,7 @@ namespace Stateflows.StateMachines.Inspection.Classes
         {
             Executor = executor;
             Edge = edge;
-            Executor.Observer.InspectionTransitions.Add(Edge, this);
+            Executor.Inspector.InspectionTransitions.Add(Edge, this);
         }
 
         public string Trigger => Edge.Trigger;
@@ -24,12 +24,12 @@ namespace Stateflows.StateMachines.Inspection.Classes
         private IActionInspection guard;
 
         public IActionInspection Guard
-            => guard ?? (guard = new ActionInspection(Executor, nameof(Guard)));
+            => guard ??= new ActionInspection(Executor, nameof(Guard));
 
         private IActionInspection effect;
 
         public IActionInspection Effect
-            => effect ?? (effect = new ActionInspection(Executor, nameof(Effect)));
+            => effect ??= new ActionInspection(Executor, nameof(Effect));
 
         private IStateInspection source;
 
@@ -39,7 +39,7 @@ namespace Stateflows.StateMachines.Inspection.Classes
             {
                 if (
                     source == null &&
-                    Executor.Observer.InspectionStates.TryGetValue(Edge.Source, out var s)
+                    Executor.Inspector.InspectionStates.TryGetValue(Edge.Source.Identifier, out var s)
                 )
                 {
                     source = s;
@@ -58,7 +58,7 @@ namespace Stateflows.StateMachines.Inspection.Classes
                 if (
                     target == null &&
                     Edge.Target != null &&
-                    Executor.Observer.InspectionStates.TryGetValue(Edge.Target, out var t)
+                    Executor.Inspector.InspectionStates.TryGetValue(Edge.Target.Identifier, out var t)
                 )
                 {
                     target = t;

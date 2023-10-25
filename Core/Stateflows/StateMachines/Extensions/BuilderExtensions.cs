@@ -1,10 +1,13 @@
 ﻿using System;
+using System.Linq;
 using Stateflows.Common;
 using Stateflows.Common.Extensions;
 using Stateflows.StateMachines.Context.Classes;
 using Stateflows.StateMachines.Registration;
 using Stateflows.StateMachines.Registration.Interfaces;
 using Stateflows.StateMachines.Registration.Interfaces.Base;
+using System.Threading.Tasks;
+using Stateflows.StateMachines.Registration.Builders;
 
 namespace Stateflows.StateMachines.Extensions
 {
@@ -20,28 +23,58 @@ namespace Stateflows.StateMachines.Extensions
                     context.Executor.GetStateMachine(stateMachineType, context)?.OnInitializeAsync();
                 });
             }
+
+            if (typeof(StateMachine).GetMethod(Constants.OnFinalizeAsync).IsOverridenIn(stateMachineType))
+            {
+                builder.AddOnFinalize(c =>
+                {
+                    var context = (c as BaseContext).Context;
+                    context.Executor.GetStateMachine(stateMachineType, context)?.OnFinalizeAsync();
+                });
+            }
+
+            var baseInterfaceType = typeof(IInitializedBy<>);
+            foreach (var interfaceType in stateMachineType.GetInterfaces())
+            {
+                if (interfaceType.GetGenericTypeDefinition() == baseInterfaceType)
+                {
+                    var methodInfo = interfaceType.GetMethods().First(m => m.Name == "InitializeAsync");
+                    var requestType = interfaceType.GenericTypeArguments[0];
+                    var requestName = Stateflows.Common.EventInfo.GetName(requestType);
+                    (builder as StateMachineBuilder).AddInitializer(requestName, c =>
+                    {
+                        var stateMachine = c.Executor.GetStateMachine(stateMachineType, c);
+                        return methodInfo.Invoke(stateMachine, new object[] { c.Event }) as Task;
+                    });
+                }
+            }
         }
 
-        public static void AddStateEvents<TState, TReturn>(this IStateEventsBuilderBase<TReturn> builder)
-            where TState : State
+        public static void AddStateEvents<TState, TReturn>(this IStateEvents<TReturn> builder)
+            where TState : BaseState
         {
-            if (typeof(State).GetMethod(Constants.OnEntryAsync).IsOverridenIn<TState>())
+            if (typeof(BaseState).GetMethod(Constants.OnEntryAsync).IsOverridenIn<TState>())
             {
                 builder.AddOnEntry(c => (c as BaseContext).Context.Executor.GetState<TState>(c)?.OnEntryAsync());
             }
 
-            if (typeof(State).GetMethod(Constants.OnExitAsync).IsOverridenIn<TState>())
+            if (typeof(BaseState).GetMethod(Constants.OnExitAsync).IsOverridenIn<TState>())
             {
                 builder.AddOnExit(c => (c as BaseContext).Context.Executor.GetState<TState>(c)?.OnExitAsync());
             }
         }
 
-        public static void AddCompositeStateEvents<TCompositeState, TReturn>(this ICompositeStateBuilderBase<TReturn> builder)
+        public static void AddCompositeStateEvents<TCompositeState, TReturn>(this ICompositeStateEvents<TReturn> builder)
             where TCompositeState : CompositeState
         {
-            if (typeof(State).GetMethod(Constants.OnInitializeAsync).IsOverridenIn<TCompositeState>())
+            if (typeof(CompositeState).GetMethod(Constants.OnInitializeAsync).IsOverridenIn<TCompositeState>())
             {
                 builder.AddOnInitialize(c => (c as BaseContext).Context.Executor.GetState<TCompositeState>(c)?.OnInitializeAsync());
+            }
+
+            if (typeof(CompositeState).GetMethod(Constants.OnFinalizeAsync).IsOverridenIn<TCompositeState>())
+            {
+                builder.AddOnFinalize(c => (c as BaseContext).Context.Executor.GetState<TCompositeState>(c)?.OnFinalizeAsync());
             }
         }
 

@@ -1,9 +1,8 @@
-using Microsoft.AspNetCore.ResponseCompression;
-using Blazor.WebAssembly.Server;
 using Examples.Common;
 
 using Stateflows;
 using Stateflows.StateMachines;
+using System.Diagnostics;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -26,6 +25,7 @@ builder.Services.AddStateflows(b => b
         )
         .AddCompositeState("state3", b => b
             .AddTransition<SomeEvent>("state4")
+            .AddTransition<OneMinuteEvent>("state4")
 
             .AddInitialState("state3_1", b => b
                 .AddTransition<SomeEvent>("state3_2")

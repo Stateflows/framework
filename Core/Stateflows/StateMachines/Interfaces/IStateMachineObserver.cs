@@ -6,10 +6,14 @@ namespace Stateflows.StateMachines
 {
     public interface IStateMachineObserver
     {
-        Task BeforeStateMachineInitializeAsync(IStateMachineActionContext context);
-        Task AfterStateMachineInitializeAsync(IStateMachineActionContext context);
+        Task BeforeStateMachineInitializeAsync(IStateMachineInitializationContext context);
+        Task AfterStateMachineInitializeAsync(IStateMachineInitializationContext context);
+        Task BeforeStateMachineFinalizeAsync(IStateMachineActionContext context);
+        Task AfterStateMachineFinalizeAsync(IStateMachineActionContext context);
         Task BeforeStateInitializeAsync(IStateActionContext context);
         Task AfterStateInitializeAsync(IStateActionContext context);
+        Task BeforeStateFinalizeAsync(IStateActionContext context);
+        Task AfterStateFinalizeAsync(IStateActionContext context);
         Task BeforeStateEntryAsync(IStateActionContext context);
         Task AfterStateEntryAsync(IStateActionContext context);
         Task BeforeStateExitAsync(IStateActionContext context);

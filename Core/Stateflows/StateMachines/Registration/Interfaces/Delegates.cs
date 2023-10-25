@@ -1,4 +1,5 @@
 ﻿using Stateflows.Common;
+using Stateflows.StateMachines.Context.Interfaces;
 using System;
 
 namespace Stateflows.StateMachines.Registration.Interfaces
@@ -16,9 +17,11 @@ namespace Stateflows.StateMachines.Registration.Interfaces
     public delegate void TransitionBuilderAction<TEvent>(ITransitionBuilder<TEvent> builder)
         where TEvent : Event, new();
 
-    public delegate IStateMachineObserver ObserverFactory(IServiceProvider serviceProvider);
+    public delegate IStateMachineObserver StateMachineObserverFactory(IServiceProvider serviceProvider);
 
-    public delegate IStateMachineInterceptor InterceptorFactory(IServiceProvider serviceProvider);
+    public delegate IStateMachineInterceptor StateMachineInterceptorFactory(IServiceProvider serviceProvider);
 
-    public delegate IStateMachineExceptionHandler ExceptionHandlerFactory(IServiceProvider serviceProvider);
+    public delegate IStateMachineExceptionHandler StateMachineExceptionHandlerFactory(IServiceProvider serviceProvider);
+
+    public delegate InitializationRequest StateActionInitializationBuilder(IStateActionContext context);
 }

@@ -1,12 +1,9 @@
-﻿using Stateflows.Common;
+﻿using System;
+using Stateflows.Common;
 using Stateflows.StateMachines.Context.Interfaces;
-using Stateflows.StateMachines.Interfaces;
-using Stateflows.StateMachines.Models;
+using Stateflows.StateMachines.Registration.Builders;
 using Stateflows.StateMachines.Registration.Extensions;
 using Stateflows.StateMachines.Registration.Interfaces;
-using System.Threading.Tasks;
-using System;
-using Stateflows.StateMachines.Registration.Builders;
 
 namespace Stateflows.StateMachines
 {

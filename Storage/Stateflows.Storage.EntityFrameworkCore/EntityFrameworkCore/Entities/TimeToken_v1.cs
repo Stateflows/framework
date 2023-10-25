@@ -3,7 +3,7 @@
 namespace Stateflows.Storage.EntityFrameworkCore.EntityFrameworkCore.Entities
 {
     [Table("StateflowsTimeTokens_v1")]
-    internal class TimeToken_v1
+    public class TimeToken_v1
     {
         public int Id { get; set; }
 

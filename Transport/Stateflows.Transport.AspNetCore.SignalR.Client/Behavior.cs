@@ -2,6 +2,7 @@
 using Stateflows.Common;
 using Stateflows.Common.Utilities;
 using Stateflows.Common.Interfaces;
+using Stateflows.Common.Extensions;
 
 namespace Stateflows.Transport.AspNetCore.SignalR.Client
 {
@@ -21,7 +22,7 @@ namespace Stateflows.Transport.AspNetCore.SignalR.Client
             return result;
         }
 
-        private BehaviorId Id { get; }
+        public BehaviorId Id { get; }
 
         public Behavior(Task<HubConnection> hub, BehaviorId id)
         {
@@ -29,12 +30,30 @@ namespace Stateflows.Transport.AspNetCore.SignalR.Client
             Id = id;
         }
 
-        public async Task<TResponse> RequestAsync<TResponse>(Request<TResponse> request)
-            where TResponse : Response, new()
-            => await (await GetHub()).InvokeAsync<TResponse>("Request", Id, StateflowsJsonConverter.SerializeObject(request));
-
-        public async Task<bool> SendAsync<TEvent>(TEvent @event)
+        public async Task<SendResult> SendAsync<TEvent>(TEvent @event)
             where TEvent : Event, new()
-            => await(await GetHub()).InvokeAsync<bool>("Send", Id, StateflowsJsonConverter.SerializeObject(@event));
+        {
+            var hub = await GetHub();
+
+            var resultString = await hub.InvokeAsync<string>("Send", Id, StateflowsJsonConverter.SerializeObject(@event));
+
+            var result = StateflowsJsonConverter.DeserializeObject<SendResult>(resultString);
+
+            return new SendResult(@event, result.Status, result.Validation);
+        }
+
+        public async Task<RequestResult<TResponse>> RequestAsync<TResponse>(Request<TResponse> request)
+            where TResponse : Response, new()
+        {
+            var hub = await GetHub();
+
+            var resultString = await hub.InvokeAsync<string>("Request", Id, StateflowsJsonConverter.SerializeObject(request));
+
+            var result = StateflowsJsonConverter.DeserializeObject<RequestResult>(resultString);
+
+            request.Respond(result.Response);
+
+            return new RequestResult<TResponse>(request, result.Status, result.Validation);
+        }
     }
 }

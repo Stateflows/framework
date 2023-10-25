@@ -1,6 +1,4 @@
-﻿using Stateflows.Common.Interfaces;
-
-namespace Stateflows.StateMachines.Context.Interfaces
+﻿namespace Stateflows.StateMachines.Context.Interfaces
 {
     public interface IStateActionContext : IStateMachineActionContext
     {

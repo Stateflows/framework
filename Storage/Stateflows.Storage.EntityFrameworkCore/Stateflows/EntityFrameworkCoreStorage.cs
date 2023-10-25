@@ -12,29 +12,28 @@ namespace Stateflows.Storage.EntityFrameworkCore.Stateflows
 {
     internal class EntityFrameworkCoreStorage : IStateflowsStorage
     {
-        private IDbContextFactory<StateflowsDbContext> DbContextFactory { get; set; }
+        private IStateflowsDbContext_v1 DbContext { get; set; }
 
-        public EntityFrameworkCoreStorage(IDbContextFactory<StateflowsDbContext> dbContextFactory)
+        public EntityFrameworkCoreStorage(IStateflowsDbContext_v1 dbContext)
         {
-            DbContextFactory = dbContextFactory;
+            DbContext = dbContext;
         }
 
         public async Task Dehydrate(StateflowsContext context)
         {
-            using (var dbContext = DbContextFactory.CreateDbContext())
             {
-                var contextEntity = await dbContext.Contexts_v1.FindOrCreate(context);
+                var contextEntity = await DbContext.Contexts_v1.FindOrCreate(context);
                 contextEntity.Data = StateflowsJsonConverter.SerializeObject(context);
                 if (contextEntity.Id == 0)
                 {
-                    dbContext.Contexts_v1.Add(contextEntity);
+                    DbContext.Contexts_v1.Add(contextEntity);
                 }
                 else
                 {
-                    dbContext.Contexts_v1.Update(contextEntity);
+                    DbContext.Contexts_v1.Update(contextEntity);
                 }
 
-                await dbContext.SaveChangesAsync();
+                await DbContext.SaveChangesAsync();
             }
         }
 
@@ -43,9 +42,8 @@ namespace Stateflows.Storage.EntityFrameworkCore.Stateflows
             StateflowsContext? result = null;
             try
             {
-                using (var dbContext = DbContextFactory.CreateDbContext())
                 {
-                    var c = await dbContext.Contexts_v1.FindOrCreate(id);
+                    var c = await DbContext.Contexts_v1.FindOrCreate(id);
 
                     result = StateflowsJsonConverter.DeserializeObject<StateflowsContext>(c.Data ?? string.Empty);
                 }
@@ -66,7 +64,6 @@ namespace Stateflows.Storage.EntityFrameworkCore.Stateflows
         public async Task AddTimeTokens(TimeToken[] timeTokens)
         {
             var tokens = new Dictionary<TimeToken, TimeTokenEntity>();
-            using (var dbContext = DbContextFactory.CreateDbContext())
             {
                 foreach (var timeToken in timeTokens)
                 {
@@ -77,12 +74,12 @@ namespace Stateflows.Storage.EntityFrameworkCore.Stateflows
 
                     tokens.Add(timeToken, t);
 
-                    dbContext.TimeTokens_v1.Add(t);
+                    DbContext.TimeTokens_v1.Add(t);
 
                     timeToken.Id = t.Id.ToString();
                 }
 
-                await dbContext.SaveChangesAsync();
+                await DbContext.SaveChangesAsync();
 
                 foreach (var timeToken in tokens.Keys)
                 {
@@ -93,10 +90,9 @@ namespace Stateflows.Storage.EntityFrameworkCore.Stateflows
 
         public async Task<IEnumerable<TimeToken>> GetTimeTokens(IEnumerable<BehaviorClass> behaviorClasses)
         {
-            using (var dbContext = DbContextFactory.CreateDbContext())
             {
                 var behaviorClassStrings = behaviorClasses.Select(bc => StateflowsJsonConverter.SerializeObject(bc));
-                return (await dbContext.TimeTokens_v1
+                return (await DbContext.TimeTokens_v1
                         .Where(t => behaviorClassStrings.Contains(t.BehaviorClass))
                         .ToArrayAsync()
                     )
@@ -121,14 +117,13 @@ namespace Stateflows.Storage.EntityFrameworkCore.Stateflows
 
         public async Task ClearTimeTokens(BehaviorId behaviorId, IEnumerable<string> ids)
         {
-            using (var dbContext = DbContextFactory.CreateDbContext())
             {
-                var tokens = await dbContext.TimeTokens_v1
+                var tokens = await DbContext.TimeTokens_v1
                     .Where(e => ids.ToArray().Contains(e.Id.ToString()))
                     .ToArrayAsync();
 
-                dbContext.TimeTokens_v1.RemoveRange(tokens);
-                await dbContext.SaveChangesAsync();
+                DbContext.TimeTokens_v1.RemoveRange(tokens);
+                await DbContext.SaveChangesAsync();
             }
         }
     }

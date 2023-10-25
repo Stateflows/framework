@@ -1,7 +1,9 @@
 ﻿using System;
 using System.Linq;
 using Microsoft.Extensions.DependencyInjection;
+using Stateflows.Common;
 using Stateflows.Common.Classes;
+using Stateflows.Common.Engine;
 using Stateflows.Common.Extensions;
 using Stateflows.Common.Interfaces;
 using Stateflows.Common.Registration.Builders;
@@ -13,26 +15,30 @@ namespace Stateflows
     {
         internal static IStateflowsBuilder EnsureStateflowServices(this IStateflowsBuilder stateflowsBuilder)
         {
-            if (!stateflowsBuilder.Services.Any(x => x.ServiceType == typeof(StateflowsEngine)))
+            if (!stateflowsBuilder.ServiceCollection.Any(x => x.ServiceType == typeof(StateflowsEngine)))
             {
                 stateflowsBuilder
-                    .Services
+                    .ServiceCollection
                     .AddSingleton<StateflowsEngine>()
                     .AddHostedService(provider => provider.GetService<StateflowsEngine>())
                     .AddSingleton<ITimeService, TimeService>()
                     .AddHostedService(provider => provider.GetService<ITimeService>() as TimeService)
+                    .AddScoped<CommonInterceptor>()
                     ;
             }
 
             return stateflowsBuilder;
         }
+
         public static IServiceCollection AddStateflows(this IServiceCollection services, Action<IStateflowsBuilder> builderAction)
         {
-            if (builderAction == null) throw new ArgumentNullException(nameof(builderAction));
+            builderAction.ThrowIfNull(nameof(builderAction));
 
-            var register = new StateflowsBuilder(services);
+            var builder = new StateflowsBuilder(services);
 
-            builderAction(register);
+            services.AddStateflowsClient(b => { });
+
+            builderAction(builder);
 
             if (!services.IsServiceRegistered<IStateflowsStorage>())
             {
@@ -44,9 +50,37 @@ namespace Stateflows
                 services.AddSingleton<IStateflowsLock, InProcessLock>();
             }
 
-            services.AddStateflowsClient(b => { });
-
             return services;
+        }
+
+        public static IStateflowsBuilder AddInterceptor<TInterceptor>(this IStateflowsBuilder stateflowsBuilder)
+            where TInterceptor : class, IBehaviorInterceptor
+        {
+            stateflowsBuilder.ServiceCollection.AddScoped<IBehaviorInterceptor, TInterceptor>();
+
+            return stateflowsBuilder;
+        }
+
+        public static IStateflowsBuilder AddInterceptor(this IStateflowsBuilder stateflowsBuilder, BehaviorInterceptorFactory interceptorFactory)
+        {
+            stateflowsBuilder.ServiceCollection.AddScoped(s => interceptorFactory(s));
+
+            return stateflowsBuilder;
+        }
+
+        public static IStateflowsBuilder AddClientInterceptor<TClientInterceptor>(this IStateflowsBuilder stateflowsBuilder)
+            where TClientInterceptor : class, IBehaviorClientInterceptor
+        {
+            stateflowsBuilder.ServiceCollection.AddScoped<IBehaviorClientInterceptor, TClientInterceptor>();
+
+            return stateflowsBuilder;
+        }
+
+        public static IStateflowsBuilder AddClientInterceptor(this IStateflowsBuilder stateflowsBuilder, BehaviorClientInterceptorFactory clientInterceptorFactory)
+        {
+            stateflowsBuilder.ServiceCollection.AddScoped(s => clientInterceptorFactory(s));
+
+            return stateflowsBuilder;
         }
     }
 }

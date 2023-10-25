@@ -9,7 +9,8 @@ namespace Stateflows
     {
         public static IStateflowsBuilder AddPlantUml(this IStateflowsBuilder builder)
         {
-            builder.Services.AddSingleton<IStateMachineEventHandler, PlantUmlHandler>();
+            builder.ServiceCollection.AddSingleton<PlantUmlHandler>();
+            builder.ServiceCollection.AddSingleton<IStateMachineEventHandler>(services => services.GetService<PlantUmlHandler>());
 
             return builder;
         }

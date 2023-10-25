@@ -3,30 +3,44 @@
 namespace Stateflows.StateMachines.Registration.Interfaces
 {
     public interface ICompositeStateBuilder :
-        IStateEventsBuilderBase<ICompositeStateBuilder>,
-        IStateUtilsBuilderBase<ICompositeStateBuilder>,
-        ICompositeStateBuilderBase<ICompositeStateBuilder>,
-        IStateTransitionsBuilderBase<ICompositeStateBuilder>,
-        IStateMachineBuilderBase<ICompositeStateBuilder>
+        IStateEvents<ICompositeStateBuilder>,
+        IStateUtils<ICompositeStateBuilder>,
+        ICompositeStateEvents<ICompositeStateBuilder>,
+        IStateTransitions<ICompositeStateBuilder>,
+        IStateMachine<ICompositeStateBuilder>,
+        IStateMachineFinal<IFinalizedCompositeStateBuilder>
+    { }
+
+    public interface IFinalizedCompositeStateBuilder :
+        IStateEvents<IFinalizedCompositeStateBuilder>,
+        IStateUtils<IFinalizedCompositeStateBuilder>,
+        ICompositeStateEvents<IFinalizedCompositeStateBuilder>,
+        IStateTransitions<IFinalizedCompositeStateBuilder>
     { }
 
     public interface ICompositeStateInitialBuilder :
-        IStateEventsBuilderBase<ICompositeStateInitialBuilder>,
-        IStateUtilsBuilderBase<ICompositeStateInitialBuilder>,
-        ICompositeStateBuilderBase<ICompositeStateInitialBuilder>,
-        IStateTransitionsBuilderBase<ICompositeStateInitialBuilder>,
-        IStateMachineInitialBuilderBase<ICompositeStateBuilder>
+        IStateEvents<ICompositeStateInitialBuilder>,
+        IStateUtils<ICompositeStateInitialBuilder>,
+        ICompositeStateEvents<ICompositeStateInitialBuilder>,
+        IStateTransitions<ICompositeStateInitialBuilder>,
+        IStateMachineInitial<ICompositeStateBuilder>
     { }
 
     public interface ITypedCompositeStateBuilder :
-        IStateUtilsBuilderBase<ITypedCompositeStateBuilder>,
-        IStateTransitionsBuilderBase<ITypedCompositeStateBuilder>,
-        IStateMachineBuilderBase<ITypedCompositeStateBuilder>
+        IStateUtils<ITypedCompositeStateBuilder>,
+        IStateTransitions<ITypedCompositeStateBuilder>,
+        IStateMachine<ITypedCompositeStateBuilder>,
+        IStateMachineFinal<ITypedFinalizedCompositeStateBuilder>
+    { }
+
+    public interface ITypedFinalizedCompositeStateBuilder :
+        IStateUtils<ITypedFinalizedCompositeStateBuilder>,
+        IStateTransitions<ITypedFinalizedCompositeStateBuilder>
     { }
 
     public interface ITypedCompositeStateInitialBuilder :
-        IStateUtilsBuilderBase<ITypedCompositeStateInitialBuilder>,
-        IStateTransitionsBuilderBase<ITypedCompositeStateInitialBuilder>,
-        IStateMachineInitialBuilderBase<ITypedCompositeStateBuilder>
+        IStateUtils<ITypedCompositeStateInitialBuilder>,
+        IStateTransitions<ITypedCompositeStateInitialBuilder>,
+        IStateMachineInitial<ITypedCompositeStateBuilder>
     { }
 }

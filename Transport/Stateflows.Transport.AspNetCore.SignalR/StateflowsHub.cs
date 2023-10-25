@@ -23,7 +23,7 @@ namespace Stateflows.Transport.AspNetCore.SignalR
             return Task.FromResult(_providers.SelectMany(p => p.BehaviorClasses));
         }
 
-        public async Task<bool> Send(BehaviorId behaviorId, string eventData)
+        public async Task<string> Send(BehaviorId behaviorId, string eventData)
         {
             Event? @event;
             try
@@ -45,12 +45,16 @@ namespace Stateflows.Transport.AspNetCore.SignalR
                 throw new Exception("Behavior not found");
             }
 
-            return await behavior.SendAsync(@event);
+            var result = await behavior.SendAsync(@event);
+
+            result = new RequestResult(@event, @event.GetResponse(), result.Status, result.Validation);
+
+            return StateflowsJsonConverter.SerializeObject(result);
         }
 
-        public async Task<Response> Request(BehaviorId behaviorId, string requestData)
+        public async Task<string> Request(BehaviorId behaviorId, string requestData)
         {
-            Event? @event = null;
+            Event? @event;
             try
             {
                 @event = StateflowsJsonConverter.DeserializeObject<Event>(requestData);
@@ -72,8 +76,11 @@ namespace Stateflows.Transport.AspNetCore.SignalR
 
             if (_locator.TryLocateBehavior(behaviorId, out var behavior))
             {
-                var consumed = await behavior.SendAsync(@event);
-                return @event.GetResponse();
+                var result = await behavior.SendAsync(@event);
+
+                result = new RequestResult(@event, @event.GetResponse(), result.Status, result.Validation);
+
+                return StateflowsJsonConverter.SerializeObject(result);
             }
             else
             {

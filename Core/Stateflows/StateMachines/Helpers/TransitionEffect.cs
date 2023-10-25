@@ -8,7 +8,7 @@ namespace Stateflows.StateMachines
     public static class TransitionEffect
     {
         public static Task Empty<TEvent>(ITransitionContext<TEvent> context)
-            where TEvent : Event
+            where TEvent : Event, new()
             => Task.CompletedTask;
 
         public static Func<ITransitionContext<TEvent>, Task> ToAsync<TEvent>(this Action<ITransitionContext<TEvent>> transitionEffect)

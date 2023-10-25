@@ -1,47 +1,45 @@
-﻿namespace Stateflows.Common.Extensions
+﻿using System;
+
+namespace Stateflows.Common.Extensions
 {
     public static class EventExtensions
     {
+        //public static bool Validate(this Event @event)
+        //{
+        //    var validationContext = new ValidationContext(@event, serviceProvider: null, items: null);
+        //    var validationResults = new List<ValidationResult>();
+
+        //    bool isValid = Validator.TryValidateObject(@event, validationContext, validationResults, true);
+
+        //    //@event.Validation = new EventValidation(isValid, validationResults);
+
+        //    return isValid;
+        //}
+
+        //public static void SetValidation(this Event @event, EventValidation validation)
+        //{
+        //    //@event.Validation = validation;
+        //}
+
         public static bool IsRequest(this Event @event)
-        {
-            var type = @event.GetType().BaseType;
-            while (type != null)
-            {
-                if (type.FullName.StartsWith("Stateflows.Common.Request`1"))
-                {
-                    return true;
-                }
+            => @event.GetType().IsSubclassOfRawGeneric(typeof(Request<>));
 
-                type = type.BaseType;
-            }
+        public static Type GetResponseType(this Event @event)
+            => @event.GetType().GetGenericParameterOf(typeof(Request<>));
 
-            return false;
-        }
-        public static bool IsInitializationRequest(this Event @event)
-        {
-            var type = @event.GetType().BaseType;
-            while (type != null)
-            {
-                if (type.FullName.StartsWith("Stateflows.Common.InitializationRequest`1"))
-                {
-                    return true;
-                }
-
-                type = type.BaseType;
-            }
-
-            return false;
-        }
-
-        public static Response GetResponse(this Event @event)
+        public static TResponse GetResponse<TResponse>(this Event @event)
+            where TResponse : Response, new()
         {
             if (!@event.IsRequest())
             {
                 return null;
             }
 
-            return @event.GetType().GetProperty("Response").GetValue(@event) as Response;
+            return @event.GetType().GetProperty("Response").GetValue(@event) as TResponse;
         }
+
+        public static Response GetResponse(this Event @event)
+            => @event.GetResponse<Response>();
 
         public static void Respond(this Event @event, Response response)
         {

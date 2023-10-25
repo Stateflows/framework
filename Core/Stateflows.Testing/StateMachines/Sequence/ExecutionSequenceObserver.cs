@@ -8,7 +8,7 @@ namespace Stateflows.Testing.StateMachines.Sequence
 {
     public class ExecutionSequenceObserver : IStateMachineObserver
     {
-        private IExecutionSequenceBuilder SequenceBuilder;
+        private readonly IExecutionSequenceBuilder SequenceBuilder;
 
         public ExecutionSequenceObserver(IExecutionSequenceBuilder sequenceBuilder)
         {
@@ -43,9 +43,23 @@ namespace Stateflows.Testing.StateMachines.Sequence
             return Task.CompletedTask;
         }
 
-        Task IStateMachineObserver.AfterStateMachineInitializeAsync(IStateMachineActionContext context)
+        Task IStateMachineObserver.AfterStateFinalizeAsync(IStateActionContext context)
+        {
+            SequenceBuilder.StateFinalize(context.CurrentState.Name);
+
+            return Task.CompletedTask;
+        }
+
+        Task IStateMachineObserver.AfterStateMachineInitializeAsync(IStateMachineInitializationContext context)
         {
             SequenceBuilder.StateMachineInitialize();
+
+            return Task.CompletedTask;
+        }
+
+        Task IStateMachineObserver.AfterStateMachineFinalizeAsync(IStateMachineActionContext context)
+        {
+            SequenceBuilder.StateMachineFinalize();
 
             return Task.CompletedTask;
         }
@@ -79,7 +93,17 @@ namespace Stateflows.Testing.StateMachines.Sequence
             return Task.CompletedTask;
         }
 
-        Task IStateMachineObserver.BeforeStateMachineInitializeAsync(IStateMachineActionContext context)
+        Task IStateMachineObserver.BeforeStateFinalizeAsync(IStateActionContext context)
+        {
+            return Task.CompletedTask;
+        }
+
+        Task IStateMachineObserver.BeforeStateMachineInitializeAsync(IStateMachineInitializationContext context)
+        {
+            return Task.CompletedTask;
+        }
+
+        Task IStateMachineObserver.BeforeStateMachineFinalizeAsync(IStateMachineActionContext context)
         {
             return Task.CompletedTask;
         }
