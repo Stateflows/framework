@@ -308,12 +308,6 @@ namespace Stateflows.StateMachines.Engine
             await Plugins.RunSafe(i => i.AfterProcessEventAsync(context), nameof(AfterProcessEventAsync));
         }
 
-        public bool BeforeExecute(Event @event)
-            => GlobalInterceptor.BeforeExecute(@event);
-
-        public void AfterExecute(Event @event)
-            => GlobalInterceptor.AfterExecute(@event);
-
         public async Task OnStateMachineInitializeExceptionAsync<TInitializationRequest>(StateMachineInitializationContext<TInitializationRequest> context, Exception exception)
             where TInitializationRequest : InitializationRequest, new()
         {

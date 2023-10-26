@@ -7,6 +7,7 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.DependencyInjection;
 using Stateflows.Common.Classes;
 using Stateflows.Common.Interfaces;
+using Stateflows.Common.Engine;
 
 namespace Stateflows.Common
 {
@@ -15,6 +16,7 @@ namespace Stateflows.Common
         private IServiceScope Scope { get; }
         private IServiceProvider ServiceProvider { get; }
         private IStateflowsLock Lock { get; }
+        private IExecutionInterceptor Interceptor { get; }
 
         private Dictionary<string, IEventProcessor> processors;
         private Dictionary<string, IEventProcessor> Processors
@@ -27,6 +29,7 @@ namespace Stateflows.Common
             Scope = serviceProvider.CreateScope();
             ServiceProvider = Scope.ServiceProvider;
             Lock = ServiceProvider.GetRequiredService<IStateflowsLock>();
+            Interceptor = ServiceProvider.GetRequiredService<CommonInterceptor>();
         }
 
         public EventHolder EnqueueEvent(BehaviorId id, Event @event, IServiceProvider serviceProvider)
@@ -54,13 +57,15 @@ namespace Stateflows.Common
         {
             var result = EventStatus.Undelivered;
 
-            if (Processors.TryGetValue(id.Type, out var processor))
+            if (Processors.TryGetValue(id.Type, out var processor) && Interceptor.BeforeExecute(@event))
             {
                 await Lock.Lock(id);
 
                 result = await processor.ProcessEventAsync(id, @event, serviceProvider);
 
                 await Lock.Unlock(id);
+
+                Interceptor.AfterExecute(@event);
             }
 
             return result;

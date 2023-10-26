@@ -7,6 +7,7 @@ using Stateflows.StateMachines.Models;
 using Stateflows.StateMachines.Extensions;
 using Stateflows.StateMachines.Registration.Builders;
 using Stateflows.StateMachines.Registration.Interfaces;
+using Stateflows.StateMachines.Exceptions;
 
 namespace Stateflows.StateMachines.Registration
 {
@@ -32,7 +33,7 @@ namespace Stateflows.StateMachines.Registration
         {
             if (StateMachines.ContainsKey(stateMachineName))
             {
-                throw new Exception($"State machine '{stateMachineName}' is already registered");
+                throw new StateMachineDefinitionException($"State machine '{stateMachineName}' is already registered");
             }
 
             var builder = new StateMachineBuilder(stateMachineName, Services);
@@ -47,7 +48,7 @@ namespace Stateflows.StateMachines.Registration
         {
             if (StateMachines.ContainsKey(stateMachineName))
             {
-                throw new Exception($"State machine '{stateMachineName}' is already registered");
+                throw new StateMachineDefinitionException($"State machine '{stateMachineName}' is already registered");
             }
 
             Services.RegisterStateMachine(stateMachineType);

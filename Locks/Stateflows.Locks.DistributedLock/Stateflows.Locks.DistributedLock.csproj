@@ -2,17 +2,18 @@
 
   <PropertyGroup>
     <TargetFramework>netstandard2.1</TargetFramework>
-    <Title>Stateflows framework core</Title>
+    <Nullable>enable</Nullable>
+    <Title>Distributed Lock locking for Stateflows framework</Title>
     <Version>0.1.1-alpha</Version>
     <Authors>Stateflows</Authors>
     <PackageProjectUrl>https://www.stateflows.net</PackageProjectUrl>
     <PackageIcon>stateflows-logo-1024.png</PackageIcon>
-    <RepositoryType>git</RepositoryType>
-    <RepositoryUrl>https://github.com/Stateflows/framework</RepositoryUrl>
-    <PackageTags>Stateflows;state-machine;workflow</PackageTags>
-    <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
     <PackageReadmeFile>README.md</PackageReadmeFile>
+    <RepositoryUrl>https://github.com/Stateflows/framework</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PackageTags>Stateflows;state-machine;workflow;DistributedLock;distributed-lock</PackageTags>
     <PackageLicenseFile>LICENSE</PackageLicenseFile>
+    <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
   </PropertyGroup>
 
   <ItemGroup>
@@ -31,7 +32,11 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Stateflows.Common\Stateflows.Common.csproj" />
+    <PackageReference Include="DistributedLock.Core" Version="1.0.5" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\Core\Stateflows\Stateflows.csproj" />
   </ItemGroup>
 
 </Project>

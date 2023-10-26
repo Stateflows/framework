@@ -50,51 +50,40 @@ namespace Stateflows.StateMachines.Engine
             {
                 return result;
             }
-            try
+
+            using (var executor = new Executor(Register, graph, ServiceProvider))
             {
-                using (var executor = new Executor(Register, graph, ServiceProvider))
+                var context = new RootContext(await Storage.Hydrate(id));
+
+                if (await executor.HydrateAsync(context))
                 {
-                    if (executor.Inspector.BeforeExecute(@event))
+                    context.SetEvent(@event);
+
+                    var eventContext = new EventContext<TEvent>(context);
+
+                    if (await executor.Inspector.BeforeProcessEventAsync(eventContext))
                     {
-                        var context = new RootContext(await Storage.Hydrate(id));
+                        result = await TryHandleEventAsync(eventContext);
 
-                        if (await executor.HydrateAsync(context))
+                        if (result != EventStatus.Consumed)
                         {
-                            context.SetEvent(@event);
-
-                            var eventContext = new EventContext<TEvent>(context);
-
-                            if (await executor.Inspector.BeforeProcessEventAsync(eventContext))
-                            {
-                                result = await TryHandleEventAsync(eventContext);
-
-                                if (result != EventStatus.Consumed)
-                                {
-                                    result = await executor.ProcessAsync(@event);
-                                }
-
-                                await executor.Inspector.AfterProcessEventAsync(eventContext);
-                            }
-                            else
-                            {
-                                if (executor.Context.ForceConsumed)
-                                {
-                                    result = EventStatus.Consumed;
-                                }
-                            }
-
-                            await Storage.Dehydrate((await executor.DehydrateAsync()).Context);
-
-                            context.ClearEvent();
+                            result = await executor.ProcessAsync(@event);
                         }
 
-                        executor.Inspector.AfterExecute(@event);
+                        await executor.Inspector.AfterProcessEventAsync(eventContext);
                     }
+                    else
+                    {
+                        if (executor.Context.ForceConsumed)
+                        {
+                            result = EventStatus.Consumed;
+                        }
+                    }
+
+                    await Storage.Dehydrate((await executor.DehydrateAsync()).Context);
+
+                    context.ClearEvent();
                 }
-            }
-            catch (Exception e)
-            {
-                throw e;
             }
 
             return result;

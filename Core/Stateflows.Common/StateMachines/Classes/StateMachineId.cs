@@ -1,4 +1,5 @@
 ﻿using System;
+using Stateflows.Common.Exceptions;
 
 namespace Stateflows.StateMachines
 {
@@ -14,7 +15,7 @@ namespace Stateflows.StateMachines
         {
             if (id.Type != "StateMachine")
             {
-                throw new Exception("BehaviorId doesn't represent State Machine");
+                throw new StateflowsException("BehaviorId doesn't represent State Machine");
             }
 
             Name = id.Name;

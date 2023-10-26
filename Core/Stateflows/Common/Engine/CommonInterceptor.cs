@@ -32,7 +32,7 @@ namespace Stateflows.Common.Engine
         public Task<bool> BeforeProcessEventAsync(IEventContext<Event> context)
             => Interceptors.RunSafe(i => i.BeforeProcessEventAsync(context), nameof(BeforeProcessEventAsync));
 
-        public bool BeforeExecute(Event @event)
+        public bool BeforeExecute(Event @event = null)
         {
             foreach (var interceptor in ExecutionInterceptors)
             {
@@ -45,7 +45,7 @@ namespace Stateflows.Common.Engine
             return true;
         }
 
-        public void AfterExecute(Event @event)
+        public void AfterExecute(Event @event = null)
         {
             foreach (var interceptor in ExecutionInterceptors)
             {

@@ -5,6 +5,6 @@ namespace Stateflows.StateMachines.Events
 {
     public sealed class Completion : Event
     {
-        public override string Name => Constants.CompletionEvent;
+        public override string EventName => Constants.CompletionEvent;
     }
 }

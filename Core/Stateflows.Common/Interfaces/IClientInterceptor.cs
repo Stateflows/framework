@@ -2,7 +2,7 @@
 
 namespace Stateflows.Common
 {
-    public interface IBehaviorClientInterceptor
+    public interface IClientInterceptor
     {
         Task<bool> BeforeDispatchEventAsync(Event @event);
         Task AfterDispatchEventAsync(Event @event);

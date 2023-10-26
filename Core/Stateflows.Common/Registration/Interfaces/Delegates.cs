@@ -2,5 +2,5 @@
 
 namespace Stateflows.Common.Registration.Interfaces
 {
-    public delegate IBehaviorClientInterceptor BehaviorClientInterceptorFactory(IServiceProvider serviceProvider);
+    public delegate IClientInterceptor ClientInterceptorFactory(IServiceProvider serviceProvider);
 }

@@ -13,10 +13,10 @@ namespace Stateflows.Common.Context.Classes
         public BehaviorContext(StateflowsContext context, IServiceProvider serviceProvider)
             : base(context, serviceProvider)
         {
-            GlobalValues = new ContextValues(Context.GlobalValues);
+            Values = new ContextValues(Context.GlobalValues);
         }
 
-        public IContextValues GlobalValues { get; }
+        public IContextValues Values { get; }
 
         public void Send<TEvent>(TEvent @event) where TEvent : Event, new()
         {
