@@ -69,14 +69,14 @@ namespace Stateflows
         }
 
         public static IStateflowsBuilder AddClientInterceptor<TClientInterceptor>(this IStateflowsBuilder stateflowsBuilder)
-            where TClientInterceptor : class, IBehaviorClientInterceptor
+            where TClientInterceptor : class, IClientInterceptor
         {
-            stateflowsBuilder.ServiceCollection.AddScoped<IBehaviorClientInterceptor, TClientInterceptor>();
+            stateflowsBuilder.ServiceCollection.AddScoped<IClientInterceptor, TClientInterceptor>();
 
             return stateflowsBuilder;
         }
 
-        public static IStateflowsBuilder AddClientInterceptor(this IStateflowsBuilder stateflowsBuilder, BehaviorClientInterceptorFactory clientInterceptorFactory)
+        public static IStateflowsBuilder AddClientInterceptor(this IStateflowsBuilder stateflowsBuilder, ClientInterceptorFactory clientInterceptorFactory)
         {
             stateflowsBuilder.ServiceCollection.AddScoped(s => clientInterceptorFactory(s));
 

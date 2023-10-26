@@ -8,6 +8,7 @@ using Stateflows.StateMachines.Context.Interfaces;
 using Stateflows.StateMachines.Registration.Interfaces;
 using Stateflows.StateMachines.Registration.Interfaces.Base;
 using Stateflows.StateMachines.Registration.Interfaces.Internal;
+using Stateflows.StateMachines.Exceptions;
 
 namespace Stateflows.StateMachines.Registration.Builders
 {
@@ -35,10 +36,15 @@ namespace Stateflows.StateMachines.Registration.Builders
 
         private ICompositeStateBuilder AddVertex(string stateName, VertexType type, Action<Vertex> vertexBuildAction = null)
         {
-            stateName.ThrowIfNullOrEmpty(nameof(stateName));
+            if (string.IsNullOrEmpty(stateName))
+            {
+                throw new StateDefinitionException(stateName, $"State name cannot be empty");
+            }
 
             if (Vertex.Vertices.ContainsKey(stateName))
-                throw new Exception($"State '{stateName}' is already registered");
+            {
+                throw new StateDefinitionException(stateName, $"State '{stateName}' is already registered");
+            }
 
             var vertex = new Vertex()
             {

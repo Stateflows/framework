@@ -11,6 +11,8 @@ using Stateflows.StateMachines.Registration.Extensions;
 using Stateflows.StateMachines.Registration.Interfaces;
 using Stateflows.StateMachines.Registration.Interfaces.Base;
 using Stateflows.StateMachines.Registration.Interfaces.Internal;
+using Stateflows.StateMachines.Exceptions;
+using Stateflows.Common.Extensions;
 
 namespace Stateflows.StateMachines.Registration.Builders
 {
@@ -129,10 +131,13 @@ namespace Stateflows.StateMachines.Registration.Builders
         public IStateBuilder AddDeferredEvent<TEvent>() where TEvent : Event, new()
         {
             if (typeof(TEvent) == typeof(Completion))
-                throw new Exception("Completion event cannot be deferred.");
+                throw new DeferralDefinitionException(EventInfo<TEvent>.Name, "Completion event cannot be deferred.");
 
             if (typeof(TEvent) == typeof(Exit))
-                throw new Exception("Exit event cannot be deferred.");
+                throw new DeferralDefinitionException(EventInfo<TEvent>.Name, "Exit event cannot be deferred.");
+
+            if (typeof(TEvent).IsSubclassOf(typeof(TimeEvent)))
+                throw new DeferralDefinitionException(EventInfo<TEvent>.Name, "Time events cannot be deferred.");
 
             Vertex.DeferredEvents.Add(EventInfo<TEvent>.Name);
 

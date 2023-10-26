@@ -5,6 +5,7 @@ using Stateflows.Common.Engine;
 using Stateflows.Common.Locator;
 using Stateflows.Common.Interfaces;
 using Stateflows.Common.Extensions;
+using Stateflows.Common.Exceptions;
 using Stateflows.Common.StateMachines.Classes;
 using Stateflows.Common.Registration.Builders;
 using Stateflows.Common.Registration.Interfaces;
@@ -18,7 +19,7 @@ namespace Stateflows
         {
             builderAction.ThrowIfNull(nameof(builderAction));
 
-            if (services.IsServiceRegistered<BehaviorLocator>()) throw new Exception("Stateflows client already registered");
+            if (services.IsServiceRegistered<BehaviorLocator>()) throw new StateflowsException("Stateflows client already registered");
 
             var builder = new StateflowsClientBuilder(services);
 
@@ -35,14 +36,14 @@ namespace Stateflows
         }
 
         public static IStateflowsClientBuilder AddClientInterceptor<TClientInterceptor>(this IStateflowsClientBuilder stateflowsBuilder)
-            where TClientInterceptor : class, IBehaviorClientInterceptor
+            where TClientInterceptor : class, IClientInterceptor
         {
-            stateflowsBuilder.ServiceCollection.AddScoped<IBehaviorClientInterceptor, TClientInterceptor>();
+            stateflowsBuilder.ServiceCollection.AddScoped<IClientInterceptor, TClientInterceptor>();
 
             return stateflowsBuilder;
         }
 
-        public static IStateflowsClientBuilder AddClientInterceptor(this IStateflowsClientBuilder stateflowsBuilder, BehaviorClientInterceptorFactory envelopeHandlerFactory)
+        public static IStateflowsClientBuilder AddClientInterceptor(this IStateflowsClientBuilder stateflowsBuilder, ClientInterceptorFactory envelopeHandlerFactory)
         {
             stateflowsBuilder.ServiceCollection.AddScoped(s => envelopeHandlerFactory(s));
 

@@ -1,4 +1,4 @@
-﻿using System;
+﻿using Stateflows.Common.Exceptions;
 
 namespace Stateflows.Common
 {
@@ -9,7 +9,7 @@ namespace Stateflows.Common
         {
             if (Response != null)
             {
-                throw new Exception($"Already responded to request '{Name}'");
+                throw new StateflowsException($"Already responded to request '{EventName}'");
             }
 
             Response = response;

@@ -48,7 +48,7 @@ namespace StateMachine.IntegrationTests.Tests
             {
                 status = (await sm.SendAsync(new SomeEvent())).Status;
 
-                currentState = (await sm.GetCurrentStateAsync()).Response?.Name;
+                currentState = (await sm.GetCurrentStateAsync()).Response?.StatesStack.FirstOrDefault();
             }
 
             Assert.AreEqual(EventStatus.Rejected, status);

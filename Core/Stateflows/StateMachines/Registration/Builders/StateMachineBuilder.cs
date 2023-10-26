@@ -11,6 +11,7 @@ using Stateflows.StateMachines.Context.Interfaces;
 using Stateflows.StateMachines.Registration.Interfaces;
 using Stateflows.StateMachines.Registration.Interfaces.Base;
 using Stateflows.StateMachines.Registration.Interfaces.Internal;
+using Stateflows.StateMachines.Exceptions;
 
 namespace Stateflows.StateMachines.Registration.Builders
 {
@@ -116,7 +117,7 @@ namespace Stateflows.StateMachines.Registration.Builders
             stateName.ThrowIfNullOrEmpty(nameof(stateName));
 
             if (Result.Vertices.ContainsKey(stateName))
-                throw new Exception($"State '{stateName}' is already registered");
+                throw new StateDefinitionException(stateName, $"State '{stateName}' is already registered");
 
             var vertex = new Vertex()
             {

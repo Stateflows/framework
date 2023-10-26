@@ -83,7 +83,7 @@ namespace Stateflows.StateMachines.Engine
                 )
                 {
                     var consumed = false;
-                    if (context.Event.Name == EventInfo<CurrentStateRequest>.Name)
+                    if (context.Event.EventName == EventInfo<CurrentStateRequest>.Name)
                     {
                         var @event = new CurrentStateRequest();
                         var result = await stateMachine.SendAsync(@event);
@@ -109,7 +109,7 @@ namespace Stateflows.StateMachines.Engine
 
         public Task AfterProcessEventAsync(IEventContext<Event> context)
         {
-            if (context.Event.Name == EventInfo<CurrentStateRequest>.Name && SubmachineState != null)
+            if (context.Event.EventName == EventInfo<CurrentStateRequest>.Name && SubmachineState != null)
             {
                 var currentState = (context.Event as CurrentStateRequest).Response;
                 currentState.StatesStack = currentState.StatesStack.Concat(SubmachineState.StatesStack);

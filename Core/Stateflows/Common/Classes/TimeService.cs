@@ -6,8 +6,7 @@ using System.Collections.Generic;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.DependencyInjection;
 using Stateflows.Common.Interfaces;
-using Microsoft.Extensions.Logging.Abstractions;
-using Microsoft.Extensions.Logging;
+using Stateflows.Common.Engine;
 
 namespace Stateflows.Common.Classes
 {
@@ -19,9 +18,11 @@ namespace Stateflows.Common.Classes
 
         public Dictionary<string, TimeToken> TokensByIds { get; set; } = new Dictionary<string, TimeToken>();
 
-        public System.Timers.Timer Timer { get; } = new System.Timers.Timer(1000 * 10) { AutoReset = true, Enabled = false };
+        public System.Timers.Timer Timer { get; } = new System.Timers.Timer(1000 * 60) { AutoReset = true, Enabled = false };
 
         private IStateflowsStorage Storage { get; }
+
+        private CommonInterceptor Interceptor { get; }
 
         private IServiceProvider ServiceProvider { get; }
 
@@ -29,23 +30,29 @@ namespace Stateflows.Common.Classes
 
         private IBehaviorLocator Locator => locator ??= ServiceProvider.GetService<IBehaviorLocator>();
 
-        public TimeService(/*IStateflowsStorage storage, */IBehaviorClassesProvider behaviorClassesProvider, IServiceProvider serviceProvider)
+        public TimeService(IBehaviorClassesProvider behaviorClassesProvider, IServiceProvider serviceProvider)
         {
             ServiceProvider = serviceProvider.CreateScope().ServiceProvider;
             Storage = ServiceProvider.GetRequiredService<IStateflowsStorage>();
+            Interceptor = ServiceProvider.GetRequiredService<CommonInterceptor>();
 
             Task.Run(async () =>
             {
-                Tokens.AddRange(
-                    await Storage.GetTimeTokens(
-                        behaviorClassesProvider.LocalBehaviorClasses
-                    )
-                );
-
-                foreach (var token in Tokens)
+                if (Interceptor.BeforeExecute())
                 {
-                    TokensByIds[token.Id] = token;
-                    IdsByTokens[token] = token.Id;
+                    Tokens.AddRange(
+                        await Storage.GetTimeTokens(
+                            behaviorClassesProvider.LocalBehaviorClasses
+                        )
+                    );
+
+                    foreach (var token in Tokens)
+                    {
+                        TokensByIds[token.Id] = token;
+                        IdsByTokens[token] = token.Id;
+                    }
+
+                    Interceptor.AfterExecute();
                 }
             });
         }
@@ -91,26 +98,31 @@ namespace Stateflows.Common.Classes
 
         private async void Tick(object sender, System.Timers.ElapsedEventArgs e)
         {
-            var passedTokens = Tokens.Where(t => t.Event.ShouldTrigger(t.CreatedAt)).ToArray();
-            if (!passedTokens.Any())
+            if (Interceptor.BeforeExecute())
             {
-                return;
-            }
-
-            var ids = new List<string>();
-            foreach (var token in passedTokens)
-            {
-                if (IdsByTokens.TryGetValue(token, out var id))
+                var passedTokens = Tokens.Where(t => t.Event.ShouldTrigger(t.CreatedAt)).ToArray();
+                if (!passedTokens.Any())
                 {
-                    ids.Add(id);
+                    return;
                 }
 
-                if (Locator.TryLocateBehavior(token.TargetId, out var behavior))
+                var ids = new List<string>();
+                foreach (var token in passedTokens)
                 {
-                    await behavior.SendAsync(token.Event);
+                    if (IdsByTokens.TryGetValue(token, out var id))
+                    {
+                        ids.Add(id);
+                    }
+
+                    if (Locator.TryLocateBehavior(token.TargetId, out var behavior))
+                    {
+                        await behavior.SendAsync(token.Event);
+                    }
+
+                    Tokens.Remove(token);
                 }
 
-                Tokens.Remove(token);
+                Interceptor.AfterExecute();
             }
         }
 

@@ -6,7 +6,7 @@ namespace Stateflows.Common.Context.Interfaces
     {
         BehaviorId Id { get; }
 
-        IContextValues GlobalValues { get; }
+        IContextValues Values { get; }
 
         void Send<TEvent>(TEvent @event)
             where TEvent : Event, new();

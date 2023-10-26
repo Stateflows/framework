@@ -13,7 +13,7 @@ namespace Stateflows.Common
 
         public Guid Id { get; set; }
 
-        public virtual string Name => GetType().FullName;
+        public virtual string EventName => GetType().FullName;
 
         public List<EventHeader> Headers { get; set; } = new List<EventHeader>();
     }
@@ -27,6 +27,6 @@ namespace Stateflows.Common
     public static class EventInfo
     {
         public static string GetName(Type @type)
-            => (@type.GetUninitializedInstance() as Event).Name;
+            => (@type.GetUninitializedInstance() as Event).EventName;
     }
 }

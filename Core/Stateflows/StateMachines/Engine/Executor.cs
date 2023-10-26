@@ -214,7 +214,7 @@ namespace Stateflows.StateMachines.Engine
             where TEvent : Event, new()
         {
             var deferredEvents = GetDeferredEvents();
-            if (deferredEvents.Any() && deferredEvents.Contains(@event.Name))
+            if (deferredEvents.Any() && deferredEvents.Contains(@event.EventName))
             {
                 Context.DeferredEvents.Add(@event);
                 return true;
@@ -227,7 +227,7 @@ namespace Stateflows.StateMachines.Engine
             var deferredEvents = GetDeferredEvents();
             foreach (var @event in Context.DeferredEvents)
             {
-                if (!deferredEvents.Any() || !deferredEvents.Contains(@event.Name))
+                if (!deferredEvents.Any() || !deferredEvents.Contains(@event.EventName))
                 {
                     Context.DeferredEvents.Remove(@event);
                     Context.SetEvent(@event);
@@ -260,7 +260,7 @@ namespace Stateflows.StateMachines.Engine
                         Context.SourceState = edge.SourceName;
                         Context.TargetState = edge.TargetName;
 
-                        if (edge.Trigger == @event.Name && await DoGuardAsync<TEvent>(edge))
+                        if (edge.Trigger == @event.EventName && await DoGuardAsync<TEvent>(edge))
                         {
                             await DoConsumeAsync<TEvent>(edge);
 
@@ -311,9 +311,9 @@ namespace Stateflows.StateMachines.Engine
         public async Task<bool> DoInitializeStateMachineAsync(InitializationRequest @event)
         {
             if (
-                Graph.Initializers.TryGetValue(@event.Name, out var initializer) ||
+                Graph.Initializers.TryGetValue(@event.EventName, out var initializer) ||
                 (
-                    @event.Name == EventInfo<InitializationRequest>.Name &&
+                    @event.EventName == EventInfo<InitializationRequest>.Name &&
                     !Graph.Initializers.Any()
                 )
             )

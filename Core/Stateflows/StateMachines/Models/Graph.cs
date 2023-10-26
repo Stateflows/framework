@@ -6,6 +6,7 @@ using Stateflows.StateMachines.Interfaces;
 using Stateflows.StateMachines.Registration;
 using Stateflows.StateMachines.Registration.Interfaces;
 using Stateflows.Common.Models;
+using Stateflows.StateMachines.Exceptions;
 
 namespace Stateflows.StateMachines.Models
 {
@@ -54,7 +55,7 @@ namespace Stateflows.StateMachines.Models
             }
             else
             {
-                throw new Exception($"Initial state '{InitialVertexName}' is not registered in state machine '{Name}'");
+                throw new StateMachineDefinitionException($"Initial state '{InitialVertexName}' is not registered in state machine '{Name}'");
             }
 
             foreach (var vertex in AllVertices.Values)
@@ -67,7 +68,7 @@ namespace Stateflows.StateMachines.Models
                     }
                     else
                     {
-                        throw new Exception($"Initial state '{vertex.InitialVertexName}' is not registered in composite state '{vertex.Name}' in state machine '{Name}'");
+                        throw new StateMachineDefinitionException($"Initial state '{vertex.InitialVertexName}' is not registered in composite state '{vertex.Name}' in state machine '{Name}'");
                     }
                 }
 
@@ -79,7 +80,7 @@ namespace Stateflows.StateMachines.Models
                 {
                     if (vertexTriggers.Contains(deferredEvent))
                     {
-                        throw new Exception($"Event '{deferredEvent}' triggers a transition outgoing from state '{vertex.Name}' in state machine '{Name}' and cannot be deferred by that state.");
+                        throw new DeferralDefinitionException(deferredEvent, $"Event '{deferredEvent}' triggers a transition outgoing from state '{vertex.Name}' in state machine '{Name}' and cannot be deferred by that state.");
                     }
                 }
             }
@@ -95,14 +96,10 @@ namespace Stateflows.StateMachines.Models
                     }
                     else
                     {
-                        if (edge.Source.Parent is null)
-                        {
-                            throw new Exception($"Transition target state '{edge.TargetName}' is not registered in root level of state machine '{Name}'");
-                        }
-                        else
-                        {
-                            throw new Exception($"Transition target state '{edge.TargetName}' is not defined on the same level as transition source '{edge.SourceName}' in state machine '{Name}'");
-                        }
+                        throw new TransitionDefinitionException(edge.Source.Parent is null
+                            ? $"Transition target state '{edge.TargetName}' is not registered in root level of state machine '{Name}'"
+                            : $"Transition target state '{edge.TargetName}' is not defined on the same level as transition source '{edge.SourceName}' in state machine '{Name}'"
+                        );
                     }
                 }
             }
