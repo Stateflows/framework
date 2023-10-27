@@ -6,6 +6,8 @@ namespace Stateflows.Common.Context
     {
         public BehaviorId Id { get; set; }
 
+        public int Version { get; set; } = 0;
+
         public Dictionary<string, object> Values { get; } = new Dictionary<string, object>();
 
         private Dictionary<string, string> globalValues = null;

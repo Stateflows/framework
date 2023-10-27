@@ -6,6 +6,7 @@ namespace Stateflows.StateMachines.Context.Classes
     internal class StateMachineActionContext : BaseContext, IStateMachineActionContext, IStateMachineActionInspectionContext
     {
         IStateMachineContext IStateMachineActionContext.StateMachine => StateMachine;
+
         IStateMachineInspectionContext IStateMachineActionInspectionContext.StateMachine => StateMachine;
 
         public StateMachineActionContext(RootContext context)

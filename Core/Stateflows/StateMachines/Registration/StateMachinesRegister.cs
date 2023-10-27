@@ -5,9 +5,9 @@ using System.Runtime.Serialization;
 using Microsoft.Extensions.DependencyInjection;
 using Stateflows.StateMachines.Models;
 using Stateflows.StateMachines.Extensions;
+using Stateflows.StateMachines.Exceptions;
 using Stateflows.StateMachines.Registration.Builders;
 using Stateflows.StateMachines.Registration.Interfaces;
-using Stateflows.StateMachines.Exceptions;
 
 namespace Stateflows.StateMachines.Registration
 {
@@ -26,48 +26,87 @@ namespace Stateflows.StateMachines.Registration
             Services = services;
         }
 
-        public Dictionary<string, Graph> StateMachines { get; set; } = new Dictionary<string, Graph>();
+        public readonly Dictionary<string, Graph> StateMachines = new Dictionary<string, Graph>();
 
-        [DebuggerHidden]
-        public void AddStateMachine(string stateMachineName, StateMachineBuilderAction buildAction)
+        public readonly Dictionary<string, int> CurrentVersions = new Dictionary<string, int>();
+
+        private bool IsNewestVersion(string stateMachineName, int version)
         {
-            if (StateMachines.ContainsKey(stateMachineName))
+            var result = false;
+
+            if (CurrentVersions.TryGetValue(stateMachineName, out var currentVersion))
             {
-                throw new StateMachineDefinitionException($"State machine '{stateMachineName}' is already registered");
+                if (currentVersion < version)
+                {
+                    result = true;
+                    CurrentVersions[stateMachineName] = version;
+                }
+            }
+            else
+            {
+                result = true;
+                CurrentVersions[stateMachineName] = version;
             }
 
-            var builder = new StateMachineBuilder(stateMachineName, Services);
-            buildAction(builder);
-            builder.Result.Build();
-
-            this.StateMachines.Add(builder.Result.Name, builder.Result);
+            return result;
         }
 
         [DebuggerHidden]
-        public void AddStateMachine(string stateMachineName, Type stateMachineType)
+        public void AddStateMachine(string stateMachineName, int version, StateMachineBuilderAction buildAction)
         {
-            if (StateMachines.ContainsKey(stateMachineName))
+            var key = $"{stateMachineName}.{version}";
+            var currentKey = $"{stateMachineName}.current";
+
+            if (StateMachines.ContainsKey(key))
             {
-                throw new StateMachineDefinitionException($"State machine '{stateMachineName}' is already registered");
+                throw new StateMachineDefinitionException($"State machine '{stateMachineName}' with version '{version}' is already registered");
+            }
+
+            var builder = new StateMachineBuilder(stateMachineName, version, Services);
+            buildAction(builder);
+            builder.Result.Build();
+
+            StateMachines.Add(key, builder.Result);
+
+            if (IsNewestVersion(stateMachineName, version))
+            {
+                StateMachines[currentKey] = builder.Result;
+            }
+        }
+
+        [DebuggerHidden]
+        public void AddStateMachine(string stateMachineName, int version, Type stateMachineType)
+        {
+            var key = $"{stateMachineName}.{version}";
+            var currentKey = $"{stateMachineName}.current";
+
+            if (StateMachines.ContainsKey(key))
+            {
+                throw new StateMachineDefinitionException($"State machine '{stateMachineName}' with version '{version}' is already registered");
             }
 
             Services.RegisterStateMachine(stateMachineType);
 
             var sm = FormatterServices.GetUninitializedObject(stateMachineType) as StateMachine;
 
-            var builder = new StateMachineBuilder(stateMachineName, Services);
+            var builder = new StateMachineBuilder(stateMachineName, version, Services);
             builder.AddStateMachineEvents(stateMachineType);
             builder.Result.StateMachineType = stateMachineType;
             sm.Build(builder);
             builder.Result.Build();
 
-            StateMachines.Add(builder.Result.Name, builder.Result);
+            StateMachines.Add(key, builder.Result);
+
+            if (IsNewestVersion(stateMachineName, version))
+            {
+                StateMachines[currentKey] = builder.Result;
+            }
         }
 
         [DebuggerHidden]
-        public void AddStateMachine<TStateMachine>(string stateMachineName)
+        public void AddStateMachine<TStateMachine>(string stateMachineName, int version = 1)
             where TStateMachine : StateMachine
-            => AddStateMachine(stateMachineName, typeof(TStateMachine));
+            => AddStateMachine(stateMachineName, version, typeof(TStateMachine));
 
         public void AddGlobalInterceptor(StateMachineInterceptorFactory interceptorFactory)
             => GlobalInterceptorFactories.Add(interceptorFactory);

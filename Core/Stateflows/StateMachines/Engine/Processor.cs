@@ -46,14 +46,22 @@ namespace Stateflows.StateMachines.Engine
         {
             var result = EventStatus.Undelivered;
 
-            if (!Register.StateMachines.TryGetValue(id.Name, out var graph))
+            var stateflowsContext = await Storage.Hydrate(id);
+
+            var key = stateflowsContext.Version != 0
+                ? $"{id.Name}.{stateflowsContext.Version}"
+                : $"{id.Name}.current";
+
+            if (!Register.StateMachines.TryGetValue(key, out var graph))
             {
                 return result;
             }
 
+            stateflowsContext.Version = graph.Version;
+
             using (var executor = new Executor(Register, graph, ServiceProvider))
             {
-                var context = new RootContext(await Storage.Hydrate(id));
+                var context = new RootContext(stateflowsContext);
 
                 if (await executor.HydrateAsync(context))
                 {

@@ -28,10 +28,10 @@ namespace Stateflows.StateMachines.Registration.Builders
 
         public IServiceCollection Services { get; }
 
-        public StateMachineBuilder(string name, IServiceCollection services)
+        public StateMachineBuilder(string name, int version, IServiceCollection services)
         {
             Services = services;
-            Result = new Graph(name);
+            Result = new Graph(name, version);
         }
 
         public IStateMachineBuilder AddInitializer(string initializerName, StateMachineActionAsync initializerAction)
