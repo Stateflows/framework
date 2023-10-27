@@ -30,7 +30,7 @@ namespace Stateflows.StateMachines.Engine
 
         public bool TryProvideBehavior(BehaviorId id, out IBehavior behavior)
         {
-            behavior = id.Type == nameof(StateMachine) && Register.StateMachines.ContainsKey(id.Name)
+            behavior = id.Type == nameof(StateMachine) && Register.StateMachines.ContainsKey($"{id.Name}.current")
                 ? new Behavior(Engine, ServiceProvider, id)
                 : null;
 

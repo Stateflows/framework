@@ -14,12 +14,14 @@ namespace Stateflows.StateMachines.Models
     {
         public Dictionary<string, int> InitCounter = new Dictionary<string, int>();
 
-        public Graph(string name)
+        public Graph(string name, int version)
         {
             Name = name;
+            Version = version;
         }
 
-        public string Name { get; set; }
+        public string Name { get; }
+        public int Version { get; }
         public Type StateMachineType { get; set; }
         public string InitialVertexName { get; set; }
         public Vertex InitialVertex { get; set; }

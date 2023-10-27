@@ -4,7 +4,6 @@ using System.Reflection;
 using System.Diagnostics;
 using System.Collections.Generic;
 using Microsoft.Extensions.DependencyInjection;
-using Stateflows.Common.Classes;
 using Stateflows.Common.Interfaces;
 using Stateflows.Common.Extensions;
 using Stateflows.Common.Registration.Interfaces;
@@ -26,7 +25,10 @@ namespace Stateflows.StateMachines
                 if (typeof(StateMachine).IsAssignableFrom(@type))
                 {
                     var attribute = @type.GetCustomAttributes(typeof(StateMachineAttribute)).FirstOrDefault() as StateMachineAttribute;
-                    stateflowsBuilder.EnsureStateMachinesServices().AddStateMachine(attribute?.Name ?? @type.FullName, @type);
+                    if (attribute != null)
+                    {
+                        stateflowsBuilder.EnsureStateMachinesServices().AddStateMachine(attribute.Name ?? @type.FullName, attribute.Version, @type);
+                    }
                 }
             });
 
@@ -52,19 +54,32 @@ namespace Stateflows.StateMachines
         [DebuggerHidden]
         public static IStateflowsBuilder AddStateMachine(this IStateflowsBuilder stateflowsBuilder, string stateMachineName, StateMachineBuilderAction buildAction)
         {
-            stateflowsBuilder.EnsureStateMachinesServices().AddStateMachine(stateMachineName, buildAction);
+            stateflowsBuilder.EnsureStateMachinesServices().AddStateMachine(stateMachineName, 1, buildAction);
 
             return stateflowsBuilder;
         }
 
         [DebuggerHidden]
-        public static IStateflowsBuilder AddStateMachine<TStateMachine>(this IStateflowsBuilder stateflowsBuilder, string stateMachineName = null)
-            where TStateMachine : StateMachine
+        public static IStateflowsBuilder AddStateMachine(this IStateflowsBuilder stateflowsBuilder, string stateMachineName, int version, StateMachineBuilderAction buildAction)
         {
-            stateflowsBuilder.EnsureStateMachinesServices().AddStateMachine<TStateMachine>(stateMachineName ?? StateMachineInfo<TStateMachine>.Name);
+            stateflowsBuilder.EnsureStateMachinesServices().AddStateMachine(stateMachineName, version, buildAction);
 
             return stateflowsBuilder;
         }
+
+        [DebuggerHidden]
+        public static IStateflowsBuilder AddStateMachine<TStateMachine>(this IStateflowsBuilder stateflowsBuilder, string stateMachineName = null, int version = 1)
+            where TStateMachine : StateMachine
+        {
+            stateflowsBuilder.EnsureStateMachinesServices().AddStateMachine<TStateMachine>(stateMachineName ?? StateMachineInfo<TStateMachine>.Name, version);
+
+            return stateflowsBuilder;
+        }
+
+        [DebuggerHidden]
+        public static IStateflowsBuilder AddStateMachine<TStateMachine>(this IStateflowsBuilder stateflowsBuilder, int version = 1)
+            where TStateMachine : StateMachine
+            => stateflowsBuilder.AddStateMachine<TStateMachine>(null, version);
 
         [DebuggerHidden]
         public static IStateflowsBuilder AddStateMachinesInterceptor<TInterceptor>(this IStateflowsBuilder stateflowsBuilder)
