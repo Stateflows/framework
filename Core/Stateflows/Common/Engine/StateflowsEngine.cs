@@ -59,11 +59,11 @@ namespace Stateflows.Common
 
             if (Processors.TryGetValue(id.Type, out var processor) && Interceptor.BeforeExecute(@event))
             {
-                await Lock.Lock(id);
+                await Lock.LockAsync(id);
 
                 result = await processor.ProcessEventAsync(id, @event, serviceProvider);
 
-                await Lock.Unlock(id);
+                await Lock.UnlockAsync(id);
 
                 Interceptor.AfterExecute(@event);
             }

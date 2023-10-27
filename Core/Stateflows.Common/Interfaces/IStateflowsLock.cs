@@ -4,7 +4,7 @@ namespace Stateflows.Common.Interfaces
 {
     public interface IStateflowsLock
     {
-        Task Lock(BehaviorId id);
-        Task Unlock(BehaviorId id);
+        Task LockAsync(BehaviorId id);
+        Task UnlockAsync(BehaviorId id);
     }
 }
