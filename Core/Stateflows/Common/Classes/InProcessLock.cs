@@ -10,7 +10,7 @@ namespace Stateflows.Common.Classes
     {
         public Dictionary<int, EventWaitHandle> Events { get; } = new Dictionary<int, EventWaitHandle>();
 
-        public async Task Lock(BehaviorId id)
+        public async Task LockAsync(BehaviorId id)
         {
             EventWaitHandle @event = null;
 
@@ -27,7 +27,7 @@ namespace Stateflows.Common.Classes
             @event.Reset();
         }
 
-        public Task Unlock(BehaviorId id)
+        public Task UnlockAsync(BehaviorId id)
         {
             EventWaitHandle @event = null;
 

@@ -8,16 +8,18 @@ namespace Stateflows.Common.Classes
 {
     internal class EventQueue<T> : LinkedList<T>
     {
-        private bool Locked { get; }
+        private readonly object LockObject = new object();
+
+        private readonly bool Locked;
 
         public EventQueue(bool locked)
         {
             Locked = locked;
         }
 
-        private EventWaitHandle Event { get; } = new EventWaitHandle(false, EventResetMode.AutoReset);
+        private readonly EventWaitHandle Event = new EventWaitHandle(false, EventResetMode.AutoReset);
 
-        private static readonly string QueueEmpty = "Queue empty.";
+        private readonly string QueueEmpty = "Queue empty.";
 
         public Task WaitAsync()
             => Event.WaitOneAsync();
@@ -35,7 +37,7 @@ namespace Stateflows.Common.Classes
         {
             if (Locked)
             {
-                lock (this)
+                lock (LockObject)
                 {
                     DoEnqueue(item);
                 }
@@ -56,7 +58,7 @@ namespace Stateflows.Common.Classes
         {
             if (Locked)
             {
-                lock (this)
+                lock (LockObject)
                 {
                     DoPush(item);
                 }
@@ -81,7 +83,7 @@ namespace Stateflows.Common.Classes
         {
             if (Locked)
             {
-                lock (this)
+                lock (LockObject)
                 {
                     return DoPeek();
                 }
@@ -114,7 +116,7 @@ namespace Stateflows.Common.Classes
 
             if (Locked)
             {
-                lock (this)
+                lock (LockObject)
                 {
                     return DoDequeue();
                 }

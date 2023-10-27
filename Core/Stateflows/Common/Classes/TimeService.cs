@@ -5,56 +5,38 @@ using System.Threading.Tasks;
 using System.Collections.Generic;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.DependencyInjection;
-using Stateflows.Common.Interfaces;
 using Stateflows.Common.Engine;
+using Stateflows.Common.Interfaces;
 
 namespace Stateflows.Common.Classes
 {
     internal class TimeService : ITimeService, IHostedService
     {
-        public List<TimeToken> Tokens { get; set; } = new List<TimeToken>();
+        private readonly CancellationTokenSource CancellationTokenSource = new CancellationTokenSource();
 
-        public Dictionary<TimeToken, string> IdsByTokens { get; set; } = new Dictionary<TimeToken, string>();
+        private readonly IStateflowsStorage Storage;
 
-        public Dictionary<string, TimeToken> TokensByIds { get; set; } = new Dictionary<string, TimeToken>();
+        private readonly IStateflowsLock Lock;
 
-        public System.Timers.Timer Timer { get; } = new System.Timers.Timer(1000 * 60) { AutoReset = true, Enabled = false };
+        private readonly CommonInterceptor Interceptor;
 
-        private IStateflowsStorage Storage { get; }
+        private readonly IBehaviorClassesProvider BehaviorClassesProvider;
 
-        private CommonInterceptor Interceptor { get; }
+        private readonly IBehaviorLocator Locator;
 
-        private IServiceProvider ServiceProvider { get; }
+        private readonly IServiceScope Scope;
 
-        private IBehaviorLocator locator = null;
+        private BehaviorId LockId = new BehaviorId(nameof(Lock), nameof(TimeService), nameof(TimeService));
 
-        private IBehaviorLocator Locator => locator ??= ServiceProvider.GetService<IBehaviorLocator>();
-
-        public TimeService(IBehaviorClassesProvider behaviorClassesProvider, IServiceProvider serviceProvider)
+        public TimeService(IServiceProvider serviceProvider)
         {
-            ServiceProvider = serviceProvider.CreateScope().ServiceProvider;
-            Storage = ServiceProvider.GetRequiredService<IStateflowsStorage>();
-            Interceptor = ServiceProvider.GetRequiredService<CommonInterceptor>();
+            Scope = serviceProvider.CreateScope();
 
-            Task.Run(async () =>
-            {
-                if (Interceptor.BeforeExecute())
-                {
-                    Tokens.AddRange(
-                        await Storage.GetTimeTokens(
-                            behaviorClassesProvider.LocalBehaviorClasses
-                        )
-                    );
-
-                    foreach (var token in Tokens)
-                    {
-                        TokensByIds[token.Id] = token;
-                        IdsByTokens[token] = token.Id;
-                    }
-
-                    Interceptor.AfterExecute();
-                }
-            });
+            Storage = Scope.ServiceProvider.GetRequiredService<IStateflowsStorage>();
+            Lock = Scope.ServiceProvider.GetRequiredService<IStateflowsLock>();
+            Interceptor = Scope.ServiceProvider.GetRequiredService<CommonInterceptor>();
+            BehaviorClassesProvider = Scope.ServiceProvider.GetRequiredService<IBehaviorClassesProvider>();
+            Locator = Scope.ServiceProvider.GetRequiredService<IBehaviorLocator>();
         }
 
         public async Task Clear(BehaviorId behaviorId, IEnumerable<string> ids)
@@ -64,71 +46,97 @@ namespace Stateflows.Common.Classes
                 return;
             }
 
-            foreach (var id in ids)
+            try
             {
-                if (TokensByIds.TryGetValue(id, out var token))
-                {
-                    Tokens.Remove(token);
-                    IdsByTokens.Remove(token);
-                    TokensByIds.Remove(id);
-                }
+                await Lock.LockAsync(LockId);
+                await Storage.ClearTimeTokens(behaviorId, ids);
             }
-
-            await Storage.ClearTimeTokens(behaviorId, ids);
+            finally
+            {
+                await Lock.UnlockAsync(LockId);
+            }
         }
 
         public async Task Register(TimeToken[] timeTokens)
         {
-            await Storage.AddTimeTokens(timeTokens);
-            Tokens.AddRange(timeTokens);
-            foreach (var token in timeTokens)
+            if (!timeTokens.Any())
             {
-                TokensByIds[token.Id] = token;
-                IdsByTokens[token] = token.Id;
+                return;
+            }
+
+            try
+            {
+                await Lock.LockAsync(LockId);
+                await Storage.AddTimeTokens(timeTokens);
+            }
+            finally
+            {
+                await Lock.UnlockAsync(LockId);
             }
         }
 
         public Task StartAsync(CancellationToken cancellationToken)
         {
-            Timer.Elapsed += Tick;
-            Timer.Enabled = true;
+            _ = Task.Run(() => TimingLoop(CancellationTokenSource.Token));
 
             return Task.CompletedTask;
         }
 
-        private async void Tick(object sender, System.Timers.ElapsedEventArgs e)
+        private async Task TimingLoop(CancellationToken cancellationToken)
+        {
+            var counter = 0;
+            while (!cancellationToken.IsCancellationRequested)
+            {
+                counter++;
+
+                if (counter > 60)
+                {
+                    _ = Task.Run(HandleTokens);
+
+                    counter = 0;
+                }
+
+                await Task.Delay(1000);
+            }
+        }
+
+        private async Task HandleTokens()
         {
             if (Interceptor.BeforeExecute())
             {
-                var passedTokens = Tokens.Where(t => t.Event.ShouldTrigger(t.CreatedAt)).ToArray();
-                if (!passedTokens.Any())
+                try
                 {
-                    return;
-                }
+                    await Lock.LockAsync(LockId);
 
-                var ids = new List<string>();
-                foreach (var token in passedTokens)
-                {
-                    if (IdsByTokens.TryGetValue(token, out var id))
+                    var tokens = await Storage.GetTimeTokens(BehaviorClassesProvider.LocalBehaviorClasses);
+
+                    var passedTokens = tokens.Where(t => t.Event.ShouldTrigger(t.CreatedAt)).ToArray();
+
+                    foreach (var token in passedTokens)
                     {
-                        ids.Add(id);
+                        if (Locator.TryLocateBehavior(token.TargetId, out var behavior))
+                        {
+                            _ = behavior.SendAsync(token.Event);
+
+                            await Storage.ClearTimeTokens(token.TargetId, new string[] { token.Id.ToString() });
+                        }
                     }
 
-                    if (Locator.TryLocateBehavior(token.TargetId, out var behavior))
-                    {
-                        await behavior.SendAsync(token.Event);
-                    }
-
-                    Tokens.Remove(token);
                 }
+                finally
+                {
+                    await Lock.UnlockAsync(LockId);
 
-                Interceptor.AfterExecute();
+                    Interceptor.AfterExecute();
+                }
             }
         }
 
         public Task StopAsync(CancellationToken cancellationToken)
         {
-            Timer.Enabled = false;
+            CancellationTokenSource.Cancel();
+
+            Scope.Dispose();
 
             return Task.CompletedTask;
         }
