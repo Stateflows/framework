@@ -4,12 +4,12 @@ using Stateflows.Common.Extensions;
 
 namespace Stateflows.Common.Engine
 {
-    internal class ClientInterceptor : IClientInterceptor
+    internal class ClientInterceptor : IStateflowsClientInterceptor
     {
-        IEnumerable<IClientInterceptor> ClientInterceptors { get; }
+        IEnumerable<IStateflowsClientInterceptor> ClientInterceptors { get; }
 
         public ClientInterceptor(
-            IEnumerable<IClientInterceptor> clientInterceptors
+            IEnumerable<IStateflowsClientInterceptor> clientInterceptors
         )
         {
             ClientInterceptors = clientInterceptors;

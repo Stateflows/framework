@@ -16,7 +16,7 @@ namespace Stateflows.Common
         private IServiceScope Scope { get; }
         private IServiceProvider ServiceProvider { get; }
         private IStateflowsLock Lock { get; }
-        private IExecutionInterceptor Interceptor { get; }
+        private IStateflowsExecutionInterceptor Interceptor { get; }
 
         private Dictionary<string, IEventProcessor> processors;
         private Dictionary<string, IEventProcessor> Processors

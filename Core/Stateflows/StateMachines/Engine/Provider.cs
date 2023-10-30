@@ -38,6 +38,6 @@ namespace Stateflows.StateMachines.Engine
         }
 
         public IEnumerable<BehaviorClass> BehaviorClasses
-            => Register.StateMachines.Values.Select(sm => new BehaviorClass(nameof(StateMachine), sm.Name));
+            => Register.StateMachines.Values.Select(sm => new BehaviorClass(nameof(StateMachine), sm.Name)).Distinct();
     }
 }

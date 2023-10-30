@@ -21,8 +21,8 @@ namespace Stateflows
                     .ServiceCollection
                     .AddSingleton<StateflowsEngine>()
                     .AddHostedService(provider => provider.GetService<StateflowsEngine>())
-                    .AddSingleton<ITimeService, TimeService>()
-                    .AddHostedService(provider => provider.GetService<ITimeService>() as TimeService)
+                    .AddSingleton<IStateflowsScheduler, ThreadScheduler>()
+                    .AddHostedService(provider => provider.GetService<IStateflowsScheduler>() as ThreadScheduler)
                     .AddScoped<CommonInterceptor>()
                     ;
             }
@@ -50,6 +50,11 @@ namespace Stateflows
                 services.AddSingleton<IStateflowsLock, InProcessLock>();
             }
 
+            if (!services.IsServiceRegistered<IStateflowsTenantsManager>())
+            {
+                services.AddSingleton<IStateflowsTenantsManager, SingleTenantManager>();
+            }
+
             return services;
         }
 
@@ -69,9 +74,9 @@ namespace Stateflows
         }
 
         public static IStateflowsBuilder AddClientInterceptor<TClientInterceptor>(this IStateflowsBuilder stateflowsBuilder)
-            where TClientInterceptor : class, IClientInterceptor
+            where TClientInterceptor : class, IStateflowsClientInterceptor
         {
-            stateflowsBuilder.ServiceCollection.AddScoped<IClientInterceptor, TClientInterceptor>();
+            stateflowsBuilder.ServiceCollection.AddScoped<IStateflowsClientInterceptor, TClientInterceptor>();
 
             return stateflowsBuilder;
         }

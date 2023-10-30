@@ -10,7 +10,7 @@ using Stateflows.Common.Interfaces;
 
 namespace Stateflows.Common.Classes
 {
-    internal class TimeService : ITimeService, IHostedService
+    internal class ThreadScheduler : IStateflowsScheduler, IHostedService
     {
         private readonly CancellationTokenSource CancellationTokenSource = new CancellationTokenSource();
 
@@ -18,7 +18,7 @@ namespace Stateflows.Common.Classes
 
         private readonly IStateflowsLock Lock;
 
-        private readonly CommonInterceptor Interceptor;
+        private readonly IStateflowsTenantsManager TenantsManager;
 
         private readonly IBehaviorClassesProvider BehaviorClassesProvider;
 
@@ -26,15 +26,15 @@ namespace Stateflows.Common.Classes
 
         private readonly IServiceScope Scope;
 
-        private BehaviorId LockId = new BehaviorId(nameof(Lock), nameof(TimeService), nameof(TimeService));
+        private BehaviorId LockId = new BehaviorId(nameof(Lock), nameof(ThreadScheduler), nameof(ThreadScheduler));
 
-        public TimeService(IServiceProvider serviceProvider)
+        public ThreadScheduler(IServiceProvider serviceProvider)
         {
             Scope = serviceProvider.CreateScope();
 
             Storage = Scope.ServiceProvider.GetRequiredService<IStateflowsStorage>();
             Lock = Scope.ServiceProvider.GetRequiredService<IStateflowsLock>();
-            Interceptor = Scope.ServiceProvider.GetRequiredService<CommonInterceptor>();
+            TenantsManager = Scope.ServiceProvider.GetRequiredService<IStateflowsTenantsManager>();
             BehaviorClassesProvider = Scope.ServiceProvider.GetRequiredService<IBehaviorClassesProvider>();
             Locator = Scope.ServiceProvider.GetRequiredService<IBehaviorLocator>();
         }
@@ -91,7 +91,7 @@ namespace Stateflows.Common.Classes
 
                 if (counter > 60)
                 {
-                    _ = Task.Run(HandleTokens);
+                    _ = Task.Run(() => TenantsManager.ExecuteByTenants(HandleTokens));
 
                     counter = 0;
                 }
@@ -100,35 +100,30 @@ namespace Stateflows.Common.Classes
             }
         }
 
-        private async Task HandleTokens()
+        private async Task HandleTokens(string tenantId)
         {
-            if (Interceptor.BeforeExecute())
+            try
             {
-                try
+                await Lock.LockAsync(LockId);
+
+                var tokens = await Storage.GetTimeTokens(BehaviorClassesProvider.LocalBehaviorClasses);
+
+                var passedTokens = tokens.Where(t => t.Event.ShouldTrigger(t.CreatedAt)).ToArray();
+
+                foreach (var token in passedTokens)
                 {
-                    await Lock.LockAsync(LockId);
-
-                    var tokens = await Storage.GetTimeTokens(BehaviorClassesProvider.LocalBehaviorClasses);
-
-                    var passedTokens = tokens.Where(t => t.Event.ShouldTrigger(t.CreatedAt)).ToArray();
-
-                    foreach (var token in passedTokens)
+                    if (Locator.TryLocateBehavior(token.TargetId, out var behavior))
                     {
-                        if (Locator.TryLocateBehavior(token.TargetId, out var behavior))
-                        {
-                            _ = behavior.SendAsync(token.Event);
+                        _ = behavior.SendAsync(token.Event);
 
-                            await Storage.ClearTimeTokens(token.TargetId, new string[] { token.Id.ToString() });
-                        }
+                        await Storage.ClearTimeTokens(token.TargetId, new string[] { token.Id.ToString() });
                     }
-
                 }
-                finally
-                {
-                    await Lock.UnlockAsync(LockId);
 
-                    Interceptor.AfterExecute();
-                }
+            }
+            finally
+            {
+                await Lock.UnlockAsync(LockId);
             }
         }
 

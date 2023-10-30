@@ -4,7 +4,7 @@ using Stateflows.Common.Classes;
 
 namespace Stateflows.Common.Interfaces
 {
-    public interface ITimeService
+    public interface IStateflowsScheduler
     {
         Task Clear(BehaviorId behaviorId, IEnumerable<string> ids);
 
