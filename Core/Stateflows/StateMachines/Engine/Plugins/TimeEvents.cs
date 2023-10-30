@@ -13,7 +13,7 @@ namespace Stateflows.StateMachines.Engine
 {
     internal class TimeEvents : IStateMachinePlugin
     {
-        private ITimeService TimeService { get; }
+        private IStateflowsScheduler Scheduler { get; }
 
         private readonly List<Vertex> Time_EnteredStates = new List<Vertex>();
 
@@ -25,9 +25,9 @@ namespace Stateflows.StateMachines.Engine
 
         private RootContext Context { get; set; }
 
-        public TimeEvents(ITimeService timeService)
+        public TimeEvents(IStateflowsScheduler scheduler)
         {
-            TimeService = timeService;
+            Scheduler = scheduler;
         }
 
         public Task AfterStateEntryAsync(IStateActionContext context)
@@ -113,7 +113,7 @@ namespace Stateflows.StateMachines.Engine
                     CreatedAt = DateTime.Now
                 };
 
-                await TimeService.Register(new TimeToken[] { token });
+                await Scheduler.Register(new TimeToken[] { token });
 
                 timeEventIds.Add(token.Id);
             }
@@ -169,7 +169,7 @@ namespace Stateflows.StateMachines.Engine
                     })
                     .ToArray();
 
-                await TimeService.Register(tokens);
+                await Scheduler.Register(tokens);
 
                 timeEventIds.AddRange(tokens.Select(token => token.Id));
             }
@@ -179,7 +179,7 @@ namespace Stateflows.StateMachines.Engine
         {
             foreach (var exitedVertexName in exitedVertices.Select(v => v.Name))
             {
-                await TimeService.Clear(Context.Context.Id, Context.GetStateValues(exitedVertexName).TimeEventIds);
+                await Scheduler.Clear(Context.Context.Id, Context.GetStateValues(exitedVertexName).TimeEventIds);
                 Context.GetStateValues(exitedVertexName).TimeEventIds.Clear();
             }
         }

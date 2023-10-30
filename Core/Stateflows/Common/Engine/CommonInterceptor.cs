@@ -5,11 +5,11 @@ using Stateflows.Common.Context.Interfaces;
 
 namespace Stateflows.Common.Engine
 {
-    internal class CommonInterceptor : IBehaviorInterceptor, IExecutionInterceptor
+    internal class CommonInterceptor : IBehaviorInterceptor, IStateflowsExecutionInterceptor
     {
         public CommonInterceptor(
             IEnumerable<IBehaviorInterceptor> interceptors,
-            IEnumerable<IExecutionInterceptor> executionInterceptors
+            IEnumerable<IStateflowsExecutionInterceptor> executionInterceptors
         )
         {
             Interceptors = interceptors;
@@ -18,7 +18,7 @@ namespace Stateflows.Common.Engine
 
         private IEnumerable<IBehaviorInterceptor> Interceptors { get; }
 
-        private IEnumerable<IExecutionInterceptor> ExecutionInterceptors { get; }
+        private IEnumerable<IStateflowsExecutionInterceptor> ExecutionInterceptors { get; }
 
         public Task AfterHydrateAsync(IBehaviorActionContext context)
             => Interceptors.RunSafe(i => i.AfterHydrateAsync(context), nameof(AfterHydrateAsync));
@@ -32,7 +32,7 @@ namespace Stateflows.Common.Engine
         public Task<bool> BeforeProcessEventAsync(IEventContext<Event> context)
             => Interceptors.RunSafe(i => i.BeforeProcessEventAsync(context), nameof(BeforeProcessEventAsync));
 
-        public bool BeforeExecute(Event @event = null)
+        public bool BeforeExecute(Event @event)
         {
             foreach (var interceptor in ExecutionInterceptors)
             {
@@ -45,7 +45,7 @@ namespace Stateflows.Common.Engine
             return true;
         }
 
-        public void AfterExecute(Event @event = null)
+        public void AfterExecute(Event @event)
         {
             foreach (var interceptor in ExecutionInterceptors)
             {

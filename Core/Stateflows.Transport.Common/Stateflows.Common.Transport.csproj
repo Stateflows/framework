@@ -3,7 +3,7 @@
   <PropertyGroup>
     <TargetFramework>netstandard2.1</TargetFramework>
     <Title>Stateflows framework transport abstractions</Title>
-    <Version>0.2.0-alpha</Version>
+    <Version>0.2.1-alpha</Version>
     <Authors>Stateflows</Authors>
     <PackageProjectUrl>https://www.stateflows.net</PackageProjectUrl>
     <PackageIcon>stateflows-logo-1024.png</PackageIcon>
@@ -13,6 +13,7 @@
     <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
     <PackageLicenseFile>LICENSE</PackageLicenseFile>
     <PackageReadmeFile>README.md</PackageReadmeFile>
+    <PackageOutputPath>..\..\NuGet</PackageOutputPath>
   </PropertyGroup>
 
   <ItemGroup>
@@ -24,7 +25,7 @@
       <Pack>True</Pack>
       <PackagePath>\</PackagePath>
     </None>
-    <None Include="C:\Users\milexmik\Downloads\stateflows-logo-1024.png">
+    <None Include="..\..\stateflows-logo-1024.png">
       <Pack>True</Pack>
       <PackagePath>\</PackagePath>
     </None>
