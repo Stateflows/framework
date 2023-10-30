@@ -3,7 +3,7 @@
   <PropertyGroup>
     <TargetFramework>netstandard2.1</TargetFramework>
     <Title>PlantUML extension for Stateflows framework</Title>
-    <Version>0.1.1-alpha</Version>
+    <Version>0.2.0-alpha</Version>
     <Authors>Stateflows</Authors>
     <PackageProjectUrl>https://www.stateflows.net</PackageProjectUrl>
     <PackageIcon>stateflows-logo-1024.png</PackageIcon>
@@ -12,9 +12,14 @@
     <PackageTags>Stateflows;state-machine;workflow;PlantUML</PackageTags>
     <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
     <PackageReadmeFile>README.md</PackageReadmeFile>
+    <PackageLicenseFile>LICENSE</PackageLicenseFile>
   </PropertyGroup>
 
   <ItemGroup>
+    <None Include="..\..\LICENSE">
+      <Pack>True</Pack>
+      <PackagePath>\</PackagePath>
+    </None>
     <None Include="..\..\README.md">
       <Pack>True</Pack>
       <PackagePath>\</PackagePath>
