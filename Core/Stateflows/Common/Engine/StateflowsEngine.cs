@@ -38,12 +38,6 @@ namespace Stateflows.Common
 
             EventQueue.Enqueue(token);
 
-            //Task.Run(async () =>
-            //{
-            //    token.Consumed = await ProcessEventAsync(token.TargetId, token.Event, token.ServiceProvider);
-            //    token.Handled.Set();
-            //});
-
             return token;
         }
 

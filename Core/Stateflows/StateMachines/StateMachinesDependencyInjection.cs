@@ -152,7 +152,9 @@ namespace Stateflows.StateMachines
                     .AddSingleton<IStateMachineEventHandler, InitializationHandler>()
                     .AddSingleton<IStateMachineEventHandler, BehaviorStatusHandler>()
                     .AddSingleton<IStateMachineEventHandler, CurrentStateHandler>()
-                    .AddSingleton<IStateMachineEventHandler, ExitHandler>();
+                    .AddSingleton<IStateMachineEventHandler, ExitHandler>()
+                    .AddSingleton<IStateMachineEventHandler, ResetHandler>()
+                    ;
             }
 
             return register;
