@@ -9,6 +9,7 @@ using Stateflows.StateMachines.Registration.Interfaces;
 using Stateflows.StateMachines.Registration.Interfaces.Base;
 using Stateflows.StateMachines.Registration.Interfaces.Internal;
 using Stateflows.StateMachines.Exceptions;
+using System.Security.Claims;
 
 namespace Stateflows.StateMachines.Registration.Builders
 {
@@ -38,12 +39,12 @@ namespace Stateflows.StateMachines.Registration.Builders
         {
             if (string.IsNullOrEmpty(stateName))
             {
-                throw new StateDefinitionException(stateName, $"State name cannot be empty");
+                throw new StateDefinitionException(stateName, $"State name cannot be empty", Vertex.Graph.Class);
             }
 
             if (Vertex.Vertices.ContainsKey(stateName))
             {
-                throw new StateDefinitionException(stateName, $"State '{stateName}' is already registered");
+                throw new StateDefinitionException(stateName, $"State '{stateName}' is already registered", Vertex.Graph.Class);
             }
 
             var vertex = new Vertex()

@@ -8,6 +8,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Stateflows.Common.Classes;
 using Stateflows.Common.Interfaces;
 using Stateflows.Common.Engine;
+using Stateflows.Common.Extensions;
 
 namespace Stateflows.Common
 {
@@ -77,7 +78,12 @@ namespace Stateflows.Common
                 {
                     _ = Task.Run(async () =>
                     {
-                        token.Status = await ProcessEventAsync(token.TargetId, token.Event, token.ServiceProvider);
+                        token.Validation = token.Event.Validate();
+
+                        token.Status = token.Validation.IsValid
+                            ? await ProcessEventAsync(token.TargetId, token.Event, token.ServiceProvider)
+                            : EventStatus.Invalid;
+
                         token.Handled.Set();
                     });
                 }

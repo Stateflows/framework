@@ -117,7 +117,7 @@ namespace Stateflows.StateMachines.Registration.Builders
             stateName.ThrowIfNullOrEmpty(nameof(stateName));
 
             if (Result.Vertices.ContainsKey(stateName))
-                throw new StateDefinitionException(stateName, $"State '{stateName}' is already registered");
+                throw new StateDefinitionException(stateName, $"State '{stateName}' is already registered", Result.Class);
 
             var vertex = new Vertex()
             {

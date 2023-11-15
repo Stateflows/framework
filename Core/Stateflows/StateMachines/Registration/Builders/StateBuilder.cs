@@ -131,13 +131,13 @@ namespace Stateflows.StateMachines.Registration.Builders
         public IStateBuilder AddDeferredEvent<TEvent>() where TEvent : Event, new()
         {
             if (typeof(TEvent) == typeof(Completion))
-                throw new DeferralDefinitionException(EventInfo<TEvent>.Name, "Completion event cannot be deferred.");
+                throw new DeferralDefinitionException(EventInfo<TEvent>.Name, "Completion event cannot be deferred.", Vertex.Graph.Class);
 
             if (typeof(TEvent) == typeof(Exit))
-                throw new DeferralDefinitionException(EventInfo<TEvent>.Name, "Exit event cannot be deferred.");
+                throw new DeferralDefinitionException(EventInfo<TEvent>.Name, "Exit event cannot be deferred.", Vertex.Graph.Class);
 
             if (typeof(TEvent).IsSubclassOf(typeof(TimeEvent)))
-                throw new DeferralDefinitionException(EventInfo<TEvent>.Name, "Time events cannot be deferred.");
+                throw new DeferralDefinitionException(EventInfo<TEvent>.Name, "Time events cannot be deferred.", Vertex.Graph.Class);
 
             Vertex.DeferredEvents.Add(EventInfo<TEvent>.Name);
 

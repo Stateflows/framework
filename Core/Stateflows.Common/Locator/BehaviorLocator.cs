@@ -45,19 +45,12 @@ namespace Stateflows.Common.Locator
 
             var result = false;
 
-            if (ProvidersByClasses.TryGetValue(id.BehaviorClass, out var provider))
+            if (ProvidersByClasses.TryGetValue(id.BehaviorClass, out var provider) && provider.TryProvideBehavior(id, out behavior))
             {
-                if (provider.TryProvideBehavior(id, out behavior))
-                {
-                    result = true;
-                }
+                behavior = new BehaviorProxy(behavior, Interceptor);
+
+                result = true;
             }
-
-            //var result =
-            //    ProvidersByClasses.TryGetValue(id.BehaviorClass, out var provider) &&
-            //    provider.TryProvideBehavior(id, out behavior);
-
-            behavior = new BehaviorProxy(behavior, Interceptor);
 
             return result;
         }

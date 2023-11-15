@@ -3,6 +3,7 @@ using Stateflows.Common;
 using Stateflows.Common.Utilities;
 using Stateflows.Common.Interfaces;
 using Stateflows.Common.Extensions;
+using Stateflows.Common.Exceptions;
 
 namespace Stateflows.Transport.AspNetCore.SignalR.Client
 {
@@ -16,7 +17,7 @@ namespace Stateflows.Transport.AspNetCore.SignalR.Client
 
             if (result.State != HubConnectionState.Connected)
             {
-                throw new Exception("Transport failure: SignalR connection unavailable");
+                throw new TransportException("Transport failure: SignalR connection unavailable");
             }
 
             return result;
