@@ -1,9 +1,12 @@
-﻿using Stateflows.Common.Interfaces;
+﻿using Stateflows.Common;
+using Stateflows.Common.Interfaces;
 
 namespace Stateflows.StateMachines.Context.Interfaces
 {
     public interface IStateMachineActionContext : IBehaviorLocator
     {
         IStateMachineContext StateMachine { get; }
+
+        Event ExecutionTrigger { get; }
     }
 }

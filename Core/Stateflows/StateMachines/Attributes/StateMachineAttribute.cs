@@ -5,15 +5,14 @@ namespace Stateflows.StateMachines.Attributes
     [AttributeUsage(AttributeTargets.Class, AllowMultiple = false)]
     public class StateMachineAttribute : Attribute
     {
-        public string Name { get; set; }
+        public string Name { get; }
 
-        public StateMachineAttribute(string name)
+        public int Version { get; }
+
+        public StateMachineAttribute(string name = null, int version = 1)
         {
             Name = name;
-        }
-
-        public StateMachineAttribute()
-        {
+            Version = version;
         }
     }
 }

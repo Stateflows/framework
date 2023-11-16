@@ -16,7 +16,7 @@ namespace Stateflows.Common
         private IServiceScope Scope { get; }
         private IServiceProvider ServiceProvider { get; }
         private IStateflowsLock Lock { get; }
-        private IExecutionInterceptor Interceptor { get; }
+        private IStateflowsExecutionInterceptor Interceptor { get; }
 
         private Dictionary<string, IEventProcessor> processors;
         private Dictionary<string, IEventProcessor> Processors
@@ -38,12 +38,6 @@ namespace Stateflows.Common
 
             EventQueue.Enqueue(token);
 
-            //Task.Run(async () =>
-            //{
-            //    token.Consumed = await ProcessEventAsync(token.TargetId, token.Event, token.ServiceProvider);
-            //    token.Handled.Set();
-            //});
-
             return token;
         }
 
@@ -59,11 +53,11 @@ namespace Stateflows.Common
 
             if (Processors.TryGetValue(id.Type, out var processor) && Interceptor.BeforeExecute(@event))
             {
-                await Lock.Lock(id);
+                await Lock.LockAsync(id);
 
                 result = await processor.ProcessEventAsync(id, @event, serviceProvider);
 
-                await Lock.Unlock(id);
+                await Lock.UnlockAsync(id);
 
                 Interceptor.AfterExecute(@event);
             }

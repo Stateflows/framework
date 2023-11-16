@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using System.Threading.Tasks;
 using System.Collections.Generic;
 using Stateflows.Common.Context;
@@ -9,6 +10,8 @@ namespace Stateflows.Common.Classes
     public class InMemoryStorage : IStateflowsStorage
     {
         public Dictionary<string, StateflowsContext> Contexts { get; } = new Dictionary<string, StateflowsContext>();
+
+        public List<TimeToken> TimeTokens { get; } = new List<TimeToken>();
 
         public Task<StateflowsContext> Hydrate(BehaviorId id)
         {
@@ -40,15 +43,21 @@ namespace Stateflows.Common.Classes
             foreach (var timeToken in timeTokens)
             {
                 timeToken.Id = new Random().Next(int.MaxValue).ToString();
+
+                TimeTokens.Add(timeToken);
             }
 
             return Task.CompletedTask;
         }
 
         public Task<IEnumerable<TimeToken>> GetTimeTokens(IEnumerable<BehaviorClass> behaviorClasses)
-            => Task.FromResult(new List<TimeToken>() as IEnumerable<TimeToken>);
+            => Task.FromResult(TimeTokens.Where(t => behaviorClasses.Contains(t.TargetId.BehaviorClass)).AsEnumerable());
 
         public Task ClearTimeTokens(BehaviorId behaviorId, IEnumerable<string> ids)
-            => Task.CompletedTask;
+        {
+            TimeTokens.RemoveAll(t => t.TargetId == behaviorId && ids.Contains(t.Id));
+
+            return Task.CompletedTask;
+        }
     }
 }

@@ -162,6 +162,17 @@ namespace Stateflows.StateMachines.Engine
             }
         }
 
+        public void Reset()
+        {
+            Debug.Assert(Context != null, $"Context is unavailable. Is state machine '{Graph.Name}' hydrated?");
+
+            if (Initialized)
+            {
+                Context.Context.Values.Clear();
+                Context.Context.Version = 0;
+            }
+        }
+
         private async Task DoInitializeCascadeAsync(Vertex vertex)
         {
             while (vertex != null)
@@ -483,21 +494,6 @@ namespace Stateflows.StateMachines.Engine
                 return stateMachine;
             }
         }
-
-        //public TStateMachine GetStateMachine<TStateMachine>(RootContext context)
-        //    where TStateMachine : StateMachine
-        //{
-        //    if (!StateMachines.TryGetValue(typeof(TStateMachine), out var stateMachine))
-        //    {
-        //        stateMachine = ServiceProvider.GetService<TStateMachine>();
-
-        //        stateMachine.Context = new StateMachineActionContext(context);
-
-        //        StateMachines.Add(typeof(TStateMachine), stateMachine);
-        //    }
-
-        //    return stateMachine as TStateMachine;
-        //}
 
         private readonly IDictionary<Type, BaseState> States = new Dictionary<Type, BaseState>();
 

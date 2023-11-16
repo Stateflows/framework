@@ -5,7 +5,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <Title>Entity Framework Core storage for Stateflows framework</Title>
-    <Version>0.1.1-alpha</Version>
+    <Version>0.2.1-alpha</Version>
     <Authors>Stateflows</Authors>
     <PackageProjectUrl>https://www.stateflows.net</PackageProjectUrl>
     <PackageIcon>stateflows-logo-1024.png</PackageIcon>
@@ -15,6 +15,7 @@
     <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <PackageLicenseFile>LICENSE</PackageLicenseFile>
+    <PackageOutputPath>..\..\NuGet</PackageOutputPath>
   </PropertyGroup>
 
   <ItemGroup>
@@ -26,7 +27,7 @@
       <Pack>True</Pack>
       <PackagePath>\</PackagePath>
     </None>
-    <None Include="C:\Users\milexmik\Downloads\stateflows-logo-1024.png">
+    <None Include="..\..\stateflows-logo-1024.png">
       <Pack>True</Pack>
       <PackagePath>\</PackagePath>
     </None>

@@ -10,11 +10,12 @@
     <RepositoryUrl>https://github.com/Stateflows/framework</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
     <PackageTags>Stateflows;state-machine;workflow</PackageTags>
-    <AssemblyVersion>0.1.0.0</AssemblyVersion>
-    <FileVersion>0.1.0.0</FileVersion>
-    <Version>0.1.1-alpha</Version>
+    <AssemblyVersion></AssemblyVersion>
+    <FileVersion></FileVersion>
+    <Version>0.2.1-alpha</Version>
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <PackageLicenseFile>LICENSE</PackageLicenseFile>
+    <PackageOutputPath>..\..\NuGet</PackageOutputPath>
   </PropertyGroup>
 
   <ItemGroup>
@@ -26,7 +27,7 @@
       <Pack>True</Pack>
       <PackagePath>\</PackagePath>
     </None>
-    <None Include="C:\Users\milexmik\Downloads\stateflows-logo-1024.png">
+    <None Include="..\..\stateflows-logo-1024.png">
       <Pack>True</Pack>
       <PackagePath>\</PackagePath>
     </None>

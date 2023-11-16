@@ -30,10 +30,10 @@ namespace Stateflows.Locks.DistributedLock.Classes
             return distributedLock;
         }
 
-        public async Task Lock(BehaviorId id)
+        public async Task LockAsync(BehaviorId id)
             => Handles.Add(id.ToString(), await (await GetDistributedLockAsync(id)).AcquireAsync());
 
-        public async Task Unlock(BehaviorId id)
+        public async Task UnlockAsync(BehaviorId id)
         {
             if (Handles.TryGetValue(id.ToString(), out var handle))
             {
