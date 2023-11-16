@@ -354,7 +354,15 @@ namespace Stateflows.Activities.Engine
 
                 if (initializer != null)
                 {
-                    await initializer.WhenAll(context);
+                    try
+                    {
+                        await initializer.WhenAll(context);
+                    }
+                    catch (Exception)
+                    {
+                        return false;
+                        //throw;
+                    }
                 }
 
                 //await Observer.AfterStateMachineInitializeAsync(context);

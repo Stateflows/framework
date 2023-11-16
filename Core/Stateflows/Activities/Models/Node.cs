@@ -68,12 +68,19 @@ namespace Stateflows.Activities.Models
         //    }
         //}
 
+        private Logic<ActivityEventActionAsync> initialize = null;
+        public Logic<ActivityEventActionAsync> Initialize
+            => initialize ??= new Logic<ActivityEventActionAsync>()
+            {
+                Name = Constants.Initialize
+            };
+
         private Logic<ActivityEventActionAsync> finalize = null;
         public Logic<ActivityEventActionAsync> Finalize
             => finalize ??= new Logic<ActivityEventActionAsync>()
-                {
-                    Name = Constants.Finalize
-                };
+            {
+                Name = Constants.Finalize
+            };
 
         private IEnumerable<Node> initialNodes = null;
         public IEnumerable<Node> InitialNodes

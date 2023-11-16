@@ -63,31 +63,6 @@ namespace Stateflows.Activities.Registration.Builders
                     //await c.Executor.Observer.OnActivityInitializeExceptionAsync(context, e);
                 }
             });
-
-            //if (!Result.Initializers.TryGetValue(initializerName, out var initializer))
-            //{
-            //    initializer = new Logic<ActivityEventActionAsync>()
-            //    {
-            //        Name = Constants.Initialize
-            //    };
-
-            //    Result.Initializers.Add(initializerName, initializer);
-            //}
-
-            //initializer.Actions.Add(async c =>
-            //{
-            //    var context = new ActivityInitializationContext(c.Event as InitializationRequest, c);
-            //    try
-            //    {
-            //        await actionAsync(context);
-            //    }
-            //    catch (Exception e)
-            //    {
-            //        //await c.Executor.Observer.OnActivityInitializeExceptionAsync(context, e);
-            //    }
-            //});
-
-            //return this;
         }
 
         public IActivityBuilder AddOnInitialize<TInitializationRequest>(Func<IActivityInitializationContext<TInitializationRequest>, Task> actionAsync)
@@ -111,31 +86,6 @@ namespace Stateflows.Activities.Registration.Builders
                     //await c.Executor.Observer.OnActivityInitializeExceptionAsync(context, e);
                 }
             });
-
-            //if (!Result.Initializers.TryGetValue(initializerName, out var initializer))
-            //{
-            //    initializer = new Logic<ActivityEventActionAsync>()
-            //    {
-            //        Name = Constants.Initialize
-            //    };
-
-            //    Result.Initializers.Add(initializerName, initializer);
-            //}
-
-            //initializer.Actions.Add(async c =>
-            //{
-            //    var context = new ActivityInitializationContext<TInitializationRequest>(c.Event as TInitializationRequest, c);
-            //    try
-            //    {
-            //        await actionAsync(context);
-            //    }
-            //    catch (Exception e)
-            //    {
-            //        //await c.Executor.Observer.OnActivityInitializeExceptionAsync(context, e);
-            //    }
-            //});
-
-            //return this;
         }
 
         IActivityBuilder IActivity<IActivityBuilder>.AddAction(string actionNodeName, ActionDelegateAsync actionAsync, ActionBuilderAction buildAction)
@@ -143,9 +93,6 @@ namespace Stateflows.Activities.Registration.Builders
 
         IActivityBuilder IActivity<IActivityBuilder>.AddStructuredActivity(string actionNodeName, StructuredActivityBuilderAction builderAction)
             => AddStructuredActivity(actionNodeName, builderAction) as IActivityBuilder;
-
-        //IActivityBuilder IActivityEvents<IActivityBuilder>.AddOnInitialize(Func<IActivityInitializationContext, Task> actionAsync)
-        //    => AddOnInitialize(actionAsync) as IActivityBuilder;
 
         IActivityBuilder IActivityEvents<IActivityBuilder>.AddOnFinalize(Func<IActivityActionContext, Task> actionAsync)
             => AddOnFinalize(actionAsync) as IActivityBuilder;
@@ -162,13 +109,7 @@ namespace Stateflows.Activities.Registration.Builders
         IActivityBuilder IOutput<IActivityBuilder>.AddOutput()
             => AddOutput() as IActivityBuilder;
 
-        //IActivityBuilder IExceptionHandler<IActivityBuilder>.AddExceptionHandler<TException>(ExceptionHandlerDelegateAsync<TException> exceptionHandler)
-        //    => AddExceptionHandler<TException>(exceptionHandler) as IActivityBuilder;
-
         IActivityBuilder IActivity<IActivityBuilder>.AddParallelActivity<TToken>(string actionNodeName, StructuredActivityBuilderAction builderAction)
             => AddParallelActivity<TToken>(actionNodeName, builderAction) as IActivityBuilder;
-
-        IActivityBuilder IActivity<IActivityBuilder>.AddIterativeActivity<TToken>(string actionNodeName, StructuredActivityBuilderAction builderAction)
-            => AddIterativeActivity<TToken>(actionNodeName, builderAction)as IActivityBuilder;
     }
 }

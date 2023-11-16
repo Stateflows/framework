@@ -8,8 +8,8 @@ using Stateflows.Activities.Extensions;
 using Stateflows.Activities.Exceptions;
 using Stateflows.Activities.Context.Classes;
 using Stateflows.Activities.Context.Interfaces;
-using Stateflows.Activities.Registration.Interfaces;
 using Stateflows.Activities.Registration.Builders;
+using Stateflows.Activities.Registration.Interfaces;
 
 namespace Stateflows.Activities.Registration
 {
@@ -181,7 +181,12 @@ namespace Stateflows.Activities.Registration
             => AddNode(
                 NodeType.StructuredActivity,
                 structuredActivityNodeName,
-                async c => c.OutputRange(await c.GetContext().Executor.DoInitializeStructuredNodeAsync(c.GetNode(), c.Input)),
+                async c =>
+                {
+                    await c.GetNode().Initialize.WhenAll(c as BaseContext);
+
+                    c.OutputRange(await c.GetContext().Executor.DoInitializeStructuredNodeAsync(c.GetNode(), c.Input));
+                },
                 b => builderAction?.Invoke(new StructuredActivityBuilder(b.Node, this, Services))
             );
 
@@ -190,16 +195,12 @@ namespace Stateflows.Activities.Registration
             => AddNode(
                 NodeType.ParallelActivity,
                 parallelActivityNodeName,
-                async c => c.OutputRange(await c.GetContext().Executor.DoInitializeParallelNodeAsync<TToken>(c.GetNode(), c.Input)),
-                b => builderAction?.Invoke(new StructuredActivityBuilder(b.Node, this, Services))
-            );
+                async c =>
+                {
+                    await c.GetNode().Initialize.WhenAll(c as BaseContext);
 
-        public BaseActivityBuilder AddIterativeActivity<TToken>(string parallelActivityNodeName, StructuredActivityBuilderAction builderAction = null)
-            where TToken : Token, new()
-            => AddNode(
-                NodeType.IterativeActivity,
-                parallelActivityNodeName,
-                async c => c.OutputRange(await c.GetContext().Executor.DoInitializeIterativeNodeAsync<TToken>(c.GetNode(), c.Input)),
+                    c.OutputRange(await c.GetContext().Executor.DoInitializeParallelNodeAsync<TToken>(c.GetNode(), c.Input));
+                },
                 b => builderAction?.Invoke(new StructuredActivityBuilder(b.Node, this, Services))
             );
 
@@ -223,30 +224,24 @@ namespace Stateflows.Activities.Registration
             return this;
         }
 
-        //public BaseActivityBuilder AddExceptionHandler<TException>(ExceptionHandlerDelegateAsync<TException> exceptionHandler)
-        //    where TException : Exception
-        //{
-        //    var targetNodeName = $"{typeof(TException).FullName}.ExceptionHandler";
+        public BaseActivityBuilder AddOnInitialize(Func<IActivityActionContext, Task> actionAsync)
+        {
+            actionAsync.ThrowIfNull(nameof(actionAsync));
 
-        //    AddNode(
-        //        NodeType.ExceptionHandler,
-        //        targetNodeName,
-        //        c =>
-        //        {
-        //            var contextObj = c as ActionContext;
-        //            var context = new ExceptionHandlerContext<TException>(contextObj.Context, contextObj.Node, Node, contextObj.Input);
+            Node.Initialize.Actions.Add(async c =>
+            {
+                var context = new ActivityActionContext(c.Context, c.NodeScope);
+                try
+                {
+                    await actionAsync(context);
+                }
+                catch (Exception e)
+                {
+                    //await c.Executor.Observer.OnActivityFinalizeExceptionAsync(context, e);
+                }
+            });
 
-        //            exceptionHandler?.Invoke(context);
-
-        //            c.OutputRange(context.OutputTokens);
-
-        //            return Task.CompletedTask;
-        //        },
-        //        null,
-        //        typeof(TException)
-        //    );
-
-        //    return this;
-        //}
+            return this;
+        }
     }
 }

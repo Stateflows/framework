@@ -5,7 +5,6 @@ using Stateflows.Activities.Models;
 using Stateflows.Activities.Context.Interfaces;
 using Stateflows.Activities.Registration.Interfaces;
 using Stateflows.Activities.Registration.Interfaces.Base;
-using Newtonsoft.Json.Linq;
 
 namespace Stateflows.Activities.Registration.Builders
 {
@@ -67,7 +66,7 @@ namespace Stateflows.Activities.Registration.Builders
             => AddOnFinalize(actionAsync) as IStructuredActivityBuilder;
 
         IStructuredActivityBuilder IStructuredActivityEvents<IStructuredActivityBuilder>.AddOnInitialize(Func<IActivityActionContext, Task> actionAsync)
-            => throw new Exception("Not implemented");
+            => AddOnInitialize(actionAsync) as IStructuredActivityBuilder;
 
         IStructuredActivityBuilder IOutput<IStructuredActivityBuilder>.AddOutput()
             => AddOutput() as IStructuredActivityBuilder;
@@ -77,9 +76,6 @@ namespace Stateflows.Activities.Registration.Builders
 
         IStructuredActivityBuilder IActivity<IStructuredActivityBuilder>.AddParallelActivity<TToken>(string actionNodeName, StructuredActivityBuilderAction builderAction)
             => AddParallelActivity<TToken>(actionNodeName, builderAction) as IStructuredActivityBuilder;
-
-        IStructuredActivityBuilder IActivity<IStructuredActivityBuilder>.AddIterativeActivity<TToken>(string actionNodeName, StructuredActivityBuilderAction builderAction)
-            => AddIterativeActivity<TToken>(actionNodeName, builderAction) as IStructuredActivityBuilder;
 
         IStructuredActivityBuilderWithOptions INodeOptions<IStructuredActivityBuilderWithOptions>.SetOptions(NodeOptions nodeOptions)
         {
@@ -111,7 +107,7 @@ namespace Stateflows.Activities.Registration.Builders
             => AddOnFinalize(actionAsync) as IStructuredActivityBuilderWithOptions;
 
         IStructuredActivityBuilderWithOptions IStructuredActivityEvents<IStructuredActivityBuilderWithOptions>.AddOnInitialize(Func<IActivityActionContext, Task> actionAsync)
-            => throw new Exception("Not implemented");
+            => AddOnInitialize(actionAsync) as IStructuredActivityBuilderWithOptions;
 
         IStructuredActivityBuilderWithOptions IOutput<IStructuredActivityBuilderWithOptions>.AddOutput()
             => AddOutput() as IStructuredActivityBuilderWithOptions;
@@ -121,9 +117,6 @@ namespace Stateflows.Activities.Registration.Builders
 
         IStructuredActivityBuilderWithOptions IActivity<IStructuredActivityBuilderWithOptions>.AddParallelActivity<TToken>(string actionNodeName, StructuredActivityBuilderAction builderAction)
             => AddParallelActivity<TToken>(actionNodeName, builderAction) as IStructuredActivityBuilderWithOptions;
-
-        IStructuredActivityBuilderWithOptions IActivity<IStructuredActivityBuilderWithOptions>.AddIterativeActivity<TToken>(string actionNodeName, StructuredActivityBuilderAction builderAction)
-            => AddIterativeActivity<TToken>(actionNodeName, builderAction) as IStructuredActivityBuilderWithOptions;
 
         public IActionBuilder AddObjectFlow<TToken>(string targetNodeName, FlowBuilderAction<TToken> buildAction = null)
             where TToken : Token, new()

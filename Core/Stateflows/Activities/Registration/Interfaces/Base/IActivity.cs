@@ -33,8 +33,5 @@ namespace Stateflows.Activities.Registration.Interfaces.Base
 
         TReturn AddParallelActivity<TToken>(string actionNodeName, StructuredActivityBuilderAction builderAction = null)
             where TToken : Token, new();
-
-        TReturn AddIterativeActivity<TToken>(string actionNodeName, StructuredActivityBuilderAction builderAction = null)
-            where TToken : Token, new();
     }
 }
