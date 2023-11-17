@@ -6,8 +6,8 @@ using System.Collections.Generic;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.DependencyInjection;
 using Stateflows;
-using Stateflows.Common.Registration.Interfaces;
 using Stateflows.StateMachines;
+using Stateflows.Common.Registration.Interfaces;
 using Stateflows.Testing.StateMachines.Sequence;
 
 namespace StateMachine.IntegrationTests.Utils
