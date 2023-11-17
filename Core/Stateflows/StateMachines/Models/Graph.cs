@@ -18,8 +18,9 @@ namespace Stateflows.StateMachines.Models
         {
             Name = name;
             Version = version;
+            Class = new StateMachineClass(Name);
         }
-
+        public StateMachineClass Class { get; }
         public string Name { get; }
         public int Version { get; }
         public Type StateMachineType { get; set; }
@@ -57,7 +58,7 @@ namespace Stateflows.StateMachines.Models
             }
             else
             {
-                throw new StateMachineDefinitionException($"Initial state '{InitialVertexName}' is not registered in state machine '{Name}'");
+                throw new StateMachineDefinitionException($"Initial state '{InitialVertexName}' is not registered in state machine '{Name}'", Class);
             }
 
             foreach (var vertex in AllVertices.Values)
@@ -70,7 +71,7 @@ namespace Stateflows.StateMachines.Models
                     }
                     else
                     {
-                        throw new StateMachineDefinitionException($"Initial state '{vertex.InitialVertexName}' is not registered in composite state '{vertex.Name}' in state machine '{Name}'");
+                        throw new StateMachineDefinitionException($"Initial state '{vertex.InitialVertexName}' is not registered in composite state '{vertex.Name}' in state machine '{Name}'", Class);
                     }
                 }
 
@@ -78,12 +79,10 @@ namespace Stateflows.StateMachines.Models
                     .Where(edge => !string.IsNullOrEmpty(edge.Trigger))
                     .Select(edge => edge.Trigger);
 
-                foreach (var deferredEvent in vertex.DeferredEvents)
+                var deferredEvents = vertex.DeferredEvents.Where(deferredEvent => vertexTriggers.Contains(deferredEvent));
+                if (deferredEvents.Any())
                 {
-                    if (vertexTriggers.Contains(deferredEvent))
-                    {
-                        throw new DeferralDefinitionException(deferredEvent, $"Event '{deferredEvent}' triggers a transition outgoing from state '{vertex.Name}' in state machine '{Name}' and cannot be deferred by that state.");
-                    }
+                    throw new DeferralDefinitionException(deferredEvents.First(), $"Event '{deferredEvents.First()}' triggers a transition outgoing from state '{vertex.Name}' in state machine '{Name}' and cannot be deferred by that state.", Class);
                 }
             }
 
@@ -100,7 +99,8 @@ namespace Stateflows.StateMachines.Models
                     {
                         throw new TransitionDefinitionException(edge.Source.Parent is null
                             ? $"Transition target state '{edge.TargetName}' is not registered in root level of state machine '{Name}'"
-                            : $"Transition target state '{edge.TargetName}' is not defined on the same level as transition source '{edge.SourceName}' in state machine '{Name}'"
+                            : $"Transition target state '{edge.TargetName}' is not defined on the same level as transition source '{edge.SourceName}' in state machine '{Name}'",
+                            Class
                         );
                     }
                 }

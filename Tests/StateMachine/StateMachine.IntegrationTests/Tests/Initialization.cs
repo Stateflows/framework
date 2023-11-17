@@ -5,7 +5,7 @@ namespace StateMachine.IntegrationTests.Tests
 {
     public class ValueInitializationRequest : InitializationRequest
     {
-        public string Value { get; set; }
+        public string Value { get; set; } = String.Empty;
     }
 
     [TestClass]

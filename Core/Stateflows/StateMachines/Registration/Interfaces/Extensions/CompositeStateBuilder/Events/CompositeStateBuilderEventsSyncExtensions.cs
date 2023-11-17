@@ -8,25 +8,25 @@ namespace Stateflows.StateMachines
 {
     public static class CompositeStateBuilderEventsSyncExtensions
     {
-        public static ICompositeStateBuilder AddOnInitialize(this ICompositeStateBuilder builder, Action<IStateActionContext> stateAction)
+        public static IInitializedCompositeStateBuilder AddOnInitialize(this IInitializedCompositeStateBuilder builder, Action<IStateActionContext> stateAction)
             => builder.AddOnInitialize(stateAction
                 .AddStateMachineInvocationContext((builder as CompositeStateBuilder).Vertex.Graph)
                 .ToAsync()
             );
 
-        public static ICompositeStateBuilder AddOnFinalize(this ICompositeStateBuilder builder, Action<IStateActionContext> stateAction)
+        public static IInitializedCompositeStateBuilder AddOnFinalize(this IInitializedCompositeStateBuilder builder, Action<IStateActionContext> stateAction)
             => builder.AddOnFinalize(stateAction
                 .AddStateMachineInvocationContext((builder as CompositeStateBuilder).Vertex.Graph)
                 .ToAsync()
             );
 
-        public static ICompositeStateBuilder AddOnEntry(this ICompositeStateBuilder builder, Action<IStateActionContext> stateAction)
+        public static IInitializedCompositeStateBuilder AddOnEntry(this IInitializedCompositeStateBuilder builder, Action<IStateActionContext> stateAction)
             => builder.AddOnEntry(stateAction
                 .AddStateMachineInvocationContext((builder as CompositeStateBuilder).Vertex.Graph)
                 .ToAsync()
             );
 
-        public static ICompositeStateBuilder AddOnExit(this ICompositeStateBuilder builder, Action<IStateActionContext> stateAction)
+        public static IInitializedCompositeStateBuilder AddOnExit(this IInitializedCompositeStateBuilder builder, Action<IStateActionContext> stateAction)
             => builder.AddOnExit(stateAction
                 .AddStateMachineInvocationContext((builder as CompositeStateBuilder).Vertex.Graph)
                 .ToAsync()

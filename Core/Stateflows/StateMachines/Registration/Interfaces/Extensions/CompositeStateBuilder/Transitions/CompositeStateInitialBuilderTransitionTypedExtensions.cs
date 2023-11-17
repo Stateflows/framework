@@ -7,13 +7,13 @@ namespace Stateflows.StateMachines
 {
     public static class CompositeStateInitialBuilderTransitionTypedExtensions
     {
-        public static ICompositeStateInitialBuilder AddTransition<TEvent, TTransition, TTargetState>(this ICompositeStateInitialBuilder builder)
+        public static ICompositeStateBuilder AddTransition<TEvent, TTransition, TTargetState>(this ICompositeStateBuilder builder)
             where TEvent : Event, new()
             where TTransition : Transition<TEvent>
             where TTargetState : State
             => AddTransition<TEvent, TTransition>(builder, StateInfo<TTargetState>.Name);
 
-        public static ICompositeStateInitialBuilder AddTransition<TEvent, TTransition>(this ICompositeStateInitialBuilder builder, string targetVertexName)
+        public static ICompositeStateBuilder AddTransition<TEvent, TTransition>(this ICompositeStateBuilder builder, string targetVertexName)
             where TEvent : Event, new()
             where TTransition : Transition<TEvent>
         {
@@ -25,7 +25,7 @@ namespace Stateflows.StateMachines
             );
         }
 
-        public static ICompositeStateInitialBuilder AddTransition<TEvent, TTargetState>(this ICompositeStateInitialBuilder builder, TransitionBuilderAction<TEvent> transitionBuildAction = null)
+        public static ICompositeStateBuilder AddTransition<TEvent, TTargetState>(this ICompositeStateBuilder builder, TransitionBuilderAction<TEvent> transitionBuildAction = null)
             where TEvent : Event, new()
             where TTargetState : State
             => builder.AddTransition(StateInfo<TTargetState>.Name, transitionBuildAction);

@@ -59,7 +59,7 @@ namespace Stateflows.StateMachines.Registration
 
             if (StateMachines.ContainsKey(key))
             {
-                throw new StateMachineDefinitionException($"State machine '{stateMachineName}' with version '{version}' is already registered");
+                throw new StateMachineDefinitionException($"State machine '{stateMachineName}' with version '{version}' is already registered", new StateMachineClass(stateMachineName));
             }
 
             var builder = new StateMachineBuilder(stateMachineName, version, Services);
@@ -82,7 +82,7 @@ namespace Stateflows.StateMachines.Registration
 
             if (StateMachines.ContainsKey(key))
             {
-                throw new StateMachineDefinitionException($"State machine '{stateMachineName}' with version '{version}' is already registered");
+                throw new StateMachineDefinitionException($"State machine '{stateMachineName}' with version '{version}' is already registered", new StateMachineClass(stateMachineName));
             }
 
             Services.RegisterStateMachine(stateMachineType);

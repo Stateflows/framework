@@ -109,7 +109,8 @@
     {
         if (locator.TryLocateStateMachine(GetCurrentId(), out var stateMachine))
         {
-            message = (await stateMachine.GetStatusAsync())?.Response.BehaviorStatus switch
+            var response = (await stateMachine.GetCurrentStateAsync())?.Response;
+            message = response?.BehaviorStatus switch
             {
                 BehaviorStatus.NotInitialized => "State Machine located, it's not initialized",
                 BehaviorStatus.Initialized => "State Machine located, it's initialized",

@@ -21,16 +21,16 @@ namespace Stateflows
         public static bool operator !=(BehaviorClass class1, BehaviorClass class2)
             => !class1.Equals(class2);
 
-        public override bool Equals(object obj)
+        public readonly override bool Equals(object obj)
             =>
-                obj is BehaviorClass &&
-                Type == ((BehaviorClass)obj).Type &&
-                Name == ((BehaviorClass)obj).Name;
+                obj is BehaviorClass @class &&
+                Type == @class.Type &&
+                Name == @class.Name;
 
-        public override int GetHashCode()
+        public readonly override int GetHashCode()
             => Tuple.Create(Type, Name).GetHashCode();
 
-        public override string ToString()
+        public readonly override string ToString()
             => StateflowsJsonConverter.SerializeObject(this);
     }
 }

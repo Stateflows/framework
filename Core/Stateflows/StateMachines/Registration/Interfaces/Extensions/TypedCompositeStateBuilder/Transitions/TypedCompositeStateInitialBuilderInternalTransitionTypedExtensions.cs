@@ -6,7 +6,7 @@ namespace Stateflows.StateMachines
 {
     public static class TypedCompositeStateInitialBuilderInternalTransitionTypedExtensions
     {
-        public static ITypedCompositeStateInitialBuilder AddInternalTransition<TEvent, TTransition>(this ITypedCompositeStateInitialBuilder builder)
+        public static ITypedCompositeStateBuilder AddInternalTransition<TEvent, TTransition>(this ITypedCompositeStateBuilder builder)
             where TEvent : Event, new()
             where TTransition : Transition<TEvent>
             => builder.AddTransition<TEvent, TTransition>(Constants.DefaultTransitionTarget);

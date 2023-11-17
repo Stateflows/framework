@@ -10,19 +10,19 @@ namespace Stateflows.StateMachines
         #region AddFinalState
         [DebuggerHidden]
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Major Code Smell", "S2326:Unused type parameters should be removed", Justification = "<Pending>")]
-        public static ITypedFinalizedCompositeStateBuilder AddState<TFinalState>(this ITypedCompositeStateBuilder builder, string stateName = FinalState.Name)
+        public static ITypedFinalizedCompositeStateBuilder AddState<TFinalState>(this ITypedInitializedCompositeStateBuilder builder, string stateName = FinalState.Name)
             where TFinalState : FinalState
             => builder.AddFinalState(stateName);
         #endregion
 
         #region AddState
         [DebuggerHidden]
-        public static ITypedCompositeStateBuilder AddState<TState>(this ITypedCompositeStateBuilder builder, StateTransitionsBuilderAction stateBuildAction = null)
+        public static ITypedInitializedCompositeStateBuilder AddState<TState>(this ITypedInitializedCompositeStateBuilder builder, StateTransitionsBuilderAction stateBuildAction = null)
             where TState : State
             => builder.AddState<TState>(StateInfo<TState>.Name, stateBuildAction);
 
         [DebuggerHidden]
-        public static ITypedCompositeStateBuilder AddState<TState>(this ITypedCompositeStateBuilder builder, string stateName, StateTransitionsBuilderAction stateBuildAction = null)
+        public static ITypedInitializedCompositeStateBuilder AddState<TState>(this ITypedInitializedCompositeStateBuilder builder, string stateName, StateTransitionsBuilderAction stateBuildAction = null)
             where TState : State
         {
             (builder as IInternal).Services.RegisterState<TState>();
@@ -41,12 +41,12 @@ namespace Stateflows.StateMachines
 
         #region AddCompositeState
         [DebuggerHidden]
-        public static ITypedCompositeStateBuilder AddCompositeState<TCompositeState>(this ITypedCompositeStateBuilder builder, CompositeStateTransitionsBuilderAction compositeStateBuildAction)
+        public static ITypedInitializedCompositeStateBuilder AddCompositeState<TCompositeState>(this ITypedInitializedCompositeStateBuilder builder, CompositeStateTransitionsBuilderAction compositeStateBuildAction)
             where TCompositeState : CompositeState
             => builder.AddCompositeState<TCompositeState>(StateInfo<TCompositeState>.Name, compositeStateBuildAction);
 
         [DebuggerHidden]
-        public static ITypedCompositeStateBuilder AddCompositeState<TCompositeState>(this ITypedCompositeStateBuilder builder, string stateName, CompositeStateTransitionsBuilderAction compositeStateBuildAction)
+        public static ITypedInitializedCompositeStateBuilder AddCompositeState<TCompositeState>(this ITypedInitializedCompositeStateBuilder builder, string stateName, CompositeStateTransitionsBuilderAction compositeStateBuildAction)
             where TCompositeState : CompositeState
         {
             (builder as IInternal).Services.RegisterState<TCompositeState>();
@@ -55,10 +55,10 @@ namespace Stateflows.StateMachines
                 stateName,
                 b =>
                 {
-                    (b as ICompositeStateBuilder).AddStateEvents<TCompositeState, ICompositeStateBuilder>();
-                    (b as ICompositeStateBuilder).AddCompositeStateEvents<TCompositeState, ICompositeStateBuilder>();
+                    (b as IInitializedCompositeStateBuilder).AddStateEvents<TCompositeState, IInitializedCompositeStateBuilder>();
+                    (b as IInitializedCompositeStateBuilder).AddCompositeStateEvents<TCompositeState, IInitializedCompositeStateBuilder>();
 
-                    compositeStateBuildAction?.Invoke(b as ITypedCompositeStateInitialBuilder);
+                    compositeStateBuildAction?.Invoke(b as ITypedCompositeStateBuilder);
                 }
             );
         }

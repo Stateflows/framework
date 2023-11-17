@@ -19,16 +19,16 @@ namespace Stateflows
         }
 
         [JsonIgnore]
-        public string Type => BehaviorClass.Type;
+        public readonly string Type => BehaviorClass.Type;
 
         [JsonIgnore]
-        public string Name => BehaviorClass.Name;
+        public readonly string Name => BehaviorClass.Name;
 
         public string Instance { get; set; }
 
         public BehaviorClass BehaviorClass { get; set; }
 
-        public override string ToString()
+        public readonly override string ToString()
             => StateflowsJsonConverter.SerializeObject(this);
 
         public static bool operator ==(BehaviorId id1, BehaviorId id2)
@@ -37,13 +37,13 @@ namespace Stateflows
         public static bool operator !=(BehaviorId id1, BehaviorId id2)
             => !id1.Equals(id2);
 
-        public override bool Equals(object obj)
+        public readonly override bool Equals(object obj)
             =>
                 obj is BehaviorId id &&
                 BehaviorClass == id.BehaviorClass &&
                 Instance == id.Instance;
 
-        public override int GetHashCode()
+        public readonly override int GetHashCode()
             => Tuple.Create(BehaviorClass, Instance).GetHashCode();
     }
 }
