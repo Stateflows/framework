@@ -52,15 +52,24 @@ namespace Stateflows.Common
         {
             var result = EventStatus.Undelivered;
 
-            if (Processors.TryGetValue(id.Type, out var processor) && Interceptor.BeforeExecute(@event))
+            if (Processors.TryGetValue(id.Type, out var processor))
             {
-                await Lock.LockAsync(id);
+                try
+                {
+                    Interceptor.BeforeExecute(@event);
 
-                result = await processor.ProcessEventAsync(id, @event, serviceProvider);
+                    await Lock.LockAsync(id);
 
-                await Lock.UnlockAsync(id);
+                    result = await processor.ProcessEventAsync(id, @event, serviceProvider);
 
-                Interceptor.AfterExecute(@event);
+                    await Lock.UnlockAsync(id);
+
+                    Interceptor.AfterExecute(@event);
+                }
+                catch (Exception e)
+                {
+                    throw e;
+                }
             }
 
             return result;

@@ -5,7 +5,7 @@ namespace Stateflows.Testing.StateMachines
 {
     public static class IStateMachineInitialBuilderExtensions
     {
-        public static IStateMachineInitialBuilder AddExecutionSequenceObserver(this IStateMachineInitialBuilder builder)
+        public static IStateMachineBuilder AddExecutionSequenceObserver(this IStateMachineBuilder builder)
             => builder.AddObserver<ExecutionSequenceObserver>();
     }
 }

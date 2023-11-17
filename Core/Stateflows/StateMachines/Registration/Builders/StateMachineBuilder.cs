@@ -16,12 +16,12 @@ using Stateflows.StateMachines.Exceptions;
 namespace Stateflows.StateMachines.Registration.Builders
 {
     internal class StateMachineBuilder :
-        IStateMachineBuilder,
+        IInitializedStateMachineBuilder,
         IFinalizedStateMachineBuilder,
-        IStateMachineInitialBuilder,
-        ITypedStateMachineBuilder,
+        IStateMachineBuilder,
+        ITypedInitializedStateMachineBuilder,
         ITypedFinalizedStateMachineBuilder,
-        ITypedStateMachineInitialBuilder,
+        ITypedStateMachineBuilder,
         IInternal
     {
         public Graph Result { get; }
@@ -34,7 +34,7 @@ namespace Stateflows.StateMachines.Registration.Builders
             Result = new Graph(name, version);
         }
 
-        public IStateMachineBuilder AddInitializer(string initializerName, StateMachineActionAsync initializerAction)
+        public IInitializedStateMachineBuilder AddInitializer(string initializerName, StateMachineActionAsync initializerAction)
         {
             if (!Result.Initializers.TryGetValue(initializerName, out var initializer))
             {
@@ -51,7 +51,7 @@ namespace Stateflows.StateMachines.Registration.Builders
             return this;
         }
 
-        public IStateMachineBuilder AddOnInitialize(Func<IStateMachineInitializationContext, Task> actionAsync)
+        public IInitializedStateMachineBuilder AddOnInitialize(Func<IStateMachineInitializationContext, Task> actionAsync)
         {
             actionAsync.ThrowIfNull(nameof(actionAsync));
 
@@ -71,7 +71,7 @@ namespace Stateflows.StateMachines.Registration.Builders
             });
         }
 
-        public IStateMachineBuilder AddOnInitialize<TInitializationRequest>(Func<IStateMachineInitializationContext<TInitializationRequest>, Task> actionAsync)
+        public IInitializedStateMachineBuilder AddOnInitialize<TInitializationRequest>(Func<IStateMachineInitializationContext<TInitializationRequest>, Task> actionAsync)
             where TInitializationRequest : InitializationRequest, new()
         {
             actionAsync.ThrowIfNull(nameof(actionAsync));
@@ -92,7 +92,7 @@ namespace Stateflows.StateMachines.Registration.Builders
             });
         }
 
-        public IStateMachineBuilder AddOnFinalize(Func<IStateMachineActionContext, Task> actionAsync)
+        public IInitializedStateMachineBuilder AddOnFinalize(Func<IStateMachineActionContext, Task> actionAsync)
         {
             actionAsync.ThrowIfNull(nameof(actionAsync));
 
@@ -112,7 +112,7 @@ namespace Stateflows.StateMachines.Registration.Builders
             return this;
         }
 
-        private IStateMachineBuilder AddVertex(string stateName, VertexType type, Action<Vertex> vertexBuildAction = null)
+        private IInitializedStateMachineBuilder AddVertex(string stateName, VertexType type, Action<Vertex> vertexBuildAction = null)
         {
             stateName.ThrowIfNullOrEmpty(nameof(stateName));
 
@@ -135,7 +135,7 @@ namespace Stateflows.StateMachines.Registration.Builders
         }
 
         #region AddState
-        public IStateMachineBuilder AddState(string stateName, StateBuilderAction stateBuildAction = null)
+        public IInitializedStateMachineBuilder AddState(string stateName, StateBuilderAction stateBuildAction = null)
             => AddVertex(stateName, VertexType.State, vertex => stateBuildAction?.Invoke(new StateBuilder(vertex, Services)));
         #endregion
 
@@ -145,16 +145,16 @@ namespace Stateflows.StateMachines.Registration.Builders
         #endregion
 
         #region AddCompositeState
-        public IStateMachineBuilder AddCompositeState(string stateName, CompositeStateBuilderAction compositeStateBuildAction)
+        public IInitializedStateMachineBuilder AddCompositeState(string stateName, CompositeStateBuilderAction compositeStateBuildAction)
             => AddVertex(stateName, VertexType.CompositeState, vertex => compositeStateBuildAction?.Invoke(new CompositeStateBuilder(vertex, Services)));
 
-        public IStateMachineBuilder AddInitialState(string stateName, StateBuilderAction stateBuildAction = null)
+        public IInitializedStateMachineBuilder AddInitialState(string stateName, StateBuilderAction stateBuildAction = null)
         {
             Result.InitialVertexName = stateName;
             return AddVertex(stateName, VertexType.InitialState, vertex => stateBuildAction?.Invoke(new StateBuilder(vertex, Services)));
         }
 
-        public IStateMachineBuilder AddInitialCompositeState(string stateName, CompositeStateBuilderAction compositeStateBuildAction)
+        public IInitializedStateMachineBuilder AddInitialCompositeState(string stateName, CompositeStateBuilderAction compositeStateBuildAction)
         {
             Result.InitialVertexName = stateName;
             return AddVertex(stateName, VertexType.InitialCompositeState, vertex => compositeStateBuildAction?.Invoke(new CompositeStateBuilder(vertex, Services)));
@@ -162,7 +162,7 @@ namespace Stateflows.StateMachines.Registration.Builders
         #endregion
 
         #region Observability
-        public IStateMachineBuilder AddExceptionHandler<TExceptionHandler>()
+        public IInitializedStateMachineBuilder AddExceptionHandler<TExceptionHandler>()
             where TExceptionHandler : class, IStateMachineExceptionHandler
         {
             Services.RegisterExceptionHandler<TExceptionHandler>();
@@ -171,14 +171,14 @@ namespace Stateflows.StateMachines.Registration.Builders
             return this;
         }
 
-        public IStateMachineBuilder AddExceptionHandler(StateMachineExceptionHandlerFactory exceptionHandlerFactory)
+        public IInitializedStateMachineBuilder AddExceptionHandler(StateMachineExceptionHandlerFactory exceptionHandlerFactory)
         {
             Result.ExceptionHandlerFactories.Add(exceptionHandlerFactory);
 
             return this;
         }
 
-        public IStateMachineBuilder AddInterceptor<TInterceptor>()
+        public IInitializedStateMachineBuilder AddInterceptor<TInterceptor>()
             where TInterceptor : class, IStateMachineInterceptor
         {
             Services.RegisterInterceptor<TInterceptor>();
@@ -187,14 +187,14 @@ namespace Stateflows.StateMachines.Registration.Builders
             return this;
         }
 
-        public IStateMachineBuilder AddInterceptor(StateMachineInterceptorFactory interceptorFactory)
+        public IInitializedStateMachineBuilder AddInterceptor(StateMachineInterceptorFactory interceptorFactory)
         {
             Result.InterceptorFactories.Add(interceptorFactory);
 
             return this;
         }
 
-        public IStateMachineBuilder AddObserver<TObserver>()
+        public IInitializedStateMachineBuilder AddObserver<TObserver>()
             where TObserver : class, IStateMachineObserver
         {
             Services.RegisterObserver<TObserver>();
@@ -203,7 +203,7 @@ namespace Stateflows.StateMachines.Registration.Builders
             return this;
         }
 
-        public IStateMachineBuilder AddObserver(StateMachineObserverFactory observerFactory)
+        public IInitializedStateMachineBuilder AddObserver(StateMachineObserverFactory observerFactory)
         {
             Result.ObserverFactories.Add(observerFactory);
 
@@ -211,23 +211,23 @@ namespace Stateflows.StateMachines.Registration.Builders
         }
         #endregion
 
-        IStateMachineInitialBuilder IStateMachineUtils<IStateMachineInitialBuilder>.AddInterceptor<TInterceptor>()
-            => AddInterceptor<TInterceptor>() as IStateMachineInitialBuilder;
+        IStateMachineBuilder IStateMachineUtils<IStateMachineBuilder>.AddInterceptor<TInterceptor>()
+            => AddInterceptor<TInterceptor>() as IStateMachineBuilder;
 
-        IStateMachineInitialBuilder IStateMachineUtils<IStateMachineInitialBuilder>.AddObserver<TObserver>()
-            => AddObserver<TObserver>() as IStateMachineInitialBuilder;
+        IStateMachineBuilder IStateMachineUtils<IStateMachineBuilder>.AddObserver<TObserver>()
+            => AddObserver<TObserver>() as IStateMachineBuilder;
 
-        IStateMachineInitialBuilder IStateMachineUtils<IStateMachineInitialBuilder>.AddExceptionHandler<TExceptionHandler>()
-            => AddExceptionHandler<TExceptionHandler>() as IStateMachineInitialBuilder;
+        IStateMachineBuilder IStateMachineUtils<IStateMachineBuilder>.AddExceptionHandler<TExceptionHandler>()
+            => AddExceptionHandler<TExceptionHandler>() as IStateMachineBuilder;
 
-        IStateMachineInitialBuilder IStateMachineEvents<IStateMachineInitialBuilder>.AddOnInitialize(Func<IStateMachineInitializationContext, Task> actionAsync)
-            => AddOnInitialize(actionAsync) as IStateMachineInitialBuilder;
+        IStateMachineBuilder IStateMachineEvents<IStateMachineBuilder>.AddOnInitialize(Func<IStateMachineInitializationContext, Task> actionAsync)
+            => AddOnInitialize(actionAsync) as IStateMachineBuilder;
 
-        IStateMachineInitialBuilder IStateMachineEvents<IStateMachineInitialBuilder>.AddOnInitialize<TInitializationRequest>(Func<IStateMachineInitializationContext<TInitializationRequest>, Task> actionAsync)
-            => AddOnInitialize<TInitializationRequest>(actionAsync) as IStateMachineInitialBuilder;
+        IStateMachineBuilder IStateMachineEvents<IStateMachineBuilder>.AddOnInitialize<TInitializationRequest>(Func<IStateMachineInitializationContext<TInitializationRequest>, Task> actionAsync)
+            => AddOnInitialize<TInitializationRequest>(actionAsync) as IStateMachineBuilder;
 
-        IStateMachineInitialBuilder IStateMachineEvents<IStateMachineInitialBuilder>.AddOnFinalize(Func<IStateMachineActionContext, Task> actionAsync)
-            => AddOnFinalize(actionAsync) as IStateMachineInitialBuilder;
+        IStateMachineBuilder IStateMachineEvents<IStateMachineBuilder>.AddOnFinalize(Func<IStateMachineActionContext, Task> actionAsync)
+            => AddOnFinalize(actionAsync) as IStateMachineBuilder;
 
         IFinalizedStateMachineBuilder IStateMachineUtils<IFinalizedStateMachineBuilder>.AddInterceptor<TInterceptor>()
             => AddInterceptor<TInterceptor>() as IFinalizedStateMachineBuilder;
@@ -248,14 +248,29 @@ namespace Stateflows.StateMachines.Registration.Builders
             => AddOnFinalize(actionAsync) as IFinalizedStateMachineBuilder;
 
 
-        ITypedStateMachineBuilder IStateMachine<ITypedStateMachineBuilder>.AddState(string stateName, StateBuilderAction stateBuildAction)
-            => AddState(stateName, stateBuildAction) as ITypedStateMachineBuilder;
+        ITypedInitializedStateMachineBuilder IStateMachine<ITypedInitializedStateMachineBuilder>.AddState(string stateName, StateBuilderAction stateBuildAction)
+            => AddState(stateName, stateBuildAction) as ITypedInitializedStateMachineBuilder;
 
         ITypedFinalizedStateMachineBuilder IStateMachineFinal<ITypedFinalizedStateMachineBuilder>.AddFinalState(string stateName)
             => AddFinalState(stateName) as ITypedFinalizedStateMachineBuilder;
 
-        ITypedStateMachineBuilder IStateMachine<ITypedStateMachineBuilder>.AddCompositeState(string stateName, CompositeStateBuilderAction compositeStateBuildAction)
-            => AddCompositeState(stateName, compositeStateBuildAction) as ITypedStateMachineBuilder;
+        ITypedInitializedStateMachineBuilder IStateMachine<ITypedInitializedStateMachineBuilder>.AddCompositeState(string stateName, CompositeStateBuilderAction compositeStateBuildAction)
+            => AddCompositeState(stateName, compositeStateBuildAction) as ITypedInitializedStateMachineBuilder;
+
+        ITypedInitializedStateMachineBuilder IStateMachineUtils<ITypedInitializedStateMachineBuilder>.AddInterceptor<TInterceptor>()
+            => AddInterceptor<TInterceptor>() as ITypedInitializedStateMachineBuilder;
+
+        ITypedInitializedStateMachineBuilder IStateMachineUtils<ITypedInitializedStateMachineBuilder>.AddObserver<TObserver>()
+            => AddObserver<TObserver>() as ITypedInitializedStateMachineBuilder;
+
+        ITypedInitializedStateMachineBuilder IStateMachineUtils<ITypedInitializedStateMachineBuilder>.AddExceptionHandler<TExceptionHandler>()
+            => AddExceptionHandler<TExceptionHandler>() as ITypedInitializedStateMachineBuilder;
+
+        ITypedInitializedStateMachineBuilder IStateMachineInitial<ITypedInitializedStateMachineBuilder>.AddInitialState(string stateName, StateBuilderAction stateBuildAction)
+            => AddInitialState(stateName, stateBuildAction) as ITypedInitializedStateMachineBuilder;
+
+        ITypedInitializedStateMachineBuilder IStateMachineInitial<ITypedInitializedStateMachineBuilder>.AddInitialCompositeState(string stateName, CompositeStateBuilderAction compositeStateBuildAction)
+            => AddInitialCompositeState(stateName, compositeStateBuildAction) as ITypedInitializedStateMachineBuilder;
 
         ITypedStateMachineBuilder IStateMachineUtils<ITypedStateMachineBuilder>.AddInterceptor<TInterceptor>()
             => AddInterceptor<TInterceptor>() as ITypedStateMachineBuilder;
@@ -265,27 +280,6 @@ namespace Stateflows.StateMachines.Registration.Builders
 
         ITypedStateMachineBuilder IStateMachineUtils<ITypedStateMachineBuilder>.AddExceptionHandler<TExceptionHandler>()
             => AddExceptionHandler<TExceptionHandler>() as ITypedStateMachineBuilder;
-
-        ITypedStateMachineBuilder IStateMachineInitial<ITypedStateMachineBuilder>.AddInitialState(string stateName, StateBuilderAction stateBuildAction)
-            => AddInitialState(stateName, stateBuildAction) as ITypedStateMachineBuilder;
-
-        ITypedStateMachineBuilder IStateMachineInitial<ITypedStateMachineBuilder>.AddInitialCompositeState(string stateName, CompositeStateBuilderAction compositeStateBuildAction)
-            => AddInitialCompositeState(stateName, compositeStateBuildAction) as ITypedStateMachineBuilder;
-
-        ITypedStateMachineInitialBuilder IStateMachineUtils<ITypedStateMachineInitialBuilder>.AddInterceptor<TInterceptor>()
-            => AddInterceptor<TInterceptor>() as ITypedStateMachineInitialBuilder;
-
-        ITypedStateMachineInitialBuilder IStateMachineUtils<ITypedStateMachineInitialBuilder>.AddObserver<TObserver>()
-            => AddObserver<TObserver>() as ITypedStateMachineInitialBuilder;
-
-        ITypedStateMachineInitialBuilder IStateMachineUtils<ITypedStateMachineInitialBuilder>.AddExceptionHandler<TExceptionHandler>()
-            => AddExceptionHandler<TExceptionHandler>() as ITypedStateMachineInitialBuilder;
-
-        ITypedFinalizedStateMachineBuilder IStateMachine<ITypedFinalizedStateMachineBuilder>.AddState(string stateName, StateBuilderAction stateBuildAction)
-            => AddState(stateName, stateBuildAction) as ITypedFinalizedStateMachineBuilder;
-
-        ITypedFinalizedStateMachineBuilder IStateMachine<ITypedFinalizedStateMachineBuilder>.AddCompositeState(string stateName, CompositeStateBuilderAction compositeStateBuildAction)
-            => AddCompositeState(stateName, compositeStateBuildAction) as ITypedFinalizedStateMachineBuilder;
 
         ITypedFinalizedStateMachineBuilder IStateMachineUtils<ITypedFinalizedStateMachineBuilder>.AddInterceptor<TInterceptor>()
             => AddInterceptor<TInterceptor>() as ITypedFinalizedStateMachineBuilder;

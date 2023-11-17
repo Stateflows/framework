@@ -13,7 +13,7 @@ namespace Stateflows.StateMachines.Extensions
 {
     internal static class BuilderExtensions
     {
-        public static void AddStateMachineEvents(this IStateMachineBuilder builder, Type stateMachineType)
+        public static void AddStateMachineEvents(this IInitializedStateMachineBuilder builder, Type stateMachineType)
         {
             if (typeof(StateMachine).GetMethod(Constants.OnInitializeAsync).IsOverridenIn(stateMachineType))
             {
