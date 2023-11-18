@@ -3,9 +3,13 @@
   "version": "0.3.0",
   "description": "SignalR-based client for Stateflows framework",
   "main": "dist/index.js",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
   "scripts": {
-    "build": "tsc --build",
-    "clean": "tsc --build --clean",
+    "build": "tsup",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [
@@ -21,6 +25,7 @@
     "@microsoft/signalr": "^8.0.0"
   },
   "devDependencies": {
+    "tsup": "^7.3.0",
     "typescript": "^5.2.2"
   }
 }

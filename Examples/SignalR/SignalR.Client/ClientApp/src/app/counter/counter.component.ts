@@ -1,5 +1,5 @@
 import { Component } from '@angular/core';
-import { BehaviorStatus, Event, EventStatus, PlantUmlRequest, PlantUmlResponse, StateMachineId, StateflowsClient } from '@stateflows/client';
+import { BehaviorStatus, Event, EventStatus, PlantUmlRequest, PlantUmlResponse, StateMachineId, StateflowsClient } from '@stateflows/signalr-client';
 
 class OtherEvent extends Event {
   public $type: string = "Examples.Common.OtherEvent, Examples.Common";
