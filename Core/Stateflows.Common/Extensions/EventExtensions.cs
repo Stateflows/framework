@@ -1,25 +1,20 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 
 namespace Stateflows.Common.Extensions
 {
     public static class EventExtensions
     {
-        //public static bool Validate(this Event @event)
-        //{
-        //    var validationContext = new ValidationContext(@event, serviceProvider: null, items: null);
-        //    var validationResults = new List<ValidationResult>();
+        public static EventValidation Validate(this Event @event)
+        {
+            var validationContext = new ValidationContext(@event, serviceProvider: null, items: null);
+            var validationResults = new List<ValidationResult>();
 
-        //    bool isValid = Validator.TryValidateObject(@event, validationContext, validationResults, true);
+            bool isValid = Validator.TryValidateObject(@event, validationContext, validationResults, true);
 
-        //    //@event.Validation = new EventValidation(isValid, validationResults);
-
-        //    return isValid;
-        //}
-
-        //public static void SetValidation(this Event @event, EventValidation validation)
-        //{
-        //    //@event.Validation = validation;
-        //}
+            return new EventValidation(isValid, validationResults);
+        }
 
         public static bool IsRequest(this Event @event)
             => @event.GetType().IsSubclassOfRawGeneric(typeof(Request<>));

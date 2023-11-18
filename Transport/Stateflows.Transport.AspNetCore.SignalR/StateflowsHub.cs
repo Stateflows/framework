@@ -3,6 +3,7 @@ using Stateflows.Common;
 using Stateflows.Common.Utilities;
 using Stateflows.Common.Interfaces;
 using Stateflows.Common.Extensions;
+using Stateflows.Common.Exceptions;
 
 namespace Stateflows.Transport.AspNetCore.SignalR
 {
@@ -32,17 +33,17 @@ namespace Stateflows.Transport.AspNetCore.SignalR
             }
             catch (Exception e)
             {
-                throw new Exception("Unable to parse event data", e);
+                throw new SerializationException("Unable to parse event data", e);
             }
 
             if (@event == null)
             {
-                throw new Exception("Unable to parse event data");
+                throw new SerializationException("Unable to parse event data");
             }
 
             if (!_locator.TryLocateBehavior(behaviorId, out var behavior))
             {
-                throw new Exception("Behavior not found");
+                throw new BehaviorInstanceException("Behavior not found", behaviorId);
             }
 
             var result = await behavior.SendAsync(@event);
@@ -61,17 +62,17 @@ namespace Stateflows.Transport.AspNetCore.SignalR
             }
             catch (Exception e)
             {
-                throw new Exception("Unable to parse request data", e);
+                throw new SerializationException("Unable to parse request data", e);
             }
 
             if (@event == null)
             {
-                throw new Exception("Unable to parse request data");
+                throw new SerializationException("Unable to parse request data");
             }
 
             if (!@event.IsRequest())
             {
-                throw new Exception("Request data is invalid");
+                throw new SerializationException("Request data is invalid");
             }
 
             if (_locator.TryLocateBehavior(behaviorId, out var behavior))
@@ -84,7 +85,7 @@ namespace Stateflows.Transport.AspNetCore.SignalR
             }
             else
             {
-                throw new Exception("Behavior not found");
+                throw new BehaviorInstanceException("Behavior not found", behaviorId);
             }
         }
     }

@@ -353,3 +353,4 @@ packages/*
 
 #code coverage
 /WE.EC.Compensation.WebModule/coverage
+Examples/SignalR/SignalR.Client/ClientApp/.angular/

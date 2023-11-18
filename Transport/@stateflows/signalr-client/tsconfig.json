@@ -1,0 +1,14 @@
+{
+  "compilerOptions": {
+    "module": "es2015",
+    "target": "es2019",
+    "moduleResolution": "node",
+    "noImplicitAny": true,
+    "removeComments": true,
+    "preserveConstEnums": true,
+    "sourceMap": true,
+    "outDir": "dist",
+    "declaration": true
+  },
+  "include": ["src/**/*"]
+}

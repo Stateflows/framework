@@ -14,7 +14,7 @@ namespace Stateflows.StateMachines
         public virtual Task OnFinalizeAsync()
             => Task.CompletedTask;
 
-        public abstract void Build(ITypedStateMachineInitialBuilder builder);
+        public abstract void Build(ITypedStateMachineBuilder builder);
     }
 
     public abstract class StateMachine<TInitializationRequest> : StateMachine

@@ -1,4 +1,5 @@
 ﻿using System;
+using Newtonsoft.Json;
 using Stateflows.Common.Exceptions;
 
 namespace Stateflows.StateMachines
@@ -13,7 +14,7 @@ namespace Stateflows.StateMachines
 
         public StateMachineId(BehaviorId id)
         {
-            if (id.Type != "StateMachine")
+            if (id.Type != StateMachineClass.Type)
             {
                 throw new StateflowsException("BehaviorId doesn't represent State Machine");
             }
@@ -26,7 +27,11 @@ namespace Stateflows.StateMachines
 
         public string Instance { get; set; }
 
-        public BehaviorId BehaviorId => new BehaviorId("StateMachine", Name, Instance);
+        [JsonIgnore]
+        public readonly StateMachineClass StateMachineClass => new StateMachineClass(Name);
+
+        [JsonIgnore]
+        public readonly BehaviorId BehaviorId => new BehaviorId(StateMachineClass.Type, Name, Instance);
 
         public static bool operator ==(StateMachineId id1, StateMachineId id2)
             => id1.Equals(id2);
@@ -34,19 +39,25 @@ namespace Stateflows.StateMachines
         public static bool operator !=(StateMachineId id1, StateMachineId id2)
             => !id1.Equals(id2);
 
-        public static bool operator ==(StateMachineId id1, BehaviorId id2)
-            => id1.BehaviorId == id2;
+        public static bool operator ==(StateMachineId stateMachineId, BehaviorId behaviorId)
+            => stateMachineId.BehaviorId == behaviorId;
 
-        public static bool operator !=(StateMachineId id1, BehaviorId id2)
-            => id1.BehaviorId != id2;
+        public static bool operator !=(StateMachineId stateMachineId, BehaviorId behaviorId)
+            => stateMachineId.BehaviorId != behaviorId;
 
-        public override bool Equals(object obj)
+        public static bool operator ==(BehaviorId behaviorId, StateMachineId stateMachineId)
+            => behaviorId == stateMachineId.BehaviorId;
+
+        public static bool operator !=(BehaviorId behaviorId, StateMachineId stateMachineId)
+            => behaviorId != stateMachineId.BehaviorId;
+
+        public readonly override bool Equals(object obj)
             =>
-                obj is StateMachineId &&
-                Name == ((StateMachineId)obj).Name &&
-                Instance == ((StateMachineId)obj).Instance;
+                obj is StateMachineId id &&
+                Name == id.Name &&
+                Instance == id.Instance;
 
-        public override int GetHashCode()
+        public readonly override int GetHashCode()
             => Tuple.Create(Name, Instance).GetHashCode();
     }
 }

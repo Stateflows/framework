@@ -1,5 +1,4 @@
-﻿using Microsoft.Extensions.DependencyInjection;
-using System;
+﻿using System;
 using System.Threading;
 
 namespace Stateflows.Common.Classes
@@ -13,8 +12,6 @@ namespace Stateflows.Common.Classes
         public Event Event { get; private set; }
 
         public EventWaitHandle Handled { get; } = new EventWaitHandle(false, EventResetMode.AutoReset);
-
-        public bool _Consumed { get; set; }
 
         public EventStatus Status { get; set; }
 

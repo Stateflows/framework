@@ -1,0 +1,26 @@
+{
+  "name": "@stateflows/signalr-client",
+  "version": "0.3.0",
+  "description": "SignalR-based client for Stateflows framework",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc --build",
+    "clean": "tsc --build --clean",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "Stateflows",
+    "state-machine",
+    "SignalR",
+    "signal-r"
+  ],
+  "author": "Stateflows",
+  "license": "MIT",
+  "homepage": "https://www.stateflows.net",
+  "dependencies": {
+    "@microsoft/signalr": "^8.0.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.2.2"
+  }
+}

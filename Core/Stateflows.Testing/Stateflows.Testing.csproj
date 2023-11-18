@@ -2,12 +2,39 @@
 
   <PropertyGroup>
     <TargetFramework>netstandard2.1</TargetFramework>
+    <Version>0.3.0-alpha</Version>
+    <Title>Stateflows framework testing utilities</Title>
+    <Authors>Stateflows</Authors>
+    <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
+    <PackageProjectUrl>https://www.stateflows.net</PackageProjectUrl>
+    <PackageIcon>stateflows-logo-1024.png</PackageIcon>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <RepositoryUrl>https://github.com/Stateflows/framework</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PackageTags>Stateflows;state-machine;workflow</PackageTags>
+    <PackageOutputPath>..\..\NuGet</PackageOutputPath>
+    <PackageLicenseFile>LICENSE</PackageLicenseFile>
   </PropertyGroup>
 
   <ItemGroup>
     <Compile Remove="StateMachines\Extensions\**" />
     <EmbeddedResource Remove="StateMachines\Extensions\**" />
     <None Remove="StateMachines\Extensions\**" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="..\..\LICENSE">
+      <Pack>True</Pack>
+      <PackagePath>\</PackagePath>
+    </None>
+    <None Include="..\..\README.md">
+      <Pack>True</Pack>
+      <PackagePath>\</PackagePath>
+    </None>
+    <None Include="..\..\stateflows-logo-1024.png">
+      <Pack>True</Pack>
+      <PackagePath>\</PackagePath>
+    </None>
   </ItemGroup>
 
   <ItemGroup>

@@ -4,14 +4,6 @@ using StateMachine.IntegrationTests.Utils;
 
 namespace StateMachine.IntegrationTests.Tests
 {
-    internal class MyState : State
-    {
-        public override Task OnEntryAsync()
-        {
-            return base.OnEntryAsync();
-        }
-    }
-
     [TestClass]
     public class Composite : StateflowsTestClass
     {
@@ -194,7 +186,7 @@ namespace StateMachine.IntegrationTests.Tests
         public async Task SingleInitialization()
         {
             var status = EventStatus.Rejected;
-            CurrentStateResponse currentState = null;
+            CurrentStateResponse? currentState = null;
 
             if (Locator.TryLocateStateMachine(new StateMachineId("single", "x"), out var sm))
             {

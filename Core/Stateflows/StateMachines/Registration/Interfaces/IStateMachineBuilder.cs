@@ -1,13 +1,12 @@
-﻿using Microsoft.Extensions.DependencyInjection;
-using Stateflows.StateMachines.Registration.Interfaces.Base;
+﻿using Stateflows.StateMachines.Registration.Interfaces.Base;
 
 namespace Stateflows.StateMachines
 {
-    public interface IStateMachineBuilder :
-        IStateMachine<IStateMachineBuilder>,
+    public interface IInitializedStateMachineBuilder :
+        IStateMachine<IInitializedStateMachineBuilder>,
         IStateMachineFinal<IFinalizedStateMachineBuilder>,
-        IStateMachineUtils<IStateMachineBuilder>,
-        IStateMachineEvents<IStateMachineBuilder>
+        IStateMachineUtils<IInitializedStateMachineBuilder>,
+        IStateMachineEvents<IInitializedStateMachineBuilder>
     { }
 
     public interface IFinalizedStateMachineBuilder :
@@ -15,25 +14,24 @@ namespace Stateflows.StateMachines
         IStateMachineEvents<IFinalizedStateMachineBuilder>
     { }
 
-    public interface IStateMachineInitialBuilder :
-        IStateMachineInitial<IStateMachineBuilder>,
-        IStateMachineUtils<IStateMachineInitialBuilder>,
-        IStateMachineEvents<IStateMachineInitialBuilder>
+    public interface IStateMachineBuilder :
+        IStateMachineInitial<IInitializedStateMachineBuilder>,
+        IStateMachineUtils<IStateMachineBuilder>,
+        IStateMachineEvents<IStateMachineBuilder>
     { }
 
-    public interface ITypedStateMachineBuilder :
-        IStateMachine<ITypedStateMachineBuilder>,
+    public interface ITypedInitializedStateMachineBuilder :
+        IStateMachine<ITypedInitializedStateMachineBuilder>,
         IStateMachineFinal<ITypedFinalizedStateMachineBuilder>,
-        IStateMachineUtils<ITypedStateMachineBuilder>
+        IStateMachineUtils<ITypedInitializedStateMachineBuilder>
     { }
 
     public interface ITypedFinalizedStateMachineBuilder :
-        IStateMachine<ITypedFinalizedStateMachineBuilder>,
         IStateMachineUtils<ITypedFinalizedStateMachineBuilder>
     { }
 
-    public interface ITypedStateMachineInitialBuilder :
-        IStateMachineInitial<ITypedStateMachineBuilder>,
-        IStateMachineUtils<ITypedStateMachineInitialBuilder>
+    public interface ITypedStateMachineBuilder :
+        IStateMachineInitial<ITypedInitializedStateMachineBuilder>,
+        IStateMachineUtils<ITypedStateMachineBuilder>
     { }
 }

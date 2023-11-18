@@ -100,7 +100,7 @@ namespace Stateflows.StateMachines.Engine
             if (
                 Time_ExitedStates.Count == 0 &&
                 Time_EnteredStates.Count == 0 &&
-                context.Event.GetType().IsSubclassOf(typeof(IntervalEvent)) &&
+                context.Event.GetType().IsSubclassOf(typeof(RecurringEvent)) &&
                 ConsumedInTransition != null
             )
             {

@@ -5,7 +5,7 @@ namespace Stateflows.StateMachines.Exceptions
 #pragma warning disable S3925 // "ISerializable" should be implemented correctly
     internal class StateDefinitionException : StateMachineDefinitionException
     {
-        public StateDefinitionException(string stateName, string message) : base(message)
+        public StateDefinitionException(string stateName, string message, StateMachineClass stateMachineClass) : base(message, stateMachineClass)
         {
             StateName = stateName;
         }
