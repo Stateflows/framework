@@ -111,5 +111,8 @@ namespace Stateflows.Activities.Registration.Builders
 
         IActivityBuilder IActivity<IActivityBuilder>.AddParallelActivity<TToken>(string actionNodeName, StructuredActivityBuilderAction builderAction)
             => AddParallelActivity<TToken>(actionNodeName, builderAction) as IActivityBuilder;
+
+        IActivityBuilder IActivity<IActivityBuilder>.AddIterativeActivity<TToken>(string actionNodeName, StructuredActivityBuilderAction builderAction)
+            => AddIterativeActivity<TToken>(actionNodeName, builderAction) as IActivityBuilder;
     }
 }

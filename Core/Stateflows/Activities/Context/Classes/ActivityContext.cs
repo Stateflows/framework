@@ -16,7 +16,7 @@ namespace Stateflows.Activities.Context.Classes
             Values = new ContextValues(Context.GlobalValues);
         }
 
-        public IActivityInspection Inspection => Context.Executor.Observer.Inspection;
+        public IActivityInspection Inspection => Context.Executor.Inspector.Inspection;
 
         public IContextValues Values { get; }
 

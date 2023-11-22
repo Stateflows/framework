@@ -1,5 +1,6 @@
 ﻿@page "/"
 @inject IStateMachineLocator locator
+@inject IActivityLocator activityLocator
 
 <PageTitle>State Machines</PageTitle>
 
@@ -14,6 +15,7 @@
 <div>
     <button class="btn btn-primary" @onclick="Initialize">Locate and initialize</button>
     <button class="btn btn-primary" @onclick="GetStatus">Check status</button>
+    <button class="btn btn-primary" @onclick="RunActivity">Run Activity</button>
 </div>
 
 @if (message != "")
@@ -123,6 +125,18 @@
         else
         {
             message = "Unable to locate State Machine";
+        }
+    }
+
+    private async Task RunActivity()
+    {
+        if (activityLocator.TryLocateActivity(new ActivityId("activity1", Random.Shared.Next().ToString()), out var activity))
+        {
+            await activity.ExecuteAsync();
+        }
+        else
+        {
+            message = "Unable to locate Activity";
         }
     }
 

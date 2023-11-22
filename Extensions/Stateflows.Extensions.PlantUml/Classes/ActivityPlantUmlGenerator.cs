@@ -3,20 +3,11 @@ using System.Text;
 using System.Collections.Generic;
 using Stateflows.Activities;
 using Stateflows.Activities.Inspection.Interfaces;
-using Stateflows.StateMachines;
 
 namespace Stateflows.Extensions.PlantUml.Classes
 {
     internal static class ActivityPlantUmlGenerator
     {
-        private static void GetPlantUml(int indentCount, IEnumerable<INodeInspection> nodes, StringBuilder builder, string parentName = null)
-        {
-            foreach (var node in nodes)
-            {
-                GetPlantUml(indentCount, node, builder, parentName);
-            }
-        }
-
         private static string GetNodeName(INodeInspection node, string parentName)
         {
             var nodeName = node.Name.Split('.').Last();
@@ -26,13 +17,25 @@ namespace Stateflows.Extensions.PlantUml.Classes
                 nodeName = string.Join("<", node.Name.Split('.').Reverse().Take(2)) + ">";
             }
 
-            return (node.Type != NodeType.Final && node.Type != NodeType.Initial)
-                ? (node.Type == NodeType.Input || node.Type == NodeType.Output) && parentName != null
+            if (node.Type != NodeType.Final && node.Type != NodeType.Initial)
+            {
+                return (node.Type == NodeType.Input || node.Type == NodeType.Output) && parentName != null
                     ? $"\"{parentName}.{nodeName}\""
-                    : $"\"{nodeName}\""
-                : parentName != null
+                    : $"\"{nodeName}\"";
+            }
+            else
+            {
+                return parentName != null
                     ? $"\"{parentName}.{nodeName}\""
                     : "(*)";
+            }
+        }
+        private static void GetPlantUml(int indentCount, IEnumerable<INodeInspection> nodes, StringBuilder builder, string parentName = null)
+        {
+            foreach (var node in nodes)
+            {
+                GetPlantUml(indentCount, node, builder, parentName);
+            }
         }
 
         private static void GetPlantUml(int indentCount, INodeInspection node, StringBuilder builder, string parentName = null)

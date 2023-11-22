@@ -4,14 +4,17 @@ using System.Collections.Generic;
 using Stateflows.Activities.Models;
 using Stateflows.Activities.Context.Interfaces;
 using Stateflows.Activities.Engine;
+using Stateflows.Activities.Inspection.Interfaces;
 
 namespace Stateflows.Activities.Context.Classes
 {
-    internal class ActionContext : BaseContext, IActionContext
+    internal class ActionContext : BaseContext, IActionContext, IActivityNodeContext, IActivityNodeInspectionContext
     {
         IActivityContext IActivityActionContext.Activity => Activity;
 
-        public CancellationToken CancellationToken => Context.Executor.CancellationToken;
+        IActivityInspectionContext IActivityNodeInspectionContext.Activity => Activity;
+
+        public CancellationToken CancellationToken => Context.Executor.GetCancellationToken(Node);
 
         public Node Node { get; set; }
 

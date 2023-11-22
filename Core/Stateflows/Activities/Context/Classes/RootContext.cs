@@ -53,17 +53,6 @@ namespace Stateflows.Activities.Context.Classes
             }
         }
 
-        public ActionValues GetActionValues(string nodeName)
-        {
-            if (!ActionValues.TryGetValue(nodeName, out var activityContext))
-            {
-                activityContext = new ActionValues();
-                ActionValues[nodeName] = activityContext;
-            }
-
-            return activityContext;
-        }
-
         private Dictionary<string, Dictionary<string, Stream>> streams = null;
         public Dictionary<string, Dictionary<string, Stream>> Streams
         {
@@ -158,27 +147,27 @@ namespace Stateflows.Activities.Context.Classes
             return tokens;
         }
 
-        //private List<string> nodesStack = null;
-        //public List<string> NodesStack
-        //{
-        //    get
-        //    {
-        //        if (nodesStack == null)
-        //        {
-        //            if (!Context.Values.TryGetValue(Constants.NodesStack, out var statesStackObj))
-        //            {
-        //                nodesStack = new List<string>();
-        //                Context.Values[Constants.NodesStack] = nodesStack;
-        //            }
-        //            else
-        //            {
-        //                nodesStack = statesStackObj as List<string>;
-        //            }
-        //        }
+        private List<string> nodesStack = null;
+        public List<string> NodesStack
+        {
+            get
+            {
+                if (nodesStack == null)
+                {
+                    if (!Context.Values.TryGetValue(Constants.NodesStack, out var statesStackObj))
+                    {
+                        nodesStack = new List<string>();
+                        Context.Values[Constants.NodesStack] = nodesStack;
+                    }
+                    else
+                    {
+                        nodesStack = statesStackObj as List<string>;
+                    }
+                }
 
-        //        return nodesStack;
-        //    }
-        //}
+                return nodesStack;
+            }
+        }
 
         public bool Initialized
         {

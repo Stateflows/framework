@@ -7,7 +7,7 @@ namespace Stateflows.Activities.Context.Classes
     internal class FlowContext<TToken> : BaseContext,
         IGuardContext<TToken>,
         IGuardContext,
-        ITransformContext<TToken>,
+        ITransformationContext<TToken>,
         IRootContext
         where TToken : Token, new()
     {

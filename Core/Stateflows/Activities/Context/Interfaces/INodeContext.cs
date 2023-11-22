@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+﻿//using System.Collections.Generic;
 
 namespace Stateflows.Activities.Context.Interfaces
 {
@@ -6,7 +6,7 @@ namespace Stateflows.Activities.Context.Interfaces
     {
         string NodeName { get; }
 
-        IDictionary<string, object> Values { get; }
+        //IDictionary<string, object> Values { get; }
 
         bool TryGetParentNode(out INodeContext parentNodeContext);
     }

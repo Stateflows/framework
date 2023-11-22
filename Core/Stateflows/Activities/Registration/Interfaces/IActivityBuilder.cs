@@ -8,7 +8,6 @@ namespace Stateflows.Activities.Registration.Interfaces
         IInitial<IActivityBuilder>,
         IFinal<IActivityBuilder>,
         IInput<IActivityBuilder>,
-        IOutput<IActivityBuilder>//,
-        //IExceptionHandler<IActivityBuilder>
+        IOutput<IActivityBuilder>
     { }
 }

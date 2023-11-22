@@ -1,6 +1,7 @@
 ﻿using System.Threading.Tasks;
 using System.Collections.Generic;
 using Stateflows.Common.Interfaces;
+using Stateflows.Common;
 
 namespace Stateflows.Activities.Interfaces
 {
@@ -12,6 +13,6 @@ namespace Stateflows.Activities.Interfaces
 
         Task Execute(IDictionary<string, object> parameters);
 
-        Task Cancel();
+        Task<SendResult> Cancel();
     }
 }

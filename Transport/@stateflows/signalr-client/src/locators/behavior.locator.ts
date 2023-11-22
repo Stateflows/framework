@@ -6,28 +6,37 @@ import { IBehavior } from "../interfaces/behavior";
 import { IBehaviorLocator } from "../interfaces/behavior.locator";
 
 export class BehaviorLocator implements IBehaviorLocator {
-    private behaviorClasses: BehaviorClass[] = [];
+    private _behaviorClasses: BehaviorClass[] = [];
+    private _hubPromise: Promise<HubConnection> = null;
 
-    constructor(private hubPromise: Promise<HubConnection>) {
-        hubPromise.then(hub => {
-            hub.invoke<BehaviorClass[]>('GetAvailableClasses').then(result => {
-                this.behaviorClasses = result;
+    constructor(hubPromise: Promise<HubConnection>) {
+        this._hubPromise = new Promise<HubConnection>((resolve, reject) => {
+            hubPromise.then(hub => {
+                hub.invoke<BehaviorClass[]>('GetAvailableClasses')
+                    .then(result => {
+                        this._behaviorClasses = result;
+                        resolve(hub);
+                    })
+                    .catch(reason => reject(reason));
             });
         });
     }
 
     locateBehavior(behaviorId: BehaviorId): Promise<IBehavior> {
         return new Promise<IBehavior>((resolve, reject) => {
-            if (this.behaviorClasses.findIndex(behaviorClass => 
-                behaviorClass.type === behaviorId.behaviorClass.type &&
-                behaviorClass.name === behaviorId.behaviorClass.name
-            ) !== -1) {
-                resolve(new Behavior(this.hubPromise, behaviorId));
-            }
-            else
-            {
-                reject("Behavior not found");
-            }
+            this._hubPromise.then(hub => {
+                if (this._behaviorClasses.findIndex(behaviorClass => 
+                    behaviorClass.type === behaviorId.behaviorClass.type &&
+                    behaviorClass.name === behaviorId.behaviorClass.name
+                ) !== -1) {
+                    resolve(new Behavior(hub, behaviorId));
+                }
+                else
+                {
+                    reject("Behavior not found");
+                }
+            })
+            .catch(reason => reject(reason));
         });
     }
 }

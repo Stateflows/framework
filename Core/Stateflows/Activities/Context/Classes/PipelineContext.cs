@@ -17,7 +17,7 @@ namespace Stateflows.Activities.Context.Classes
 
         private Edge Edge { get; }
 
-        public CancellationToken CancellationToken => Context.Executor.CancellationToken;
+        public CancellationToken CancellationToken => Context.Executor.GetCancellationToken(Edge.Source);
 
         public IEnumerable<Token> Tokens { get; set; }
 

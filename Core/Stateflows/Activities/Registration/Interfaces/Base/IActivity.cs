@@ -29,9 +29,12 @@ namespace Stateflows.Activities.Registration.Interfaces.Base
         ////    where TEventAction : EventAction<TEvent>;
         //#endregion
 
-        TReturn AddStructuredActivity(string actionNodeName, StructuredActivityBuilderAction builderAction = null);
+        TReturn AddStructuredActivity(string actionNodeName, StructuredActivityBuilderAction builderAction);
 
-        TReturn AddParallelActivity<TToken>(string actionNodeName, StructuredActivityBuilderAction builderAction = null)
+        TReturn AddParallelActivity<TToken>(string actionNodeName, StructuredActivityBuilderAction builderAction)
+            where TToken : Token, new();
+
+        TReturn AddIterativeActivity<TToken>(string actionNodeName, StructuredActivityBuilderAction builderAction)
             where TToken : Token, new();
     }
 }

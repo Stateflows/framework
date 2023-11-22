@@ -4,6 +4,8 @@ using Examples.Common;
 using Stateflows;
 using Stateflows.Common;
 using Stateflows.StateMachines;
+using Stateflows.Activities;
+using System.Diagnostics;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -16,6 +18,48 @@ builder.Services.AddSignalR();
 
 builder.Services.AddStateflows(b => b
     .AddPlantUml()
+
+    .AddActivity("activity1", b => b
+        .AddInitial(b => b
+            .AddControlFlow("1")
+        )
+        .AddAction("1", async c =>
+        {
+            c.OutputRange((new[] { 1, 2, 3, 4, 5 }).Select(x => new ValueToken<int>() { Value = x }));
+        }, b => b
+            .AddObjectFlow<ValueToken<int>>("2")
+        )
+        .AddParallelActivity<ValueToken<int>>("2", b => b
+            .AddInitial(b => b
+                .AddControlFlow("2.1")
+                .AddControlFlow<Final>()
+            )
+            .AddAction("2.1", async c =>
+            {
+                await Task.Delay(1000);
+                Debug.WriteLine("executing thread 1");
+            }, b => b
+                .AddControlFlow("2.2")
+            )
+            .AddAction("2.2", async c =>
+            {
+                await Task.Delay(1000);
+                Debug.WriteLine("executing thread 2");
+                c.Output(new ValueToken<int>() { Value = Random.Shared.Next(0, 100) });
+            }, b => b
+                .AddObjectFlow<ValueToken<int>, Output>()
+            )
+            .AddOutput()
+            .AddFinal()
+
+            .AddObjectFlow<ValueToken<int>>("3", b => b.SetWeight(0))
+            //.AddControlFlow("3")
+        )
+        .AddAction("3", async c =>
+        {
+            Debug.WriteLine($"{c.Input.Count()}");
+        })
+    )
 
     .AddStateMachine("stateMachine1", b => b
         .AddInitialState("state1", b => b

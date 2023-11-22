@@ -1,4 +1,4 @@
-﻿using System.Threading.Tasks;
+﻿using System.Linq;
 using Stateflows.Common;
 using Stateflows.StateMachines.Registration;
 using Stateflows.StateMachines.Registration.Interfaces;
@@ -12,18 +12,8 @@ namespace Stateflows.Activities
         public static ITransitionBuilder<TEvent> AddGuardActivity<TEvent>(this ITransitionBuilder<TEvent> builder, string activityName, GuardActivityInitializationBuilder<TEvent> parametersBuilder = null)
             where TEvent : Event, new()
             => builder.AddGuard(
-                c =>
-                {
-                    if (c.TryLocateActivity(activityName, Constants.Guard, out var a))
-                    {
-                        var initializationRequest = parametersBuilder?.Invoke(c) ?? new InitializationRequest();
-                        return a.ExecuteAsync<bool>(initializationRequest);
-                    }
-                    else
-                    {
-                        return Task.FromResult(false);
-                    }
-                }
+                async c => c.TryLocateActivity(activityName, Constants.Guard, out var a)
+                    && ((await a.ExecuteAsync(parametersBuilder?.Invoke(c))).Response?.OutputTokens.OfType<ValueToken<bool>>().FirstOrDefault()?.Value ?? false)
             );
 
         public static ITransitionBuilder<TEvent> AddGuardActivity<TEvent, TActivity>(this ITransitionBuilder<TEvent> builder, GuardActivityInitializationBuilder<TEvent> parametersBuilder = null)
@@ -40,8 +30,7 @@ namespace Stateflows.Activities
                 {
                     if (c.TryLocateActivity(activityName, Constants.Guard, out var a))
                     {
-                        var initializationRequest = parametersBuilder?.Invoke(c) ?? new InitializationRequest();
-                        await a.ExecuteAsync(initializationRequest);
+                        await a.ExecuteAsync(parametersBuilder?.Invoke(c));
                     }
                 }
             );

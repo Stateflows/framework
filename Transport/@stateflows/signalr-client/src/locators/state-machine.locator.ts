@@ -12,7 +12,7 @@ export class StateMachineLocator implements IStateMachineLocator {
         return new Promise<IStateMachine>((resolve, reject) => {
             this.behaviorLocator.locateBehavior(id)
                 .then(behavior => resolve(new StateMachine(behavior as Behavior)))
-                .catch(error => reject("State Machine not found"));
+                .catch(_ => reject("State Machine not found"));
         });
     }
 }

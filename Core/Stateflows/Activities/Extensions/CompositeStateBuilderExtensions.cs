@@ -60,7 +60,7 @@ namespace Stateflows.Activities
                     {
                         if (c.TryLocateActivity(activityName, Constants.Do, out var a))
                         {
-                            await a.Cancel();
+                            await a.CancelAsync();
                         }
                     }
                 );

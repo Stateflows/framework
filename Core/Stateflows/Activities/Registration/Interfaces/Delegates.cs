@@ -10,7 +10,7 @@ namespace Stateflows.Activities.Registration.Interfaces
 
     public delegate Task<bool> GuardDelegateAsync(IGuardContext context);
 
-    public delegate Task<TTargetToken> TransformationDelegateAsync<in TSourceToken, TTargetToken>(ITransformContext<TSourceToken> context)
+    public delegate Task<TTargetToken> TransformationDelegateAsync<in TSourceToken, TTargetToken>(ITransformationContext<TSourceToken> context)
         where TSourceToken : Token, new()
         where TTargetToken : Token, new();
 

@@ -33,7 +33,7 @@ export class StateflowsClient {
         return this._behaviorLocator ??= new BehaviorLocator(this.hub);
     }
 
-    public _stateMachineLocator: IStateMachineLocator | null = null;
+    private _stateMachineLocator: IStateMachineLocator | null = null;
 
     public get stateMachineLocator(): IStateMachineLocator {
         return this._stateMachineLocator ??= new StateMachineLocator(this.behaviorLocator);

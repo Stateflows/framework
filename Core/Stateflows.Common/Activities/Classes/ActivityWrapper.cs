@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using Stateflows.Common.Interfaces;
 using Stateflows.Activities;
 using Stateflows.Activities.Events;
+using System;
 
 namespace Stateflows.Common.Activities.Classes
 {
@@ -18,29 +19,19 @@ namespace Stateflows.Common.Activities.Classes
             Behavior = consumer;
         }
 
-        public async Task<IEnumerable<Token>> ExecuteAsync(InitializationRequest initializationRequest = null)
+        public Task<RequestResult<ExecutionResponse>> ExecuteAsync(InitializationRequest initializationRequest = null, IEnumerable<Token> inputTokens = null)
         {
-            if (initializationRequest == null)
+            var executionRequest = new ExecutionRequest(initializationRequest ?? new InitializationRequest(), inputTokens ?? new Token[0]);
+            if (initializationRequest != null)
             {
-                initializationRequest = new InitializationRequest();
+                executionRequest.Headers.AddRange(initializationRequest.Headers);
             }
-            var executionRequest = new ExecutionRequest(initializationRequest);
-            executionRequest.Headers.AddRange(initializationRequest.Headers);
-            return (await Behavior.RequestAsync(executionRequest)).Response?.OutputTokens ?? new Token[0];
 
+            return Behavior.RequestAsync(executionRequest);
         }
 
-        public async Task<T> ExecuteAsync<T>(InitializationRequest initializationRequest = null)
-        {
-            var results = (await ExecuteAsync(initializationRequest)).OfType<ValueToken<T>>();
-
-            return results.Any()
-                ? results.First().Value
-                : default;
-        }
-
-        public Task Cancel()
-            => SendAsync(new CancelRequest());
+        public Task<RequestResult<CancelResponse>> CancelAsync()
+            => RequestAsync(new CancelRequest());
 
         public Task<SendResult> SendAsync<TEvent>(TEvent @event)
             where TEvent : Event, new()

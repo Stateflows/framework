@@ -70,7 +70,7 @@ namespace Stateflows.Activities.Engine
 
             var eventContext = new EventContext<TEvent>(context, executor.NodeScope, @event);
 
-            if (await executor.Observer.BeforeProcessEventAsync(eventContext))
+            if (await executor.Inspector.BeforeProcessEventAsync(eventContext))
             {
                 result = await TryHandleEventAsync(eventContext);
 
@@ -79,7 +79,7 @@ namespace Stateflows.Activities.Engine
                     result = await executor.ProcessAsync(@event);
                 }
 
-                await executor.Observer.AfterProcessEventAsync(eventContext);
+                await executor.Inspector.AfterProcessEventAsync(eventContext);
             }
 
             //await Storage.Dehydrate((await executor.DehydrateAsync()).Context);

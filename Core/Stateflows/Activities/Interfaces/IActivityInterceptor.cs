@@ -10,7 +10,5 @@ namespace Stateflows.Activities
         Task BeforeDehydrateAsync(IActivityActionContext context);
         Task<bool> BeforeProcessEventAsync(IEventContext<Event> context);
         Task AfterProcessEventAsync(IEventContext<Event> context);
-        Task<bool> BeforeDispatchEventAsync(IEventContext<Event> context);
-        Task AfterDispatchEventAsync(IEventContext<Event> context);
     }
 }

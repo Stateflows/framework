@@ -1,16 +1,15 @@
 ﻿using System.Threading.Tasks;
-using System.Collections.Generic;
 using Stateflows.Common;
 using Stateflows.Common.Interfaces;
+using Stateflows.Activities.Events;
+using System.Collections.Generic;
 
 namespace Stateflows.Activities
 {
     public interface IActivity : IBehavior
     {
-        Task<IEnumerable<Token>> ExecuteAsync(InitializationRequest initializationRequest = null);
+        Task<RequestResult<ExecutionResponse>> ExecuteAsync(InitializationRequest initializationRequest = null, IEnumerable<Token> inputTokens = null);
 
-        Task<T> ExecuteAsync<T>(InitializationRequest initializationRequest = null);
-
-        Task Cancel();
+        Task<RequestResult<CancelResponse>> CancelAsync();
     }
 }

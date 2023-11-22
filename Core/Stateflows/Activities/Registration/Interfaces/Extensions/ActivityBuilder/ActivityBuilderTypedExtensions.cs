@@ -127,5 +127,28 @@ namespace Stateflows.Activities
             );
         }
         #endregion
+
+        #region AddIterativeActivity
+        public static IActivityBuilder AddIterativeActivity<TToken, TStructuredActivity>(this IActivityBuilder builder, StructuredActivityBuilderAction buildAction = null)
+            where TToken : Token, new()
+            where TStructuredActivity : StructuredActivity
+            => AddIterativeActivity<TToken, TStructuredActivity>(builder, ActivityNodeInfo<TStructuredActivity>.Name, buildAction);
+
+        public static IActivityBuilder AddIterativeActivity<TToken, TStructuredActivity>(this IActivityBuilder builder, string structuredActivityName, StructuredActivityBuilderAction buildAction = null)
+            where TToken : Token, new()
+            where TStructuredActivity : StructuredActivity
+        {
+            (builder as IInternal).Services.RegisterStructuredActivity<TStructuredActivity>();
+            return builder.AddIterativeActivity<TToken>(
+                structuredActivityName,
+                b =>
+                {
+                    b.AddStructuredActivityEvents<TStructuredActivity>();
+                    //(b as NodeBuilder).Node.ScanForDeclaredTypes(typeof(TAction));
+                    buildAction?.Invoke(b);
+                }
+            );
+        }
+        #endregion
     }
 }

@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using System.Collections.Generic;
 using Microsoft.Extensions.DependencyInjection;
 using Stateflows.Common;
+using Stateflows.Common.Engine;
 using Stateflows.Common.Extensions;
 using Stateflows.Activities.Models;
 using Stateflows.Activities.Extensions;
@@ -12,7 +13,6 @@ using Stateflows.Activities.Context.Classes;
 using Stateflows.Activities.Inspection.Classes;
 using Stateflows.Activities.Inspection.Interfaces;
 using Stateflows.Activities.Registration.Interfaces;
-using Stateflows.Common.Engine;
 
 namespace Stateflows.Activities.Engine
 {
@@ -226,6 +226,59 @@ namespace Stateflows.Activities.Engine
             => Task.WhenAll(
                 Interceptors.RunSafe(i => i.AfterProcessEventAsync(context), nameof(AfterProcessEventAsync)),
                 GlobalInterceptor.AfterProcessEventAsync(new Common.Context.Classes.EventContext<TEvent>(context.Context.Context, Executor.NodeScope.ServiceProvider, context.Event))
+            );
+
+        public Task BeforeActivityInitializeAsync(ActivityInitializationContext context)
+            => Task.WhenAll(
+                Inspectors.RunSafe(i => i.BeforeActivityInitializeAsync(context), nameof(BeforeActivityInitializeAsync)),
+                Observers.RunSafe(o => o.BeforeActivityInitializeAsync(context), nameof(BeforeActivityInitializeAsync))
+            );
+
+        //    if (InitializeInspection != null)
+        //    {
+        //        InitializeInspection.Active = true;
+        //    }
+
+        public Task AfterActivityInitializeAsync(ActivityInitializationContext context)
+            => Task.WhenAll(
+                Observers.RunSafe(o => o.AfterActivityInitializeAsync(context), nameof(AfterActivityInitializeAsync)),
+                Inspectors.RunSafe(i => i.AfterActivityInitializeAsync(context), nameof(AfterActivityInitializeAsync))
+            );
+
+        public Task BeforeNodeInitializeAsync(ActionContext context)
+            => Task.WhenAll(
+                Inspectors.RunSafe(i => i.BeforeNodeInitializeAsync(context), nameof(BeforeNodeInitializeAsync)),
+                Observers.RunSafe(o => o.BeforeNodeInitializeAsync(context), nameof(BeforeNodeInitializeAsync))
+            );
+
+        public Task AfterNodeInitializeAsync(ActionContext context)
+            => Task.WhenAll(
+                Observers.RunSafe(i => i.AfterNodeInitializeAsync(context), nameof(AfterNodeInitializeAsync)),
+                Inspectors.RunSafe(o => o.AfterNodeInitializeAsync(context), nameof(AfterNodeInitializeAsync))
+            );
+
+        public Task BeforeNodeFinalizeAsync(ActionContext context)
+            => Task.WhenAll(
+                Inspectors.RunSafe(i => i.BeforeNodeFinalizeAsync(context), nameof(BeforeNodeFinalizeAsync)),
+                Observers.RunSafe(o => o.BeforeNodeFinalizeAsync(context), nameof(BeforeNodeFinalizeAsync))
+            );
+
+        public Task AfterNodeFinalizeAsync(ActionContext context)
+            => Task.WhenAll(
+                Observers.RunSafe(i => i.AfterNodeFinalizeAsync(context), nameof(AfterNodeFinalizeAsync)),
+                Inspectors.RunSafe(o => o.AfterNodeFinalizeAsync(context), nameof(AfterNodeFinalizeAsync))
+            );
+
+        public Task BeforeNodeExecuteAsync(ActionContext context)
+            => Task.WhenAll(
+                Inspectors.RunSafe(i => i.BeforeNodeExecuteAsync(context), nameof(BeforeNodeExecuteAsync)),
+                Observers.RunSafe(o => o.BeforeNodeExecuteAsync(context), nameof(BeforeNodeExecuteAsync))
+            );
+
+        public Task AfterNodeExecuteAsync(ActionContext context)
+            => Task.WhenAll(
+                Observers.RunSafe(i => i.AfterNodeExecuteAsync(context), nameof(AfterNodeExecuteAsync)),
+                Inspectors.RunSafe(o => o.AfterNodeExecuteAsync(context), nameof(AfterNodeExecuteAsync))
             );
 
 

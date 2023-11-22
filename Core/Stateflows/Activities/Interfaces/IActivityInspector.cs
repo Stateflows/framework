@@ -1,32 +1,33 @@
-﻿using System.Threading.Tasks;
+﻿using System;
+using System.Threading.Tasks;
 using Stateflows.Activities.Inspection.Interfaces;
 
 namespace Stateflows.Activities
 {
     public interface IActivityInspector
     {
-        Task BeforeActivityInitializeAsync(IActivityActionInspectionContext context);
-        Task AfterActivityInitializeAsync(IActivityActionInspectionContext context);
+        Task BeforeActivityInitializeAsync(IActivityInitializationInspectionContext context);
+        Task AfterActivityInitializeAsync(IActivityInitializationInspectionContext context);
 
-        //Task BeforeActivityFinalizeAsync(IActivityActionInspectionContext context);
-        //Task AfterActivityFinalizeAsync(IActivityActionInspectionContext context);
+        Task BeforeNodeInitializeAsync(IActivityNodeInspectionContext context);
+        Task AfterNodeInitializeAsync(IActivityNodeInspectionContext context);
 
-        //Task BeforeStateInitializeAsync(IStateActionInspectionContext context);
-        //Task AfterStateInitializeAsync(IStateActionInspectionContext context);
-        //Task BeforeStateEntryAsync(IStateActionInspectionContext context);
-        //Task AfterStateEntryAsync(IStateActionInspectionContext context);
-        //Task BeforeStateExitAsync(IStateActionInspectionContext context);
-        //Task AfterStateExitAsync(IStateActionInspectionContext context);
-        //Task BeforeTransitionGuardAsync(IGuardInspectionContext<Event> context);
-        //Task AfterTransitionGuardAsync(IGuardInspectionContext<Event> context, bool guardResult);
-        //Task BeforeTransitionEffectAsync(ITransitionInspectionContext<Event> context);
-        //Task AfterTransitionEffectAsync(ITransitionInspectionContext<Event> context);
+        Task BeforeNodeFinalizeAsync(IActivityNodeInspectionContext context);
+        Task AfterNodeFinalizeAsync(IActivityNodeInspectionContext context);
 
-        //Task OnActivityInitializeExceptionAsync(IActivityActionInspectionContext context, Exception exception);
-        //Task OnTransitionGuardExceptionAsync(IGuardInspectionContext<Event> context, Exception exception);
-        //Task OnTransitionEffectExceptionAsync(IEventInspectionContext<Event> context, Exception exception);
-        //Task OnStateInitializeExceptionAsync(IStateActionInspectionContext context, Exception exception);
-        //Task OnStateEntryExceptionAsync(IStateActionInspectionContext context, Exception exception);
-        //Task OnStateExitExceptionAsync(IStateActionInspectionContext context, Exception exception);
+        Task BeforeNodeExecuteAsync(IActivityNodeInspectionContext context);
+        Task AfterNodeExecuteAsync(IActivityNodeInspectionContext context);
+
+        Task BeforeFlowGuardAsync(IGuardInspectionContext context);
+        Task AfterFlowGuardAsync(IGuardInspectionContext context, bool guardResult);
+
+        Task BeforeFlowTransformationAsync(ITransformationInspectionContext context);
+        Task AfterFlowTransformationAsync(ITransformationInspectionContext context);
+
+        Task OnActivityInitializationExceptionAsync(IActivityInitializationInspectionContext context, Exception exception);
+        Task OnNodeInitializationExceptionAsync(IActivityNodeInspectionContext context, Exception exception);
+        Task OnNodeExecutionExceptionAsync(IActivityNodeInspectionContext context, Exception exception);
+        Task OnFlowGuardExceptionAsync(IGuardInspectionContext context, Exception exception);
+        Task OnFlowTransformationExceptionAsync(ITransformationInspectionContext context, Exception exception);
     }
 }

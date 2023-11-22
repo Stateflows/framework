@@ -52,6 +52,7 @@ namespace Stateflows.Transport.Common.Classes
         {
             try
             {
+                await Task.Delay(10 * 1000);
                 await Discoverer.DiscoverBehaviorClassesAsync(BehaviorClassesProvider.LocalBehaviorClasses);
             }
             catch (Exception e)

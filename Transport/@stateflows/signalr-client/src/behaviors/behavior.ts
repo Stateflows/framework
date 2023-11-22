@@ -12,17 +12,17 @@ import { Event } from "../events/event";
 import { BehaviorStatusRequest } from "../events/behavior-status.request";
 
 export class Behavior implements IBehavior {
-    private hubPromise: Promise<HubConnection>;
+    private _hub: HubConnection;
     
-    constructor(hubPromiseOrBehavior: Promise<HubConnection> | Behavior, public behaviorId: BehaviorId) {
-        this.hubPromise = hubPromiseOrBehavior instanceof Behavior
-            ? hubPromiseOrBehavior.hubPromise
-            : this.hubPromise = hubPromiseOrBehavior;
+    constructor(hubPromiseOrBehavior: HubConnection | Behavior, public behaviorId: BehaviorId) {
+        this._hub = hubPromiseOrBehavior instanceof Behavior
+            ? hubPromiseOrBehavior._hub
+            : this._hub = hubPromiseOrBehavior;
     }
 
     private getHub(): Promise<HubConnection> {
         return new Promise<HubConnection>(async (resolve, reject) => {
-            let hub = await this.hubPromise;
+            let hub = this._hub;
             if (hub.state != HubConnectionState.Connected) {
                 hub.start().then(() => resolve(hub));
             } else {

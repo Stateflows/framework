@@ -77,6 +77,9 @@ namespace Stateflows.Activities.Registration.Builders
         IStructuredActivityBuilder IActivity<IStructuredActivityBuilder>.AddParallelActivity<TToken>(string actionNodeName, StructuredActivityBuilderAction builderAction)
             => AddParallelActivity<TToken>(actionNodeName, builderAction) as IStructuredActivityBuilder;
 
+        IStructuredActivityBuilder IActivity<IStructuredActivityBuilder>.AddIterativeActivity<TToken>(string actionNodeName, StructuredActivityBuilderAction builderAction)
+            => AddIterativeActivity<TToken>(actionNodeName, builderAction) as IStructuredActivityBuilder;
+
         IStructuredActivityBuilderWithOptions INodeOptions<IStructuredActivityBuilderWithOptions>.SetOptions(NodeOptions nodeOptions)
         {
             Node.Options = nodeOptions;
@@ -117,6 +120,9 @@ namespace Stateflows.Activities.Registration.Builders
 
         IStructuredActivityBuilderWithOptions IActivity<IStructuredActivityBuilderWithOptions>.AddParallelActivity<TToken>(string actionNodeName, StructuredActivityBuilderAction builderAction)
             => AddParallelActivity<TToken>(actionNodeName, builderAction) as IStructuredActivityBuilderWithOptions;
+
+        IStructuredActivityBuilderWithOptions IActivity<IStructuredActivityBuilderWithOptions>.AddIterativeActivity<TToken>(string actionNodeName, StructuredActivityBuilderAction builderAction)
+            => AddIterativeActivity<TToken>(actionNodeName, builderAction) as IStructuredActivityBuilderWithOptions;
 
         public IActionBuilder AddObjectFlow<TToken>(string targetNodeName, FlowBuilderAction<TToken> buildAction = null)
             where TToken : Token, new()

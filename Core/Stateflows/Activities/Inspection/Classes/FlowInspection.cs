@@ -14,7 +14,7 @@ namespace Stateflows.Activities.Inspection.Classes
         {
             Executor = executor;
             Edge = edge;
-            Executor.Observer.InspectionFlows.Add(Edge, this);
+            Executor.Inspector.InspectionFlows.Add(Edge, this);
         }
 
         public bool Active { get; set; }
@@ -27,7 +27,7 @@ namespace Stateflows.Activities.Inspection.Classes
             {
                 if (
                     source == null &&
-                    Executor.Observer.InspectionNodes.TryGetValue(Edge.Source, out var s)
+                    Executor.Inspector.InspectionNodes.TryGetValue(Edge.Source, out var s)
                 )
                 {
                     source = s;
@@ -46,7 +46,7 @@ namespace Stateflows.Activities.Inspection.Classes
                 if (
                     target == null &&
                     Edge.Target != null &&
-                    Executor.Observer.InspectionNodes.TryGetValue(Edge.Target, out var t)
+                    Executor.Inspector.InspectionNodes.TryGetValue(Edge.Target, out var t)
                 )
                 {
                     target = t;

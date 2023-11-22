@@ -10,6 +10,7 @@ using Stateflows.Activities.Context.Classes;
 using Stateflows.Activities.Context.Interfaces;
 using Stateflows.Activities.Registration.Builders;
 using Stateflows.Activities.Registration.Interfaces;
+using Newtonsoft.Json.Linq;
 
 namespace Stateflows.Activities.Registration
 {
@@ -87,7 +88,10 @@ namespace Stateflows.Activities.Registration
             {
                 try
                 {
+                    var observer = c.Activity.GetExecutor().Inspector;
+                    await observer.BeforeNodeExecuteAsync(c as ActionContext);
                     await actionAsync(c);
+                    await observer.AfterNodeExecuteAsync(c as ActionContext);
 
                     c.Output(new ControlToken());
                 }
@@ -148,7 +152,7 @@ namespace Stateflows.Activities.Registration
                 Final.Name,
                 c =>
                 {
-                    c.GetContext().Executor.Cancel();
+                    c.GetContext().Executor.Cancel(c.GetNode().Parent);
                     return Task.CompletedTask;
                 }
             );
@@ -183,9 +187,12 @@ namespace Stateflows.Activities.Registration
                 structuredActivityNodeName,
                 async c =>
                 {
-                    await c.GetNode().Initialize.WhenAll(c as BaseContext);
+                    var executor = c.GetContext().Executor;
+                    var node = c.GetNode();
 
-                    c.OutputRange(await c.GetContext().Executor.DoInitializeStructuredNodeAsync(c.GetNode(), c.Input));
+                    await executor.DoInitializeNodeAsync(node, c as ActionContext);
+                    c.OutputRange(await executor.DoExecuteStructuredNodeAsync(node, c.Input));
+                    await executor.DoFinalizeNodeAsync(node, c as ActionContext);
                 },
                 b => builderAction?.Invoke(new StructuredActivityBuilder(b.Node, this, Services))
             );
@@ -197,9 +204,29 @@ namespace Stateflows.Activities.Registration
                 parallelActivityNodeName,
                 async c =>
                 {
-                    await c.GetNode().Initialize.WhenAll(c as BaseContext);
+                    var executor = c.GetContext().Executor;
+                    var node = c.GetNode();
 
-                    c.OutputRange(await c.GetContext().Executor.DoInitializeParallelNodeAsync<TToken>(c.GetNode(), c.Input));
+                    await executor.DoInitializeNodeAsync(node, c as ActionContext);
+                    c.OutputRange(await executor.DoExecuteParallelNodeAsync<TToken>(node, c.Input));
+                    await executor.DoFinalizeNodeAsync(node, c as ActionContext);
+                },
+                b => builderAction?.Invoke(new StructuredActivityBuilder(b.Node, this, Services))
+            );
+
+        public BaseActivityBuilder AddIterativeActivity<TToken>(string parallelActivityNodeName, StructuredActivityBuilderAction builderAction = null)
+            where TToken : Token, new()
+            => AddNode(
+                NodeType.IterativeActivity,
+                parallelActivityNodeName,
+                async c =>
+                {
+                    var executor = c.GetContext().Executor;
+                    var node = c.GetNode();
+
+                    await executor.DoInitializeNodeAsync(node, c as ActionContext);
+                    c.OutputRange(await executor.DoExecuteIterativeNodeAsync<TToken>(node, c.Input));
+                    await executor.DoFinalizeNodeAsync(node, c as ActionContext);
                 },
                 b => builderAction?.Invoke(new StructuredActivityBuilder(b.Node, this, Services))
             );

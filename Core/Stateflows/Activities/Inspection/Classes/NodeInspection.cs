@@ -16,7 +16,7 @@ namespace Stateflows.Activities.Inspection.Classes
         {
             Executor = executor;
             Node = node;
-            Executor.Observer.InspectionNodes.Add(Node, this);
+            Executor.Inspector.InspectionNodes.Add(Node, this);
         }
 
         public string Name => Node.Name;
@@ -28,11 +28,11 @@ namespace Stateflows.Activities.Inspection.Classes
         private IEnumerable<IFlowInspection> flows;
 
         public IEnumerable<IFlowInspection> Flows
-            => flows ??= Node.Edges.Select(e => new FlowInspection(Executor, e));
+            => flows ??= Node.Edges.Select(e => new FlowInspection(Executor, e)).ToArray();
 
         public IEnumerable<INodeInspection> nodes;
 
         public IEnumerable<INodeInspection> Nodes
-            => nodes ??= Node.Nodes.Values.Select(subVertex => new NodeInspection(Executor, subVertex));
+            => nodes ??= Node.Nodes.Values.Select(subVertex => new NodeInspection(Executor, subVertex)).ToArray();
     }
 }

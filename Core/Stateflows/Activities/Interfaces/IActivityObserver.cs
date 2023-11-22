@@ -8,15 +8,19 @@ namespace Stateflows.Activities
         Task BeforeActivityInitializeAsync(IActivityInitializationContext context);
         Task AfterActivityInitializeAsync(IActivityInitializationContext context);
 
-        //Task BeforeStateInitializeAsync(IStateActionContext context);
-        //Task AfterStateInitializeAsync(IStateActionContext context);
-        //Task BeforeStateEntryAsync(IStateActionContext context);
-        //Task AfterStateEntryAsync(IStateActionContext context);
-        //Task BeforeStateExitAsync(IStateActionContext context);
-        //Task AfterStateExitAsync(IStateActionContext context);
-        //Task BeforeTransitionGuardAsync(IGuardContext<Event> context);
-        //Task AfterTransitionGuardAsync(IGuardContext<Event> context, bool guardResult);
-        //Task BeforeTransitionEffectAsync(ITransitionContext<Event> context);
-        //Task AfterTransitionEffectAsync(ITransitionContext<Event> context);
+        Task BeforeNodeInitializeAsync(IActivityNodeContext context);
+        Task AfterNodeInitializeAsync(IActivityNodeContext context);
+
+        Task BeforeNodeFinalizeAsync(IActivityNodeContext context);
+        Task AfterNodeFinalizeAsync(IActivityNodeContext context);
+
+        Task BeforeNodeExecuteAsync(IActivityNodeContext context);
+        Task AfterNodeExecuteAsync(IActivityNodeContext context);
+
+        Task BeforeFlowGuardAsync(IGuardContext<Token> context);
+        Task AfterFlowGuardAsync(IGuardContext<Token> context, bool guardResult);
+
+        Task BeforeFlowTransformationAsync(ITransformationContext<Token> context);
+        Task AfterFlowTransformationAsync(ITransformationContext<Token> context);
     }
 }

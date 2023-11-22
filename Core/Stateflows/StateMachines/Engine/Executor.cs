@@ -158,6 +158,8 @@ namespace Stateflows.StateMachines.Engine
                     await DoExitAsync(vertex);
                 }
 
+                await DoFinalizeStateMachineAsync();
+
                 Context.StatesStack.Clear();
             }
         }
