@@ -10,8 +10,6 @@ namespace Stateflows.Locks.DistributedLock.Classes
     {
         private Func<string, Task<IDistributedLock>> DistributedLockFactory { get; }
 
-        private Dictionary<string, IDistributedLock> DistributedLocks { get; } = new Dictionary<string, IDistributedLock>();
-
         private Dictionary<string, IDistributedSynchronizationHandle> Handles { get; } = new Dictionary<string, IDistributedSynchronizationHandle>();
 
         public DistributedLockService(Func<string, Task<IDistributedLock>> distributedLockFactory)
@@ -19,28 +17,36 @@ namespace Stateflows.Locks.DistributedLock.Classes
              DistributedLockFactory = distributedLockFactory;
         }
 
-        private async Task<IDistributedLock> GetDistributedLockAsync(BehaviorId id)
-        {
-            if (!DistributedLocks.TryGetValue(id.ToString(), out var distributedLock))
-            {
-                distributedLock = await DistributedLockFactory(id.ToString());
-                DistributedLocks.Add(id.ToString(), distributedLock);
-            }
-
-            return distributedLock;
-        }
-
         public async Task LockAsync(BehaviorId id)
-            => Handles.Add(id.ToString(), await (await GetDistributedLockAsync(id)).AcquireAsync());
+        {
+            var handle = await (await DistributedLockFactory(id.ToString())).AcquireAsync();
+
+            lock (Handles)
+            {
+                if (Handles.ContainsKey(id.ToString()))
+                {
+                    Handles.Remove(id.ToString());
+                }
+
+                Handles.Add(id.ToString(), handle);
+            }
+        }
 
         public async Task UnlockAsync(BehaviorId id)
         {
-            if (Handles.TryGetValue(id.ToString(), out var handle))
+            IDistributedSynchronizationHandle handle;
+
+            lock (Handles)
+            {
+                if (Handles.TryGetValue(id.ToString(), out handle))
+                {
+                    Handles.Remove(id.ToString());
+                }
+            }
+
+            if (handle != null)
             {
                 await handle.DisposeAsync();
-
-                Handles.Remove(id.ToString());
-                DistributedLocks.Remove(id.ToString());
             }
         }
     }
