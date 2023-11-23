@@ -170,7 +170,15 @@ namespace Stateflows.Activities.Engine
             {
                 Context.Initialized = true;
 
-                _ = DoExecuteStructuredNodeAsync(Graph);
+                try
+                {
+                    _ = DoExecuteStructuredNodeAsync(Graph);
+                }
+                catch (Exception e)
+                {
+
+                    throw e;
+                }
 
                 Debug.WriteLine($"{Context.Id.Instance} initialization");
 
@@ -515,11 +523,11 @@ namespace Stateflows.Activities.Engine
                             ? streams.SelectMany(stream => stream.Tokens).ToArray()
                             : input;
 
-                        //lock (node.Graph)
-                        //{
-                        //    Debug.WriteLine("");
-                        //    Debug.WriteLine($">>> Executing node {node.Name.Split('.').Last()}, threadId: {threadId}");
-                        //}
+                        lock (node.Graph)
+                        {
+                            Debug.WriteLine("");
+                            Debug.WriteLine($">>> Executing node {node.Name.Split('.').Last()}, threadId: {threadId}");
+                        }
 
                         var context = new ActionContext(Context, NodeScope.CreateChildScope(), node, inputTokens);
 
@@ -551,7 +559,7 @@ namespace Stateflows.Activities.Engine
                                 }
                                 catch (Exception e)
                                 {
-                                    throw;
+                                    throw e;
                                 }
                             }
                         }
@@ -559,7 +567,7 @@ namespace Stateflows.Activities.Engine
                 }
                 catch (Exception e)
                 {
-                    throw;
+                    throw e;
                 }
             });
 

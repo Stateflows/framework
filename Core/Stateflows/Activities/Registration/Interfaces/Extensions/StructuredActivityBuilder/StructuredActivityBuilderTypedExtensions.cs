@@ -96,18 +96,18 @@ namespace Stateflows.Activities
         #endregion
 
         #region AddParallelActivity
-        public static IStructuredActivityBuilder AddParallelActivity<TToken, TStructuredActivity>(this IStructuredActivityBuilder builder, StructuredActivityBuilderAction buildAction = null)
-            where TToken : Token, new()
+        public static IStructuredActivityBuilder AddParallelActivity<TStructuredActivity, TParallelizationToken>(this IStructuredActivityBuilder builder, StructuredActivityBuilderAction buildAction = null)
             where TStructuredActivity : StructuredActivity
-            => AddParallelActivity<TToken, TStructuredActivity>(builder, ActivityNodeInfo<TStructuredActivity>.Name, buildAction);
+            where TParallelizationToken : Token, new()
+            => AddParallelActivity<TStructuredActivity, TParallelizationToken>(builder, ActivityNodeInfo<TStructuredActivity>.Name, buildAction);
 
-        public static IStructuredActivityBuilder AddParallelActivity<TToken, TStructuredActivity>(this IStructuredActivityBuilder builder, string structuredActivityName, StructuredActivityBuilderAction buildAction = null)
-            where TToken : Token, new()
+        public static IStructuredActivityBuilder AddParallelActivity<TStructuredActivity, TParallelizationToken>(this IStructuredActivityBuilder builder, string structuredActivityName, StructuredActivityBuilderAction buildAction = null)
             where TStructuredActivity : StructuredActivity
+            where TParallelizationToken : Token, new()
         {
             (builder as IInternal).Services.RegisterStructuredActivity<TStructuredActivity>();
 
-            return builder.AddParallelActivity<TToken>(
+            return builder.AddParallelActivity<TParallelizationToken>(
                 structuredActivityName,
                 b =>
                 {
@@ -120,17 +120,17 @@ namespace Stateflows.Activities
         #endregion
 
         #region AddIterativeActivity
-        public static IStructuredActivityBuilder AddIterativeActivity<TToken, TStructuredActivity>(this IStructuredActivityBuilder builder, StructuredActivityBuilderAction buildAction = null)
-            where TToken : Token, new()
+        public static IStructuredActivityBuilder AddIterativeActivity<TStructuredActivity, TIterationToken>(this IStructuredActivityBuilder builder, StructuredActivityBuilderAction buildAction = null)
             where TStructuredActivity : StructuredActivity
-            => AddIterativeActivity<TToken, TStructuredActivity>(builder, ActivityNodeInfo<TStructuredActivity>.Name, buildAction);
+            where TIterationToken : Token, new()
+            => AddIterativeActivity<TStructuredActivity, TIterationToken>(builder, ActivityNodeInfo<TStructuredActivity>.Name, buildAction);
 
-        public static IStructuredActivityBuilder AddIterativeActivity<TToken, TStructuredActivity>(this IStructuredActivityBuilder builder, string structuredActivityName, StructuredActivityBuilderAction buildAction = null)
-            where TToken : Token, new()
+        public static IStructuredActivityBuilder AddIterativeActivity<TStructuredActivity, TIterationToken>(this IStructuredActivityBuilder builder, string structuredActivityName, StructuredActivityBuilderAction buildAction = null)
             where TStructuredActivity : StructuredActivity
+            where TIterationToken : Token, new()
         {
             (builder as IInternal).Services.RegisterStructuredActivity<TStructuredActivity>();
-            return builder.AddIterativeActivity<TToken>(
+            return builder.AddIterativeActivity<TIterationToken>(
                 structuredActivityName,
                 b =>
                 {
