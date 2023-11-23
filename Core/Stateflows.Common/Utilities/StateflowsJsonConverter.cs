@@ -6,11 +6,27 @@ namespace Stateflows.Common.Utilities
 {
     public static class StateflowsJsonConverter
     {
-        private static JsonSerializerSettings settings = new JsonSerializerSettings()
+        private static JsonSerializerSettings polymorphicSettings = new JsonSerializerSettings()
         {
             TypeNameHandling = TypeNameHandling.All,
             ReferenceLoopHandling = ReferenceLoopHandling.Ignore
         };
+
+        private static JsonSerializerSettings settings = new JsonSerializerSettings()
+        {
+            ReferenceLoopHandling = ReferenceLoopHandling.Ignore
+        };
+
+        /// <summary>
+        /// Serializes the specified object to a JSON string.
+        /// </summary>
+        /// <param name="value">The object to serialize.</param>
+        /// <returns>A JSON string representation of the object.</returns>
+        [DebuggerStepThrough]
+        public static string SerializePolymorphicObject(object value)
+        {
+            return JsonConvert.SerializeObject(value, null, polymorphicSettings);
+        }
 
         /// <summary>
         /// Serializes the specified object to a JSON string.
@@ -31,7 +47,7 @@ namespace Stateflows.Common.Utilities
         [DebuggerStepThrough]
         public static object DeserializeObject(string value)
         {
-            return JsonConvert.DeserializeObject(value, null, settings);
+            return JsonConvert.DeserializeObject(value, null, polymorphicSettings);
         }
 
         /// <summary>
@@ -43,7 +59,7 @@ namespace Stateflows.Common.Utilities
         [DebuggerStepThrough]
         public static object DeserializeObject(string value, Type type)
         {
-            return JsonConvert.DeserializeObject(value, type, settings);
+            return JsonConvert.DeserializeObject(value, type, polymorphicSettings);
         }
 
         /// <summary>
@@ -55,7 +71,7 @@ namespace Stateflows.Common.Utilities
         [DebuggerStepThrough]
         public static T DeserializeObject<T>(string value)
         {
-            return JsonConvert.DeserializeObject<T>(value, settings);
+            return JsonConvert.DeserializeObject<T>(value, polymorphicSettings);
         }
     }
 }

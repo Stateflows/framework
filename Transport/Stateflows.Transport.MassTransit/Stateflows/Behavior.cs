@@ -29,7 +29,7 @@ namespace Stateflows.Transport.MassTransit.Stateflows
                 new BehaviorRequest()
                 {
                     BehaviorId = Id,
-                    RequestData = StateflowsJsonConverter.SerializeObject(@event)
+                    RequestData = StateflowsJsonConverter.SerializePolymorphicObject(@event)
                 }
             );
 

@@ -34,6 +34,7 @@ namespace Stateflows.StateMachines.Engine
 
         private Inspector inspector;
 
+        [DebuggerHidden]
         public Inspector Inspector
             => inspector ??= new Inspector(this);
 
@@ -293,6 +294,7 @@ namespace Stateflows.StateMachines.Engine
                 : EventStatus.NotConsumed;
         }
 
+        [DebuggerStepThrough]
         private async Task<bool> DoGuardAsync<TEvent>(Edge edge)
             where TEvent : Event, new()
         {

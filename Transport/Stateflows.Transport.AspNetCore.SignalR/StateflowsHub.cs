@@ -50,7 +50,7 @@ namespace Stateflows.Transport.AspNetCore.SignalR
 
             result = new RequestResult(@event, @event.GetResponse(), result.Status, result.Validation);
 
-            return StateflowsJsonConverter.SerializeObject(result);
+            return StateflowsJsonConverter.SerializePolymorphicObject(result);
         }
 
         public async Task<string> Request(BehaviorId behaviorId, string requestData)
@@ -81,7 +81,7 @@ namespace Stateflows.Transport.AspNetCore.SignalR
 
                 result = new RequestResult(@event, @event.GetResponse(), result.Status, result.Validation);
 
-                return StateflowsJsonConverter.SerializeObject(result);
+                return StateflowsJsonConverter.SerializePolymorphicObject(result);
             }
             else
             {

@@ -74,7 +74,7 @@ namespace Stateflows.StateMachines.Engine
                 {
                     if (vertexName != context.TargetState.Name)
                     {
-                        ctx.GetStateValues(vertexName).Values.Clear();
+                        ctx.ClearStateValues(vertexName);
                     }
                 }
                 Context_ExitedStates.Clear();
@@ -179,8 +179,11 @@ namespace Stateflows.StateMachines.Engine
         {
             foreach (var exitedVertexName in exitedVertices.Select(v => v.Name))
             {
-                await Scheduler.Clear(Context.Context.Id, Context.GetStateValues(exitedVertexName).TimeEventIds);
-                Context.GetStateValues(exitedVertexName).TimeEventIds.Clear();
+                if (Context.TryGetStateValues(exitedVertexName, out var stateValues))
+                {
+                    await Scheduler.Clear(Context.Context.Id, stateValues.TimeEventIds);
+                    stateValues.TimeEventIds.Clear();
+                }
             }
         }
     }

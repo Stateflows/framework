@@ -70,15 +70,26 @@ namespace Stateflows.StateMachines.Context.Classes
             }
         }
 
+        public void ClearStateValues(string stateName)
+        {
+            if (StateValues.TryGetValue(stateName, out var values) && !values.TimeEventIds.Any())
+            {
+                StateValues.Remove(stateName);
+            }
+        }
+
+        public bool TryGetStateValues(string stateName, out StateValues values)
+            => StateValues.TryGetValue(stateName, out values);
+
         public StateValues GetStateValues(string stateName)
         {
-            if (!StateValues.TryGetValue(stateName, out var stateContext))
+            if (!StateValues.TryGetValue(stateName, out var values))
             {
-                stateContext = new StateValues();
-                StateValues[stateName] = stateContext;
+                values = new StateValues();
+                StateValues[stateName] = values;
             }
 
-            return stateContext;
+            return values;
         }
 
         private List<string> statesStack = null;

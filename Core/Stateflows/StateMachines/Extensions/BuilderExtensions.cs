@@ -8,6 +8,7 @@ using Stateflows.StateMachines.Registration.Interfaces;
 using Stateflows.StateMachines.Registration.Interfaces.Base;
 using System.Threading.Tasks;
 using Stateflows.StateMachines.Registration.Builders;
+using System.Diagnostics;
 
 namespace Stateflows.StateMachines.Extensions
 {
@@ -78,6 +79,7 @@ namespace Stateflows.StateMachines.Extensions
             }
         }
 
+        [DebuggerHidden]
         public static void AddTransitionEvents<TTransition, TEvent>(this ITransitionBuilder<TEvent> builder)
             where TTransition : Transition<TEvent>
             where TEvent : Event, new()
