@@ -28,7 +28,7 @@ namespace Stateflows.StateMachines.Models
         public Vertex InitialVertex { get; set; }
         public Dictionary<string, Vertex> Vertices { get; set; } = new Dictionary<string, Vertex>();
         public Dictionary<string, Vertex> AllVertices { get; set; } = new Dictionary<string, Vertex>();
-        public List<Edge> AllEdges { get; set; } = new List<Edge>();
+        public Dictionary<string, Edge> AllEdges { get; set; } = new Dictionary<string, Edge>();
 
         private Dictionary<string, Logic<StateMachineActionAsync>> initializers = null;
         public Dictionary<string, Logic<StateMachineActionAsync>> Initializers
@@ -75,7 +75,7 @@ namespace Stateflows.StateMachines.Models
                     }
                 }
 
-                var vertexTriggers = vertex.Edges
+                var vertexTriggers = vertex.Edges.Values
                     .Where(edge => !string.IsNullOrEmpty(edge.Trigger))
                     .Select(edge => edge.Trigger);
 
@@ -86,7 +86,7 @@ namespace Stateflows.StateMachines.Models
                 }
             }
 
-            foreach (var edge in AllEdges)
+            foreach (var edge in AllEdges.Values)
             {
                 if (edge.TargetName != null && edge.TargetName != Constants.DefaultTransitionTarget)
                 {

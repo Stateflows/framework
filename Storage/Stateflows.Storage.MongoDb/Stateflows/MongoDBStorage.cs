@@ -38,6 +38,11 @@ namespace Stateflows.Storage.MongoDB.Stateflows
             await UpdateOrInsertContextData(contextEntity);
         }
 
+        public Task<IEnumerable<StateflowsContext>> GetContexts(IEnumerable<BehaviorClass> behaviorClasses)
+        {
+            throw new NotImplementedException();
+        }
+
         public async Task AddTimeTokens(TimeToken[] timeTokens)
         {
             if (!timeTokens.Any()) return;

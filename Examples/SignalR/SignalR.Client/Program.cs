@@ -1,6 +1,5 @@
 using Examples.Common;
 using Stateflows;
-using Stateflows.Common;
 using Stateflows.StateMachines;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -21,6 +20,11 @@ builder.Services.AddStateflows(b => b
     )
 
     .AddPlantUml()
+    .SetEnvironment(
+        builder.Environment.IsDevelopment()
+            ? $"{StateflowsEnvironments.Development}.{Environment.MachineName}"
+            : StateflowsEnvironments.Production
+    )
 );
 
 // Add services to the container.

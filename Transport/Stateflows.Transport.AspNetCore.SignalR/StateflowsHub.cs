@@ -26,6 +26,8 @@ namespace Stateflows.Transport.AspNetCore.SignalR
 
         public async Task<string> Send(BehaviorId behaviorId, string eventData)
         {
+            behaviorId.BehaviorClass = behaviorId.BehaviorClass.ApplyCurrentEnvironment();
+
             Event? @event;
             try
             {

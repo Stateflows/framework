@@ -10,6 +10,12 @@ namespace Stateflows.StateMachines.Models
         public Graph Graph { get; set; }
         public string Trigger { get; set; }
         public Type TriggerType { get; set; }
+        public string Name
+            => $"{SourceName}:{Trigger}:{TargetName}";
+        public string Identifier
+            => Target != null
+                ? $"{Source.Identifier}:{Trigger}:{Target.Identifier}"
+                : $"{Source.Identifier}:{Trigger}";
 
         public Logic<StateMachinePredicateAsync> guards = null;
         public Logic<StateMachinePredicateAsync> Guards => guards ??= new Logic<StateMachinePredicateAsync>() { Name = Constants.Guard };

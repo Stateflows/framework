@@ -5,7 +5,6 @@ namespace Stateflows.Common.Context
 {
     public class StateflowsContext
     {
-        [JsonIgnore]
         public BehaviorId Id { get; set; }
 
         public int Version { get; set; } = 0;

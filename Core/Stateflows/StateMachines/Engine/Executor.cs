@@ -34,7 +34,6 @@ namespace Stateflows.StateMachines.Engine
 
         private Inspector inspector;
 
-        [DebuggerHidden]
         public Inspector Inspector
             => inspector ??= new Inspector(this);
 
@@ -195,7 +194,7 @@ namespace Stateflows.StateMachines.Engine
             var currentStack = GetVerticesStack();
             currentStack.Reverse();
 
-            return currentStack.SelectMany(vertex => vertex.Edges).Select(edge => edge.TriggerType).Distinct();
+            return currentStack.SelectMany(vertex => vertex.Edges.Values).Select(edge => edge.TriggerType).Distinct();
         }
 
         private List<Vertex> GetNestedVertices(Vertex vertex)
@@ -267,7 +266,7 @@ namespace Stateflows.StateMachines.Engine
 
                 foreach (var vertex in currentStack)
                 {
-                    foreach (var edge in vertex.Edges)
+                    foreach (var edge in vertex.Edges.Values)
                     {
                         Context.SourceState = edge.SourceName;
                         Context.TargetState = edge.TargetName;

@@ -1,8 +1,8 @@
-﻿using Microsoft.AspNetCore.Routing;
+﻿using System.Diagnostics;
+using Microsoft.AspNetCore.Routing;
 using Microsoft.AspNetCore.Builder;
-using System.Diagnostics;
-using Stateflows.Transport.AspNetCore.SignalR;
 using Microsoft.AspNetCore.Http.Connections;
+using Stateflows.Transport.AspNetCore.SignalR;
 
 namespace Stateflows
 {

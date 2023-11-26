@@ -53,6 +53,11 @@ namespace StateMachine.IntegrationTests.Tests
 
                 .AddStateMachine("exits", b => b
                     .AddExecutionSequenceObserver()
+                    .AddOnInitialize(c =>
+                    {
+                        ParentStateExited = null;
+                        ChildStateExited = null;
+                    })
                     .AddInitialCompositeState("state1", b => b
                         .AddOnExit(c => ParentStateExited = true)
                         .AddInitialState("state2", b => b
@@ -171,6 +176,8 @@ namespace StateMachine.IntegrationTests.Tests
                 .StateEntry("state1")
                 .StateInitialize("state1")
                 .StateEntry("state2")
+                .TransitionGuard(EventInfo<OtherEvent>.Name, "state2", "state3")
+                .StateExit("state2")
                 .TransitionEffect(EventInfo<OtherEvent>.Name, "state2", "state3")
                 .StateEntry("state3")
             );

@@ -146,6 +146,7 @@ namespace Stateflows.StateMachines
                     .ServiceCollection
                     .AddScoped<IStateMachinePlugin, TimeEvents>()
                     .AddScoped<IStateMachinePlugin, Submachines>()
+                    .AddScoped<IStateMachinePlugin, ContextCleanup>()
                     .AddSingleton(register)
                     .AddSingleton<IEventProcessor, Processor>()
                     .AddTransient<IBehaviorProvider, Provider>()

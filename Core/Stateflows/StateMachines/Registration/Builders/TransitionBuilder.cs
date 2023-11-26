@@ -3,11 +3,9 @@ using System.Threading.Tasks;
 using Stateflows.Common;
 using Stateflows.StateMachines.Models;
 using Stateflows.StateMachines.Context.Classes;
-using Stateflows.StateMachines.Registration.Interfaces;
 using Stateflows.StateMachines.Context.Interfaces;
+using Stateflows.StateMachines.Registration.Interfaces;
 using Stateflows.StateMachines.Registration.Extensions;
-using System.Diagnostics;
-
 
 namespace Stateflows.StateMachines.Registration.Builders
 {
@@ -21,7 +19,6 @@ namespace Stateflows.StateMachines.Registration.Builders
             Edge = edge;
         }
 
-        [DebuggerHidden]
         public ITransitionBuilder<TEvent> AddGuard(Func<IGuardContext<TEvent>, Task<bool>> guardAsync)
         {
             guardAsync.ThrowIfNull(nameof(guardAsync));

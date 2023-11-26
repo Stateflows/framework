@@ -38,7 +38,7 @@ namespace Stateflows.StateMachines.Models
         private Logic<StateMachineActionAsync> exit = null;
         public Logic<StateMachineActionAsync> Exit => exit ??= new Logic<StateMachineActionAsync>() { Name = Constants.Exit };
 
-        public List<Edge> Edges { get; set; } = new List<Edge>();
+        public Dictionary<string, Edge> Edges { get; set; } = new Dictionary<string, Edge>();
         public string InitialVertexName { get; set; }
         public Vertex InitialVertex { get; set; }
         public Dictionary<string, Vertex> Vertices { get; set; } = new Dictionary<string, Vertex>();

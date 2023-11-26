@@ -1,7 +1,7 @@
 ﻿using System.Collections.Generic;
 using Newtonsoft.Json.Linq;
-using Stateflows.Common.Interfaces;
 using Stateflows.Common.Utilities;
+using Stateflows.Common.Interfaces;
 
 namespace Stateflows.Common.Classes
 {
@@ -16,7 +16,7 @@ namespace Stateflows.Common.Classes
 
         public void Set<T>(string key, T value)
         {
-            Values[key] = StateflowsJsonConverter.SerializeObject(value);
+            Values[key] = StateflowsJsonConverter.SerializePolymorphicObject(value);
         }
 
         public bool IsSet(string key)
@@ -35,9 +35,9 @@ namespace Stateflows.Common.Classes
                     ? ParseStringToTypedValue<T>(data)
                     : StateflowsJsonConverter.DeserializeObject(data);
 
-                if (typeof(T).IsAssignableFrom(deserializedData.GetType()))
+                if (deserializedData is T t)
                 {
-                    value = (T)deserializedData;
+                    value = t;
 
                     return true;
                 }
@@ -55,9 +55,9 @@ namespace Stateflows.Common.Classes
                     ? ParseStringToTypedValue<T>(data)
                     : StateflowsJsonConverter.DeserializeObject(data);
 
-                if (deserializedData is T)
+                if (deserializedData is T t)
                 {
-                    return (T)deserializedData;
+                    return t;
                 }
             }
 

@@ -1,3 +1,4 @@
+using Blazor.Server;
 using Blazor.Server.Data;
 using Examples.Common;
 
@@ -30,10 +31,7 @@ builder.Services.AddStateflows(b => b
         )
         .AddState("state2", b => b
             .AddTransition<OtherEvent>("state3", b => b
-                .AddGuard(c =>
-                {
-                    return c.Event.AnswerToLifeUniverseAndEverything == 42;
-                })
+                .AddGuard(c => c.Event.AnswerToLifeUniverseAndEverything == 42)
             )
         )
         .AddCompositeState("state3", b => b
@@ -53,11 +51,12 @@ builder.Services.AddStateflows(b => b
             .AddDefaultTransition("state5")
         )
         .AddState("state5", b => b
-            .AddInternalTransition<ExampleRequest>(b => b
+            .AddInternalTransition<EveryOneMinute>(b => b
                 .AddEffect(c =>
                 {
                     var counter = c.SourceState.Values.GetOrDefault<int>("counter", 0);
                     c.SourceState.Values.Set("counter", counter + 1);
+                    Debug.WriteLine($"counter: {counter}");
                 })
             )
             .AddDefaultTransition("state2", b => b
@@ -69,6 +68,14 @@ builder.Services.AddStateflows(b => b
             )
         )
     )
+
+    .SetEnvironment(
+        builder.Environment.IsDevelopment()
+            ? $"{StateflowsEnvironments.Development}.{Environment.MachineName}"
+            : StateflowsEnvironments.Production
+    )
+
+    .AddEntityFrameworkCoreStorage<StateflowsContext>()
 );
 
 var app = builder.Build();

@@ -4,12 +4,11 @@ using Microsoft.Extensions.DependencyInjection;
 using Stateflows.Common;
 using Stateflows.StateMachines.Events;
 using Stateflows.StateMachines.Models;
+using Stateflows.StateMachines.Exceptions;
 using Stateflows.StateMachines.Context.Interfaces;
 using Stateflows.StateMachines.Registration.Interfaces;
 using Stateflows.StateMachines.Registration.Interfaces.Base;
 using Stateflows.StateMachines.Registration.Interfaces.Internal;
-using Stateflows.StateMachines.Exceptions;
-using System.Security.Claims;
 
 namespace Stateflows.StateMachines.Registration.Builders
 {

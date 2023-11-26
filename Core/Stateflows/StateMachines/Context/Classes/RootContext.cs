@@ -72,10 +72,7 @@ namespace Stateflows.StateMachines.Context.Classes
 
         public void ClearStateValues(string stateName)
         {
-            if (StateValues.TryGetValue(stateName, out var values) && !values.TimeEventIds.Any())
-            {
-                StateValues.Remove(stateName);
-            }
+            StateValues.Remove(stateName);
         }
 
         public bool TryGetStateValues(string stateName, out StateValues values)
