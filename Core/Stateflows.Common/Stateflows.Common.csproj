@@ -12,7 +12,7 @@
     <PackageTags>Stateflows;state-machine;workflow</PackageTags>
     <AssemblyVersion></AssemblyVersion>
     <FileVersion></FileVersion>
-    <Version>0.3.1-alpha</Version>
+    <Version>0.4.0-alpha</Version>
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <PackageLicenseFile>LICENSE</PackageLicenseFile>
     <PackageOutputPath>..\..\NuGet</PackageOutputPath>

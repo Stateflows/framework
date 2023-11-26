@@ -38,6 +38,18 @@ namespace Stateflows.Common.Classes
             return Task.CompletedTask;
         }
 
+        public Task<IEnumerable<StateflowsContext>> GetContexts(IEnumerable<BehaviorClass> behaviorClasses)
+        {
+            IEnumerable<StateflowsContext> result;
+
+            lock (Contexts)
+            {
+                result = Contexts.Values.Where(c => behaviorClasses.Contains(c.Id.BehaviorClass)).ToArray();
+            }
+
+            return Task.FromResult(result);
+        }
+
         public Task AddTimeTokens(TimeToken[] timeTokens)
         {
             foreach (var timeToken in timeTokens)

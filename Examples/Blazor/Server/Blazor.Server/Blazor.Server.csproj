@@ -8,11 +8,17 @@
 
   <ItemGroup>
     <PackageReference Include="JavaScriptEngineSwitcher.Jurassic" Version="3.21.0" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="7.0.14">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+    <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="7.0.14" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\..\..\..\Core\Stateflows\Stateflows.csproj" />
     <ProjectReference Include="..\..\..\..\Extensions\Stateflows.Extensions.PlantUml\Stateflows.Extensions.PlantUml.csproj" />
+    <ProjectReference Include="..\..\..\..\Storage\Stateflows.Storage.EntityFrameworkCore\Stateflows.Storage.EntityFrameworkCore.csproj" />
     <ProjectReference Include="..\..\..\..\Transport\Stateflows.Transport.AspNetCore.SignalR\Stateflows.Transport.AspNetCore.SignalR.csproj" />
     <ProjectReference Include="..\..\..\Examples.Common\Examples.Common.csproj" />
   </ItemGroup>

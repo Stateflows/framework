@@ -3,10 +3,9 @@ using System.Threading.Tasks;
 using Stateflows.Common;
 using Stateflows.StateMachines.Models;
 using Stateflows.StateMachines.Context.Classes;
-using Stateflows.StateMachines.Registration.Interfaces;
 using Stateflows.StateMachines.Context.Interfaces;
+using Stateflows.StateMachines.Registration.Interfaces;
 using Stateflows.StateMachines.Registration.Extensions;
-
 
 namespace Stateflows.StateMachines.Registration.Builders
 {

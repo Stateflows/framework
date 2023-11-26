@@ -1,16 +1,10 @@
-﻿using System;
-using System.Linq;
+﻿using System.Linq;
 using System.Threading.Tasks;
-using System.Collections.Generic;
 using Stateflows.Common;
 using Stateflows.Common.Events;
-using Stateflows.Common.Classes;
-using Stateflows.Common.Interfaces;
-using Stateflows.StateMachines.Models;
+using Stateflows.StateMachines.Events;
 using Stateflows.StateMachines.Context.Classes;
 using Stateflows.StateMachines.Context.Interfaces;
-using Stateflows.Common.Extensions;
-using Stateflows.StateMachines.Events;
 
 namespace Stateflows.StateMachines.Engine
 {
@@ -35,7 +29,7 @@ namespace Stateflows.StateMachines.Engine
 
                 if (context.TryLocateStateMachine(submachineId, out var stateMachine))
                 {
-                    stateValues.SetSubmachineId(submachineId);
+                    stateValues.SubmachineId = submachineId;
                     var initializationRequest = vertex.SubmachineInitializationBuilder?.Invoke(context) ?? new InitializationRequest();
                     await stateMachine.InitializeAsync(initializationRequest);
                 }
@@ -78,8 +72,8 @@ namespace Stateflows.StateMachines.Engine
                 var stateValues = rootContext.GetStateValues(stateName);
 
                 if (
-                    stateValues.TryGetSubmachineId(out var submachineId) &&
-                    context.TryLocateStateMachine(submachineId, out var stateMachine)
+                    stateValues.SubmachineId.HasValue &&
+                    context.TryLocateStateMachine(stateValues.SubmachineId.Value, out var stateMachine)
                 )
                 {
                     var consumed = false;
@@ -132,12 +126,12 @@ namespace Stateflows.StateMachines.Engine
                 var stateValues = (context as IRootContext).Context.GetStateValues(vertex.Name);
 
                 if (
-                    stateValues.TryGetSubmachineId(out var submachineId) &&
-                    context.TryLocateStateMachine(submachineId, out var stateMachine)
+                    stateValues.SubmachineId.HasValue &&
+                    context.TryLocateStateMachine(stateValues.SubmachineId.Value, out var stateMachine)
                 )
                 {
                     await stateMachine.SendAsync(new Exit());
-                    stateValues.SetSubmachineId(null);
+                    stateValues.SubmachineId = null;
                 }
             }
         }

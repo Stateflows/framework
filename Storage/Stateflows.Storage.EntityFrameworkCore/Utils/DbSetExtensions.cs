@@ -1,5 +1,4 @@
-﻿using System.Linq;
-using Stateflows.Common.Context;
+﻿using Stateflows.Common.Context;
 using Microsoft.EntityFrameworkCore;
 using Stateflows.Storage.EntityFrameworkCore.EntityFrameworkCore.Entities;
 
@@ -14,7 +13,14 @@ namespace Stateflows.Storage.EntityFrameworkCore.Utils
         {
             return await dbSet
                 .Where(c => c.BehaviorId == id.ToString())
-                .FirstOrDefaultAsync() ?? new Context_v1(id.ToString(), "");
+                .FirstOrDefaultAsync() ?? new Context_v1(id.BehaviorClass.ToString(), id.ToString(), "");
+        }
+
+        public static async Task<IEnumerable<Context_v1>> FindByClasses(this DbSet<Context_v1> dbSet, IEnumerable<BehaviorClass> behaviorClasses)
+        {
+            var behaviorClassStrings = behaviorClasses.Select(bc => bc.ToString());
+
+            return await dbSet.Where(c => behaviorClassStrings.Contains(c.BehaviorClass)).ToArrayAsync();
         }
     }
 }

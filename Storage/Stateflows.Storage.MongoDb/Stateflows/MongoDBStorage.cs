@@ -38,6 +38,11 @@ namespace Stateflows.Storage.MongoDB.Stateflows
             await UpdateOrInsertContextData(contextEntity);
         }
 
+        public Task<IEnumerable<StateflowsContext>> GetContexts(IEnumerable<BehaviorClass> behaviorClasses)
+        {
+            throw new NotImplementedException();
+        }
+
         public async Task AddTimeTokens(TimeToken[] timeTokens)
         {
             if (!timeTokens.Any()) return;
@@ -71,7 +76,7 @@ namespace Stateflows.Storage.MongoDB.Stateflows
         public async Task<IEnumerable<TimeToken>> GetTimeTokens(IEnumerable<BehaviorClass> behaviorClasses)
         {
             var collection = _mongoDatabase.GetCollection<TimeTokenEntity>(CollectionNames.TimeToken_v1);
-            var behaviorClassStrings = behaviorClasses.Select(bc => StateflowsJsonConverter.SerializeObject(bc));
+            var behaviorClassStrings = behaviorClasses.Select(bc => bc.ToString());
 
             return (await collection.Find(p => behaviorClassStrings.Contains(p.BehaviorClass)).ToListAsync())
                 .Select(e =>

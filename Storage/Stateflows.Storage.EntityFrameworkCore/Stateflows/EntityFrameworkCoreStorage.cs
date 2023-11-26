@@ -57,6 +57,23 @@ namespace Stateflows.Storage.EntityFrameworkCore.Stateflows
             return result;
         }
 
+        public async Task<IEnumerable<StateflowsContext>> GetContexts(IEnumerable<BehaviorClass> behaviorClasses)
+        {
+            StateflowsContext[] result = Array.Empty<StateflowsContext>();
+            try
+            {
+                var contexts = await DbContext.Contexts_v1.FindByClasses(behaviorClasses);
+
+                result = contexts.Select(c => StateflowsJsonConverter.DeserializeObject<StateflowsContext>(c.Data ?? string.Empty)).ToArray();
+            }
+            catch (Exception e)
+            {
+                Debug.WriteLine($"Exception catched in {nameof(EntityFrameworkCoreStorage)}.{nameof(GetContexts)}(): '{e.GetType().Name}' with message \"{e.Message}\"");
+            }
+
+            return result;
+        }
+
         public async Task AddTimeTokens(TimeToken[] timeTokens)
         {
             var tokens = new Dictionary<TimeToken, TimeTokenEntity>();
@@ -65,7 +82,7 @@ namespace Stateflows.Storage.EntityFrameworkCore.Stateflows
             {
                 var t = new TimeTokenEntity(
                     timeToken.TargetId.BehaviorClass.ToString(),
-                    StateflowsJsonConverter.SerializeObject(timeToken)
+                    StateflowsJsonConverter.SerializePolymorphicObject(timeToken)
                 );
 
                 tokens.Add(timeToken, t);
@@ -85,7 +102,7 @@ namespace Stateflows.Storage.EntityFrameworkCore.Stateflows
 
         public async Task<IEnumerable<TimeToken>> GetTimeTokens(IEnumerable<BehaviorClass> behaviorClasses)
         {
-            var behaviorClassStrings = behaviorClasses.Select(bc => StateflowsJsonConverter.SerializeObject(bc));
+            var behaviorClassStrings = behaviorClasses.Select(bc => bc.ToString());
             return (await DbContext.TimeTokens_v1
                     .Where(t => behaviorClassStrings.Contains(t.BehaviorClass))
                     .ToArrayAsync()

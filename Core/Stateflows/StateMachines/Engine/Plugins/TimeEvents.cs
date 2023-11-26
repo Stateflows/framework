@@ -8,6 +8,7 @@ using Stateflows.Common.Interfaces;
 using Stateflows.StateMachines.Models;
 using Stateflows.StateMachines.Context.Classes;
 using Stateflows.StateMachines.Context.Interfaces;
+using Newtonsoft.Json.Linq;
 
 namespace Stateflows.StateMachines.Engine
 {
@@ -15,11 +16,9 @@ namespace Stateflows.StateMachines.Engine
     {
         private IStateflowsScheduler Scheduler { get; }
 
-        private readonly List<Vertex> Time_EnteredStates = new List<Vertex>();
+        private readonly List<Vertex> EnteredStates = new List<Vertex>();
 
-        private readonly List<Vertex> Time_ExitedStates = new List<Vertex>();
-
-        private readonly List<Vertex> Context_ExitedStates = new List<Vertex>();
+        private readonly List<string> TimeEventIdsToClear = new List<string>();
 
         private Edge ConsumedInTransition { get; set; }
 
@@ -33,8 +32,7 @@ namespace Stateflows.StateMachines.Engine
         public Task AfterStateEntryAsync(IStateActionContext context)
         {
             var vertex = (context as StateActionContext).Vertex;
-
-            Time_EnteredStates.Add(vertex);
+            EnteredStates.Add(vertex);
 
             return Task.CompletedTask;
         }
@@ -42,13 +40,9 @@ namespace Stateflows.StateMachines.Engine
         public Task AfterStateExitAsync(IStateActionContext context)
         {
             var vertex = (context as StateActionContext).Vertex;
-            Time_ExitedStates.Add(vertex);
-            if (Time_EnteredStates.Contains(vertex))
-            {
-                Time_EnteredStates.Remove(vertex);
-            }
-
-            Context_ExitedStates.Add(vertex);
+            var stateValues = Context.GetStateValues(vertex.Name);
+            var timeEventIds = stateValues.TimeEventIds.Values;
+            TimeEventIdsToClear.AddRange(timeEventIds);
 
             return Task.CompletedTask;
         }
@@ -66,42 +60,36 @@ namespace Stateflows.StateMachines.Engine
             => Task.CompletedTask;
 
         public Task AfterTransitionEffectAsync(ITransitionContext<Event> context)
-        {
-            if (context.TargetState != null)
-            {
-                var ctx = (context as IRootContext).Context;
-                foreach (var vertexName in Context_ExitedStates.Select(v => v.Name))
-                {
-                    if (vertexName != context.TargetState.Name)
-                    {
-                        ctx.GetStateValues(vertexName).Values.Clear();
-                    }
-                }
-                Context_ExitedStates.Clear();
-            }
-
-            return Task.CompletedTask;
-        }
+            => Task.CompletedTask;
 
         public Task AfterTransitionGuardAsync(IGuardContext<Event> context, bool guardResult)
             => Task.CompletedTask;
 
         public Task<bool> BeforeProcessEventAsync(IEventContext<Event> context)
-            => Task.FromResult(true);
-
-        public async Task AfterProcessEventAsync(IEventContext<Event> context)
         {
             Context = (context as BaseContext).Context;
 
-            await ClearTimeTokens(Time_ExitedStates);
+            return Task.FromResult(true);
+        }
 
-            await RegisterTimeTokens(Time_EnteredStates);
+        public async Task AfterProcessEventAsync(IEventContext<Event> context)
+        {
+            await ClearTimeTokens(TimeEventIdsToClear);
+
+            var currentStack = (context as BaseContext).Context.Executor
+                .GetVerticesStack();
+
+            var enteredStack = currentStack
+                .Where(vertex => EnteredStates.Contains(vertex))
+                .ToArray();
+
+            await RegisterTimeTokens(enteredStack);
 
             if (
-                Time_ExitedStates.Count == 0 &&
-                Time_EnteredStates.Count == 0 &&
                 context.Event.GetType().IsSubclassOf(typeof(RecurringEvent)) &&
-                ConsumedInTransition != null
+                ConsumedInTransition != null &&
+                currentStack.Contains(ConsumedInTransition.Source) &&
+                !enteredStack.Contains(ConsumedInTransition.Source)
             )
             {
                 var timeEventIds = Context.GetStateValues(ConsumedInTransition.Source.Name).TimeEventIds;
@@ -110,12 +98,18 @@ namespace Stateflows.StateMachines.Engine
                 {
                     TargetId = context.StateMachine.Id.BehaviorId,
                     Event = Activator.CreateInstance(ConsumedInTransition.TriggerType) as TimeEvent,
-                    CreatedAt = DateTime.Now
+                    CreatedAt = DateTime.Now,
+                    EdgeIdentifier = ConsumedInTransition.Identifier
                 };
 
                 await Scheduler.Register(new TimeToken[] { token });
 
-                timeEventIds.Add(token.Id);
+                if (timeEventIds.ContainsKey(ConsumedInTransition.Identifier))
+                {
+                    timeEventIds.Remove(token.EdgeIdentifier);
+                }
+
+                timeEventIds.Add(token.EdgeIdentifier, token.Id);
             }
         }
 
@@ -142,7 +136,10 @@ namespace Stateflows.StateMachines.Engine
 
         public Task BeforeTransitionGuardAsync(IGuardContext<Event> context)
         {
-            ConsumedInTransition = (context as IEdgeContext).Edge;
+            if (ConsumedInTransition == null && (context as IEdgeContext).Edge.Trigger == context.ExecutionTrigger.EventName)
+            {
+                ConsumedInTransition = (context as IEdgeContext).Edge;
+            }
 
             return Task.CompletedTask;
         }
@@ -153,35 +150,34 @@ namespace Stateflows.StateMachines.Engine
         public Task BeforeDehydrateAsync(IStateMachineActionContext context)
             => Task.CompletedTask;
 
-        private async Task RegisterTimeTokens(List<Vertex> enteredVertices)
+        private async Task RegisterTimeTokens(IEnumerable<Vertex> vertices)
         {
-            foreach (var currentVertex in enteredVertices)
+            foreach (var currentVertex in vertices)
             {
                 var timeEventIds = Context.GetStateValues(currentVertex.Name).TimeEventIds;
 
-                var tokens = currentVertex.Edges
+                var tokens = currentVertex.Edges.Values
                     .Where(edge => edge.TriggerType.IsSubclassOf(typeof(TimeEvent)))
+                    .Where(edge => !timeEventIds.ContainsValue(edge.Identifier))
                     .Select(edge => new TimeToken()
                     {
                         TargetId = Context.Id.BehaviorId,
                         Event = Activator.CreateInstance(edge.TriggerType) as TimeEvent,
-                        CreatedAt = DateTime.Now
+                        CreatedAt = DateTime.Now,
+                        EdgeIdentifier = edge.Identifier
                     })
                     .ToArray();
 
                 await Scheduler.Register(tokens);
 
-                timeEventIds.AddRange(tokens.Select(token => token.Id));
+                foreach (var token in tokens)
+                {
+                    timeEventIds.Add(token.EdgeIdentifier, token.Id);
+                }
             }
         }
 
-        private async Task ClearTimeTokens(List<Vertex> exitedVertices)
-        {
-            foreach (var exitedVertexName in exitedVertices.Select(v => v.Name))
-            {
-                await Scheduler.Clear(Context.Context.Id, Context.GetStateValues(exitedVertexName).TimeEventIds);
-                Context.GetStateValues(exitedVertexName).TimeEventIds.Clear();
-            }
-        }
+        private Task ClearTimeTokens(IEnumerable<string> timeEventIds)
+            => Scheduler.Clear(Context.Context.Id, timeEventIds);
     }
 }
