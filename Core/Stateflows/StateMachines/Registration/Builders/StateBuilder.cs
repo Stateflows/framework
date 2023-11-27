@@ -172,10 +172,10 @@ namespace Stateflows.StateMachines.Registration.Builders
                     if (edge.Trigger == Constants.CompletionEvent)
                         throw new TransitionDefinitionException($"Default transition from '{edge.SourceName}' to '{edge.TargetName}' is already registered", Vertex.Graph.Class);
                     else
-                        throw new TransitionDefinitionException($"Default transition from '{edge.SourceName}' to '{edge.TargetName}' triggered by '{edge.Trigger}' is already registered", Vertex.Graph.Class);
+                        throw new TransitionDefinitionException($"Transition from '{edge.SourceName}' to '{edge.TargetName}' triggered by '{edge.Trigger}' is already registered", Vertex.Graph.Class);
 
             Vertex.Edges.Add(edge.Name, edge);
-            Vertex.Graph.AllEdges.Add(edge.Identifier, edge);
+            Vertex.Graph.AllEdges.Add(edge);
 
             transitionBuildAction?.Invoke(new TransitionBuilder<TEvent>(edge));
 

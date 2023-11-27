@@ -40,6 +40,7 @@ builder.Services.AddStateflows(b => b
                 Debug.WriteLine("entered state3");
             })
             .AddTransition<SomeEvent>("state4")
+            .AddTransition<SomeEvent>("state5", b => b.AddGuard(c => false))
             .AddTransition<AfterOneMinute>("state4")
 
             .AddInitialState("state3_1", b => b
