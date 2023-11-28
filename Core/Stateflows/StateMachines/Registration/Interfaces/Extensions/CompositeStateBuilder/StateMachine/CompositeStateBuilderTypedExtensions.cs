@@ -9,8 +9,9 @@ namespace Stateflows.StateMachines
     {
         #region AddFinalState
         [DebuggerHidden]
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Major Code Smell", "S2326:Unused type parameters should be removed", Justification = "<Pending>")]
+#pragma warning disable S2326 // Unused type parameters should be removed
         public static IFinalizedCompositeStateBuilder AddState<TFinalState>(this IInitializedCompositeStateBuilder builder, string stateName = FinalState.Name)
+#pragma warning restore S2326 // Unused type parameters should be removed
             where TFinalState : FinalState
             => builder.AddFinalState(stateName);
         #endregion

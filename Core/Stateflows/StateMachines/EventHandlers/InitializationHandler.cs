@@ -14,18 +14,18 @@ namespace Stateflows.StateMachines.EventHandlers
         public async Task<EventStatus> TryHandleEventAsync<TEvent>(IEventInspectionContext<TEvent> context)
             where TEvent : Event, new()
         {
-            if (context.Event is InitializationRequest)
+            if (context.Event is InitializationRequest request)
             {
                 var executor = context.StateMachine.GetExecutor();
 
-                var initialized = await executor.InitializeAsync(context.Event as InitializationRequest);
+                var initialized = await executor.InitializeAsync(request);
 
                 if (!initialized)
                 {
                     Debug.WriteLine("not initialized");
                 }
 
-                (context.Event as InitializationRequest).Respond(new InitializationResponse() { InitializationSuccessful = initialized });
+                request.Respond(new InitializationResponse() { InitializationSuccessful = initialized });
 
                 return EventStatus.Consumed;
             }

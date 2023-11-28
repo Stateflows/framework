@@ -51,6 +51,8 @@ namespace Stateflows.Common
             where TEvent : Event, new()
         {
             var result = EventStatus.Undelivered;
+            try
+            {
 
             if (Processors.TryGetValue(id.Type, out var processor))
             {
@@ -70,6 +72,12 @@ namespace Stateflows.Common
                 {
                     throw e;
                 }
+                }
+            }
+            catch (Exception e)
+            {
+
+                throw e;
             }
 
             return result;

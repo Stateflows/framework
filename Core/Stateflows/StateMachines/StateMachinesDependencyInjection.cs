@@ -15,7 +15,7 @@ using Stateflows.StateMachines.Registration.Interfaces;
 
 namespace Stateflows.StateMachines
 {
-    public static class StateMachinesDependencyInjection
+    public static class SystemDependencyInjection
     {
         [DebuggerHidden]
         public static IStateflowsBuilder AddStateMachines(this IStateflowsBuilder stateflowsBuilder, Assembly assembly)

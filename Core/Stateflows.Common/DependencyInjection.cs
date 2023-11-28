@@ -9,7 +9,9 @@ using Stateflows.Common.Exceptions;
 using Stateflows.Common.StateMachines.Classes;
 using Stateflows.Common.Registration.Builders;
 using Stateflows.Common.Registration.Interfaces;
+using Stateflows.Common.System.Classes;
 using Stateflows.StateMachines;
+using Stateflows.System;
 
 namespace Stateflows
 {
@@ -29,6 +31,7 @@ namespace Stateflows
                 .AddTransient<ClientInterceptor>()
                 .AddTransient<IBehaviorLocator, BehaviorLocator>()
                 .AddTransient<IStateMachineLocator, StateMachineLocator>()
+                .AddTransient<ISystemBehavior, SystemBehavior>()
                 .AddSingleton<IBehaviorClassesProvider, BehaviorClassesProvider>()
                 ;
 
