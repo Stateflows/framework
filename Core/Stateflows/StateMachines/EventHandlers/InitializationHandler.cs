@@ -2,6 +2,7 @@
 using System.Diagnostics;
 using System.Threading.Tasks;
 using Stateflows.Common;
+using Stateflows.Common.Context.Classes;
 using Stateflows.StateMachines.Extensions;
 using Stateflows.StateMachines.Inspection.Interfaces;
 
@@ -19,11 +20,6 @@ namespace Stateflows.StateMachines.EventHandlers
                 var executor = context.StateMachine.GetExecutor();
 
                 var initialized = await executor.InitializeAsync(context.Event as InitializationRequest);
-
-                if (!initialized)
-                {
-                    Debug.WriteLine("not initialized");
-                }
 
                 (context.Event as InitializationRequest).Respond(new InitializationResponse() { InitializationSuccessful = initialized });
 
