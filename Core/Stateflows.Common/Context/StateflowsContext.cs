@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using Newtonsoft.Json;
 
 namespace Stateflows.Common.Context
@@ -8,6 +9,10 @@ namespace Stateflows.Common.Context
         public BehaviorId Id { get; set; }
 
         public int Version { get; set; } = 0;
+
+        public BehaviorStatus Status { get; set; } = BehaviorStatus.Unknown;
+
+        public DateTime LastExecutedAt { get; set; }
 
         [JsonProperty(ItemTypeNameHandling = TypeNameHandling.Auto)]
         public Dictionary<string, object> Values { get; } = new Dictionary<string, object>();

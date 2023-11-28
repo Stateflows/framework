@@ -16,6 +16,7 @@
     <button class="btn btn-primary" @onclick="Initialize">Locate and initialize</button>
     <button class="btn btn-primary" @onclick="GetStatus">Check status</button>
     <button class="btn btn-primary" @onclick="SystemRequest">Check system</button>
+    <button class="btn btn-primary" @onclick="Reset">Reset</button>
 </div>
 
 @if (message != "")
@@ -125,6 +126,21 @@
                 BehaviorStatus.Finalized => "State Machine located, it's finalized",
                 _ => ""
             };
+
+            await RefreshSMInfo(stateMachine);
+        }
+        else
+        {
+            message = "Unable to locate State Machine";
+        }
+    }
+
+    private async Task Reset()
+    {
+        if (locator.TryLocateStateMachine(GetCurrentId(), out var stateMachine))
+        {
+            var response = (await stateMachine.ResetAsync())?.Response;
+            message = "State Machine resetted";
 
             await RefreshSMInfo(stateMachine);
         }
