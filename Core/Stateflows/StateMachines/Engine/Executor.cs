@@ -10,18 +10,19 @@ using Stateflows.StateMachines.Events;
 using Stateflows.StateMachines.Registration;
 using Stateflows.StateMachines.Context.Classes;
 using Stateflows.StateMachines.Context.Interfaces;
+using Stateflows.StateMachines.Extensions;
 
 namespace Stateflows.StateMachines.Engine
 {
     internal sealed class Executor : IDisposable
     {
-        public Graph Graph { get; }
+        public readonly Graph Graph;
 
-        public StateMachinesRegister Register { get; }
+        public readonly StateMachinesRegister Register;
 
         public IServiceProvider ServiceProvider => Scope.ServiceProvider;
 
-        private IServiceScope Scope { get; }
+        private readonly IServiceScope Scope;
 
         public Executor(StateMachinesRegister register, Graph graph, IServiceProvider serviceProvider)
         {
@@ -139,8 +140,6 @@ namespace Stateflows.StateMachines.Engine
 
                 return true;
             }
-
-            Debug.WriteLine($"{Context.Id.Instance} initialized already");
 
             return false;
         }
@@ -271,7 +270,7 @@ namespace Stateflows.StateMachines.Engine
                         Context.SourceState = edge.SourceName;
                         Context.TargetState = edge.TargetName;
 
-                        if (edge.Trigger == @event.EventName && await DoGuardAsync<TEvent>(edge))
+                        if (@event.Triggers(edge) && await DoGuardAsync<TEvent>(edge))
                         {
                             await DoConsumeAsync<TEvent>(edge);
 
