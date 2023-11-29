@@ -71,6 +71,10 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "SignalR", "SignalR", "{DDFD
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SignalR.Client", "Examples\SignalR\SignalR.Client\SignalR.Client.csproj", "{045971D5-E4D0-48FD-B72E-03ED199086C8}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Tooling", "Tooling", "{770A07EB-7730-438C-B024-00F4852DB038}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Stateflows.Manager", "Tooling\Stateflows.Manager\Stateflows.Manager.csproj", "{76BE8FCD-2692-41E7-85B8-78C5A920540E}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -165,6 +169,10 @@ Global
 		{045971D5-E4D0-48FD-B72E-03ED199086C8}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{045971D5-E4D0-48FD-B72E-03ED199086C8}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{045971D5-E4D0-48FD-B72E-03ED199086C8}.Release|Any CPU.Build.0 = Release|Any CPU
+		{76BE8FCD-2692-41E7-85B8-78C5A920540E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{76BE8FCD-2692-41E7-85B8-78C5A920540E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{76BE8FCD-2692-41E7-85B8-78C5A920540E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{76BE8FCD-2692-41E7-85B8-78C5A920540E}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -197,6 +205,7 @@ Global
 		{9B383E9D-F83E-418E-89A2-D9E1CF00EE79} = {F9B9A7A0-955F-4BDC-A2C0-E4DC335AE1F4}
 		{DDFD2513-47E8-48D1-83D2-1EFEE0F0E100} = {D02BCCCA-7A8D-4AB8-AF36-020DCF92E17C}
 		{045971D5-E4D0-48FD-B72E-03ED199086C8} = {DDFD2513-47E8-48D1-83D2-1EFEE0F0E100}
+		{76BE8FCD-2692-41E7-85B8-78C5A920540E} = {770A07EB-7730-438C-B024-00F4852DB038}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {602A9FD6-5053-42E4-AEAE-2813DF169A3C}
