@@ -2,9 +2,9 @@
 using System.Threading.Tasks;
 using Stateflows.Common.Interfaces;
 
-namespace Stateflows.Common.Classes
+namespace Stateflows.Common.Tenant
 {
-    public class SingleTenantManager : IStateflowsTenantsManager
+    internal class SingleTenantManager : IStateflowsTenantsManager
     {
         private readonly string TenantId = "mainTenant";
 

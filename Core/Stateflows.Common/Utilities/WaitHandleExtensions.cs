@@ -5,10 +5,7 @@ namespace Stateflows.Common.Utilities
 {
     public static class WaitHandleExtensions
     {
-        public static Task WaitOneAsync(this WaitHandle waitHandle)
-            => waitHandle.WaitOneAsync(-1);
-
-        public static Task WaitOneAsync(this WaitHandle waitHandle, int millisecondsTimeout)
+        public static Task WaitOneAsync(this WaitHandle waitHandle, int millisecondsTimeout = -1)
         {
             waitHandle.ThrowIfNull(nameof(waitHandle));
 

@@ -23,8 +23,9 @@ builder.Services.AddStateflows(b => b
         .AddInitialState("state1", b => b
             .AddTransition<SomeEvent>("state2")
             .AddInternalTransition<ExampleRequest>(b => b
-                .AddEffect(c =>
+                .AddEffect(async c =>
                 {
+                    await Task.Delay(3000);
                     c.Event.Respond(new ExampleResponse() { ResponseData = "Example response data" });
                 })
             )

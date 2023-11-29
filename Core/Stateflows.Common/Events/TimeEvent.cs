@@ -8,5 +8,7 @@ namespace Stateflows.Common
         {
             throw new NotImplementedException();
         }
+
+        public string EdgeIdentifier { get; set; }
     }
 }

@@ -16,7 +16,23 @@ namespace StateMachine.IntegrationTests.Tests
         protected override void InitializeStateflows(IStateflowsBuilder builder)
         {
             builder
-                .AddStateMachine("scale", b => b
+                .AddStateMachine("scale1", b => b
+                    .AddInitialState("state1")
+                    .AddFinalState()
+                )
+                .AddStateMachine("scale2", b => b
+                    .AddInitialState("state1")
+                    .AddFinalState()
+                )
+                .AddStateMachine("scale3", b => b
+                    .AddInitialState("state1")
+                    .AddFinalState()
+                )
+                .AddStateMachine("scale4", b => b
+                    .AddInitialState("state1")
+                    .AddFinalState()
+                )
+                .AddStateMachine("scale5", b => b
                     .AddInitialState("state1")
                     .AddFinalState()
                 )
@@ -28,7 +44,7 @@ namespace StateMachine.IntegrationTests.Tests
         {
             var sequence = Enumerable
                 .Range(0, 10000)
-                .Select(i => Locator.TryLocateStateMachine(new StateMachineId("scale", i.ToString()), out var stateMachine)
+                .Select(i => Locator.TryLocateStateMachine(new StateMachineId($"scale{Random.Shared.Next(1, 5)}", i.ToString()), out var stateMachine)
                     ? stateMachine
                     : null
                 )

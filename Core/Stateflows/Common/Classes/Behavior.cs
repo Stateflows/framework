@@ -1,9 +1,7 @@
 ﻿using System;
 using System.Threading.Tasks;
-using Stateflows.Common.Engine;
 using Stateflows.Common.Utilities;
 using Stateflows.Common.Interfaces;
-using Microsoft.Extensions.DependencyInjection;
 
 namespace Stateflows.Common.Classes
 {
@@ -15,12 +13,9 @@ namespace Stateflows.Common.Classes
 
         private IServiceProvider ServiceProvider { get; }
 
-        private CommonInterceptor CommonInterceptor { get; }
-
         public Behavior(StateflowsEngine engine, IServiceProvider serviceProvider, BehaviorId id)
         {
             Engine = engine;
-            CommonInterceptor = serviceProvider.GetRequiredService<CommonInterceptor>();
             ServiceProvider = serviceProvider;
             Id = id;
         }

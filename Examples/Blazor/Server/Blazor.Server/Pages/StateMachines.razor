@@ -148,11 +148,13 @@
 
         if (eventType != null)
         {
-            var @event = System.Activator.CreateInstance(eventType) as Event;
+            var ev = System.Activator.CreateInstance(eventType) as Event;
 
             if (locator.TryLocateStateMachine(GetCurrentId(), out var stateMachine))
             {
-                var result = await stateMachine.SendAsync(@event);
+                var result = await stateMachine.SendAsync(ev);
+
+                _ = await stateMachine.SendAsync(System.Activator.CreateInstance(eventType) as Event);
 
                 if (!(result.Validation?.IsValid ?? true))
                 {
