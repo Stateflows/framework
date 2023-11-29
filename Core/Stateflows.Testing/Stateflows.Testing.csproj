@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <TargetFramework>netstandard2.1</TargetFramework>
-    <Version>0.4.1-alpha</Version>
+    <Version>0.4.2-alpha</Version>
     <Title>Stateflows framework testing utilities</Title>
     <Authors>Stateflows</Authors>
     <GeneratePackageOnBuild>True</GeneratePackageOnBuild>

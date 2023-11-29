@@ -8,7 +8,6 @@ using Stateflows.Common.Interfaces;
 using Stateflows.StateMachines.Models;
 using Stateflows.StateMachines.Context.Classes;
 using Stateflows.StateMachines.Context.Interfaces;
-using Newtonsoft.Json.Linq;
 
 namespace Stateflows.StateMachines.Engine
 {
@@ -65,16 +64,33 @@ namespace Stateflows.StateMachines.Engine
         public Task AfterTransitionGuardAsync(IGuardContext<Event> context, bool guardResult)
             => Task.CompletedTask;
 
-        public Task<bool> BeforeProcessEventAsync(IEventContext<Event> context)
+        public async Task<bool> BeforeProcessEventAsync(IEventContext<Event> context)
         {
             Context = (context as BaseContext).Context;
 
-            return Task.FromResult(true);
+            if (context.Event is ResetRequest)
+            {
+                await Scheduler.Clear(context.StateMachine.Id.BehaviorId, Context.StateValues.Values.SelectMany(v => v.TimeEventIds.Values));
+            }
+
+            return true;
         }
 
         public async Task AfterProcessEventAsync(IEventContext<Event> context)
         {
             await ClearTimeTokens(TimeEventIdsToClear);
+
+            if (ConsumedInTransition != null)
+            {
+                var timeEventIds = Context.GetStateValues(ConsumedInTransition.Source.Name).TimeEventIds;
+
+                if (timeEventIds.ContainsKey(ConsumedInTransition.Identifier))
+                {
+                    await ClearTimeToken(timeEventIds[ConsumedInTransition.Identifier]);
+
+                    timeEventIds.Remove(ConsumedInTransition.Identifier);
+                }
+            }
 
             var currentStack = (context as BaseContext).Context.Executor
                 .GetVerticesStack();
@@ -103,11 +119,6 @@ namespace Stateflows.StateMachines.Engine
                 };
 
                 await Scheduler.Register(new TimeToken[] { token });
-
-                if (timeEventIds.ContainsKey(ConsumedInTransition.Identifier))
-                {
-                    timeEventIds.Remove(token.EdgeIdentifier);
-                }
 
                 timeEventIds.Add(token.EdgeIdentifier, token.Id);
             }
@@ -179,5 +190,8 @@ namespace Stateflows.StateMachines.Engine
 
         private Task ClearTimeTokens(IEnumerable<string> timeEventIds)
             => Scheduler.Clear(Context.Context.Id, timeEventIds);
+
+        private Task ClearTimeToken(string timeEventId)
+            => ClearTimeTokens(new string[] { timeEventId });
     }
 }

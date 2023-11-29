@@ -2,10 +2,11 @@
 using System.Linq;
 using System.Threading.Tasks;
 using System.Collections.Generic;
+using Stateflows.Common.Classes;
 using Stateflows.Common.Context;
 using Stateflows.Common.Interfaces;
 
-namespace Stateflows.Common.Classes
+namespace Stateflows.Common.Storage
 {
     public class InMemoryStorage : IStateflowsStorage
     {
