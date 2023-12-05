@@ -20,9 +20,11 @@ namespace StateMachine.IntegrationTests.Tests
         protected override void InitializeStateflows(IStateflowsBuilder builder)
         {
             builder
-                .AddStateMachine("reset", b => b
-                    .AddInitialState("state1", b => b
-                        .AddOnEntry(c => StateEntered = true)
+                .AddStateMachines(b => b
+                    .AddStateMachine("reset", b => b
+                        .AddInitialState("state1", b => b
+                            .AddOnEntry(c => StateEntered = true)
+                        )
                     )
                 )
                 ;

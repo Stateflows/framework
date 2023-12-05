@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 
 namespace Stateflows.StateMachines.Context.Classes
 {
@@ -8,6 +9,8 @@ namespace Stateflows.StateMachines.Context.Classes
 
         public StateMachineId? SubmachineId { get; set; } = null;
 
-        public Dictionary<string, string> TimeEventIds { get; set; } = new Dictionary<string, string>();
+        public Dictionary<string, Guid> TimeEventIds { get; set; } = new Dictionary<string, Guid>();
+
+        public Dictionary<string, string> TimeTokenIds { get; set; } = new Dictionary<string, string>();
     }
 }

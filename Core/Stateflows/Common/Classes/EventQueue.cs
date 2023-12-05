@@ -21,8 +21,8 @@ namespace Stateflows.Common.Classes
 
         private readonly string QueueEmpty = "Queue empty.";
 
-        public Task WaitAsync()
-            => Event.WaitOneAsync();
+        public Task WaitAsync(int millisecondsTimeout = -1)
+            => Event.WaitOneAsync(millisecondsTimeout);
 
         public bool Wait()
             => Event.WaitOne();

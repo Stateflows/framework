@@ -9,7 +9,6 @@ using Stateflows.Common.Engine;
 using Stateflows.Common.Classes;
 using Stateflows.Common.Interfaces;
 using Stateflows.Common.Extensions;
-using System.Diagnostics;
 
 namespace Stateflows.Common
 {
@@ -59,11 +58,9 @@ namespace Stateflows.Common
                 {
                     Interceptor.BeforeExecute(@event);
 
-                    //if (await Lock.TryLockAsync(id))
                     await using (await Lock.AquireLockAsync(id))
                     {
                         result = await processor.ProcessEventAsync(id, @event, serviceProvider);
-                        //await Lock.UnlockAsync(id);
                     }
                 }
                 finally

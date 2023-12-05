@@ -1,9 +1,11 @@
-﻿using Stateflows.Common;
+﻿using System;
+using Stateflows.Common;
 using Stateflows.StateMachines.Context.Interfaces;
-using System;
 
 namespace Stateflows.StateMachines.Registration.Interfaces
 {
+    public delegate void StateMachinesBuilderAction(IStateMachinesBuilder builder);
+
     public delegate void StateMachineBuilderAction(IStateMachineBuilder builder);
 
     public delegate void StateBuilderAction(IStateBuilder builder);

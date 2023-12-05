@@ -25,46 +25,48 @@ namespace StateMachine.IntegrationTests.Tests
         protected override void InitializeStateflows(IStateflowsBuilder builder)
         {
             builder
-                .AddStateMachine("simple", b => b
-                    .AddInitialState("state1", b => b
-                        .AddOnEntry(c => StateEntered = true)
-                    )
-                )
-
-                .AddStateMachine("value", b => b
-                    .AddOnInitialize<ValueInitializationRequest>(c =>
-                    {
-                        c.StateMachine.Values.Set<string>("foo", c.InitializationRequest.Value);
-                    })
-                    .AddInitialState("state1", b => b
-                        .AddOnEntry(c =>
-                        {
-                            if (c.StateMachine.Values.TryGet<string>("foo", out var v))
-                            {
-                                Value = v;
-                            }
-                        })
-                    )
-                )
-
-                .AddStateMachine("invalid", b => b
-                    .AddOnInitialize<ValueInitializationRequest>(c => { })
-                    .AddInitialState("state1")
-                )
-
-                .AddStateMachine("completion", b => b
-                    .AddInitialState("state1", b => b
-                        .AddDefaultTransition("state2")
-                    )
-                    .AddState("state2")
-                )
-
-                .AddStateMachine("nested-completion", b => b
-                    .AddInitialCompositeState("state1", b => b
-                        .AddInitialState("state1.1", b => b
-                            .AddDefaultTransition("state1.2")
+                .AddStateMachines(b => b
+                    .AddStateMachine("simple", b => b
+                        .AddInitialState("state1", b => b
+                            .AddOnEntry(c => StateEntered = true)
                         )
-                        .AddState("state1.2")
+                    )
+
+                    .AddStateMachine("value", b => b
+                        .AddOnInitialize<ValueInitializationRequest>(c =>
+                        {
+                            c.StateMachine.Values.Set<string>("foo", c.InitializationRequest.Value);
+                        })
+                        .AddInitialState("state1", b => b
+                            .AddOnEntry(c =>
+                            {
+                                if (c.StateMachine.Values.TryGet<string>("foo", out var v))
+                                {
+                                    Value = v;
+                                }
+                            })
+                        )
+                    )
+
+                    .AddStateMachine("invalid", b => b
+                        .AddOnInitialize<ValueInitializationRequest>(c => { })
+                        .AddInitialState("state1")
+                    )
+
+                    .AddStateMachine("completion", b => b
+                        .AddInitialState("state1", b => b
+                            .AddDefaultTransition("state2")
+                        )
+                        .AddState("state2")
+                    )
+
+                    .AddStateMachine("nested-completion", b => b
+                        .AddInitialCompositeState("state1", b => b
+                            .AddInitialState("state1.1", b => b
+                                .AddDefaultTransition("state1.2")
+                            )
+                            .AddState("state1.2")
+                        )
                     )
                 )
                 ;

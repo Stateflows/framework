@@ -10,15 +10,16 @@ builder.Services.AddSignalR(options =>
 });
 
 builder.Services.AddStateflows(b => b
-    .AddStateMachine("stateMachine1", b => b
-        .AddInitialState("state1", b => b
-            .AddTransition<OtherEvent>("state2")
-        )
-        .AddState("state2", b => b
-            .AddTransition<OtherEvent>("state1")
+    .AddStateMachines(b => b
+        .AddStateMachine("stateMachine1", b => b
+            .AddInitialState("state1", b => b
+                .AddTransition<OtherEvent>("state2")
+            )
+            .AddState("state2", b => b
+                .AddTransition<OtherEvent>("state1")
+            )
         )
     )
-
     .AddPlantUml()
     .SetEnvironment(
         builder.Environment.IsDevelopment()

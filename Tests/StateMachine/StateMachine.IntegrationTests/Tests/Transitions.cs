@@ -21,51 +21,53 @@ namespace StateMachine.IntegrationTests.Tests
         protected override void InitializeStateflows(IStateflowsBuilder builder)
         {
             builder
-                .AddStateMachine("simple", b => b
-                    .AddInitialState("state1", b => b
-                        .AddOnExit(c => StateExited = true)
-                        .AddTransition<SomeEvent>("state2", b => b
-                            .AddEffect(c => TransitionHappened = true)
+                .AddStateMachines(b => b
+                    .AddStateMachine("simple", b => b
+                        .AddInitialState("state1", b => b
+                            .AddOnExit(c => StateExited = true)
+                            .AddTransition<SomeEvent>("state2", b => b
+                                .AddEffect(c => TransitionHappened = true)
+                            )
+                        )
+                        .AddState("state2", b => b
+                            .AddOnEntry(c => StateEntered = true)
                         )
                     )
-                    .AddState("state2", b => b
-                        .AddOnEntry(c => StateEntered = true)
-                    )
-                )
 
-                .AddStateMachine("guarded", b => b
-                    .AddInitialState("state1", b => b
-                        .AddTransition<OtherEvent>("state2", b => b
-                            .AddGuard(c => c.Event.AnswerToLifeUniverseAndEverything == 42)
+                    .AddStateMachine("guarded", b => b
+                        .AddInitialState("state1", b => b
+                            .AddTransition<OtherEvent>("state2", b => b
+                                .AddGuard(c => c.Event.AnswerToLifeUniverseAndEverything == 42)
+                            )
+                        )
+                        .AddState("state2")
+                    )
+
+                    .AddStateMachine("default", b => b
+                        .AddInitialState("state1", b => b
+                            .AddTransition<SomeEvent>("state2")
+                        )
+                        .AddState("state2", b => b
+                            .AddDefaultTransition("state3")
+                        )
+                        .AddState("state3")
+                    )
+
+                    .AddStateMachine("internal", b => b
+                        .AddInitialState("state1", b => b
+                            .AddOnExit(c => StateExited = true)
+                            .AddInternalTransition<SomeEvent>(b => b
+                                .AddEffect(c => TransitionHappened = true)
+                            )
                         )
                     )
-                    .AddState("state2")
-                )
 
-                .AddStateMachine("default", b => b
-                    .AddInitialState("state1", b => b
-                        .AddTransition<SomeEvent>("state2")
-                    )
-                    .AddState("state2", b => b
-                        .AddDefaultTransition("state3")
-                    )
-                    .AddState("state3")
-                )
-
-                .AddStateMachine("internal", b => b
-                    .AddInitialState("state1", b => b
-                        .AddOnExit(c => StateExited = true)
-                        .AddInternalTransition<SomeEvent>(b => b
-                            .AddEffect(c => TransitionHappened = true)
-                        )
-                    )
-                )
-
-                .AddStateMachine("self", b => b
-                    .AddInitialState("state1", b => b
-                        .AddOnExit(c => StateExited = true)
-                        .AddTransition<SomeEvent>("state1", b => b
-                            .AddEffect(c => TransitionHappened = true)
+                    .AddStateMachine("self", b => b
+                        .AddInitialState("state1", b => b
+                            .AddOnExit(c => StateExited = true)
+                            .AddTransition<SomeEvent>("state1", b => b
+                                .AddEffect(c => TransitionHappened = true)
+                            )
                         )
                     )
                 )

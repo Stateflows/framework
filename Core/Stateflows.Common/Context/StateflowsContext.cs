@@ -14,6 +14,11 @@ namespace Stateflows.Common.Context
 
         public DateTime LastExecutedAt { get; set; }
 
+        public DateTime? TriggerTime { get; set; }
+
+        [JsonProperty(ItemTypeNameHandling = TypeNameHandling.Auto)]
+        public Dictionary<Guid, TimeEvent> PendingTimeEvents { get; set; } = new Dictionary<Guid, TimeEvent>();
+
         [JsonProperty(ItemTypeNameHandling = TypeNameHandling.Auto)]
         public Dictionary<string, object> Values { get; } = new Dictionary<string, object>();
 

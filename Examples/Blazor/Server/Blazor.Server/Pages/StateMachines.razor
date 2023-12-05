@@ -87,7 +87,7 @@
     {
         expectedEvents = (await stateMachine.GetCurrentStateAsync()).Response.ExpectedEvents;
 
-        plantUmlUrl = (await stateMachine.GetPlantUmlUrlAsync()).Response.PlantUmlUrl;
+        plantUmlUrl = (await stateMachine.GetPlantUmlAsync()).Response.GetUrl();
     }
 
     private async Task Initialize()
@@ -153,8 +153,6 @@
             if (locator.TryLocateStateMachine(GetCurrentId(), out var stateMachine))
             {
                 var result = await stateMachine.SendAsync(ev);
-
-                _ = await stateMachine.SendAsync(System.Activator.CreateInstance(eventType) as Event);
 
                 if (!(result.Validation?.IsValid ?? true))
                 {

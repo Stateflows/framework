@@ -9,8 +9,5 @@ namespace Stateflows
     {
         public static Task<RequestResult<PlantUmlResponse>> GetPlantUmlAsync(this IBehavior behavior)
             => behavior.RequestAsync(new PlantUmlRequest());
-
-        public static Task<RequestResult<PlantUmlResponse>> GetPlantUmlUrlAsync(this IBehavior behavior)
-            => behavior.RequestAsync(new PlantUmlRequest());
     }
 }

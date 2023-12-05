@@ -17,56 +17,58 @@ namespace StateMachine.IntegrationTests.Tests
         protected override void InitializeStateflows(IStateflowsBuilder builder)
         {
             builder
-                .AddStateMachine("defer", b => b
-                    .AddInitialState("state1", b => b
-                        .AddDeferredEvent<OtherEvent>()
-                        .AddTransition<SomeEvent>("state2")
-                    )
-                    .AddState("state2", b => b
-                        .AddTransition<OtherEvent>("state3")
-                    )
-                    .AddState("state3")
-                )
-
-                .AddStateMachine("nested", b => b
-                    .AddInitialCompositeState("state1", b => b
-                        .AddInitialState("state1.1", b => b
+                .AddStateMachines(b => b
+                    .AddStateMachine("defer", b => b
+                        .AddInitialState("state1", b => b
                             .AddDeferredEvent<OtherEvent>()
-                            .AddTransition<SomeEvent>("state1.2")
+                            .AddTransition<SomeEvent>("state2")
                         )
-                        .AddState("state1.2")
-                        .AddTransition<OtherEvent>("state2")
+                        .AddState("state2", b => b
+                            .AddTransition<OtherEvent>("state3")
+                        )
+                        .AddState("state3")
                     )
-                    .AddState("state2")
-                )
 
-                .AddStateMachine("sequence", b => b
-                    .AddInitialState("state1", b => b
-                        .AddDeferredEvent<OtherEvent>()
-                        .AddTransition<SomeEvent>("state2")
+                    .AddStateMachine("nested", b => b
+                        .AddInitialCompositeState("state1", b => b
+                            .AddInitialState("state1.1", b => b
+                                .AddDeferredEvent<OtherEvent>()
+                                .AddTransition<SomeEvent>("state1.2")
+                            )
+                            .AddState("state1.2")
+                            .AddTransition<OtherEvent>("state2")
+                        )
+                        .AddState("state2")
                     )
-                    .AddState("state2", b => b
-                        .AddInternalTransition<OtherEvent>(b => b
-                            .AddEffect(c =>
-                            {
-                                if (c.StateMachine.Values.TryGet<int>("c", out var counter))
+
+                    .AddStateMachine("sequence", b => b
+                        .AddInitialState("state1", b => b
+                            .AddDeferredEvent<OtherEvent>()
+                            .AddTransition<SomeEvent>("state2")
+                        )
+                        .AddState("state2", b => b
+                            .AddInternalTransition<OtherEvent>(b => b
+                                .AddEffect(c =>
                                 {
-                                    if (counter == c.Event.AnswerToLifeUniverseAndEverything - 1)
+                                    if (c.StateMachine.Values.TryGet<int>("c", out var counter))
                                     {
-                                        c.StateMachine.Values.Set<bool>("result", true);
+                                        if (counter == c.Event.AnswerToLifeUniverseAndEverything - 1)
+                                        {
+                                            c.StateMachine.Values.Set<bool>("result", true);
+                                        }
                                     }
-                                }
-                                else
-                                {
-                                    c.StateMachine.Values.Set<int>("c", c.Event.AnswerToLifeUniverseAndEverything);
-                                }
-                            })
+                                    else
+                                    {
+                                        c.StateMachine.Values.Set<int>("c", c.Event.AnswerToLifeUniverseAndEverything);
+                                    }
+                                })
+                            )
+                            .AddDefaultTransition("state3", b => b
+                                .AddGuard(c => c.StateMachine.Values.TryGet<bool>("result", out var result) && result)
+                            )
                         )
-                        .AddDefaultTransition("state3", b => b
-                            .AddGuard(c => c.StateMachine.Values.TryGet<bool>("result", out var result) && result)
-                        )
+                        .AddState("state3")
                     )
-                    .AddState("state3")
                 )
                 ;
         }

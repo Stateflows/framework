@@ -51,6 +51,12 @@ namespace Stateflows.Common.Storage
             return Task.FromResult(result);
         }
 
+        public async Task<IEnumerable<StateflowsContext>> GetContextsToTimeTrigger(IEnumerable<BehaviorClass> behaviorClasses)
+            => (await GetContexts(behaviorClasses)).Where(context =>
+                context.TriggerTime != null &&
+                context.TriggerTime < DateTime.Now
+            );
+
         public Task AddTimeTokens(TimeToken[] timeTokens)
         {
             foreach (var timeToken in timeTokens)

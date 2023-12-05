@@ -17,23 +17,25 @@ namespace StateMachine.IntegrationTests.Tests
         protected override void InitializeStateflows(IStateflowsBuilder builder)
         {
             builder
-                .AddStateMachine("simple", b => b
-                    .AddExecutionSequenceObserver()
-                    .AddInitialState("state1", b => b
-                        .AddDefaultTransition<FinalState>()
-                    )
-                    .AddFinalState()
-                )
-
-                .AddStateMachine("cascade", b => b
-                    .AddExecutionSequenceObserver()
-                    .AddInitialCompositeState("state1", b => b
-                        .AddInitialState("state1.1", b => b
+                .AddStateMachines(b => b
+                    .AddStateMachine("simple", b => b
+                        .AddExecutionSequenceObserver()
+                        .AddInitialState("state1", b => b
                             .AddDefaultTransition<FinalState>()
                         )
                         .AddFinalState()
                     )
-                    .AddFinalState()
+
+                    .AddStateMachine("cascade", b => b
+                        .AddExecutionSequenceObserver()
+                        .AddInitialCompositeState("state1", b => b
+                            .AddInitialState("state1.1", b => b
+                                .AddDefaultTransition<FinalState>()
+                            )
+                            .AddFinalState()
+                        )
+                        .AddFinalState()
+                    )
                 )
                 ;
         }

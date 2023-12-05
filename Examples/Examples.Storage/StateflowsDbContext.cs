@@ -1,18 +1,17 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using Stateflows.Storage.EntityFrameworkCore.EntityFrameworkCore;
 using Stateflows.Storage.EntityFrameworkCore.EntityFrameworkCore.Entities;
 
-namespace Blazor.Server
+namespace Examples.Storage
 {
-    public class StateflowsContext : DbContext, IStateflowsDbContext_v1
+    public class StateflowsDbContext : DbContext, IStateflowsDbContext_v1
     {
         public DbSet<Context_v1> Contexts_v1 { get; set; }
 
-        public DbSet<TimeToken_v1> TimeTokens_v1 { get; set; }
-
         protected readonly IConfiguration Configuration;
 
-        public StateflowsContext(IConfiguration configuration)
+        public StateflowsDbContext(IConfiguration configuration)
         {
             Configuration = configuration;
         }
@@ -20,7 +19,9 @@ namespace Blazor.Server
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
             // connect to sql server with connection string from app settings
-            optionsBuilder.UseSqlServer(Configuration.GetConnectionString("StateflowsDatabase"));
+            optionsBuilder.UseSqlServer(
+                Configuration.GetConnectionString("StateflowsDatabase")
+            );
         }
     }
 }

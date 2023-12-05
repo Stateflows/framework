@@ -9,6 +9,7 @@ using Stateflows;
 using Stateflows.StateMachines;
 using Stateflows.Common.Registration.Interfaces;
 using Stateflows.Testing.StateMachines.Sequence;
+using Microsoft.Extensions.Logging;
 
 namespace StateMachine.IntegrationTests.Utils
 {
@@ -28,6 +29,7 @@ namespace StateMachine.IntegrationTests.Utils
         {
             ServiceCollection.AddStateflows(b => InitializeStateflows(b));
             ServiceCollection.AddSingleton<IExecutionSequenceBuilder, ExecutionSequence>();
+            ServiceCollection.AddLogging(builder => builder.AddConsole());
 
             var hostedServices = ServiceProvider.GetRequiredService<IEnumerable<IHostedService>>();
             Task.WaitAll(hostedServices.Select(s => s.StartAsync(new CancellationToken())).ToArray());
