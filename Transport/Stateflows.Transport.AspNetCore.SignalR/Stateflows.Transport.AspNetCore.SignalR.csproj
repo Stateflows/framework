@@ -4,7 +4,7 @@
     <TargetFramework>net6.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
-    <Version>0.3.0-alpha</Version>
+    <Version>0.5.1-alpha</Version>
     <Title>SignalR transport for Stateflows framework</Title>
     <Authors>Stateflows</Authors>
     <PackageProjectUrl>https://www.stateflows.net</PackageProjectUrl>

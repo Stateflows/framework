@@ -16,6 +16,7 @@
     <button class="btn btn-primary" @onclick="Initialize">Locate and initialize</button>
     <button class="btn btn-primary" @onclick="GetStatus">Check status</button>
     <button class="btn btn-primary" @onclick="RunActivity">Run Activity</button>
+    <button class="btn btn-primary" @onclick="Reset">Reset</button>
 </div>
 
 @if (message != "")
@@ -88,7 +89,7 @@
     {
         expectedEvents = (await stateMachine.GetCurrentStateAsync()).Response.ExpectedEvents;
 
-        plantUmlUrl = (await stateMachine.GetPlantUmlUrlAsync()).Response.PlantUmlUrl;
+        plantUmlUrl = (await stateMachine.GetPlantUmlAsync()).Response.GetUrl();
     }
 
     private async Task Initialize()
@@ -140,17 +141,32 @@
         }
     }
 
+    private async Task Reset()
+    {
+        if (locator.TryLocateStateMachine(GetCurrentId(), out var stateMachine))
+        {
+            var response = (await stateMachine.ResetAsync())?.Response;
+            message = "State Machine resetted";
+
+            await RefreshSMInfo(stateMachine);
+        }
+        else
+        {
+            message = "Unable to locate State Machine";
+        }
+    }
+
     private async Task SendEvent(string eventName)
     {
         var eventType = Type.GetType($"{eventName}, Examples.Common");
 
         if (eventType != null)
         {
-            var @event = System.Activator.CreateInstance(eventType) as Event;
+            var ev = System.Activator.CreateInstance(eventType) as Event;
 
             if (locator.TryLocateStateMachine(GetCurrentId(), out var stateMachine))
             {
-                var result = await stateMachine.SendAsync(@event);
+                var result = await stateMachine.SendAsync(ev);
 
                 if (!(result.Validation?.IsValid ?? true))
                 {

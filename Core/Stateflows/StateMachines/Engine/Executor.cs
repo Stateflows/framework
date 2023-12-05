@@ -3,10 +3,12 @@ using System.Linq;
 using System.Diagnostics;
 using System.Threading.Tasks;
 using System.Collections.Generic;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.DependencyInjection;
 using Stateflows.Common;
 using Stateflows.StateMachines.Models;
 using Stateflows.StateMachines.Events;
+using Stateflows.StateMachines.Extensions;
 using Stateflows.StateMachines.Registration;
 using Stateflows.StateMachines.Context.Classes;
 using Stateflows.StateMachines.Context.Interfaces;
@@ -15,19 +17,22 @@ namespace Stateflows.StateMachines.Engine
 {
     internal sealed class Executor : IDisposable
     {
-        public Graph Graph { get; }
+        public readonly Graph Graph;
 
-        public StateMachinesRegister Register { get; }
+        public readonly StateMachinesRegister Register;
 
         public IServiceProvider ServiceProvider => Scope.ServiceProvider;
 
-        private IServiceScope Scope { get; }
+        private readonly IServiceScope Scope;
+
+        private readonly ILogger<Executor> Logger;
 
         public Executor(StateMachinesRegister register, Graph graph, IServiceProvider serviceProvider)
         {
             Register = register;
             Scope = serviceProvider.CreateScope();
             Graph = graph;
+            Logger = ServiceProvider.GetService<ILogger<Executor>>();
         }
 
         public RootContext Context { get; private set; }
@@ -35,7 +40,7 @@ namespace Stateflows.StateMachines.Engine
         private Inspector inspector;
 
         public Inspector Inspector
-            => inspector ??= new Inspector(this);
+            => inspector ??= new Inspector(this, Logger);
 
         public IEnumerable<string> GetDeferredEvents()
         {
@@ -140,8 +145,6 @@ namespace Stateflows.StateMachines.Engine
                 return true;
             }
 
-            Debug.WriteLine($"{Context.Id.Instance} initialized already");
-
             return false;
         }
 
@@ -196,7 +199,7 @@ namespace Stateflows.StateMachines.Engine
             var currentStack = GetVerticesStack();
             currentStack.Reverse();
 
-            return currentStack.SelectMany(vertex => vertex.Edges).Select(edge => edge.TriggerType).Distinct();
+            return currentStack.SelectMany(vertex => vertex.Edges.Values).Select(edge => edge.TriggerType).Distinct();
         }
 
         private List<Vertex> GetNestedVertices(Vertex vertex)
@@ -268,12 +271,12 @@ namespace Stateflows.StateMachines.Engine
 
                 foreach (var vertex in currentStack)
                 {
-                    foreach (var edge in vertex.Edges)
+                    foreach (var edge in vertex.Edges.Values)
                     {
                         Context.SourceState = edge.SourceName;
                         Context.TargetState = edge.TargetName;
 
-                        if (edge.Trigger == @event.EventName && await DoGuardAsync<TEvent>(edge))
+                        if (@event.Triggers(edge) && await DoGuardAsync<TEvent>(edge))
                         {
                             await DoConsumeAsync<TEvent>(edge);
 
@@ -295,6 +298,7 @@ namespace Stateflows.StateMachines.Engine
                 : EventStatus.NotConsumed;
         }
 
+        [DebuggerStepThrough]
         private async Task<bool> DoGuardAsync<TEvent>(Edge edge)
             where TEvent : Event, new()
         {

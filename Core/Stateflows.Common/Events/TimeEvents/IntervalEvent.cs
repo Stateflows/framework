@@ -11,5 +11,8 @@ namespace Stateflows.Common
 
         public override sealed bool ShouldTrigger(DateTime startedAt)
             => DateTime.Now >= GetIntervalStart(startedAt).Add(Interval);
+
+        protected override DateTime GetTriggerTime(DateTime startedAt)
+            => GetIntervalStart(startedAt).Add(Interval);
     }
 }

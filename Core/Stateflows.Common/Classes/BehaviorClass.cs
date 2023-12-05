@@ -7,9 +7,22 @@ namespace Stateflows
     {
         public BehaviorClass(string type, string name)
         {
+            Environment = BehaviorClassDefaults.CurrentEnvironment;
             Type = type;
             Name = name;
         }
+
+        public BehaviorClass ApplyCurrentEnvironment()
+        {
+            if (Environment == null)
+            {
+                Environment = BehaviorClassDefaults.CurrentEnvironment;
+            }
+
+            return this;
+        }
+
+        public string Environment { get; set; }
 
         public string Type { get; set; }
 
@@ -24,6 +37,7 @@ namespace Stateflows
         public readonly override bool Equals(object obj)
             =>
                 obj is BehaviorClass @class &&
+                Environment == @class.Environment &&
                 Type == @class.Type &&
                 Name == @class.Name;
 

@@ -1,5 +1,5 @@
-﻿using Stateflows.Common;
-using Stateflows.StateMachines.Context.Classes;
+﻿using System.Diagnostics;
+using Stateflows.Common;
 using Stateflows.StateMachines.Extensions;
 using Stateflows.StateMachines.Registration.Interfaces;
 using Stateflows.StateMachines.Registration.Interfaces.Internal;
@@ -14,6 +14,7 @@ namespace Stateflows.StateMachines
             where TTargetState : State
             => AddTransition<TEvent, TTransition>(builder, StateInfo<TTargetState>.Name);
 
+        [DebuggerHidden]
         public static IInitializedCompositeStateBuilder AddTransition<TEvent, TTransition>(this IInitializedCompositeStateBuilder builder, string targetVertexName)
             where TEvent : Event, new()
             where TTransition : Transition<TEvent>

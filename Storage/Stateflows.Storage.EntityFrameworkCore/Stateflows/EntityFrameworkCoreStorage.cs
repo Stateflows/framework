@@ -1,121 +1,133 @@
-﻿using System.Diagnostics;
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.Extensions.Logging;
+using Stateflows.Common;
 using Stateflows.Common.Context;
 using Stateflows.Common.Utilities;
 using Stateflows.Common.Interfaces;
 using Stateflows.Storage.EntityFrameworkCore.Utils;
 using Stateflows.Storage.EntityFrameworkCore.EntityFrameworkCore;
-using TimeToken = Stateflows.Common.Classes.TimeToken;
-using TimeTokenEntity = Stateflows.Storage.EntityFrameworkCore.EntityFrameworkCore.Entities.TimeToken_v1;
 
 namespace Stateflows.Storage.EntityFrameworkCore.Stateflows
 {
     internal class EntityFrameworkCoreStorage : IStateflowsStorage
     {
-        private IStateflowsDbContext_v1 DbContext { get; set; }
+        private readonly IStateflowsDbContext_v1 DbContext;
+        private readonly EventWaitHandle EventWaitHandle;
+        private readonly ILogger<EntityFrameworkCoreStorage> Logger;
 
-        public EntityFrameworkCoreStorage(IStateflowsDbContext_v1 dbContext)
+        public EntityFrameworkCoreStorage(IStateflowsDbContext_v1 dbContext, ILogger<EntityFrameworkCoreStorage> logger)
         {
             DbContext = dbContext;
+            Logger = logger;
+            EventWaitHandle = new EventWaitHandle(true, EventResetMode.AutoReset);
         }
 
         public async Task Dehydrate(StateflowsContext context)
         {
-            var contextEntity = await DbContext.Contexts_v1.FindOrCreate(context);
-            contextEntity.Data = StateflowsJsonConverter.SerializeObject(context);
-            if (contextEntity.Id == 0)
-            {
-                DbContext.Contexts_v1.Add(contextEntity);
-            }
-            else
-            {
-                DbContext.Contexts_v1.Update(contextEntity);
-            }
+            await EventWaitHandle.WaitOneAsync();
 
-            await DbContext.SaveChangesAsync();
+            try
+            {
+                var contextEntity = await DbContext.Contexts_v1.FindOrCreate(context, true);
+                contextEntity.Data = StateflowsJsonConverter.SerializeObject(context);
+                contextEntity.TriggerTime = context.TriggerTime;
+                if (contextEntity.Id == 0)
+                {
+                    DbContext.Contexts_v1.Add(contextEntity);
+                }
+                else
+                {
+                    DbContext.Contexts_v1.Update(contextEntity);
+                }
+
+                await DbContext.SaveChangesAsync();
+            }
+            finally
+            {
+                EventWaitHandle.Set();
+            }
         }
 
         public async Task<StateflowsContext> Hydrate(BehaviorId id)
         {
             StateflowsContext? result = null;
+
+            await EventWaitHandle.WaitOneAsync();
+
             try
             {
-                var c = await DbContext.Contexts_v1.FindOrCreate(id);
+                try
+                {
+                    var c = await DbContext.Contexts_v1.FindOrCreate(id);
 
-                result = StateflowsJsonConverter.DeserializeObject<StateflowsContext>(c.Data ?? string.Empty);
-            }
-            catch (Exception e)
-            {
-                Debug.WriteLine($"Exception catched in {nameof(EntityFrameworkCoreStorage)}.{nameof(Hydrate)}(): '{e.GetType().Name}' with message \"{e.Message}\"");
-            }
+                    result = StateflowsJsonConverter.DeserializeObject<StateflowsContext>(c.Data ?? string.Empty);
+                }
+                catch (Exception e)
+                {
+                    Logger.LogError(LogTemplates.ExceptionLogTemplate, typeof(EntityFrameworkCoreStorage).FullName, nameof(Hydrate), e.GetType().Name, e.Message);
+                }
 
-            if (result == null)
+                result ??= new StateflowsContext() { Id = id };
+            }
+            finally
             {
-                result = new StateflowsContext() { Id = id };
+                EventWaitHandle.Set();
             }
 
             return result;
         }
 
-        public async Task AddTimeTokens(TimeToken[] timeTokens)
+        public async Task<IEnumerable<StateflowsContext>> GetContexts(IEnumerable<BehaviorClass> behaviorClasses)
         {
-            var tokens = new Dictionary<TimeToken, TimeTokenEntity>();
+            StateflowsContext[] result = Array.Empty<StateflowsContext>();
 
-            foreach (var timeToken in timeTokens)
+            await EventWaitHandle.WaitOneAsync();
+
+            try
             {
-                var t = new TimeTokenEntity(
-                    timeToken.TargetId.BehaviorClass.ToString(),
-                    StateflowsJsonConverter.SerializeObject(timeToken)
-                );
-
-                tokens.Add(timeToken, t);
-
-                DbContext.TimeTokens_v1.Add(t);
-
-                timeToken.Id = t.Id.ToString();
-            }
-
-            await DbContext.SaveChangesAsync();
-
-            foreach (var timeToken in tokens.Keys)
-            {
-                timeToken.Id = tokens[timeToken].Id.ToString();
-            }
-        }
-
-        public async Task<IEnumerable<TimeToken>> GetTimeTokens(IEnumerable<BehaviorClass> behaviorClasses)
-        {
-            var behaviorClassStrings = behaviorClasses.Select(bc => StateflowsJsonConverter.SerializeObject(bc));
-            return (await DbContext.TimeTokens_v1
-                    .Where(t => behaviorClassStrings.Contains(t.BehaviorClass))
-                    .ToArrayAsync()
-                )
-                .Select(e =>
+                try
                 {
-                    var result = StateflowsJsonConverter.DeserializeObject<TimeToken>(e.Data);
-                    if (result != null)
-                    {
-                        result.Id = e.Id.ToString();
-                    }
-                    else
-                    {
-                        result = new TimeToken();
-                    }
+                    var contexts = await DbContext.Contexts_v1.FindByClasses(behaviorClasses);
 
-                    return result;
-                })
-                .Where(e => e.Id != null)
-                .ToArray();
+                    result = contexts.Select(c => StateflowsJsonConverter.DeserializeObject<StateflowsContext>(c.Data ?? string.Empty)).ToArray();
+                }
+                catch (Exception e)
+                {
+                    Logger.LogError(LogTemplates.ExceptionLogTemplate, typeof(EntityFrameworkCoreStorage).FullName, nameof(GetContexts), e.GetType().Name, e.Message);
+                }
+            }
+            finally
+            {
+                EventWaitHandle.Set();
+            }
+
+            return result;
         }
 
-        public async Task ClearTimeTokens(BehaviorId behaviorId, IEnumerable<string> ids)
+        public async Task<IEnumerable<StateflowsContext>> GetContextsToTimeTrigger(IEnumerable<BehaviorClass> behaviorClasses)
         {
-            var tokens = await DbContext.TimeTokens_v1
-                .Where(e => ids.Contains(e.Id.ToString()))
-                .ToArrayAsync();
+            StateflowsContext[] result = Array.Empty<StateflowsContext>();
 
-            DbContext.TimeTokens_v1.RemoveRange(tokens);
-            await DbContext.SaveChangesAsync();
+            await EventWaitHandle.WaitOneAsync();
+
+            try
+            {
+                try
+                {
+                    var contexts = await DbContext.Contexts_v1.FindByTriggerTime(behaviorClasses);
+
+                    result = contexts.Select(c => StateflowsJsonConverter.DeserializeObject<StateflowsContext>(c.Data ?? string.Empty)).ToArray();
+                }
+                catch (Exception e)
+                {
+                    Logger.LogError(LogTemplates.ExceptionLogTemplate, typeof(EntityFrameworkCoreStorage).FullName, nameof(GetContextsToTimeTrigger), e.GetType().Name, e.Message);
+                }
+            }
+            finally
+            {
+                EventWaitHandle.Set();
+            }
+
+            return result;
         }
     }
 }

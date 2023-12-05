@@ -5,9 +5,9 @@ using System.Threading.Tasks;
 using System.Collections.Generic;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.DependencyInjection;
+using Stateflows.Common.Engine;
 using Stateflows.Common.Classes;
 using Stateflows.Common.Interfaces;
-using Stateflows.Common.Engine;
 using Stateflows.Common.Extensions;
 
 namespace Stateflows.Common
@@ -58,17 +58,14 @@ namespace Stateflows.Common
                 {
                     Interceptor.BeforeExecute(@event);
 
-                    await Lock.LockAsync(id);
-
-                    result = await processor.ProcessEventAsync(id, @event, serviceProvider);
-
-                    await Lock.UnlockAsync(id);
-
-                    Interceptor.AfterExecute(@event);
+                    await using (await Lock.AquireLockAsync(id))
+                    {
+                        result = await processor.ProcessEventAsync(id, @event, serviceProvider);
+                    }
                 }
-                catch (Exception e)
+                finally
                 {
-                    throw e;
+                    Interceptor.AfterExecute(@event);
                 }
             }
 

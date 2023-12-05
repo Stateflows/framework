@@ -80,41 +80,34 @@ namespace Stateflows.Transport.AspNetCore.WebApi
         [HttpPost("{type}/{name}/{instance}/request")]
         public async Task<IActionResult> PostRequest(string type, string name, string instance)
         {
+            Event? @event;
             try
             {
-                Event? @event;
-                try
-                {
-                    @event = await Request.DeserializeEvent<Event>();
-                }
-                catch (Exception e)
-                {
-                    return BadRequest(new StateflowsBadRequestResponse("Unable to parse request data: " + e.Message));
-                }
-
-                if (@event == null)
-                {
-                    return BadRequest(new StateflowsBadRequestResponse("Unable to parse request data"));
-                }
-
-                if (!@event.IsRequest())
-                {
-                    return BadRequest(new StateflowsBadRequestResponse("Request data is invalid"));
-                }
-
-                if (_locator.TryLocateBehavior(new BehaviorId(type, name, instance), out var behavior))
-                {
-                    var result = await behavior.SendAsync(@event);
-                    return Ok(new StateflowsRequestResponse(result, @event.GetResponse()));
-                }
-                else
-                {
-                    return BadRequest(new StateflowsBadRequestResponse("Behavior not found"));
-                }
+                @event = await Request.DeserializeEvent<Event>();
             }
             catch (Exception e)
             {
-                throw e;
+                return BadRequest(new StateflowsBadRequestResponse("Unable to parse request data: " + e.Message));
+            }
+
+            if (@event == null)
+            {
+                return BadRequest(new StateflowsBadRequestResponse("Unable to parse request data"));
+            }
+
+            if (!@event.IsRequest())
+            {
+                return BadRequest(new StateflowsBadRequestResponse("Request data is invalid"));
+            }
+
+            if (_locator.TryLocateBehavior(new BehaviorId(type, name, instance), out var behavior))
+            {
+                var result = await behavior.SendAsync(@event);
+                return Ok(new StateflowsRequestResponse(result, @event.GetResponse()));
+            }
+            else
+            {
+                return BadRequest(new StateflowsBadRequestResponse("Behavior not found"));
             }
         }
 

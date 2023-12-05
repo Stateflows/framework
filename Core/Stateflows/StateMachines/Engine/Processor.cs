@@ -57,8 +57,6 @@ namespace Stateflows.StateMachines.Engine
                 return result;
             }
 
-            stateflowsContext.Version = graph.Version;
-
             using (var executor = new Executor(Register, graph, ServiceProvider))
             {
                 var context = new RootContext(stateflowsContext);
@@ -85,6 +83,24 @@ namespace Stateflows.StateMachines.Engine
                         if (executor.Context.ForceConsumed)
                         {
                             result = EventStatus.Consumed;
+                        }
+                    }
+
+                    stateflowsContext.Status = executor.BehaviorStatus;
+
+                    stateflowsContext.LastExecutedAt = DateTime.Now;
+
+                    var statuses = new BehaviorStatus[] { BehaviorStatus.Initialized, BehaviorStatus.Finalized };
+
+                    if (statuses.Contains(stateflowsContext.Status))
+                    {
+                        stateflowsContext.Version = graph.Version;
+                    }
+                    else
+                    {
+                        if (stateflowsContext.Status == BehaviorStatus.NotInitialized)
+                        {
+                            stateflowsContext.Version = 0;
                         }
                     }
 

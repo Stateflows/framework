@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics;
 using Stateflows.Common;
 using Stateflows.StateMachines.Context.Interfaces;
 using Stateflows.StateMachines.Registration.Builders;
@@ -9,6 +10,7 @@ namespace Stateflows.StateMachines
 {
     public static class TransitionBuilderSyncExtensions
     {
+        [DebuggerHidden]
         public static ITransitionBuilder<TEvent> AddGuard<TEvent>(this ITransitionBuilder<TEvent> builder, Func<IGuardContext<TEvent>, bool> guard)
             where TEvent : Event, new()
             => builder.AddGuard(guard
@@ -16,6 +18,7 @@ namespace Stateflows.StateMachines
                 .ToAsync()
             );
 
+        [DebuggerHidden]
         public static ITransitionBuilder<TEvent> AddEffect<TEvent>(this ITransitionBuilder<TEvent> builder, Action<ITransitionContext<TEvent>> effect)
             where TEvent : Event, new()
             => builder.AddEffect(effect

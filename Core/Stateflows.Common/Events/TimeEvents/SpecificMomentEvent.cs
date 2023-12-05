@@ -13,5 +13,8 @@ namespace Stateflows.Common
             var afterMoment = moment.AddMinutes(1).AddSeconds(30);
             return (now > moment) && (now < afterMoment);
         }
+
+        protected override DateTime GetTriggerTime(DateTime startedAt)
+            => Moment;
     }
 }

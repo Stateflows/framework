@@ -2,10 +2,11 @@
 using System.Linq;
 using System.Threading.Tasks;
 using System.Collections.Generic;
+using Stateflows.Common.Classes;
 using Stateflows.Common.Context;
 using Stateflows.Common.Interfaces;
 
-namespace Stateflows.Common.Classes
+namespace Stateflows.Common.Storage
 {
     public class InMemoryStorage : IStateflowsStorage
     {
@@ -37,6 +38,24 @@ namespace Stateflows.Common.Classes
 
             return Task.CompletedTask;
         }
+
+        public Task<IEnumerable<StateflowsContext>> GetContexts(IEnumerable<BehaviorClass> behaviorClasses)
+        {
+            IEnumerable<StateflowsContext> result;
+
+            lock (Contexts)
+            {
+                result = Contexts.Values.Where(c => behaviorClasses.Contains(c.Id.BehaviorClass)).ToArray();
+            }
+
+            return Task.FromResult(result);
+        }
+
+        public async Task<IEnumerable<StateflowsContext>> GetContextsToTimeTrigger(IEnumerable<BehaviorClass> behaviorClasses)
+            => (await GetContexts(behaviorClasses)).Where(context =>
+                context.TriggerTime != null &&
+                context.TriggerTime < DateTime.Now
+            );
 
         public Task AddTimeTokens(TimeToken[] timeTokens)
         {

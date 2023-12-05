@@ -1,6 +1,5 @@
 using Examples.Common;
 using Stateflows;
-using Stateflows.Common;
 using Stateflows.StateMachines;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -11,16 +10,22 @@ builder.Services.AddSignalR(options =>
 });
 
 builder.Services.AddStateflows(b => b
-    .AddStateMachine("stateMachine1", b => b
-        .AddInitialState("state1", b => b
-            .AddTransition<OtherEvent>("state2")
-        )
-        .AddState("state2", b => b
-            .AddTransition<OtherEvent>("state1")
+    .AddStateMachines(b => b
+        .AddStateMachine("stateMachine1", b => b
+            .AddInitialState("state1", b => b
+                .AddTransition<OtherEvent>("state2")
+            )
+            .AddState("state2", b => b
+                .AddTransition<OtherEvent>("state1")
+            )
         )
     )
-
     .AddPlantUml()
+    .SetEnvironment(
+        builder.Environment.IsDevelopment()
+            ? $"{StateflowsEnvironments.Development}.{Environment.MachineName}"
+            : StateflowsEnvironments.Production
+    )
 );
 
 // Add services to the container.

@@ -1,6 +1,4 @@
-﻿using Stateflows.Common.StateMachines.Classes;
-
-namespace Stateflows.StateMachines
+﻿namespace Stateflows.StateMachines
 {
     public interface IStateMachineLocator
     {

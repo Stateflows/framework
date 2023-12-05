@@ -75,7 +75,7 @@ namespace Stateflows.StateMachines.Models
                     }
                 }
 
-                var vertexTriggers = vertex.Edges
+                var vertexTriggers = vertex.Edges.Values
                     .Where(edge => !string.IsNullOrEmpty(edge.Trigger))
                     .Select(edge => edge.Trigger);
 
