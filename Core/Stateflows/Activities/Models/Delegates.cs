@@ -9,6 +9,8 @@ namespace Stateflows.Activities.Models
 
     internal delegate Task ActivityActionAsync(IActionContext context);
 
+    internal delegate Task<bool> ActivityPredicateAsync(BaseContext context);
+
     internal delegate Task ActivityEventActionAsync(BaseContext context);
 
     internal delegate Task<bool> GuardAsync<TToken>(BaseContext context)

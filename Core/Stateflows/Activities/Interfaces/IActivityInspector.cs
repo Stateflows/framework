@@ -7,13 +7,13 @@ namespace Stateflows.Activities
     public interface IActivityInspector
     {
         Task BeforeActivityInitializeAsync(IActivityInitializationInspectionContext context);
-        Task AfterActivityInitializeAsync(IActivityInitializationInspectionContext context);
+        Task AfterActivityInitializationAsync(IActivityInitializationInspectionContext context);
 
-        Task BeforeNodeInitializeAsync(IActivityNodeInspectionContext context);
-        Task AfterNodeInitializeAsync(IActivityNodeInspectionContext context);
+        Task BeforeNodeInitializationAsync(IActivityNodeInspectionContext context);
+        Task AfterNodeInitializationAsync(IActivityNodeInspectionContext context);
 
-        Task BeforeNodeFinalizeAsync(IActivityNodeInspectionContext context);
-        Task AfterNodeFinalizeAsync(IActivityNodeInspectionContext context);
+        Task BeforeNodeFinalizationAsync(IActivityNodeInspectionContext context);
+        Task AfterNodeFinalizationAsync(IActivityNodeInspectionContext context);
 
         Task BeforeNodeExecuteAsync(IActivityNodeInspectionContext context);
         Task AfterNodeExecuteAsync(IActivityNodeInspectionContext context);
@@ -25,7 +25,9 @@ namespace Stateflows.Activities
         Task AfterFlowTransformationAsync(ITransformationInspectionContext context);
 
         Task OnActivityInitializationExceptionAsync(IActivityInitializationInspectionContext context, Exception exception);
+        Task OnActivityFinalizationExceptionAsync(IActivityFinalizationInspectionContext context, Exception exception);
         Task OnNodeInitializationExceptionAsync(IActivityNodeInspectionContext context, Exception exception);
+        Task OnNodeFinalizationExceptionAsync(IActivityNodeInspectionContext context, Exception exception);
         Task OnNodeExecutionExceptionAsync(IActivityNodeInspectionContext context, Exception exception);
         Task OnFlowGuardExceptionAsync(IGuardInspectionContext context, Exception exception);
         Task OnFlowTransformationExceptionAsync(ITransformationInspectionContext context, Exception exception);

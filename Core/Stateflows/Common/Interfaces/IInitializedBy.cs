@@ -5,6 +5,6 @@ namespace Stateflows.Common
     public interface IInitializedBy<in TInitializationRequest>
         where TInitializationRequest : InitializationRequest, new()
     {
-        Task InitializeAsync(TInitializationRequest initializationRequest);
+        Task<bool> InitializeAsync(TInitializationRequest initializationRequest);
     }
 }

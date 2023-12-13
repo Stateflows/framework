@@ -8,8 +8,8 @@ namespace Stateflows.Activities
     {
         public IActivityActionContext Context { get; internal set; }
 
-        public virtual Task OnInitializeAsync()
-            => Task.CompletedTask;
+        public virtual Task<bool> OnInitializeAsync()
+            => Task.FromResult(true);
 
         public virtual Task OnFinalizeAsync()
             => Task.CompletedTask;
@@ -19,7 +19,7 @@ namespace Stateflows.Activities
 
     public abstract class Activity<TInitializationRequest> : Activity
     {
-        public override sealed Task OnInitializeAsync()
+        public override sealed Task<bool> OnInitializeAsync()
             => base.OnInitializeAsync();
 
         public abstract Task OnInitializeAsync(TInitializationRequest initializationRequest);

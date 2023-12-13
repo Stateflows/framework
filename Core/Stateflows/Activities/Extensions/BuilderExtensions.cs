@@ -44,7 +44,7 @@ namespace Stateflows.Activities.Extensions
                     (builder as ActivityBuilder).AddInitializer(requestName, c =>
                     {
                         var activity = c.Context.Executor.GetActivity(activityType, c.Context);
-                        return methodInfo.Invoke(activity, new object[] { c.Context.Event }) as Task;
+                        return methodInfo.Invoke(activity, new object[] { c.Context.Event }) as Task<bool>;
                     });
                 }
             }

@@ -8,13 +8,13 @@ namespace Stateflows.StateMachines
 {
     public static class StateMachineBuilderEventsSyncExtensions
     {
-        public static IInitializedStateMachineBuilder AddOnInitialize(this IInitializedStateMachineBuilder builder, Action<IStateMachineInitializationContext> stateMachineAction)
+        public static IInitializedStateMachineBuilder AddOnInitialize(this IInitializedStateMachineBuilder builder, Func<IStateMachineInitializationContext, bool> stateMachineAction)
             => builder.AddOnInitialize(stateMachineAction
                 .AddStateMachineInvocationContext((builder as StateMachineBuilder).Result)
                 .ToAsync()
             );
 
-        public static IInitializedStateMachineBuilder AddOnInitialize<TInitializationRequest>(this IInitializedStateMachineBuilder builder, Action<IStateMachineInitializationContext<TInitializationRequest>> stateMachineAction)
+        public static IInitializedStateMachineBuilder AddOnInitialize<TInitializationRequest>(this IInitializedStateMachineBuilder builder, Func<IStateMachineInitializationContext<TInitializationRequest>, bool> stateMachineAction)
             where TInitializationRequest : InitializationRequest, new()
             => builder.AddOnInitialize(stateMachineAction
                 .AddStateMachineInvocationContext((builder as StateMachineBuilder).Result)

@@ -1,6 +1,14 @@
 ﻿using Stateflows.Activities.Extensions;
 using Stateflows.Activities.Context.Classes;
 using Stateflows.Activities.Registration.Interfaces;
+using System.Linq;
+using System.Reflection;
+using Stateflows.Activities.Attributes;
+using Stateflows.Common.Extensions;
+using System.Collections.Generic;
+using System.Runtime.InteropServices;
+using System;
+using System.ComponentModel;
 
 namespace Stateflows.Activities
 {
@@ -18,7 +26,39 @@ namespace Stateflows.Activities
 
             return builder.AddAction(
                 actionNodeName,
-                c => (c as BaseContext).NodeScope.GetAction<TAction>(c).ExecuteAsync(),
+                c =>
+                {
+                    var action = (c as BaseContext).NodeScope.GetAction<TAction>(c);
+                    _ = action.GetType()
+                        .GetFields()
+                        .Select(property =>
+                        {
+                            var attribute = property.GetCustomAttribute<InputAttribute>();
+                            var isIEnumerable = property.FieldType.IsSubclassOfRawGeneric(typeof(List<>));
+                            var enumeratedType = property.FieldType.GenericTypeArguments.First();
+                            
+                            //var isList = property.GetType().IsSubclassOfRawGeneric(typeof(List<>));
+
+                            if (attribute != null && isIEnumerable && enumeratedType.IsSubclassOf(typeof(Token)))
+                            {
+                                var tokenName = (enumeratedType.GetUninitializedInstance() as Token).Name;
+                                var tokens = c.Input.Where(token => token.Name == tokenName && token.GetType().IsAssignableFrom(enumeratedType)).ToList();
+                                var castMethod = typeof(Enumerable).GetMethod("Cast");
+                                var genericCastMethod = castMethod.MakeGenericMethod(enumeratedType);
+                                var convertedTokens = genericCastMethod.Invoke(null, new object[] { tokens });
+                                var listingMethod = typeof(Enumerable).GetMethod("ToList");
+                                var genericListingMethod = listingMethod.MakeGenericMethod(enumeratedType);
+                                var list = genericListingMethod.Invoke(null, new object[] { convertedTokens });
+
+                                property.SetValue(action, list);
+                            }
+
+                            return property;
+                        })
+                        .ToArray();
+
+                    return action.ExecuteAsync();
+                },
                 b =>
                 {
                     //(b as NodeBuilder).Node.ScanForDeclaredTypes(typeof(TAction));

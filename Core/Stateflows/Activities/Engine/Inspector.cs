@@ -13,18 +13,23 @@ using Stateflows.Activities.Context.Classes;
 using Stateflows.Activities.Inspection.Classes;
 using Stateflows.Activities.Inspection.Interfaces;
 using Stateflows.Activities.Registration.Interfaces;
+using Microsoft.Extensions.Logging;
+using Stateflows.StateMachines.Context.Classes;
 
 namespace Stateflows.Activities.Engine
 {
     internal class Inspector
     {
-        private Executor Executor { get; }
+        private readonly Executor Executor;
 
-        private CommonInterceptor GlobalInterceptor { get; }
+        private readonly CommonInterceptor GlobalInterceptor;
 
-        public Inspector(Executor executor)
+        private readonly ILogger Logger;
+
+        public Inspector(Executor executor, ILogger logger)
         {
             Executor = executor;
+            Logger = logger;
 
             GlobalInterceptor = Executor.NodeScope.ServiceProvider.GetRequiredService<CommonInterceptor>();
             //GlobalInterceptor = new Interceptor(Executor.NodeScope.ServiceProvider);
@@ -70,6 +75,10 @@ namespace Stateflows.Activities.Engine
         public IEnumerable<IActivityInspector> inspectors;
         public IEnumerable<IActivityInspector> Inspectors
             => inspectors ??= Executor.NodeScope.ServiceProvider.GetService<IEnumerable<IActivityInspector>>();
+
+        public IEnumerable<IActivityPlugin> plugins;
+        public IEnumerable<IActivityPlugin> Plugins
+            => plugins ??= Executor.NodeScope.ServiceProvider.GetService<IEnumerable<IActivityPlugin>>();
 
         //public async Task BeforeStateMachineInitializeAsync(StateMachineActionContext context)
         //{
@@ -207,79 +216,93 @@ namespace Stateflows.Activities.Engine
         //    }
         //}
 
-        public Task AfterHydrateAsync(ActivityActionContext context)
-            => Interceptors.RunSafe(i => i.AfterHydrateAsync(context), nameof(AfterHydrateAsync));
+        public async Task AfterHydrateAsync(ActivityActionContext context)
+        {
+            await Plugins.RunSafe(p => p.AfterHydrateAsync(context), nameof(AfterHydrateAsync), Logger);
+            await Interceptors.RunSafe(i => i.AfterHydrateAsync(context), nameof(AfterHydrateAsync), Logger);
+        }
 
-        public Task BeforeDehydrateAsync(ActivityActionContext context)
-            => Interceptors.RunSafe(i => i.BeforeDehydrateAsync(context), nameof(BeforeDehydrateAsync));
+        public async Task BeforeDehydrateAsync(ActivityActionContext context)
+        {
+            await Interceptors.RunSafe(i => i.BeforeDehydrateAsync(context), nameof(BeforeDehydrateAsync), Logger);
+            await Plugins.RunSafe(p => p.BeforeDehydrateAsync(context), nameof(BeforeDehydrateAsync), Logger);
+        }
 
         public async Task<bool> BeforeProcessEventAsync<TEvent>(Context.Classes.EventContext<TEvent> context)
             where TEvent : Event, new()
-            =>
-                await Interceptors.RunSafe(i => i.BeforeProcessEventAsync(context), nameof(BeforeProcessEventAsync)) &&
-                await GlobalInterceptor.BeforeProcessEventAsync(
-                    new Common.Context.Classes.EventContext<TEvent>(context.Context.Context, Executor.NodeScope.ServiceProvider, context.Event)
-                );
+        {
+            var plugin = await Plugins.RunSafe(i => i.BeforeProcessEventAsync(context), nameof(BeforeProcessEventAsync), Logger);
+            var global = await GlobalInterceptor.BeforeProcessEventAsync(
+                new Common.Context.Classes.EventContext<TEvent>(context.Context.Context, Executor.NodeScope.ServiceProvider, context.Event)
+            );
+            var local = await Interceptors.RunSafe(i => i.BeforeProcessEventAsync(context), nameof(BeforeProcessEventAsync), Logger);
 
-        public Task AfterProcessEventAsync<TEvent>(Context.Classes.EventContext<TEvent> context)
+            return global && local && plugin;
+        }
+
+        public async Task AfterProcessEventAsync<TEvent>(Context.Classes.EventContext<TEvent> context)
             where TEvent : Event, new()
-            => Task.WhenAll(
-                Interceptors.RunSafe(i => i.AfterProcessEventAsync(context), nameof(AfterProcessEventAsync)),
-                GlobalInterceptor.AfterProcessEventAsync(new Common.Context.Classes.EventContext<TEvent>(context.Context.Context, Executor.NodeScope.ServiceProvider, context.Event))
-            );
+        {
+            await Interceptors.RunSafe(i => i.AfterProcessEventAsync(context), nameof(AfterProcessEventAsync), Logger);
+            await GlobalInterceptor.AfterProcessEventAsync(new Common.Context.Classes.EventContext<TEvent>(context.Context.Context, Executor.NodeScope.ServiceProvider, context.Event));
+            await Plugins.RunSafe(p => p.AfterProcessEventAsync(context), nameof(AfterProcessEventAsync), Logger);
+        }
 
-        public Task BeforeActivityInitializeAsync(ActivityInitializationContext context)
-            => Task.WhenAll(
-                Inspectors.RunSafe(i => i.BeforeActivityInitializeAsync(context), nameof(BeforeActivityInitializeAsync)),
-                Observers.RunSafe(o => o.BeforeActivityInitializeAsync(context), nameof(BeforeActivityInitializeAsync))
-            );
+        public async Task BeforeActivityInitializeAsync(ActivityInitializationContext context)
+        {
+            await Plugins.RunSafe(p => p.BeforeActivityInitializeAsync(context), nameof(BeforeActivityInitializeAsync), Logger);
+            await Inspectors.RunSafe(i => i.BeforeActivityInitializeAsync(context), nameof(BeforeActivityInitializeAsync), Logger);
+            await Observers.RunSafe(o => o.BeforeActivityInitializeAsync(context), nameof(BeforeActivityInitializeAsync), Logger);
+        }
 
-        //    if (InitializeInspection != null)
-        //    {
-        //        InitializeInspection.Active = true;
-        //    }
+        public async Task AfterActivityInitializationAsync(ActivityInitializationContext context)
+        {
+            await Observers.RunSafe(o => o.AfterActivityInitializationAsync(context), nameof(AfterActivityInitializationAsync), Logger);
+            await Inspectors.RunSafe(i => i.AfterActivityInitializationAsync(context), nameof(AfterActivityInitializationAsync), Logger);
+            await Plugins.RunSafe(p => p.AfterActivityInitializationAsync(context), nameof(AfterActivityInitializationAsync), Logger);
+        }
 
-        public Task AfterActivityInitializeAsync(ActivityInitializationContext context)
-            => Task.WhenAll(
-                Observers.RunSafe(o => o.AfterActivityInitializeAsync(context), nameof(AfterActivityInitializeAsync)),
-                Inspectors.RunSafe(i => i.AfterActivityInitializeAsync(context), nameof(AfterActivityInitializeAsync))
-            );
+        public async Task BeforeNodeInitializationAsync(ActionContext context)
+        {
+            await Plugins.RunSafe(p => p.BeforeNodeInitializationAsync(context), nameof(BeforeNodeInitializationAsync), Logger);
+            await Inspectors.RunSafe(i => i.BeforeNodeInitializationAsync(context), nameof(BeforeNodeInitializationAsync), Logger);
+            await Observers.RunSafe(o => o.BeforeNodeInitializationAsync(context), nameof(BeforeNodeInitializationAsync), Logger);
+        }
 
-        public Task BeforeNodeInitializeAsync(ActionContext context)
-            => Task.WhenAll(
-                Inspectors.RunSafe(i => i.BeforeNodeInitializeAsync(context), nameof(BeforeNodeInitializeAsync)),
-                Observers.RunSafe(o => o.BeforeNodeInitializeAsync(context), nameof(BeforeNodeInitializeAsync))
-            );
+        public async Task AfterNodeInitializationAsync(ActionContext context)
+        {
+            await Observers.RunSafe(o => o.AfterNodeInitializationAsync(context), nameof(AfterNodeInitializationAsync), Logger);
+            await Inspectors.RunSafe(i => i.AfterNodeInitializationAsync(context), nameof(AfterNodeInitializationAsync), Logger);
+            await Plugins.RunSafe(p => p.AfterNodeInitializationAsync(context), nameof(AfterNodeInitializationAsync), Logger);
+        }
 
-        public Task AfterNodeInitializeAsync(ActionContext context)
-            => Task.WhenAll(
-                Observers.RunSafe(i => i.AfterNodeInitializeAsync(context), nameof(AfterNodeInitializeAsync)),
-                Inspectors.RunSafe(o => o.AfterNodeInitializeAsync(context), nameof(AfterNodeInitializeAsync))
-            );
+        public async Task BeforeNodeFinalizationAsync(ActionContext context)
+        {
+            await Plugins.RunSafe(p => p.BeforeNodeFinalizationAsync(context), nameof(BeforeNodeFinalizationAsync), Logger);
+            await Inspectors.RunSafe(i => i.BeforeNodeFinalizationAsync(context), nameof(BeforeNodeFinalizationAsync), Logger);
+            await Observers.RunSafe(o => o.BeforeNodeFinalizationAsync(context), nameof(BeforeNodeFinalizationAsync), Logger);
+        }
 
-        public Task BeforeNodeFinalizeAsync(ActionContext context)
-            => Task.WhenAll(
-                Inspectors.RunSafe(i => i.BeforeNodeFinalizeAsync(context), nameof(BeforeNodeFinalizeAsync)),
-                Observers.RunSafe(o => o.BeforeNodeFinalizeAsync(context), nameof(BeforeNodeFinalizeAsync))
-            );
+        public async Task AfterNodeFinalizationAsync(ActionContext context)
+        {
+            await Observers.RunSafe(o => o.AfterNodeFinalizationAsync(context), nameof(AfterNodeFinalizationAsync), Logger);
+            await Inspectors.RunSafe(i => i.AfterNodeFinalizationAsync(context), nameof(AfterNodeFinalizationAsync), Logger);
+            await Plugins.RunSafe(p => p.AfterNodeFinalizationAsync(context), nameof(AfterNodeFinalizationAsync), Logger);
+        }
 
-        public Task AfterNodeFinalizeAsync(ActionContext context)
-            => Task.WhenAll(
-                Observers.RunSafe(i => i.AfterNodeFinalizeAsync(context), nameof(AfterNodeFinalizeAsync)),
-                Inspectors.RunSafe(o => o.AfterNodeFinalizeAsync(context), nameof(AfterNodeFinalizeAsync))
-            );
+        public async Task BeforeNodeExecuteAsync(ActionContext context)
+        {
+            await Plugins.RunSafe(p => p.BeforeNodeExecuteAsync(context), nameof(BeforeNodeExecuteAsync), Logger);
+            await Inspectors.RunSafe(i => i.BeforeNodeExecuteAsync(context), nameof(BeforeNodeExecuteAsync), Logger);
+            await Observers.RunSafe(o => o.BeforeNodeExecuteAsync(context), nameof(BeforeNodeExecuteAsync), Logger);
+        }
 
-        public Task BeforeNodeExecuteAsync(ActionContext context)
-            => Task.WhenAll(
-                Inspectors.RunSafe(i => i.BeforeNodeExecuteAsync(context), nameof(BeforeNodeExecuteAsync)),
-                Observers.RunSafe(o => o.BeforeNodeExecuteAsync(context), nameof(BeforeNodeExecuteAsync))
-            );
-
-        public Task AfterNodeExecuteAsync(ActionContext context)
-            => Task.WhenAll(
-                Observers.RunSafe(i => i.AfterNodeExecuteAsync(context), nameof(AfterNodeExecuteAsync)),
-                Inspectors.RunSafe(o => o.AfterNodeExecuteAsync(context), nameof(AfterNodeExecuteAsync))
-            );
+        public async Task AfterNodeExecuteAsync(ActionContext context)
+        {
+            await Observers.RunSafe(o => o.AfterNodeExecuteAsync(context), nameof(AfterNodeExecuteAsync), Logger);
+            await Inspectors.RunSafe(i => i.AfterNodeExecuteAsync(context), nameof(AfterNodeExecuteAsync), Logger);
+            await Plugins.RunSafe(p => p.AfterNodeExecuteAsync(context), nameof(AfterNodeExecuteAsync), Logger);
+        }
 
 
         //public Task AfterProcessEventAsync<TEvent>(EventContext<TEvent> context)
@@ -292,6 +315,51 @@ namespace Stateflows.Activities.Engine
 
 
 
+
+
+        public async Task OnActivityInitializationExceptionAsync<TInitializationRequest>(ActivityInitializationContext<TInitializationRequest> context, Exception exception)
+            where TInitializationRequest : InitializationRequest, new()
+        {
+            var exceptionContext = new ActivityInitializationContext(context.Context, context.NodeScope, context.InitializationRequest);
+            await ExceptionHandlers.RunSafe(h => h.OnActivityInitializationExceptionAsync(exceptionContext, exception), nameof(OnActivityInitializationExceptionAsync), Logger);
+            await Inspectors.RunSafe(i => i.OnActivityInitializationExceptionAsync(exceptionContext, exception), nameof(OnActivityInitializationExceptionAsync), Logger);
+        }
+
+        public async Task OnActivityFinalizationExceptionAsync(IActivityFinalizationInspectionContext context, Exception exception)
+        {
+            await ExceptionHandlers.RunSafe(h => h.OnActivityFinalizationExceptionAsync(context, exception), nameof(OnActivityFinalizationExceptionAsync), Logger);
+            await Inspectors.RunSafe(i => i.OnActivityFinalizationExceptionAsync(context, exception), nameof(OnActivityFinalizationExceptionAsync), Logger);
+        }
+
+        public async Task OnNodeInitializationExceptionAsync(IActivityNodeInspectionContext context, Exception exception)
+        {
+            await ExceptionHandlers.RunSafe(h => h.OnNodeInitializationExceptionAsync(context, exception), nameof(OnNodeInitializationExceptionAsync), Logger);
+            await Inspectors.RunSafe(i => i.OnNodeInitializationExceptionAsync(context, exception), nameof(OnNodeInitializationExceptionAsync), Logger);
+        }
+
+        public async Task OnNodeFinalizationExceptionAsync(IActivityNodeInspectionContext context, Exception exception)
+        {
+            await ExceptionHandlers.RunSafe(h => h.OnNodeFinalizationExceptionAsync(context, exception), nameof(OnNodeFinalizationExceptionAsync), Logger);
+            await Inspectors.RunSafe(i => i.OnNodeFinalizationExceptionAsync(context, exception), nameof(OnNodeFinalizationExceptionAsync), Logger);
+        }
+
+        public async Task OnNodeExecutionExceptionAsync(IActivityNodeInspectionContext context, Exception exception)
+        {
+            await ExceptionHandlers.RunSafe(h => h.OnNodeExecutionExceptionAsync(context, exception), nameof(OnNodeExecutionExceptionAsync), Logger);
+            await Inspectors.RunSafe(i => i.OnNodeExecutionExceptionAsync(context, exception), nameof(OnNodeExecutionExceptionAsync), Logger);
+        }
+
+        public async Task OnFlowGuardExceptionAsync(IGuardInspectionContext context, Exception exception)
+        {
+            await ExceptionHandlers.RunSafe(h => h.OnFlowGuardExceptionAsync(context, exception), nameof(OnFlowGuardExceptionAsync), Logger);
+            await Inspectors.RunSafe(i => i.OnFlowGuardExceptionAsync(context, exception), nameof(OnFlowGuardExceptionAsync), Logger);
+        }
+
+        public async Task OnFlowTransformationExceptionAsync(ITransformationInspectionContext context, Exception exception)
+        {
+            await ExceptionHandlers.RunSafe(h => h.OnFlowTransformationExceptionAsync(context, exception), nameof(OnFlowGuardExceptionAsync), Logger);
+            await Inspectors.RunSafe(i => i.OnFlowTransformationExceptionAsync(context, exception), nameof(OnFlowGuardExceptionAsync), Logger);
+        }
 
 
 

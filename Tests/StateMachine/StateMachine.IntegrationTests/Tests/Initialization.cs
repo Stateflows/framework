@@ -36,6 +36,8 @@ namespace StateMachine.IntegrationTests.Tests
                         .AddOnInitialize<ValueInitializationRequest>(c =>
                         {
                             c.StateMachine.Values.Set<string>("foo", c.InitializationRequest.Value);
+
+                            return true;
                         })
                         .AddInitialState("state1", b => b
                             .AddOnEntry(c =>
@@ -49,7 +51,12 @@ namespace StateMachine.IntegrationTests.Tests
                     )
 
                     .AddStateMachine("invalid", b => b
-                        .AddOnInitialize<ValueInitializationRequest>(c => { })
+                        .AddOnInitialize<ValueInitializationRequest>(c => true)
+                        .AddInitialState("state1")
+                    )
+
+                    .AddStateMachine("failed", b => b
+                        .AddOnInitialize(c => throw new Exception("Initialization failed"))
                         .AddInitialState("state1")
                     )
 
@@ -152,6 +159,19 @@ namespace StateMachine.IntegrationTests.Tests
             var initialized = false;
 
             if (Locator.TryLocateStateMachine(new StateMachineId("invalid", "x"), out var sm))
+            {
+                initialized = (await sm.InitializeAsync()).Response.InitializationSuccessful;
+            }
+
+            Assert.IsFalse(initialized);
+        }
+
+        [TestMethod]
+        public async Task FailedInitialization()
+        {
+            var initialized = false;
+
+            if (Locator.TryLocateStateMachine(new StateMachineId("failed", "x"), out var sm))
             {
                 initialized = (await sm.InitializeAsync()).Response.InitializationSuccessful;
             }

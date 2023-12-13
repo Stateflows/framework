@@ -5,6 +5,8 @@ using Stateflows.Activities.Context.Interfaces;
 
 namespace Stateflows.Activities.Registration.Interfaces
 {
+    public delegate void ActivitiesBuilderAction(IActivitiesBuilder builder);
+
     public delegate Task<bool> GuardDelegateAsync<in TToken>(IGuardContext<TToken> context)
         where TToken : Token, new();
 
@@ -19,12 +21,15 @@ namespace Stateflows.Activities.Registration.Interfaces
     public delegate Task ExceptionHandlerDelegateAsync<in TException>(IExceptionHandlerContext<TException> context)
         where TException : Exception;
 
-    public delegate Task<TEvent> SignalActionDelegateAsync<TEvent>(IActionContext context)
+    public delegate Task<TEvent> SendEventActionDelegateAsync<TEvent>(IActionContext context)
+        where TEvent : Event, new();
+
+    public delegate Task<TEvent> PublishEventActionDelegateAsync<TEvent>(IActionContext context)
         where TEvent : Event, new();
 
     public delegate Task<BehaviorId> BehaviorIdSelectorAsync(IActionContext context);
 
-    public delegate Task EventActionDelegateAsync<in TEvent>(IEventContext<TEvent> context)
+    public delegate Task AcceptEventActionDelegateAsync<in TEvent>(IAcceptEventActionContext<TEvent> context)
         where TEvent : Event, new();
 
     public delegate bool DecisionDelegate(IActionContext context);
@@ -48,8 +53,6 @@ namespace Stateflows.Activities.Registration.Interfaces
 
     public delegate void InputBuilderAction(IInputBuilder builder);
 
-    public delegate void EventActionBuilderAction(IEventActionBuilder builder);
-
     public delegate void StructuredActivityBuilderAction(IStructuredActivityBuilder builder);
 
     public delegate void ForkBuilderAction(IForkBuilder builder);
@@ -60,7 +63,11 @@ namespace Stateflows.Activities.Registration.Interfaces
 
     public delegate void TimeEventBuilderAction(ITimeEventBuilder builder);
 
-    public delegate void SignalActionBuilderAction(ISignalActionBuilder builder);
+    public delegate void AcceptEventActionBuilderAction(IAcceptEventActionBuilder builder);
+
+    public delegate void SendEventActionBuilderAction(ISendEventActionBuilder builder);
+
+    public delegate void PublishEventActionBuilderAction(IPublishEventActionBuilder builder);
 
     internal delegate void NodeValidationAction();
 

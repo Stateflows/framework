@@ -12,12 +12,10 @@ namespace Stateflows.Activities.Context.Classes
 
         IActivityInspectionContext IEventInspectionContext<TEvent>.Activity => Activity;
 
-        public EventContext(RootContext context, NodeScope nodeScope, TEvent @event)
+        public EventContext(RootContext context, NodeScope nodeScope)
             : base(context, nodeScope)
-        {
-            Event = @event;
-        }
+        { }
 
-        public TEvent Event { get; set; }
+        public TEvent Event => Context.Event as TEvent;
     }
 }

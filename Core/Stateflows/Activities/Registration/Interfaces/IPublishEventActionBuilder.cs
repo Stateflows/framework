@@ -2,9 +2,7 @@
 
 namespace Stateflows.Activities.Registration.Interfaces
 {
-    public interface IEventActionBuilder :
-        IObjectFlow<IEventActionBuilder>, 
-        IControlFlow<IEventActionBuilder>
+    public interface IPublishEventActionBuilder : IControlFlow<IPublishEventActionBuilder>
     {
     }
 }

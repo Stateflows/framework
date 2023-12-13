@@ -20,7 +20,7 @@ namespace Stateflows.StateMachines.Extensions
                 builder.AddOnInitialize(c =>
                 {
                     var context = (c as BaseContext).Context;
-                    context.Executor.GetStateMachine(stateMachineType, context)?.OnInitializeAsync();
+                    return context.Executor.GetStateMachine(stateMachineType, context).OnInitializeAsync();
                 });
             }
 
@@ -44,7 +44,7 @@ namespace Stateflows.StateMachines.Extensions
                     (builder as StateMachineBuilder).AddInitializer(requestName, c =>
                     {
                         var stateMachine = c.Executor.GetStateMachine(stateMachineType, c);
-                        return methodInfo.Invoke(stateMachine, new object[] { c.Event }) as Task;
+                        return methodInfo.Invoke(stateMachine, new object[] { c.Event }) as Task<bool>;
                     });
                 }
             }

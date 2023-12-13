@@ -10,8 +10,8 @@ namespace Stateflows.StateMachines
     {
         public IStateMachineActionContext Context { get; internal set; }
 
-        public virtual Task OnInitializeAsync()
-            => Task.CompletedTask;
+        public virtual Task<bool> OnInitializeAsync()
+            => Task.FromResult(true);
 
         public virtual Task OnFinalizeAsync()
             => Task.CompletedTask;
@@ -22,7 +22,7 @@ namespace Stateflows.StateMachines
     public abstract class StateMachine<TInitializationRequest> : StateMachine
         where TInitializationRequest : InitializationRequest, new()
     {
-        public override sealed Task OnInitializeAsync()
+        public override sealed Task<bool> OnInitializeAsync()
             => base.OnInitializeAsync();
 
         public abstract Task OnInitializeAsync(TInitializationRequest initializationEvent);
@@ -36,7 +36,7 @@ namespace Stateflows.StateMachines
             get
             {
                 var stateMachineType = typeof(TStateMachine);
-                var attribute = stateMachineType.GetCustomAttribute<StateMachineAttribute>();
+                var attribute = stateMachineType.GetCustomAttribute<StateMachineBehaviorAttribute>();
                 return attribute != null
                     ? attribute.Name
                     : stateMachineType.FullName;

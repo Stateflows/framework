@@ -1,87 +1,48 @@
-﻿using System;
-using System.Linq;
-using System.Reflection;
-using System.Diagnostics;
-using System.Collections.Generic;
+﻿using System.Diagnostics;
 using Microsoft.Extensions.DependencyInjection;
 using Stateflows.Common.Interfaces;
-using Stateflows.Common.Extensions;
+using Stateflows.Common.Initializer;
 using Stateflows.Common.Registration.Interfaces;
 using Stateflows.Activities.Engine;
-using Stateflows.Activities.Attributes;
 using Stateflows.Activities.Registration;
 using Stateflows.Activities.EventHandlers;
+using Stateflows.Activities.Registration.Builders;
 using Stateflows.Activities.Registration.Interfaces;
 
 namespace Stateflows.Activities
 {
     public static class ActivitiesDependencyInjection
     {
+        private static ActivitiesRegister Register;
+
         [DebuggerHidden]
-        public static IStateflowsBuilder AddActivities(this IStateflowsBuilder stateflowsBuilder, Assembly assembly)
+        public static IStateflowsBuilder AddActivities(this IStateflowsBuilder stateflowsBuilder, ActivitiesBuilderAction buildAction)
         {
-            assembly.GetAttributedTypes<ActivityAttribute>().ToList().ForEach(@type =>
-            {
-                if (typeof(Activity).IsAssignableFrom(@type))
-                {
-                    var attribute = @type.GetCustomAttributes(typeof(ActivityAttribute)).FirstOrDefault() as ActivityAttribute;
-                    stateflowsBuilder.EnsureActivitiesServices().AddActivity(attribute?.Name ?? @type.FullName, @type);
-                }
-            });
+            buildAction(new ActivitiesBuilder(stateflowsBuilder.EnsureActivitiesServices()));
 
             return stateflowsBuilder;
         }
 
         [DebuggerHidden]
-        public static IStateflowsBuilder AddActivities(this IStateflowsBuilder stateflowsBuilder, IEnumerable<Assembly> assemblies = null)
-        {
-            if (assemblies == null)
-            {
-                assemblies = AppDomain.CurrentDomain.GetAssemblies();
-            }
+        public static IStateflowsBuilder AddDefaultInstance<TActivity>(this IStateflowsBuilder stateflowsBuilder, InitializationRequestFactoryAsync initializationRequestFactoryAsync = null)
+            where TActivity: Activity
+            => stateflowsBuilder.AddDefaultInstance(new ActivityClass(ActivityInfo<TActivity>.Name).BehaviorClass, initializationRequestFactoryAsync);
 
-            foreach (var assembly in assemblies)
-            {
-                stateflowsBuilder.AddActivities(assembly);
-            }
-
-            return stateflowsBuilder;
-        }
-
-        [DebuggerHidden]
-        public static IStateflowsBuilder AddActivity(this IStateflowsBuilder stateflowsBuilder, string activityName, ActivityBuilderAction buildAction)
-        {
-            stateflowsBuilder.EnsureActivitiesServices().AddActivity(activityName, buildAction);
-
-            return stateflowsBuilder;
-        }
-
-        [DebuggerHidden]
-        public static IStateflowsBuilder AddActivity<TActivity>(this IStateflowsBuilder stateflowsBuilder, string activityName = null)
-            where TActivity : Activity
-        {
-            stateflowsBuilder.EnsureActivitiesServices().AddActivity<TActivity>(activityName ?? ActivityInfo<TActivity>.Name);
-
-            return stateflowsBuilder;
-        }
-
-        private readonly static Dictionary<IStateflowsBuilder, ActivitiesRegister> Registers = new Dictionary<IStateflowsBuilder, ActivitiesRegister>();
 
         private static ActivitiesRegister EnsureActivitiesServices(this IStateflowsBuilder stateflowsBuilder)
         {
-
-            if (!Registers.TryGetValue(stateflowsBuilder, out var register))
+            if (Register == null)
             {
-                register = new ActivitiesRegister(stateflowsBuilder.ServiceCollection);
-                Registers.Add(stateflowsBuilder, register);
+                Register = new ActivitiesRegister(stateflowsBuilder.ServiceCollection);
 
                 stateflowsBuilder
                     .EnsureStateflowServices()
                     .ServiceCollection
+                    .AddScoped<IActivityPlugin, TimeEvents>()
                     //.AddGlobalObserver(p => p.GetRequiredService<Observer>())
                     //.AddGlobalInterceptor(p => p.GetRequiredService<Observer>())
                     //.AddScoped<Observer>()
-                    .AddSingleton(register)
+                    .AddSingleton(Register)
                     .AddScoped<IEventProcessor, Processor>()
                     .AddTransient<IBehaviorProvider, Provider>()
                     .AddSingleton<IActivityEventHandler, InitializationHandler>()
@@ -94,7 +55,7 @@ namespace Stateflows.Activities
                     ;
             }
 
-            return register;
+            return Register;
         }
     }
 }

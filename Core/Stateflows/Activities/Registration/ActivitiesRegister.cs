@@ -5,9 +5,9 @@ using System.Runtime.Serialization;
 using Microsoft.Extensions.DependencyInjection;
 using Stateflows.Activities.Models;
 using Stateflows.Activities.Extensions;
+using Stateflows.Activities.Exceptions;
 using Stateflows.Activities.Registration.Builders;
 using Stateflows.Activities.Registration.Interfaces;
-using Stateflows.Activities.Exceptions;
 
 namespace Stateflows.Activities.Registration
 {
@@ -26,48 +26,87 @@ namespace Stateflows.Activities.Registration
             Services = services;
         }
 
-        public Dictionary<string, Graph> Activities { get; set; } = new Dictionary<string, Graph>();
+        public readonly Dictionary<string, Graph> Activities = new Dictionary<string, Graph>();
 
-        [DebuggerHidden]
-        public void AddActivity(string activityName, ActivityBuilderAction buildAction)
+        public readonly Dictionary<string, int> CurrentVersions = new Dictionary<string, int>();
+
+        private bool IsNewestVersion(string activityName, int version)
         {
-            if (Activities.ContainsKey(activityName))
+            var result = false;
+
+            if (CurrentVersions.TryGetValue(activityName, out var currentVersion))
             {
-                throw new ActivityDefinitionException($"Activity '{activityName}' is already registered");
+                if (currentVersion < version)
+                {
+                    result = true;
+                    CurrentVersions[activityName] = version;
+                }
+            }
+            else
+            {
+                result = true;
+                CurrentVersions[activityName] = version;
             }
 
-            var builder = new ActivityBuilder(activityName, null, Services);
-            buildAction(builder);
-            builder.Result.Build();
-
-            Activities.Add(builder.Result.Name, builder.Result);
+            return result;
         }
 
         [DebuggerHidden]
-        public void AddActivity(string activityName, Type activityType)
+        public void AddActivity(string activityName, int version, ActivityBuilderAction buildAction)
         {
-            if (Activities.ContainsKey(activityName))
+            var key = $"{activityName}.{version}";
+            var currentKey = $"{activityName}.current";
+
+            if (Activities.ContainsKey(key))
             {
-                throw new ActivityDefinitionException($"Activity '{activityName}' is already registered");
+                throw new ActivityDefinitionException($"Activity '{activityName}' with version '{version}' is already registered");
+            }
+
+            var builder = new ActivityBuilder(activityName, version, null, Services);
+            buildAction(builder);
+            builder.Result.Build();
+
+            Activities.Add(key, builder.Result);
+
+            if (IsNewestVersion(activityName, version))
+            {
+                Activities[currentKey] = builder.Result;
+            }
+        }
+
+        [DebuggerHidden]
+        public void AddActivity(string activityName, int version, Type activityType)
+        {
+            var key = $"{activityName}.{version}";
+            var currentKey = $"{activityName}.current";
+
+            if (Activities.ContainsKey(key))
+            {
+                throw new ActivityDefinitionException($"Activity '{activityName}' with version '{version}' is already registered");
             }
 
             Services.RegisterActivity(activityType);
 
             var activity = FormatterServices.GetUninitializedObject(activityType) as Activity;
 
-            var builder = new ActivityBuilder(activityName, null, Services);
+            var builder = new ActivityBuilder(activityName, version, null, Services);
             builder.AddActivityEvents(activityType);
             builder.Result.ActivityType = activityType;
             activity.Build(builder);
             builder.Result.Build();
 
-            Activities.Add(builder.Result.Name, builder.Result);
+            Activities.Add(key, builder.Result);
+
+            if (IsNewestVersion(activityName, version))
+            {
+                Activities[currentKey] = builder.Result;
+            }
         }
 
         [DebuggerHidden]
-        public void AddActivity<TActivity>(string stateMachineName)
+        public void AddActivity<TActivity>(string activityName, int version)
             where TActivity : Activity
-            => AddActivity(stateMachineName, typeof(TActivity));
+            => AddActivity(activityName, version, typeof(TActivity));
 
         //public void AddGlobalInterceptor(InterceptorFactory interceptorFactory)
         //    => GlobalInterceptorFactories.Add(interceptorFactory);

@@ -2,7 +2,7 @@
 
 namespace Stateflows.Activities.Registration.Interfaces
 {
-    public interface ISignalActionBuilder : IControlFlow<ISignalActionBuilder>
+    public interface ISendEventActionBuilder : IControlFlow<ISendEventActionBuilder>
     {
     }
 }

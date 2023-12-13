@@ -9,6 +9,7 @@ using Stateflows.Activities.Models;
 using Stateflows.Activities.Engine;
 using Stateflows.Activities.Streams;
 using Stateflows.Activities.Registration;
+using System.Linq;
 
 namespace Stateflows.Activities.Context.Classes
 {
@@ -100,6 +101,20 @@ namespace Stateflows.Activities.Context.Classes
             return stream;
         }
 
+        public Dictionary<string, Stream> GetStreams(string threadId)
+        {
+            lock (Streams)
+            {
+                if (!Streams.TryGetValue(threadId, out var edges))
+                {
+                    edges = new Dictionary<string, Stream>();
+                    Streams.Add(threadId, edges);
+                }
+
+                return edges;
+            }
+        }
+
         private Dictionary<string, Dictionary<string, List<Token>>> outputTokens = null;
         public Dictionary<string, Dictionary<string, List<Token>>> OutputTokens
         {
@@ -181,7 +196,21 @@ namespace Stateflows.Activities.Context.Classes
             set => Context.Values[Constants.ForceConsumed] = value;
         }
 
-        public Event Event { get; set; }
+        private readonly Stack<Event> EventsStack = new Stack<Event>();
+
+        public void SetEvent(Event @event)
+        {
+            EventsStack.Push(@event);
+        }
+
+        public void ClearEvent()
+        {
+            EventsStack.Pop();
+        }
+
+        public Event Event => EventsStack.Any()
+            ? EventsStack.Peek()
+            : null;
 
         internal Exception Exception { get; set; }
 

@@ -1,9 +1,5 @@
 ﻿using System;
-using System.Diagnostics;
 using System.Collections.Generic;
-using Stateflows.StateMachines.Interfaces;
-using Stateflows.Activities.Registration;
-using System.Linq;
 using Stateflows.Common.Models;
 using Stateflows.Activities.Exceptions;
 
@@ -11,12 +7,14 @@ namespace Stateflows.Activities.Models
 {
     internal class Graph : Node
     {
-        public Graph(string name)
+        public Graph(string name, int version)
         {
             Name = name;
             Type = NodeType.Activity;
+            Version = version;
         }
 
+        public int Version { get; }
         public Type ActivityType { get; set; }
         public Dictionary<string, Node> AllNodes { get; set; } = new Dictionary<string, Node>();
         public Dictionary<string, Node> AllNamedNodes { get; set; } = new Dictionary<string, Node>();
@@ -25,9 +23,9 @@ namespace Stateflows.Activities.Models
         public Dictionary<string, Edge> AllEdges { get; set; } = new Dictionary<string, Edge>();
 
 
-        private Dictionary<string, Logic<ActivityEventActionAsync>> initializers = null;
-        public Dictionary<string, Logic<ActivityEventActionAsync>> Initializers
-            => initializers ??= new Dictionary<string, Logic<ActivityEventActionAsync>>();
+        private Dictionary<string, Logic<ActivityPredicateAsync>> initializers = null;
+        public Dictionary<string, Logic<ActivityPredicateAsync>> Initializers
+            => initializers ??= new Dictionary<string, Logic<ActivityPredicateAsync>>();
 
         //private Logic<StateMachineActionAsync> initialize = null;
         //public Logic<StateMachineActionAsync> Initialize

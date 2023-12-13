@@ -6,9 +6,9 @@ using Stateflows.Common.Models;
 using Stateflows.Activities.Models;
 using Stateflows.Activities.Context.Classes;
 using Stateflows.Activities.Context.Interfaces;
+using Stateflows.Activities.Registration.Extensions;
 using Stateflows.Activities.Registration.Interfaces;
 using Stateflows.Activities.Registration.Interfaces.Base;
-using Stateflows.Activities.Registration.Extensions;
 
 namespace Stateflows.Activities.Registration.Builders
 {
@@ -22,17 +22,17 @@ namespace Stateflows.Activities.Registration.Builders
             set => Node = value;
         }
 
-        public ActivityBuilder(string name, Node parentNode, IServiceCollection services)
+        public ActivityBuilder(string name, int version, Node parentNode, IServiceCollection services)
             : base(parentNode, services)
         {
-            Result = new Graph(name);
+            Result = new Graph(name, version);
         }
 
-        public IActivityBuilder AddInitializer(string initializerName, ActivityEventActionAsync initializerAction)
+        public IActivityBuilder AddInitializer(string initializerName, ActivityPredicateAsync initializerAction)
         {
             if (!Result.Initializers.TryGetValue(initializerName, out var initializer))
             {
-                initializer = new Logic<ActivityEventActionAsync>()
+                initializer = new Logic<ActivityPredicateAsync>()
                 {
                     Name = Constants.Initialize
                 };
@@ -45,27 +45,37 @@ namespace Stateflows.Activities.Registration.Builders
             return this;
         }
 
-        public IActivityBuilder AddOnInitialize(Func<IActivityInitializationContext, Task> actionAsync)
-        {
-            actionAsync.ThrowIfNull(nameof(actionAsync));
-
-            var initializerName = EventInfo<InitializationRequest>.Name;
-
-            return AddInitializer(initializerName, async c =>
+        public IActivityBuilder AddOnInitialize(Func<IActivityInitializationContext, Task<bool>> actionAsync)
+            => AddOnInitialize<InitializationRequest>(c =>
             {
-                var context = new ActivityInitializationContext(c.Context, c.NodeScope, c.Context.Event as InitializationRequest);
-                try
-                {
-                    await actionAsync(context);
-                }
-                catch (Exception e)
-                {
-                    //await c.Executor.Observer.OnActivityInitializeExceptionAsync(context, e);
-                }
+                var baseContext = c as BaseContext;
+                var context = new ActivityInitializationContext(baseContext.Context, baseContext.NodeScope, baseContext.Context.Event as InitializationRequest);
+                return actionAsync(context);
             });
-        }
+        //{
+        //    actionAsync.ThrowIfNull(nameof(actionAsync));
 
-        public IActivityBuilder AddOnInitialize<TInitializationRequest>(Func<IActivityInitializationContext<TInitializationRequest>, Task> actionAsync)
+        //    var initializerName = EventInfo<InitializationRequest>.Name;
+
+        //    return AddInitializer(initializerName, async c =>
+        //    {
+        //        var result = false;
+        //        var context = new ActivityInitializationContext(c.Context, c.NodeScope, c.Context.Event as InitializationRequest);
+        //        try
+        //        {
+        //            result = await actionAsync(context);
+        //        }
+        //        catch (Exception e)
+        //        {
+        //            await c.Context.Executor.Inspector.OnActivityInitializationExceptionAsync(context, e);
+        //            result = false;
+        //        }
+
+        //        return result;
+        //    });
+        //}
+
+        public IActivityBuilder AddOnInitialize<TInitializationRequest>(Func<IActivityInitializationContext<TInitializationRequest>, Task<bool>> actionAsync)
             where TInitializationRequest : InitializationRequest, new()
         {
             actionAsync.ThrowIfNull(nameof(actionAsync));
@@ -76,15 +86,19 @@ namespace Stateflows.Activities.Registration.Builders
 
             return AddInitializer(initializerName, async c =>
             {
+                var result = false;
                 var context = new ActivityInitializationContext<TInitializationRequest>(c.Context, c.Context.Executor.NodeScope, c.Context.Event as TInitializationRequest);
                 try
                 {
-                    await actionAsync(context);
+                    result = await actionAsync(context);
                 }
                 catch (Exception e)
                 {
-                    //await c.Executor.Observer.OnActivityInitializeExceptionAsync(context, e);
+                    await c.Context.Executor.Inspector.OnActivityInitializationExceptionAsync(context, e);
+                    result = false;
                 }
+
+                return result;
             });
         }
 
@@ -114,5 +128,11 @@ namespace Stateflows.Activities.Registration.Builders
 
         IActivityBuilder IActivity<IActivityBuilder>.AddIterativeActivity<TToken>(string actionNodeName, StructuredActivityBuilderAction builderAction)
             => AddIterativeActivity<TToken>(actionNodeName, builderAction) as IActivityBuilder;
+
+        IActivityBuilder IAcceptEvent<IActivityBuilder>.AddAcceptEventAction<TEvent>(string actionNodeName, AcceptEventActionDelegateAsync<TEvent> eventActionAsync, AcceptEventActionBuilderAction buildAction)
+            => AddAcceptEventAction<TEvent>(actionNodeName, eventActionAsync) as IActivityBuilder;
+
+        IActivityBuilder ISendEvent<IActivityBuilder>.AddSendEventAction<TEvent>(string actionNodeName, SendEventActionDelegateAsync<TEvent> actionAsync, BehaviorIdSelectorAsync targetSelectorAsync, SendEventActionBuilderAction buildAction)
+            => AddSendEventAction<TEvent>(actionNodeName, actionAsync, targetSelectorAsync) as IActivityBuilder;
     }
 }

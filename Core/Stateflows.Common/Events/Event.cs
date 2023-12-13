@@ -6,12 +6,7 @@ namespace Stateflows.Common
 {
     public class Event
     {
-        public Event()
-        {
-            Id = Guid.NewGuid();
-        }
-
-        public Guid Id { get; set; }
+        public Guid Id { get; set; } = Guid.NewGuid();
 
         public virtual string EventName => GetType().FullName;
 

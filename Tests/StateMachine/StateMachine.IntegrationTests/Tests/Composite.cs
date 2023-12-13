@@ -58,6 +58,8 @@ namespace StateMachine.IntegrationTests.Tests
                         {
                             ParentStateExited = null;
                             ChildStateExited = null;
+
+                            return true;
                         })
                         .AddInitialCompositeState("state1", b => b
                             .AddOnExit(c => ParentStateExited = true)

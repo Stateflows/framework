@@ -20,6 +20,7 @@ namespace Stateflows.Activities.Models
         public NodeType Type { get; set; }
         public NodeOptions Options { get; set; } = NodeOptions.Default;
         public Type ExceptionType { get; set; }
+        public Type EventType { get; set; }
 
         private Logic<ActivityActionAsync> action = null;
         public Logic<ActivityActionAsync> Action

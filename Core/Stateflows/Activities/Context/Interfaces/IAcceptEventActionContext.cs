@@ -2,7 +2,7 @@
 
 namespace Stateflows.Activities.Context.Interfaces
 {
-    public interface IEventActionContext<out TEvent> : IActionContext
+    public interface IAcceptEventActionContext<out TEvent> : IActionContext
         where TEvent : Event
     {
         TEvent Event { get; }

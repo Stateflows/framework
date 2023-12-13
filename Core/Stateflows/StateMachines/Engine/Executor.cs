@@ -132,7 +132,7 @@ namespace Stateflows.StateMachines.Engine
                 _ => BehaviorStatus.NotInitialized
             };
 
-    public async Task<bool> InitializeAsync(InitializationRequest @event)
+        public async Task<bool> InitializeAsync(InitializationRequest @event)
         {
             Debug.Assert(Context != null, $"Context is unavailable. Is state machine '{Graph.Name}' hydrated?");
 
@@ -327,6 +327,8 @@ namespace Stateflows.StateMachines.Engine
 
         public async Task<bool> DoInitializeStateMachineAsync(InitializationRequest @event)
         {
+            var result = false;
+
             if (
                 Graph.Initializers.TryGetValue(@event.EventName, out var initializer) ||
                 (
@@ -335,20 +337,24 @@ namespace Stateflows.StateMachines.Engine
                 )
             )
             {
-                var context = new StateMachineInitializationContext(@event, Context);
+                var context = new StateMachineInitializationContext(Context, @event);
                 await Inspector.BeforeStateMachineInitializeAsync(context);
 
-                if (initializer != null)
+                try
                 {
-                    await initializer.WhenAll(Context);
+                    result = (initializer == null) || await initializer.WhenAll(Context);
+                }
+                catch (Exception e)
+                {
+                    await Inspector.OnStateMachineInitializationExceptionAsync(context, e);
+
+                    result = false;
                 }
 
                 await Inspector.AfterStateMachineInitializeAsync(context);
-
-                return true;
             }
 
-            return false;
+            return result;
         }
 
         public async Task DoFinalizeStateMachineAsync()

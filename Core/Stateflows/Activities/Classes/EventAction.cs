@@ -6,7 +6,7 @@ namespace Stateflows.Activities
     public abstract class EventAction<TEvent> : ActivityNode
         where TEvent : Event
     {
-        new public IEventActionContext<TEvent> Context { get; internal set; }
+        new public IAcceptEventActionContext<TEvent> Context { get; internal set; }
     }
 
     public static class EventActionInfo<TEvent, TEventAcceptAction>

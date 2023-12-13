@@ -10,7 +10,6 @@ using Stateflows.Activities.Context.Classes;
 using Stateflows.Activities.Context.Interfaces;
 using Stateflows.Activities.Registration.Builders;
 using Stateflows.Activities.Registration.Interfaces;
-using Newtonsoft.Json.Linq;
 
 namespace Stateflows.Activities.Registration
 {
@@ -30,7 +29,7 @@ namespace Stateflows.Activities.Registration
             Node = parentNode;
         }
 
-        public BaseActivityBuilder AddNode(NodeType type, string nodeName, ActionDelegateAsync actionAsync, NodeBuilderAction buildAction = null, Type exceptionType = null)
+        public BaseActivityBuilder AddNode(NodeType type, string nodeName, ActionDelegateAsync actionAsync, NodeBuilderAction buildAction = null, Type exceptionOrEventType = null)
         {
             if (Node.Type != NodeType.Activity)
             {
@@ -47,6 +46,7 @@ namespace Stateflows.Activities.Registration
                 NodeType.StructuredActivity,
                 NodeType.ParallelActivity,
                 NodeType.IterativeActivity,
+                NodeType.AcceptEventAction,
                 NodeType.Output,
                 NodeType.Final
             };
@@ -74,12 +74,22 @@ namespace Stateflows.Activities.Registration
 
             if (type == NodeType.ExceptionHandler)
             {
-                if (exceptionType is null)
+                if (exceptionOrEventType is null)
                 {
                     throw new ExceptionHandlerDefinitionException(nodeName, "Exception type not provided");
                 }
 
-                node.ExceptionType = exceptionType;
+                node.ExceptionType = exceptionOrEventType;
+            }
+
+            if (type == NodeType.AcceptEventAction)
+            {
+                if (exceptionOrEventType is null)
+                {
+                    throw new AcceptEventActionDefinitionException(nodeName, "Event type not provided");
+                }
+
+                node.EventType = exceptionOrEventType;
             }
 
             buildAction?.Invoke(new NodeBuilder(node, this, Services));
@@ -117,15 +127,15 @@ namespace Stateflows.Activities.Registration
         public BaseActivityBuilder AddAction(string actionNodeName, ActionDelegateAsync actionAsync, NodeBuilderAction buildAction = null)
             => AddNode(NodeType.Action, actionNodeName, actionAsync, buildAction);
 
-        public BaseActivityBuilder AddSignalAction<TEvent>(
-            string signalActionNodeName,
-            SignalActionDelegateAsync<TEvent> actionAsync,
+        public BaseActivityBuilder AddSendEventAction<TEvent>(
+            string actionNodeName,
+            SendEventActionDelegateAsync<TEvent> actionAsync,
             BehaviorIdSelectorAsync targetSelectorAsync,
-            SignalActionBuilderAction signalActionBuildAction = null
+            SendEventActionBuilderAction buildAction = null
         )
             where TEvent : Event, new()
             => AddAction(
-                signalActionNodeName,
+                actionNodeName,
                 async c =>
                 {
                     var @event = await actionAsync(c);
@@ -135,7 +145,26 @@ namespace Stateflows.Activities.Registration
                         await behavior.SendAsync(@event);
                     }
                 },
-                b => signalActionBuildAction(b as ISignalActionBuilder)
+                b => buildAction(b as ISendEventActionBuilder)
+            );
+
+        public BaseActivityBuilder AddAcceptEventAction<TEvent>(
+            string actionNodeName,
+            AcceptEventActionDelegateAsync<TEvent> actionAsync,
+            AcceptEventActionBuilderAction buildAction = null
+        )
+            where TEvent : Event, new()
+            => AddNode(
+                NodeType.AcceptEventAction,
+                actionNodeName,
+                c =>
+                {
+                    var actionContext = c as ActionContext;
+                    var context = new AcceptEventActionContext<TEvent>(actionContext);
+                    return actionAsync(context);
+                },
+                b => buildAction(b as IAcceptEventActionBuilder),
+                typeof(TEvent)
             );
 
         public BaseActivityBuilder AddInitial(InitialBuilderAction buildAction)
@@ -191,8 +220,12 @@ namespace Stateflows.Activities.Registration
                     var node = c.GetNode();
 
                     await executor.DoInitializeNodeAsync(node, c as ActionContext);
-                    c.OutputRange(await executor.DoExecuteStructuredNodeAsync(node, c.Input));
-                    await executor.DoFinalizeNodeAsync(node, c as ActionContext);
+                    (var output, var finalized) = await executor.DoExecuteStructuredNodeAsync(node, c.Input);
+                    c.OutputRange(output);
+                    if (finalized)
+                    {
+                        await executor.DoFinalizeNodeAsync(node, c as ActionContext);
+                    }
                 },
                 b => builderAction?.Invoke(new StructuredActivityBuilder(b.Node, this, Services))
             );

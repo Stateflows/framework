@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Threading.Tasks;
 using Stateflows.Common;
-using Stateflows.Common.Extensions;
 using Stateflows.Activities.Events;
 using Stateflows.Activities.Extensions;
 using Stateflows.Activities.Inspection.Interfaces;
@@ -21,7 +20,7 @@ namespace Stateflows.Activities.EventHandlers
 
                 var initialized = await executor.InitializeAsync(executionRequest.InitializationRequest ?? new InitializationRequest());
 
-                context.Event.Respond(
+                executionRequest.Respond(
                     new ExecutionResponse()
                     {
                         ExecutionSuccessful = initialized,

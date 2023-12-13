@@ -17,7 +17,6 @@ namespace Stateflows.Activities.Engine
         public ActivitiesRegister Register { get; }
         public IStateflowsStorage Storage { get; }
         public Dictionary<Type, IActivityEventHandler> EventHandlers { get; }
-        public Dictionary<BehaviorId, Executor> Executors { get; } = new Dictionary<BehaviorId, Executor>();
         public IServiceProvider ServiceProvider { get; }
 
         public Processor(
@@ -41,50 +40,119 @@ namespace Stateflows.Activities.Engine
         public async Task<EventStatus> ProcessEventAsync<TEvent>(BehaviorId id, TEvent @event, IServiceProvider serviceProvider)
             where TEvent : Event, new()
         {
-            var result = EventStatus.Undelivered;
-
-            if (!Register.Activities.TryGetValue(id.Name, out var graph))
+            try
             {
+                var result = EventStatus.Undelivered;
+
+                var stateflowsContext = await Storage.Hydrate(id);
+
+                var key = stateflowsContext.Version != 0
+                    ? $"{id.Name}.{stateflowsContext.Version}"
+                    : $"{id.Name}.current";
+
+                if (!Register.Activities.TryGetValue(key, out var graph))
+                {
+                    return result;
+                }
+
+                using (var executor = new Executor(Register, graph, ServiceProvider))
+                {
+                    var context = new RootContext(stateflowsContext);
+
+                    if (await executor.HydrateAsync(context))
+                    {
+                        context.SetEvent(@event);
+
+                        var eventContext = new EventContext<TEvent>(context, executor.NodeScope);
+
+                        if (await executor.Inspector.BeforeProcessEventAsync(eventContext))
+                        {
+                            result = await TryHandleEventAsync(eventContext);
+
+                            if (result != EventStatus.Consumed)
+                            {
+                                result = await executor.ProcessAsync(@event);
+                            }
+
+                            await executor.Inspector.AfterProcessEventAsync(eventContext);
+                        }
+                        else
+                        {
+                            if (executor.Context.ForceConsumed)
+                            {
+                                result = EventStatus.Consumed;
+                            }
+                        }
+
+                        stateflowsContext.Status = executor.BehaviorStatus;
+
+                        stateflowsContext.LastExecutedAt = DateTime.Now;
+
+                        var statuses = new BehaviorStatus[] { BehaviorStatus.Initialized, BehaviorStatus.Finalized };
+
+                        if (statuses.Contains(stateflowsContext.Status))
+                        {
+                            stateflowsContext.Version = graph.Version;
+                        }
+                        else
+                        {
+                            if (stateflowsContext.Status == BehaviorStatus.NotInitialized)
+                            {
+                                stateflowsContext.Version = 0;
+                            }
+                        }
+
+                        await Storage.Dehydrate((await executor.DehydrateAsync()).Context);
+
+                        context.ClearEvent();
+                    }
+                }
+
                 return result;
             }
-            Executor executor = null;
-            RootContext context = null;
-            lock (Executors)
+            catch (Exception e)
             {
-                if (Executors.TryGetValue(id, out executor))
-                {
-                    context = executor.Context;
-                }
-                else
-                {
-                    executor = new Executor(Register, graph, ServiceProvider);
-                    Executors.Add(id, executor);
-                }
+                throw e;
             }
 
-            if (context is null)
-            {
-                context = new RootContext(await Storage.Hydrate(id));
-                await executor.HydrateAsync(context);
-            }
+            //Executor executor = null;
+            //RootContext context = null;
+            //lock (Executors)
+            //{
+            //    if (Executors.TryGetValue(id, out executor))
+            //    {
+            //        context = executor.Context;
+            //    }
+            //    else
+            //    {
+            //        executor = new Executor(Register, graph, ServiceProvider);
+            //        Executors.Add(id, executor);
+            //    }
+            //}
 
-            var eventContext = new EventContext<TEvent>(context, executor.NodeScope, @event);
+            //if (context is null)
+            //{
+            //    context = new RootContext(await Storage.Hydrate(id));
+            //    await executor.HydrateAsync(context);
+            //}
 
-            if (await executor.Inspector.BeforeProcessEventAsync(eventContext))
-            {
-                result = await TryHandleEventAsync(eventContext);
+            //var eventContext = new EventContext<TEvent>(context, executor.NodeScope, @event);
 
-                if (result != EventStatus.Consumed)
-                {
-                    result = await executor.ProcessAsync(@event);
-                }
+            //if (await executor.Inspector.BeforeProcessEventAsync(eventContext))
+            //{
+            //    result = await TryHandleEventAsync(eventContext);
 
-                await executor.Inspector.AfterProcessEventAsync(eventContext);
-            }
+            //    if (result != EventStatus.Consumed)
+            //    {
+            //        result = await executor.ProcessAsync(@event);
+            //    }
 
-            //await Storage.Dehydrate((await executor.DehydrateAsync()).Context);
+            //    await executor.Inspector.AfterProcessEventAsync(eventContext);
+            //}
 
-            return result;
+            ////await Storage.Dehydrate((await executor.DehydrateAsync()).Context);
+
+            //return result;
         }
     }
 }

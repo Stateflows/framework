@@ -1,5 +1,4 @@
-﻿using System.Collections.Generic;
-using Stateflows.Activities.Models;
+﻿using Stateflows.Activities.Models;
 using Stateflows.Activities.Context.Interfaces;
 
 namespace Stateflows.Activities.Context.Classes
@@ -12,16 +11,11 @@ namespace Stateflows.Activities.Context.Classes
 
         private RootContext Context { get; }
 
-        //private ActionValues ActionValues { get; }
-
         public NodeContext(Node node, RootContext context)
         {
             Node = node;
             Context = context;
-            //ActionValues = Context.GetActionValues(NodeName);
         }
-
-        //public IDictionary<string, object> Values => ActionValues.Values;
 
         public bool TryGetParentNode(out INodeContext parentNodeContext)
         {

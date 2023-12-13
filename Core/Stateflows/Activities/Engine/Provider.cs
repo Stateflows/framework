@@ -31,7 +31,7 @@ namespace Stateflows.Activities.Engine
 
         public bool TryProvideBehavior(BehaviorId id, out IBehavior behavior)
         {
-            behavior = id.Type == nameof(Activity) && Register.Activities.ContainsKey(id.Name)
+            behavior = id.Type == nameof(Activity) && Register.Activities.ContainsKey($"{id.Name}.current")
                 ? new Behavior(Engine, ServiceProvider, id)
                 : null;
 

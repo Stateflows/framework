@@ -21,11 +21,11 @@ namespace Stateflows.StateMachines.Registration.Builders
         [DebuggerHidden]
         public IStateMachinesBuilder AddFromAssembly(Assembly assembly)
         {
-            assembly.GetAttributedTypes<StateMachineAttribute>().ToList().ForEach(@type =>
+            assembly.GetAttributedTypes<StateMachineBehaviorAttribute>().ToList().ForEach(@type =>
             {
                 if (
                     typeof(StateMachine).IsAssignableFrom(@type) &&
-                    @type.GetCustomAttributes(typeof(StateMachineAttribute)).FirstOrDefault() is StateMachineAttribute attribute)
+                    @type.GetCustomAttributes(typeof(StateMachineBehaviorAttribute)).FirstOrDefault() is StateMachineBehaviorAttribute attribute)
                 {
                     Register.AddStateMachine(attribute.Name ?? @type.FullName, attribute.Version, @type);
                 }
@@ -44,7 +44,6 @@ namespace Stateflows.StateMachines.Registration.Builders
 
             return this;
         }
-
 
         [DebuggerHidden]
         public IStateMachinesBuilder AddFromLoadedAssemblies()

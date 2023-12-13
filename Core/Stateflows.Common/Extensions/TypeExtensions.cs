@@ -4,7 +4,7 @@ using System.Runtime.Serialization;
 
 namespace Stateflows.Common.Extensions
 {
-    internal static class TypeExtensions
+    public static class TypeExtensions
     {
         public static object GetUninitializedInstance(this Type type)
             => FormatterServices.GetUninitializedObject(type);
