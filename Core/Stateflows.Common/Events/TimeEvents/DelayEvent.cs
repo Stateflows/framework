@@ -11,8 +11,5 @@ namespace Stateflows.Common
 
         protected override DateTime GetTriggerTime(DateTime startedAt)
             => GetDelayStart(startedAt).Add(Delay);
-
-        public override sealed bool ShouldTrigger(DateTime startedAt)
-            => DateTime.Now >= GetDelayStart(startedAt).Add(Delay);
     }
 }

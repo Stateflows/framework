@@ -78,6 +78,16 @@ namespace Stateflows.StateMachines.Extensions
             }
         }
 
+        public static void AddElseTransitionEvents<TElseTransition, TEvent>(this IElseTransitionBuilder<TEvent> builder)
+            where TElseTransition : ElseTransition<TEvent>
+            where TEvent : Event, new()
+        {
+            if (typeof(Transition<TEvent>).GetMethod(Constants.EffectAsync).IsOverridenIn<TElseTransition>())
+            {
+                builder.AddEffect(c => (c as BaseContext).Context.Executor.GetElseTransition<TElseTransition, TEvent>(c)?.EffectAsync());
+            }
+        }
+
         public static void AddTransitionEvents<TTransition, TEvent>(this ITransitionBuilder<TEvent> builder)
             where TTransition : Transition<TEvent>
             where TEvent : Event, new()

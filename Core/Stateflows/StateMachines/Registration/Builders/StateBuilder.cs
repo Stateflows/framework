@@ -152,13 +152,14 @@ namespace Stateflows.StateMachines.Registration.Builders
 
         #region Transitions
         [DebuggerHidden]
-        public IStateBuilder AddTransition<TEvent>(string targetVertexName, TransitionBuilderAction<TEvent> transitionBuildAction = null)
+        private IStateBuilder AddTransitionInternal<TEvent>(string targetVertexName, bool isElse, TransitionBuilderAction<TEvent> transitionBuildAction = null)
             where TEvent : Event, new()
         {
             var edge = new Edge()
             {
                 Trigger = EventInfo<TEvent>.Name,
                 TriggerType = typeof(TEvent),
+                IsElseTransition = isElse,
                 Graph = Vertex.Graph,
                 SourceName = Vertex.Name,
                 Source = Vertex,
@@ -183,8 +184,22 @@ namespace Stateflows.StateMachines.Registration.Builders
         }
 
         [DebuggerHidden]
+        public IStateBuilder AddTransition<TEvent>(string targetVertexName, TransitionBuilderAction<TEvent> transitionBuildAction = null)
+            where TEvent : Event, new()
+            => AddTransitionInternal<TEvent>(targetVertexName, false, transitionBuildAction);
+
+        [DebuggerHidden]
+        public IStateBuilder AddElseTransition<TEvent>(string targetVertexName, ElseTransitionBuilderAction<TEvent> transitionBuildAction = null)
+            where TEvent : Event, new()
+            => AddTransitionInternal<TEvent>(targetVertexName, true, builder => transitionBuildAction?.Invoke(builder));
+
+        [DebuggerHidden]
         public IStateBuilder AddDefaultTransition(string targetVertexName, TransitionBuilderAction<Completion> transitionBuildAction = null)
             => AddTransition<Completion>(targetVertexName, transitionBuildAction);
+
+        [DebuggerHidden]
+        public IStateBuilder AddElseDefaultTransition(string targetVertexName, ElseTransitionBuilderAction<Completion> transitionBuildAction = null)
+            => AddElseTransition<Completion>(targetVertexName, transitionBuildAction);
 
         [DebuggerHidden]
         public IStateBuilder AddInternalTransition<TEvent>(TransitionBuilderAction<TEvent> transitionBuildAction = null)
@@ -192,16 +207,33 @@ namespace Stateflows.StateMachines.Registration.Builders
             => AddTransition<TEvent>(Constants.DefaultTransitionTarget, transitionBuildAction);
 
         [DebuggerHidden]
+        public IStateBuilder AddElseInternalTransition<TEvent>(ElseTransitionBuilderAction<TEvent> transitionBuildAction = null)
+            where TEvent : Event, new()
+            => AddElseTransition<TEvent>(Constants.DefaultTransitionTarget, transitionBuildAction);
+
+        [DebuggerHidden]
         ITypedStateBuilder IStateTransitions<ITypedStateBuilder>.AddTransition<TEvent>(string targetVertexName, TransitionBuilderAction<TEvent> transitionBuildAction)
             => AddTransition<TEvent>(targetVertexName, transitionBuildAction) as ITypedStateBuilder;
+
+        [DebuggerHidden]
+        ITypedStateBuilder IStateTransitions<ITypedStateBuilder>.AddElseTransition<TEvent>(string targetVertexName, ElseTransitionBuilderAction<TEvent> transitionBuildAction)
+            => AddElseTransition<TEvent>(targetVertexName, transitionBuildAction) as ITypedStateBuilder;
 
         [DebuggerHidden]
         ITypedStateBuilder IStateTransitions<ITypedStateBuilder>.AddDefaultTransition(string targetVertexName, TransitionBuilderAction<Completion> transitionBuildAction)
             => AddDefaultTransition(targetVertexName, transitionBuildAction) as ITypedStateBuilder;
 
         [DebuggerHidden]
+        ITypedStateBuilder IStateTransitions<ITypedStateBuilder>.AddElseDefaultTransition(string targetVertexName, ElseTransitionBuilderAction<Completion> transitionBuildAction)
+            => AddElseDefaultTransition(targetVertexName, transitionBuildAction) as ITypedStateBuilder;
+
+        [DebuggerHidden]
         ITypedStateBuilder IStateTransitions<ITypedStateBuilder>.AddInternalTransition<TEvent>(TransitionBuilderAction<TEvent> transitionBuildAction)
             => AddInternalTransition<TEvent>(transitionBuildAction) as ITypedStateBuilder;
+
+        [DebuggerHidden]
+        ITypedStateBuilder IStateTransitions<ITypedStateBuilder>.AddElseInternalTransition<TEvent>(ElseTransitionBuilderAction<TEvent> transitionBuildAction)
+            => AddElseInternalTransition<TEvent>(transitionBuildAction) as ITypedStateBuilder;
 
         [DebuggerHidden]
         ITypedStateBuilder IStateUtils<ITypedStateBuilder>.AddDeferredEvent<TEvent>()
@@ -239,12 +271,24 @@ namespace Stateflows.StateMachines.Registration.Builders
             => AddTransition<TEvent>(targetVertexName, transitionBuildAction) as ISubmachineStateBuilder;
 
         [DebuggerHidden]
+        ISubmachineStateBuilder IStateTransitions<ISubmachineStateBuilder>.AddElseTransition<TEvent>(string targetVertexName, ElseTransitionBuilderAction<TEvent> transitionBuildAction)
+            => AddElseTransition<TEvent>(targetVertexName, transitionBuildAction) as ISubmachineStateBuilder;
+
+        [DebuggerHidden]
         ISubmachineStateBuilder IStateTransitions<ISubmachineStateBuilder>.AddDefaultTransition(string targetVertexName, TransitionBuilderAction<Completion> transitionBuildAction)
             => AddDefaultTransition(targetVertexName, transitionBuildAction) as ISubmachineStateBuilder;
 
         [DebuggerHidden]
+        ISubmachineStateBuilder IStateTransitions<ISubmachineStateBuilder>.AddElseDefaultTransition(string targetVertexName, ElseTransitionBuilderAction<Completion> transitionBuildAction)
+            => AddElseDefaultTransition(targetVertexName, transitionBuildAction) as ISubmachineStateBuilder;
+
+        [DebuggerHidden]
         ISubmachineStateBuilder IStateTransitions<ISubmachineStateBuilder>.AddInternalTransition<TEvent>(TransitionBuilderAction<TEvent> transitionBuildAction)
             => AddInternalTransition<TEvent>(transitionBuildAction) as ISubmachineStateBuilder;
+
+        [DebuggerHidden]
+        ISubmachineStateBuilder IStateTransitions<ISubmachineStateBuilder>.AddElseInternalTransition<TEvent>(ElseTransitionBuilderAction<TEvent> transitionBuildAction)
+            => AddElseInternalTransition<TEvent>(transitionBuildAction) as ISubmachineStateBuilder;
 
         [DebuggerHidden]
         ISubmachineTypedStateBuilder IStateUtils<ISubmachineTypedStateBuilder>.AddDeferredEvent<TEvent>()
@@ -255,12 +299,24 @@ namespace Stateflows.StateMachines.Registration.Builders
             => AddTransition<TEvent>(targetVertexName, transitionBuildAction) as ISubmachineTypedStateBuilder;
 
         [DebuggerHidden]
+        ISubmachineTypedStateBuilder IStateTransitions<ISubmachineTypedStateBuilder>.AddElseTransition<TEvent>(string targetVertexName, ElseTransitionBuilderAction<TEvent> transitionBuildAction)
+            => AddElseTransition<TEvent>(targetVertexName, transitionBuildAction) as ISubmachineTypedStateBuilder;
+
+        [DebuggerHidden]
         ISubmachineTypedStateBuilder IStateTransitions<ISubmachineTypedStateBuilder>.AddDefaultTransition(string targetVertexName, TransitionBuilderAction<Completion> transitionBuildAction)
             => AddDefaultTransition(targetVertexName, transitionBuildAction) as ISubmachineTypedStateBuilder;
 
         [DebuggerHidden]
+        ISubmachineTypedStateBuilder IStateTransitions<ISubmachineTypedStateBuilder>.AddElseDefaultTransition(string targetVertexName, ElseTransitionBuilderAction<Completion> transitionBuildAction)
+            => AddElseDefaultTransition(targetVertexName, transitionBuildAction) as ISubmachineTypedStateBuilder;
+
+        [DebuggerHidden]
         ISubmachineTypedStateBuilder IStateTransitions<ISubmachineTypedStateBuilder>.AddInternalTransition<TEvent>(TransitionBuilderAction<TEvent> transitionBuildAction)
             => AddInternalTransition<TEvent>(transitionBuildAction) as ISubmachineTypedStateBuilder;
+
+        [DebuggerHidden]
+        ISubmachineTypedStateBuilder IStateTransitions<ISubmachineTypedStateBuilder>.AddElseInternalTransition<TEvent>(ElseTransitionBuilderAction<TEvent> transitionBuildAction)
+            => AddElseInternalTransition<TEvent>(transitionBuildAction) as ISubmachineTypedStateBuilder;
         #endregion
     }
 }

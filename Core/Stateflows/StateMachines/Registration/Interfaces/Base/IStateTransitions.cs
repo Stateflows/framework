@@ -14,5 +14,15 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         TReturn AddInternalTransition<TEvent>(TransitionBuilderAction<TEvent> transitionBuildAction = null)
             where TEvent : Event, new();
         #endregion
+
+        #region ElseTransitions
+        TReturn AddElseTransition<TEvent>(string targetVertexName, ElseTransitionBuilderAction<TEvent> transitionBuildAction = null)
+            where TEvent : Event, new();
+
+        TReturn AddElseDefaultTransition(string targetVertexName, ElseTransitionBuilderAction<Completion> transitionBuildAction = null);
+
+        TReturn AddElseInternalTransition<TEvent>(ElseTransitionBuilderAction<TEvent> transitionBuildAction = null)
+            where TEvent : Event, new();
+        #endregion
     }
 }

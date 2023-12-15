@@ -29,7 +29,7 @@ namespace Stateflows.Common.Initializer
         }
 
         public Task StartAsync(CancellationToken cancellationToken)
-            => TenantsManager.ExecuteByTenants(InitiateBehaviors);
+            => TenantsManager.ExecuteByTenantsAsync(InitiateBehaviors);
 
         private async Task InitiateBehaviors(string tenantId)
         {

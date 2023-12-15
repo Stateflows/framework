@@ -10,6 +10,7 @@ namespace Stateflows.StateMachines.Models
         public Graph Graph { get; set; }
         public string Trigger { get; set; }
         public Type TriggerType { get; set; }
+        public bool IsElseTransition { get; set; }
         public string Name
             => $"{SourceName}:{Trigger}:{TargetName}";
         public string Identifier
