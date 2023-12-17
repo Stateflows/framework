@@ -114,6 +114,7 @@ namespace Stateflows.Activities.Registration.Builders
             });
 
             Edge.Pipeline.Actions.Add(logic);
+            Edge.TargetTokenType = typeof(TTransformedToken);
 
             return new FlowBuilder<TTransformedToken>(Edge);
         }

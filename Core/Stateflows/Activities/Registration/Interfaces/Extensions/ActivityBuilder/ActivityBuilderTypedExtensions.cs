@@ -9,6 +9,10 @@ using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using System;
 using System.ComponentModel;
+using Stateflows.Activities.Collections;
+using static System.Collections.Specialized.BitVector32;
+using System.Text.Json;
+using Stateflows.Activities.Registration;
 
 namespace Stateflows.Activities
 {
@@ -29,39 +33,17 @@ namespace Stateflows.Activities
                 c =>
                 {
                     var action = (c as BaseContext).NodeScope.GetAction<TAction>(c);
-                    _ = action.GetType()
-                        .GetFields()
-                        .Select(property =>
-                        {
-                            var attribute = property.GetCustomAttribute<InputAttribute>();
-                            var isIEnumerable = property.FieldType.IsSubclassOfRawGeneric(typeof(List<>));
-                            var enumeratedType = property.FieldType.GenericTypeArguments.First();
-                            
-                            //var isList = property.GetType().IsSubclassOfRawGeneric(typeof(List<>));
 
-                            if (attribute != null && isIEnumerable && enumeratedType.IsSubclassOf(typeof(Token)))
-                            {
-                                var tokenName = (enumeratedType.GetUninitializedInstance() as Token).Name;
-                                var tokens = c.Input.Where(token => token.Name == tokenName && token.GetType().IsAssignableFrom(enumeratedType)).ToList();
-                                var castMethod = typeof(Enumerable).GetMethod("Cast");
-                                var genericCastMethod = castMethod.MakeGenericMethod(enumeratedType);
-                                var convertedTokens = genericCastMethod.Invoke(null, new object[] { tokens });
-                                var listingMethod = typeof(Enumerable).GetMethod("ToList");
-                                var genericListingMethod = listingMethod.MakeGenericMethod(enumeratedType);
-                                var list = genericListingMethod.Invoke(null, new object[] { convertedTokens });
+                    InputTokensHolder.Tokens.Value = c.Input;
+                    OutputTokensHolder.Tokens.Value = ((ActionContext)c).OutputTokens;
 
-                                property.SetValue(action, list);
-                            }
+                    var result = action.ExecuteAsync();
 
-                            return property;
-                        })
-                        .ToArray();
-
-                    return action.ExecuteAsync();
+                    return result;
                 },
                 b =>
                 {
-                    //(b as NodeBuilder).Node.ScanForDeclaredTypes(typeof(TAction));
+                    (b as NodeBuilder).Node.ScanForDeclaredTypes(typeof(TAction));
                     buildAction?.Invoke(b as ITypedActionBuilder);
                 }
             );
@@ -137,7 +119,7 @@ namespace Stateflows.Activities
                 b =>
                 {
                     b.AddStructuredActivityEvents<TStructuredActivity>();
-                    //(b as NodeBuilder).Node.ScanForDeclaredTypes(typeof(TAction));
+                    (b as NodeBuilder).Node.ScanForDeclaredTypes(typeof(TStructuredActivity));
                     buildAction?.Invoke(b);
                 }
             );
@@ -161,7 +143,7 @@ namespace Stateflows.Activities
                 b =>
                 {
                     b.AddStructuredActivityEvents<TStructuredActivity>();
-                    //(b as NodeBuilder).Node.ScanForDeclaredTypes(typeof(TAction));
+                    (b as NodeBuilder).Node.ScanForDeclaredTypes(typeof(TStructuredActivity));
                     buildAction?.Invoke(b);
                 }
             );
@@ -184,7 +166,7 @@ namespace Stateflows.Activities
                 b =>
                 {
                     b.AddStructuredActivityEvents<TStructuredActivity>();
-                    //(b as NodeBuilder).Node.ScanForDeclaredTypes(typeof(TAction));
+                    (b as NodeBuilder).Node.ScanForDeclaredTypes(typeof(TStructuredActivity));
                     buildAction?.Invoke(b);
                 }
             );

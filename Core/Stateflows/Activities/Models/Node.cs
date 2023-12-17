@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using Stateflows.Common.Models;
 using Stateflows.Activities.Registration;
 using Stateflows.Activities.Context.Classes;
+using Stateflows.Activities.Collections;
 
 namespace Stateflows.Activities.Models
 {
@@ -34,40 +35,31 @@ namespace Stateflows.Activities.Models
         public Dictionary<string, Node> Nodes { get; set; } = new Dictionary<string, Node>();
         public Dictionary<string, Node> NamedNodes { get; set; } = new Dictionary<string, Node>();
 
-        //public bool DeclaredTypesSet { get; set; } = false;
+        public bool DeclaredTypesSet { get; set; } = false;
 
-        //public List<Type> ConsumedTypes { get; set; } = new List<Type>();
+        public List<Type> InputTokenTypes { get; set; } = new List<Type>();
+        public List<Type> OptionalInputTokenTypes { get; set; } = new List<Type>();
+        public List<Type> OutputTokenTypes { get; set; } = new List<Type>();
 
-        //public List<Type> ProducedTypes { get; set; } = new List<Type>();
+        public void ScanForDeclaredTypes(Type nodeType)
+        {
+            DeclaredTypesSet = true;
 
-        //public void ScanForDeclaredTypes(Type nodeType)
-        //{
-        //    DeclaredTypesSet = true;
+            InputTokenTypes = nodeType.GetFields()
+                .Where(field => field.FieldType.GetGenericTypeDefinition() == typeof(Input<>))
+                .Select(field => field.FieldType.GenericTypeArguments[0])
+                .ToList();
 
-        //    var interfaces = nodeType.GetInterfaces().Where(t => 
-        //        typeof(INodeInterface).IsAssignableFrom(t) &&
-        //        (
-        //            t.FullName.StartsWith("Stateflows.Activities.IProduces") ||
-        //            t.FullName.StartsWith("Stateflows.Activities.IConsumes")
-        //        ) &&
-        //        t.GetGenericArguments().Length == 1
-        //    );
+            OptionalInputTokenTypes = nodeType.GetFields()
+                .Where(field => field.FieldType.GetGenericTypeDefinition() == typeof(OptionalInput<>))
+                .Select(field => field.FieldType.GenericTypeArguments[0])
+                .ToList();
 
-        //    foreach (var type in interfaces)
-        //    {
-        //        var tokenType = type.GetGenericArguments().First();
-
-        //        if (type.FullName.StartsWith("Stateflows.Activities.IProduces"))
-        //        {
-        //            ProducedTypes.Add(tokenType);
-        //        }
-
-        //        if (type.FullName.StartsWith("Stateflows.Activities.IConsumes"))
-        //        {
-        //            ConsumedTypes.Add(tokenType);
-        //        }
-        //    }
-        //}
+            OutputTokenTypes = nodeType.GetFields()
+                .Where(field => field.FieldType.GetGenericTypeDefinition() == typeof(Output<>))
+                .Select(field => field.FieldType.GenericTypeArguments[0])
+                .ToList();
+        }
 
         private Logic<ActivityEventActionAsync> initialize = null;
         public Logic<ActivityEventActionAsync> Initialize

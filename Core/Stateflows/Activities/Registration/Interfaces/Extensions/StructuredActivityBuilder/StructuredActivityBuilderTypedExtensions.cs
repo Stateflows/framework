@@ -1,6 +1,8 @@
 ﻿using Stateflows.Activities.Extensions;
 using Stateflows.Activities.Context.Classes;
 using Stateflows.Activities.Registration.Interfaces;
+using Stateflows.Activities.Collections;
+using Stateflows.Activities.Registration;
 
 namespace Stateflows.Activities
 {
@@ -18,10 +20,20 @@ namespace Stateflows.Activities
 
             return builder.AddAction(
                 actionNodeName,
-                c => (c as BaseContext).NodeScope.GetAction<TAction>(c).ExecuteAsync(),
+                c =>
+                {
+                    var action = (c as BaseContext).NodeScope.GetAction<TAction>(c);
+
+                    InputTokensHolder.Tokens.Value = c.Input;
+                    OutputTokensHolder.Tokens.Value = ((ActionContext)c).OutputTokens;
+
+                    var result = action.ExecuteAsync();
+
+                    return result;
+                },
                 b =>
                 {
-                    //(b as NodeBuilder).Node.ScanForDeclaredTypes(typeof(TAction));
+                    (b as NodeBuilder).Node.ScanForDeclaredTypes(typeof(TAction));
                     buildAction?.Invoke(b as ITypedActionBuilder);
                 }
             );
@@ -88,7 +100,7 @@ namespace Stateflows.Activities
                 b =>
                 {
                     b.AddStructuredActivityEvents<TStructuredActivity>();
-                    //(b as NodeBuilder).Node.ScanForDeclaredTypes(typeof(TAction));
+                    (b as NodeBuilder).Node.ScanForDeclaredTypes(typeof(TStructuredActivity));
                     buildAction?.Invoke(b);
                 }
             );
@@ -112,7 +124,7 @@ namespace Stateflows.Activities
                 b =>
                 {
                     b.AddStructuredActivityEvents<TStructuredActivity>();
-                    //(b as NodeBuilder).Node.ScanForDeclaredTypes(typeof(TAction));
+                    (b as NodeBuilder).Node.ScanForDeclaredTypes(typeof(TStructuredActivity));
                     buildAction?.Invoke(b);
                 }
             );
@@ -135,7 +147,7 @@ namespace Stateflows.Activities
                 b =>
                 {
                     b.AddStructuredActivityEvents<TStructuredActivity>();
-                    //(b as NodeBuilder).Node.ScanForDeclaredTypes(typeof(TAction));
+                    (b as NodeBuilder).Node.ScanForDeclaredTypes(typeof(TStructuredActivity));
                     buildAction?.Invoke(b);
                 }
             );

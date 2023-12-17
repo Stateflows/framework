@@ -1,8 +1,8 @@
 ﻿using System;
+using System.Linq;
+using System.Collections.Generic;
 using Stateflows.Common.Utilities;
 using Stateflows.Common.Extensions;
-using System.Collections.Generic;
-using System.Linq;
 
 namespace Stateflows.Activities
 {
@@ -10,7 +10,23 @@ namespace Stateflows.Activities
     {
         public Guid Id { get; set; } = Guid.NewGuid();
 
-        public virtual string Name => GetType().FullName;
+        public virtual string Name
+        {
+            get
+            {
+                var tokenType = GetType();
+                if (!tokenType.IsGenericType)
+                {
+                    return tokenType.FullName;
+                }
+                else
+                {
+                    var tokenName = tokenType.GetGenericTypeDefinition().FullName.Split('`').First();
+                    var typeNames = string.Join(", ", tokenType.GetGenericArguments().Select(t => t.FullName));
+                    return $"{tokenName}<{typeNames}>";
+                }
+            }
+        }
     }
 
     public static class TokenExtensions

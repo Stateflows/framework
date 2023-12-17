@@ -8,6 +8,8 @@ using Stateflows.StateMachines;
 using Stateflows.Activities;
 using System.Diagnostics;
 using Stateflows.Activities.Attributes;
+using System.Collections;
+using Stateflows.Activities.Collections;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -29,11 +31,19 @@ builder.Services.AddStateflows(b => b
             .AddAction("1", async c =>
             {
                 c.OutputRange((new[] { 1, 2, 3, 4, 5 }).Select(x => new ValueToken<int>() { Value = x }).ToArray());
+                c.OutputRange((new[] { "1", "2", "3" }).Select(x => new ValueToken<string>() { Value = x }).ToArray());
             }, b => b
-                .AddObjectFlow<ValueToken<int>>("2")
                 .AddObjectFlow<ValueToken<int>, Action1>()
+                .AddObjectFlow<ValueToken<string>, Action1>()
+                //.AddObjectFlow<ValueToken<string>, Action2>()
             )
-            .AddAction<Action1>()
+            .AddAction<Action1>(b => b
+                .AddObjectFlow<ValueToken<int>>("2")
+            )
+            .AddAction<Action2>(b => b
+                .AddObjectFlow<ValueToken<string>>("2")
+                //.AddObjectFlow<ValueToken<int>>("2")
+            )
             .AddParallelActivity<ValueToken<int>>("2", b => b
                 .AddInitial(b => b
                     .AddControlFlow("2.1")
@@ -113,7 +123,6 @@ builder.Services.AddStateflows(b => b
         //    .AddFinalState("cleared")
         //)
 
-        .AddInterceptor
 
         .AddStateMachine("stateMachine1", b => b
             .AddInitialState("state1", b => b
@@ -198,13 +207,33 @@ app.Run();
 
 public class Action1 : Stateflows.Activities.Action
 {
-    [Input]
-    public readonly List<ValueToken<int>> Ints = new List<ValueToken<int>>();
+    public readonly Input<ValueToken<int>> Ints;
+    public readonly Input<ValueToken<string>> Strings;
+    public readonly Output<ValueToken<int>> IntsOut;
 
-    public override Task ExecuteAsync()
+    public override async Task ExecuteAsync()
     {
-        Debug.WriteLine(Ints?.Count().ToString() ?? "input not working");
+        await Task.Delay(1000);
 
-        return Task.CompletedTask;
+        Debug.WriteLine("ints count: " + Ints.Count().ToString() ?? "input not working");
+
+        IntsOut.AddRange(Ints);
+
+        await Task.Delay(1000);
+    }
+}
+
+public class Action2 : Stateflows.Activities.Action
+{
+    public readonly OptionalInput<ValueToken<string>> Strings;
+    public readonly Output<ValueToken<string>> StringsOut;
+
+    public override async Task ExecuteAsync()
+    {
+        await Task.Delay(1000);
+
+        Debug.WriteLine("strings count: " + Strings.Count().ToString() ?? "input not working");
+
+        StringsOut.AddRange(Strings);
     }
 }

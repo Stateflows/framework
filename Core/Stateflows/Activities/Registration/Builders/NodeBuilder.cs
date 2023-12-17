@@ -50,6 +50,7 @@ namespace Stateflows.Activities.Registration
             var edge = new Edge()
             {
                 TokenType = typeof(TToken),
+                TargetTokenType = typeof(TToken),
                 Graph = Node.Graph,
                 SourceName = Node.Name,
                 Source = Node,

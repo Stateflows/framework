@@ -2,6 +2,8 @@
 using System.Collections.Generic;
 using Stateflows.Common.Models;
 using Stateflows.Activities.Exceptions;
+using System.Linq;
+using System.Diagnostics;
 
 namespace Stateflows.Activities.Models
 {
@@ -43,7 +45,7 @@ namespace Stateflows.Activities.Models
 
         //public List<ObserverFactory> ObserverFactories { get; set; } = new List<ObserverFactory>();
 
-        //[DebuggerHidden]
+        [DebuggerHidden]
         public void Build()
         {
             //foreach (var node in Nodes.Values)
@@ -75,27 +77,39 @@ namespace Stateflows.Activities.Models
                 }
             }
 
-            //foreach (var node in AllNodes.Values)
-            //{
-            //    if (node.DeclaredTypesSet)
-            //    {
-            //        var incomingTokens = node.IncomingEdges.Select(e => e.TokenType).Where(t => t != typeof(ControlToken) && !t.FullName.StartsWith("Stateflows.Activities.ExceptionToken")).Distinct();
-            //        var outgoingTokens = node.Edges.Select(e => e.TokenType).Where(t => t != typeof(ControlToken) && !t.FullName.StartsWith("Stateflows.Activities.ExceptionToken")).Distinct();
+            foreach (var node in AllNodes.Values)
+            {
+                if (node.DeclaredTypesSet)
+                {
+                    var incomingTokens = node.IncomingEdges
+                        .Select(e => e.TargetTokenType)
+                        .Where(t => t != typeof(ControlToken) && (!t.IsGenericType || t.GetGenericTypeDefinition() != typeof(ExceptionToken<>)))
+                        .Distinct();
+                    var outgoingTokens = node.Edges
+                        .Select(e => e.TokenType)
+                        .Where(t => t != typeof(ControlToken) && (!t.IsGenericType || t.GetGenericTypeDefinition() != typeof(ExceptionToken<>)))
+                        .Distinct();
 
-            //        var undeclaredIncomingTokens = incomingTokens.Where(t => !node.ConsumedTypes.Contains(t));
-            //        var undeclaredOutgoingTokens = outgoingTokens.Where(t => !node.ProducedTypes.Contains(t));
+                    var undeclaredIncomingTokens = incomingTokens.Where(t => !node.InputTokenTypes.Contains(t) && !node.OptionalInputTokenTypes.Contains(t));
+                    var undeclaredOutgoingTokens = outgoingTokens.Where(t => !node.OutputTokenTypes.Contains(t));
+                    var unsatisfiedIncomingTokens = node.InputTokenTypes.Where(t => !incomingTokens.Contains(t));
 
-            //        if (undeclaredIncomingTokens.Any())
-            //        {
-            //            throw new ActionDefinitionException($"Invalid incoming token type: action '{node.Name}' doesn't consume {undeclaredIncomingTokens.First().FullName} token.");
-            //        }
+                    if (undeclaredIncomingTokens.Any())
+                    {
+                        throw new NodeDefinitionException(node.Name, $"Invalid incoming flow: action '{node.Name}' doesn't consume '{TokenInfo.GetName(undeclaredIncomingTokens.First())}' token.");
+                    }
 
-            //        if (undeclaredOutgoingTokens.Any())
-            //        {
-            //            throw new ActionDefinitionException($"Invalid outgoing token type: action '{node.Name}' doesn't produce {undeclaredOutgoingTokens.First().FullName} token.");
-            //        }
-            //    }
-            //}
+                    if (undeclaredOutgoingTokens.Any())
+                    {
+                        throw new NodeDefinitionException(node.Name, $"Invalid outgoing flow: action '{node.Name}' doesn't produce '{TokenInfo.GetName(undeclaredOutgoingTokens.First())}' token.");
+                    }
+
+                    if (unsatisfiedIncomingTokens.Any())
+                    {
+                        throw new NodeDefinitionException(node.Name, $"Missing incoming flow: action '{node.Name}' requires '{TokenInfo.GetName(unsatisfiedIncomingTokens.First())}' input token which is not provided.");
+                    }
+                }
+            }
         }
     }
 }
