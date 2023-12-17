@@ -271,7 +271,7 @@ namespace Stateflows.StateMachines.Engine
 
                 foreach (var vertex in currentStack)
                 {
-                    foreach (var edge in vertex.Edges.Values)
+                    foreach (var edge in vertex.OrderedEdges)
                     {
                         Context.SourceState = edge.SourceName;
                         Context.TargetState = edge.TargetName;
@@ -545,6 +545,28 @@ namespace Stateflows.StateMachines.Engine
                 (transitionObj as TTransition).Context = context;
 
                 return transitionObj as TTransition;
+            }
+        }
+
+        public TElseTransition GetElseTransition<TElseTransition, TEvent>(ITransitionContext<TEvent> context)
+            where TElseTransition : ElseTransition<TEvent>
+            where TEvent : Event, new()
+        {
+            if (!Transitions.TryGetValue(typeof(TElseTransition), out var transitionObj))
+            {
+                var transition = ServiceProvider.GetService<TElseTransition>();
+
+                transition.Context = context;
+
+                Transitions.Add(typeof(TElseTransition), transition);
+
+                return transition;
+            }
+            else
+            {
+                (transitionObj as TElseTransition).Context = context;
+
+                return transitionObj as TElseTransition;
             }
         }
     }

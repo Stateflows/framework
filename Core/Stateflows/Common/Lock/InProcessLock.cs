@@ -1,4 +1,5 @@
-﻿using System.Threading;
+﻿using System;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Collections.Generic;
 using Stateflows.Common.Classes;
@@ -11,7 +12,7 @@ namespace Stateflows.Common.Lock
     {
         public Dictionary<BehaviorId, EventWaitHandle> Events { get; } = new Dictionary<BehaviorId, EventWaitHandle>();
 
-        public async Task<IStateflowsLockHandle> AquireLockAsync(BehaviorId id)
+        public async Task<IStateflowsLockHandle> AquireLockAsync(BehaviorId id, TimeSpan? timeout = null)
         {
             EventWaitHandle @event = null;
 
@@ -24,7 +25,7 @@ namespace Stateflows.Common.Lock
                 }
             }
 
-            await @event.WaitOneAsync();
+            await @event.WaitOneAsync((int)(timeout?.TotalMilliseconds ?? -1));
             @event.Reset();
 
             return new LockHandle(id, new AsyncDisposableHandle(@event), () =>

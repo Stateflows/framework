@@ -1,5 +1,6 @@
 ﻿using Stateflows.Common.Interfaces;
 using Stateflows.StateMachines;
+using System.Threading.Tasks;
 
 namespace Stateflows.Common.StateMachines.Classes
 {
