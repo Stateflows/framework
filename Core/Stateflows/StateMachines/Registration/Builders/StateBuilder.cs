@@ -155,6 +155,10 @@ namespace Stateflows.StateMachines.Registration.Builders
         private IStateBuilder AddTransitionInternal<TEvent>(string targetVertexName, bool isElse, TransitionBuilderAction<TEvent> transitionBuildAction = null)
             where TEvent : Event, new()
         {
+            var targetEdgeType = targetVertexName == Constants.DefaultTransitionTarget
+                ? TriggerType.InternalTransition
+                : TriggerType.Transition;
+
             var edge = new Edge()
             {
                 Trigger = EventInfo<TEvent>.Name,
@@ -164,6 +168,9 @@ namespace Stateflows.StateMachines.Registration.Builders
                 SourceName = Vertex.Name,
                 Source = Vertex,
                 TargetName = targetVertexName,
+                Type = EventInfo<TEvent>.Name == Constants.CompletionEvent
+                    ? TriggerType.DefaultTransition
+                    : targetEdgeType
             };
 
             if (Vertex.Edges.ContainsKey(edge.Name))

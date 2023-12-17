@@ -5,11 +5,19 @@ using Stateflows.StateMachines.Registration;
 
 namespace Stateflows.StateMachines.Models
 {
+    internal enum TriggerType
+    {
+        Transition,
+        InternalTransition,
+        DefaultTransition
+    }
+
     internal class Edge
     {
         public Graph Graph { get; set; }
         public string Trigger { get; set; }
         public Type TriggerType { get; set; }
+        public TriggerType Type { get; set; }
         public bool IsElseTransition { get; set; }
         public string Name
             => $"{SourceName}:{Trigger}:{TargetName}";
