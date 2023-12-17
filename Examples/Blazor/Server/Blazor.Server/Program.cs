@@ -1,7 +1,7 @@
 using Blazor.Server;
 using Blazor.Server.Data;
 using Examples.Common;
-
+using Examples.Storage;
 using Stateflows;
 using Stateflows.Common;
 using Stateflows.StateMachines;
@@ -18,55 +18,22 @@ builder.Services.AddSignalR();
 
 builder.Services.AddStateflows(b => b
     .AddPlantUml()
-
-    .AddStateMachine("stateMachine1", b => b
-        .AddInitialState("state1", b => b
-            .AddTransition<SomeEvent>("state2")
-            .AddInternalTransition<ExampleRequest>(b => b
-                .AddEffect(async c =>
-                {
-                    await Task.Delay(3000);
-                    c.Event.Respond(new ExampleResponse() { ResponseData = "Example response data" });
-                })
+    .AddStateMachines(b => b
+        .AddStateMachine("stateMachine1", b => b
+            .AddInitialState("state1", b => b
+                .AddTransition<OtherEvent>("state2")
             )
-        )
-        .AddState("state2", b => b
-            .AddTransition<OtherEvent>("state3", b => b
-                .AddGuard(c => c.Event.AnswerToLifeUniverseAndEverything == 42)
+            .AddState("state2", b => b
+                .AddTransition<OtherEvent>("state3")
             )
-        )
-        .AddCompositeState("state3", b => b
-            .AddOnEntry(c =>
-            {
-                Debug.WriteLine("entered state3");
-            })
-            .AddTransition<SomeEvent>("state4")
-            .AddTransition<SomeEvent>("state5", b => b.AddGuard(c => false))
-            .AddTransition<AfterOneMinute>("state4")
-
-            .AddInitialState("state3_1", b => b
-                .AddTransition<SomeEvent>("state3_2")
-            )
-            .AddState("state3_2")
-        )
-        .AddState("state4", b => b
-            .AddDefaultTransition("state5")
-        )
-        .AddState("state5", b => b
-            .AddInternalTransition<EveryOneMinute>(b => b
-                .AddEffect(c =>
-                {
-                    var counter = c.SourceState.Values.GetOrDefault<int>("counter", 0);
-                    c.SourceState.Values.Set("counter", counter + 1);
-                    Debug.WriteLine($"counter: {counter}");
-                })
-            )
-            .AddDefaultTransition("state2", b => b
-                .AddGuard(c =>
-                {
-                    var counter = c.SourceState.Values.GetOrDefault<int>("counter", 0);
-                    return counter > 2;
-                })
+            .AddState("state3", b => b
+                .AddTransition<OtherEvent>("state1", b => b
+                    .AddGuard(c => Random.Shared.Next(1, 10) % 2 == 0)
+                    .AddEffect(c => Debug.WriteLine("Even, going to state1"))
+                )
+                .AddElseTransition<OtherEvent>("state2", b => b
+                    .AddEffect(c => Debug.WriteLine("Odd, going to state2"))
+                )
             )
         )
     )
@@ -77,7 +44,7 @@ builder.Services.AddStateflows(b => b
             : StateflowsEnvironments.Production
     )
 
-    .AddEntityFrameworkCoreStorage<StateflowsContext>()
+    //.AddStorage()
 );
 
 var app = builder.Build();

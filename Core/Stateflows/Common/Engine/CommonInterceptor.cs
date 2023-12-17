@@ -2,47 +2,53 @@
 using System.Collections.Generic;
 using Stateflows.Common.Extensions;
 using Stateflows.Common.Context.Interfaces;
+using Microsoft.Extensions.Logging;
 
 namespace Stateflows.Common.Engine
 {
     internal class CommonInterceptor : IBehaviorInterceptor, IStateflowsExecutionInterceptor
     {
+        private readonly IEnumerable<IBehaviorInterceptor> Interceptors;
+
+        private readonly IEnumerable<IStateflowsExecutionInterceptor> ExecutionInterceptors;
+
+        private readonly ILogger<CommonInterceptor> Logger;
+
         public CommonInterceptor(
             IEnumerable<IBehaviorInterceptor> interceptors,
-            IEnumerable<IStateflowsExecutionInterceptor> executionInterceptors
+            IEnumerable<IStateflowsExecutionInterceptor> executionInterceptors,
+            ILogger<CommonInterceptor> logger
         )
         {
             Interceptors = interceptors;
             ExecutionInterceptors = executionInterceptors;
+            Logger = logger;
         }
 
-        private IEnumerable<IBehaviorInterceptor> Interceptors { get; }
-
-        private IEnumerable<IStateflowsExecutionInterceptor> ExecutionInterceptors { get; }
-
         public Task AfterHydrateAsync(IBehaviorActionContext context)
-            => Interceptors.RunSafe(i => i.AfterHydrateAsync(context), nameof(AfterHydrateAsync));
+            => Interceptors.RunSafe(i => i.AfterHydrateAsync(context), nameof(AfterHydrateAsync), Logger);
 
         public Task AfterProcessEventAsync(IEventContext<Event> context)
-            => Interceptors.RunSafe(i => i.AfterProcessEventAsync(context), nameof(AfterProcessEventAsync));
+            => Interceptors.RunSafe(i => i.AfterProcessEventAsync(context), nameof(AfterProcessEventAsync), Logger);
 
         public Task BeforeDehydrateAsync(IBehaviorActionContext context)
-            => Interceptors.RunSafe(i => i.BeforeDehydrateAsync(context), nameof(BeforeDehydrateAsync));
+            => Interceptors.RunSafe(i => i.BeforeDehydrateAsync(context), nameof(BeforeDehydrateAsync), Logger);
 
         public Task<bool> BeforeProcessEventAsync(IEventContext<Event> context)
-            => Interceptors.RunSafe(i => i.BeforeProcessEventAsync(context), nameof(BeforeProcessEventAsync));
+            => Interceptors.RunSafe(i => i.BeforeProcessEventAsync(context), nameof(BeforeProcessEventAsync), Logger);
 
         public bool BeforeExecute(Event @event)
         {
+            var result = true;
             foreach (var interceptor in ExecutionInterceptors)
             {
                 if (!interceptor.BeforeExecute(@event))
                 {
-                    return false;
+                    result = false;
                 }
             }
 
-            return true;
+            return result;
         }
 
         public void AfterExecute(Event @event)

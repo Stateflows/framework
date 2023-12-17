@@ -85,7 +85,7 @@
     {
         expectedEvents = (await stateMachine.GetCurrentStateAsync()).Response.ExpectedEvents;
 
-        plantUmlUrl = (await stateMachine.GetPlantUmlUrlAsync()).Response.PlantUmlUrl;
+        plantUmlUrl = (await stateMachine.GetPlantUmlAsync()).Response.GetUrl();
     }
 
     private async Task Initialize()

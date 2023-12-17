@@ -104,6 +104,23 @@ namespace Stateflows.StateMachines.Models
                         );
                     }
                 }
+
+                if (edge.IsElseTransition)
+                {
+                    var siblings = edge.Source.Edges.Values.Any(e =>
+                        !e.IsElseTransition &&
+                        e.Trigger == edge.Trigger &&
+                        e.Type == edge.Type
+                    );
+
+                    if (!siblings)
+                    {
+                        throw new TransitionDefinitionException(
+                            $"Can't register else transition outgoing from state '{edge.SourceName}' in state machine '{Name}': there are no other transitions coming out from this state with same type and trigger",
+                            Class
+                        );
+                    }
+                }
             }
         }
     }

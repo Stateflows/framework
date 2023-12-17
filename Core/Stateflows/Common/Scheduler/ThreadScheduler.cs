@@ -2,15 +2,14 @@
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using System.Collections.Generic;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.DependencyInjection;
-using Stateflows.Common.Classes;
 using Stateflows.Common.Interfaces;
+using Microsoft.Extensions.Logging;
 
 namespace Stateflows.Common.Scheduler
 {
-    internal class ThreadScheduler : IStateflowsScheduler, IHostedService
+    internal class ThreadScheduler : IHostedService
     {
         private readonly CancellationTokenSource CancellationTokenSource = new CancellationTokenSource();
 
@@ -26,7 +25,9 @@ namespace Stateflows.Common.Scheduler
 
         private readonly IServiceScope Scope;
 
-        private BehaviorId StorageLockId;
+        private readonly ILogger<ThreadScheduler> Logger;
+
+        private readonly TimeSpan LockTimeout = new TimeSpan(0, 0, 10);
 
         private BehaviorId HandlingLockId;
 
@@ -39,34 +40,8 @@ namespace Stateflows.Common.Scheduler
             TenantsManager = Scope.ServiceProvider.GetRequiredService<IStateflowsTenantsManager>();
             BehaviorClassesProvider = Scope.ServiceProvider.GetRequiredService<IBehaviorClassesProvider>();
             Locator = Scope.ServiceProvider.GetRequiredService<IBehaviorLocator>();
-            StorageLockId = new BehaviorId(nameof(ThreadScheduler), nameof(StorageLockId), new BehaviorClass("", "").Environment);
+            Logger = Scope.ServiceProvider.GetRequiredService<ILogger<ThreadScheduler>>();
             HandlingLockId = new BehaviorId(nameof(ThreadScheduler), nameof(HandlingLockId), new BehaviorClass("", "").Environment);
-        }
-
-        public async Task Clear(BehaviorId behaviorId, IEnumerable<string> ids)
-        {
-            if (!ids.Any())
-            {
-                return;
-            }
-
-            await using (await Lock.AquireLockAsync(StorageLockId))
-            {
-                await Storage.ClearTimeTokens(behaviorId, ids);
-            }
-        }
-
-        public async Task Register(TimeToken[] timeTokens)
-        {
-            if (!timeTokens.Any())
-            {
-                return;
-            }
-
-            await using (await Lock.AquireLockAsync(StorageLockId))
-            {
-                await Storage.AddTimeTokens(timeTokens);
-            }
         }
 
         public Task StartAsync(CancellationToken cancellationToken)
@@ -76,9 +51,12 @@ namespace Stateflows.Common.Scheduler
             return Task.CompletedTask;
         }
 
+        private DateTime GetCurrentTick()
+            => new DateTime(DateTime.Now.Year, DateTime.Now.Month, DateTime.Now.Day, DateTime.Now.Hour, DateTime.Now.Minute, 0);
+
         private async Task TimingLoop(CancellationToken cancellationToken)
         {
-            var lastTick = new DateTime(DateTime.Now.Year, DateTime.Now.Month, DateTime.Now.Day, DateTime.Now.Hour, DateTime.Now.Minute, 0);
+            var lastTick = GetCurrentTick();
 
             while (!cancellationToken.IsCancellationRequested)
             {
@@ -86,47 +64,37 @@ namespace Stateflows.Common.Scheduler
 
                 if (diffInSeconds >= 60)
                 {
-                    lastTick = DateTime.Now;
+                    lastTick = GetCurrentTick();
 
-                    _ = Task.Run(() => TenantsManager.ExecuteByTenants(HandleTokens));
+                    _ = TenantsManager.ExecuteByTenantsAsync(_ => Task.Run(() => HandleTokens()));
                 }
 
                 await Task.Delay(1000);
             }
         }
 
-        private async Task HandleTokens(string tenantId)
+        private async Task HandleTokens()
         {
-            IEnumerable<TimeToken> tokens;
-
-            await using (await Lock.AquireLockAsync(HandlingLockId))
+            try
             {
-                await using (await Lock.AquireLockAsync(StorageLockId))
+                await using (await Lock.AquireLockAsync(HandlingLockId, LockTimeout))
                 {
-                    tokens = await Storage.GetTimeTokens(BehaviorClassesProvider.LocalBehaviorClasses);
-                }
+                    var contexts = await Storage.GetContextsToTimeTrigger(BehaviorClassesProvider.LocalBehaviorClasses);
 
-                var passedTokens = tokens.Where(t => t.Event.ShouldTrigger(t.CreatedAt)).ToArray();
-
-                await Task.WhenAll(
-                    passedTokens.Select(async token =>
-                    {
-                        if (Locator.TryLocateBehavior(token.TargetId, out var behavior))
+                    await Task.WhenAll(
+                        contexts.Select(context =>
                         {
-                            token.Event.EdgeIdentifier = token.EdgeIdentifier;
-
-                            var result = await behavior.SendAsync(token.Event);
-
-                            if (result.Status != EventStatus.Consumed)
-                            {
-                                await using (await Lock.AquireLockAsync(StorageLockId))
-                                {
-                                    await Storage.ClearTimeTokens(token.TargetId, new string[] { token.Id });
-                                }
-                            }
-                        }
-                    })
-                );
+                            var timeEvent = context.PendingTimeEvents.Values.FirstOrDefault(timeEvent => timeEvent.TriggerTime < DateTime.Now);
+                            return (timeEvent != null && Locator.TryLocateBehavior(context.Id, out var behavior))
+                                ? behavior.SendAsync(timeEvent)
+                                : Task.CompletedTask;
+                        })
+                    );
+                }
+            }
+            catch (Exception e)
+            {
+                Logger.LogError(LogTemplates.ExceptionLogTemplate, typeof(ThreadScheduler).FullName, nameof(HandleTokens), e.GetType().Name, e.Message);
             }
         }
 

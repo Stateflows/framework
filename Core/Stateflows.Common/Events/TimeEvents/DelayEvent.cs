@@ -9,7 +9,7 @@ namespace Stateflows.Common
         protected virtual DateTime GetDelayStart(DateTime startedAt)
             => startedAt;
 
-        public override sealed bool ShouldTrigger(DateTime startedAt)
-            => DateTime.Now >= GetDelayStart(startedAt).Add(Delay);
+        protected override DateTime GetTriggerTime(DateTime startedAt)
+            => GetDelayStart(startedAt).Add(Delay);
     }
 }

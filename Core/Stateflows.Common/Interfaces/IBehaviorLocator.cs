@@ -1,4 +1,7 @@
-﻿namespace Stateflows.Common.Interfaces
+﻿using System;
+using System.Threading.Tasks;
+
+namespace Stateflows.Common.Interfaces
 {
     public interface IBehaviorLocator
     {

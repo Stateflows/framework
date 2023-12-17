@@ -10,7 +10,7 @@ namespace Stateflows.StateMachines.Engine
 {
     internal class ContextCleanup : IStateMachinePlugin
     {
-        private readonly List<Vertex> Context_ExitedStates = new List<Vertex>();
+        private readonly List<Vertex> ExitedStates = new List<Vertex>();
 
         public Task AfterStateEntryAsync(IStateActionContext context)
             => Task.CompletedTask;
@@ -19,7 +19,7 @@ namespace Stateflows.StateMachines.Engine
         {
             var vertex = (context as StateActionContext).Vertex;
 
-            Context_ExitedStates.Add(vertex);
+            ExitedStates.Add(vertex);
 
             return Task.CompletedTask;
         }
@@ -41,14 +41,14 @@ namespace Stateflows.StateMachines.Engine
             if (context.TargetState != null)
             {
                 var ctx = (context as IRootContext).Context;
-                foreach (var vertexName in Context_ExitedStates.Select(v => v.Name))
+                foreach (var vertexName in ExitedStates.Select(v => v.Name))
                 {
                     if (vertexName != context.TargetState.Name)
                     {
                         ctx.ClearStateValues(vertexName);
                     }
                 }
-                Context_ExitedStates.Clear();
+                ExitedStates.Clear();
             }
 
             return Task.CompletedTask;

@@ -9,6 +9,7 @@ using Stateflows.Common.Storage;
 using Stateflows.Common.Scheduler;
 using Stateflows.Common.Extensions;
 using Stateflows.Common.Interfaces;
+using Stateflows.Common.Initializer;
 using Stateflows.Common.Registration.Builders;
 using Stateflows.Common.Registration.Interfaces;
 using Stateflows.System;
@@ -26,8 +27,8 @@ namespace Stateflows
                     .ServiceCollection
                     .AddSingleton<StateflowsEngine>()
                     .AddHostedService(provider => provider.GetService<StateflowsEngine>())
-                    .AddSingleton<IStateflowsScheduler, ThreadScheduler>()
-                    .AddHostedService(provider => provider.GetService<IStateflowsScheduler>() as ThreadScheduler)
+                    .AddHostedService<ThreadScheduler>()
+                    .AddHostedService<ThreadInitializer>()
                     .AddScoped<CommonInterceptor>()
                     ;
             }
@@ -61,6 +62,13 @@ namespace Stateflows
             }
 
             return services;
+        }
+
+        public static IStateflowsBuilder AddDefaultInstance(this IStateflowsBuilder stateflowsBuilder, BehaviorClass behaviorClass, InitializationRequestFactoryAsync initializationRequestFactoryAsync = null)
+        {
+            BehaviorClassesInitializations.Instance.Initialize(behaviorClass, initializationRequestFactoryAsync);
+
+            return stateflowsBuilder;
         }
 
         public static IStateflowsBuilder AddInterceptor<TInterceptor>(this IStateflowsBuilder stateflowsBuilder)

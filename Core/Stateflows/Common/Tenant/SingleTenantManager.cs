@@ -8,7 +8,7 @@ namespace Stateflows.Common.Tenant
     {
         private readonly string TenantId = "mainTenant";
 
-        public Task ExecuteByTenants(Func<string, Task> tenantAction)
+        public Task ExecuteByTenantsAsync(Func<string, Task> tenantAction)
             => tenantAction?.Invoke(TenantId);
     }
 }

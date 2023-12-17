@@ -1,9 +1,11 @@
-﻿using Stateflows.Common;
+﻿using System;
+using Stateflows.Common;
 using Stateflows.StateMachines.Context.Interfaces;
-using System;
 
 namespace Stateflows.StateMachines.Registration.Interfaces
 {
+    public delegate void StateMachinesBuilderAction(IStateMachinesBuilder builder);
+
     public delegate void StateMachineBuilderAction(IStateMachineBuilder builder);
 
     public delegate void StateBuilderAction(IStateBuilder builder);
@@ -15,6 +17,9 @@ namespace Stateflows.StateMachines.Registration.Interfaces
     public delegate void CompositeStateTransitionsBuilderAction(ITypedCompositeStateBuilder builder);
 
     public delegate void TransitionBuilderAction<TEvent>(ITransitionBuilder<TEvent> builder)
+        where TEvent : Event, new();
+
+    public delegate void ElseTransitionBuilderAction<TEvent>(IElseTransitionBuilder<TEvent> builder)
         where TEvent : Event, new();
 
     public delegate IStateMachineObserver StateMachineObserverFactory(IServiceProvider serviceProvider);

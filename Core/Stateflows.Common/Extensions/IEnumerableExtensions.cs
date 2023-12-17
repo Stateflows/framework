@@ -1,7 +1,7 @@
 ﻿using System;
-using System.Diagnostics;
 using System.Threading.Tasks;
 using System.Collections.Generic;
+using Microsoft.Extensions.Logging;
 using Stateflows.Common.Utilities;
 
 namespace Stateflows.Common.Extensions
@@ -27,13 +27,14 @@ namespace Stateflows.Common.Extensions
         public static async Task<bool> RunProtected<T>(this IEnumerable<T> enumerable, PredicateAsync<T> action, Action<Exception> exceptionHandler)
             where T : class
         {
+            var result = true;
             foreach (var item in enumerable)
             {
                 try
                 {
                     if (!await action(item))
                     {
-                        return false;
+                        result = false;
                     }
                 }
                 catch (Exception e)
@@ -42,21 +43,21 @@ namespace Stateflows.Common.Extensions
                 }
             }
 
-            return true;
+            return result;
         }
 
-        public static Task RunSafe<T>(this IEnumerable<T> enumerable, ActionAsync<T> action, string methodName)
+        public static Task RunSafe<T>(this IEnumerable<T> enumerable, ActionAsync<T> action, string methodName, ILogger logger)
             where T : class
             => enumerable.RunProtected<T>(
                 action,
-                e => Debug.WriteLine($"Exception catched in {typeof(T).DeclaringType.Name}.{methodName}(): '{e.GetType().Name}' with message \"{e.Message}\"")
+                e => logger.LogError(LogTemplates.ExceptionLogTemplate, typeof(T).DeclaringType.FullName, methodName, e.GetType().Name, e.Message)
             );
 
-        public static Task<bool> RunSafe<T>(this IEnumerable<T> enumerable, PredicateAsync<T> action, string methodName)
+        public static Task<bool> RunSafe<T>(this IEnumerable<T> enumerable, PredicateAsync<T> action, string methodName, ILogger logger)
             where T : class
             => enumerable.RunProtected<T>(
                 action,
-                e => Debug.WriteLine($"Exception catched in {typeof(T).DeclaringType.Name}.{methodName}(): '{e.GetType().Name}' with message \"{e.Message}\"")
+                e => logger.LogError(LogTemplates.ExceptionLogTemplate, typeof(T).DeclaringType.FullName, methodName, e.GetType().Name, e.Message)
             );
     }
 }

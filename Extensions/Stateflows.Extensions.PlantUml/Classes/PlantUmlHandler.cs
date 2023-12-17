@@ -17,15 +17,10 @@ namespace Stateflows.Extensions.PlantUml.Classes
         private EventStatus HandleEvent<TEvent>(TEvent @event, Func<string> plantUmlGenerator)
             where TEvent : Event, new()
         {
-            if (@event is PlantUmlRequest)
+            if (@event is PlantUmlRequest request)
             {
                 var plantUml = plantUmlGenerator();
-                (@event as PlantUmlRequest).Respond(new PlantUmlResponse()
-                    {
-                        PlantUml = plantUml,
-                        PlantUmlUrl = "http://www.plantuml.com/plantuml/png/" + PlantUmlTextEncoder.Encode(plantUml)
-                    }
-                );
+                request.Respond(new PlantUmlResponse() { PlantUml = plantUml });
 
                 return EventStatus.Consumed;
             }

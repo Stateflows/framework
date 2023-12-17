@@ -25,5 +25,13 @@ namespace Stateflows.StateMachines
                 .AddStateMachineInvocationContext((builder as TransitionBuilder<TEvent>).Edge.Graph)
                 .ToAsync()
             );
+
+        [DebuggerHidden]
+        public static IElseTransitionBuilder<TEvent> AddEffect<TEvent>(this IElseTransitionBuilder<TEvent> builder, Action<ITransitionContext<TEvent>> effect)
+            where TEvent : Event, new()
+            => builder.AddEffect(effect
+                .AddStateMachineInvocationContext((builder as TransitionBuilder<TEvent>).Edge.Graph)
+                .ToAsync()
+            );
     }
 }

@@ -18,21 +18,23 @@ namespace StateMachine.IntegrationTests.Tests
         {
             builder
                 .AddPlantUml()
-                .AddStateMachine("submachine", b => b
-                    .AddExecutionSequenceObserver()
-                    .AddInitialState("state1", b => b
-                        .AddSubmachine("nested")
-                        .AddTransition<SomeEvent>("state2")
+                .AddStateMachines(b => b
+                    .AddStateMachine("submachine", b => b
+                        .AddExecutionSequenceObserver()
+                        .AddInitialState("state1", b => b
+                            .AddSubmachine("nested")
+                            .AddTransition<SomeEvent>("state2")
+                        )
+                        .AddState("state2")
                     )
-                    .AddState("state2")
-                )
 
-                .AddStateMachine("nested", b => b
-                    .AddExecutionSequenceObserver()
-                    .AddInitialState("stateA", b => b
-                        .AddTransition<SomeEvent>("stateB")
+                    .AddStateMachine("nested", b => b
+                        .AddExecutionSequenceObserver()
+                        .AddInitialState("stateA", b => b
+                            .AddTransition<SomeEvent>("stateB")
+                        )
+                        .AddState("stateB")
                     )
-                    .AddState("stateB")
                 )
                 ;
         }

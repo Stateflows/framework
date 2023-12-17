@@ -4,22 +4,22 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Collections.Generic;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.DependencyInjection;
 using Stateflows.Common.Engine;
 using Stateflows.Common.Classes;
 using Stateflows.Common.Interfaces;
 using Stateflows.Common.Extensions;
-using System.Diagnostics;
 
 namespace Stateflows.Common
 {
     internal class StateflowsEngine : BackgroundService, IHostedService
     {
-        private IServiceScope Scope { get; }
-        private IServiceProvider ServiceProvider { get; }
-        private IStateflowsLock Lock { get; }
-        private IStateflowsExecutionInterceptor Interceptor { get; }
-
+        private readonly IServiceScope Scope;
+        private IServiceProvider ServiceProvider => Scope.ServiceProvider;
+        private readonly IStateflowsLock Lock;
+        private readonly IStateflowsExecutionInterceptor Interceptor;
+        private readonly ILogger<StateflowsEngine> Logger;
         private Dictionary<string, IEventProcessor> processors;
         private Dictionary<string, IEventProcessor> Processors
             => processors ??= ServiceProvider.GetRequiredService<IEnumerable<IEventProcessor>>().ToDictionary(p => p.BehaviorType, p => p);
@@ -29,9 +29,9 @@ namespace Stateflows.Common
         public StateflowsEngine(IServiceProvider serviceProvider)
         {
             Scope = serviceProvider.CreateScope();
-            ServiceProvider = Scope.ServiceProvider;
             Lock = ServiceProvider.GetRequiredService<IStateflowsLock>();
             Interceptor = ServiceProvider.GetRequiredService<CommonInterceptor>();
+            Logger = ServiceProvider.GetRequiredService<ILogger<StateflowsEngine>>();
         }
 
         public EventHolder EnqueueEvent(BehaviorId id, Event @event, IServiceProvider serviceProvider)
@@ -59,18 +59,23 @@ namespace Stateflows.Common
             {
                 try
                 {
-                    Interceptor.BeforeExecute(@event);
-
-                    //if (await Lock.TryLockAsync(id))
-                    await using (await Lock.AquireLockAsync(id))
+                    try
                     {
-                        result = await processor.ProcessEventAsync(id, @event, serviceProvider);
-                        //await Lock.UnlockAsync(id);
+                        Interceptor.BeforeExecute(@event);
+
+                        await using (await Lock.AquireLockAsync(id))
+                        {
+                            result = await processor.ProcessEventAsync(id, @event, serviceProvider);
+                        }
+                    }
+                    finally
+                    {
+                        Interceptor.AfterExecute(@event);
                     }
                 }
-                finally
+                catch (Exception e)
                 {
-                    Interceptor.AfterExecute(@event);
+                    Logger.LogError(LogTemplates.ExceptionLogTemplate, typeof(StateflowsEngine).FullName, nameof(ProcessEventAsync), e.GetType().Name, e.Message);
                 }
                 }
             }

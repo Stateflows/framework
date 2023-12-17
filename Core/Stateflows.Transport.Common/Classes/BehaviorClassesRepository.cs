@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Collections.Generic;
@@ -12,15 +11,19 @@ namespace Stateflows.Transport.Common.Classes
 {
     public abstract class BehaviorClassesRepository : IHostedService
     {
-        IServiceProvider ServiceProvider { get; }
+        private readonly IServiceProvider ServiceProvider;
 
         private IBehaviorClassesProvider behaviorClassesProvider = null;
         private IBehaviorClassesProvider BehaviorClassesProvider 
-            => behaviorClassesProvider ?? (behaviorClassesProvider = ServiceProvider.GetService<IBehaviorClassesProvider>());
+            => behaviorClassesProvider ??= ServiceProvider.GetService<IBehaviorClassesProvider>();
 
-        private IBehaviorClassesDiscoverer Discoverer { get; }
+        private readonly IBehaviorClassesDiscoverer Discoverer;
 
-        public BehaviorClassesRepository(
+        private readonly List<BehaviorClass> behaviorClasses = new List<BehaviorClass>();
+
+        public IEnumerable<BehaviorClass> BehaviorClasses => behaviorClasses;
+
+        protected BehaviorClassesRepository(
             IServiceProvider serviceProvider,
             IBehaviorClassesDiscoverer discoverer)
         {
@@ -28,18 +31,19 @@ namespace Stateflows.Transport.Common.Classes
             Discoverer = discoverer;
         }
 
-        private List<BehaviorClass> behaviorClasses = new List<BehaviorClass>();
-
-        public IEnumerable<BehaviorClass> BehaviorClasses => behaviorClasses;
-
         protected abstract Task OnBehaviorClassesChanged();
 
         public Task AddBehaviorClasses(IEnumerable<BehaviorClass> behaviorClasses)
         {
             lock (this.behaviorClasses)
             {
-                this.behaviorClasses.AddRange(behaviorClasses);
-                this.behaviorClasses = this.behaviorClasses.Distinct().ToList();
+                foreach (var behaviorClass in behaviorClasses)
+                {
+                    if (!this.behaviorClasses.Contains(behaviorClass))
+                    {
+                        this.behaviorClasses.AddRange(behaviorClasses);
+                    }
+                }
             }
 
             lock (this.behaviorClasses)

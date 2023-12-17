@@ -23,6 +23,11 @@ namespace Stateflows.StateMachines.Extensions
             where TEvent : Event, new()
             => services?.AddServiceType<TTransition>();
 
+        public static IServiceCollection RegisterElseTransition<TElseTransition, TEvent>(this IServiceCollection services)
+            where TElseTransition : ElseTransition<TEvent>
+            where TEvent : Event, new()
+            => services?.AddServiceType<TElseTransition>();
+
         public static IServiceCollection RegisterExceptionHandler<TExceptionHandler>(this IServiceCollection services)
             where TExceptionHandler : class, IStateMachineExceptionHandler
             => services?.AddServiceType<TExceptionHandler>();

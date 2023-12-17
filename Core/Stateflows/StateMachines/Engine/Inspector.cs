@@ -2,6 +2,7 @@
 using System.Linq;
 using System.Threading.Tasks;
 using System.Collections.Generic;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.DependencyInjection;
 using Stateflows.Common;
 using Stateflows.Common.Engine;
@@ -19,13 +20,16 @@ namespace Stateflows.StateMachines.Engine
 {
     internal class Inspector
     {
-        private Executor Executor { get; }
+        private readonly Executor Executor;
 
-        private CommonInterceptor GlobalInterceptor { get; }
+        private readonly CommonInterceptor GlobalInterceptor;
 
-        public Inspector(Executor executor)
+        private readonly ILogger Logger;
+
+        public Inspector(Executor executor, ILogger logger)
         {
             Executor = executor;
+            Logger = logger;
 
             GlobalInterceptor = Executor.ServiceProvider.GetRequiredService<CommonInterceptor>();
 
@@ -85,16 +89,16 @@ namespace Stateflows.StateMachines.Engine
                 InitializeInspection.Active = true;
             }
 
-            await Plugins.RunSafe(o => o.BeforeStateMachineInitializeAsync(context), nameof(BeforeStateMachineInitializeAsync));
-            await Inspectors.RunSafe(i => i.BeforeStateMachineInitializeAsync(context), nameof(BeforeStateMachineInitializeAsync));
-            await Observers.RunSafe(o => o.BeforeStateMachineInitializeAsync(context), nameof(BeforeStateMachineInitializeAsync));
+            await Plugins.RunSafe(o => o.BeforeStateMachineInitializeAsync(context), nameof(BeforeStateMachineInitializeAsync), Logger);
+            await Inspectors.RunSafe(i => i.BeforeStateMachineInitializeAsync(context), nameof(BeforeStateMachineInitializeAsync), Logger);
+            await Observers.RunSafe(o => o.BeforeStateMachineInitializeAsync(context), nameof(BeforeStateMachineInitializeAsync), Logger);
         }
 
         public async Task AfterStateMachineInitializeAsync(StateMachineInitializationContext context)
         {
-            await Observers.RunSafe(o => o.AfterStateMachineInitializeAsync(context), nameof(AfterStateMachineInitializeAsync));
-            await Inspectors.RunSafe(i => i.AfterStateMachineInitializeAsync(context), nameof(AfterStateMachineInitializeAsync));
-            await Plugins.RunSafe(o => o.AfterStateMachineInitializeAsync(context), nameof(AfterStateMachineInitializeAsync));
+            await Observers.RunSafe(o => o.AfterStateMachineInitializeAsync(context), nameof(AfterStateMachineInitializeAsync), Logger);
+            await Inspectors.RunSafe(i => i.AfterStateMachineInitializeAsync(context), nameof(AfterStateMachineInitializeAsync), Logger);
+            await Plugins.RunSafe(o => o.AfterStateMachineInitializeAsync(context), nameof(AfterStateMachineInitializeAsync), Logger);
 
             if (InitializeInspection != null)
             {
@@ -109,16 +113,16 @@ namespace Stateflows.StateMachines.Engine
                 FinalizeInspection.Active = true;
             }
 
-            await Plugins.RunSafe(o => o.BeforeStateMachineFinalizeAsync(context), nameof(BeforeStateMachineFinalizeAsync));
-            await Inspectors.RunSafe(i => i.BeforeStateMachineFinalizeAsync(context), nameof(BeforeStateMachineFinalizeAsync));
-            await Observers.RunSafe(o => o.BeforeStateMachineFinalizeAsync(context), nameof(BeforeStateMachineFinalizeAsync));
+            await Plugins.RunSafe(o => o.BeforeStateMachineFinalizeAsync(context), nameof(BeforeStateMachineFinalizeAsync), Logger);
+            await Inspectors.RunSafe(i => i.BeforeStateMachineFinalizeAsync(context), nameof(BeforeStateMachineFinalizeAsync), Logger);
+            await Observers.RunSafe(o => o.BeforeStateMachineFinalizeAsync(context), nameof(BeforeStateMachineFinalizeAsync), Logger);
         }
 
         public async Task AfterStateMachineFinalizeAsync(StateMachineActionContext context)
         {
-            await Observers.RunSafe(o => o.AfterStateMachineFinalizeAsync(context), nameof(AfterStateMachineFinalizeAsync));
-            await Inspectors.RunSafe(i => i.AfterStateMachineFinalizeAsync(context), nameof(AfterStateMachineFinalizeAsync));
-            await Plugins.RunSafe(o => o.AfterStateMachineFinalizeAsync(context), nameof(AfterStateMachineFinalizeAsync));
+            await Observers.RunSafe(o => o.AfterStateMachineFinalizeAsync(context), nameof(AfterStateMachineFinalizeAsync), Logger);
+            await Inspectors.RunSafe(i => i.AfterStateMachineFinalizeAsync(context), nameof(AfterStateMachineFinalizeAsync), Logger);
+            await Plugins.RunSafe(o => o.AfterStateMachineFinalizeAsync(context), nameof(AfterStateMachineFinalizeAsync), Logger);
 
             if (FinalizeInspection != null)
             {
@@ -133,16 +137,16 @@ namespace Stateflows.StateMachines.Engine
                 stateInspection.BeginAction(Constants.Initialize);
             }
 
-            await Plugins.RunSafe(o => o.BeforeStateInitializeAsync(context), nameof(BeforeStateInitializeAsync));
-            await Inspectors.RunSafe(i => i.BeforeStateInitializeAsync(context), nameof(BeforeStateInitializeAsync));
-            await Observers.RunSafe(o => o.BeforeStateInitializeAsync(context), nameof(BeforeStateInitializeAsync));
+            await Plugins.RunSafe(o => o.BeforeStateInitializeAsync(context), nameof(BeforeStateInitializeAsync), Logger);
+            await Inspectors.RunSafe(i => i.BeforeStateInitializeAsync(context), nameof(BeforeStateInitializeAsync), Logger);
+            await Observers.RunSafe(o => o.BeforeStateInitializeAsync(context), nameof(BeforeStateInitializeAsync), Logger);
         }
 
         public async Task AfterStateInitializeAsync(StateActionContext context)
         {
-            await Observers.RunSafe(o => o.AfterStateInitializeAsync(context), nameof(AfterStateInitializeAsync));
-            await Inspectors.RunSafe(i => i.AfterStateInitializeAsync(context), nameof(AfterStateInitializeAsync));
-            await Plugins.RunSafe(o => o.AfterStateInitializeAsync(context), nameof(AfterStateInitializeAsync));
+            await Observers.RunSafe(o => o.AfterStateInitializeAsync(context), nameof(AfterStateInitializeAsync), Logger);
+            await Inspectors.RunSafe(i => i.AfterStateInitializeAsync(context), nameof(AfterStateInitializeAsync), Logger);
+            await Plugins.RunSafe(o => o.AfterStateInitializeAsync(context), nameof(AfterStateInitializeAsync), Logger);
 
             if (InspectionStates.TryGetValue(context.Vertex.Identifier, out var stateInspection))
             {
@@ -157,16 +161,16 @@ namespace Stateflows.StateMachines.Engine
                 stateInspection.BeginAction(Constants.Finalize);
             }
 
-            await Plugins.RunSafe(o => o.BeforeStateFinalizeAsync(context), nameof(BeforeStateFinalizeAsync));
-            await Inspectors.RunSafe(i => i.BeforeStateFinalizeAsync(context), nameof(BeforeStateFinalizeAsync));
-            await Observers.RunSafe(o => o.BeforeStateFinalizeAsync(context), nameof(BeforeStateFinalizeAsync));
+            await Plugins.RunSafe(o => o.BeforeStateFinalizeAsync(context), nameof(BeforeStateFinalizeAsync), Logger);
+            await Inspectors.RunSafe(i => i.BeforeStateFinalizeAsync(context), nameof(BeforeStateFinalizeAsync), Logger);
+            await Observers.RunSafe(o => o.BeforeStateFinalizeAsync(context), nameof(BeforeStateFinalizeAsync), Logger);
         }
 
         public async Task AfterStateFinalizeAsync(StateActionContext context)
         {
-            await Observers.RunSafe(o => o.AfterStateFinalizeAsync(context), nameof(AfterStateFinalizeAsync));
-            await Inspectors.RunSafe(i => i.AfterStateFinalizeAsync(context), nameof(AfterStateFinalizeAsync));
-            await Plugins.RunSafe(o => o.AfterStateFinalizeAsync(context), nameof(AfterStateFinalizeAsync));
+            await Observers.RunSafe(o => o.AfterStateFinalizeAsync(context), nameof(AfterStateFinalizeAsync), Logger);
+            await Inspectors.RunSafe(i => i.AfterStateFinalizeAsync(context), nameof(AfterStateFinalizeAsync), Logger);
+            await Plugins.RunSafe(o => o.AfterStateFinalizeAsync(context), nameof(AfterStateFinalizeAsync), Logger);
 
             if (InspectionStates.TryGetValue(context.Vertex.Identifier, out var stateInspection))
             {
@@ -181,16 +185,16 @@ namespace Stateflows.StateMachines.Engine
                 stateInspection.BeginAction(Constants.Entry);
             }
 
-            await Plugins.RunSafe(o => o.BeforeStateEntryAsync(context), nameof(BeforeStateEntryAsync));
-            await Inspectors.RunSafe(i => i.BeforeStateEntryAsync(context), nameof(BeforeStateEntryAsync));
-            await Observers.RunSafe(o => o.BeforeStateEntryAsync(context), nameof(BeforeStateEntryAsync));
+            await Plugins.RunSafe(o => o.BeforeStateEntryAsync(context), nameof(BeforeStateEntryAsync), Logger);
+            await Inspectors.RunSafe(i => i.BeforeStateEntryAsync(context), nameof(BeforeStateEntryAsync), Logger);
+            await Observers.RunSafe(o => o.BeforeStateEntryAsync(context), nameof(BeforeStateEntryAsync), Logger);
         }
 
         public async Task AfterStateEntryAsync(StateActionContext context)
         {
-            await Observers.RunSafe(o => o.AfterStateEntryAsync(context), nameof(AfterStateEntryAsync));
-            await Inspectors.RunSafe(i => i.AfterStateEntryAsync(context), nameof(AfterStateEntryAsync));
-            await Plugins.RunSafe(o => o.AfterStateEntryAsync(context), nameof(AfterStateEntryAsync));
+            await Observers.RunSafe(o => o.AfterStateEntryAsync(context), nameof(AfterStateEntryAsync), Logger);
+            await Inspectors.RunSafe(i => i.AfterStateEntryAsync(context), nameof(AfterStateEntryAsync), Logger);
+            await Plugins.RunSafe(o => o.AfterStateEntryAsync(context), nameof(AfterStateEntryAsync), Logger);
 
             if (InspectionStates.TryGetValue(context.Vertex.Identifier, out var stateInspection))
             {
@@ -205,16 +209,16 @@ namespace Stateflows.StateMachines.Engine
                 stateInspection.BeginAction(Constants.Exit);
             }
 
-            await Plugins.RunSafe(o => o.BeforeStateExitAsync(context), nameof(BeforeStateExitAsync));
-            await Inspectors.RunSafe(i => i.BeforeStateExitAsync(context), nameof(BeforeStateExitAsync));
-            await Observers.RunSafe(o => o.BeforeStateExitAsync(context), nameof(BeforeStateExitAsync));
+            await Plugins.RunSafe(o => o.BeforeStateExitAsync(context), nameof(BeforeStateExitAsync), Logger);
+            await Inspectors.RunSafe(i => i.BeforeStateExitAsync(context), nameof(BeforeStateExitAsync), Logger);
+            await Observers.RunSafe(o => o.BeforeStateExitAsync(context), nameof(BeforeStateExitAsync), Logger);
         }
 
         public async Task AfterStateExitAsync(StateActionContext context)
         {
-            await Observers.RunSafe(o => o.AfterStateExitAsync(context), nameof(AfterStateExitAsync));
-            await Inspectors.RunSafe(i => i.BeforeStateExitAsync(context), nameof(BeforeStateExitAsync));
-            await Plugins.RunSafe(o => o.AfterStateExitAsync(context), nameof(AfterStateExitAsync));
+            await Observers.RunSafe(o => o.AfterStateExitAsync(context), nameof(AfterStateExitAsync), Logger);
+            await Inspectors.RunSafe(i => i.BeforeStateExitAsync(context), nameof(BeforeStateExitAsync), Logger);
+            await Plugins.RunSafe(o => o.AfterStateExitAsync(context), nameof(AfterStateExitAsync), Logger);
 
             if (InspectionStates.TryGetValue(context.Vertex.Identifier, out var stateInspection))
             {
@@ -230,17 +234,17 @@ namespace Stateflows.StateMachines.Engine
                 (stateInspection.Guard as ActionInspection).Active = true;
             }
 
-            await Plugins.RunSafe(o => o.BeforeTransitionGuardAsync(context), nameof(BeforeTransitionGuardAsync));
-            await Inspectors.RunSafe(i => i.BeforeTransitionGuardAsync(context), nameof(BeforeTransitionGuardAsync));
-            await Observers.RunSafe(o => o.BeforeTransitionGuardAsync(context), nameof(BeforeTransitionGuardAsync));
+            await Plugins.RunSafe(o => o.BeforeTransitionGuardAsync(context), nameof(BeforeTransitionGuardAsync), Logger);
+            await Inspectors.RunSafe(i => i.BeforeTransitionGuardAsync(context), nameof(BeforeTransitionGuardAsync), Logger);
+            await Observers.RunSafe(o => o.BeforeTransitionGuardAsync(context), nameof(BeforeTransitionGuardAsync), Logger);
         }
 
         public async Task AfterGuardAsync<TEvent>(GuardContext<TEvent> context, bool guardResult)
             where TEvent : Event, new()
         {
-            await Observers.RunSafe(o => o.AfterTransitionGuardAsync(context, guardResult), nameof(AfterGuardAsync));
-            await Inspectors.RunSafe(i => i.AfterTransitionGuardAsync(context, guardResult), nameof(AfterGuardAsync));
-            await Plugins.RunSafe(o => o.AfterTransitionGuardAsync(context, guardResult), nameof(AfterGuardAsync));
+            await Observers.RunSafe(o => o.AfterTransitionGuardAsync(context, guardResult), nameof(AfterGuardAsync), Logger);
+            await Inspectors.RunSafe(i => i.AfterTransitionGuardAsync(context, guardResult), nameof(AfterGuardAsync), Logger);
+            await Plugins.RunSafe(o => o.AfterTransitionGuardAsync(context, guardResult), nameof(AfterGuardAsync), Logger);
 
             if (InspectionTransitions.TryGetValue(context.Edge, out var stateInspection))
             {
@@ -256,17 +260,17 @@ namespace Stateflows.StateMachines.Engine
                 (stateInspection.Effect as ActionInspection).Active = true;
             }
 
-            await Plugins.RunSafe(o => o.BeforeTransitionEffectAsync(context), nameof(BeforeEffectAsync));
-            await Inspectors.RunSafe(i => i.BeforeTransitionEffectAsync(context), nameof(BeforeEffectAsync));
-            await Observers.RunSafe(o => o.BeforeTransitionEffectAsync(context), nameof(BeforeEffectAsync));
+            await Plugins.RunSafe(o => o.BeforeTransitionEffectAsync(context), nameof(BeforeEffectAsync), Logger);
+            await Inspectors.RunSafe(i => i.BeforeTransitionEffectAsync(context), nameof(BeforeEffectAsync), Logger);
+            await Observers.RunSafe(o => o.BeforeTransitionEffectAsync(context), nameof(BeforeEffectAsync), Logger);
         }
 
         public async Task AfterEffectAsync<TEvent>(TransitionContext<TEvent> context)
             where TEvent : Event, new()
         {
-            await Observers.RunSafe(o => o.AfterTransitionEffectAsync(context), nameof(AfterEffectAsync));
-            await Inspectors.RunSafe(i => i.AfterTransitionEffectAsync(context), nameof(AfterEffectAsync));
-            await Plugins.RunSafe(o => o.AfterTransitionEffectAsync(context), nameof(AfterEffectAsync));
+            await Observers.RunSafe(o => o.AfterTransitionEffectAsync(context), nameof(AfterEffectAsync), Logger);
+            await Inspectors.RunSafe(i => i.AfterTransitionEffectAsync(context), nameof(AfterEffectAsync), Logger);
+            await Plugins.RunSafe(o => o.AfterTransitionEffectAsync(context), nameof(AfterEffectAsync), Logger);
 
             if (InspectionTransitions.TryGetValue(context.Edge, out var stateInspection))
             {
@@ -276,26 +280,26 @@ namespace Stateflows.StateMachines.Engine
 
         public async Task AfterHydrateAsync(StateMachineActionContext context)
         {
-            await Plugins.RunSafe(i => i.AfterHydrateAsync(context), nameof(AfterHydrateAsync));
+            await Plugins.RunSafe(i => i.AfterHydrateAsync(context), nameof(AfterHydrateAsync), Logger);
             await GlobalInterceptor.AfterHydrateAsync(new BehaviorActionContext(context.Context.Context, Executor.ServiceProvider));
-            await Interceptors.RunSafe(i => i.AfterHydrateAsync(context), nameof(AfterHydrateAsync));
+            await Interceptors.RunSafe(i => i.AfterHydrateAsync(context), nameof(AfterHydrateAsync), Logger);
         }
 
         public async Task BeforeDehydrateAsync(StateMachineActionContext context)
         {
-            await Interceptors.RunSafe(i => i.BeforeDehydrateAsync(context), nameof(BeforeDehydrateAsync));
+            await Interceptors.RunSafe(i => i.BeforeDehydrateAsync(context), nameof(BeforeDehydrateAsync), Logger);
             await GlobalInterceptor.BeforeDehydrateAsync(new BehaviorActionContext(context.Context.Context, Executor.ServiceProvider));
-            await Plugins.RunSafe(i => i.BeforeDehydrateAsync(context), nameof(BeforeDehydrateAsync));
+            await Plugins.RunSafe(i => i.BeforeDehydrateAsync(context), nameof(BeforeDehydrateAsync), Logger);
         }
 
         public async Task<bool> BeforeProcessEventAsync<TEvent>(Context.Classes.EventContext<TEvent> context)
             where TEvent : Event, new()
         {
-            var plugin = await Plugins.RunSafe(i => i.BeforeProcessEventAsync(context), nameof(BeforeProcessEventAsync));
+            var plugin = await Plugins.RunSafe(i => i.BeforeProcessEventAsync(context), nameof(BeforeProcessEventAsync), Logger);
             var global = await GlobalInterceptor.BeforeProcessEventAsync(
                 new Common.Context.Classes.EventContext<TEvent>(context.Context.Context, Executor.ServiceProvider, context.Event)
             );
-            var local = await Interceptors.RunSafe(i => i.BeforeProcessEventAsync(context), nameof(BeforeProcessEventAsync));
+            var local = await Interceptors.RunSafe(i => i.BeforeProcessEventAsync(context), nameof(BeforeProcessEventAsync), Logger);
 
             return global && local && plugin;
         }
@@ -303,61 +307,61 @@ namespace Stateflows.StateMachines.Engine
         public async Task AfterProcessEventAsync<TEvent>(Context.Classes.EventContext<TEvent> context)
             where TEvent : Event, new()
         {
-            await Interceptors.RunSafe(i => i.AfterProcessEventAsync(context), nameof(AfterProcessEventAsync));
+            await Interceptors.RunSafe(i => i.AfterProcessEventAsync(context), nameof(AfterProcessEventAsync), Logger);
             await GlobalInterceptor.AfterProcessEventAsync(new Common.Context.Classes.EventContext<TEvent>(context.Context.Context, Executor.ServiceProvider, context.Event));
-            await Plugins.RunSafe(i => i.AfterProcessEventAsync(context), nameof(AfterProcessEventAsync));
+            await Plugins.RunSafe(i => i.AfterProcessEventAsync(context), nameof(AfterProcessEventAsync), Logger);
         }
 
         public async Task OnStateMachineInitializeExceptionAsync<TInitializationRequest>(StateMachineInitializationContext<TInitializationRequest> context, Exception exception)
             where TInitializationRequest : InitializationRequest, new()
         {
             var exceptionContext = new StateMachineInitializationContext(context.InitializationRequest, context.Context);
-            await ExceptionHandlers.RunSafe(h => h.OnStateMachineInitializeExceptionAsync(exceptionContext, exception), nameof(OnStateMachineInitializeExceptionAsync));
-            await Inspectors.RunSafe(i => i.OnStateMachineInitializeExceptionAsync(exceptionContext, exception), nameof(OnStateMachineInitializeExceptionAsync));
+            await ExceptionHandlers.RunSafe(h => h.OnStateMachineInitializeExceptionAsync(exceptionContext, exception), nameof(OnStateMachineInitializeExceptionAsync), Logger);
+            await Inspectors.RunSafe(i => i.OnStateMachineInitializeExceptionAsync(exceptionContext, exception), nameof(OnStateMachineInitializeExceptionAsync), Logger);
         }
 
         public async Task OnStateMachineFinalizeExceptionAsync(StateMachineActionContext context, Exception exception)
         {
-            await ExceptionHandlers.RunSafe(h => h.OnStateMachineFinalizeExceptionAsync(context, exception), nameof(OnStateMachineFinalizeExceptionAsync));
-            await Inspectors.RunSafe(i => i.OnStateMachineFinalizeExceptionAsync(context, exception), nameof(OnStateMachineFinalizeExceptionAsync));
+            await ExceptionHandlers.RunSafe(h => h.OnStateMachineFinalizeExceptionAsync(context, exception), nameof(OnStateMachineFinalizeExceptionAsync), Logger);
+            await Inspectors.RunSafe(i => i.OnStateMachineFinalizeExceptionAsync(context, exception), nameof(OnStateMachineFinalizeExceptionAsync), Logger);
         }
 
         public async Task OnTransitionGuardExceptionAsync<TEvent>(GuardContext<TEvent> context, Exception exception)
             where TEvent : Event, new()
         {
-            await ExceptionHandlers.RunSafe(h => h.OnTransitionGuardExceptionAsync(context, exception), nameof(OnTransitionGuardExceptionAsync));
-            await Inspectors.RunSafe(i => i.OnTransitionGuardExceptionAsync(context, exception), nameof(OnTransitionGuardExceptionAsync));
+            await ExceptionHandlers.RunSafe(h => h.OnTransitionGuardExceptionAsync(context, exception), nameof(OnTransitionGuardExceptionAsync), Logger);
+            await Inspectors.RunSafe(i => i.OnTransitionGuardExceptionAsync(context, exception), nameof(OnTransitionGuardExceptionAsync), Logger);
         }
 
         public async Task OnTransitionEffectExceptionAsync<TEvent>(TransitionContext<TEvent> context, Exception exception)
             where TEvent : Event, new()
         {
-            await ExceptionHandlers.RunSafe(h => h.OnTransitionEffectExceptionAsync(context, exception), nameof(OnTransitionEffectExceptionAsync));
-            await Inspectors.RunSafe(h => h.OnTransitionEffectExceptionAsync(context, exception), nameof(OnTransitionEffectExceptionAsync));
+            await ExceptionHandlers.RunSafe(h => h.OnTransitionEffectExceptionAsync(context, exception), nameof(OnTransitionEffectExceptionAsync), Logger);
+            await Inspectors.RunSafe(h => h.OnTransitionEffectExceptionAsync(context, exception), nameof(OnTransitionEffectExceptionAsync), Logger);
         }
 
         public async Task OnStateInitializeExceptionAsync(StateActionContext context, Exception exception)
         {
-            await ExceptionHandlers.RunSafe(h => h.OnStateInitializeExceptionAsync(context, exception), nameof(OnStateInitializeExceptionAsync));
-            await Inspectors.RunSafe(i => i.OnStateInitializeExceptionAsync(context, exception), nameof(OnStateInitializeExceptionAsync));
+            await ExceptionHandlers.RunSafe(h => h.OnStateInitializeExceptionAsync(context, exception), nameof(OnStateInitializeExceptionAsync), Logger);
+            await Inspectors.RunSafe(i => i.OnStateInitializeExceptionAsync(context, exception), nameof(OnStateInitializeExceptionAsync), Logger);
         }
 
         public async Task OnStateFinalizeExceptionAsync(StateActionContext context, Exception exception)
         {
-            await ExceptionHandlers.RunSafe(h => h.OnStateFinalizeExceptionAsync(context, exception), nameof(OnStateFinalizeExceptionAsync));
-            await Inspectors.RunSafe(i => i.OnStateFinalizeExceptionAsync(context, exception), nameof(OnStateFinalizeExceptionAsync));
+            await ExceptionHandlers.RunSafe(h => h.OnStateFinalizeExceptionAsync(context, exception), nameof(OnStateFinalizeExceptionAsync), Logger);
+            await Inspectors.RunSafe(i => i.OnStateFinalizeExceptionAsync(context, exception), nameof(OnStateFinalizeExceptionAsync), Logger);
         }
 
         public async Task OnStateEntryExceptionAsync(StateActionContext context, Exception exception)
         {
-            await ExceptionHandlers.RunSafe(h => h.OnStateEntryExceptionAsync(context, exception), nameof(OnStateEntryExceptionAsync));
-            await Inspectors.RunSafe(i => i.OnStateEntryExceptionAsync(context, exception), nameof(OnStateEntryExceptionAsync));
+            await ExceptionHandlers.RunSafe(h => h.OnStateEntryExceptionAsync(context, exception), nameof(OnStateEntryExceptionAsync), Logger);
+            await Inspectors.RunSafe(i => i.OnStateEntryExceptionAsync(context, exception), nameof(OnStateEntryExceptionAsync), Logger);
         }
 
         public async Task OnStateExitExceptionAsync(StateActionContext context, Exception exception)
         {
-            await ExceptionHandlers.RunSafe(h => h.OnStateExitExceptionAsync(context, exception), nameof(OnStateExitExceptionAsync));
-            await Inspectors.RunSafe(i => i.OnStateExitExceptionAsync(context, exception), nameof(OnStateExitExceptionAsync));
+            await ExceptionHandlers.RunSafe(h => h.OnStateExitExceptionAsync(context, exception), nameof(OnStateExitExceptionAsync), Logger);
+            await Inspectors.RunSafe(i => i.OnStateExitExceptionAsync(context, exception), nameof(OnStateExitExceptionAsync), Logger);
         }
     }
 }

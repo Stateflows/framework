@@ -5,11 +5,9 @@ using Stateflows.StateMachines.Context.Interfaces;
 
 namespace Stateflows.StateMachines.Registration.Interfaces
 {
-    public interface ITransitionBuilder<TEvent>
+    public interface ITransitionBuilder<TEvent> : IElseTransitionBuilder<TEvent>
         where TEvent : Event, new()
     {
         ITransitionBuilder<TEvent> AddGuard(Func<IGuardContext<TEvent>, Task<bool>> guardAsync);
-
-        ITransitionBuilder<TEvent> AddEffect(Func<ITransitionContext<TEvent>, Task> effectAsync);
     }
 }

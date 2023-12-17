@@ -22,63 +22,65 @@ namespace StateMachine.IntegrationTests.Tests
         protected override void InitializeStateflows(IStateflowsBuilder builder)
         {
             builder
-                .AddStateMachine("composite", b => b
-                    .AddExecutionSequenceObserver()
-                    .AddInitialCompositeState("state1", b => b
-                        .AddInitialState("state2")
-                        .AddTransition<OtherEvent>("state3")
-                    )
-                    .AddCompositeState("state3", b => b
-                        .AddInitialState("state4")
-                    )
-                )
-
-                .AddStateMachine("default", b => b
-                    .AddExecutionSequenceObserver()
-                    .AddInitialState("state1", b => b
-                        .AddTransition<OtherEvent>("state2")
-                    )
-                    .AddCompositeState("state2", b => b
-                        .AddInitialState("state3", b => b
-                            .AddDefaultTransition("state4")
+                .AddStateMachines(b => b
+                    .AddStateMachine("composite", b => b
+                        .AddExecutionSequenceObserver()
+                        .AddInitialCompositeState("state1", b => b
+                            .AddInitialState("state2")
+                            .AddTransition<OtherEvent>("state3")
                         )
-                        .AddCompositeState("state4", b => b
-                            .AddInitialState("state5", b => b
-                                .AddDefaultTransition("state6")
+                        .AddCompositeState("state3", b => b
+                            .AddInitialState("state4")
+                        )
+                    )
+
+                    .AddStateMachine("default", b => b
+                        .AddExecutionSequenceObserver()
+                        .AddInitialState("state1", b => b
+                            .AddTransition<OtherEvent>("state2")
+                        )
+                        .AddCompositeState("state2", b => b
+                            .AddInitialState("state3", b => b
+                                .AddDefaultTransition("state4")
                             )
-                            .AddState("state6")
+                            .AddCompositeState("state4", b => b
+                                .AddInitialState("state5", b => b
+                                    .AddDefaultTransition("state6")
+                                )
+                                .AddState("state6")
+                            )
                         )
                     )
-                )
 
-                .AddStateMachine("exits", b => b
-                    .AddExecutionSequenceObserver()
-                    .AddOnInitialize(c =>
-                    {
-                        ParentStateExited = null;
-                        ChildStateExited = null;
-                    })
-                    .AddInitialCompositeState("state1", b => b
-                        .AddOnExit(c => ParentStateExited = true)
-                        .AddInitialState("state2", b => b
-                            .AddOnExit(c => ChildStateExited = true)
-                            .AddTransition<OtherEvent>("state3")
+                    .AddStateMachine("exits", b => b
+                        .AddExecutionSequenceObserver()
+                        .AddOnInitialize(c =>
+                        {
+                            ParentStateExited = null;
+                            ChildStateExited = null;
+                        })
+                        .AddInitialCompositeState("state1", b => b
+                            .AddOnExit(c => ParentStateExited = true)
+                            .AddInitialState("state2", b => b
+                                .AddOnExit(c => ChildStateExited = true)
+                                .AddTransition<OtherEvent>("state3")
+                            )
+                            .AddState("state3")
                         )
-                        .AddState("state3")
                     )
-                )
 
-                .AddStateMachine("single", b => b
-                    .AddExecutionSequenceObserver()
-                    .AddInitialCompositeState("state1", b => b
-                        .AddOnInitialize(c => InitializeCounter++)
-                        .AddInitialState("state2", b => b
-                            .AddTransition<OtherEvent>("state3")
+                    .AddStateMachine("single", b => b
+                        .AddExecutionSequenceObserver()
+                        .AddInitialCompositeState("state1", b => b
+                            .AddOnInitialize(c => InitializeCounter++)
+                            .AddInitialState("state2", b => b
+                                .AddTransition<OtherEvent>("state3")
+                            )
+                            .AddState("state3", b => b
+                                .AddDefaultTransition("state4")
+                            )
+                            .AddState("state4")
                         )
-                        .AddState("state3", b => b
-                            .AddDefaultTransition("state4")
-                        )
-                        .AddState("state4")
                     )
                 )
                 ;

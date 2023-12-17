@@ -3,14 +3,15 @@ using System.Linq;
 using System.Diagnostics;
 using System.Threading.Tasks;
 using System.Collections.Generic;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.DependencyInjection;
 using Stateflows.Common;
 using Stateflows.StateMachines.Models;
 using Stateflows.StateMachines.Events;
+using Stateflows.StateMachines.Extensions;
 using Stateflows.StateMachines.Registration;
 using Stateflows.StateMachines.Context.Classes;
 using Stateflows.StateMachines.Context.Interfaces;
-using Stateflows.StateMachines.Extensions;
 
 namespace Stateflows.StateMachines.Engine
 {
@@ -24,11 +25,14 @@ namespace Stateflows.StateMachines.Engine
 
         private readonly IServiceScope Scope;
 
+        private readonly ILogger<Executor> Logger;
+
         public Executor(StateMachinesRegister register, Graph graph, IServiceProvider serviceProvider)
         {
             Register = register;
             Scope = serviceProvider.CreateScope();
             Graph = graph;
+            Logger = ServiceProvider.GetService<ILogger<Executor>>();
         }
 
         public RootContext Context { get; private set; }
@@ -36,7 +40,7 @@ namespace Stateflows.StateMachines.Engine
         private Inspector inspector;
 
         public Inspector Inspector
-            => inspector ??= new Inspector(this);
+            => inspector ??= new Inspector(this, Logger);
 
         public IEnumerable<string> GetDeferredEvents()
         {
@@ -128,7 +132,7 @@ namespace Stateflows.StateMachines.Engine
                 _ => BehaviorStatus.NotInitialized
             };
 
-    public async Task<bool> InitializeAsync(InitializationRequest @event)
+        public async Task<bool> InitializeAsync(InitializationRequest @event)
         {
             Debug.Assert(Context != null, $"Context is unavailable. Is state machine '{Graph.Name}' hydrated?");
 
@@ -265,7 +269,7 @@ namespace Stateflows.StateMachines.Engine
 
                 foreach (var vertex in currentStack)
                 {
-                    foreach (var edge in vertex.Edges.Values)
+                    foreach (var edge in vertex.OrderedEdges)
                     {
                         Context.SourceState = edge.SourceName;
                         Context.TargetState = edge.TargetName;
@@ -533,6 +537,28 @@ namespace Stateflows.StateMachines.Engine
                 (transitionObj as TTransition).Context = context;
 
                 return transitionObj as TTransition;
+            }
+        }
+
+        public TElseTransition GetElseTransition<TElseTransition, TEvent>(ITransitionContext<TEvent> context)
+            where TElseTransition : ElseTransition<TEvent>
+            where TEvent : Event, new()
+        {
+            if (!Transitions.TryGetValue(typeof(TElseTransition), out var transitionObj))
+            {
+                var transition = ServiceProvider.GetService<TElseTransition>();
+
+                transition.Context = context;
+
+                Transitions.Add(typeof(TElseTransition), transition);
+
+                return transition;
+            }
+            else
+            {
+                (transitionObj as TElseTransition).Context = context;
+
+                return transitionObj as TElseTransition;
             }
         }
     }

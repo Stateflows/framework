@@ -10,15 +10,17 @@ builder.Services.AddControllers();
 
 builder.Services
     .AddStateflows(b => b
-        .AddStateMachine("stateMachine3", b => b
-            .AddInitialState("state1", b => b
-                .AddTransition<SomeEvent>("state2")
-                .AddInternalTransition<ExampleRequest>(b => b
-                    .AddEffect(c => c.Event.Respond(new ExampleResponse() { ResponseData = "Example response data" }))
+        .AddStateMachines(b => b
+            .AddStateMachine("stateMachine3", b => b
+                .AddInitialState("state1", b => b
+                    .AddTransition<SomeEvent>("state2")
+                    .AddInternalTransition<ExampleRequest>(b => b
+                        .AddEffect(c => c.Event.Respond(new ExampleResponse() { ResponseData = "Example response data" }))
+                    )
                 )
-            )
-            .AddState("state2", b => b
-                .AddTransition<SomeEvent>("state1")
+                .AddState("state2", b => b
+                    .AddTransition<SomeEvent>("state1")
+                )
             )
         )
     );

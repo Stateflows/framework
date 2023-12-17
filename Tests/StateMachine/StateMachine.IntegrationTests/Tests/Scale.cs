@@ -16,25 +16,27 @@ namespace StateMachine.IntegrationTests.Tests
         protected override void InitializeStateflows(IStateflowsBuilder builder)
         {
             builder
-                .AddStateMachine("scale1", b => b
-                    .AddInitialState("state1")
-                    .AddFinalState()
-                )
-                .AddStateMachine("scale2", b => b
-                    .AddInitialState("state1")
-                    .AddFinalState()
-                )
-                .AddStateMachine("scale3", b => b
-                    .AddInitialState("state1")
-                    .AddFinalState()
-                )
-                .AddStateMachine("scale4", b => b
-                    .AddInitialState("state1")
-                    .AddFinalState()
-                )
-                .AddStateMachine("scale5", b => b
-                    .AddInitialState("state1")
-                    .AddFinalState()
+                .AddStateMachines(b => b
+                    .AddStateMachine("scale1", b => b
+                        .AddInitialState("state1")
+                        .AddFinalState()
+                    )
+                    .AddStateMachine("scale2", b => b
+                        .AddInitialState("state1")
+                        .AddFinalState()
+                    )
+                    .AddStateMachine("scale3", b => b
+                        .AddInitialState("state1")
+                        .AddFinalState()
+                    )
+                    .AddStateMachine("scale4", b => b
+                        .AddInitialState("state1")
+                        .AddFinalState()
+                    )
+                    .AddStateMachine("scale5", b => b
+                        .AddInitialState("state1")
+                        .AddFinalState()
+                    )
                 )
                 ;
         }
