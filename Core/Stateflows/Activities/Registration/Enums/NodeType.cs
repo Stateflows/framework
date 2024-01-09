@@ -17,6 +17,7 @@
         StructuredActivity,
         ParallelActivity,
         IterativeActivity,
-        ExceptionHandler
+        ExceptionHandler,
+        DataStore,
     }
 }

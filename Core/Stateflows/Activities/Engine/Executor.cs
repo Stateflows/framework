@@ -23,40 +23,13 @@ namespace Stateflows.Activities.Engine
 
         public NodeScope NodeScope { get; }
 
-        private readonly CancellationTokenSource cancellationTokenSource = new CancellationTokenSource();
-
-        private readonly Dictionary<Node, CancellationTokenSource> cancellationTokenSources = new Dictionary<Node, CancellationTokenSource>();
-
-        private CancellationTokenSource GetCancellationTokenSource(Node node)
-        {
-            lock (cancellationTokenSource)
-            {
-                if (node.Type == NodeType.Activity)
-                {
-                    return cancellationTokenSource;
-                }
-                else
-                {
-                    if (!cancellationTokenSources.TryGetValue(node, out var source))
-                    {
-                        source = CancellationTokenSource.CreateLinkedTokenSource(GetCancellationTokenSource(node.Parent).Token);
-                        cancellationTokenSources.Add(node, source);
-                    }
-
-                    return source;
-                }
-            }
-        }
-
-        public CancellationToken GetCancellationToken(Node node)
-            => GetCancellationTokenSource(node).Token;
 
         private readonly ILogger<Executor> Logger;
 
         public Executor(ActivitiesRegister register, Graph graph, IServiceProvider serviceProvider)
         {
             Register = register;
-            NodeScope = new NodeScope(serviceProvider);
+            NodeScope = new NodeScope(serviceProvider, Guid.NewGuid());
             Graph = graph;
 
             Logger = serviceProvider.GetService<ILogger<Executor>>();
@@ -65,76 +38,18 @@ namespace Stateflows.Activities.Engine
         public RootContext Context { get; private set; }
 
         private Inspector inspector;
-
         public Inspector Inspector
             => inspector ??= new Inspector(this, Logger);
-
-        private HashSet<Task> Tasks { get; set; } = new HashSet<Task>();
 
         private EventWaitHandle FinalizationEvent { get; } = new EventWaitHandle(false, EventResetMode.AutoReset);
 
         private bool Finalized { get; set; } = false;
 
-        private List<Node> verticesStack = null;
-
-        public List<Node> GetNodesStack(bool forceRebuild = false)
-        {
-            if (verticesStack == null || forceRebuild)
-            {
-                Debug.Assert(Context != null, $"Context is not available. Is activity '{Graph.Name}' hydrated?");
-
-                verticesStack = BuildNodesStack();
-            }
-
-            return verticesStack;
-        }
-
-        private List<Node> BuildNodesStack()
-        {
-            var result = new List<Node>();
-            for (int i = 0; i < Context.NodesStack.Count; i++)
-            {
-                var vertexName = Context.NodesStack[i];
-                if (Graph.AllNodes.TryGetValue(vertexName, out var vertex))
-                {
-                    result.Add(vertex);
-                }
-                else
-                {
-                    while (Context.NodesStack.Count > i)
-                    {
-                        Context.NodesStack.RemoveAt(i);
-                    }
-
-                    break;
-                }
-            }
-
-            return result;
-        }
-
-        private void RegisterTask(Task task, string threadId)
-        {
-            lock (Tasks)
-            {
-                Tasks.Add(task);
-            }
-
-            _ = Task.Run(async () =>
-            {
-                await Task.WhenAll(task);
-
-                lock (Tasks)
-                {
-                    Tasks.Remove(task);
-
-                    if (!Tasks.Any())
-                    {
-                        DoFinalize(threadId);
-                    }
-                }
-            });
-        }
+        public IEnumerable<Node> GetActiveNodes()
+            => Context.ActiveNodes.Keys
+                .Select(nodeId => Graph.AllNodes[nodeId])
+                .OrderByDescending(node => node.Level)
+                .ToArray();
 
         public async Task<bool> HydrateAsync(RootContext context)
         {
@@ -152,23 +67,14 @@ namespace Stateflows.Activities.Engine
 
             await Inspector.BeforeDehydrateAsync(new ActivityActionContext(Context, NodeScope.CreateChildScope()));
 
+            NodeScope.Dispose();
+
             var result = Context;
             result.Executor = null;
             Context = null;
 
             return result;
         }
-
-        //public bool Initialized => Context.StatesStack.Count > 0;
-
-        //public bool Finalized
-        //{
-        //    get
-        //    {
-        //        var stack = GetVerticesStack();
-        //        return stack.Count == 1 && stack.First().Type == VertexType.FinalState;
-        //    }
-        //}
 
         public BehaviorStatus BehaviorStatus =>
             (Initialized, Finalized) switch
@@ -197,17 +103,9 @@ namespace Stateflows.Activities.Engine
             {
                 Context.Initialized = true;
 
-                try
-                {
-                    _ = DoExecuteStructuredNodeAsync(Graph);
-                }
-                catch (Exception e)
-                {
+                Context.ClearEvent();
 
-                    throw e;
-                }
-
-                Debug.WriteLine($"{Context.Id.Instance} initialization");
+                await ExecuteGraphAsync();
 
                 return true;
             }
@@ -215,43 +113,6 @@ namespace Stateflows.Activities.Engine
             Debug.WriteLine($"{Context.Id.Instance} initialized already");
 
             return false;
-        }
-
-        public bool Cancel(Node node)
-        {
-            Debug.Assert(Context != null, $"Context is unavailable. Is activity '{Graph.Name}' hydrated?");
-
-            if (Initialized)
-            {
-                Debug.WriteLine("Cancelling...");
-
-                GetCancellationTokenSource(node).Cancel();
-
-                Debug.WriteLine("Cancelled");
-
-                return true;
-            }
-
-            return false;
-        }
-
-        public async Task ExitAsync()
-        {
-            Debug.Assert(Context != null, $"Context is unavailable. Is activity '{Graph.Name}' hydrated?");
-
-            //if (Initialized)
-            //{
-            //    var currentStack = GetNodesStack();
-
-            //    foreach (var vertex in currentStack)
-            //    {
-            //        await DoExitAsync(vertex);
-            //    }
-
-            //    await DoFinalizeActivityAsync();
-
-            //    Context.NodesStack.Clear();
-            //}
         }
 
         private IEnumerable<Token> OutputTokens { get; set; } = null;
@@ -273,9 +134,7 @@ namespace Stateflows.Activities.Engine
                 result = await DoProcessAsync(@event);
             }
 
-            NodeScope.Dispose();
-
-            //ServiceProvider = null;
+            // disposal
 
             return result;
         }
@@ -285,76 +144,107 @@ namespace Stateflows.Activities.Engine
         {
             Debug.Assert(Context != null, $"Context is not available. Is activity '{Graph.Name}' hydrated?");
 
-            //var currentStack = await GetVerticesStackAsync(true);
-            //currentStack.Reverse();
+            var activeNodes = GetActiveNodes();
+            var activeNode = activeNodes.FirstOrDefault(node =>
+                node.EventType == @event.GetType() &&
+                (
+                    !(@event is TimeEvent) ||
+                    (
+                        Context.NodeTimeEvents.TryGetValue(node.Identifier, out var timeEventId) &&
+                        @event.Id == timeEventId
+                    )
+                )
+            );
 
-            //if (!await TryDeferEventAsync(@event))
-            //{
-            //    foreach (var vertex in currentStack)
-            //    {
-            //        foreach (var edge in vertex.Edges)
-            //        {
-            //            if (edge.Trigger == @event.Name)
-            //            {
-            //                if (await DoGuardAsync(edge, @event))
-            //                {
-            //                    await DoConsumeAsync<TEvent>(vertex, edge);
-
-            //                    return true;
-            //                }
-            //            }
-            //        }
-            //    }
-            //}
-
-            //await DispatchNextDeferredEvent();
-
-            return EventStatus.NotConsumed;
-        }
-
-        public void DoFinalize(string threadId)
-        {
-            lock (Context)
+            if (activeNode == null)
             {
-                if (Finalized) return;
-
-                Finalized = true;
-
-                if (Graph.OutputNode != null)
-                {
-                    OutputTokens = Context.GetOutputTokens(Graph.OutputNode.Identifier, threadId);
-                }
-
-                FinalizationEvent.Set();
+                return EventStatus.NotConsumed;
             }
+
+            while (activeNode != null)
+            {
+                Context.NodesToExecute.Add(activeNode);
+
+                activeNode = activeNode.Parent;
+            }
+
+            return await ExecuteGraphAsync();
         }
 
-        public async Task<(IEnumerable<Token> Output, bool Finalized)> DoExecuteStructuredNodeAsync(Node node, IEnumerable<Token> input = null)
+        private async Task<EventStatus> ExecuteGraphAsync()
         {
-            var threadId = Guid.NewGuid().ToString();
+            (var output, var finalized) = await DoExecuteStructuredNodeAsync(Graph, NodeScope);
+
+            if (finalized)
+            {
+                await DoFinalizeAsync(output);
+            }
+
+            return EventStatus.Consumed;
+        }
+
+        public async Task DoFinalizeAsync(IEnumerable<Token> outputTokens)
+        {
+            if (Finalized) return;
+
+            Finalized = true;
+
+            if (Graph.OutputNode != null)
+            {
+                OutputTokens = outputTokens;
+            }
+
+            var context = new ActivityActionContext(Context, NodeScope);
+
+            await Inspector.BeforeActivityFinalizationAsync(context);
+
+            await Graph.Finalize.WhenAll(context);
+
+            await Inspector.AfterActivityFinalizationAsync(context);
+
+            FinalizationEvent.Set();
+        }
+
+        public async Task<(IEnumerable<Token> Output, bool Finalized)> DoExecuteStructuredNodeAsync(Node node, NodeScope nodeScope, IEnumerable<Token> input = null)
+        {
+            if (Context.NodeThreads.TryGetValue(node.Identifier, out var storedThreadId))
+            {
+                nodeScope.ThreadId = storedThreadId;
+            }
+            else
+            {
+                Context.NodeThreads.Add(node.Identifier, nodeScope.ThreadId);
+            }
 
             var finalized = await DoExecuteNodeStructureAsync(
                 node,
-                threadId,
+                nodeScope,
                 input
             );
 
-            return (
+            var result = (
                 node.OutputNode != null
-                    ? Context.GetOutputTokens(node.OutputNode.Identifier, threadId)
+                    ? Context.GetOutputTokens(node.OutputNode.Identifier, nodeScope.ThreadId)
                     : new List<Token>(),
                 finalized
             );
+
+            if (finalized)
+            {
+                Context.NodeThreads.Remove(node.Identifier);
+            }
+
+            return result;
         }
 
-        public async Task<IEnumerable<Token>> DoExecuteParallelNodeAsync<TToken>(Node node, IEnumerable<Token> input = null)
+        public async Task<IEnumerable<Token>> DoExecuteParallelNodeAsync<TToken>(ActionContext context)
             where TToken : Token, new()
         {
-            var restOfInput = input.Where(t => !(t is TToken)).ToArray();
+            var restOfInput = context.InputTokens.Where(t => !(t is TToken)).ToArray();
 
-            var parallelInput = input.OfType<TToken>().ToArray();
+            var parallelInput = context.InputTokens.OfType<TToken>().ToArray();
 
-            var threadIds = parallelInput.ToDictionary<Token, Token, string>(t => t, t => Guid.NewGuid().ToString());
+            var threadIds = parallelInput.ToDictionary<Token, Token, Guid>(t => t, t => Guid.NewGuid());
 
             await Task.WhenAll(parallelInput
                 .Select(async token =>
@@ -362,8 +252,8 @@ namespace Stateflows.Activities.Engine
                     var threadId = threadIds[token];
 
                     await DoExecuteNodeStructureAsync(
-                        node,
-                        threadId,
+                        context.Node,
+                        context.NodeScope,
                         restOfInput.Concat(new Token[] { token }).ToArray()
                     );
 
@@ -374,8 +264,8 @@ namespace Stateflows.Activities.Engine
                 })
             );
 
-            return node.OutputNode != null
-                ? threadIds.Values.SelectMany(threadId => Context.GetOutputTokens(node.OutputNode.Identifier, threadId))
+            return context.Node.OutputNode != null
+                ? threadIds.Values.SelectMany(threadId => Context.GetOutputTokens(context.Node.OutputNode.Identifier, threadId))
                 : new List<Token>();
         }
 
@@ -397,20 +287,20 @@ namespace Stateflows.Activities.Engine
             await Inspector.AfterNodeFinalizationAsync(context);
         }
 
-        public async Task<IEnumerable<Token>> DoExecuteIterativeNodeAsync<TToken>(Node node, IEnumerable<Token> input = null)
+        public async Task<IEnumerable<Token>> DoExecuteIterativeNodeAsync<TToken>(ActionContext context)
             where TToken : Token, new()
         {
-            var restOfInput = input.Where(t => !(t is TToken)).ToArray();
+            var restOfInput = context.InputTokens.Where(t => !(t is TToken)).ToArray();
 
-            var iterativeInput = input.OfType<TToken>().ToArray();
+            var iterativeInput = context.InputTokens.OfType<TToken>().ToArray();
 
-            var threadId = Guid.NewGuid().ToString();
+            var threadId = Guid.NewGuid();
 
             foreach (var token in iterativeInput)
             {
                 await DoExecuteNodeStructureAsync(
-                    node,
-                    threadId,
+                    context.Node,
+                    context.NodeScope,
                     restOfInput.Concat(new Token[] { token })
                 );
 
@@ -420,45 +310,44 @@ namespace Stateflows.Activities.Engine
                 }
             }
 
-            return node.OutputNode != null
-                ? Context.GetOutputTokens(node.OutputNode.Identifier, threadId)
+            return context.Node.OutputNode != null
+                ? Context.GetOutputTokens(context.Node.OutputNode.Identifier, threadId)
                 : new List<Token>();
         }
 
-        private async Task<bool> DoExecuteNodeStructureAsync(Node node, string threadId, IEnumerable<Token> input = null)
+        private async Task<bool> DoExecuteNodeStructureAsync(Node node, NodeScope nodeScope, IEnumerable<Token> input = null)
         {
+            var startingNode = Context.NodesToExecute.Any()
+                ? node.Nodes.Values.FirstOrDefault(n => Context.NodesToExecute.Contains(n))
+                : null;
+
             var nodes = new List<Node>();
-            nodes.AddRange(node.InitialNodes);
-            if (node.InputNode != null)
+            if (startingNode != null)
             {
-                nodes.Add(node.InputNode);
+                nodes.Add(startingNode);
+            }
+            else
+            {
+                nodes.AddRange(node.InitialNodes);
+
+                if (node.InputNode != null)
+                {
+                    nodes.Add(node.InputNode);
+                }
             }
 
             await Task.WhenAll(
-                nodes.Select(n => DoHandleNodeAsync(n, threadId, n == node.InputNode ? input : null))
+                nodes.Select(n => DoHandleNodeAsync(n, nodeScope, n == node.InputNode ? input : null))
             );
 
-            return !Context.GetStreams(threadId).Values.Any(s => s.Tokens.Any());
-            
-            //RegisterTask(
-            //    Task.Run(async () =>
-            //    {
-            //        await Task.WhenAll(Graph.InitialNodes
-            //            .Select(node => node.Action.WhenAll(Context))
-            //        );
+            var result =
+                nodeScope.IsTerminated ||
+                (
+                    !Context.GetStreams(nodeScope.ThreadId).Values.Any(s => s.Tokens.Any()) &&
+                    !node.Nodes.Values.Any(node => node.Type == NodeType.AcceptEventAction && !node.IncomingEdges.Any())
+                );
 
-            //        await Task.WhenAll(Graph.InitialNodes
-            //            .SelectMany(node => node.Edges.Values)
-            //            .Where(edge => Context.Streams[edge.Identifier].IsActivated)
-            //            .Select(edge => edge.Target)
-            //            .Select(node => node.Action.WhenAll(Context))
-            //        );
-            //    })
-            //);
-
-            //await Graph.Initialize.WhenAll(Context);
-
-            //await Observer.AfterStateMachineInitializeAsync(context);
+            return result;
         }
 
         public async Task<bool> DoInitializeActivityAsync(InitializationRequest @event)
@@ -474,7 +363,7 @@ namespace Stateflows.Activities.Engine
             )
             {
                 var context = new ActivityInitializationContext(Context, NodeScope, @event);
-                await Inspector.BeforeActivityInitializeAsync(context);
+                await Inspector.BeforeActivityInitializationAsync(context);
 
                 try
                 {
@@ -482,7 +371,7 @@ namespace Stateflows.Activities.Engine
                 }
                 catch (Exception e)
                 {
-                    await Inspector.OnActivityInitializationExceptionAsync(context, e);
+                    await Inspector.OnActivityInitializationExceptionAsync(context, @event, e);
 
                     result = false;
                 }
@@ -491,183 +380,192 @@ namespace Stateflows.Activities.Engine
             }
 
             return result;
-            //if (
-            //    Graph.Initializers.TryGetValue(@event.EventName, out var initializer) ||
-            //    (
-            //        @event.EventName == EventInfo<InitializationRequest>.Name &&
-            //        !Graph.Initializers.Any()
-            //    )
-            //)
-            //{
-            //    Context.SetEvent(@event);
-            //    var context = new ActivityInitializationContext(Context, NodeScope, @event);
-            //    await Inspector.BeforeActivityInitializeAsync(context);
-
-            //    if (initializer != null)
-            //    {
-            //        try
-            //        {
-            //            await initializer.WhenAll(context);
-            //        }
-            //        catch (Exception)
-            //        {
-            //            return false;
-            //            //throw;
-            //        }
-            //    }
-
-            //    await Inspector.AfterActivityInitializeAsync(context);
-
-            //    return true;
-            //}
-
-            //return false;
         }
 
-        public Task DoHandleNodeAsync(Node node, string threadId, IEnumerable<Token> input = null)
+        public async Task DoHandleNodeAsync(Node node, NodeScope nodeScope, IEnumerable<Token> input = null)
         {
-            var task = Task.Run(async () =>
+            var types = new NodeType[]
             {
-                try
-                {
-                    if (GetCancellationToken(node.Parent).IsCancellationRequested) return;
+                NodeType.Action,
+                NodeType.Decision,
+                NodeType.Fork,
+                NodeType.Join,
+                NodeType.Merge,
+                NodeType.SendEventAction,
+                NodeType.AcceptEventAction,
+                NodeType.StructuredActivity,
+                NodeType.ParallelActivity,
+                NodeType.IterativeActivity,
+                NodeType.ExceptionHandler,
+                NodeType.DataStore
+            };
 
-                    Stream[] streams;
+            if (types.Contains(node.Type) && nodeScope.CancellationToken.IsCancellationRequested)
+            {
+                return;
+            }
 
-                    lock (node)
-                    {
-                        streams = node.IncomingEdges
-                            .Select(edge => Context.GetStream(edge.Identifier, threadId))
-                            .Where(stream => stream.IsActivated)
-                            .ToArray();
-                    }
+            IEnumerable<Stream> streams;
 
-                    if (
-                        ( // initial node case
-                            node.Type == NodeType.Initial
-                        ) ||
-                        ( // input node case - has to have input
-                            node.Type == NodeType.Input &&
-                            (input?.Any() ?? false)
-                        ) ||
-                        ( // no implicit join node - has any incoming streams
-                            streams.Length > 0 &&
-                            !node.Options.HasFlag(NodeOptions.ImplicitJoin)
-                        ) ||
-                        ( // implicit join node - has incoming streams on all edges
-                            node.IncomingEdges.Count == streams.Length &&
-                            node.Options.HasFlag(NodeOptions.ImplicitJoin)
-                        )
+            lock (node)
+            {
+                streams = Context.GetStreams(node, nodeScope.ThreadId);
+            }
+
+            if (
+                ( // initial node case
+                    node.Type == NodeType.Initial
+                ) ||
+                ( // input node case - has to have input
+                    node.Type == NodeType.Input &&
+                    (input?.Any() ?? false)
+                ) ||
+                ( // no implicit join node - has any incoming streams
+                    streams.Any() &&
+                    !node.Options.HasFlag(NodeOptions.ImplicitJoin)
+                ) ||
+                ( // implicit join node - has incoming streams on all edges
+                    node.IncomingEdges.Count == streams.Count() &&
+                    node.Options.HasFlag(NodeOptions.ImplicitJoin)
+                )
+            )
+            {
+                if (
+                    node.Type == NodeType.AcceptEventAction &&
+                    (
+                        Context.Event == null ||
+                        Context.Event.GetType() != node.EventType
                     )
+                )
+                {
+                    Inspector.AcceptEventsPlugin.RegisterAcceptEventNode(node, nodeScope.ThreadId);
+
+                    return;
+                }
+
+                var inputTokens = input ?? streams.SelectMany(stream => stream.Tokens).ToArray();
+
+                lock (node.Graph)
+                {
+                    Debug.WriteLine($">>> Executing node {node.Name.Split('.').Last()}, threadId: {nodeScope.ThreadId}");
+                }
+
+                var actionContext = new ActionContext(Context, nodeScope, node, inputTokens);
+
+                await node.Action.WhenAll(actionContext);
+
+                if (node.Type == NodeType.AcceptEventAction)
+                {
+                    Context.ClearEvent();
+
+                    if (node.IncomingEdges.Any())
                     {
-                        var inputTokens = input ?? streams.SelectMany(stream => stream.Tokens).ToArray();
+                        Inspector.AcceptEventsPlugin.UnregisterAcceptEventNode(node);
+                    }
+                }
 
-                        lock (node.Graph)
+                if (node.Type == NodeType.Output)
+                {
+                    DoHandleOutput(actionContext);
+                }
+                else
+                {
+                    if (actionContext.Output.Any(t => t is ControlToken))
+                    {
+                        var tokenNames = actionContext.Output.Select(token => token.Name).Distinct().ToArray();
+                        var edges = node.Edges
+                            .Where(edge => tokenNames.Contains(edge.TokenType.GetTokenName()) || edge.Weight == 0)
+                            .OrderBy(edge => edge.IsElse)
+                            .ToArray();
+
+                        foreach (var edge in edges)
                         {
-                            Debug.WriteLine($">>> Executing node {node.Name.Split('.').Last()}, threadId: {threadId}");
+                            _ = await DoHandleEdgeAsync(edge, actionContext);
                         }
 
-                        var context = new ActionContext(Context, NodeScope.CreateChildScope(), node, inputTokens);
+                        var nodes = edges.Select(edge => edge.Target).Distinct();
 
-                        await node.Action.WhenAll(context);
+                        await Task.WhenAll(nodes.Select(n => DoHandleNodeAsync(n, nodeScope)));
+                    }
+                }
 
-                        if (node.Type == NodeType.Output)
+                lock (node)
+                {
+                    foreach (var stream in streams)
+                    {
+                        if (!stream.IsPersistent)
                         {
-                            DoHandleOutput(context, threadId);
-                        }
-                        else
-                        {
-                            if (context.OutputTokens.Any(t => t is ControlToken))
-                            {
-                                try
-                                {
-                                    var tokenNames = context.OutputTokens.Select(token => token.Name).Distinct();
-                                    var edges = node.Edges.Where(edge => tokenNames.Contains(edge.TokenType.GetTokenName()) || edge.Weight == 0);
-
-                                    foreach (var edge in edges)
-                                    {
-                                        if (GetCancellationToken(node.Parent).IsCancellationRequested) return;
-
-                                        await DoHandleEdgeAsync(context, edge, threadId);
-                                    }
-
-                                    var nodes = edges.Select(edge => edge.Target).Distinct();
-
-                                    await Task.WhenAll(nodes.Select(n => DoHandleNodeAsync(n, threadId)));
-                                }
-                                catch (Exception e)
-                                {
-                                    throw e;
-                                }
-                            }
+                            Context.ClearStream(stream.EdgeIdentifier, nodeScope.ThreadId);
                         }
                     }
                 }
-                catch (Exception e)
-                {
-                    throw e;
-                }
-            });
-
-            RegisterTask(task, threadId);
-
-            return task;
+            }
         }
 
-        private void DoHandleOutput(ActionContext context, string threadId)
-            => context.Context.GetOutputTokens(context.Node.Identifier, threadId).AddRange(context.OutputTokens);
+        private void DoHandleOutput(ActionContext context)
+            => context.Context.GetOutputTokens(context.Node.Identifier, context.NodeScope.ThreadId).AddRange(context.Output);
 
-        private async Task DoHandleEdgeAsync(ActionContext context, Edge edge, string threadId)
+        private async Task<bool> DoHandleEdgeAsync(Edge edge, ActionContext context)
         {
             var edgeTokenName = edge.TokenType.GetTokenName();
 
-            IEnumerable<Token> processedTokens = context.OutputTokens.Where(t => t.Name == edgeTokenName).ToArray();
+            IEnumerable<Token> originalTokens = context.Output.Where(t => t.Name == edgeTokenName).ToArray();
 
-            foreach (var logic in edge.Pipeline.Actions)
+            if (!originalTokens.Any())
             {
-                if (GetCancellationToken(edge.Source.Parent).IsCancellationRequested) return;
+                return false;
+            }
 
-                foreach (var action in logic.Actions)
+            var consumedTokens = new List<Token>();
+            var processedTokens = new List<Token>();
+
+            foreach (var token in originalTokens)
+            {
+                var processedToken = token;
+                foreach (var logic in edge.TokenPipeline.Actions)
                 {
-                    if (GetCancellationToken(edge.Source.Parent).IsCancellationRequested) return;
+                    foreach (var action in logic.Actions)
+                    {
+                        var pipelineContext = new TokenPipelineContext(context, edge, processedToken);
+                        processedToken = await action.Invoke(pipelineContext);
 
-                    processedTokens = await action.Invoke(new PipelineContext(Context, context.NodeScope, edge, processedTokens));
+                    }
+                }
+
+                if (processedToken != null)
+                {
+                    consumedTokens.Add(token);
+
+                    processedTokens.Add(processedToken);
                 }
             }
 
-            if (processedTokens.Count() >= edge.Weight)
+            if (processedTokens.Count >= edge.Weight)
             {
-                var stream = Context.GetStream(edge.Identifier, threadId);
+                var stream = Context.GetStream(edge.Identifier, context.NodeScope.ThreadId);
 
                 if (edgeTokenName != TokenInfo<ControlToken>.TokenName)
                 {
-                    processedTokens = processedTokens.Concat(new[] { new ControlToken() });
+                    processedTokens.Add(new ControlToken());
                 }
 
-                //lock (edge.Source.Graph)
-                //{
-                //    Debug.WriteLine("");
-                //    Debug.WriteLine($">>> Edge {edge.Source.Name.Split('.').Last()}-->{edge.Target.Name.Split('.').Last()}, threadId: {threadId}, tokens count: {processedTokens.Count()}");
-                //}
-
-                lock (edge.Source)
+                if (!edge.Source.Options.HasFlag(NodeOptions.ImplicitFork) && consumedTokens.Any())
                 {
-                    stream.Consume(processedTokens);
+                    foreach (var token in consumedTokens)
+                    {
+                        context.Output.Remove(token);
+                    }
+                }
 
-                    //if (!stream.IsActivated)
-                    //{
-                    //    Debug.WriteLine($"  -----------> NOT ACTIVATED threadId: {threadId}");
-                    //}
+                lock (edge.Target)
+                {
+                    stream.Consume(processedTokens, edge.Source.Type == NodeType.DataStore);
+
+                    return true;
                 }
             }
-            else
-            {
-                //lock (edge.Source.Graph)
-                //{
-                //    Debug.WriteLine("");
-                //    Debug.WriteLine($">>> Edge from node {edge.Source.Name.Split('.').Last()} processing, tokens count smaller than edge weight");
-                //}
-            }
+
+            return false;
         }
 
         public void Dispose()
@@ -695,167 +593,5 @@ namespace Stateflows.Activities.Engine
 
             return activity;
         }
-
-        //public TActivity GetActivity<TActivity>(RootContext context)
-        //    where TActivity : Activity
-        //{
-        //    if (!Activities.TryGetValue(typeof(TActivity), out var activity))
-        //    {
-        //        activity = ServiceProvider.GetService<TActivity>();
-        //        activity.Context = new ActivityActionContext(context);
-
-        //        Activities.Add(typeof(TActivity), activity);
-        //    }
-
-        //    return activity as TActivity;
-        ////}
-
-        //private readonly IDictionary<Type, Action> Actions = new Dictionary<Type, Action>();
-
-        //public TAction GetAction<TAction>(IActionContext context)
-        //    where TAction : Action
-        //{
-        //    lock (Actions)
-        //    {
-        //        if (!Actions.TryGetValue(typeof(TAction), out var action))
-        //        {
-        //            action = ServiceProvider.GetService<TAction>();
-
-        //            Actions.Add(typeof(TAction), action);
-        //        }
-
-        //        action.Context = context;
-
-        //        return action as TAction;
-        //    }
-        //}
-
-        //private readonly IDictionary<Type, StructuredActivity> StructuredActivities = new Dictionary<Type, StructuredActivity>();
-
-        ////public StructuredActivity GetStructuredActivity(Type structuredActivityType, IActionContext context)
-        ////{
-        ////    if (!StructuredActivities.TryGetValue(structuredActivityType, out var structuredActivity))
-        ////    {
-        ////        structuredActivity = ServiceProvider.GetService(structuredActivityType) as StructuredActivity;
-
-        ////        StructuredActivities.Add(typeof(StructuredActivity), structuredActivity);
-        ////    }
-
-        ////    structuredActivity.Context = context;
-
-        ////    return structuredActivity;
-        ////}
-
-        //public TStructuredActivity GetStructuredActivity<TStructuredActivity>(IActionContext context)
-        //    where TStructuredActivity : StructuredActivity
-        //{
-        //    if (!StructuredActivities.TryGetValue(typeof(TStructuredActivity), out var structuredActivity))
-        //    {
-        //        structuredActivity = ServiceProvider.GetService<TStructuredActivity>();
-
-        //        StructuredActivities.Add(typeof(TStructuredActivity), structuredActivity);
-        //    }
-
-        //    structuredActivity.Context = context;
-
-        //    return structuredActivity as TStructuredActivity;
-        //}
-
-        //private readonly IDictionary<Type, ActivityNode> ExceptionHandlers = new Dictionary<Type, ActivityNode>();
-
-        //public TExceptionHandler GetExceptionHandler<TException, TExceptionHandler>(IExceptionHandlerContext<TException> context)
-        //    where TException : Exception
-        //    where TExceptionHandler : ExceptionHandler<TException>
-        //{
-        //    if (!ExceptionHandlers.TryGetValue(typeof(TExceptionHandler), out var exceptionHandlerNode))
-        //    {
-        //        var exceptionHandler = ServiceProvider.GetService<TExceptionHandler>();
-
-        //        exceptionHandler.Context = context;
-
-        //        ExceptionHandlers.Add(typeof(TExceptionHandler), exceptionHandler);
-
-        //        return exceptionHandler;
-        //    }
-        //    else
-        //    {
-        //        if (exceptionHandlerNode is TExceptionHandler exceptionHandler)
-        //        {
-        //            exceptionHandler.Context = context;
-
-        //            return exceptionHandler;
-        //        }
-        //    }
-
-        //    return null;
-        //}
-
-        //private readonly IDictionary<Type, object> Flows = new Dictionary<Type, object>();
-
-        //public TControlFlow GetControlFlow<TControlFlow>(IFlowContext context)
-        //    where TControlFlow : ControlFlow
-        //{
-        //    if (!Flows.TryGetValue(typeof(TControlFlow), out var flowObj))
-        //    {
-        //        var flow = ServiceProvider.GetService<TControlFlow>();
-
-        //        flow.Context = context;
-
-        //        Flows.Add(typeof(TControlFlow), flow);
-
-        //        return flow;
-        //    }
-        //    else
-        //    {
-        //        (flowObj as TControlFlow).Context = context;
-
-        //        return flowObj as TControlFlow;
-        //    }
-        //}
-
-        //public TFlow GetObjectFlow<TFlow, TToken>(IFlowContext<TToken> context)
-        //    where TFlow : ObjectFlow<TToken>
-        //    where TToken : Token, new();
-        //{
-        //    if (!Flows.TryGetValue(typeof(TFlow), out var flowObj))
-        //    {
-        //        var flow = ServiceProvider.GetService<TFlow>();
-
-        //        flow.Context = context;
-
-        //        Flows.Add(typeof(TFlow), flow);
-
-        //        return flow;
-        //    }
-        //    else
-        //    {
-        //        (flowObj as TFlow).Context = context;
-
-        //        return flowObj as TFlow;
-        //    }
-        //}
-
-        //public TFlow GetObjectTransformationFlow<TFlow, TToken, TTransformedToken>(IFlowContext<TToken> context)
-        //    where TFlow : ObjectTransformationFlow<TToken, TTransformedToken>
-        //    where TToken : Token, new();
-        //    where TTransformedToken : Token
-        //{
-        //    if (!Flows.TryGetValue(typeof(TFlow), out var flowObj))
-        //    {
-        //        var flow = ServiceProvider.GetService<TFlow>();
-
-        //        flow.Context = context;
-
-        //        Flows.Add(typeof(TFlow), flow);
-
-        //        return flow;
-        //    }
-        //    else
-        //    {
-        //        (flowObj as TFlow).Context = context;
-
-        //        return flowObj as TFlow;
-        //    }
-        //}
     }
 }

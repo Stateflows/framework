@@ -15,11 +15,11 @@ namespace Stateflows.Activities.Registration
     {
         private IServiceCollection Services { get; }
 
-        //public List<ExceptionHandlerFactory> GlobalExceptionHandlerFactories { get; set; } = new List<ExceptionHandlerFactory>();
+        public List<ExceptionHandlerFactory> GlobalExceptionHandlerFactories { get; set; } = new List<ExceptionHandlerFactory>();
 
-        //public List<InterceptorFactory> GlobalInterceptorFactories { get; set; } = new List<InterceptorFactory>();
+        public List<InterceptorFactory> GlobalInterceptorFactories { get; set; } = new List<InterceptorFactory>();
 
-        //public List<ObserverFactory> GlobalObserverFactories { get; set; } = new List<ObserverFactory>();
+        public List<ObserverFactory> GlobalObserverFactories { get; set; } = new List<ObserverFactory>();
 
         public ActivitiesRegister(IServiceCollection services)
         {
@@ -52,7 +52,7 @@ namespace Stateflows.Activities.Registration
         }
 
         [DebuggerHidden]
-        public void AddActivity(string activityName, int version, ActivityBuilderAction buildAction)
+        public void AddActivity(string activityName, int version, ReactiveActivityBuilderAction buildAction)
         {
             var key = $"{activityName}.{version}";
             var currentKey = $"{activityName}.current";
@@ -108,34 +108,36 @@ namespace Stateflows.Activities.Registration
             where TActivity : Activity
             => AddActivity(activityName, version, typeof(TActivity));
 
-        //public void AddGlobalInterceptor(InterceptorFactory interceptorFactory)
-        //    => GlobalInterceptorFactories.Add(interceptorFactory);
+        #region Observability
+        public void AddGlobalInterceptor(InterceptorFactory interceptorFactory)
+            => GlobalInterceptorFactories.Add(interceptorFactory);
 
-        //public void AddGlobalInterceptor<TInterceptor>()
-        //    where TInterceptor : class, IActivityInterceptor
-        //{
-        //    Services.RegisterInterceptor<TInterceptor>();
-        //    AddGlobalInterceptor(serviceProvider => serviceProvider.GetRequiredService<TInterceptor>());
-        //}
+        public void AddGlobalInterceptor<TInterceptor>()
+            where TInterceptor : class, IActivityInterceptor
+        {
+            Services.RegisterInterceptor<TInterceptor>();
+            AddGlobalInterceptor(serviceProvider => serviceProvider.GetRequiredService<TInterceptor>());
+        }
 
-        //public void AddGlobalExceptionHandler(ExceptionHandlerFactory exceptionHandlerFactory)
-        //    => GlobalExceptionHandlerFactories.Add(exceptionHandlerFactory);
+        public void AddGlobalExceptionHandler(ExceptionHandlerFactory exceptionHandlerFactory)
+            => GlobalExceptionHandlerFactories.Add(exceptionHandlerFactory);
 
-        //public void AddGlobalExceptionHandler<TExceptionHandler>()
-        //    where TExceptionHandler : class, IActivityExceptionHandler
-        //{
-        //    Services.RegisterExceptionHandler<TExceptionHandler>();
-        //    AddGlobalExceptionHandler(serviceProvider => serviceProvider.GetRequiredService<TExceptionHandler>());
-        //}
+        public void AddGlobalExceptionHandler<TExceptionHandler>()
+            where TExceptionHandler : class, IActivityExceptionHandler
+        {
+            Services.RegisterExceptionHandler<TExceptionHandler>();
+            AddGlobalExceptionHandler(serviceProvider => serviceProvider.GetRequiredService<TExceptionHandler>());
+        }
 
-        //public void AddGlobalObserver(ObserverFactory observerFactory)
-        //    => GlobalObserverFactories.Add(observerFactory);
+        public void AddGlobalObserver(ObserverFactory observerFactory)
+            => GlobalObserverFactories.Add(observerFactory);
 
-        //public void AddGlobalObserver<TObserver>()
-        //    where TObserver : class, IActivityObserver
-        //{
-        //    Services.RegisterObserver<TObserver>();
-        //    AddGlobalObserver(serviceProvider => serviceProvider.GetRequiredService<TObserver>());
-        //}
+        public void AddGlobalObserver<TObserver>()
+            where TObserver : class, IActivityObserver
+        {
+            Services.RegisterObserver<TObserver>();
+            AddGlobalObserver(serviceProvider => serviceProvider.GetRequiredService<TObserver>());
+        }
+        #endregion
     }
 }

@@ -12,6 +12,8 @@ namespace Stateflows.Activities.Registration.Builders
         BaseActivityBuilder,
         IActionBuilder,
         IActionBuilderWithOptions,
+        IReactiveStructuredActivityBuilder,
+        IReactiveStructuredActivityBuilderWithOptions,
         IStructuredActivityBuilder,
         IStructuredActivityBuilderWithOptions
     {
@@ -23,7 +25,7 @@ namespace Stateflows.Activities.Registration.Builders
             NodeBuilder = new NodeBuilder(Node, parentActivityBuilder, Services);
         }
 
-        public IActionBuilder AddObjectFlow<TToken>(string targetNodeName, FlowBuilderAction<TToken> buildAction = null)
+        public IActionBuilder AddObjectFlow<TToken>(string targetNodeName, ObjectFlowBuilderAction<TToken> buildAction = null)
             where TToken : Token, new()
         {
             NodeBuilder.AddObjectFlow<TToken>(targetNodeName, buildAction);
@@ -31,9 +33,24 @@ namespace Stateflows.Activities.Registration.Builders
             return this;
         }
 
+        public IActionBuilder AddElseObjectFlow<TToken>(string targetNodeName, ElseObjectFlowBuilderAction<TToken> buildAction = null)
+            where TToken : Token, new()
+        {
+            NodeBuilder.AddElseObjectFlow<TToken>(targetNodeName, buildAction);
+
+            return this;
+        }
+
         public IActionBuilder AddControlFlow(string targetNodeName, ControlFlowBuilderAction buildAction = null)
         {
             NodeBuilder.AddControlFlow(targetNodeName, buildAction);
+
+            return this;
+        }
+
+        public IActionBuilder AddElseControlFlow(string targetNodeName, ElseControlFlowBuilderAction buildAction = null)
+        {
+            NodeBuilder.AddElseControlFlow(targetNodeName, buildAction);
 
             return this;
         }
@@ -53,6 +70,117 @@ namespace Stateflows.Activities.Registration.Builders
             return this;
         }
 
+        #region IActionBuilder
+        IActionBuilderWithOptions IObjectFlow<IActionBuilderWithOptions>.AddObjectFlow<TToken>(string targetNodeName, ObjectFlowBuilderAction<TToken> buildAction)
+            => AddObjectFlow<TToken>(targetNodeName, buildAction) as IActionBuilderWithOptions;
+
+        IActionBuilderWithOptions IControlFlow<IActionBuilderWithOptions>.AddControlFlow(string targetNodeName, ControlFlowBuilderAction buildAction)
+            => AddControlFlow(targetNodeName, buildAction) as IActionBuilderWithOptions;
+
+        IActionBuilderWithOptions IExceptionHandler<IActionBuilderWithOptions>.AddExceptionHandler<TException>(ExceptionHandlerDelegateAsync<TException> exceptionHandler)
+            => AddExceptionHandler<TException>(exceptionHandler) as IActionBuilderWithOptions;
+        #endregion
+
+        #region IReactiveStructuredActivityBuilder
+        IReactiveStructuredActivityBuilderWithOptions IReactiveActivity<IReactiveStructuredActivityBuilderWithOptions>.AddAction(string actionNodeName, ActionDelegateAsync actionAsync, ActionBuilderAction buildAction)
+            => AddAction(actionNodeName, actionAsync, b => buildAction(b)) as IReactiveStructuredActivityBuilderWithOptions;
+
+        IReactiveStructuredActivityBuilderWithOptions IControlFlow<IReactiveStructuredActivityBuilderWithOptions>.AddControlFlow(string targetNodeName, ControlFlowBuilderAction buildAction)
+            => AddControlFlow(targetNodeName, buildAction) as IReactiveStructuredActivityBuilderWithOptions;
+
+        IReactiveStructuredActivityBuilder IReactiveActivity<IReactiveStructuredActivityBuilder>.AddAction(string actionNodeName, ActionDelegateAsync actionAsync, ActionBuilderAction buildAction)
+            => AddAction(actionNodeName, actionAsync, b => buildAction?.Invoke(b)) as IReactiveStructuredActivityBuilder;
+
+        IReactiveStructuredActivityBuilder IControlFlow<IReactiveStructuredActivityBuilder>.AddControlFlow(string targetNodeName, ControlFlowBuilderAction buildAction)
+            => AddControlFlow(targetNodeName, buildAction) as IReactiveStructuredActivityBuilder;
+
+        IReactiveStructuredActivityBuilder IFinal<IReactiveStructuredActivityBuilder>.AddFinal()
+            => AddFinal() as IReactiveStructuredActivityBuilder;
+
+        IReactiveStructuredActivityBuilder IInitial<IReactiveStructuredActivityBuilder>.AddInitial(InitialBuilderAction buildAction)
+            => AddInitial(buildAction) as IReactiveStructuredActivityBuilder;
+
+        IReactiveStructuredActivityBuilder IInput<IReactiveStructuredActivityBuilder>.AddInput(InputBuilderAction buildAction)
+            => AddInput(buildAction) as IReactiveStructuredActivityBuilder;
+
+        IReactiveStructuredActivityBuilder IObjectFlow<IReactiveStructuredActivityBuilder>.AddObjectFlow<TToken>(string targetNodeName, ObjectFlowBuilderAction<TToken> buildAction)
+            => AddObjectFlow<TToken>(targetNodeName, buildAction) as IReactiveStructuredActivityBuilder;
+
+        IReactiveStructuredActivityBuilder IStructuredActivityEvents<IReactiveStructuredActivityBuilder>.AddOnFinalize(Func<IActivityNodeContext, Task> actionAsync)
+            => AddOnFinalize(actionAsync) as IReactiveStructuredActivityBuilder;
+
+        IReactiveStructuredActivityBuilder IStructuredActivityEvents<IReactiveStructuredActivityBuilder>.AddOnInitialize(Func<IActivityNodeContext, Task> actionAsync)
+            => AddOnInitialize(actionAsync) as IReactiveStructuredActivityBuilder;
+
+        IReactiveStructuredActivityBuilder IOutput<IReactiveStructuredActivityBuilder>.AddOutput()
+            => AddOutput() as IReactiveStructuredActivityBuilder;
+
+        IReactiveStructuredActivityBuilder IReactiveActivity<IReactiveStructuredActivityBuilder>.AddStructuredActivity(string actionNodeName, ReactiveStructuredActivityBuilderAction builderAction)
+            => AddStructuredActivity(actionNodeName, builderAction) as IReactiveStructuredActivityBuilder;
+
+        IReactiveStructuredActivityBuilder IReactiveActivity<IReactiveStructuredActivityBuilder>.AddParallelActivity<TToken>(string actionNodeName, ParallelActivityBuilderAction builderAction)
+            => AddParallelActivity<TToken>(actionNodeName, builderAction) as IReactiveStructuredActivityBuilder;
+
+        IReactiveStructuredActivityBuilder IReactiveActivity<IReactiveStructuredActivityBuilder>.AddIterativeActivity<TToken>(string actionNodeName, IterativeActivityBuilderAction builderAction)
+            => AddIterativeActivity<TToken>(actionNodeName, builderAction) as IReactiveStructuredActivityBuilder;
+
+        IReactiveStructuredActivityBuilderWithOptions INodeOptions<IReactiveStructuredActivityBuilderWithOptions>.SetOptions(NodeOptions nodeOptions)
+        {
+            Node.Options = nodeOptions;
+
+            return this;
+        }
+
+        IReactiveStructuredActivityBuilderWithOptions IObjectFlow<IReactiveStructuredActivityBuilderWithOptions>.AddObjectFlow<TToken>(string targetNodeName, ObjectFlowBuilderAction<TToken> buildAction)
+            => AddObjectFlow<TToken>(targetNodeName, buildAction) as IReactiveStructuredActivityBuilderWithOptions;
+
+        IReactiveStructuredActivityBuilderWithOptions IExceptionHandler<IReactiveStructuredActivityBuilderWithOptions>.AddExceptionHandler<TException>(ExceptionHandlerDelegateAsync<TException> exceptionHandler)
+            => AddExceptionHandler(exceptionHandler) as IReactiveStructuredActivityBuilderWithOptions;
+
+        IReactiveStructuredActivityBuilderWithOptions IFinal<IReactiveStructuredActivityBuilderWithOptions>.AddFinal()
+            => AddFinal() as IReactiveStructuredActivityBuilderWithOptions;
+
+        IReactiveStructuredActivityBuilderWithOptions IInitial<IReactiveStructuredActivityBuilderWithOptions>.AddInitial(InitialBuilderAction buildAction)
+            => AddInitial(buildAction) as IReactiveStructuredActivityBuilderWithOptions;
+
+        IReactiveStructuredActivityBuilderWithOptions IInput<IReactiveStructuredActivityBuilderWithOptions>.AddInput(InputBuilderAction buildAction)
+            => AddInput(buildAction) as IReactiveStructuredActivityBuilderWithOptions;
+
+        IReactiveStructuredActivityBuilderWithOptions IStructuredActivityEvents<IReactiveStructuredActivityBuilderWithOptions>.AddOnFinalize(Func<IActivityNodeContext, Task> actionAsync)
+            => AddOnFinalize(actionAsync) as IReactiveStructuredActivityBuilderWithOptions;
+
+        IReactiveStructuredActivityBuilderWithOptions IStructuredActivityEvents<IReactiveStructuredActivityBuilderWithOptions>.AddOnInitialize(Func<IActivityNodeContext, Task> actionAsync)
+            => AddOnInitialize(actionAsync) as IReactiveStructuredActivityBuilderWithOptions;
+
+        IReactiveStructuredActivityBuilderWithOptions IOutput<IReactiveStructuredActivityBuilderWithOptions>.AddOutput()
+            => AddOutput() as IReactiveStructuredActivityBuilderWithOptions;
+
+        IReactiveStructuredActivityBuilderWithOptions IReactiveActivity<IReactiveStructuredActivityBuilderWithOptions>.AddStructuredActivity(string actionNodeName, ReactiveStructuredActivityBuilderAction builderAction)
+            => AddStructuredActivity(actionNodeName, builderAction) as IReactiveStructuredActivityBuilderWithOptions;
+
+        IReactiveStructuredActivityBuilderWithOptions IReactiveActivity<IReactiveStructuredActivityBuilderWithOptions>.AddParallelActivity<TToken>(string actionNodeName, ParallelActivityBuilderAction builderAction)
+            => AddParallelActivity<TToken>(actionNodeName, builderAction) as IReactiveStructuredActivityBuilderWithOptions;
+
+        IReactiveStructuredActivityBuilderWithOptions IReactiveActivity<IReactiveStructuredActivityBuilderWithOptions>.AddIterativeActivity<TToken>(string actionNodeName, IterativeActivityBuilderAction builderAction)
+            => AddIterativeActivity<TToken>(actionNodeName, builderAction) as IReactiveStructuredActivityBuilderWithOptions;
+
+        IReactiveStructuredActivityBuilder IExceptionHandler<IReactiveStructuredActivityBuilder>.AddExceptionHandler<TException>(ExceptionHandlerDelegateAsync<TException> exceptionHandler)
+            => AddExceptionHandler<TException>(exceptionHandler) as IReactiveStructuredActivityBuilder;
+
+        IReactiveStructuredActivityBuilder ISendEvent<IReactiveStructuredActivityBuilder>.AddSendEventAction<TEvent>(string actionNodeName, SendEventActionDelegateAsync<TEvent> actionAsync, BehaviorIdSelectorAsync targetSelectorAsync, SendEventActionBuilderAction buildAction)
+            => AddSendEventAction<TEvent>(actionNodeName, actionAsync, targetSelectorAsync, buildAction) as IReactiveStructuredActivityBuilder;
+
+        IReactiveStructuredActivityBuilder IAcceptEvent<IReactiveStructuredActivityBuilder>.AddAcceptEventAction<TEvent>(string actionNodeName, AcceptEventActionDelegateAsync<TEvent> eventActionAsync, AcceptEventActionBuilderAction buildAction)
+            => AddAcceptEventAction(actionNodeName, eventActionAsync, buildAction) as IReactiveStructuredActivityBuilder;
+
+        IReactiveStructuredActivityBuilderWithOptions ISendEvent<IReactiveStructuredActivityBuilderWithOptions>.AddSendEventAction<TEvent>(string actionNodeName, SendEventActionDelegateAsync<TEvent> actionAsync, BehaviorIdSelectorAsync targetSelectorAsync, SendEventActionBuilderAction buildAction)
+            => AddSendEventAction<TEvent>(actionNodeName, actionAsync, targetSelectorAsync, buildAction) as IReactiveStructuredActivityBuilderWithOptions;
+
+        IReactiveStructuredActivityBuilderWithOptions IAcceptEvent<IReactiveStructuredActivityBuilderWithOptions>.AddAcceptEventAction<TEvent>(string actionNodeName, AcceptEventActionDelegateAsync<TEvent> eventActionAsync, AcceptEventActionBuilderAction buildAction)
+            => AddAcceptEventAction(actionNodeName, eventActionAsync, buildAction) as IReactiveStructuredActivityBuilderWithOptions;
+        #endregion
+
+        #region IStructuredActivityBuilder
         IStructuredActivityBuilderWithOptions IActivity<IStructuredActivityBuilderWithOptions>.AddAction(string actionNodeName, ActionDelegateAsync actionAsync, ActionBuilderAction buildAction)
             => AddAction(actionNodeName, actionAsync, b => buildAction(b)) as IStructuredActivityBuilderWithOptions;
 
@@ -74,25 +202,25 @@ namespace Stateflows.Activities.Registration.Builders
         IStructuredActivityBuilder IInput<IStructuredActivityBuilder>.AddInput(InputBuilderAction buildAction)
             => AddInput(buildAction) as IStructuredActivityBuilder;
 
-        IStructuredActivityBuilder IObjectFlow<IStructuredActivityBuilder>.AddObjectFlow<TToken>(string targetNodeName, FlowBuilderAction<TToken> buildAction)
+        IStructuredActivityBuilder IObjectFlow<IStructuredActivityBuilder>.AddObjectFlow<TToken>(string targetNodeName, ObjectFlowBuilderAction<TToken> buildAction)
             => AddObjectFlow<TToken>(targetNodeName, buildAction) as IStructuredActivityBuilder;
 
-        IStructuredActivityBuilder IStructuredActivityEvents<IStructuredActivityBuilder>.AddOnFinalize(Func<IActivityActionContext, Task> actionAsync)
+        IStructuredActivityBuilder IStructuredActivityEvents<IStructuredActivityBuilder>.AddOnFinalize(Func<IActivityNodeContext, Task> actionAsync)
             => AddOnFinalize(actionAsync) as IStructuredActivityBuilder;
 
-        IStructuredActivityBuilder IStructuredActivityEvents<IStructuredActivityBuilder>.AddOnInitialize(Func<IActivityActionContext, Task> actionAsync)
+        IStructuredActivityBuilder IStructuredActivityEvents<IStructuredActivityBuilder>.AddOnInitialize(Func<IActivityNodeContext, Task> actionAsync)
             => AddOnInitialize(actionAsync) as IStructuredActivityBuilder;
 
         IStructuredActivityBuilder IOutput<IStructuredActivityBuilder>.AddOutput()
             => AddOutput() as IStructuredActivityBuilder;
 
         IStructuredActivityBuilder IActivity<IStructuredActivityBuilder>.AddStructuredActivity(string actionNodeName, StructuredActivityBuilderAction builderAction)
-            => AddStructuredActivity(actionNodeName, builderAction) as IStructuredActivityBuilder;
+            => AddStructuredActivity(actionNodeName, b => builderAction?.Invoke(b as IStructuredActivityBuilder)) as IStructuredActivityBuilder;
 
-        IStructuredActivityBuilder IActivity<IStructuredActivityBuilder>.AddParallelActivity<TToken>(string actionNodeName, StructuredActivityBuilderAction builderAction)
+        IStructuredActivityBuilder IActivity<IStructuredActivityBuilder>.AddParallelActivity<TToken>(string actionNodeName, ParallelActivityBuilderAction builderAction)
             => AddParallelActivity<TToken>(actionNodeName, builderAction) as IStructuredActivityBuilder;
 
-        IStructuredActivityBuilder IActivity<IStructuredActivityBuilder>.AddIterativeActivity<TToken>(string actionNodeName, StructuredActivityBuilderAction builderAction)
+        IStructuredActivityBuilder IActivity<IStructuredActivityBuilder>.AddIterativeActivity<TToken>(string actionNodeName, IterativeActivityBuilderAction builderAction)
             => AddIterativeActivity<TToken>(actionNodeName, builderAction) as IStructuredActivityBuilder;
 
         IStructuredActivityBuilderWithOptions INodeOptions<IStructuredActivityBuilderWithOptions>.SetOptions(NodeOptions nodeOptions)
@@ -102,7 +230,7 @@ namespace Stateflows.Activities.Registration.Builders
             return this;
         }
 
-        IStructuredActivityBuilderWithOptions IObjectFlow<IStructuredActivityBuilderWithOptions>.AddObjectFlow<TToken>(string targetNodeName, FlowBuilderAction<TToken> buildAction)
+        IStructuredActivityBuilderWithOptions IObjectFlow<IStructuredActivityBuilderWithOptions>.AddObjectFlow<TToken>(string targetNodeName, ObjectFlowBuilderAction<TToken> buildAction)
             => AddObjectFlow<TToken>(targetNodeName, buildAction) as IStructuredActivityBuilderWithOptions;
 
         IStructuredActivityBuilderWithOptions IExceptionHandler<IStructuredActivityBuilderWithOptions>.AddExceptionHandler<TException>(ExceptionHandlerDelegateAsync<TException> exceptionHandler)
@@ -117,46 +245,32 @@ namespace Stateflows.Activities.Registration.Builders
         IStructuredActivityBuilderWithOptions IInput<IStructuredActivityBuilderWithOptions>.AddInput(InputBuilderAction buildAction)
             => AddInput(buildAction) as IStructuredActivityBuilderWithOptions;
 
-        IStructuredActivityBuilderWithOptions IStructuredActivityEvents<IStructuredActivityBuilderWithOptions>.AddOnFinalize(Func<IActivityActionContext, Task> actionAsync)
+        IStructuredActivityBuilderWithOptions IStructuredActivityEvents<IStructuredActivityBuilderWithOptions>.AddOnFinalize(Func<IActivityNodeContext, Task> actionAsync)
             => AddOnFinalize(actionAsync) as IStructuredActivityBuilderWithOptions;
 
-        IStructuredActivityBuilderWithOptions IStructuredActivityEvents<IStructuredActivityBuilderWithOptions>.AddOnInitialize(Func<IActivityActionContext, Task> actionAsync)
+        IStructuredActivityBuilderWithOptions IStructuredActivityEvents<IStructuredActivityBuilderWithOptions>.AddOnInitialize(Func<IActivityNodeContext, Task> actionAsync)
             => AddOnInitialize(actionAsync) as IStructuredActivityBuilderWithOptions;
 
         IStructuredActivityBuilderWithOptions IOutput<IStructuredActivityBuilderWithOptions>.AddOutput()
             => AddOutput() as IStructuredActivityBuilderWithOptions;
 
         IStructuredActivityBuilderWithOptions IActivity<IStructuredActivityBuilderWithOptions>.AddStructuredActivity(string actionNodeName, StructuredActivityBuilderAction builderAction)
-            => AddStructuredActivity(actionNodeName, builderAction) as IStructuredActivityBuilderWithOptions;
+            => AddStructuredActivity(actionNodeName, b => builderAction?.Invoke(b as IStructuredActivityBuilder)) as IStructuredActivityBuilderWithOptions;
 
-        IStructuredActivityBuilderWithOptions IActivity<IStructuredActivityBuilderWithOptions>.AddParallelActivity<TToken>(string actionNodeName, StructuredActivityBuilderAction builderAction)
+        IStructuredActivityBuilderWithOptions IActivity<IStructuredActivityBuilderWithOptions>.AddParallelActivity<TToken>(string actionNodeName, ParallelActivityBuilderAction builderAction)
             => AddParallelActivity<TToken>(actionNodeName, builderAction) as IStructuredActivityBuilderWithOptions;
 
-        IStructuredActivityBuilderWithOptions IActivity<IStructuredActivityBuilderWithOptions>.AddIterativeActivity<TToken>(string actionNodeName, StructuredActivityBuilderAction builderAction)
+        IStructuredActivityBuilderWithOptions IActivity<IStructuredActivityBuilderWithOptions>.AddIterativeActivity<TToken>(string actionNodeName, IterativeActivityBuilderAction builderAction)
             => AddIterativeActivity<TToken>(actionNodeName, builderAction) as IStructuredActivityBuilderWithOptions;
 
         IStructuredActivityBuilder IExceptionHandler<IStructuredActivityBuilder>.AddExceptionHandler<TException>(ExceptionHandlerDelegateAsync<TException> exceptionHandler)
             => AddExceptionHandler<TException>(exceptionHandler) as IStructuredActivityBuilder;
 
-        IActionBuilderWithOptions IObjectFlow<IActionBuilderWithOptions>.AddObjectFlow<TToken>(string targetNodeName, FlowBuilderAction<TToken> buildAction)
-            => AddObjectFlow<TToken>(targetNodeName, buildAction) as IActionBuilderWithOptions;
-
-        IActionBuilderWithOptions IControlFlow<IActionBuilderWithOptions>.AddControlFlow(string targetNodeName, ControlFlowBuilderAction buildAction)
-            => AddControlFlow(targetNodeName, buildAction) as IActionBuilderWithOptions;
-
-        IActionBuilderWithOptions IExceptionHandler<IActionBuilderWithOptions>.AddExceptionHandler<TException>(ExceptionHandlerDelegateAsync<TException> exceptionHandler)
-            => AddExceptionHandler<TException>(exceptionHandler) as IActionBuilderWithOptions;
-
         IStructuredActivityBuilder ISendEvent<IStructuredActivityBuilder>.AddSendEventAction<TEvent>(string actionNodeName, SendEventActionDelegateAsync<TEvent> actionAsync, BehaviorIdSelectorAsync targetSelectorAsync, SendEventActionBuilderAction buildAction)
             => AddSendEventAction<TEvent>(actionNodeName, actionAsync, targetSelectorAsync, buildAction) as IStructuredActivityBuilder;
 
-        IStructuredActivityBuilder IAcceptEvent<IStructuredActivityBuilder>.AddAcceptEventAction<TEvent>(string actionNodeName, AcceptEventActionDelegateAsync<TEvent> eventActionAsync, AcceptEventActionBuilderAction buildAction)
-            => AddAcceptEventAction(actionNodeName, eventActionAsync, buildAction) as IStructuredActivityBuilder;
-
         IStructuredActivityBuilderWithOptions ISendEvent<IStructuredActivityBuilderWithOptions>.AddSendEventAction<TEvent>(string actionNodeName, SendEventActionDelegateAsync<TEvent> actionAsync, BehaviorIdSelectorAsync targetSelectorAsync, SendEventActionBuilderAction buildAction)
             => AddSendEventAction<TEvent>(actionNodeName, actionAsync, targetSelectorAsync, buildAction) as IStructuredActivityBuilderWithOptions;
-
-        IStructuredActivityBuilderWithOptions IAcceptEvent<IStructuredActivityBuilderWithOptions>.AddAcceptEventAction<TEvent>(string actionNodeName, AcceptEventActionDelegateAsync<TEvent> eventActionAsync, AcceptEventActionBuilderAction buildAction)
-            => AddAcceptEventAction(actionNodeName, eventActionAsync, buildAction) as IStructuredActivityBuilderWithOptions;
+        #endregion
     }
 }

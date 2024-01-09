@@ -2,6 +2,10 @@
 
 namespace Stateflows.Activities
 {
-    public interface IDecisionBuilder : IObjectFlow<IDecisionBuilder>, IControlFlow<IDecisionBuilder>
+    public interface IDecisionBuilder<TToken> : IObjectFlow<TToken, IDecisionBuilder<TToken>>, IElseObjectFlow<TToken, IDecisionBuilder<TToken>>
+        where TToken : Token, new()
+    { }
+
+    public interface IDecisionBuilder : IControlFlow<IDecisionBuilder>, IElseControlFlow<IDecisionBuilder>
     { }
 }

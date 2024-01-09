@@ -1,6 +1,8 @@
 ﻿using System;
+using System.Linq;
 using System.Threading.Tasks;
 using System.Collections.Generic;
+using System.Text.Json.Serialization;
 using Microsoft.Extensions.DependencyInjection;
 using Stateflows.Common;
 using Stateflows.Common.Context;
@@ -9,7 +11,7 @@ using Stateflows.Activities.Models;
 using Stateflows.Activities.Engine;
 using Stateflows.Activities.Streams;
 using Stateflows.Activities.Registration;
-using System.Linq;
+using Stateflows.Common.Classes;
 
 namespace Stateflows.Activities.Context.Classes
 {
@@ -29,33 +31,8 @@ namespace Stateflows.Activities.Context.Classes
 
         public Dictionary<string, string> GlobalValues => Context.GlobalValues;
 
-        private Dictionary<string, ActionValues> actionValues = null;
-        public Dictionary<string, ActionValues> ActionValues
-        {
-            get
-            {
-                lock (Context.Values)
-                {
-                    if (actionValues == null)
-                    {
-                        if (!Context.Values.TryGetValue(Constants.ActionValues, out var actionValuesObj))
-                        {
-                            actionValues = new Dictionary<string, ActionValues>();
-                            Context.Values[Constants.ActionValues] = actionValues;
-                        }
-                        else
-                        {
-                            actionValues = actionValuesObj as Dictionary<string, ActionValues>;
-                        }
-                    }
-                }
-
-                return actionValues;
-            }
-        }
-
-        private Dictionary<string, Dictionary<string, Stream>> streams = null;
-        public Dictionary<string, Dictionary<string, Stream>> Streams
+        private Dictionary<Guid, Dictionary<string, Stream>> streams = null;
+        public Dictionary<Guid, Dictionary<string, Stream>> Streams
         {
             get
             {
@@ -65,12 +42,12 @@ namespace Stateflows.Activities.Context.Classes
                     {
                         if (!Context.Values.TryGetValue(Constants.Streams, out var streamsObj))
                         {
-                            streams = new Dictionary<string, Dictionary<string, Stream>>();
+                            streams = new Dictionary<Guid, Dictionary<string, Stream>>();
                             Context.Values[Constants.Streams] = streams;
                         }
                         else
                         {
-                            streams = streamsObj as Dictionary<string, Dictionary<string, Stream>>;
+                            streams = streamsObj as Dictionary<Guid, Dictionary<string, Stream>>;
                         }
                     }
                 }
@@ -79,7 +56,7 @@ namespace Stateflows.Activities.Context.Classes
             }
         }
 
-        public Stream GetStream(string edgeIdentifier, string threadId)
+        public Stream GetStream(string edgeIdentifier, Guid threadId)
         {
             Stream stream;
 
@@ -101,7 +78,7 @@ namespace Stateflows.Activities.Context.Classes
             return stream;
         }
 
-        public Dictionary<string, Stream> GetStreams(string threadId)
+        public Dictionary<string, Stream> GetStreams(Guid threadId)
         {
             lock (Streams)
             {
@@ -115,8 +92,35 @@ namespace Stateflows.Activities.Context.Classes
             }
         }
 
-        private Dictionary<string, Dictionary<string, List<Token>>> outputTokens = null;
-        public Dictionary<string, Dictionary<string, List<Token>>> OutputTokens
+        internal IEnumerable<Stream> GetStreams(Node node, Guid threadId)
+        {
+            lock (Streams)
+            {
+                return node.IncomingEdges
+                    .Select(edge => GetStream(edge.Identifier, threadId))
+                    .Where(stream => stream.IsActivated)
+                    .ToArray();
+            }
+        }
+
+        public void ClearStream(string edgeIdentifier, Guid threadId)
+        {
+            lock (Streams)
+            {
+                if (Streams.TryGetValue(threadId, out var edges))
+                {
+                    edges.Remove(edgeIdentifier);
+
+                    if (!edges.Any())
+                    {
+                        Streams.Remove(threadId);
+                    }
+                }
+            }
+        }
+
+        private Dictionary<Guid, Dictionary<string, List<Token>>> outputTokens = null;
+        public Dictionary<Guid, Dictionary<string, List<Token>>> OutputTokens
         {
             get
             {
@@ -126,12 +130,12 @@ namespace Stateflows.Activities.Context.Classes
                     {
                         if (!Context.Values.TryGetValue(Constants.OutputTokens, out var outputTokensObj))
                         {
-                            outputTokens = new Dictionary<string, Dictionary<string, List<Token>>>();
+                            outputTokens = new Dictionary<Guid, Dictionary<string, List<Token>>>();
                             Context.Values[Constants.OutputTokens] = outputTokens;
                         }
                         else
                         {
-                            outputTokens = outputTokensObj as Dictionary<string, Dictionary<string, List<Token>>>;
+                            outputTokens = outputTokensObj as Dictionary<Guid, Dictionary<string, List<Token>>>;
                         }
                     }
                 }
@@ -140,7 +144,7 @@ namespace Stateflows.Activities.Context.Classes
             }
         }
 
-        public List<Token> GetOutputTokens(string nodeName, string threadId)
+        public List<Token> GetOutputTokens(string nodeName, Guid threadId)
         {
             List<Token> tokens;
 
@@ -162,25 +166,120 @@ namespace Stateflows.Activities.Context.Classes
             return tokens;
         }
 
-        private List<string> nodesStack = null;
-        public List<string> NodesStack
+        private Dictionary<string, Guid> activeNodes = null;
+        public Dictionary<string, Guid> ActiveNodes
         {
             get
             {
-                if (nodesStack == null)
+                lock (Context.Values)
                 {
-                    if (!Context.Values.TryGetValue(Constants.NodesStack, out var statesStackObj))
+                    if (activeNodes == null)
                     {
-                        nodesStack = new List<string>();
-                        Context.Values[Constants.NodesStack] = nodesStack;
-                    }
-                    else
-                    {
-                        nodesStack = statesStackObj as List<string>;
+                        if (!Context.Values.TryGetValue(Constants.ActiveNodes, out var activeNodesObj))
+                        {
+                            activeNodes = new Dictionary<string, Guid>();
+                            Context.Values[Constants.ActiveNodes] = activeNodes;
+                        }
+                        else
+                        {
+                            activeNodes = activeNodesObj as Dictionary<string, Guid>;
+                        }
                     }
                 }
 
-                return nodesStack;
+                return activeNodes;
+            }
+        }
+
+        private Dictionary<string, Guid> nodeThreads = null;
+        public Dictionary<string, Guid> NodeThreads
+        {
+            get
+            {
+                lock (Context.Values)
+                {
+                    if (nodeThreads == null)
+                    {
+                        if (!Context.Values.TryGetValue(Constants.NodeThreads, out var nodesThreadsObj))
+                        {
+                            nodeThreads = new Dictionary<string, Guid>();
+                            Context.Values[Constants.NodeThreads] = nodeThreads;
+                        }
+                        else
+                        {
+                            nodeThreads = nodesThreadsObj as Dictionary<string, Guid>;
+                        }
+                    }
+                }
+
+                return nodeThreads;
+            }
+        }
+
+        private Dictionary<string, Guid> nodeTimeEvents = null;
+        public Dictionary<string, Guid> NodeTimeEvents
+        {
+            get
+            {
+                lock (Context.Values)
+                {
+                    if (nodeTimeEvents == null)
+                    {
+                        if (!Context.Values.TryGetValue(Constants.NodeTimeEvents, out var nodesTimeEventsObj))
+                        {
+                            nodeTimeEvents = new Dictionary<string, Guid>();
+                            Context.Values[Constants.NodeTimeEvents] = nodeTimeEvents;
+                        }
+                        else
+                        {
+                            nodeTimeEvents = nodesTimeEventsObj as Dictionary<string, Guid>;
+                        }
+                    }
+                }
+
+                return nodeTimeEvents;
+            }
+        }
+
+        [JsonIgnore]
+        internal LockedList<Node> NodesToExecute { get; set; } = new LockedList<Node>();
+
+        [JsonIgnore]
+        private Dictionary<Guid, List<Node>> TerminatedNodes { get; set; } = new Dictionary<Guid, List<Node>>();
+
+        internal bool IsTerminated(Node node, Guid threadId)
+        {
+            lock (TerminatedNodes)
+            {
+                return TerminatedNodes.TryGetValue(threadId, out var nodes) && nodes.Contains(node);
+            }
+        }
+
+        internal void MarkAsTerminated(Node node, Guid threadId)
+        {
+            lock (TerminatedNodes)
+            {
+                if (!TerminatedNodes.TryGetValue(threadId, out var nodes))
+                {
+                    nodes = new List<Node>();
+                    TerminatedNodes.Add(threadId, nodes);
+                }
+
+                nodes.Add(node);
+            }
+        }
+
+        internal void UnmarkAsTerminated(Node node, Guid threadId)
+        {
+            lock (TerminatedNodes)
+            {
+                if (!TerminatedNodes.TryGetValue(threadId, out var nodes))
+                {
+                    nodes = new List<Node>();
+                    TerminatedNodes.Add(threadId, nodes);
+                }
+
+                nodes.Remove(node);
             }
         }
 

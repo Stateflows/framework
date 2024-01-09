@@ -38,7 +38,7 @@ namespace Stateflows.StateMachines.Extensions
             {
                 if (interfaceType.GetGenericTypeDefinition() == baseInterfaceType)
                 {
-                    var methodInfo = interfaceType.GetMethods().First(m => m.Name == "InitializeAsync");
+                    var methodInfo = interfaceType.GetMethods().First(m => m.Name == "OnInitializeAsync");
                     var requestType = interfaceType.GenericTypeArguments[0];
                     var requestName = Stateflows.Common.EventInfo.GetName(requestType);
                     (builder as StateMachineBuilder).AddInitializer(requestName, c =>

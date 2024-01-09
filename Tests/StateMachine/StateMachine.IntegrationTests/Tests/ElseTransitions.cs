@@ -35,10 +35,10 @@ namespace StateMachine.IntegrationTests.Tests
                             .AddTransition<OtherEvent>("state2", b => b
                                 .AddGuard(c => c.Event.AnswerToLifeUniverseAndEverything == 42)
                             )
+                            .AddElseTransition<OtherEvent>("state4")
                             .AddTransition<OtherEvent>("state3", b => b
                                 .AddGuard(c => c.Event.AnswerToLifeUniverseAndEverything == 43)
                             )
-                            .AddElseTransition<OtherEvent>("state4")
                         )
                         .AddState("state2")
                         .AddState("state3")
@@ -77,13 +77,13 @@ namespace StateMachine.IntegrationTests.Tests
             {
                 await sm.InitializeAsync();
 
-                status = (await sm.SendAsync(new OtherEvent() { AnswerToLifeUniverseAndEverything = 44 })).Status;
+                status = (await sm.SendAsync(new OtherEvent() { AnswerToLifeUniverseAndEverything = 43 })).Status;
 
                 currentState = (await sm.GetCurrentStateAsync()).Response.StatesStack.First();
             }
 
             Assert.AreEqual(EventStatus.Consumed, status);
-            Assert.AreEqual("state4", currentState);
+            Assert.AreEqual("state3", currentState);
         }
     }
 }

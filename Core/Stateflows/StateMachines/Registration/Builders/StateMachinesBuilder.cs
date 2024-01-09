@@ -79,6 +79,7 @@ namespace Stateflows.StateMachines.Registration.Builders
             where TStateMachine : StateMachine
             => AddStateMachine<TStateMachine>(null, version);
 
+        #region Observability
         [DebuggerHidden]
         public IStateMachinesBuilder AddInterceptor<TInterceptor>()
             where TInterceptor : class, IStateMachineInterceptor
@@ -129,6 +130,7 @@ namespace Stateflows.StateMachines.Registration.Builders
 
             return this;
         }
+        #endregion
     }
 }
 

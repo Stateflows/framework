@@ -1,8 +1,13 @@
-﻿using Stateflows.Activities.Extensions;
-using Stateflows.Activities.Context.Classes;
-using Stateflows.Activities.Registration.Interfaces;
+﻿using System;
+using System.Threading.Tasks;
+using Stateflows.Common;
+using Stateflows.Activities.Extensions;
 using Stateflows.Activities.Collections;
 using Stateflows.Activities.Registration;
+using Stateflows.Activities.Context.Classes;
+using Stateflows.Activities.Context.Interfaces;
+using Stateflows.Activities.Registration.Interfaces;
+using Stateflows.Activities.Registration.Builders;
 
 namespace Stateflows.Activities
 {
@@ -20,17 +25,17 @@ namespace Stateflows.Activities
 
             return builder.AddAction(
                 actionNodeName,
-                c =>
+                (ActionDelegateAsync)(                c =>
                 {
                     var action = (c as BaseContext).NodeScope.GetAction<TAction>(c);
 
-                    InputTokensHolder.Tokens.Value = c.Input;
-                    OutputTokensHolder.Tokens.Value = ((ActionContext)c).OutputTokens;
+                    InputTokensHolder.Tokens.Value = c.InputTokens;
+                    OutputTokensHolder.Tokens.Value = ((ActionContext)c).Output;
 
                     var result = action.ExecuteAsync();
 
                     return result;
-                },
+                }),
                 b =>
                 {
                     (b as NodeBuilder).Node.ScanForDeclaredTypes(typeof(TAction));
@@ -40,49 +45,58 @@ namespace Stateflows.Activities
         }
         #endregion
 
-        #region AddSignalAction
-        //public static IActivityBuilder AddSignalAction<TEvent, TSignalAction>(
-        //    this IActivityBuilder builder,
-        //    SignalActionBuilderAction signalActionBuildAction
-        //)
-        //    where TEvent : Event
-        //    where TSignalAction : SignalAction<TEvent>
-        //    => AddSignalAction<TEvent, TSignalAction>(builder, ActivityNodeInfo<TSignalAction>.Name, signalActionBuildAction);
+        #region AddSendEventAction
+        private static async Task<TResult> GetSendEventAction<TEvent, TSendEventAction, TResult>(this IActionContext context, Func<TSendEventAction, Task<TResult>> callback)
+            where TEvent : Event, new()
+            where TSendEventAction : SendEventAction<TEvent>
+        {
+            var action = (context as BaseContext).NodeScope.GetSendEventAction<TEvent, TSendEventAction>(context);
 
-        //public static IActivityBuilder AddSignalAction<TEvent, TSignalAction>(
-        //    this IActivityBuilder builder,
-        //    string signalActionNodeName,
-        //    SignalActionBuilderAction signalActionBuildAction
-        //)
-        //    where TEvent : Event
-        //    where TSignalAction : SignalAction<TEvent>
-        //{
-        //    var self = builder as IActivityBuilderInternal;
-        //    self.Services.RegisterAction<TSignalAction>();
+            InputTokensHolder.Tokens.Value = context.InputTokens;
+            OutputTokensHolder.Tokens.Value = ((ActionContext)context).Output;
 
-        //    return builder.AddSignalAction(
-        //        signalActionNodeName,
-        //        c => (c as BaseContext).Context.Executor.GetAction<TSignalAction>(c).GenerateEventAsync(),
-        //        c => (c as BaseContext).Context.Executor.GetAction<TSignalAction>(c).SelectTargetAsync(),
-        //        signalActionBuildAction
-        //    );
-        //}
+            return await callback(action);
+        }
+
+        public static IStructuredActivityBuilder AddSendEventAction<TEvent, TSendEventAction>(this IStructuredActivityBuilder builder, SendEventActionBuilderAction buildAction = null)
+            where TEvent : Event, new()
+            where TSendEventAction : SendEventAction<TEvent>
+            => builder.AddSendEventAction<TEvent, TSendEventAction>(ActivityNodeInfo<TSendEventAction>.Name, buildAction);
+
+        public static IStructuredActivityBuilder AddSendEventAction<TEvent, TSendEventAction>(this IStructuredActivityBuilder builder, string actionNodeName, SendEventActionBuilderAction buildAction = null)
+            where TEvent : Event, new()
+            where TSendEventAction : SendEventAction<TEvent>
+        {
+            return builder.AddSendEventAction<TEvent>(
+                actionNodeName,
+                c => c.GetSendEventAction<TEvent, TSendEventAction, TEvent>(a => a.GenerateEventAsync()),
+                c => c.GetSendEventAction<TEvent, TSendEventAction, BehaviorId>(a => a.SelectTargetAsync()),
+                buildAction
+            );
+        }
         #endregion
 
-        #region AddEventAction
-        //public static IActivityBuilder AddEventAction<TEvent, TEventAction>(this IActivityBuilder builder, EventActionBuilderAction buildAction = null)
-        //    where TEvent : Event
-        //    where TEventAction : EventAction<TEvent>
-        //{
-        //    return builder;
-        //}
+        #region AddReactiveStructuredActivity
+        public static IReactiveStructuredActivityBuilder AddStructuredActivity<TStructuredActivity>(this IReactiveStructuredActivityBuilder builder, ReactiveStructuredActivityBuilderAction buildAction = null)
+            where TStructuredActivity : StructuredActivity
+            => AddStructuredActivity<TStructuredActivity>(builder, ActivityNodeInfo<TStructuredActivity>.Name, buildAction);
 
-        //public static IActivityBuilder AddEventAction<TEvent, TEventAction>(this IActivityBuilder builder, string actionNodeName, EventActionBuilderAction buildAction = null)
-        //    where TEvent : Event
-        //    where TEventAction : EventAction<TEvent>
-        //{
-        //    return builder;
-        //}
+        public static IReactiveStructuredActivityBuilder AddStructuredActivity<TStructuredActivity>(this IReactiveStructuredActivityBuilder builder, string structuredActivityName, ReactiveStructuredActivityBuilderAction buildAction = null)
+            where TStructuredActivity : StructuredActivity
+        {
+            (builder as IInternal).Services.RegisterStructuredActivity<TStructuredActivity>();
+
+            return builder.AddStructuredActivity(
+                structuredActivityName,
+                b =>
+                {
+                    var builder = b as StructuredActivityBuilder;
+                    builder.AddStructuredActivityEvents<TStructuredActivity>();
+                    builder.Node.ScanForDeclaredTypes(typeof(TStructuredActivity));
+                    buildAction?.Invoke(b);
+                }
+            );
+        }
         #endregion
 
         #region AddStructuredActivity
@@ -99,8 +113,9 @@ namespace Stateflows.Activities
                 structuredActivityName,
                 b =>
                 {
-                    b.AddStructuredActivityEvents<TStructuredActivity>();
-                    (b as NodeBuilder).Node.ScanForDeclaredTypes(typeof(TStructuredActivity));
+                    var builder = b as StructuredActivityBuilder;
+                    builder.AddStructuredActivityEvents<TStructuredActivity>();
+                    builder.Node.ScanForDeclaredTypes(typeof(TStructuredActivity));
                     buildAction?.Invoke(b);
                 }
             );
@@ -123,8 +138,9 @@ namespace Stateflows.Activities
                 structuredActivityName,
                 b =>
                 {
-                    b.AddStructuredActivityEvents<TStructuredActivity>();
-                    (b as NodeBuilder).Node.ScanForDeclaredTypes(typeof(TStructuredActivity));
+                    var builder = b as StructuredActivityBuilder;
+                    builder.AddStructuredActivityEvents<TStructuredActivity>();
+                    builder.Node.ScanForDeclaredTypes(typeof(TStructuredActivity));
                     buildAction?.Invoke(b);
                 }
             );
@@ -146,8 +162,9 @@ namespace Stateflows.Activities
                 structuredActivityName,
                 b =>
                 {
-                    b.AddStructuredActivityEvents<TStructuredActivity>();
-                    (b as NodeBuilder).Node.ScanForDeclaredTypes(typeof(TStructuredActivity));
+                    var builder = b as StructuredActivityBuilder;
+                    builder.AddStructuredActivityEvents<TStructuredActivity>();
+                    builder.Node.ScanForDeclaredTypes(typeof(TStructuredActivity));
                     buildAction?.Invoke(b);
                 }
             );

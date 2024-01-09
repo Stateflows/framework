@@ -6,10 +6,10 @@
 
         TReturn AddStructuredActivity(string actionNodeName, StructuredActivityBuilderAction builderAction);
 
-        TReturn AddParallelActivity<TToken>(string actionNodeName, StructuredActivityBuilderAction builderAction)
+        TReturn AddParallelActivity<TToken>(string actionNodeName, ParallelActivityBuilderAction builderAction)
             where TToken : Token, new();
 
-        TReturn AddIterativeActivity<TToken>(string actionNodeName, StructuredActivityBuilderAction builderAction)
+        TReturn AddIterativeActivity<TToken>(string actionNodeName, IterativeActivityBuilderAction builderAction)
             where TToken : Token, new();
     }
 }

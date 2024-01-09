@@ -1,55 +1,58 @@
 ﻿using System.Linq;
-using System.Threading;
 using System.Collections.Generic;
 using Stateflows.Activities.Models;
-using Stateflows.Activities.Context.Interfaces;
 using Stateflows.Activities.Engine;
+using Stateflows.Activities.Context.Interfaces;
 using Stateflows.Activities.Inspection.Interfaces;
-using Stateflows.Common.Utilities;
 
 namespace Stateflows.Activities.Context.Classes
 {
-    internal class ActionContext : BaseContext, IActionContext, IActivityNodeContext, IActivityNodeInspectionContext
+    internal class ActionContext : ActivityNodeContext, IActionContext, IActivityNodeInspectionContext
     {
-        IActivityContext IActivityActionContext.Activity => Activity;
-
-        IActivityInspectionContext IActivityNodeInspectionContext.Activity => Activity;
-
-        public CancellationToken CancellationToken => Context.Executor.GetCancellationToken(Node);
-
-        public Node Node { get; set; }
+        public ActionContext(BaseContext context, Node node, IEnumerable<Token> inputTokens = null)
+            : base(context, node)
+        {
+            if (inputTokens != null)
+            {
+                Input.AddRange(inputTokens);
+            }
+        }
 
         public ActionContext(RootContext context, NodeScope nodeScope, Node node, IEnumerable<Token> inputTokens)
-            : base(context, nodeScope)
+            : base(context, nodeScope, node)
         {
-            Node = node;
-            InputTokens.AddRange(inputTokens);
+            Input.AddRange(inputTokens);
         }
 
-        private INodeContext currentNode = null;
-        public INodeContext CurrentNode => currentNode ??= new NodeContext(Node, Context);
+        public List<Token> Input { get; } = new List<Token>();
 
-        public List<Token> InputTokens { get; } = new List<Token>();
+        public List<Token> Output { get; } = new List<Token>();
 
-        public List<Token> OutputTokens { get; } = new List<Token>();
-
-        public void Output<TToken>(TToken token)
+        public void OutputToken<TToken>(TToken token)
             where TToken : Token, new()
-            => OutputRange(new TToken[] { token });
+            => OutputTokensRange(new TToken[] { token });
 
-        public void OutputRange<TToken>(IEnumerable<TToken> tokens)
+        public void OutputTokensRange<TToken>(IEnumerable<TToken> tokens)
             where TToken : Token, new()
         {
-            OutputTokens.AddRange(tokens);
+            Output.AddRange(tokens);
         }
 
-        public void PassOfType<TToken>()
+        public void OutputTokensRangeAsGroup<TToken>(IEnumerable<TToken> tokens)
             where TToken : Token, new()
-            => OutputRange(Input.OfType<TToken>());
+            => OutputToken(tokens.ToGroupToken());
 
-        public void PassAll()
-            => OutputRange(Input);
+        public void PassTokensOfType<TToken>()
+            where TToken : Token, new()
+            => OutputTokensRange(Input.OfType<TToken>());
 
-        public IEnumerable<Token> Input => InputTokens;
+        public void PassTokensOfTypeAsGroup<TToken>()
+            where TToken : Token, new()
+            => OutputToken(Input.OfType<TToken>().ToGroupToken());
+
+        public void PassAllTokens()
+            => OutputTokensRange(Input);
+
+        public IEnumerable<Token> InputTokens => Input;
     }
 }

@@ -163,7 +163,7 @@ namespace Stateflows.StateMachines.Registration.Builders
             {
                 Trigger = EventInfo<TEvent>.Name,
                 TriggerType = typeof(TEvent),
-                IsElseTransition = isElse,
+                IsElse = isElse,
                 Graph = Vertex.Graph,
                 SourceName = Vertex.Name,
                 Source = Vertex,

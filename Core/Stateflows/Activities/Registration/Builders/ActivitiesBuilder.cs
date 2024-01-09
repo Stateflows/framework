@@ -50,11 +50,11 @@ namespace Stateflows.Activities.Registration.Builders
             => AddFromAssemblies(AppDomain.CurrentDomain.GetAssemblies());
 
         [DebuggerHidden]
-        public IActivitiesBuilder AddActivity(string activityName, ActivityBuilderAction buildAction)
+        public IActivitiesBuilder AddActivity(string activityName, ReactiveActivityBuilderAction buildAction)
             => AddActivity(activityName, 1, buildAction);
 
         [DebuggerHidden]
-        public IActivitiesBuilder AddActivity(string activityName, int version, ActivityBuilderAction buildAction)
+        public IActivitiesBuilder AddActivity(string activityName, int version, ReactiveActivityBuilderAction buildAction)
         {
             Register.AddActivity(activityName, version, buildAction);
 
@@ -74,5 +74,58 @@ namespace Stateflows.Activities.Registration.Builders
         public IActivitiesBuilder AddActivity<TActivity>(int version)
             where TActivity : Activity
             => AddActivity<TActivity>(null, version);
+
+        #region Observability
+        [DebuggerHidden]
+        public IActivitiesBuilder AddInterceptor<TInterceptor>()
+            where TInterceptor : class, IActivityInterceptor
+        {
+            Register.AddGlobalInterceptor<TInterceptor>();
+
+            return this;
+        }
+
+        [DebuggerHidden]
+        public IActivitiesBuilder AddInterceptor(InterceptorFactory interceptorFactory)
+        {
+            Register.AddGlobalInterceptor(interceptorFactory);
+
+            return this;
+        }
+
+        [DebuggerHidden]
+        public IActivitiesBuilder AddExceptionHandler<TExceptionHandler>()
+            where TExceptionHandler : class, IActivityExceptionHandler
+        {
+            Register.AddGlobalExceptionHandler<TExceptionHandler>();
+
+            return this;
+        }
+
+        [DebuggerHidden]
+        public IActivitiesBuilder AddExceptionHandler(ExceptionHandlerFactory exceptionHandlerFactory)
+        {
+            Register.AddGlobalExceptionHandler(exceptionHandlerFactory);
+
+            return this;
+        }
+
+        [DebuggerHidden]
+        public IActivitiesBuilder AddObserver<TObserver>()
+            where TObserver : class, IActivityObserver
+        {
+            Register.AddGlobalObserver<TObserver>();
+
+            return this;
+        }
+
+        [DebuggerHidden]
+        public IActivitiesBuilder AddObserver(ObserverFactory observerFactory)
+        {
+            Register.AddGlobalObserver(observerFactory);
+
+            return this;
+        }
+        #endregion
     }
 }

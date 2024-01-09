@@ -6,7 +6,7 @@ namespace Stateflows.Activities.Attributes
     [AttributeUsage(AttributeTargets.Class, AllowMultiple = false)]
     public class ActivityBehaviorAttribute : BehaviorAttribute
     {
-        public ActivityBehaviorAttribute(string name, int version = 1) : base(name, version)
+        public ActivityBehaviorAttribute(string name = null, int version = 1) : base(name, version)
         { }
     }
 }

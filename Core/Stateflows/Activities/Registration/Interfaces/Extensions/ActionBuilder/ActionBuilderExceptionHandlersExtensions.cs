@@ -11,7 +11,7 @@ namespace Stateflows.Activities
             where TException : Exception
             where TExceptionHandler : ExceptionHandler<TException>
         {
-            (builder as IInternal).Services.RegisterExceptionHandler<TException, TExceptionHandler>();
+            (builder as IInternal).Services.RegisterExceptionHandlerAction<TException, TExceptionHandler>();
 
             return builder.AddExceptionHandler<TException>(c => (c as BaseContext).NodeScope.GetExceptionHandler<TException, TExceptionHandler>(c).HandleAsync());
         }

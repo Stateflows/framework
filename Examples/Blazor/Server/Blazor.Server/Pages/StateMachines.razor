@@ -16,6 +16,7 @@
     <button class="btn btn-primary" @onclick="Initialize">Locate and initialize</button>
     <button class="btn btn-primary" @onclick="GetStatus">Check status</button>
     <button class="btn btn-primary" @onclick="RunActivity">Run Activity</button>
+    <button class="btn btn-primary" @onclick="PushActivity">Push Activity</button>
     <button class="btn btn-primary" @onclick="Reset">Reset</button>
 </div>
 
@@ -131,9 +132,21 @@
 
     private async Task RunActivity()
     {
-        if (activityLocator.TryLocateActivity(new ActivityId("activity1", Random.Shared.Next().ToString()), out var activity))
+        if (activityLocator.TryLocateActivity(new ActivityId("activity1", stateMachineInstance), out var activity))
         {
-            await activity.ExecuteAsync();
+            await activity.InitializeAsync();
+        }
+        else
+        {
+            message = "Unable to locate Activity";
+        }
+    }
+
+    private async Task PushActivity()
+    {
+        if (activityLocator.TryLocateActivity(new ActivityId("activity1", stateMachineInstance), out var activity))
+        {
+            await activity.SendAsync(new Examples.Common.SomeEvent());
         }
         else
         {

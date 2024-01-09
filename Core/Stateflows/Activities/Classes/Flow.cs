@@ -3,7 +3,7 @@ using Stateflows.Activities.Context.Interfaces;
 
 namespace Stateflows.Activities
 {
-    public abstract class ControlFlow
+    public abstract class BaseControlFlow
     {
         public IFlowContext Context { get; internal set; }
 
@@ -11,7 +11,10 @@ namespace Stateflows.Activities
             => Task.FromResult(true);
     }
 
-    public abstract class ObjectFlow<TToken> : ControlFlow
+    public abstract class ControlFlow : BaseControlFlow
+    { }
+
+    public abstract class BaseObjectFlow<TToken> : BaseControlFlow
         where TToken : Token, new()
     {
         public virtual int Weight => 1;
@@ -19,7 +22,11 @@ namespace Stateflows.Activities
         new public IFlowContext<TToken> Context { get; internal set; }
     }
 
-    public abstract class ObjectTransformationFlow<TToken, TTransformedToken> : ControlFlow
+    public abstract class ObjectFlow<TToken> : BaseObjectFlow<TToken>
+        where TToken : Token, new()
+    { }
+
+    public abstract class BaseObjectTransformationFlow<TToken, TTransformedToken> : BaseControlFlow
         where TToken : Token, new()
         where TTransformedToken : Token, new()
     {
@@ -29,4 +36,9 @@ namespace Stateflows.Activities
 
         public abstract Task<TTransformedToken> TransformAsync();
     }
+
+    public abstract class ObjectTransformationFlow<TToken, TTransformedToken> : BaseObjectTransformationFlow<TToken, TTransformedToken>
+        where TToken : Token, new()
+        where TTransformedToken : Token, new()
+    { }
 }

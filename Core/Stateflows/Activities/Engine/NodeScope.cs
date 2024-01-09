@@ -1,24 +1,60 @@
 ﻿using System;
 using System.Collections.Generic;
 using Microsoft.Extensions.DependencyInjection;
+using Stateflows.Common;
 using Stateflows.Activities.Context.Interfaces;
+using System.Threading;
 
 namespace Stateflows.Activities.Engine
 {
     internal class NodeScope : IDisposable
     {
-        public IServiceProvider ServiceProvider { get; private set; }
+        private readonly NodeScope BaseNodeScope = null;
 
-        private IServiceScope Scope { get; }
+        private IServiceProvider baseServiceProvider = null;
+        private IServiceProvider BaseServiceProvider
+            => baseServiceProvider ??= BaseNodeScope.ServiceProvider;
 
-        public NodeScope(IServiceProvider serviceProvider)
+        private IServiceScope scope = null;
+        private IServiceScope Scope
+            => scope ??= BaseServiceProvider.CreateScope();
+
+        public IServiceProvider ServiceProvider
+            => Scope.ServiceProvider;
+
+        private CancellationTokenSource cancellationTokenSource = null;
+        private CancellationTokenSource CancellationTokenSource
+            => cancellationTokenSource ??= BaseNodeScope != null
+                ? CancellationTokenSource.CreateLinkedTokenSource(BaseNodeScope.CancellationToken)
+                : new CancellationTokenSource();
+
+        public CancellationToken CancellationToken
+            => CancellationTokenSource.Token;
+
+        public Guid ThreadId { get; set; }
+
+        public bool IsTerminated { get; private set; }
+
+        public void Terminate()
         {
-            Scope = serviceProvider.CreateScope();
-            ServiceProvider = Scope.ServiceProvider;
+            CancellationTokenSource.Cancel();
+            IsTerminated = true;
         }
 
-        public NodeScope CreateChildScope()
-            => new NodeScope(ServiceProvider);
+        public NodeScope(IServiceProvider serviceProvider, Guid threadId)
+        {
+            baseServiceProvider = serviceProvider;
+            ThreadId = threadId;
+        }
+
+        public NodeScope(NodeScope nodeScope, Guid threadId)
+        {
+            BaseNodeScope = nodeScope;
+            ThreadId = threadId;
+        }
+
+        public NodeScope CreateChildScope(Guid? threadId = null)
+            => new NodeScope(this, threadId ?? ThreadId);
 
         private readonly IDictionary<Type, Action> Actions = new Dictionary<Type, Action>();
 
@@ -37,6 +73,52 @@ namespace Stateflows.Activities.Engine
                 action.Context = context;
 
                 return action as TAction;
+            }
+        }
+
+        private readonly IDictionary<Type, Action> AcceptEventActions = new Dictionary<Type, Action>();
+
+        public TAcceptEventAction GetAcceptEventAction<TEvent, TAcceptEventAction>(IAcceptEventActionContext<TEvent> context)
+            where TEvent : Event, new()
+            where TAcceptEventAction : AcceptEventAction<TEvent>
+        {
+            lock (AcceptEventActions)
+            {
+                if (!AcceptEventActions.TryGetValue(typeof(TAcceptEventAction), out var action))
+                {
+                    action = ServiceProvider.GetService<TAcceptEventAction>();
+
+                    AcceptEventActions.Add(typeof(TAcceptEventAction), action);
+                }
+
+                var acceptEventAction = action as TAcceptEventAction;
+
+                acceptEventAction.Context = context;
+
+                return acceptEventAction;
+            }
+        }
+
+        private readonly IDictionary<Type, ActivityNode> SendEventActions = new Dictionary<Type, ActivityNode>();
+
+        public TSendEventAction GetSendEventAction<TEvent, TSendEventAction>(IActionContext context)
+            where TEvent : Event, new()
+            where TSendEventAction : SendEventAction<TEvent>
+        {
+            lock (SendEventActions)
+            {
+                if (!SendEventActions.TryGetValue(typeof(TSendEventAction), out var action))
+                {
+                    action = ServiceProvider.GetService<TSendEventAction>();
+
+                    SendEventActions.Add(typeof(TSendEventAction), action);
+                }
+
+                var acceptEventAction = action as TSendEventAction;
+
+                acceptEventAction.Context = context;
+
+                return acceptEventAction;
             }
         }
 
@@ -162,7 +244,7 @@ namespace Stateflows.Activities.Engine
 
         protected virtual void Dispose(bool disposing)
         {
-            Scope.Dispose();
+            scope?.Dispose();
         }
     }
 }

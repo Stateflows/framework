@@ -38,20 +38,13 @@ namespace Stateflows.Activities
                 stateflowsBuilder
                     .EnsureStateflowServices()
                     .ServiceCollection
-                    .AddScoped<IActivityPlugin, TimeEvents>()
-                    //.AddGlobalObserver(p => p.GetRequiredService<Observer>())
-                    //.AddGlobalInterceptor(p => p.GetRequiredService<Observer>())
-                    //.AddScoped<Observer>()
+                    .AddScoped<AcceptEvents>()
+                    .AddScoped<IActivityPlugin>(serviceProvider => serviceProvider.GetRequiredService<AcceptEvents>())
                     .AddSingleton(Register)
                     .AddScoped<IEventProcessor, Processor>()
                     .AddTransient<IBehaviorProvider, Provider>()
                     .AddSingleton<IActivityEventHandler, InitializationHandler>()
                     .AddSingleton<IActivityEventHandler, ExecutionHandler>()
-                    .AddSingleton<IActivityEventHandler, ExitHandler>()
-                    //.AddSingleton<IActivityEventHandler, InitializedHandler>()
-                    //.AddSingleton<IActivityEventHandler, CurrentStateHandler>()
-                    //.AddSingleton<IActivityEventHandler, ExpectedEventsHandler>()
-                    //.AddSingleton<IActivityEventHandler, ExitHandler>()
                     ;
             }
 

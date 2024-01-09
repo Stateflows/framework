@@ -6,8 +6,11 @@ namespace Stateflows.Activities
 {
     public interface IActivityInspector
     {
-        Task BeforeActivityInitializeAsync(IActivityInitializationInspectionContext context);
+        Task BeforeActivityInitializationAsync(IActivityInitializationInspectionContext context);
         Task AfterActivityInitializationAsync(IActivityInitializationInspectionContext context);
+
+        Task BeforeActivityFinalizationAsync(IActivityFinalizationInspectionContext context);
+        Task AfterActivityFinalizationAsync(IActivityFinalizationInspectionContext context);
 
         Task BeforeNodeInitializationAsync(IActivityNodeInspectionContext context);
         Task AfterNodeInitializationAsync(IActivityNodeInspectionContext context);

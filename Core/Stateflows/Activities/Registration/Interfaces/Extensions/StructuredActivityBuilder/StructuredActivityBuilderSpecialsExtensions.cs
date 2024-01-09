@@ -1,4 +1,6 @@
 ﻿using System.Threading.Tasks;
+using Stateflows.Activities.Registration.Builders;
+using Stateflows.Activities.Registration;
 using Stateflows.Activities.Registration.Interfaces;
 
 namespace Stateflows.Activities
@@ -6,56 +8,82 @@ namespace Stateflows.Activities
     public static class StructuredActivityBuilderSpecialsExtensions
     {
         public static IStructuredActivityBuilder AddJoin(this IStructuredActivityBuilder builder, string joinNodeName, JoinBuilderAction joinBuildAction)
-            => builder
-                .AddAction(
+            => (builder as BaseActivityBuilder)
+                .AddNode(
+                    NodeType.Join,
                     joinNodeName,
                     c =>
                     {
-                        c.PassAll();
+                        c.PassAllTokens();
                         return Task.CompletedTask;
                     },
-                    b => joinBuildAction(b as IJoinBuilder)
-                );
+                    b => joinBuildAction(b)
+                ) as IStructuredActivityBuilder;
 
-        public static IStructuredActivityBuilder AddFork(this IStructuredActivityBuilder builder, string forkNodeName, ForkBuilderAction joinBuildAction)
-            => builder
-                .AddAction(
+        public static IStructuredActivityBuilder AddFork(this IStructuredActivityBuilder builder, string forkNodeName, ForkBuilderAction forkBuildAction)
+            => (builder as BaseActivityBuilder)
+                .AddNode(
+                    NodeType.Fork,
                     forkNodeName,
                     c =>
                     {
-                        c.PassAll();
+                        c.PassAllTokens();
                         return Task.CompletedTask;
                     },
-                    b => joinBuildAction(b as IForkBuilder)
-                );
+                    b => forkBuildAction(b)
+                ) as IStructuredActivityBuilder;
 
         public static IStructuredActivityBuilder AddMerge(this IStructuredActivityBuilder builder, string mergeNodeName, MergeBuilderAction mergeBuildAction)
-            => builder
-                .AddAction(
+            => (builder as BaseActivityBuilder)
+                .AddNode(
+                    NodeType.Merge,
                     mergeNodeName,
                     c =>
                     {
-                        c.PassAll();
+                        c.PassAllTokens();
                         return Task.CompletedTask;
                     },
                     b => mergeBuildAction(b.SetOptions(NodeOptions.None) as IMergeBuilder)
-                );
+                ) as IStructuredActivityBuilder;
 
-        //public static IActivityBuilder AddDecision(this IActivityBuilder builder, string joinNodeName, DecisionBuilderAction decisionBuildAction)
-        //    => builder
-        //        .AddAction(
-        //            joinNodeName,
-        //            async c => c.PassAll(),
-        //            b => decisionBuildAction(b.SetOptions(NodeOptions.None) as IDecisionBuilder)
-        //        );
+        public static IStructuredActivityBuilder AddControlDecision(this IStructuredActivityBuilder builder, string decisionNodeName, DecisionBuilderAction decisionBuildAction)
+            => (builder as BaseActivityBuilder)
+                .AddNode(
+                    NodeType.Decision,
+                    decisionNodeName,
+                    c =>
+                    {
+                        c.PassAllTokens();
+                        return Task.CompletedTask;
+                    },
+                    b => decisionBuildAction(b.SetOptions(NodeOptions.DecisionDefault) as IDecisionBuilder)
+                ) as IStructuredActivityBuilder;
 
-        //public static IActivityBuilder AddTimeEvent<TTimeEvent>(this IActivityBuilder builder, string timeEventNodeName, DecisionBuilderAction timeEventBuildAction)
-        //    where TTimeEvent : TimeEvent
-        //    => builder
-        //        .AddAction(
-        //            timeEventNodeName,
-        //            async c => { },
-        //            b => timeEventBuildAction(b as IDecisionBuilder)
-        //        );
+        public static IStructuredActivityBuilder AddObjectDecision<TToken>(this IStructuredActivityBuilder builder, string decisionNodeName, DecisionBuilderAction<TToken> decisionBuildAction)
+            where TToken : Token, new()
+            => (builder as BaseActivityBuilder)
+                .AddNode(
+                    NodeType.Decision,
+                    decisionNodeName,
+                    c =>
+                    {
+                        c.PassAllTokens();
+                        return Task.CompletedTask;
+                    },
+                    b => decisionBuildAction(new DecisionBuilder<TToken>(b.SetOptions(NodeOptions.DecisionDefault) as NodeBuilder))
+                ) as IStructuredActivityBuilder;
+
+        public static IStructuredActivityBuilder AddDataStore(this IStructuredActivityBuilder builder, string dataStoreNodeName, DataStoreBuilderAction decisionBuildAction)
+            => (builder as BaseActivityBuilder)
+                .AddNode(
+                    NodeType.DataStore,
+                    dataStoreNodeName,
+                    c =>
+                    {
+                        c.PassAllTokens();
+                        return Task.CompletedTask;
+                    },
+                    b => decisionBuildAction(b.SetOptions(NodeOptions.DataStoreDefault) as IDataStoreBuilder)
+                ) as IStructuredActivityBuilder;
     }
 }

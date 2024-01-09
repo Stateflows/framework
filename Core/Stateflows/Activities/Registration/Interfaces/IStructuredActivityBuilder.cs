@@ -13,8 +13,7 @@ namespace Stateflows.Activities.Registration.Interfaces
         IExceptionHandler<IStructuredActivityBuilder>,
         INodeOptions<IStructuredActivityBuilderWithOptions>,
         IStructuredActivityEvents<IStructuredActivityBuilder>,
-        ISendEvent<IStructuredActivityBuilder>,
-        IAcceptEvent<IStructuredActivityBuilder>
+        ISendEvent<IStructuredActivityBuilder>
     { }
 
     public interface IStructuredActivityBuilderWithOptions :
@@ -27,8 +26,7 @@ namespace Stateflows.Activities.Registration.Interfaces
         IOutput<IStructuredActivityBuilderWithOptions>,
         IExceptionHandler<IStructuredActivityBuilderWithOptions>,
         IStructuredActivityEvents<IStructuredActivityBuilderWithOptions>,
-        ISendEvent<IStructuredActivityBuilderWithOptions>,
-        IAcceptEvent<IStructuredActivityBuilderWithOptions>
+        ISendEvent<IStructuredActivityBuilderWithOptions>
     { }
 
 

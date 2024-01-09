@@ -2,7 +2,7 @@
 {
     public interface IFlowContext : IActivityActionContext
     {
-        INodeContext SourceNode { get; }
+        ISourceNodeContext SourceNode { get; }
 
         INodeContext TargetNode { get; }
     }

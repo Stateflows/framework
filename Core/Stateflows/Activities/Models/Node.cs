@@ -1,25 +1,29 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using System.Collections.Generic;
 using Stateflows.Common.Models;
+using Stateflows.Activities.Collections;
 using Stateflows.Activities.Registration;
 using Stateflows.Activities.Context.Classes;
-using Stateflows.Activities.Collections;
+using System.Xml.Linq;
 
 namespace Stateflows.Activities.Models
 {
     internal class Node : Element
     {
-        public override string Identifier => !(Parent is null)
-            ? $"{Type}:{Parent.Name}:{Name}"
-            : $"{Type}:{Name}";
+        private string identifier = null;
+        public override string Identifier
+            => identifier ??= !(Parent is null)
+                ? $"{Type}:{Parent.Name}:{Name}"
+                : $"{Type}:{Name}";
 
+        public int Level { get; set; }
         public Graph Graph { get; set; }
         public Node Parent { get; set; }
         public string Name { get; set; }
         public NodeType Type { get; set; }
-        public NodeOptions Options { get; set; } = NodeOptions.Default;
+        public NodeOptions Options { get; set; } = NodeOptions.ActionDefault;
         public Type ExceptionType { get; set; }
         public Type EventType { get; set; }
 
@@ -40,6 +44,18 @@ namespace Stateflows.Activities.Models
         public List<Type> InputTokenTypes { get; set; } = new List<Type>();
         public List<Type> OptionalInputTokenTypes { get; set; } = new List<Type>();
         public List<Type> OutputTokenTypes { get; set; } = new List<Type>();
+
+        public IEnumerable<Type> GetIncomingTokenTypes()
+            => IncomingEdges
+                .Select(e => e.TargetTokenType)
+                .Where(t => t != typeof(ControlToken) && (!t.IsGenericType || t.GetGenericTypeDefinition() != typeof(ExceptionToken<>)))
+                .Distinct();
+
+        public IEnumerable<Type> GetOutgoingTokenTypes()
+            => Edges
+                .Select(e => e.TokenType)
+                .Where(t => t != typeof(ControlToken) && (!t.IsGenericType || t.GetGenericTypeDefinition() != typeof(ExceptionToken<>)))
+                .Distinct();
 
         public void ScanForDeclaredTypes(Type nodeType)
         {
@@ -112,6 +128,11 @@ namespace Stateflows.Activities.Models
             }
         }
 
+        private IEnumerable<Node> acceptEventActionNodes = null;
+        public IEnumerable<Node> AcceptEventActionNodes
+            => acceptEventActionNodes ??= Nodes.Values
+                .Where(n => n.Type == NodeType.AcceptEventAction);
+
         private IEnumerable<Node> exceptionHandlers = null;
         public IEnumerable<Node> ExceptionHandlers
             => exceptionHandlers ??= Edges
@@ -140,7 +161,7 @@ namespace Stateflows.Activities.Models
 
                 await handler.Action.WhenAll(exceptionContext);
 
-                return exceptionContext.OutputTokens;
+                return exceptionContext.Output;
             }
 
             return new Token[0];

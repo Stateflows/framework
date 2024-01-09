@@ -1,11 +1,10 @@
 ﻿using System.Threading.Tasks;
-using System.Collections.Generic;
 using Stateflows.Activities.Context.Classes;
 using Stateflows.Activities.Context.Interfaces;
 
 namespace Stateflows.Activities.Models
 {
-    internal delegate Task<IEnumerable<Token>> PipelineActionAsync(IPipelineContext context);
+    internal delegate Task<Token> TokenPipelineActionAsync(TokenPipelineContext context);
 
     internal delegate Task ActivityActionAsync(IActionContext context);
 

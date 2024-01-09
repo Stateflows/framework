@@ -38,7 +38,7 @@ namespace Stateflows.Activities.Extensions
             {
                 if (interfaceType.GetGenericTypeDefinition() == baseInterfaceType)
                 {
-                    var methodInfo = interfaceType.GetMethods().First(m => m.Name == "InitializeAsync");
+                    var methodInfo = interfaceType.GetMethods().First(m => m.Name == "OnInitializeAsync");
                     var requestType = interfaceType.GenericTypeArguments[0];
                     var requestName = Stateflows.Common.EventInfo.GetName(requestType);
                     (builder as ActivityBuilder).AddInitializer(requestName, c =>
@@ -50,7 +50,7 @@ namespace Stateflows.Activities.Extensions
             }
         }
 
-        public static void AddStructuredActivityEvents<TStructuredActivity>(this IStructuredActivityBuilder builder)
+        public static void AddStructuredActivityEvents<TStructuredActivity>(this StructuredActivityBuilder builder)
             where TStructuredActivity : StructuredActivity
         {
             if (typeof(StructuredActivity).GetMethod(nameof(StructuredActivity.OnInitializeAsync)).IsOverridenIn<TStructuredActivity>())
@@ -64,7 +64,7 @@ namespace Stateflows.Activities.Extensions
             }
         }
 
-        public static void AddObjectTransformationFlowEvents<TObjectTransformationFlow, TToken, TTransformedToken>(this IFlowBuilder<TToken> builder)
+        public static void AddObjectTransformationFlowEvents<TObjectTransformationFlow, TToken, TTransformedToken>(this IObjectFlowBuilder<TToken> builder)
             where TObjectTransformationFlow : ObjectTransformationFlow<TToken, TTransformedToken>
             where TToken : Token, new()
             where TTransformedToken : Token, new()
@@ -87,7 +87,7 @@ namespace Stateflows.Activities.Extensions
             }
         }
 
-        public static void AddObjectFlowEvents<TObjectFlow, TToken>(this IFlowBuilder<TToken> builder)
+        public static void AddObjectFlowEvents<TObjectFlow, TToken>(this IObjectFlowBuilder<TToken> builder)
             where TObjectFlow : ObjectFlow<TToken>
             where TToken : Token, new()
         {
@@ -104,7 +104,7 @@ namespace Stateflows.Activities.Extensions
             }
         }
 
-        public static void AddControlFlowEvents<TControlFlow>(this IFlowBuilder builder)
+        public static void AddControlFlowEvents<TControlFlow>(this IControlFlowBuilder builder)
             where TControlFlow : ControlFlow
         {
             if (typeof(ControlFlow).GetMethod(nameof(ControlFlow.GuardAsync)).IsOverridenIn<TControlFlow>())

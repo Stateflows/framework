@@ -5,8 +5,11 @@ namespace Stateflows.Activities
 {
     public interface IActivityObserver
     {
-        Task BeforeActivityInitializeAsync(IActivityInitializationContext context);
+        Task BeforeActivityInitializationAsync(IActivityInitializationContext context);
         Task AfterActivityInitializationAsync(IActivityInitializationContext context);
+
+        Task BeforeActivityFinalizationAsync(IActivityFinalizationContext context);
+        Task AfterActivityFinalizationAsync(IActivityFinalizationContext context);
 
         Task BeforeNodeInitializationAsync(IActivityNodeContext context);
         Task AfterNodeInitializationAsync(IActivityNodeContext context);

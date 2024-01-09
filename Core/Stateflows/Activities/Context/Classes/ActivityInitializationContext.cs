@@ -1,7 +1,7 @@
 ﻿using Stateflows.Common;
+using Stateflows.Activities.Engine;
 using Stateflows.Activities.Context.Interfaces;
 using Stateflows.Activities.Inspection.Interfaces;
-using Stateflows.Activities.Engine;
 
 namespace Stateflows.Activities.Context.Classes
 {
@@ -17,6 +17,12 @@ namespace Stateflows.Activities.Context.Classes
             InitializationRequest = initializationRequest;
         }
 
+        public ActivityInitializationContext(BaseContext context, TInitializationRequest initializationRequest)
+            : base(context)
+        {
+            InitializationRequest = initializationRequest;
+        }
+
         IActivityContext IActivityActionContext.Activity => Activity;
 
         public TInitializationRequest InitializationRequest { get; }
@@ -24,10 +30,13 @@ namespace Stateflows.Activities.Context.Classes
 
     internal class ActivityInitializationContext :
         ActivityInitializationContext<InitializationRequest>,
-        IActivityInitializationContext,
         IActivityInitializationInspectionContext,
         IRootContext
     {
+        public ActivityInitializationContext(BaseContext context, InitializationRequest initializationRequest)
+            : base(context, initializationRequest)
+        { }
+
         public ActivityInitializationContext(RootContext context, NodeScope nodeScope, InitializationRequest initializationRequest)
             : base(context, nodeScope, initializationRequest)
         { }

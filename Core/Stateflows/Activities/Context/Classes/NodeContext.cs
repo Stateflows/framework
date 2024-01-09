@@ -5,11 +5,13 @@ namespace Stateflows.Activities.Context.Classes
 {
     internal class NodeContext : INodeContext
     {
-        public Node Node { get; set; }
+        public readonly Node Node;
 
         public string NodeName => Node.Name;
 
-        private RootContext Context { get; }
+        public NodeType NodeType => Node.Type;
+
+        internal RootContext Context { get; }
 
         public NodeContext(Node node, RootContext context)
         {

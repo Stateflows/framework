@@ -8,10 +8,13 @@ namespace Stateflows.Activities.Streams
 
         public bool IsActivated { get; set; } = false;
 
+        public bool IsPersistent { get; set; } = false;
+
         public Queue<Token> Tokens { get; set; } = new Queue<Token>();
 
-        public void Consume(IEnumerable<Token> tokens)
+        public void Consume(IEnumerable<Token> tokens, bool isPersistent)
         {
+            IsPersistent = isPersistent;
             foreach (var token in tokens)
             {
                 Consume(token);

@@ -34,12 +34,17 @@ namespace Stateflows.Activities.Registration.Interfaces
 
     public delegate bool DecisionDelegate(IActionContext context);
 
-    public delegate void FlowBuilderAction<in TToken>(IFlowBuilder<TToken> builder)
+    public delegate void ObjectFlowBuilderAction<in TToken>(IObjectFlowBuilder<TToken> builder)
         where TToken : Token, new();
 
-    public delegate void ControlFlowBuilderAction(IFlowBuilder builder);
+    public delegate void ElseObjectFlowBuilderAction<in TToken>(IElseObjectFlowBuilder<TToken> builder)
+        where TToken : Token, new();
 
-    public delegate void ActivityBuilderAction(IActivityBuilder builder);
+    public delegate void ControlFlowBuilderAction(IControlFlowBuilder builder);
+
+    public delegate void ElseControlFlowBuilderAction(IElseControlFlowBuilder builder);
+
+    public delegate void ReactiveActivityBuilderAction(IActivityBuilder builder);
 
     internal delegate void NodeBuilderAction(NodeBuilder builder);
 
@@ -53,13 +58,24 @@ namespace Stateflows.Activities.Registration.Interfaces
 
     public delegate void InputBuilderAction(IInputBuilder builder);
 
+    public delegate void ReactiveStructuredActivityBuilderAction(IReactiveStructuredActivityBuilder builder);
+
     public delegate void StructuredActivityBuilderAction(IStructuredActivityBuilder builder);
+
+    public delegate void ParallelActivityBuilderAction(IStructuredActivityBuilder builder);
+
+    public delegate void IterativeActivityBuilderAction(IStructuredActivityBuilder builder);
 
     public delegate void ForkBuilderAction(IForkBuilder builder);
 
     public delegate void MergeBuilderAction(IMergeBuilder builder);
 
     public delegate void DecisionBuilderAction(IDecisionBuilder builder);
+
+    public delegate void DecisionBuilderAction<TToken>(IDecisionBuilder<TToken> builder)
+        where TToken : Token, new();
+
+    public delegate void DataStoreBuilderAction(IDataStoreBuilder builder);
 
     public delegate void TimeEventBuilderAction(ITimeEventBuilder builder);
 

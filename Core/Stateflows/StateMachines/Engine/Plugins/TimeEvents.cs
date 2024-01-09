@@ -172,7 +172,7 @@ namespace Stateflows.StateMachines.Engine
         {
             var timeEvent = Activator.CreateInstance(edge.TriggerType) as TimeEvent;
             timeEvent.SetTriggerTime(DateTime.Now);
-            timeEvent.EdgeIdentifier = edge.Identifier;
+            timeEvent.ConsumerIdentifier = edge.Identifier;
             Context.Context.PendingTimeEvents.Add(timeEvent.Id, timeEvent);
             var timeEventIds = Context.GetStateValues(edge.Source.Name).TimeEventIds;
             timeEventIds.Add(edge.Identifier, timeEvent.Id);

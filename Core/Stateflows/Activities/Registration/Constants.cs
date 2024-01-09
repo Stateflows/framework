@@ -21,6 +21,9 @@
         public static readonly string Token = nameof(Token);
         public static readonly string Tokens = nameof(Tokens);
         public static readonly string Streams = nameof(Streams);
+        public static readonly string ActiveNodes = nameof(ActiveNodes);
+        public static readonly string NodeThreads = nameof(NodeThreads);
+        public static readonly string NodeTimeEvents = nameof(NodeTimeEvents);
         public static readonly string OutputTokens = nameof(OutputTokens);
         public static readonly string Event = nameof(Event);
     }

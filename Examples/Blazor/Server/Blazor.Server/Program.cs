@@ -1,15 +1,13 @@
-using Blazor.Server;
+﻿using System.Diagnostics;
 using Blazor.Server.Data;
 using Examples.Common;
-using Examples.Storage;
 using Stateflows;
 using Stateflows.Common;
 using Stateflows.StateMachines;
 using Stateflows.Activities;
-using System.Diagnostics;
 using Stateflows.Activities.Attributes;
-using System.Collections;
 using Stateflows.Activities.Collections;
+using Stateflows.Activities.Registration.Interfaces;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -25,55 +23,98 @@ builder.Services.AddStateflows(b => b
 
     .AddActivities(b => b
         .AddActivity("activity1", b => b
+            .AddOnInitialize(async c =>
+            {
+                Debug.WriteLine("initialize");
+                return true;
+            })
             .AddInitial(b => b
                 .AddControlFlow("1")
             )
-            .AddAction("1", async c =>
-            {
-                c.OutputRange((new[] { 1, 2, 3, 4, 5 }).Select(x => new ValueToken<int>() { Value = x }).ToArray());
-                c.OutputRange((new[] { "1", "2", "3" }).Select(x => new ValueToken<string>() { Value = x }).ToArray());
-            }, b => b
-                .AddObjectFlow<ValueToken<int>, Action1>()
-                .AddObjectFlow<ValueToken<string>, Action1>()
-                //.AddObjectFlow<ValueToken<string>, Action2>()
-            )
-            .AddAction<Action1>(b => b
-                .AddObjectFlow<ValueToken<int>>("2")
-            )
-            .AddAction<Action2>(b => b
-                .AddObjectFlow<ValueToken<string>>("2")
-                //.AddObjectFlow<ValueToken<int>>("2")
-            )
-            .AddParallelActivity<ValueToken<int>>("2", b => b
-                .AddInitial(b => b
-                    .AddControlFlow("2.1")
-                    .AddControlFlow<Final>()
-                )
-                .AddAction("2.1", async c =>
+            .AddAction("1",
+                async c =>
                 {
-                    await Task.Delay(1000);
-                    Debug.WriteLine("executing thread 1");
-                }, b => b
-                    .AddControlFlow("2.2")
-                )
-                .AddAction("2.2", async c =>
-                {
-                    await Task.Delay(1000);
-                    Debug.WriteLine("executing thread 2");
-                    c.Output(new ValueToken<int>() { Value = Random.Shared.Next(0, 100) });
-                }, b => b
-                    .AddObjectFlow<ValueToken<int>, Output>()
-                )
-                .AddOutput()
-                .AddFinal()
-
-                .AddObjectFlow<ValueToken<int>>("3", b => b.SetWeight(0))
-                //.AddControlFlow("3")
+                    c.OutputTokensRange((new[] { 1, 2, 3, 4, 5 }).Select(x => new ValueToken<int>() { Value = x }).ToArray());
+                    c.OutputTokensRange((new[] { "1", "2", "3" }).Select(x => new ValueToken<string>() { Value = x }).ToArray());
+                },
+                b => b.AddObjectFlow<ValueToken<int>>("2")
             )
-            .AddAction("3", async c =>
-            {
-                Debug.WriteLine($"{c.Input.Count()}");
-            })
+            .AddAction("2",
+                async c =>
+                {
+                    Debug.WriteLine("action 2");
+                }
+            )
+            .AddAcceptEventAction<SomeEvent>("event",
+                async c => { },
+                b => b
+                    .AddControlFlow("decision")
+            )
+            .AddTimeEventAction<EveryOneMinute>("time",
+                async c =>
+                {
+                    c.OutputToken(new ValueToken<int>() { Value = Random.Shared.Next(1, 5) });
+                    c.OutputToken(new ValueToken<int>() { Value = Random.Shared.Next(1, 5) });
+                    c.OutputToken(new ValueToken<int>() { Value = Random.Shared.Next(1, 5) });
+                    c.OutputToken(new ValueToken<int>() { Value = Random.Shared.Next(1, 5) });
+                    c.OutputToken(new ValueToken<int>() { Value = Random.Shared.Next(1, 5) });
+                    c.OutputToken(new ValueToken<int>() { Value = Random.Shared.Next(1, 5) });
+                    c.OutputToken(new ValueToken<int>() { Value = Random.Shared.Next(1, 5) });
+                    c.OutputToken(new ValueToken<int>() { Value = Random.Shared.Next(1, 5) });
+                    c.OutputToken(new ValueToken<int>() { Value = Random.Shared.Next(1, 5) });
+                    c.OutputToken(new ValueToken<int>() { Value = Random.Shared.Next(1, 5) });
+                },
+                b => b
+                    .AddObjectFlow<ValueToken<int>>("data")
+            )
+            .AddDataStore("data", b => b
+                .AddObjectFlow<ValueToken<int>>("decision")
+            )
+            .AddObjectDecision<ValueToken<int>>("decision", b => b
+                .AddObjectFlow("3", b => b
+                    .AddGuard(async c => c.Token.Value < 3)
+                    .AddTransformation(async c =>
+                    {
+                        Debug.WriteLine($"token going to 3: {c.Token.Value}");
+                        return c.Token;
+                    })
+                )
+                .AddObjectFlow("4", b => b
+                    .AddGuard(async c => c.Token.Value < 6)
+                    .AddTransformation(async c =>
+                    {
+                        Debug.WriteLine($"token going to 4: {c.Token.Value}");
+                        return c.Token;
+                    })
+                )
+                .AddElseObjectFlow("5"
+                    , b => b.AddTransformation(async c =>
+                    {
+                        Debug.WriteLine($"token going to 5: {c.Token.Value}");
+                        return c.Token;
+                    })
+                )
+            )
+            .AddAction("3",
+                async c =>
+                {
+                    Debug.WriteLine($"finish 3! {c.InputTokens.OfType<ValueToken<int>>().Count()}");
+                }
+            )
+            .AddAction("4",
+                async c =>
+                {
+                    Debug.WriteLine($"finish 4! {c.InputTokens.OfType<ValueToken<int>>().Count()}");
+                }
+            )
+            .AddAction("5",
+                async c =>
+                {
+                    Debug.WriteLine($"finish 5! {c.InputTokens.OfType<ValueToken<int>>().Count()}");
+                },
+                b => b.AddControlFlow<Final>()
+            )
+            .AddFinal()
         )
     )
 
@@ -205,5 +246,19 @@ public class Action2 : Stateflows.Activities.Action
         Debug.WriteLine("strings count: " + Strings.Count().ToString() ?? "input not working");
 
         StringsOut.AddRange(Strings);
+    }
+}
+
+[ActivityBehavior]
+public class Activity1 : Stateflows.Activities.Activity
+{
+    public override void Build(ITypedActivityBuilder builder)
+    {
+        builder
+            .AddAction("", async c => { }, b => b
+                .AddControlFlow("")
+            )
+            .AddAction("", async c => { })
+            ;
     }
 }

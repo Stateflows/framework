@@ -4,7 +4,7 @@ namespace Stateflows.Activities
 {
     public static class StructuredActivityBuilderFlowsTypedExtensions
     {
-        public static IStructuredActivityBuilder AddObjectFlow<TToken, TTargetNode>(this IStructuredActivityBuilder builder, FlowBuilderAction<TToken> buildAction = null)
+        public static IStructuredActivityBuilder AddObjectFlow<TToken, TTargetNode>(this IStructuredActivityBuilder builder, ObjectFlowBuilderAction<TToken> buildAction = null)
             where TToken : Token, new()
             where TTargetNode : ActivityNode
             => builder.AddObjectFlow<TToken>(ActivityNodeInfo<TTargetNode>.Name, buildAction);

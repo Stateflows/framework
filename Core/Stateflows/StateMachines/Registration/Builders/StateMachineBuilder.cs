@@ -58,28 +58,6 @@ namespace Stateflows.StateMachines.Registration.Builders
                 var context = new StateMachineInitializationContext(ctx, ctx.Event as InitializationRequest);
                 return actionAsync(context);
             });
-        //{
-        //    actionAsync.ThrowIfNull(nameof(actionAsync));
-
-        //    var initializerName = EventInfo<InitializationRequest>.Name;
-
-        //    return AddInitializer(initializerName, async c =>
-        //    {
-        //        var result = false;
-        //        var context = new StateMachineInitializationContext(c, c.Event as InitializationRequest);
-        //        try
-        //        {
-        //            result = await actionAsync(context);
-        //        }
-        //        catch (Exception e)
-        //        {
-        //            await c.Executor.Inspector.OnStateMachineInitializeExceptionAsync(context, e);
-        //            result = false;
-        //        }
-
-        //        return result;
-        //    });
-        //}
 
         public IInitializedStateMachineBuilder AddOnInitialize<TInitializationRequest>(Func<IStateMachineInitializationContext<TInitializationRequest>, Task<bool>> actionAsync)
             where TInitializationRequest : InitializationRequest, new()
@@ -223,7 +201,6 @@ namespace Stateflows.StateMachines.Registration.Builders
 
             return this;
         }
-        #endregion
 
         IStateMachineBuilder IStateMachineUtils<IStateMachineBuilder>.AddInterceptor<TInterceptor>()
             => AddInterceptor<TInterceptor>() as IStateMachineBuilder;
@@ -303,6 +280,7 @@ namespace Stateflows.StateMachines.Registration.Builders
 
         ITypedFinalizedStateMachineBuilder IStateMachineUtils<ITypedFinalizedStateMachineBuilder>.AddExceptionHandler<TExceptionHandler>()
             => AddExceptionHandler<TExceptionHandler>() as ITypedFinalizedStateMachineBuilder;
+        #endregion
     }
 }
 

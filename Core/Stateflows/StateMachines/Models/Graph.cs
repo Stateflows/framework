@@ -105,10 +105,10 @@ namespace Stateflows.StateMachines.Models
                     }
                 }
 
-                if (edge.IsElseTransition)
+                if (edge.IsElse)
                 {
                     var siblings = edge.Source.Edges.Values.Any(e =>
-                        !e.IsElseTransition &&
+                        !e.IsElse &&
                         e.Trigger == edge.Trigger &&
                         e.Type == edge.Type
                     );
