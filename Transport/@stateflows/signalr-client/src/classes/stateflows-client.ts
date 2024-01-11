@@ -3,6 +3,11 @@ import { IBehaviorLocator } from "../interfaces/behavior.locator";
 import { IStateMachineLocator } from "../interfaces/state-machine.locator";
 import { BehaviorLocator } from "../locators/behavior.locator";
 import { StateMachineLocator } from "../locators/state-machine.locator";
+import { ISystem } from "../interfaces/system";
+import { BehaviorId } from "../ids/behavior.id";
+import { BehaviorClass } from "../ids/behavior.class";
+import { System } from "../behaviors/system";
+import { Behavior } from "../behaviors/behavior";
 
 export class StateflowsClient {
     private _hub: Promise<HubConnection> | null = null;
@@ -37,5 +42,15 @@ export class StateflowsClient {
 
     public get stateMachineLocator(): IStateMachineLocator {
         return this._stateMachineLocator ??= new StateMachineLocator(this.behaviorLocator);
+    }
+
+    public _systemPromise: Promise<ISystem> | null = null;
+
+    public get system(): Promise<ISystem> {
+        return this._systemPromise ??= new Promise<ISystem>((resolve, reject) => {
+            this.behaviorLocator.locateBehavior(new BehaviorId(new BehaviorClass("System", "Stateflows"), ""))
+                .then(behavior => resolve(new System(behavior)))
+                .catch(reason => reject(reason));
+        })
     }
 }

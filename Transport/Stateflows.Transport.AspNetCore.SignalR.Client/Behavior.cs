@@ -38,7 +38,12 @@ namespace Stateflows.Transport.AspNetCore.SignalR.Client
 
             var resultString = await hub.InvokeAsync<string>("Send", Id, StateflowsJsonConverter.SerializePolymorphicObject(@event));
 
-            var result = StateflowsJsonConverter.DeserializeObject<SendResult>(resultString);
+            var result = StateflowsJsonConverter.DeserializeObject<RequestResult>(resultString);
+
+            if (result.Response != null)
+            {
+                @event.Respond(result.Response);
+            }
 
             return new SendResult(@event, result.Status, result.Validation);
         }

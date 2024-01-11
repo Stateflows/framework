@@ -1,6 +1,7 @@
 ﻿@page "/"
 @inject IStateMachineLocator locator
 @inject IActivityLocator activityLocator
+@inject ISystemBehavior system
 
 <PageTitle>State Machines</PageTitle>
 
@@ -17,6 +18,7 @@
     <button class="btn btn-primary" @onclick="GetStatus">Check status</button>
     <button class="btn btn-primary" @onclick="RunActivity">Run Activity</button>
     <button class="btn btn-primary" @onclick="PushActivity">Push Activity</button>
+    <button class="btn btn-primary" @onclick="SystemRequest">Check system</button>
     <button class="btn btn-primary" @onclick="Reset">Reset</button>
 </div>
 
@@ -91,6 +93,12 @@
         expectedEvents = (await stateMachine.GetCurrentStateAsync()).Response.ExpectedEvents;
 
         plantUmlUrl = (await stateMachine.GetPlantUmlAsync()).Response.GetUrl();
+    }
+
+    private async Task SystemRequest()
+    {
+        var classes = await system.GetAvailableBehaviorClassesAsync();
+        var instances = await system.GetBehaviorInstancesAsync();
     }
 
     private async Task Initialize()

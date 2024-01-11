@@ -15,11 +15,11 @@ namespace Stateflows.StateMachines.EventHandlers
         public Task<EventStatus> TryHandleEventAsync<TEvent>(IEventInspectionContext<TEvent> context)
             where TEvent : Event, new()
         {
-            if (context.Event is CurrentStateRequest)
+            if (context.Event is CurrentStateRequest request)
             {
                 var executor = context.StateMachine.GetExecutor();
 
-                (context.Event as CurrentStateRequest).Respond(new CurrentStateResponse()
+                request.Respond(new CurrentStateResponse()
                 {
                     StatesStack = executor.GetStateStack(),
                     ExpectedEvents = executor.GetExpectedEvents()

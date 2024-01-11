@@ -52,6 +52,8 @@ namespace Stateflows.Common
             where TEvent : Event, new()
         {
             var result = EventStatus.Undelivered;
+            try
+            {
 
             if (Processors.TryGetValue(id.Type, out var processor))
             {
@@ -64,6 +66,12 @@ namespace Stateflows.Common
                         await using (await Lock.AquireLockAsync(id))
                         {
                             result = await processor.ProcessEventAsync(id, @event, serviceProvider);
+                            
+                            var response = @event.GetResponse();
+                            if (response != null)
+                            {
+                                response.SenderId = id;
+                            }
                         }
                     }
                     finally
@@ -75,6 +83,12 @@ namespace Stateflows.Common
                 {
                     Logger.LogError(LogTemplates.ExceptionLogTemplate, typeof(StateflowsEngine).FullName, nameof(ProcessEventAsync), e.GetType().Name, e.Message);
                 }
+                }
+            }
+            catch (Exception e)
+            {
+
+                throw e;
             }
 
             return result;

@@ -12,6 +12,7 @@ using Stateflows.Common.Interfaces;
 using Stateflows.Common.Initializer;
 using Stateflows.Common.Registration.Builders;
 using Stateflows.Common.Registration.Interfaces;
+using Stateflows.System;
 
 namespace Stateflows
 {
@@ -22,6 +23,7 @@ namespace Stateflows
             if (!stateflowsBuilder.ServiceCollection.Any(x => x.ServiceType == typeof(StateflowsEngine)))
             {
                 stateflowsBuilder
+                    .EnsureSystemServices()
                     .ServiceCollection
                     .AddSingleton<StateflowsEngine>()
                     .AddHostedService(provider => provider.GetService<StateflowsEngine>())

@@ -115,7 +115,7 @@
 
             if (locator.TryLocateStateMachine(GetCurrentId(), out var stateMachine))
             {
-                await stateMachine.SendAsync(@event as Event);
+                var result = await stateMachine.SendAsync(@event as Event);
 
                 await RefreshSMInfo(stateMachine);
             }
