@@ -34,7 +34,6 @@ namespace Stateflows.System.Engine
             return behavior != null;
         }
 
-
         public IEnumerable<BehaviorClass> BehaviorClasses
             => new BehaviorClass[] { new BehaviorClass("System", "Stateflows") };
     }

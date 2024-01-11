@@ -9,15 +9,13 @@ namespace Stateflows.Extensions.PlantUml.Classes
     {
         public static string Encode(string plantUmlCode)
         {
-            using (var output = new MemoryStream())
+            using var output = new MemoryStream();
+            using (var writer = new StreamWriter(new DeflateStream(output, CompressionLevel.Optimal), Encoding.UTF8))
             {
-                using (var writer = new StreamWriter(new DeflateStream(output, CompressionLevel.Optimal), Encoding.UTF8))
-                {
-                    writer.Write(plantUmlCode);
-                }
-
-                return Encode(output.ToArray());
+                writer.Write(plantUmlCode);
             }
+
+            return Encode(output.ToArray());
         }
 
         private static string Encode(IReadOnlyList<byte> bytes)

@@ -22,6 +22,9 @@ builder.Services.AddStateflows(b => b
         .AddStateMachine("stateMachine1", b => b
             .AddInitialState("state1", b => b
                 .AddTransition<OtherEvent>("state2")
+                .AddInternalTransition<ExampleRequest>(b => b
+                    .AddEffect(c => c.Event.Respond(new ExampleResponse()))
+                )
             )
             .AddState("state2", b => b
                 .AddTransition<OtherEvent>("state3")

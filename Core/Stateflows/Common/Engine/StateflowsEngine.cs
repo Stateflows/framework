@@ -66,6 +66,12 @@ namespace Stateflows.Common
                         await using (await Lock.AquireLockAsync(id))
                         {
                             result = await processor.ProcessEventAsync(id, @event, serviceProvider);
+                            
+                            var response = @event.GetResponse();
+                            if (response != null)
+                            {
+                                response.SenderId = id;
+                            }
                         }
                     }
                     finally

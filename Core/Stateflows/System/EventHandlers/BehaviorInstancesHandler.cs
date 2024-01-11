@@ -4,7 +4,6 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using Stateflows.Common;
 using Stateflows.Common.Interfaces;
-using Stateflows.System.Events;
 
 namespace Stateflows.System.EventHandlers
 {
@@ -42,7 +41,7 @@ namespace Stateflows.System.EventHandlers
                                 Id = c.Id,
                                 Status = BehaviorStatus.Initialized
                             }
-                        )
+                        ).ToArray()
                     }
                 );
 

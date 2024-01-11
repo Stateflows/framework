@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Reflection;
-using Stateflows.Common.Interfaces;
+using Stateflows.Common;
 using Stateflows.StateMachines.Models;
 using Stateflows.StateMachines.Context.Interfaces;
 

@@ -1,7 +1,7 @@
 ﻿using Stateflows.Common;
 using System.Collections.Generic;
 
-namespace Stateflows.System.Events
+namespace Stateflows.System
 {
     public sealed class AvailableBehaviorClassesResponse : Response
     {

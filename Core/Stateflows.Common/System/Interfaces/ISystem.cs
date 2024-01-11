@@ -1,11 +1,9 @@
 ﻿using System.Threading.Tasks;
 using Stateflows.Common;
-using Stateflows.Common.Interfaces;
-using Stateflows.System.Events;
 
 namespace Stateflows.System
 {
-    public interface ISystemBehavior : IBehavior
+    public interface ISystem
     {
         Task<RequestResult<AvailableBehaviorClassesResponse>> GetAvailableBehaviorClassesAsync();
 
