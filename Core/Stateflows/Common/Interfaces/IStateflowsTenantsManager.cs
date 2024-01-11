@@ -5,6 +5,6 @@ namespace Stateflows.Common.Interfaces
 {
     public interface IStateflowsTenantsManager
     {
-        Task ExecuteByTenants(Func<string, Task> tenantAction);
+        Task ExecuteByTenantsAsync(Func<string, Task> tenantAction);
     }
 }

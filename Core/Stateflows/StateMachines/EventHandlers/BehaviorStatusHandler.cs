@@ -13,9 +13,9 @@ namespace Stateflows.StateMachines.EventHandlers
         public Task<EventStatus> TryHandleEventAsync<TEvent>(IEventInspectionContext<TEvent> context)
             where TEvent : Event, new()
         {
-            if (context.Event is BehaviorStatusRequest)
+            if (context.Event is BehaviorStatusRequest request)
             {
-                (context.Event as BehaviorStatusRequest).Respond(new BehaviorStatusResponse() { BehaviorStatus = context.StateMachine.GetExecutor().BehaviorStatus });
+                request.Respond(new BehaviorStatusResponse() { BehaviorStatus = context.StateMachine.GetExecutor().BehaviorStatus });
 
                 return Task.FromResult(EventStatus.Consumed);
             }

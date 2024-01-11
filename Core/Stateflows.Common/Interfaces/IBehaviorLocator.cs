@@ -1,4 +1,4 @@
-﻿namespace Stateflows.Common.Interfaces
+﻿namespace Stateflows.Common
 {
     public interface IBehaviorLocator
     {

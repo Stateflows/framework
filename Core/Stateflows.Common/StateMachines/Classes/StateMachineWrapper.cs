@@ -7,7 +7,7 @@ namespace Stateflows.Common.StateMachines.Classes
 {
     internal class StateMachineWrapper : IStateMachine
     {
-        BehaviorId IBehavior.Id => Behavior.Id;
+        public BehaviorId Id => Behavior.Id;
 
         private IBehavior Behavior { get; }
 
