@@ -1,4 +1,4 @@
-import { HubConnection, HubConnectionState } from "@microsoft/signalr";
+import { HubConnection } from "@microsoft/signalr";
 import { Request } from "../events/request";
 import { IBehavior } from "../interfaces/behavior";
 import { SendResult } from "../classes/send-result";
@@ -20,20 +20,9 @@ export class Behavior implements IBehavior {
             : this.hubPromise = hubPromiseOrBehavior;
     }
 
-    private getHub(): Promise<HubConnection> {
-        return new Promise<HubConnection>(async (resolve, reject) => {
-            let hub = await this.hubPromise;
-            if (hub.state != HubConnectionState.Connected) {
-                hub.start().then(() => resolve(hub));
-            } else {
-                resolve(hub);
-            }
-        });
-    }
-
     send(event: Event): Promise<SendResult> {
         return new Promise<SendResult>(async (resolve, reject) => {
-            let hub = await this.getHub();
+            let hub = await this.hubPromise;
             let result = await hub.invoke("Send", this.behaviorId, JSON.stringify(event));
             resolve(JSON.parse(result));
         });

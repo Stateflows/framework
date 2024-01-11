@@ -71,6 +71,10 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "SignalR", "SignalR", "{DDFD
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SignalR.Client", "Examples\SignalR\SignalR.Client\SignalR.Client.csproj", "{045971D5-E4D0-48FD-B72E-03ED199086C8}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Tooling", "Tooling", "{770A07EB-7730-438C-B024-00F4852DB038}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Stateflows.Manager", "Tooling\Stateflows.Manager\Stateflows.Manager.csproj", "{76BE8FCD-2692-41E7-85B8-78C5A920540E}"
+EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Examples.Storage", "Examples\Examples.Storage\Examples.Storage.csproj", "{00B67F7B-28BD-44CF-B989-39755180EF8C}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Examples.SharedBehaviors", "Examples\Examples.SharedBehaviors\Examples.SharedBehaviors.csproj", "{BA8D154B-3D83-47C0-B007-97EC30A2790D}"

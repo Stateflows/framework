@@ -12,7 +12,7 @@ using Stateflows.StateMachines.Registration.Interfaces;
 
 namespace Stateflows.StateMachines
 {
-    public static class StateMachinesDependencyInjection
+    public static class SystemDependencyInjection
     {
         private readonly static Dictionary<IStateflowsBuilder, StateMachinesRegister> Registers = new Dictionary<IStateflowsBuilder, StateMachinesRegister>();
 

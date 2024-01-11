@@ -1,6 +1,6 @@
 ﻿using System.Threading.Tasks;
 
-namespace Stateflows.Common.Interfaces
+namespace Stateflows.Common
 {
     public interface IBehavior
     {

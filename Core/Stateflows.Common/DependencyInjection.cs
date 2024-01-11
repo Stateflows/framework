@@ -10,6 +10,8 @@ using Stateflows.Common.StateMachines.Classes;
 using Stateflows.Common.Registration.Builders;
 using Stateflows.Common.Registration.Interfaces;
 using Stateflows.StateMachines;
+using Stateflows.System;
+using Stateflows.Common.System.Classes;
 
 namespace Stateflows
 {
@@ -29,6 +31,17 @@ namespace Stateflows
                 .AddTransient<ClientInterceptor>()
                 .AddTransient<IBehaviorLocator, BehaviorLocator>()
                 .AddTransient<IStateMachineLocator, StateMachineLocator>()
+                .AddTransient<ISystem>((IServiceProvider provider) =>
+                {
+                    if (provider.GetRequiredService<IBehaviorLocator>().TryLocateBehavior(SystemBehavior.Id, out var behavior))
+                    {
+                        return new SystemWrapper(behavior);
+                    }
+                    else
+                    {
+                        throw new StateflowsException("System behavior could not be found");
+                    }
+                })
                 .AddSingleton<IBehaviorClassesProvider, BehaviorClassesProvider>()
                 ;
 
