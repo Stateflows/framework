@@ -2,7 +2,6 @@
 using System.Text;
 using System.Collections.Generic;
 using Stateflows.StateMachines.Inspection.Interfaces;
-using Stateflows.StateMachines;
 
 namespace Stateflows.Extensions.PlantUml.Classes
 {
@@ -45,7 +44,7 @@ namespace Stateflows.Extensions.PlantUml.Classes
                 builder.AppendLine($"{indent}state {stateName} {{");
             }
 
-            if (state.States.Count() > 0)
+            if (state.States.Any())
             {
                 GetPlantUml(indentCount + 2, state.States, builder);
             }
@@ -67,7 +66,9 @@ namespace Stateflows.Extensions.PlantUml.Classes
 
             foreach (var transition in state.Transitions)
             {
-                var trigger = transition.Trigger.Split('.').Last();
+                var trigger = transition.Trigger.Contains('<')
+                        ? $"{transition.Trigger.Split('<').First().Split('.').Last()}<{transition.Trigger.Split('<').Last().Split('.').Last()}"
+                        : transition.Trigger.Split('.').Last();
 
                 if (transition.Target == null)
                 {

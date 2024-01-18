@@ -4,7 +4,7 @@ using Stateflows.StateMachines.Context.Interfaces;
 using Stateflows.StateMachines.Registration.Builders;
 using Stateflows.StateMachines.Registration.Extensions;
 
-namespace Stateflows.StateMachines
+namespace Stateflows.StateMachines.Sync
 {
     public static class FinalizedStateMachineBuilderEventsSyncExtensions
     {

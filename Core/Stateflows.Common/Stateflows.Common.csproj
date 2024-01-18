@@ -9,10 +9,10 @@
     <PackageIcon>stateflows-logo-1024.png</PackageIcon>
     <RepositoryUrl>https://github.com/Stateflows/framework</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
-    <PackageTags>Stateflows;state-machine;workflow</PackageTags>
+    <PackageTags>Stateflows;state-machine;activity;workflow</PackageTags>
     <AssemblyVersion></AssemblyVersion>
     <FileVersion></FileVersion>
-    <Version>0.5.2-alpha</Version>
+    <Version>0.6.0-alpha</Version>
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <PackageLicenseFile>LICENSE</PackageLicenseFile>
     <PackageOutputPath>..\..\NuGet</PackageOutputPath>

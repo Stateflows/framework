@@ -2,11 +2,11 @@
 using Stateflows.StateMachines.Registration;
 using Stateflows.StateMachines.Registration.Interfaces;
 
-namespace Stateflows.StateMachines
+namespace Stateflows.StateMachines.Typed
 {
     public static class CompositeStateBuilderInternalTransitionTypedExtensions
     {
-        public static IInitializedCompositeStateBuilder AddInternalTransition<TEvent, TTransition>(this IInitializedCompositeStateBuilder builder)
+        public static ICompositeStateBuilder AddInternalTransition<TEvent, TTransition>(this ICompositeStateBuilder builder)
             where TEvent : Event, new()
             where TTransition : Transition<TEvent>
             => builder.AddTransition<TEvent, TTransition>(Constants.DefaultTransitionTarget);

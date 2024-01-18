@@ -1,7 +1,7 @@
 ﻿using Stateflows.Activities.Extensions;
 using Stateflows.Activities.Registration.Interfaces;
 
-namespace Stateflows.Activities
+namespace Stateflows.Activities.Typed
 {
     public static class InitialBuilderControlFlowsTypedExtensions
     {

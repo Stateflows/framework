@@ -5,13 +5,12 @@ using System.Collections.Generic;
 using System.Text.Json.Serialization;
 using Microsoft.Extensions.DependencyInjection;
 using Stateflows.Common;
+using Stateflows.Common.Classes;
 using Stateflows.Common.Context;
-using Stateflows.Common.Interfaces;
 using Stateflows.Activities.Models;
 using Stateflows.Activities.Engine;
 using Stateflows.Activities.Streams;
 using Stateflows.Activities.Registration;
-using Stateflows.Common.Classes;
 
 namespace Stateflows.Activities.Context.Classes
 {

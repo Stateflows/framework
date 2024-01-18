@@ -1,8 +1,8 @@
 ﻿using System.Linq;
 using Stateflows.Common;
+using Stateflows.Activities.Extensions;
 using Stateflows.StateMachines.Registration;
 using Stateflows.StateMachines.Registration.Interfaces;
-using Stateflows.Activities.Extensions;
 
 namespace Stateflows.Activities
 {
@@ -13,7 +13,7 @@ namespace Stateflows.Activities
             where TEvent : Event, new()
             => builder.AddGuard(
                 async c => c.TryLocateActivity(activityName, Constants.Guard, out var a)
-                    && ((await a.ExecuteAsync(parametersBuilder?.Invoke(c))).Response?.OutputTokens.OfType<ValueToken<bool>>().FirstOrDefault()?.Value ?? false)
+                    && ((await a.ExecuteAsync(parametersBuilder?.Invoke(c))).Response?.OutputTokens.OfType<Token<bool>>().FirstOrDefault()?.Payload ?? false)
             );
 
         public static ITransitionBuilder<TEvent> AddGuardActivity<TEvent, TActivity>(this ITransitionBuilder<TEvent> builder, GuardActivityInitializationBuilder<TEvent> parametersBuilder = null)

@@ -1,12 +1,13 @@
 import { Component } from '@angular/core';
 import { BehaviorClass } from '@stateflows/signalr-client';
 import { BehaviorId } from '@stateflows/signalr-client';
+import { ActivityId } from '@stateflows/signalr-client';
 import { BehaviorStatus, Event, EventStatus, PlantUmlRequest, PlantUmlResponse, StateMachineId, StateflowsClient, AvailableBehaviorClassesRequest, AvailableBehaviorClassesResponse } from '@stateflows/signalr-client';
 import * as plantUmlEncoder from 'plantuml-encoder';
 
 class OtherEvent extends Event {
   public $type: string = "Examples.Common.OtherEvent, Examples.Common";
-  //public RequiredParameter: string | null = null;q
+  //public RequiredParameter: string | null = null;
 }
 
 @Component({
@@ -20,7 +21,6 @@ export class CounterComponent {
 
   public async incrementCounter() {
     let sm = await this.stateflows.stateMachineLocator.locateStateMachine(new StateMachineId("stateMachine1", "x"));
-
     if ((await sm.getStatus()).Response.BehaviorStatus == BehaviorStatus.NotInitialized) {
       await sm.initialize();
     }

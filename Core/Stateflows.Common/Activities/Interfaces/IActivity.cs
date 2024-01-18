@@ -1,8 +1,7 @@
 ﻿using System.Threading.Tasks;
-using Stateflows.Common;
-using Stateflows.Common.Interfaces;
-using Stateflows.Activities.Events;
 using System.Collections.Generic;
+using Stateflows.Common;
+using Stateflows.Activities.Events;
 
 namespace Stateflows.Activities
 {

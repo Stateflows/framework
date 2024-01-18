@@ -1,4 +1,4 @@
-﻿using Stateflows.Common.Interfaces;
+﻿using Stateflows.Common;
 using Stateflows.Activities;
 
 namespace Stateflows.Common.Activities.Classes

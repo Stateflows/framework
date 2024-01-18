@@ -1,4 +1,6 @@
-﻿namespace Stateflows.Activities.Context.Interfaces
+﻿using Stateflows.Common;
+
+namespace Stateflows.Activities.Context.Interfaces
 {
     public interface ITokenContext<out TToken> : IActivityActionContext
         where TToken : Token, new()

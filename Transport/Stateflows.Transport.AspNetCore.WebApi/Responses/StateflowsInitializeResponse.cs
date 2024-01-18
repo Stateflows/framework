@@ -1,5 +1,4 @@
 ﻿using Stateflows.Common;
-using Stateflows.Common.Interfaces;
 
 namespace Stateflows.Transport.AspNetCore.WebApi.Responses
 {
@@ -8,8 +7,11 @@ namespace Stateflows.Transport.AspNetCore.WebApi.Responses
         public StateflowsInitializeResponse(RequestResult<InitializationResponse> result)
         {
             InitializationSuccessful = result.Response?.InitializationSuccessful ?? false;
+            Status = result.Status;
         }
 
         public bool InitializationSuccessful { get; set; }
+
+        public EventStatus Status { get; set; }
     }
 }

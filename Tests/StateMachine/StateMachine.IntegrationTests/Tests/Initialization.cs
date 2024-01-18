@@ -1,4 +1,8 @@
 using Stateflows.Common;
+using Stateflows.Common.Data;
+using Stateflows.StateMachines.Sync;
+using Stateflows.StateMachines.Data;
+using Stateflows.StateMachines.Sync.Data;
 using StateMachine.IntegrationTests.Utils;
 
 namespace StateMachine.IntegrationTests.Tests
@@ -51,7 +55,12 @@ namespace StateMachine.IntegrationTests.Tests
                     )
 
                     .AddStateMachine("invalid", b => b
-                        .AddOnInitialize<ValueInitializationRequest>(c => true)
+                        .AddOnInitialize<ValueInitializationRequest>(c => c.InitializationRequest.Value != null)
+                        .AddInitialState("state1")
+                    )
+
+                    .AddStateMachine("payload", b => b
+                        .AddOnInitialize<string>(c => c.InitializationRequest.Payload != null)
                         .AddInitialState("state1")
                     )
 
@@ -150,6 +159,23 @@ namespace StateMachine.IntegrationTests.Tests
 
             Assert.IsTrue(initialized);
             Assert.AreEqual("bar", Value);
+            Assert.AreEqual("state1", currentState);
+        }
+
+        [TestMethod]
+        public async Task PayloadInitialization()
+        {
+            var initialized = false;
+            string currentState = string.Empty;
+
+            if (Locator.TryLocateStateMachine(new StateMachineId("payload", "x"), out var sm))
+            {
+                initialized = (await sm.InitializeAsync("bar")).Response.InitializationSuccessful;
+
+                currentState = (await sm.GetCurrentStateAsync()).Response.StatesStack.First() ?? string.Empty;
+            }
+
+            Assert.IsTrue(initialized);
             Assert.AreEqual("state1", currentState);
         }
 

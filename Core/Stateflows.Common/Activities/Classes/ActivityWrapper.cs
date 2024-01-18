@@ -1,10 +1,8 @@
 ﻿using System.Linq;
 using System.Threading.Tasks;
 using System.Collections.Generic;
-using Stateflows.Common.Interfaces;
 using Stateflows.Activities;
 using Stateflows.Activities.Events;
-using System;
 
 namespace Stateflows.Common.Activities.Classes
 {

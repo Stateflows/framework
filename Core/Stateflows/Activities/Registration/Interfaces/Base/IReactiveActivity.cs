@@ -1,4 +1,6 @@
-﻿namespace Stateflows.Activities.Registration.Interfaces.Base
+﻿using Stateflows.Common;
+
+namespace Stateflows.Activities.Registration.Interfaces.Base
 {
     public interface IReactiveActivity<out TReturn>
     {
@@ -6,10 +8,10 @@
 
         TReturn AddStructuredActivity(string actionNodeName, ReactiveStructuredActivityBuilderAction builderAction);
 
-        TReturn AddParallelActivity<TToken>(string actionNodeName, ParallelActivityBuilderAction builderAction)
-            where TToken : Token, new();
+        TReturn AddParallelActivity<TParallelizationToken>(string actionNodeName, ParallelActivityBuilderAction builderAction)
+            where TParallelizationToken : Token, new();
 
-        TReturn AddIterativeActivity<TToken>(string actionNodeName, IterativeActivityBuilderAction builderAction)
-            where TToken : Token, new();
+        TReturn AddIterativeActivity<TIterationToken>(string actionNodeName, IterativeActivityBuilderAction builderAction)
+            where TIterationToken : Token, new();
     }
 }

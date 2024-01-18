@@ -3,6 +3,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Stateflows.Common;
 using Stateflows.Common.Extensions;
+using Stateflows.StateMachines.Sync;
 using Stateflows.StateMachines.Context.Classes;
 using Stateflows.StateMachines.Registration;
 using Stateflows.StateMachines.Registration.Builders;

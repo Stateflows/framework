@@ -8,6 +8,7 @@ using Stateflows.Common.Engine;
 using Stateflows.Common.Locator;
 using Stateflows.Common.Interfaces;
 using Stateflows.Common.Extensions;
+using Stateflows.Common.Exceptions;
 using Stateflows.Common.System.Classes;
 using Stateflows.Common.Activities.Classes;
 using Stateflows.Common.StateMachines.Classes;
@@ -22,7 +23,7 @@ namespace Stateflows
         {
             builderAction.ThrowIfNull(nameof(builderAction));
 
-            if (services.IsServiceRegistered<BehaviorLocator>()) throw new Exception("Stateflows client already registered");
+            if (services.IsServiceRegistered<BehaviorLocator>()) throw new StateflowsException("Stateflows client already registered");
 
             var builder = new StateflowsClientBuilder(services);
 

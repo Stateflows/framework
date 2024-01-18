@@ -1,9 +1,8 @@
-﻿using System.Threading.Tasks;
-using Stateflows.StateMachines;
+﻿using Stateflows.Common;
+using Stateflows.Activities.Extensions;
+using Stateflows.StateMachines.Sync;
 using Stateflows.StateMachines.Registration;
 using Stateflows.StateMachines.Registration.Interfaces;
-using Stateflows.Activities.Extensions;
-using Stateflows.Common;
 
 namespace Stateflows.Activities
 {

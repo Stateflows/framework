@@ -254,7 +254,8 @@ namespace Stateflows.Activities.Engine
                     await DoExecuteNodeStructureAsync(
                         context.Node,
                         context.NodeScope,
-                        restOfInput.Concat(new Token[] { token }).ToArray()
+                        restOfInput.Concat(new Token[] { token }).ToArray(),
+                        token
                     );
 
                     lock (Context.Streams)
@@ -301,7 +302,8 @@ namespace Stateflows.Activities.Engine
                 await DoExecuteNodeStructureAsync(
                     context.Node,
                     context.NodeScope,
-                    restOfInput.Concat(new Token[] { token })
+                    restOfInput.Concat(new Token[] { token }),
+                    token
                 );
 
                 lock (Context.Streams)
@@ -315,7 +317,7 @@ namespace Stateflows.Activities.Engine
                 : new List<Token>();
         }
 
-        private async Task<bool> DoExecuteNodeStructureAsync(Node node, NodeScope nodeScope, IEnumerable<Token> input = null)
+        private async Task<bool> DoExecuteNodeStructureAsync(Node node, NodeScope nodeScope, IEnumerable<Token> input = null, Token selectionToken = null)
         {
             var startingNode = Context.NodesToExecute.Any()
                 ? node.Nodes.Values.FirstOrDefault(n => Context.NodesToExecute.Contains(n))
@@ -337,7 +339,7 @@ namespace Stateflows.Activities.Engine
             }
 
             await Task.WhenAll(
-                nodes.Select(n => DoHandleNodeAsync(n, nodeScope, n == node.InputNode ? input : null))
+                nodes.Select(n => DoHandleNodeAsync(n, nodeScope, n == node.InputNode ? input : null, selectionToken))
             );
 
             var result =
@@ -355,9 +357,9 @@ namespace Stateflows.Activities.Engine
             var result = false;
 
             if (
-                Graph.Initializers.TryGetValue(@event.EventName, out var initializer) ||
+                Graph.Initializers.TryGetValue(@event.Name, out var initializer) ||
                 (
-                    @event.EventName == EventInfo<InitializationRequest>.Name &&
+                    @event.Name == EventInfo<InitializationRequest>.Name &&
                     !Graph.Initializers.Any()
                 )
             )
@@ -382,7 +384,7 @@ namespace Stateflows.Activities.Engine
             return result;
         }
 
-        public async Task DoHandleNodeAsync(Node node, NodeScope nodeScope, IEnumerable<Token> input = null)
+        public async Task DoHandleNodeAsync(Node node, NodeScope nodeScope, IEnumerable<Token> input = null, Token selectionToken = null)
         {
             var types = new NodeType[]
             {
@@ -450,7 +452,7 @@ namespace Stateflows.Activities.Engine
                     Debug.WriteLine($">>> Executing node {node.Name.Split('.').Last()}, threadId: {nodeScope.ThreadId}");
                 }
 
-                var actionContext = new ActionContext(Context, nodeScope, node, inputTokens);
+                var actionContext = new ActionContext(Context, nodeScope, node, inputTokens, selectionToken);
 
                 await node.Action.WhenAll(actionContext);
 
@@ -470,9 +472,9 @@ namespace Stateflows.Activities.Engine
                 }
                 else
                 {
-                    if (actionContext.Output.Any(t => t is ControlToken))
+                    if (actionContext.OutputTokens.Any(t => t is ControlToken))
                     {
-                        var tokenNames = actionContext.Output.Select(token => token.Name).Distinct().ToArray();
+                        var tokenNames = actionContext.OutputTokens.Select(token => token.Name).Distinct().ToArray();
                         var edges = node.Edges
                             .Where(edge => tokenNames.Contains(edge.TokenType.GetTokenName()) || edge.Weight == 0)
                             .OrderBy(edge => edge.IsElse)
@@ -503,13 +505,13 @@ namespace Stateflows.Activities.Engine
         }
 
         private void DoHandleOutput(ActionContext context)
-            => context.Context.GetOutputTokens(context.Node.Identifier, context.NodeScope.ThreadId).AddRange(context.Output);
+            => context.Context.GetOutputTokens(context.Node.Identifier, context.NodeScope.ThreadId).AddRange(context.OutputTokens);
 
         private async Task<bool> DoHandleEdgeAsync(Edge edge, ActionContext context)
         {
             var edgeTokenName = edge.TokenType.GetTokenName();
 
-            IEnumerable<Token> originalTokens = context.Output.Where(t => t.Name == edgeTokenName).ToArray();
+            IEnumerable<Token> originalTokens = context.OutputTokens.Where(t => t.Name == edgeTokenName).ToArray();
 
             if (!originalTokens.Any())
             {
@@ -553,7 +555,7 @@ namespace Stateflows.Activities.Engine
                 {
                     foreach (var token in consumedTokens)
                     {
-                        context.Output.Remove(token);
+                        context.OutputTokens.Remove(token);
                     }
                 }
 

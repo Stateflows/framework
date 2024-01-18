@@ -1,9 +1,10 @@
 ﻿using System;
+using System.Threading;
 using System.Collections.Generic;
 using Microsoft.Extensions.DependencyInjection;
 using Stateflows.Common;
 using Stateflows.Activities.Context.Interfaces;
-using System.Threading;
+
 
 namespace Stateflows.Activities.Engine
 {
@@ -56,10 +57,10 @@ namespace Stateflows.Activities.Engine
         public NodeScope CreateChildScope(Guid? threadId = null)
             => new NodeScope(this, threadId ?? ThreadId);
 
-        private readonly IDictionary<Type, Action> Actions = new Dictionary<Type, Action>();
+        private readonly IDictionary<Type, ActionNode> Actions = new Dictionary<Type, ActionNode>();
 
         public TAction GetAction<TAction>(IActionContext context)
-            where TAction : Action
+            where TAction : ActionNode
         {
             lock (Actions)
             {
@@ -76,11 +77,11 @@ namespace Stateflows.Activities.Engine
             }
         }
 
-        private readonly IDictionary<Type, Action> AcceptEventActions = new Dictionary<Type, Action>();
+        private readonly IDictionary<Type, ActionNode> AcceptEventActions = new Dictionary<Type, ActionNode>();
 
         public TAcceptEventAction GetAcceptEventAction<TEvent, TAcceptEventAction>(IAcceptEventActionContext<TEvent> context)
             where TEvent : Event, new()
-            where TAcceptEventAction : AcceptEventAction<TEvent>
+            where TAcceptEventAction : AcceptEventActionNode<TEvent>
         {
             lock (AcceptEventActions)
             {
@@ -103,7 +104,7 @@ namespace Stateflows.Activities.Engine
 
         public TSendEventAction GetSendEventAction<TEvent, TSendEventAction>(IActionContext context)
             where TEvent : Event, new()
-            where TSendEventAction : SendEventAction<TEvent>
+            where TSendEventAction : SendEventActionNode<TEvent>
         {
             lock (SendEventActions)
             {
@@ -122,10 +123,10 @@ namespace Stateflows.Activities.Engine
             }
         }
 
-        private readonly IDictionary<Type, StructuredActivity> StructuredActivities = new Dictionary<Type, StructuredActivity>();
+        private readonly IDictionary<Type, StructuredActivityNode> StructuredActivities = new Dictionary<Type, StructuredActivityNode>();
 
         public TStructuredActivity GetStructuredActivity<TStructuredActivity>(IActionContext context)
-            where TStructuredActivity : StructuredActivity
+            where TStructuredActivity : StructuredActivityNode
         {
             if (!StructuredActivities.TryGetValue(typeof(TStructuredActivity), out var structuredActivity))
             {
@@ -143,7 +144,7 @@ namespace Stateflows.Activities.Engine
 
         public TExceptionHandler GetExceptionHandler<TException, TExceptionHandler>(IExceptionHandlerContext<TException> context)
             where TException : Exception
-            where TExceptionHandler : ExceptionHandler<TException>
+            where TExceptionHandler : ExceptionHandlerNode<TException>
         {
             if (!ExceptionHandlers.TryGetValue(typeof(TExceptionHandler), out var exceptionHandlerNode))
             {
@@ -192,7 +193,7 @@ namespace Stateflows.Activities.Engine
         }
 
         public TFlow GetObjectFlow<TFlow, TToken>(IFlowContext<TToken> context)
-            where TFlow : ObjectFlow<TToken>
+            where TFlow : TokenFlow<TToken>
             where TToken : Token, new()
         {
             if (!Flows.TryGetValue(typeof(TFlow), out var flowObj))
@@ -214,7 +215,7 @@ namespace Stateflows.Activities.Engine
         }
 
         public TFlow GetObjectTransformationFlow<TFlow, TToken, TTransformedToken>(IFlowContext<TToken> context)
-            where TFlow : ObjectTransformationFlow<TToken, TTransformedToken>
+            where TFlow : TokenTransformationFlow<TToken, TTransformedToken>
             where TToken : Token, new()
             where TTransformedToken : Token, new()
         {

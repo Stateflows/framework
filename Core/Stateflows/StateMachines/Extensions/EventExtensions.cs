@@ -8,7 +8,7 @@ namespace Stateflows.StateMachines.Extensions
         public static bool Triggers(this Event @event, Edge edge)
         {
             return
-                edge.Trigger == @event.EventName &&
+                edge.Trigger == @event.Name &&
                 (
                     !(@event is TimeEvent timeEvent) || 
                     timeEvent.ConsumerIdentifier == edge.Identifier

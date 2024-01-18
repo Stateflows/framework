@@ -1,24 +1,25 @@
 ﻿using System.Collections.Generic;
+using Stateflows.Common;
 
 namespace Stateflows.Activities.Context.Interfaces
 {
     public interface IOutput
     {
-        void OutputToken<TToken>(TToken token)
+        void Output<TToken>(TToken token)
             where TToken : Token, new();
 
-        void OutputTokensRange<TToken>(IEnumerable<TToken> tokens)
+        void OutputRange<TToken>(IEnumerable<TToken> tokens)
             where TToken : Token, new();
 
-        void OutputTokensRangeAsGroup<TToken>(IEnumerable<TToken> tokens)
+        void OutputRangeAsGroup<TToken>(IEnumerable<TToken> tokens)
             where TToken : Token, new();
 
-        void PassTokensOfType<TToken>()
+        void PassTokensOfTypeOn<TToken>()
             where TToken : Token, new();
 
-        void PassTokensOfTypeAsGroup<TToken>()
+        void PassTokensOfTypeOnAsGroup<TToken>()
             where TToken : Token, new();
 
-        void PassAllTokens();
+        void PassAllOn();
     }
 }

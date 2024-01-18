@@ -2,11 +2,11 @@
 using System.Linq;
 using System.Threading.Tasks;
 using System.Collections.Generic;
+using Stateflows.Common;
 using Stateflows.Common.Models;
-using Stateflows.Activities.Collections;
 using Stateflows.Activities.Registration;
 using Stateflows.Activities.Context.Classes;
-using System.Xml.Linq;
+using System.Runtime.InteropServices;
 
 namespace Stateflows.Activities.Models
 {
@@ -61,17 +61,33 @@ namespace Stateflows.Activities.Models
         {
             DeclaredTypesSet = true;
 
-            InputTokenTypes = nodeType.GetFields()
+            var fields = nodeType.GetFields().Where(field => field.FieldType.IsGenericType).ToArray();
+
+            InputTokenTypes = fields
                 .Where(field => field.FieldType.GetGenericTypeDefinition() == typeof(Input<>))
                 .Select(field => field.FieldType.GenericTypeArguments[0])
                 .ToList();
 
-            OptionalInputTokenTypes = nodeType.GetFields()
+            InputTokenTypes.AddRange(
+                fields
+                    .Where(field => field.FieldType.GetGenericTypeDefinition() == typeof(SingleInput<>))
+                    .Select(field => field.FieldType.GenericTypeArguments[0])
+                    .ToList()
+            );
+
+            OptionalInputTokenTypes = fields
                 .Where(field => field.FieldType.GetGenericTypeDefinition() == typeof(OptionalInput<>))
                 .Select(field => field.FieldType.GenericTypeArguments[0])
                 .ToList();
 
-            OutputTokenTypes = nodeType.GetFields()
+            OptionalInputTokenTypes.AddRange(
+                fields
+                    .Where(field => field.FieldType.GetGenericTypeDefinition() == typeof(OptionalSingleInput<>))
+                    .Select(field => field.FieldType.GenericTypeArguments[0])
+                    .ToList()
+            );
+
+            OutputTokenTypes = fields
                 .Where(field => field.FieldType.GetGenericTypeDefinition() == typeof(Output<>))
                 .Select(field => field.FieldType.GenericTypeArguments[0])
                 .ToList();
@@ -161,7 +177,7 @@ namespace Stateflows.Activities.Models
 
                 await handler.Action.WhenAll(exceptionContext);
 
-                return exceptionContext.Output;
+                return exceptionContext.OutputTokens;
             }
 
             return new Token[0];

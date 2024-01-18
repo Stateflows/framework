@@ -4,6 +4,6 @@ namespace Stateflows.Extensions.PlantUml.Events
 {
     public sealed class PlantUmlRequest : Request<PlantUmlResponse>
     {
-        public override string EventName => nameof(PlantUmlRequest);
+        public override string Name => nameof(PlantUmlRequest);
     }
 }

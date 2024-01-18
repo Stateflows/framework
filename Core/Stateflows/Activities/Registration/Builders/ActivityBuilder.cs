@@ -104,11 +104,11 @@ namespace Stateflows.Activities.Registration.Builders
         IActivityBuilder IOutput<IActivityBuilder>.AddOutput()
             => AddOutput() as IActivityBuilder;
 
-        IActivityBuilder IReactiveActivity<IActivityBuilder>.AddParallelActivity<TToken>(string actionNodeName, ParallelActivityBuilderAction builderAction)
-            => AddParallelActivity<TToken>(actionNodeName, builderAction) as IActivityBuilder;
+        IActivityBuilder IReactiveActivity<IActivityBuilder>.AddParallelActivity<TParallelizationToken>(string actionNodeName, ParallelActivityBuilderAction builderAction)
+            => AddParallelActivity<TParallelizationToken>(actionNodeName, builderAction) as IActivityBuilder;
 
-        IActivityBuilder IReactiveActivity<IActivityBuilder>.AddIterativeActivity<TToken>(string actionNodeName, IterativeActivityBuilderAction builderAction)
-            => AddIterativeActivity<TToken>(actionNodeName, builderAction) as IActivityBuilder;
+        IActivityBuilder IReactiveActivity<IActivityBuilder>.AddIterativeActivity<TIterationToken>(string actionNodeName, IterativeActivityBuilderAction builderAction)
+            => AddIterativeActivity<TIterationToken>(actionNodeName, builderAction) as IActivityBuilder;
 
         IActivityBuilder IAcceptEvent<IActivityBuilder>.AddAcceptEventAction<TEvent>(string actionNodeName, AcceptEventActionDelegateAsync<TEvent> eventActionAsync, AcceptEventActionBuilderAction buildAction)
             => AddAcceptEventAction<TEvent>(actionNodeName, eventActionAsync, buildAction) as IActivityBuilder;
@@ -136,11 +136,11 @@ namespace Stateflows.Activities.Registration.Builders
         ITypedActivityBuilder IOutput<ITypedActivityBuilder>.AddOutput()
             => AddOutput() as ITypedActivityBuilder;
 
-        ITypedActivityBuilder IReactiveActivity<ITypedActivityBuilder>.AddParallelActivity<TToken>(string actionNodeName, ParallelActivityBuilderAction builderAction)
-            => AddParallelActivity<TToken>(actionNodeName, builderAction) as ITypedActivityBuilder;
+        ITypedActivityBuilder IReactiveActivity<ITypedActivityBuilder>.AddParallelActivity<TParallelizationToken>(string actionNodeName, ParallelActivityBuilderAction builderAction)
+            => AddParallelActivity<TParallelizationToken>(actionNodeName, builderAction) as ITypedActivityBuilder;
 
-        ITypedActivityBuilder IReactiveActivity<ITypedActivityBuilder>.AddIterativeActivity<TToken>(string actionNodeName, IterativeActivityBuilderAction builderAction)
-            => AddIterativeActivity<TToken>(actionNodeName, builderAction) as ITypedActivityBuilder;
+        ITypedActivityBuilder IReactiveActivity<ITypedActivityBuilder>.AddIterativeActivity<TIterationToken>(string actionNodeName, IterativeActivityBuilderAction builderAction)
+            => AddIterativeActivity<TIterationToken>(actionNodeName, builderAction) as ITypedActivityBuilder;
 
         ITypedActivityBuilder IAcceptEvent<ITypedActivityBuilder>.AddAcceptEventAction<TEvent>(string actionNodeName, AcceptEventActionDelegateAsync<TEvent> eventActionAsync, AcceptEventActionBuilderAction buildAction)
             => AddAcceptEventAction<TEvent>(actionNodeName, eventActionAsync, buildAction) as ITypedActivityBuilder;

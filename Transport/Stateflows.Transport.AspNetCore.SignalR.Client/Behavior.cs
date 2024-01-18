@@ -1,7 +1,6 @@
 ﻿using Microsoft.AspNetCore.SignalR.Client;
 using Stateflows.Common;
 using Stateflows.Common.Utilities;
-using Stateflows.Common.Interfaces;
 using Stateflows.Common.Extensions;
 using Stateflows.Common.Exceptions;
 

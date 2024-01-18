@@ -5,13 +5,13 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <Title>Entity Framework Core storage for Stateflows framework</Title>
-    <Version>0.5.2-alpha</Version>
+    <Version>0.6.0-alpha</Version>
     <Authors>Stateflows</Authors>
     <PackageProjectUrl>https://www.stateflows.net</PackageProjectUrl>
     <PackageIcon>stateflows-logo-1024.png</PackageIcon>
     <RepositoryType>git</RepositoryType>
     <RepositoryUrl>https://github.com/Stateflows/framework</RepositoryUrl>
-    <PackageTags>Stateflows;state-machine;workflow;EF;EFCore;EntityFrameworkCore;entity-framework-core</PackageTags>
+    <PackageTags>Stateflows;state-machine;activity;workflow;EF;EFCore;EntityFrameworkCore;entity-framework-core</PackageTags>
     <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <PackageLicenseFile>LICENSE</PackageLicenseFile>

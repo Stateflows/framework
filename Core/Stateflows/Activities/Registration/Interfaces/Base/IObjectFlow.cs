@@ -1,32 +1,34 @@
-﻿namespace Stateflows.Activities.Registration.Interfaces.Base
+﻿using Stateflows.Common;
+
+namespace Stateflows.Activities.Registration.Interfaces.Base
 {
     public interface IObjectFlow<out TReturn>
     {
-        TReturn AddObjectFlow<TToken>(string targetNodeName, ObjectFlowBuilderAction<TToken> buildAction = null)
+        TReturn AddTokenFlow<TToken>(string targetNodeName, ObjectFlowBuilderAction<TToken> buildAction = null)
             where TToken : Token, new();
     }
 
     public interface IElseObjectFlow<out TReturn>
     {
-        TReturn AddElseObjectFlow<TToken>(string targetNodeName, ElseObjectFlowBuilderAction<TToken> buildAction = null)
+        TReturn AddElseTokenFlow<TToken>(string targetNodeName, ElseObjectFlowBuilderAction<TToken> buildAction = null)
             where TToken : Token, new();
     }
 
-    public interface IObjectFlow<out TToken, out TReturn>
+    public interface IDecisionFlow<out TToken, out TReturn>
         where TToken : Token, new()
     {
-        TReturn AddObjectFlow(string targetNodeName, ObjectFlowBuilderAction<TToken> buildAction = null);
+        TReturn AddFlow(string targetNodeName, ObjectFlowBuilderAction<TToken> buildAction = null);
     }
 
-    public interface IElseObjectFlow<out TToken, out TReturn>
+    public interface IElseDecisionFlow<out TToken, out TReturn>
         where TToken : Token, new()
     {
-        TReturn AddElseObjectFlow(string targetNodeName, ElseObjectFlowBuilderAction<TToken> buildAction = null);
+        TReturn AddElseFlow(string targetNodeName, ElseObjectFlowBuilderAction<TToken> buildAction = null);
     }
 
     public interface IObjectFlow
     {
-        void AddObjectFlow<TToken>(string targetNodeName, ObjectFlowBuilderAction<TToken> buildAction = null)
+        void AddTokenFlow<TToken>(string targetNodeName, ObjectFlowBuilderAction<TToken> buildAction = null)
             where TToken : Token, new();
     }
 }

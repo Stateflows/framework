@@ -1,8 +1,8 @@
 ﻿using System;
 using System.Threading;
 using Microsoft.Extensions.DependencyInjection;
+using Stateflows.Common;
 using Stateflows.Activities.Engine;
-using Stateflows.Common.Interfaces;
 
 namespace Stateflows.Activities.Context.Classes
 {

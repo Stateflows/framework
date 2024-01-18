@@ -30,9 +30,9 @@ namespace Stateflows.Common.Locator
         {
             foreach (var behaviorClass in provider.BehaviorClasses)
             {
-                if (!ProvidersByClasses.ContainsKey(behaviorClass))
+                if (!ProvidersByClasses.ContainsKey(behaviorClass) || provider.IsLocal)
                 {
-                    ProvidersByClasses.Add(behaviorClass, provider);
+                    ProvidersByClasses[behaviorClass] = provider;
                 }
             }
 

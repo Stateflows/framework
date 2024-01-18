@@ -1,7 +1,7 @@
 ﻿using Stateflows.StateMachines.Events;
 using Stateflows.StateMachines.Registration.Interfaces;
 
-namespace Stateflows.StateMachines
+namespace Stateflows.StateMachines.Typed
 {
     public static class TypedCompositeStateBuilderDefaultTransitionTypedExtensions
     {

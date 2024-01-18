@@ -1,5 +1,14 @@
-﻿namespace Stateflows.Activities.Context.Interfaces
+﻿using Stateflows.Common;
+
+namespace Stateflows.Activities.Context.Interfaces
 {
-    public interface IActionContext : IActivityNodeContext, IInput, IOutput
+    public interface ITypedActionContext : IActivityNodeContext
+    { }
+
+    public interface IActionContext : ITypedActionContext, IInput, IOutput
+    { }
+
+    public interface IActionContext<out TToken> : IActionContext, ITokenContext<TToken>
+        where TToken : Token, new()
     { }
 }

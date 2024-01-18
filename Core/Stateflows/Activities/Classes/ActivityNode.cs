@@ -4,7 +4,7 @@ namespace Stateflows.Activities
 {
     public abstract class ActivityNode
     {
-        public IActionContext Context { get; internal set; }
+        public ITypedActionContext Context { get; internal set; }
     }
 
     public static class ActivityNodeInfo<TNode>

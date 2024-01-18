@@ -9,12 +9,22 @@ namespace Stateflows.Common
         {
             if (Response != null)
             {
-                throw new StateflowsException($"Already responded to request '{EventName}'");
+                throw new StateflowsException($"Already responded to request '{Name}'");
             }
 
             Response = response;
         }
 
         public TResponse Response { get; private set; }
+    }
+
+    public sealed class Request<TRequestPayload, TResponsePayload> : Request<Response<TResponsePayload>>
+    {
+        public Request()
+        {
+            Payload = default;
+        }
+
+        public TRequestPayload Payload { get; set; }
     }
 }

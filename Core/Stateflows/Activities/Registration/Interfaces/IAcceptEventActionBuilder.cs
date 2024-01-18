@@ -5,6 +5,6 @@ namespace Stateflows.Activities.Registration.Interfaces
     public interface IAcceptEventActionBuilder :
         IObjectFlow<IAcceptEventActionBuilder>,
         IControlFlow<IAcceptEventActionBuilder>,
-        IExceptionHandler<IActionBuilder>
+        IExceptionHandler<IAcceptEventActionBuilder>
     { }
 }

@@ -1,6 +1,7 @@
 ﻿using Stateflows.Activities.Models;
 using Stateflows.Activities.Engine;
 using Stateflows.Activities.Inspection.Interfaces;
+using Stateflows.Common;
 
 namespace Stateflows.Activities.Inspection.Classes
 {
@@ -56,7 +57,7 @@ namespace Stateflows.Activities.Inspection.Classes
             }
         }
 
-        public string TokenName => Edge.TokenType.FullName;
+        public string TokenName => TokenInfo.GetName(Edge.TokenType);
 
         public FlowType Type => Edge.TokenType == typeof(ControlToken)
             ? FlowType.ControlFlow

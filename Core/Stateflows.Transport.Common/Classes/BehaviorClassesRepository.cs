@@ -21,6 +21,8 @@ namespace Stateflows.Transport.Common.Classes
 
         private readonly List<BehaviorClass> behaviorClasses = new List<BehaviorClass>();
 
+        //public readonly EventWaitHandle BehaviorClassesAvailable = new EventWaitHandle(false, EventResetMode.AutoReset);
+
         public IEnumerable<BehaviorClass> BehaviorClasses => behaviorClasses;
 
         protected BehaviorClassesRepository(
@@ -44,6 +46,8 @@ namespace Stateflows.Transport.Common.Classes
                         this.behaviorClasses.AddRange(behaviorClasses);
                     }
                 }
+
+                //BehaviorClassesAvailable.Set();
             }
 
             lock (this.behaviorClasses)
@@ -58,6 +62,7 @@ namespace Stateflows.Transport.Common.Classes
             {
                 await Task.Delay(10 * 1000);
                 await Discoverer.DiscoverBehaviorClassesAsync(BehaviorClassesProvider.LocalBehaviorClasses);
+                //await BehaviorClassesAvailable.WaitOneAsync();
             }
             catch (Exception e)
             {

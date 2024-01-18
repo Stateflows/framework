@@ -1,11 +1,12 @@
 ﻿using Stateflows.Activities.Registration.Interfaces.Base;
+using Stateflows.Common;
 
 namespace Stateflows.Activities
 {
-    public interface IDecisionBuilder<TToken> : IObjectFlow<TToken, IDecisionBuilder<TToken>>, IElseObjectFlow<TToken, IDecisionBuilder<TToken>>
+    public interface IDecisionBuilder<TToken> : IDecisionFlow<TToken, IDecisionBuilder<TToken>>, IElseDecisionFlow<TToken, IDecisionBuilder<TToken>>
         where TToken : Token, new()
     { }
 
-    public interface IDecisionBuilder : IControlFlow<IDecisionBuilder>, IElseControlFlow<IDecisionBuilder>
+    public interface IDecisionBuilder : IDecisionFlow<IDecisionBuilder>, IElseDecisionFlow<IDecisionBuilder>
     { }
 }

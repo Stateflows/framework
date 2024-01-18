@@ -2,7 +2,6 @@
 using MassTransit;
 using Stateflows.Common;
 using Stateflows.Common.Utilities;
-using Stateflows.Common.Interfaces;
 using Stateflows.Common.Extensions;
 using Event = Stateflows.Common.Event;
 using Response = Stateflows.Common.Response;

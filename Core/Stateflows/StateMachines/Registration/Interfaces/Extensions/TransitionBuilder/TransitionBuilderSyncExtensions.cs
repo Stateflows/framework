@@ -6,7 +6,7 @@ using Stateflows.StateMachines.Registration.Builders;
 using Stateflows.StateMachines.Registration.Extensions;
 using Stateflows.StateMachines.Registration.Interfaces;
 
-namespace Stateflows.StateMachines
+namespace Stateflows.StateMachines.Sync
 {
     public static class TransitionBuilderSyncExtensions
     {

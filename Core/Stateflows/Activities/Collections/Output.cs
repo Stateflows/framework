@@ -1,9 +1,10 @@
 ﻿using System.Linq;
+using System.Threading;
 using System.Collections;
 using System.Collections.Generic;
-using System.Threading;
+using Stateflows.Common;
 
-namespace Stateflows.Activities.Collections
+namespace Stateflows.Activities
 {
     internal static class OutputTokensHolder
     {
@@ -13,17 +14,17 @@ namespace Stateflows.Activities.Collections
     public struct Output<TToken> : ICollection<TToken>
         where TToken : Token, new()
     {
-        private List<TToken> GetTokens()
+        private readonly List<TToken> GetTokens()
             => OutputTokensHolder.Tokens.Value.OfType<TToken>().ToList();
 
-        public int Count => GetTokens().Count;
+        public readonly int Count => GetTokens().Count;
 
-        public bool IsReadOnly => false;
+        public readonly bool IsReadOnly => false;
 
-        public void Add(TToken item)
+        public readonly void Add(TToken item)
             => OutputTokensHolder.Tokens.Value.Add(item);
 
-        public void AddRange(IEnumerable<TToken> items)
+        public readonly void AddRange(IEnumerable<TToken> items)
         {
             foreach (var item in items)
             {
@@ -31,22 +32,22 @@ namespace Stateflows.Activities.Collections
             }
         }
 
-        public void Clear()
+        public readonly void Clear()
         => OutputTokensHolder.Tokens.Value.RemoveAll(token => token is TToken);
 
-        public bool Contains(TToken item)
+        public readonly bool Contains(TToken item)
             => OutputTokensHolder.Tokens.Value.Contains(item);
 
-        public void CopyTo(TToken[] array, int arrayIndex)
+        public readonly void CopyTo(TToken[] array, int arrayIndex)
             => OutputTokensHolder.Tokens.Value.CopyTo(array, arrayIndex);
 
-        public bool Remove(TToken item)
+        public readonly bool Remove(TToken item)
             => OutputTokensHolder.Tokens.Value.Remove(item);
 
-        public IEnumerator<TToken> GetEnumerator()
+        public readonly IEnumerator<TToken> GetEnumerator()
             => GetTokens().GetEnumerator();
 
-        IEnumerator IEnumerable.GetEnumerator()
+        readonly IEnumerator IEnumerable.GetEnumerator()
             => GetTokens().GetEnumerator();
     }
 }

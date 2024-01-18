@@ -1,6 +1,6 @@
 ﻿using System.Threading.Tasks;
 using Stateflows.Common;
-using Stateflows.StateMachines;
+using Stateflows.StateMachines.Sync;
 using Stateflows.Activities.Extensions;
 using Stateflows.StateMachines.Registration;
 using Stateflows.StateMachines.Registration.Interfaces;

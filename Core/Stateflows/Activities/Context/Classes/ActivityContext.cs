@@ -1,5 +1,4 @@
-﻿using System;
-using Stateflows.Common;
+﻿using Stateflows.Common;
 using Stateflows.Common.Classes;
 using Stateflows.Common.Interfaces;
 using Stateflows.Activities.Engine;

@@ -2,8 +2,9 @@
 using System.Threading;
 using System.Collections;
 using System.Collections.Generic;
+using Stateflows.Common;
 
-namespace Stateflows.Activities.Collections
+namespace Stateflows.Activities
 {
     internal static class InputTokensHolder
     {
@@ -16,11 +17,24 @@ namespace Stateflows.Activities.Collections
         private readonly IEnumerable<TToken> Tokens
             => InputTokensHolder.Tokens.Value.OfType<TToken>();
 
-        public IEnumerator<TToken> GetEnumerator()
+        public readonly IEnumerator<TToken> GetEnumerator()
             => Tokens.GetEnumerator();
 
-        IEnumerator IEnumerable.GetEnumerator()
+        readonly IEnumerator IEnumerable.GetEnumerator()
             => Tokens.GetEnumerator();
+
+        public readonly void PassAllOn()
+            => new Output<TToken>().AddRange(Tokens);
+    }
+
+    public struct SingleInput<TToken>
+        where TToken : Token, new()
+    {
+        public readonly TToken Token
+            => InputTokensHolder.Tokens.Value.OfType<TToken>().First();
+
+        public readonly void Pass()
+            => new Output<TToken>().Add(Token);
     }
 
     public struct OptionalInput<TToken> : IEnumerable<TToken>
@@ -29,10 +43,23 @@ namespace Stateflows.Activities.Collections
         private readonly IEnumerable<TToken> Tokens
             => InputTokensHolder.Tokens.Value.OfType<TToken>();
 
-        public IEnumerator<TToken> GetEnumerator()
+        public readonly IEnumerator<TToken> GetEnumerator()
             => Tokens.GetEnumerator();
 
-        IEnumerator IEnumerable.GetEnumerator()
+        readonly IEnumerator IEnumerable.GetEnumerator()
             => Tokens.GetEnumerator();
+
+        public readonly void PassAll()
+            => new Output<TToken>().AddRange(Tokens);
+    }
+
+    public struct OptionalSingleInput<TToken>
+        where TToken : Token, new()
+    {
+        public readonly TToken Token
+            => InputTokensHolder.Tokens.Value.OfType<TToken>().First();
+
+        public readonly void Pass()
+            => new Output<TToken>().Add(Token);
     }
 }

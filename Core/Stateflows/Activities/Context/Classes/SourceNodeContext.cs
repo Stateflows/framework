@@ -3,6 +3,7 @@ using System.Linq;
 using System.Collections.Generic;
 using Stateflows.Activities.Models;
 using Stateflows.Activities.Context.Interfaces;
+using Stateflows.Common;
 
 namespace Stateflows.Activities.Context.Classes
 {
@@ -11,7 +12,7 @@ namespace Stateflows.Activities.Context.Classes
         internal readonly Guid ThreadId;
 
         private IEnumerable<Token> input = null;
-        public IEnumerable<Token> InputTokens
+        public IEnumerable<Token> Input
 #pragma warning disable S2365 // Properties should not make collection or array copies
             => input ??= Context
                 .GetStreams(Node, ThreadId)

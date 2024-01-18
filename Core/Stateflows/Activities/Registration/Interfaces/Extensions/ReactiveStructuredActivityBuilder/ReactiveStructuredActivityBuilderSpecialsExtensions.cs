@@ -1,8 +1,8 @@
 ﻿using System.Threading.Tasks;
-using Stateflows.Activities.Registration.Builders;
-using Stateflows.Activities.Registration;
-using Stateflows.Activities.Registration.Interfaces;
 using Stateflows.Common;
+using Stateflows.Activities.Registration;
+using Stateflows.Activities.Registration.Builders;
+using Stateflows.Activities.Registration.Interfaces;
 
 namespace Stateflows.Activities
 {
@@ -15,7 +15,7 @@ namespace Stateflows.Activities
                     joinNodeName,
                     c =>
                     {
-                        c.PassAllTokens();
+                        c.PassAllOn();
                         return Task.CompletedTask;
                     },
                     b => buildAction(b)
@@ -28,7 +28,7 @@ namespace Stateflows.Activities
                     forkNodeName,
                     c =>
                     {
-                        c.PassAllTokens();
+                        c.PassAllOn();
                         return Task.CompletedTask;
                     },
                     b => buildAction(b)
@@ -41,7 +41,7 @@ namespace Stateflows.Activities
                     mergeNodeName,
                     c =>
                     {
-                        c.PassAllTokens();
+                        c.PassAllOn();
                         return Task.CompletedTask;
                     },
                     b => buildAction(b.SetOptions(NodeOptions.None) as IMergeBuilder)
@@ -54,13 +54,13 @@ namespace Stateflows.Activities
                     decisionNodeName,
                     c =>
                     {
-                        c.PassAllTokens();
+                        c.PassAllOn();
                         return Task.CompletedTask;
                     },
                     b => buildAction(b.SetOptions(NodeOptions.DecisionDefault) as IDecisionBuilder)
                 ) as IReactiveStructuredActivityBuilder;
 
-        public static IReactiveStructuredActivityBuilder AddObjectDecision<TToken>(this IReactiveStructuredActivityBuilder builder, string decisionNodeName, DecisionBuilderAction<TToken> buildAction)
+        public static IReactiveStructuredActivityBuilder AddTokenDecision<TToken>(this IReactiveStructuredActivityBuilder builder, string decisionNodeName, DecisionBuilderAction<TToken> buildAction)
             where TToken : Token, new()
             => (builder as BaseActivityBuilder)
                 .AddNode(
@@ -68,7 +68,7 @@ namespace Stateflows.Activities
                     decisionNodeName,
                     c =>
                     {
-                        c.PassAllTokens();
+                        c.PassAllOn();
                         return Task.CompletedTask;
                     },
                     b => buildAction(new DecisionBuilder<TToken>(b.SetOptions(NodeOptions.DecisionDefault) as NodeBuilder))
@@ -81,7 +81,7 @@ namespace Stateflows.Activities
                     dataStoreNodeName,
                     c =>
                     {
-                        c.PassAllTokens();
+                        c.PassAllOn();
                         return Task.CompletedTask;
                     },
                     b => buildAction(b.SetOptions(NodeOptions.DataStoreDefault) as IDataStoreBuilder)

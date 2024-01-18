@@ -230,7 +230,7 @@ namespace Stateflows.StateMachines.Engine
             where TEvent : Event, new()
         {
             var deferredEvents = GetDeferredEvents();
-            if (deferredEvents.Any() && deferredEvents.Contains(@event.EventName))
+            if (deferredEvents.Any() && deferredEvents.Contains(@event.Name))
             {
                 Context.DeferredEvents.Add(@event);
                 return true;
@@ -243,7 +243,7 @@ namespace Stateflows.StateMachines.Engine
             var deferredEvents = GetDeferredEvents();
             foreach (var @event in Context.DeferredEvents)
             {
-                if (!deferredEvents.Any() || !deferredEvents.Contains(@event.EventName))
+                if (!deferredEvents.Any() || !deferredEvents.Contains(@event.Name))
                 {
                     Context.DeferredEvents.Remove(@event);
                     Context.SetEvent(@event);
@@ -330,9 +330,9 @@ namespace Stateflows.StateMachines.Engine
             var result = false;
 
             if (
-                Graph.Initializers.TryGetValue(@event.EventName, out var initializer) ||
+                Graph.Initializers.TryGetValue(@event.Name, out var initializer) ||
                 (
-                    @event.EventName == EventInfo<InitializationRequest>.Name &&
+                    @event.Name == EventInfo<InitializationRequest>.Name &&
                     !Graph.Initializers.Any()
                 )
             )

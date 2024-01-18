@@ -20,33 +20,33 @@ namespace Stateflows.Activities.Context.Classes
 
         public TEvent @event = null;
         public TEvent Event
-            => @event ??= InputTokens.OfType<EventToken<TEvent>>().First(t => t.Event is TEvent).Event;
+            => @event ??= Input.OfType<EventToken<TEvent>>().First(t => t.Event is TEvent).Event;
 
         public INodeContext CurrentNode => ActionContext.CurrentNode;
 
-        public IEnumerable<Token> InputTokens => ActionContext.InputTokens;
+        public IEnumerable<Token> Input => ActionContext.InputTokens;
 
-        public void OutputToken<TToken>(TToken token)
+        public void Output<TToken>(TToken token)
             where TToken : Token, new()
-            => ActionContext.OutputToken<TToken>(token);
+            => ActionContext.Output<TToken>(token);
 
-        public void OutputTokensRange<TToken>(IEnumerable<TToken> tokens)
+        public void OutputRange<TToken>(IEnumerable<TToken> tokens)
             where TToken : Token, new()
-            => ActionContext.OutputTokensRange<TToken>(tokens);
+            => ActionContext.OutputRange<TToken>(tokens);
 
-        public void OutputTokensRangeAsGroup<TToken>(IEnumerable<TToken> tokens)
+        public void OutputRangeAsGroup<TToken>(IEnumerable<TToken> tokens)
             where TToken : Token, new()
-            => ActionContext.OutputTokensRangeAsGroup<TToken>(tokens);
+            => ActionContext.OutputRangeAsGroup<TToken>(tokens);
 
-        public void PassTokensOfType<TToken>()
+        public void PassTokensOfTypeOn<TToken>()
             where TToken : Token, new()
-            => ActionContext.PassTokensOfType<TToken>();
+            => ActionContext.PassTokensOfTypeOn<TToken>();
 
-        public void PassTokensOfTypeAsGroup<TToken>()
+        public void PassTokensOfTypeOnAsGroup<TToken>()
             where TToken : Token, new()
-            => ActionContext.PassTokensOfTypeAsGroup<TToken>();
+            => ActionContext.PassTokensOfTypeOnAsGroup<TToken>();
 
-        public void PassAllTokens()
-            => ActionContext.PassAllTokens();
+        public void PassAllOn()
+            => ActionContext.PassAllOn();
     }
 }

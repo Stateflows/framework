@@ -10,7 +10,6 @@ using Stateflows.Activities.Context.Classes;
 using Stateflows.Activities.Context.Interfaces;
 using Stateflows.Activities.Registration.Builders;
 using Stateflows.Activities.Registration.Interfaces;
-using Stateflows.Activities.Engine;
 
 namespace Stateflows.Activities.Registration
 {
@@ -106,11 +105,11 @@ namespace Stateflows.Activities.Registration
                     await actionAsync(c);
                     await observer.AfterNodeExecuteAsync(c as ActionContext);
 
-                    c.OutputToken(new ControlToken());
+                    c.Output(new ControlToken());
                 }
                 catch (Exception e)
                 {
-                    c.OutputTokensRange(await node.HandleExceptionAsync(e, c as BaseContext));
+                    c.OutputRange(await node.HandleExceptionAsync(e, c as BaseContext));
                 }
             }
             );
@@ -191,7 +190,7 @@ namespace Stateflows.Activities.Registration
                 nameof(NodeType.Input),
                 c =>
                 {
-                    c.PassAllTokens();
+                    c.PassAllOn();
                     return Task.CompletedTask;
                 },
                 b => buildAction(b)
@@ -203,7 +202,7 @@ namespace Stateflows.Activities.Registration
                 Output.Name,
                 c =>
                 {
-                    c.PassAllTokens();
+                    c.PassAllOn();
                     return Task.CompletedTask;
                 },
                 b => b.SetOptions(NodeOptions.None)
@@ -219,8 +218,8 @@ namespace Stateflows.Activities.Registration
                     var node = c.GetNode();
 
                     await executor.DoInitializeNodeAsync(node, c as ActionContext);
-                    (var output, var finalized) = await executor.DoExecuteStructuredNodeAsync(node, c.Activity.GetNodeScope(), c.InputTokens);
-                    c.OutputTokensRange(output);
+                    (var output, var finalized) = await executor.DoExecuteStructuredNodeAsync(node, c.Activity.GetNodeScope(), c.Input);
+                    c.OutputRange(output);
                     if (finalized)
                     {
                         await executor.DoFinalizeNodeAsync(node, c as ActionContext);
@@ -240,7 +239,7 @@ namespace Stateflows.Activities.Registration
                     var node = c.GetNode();
 
                     await executor.DoInitializeNodeAsync(node, c as ActionContext);
-                    c.OutputTokensRange(await executor.DoExecuteParallelNodeAsync<TToken>(c as ActionContext));
+                    c.OutputRange(await executor.DoExecuteParallelNodeAsync<TToken>(c as ActionContext));
                     await executor.DoFinalizeNodeAsync(node, c as ActionContext);
                 },
                 b => builderAction?.Invoke(new StructuredActivityBuilder(b.Node, this, Services))
@@ -257,7 +256,7 @@ namespace Stateflows.Activities.Registration
                     var node = c.GetNode();
 
                     await executor.DoInitializeNodeAsync(node, c as ActionContext);
-                    c.OutputTokensRange(await executor.DoExecuteIterativeNodeAsync<TToken>(c as ActionContext));
+                    c.OutputRange(await executor.DoExecuteIterativeNodeAsync<TToken>(c as ActionContext));
                     await executor.DoFinalizeNodeAsync(node, c as ActionContext);
                 },
                 b => builderAction?.Invoke(new StructuredActivityBuilder(b.Node, this, Services))

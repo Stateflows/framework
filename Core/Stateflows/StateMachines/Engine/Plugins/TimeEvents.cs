@@ -154,7 +154,7 @@ namespace Stateflows.StateMachines.Engine
 
         public Task BeforeTransitionGuardAsync(IGuardContext<Event> context)
         {
-            if (ConsumedInTransition == null && (context as IEdgeContext).Edge.Trigger == context.ExecutionTrigger.EventName)
+            if (ConsumedInTransition == null && (context as IEdgeContext).Edge.Trigger == context.ExecutionTrigger.Name)
             {
                 ConsumedInTransition = (context as IEdgeContext).Edge;
             }

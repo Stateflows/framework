@@ -3,6 +3,7 @@ using System.Text;
 using System.Collections.Generic;
 using Stateflows.Activities;
 using Stateflows.Activities.Inspection.Interfaces;
+using Stateflows.Common;
 
 namespace Stateflows.Extensions.PlantUml.Classes
 {
@@ -66,15 +67,15 @@ namespace Stateflows.Extensions.PlantUml.Classes
                 }
                 else
                 {
-                    var tokenName = transition.TokenName.Split('`').First().Split('.').Last();
+                    //var tokenName = transition.TokenName.Split('`').First().Split('.').Last();
 
-                    if (tokenName == "ValueToken" || tokenName == "ExceptionToken")
-                    {
-                        var typeName = transition.TokenName.Split('`').Last().Trim('1', '[', ']').Split(',').First().Split('.').Last();
-                        tokenName = $"{tokenName}<{typeName}>";
-                    }
+                    //if (tokenName == "ValueToken" || tokenName == "ExceptionToken")
+                    //{
+                    //    var typeName = transition.TokenName.Split('`').Last().Trim('1', '[', ']').Split(',').First().Split('.').Last();
+                    //    tokenName = $"{tokenName}<{typeName}>";
+                    //}
 
-                    builder.AppendLine($"{indent}{source} -->[{tokenName}] {target}");
+                    builder.AppendLine($"{indent}{source} -->[{transition.TokenName}] {target}");
                 }
             }
         }

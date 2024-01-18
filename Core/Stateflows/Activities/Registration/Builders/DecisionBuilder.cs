@@ -1,4 +1,5 @@
-﻿using Stateflows.Activities.Registration.Interfaces;
+﻿using Stateflows.Common;
+using Stateflows.Activities.Registration.Interfaces;
 
 namespace Stateflows.Activities.Registration.Builders
 {
@@ -9,10 +10,10 @@ namespace Stateflows.Activities.Registration.Builders
             : base(builder.Node, builder.ActivityBuilder, builder.Services)
         { }
 
-        public IDecisionBuilder<TToken> AddObjectFlow(string targetNodeName, ObjectFlowBuilderAction<TToken> buildAction = null)
-            => AddObjectFlow<TToken>(targetNodeName, buildAction) as IDecisionBuilder<TToken>;
+        public IDecisionBuilder<TToken> AddFlow(string targetNodeName, ObjectFlowBuilderAction<TToken> buildAction = null)
+            => AddTokenFlow<TToken>(targetNodeName, buildAction) as IDecisionBuilder<TToken>;
 
-        public IDecisionBuilder<TToken> AddElseObjectFlow(string targetNodeName, ElseObjectFlowBuilderAction<TToken> buildAction = null)
-            => AddElseObjectFlow<TToken>(targetNodeName, buildAction) as IDecisionBuilder<TToken>;
+        public IDecisionBuilder<TToken> AddElseFlow(string targetNodeName, ElseObjectFlowBuilderAction<TToken> buildAction = null)
+            => AddElseTokenFlow<TToken>(targetNodeName, buildAction) as IDecisionBuilder<TToken>;
     }
 }

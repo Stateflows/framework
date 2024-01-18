@@ -10,6 +10,16 @@
         TReturn AddElseControlFlow(string targetNodeName, ElseControlFlowBuilderAction buildAction = null);
     }
 
+    public interface IDecisionFlow<out TReturn>
+    {
+        TReturn AddFlow(string targetNodeName, ControlFlowBuilderAction buildAction = null);
+    }
+
+    public interface IElseDecisionFlow<out TReturn>
+    {
+        TReturn AddElseFlow(string targetNodeName, ElseControlFlowBuilderAction buildAction = null);
+    }
+
     public interface IControlFlow
     {
         void AddControlFlow(string targetNodeName, ControlFlowBuilderAction buildAction = null);

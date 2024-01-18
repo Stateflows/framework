@@ -4,6 +4,7 @@ using Stateflows.Activities.Models;
 using Stateflows.Activities.Context.Classes;
 using Stateflows.Activities.Context.Interfaces;
 using Stateflows.Activities.Registration.Interfaces;
+using Stateflows.Common;
 
 namespace Stateflows.Activities.Registration.Builders
 {

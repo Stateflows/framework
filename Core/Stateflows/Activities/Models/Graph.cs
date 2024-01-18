@@ -6,6 +6,7 @@ using Stateflows.Common.Models;
 using Stateflows.Activities.Exceptions;
 using Stateflows.Activities.Registration.Interfaces;
 using System.Xml.Linq;
+using Stateflows.Common;
 
 namespace Stateflows.Activities.Models
 {

@@ -1,4 +1,6 @@
-﻿namespace Stateflows.Activities.Registration.Interfaces.Base
+﻿using Stateflows.Common;
+
+namespace Stateflows.Activities.Registration.Interfaces.Base
 {
     public interface IActivity<out TReturn>
     {

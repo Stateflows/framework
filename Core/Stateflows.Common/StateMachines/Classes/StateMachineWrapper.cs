@@ -1,5 +1,4 @@
 ﻿using System.Threading.Tasks;
-using Stateflows.Common.Interfaces;
 using Stateflows.StateMachines;
 using Stateflows.StateMachines.Events;
 

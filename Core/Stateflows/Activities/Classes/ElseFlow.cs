@@ -1,4 +1,5 @@
 ﻿using System.Threading.Tasks;
+using Stateflows.Common;
 
 namespace Stateflows.Activities
 {
@@ -8,14 +9,14 @@ namespace Stateflows.Activities
             => Task.FromResult(true);
     }
 
-    public abstract class ElseObjectFlow<TToken> : BaseObjectFlow<TToken>
+    public abstract class ElseTokenFlow<TToken> : BaseTokenFlow<TToken>
         where TToken : Token, new()
     {
         public override sealed Task<bool> GuardAsync()
             => Task.FromResult(true);
     }
 
-    public abstract class ElseObjectTransformationFlow<TToken, TTransformedToken> : BaseObjectTransformationFlow<TToken, TTransformedToken>
+    public abstract class ElseObjectTransformationFlow<TToken, TTransformedToken> : BaseTokenTransformationFlow<TToken, TTransformedToken>
         where TToken : Token, new()
         where TTransformedToken : Token, new()
     {

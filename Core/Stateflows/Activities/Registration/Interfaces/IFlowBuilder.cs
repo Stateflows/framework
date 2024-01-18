@@ -1,4 +1,6 @@
-﻿namespace Stateflows.Activities.Registration.Interfaces
+﻿using Stateflows.Common;
+
+namespace Stateflows.Activities.Registration.Interfaces
 {
     public interface IObjectFlowBuilder<out TToken> :
         IFlowWeight<IObjectFlowBuilderWithWeight<TToken>>,

@@ -1,6 +1,7 @@
 ﻿using System;
 using Microsoft.Extensions.DependencyInjection;
 using Stateflows.Common.Extensions;
+using Stateflows.Common;
 
 namespace Stateflows.Activities.Extensions
 {
@@ -18,26 +19,26 @@ namespace Stateflows.Activities.Extensions
             => services?.AddServiceType<TAction>();
 
         public static IServiceCollection RegisterStructuredActivity<TStructuredActivity>(this IServiceCollection services)
-            where TStructuredActivity : StructuredActivity
+            where TStructuredActivity : StructuredActivityNode
             => services?.AddServiceType<TStructuredActivity>();
 
         public static IServiceCollection RegisterExceptionHandlerAction<TException, TExceptionHandler>(this IServiceCollection services)
             where TException : Exception
-            where TExceptionHandler : ExceptionHandler<TException>
+            where TExceptionHandler : ExceptionHandlerNode<TException>
             => services?.AddServiceType<TExceptionHandler>();
 
         public static IServiceCollection RegisterObjectFlow<TObjectFlow, TToken>(this IServiceCollection services)
-            where TObjectFlow : ObjectFlow<TToken>
+            where TObjectFlow : TokenFlow<TToken>
             where TToken : Token, new()
             => services?.AddServiceType<TObjectFlow>();
 
         public static IServiceCollection RegisterElseObjectFlow<TObjectFlow, TToken>(this IServiceCollection services)
-            where TObjectFlow : ElseObjectFlow<TToken>
+            where TObjectFlow : ElseTokenFlow<TToken>
             where TToken : Token, new()
             => services?.AddServiceType<TObjectFlow>();
 
         public static IServiceCollection RegisterObjectTransformationFlow<TObjectTransformationFlow, TToken, TTransformedToken>(this IServiceCollection services)
-            where TObjectTransformationFlow : ObjectTransformationFlow<TToken, TTransformedToken>
+            where TObjectTransformationFlow : TokenTransformationFlow<TToken, TTransformedToken>
             where TToken : Token, new()
             where TTransformedToken : Token, new()
             => services?.AddServiceType<TObjectTransformationFlow>();

@@ -1,6 +1,5 @@
 ﻿using System.Threading.Tasks;
 using System.Collections.Generic;
-using Stateflows.Common.Interfaces;
 using Stateflows.Common;
 
 namespace Stateflows.Activities.Interfaces
