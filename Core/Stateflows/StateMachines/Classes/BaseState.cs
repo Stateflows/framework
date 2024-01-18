@@ -1,6 +1,5 @@
 ﻿using System.Threading.Tasks;
 using Stateflows.StateMachines.Context.Interfaces;
-using Stateflows.StateMachines.Registration;
 
 namespace Stateflows.StateMachines
 {

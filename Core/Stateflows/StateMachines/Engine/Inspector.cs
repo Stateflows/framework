@@ -312,18 +312,18 @@ namespace Stateflows.StateMachines.Engine
             await Plugins.RunSafe(i => i.AfterProcessEventAsync(context), nameof(AfterProcessEventAsync), Logger);
         }
 
-        public async Task OnStateMachineInitializeExceptionAsync<TInitializationRequest>(StateMachineInitializationContext<TInitializationRequest> context, Exception exception)
+        public async Task OnStateMachineInitializationExceptionAsync<TInitializationRequest>(StateMachineInitializationContext<TInitializationRequest> context, Exception exception)
             where TInitializationRequest : InitializationRequest, new()
         {
-            var exceptionContext = new StateMachineInitializationContext(context.InitializationRequest, context.Context);
-            await ExceptionHandlers.RunSafe(h => h.OnStateMachineInitializeExceptionAsync(exceptionContext, exception), nameof(OnStateMachineInitializeExceptionAsync), Logger);
-            await Inspectors.RunSafe(i => i.OnStateMachineInitializeExceptionAsync(exceptionContext, exception), nameof(OnStateMachineInitializeExceptionAsync), Logger);
+            var exceptionContext = new StateMachineInitializationContext(context.Context, context.InitializationRequest);
+            await ExceptionHandlers.RunSafe(h => h.OnStateMachineInitializationExceptionAsync(exceptionContext, exception), nameof(OnStateMachineInitializationExceptionAsync), Logger);
+            await Inspectors.RunSafe(i => i.OnStateMachineInitializationExceptionAsync(exceptionContext, exception), nameof(OnStateMachineInitializationExceptionAsync), Logger);
         }
 
-        public async Task OnStateMachineFinalizeExceptionAsync(StateMachineActionContext context, Exception exception)
+        public async Task OnStateMachineFinalizationExceptionAsync(StateMachineActionContext context, Exception exception)
         {
-            await ExceptionHandlers.RunSafe(h => h.OnStateMachineFinalizeExceptionAsync(context, exception), nameof(OnStateMachineFinalizeExceptionAsync), Logger);
-            await Inspectors.RunSafe(i => i.OnStateMachineFinalizeExceptionAsync(context, exception), nameof(OnStateMachineFinalizeExceptionAsync), Logger);
+            await ExceptionHandlers.RunSafe(h => h.OnStateMachineFinalizationExceptionAsync(context, exception), nameof(OnStateMachineFinalizationExceptionAsync), Logger);
+            await Inspectors.RunSafe(i => i.OnStateMachineFinalizationExceptionAsync(context, exception), nameof(OnStateMachineFinalizationExceptionAsync), Logger);
         }
 
         public async Task OnTransitionGuardExceptionAsync<TEvent>(GuardContext<TEvent> context, Exception exception)
@@ -342,13 +342,13 @@ namespace Stateflows.StateMachines.Engine
 
         public async Task OnStateInitializeExceptionAsync(StateActionContext context, Exception exception)
         {
-            await ExceptionHandlers.RunSafe(h => h.OnStateInitializeExceptionAsync(context, exception), nameof(OnStateInitializeExceptionAsync), Logger);
+            await ExceptionHandlers.RunSafe(h => h.OnStateInitializationExceptionAsync(context, exception), nameof(OnStateInitializeExceptionAsync), Logger);
             await Inspectors.RunSafe(i => i.OnStateInitializeExceptionAsync(context, exception), nameof(OnStateInitializeExceptionAsync), Logger);
         }
 
         public async Task OnStateFinalizeExceptionAsync(StateActionContext context, Exception exception)
         {
-            await ExceptionHandlers.RunSafe(h => h.OnStateFinalizeExceptionAsync(context, exception), nameof(OnStateFinalizeExceptionAsync), Logger);
+            await ExceptionHandlers.RunSafe(h => h.OnStateFinalizationExceptionAsync(context, exception), nameof(OnStateFinalizeExceptionAsync), Logger);
             await Inspectors.RunSafe(i => i.OnStateFinalizeExceptionAsync(context, exception), nameof(OnStateFinalizeExceptionAsync), Logger);
         }
 

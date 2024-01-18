@@ -1,9 +1,8 @@
 ﻿using System.Linq;
 using System.Threading.Tasks;
-using Stateflows.StateMachines.Models;
+using Stateflows.Common.Models;
 using Stateflows.StateMachines.Interfaces;
 using Stateflows.StateMachines.Context.Classes;
-using Stateflows.Common.Models;
 
 namespace Stateflows.StateMachines
 {

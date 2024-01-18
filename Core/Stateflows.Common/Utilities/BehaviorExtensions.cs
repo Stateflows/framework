@@ -1,14 +1,9 @@
 ﻿using System.Threading.Tasks;
-using Stateflows.Common;
-using Stateflows.Common.Interfaces;
 
-namespace Stateflows
+namespace Stateflows.Common
 {
     public static class BehaviorExtensions
     {
-        public static Task<RequestResult<InitializationResponse>> InitializeAsync(this IBehavior behavior, InitializationRequest initializationRequest = null)
-            => behavior.RequestAsync(initializationRequest ?? new InitializationRequest());
-
         public static Task<RequestResult<ResetResponse>> ResetAsync(this IBehavior behavior)
             => behavior.RequestAsync(new ResetRequest());
 

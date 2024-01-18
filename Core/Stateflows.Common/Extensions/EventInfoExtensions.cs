@@ -13,7 +13,7 @@ namespace Stateflows.Common
             }
 
             var @event = @type.GetUninitializedInstance() as Event;
-            return @event.EventName;
+            return @event.Name;
         }
     }
 }

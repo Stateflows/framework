@@ -5,13 +5,13 @@ using Stateflows.Common;
 using Stateflows.Common.Models;
 using Stateflows.StateMachines.Models;
 using Stateflows.StateMachines.Interfaces;
+using Stateflows.StateMachines.Exceptions;
 using Stateflows.StateMachines.Extensions;
 using Stateflows.StateMachines.Context.Classes;
 using Stateflows.StateMachines.Context.Interfaces;
 using Stateflows.StateMachines.Registration.Interfaces;
 using Stateflows.StateMachines.Registration.Interfaces.Base;
 using Stateflows.StateMachines.Registration.Interfaces.Internal;
-using Stateflows.StateMachines.Exceptions;
 
 namespace Stateflows.StateMachines.Registration.Builders
 {
@@ -34,11 +34,11 @@ namespace Stateflows.StateMachines.Registration.Builders
             Result = new Graph(name, version);
         }
 
-        public IInitializedStateMachineBuilder AddInitializer(string initializerName, StateMachineActionAsync initializerAction)
+        public IInitializedStateMachineBuilder AddInitializer(string initializerName, StateMachinePredicateAsync initializerAction)
         {
             if (!Result.Initializers.TryGetValue(initializerName, out var initializer))
             {
-                initializer = new Logic<StateMachineActionAsync>()
+                initializer = new Logic<StateMachinePredicateAsync>()
                 {
                     Name = Constants.Initialize
                 };
@@ -51,27 +51,15 @@ namespace Stateflows.StateMachines.Registration.Builders
             return this;
         }
 
-        public IInitializedStateMachineBuilder AddOnInitialize(Func<IStateMachineInitializationContext, Task> actionAsync)
-        {
-            actionAsync.ThrowIfNull(nameof(actionAsync));
-
-            var initializerName = EventInfo<InitializationRequest>.Name;
-
-            return AddInitializer(initializerName, async c =>
+        public IInitializedStateMachineBuilder AddOnInitialize(Func<IStateMachineInitializationContext, Task<bool>> actionAsync)
+            => AddOnInitialize<InitializationRequest>(c =>
             {
-                var context = new StateMachineInitializationContext(c.Event as InitializationRequest, c);
-                try
-                {
-                    await actionAsync(context);
-                }
-                catch (Exception e)
-                {
-                    await c.Executor.Inspector.OnStateMachineInitializeExceptionAsync(context, e);
-                }
+                var ctx = (c as BaseContext).Context;
+                var context = new StateMachineInitializationContext(ctx, ctx.Event as InitializationRequest);
+                return actionAsync(context);
             });
-        }
 
-        public IInitializedStateMachineBuilder AddOnInitialize<TInitializationRequest>(Func<IStateMachineInitializationContext<TInitializationRequest>, Task> actionAsync)
+        public IInitializedStateMachineBuilder AddOnInitialize<TInitializationRequest>(Func<IStateMachineInitializationContext<TInitializationRequest>, Task<bool>> actionAsync)
             where TInitializationRequest : InitializationRequest, new()
         {
             actionAsync.ThrowIfNull(nameof(actionAsync));
@@ -80,15 +68,19 @@ namespace Stateflows.StateMachines.Registration.Builders
 
             return AddInitializer(initializerName, async c =>
             {
-                var context = new StateMachineInitializationContext<TInitializationRequest>(c.Event as TInitializationRequest, c);
+                var result = false;
+                var context = new StateMachineInitializationContext<TInitializationRequest>(c, c.Event as TInitializationRequest);
                 try
                 {
-                    await actionAsync(context);
+                    result = await actionAsync(context);
                 }
                 catch (Exception e)
                 {
-                    await c.Executor.Inspector.OnStateMachineInitializeExceptionAsync(context, e);
+                    await c.Executor.Inspector.OnStateMachineInitializationExceptionAsync(context, e);
+                    result = false;
                 }
+
+                return result;
             });
         }
 
@@ -105,7 +97,7 @@ namespace Stateflows.StateMachines.Registration.Builders
                 }
                 catch (Exception e)
                 {
-                    await c.Executor.Inspector.OnStateMachineFinalizeExceptionAsync(context, e);
+                    await c.Executor.Inspector.OnStateMachineFinalizationExceptionAsync(context, e);
                 }
             });
 
@@ -209,7 +201,6 @@ namespace Stateflows.StateMachines.Registration.Builders
 
             return this;
         }
-        #endregion
 
         IStateMachineBuilder IStateMachineUtils<IStateMachineBuilder>.AddInterceptor<TInterceptor>()
             => AddInterceptor<TInterceptor>() as IStateMachineBuilder;
@@ -220,10 +211,10 @@ namespace Stateflows.StateMachines.Registration.Builders
         IStateMachineBuilder IStateMachineUtils<IStateMachineBuilder>.AddExceptionHandler<TExceptionHandler>()
             => AddExceptionHandler<TExceptionHandler>() as IStateMachineBuilder;
 
-        IStateMachineBuilder IStateMachineEvents<IStateMachineBuilder>.AddOnInitialize(Func<IStateMachineInitializationContext, Task> actionAsync)
+        IStateMachineBuilder IStateMachineEvents<IStateMachineBuilder>.AddOnInitialize(Func<IStateMachineInitializationContext, Task<bool>> actionAsync)
             => AddOnInitialize(actionAsync) as IStateMachineBuilder;
 
-        IStateMachineBuilder IStateMachineEvents<IStateMachineBuilder>.AddOnInitialize<TInitializationRequest>(Func<IStateMachineInitializationContext<TInitializationRequest>, Task> actionAsync)
+        IStateMachineBuilder IStateMachineEvents<IStateMachineBuilder>.AddOnInitialize<TInitializationRequest>(Func<IStateMachineInitializationContext<TInitializationRequest>, Task<bool>> actionAsync)
             => AddOnInitialize<TInitializationRequest>(actionAsync) as IStateMachineBuilder;
 
         IStateMachineBuilder IStateMachineEvents<IStateMachineBuilder>.AddOnFinalize(Func<IStateMachineActionContext, Task> actionAsync)
@@ -238,10 +229,10 @@ namespace Stateflows.StateMachines.Registration.Builders
         IFinalizedStateMachineBuilder IStateMachineUtils<IFinalizedStateMachineBuilder>.AddExceptionHandler<TExceptionHandler>()
             => AddExceptionHandler<TExceptionHandler>() as IFinalizedStateMachineBuilder;
 
-        IFinalizedStateMachineBuilder IStateMachineEvents<IFinalizedStateMachineBuilder>.AddOnInitialize(Func<IStateMachineInitializationContext, Task> actionAsync)
+        IFinalizedStateMachineBuilder IStateMachineEvents<IFinalizedStateMachineBuilder>.AddOnInitialize(Func<IStateMachineInitializationContext, Task<bool>> actionAsync)
             => AddOnInitialize(actionAsync) as IFinalizedStateMachineBuilder;
 
-        IFinalizedStateMachineBuilder IStateMachineEvents<IFinalizedStateMachineBuilder>.AddOnInitialize<TInitializationRequest>(Func<IStateMachineInitializationContext<TInitializationRequest>, Task> actionAsync)
+        IFinalizedStateMachineBuilder IStateMachineEvents<IFinalizedStateMachineBuilder>.AddOnInitialize<TInitializationRequest>(Func<IStateMachineInitializationContext<TInitializationRequest>, Task<bool>> actionAsync)
             => AddOnInitialize(actionAsync) as IFinalizedStateMachineBuilder;
 
         IFinalizedStateMachineBuilder IStateMachineEvents<IFinalizedStateMachineBuilder>.AddOnFinalize(Func<IStateMachineActionContext, Task> actionAsync)
@@ -289,6 +280,7 @@ namespace Stateflows.StateMachines.Registration.Builders
 
         ITypedFinalizedStateMachineBuilder IStateMachineUtils<ITypedFinalizedStateMachineBuilder>.AddExceptionHandler<TExceptionHandler>()
             => AddExceptionHandler<TExceptionHandler>() as ITypedFinalizedStateMachineBuilder;
+        #endregion
     }
 }
 

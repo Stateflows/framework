@@ -40,7 +40,7 @@ namespace Stateflows.StateMachines.Models
         public Logic<StateMachineActionAsync> Exit => exit ??= new Logic<StateMachineActionAsync>() { Name = Constants.Exit };
 
         public Dictionary<string, Edge> Edges { get; set; } = new Dictionary<string, Edge>();
-        public IEnumerable<Edge> OrderedEdges => Edges.Values.OrderBy(edge => edge.IsElseTransition);
+        public IEnumerable<Edge> OrderedEdges => Edges.Values.OrderBy(edge => edge.IsElse);
         public string InitialVertexName { get; set; }
         public Vertex InitialVertex { get; set; }
         public Dictionary<string, Vertex> Vertices { get; set; } = new Dictionary<string, Vertex>();

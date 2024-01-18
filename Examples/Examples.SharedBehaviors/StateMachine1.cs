@@ -6,7 +6,7 @@ using System.Diagnostics;
 
 namespace Examples.SharedBehaviors
 {
-    [StateMachine(nameof(StateMachine1))]
+    [StateMachineBehavior(nameof(StateMachine1))]
     public class StateMachine1 : StateMachine
     {
         public override void Build(ITypedStateMachineBuilder builder)

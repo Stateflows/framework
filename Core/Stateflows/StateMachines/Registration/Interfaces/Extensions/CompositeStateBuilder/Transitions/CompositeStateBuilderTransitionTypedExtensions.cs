@@ -1,21 +1,19 @@
-﻿using System.Diagnostics;
-using Stateflows.Common;
+﻿using Stateflows.Common;
 using Stateflows.StateMachines.Extensions;
 using Stateflows.StateMachines.Registration.Interfaces;
 using Stateflows.StateMachines.Registration.Interfaces.Internal;
 
-namespace Stateflows.StateMachines
+namespace Stateflows.StateMachines.Typed
 {
     public static class CompositeStateBuilderTransitionTypedExtensions
     {
-        public static IInitializedCompositeStateBuilder AddTransition<TEvent, TTransition, TTargetState>(this IInitializedCompositeStateBuilder builder)
+        public static ICompositeStateBuilder AddTransition<TEvent, TTransition, TTargetState>(this ICompositeStateBuilder builder)
             where TEvent : Event, new()
             where TTransition : Transition<TEvent>
             where TTargetState : State
             => AddTransition<TEvent, TTransition>(builder, StateInfo<TTargetState>.Name);
 
-        [DebuggerHidden]
-        public static IInitializedCompositeStateBuilder AddTransition<TEvent, TTransition>(this IInitializedCompositeStateBuilder builder, string targetVertexName)
+        public static ICompositeStateBuilder AddTransition<TEvent, TTransition>(this ICompositeStateBuilder builder, string targetVertexName)
             where TEvent : Event, new()
             where TTransition : Transition<TEvent>
         {
@@ -27,7 +25,7 @@ namespace Stateflows.StateMachines
             );
         }
 
-        public static IInitializedCompositeStateBuilder AddTransition<TEvent, TTargetState>(this IInitializedCompositeStateBuilder builder, TransitionBuilderAction<TEvent> transitionBuildAction = null)
+        public static ICompositeStateBuilder AddTransition<TEvent, TTargetState>(this ICompositeStateBuilder builder, TransitionBuilderAction<TEvent> transitionBuildAction = null)
             where TEvent : Event, new()
             where TTargetState : State
             => builder.AddTransition(StateInfo<TTargetState>.Name, transitionBuildAction);

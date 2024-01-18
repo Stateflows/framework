@@ -1,11 +1,17 @@
-using Blazor.Server;
+﻿using System.Diagnostics;
 using Blazor.Server.Data;
 using Examples.Common;
-using Examples.Storage;
 using Stateflows;
 using Stateflows.Common;
+using Stateflows.Common.Data;
 using Stateflows.StateMachines;
-using System.Diagnostics;
+using Stateflows.StateMachines.Data;
+using Stateflows.StateMachines.Sync;
+using Stateflows.Activities;
+using Stateflows.Activities.Data;
+using Stateflows.Activities.Attributes;
+using Stateflows.Activities.Registration.Interfaces;
+using Stateflows.StateMachines.Attributes;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -18,12 +24,122 @@ builder.Services.AddSignalR();
 
 builder.Services.AddStateflows(b => b
     .AddPlantUml()
+
+    .AddActivities(b => b
+
+
+
+        .AddActivity("activity1", b => b
+            .AddOnInitialize(async c =>
+            {
+                Debug.WriteLine("initialize");
+                return true;
+            })
+
+
+            .AddInitial(b => b
+                .AddControlFlow("1")
+            )
+            .AddAction("1",
+                async c =>
+                {
+                    c.OutputRange((new[] { 1, 2, 3, 4, 5 }).ToTokens());
+                    c.OutputRange((new[] { "1", "2", "3" }).ToTokens());
+                },
+                b => b.AddDataFlow<int>("2")
+            )
+            .AddAction("2",
+                async c =>
+                {
+                    Debug.WriteLine("action 2");
+                }
+            )
+            .AddAcceptEventAction<SomeEvent>("event",
+                async c => { },
+                b => b
+                    .AddControlFlow("decision")
+            )
+            .AddTimeEventAction<EveryOneMinute>("time",
+                async c =>
+                {
+                    c.Output(Random.Shared.Next(1, 5));
+                    c.Output(Random.Shared.Next(1, 5));
+                    c.Output(Random.Shared.Next(1, 5));
+                    c.Output(Random.Shared.Next(1, 5));
+                    c.Output(Random.Shared.Next(1, 5));
+                    c.Output(Random.Shared.Next(1, 5));
+                    c.Output(Random.Shared.Next(1, 5));
+                    c.Output(Random.Shared.Next(1, 5));
+                    c.Output(Random.Shared.Next(1, 5));
+                    c.Output(Random.Shared.Next(1, 5));
+                },
+                b => b
+                    .AddDataFlow<int>("data")
+            )
+            .AddDataStore("data", b => b
+                .AddDataFlow<int>("decision")
+            )
+            .AddDataDecision<int>("decision", b => b
+                .AddFlow("3", b => b
+                    .AddGuard(async c => c.Token.Payload < 3)
+                    .AddTransformation(async c =>
+                    {
+                        Debug.WriteLine($"token going to 3: {c.Token.Payload}");
+                        return c.Token;
+                    })
+                )
+                .AddFlow("4", b => b
+                    .AddGuard(async c => c.Token.Payload < 6)
+                    .AddTransformation(async c =>
+                    {
+                        Debug.WriteLine($"token going to 4: {c.Token.Payload}");
+                        return c.Token;
+                    })
+                )
+                .AddElseFlow("5"
+                    , b => b.AddTransformation(async c =>
+                    {
+                        Debug.WriteLine($"token going to 5: {c.Token.Payload}");
+                        return c.Token;
+                    })
+                )
+            )
+            .AddAction("3",
+                async c =>
+                {
+                    Debug.WriteLine($"finish 3! {c.Input.OfType<Token<int>>().Count()}");
+                }
+            )
+            .AddAction("4",
+                async c =>
+                {
+                    Debug.WriteLine($"finish 4! {c.Input.OfType<Token<int>>().Count()}");
+                }
+            )
+            .AddAction("5",
+                async c =>
+                {
+                    Debug.WriteLine($"finish 5! {c.Input.OfType<Token<int>>().Count()}");
+                },
+                b => b.AddControlFlow(Final.Name)
+            )
+            .AddFinal()
+        )
+    )
+
     .AddStateMachines(b => b
         .AddStateMachine("stateMachine1", b => b
             .AddInitialState("state1", b => b
+                .AddTransition<TestNamespace.MyClass>("state3", b => b
+                    .AddEffect(c => Console.Write(c.Event.Payload.Prop))
+                )
                 .AddTransition<OtherEvent>("state2")
                 .AddInternalTransition<ExampleRequest>(b => b
-                    .AddEffect(c => c.Event.Respond(new ExampleResponse()))
+                    .AddEffect(c =>
+                    {
+                        c.Event.Respond(new ExampleResponse());
+                        c.StateMachine.Send(new TestNamespace.MyClass().ToEvent());
+                    })
                 )
             )
             .AddState("state2", b => b
@@ -72,3 +188,72 @@ app.MapBlazorHub();
 app.MapFallbackToPage("/_Host");
 
 app.Run();
+
+public class Action1 : Stateflows.Activities.ActionNode
+{
+    public readonly Input<Token<int>> Ints;
+    public readonly Input<Token<string>> Strings;
+    public readonly Output<Token<int>> IntsOut;
+
+    public override async Task ExecuteAsync()
+    {
+        await Task.Delay(1000);
+
+        Debug.WriteLine("ints count: " + Ints.Count().ToString() ?? "input not working");
+
+        IntsOut.AddRange(Ints);
+
+        await Task.Delay(1000);
+    }
+}
+
+public class Action2 : Stateflows.Activities.ActionNode
+{
+    public readonly OptionalInput<Token<string>> Strings;
+    public readonly Output<Token<string>> StringsOut;
+
+    public override async Task ExecuteAsync()
+    {
+        await Task.Delay(1000);
+
+        Debug.WriteLine("strings count: " + Strings.Count().ToString() ?? "input not working");
+
+        StringsOut.AddRange(Strings);
+    }
+}
+
+namespace TestNamespace
+{
+    public class MyClass
+    {
+        public string Prop { get; set; }
+    }
+
+    [ActivityBehavior]
+    public class Activity1 : Stateflows.Activities.Activity
+    {
+        public override void Build(ITypedActivityBuilder builder)
+        {
+            builder
+                .AddAction("", async c => { }, b => b
+                    .AddControlFlow("")
+                )
+                .AddAction("", async c => { })
+                ;
+        }
+    }
+
+    [StateMachineBehavior]
+    public class StateMachine1 : Stateflows.StateMachines.StateMachine
+    {
+        public override void Build(ITypedStateMachineBuilder builder)
+        {
+            builder
+                .AddInitialState("1", b => b
+                    .AddDefaultTransition("2")
+                )
+                .AddState("2")
+                ;
+        }
+    }
+}

@@ -9,7 +9,7 @@ namespace Stateflows.StateMachines.Context.Classes
         IStateMachineInitializationContext<TInitializationRequest>
         where TInitializationRequest : InitializationRequest, new()
     {
-        public StateMachineInitializationContext(TInitializationRequest initializationRequest, RootContext context) : base(context)
+        public StateMachineInitializationContext(RootContext context, TInitializationRequest initializationRequest) : base(context)
         {
             InitializationRequest = initializationRequest;
         }
@@ -21,10 +21,10 @@ namespace Stateflows.StateMachines.Context.Classes
 
     internal class StateMachineInitializationContext :
         StateMachineInitializationContext<InitializationRequest>,
-        IStateMachineInitializationContext,
         IStateMachineInitializationInspectionContext
     {
-        public StateMachineInitializationContext(InitializationRequest initializationRequest, RootContext context) : base(initializationRequest, context)
+        public StateMachineInitializationContext(RootContext context, InitializationRequest initializationRequest)
+            : base(context, initializationRequest)
         { }
 
         IStateMachineInspectionContext IStateMachineInitializationInspectionContext.StateMachine => StateMachine;

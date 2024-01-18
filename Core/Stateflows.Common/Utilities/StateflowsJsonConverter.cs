@@ -17,6 +17,11 @@ namespace Stateflows.Common.Utilities
             ReferenceLoopHandling = ReferenceLoopHandling.Ignore
         };
 
+        [DebuggerStepThrough]
+        public static T CloneObject<T>(T value)
+            where T : class
+            => DeserializeObject(SerializePolymorphicObject(value)) as T;
+
         /// <summary>
         /// Serializes the specified object to a JSON string.
         /// </summary>

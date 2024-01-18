@@ -7,10 +7,10 @@ namespace Stateflows.StateMachines
 {
     public static class StateMachineAction
     {
-        public static Func<IStateMachineInitializationContext, Task> ToAsync(this Action<IStateMachineInitializationContext> stateMachineAction)
+        public static Func<IStateMachineInitializationContext, Task<bool>> ToAsync(this Func<IStateMachineInitializationContext, bool> stateMachineAction)
             => c => Task.Run(() => stateMachineAction(c));
 
-        public static Func<IStateMachineInitializationContext<TInitializationRequest>, Task> ToAsync<TInitializationRequest>(this Action<IStateMachineInitializationContext<TInitializationRequest>> stateMachineAction)
+        public static Func<IStateMachineInitializationContext<TInitializationRequest>, Task<bool>> ToAsync<TInitializationRequest>(this Func<IStateMachineInitializationContext<TInitializationRequest>, bool> stateMachineAction)
             where TInitializationRequest : InitializationRequest, new()
             => c => Task.Run(() => stateMachineAction(c));
 

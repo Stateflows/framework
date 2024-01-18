@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <TargetFramework>netstandard2.1</TargetFramework>
-    <Version>0.5.2-alpha</Version>
+    <Version>0.6.0-alpha</Version>
     <Title>Stateflows framework testing utilities</Title>
     <Authors>Stateflows</Authors>
     <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
@@ -11,7 +11,7 @@
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <RepositoryUrl>https://github.com/Stateflows/framework</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
-    <PackageTags>Stateflows;state-machine;workflow</PackageTags>
+    <PackageTags>Stateflows;state-machine;activity;workflow</PackageTags>
     <PackageOutputPath>..\..\NuGet</PackageOutputPath>
     <PackageLicenseFile>LICENSE</PackageLicenseFile>
   </PropertyGroup>

@@ -1,6 +1,7 @@
-﻿@page "/"
+﻿@page "/state-machines"
 @inject IStateMachineLocator locator
-@inject ISystemBehavior system
+@inject IActivityLocator activityLocator
+@inject ISystem system
 
 <PageTitle>State Machines</PageTitle>
 
@@ -15,7 +16,9 @@
 <div>
     <button class="btn btn-primary" @onclick="Initialize">Locate and initialize</button>
     <button class="btn btn-primary" @onclick="GetStatus">Check status</button>
-    <button class="btn btn-primary" @onclick="SystemRequest">Check system</button>
+    @* <button class="btn btn-primary" @onclick="RunActivity">Run Activity</button> *@
+    @* <button class="btn btn-primary" @onclick="PushActivity">Push Activity</button> *@
+    @* <button class="btn btn-primary" @onclick="SystemRequest">Check system</button> *@
     <button class="btn btn-primary" @onclick="Reset">Reset</button>
 </div>
 
@@ -33,7 +36,7 @@
                         <span>Events expected in current state:</span>
                         @foreach (var eventName in expectedEvents)
                         {
-                            <button class="btn btn-primary" style="margin-top: 5px;" @onclick="() => SendEvent(eventName)">Send <strong>@eventName.Split('.').Last()</strong></button>
+                            <button class="btn btn-primary" style="margin-top: 5px;" @onclick="() => SendEvent(eventName)">Send <strong>@GetEventName(eventName)</strong></button>
                         }
                     }
                 </div>
@@ -92,6 +95,11 @@
         plantUmlUrl = (await stateMachine.GetPlantUmlAsync()).Response.GetUrl();
     }
 
+    private async Task RefreshAInfo(IActivity activity)
+    {
+        plantUmlUrl = (await activity.GetPlantUmlAsync()).Response.GetUrl();
+    }
+
     private async Task SystemRequest()
     {
         var classes = await system.GetAvailableBehaviorClassesAsync();
@@ -135,6 +143,31 @@
         }
     }
 
+    private async Task RunActivity()
+    {
+        if (activityLocator.TryLocateActivity(new ActivityId("activity1", stateMachineInstance), out var activity))
+        {
+            await activity.InitializeAsync();
+            await RefreshAInfo(activity);
+        }
+        else
+        {
+            message = "Unable to locate Activity";
+        }
+    }
+
+    private async Task PushActivity()
+    {
+        if (activityLocator.TryLocateActivity(new ActivityId("activity1", stateMachineInstance), out var activity))
+        {
+            await activity.SendAsync(new Examples.Common.SomeEvent());
+        }
+        else
+        {
+            message = "Unable to locate Activity";
+        }
+    }
+
     private async Task Reset()
     {
         if (locator.TryLocateStateMachine(GetCurrentId(), out var stateMachine))
@@ -149,6 +182,11 @@
             message = "Unable to locate State Machine";
         }
     }
+
+    private string GetEventName(string eventName)
+        => eventName.Contains('<')
+            ? $"{eventName.Split('<').First().Split('.').Last()}<{eventName.Split('<').Last()}"
+            : eventName.Split('.').Last();
 
     private async Task SendEvent(string eventName)
     {

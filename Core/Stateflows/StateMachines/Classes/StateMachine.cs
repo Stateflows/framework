@@ -10,8 +10,8 @@ namespace Stateflows.StateMachines
     {
         public IStateMachineActionContext Context { get; internal set; }
 
-        public virtual Task OnInitializeAsync()
-            => Task.CompletedTask;
+        public virtual Task<bool> OnInitializeAsync()
+            => Task.FromResult(true);
 
         public virtual Task OnFinalizeAsync()
             => Task.CompletedTask;
@@ -19,13 +19,25 @@ namespace Stateflows.StateMachines
         public abstract void Build(ITypedStateMachineBuilder builder);
     }
 
-    public abstract class StateMachine<TInitializationRequest> : StateMachine
+    public abstract class StateMachine<TInitializationRequest> : StateMachine, IInitializedBy<TInitializationRequest>
         where TInitializationRequest : InitializationRequest, new()
     {
-        public override sealed Task OnInitializeAsync()
-            => base.OnInitializeAsync();
+        public abstract Task<bool> OnInitializeAsync(TInitializationRequest initializationRequest);
+    }
 
-        public abstract Task OnInitializeAsync(TInitializationRequest initializationEvent);
+    public abstract class StateMachine<TInitializationRequest1, TInitializationRequest2> : StateMachine<TInitializationRequest1>, IInitializedBy<TInitializationRequest2>
+        where TInitializationRequest1 : InitializationRequest, new()
+        where TInitializationRequest2 : InitializationRequest, new()
+    {
+        public abstract Task<bool> OnInitializeAsync(TInitializationRequest2 initializationRequest);
+    }
+
+    public abstract class StateMachine<TInitializationRequest1, TInitializationRequest2, TInitializationRequest3> : StateMachine<TInitializationRequest1, TInitializationRequest2>, IInitializedBy<TInitializationRequest3>
+        where TInitializationRequest1 : InitializationRequest, new()
+        where TInitializationRequest2 : InitializationRequest, new()
+        where TInitializationRequest3 : InitializationRequest, new()
+    {
+        public abstract Task<bool> OnInitializeAsync(TInitializationRequest3 initializationRequest);
     }
 
     public static class StateMachineInfo<TStateMachine>
@@ -36,7 +48,7 @@ namespace Stateflows.StateMachines
             get
             {
                 var stateMachineType = typeof(TStateMachine);
-                var attribute = stateMachineType.GetCustomAttribute<StateMachineAttribute>();
+                var attribute = stateMachineType.GetCustomAttribute<StateMachineBehaviorAttribute>();
                 return attribute != null
                     ? attribute.Name
                     : stateMachineType.FullName;

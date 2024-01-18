@@ -154,7 +154,7 @@ namespace Stateflows.StateMachines.Engine
 
         public Task BeforeTransitionGuardAsync(IGuardContext<Event> context)
         {
-            if (ConsumedInTransition == null && (context as IEdgeContext).Edge.Trigger == context.ExecutionTrigger.EventName)
+            if (ConsumedInTransition == null && (context as IEdgeContext).Edge.Trigger == context.ExecutionTrigger.Name)
             {
                 ConsumedInTransition = (context as IEdgeContext).Edge;
             }
@@ -172,7 +172,7 @@ namespace Stateflows.StateMachines.Engine
         {
             var timeEvent = Activator.CreateInstance(edge.TriggerType) as TimeEvent;
             timeEvent.SetTriggerTime(DateTime.Now);
-            timeEvent.EdgeIdentifier = edge.Identifier;
+            timeEvent.ConsumerIdentifier = edge.Identifier;
             Context.Context.PendingTimeEvents.Add(timeEvent.Id, timeEvent);
             var timeEventIds = Context.GetStateValues(edge.Source.Name).TimeEventIds;
             timeEventIds.Add(edge.Identifier, timeEvent.Id);

@@ -4,17 +4,17 @@ using Stateflows.StateMachines.Context.Interfaces;
 using Stateflows.StateMachines.Registration.Builders;
 using Stateflows.StateMachines.Registration.Extensions;
 
-namespace Stateflows.StateMachines
+namespace Stateflows.StateMachines.Sync
 {
     public static class FinalizedStateMachineBuilderEventsSyncExtensions
     {
-        public static IFinalizedStateMachineBuilder AddOnInitialize(this IFinalizedStateMachineBuilder builder, Action<IStateMachineInitializationContext> stateMachineAction)
+        public static IFinalizedStateMachineBuilder AddOnInitialize(this IFinalizedStateMachineBuilder builder, Func<IStateMachineInitializationContext, bool> stateMachineAction)
             => builder.AddOnInitialize(stateMachineAction
                 .AddStateMachineInvocationContext((builder as StateMachineBuilder).Result)
                 .ToAsync()
             );
 
-        public static IFinalizedStateMachineBuilder AddOnInitialize<TInitializationRequest>(this IFinalizedStateMachineBuilder builder, Action<IStateMachineInitializationContext<TInitializationRequest>> stateMachineAction)
+        public static IFinalizedStateMachineBuilder AddOnInitialize<TInitializationRequest>(this IFinalizedStateMachineBuilder builder, Func<IStateMachineInitializationContext<TInitializationRequest>, bool> stateMachineAction)
             where TInitializationRequest : InitializationRequest, new()
             => builder.AddOnInitialize(stateMachineAction
                 .AddStateMachineInvocationContext((builder as StateMachineBuilder).Result)

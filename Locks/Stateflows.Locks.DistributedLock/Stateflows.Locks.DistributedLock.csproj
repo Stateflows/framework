@@ -4,14 +4,14 @@
     <TargetFramework>netstandard2.1</TargetFramework>
     <Nullable>enable</Nullable>
     <Title>DistributedLock locking for Stateflows framework</Title>
-    <Version>0.5.2-alpha</Version>
+    <Version>0.6.0-alpha</Version>
     <Authors>Stateflows</Authors>
     <PackageProjectUrl>https://www.stateflows.net</PackageProjectUrl>
     <PackageIcon>stateflows-logo-1024.png</PackageIcon>
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <RepositoryUrl>https://github.com/Stateflows/framework</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
-    <PackageTags>Stateflows;state-machine;workflow;DistributedLock;distributed-lock</PackageTags>
+    <PackageTags>Stateflows;state-machine;activity;workflow;DistributedLock;distributed-lock</PackageTags>
     <PackageLicenseFile>LICENSE</PackageLicenseFile>
     <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
     <PackageOutputPath>..\..\NuGet</PackageOutputPath>

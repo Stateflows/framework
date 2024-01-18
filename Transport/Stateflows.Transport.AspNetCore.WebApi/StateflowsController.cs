@@ -117,8 +117,14 @@ namespace Stateflows.Transport.AspNetCore.WebApi
             var classes = localOnly
                 ? _behaviorClassesProvider.LocalBehaviorClasses
                 : _behaviorClassesProvider.AllBehaviorClasses;
-            
+
             return Task.FromResult(Ok(classes) as IActionResult);
+        }
+
+        [HttpGet("xxx")]
+        public Task<IActionResult> GetXXX()
+        {
+            return Task.FromResult(Ok("yay!") as IActionResult);
         }
     }
 }

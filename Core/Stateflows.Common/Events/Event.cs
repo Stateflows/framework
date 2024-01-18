@@ -4,18 +4,19 @@ using Stateflows.Common.Extensions;
 
 namespace Stateflows.Common
 {
-    public class Event
+    public class Event : Token
+    {
+        public List<EventHeader> Headers { get; set; } = new List<EventHeader>();
+    }
+
+    public class Event<TPayload> : Event
     {
         public Event()
         {
-            Id = Guid.NewGuid();
+            Payload = default;
         }
 
-        public Guid Id { get; set; }
-
-        public virtual string EventName => GetType().FullName;
-
-        public List<EventHeader> Headers { get; set; } = new List<EventHeader>();
+        public TPayload Payload { get; set; }
     }
 
     public static class EventInfo<TEvent>
@@ -27,6 +28,6 @@ namespace Stateflows.Common
     public static class EventInfo
     {
         public static string GetName(Type @type)
-            => (@type.GetUninitializedInstance() as Event).EventName;
+            => (@type.GetUninitializedInstance() as Event).Name;
     }
 }

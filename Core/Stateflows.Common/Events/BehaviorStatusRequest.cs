@@ -2,6 +2,6 @@
 {
     public sealed class BehaviorStatusRequest : Request<BehaviorStatusResponse>
     {
-        public override string EventName => nameof(BehaviorStatusRequest);
+        public override string Name => nameof(BehaviorStatusRequest);
     }
 }

@@ -161,6 +161,8 @@ namespace Stateflows.StateMachines.Engine
                     await DoExitAsync(vertex);
                 }
 
+                await DoFinalizeStateMachineAsync();
+
                 Context.StatesStack.Clear();
             }
         }
@@ -228,7 +230,7 @@ namespace Stateflows.StateMachines.Engine
             where TEvent : Event, new()
         {
             var deferredEvents = GetDeferredEvents();
-            if (deferredEvents.Any() && deferredEvents.Contains(@event.EventName))
+            if (deferredEvents.Any() && deferredEvents.Contains(@event.Name))
             {
                 Context.DeferredEvents.Add(@event);
                 return true;
@@ -241,7 +243,7 @@ namespace Stateflows.StateMachines.Engine
             var deferredEvents = GetDeferredEvents();
             foreach (var @event in Context.DeferredEvents)
             {
-                if (!deferredEvents.Any() || !deferredEvents.Contains(@event.EventName))
+                if (!deferredEvents.Any() || !deferredEvents.Contains(@event.Name))
                 {
                     Context.DeferredEvents.Remove(@event);
                     Context.SetEvent(@event);
@@ -325,28 +327,34 @@ namespace Stateflows.StateMachines.Engine
 
         public async Task<bool> DoInitializeStateMachineAsync(InitializationRequest @event)
         {
+            var result = false;
+
             if (
-                Graph.Initializers.TryGetValue(@event.EventName, out var initializer) ||
+                Graph.Initializers.TryGetValue(@event.Name, out var initializer) ||
                 (
-                    @event.EventName == EventInfo<InitializationRequest>.Name &&
+                    @event.Name == EventInfo<InitializationRequest>.Name &&
                     !Graph.Initializers.Any()
                 )
             )
             {
-                var context = new StateMachineInitializationContext(@event, Context);
+                var context = new StateMachineInitializationContext(Context, @event);
                 await Inspector.BeforeStateMachineInitializeAsync(context);
 
-                if (initializer != null)
+                try
                 {
-                    await initializer.WhenAll(Context);
+                    result = (initializer == null) || await initializer.WhenAll(Context);
+                }
+                catch (Exception e)
+                {
+                    await Inspector.OnStateMachineInitializationExceptionAsync(context, e);
+
+                    result = false;
                 }
 
                 await Inspector.AfterStateMachineInitializeAsync(context);
-
-                return true;
             }
 
-            return false;
+            return result;
         }
 
         public async Task DoFinalizeStateMachineAsync()

@@ -3,6 +3,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Stateflows.Common;
 using Stateflows.Common.Extensions;
+using Stateflows.StateMachines.Sync;
 using Stateflows.StateMachines.Context.Classes;
 using Stateflows.StateMachines.Registration;
 using Stateflows.StateMachines.Registration.Builders;
@@ -20,7 +21,7 @@ namespace Stateflows.StateMachines.Extensions
                 builder.AddOnInitialize(c =>
                 {
                     var context = (c as BaseContext).Context;
-                    context.Executor.GetStateMachine(stateMachineType, context)?.OnInitializeAsync();
+                    return context.Executor.GetStateMachine(stateMachineType, context).OnInitializeAsync();
                 });
             }
 
@@ -38,13 +39,13 @@ namespace Stateflows.StateMachines.Extensions
             {
                 if (interfaceType.GetGenericTypeDefinition() == baseInterfaceType)
                 {
-                    var methodInfo = interfaceType.GetMethods().First(m => m.Name == "InitializeAsync");
+                    var methodInfo = interfaceType.GetMethods().First(m => m.Name == "OnInitializeAsync");
                     var requestType = interfaceType.GenericTypeArguments[0];
                     var requestName = Stateflows.Common.EventInfo.GetName(requestType);
                     (builder as StateMachineBuilder).AddInitializer(requestName, c =>
                     {
                         var stateMachine = c.Executor.GetStateMachine(stateMachineType, c);
-                        return methodInfo.Invoke(stateMachine, new object[] { c.Event }) as Task;
+                        return methodInfo.Invoke(stateMachine, new object[] { c.Event }) as Task<bool>;
                     });
                 }
             }

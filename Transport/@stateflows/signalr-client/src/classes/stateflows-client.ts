@@ -7,14 +7,15 @@ import { ISystem } from "../interfaces/system";
 import { BehaviorId } from "../ids/behavior.id";
 import { BehaviorClass } from "../ids/behavior.class";
 import { System } from "../behaviors/system";
-import { Behavior } from "../behaviors/behavior";
+import { IActivityLocator } from "../interfaces/activity.locator";
+import { ActivityLocator } from "../locators/activity.locator";
 
 export class StateflowsClient {
-    private _hub: Promise<HubConnection> | null = null;
+    #hub: Promise<HubConnection> | null = null;
 
     private get hub(): Promise<HubConnection> {
-        if (this._hub == null) {
-            this._hub = new Promise<HubConnection>((resolve, reject) => {
+        if (this.#hub == null) {
+            this.#hub = new Promise<HubConnection>((resolve, reject) => {
                 let hub = new HubConnectionBuilder()
                     .withUrl(this.url + "stateflows_v1")
                     .build();
@@ -23,7 +24,7 @@ export class StateflowsClient {
             });
         }
 
-        return this._hub;
+        return this.#hub;
     }
 
     constructor(private url: string) {
@@ -32,22 +33,28 @@ export class StateflowsClient {
         }
     }
 
-    private _behaviorLocator: IBehaviorLocator | null = null;
+    #behaviorLocator: IBehaviorLocator | null = null;
 
     public get behaviorLocator(): IBehaviorLocator {
-        return this._behaviorLocator ??= new BehaviorLocator(this.hub);
+        return this.#behaviorLocator ??= new BehaviorLocator(this.hub);
     }
 
-    public _stateMachineLocator: IStateMachineLocator | null = null;
+    #stateMachineLocator: IStateMachineLocator | null = null;
 
     public get stateMachineLocator(): IStateMachineLocator {
-        return this._stateMachineLocator ??= new StateMachineLocator(this.behaviorLocator);
+        return this.#stateMachineLocator ??= new StateMachineLocator(this.behaviorLocator);
     }
 
-    public _systemPromise: Promise<ISystem> | null = null;
+    #activityLocator: IActivityLocator | null = null;
+
+    public get activityLocator(): IActivityLocator {
+        return this.#activityLocator ??= new ActivityLocator(this.behaviorLocator);
+    }
+
+    #systemPromise: Promise<ISystem> | null = null;
 
     public get system(): Promise<ISystem> {
-        return this._systemPromise ??= new Promise<ISystem>((resolve, reject) => {
+        return this.#systemPromise ??= new Promise<ISystem>((resolve, reject) => {
             this.behaviorLocator.locateBehavior(new BehaviorId(new BehaviorClass("System", "Stateflows"), ""))
                 .then(behavior => resolve(new System(behavior)))
                 .catch(reason => reject(reason));

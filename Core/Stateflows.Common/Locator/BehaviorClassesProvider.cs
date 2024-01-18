@@ -10,7 +10,7 @@ namespace Stateflows.Common.Locator
         {
             LocalBehaviorClasses = behaviorProviders.Where(bp => bp.IsLocal).SelectMany(bp => bp.BehaviorClasses);
             RemoteBehaviorClasses = behaviorProviders.Where(bp => !bp.IsLocal).SelectMany(bp => bp.BehaviorClasses);
-            AllBehaviorClasses = behaviorProviders.SelectMany(bp => bp.BehaviorClasses);
+            AllBehaviorClasses = behaviorProviders.SelectMany(bp => bp.BehaviorClasses).Distinct();
         }
 
         public IEnumerable<BehaviorClass> LocalBehaviorClasses { get; set; }

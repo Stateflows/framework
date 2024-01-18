@@ -14,6 +14,6 @@ namespace Stateflows.Common
 
         public DateTime TriggerTime { get; set; }
 
-        public string EdgeIdentifier { get; set; }
+        public string ConsumerIdentifier { get; set; }
     }
 }

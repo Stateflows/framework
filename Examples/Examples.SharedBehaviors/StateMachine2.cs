@@ -4,7 +4,7 @@ using Stateflows.StateMachines.Attributes;
 
 namespace Examples.SharedBehaviors
 {
-    [StateMachine(nameof(StateMachine2))]
+    [StateMachineBehavior(nameof(StateMachine2))]
     public class StateMachine2 : StateMachine
     {
         public override void Build(ITypedStateMachineBuilder builder)

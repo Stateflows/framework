@@ -4,8 +4,8 @@
     <TargetFramework>net6.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
-    <PackageTags>Stateflows;state-machine;workflow;SignalR;signal-r</PackageTags>
-    <Version>0.5.2-alpha</Version>
+    <PackageTags>Stateflows;state-machine;activity;workflow;SignalR;signal-r</PackageTags>
+    <Version>0.6.0-alpha</Version>
     <Title>SignalR transport client for Stateflows framework</Title>
     <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
     <Authors>Stateflows</Authors>

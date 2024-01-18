@@ -55,8 +55,6 @@ namespace StateMachine.IntegrationTests.Tests
 
                 someStatus1 = (await sm.SendAsync(new SomeEvent())).Status;
 
-                var uml = await sm.GetPlantUmlAsync();
-
                 var currentState = (await sm.GetCurrentStateAsync()).Response;
 
                 currentState1 = currentState.StatesStack.First();
@@ -74,6 +72,7 @@ namespace StateMachine.IntegrationTests.Tests
                 .StateExit("stateA")
                 .StateEntry("stateB")
                 .StateExit("stateB")
+                .StateMachineFinalize()
                 .StateEntry("state2")
             );
             Assert.IsTrue(initialized);

@@ -14,17 +14,17 @@ namespace Stateflows.StateMachines.Models
 
     internal class Edge
     {
-        public Graph Graph { get; set; }
-        public string Trigger { get; set; }
-        public Type TriggerType { get; set; }
-        public TriggerType Type { get; set; }
-        public bool IsElseTransition { get; set; }
         public string Name
             => $"{SourceName}:{Trigger}:{TargetName}";
         public string Identifier
             => Target != null
                 ? $"{Source.Identifier}:{Trigger}:{Target.Identifier}"
                 : $"{Source.Identifier}:{Trigger}";
+        public Graph Graph { get; set; }
+        public string Trigger { get; set; }
+        public Type TriggerType { get; set; }
+        public TriggerType Type { get; set; }
+        public bool IsElse { get; set; }
 
         public Logic<StateMachinePredicateAsync> guards = null;
         public Logic<StateMachinePredicateAsync> Guards => guards ??= new Logic<StateMachinePredicateAsync>() { Name = Constants.Guard };

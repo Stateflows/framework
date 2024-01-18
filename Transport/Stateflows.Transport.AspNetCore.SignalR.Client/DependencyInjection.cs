@@ -18,5 +18,10 @@ namespace Stateflows
 
             return builder;
         }
+
+        public static IStateflowsClientBuilder AddSignalRTransport(this IStateflowsClientBuilder builder, Func<IServiceProvider, Task<string>> baseUriProviderAsync)
+        {
+            return builder.AddSignalRTransport(serviceProvider => baseUriProviderAsync(serviceProvider).GetAwaiter().GetResult());
+        }
     }
 }

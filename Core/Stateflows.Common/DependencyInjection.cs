@@ -1,17 +1,19 @@
 ﻿using System;
 using Microsoft.Extensions.DependencyInjection;
+using Stateflows.System;
+using Stateflows.Activities;
+using Stateflows.StateMachines;
 using Stateflows.Common;
 using Stateflows.Common.Engine;
 using Stateflows.Common.Locator;
 using Stateflows.Common.Interfaces;
 using Stateflows.Common.Extensions;
 using Stateflows.Common.Exceptions;
+using Stateflows.Common.System.Classes;
+using Stateflows.Common.Activities.Classes;
 using Stateflows.Common.StateMachines.Classes;
 using Stateflows.Common.Registration.Builders;
 using Stateflows.Common.Registration.Interfaces;
-using Stateflows.StateMachines;
-using Stateflows.System;
-using Stateflows.Common.System.Classes;
 
 namespace Stateflows
 {
@@ -31,6 +33,7 @@ namespace Stateflows
                 .AddTransient<ClientInterceptor>()
                 .AddTransient<IBehaviorLocator, BehaviorLocator>()
                 .AddTransient<IStateMachineLocator, StateMachineLocator>()
+                .AddTransient<IActivityLocator, ActivityLocator>()
                 .AddTransient<ISystem>((IServiceProvider provider) =>
                 {
                     if (provider.GetRequiredService<IBehaviorLocator>().TryLocateBehavior(SystemBehavior.Id, out var behavior))

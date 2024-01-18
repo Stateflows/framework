@@ -30,9 +30,9 @@ namespace Stateflows.StateMachines.Models
         public Dictionary<string, Vertex> AllVertices { get; set; } = new Dictionary<string, Vertex>();
         public List<Edge> AllEdges { get; set; } = new List<Edge>();
 
-        private Dictionary<string, Logic<StateMachineActionAsync>> initializers = null;
-        public Dictionary<string, Logic<StateMachineActionAsync>> Initializers
-            => initializers ??= new Dictionary<string, Logic<StateMachineActionAsync>>();
+        private Dictionary<string, Logic<StateMachinePredicateAsync>> initializers = null;
+        public Dictionary<string, Logic<StateMachinePredicateAsync>> Initializers
+            => initializers ??= new Dictionary<string, Logic<StateMachinePredicateAsync>>();
 
         private Logic<StateMachineActionAsync> finalize = null;
         public Logic<StateMachineActionAsync> Finalize
@@ -105,10 +105,10 @@ namespace Stateflows.StateMachines.Models
                     }
                 }
 
-                if (edge.IsElseTransition)
+                if (edge.IsElse)
                 {
                     var siblings = edge.Source.Edges.Values.Any(e =>
-                        !e.IsElseTransition &&
+                        !e.IsElse &&
                         e.Trigger == edge.Trigger &&
                         e.Type == edge.Type
                     );

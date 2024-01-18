@@ -1,6 +1,6 @@
 {
   "name": "@stateflows/signalr-client",
-  "version": "0.3.0",
+  "version": "0.6.0",
   "description": "SignalR-based client for Stateflows framework",
   "main": "dist/index.js",
   "module": "./dist/index.mjs",
@@ -26,6 +26,6 @@
   },
   "devDependencies": {
     "tsup": "^7.3.0",
-    "typescript": "^5.2.2"
+    "typescript": "^5.3.3"
   }
 }
