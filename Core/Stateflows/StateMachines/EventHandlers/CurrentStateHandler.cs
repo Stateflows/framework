@@ -19,7 +19,7 @@ namespace Stateflows.StateMachines.EventHandlers
             {
                 var executor = context.StateMachine.GetExecutor();
 
-                request.Respond(new CurrentStateResponse()
+                var response = new CurrentStateResponse()
                 {
                     StatesStack = executor.GetStateStack(),
                     ExpectedEvents = executor.GetExpectedEvents()
@@ -28,7 +28,9 @@ namespace Stateflows.StateMachines.EventHandlers
                         .Select(type => type.GetEventName())
                         .ToArray(),
                     BehaviorStatus = executor.BehaviorStatus
-                });
+                };
+
+                request.Respond(response);
 
                 return Task.FromResult(EventStatus.Consumed);
             }

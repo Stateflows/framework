@@ -9,7 +9,7 @@ using Stateflows.StateMachines.Context.Interfaces;
 
 namespace Stateflows.StateMachines.Engine
 {
-    internal class TimeEvents : IStateMachinePlugin
+    internal class TimeEvents : IStateMachinePlugin, IEqualityComparer<Edge>
     {
         private readonly List<Vertex> EnteredStates = new List<Vertex>();
 
@@ -68,15 +68,7 @@ namespace Stateflows.StateMachines.Engine
 
             if (context.Event is TimeEvent timeEvent)
             {
-                if (Context.Context.PendingTimeEvents.TryGetValue(timeEvent.Id, out var pendingEvent))
-                {
-                    result = true;
-                    ClearTimeEvent(pendingEvent.Id);
-                }
-                else
-                {
-                    result = false;
-                }
+                result = Context.Context.PendingTimeEvents.ContainsKey(timeEvent.Id);
             }
 
             return Task.FromResult(result);
@@ -97,8 +89,7 @@ namespace Stateflows.StateMachines.Engine
                 stateValues.TimeEventIds.Remove(ConsumedInTransition.Identifier);
             }
 
-            var currentStack = (context as BaseContext).Context.Executor
-                .GetVerticesStack();
+            var currentStack = (context as BaseContext).Context.Executor.VerticesStack;
 
             var enteredStack = currentStack
                 .Where(vertex => EnteredStates.Contains(vertex))
@@ -170,11 +161,16 @@ namespace Stateflows.StateMachines.Engine
 
         private void RegisterTimeEvent(Edge edge)
         {
+            var timeEventIds = Context.GetStateValues(edge.Source.Name).TimeEventIds;
+            if (timeEventIds.ContainsKey(edge.Identifier))
+            {
+                return;
+            }
+
             var timeEvent = Activator.CreateInstance(edge.TriggerType) as TimeEvent;
             timeEvent.SetTriggerTime(DateTime.Now);
-            timeEvent.ConsumerIdentifier = edge.Identifier;
+            timeEvent.ConsumerSignature = edge.Signature;
             Context.Context.PendingTimeEvents.Add(timeEvent.Id, timeEvent);
-            var timeEventIds = Context.GetStateValues(edge.Source.Name).TimeEventIds;
             timeEventIds.Add(edge.Identifier, timeEvent.Id);
         }
 
@@ -193,8 +189,12 @@ namespace Stateflows.StateMachines.Engine
                 var timeEventIds = Context.GetStateValues(currentVertex.Name).TimeEventIds;
 
                 var edges = currentVertex.Edges.Values
-                    .Where(edge => edge.TriggerType.IsSubclassOf(typeof(TimeEvent)))
-                    .Where(edge => !timeEventIds.ContainsKey(edge.Identifier))
+                    .Where(edge =>
+                        !edge.IsElse &&
+                        edge.TriggerType.IsSubclassOf(typeof(TimeEvent)) &&
+                        !timeEventIds.ContainsKey(edge.Identifier)
+                    )
+                    .Distinct(this)
                     .ToArray();
 
                 RegisterTimeEvents(edges);
@@ -211,5 +211,11 @@ namespace Stateflows.StateMachines.Engine
 
         private void ClearTimeEvent(Guid timeEventId)
             => Context.Context.PendingTimeEvents.Remove(timeEventId);
+
+        public bool Equals(Edge x, Edge y)
+            => x.Identifier == y.Identifier;
+
+        public int GetHashCode(Edge obj)
+            => obj.Identifier.GetHashCode();
     }
 }

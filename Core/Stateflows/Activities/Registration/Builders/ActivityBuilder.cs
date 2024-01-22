@@ -159,7 +159,7 @@ namespace Stateflows.Activities.Registration.Builders
             return this;
         }
 
-        public IActivityBuilder AddExceptionHandler(ExceptionHandlerFactory exceptionHandlerFactory)
+        public IActivityBuilder AddExceptionHandler(ActivityExceptionHandlerFactory exceptionHandlerFactory)
         {
             Result.ExceptionHandlerFactories.Add(exceptionHandlerFactory);
 
@@ -175,7 +175,7 @@ namespace Stateflows.Activities.Registration.Builders
             return this;
         }
 
-        public IActivityBuilder AddInterceptor(InterceptorFactory interceptorFactory)
+        public IActivityBuilder AddInterceptor(ActivityInterceptorFactory interceptorFactory)
         {
             Result.InterceptorFactories.Add(interceptorFactory);
 
@@ -191,7 +191,7 @@ namespace Stateflows.Activities.Registration.Builders
             return this;
         }
 
-        public IActivityBuilder AddObserver(ObserverFactory observerFactory)
+        public IActivityBuilder AddObserver(ActivityObserverFactory observerFactory)
         {
             Result.ObserverFactories.Add(observerFactory);
 

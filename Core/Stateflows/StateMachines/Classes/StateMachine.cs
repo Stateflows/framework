@@ -49,7 +49,7 @@ namespace Stateflows.StateMachines
             {
                 var stateMachineType = typeof(TStateMachine);
                 var attribute = stateMachineType.GetCustomAttribute<StateMachineBehaviorAttribute>();
-                return attribute != null
+                return attribute != null && attribute.Name != null
                     ? attribute.Name
                     : stateMachineType.FullName;
             }

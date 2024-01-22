@@ -54,35 +54,34 @@ namespace Stateflows.Common
             var result = EventStatus.Undelivered;
             try
             {
-
-            if (Processors.TryGetValue(id.Type, out var processor))
-            {
-                try
+                if (Processors.TryGetValue(id.Type, out var processor))
                 {
                     try
                     {
-                        Interceptor.BeforeExecute(@event);
-
-                        await using (await Lock.AquireLockAsync(id))
+                        try
                         {
-                            result = await processor.ProcessEventAsync(id, @event, serviceProvider);
-                            
-                            var response = @event.GetResponse();
-                            if (response != null)
+                            Interceptor.BeforeExecute(@event);
+
+                            await using (var lockHandle = await Lock.AquireLockAsync(id))
                             {
-                                response.SenderId = id;
+                                result = await processor.ProcessEventAsync(id, @event, serviceProvider);
+                            
+                                var response = @event.GetResponse();
+                                if (response != null)
+                                {
+                                    response.SenderId = id;
+                                }
                             }
                         }
+                        finally
+                        {
+                            Interceptor.AfterExecute(@event);
+                        }
                     }
-                    finally
+                    catch (Exception e)
                     {
-                        Interceptor.AfterExecute(@event);
+                        Logger.LogError(LogTemplates.ExceptionLogTemplate, typeof(StateflowsEngine).FullName, nameof(ProcessEventAsync), e.GetType().Name, e.Message);
                     }
-                }
-                catch (Exception e)
-                {
-                    Logger.LogError(LogTemplates.ExceptionLogTemplate, typeof(StateflowsEngine).FullName, nameof(ProcessEventAsync), e.GetType().Name, e.Message);
-                }
                 }
             }
             catch (Exception e)

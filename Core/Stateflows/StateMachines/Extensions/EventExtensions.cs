@@ -11,7 +11,7 @@ namespace Stateflows.StateMachines.Extensions
                 edge.Trigger == @event.Name &&
                 (
                     !(@event is TimeEvent timeEvent) || 
-                    timeEvent.ConsumerIdentifier == edge.Identifier
+                    timeEvent.ConsumerSignature == edge.Signature
                 );
         }
     }

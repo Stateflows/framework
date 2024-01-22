@@ -15,5 +15,14 @@ namespace Stateflows.Activities
             where TActivity : Activity;
         IActivitiesBuilder AddActivity<TActivity>(int version)
             where TActivity : Activity;
+        IActivitiesBuilder AddInterceptor<TInterceptor>()
+            where TInterceptor : class, IActivityInterceptor;
+        IActivitiesBuilder AddInterceptor(ActivityInterceptorFactory interceptorFactory);
+        IActivitiesBuilder AddExceptionHandler<TExceptionHandler>()
+            where TExceptionHandler : class, IActivityExceptionHandler;
+        IActivitiesBuilder AddExceptionHandler(ActivityExceptionHandlerFactory exceptionHandlerFactory);
+        IActivitiesBuilder AddObserver<TObserver>()
+            where TObserver : class, IActivityObserver;
+        IActivitiesBuilder AddObserver(ActivityObserverFactory observerFactory);
     }
 }

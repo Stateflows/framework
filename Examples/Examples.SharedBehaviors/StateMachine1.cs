@@ -1,8 +1,8 @@
 ﻿using Examples.SharedBehaviors.Events;
 using Stateflows.Common;
 using Stateflows.StateMachines;
+using Stateflows.StateMachines.Sync;
 using Stateflows.StateMachines.Attributes;
-using System.Diagnostics;
 
 namespace Examples.SharedBehaviors
 {

@@ -26,7 +26,7 @@ namespace Stateflows.Activities.Registration.Builders
                 if (typeof(Activity).IsAssignableFrom(@type))
                 {
                     var attribute = @type.GetCustomAttributes(typeof(ActivityBehaviorAttribute)).FirstOrDefault() as ActivityBehaviorAttribute;
-                    Register.AddActivity(attribute?.Name ?? @type.FullName, attribute.Version, @type);
+                    Register.AddActivity(attribute?.Name ?? @type.FullName, attribute?.Version ?? 1, @type);
                 }
             });
 
@@ -86,7 +86,7 @@ namespace Stateflows.Activities.Registration.Builders
         }
 
         [DebuggerHidden]
-        public IActivitiesBuilder AddInterceptor(InterceptorFactory interceptorFactory)
+        public IActivitiesBuilder AddInterceptor(ActivityInterceptorFactory interceptorFactory)
         {
             Register.AddGlobalInterceptor(interceptorFactory);
 
@@ -103,7 +103,7 @@ namespace Stateflows.Activities.Registration.Builders
         }
 
         [DebuggerHidden]
-        public IActivitiesBuilder AddExceptionHandler(ExceptionHandlerFactory exceptionHandlerFactory)
+        public IActivitiesBuilder AddExceptionHandler(ActivityExceptionHandlerFactory exceptionHandlerFactory)
         {
             Register.AddGlobalExceptionHandler(exceptionHandlerFactory);
 
@@ -120,7 +120,7 @@ namespace Stateflows.Activities.Registration.Builders
         }
 
         [DebuggerHidden]
-        public IActivitiesBuilder AddObserver(ObserverFactory observerFactory)
+        public IActivitiesBuilder AddObserver(ActivityObserverFactory observerFactory)
         {
             Register.AddGlobalObserver(observerFactory);
 

@@ -35,6 +35,12 @@ namespace Stateflows
         public static bool operator !=(BehaviorClass behaviorClass, ActivityClass stateMachineClass)
             => !behaviorClass.Equals(stateMachineClass.BehaviorClass);
 
+        public static implicit operator BehaviorClass(ActivityClass activityClass)
+            => activityClass.BehaviorClass;
+
+        public static implicit operator ActivityClass(BehaviorClass behaviorClass)
+            => new ActivityClass(behaviorClass.Name);
+
         public readonly override bool Equals(object obj)
             =>
                 obj is ActivityClass @class &&

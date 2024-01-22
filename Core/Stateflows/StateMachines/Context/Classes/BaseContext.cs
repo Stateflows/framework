@@ -1,10 +1,11 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using Stateflows.Common;
+using Stateflows.Common.Context;
 using Stateflows.Common.Interfaces;
 
 namespace Stateflows.StateMachines.Context.Classes
 {
-    internal class BaseContext
+    internal class BaseContext : IStateflowsContextProvider
     {
         public BaseContext(RootContext context)
         {
@@ -23,5 +24,7 @@ namespace Stateflows.StateMachines.Context.Classes
 
         public bool TryLocateBehavior(BehaviorId id, out IBehavior behavior)
             => BehaviorLocator.TryLocateBehavior(id, out behavior);
+
+        StateflowsContext IStateflowsContextProvider.Context => Context.Context;
     }
 }

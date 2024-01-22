@@ -3,6 +3,7 @@ using Examples.Common;
 using Stateflows;
 using Stateflows.Common;
 using Stateflows.StateMachines;
+using Stateflows.StateMachines.Sync;
 
 var builder = WebApplication.CreateBuilder(args);
 

@@ -1,6 +1,5 @@
 ﻿@page "/state-machines"
 @inject IStateMachineLocator locator
-@inject IActivityLocator activityLocator
 @inject ISystem system
 
 <PageTitle>State Machines</PageTitle>
@@ -16,9 +15,6 @@
 <div>
     <button class="btn btn-primary" @onclick="Initialize">Locate and initialize</button>
     <button class="btn btn-primary" @onclick="GetStatus">Check status</button>
-    @* <button class="btn btn-primary" @onclick="RunActivity">Run Activity</button> *@
-    @* <button class="btn btn-primary" @onclick="PushActivity">Push Activity</button> *@
-    @* <button class="btn btn-primary" @onclick="SystemRequest">Check system</button> *@
     <button class="btn btn-primary" @onclick="Reset">Reset</button>
 </div>
 
@@ -90,14 +86,17 @@
 
     private async Task RefreshSMInfo(IStateMachine stateMachine)
     {
-        expectedEvents = (await stateMachine.GetCurrentStateAsync()).Response.ExpectedEvents;
+        var result = await stateMachine.GetCurrentStateAsync();
+        expectedEvents = result.Response?.ExpectedEvents;
+        message = result.Response?.BehaviorStatus switch
+        {
+            BehaviorStatus.NotInitialized => "State Machine located, it's not initialized",
+            BehaviorStatus.Initialized => "State Machine located, it's initialized",
+            BehaviorStatus.Finalized => "State Machine located, it's finalized",
+            _ => ""
+        };
 
         plantUmlUrl = (await stateMachine.GetPlantUmlAsync()).Response.GetUrl();
-    }
-
-    private async Task RefreshAInfo(IActivity activity)
-    {
-        plantUmlUrl = (await activity.GetPlantUmlAsync()).Response.GetUrl();
     }
 
     private async Task SystemRequest()
@@ -110,11 +109,13 @@
     {
         if (locator.TryLocateStateMachine(GetCurrentId(), out var stateMachine))
         {
-            message = (await stateMachine.InitializeAsync()).Response?.InitializationSuccessful ?? false
+            var msg = (await stateMachine.InitializeAsync()).Response?.InitializationSuccessful ?? false
                 ? "State Machine located and initialized"
                 : "State Machine located, it's already initialized";
 
             await RefreshSMInfo(stateMachine);
+
+            message = msg;
         }
         else
         {
@@ -126,45 +127,11 @@
     {
         if (locator.TryLocateStateMachine(GetCurrentId(), out var stateMachine))
         {
-            var response = (await stateMachine.GetCurrentStateAsync())?.Response;
-            message = response?.BehaviorStatus switch
-            {
-                BehaviorStatus.NotInitialized => "State Machine located, it's not initialized",
-                BehaviorStatus.Initialized => "State Machine located, it's initialized",
-                BehaviorStatus.Finalized => "State Machine located, it's finalized",
-                _ => ""
-            };
-
             await RefreshSMInfo(stateMachine);
         }
         else
         {
             message = "Unable to locate State Machine";
-        }
-    }
-
-    private async Task RunActivity()
-    {
-        if (activityLocator.TryLocateActivity(new ActivityId("activity1", stateMachineInstance), out var activity))
-        {
-            await activity.InitializeAsync();
-            await RefreshAInfo(activity);
-        }
-        else
-        {
-            message = "Unable to locate Activity";
-        }
-    }
-
-    private async Task PushActivity()
-    {
-        if (activityLocator.TryLocateActivity(new ActivityId("activity1", stateMachineInstance), out var activity))
-        {
-            await activity.SendAsync(new Examples.Common.SomeEvent());
-        }
-        else
-        {
-            message = "Unable to locate Activity";
         }
     }
 

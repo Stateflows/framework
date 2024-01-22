@@ -57,57 +57,50 @@ namespace Stateflows.StateMachines.Engine
                 return result;
             }
 
-            using (var executor = new Executor(Register, graph, ServiceProvider))
+            using (var executor = new Executor(Register, graph, ServiceProvider, stateflowsContext, @event))
             {
-                var context = new RootContext(stateflowsContext);
+                await executor.HydrateAsync();
 
-                if (await executor.HydrateAsync(context))
+                executor.RebuildVerticesStack();
+
+                var eventContext = new EventContext<TEvent>(executor.Context);
+
+                if (await executor.Inspector.BeforeProcessEventAsync(eventContext))
                 {
-                    context.SetEvent(@event);
+                    result = await TryHandleEventAsync(eventContext);
 
-                    var eventContext = new EventContext<TEvent>(context);
-
-                    if (await executor.Inspector.BeforeProcessEventAsync(eventContext))
+                    if (result != EventStatus.Consumed)
                     {
-                        result = await TryHandleEventAsync(eventContext);
-
-                        if (result != EventStatus.Consumed)
-                        {
-                            result = await executor.ProcessAsync(@event);
-                        }
-
-                        await executor.Inspector.AfterProcessEventAsync(eventContext);
-                    }
-                    else
-                    {
-                        if (executor.Context.ForceConsumed)
-                        {
-                            result = EventStatus.Consumed;
-                        }
+                        result = await executor.ProcessAsync(@event);
                     }
 
-                    stateflowsContext.Status = executor.BehaviorStatus;
-
-                    stateflowsContext.LastExecutedAt = DateTime.Now;
-
-                    var statuses = new BehaviorStatus[] { BehaviorStatus.Initialized, BehaviorStatus.Finalized };
-
-                    if (statuses.Contains(stateflowsContext.Status))
-                    {
-                        stateflowsContext.Version = graph.Version;
-                    }
-                    else
-                    {
-                        if (stateflowsContext.Status == BehaviorStatus.NotInitialized)
-                        {
-                            stateflowsContext.Version = 0;
-                        }
-                    }
-
-                    await Storage.Dehydrate((await executor.DehydrateAsync()).Context);
-
-                    context.ClearEvent();
+                    await executor.Inspector.AfterProcessEventAsync(eventContext);
                 }
+                else
+                {
+                    if (executor.Context.ForceConsumed)
+                    {
+                        result = EventStatus.Consumed;
+                    }
+                }
+
+                stateflowsContext.Status = executor.BehaviorStatus;
+
+                stateflowsContext.LastExecutedAt = DateTime.Now;
+
+                stateflowsContext.Version = stateflowsContext.Status switch
+                {
+                    BehaviorStatus.NotInitialized => 0,
+                    BehaviorStatus.Initialized => graph.Version,
+                    BehaviorStatus.Finalized => graph.Version,
+                    _ => 0
+                };
+
+                await executor.DehydrateAsync();
+
+                await Storage.Dehydrate(executor.Context.Context);
+
+                executor.Context.ClearEvent();
             }
 
             return result;

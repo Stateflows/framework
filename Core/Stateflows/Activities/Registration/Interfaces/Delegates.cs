@@ -87,9 +87,9 @@ namespace Stateflows.Activities.Registration.Interfaces
 
     internal delegate void NodeValidationAction();
 
-    public delegate IActivityObserver ObserverFactory(IServiceProvider serviceProvider);
+    public delegate IActivityObserver ActivityObserverFactory(IServiceProvider serviceProvider);
 
-    public delegate IActivityInterceptor InterceptorFactory(IServiceProvider serviceProvider);
+    public delegate IActivityInterceptor ActivityInterceptorFactory(IServiceProvider serviceProvider);
 
-    public delegate IActivityExceptionHandler ExceptionHandlerFactory(IServiceProvider serviceProvider);
+    public delegate IActivityExceptionHandler ActivityExceptionHandlerFactory(IServiceProvider serviceProvider);
 }

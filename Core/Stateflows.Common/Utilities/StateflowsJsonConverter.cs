@@ -28,8 +28,9 @@ namespace Stateflows.Common.Utilities
         /// <param name="value">The object to serialize.</param>
         /// <returns>A JSON string representation of the object.</returns>
         [DebuggerStepThrough]
-        public static string SerializePolymorphicObject(object value)
+        public static string SerializePolymorphicObject(object value, Formatting formatting = Formatting.None)
         {
+            settings.Formatting = formatting;
             return JsonConvert.SerializeObject(value, null, polymorphicSettings);
         }
 
@@ -39,8 +40,9 @@ namespace Stateflows.Common.Utilities
         /// <param name="value">The object to serialize.</param>
         /// <returns>A JSON string representation of the object.</returns>
         [DebuggerStepThrough]
-        public static string SerializeObject(object value)
+        public static string SerializeObject(object value, Formatting formatting = Formatting.None)
         {
+            settings.Formatting = formatting;
             return JsonConvert.SerializeObject(value, null, settings);
         }
 

@@ -12,6 +12,7 @@ using Stateflows.Activities.Data;
 using Stateflows.Activities.Attributes;
 using Stateflows.Activities.Registration.Interfaces;
 using Stateflows.StateMachines.Attributes;
+using Stateflows.Tools.Tracer;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -55,7 +56,10 @@ builder.Services.AddStateflows(b => b
                 }
             )
             .AddAcceptEventAction<SomeEvent>("event",
-                async c => { },
+                async c =>
+                {
+                    Debug.WriteLine(c.Event.TheresSomethingHappeningHere);
+                },
                 b => b
                     .AddControlFlow("decision")
             )
@@ -127,13 +131,22 @@ builder.Services.AddStateflows(b => b
         )
     )
 
+    .AddTracer("W:\\traces")
+
     .AddStateMachines(b => b
         .AddStateMachine("stateMachine1", b => b
             .AddInitialState("state1", b => b
-                .AddTransition<TestNamespace.MyClass>("state3", b => b
-                    .AddEffect(c => Console.Write(c.Event.Payload.Prop))
+                .AddTransition<TestNamespace.MyClass>("state3", b => { }
+                //.AddEffect(c => Console.Write(c.Event.Payload.Prop))
                 )
                 .AddTransition<OtherEvent>("state2")
+                .AddTransition<EveryOneMinute>("state2", b => b
+                    .AddGuard(c => false)
+                )
+                //.AddElseTransition<EveryOneMinute>("state2")
+                .AddTransition<EveryFiveMinutes>("state2", b => b
+                    .AddEffect(c => throw new Exception("test"))
+                )
                 .AddInternalTransition<ExampleRequest>(b => b
                     .AddEffect(c =>
                     {
@@ -148,10 +161,10 @@ builder.Services.AddStateflows(b => b
             .AddState("state3", b => b
                 .AddTransition<OtherEvent>("state1", b => b
                     .AddGuard(c => Random.Shared.Next(1, 10) % 2 == 0)
-                    .AddEffect(c => Debug.WriteLine("Even, going to state1"))
+                    //.AddEffect(c => Debug.WriteLine("Even, going to state1"))
                 )
-                .AddElseTransition<OtherEvent>("state2", b => b
-                    .AddEffect(c => Debug.WriteLine("Odd, going to state2"))
+                .AddElseTransition<OtherEvent>("state2", b => { }
+                    //.AddEffect(c => Debug.WriteLine("Odd, going to state2"))
                 )
             )
         )

@@ -84,10 +84,13 @@ namespace Stateflows.Common.Scheduler
                     await Task.WhenAll(
                         contexts.Select(context =>
                         {
-                            var timeEvent = context.PendingTimeEvents.Values.FirstOrDefault(timeEvent => timeEvent.TriggerTime < DateTime.Now);
-                            return (timeEvent != null && Locator.TryLocateBehavior(context.Id, out var behavior))
-                                ? behavior.SendAsync(timeEvent)
-                                : Task.CompletedTask;
+                            if (Locator.TryLocateBehavior(context.Id, out var behavior))
+                            {
+                                var timeEvents = context.PendingTimeEvents.Values.Where(timeEvent => timeEvent.TriggerTime < DateTime.Now).ToArray();
+                                _ = Task.WhenAll(timeEvents.Select(timeEvent => behavior.SendAsync(timeEvent)));
+                            }
+
+                            return Task.CompletedTask;
                         })
                     );
                 }

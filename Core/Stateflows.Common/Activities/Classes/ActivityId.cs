@@ -1,4 +1,5 @@
 ﻿using Stateflows.Common.Exceptions;
+using Stateflows.StateMachines;
 using System;
 
 namespace Stateflows.Activities
@@ -39,6 +40,12 @@ namespace Stateflows.Activities
 
         public static bool operator !=(ActivityId id1, BehaviorId id2)
             => id1.BehaviorId != id2;
+
+        public static implicit operator BehaviorId(ActivityId activityId)
+            => activityId.BehaviorId;
+
+        public static implicit operator ActivityId(BehaviorId behaviorId)
+            => new ActivityId(behaviorId);
 
         public override bool Equals(object obj)
             =>

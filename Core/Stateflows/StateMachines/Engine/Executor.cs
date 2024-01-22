@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.DependencyInjection;
 using Stateflows.Common;
+using Stateflows.Common.Context;
 using Stateflows.StateMachines.Models;
 using Stateflows.StateMachines.Events;
 using Stateflows.StateMachines.Extensions;
@@ -19,50 +20,37 @@ namespace Stateflows.StateMachines.Engine
     {
         public readonly Graph Graph;
 
-        public readonly StateMachinesRegister Register;
+        public StateMachinesRegister Register { get; set; }
 
         public IServiceProvider ServiceProvider => Scope.ServiceProvider;
 
         private readonly IServiceScope Scope;
 
-        private readonly ILogger<Executor> Logger;
-
-        public Executor(StateMachinesRegister register, Graph graph, IServiceProvider serviceProvider)
+        public Executor(StateMachinesRegister register, Graph graph, IServiceProvider serviceProvider, StateflowsContext stateflowsContext, Event @event)
         {
             Register = register;
             Scope = serviceProvider.CreateScope();
             Graph = graph;
-            Logger = ServiceProvider.GetService<ILogger<Executor>>();
+            Context = new RootContext(stateflowsContext, this, @event);
+            var logger = ServiceProvider.GetService<ILogger<Executor>>();
+            Inspector = new Inspector(this, logger);
         }
 
-        public RootContext Context { get; private set; }
+        public void Dispose()
+        {
+            Scope.Dispose();
+        }
 
-        private Inspector inspector;
+        public readonly RootContext Context;
 
-        public Inspector Inspector
-            => inspector ??= new Inspector(this, Logger);
+        public readonly Inspector Inspector;
 
         public IEnumerable<string> GetDeferredEvents()
-        {
-            var stack = GetVerticesStack();
-            return stack.SelectMany(vertex => vertex.DeferredEvents);
-        }
+            => VerticesStack.SelectMany(vertex => vertex.DeferredEvents).ToArray();
 
-        private List<Vertex> verticesStack = null;
+        public IEnumerable<Vertex> VerticesStack { get; private set; } = null;
 
-        public List<Vertex> GetVerticesStack(bool forceRebuild = false)
-        {
-            if (verticesStack == null || forceRebuild)
-            {
-                Debug.Assert(Context != null, $"Context is not available. Is state machine '{Graph.Name}' hydrated?");
-
-                verticesStack = BuildVerticesStack();
-            }
-
-            return verticesStack;
-        }
-
-        private List<Vertex> BuildVerticesStack()
+        public void RebuildVerticesStack()
         {
             var result = new List<Vertex>();
             for (int i = 0; i < Context.StatesStack.Count; i++)
@@ -83,45 +71,25 @@ namespace Stateflows.StateMachines.Engine
                 }
             }
 
-            return result;
+            VerticesStack = result;
         }
 
         public IEnumerable<string> GetStateStack()
-            => GetVerticesStack().Select(vertex => vertex.Name).ToArray();
+            => VerticesStack.Select(vertex => vertex.Name).ToArray();
 
-        public async Task<bool> HydrateAsync(RootContext context)
-        {
-            Context = context;
-            Context.Executor = this;
+        public Task HydrateAsync()
+            => Inspector.AfterHydrateAsync(new StateMachineActionContext(Context));
 
-            await Inspector.AfterHydrateAsync(new StateMachineActionContext(Context));
+        public Task DehydrateAsync()
+            => Inspector.BeforeDehydrateAsync(new StateMachineActionContext(Context));
 
-            return true;
-        }
-
-        public async Task<RootContext> DehydrateAsync()
-        {
-            Debug.Assert(Context != null, $"Context is unavailable. Is state machine '{Graph.Name}' already dehydrated?");
-
-            await Inspector.BeforeDehydrateAsync(new StateMachineActionContext(Context));
-
-            var result = Context;
-            result.Executor = null;
-            Context = null;
-
-            return result;
-        }
-
-        public bool Initialized => Context.StatesStack.Count > 0;
+        public bool Initialized
+            => VerticesStack.Any();
 
         public bool Finalized
-        {
-            get
-            {
-                var stack = GetVerticesStack();
-                return stack.Count == 1 && stack.First().Type == VertexType.FinalState;
-            }
-        }
+            =>
+                VerticesStack.Count() == 1 &&
+                VerticesStack.First().Type == VertexType.FinalState;
 
         public BehaviorStatus BehaviorStatus =>
             (Initialized, Finalized) switch
@@ -154,9 +122,7 @@ namespace Stateflows.StateMachines.Engine
 
             if (Initialized)
             {
-                var currentStack = GetVerticesStack();
-
-                foreach (var vertex in currentStack)
+                foreach (var vertex in VerticesStack)
                 {
                     await DoExitAsync(vertex);
                 }
@@ -196,10 +162,13 @@ namespace Stateflows.StateMachines.Engine
 
         public IEnumerable<Type> GetExpectedEvents()
         {
-            var currentStack = GetVerticesStack();
+            var currentStack = VerticesStack.ToList();
             currentStack.Reverse();
 
-            return currentStack.SelectMany(vertex => vertex.Edges.Values).Select(edge => edge.TriggerType).Distinct();
+            return currentStack
+                .SelectMany(vertex => vertex.Edges.Values)
+                .Select(edge => edge.TriggerType)
+                .Distinct();
         }
 
         private List<Vertex> GetNestedVertices(Vertex vertex)
@@ -246,8 +215,13 @@ namespace Stateflows.StateMachines.Engine
                 if (!deferredEvents.Any() || !deferredEvents.Contains(@event.Name))
                 {
                     Context.DeferredEvents.Remove(@event);
+
                     Context.SetEvent(@event);
+
+                    RebuildVerticesStack();
+
                     await DoProcessAsync(@event);
+
                     Context.ClearEvent();
 
                     break;
@@ -260,7 +234,7 @@ namespace Stateflows.StateMachines.Engine
         {
             Debug.Assert(Context != null, $"Context is not available. Is state machine '{Graph.Name}' hydrated?");
 
-            var currentStack = GetVerticesStack(true);
+            var currentStack = VerticesStack.ToList();
             currentStack.Reverse();
 
             var deferred = true;
@@ -290,6 +264,8 @@ namespace Stateflows.StateMachines.Engine
 
             if (!deferred)
             {
+                RebuildVerticesStack();
+
                 await DispatchNextDeferredEvent();
             }
 
@@ -479,14 +455,11 @@ namespace Stateflows.StateMachines.Engine
         {
             Context.SetEvent(new Completion());
 
+            RebuildVerticesStack();
+
             await DoProcessAsync(Context.Event);
 
             Context.ClearEvent();
-        }
-
-        public void Dispose()
-        {
-            Scope.Dispose();
         }
 
         private readonly IDictionary<Type, StateMachine> StateMachines = new Dictionary<Type, StateMachine>();
