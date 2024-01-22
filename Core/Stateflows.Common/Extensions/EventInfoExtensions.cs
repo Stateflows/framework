@@ -1,5 +1,4 @@
-﻿using Stateflows.Common.Extensions;
-using System;
+﻿using System;
 
 namespace Stateflows.Common
 {
@@ -12,8 +11,7 @@ namespace Stateflows.Common
                 throw new ArgumentException("Given type is not subclass of Event class");
             }
 
-            var @event = @type.GetUninitializedInstance() as Event;
-            return @event.Name;
+            return @type.GetTokenName();
         }
     }
 }

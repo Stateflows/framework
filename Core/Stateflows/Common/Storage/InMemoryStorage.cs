@@ -2,26 +2,23 @@
 using System.Linq;
 using System.Threading.Tasks;
 using System.Collections.Generic;
-using Stateflows.Common.Classes;
 using Stateflows.Common.Context;
+using Stateflows.Common.Utilities;
 using Stateflows.Common.Interfaces;
 
 namespace Stateflows.Common.Storage
 {
     public class InMemoryStorage : IStateflowsStorage
     {
-        public Dictionary<string, StateflowsContext> Contexts { get; } = new Dictionary<string, StateflowsContext>();
-
-        public List<TimeToken> TimeTokens { get; } = new List<TimeToken>();
+        private readonly Dictionary<BehaviorId, string> Contexts = new Dictionary<BehaviorId, string>();
 
         public Task<StateflowsContext> Hydrate(BehaviorId id)
         {
             lock (Contexts)
             {
-                if (!Contexts.TryGetValue(id.ToString(), out var context))
-                {
-                    context = new StateflowsContext() { Id = id };
-                }
+                var context = Contexts.TryGetValue(id, out var contextStr)
+                    ? StateflowsJsonConverter.DeserializeObject<StateflowsContext>(contextStr)
+                    : new StateflowsContext() { Id = id };
 
                 return Task.FromResult(context);
             }
@@ -29,11 +26,9 @@ namespace Stateflows.Common.Storage
 
         public Task Dehydrate(StateflowsContext context)
         {
-            var hash = context.Id.ToString();
-
             lock (Contexts)
             {
-                Contexts[hash] = context;
+                Contexts[context.Id] = StateflowsJsonConverter.SerializePolymorphicObject(context);
             }
 
             return Task.CompletedTask;
@@ -45,7 +40,10 @@ namespace Stateflows.Common.Storage
 
             lock (Contexts)
             {
-                result = Contexts.Values.Where(c => behaviorClasses.Contains(c.Id.BehaviorClass)).ToArray();
+                result = Contexts.Keys
+                    .Where(key => behaviorClasses.Contains(key.BehaviorClass))
+                    .Select(key => StateflowsJsonConverter.DeserializeObject<StateflowsContext>(Contexts[key]))
+                    .ToArray();
             }
 
             return Task.FromResult(result);
@@ -56,27 +54,5 @@ namespace Stateflows.Common.Storage
                 context.TriggerTime != null &&
                 context.TriggerTime < DateTime.Now
             );
-
-        public Task AddTimeTokens(TimeToken[] timeTokens)
-        {
-            foreach (var timeToken in timeTokens)
-            {
-                timeToken.Id = new Random().Next(int.MaxValue).ToString();
-
-                TimeTokens.Add(timeToken);
-            }
-
-            return Task.CompletedTask;
-        }
-
-        public Task<IEnumerable<TimeToken>> GetTimeTokens(IEnumerable<BehaviorClass> behaviorClasses)
-            => Task.FromResult(TimeTokens.Where(t => behaviorClasses.Contains(t.TargetId.BehaviorClass)).AsEnumerable());
-
-        public Task ClearTimeTokens(BehaviorId behaviorId, IEnumerable<string> ids)
-        {
-            TimeTokens.RemoveAll(t => t.TargetId == behaviorId && ids.Contains(t.Id));
-
-            return Task.CompletedTask;
-        }
     }
 }

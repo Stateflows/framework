@@ -1,5 +1,4 @@
-﻿using System.Linq;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using Stateflows.Common;
 using Stateflows.Activities.Context.Interfaces;
 
@@ -18,9 +17,7 @@ namespace Stateflows.Activities.Context.Classes
             ActionContext = actionContext;
         }
 
-        public TEvent @event = null;
-        public TEvent Event
-            => @event ??= Input.OfType<EventToken<TEvent>>().First(t => t.Event is TEvent).Event;
+        public TEvent Event => Context.Event as TEvent;
 
         public INodeContext CurrentNode => ActionContext.CurrentNode;
 

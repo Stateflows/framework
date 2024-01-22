@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-using Newtonsoft.Json;
+using System.Linq;
 
 namespace Stateflows.Common.Context
 {
@@ -16,11 +16,18 @@ namespace Stateflows.Common.Context
 
         public DateTime? TriggerTime { get; set; }
 
-        [JsonProperty(ItemTypeNameHandling = TypeNameHandling.Auto)]
+        public bool ShouldSerializePendingTimeEvents()
+            => PendingTimeEvents.Any();
+
         public Dictionary<Guid, TimeEvent> PendingTimeEvents { get; set; } = new Dictionary<Guid, TimeEvent>();
 
-        [JsonProperty(ItemTypeNameHandling = TypeNameHandling.Auto)]
+        public bool ShouldSerializeValues()
+            => Values.Any();
+
         public Dictionary<string, object> Values { get; } = new Dictionary<string, object>();
+
+        public bool ShouldSerializeGlobalValues()
+            => GlobalValues.Any();
 
         public Dictionary<string, string> GlobalValues { get; } = new Dictionary<string, string>();
     }

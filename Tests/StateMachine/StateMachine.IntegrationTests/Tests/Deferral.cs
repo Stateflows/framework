@@ -94,8 +94,8 @@ namespace StateMachine.IntegrationTests.Tests
             }
 
             Assert.IsTrue(initialized);
-            Assert.AreEqual(EventStatus.Consumed, someStatus);
             Assert.AreEqual(EventStatus.Deferred, otherStatus);
+            Assert.AreEqual(EventStatus.Consumed, someStatus);
             Assert.AreEqual("state3", currentState);
         }
 
@@ -122,9 +122,9 @@ namespace StateMachine.IntegrationTests.Tests
             }
 
             Assert.IsTrue(initialized);
-            Assert.AreEqual(EventStatus.Consumed, someStatus);
             Assert.AreEqual(EventStatus.Deferred, otherStatus1);
             Assert.AreEqual(EventStatus.Deferred, otherStatus2);
+            Assert.AreEqual(EventStatus.Consumed, someStatus);
             Assert.AreEqual("state3", currentState);
         }
 

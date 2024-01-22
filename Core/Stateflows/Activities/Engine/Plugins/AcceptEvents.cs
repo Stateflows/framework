@@ -17,7 +17,7 @@ namespace Stateflows.Activities.Engine
         {
             var timeEvent = Activator.CreateInstance(node.EventType) as TimeEvent;
             timeEvent.SetTriggerTime(DateTime.Now);
-            timeEvent.ConsumerIdentifier = node.Identifier;
+            timeEvent.ConsumerSignature = node.Identifier;
             Context.Context.PendingTimeEvents.Add(timeEvent.Id, timeEvent);
             Context.NodeTimeEvents[node.Identifier] = timeEvent.Id;
         }
@@ -174,9 +174,16 @@ namespace Stateflows.Activities.Engine
 
         Task<bool> IActivityInterceptor.BeforeProcessEventAsync(IEventContext<Event> context)
         {
+            var result = true;
+
             Context = (context as BaseContext).Context;
 
-            return Task.FromResult(true);
+            if (context.Event is TimeEvent timeEvent)
+            {
+                result = Context.Context.PendingTimeEvents.ContainsKey(timeEvent.Id);
+            }
+
+            return Task.FromResult(result);
         }
     }
 }

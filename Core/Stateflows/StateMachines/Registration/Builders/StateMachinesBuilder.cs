@@ -65,7 +65,7 @@ namespace Stateflows.StateMachines.Registration.Builders
             return this;
         }
 
-        [DebuggerHidden]
+        //[DebuggerHidden]
         public IStateMachinesBuilder AddStateMachine<TStateMachine>(string stateMachineName = null, int version = 1)
             where TStateMachine : StateMachine
         {

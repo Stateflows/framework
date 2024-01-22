@@ -15,9 +15,7 @@ namespace Stateflows.StateMachines.EventHandlers
         {
             if (context.Event is ResetRequest request)
             {
-                var executor = context.StateMachine.GetExecutor();
-
-                executor.Reset();
+                context.StateMachine.GetExecutor().Reset();
 
                 request.Respond(new ResetResponse() { ResetSuccessful = true });
 

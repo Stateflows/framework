@@ -28,7 +28,7 @@ namespace Stateflows.Storage.EntityFrameworkCore.Stateflows
             try
             {
                 var contextEntity = await DbContext.Contexts_v1.FindOrCreate(context, true);
-                contextEntity.Data = StateflowsJsonConverter.SerializeObject(context);
+                contextEntity.Data = StateflowsJsonConverter.SerializePolymorphicObject(context);
                 contextEntity.TriggerTime = context.TriggerTime;
                 if (contextEntity.Id == 0)
                 {

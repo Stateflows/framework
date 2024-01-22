@@ -51,7 +51,7 @@ namespace Stateflows.StateMachines.Registration
             return result;
         }
 
-        [DebuggerHidden]
+        //[DebuggerHidden]
         public void AddStateMachine(string stateMachineName, int version, StateMachineBuilderAction buildAction)
         {
             var key = $"{stateMachineName}.{version}";
@@ -74,7 +74,7 @@ namespace Stateflows.StateMachines.Registration
             }
         }
 
-        [DebuggerHidden]
+        //[DebuggerHidden]
         public void AddStateMachine(string stateMachineName, int version, Type stateMachineType)
         {
             var key = $"{stateMachineName}.{version}";
@@ -103,7 +103,7 @@ namespace Stateflows.StateMachines.Registration
             }
         }
 
-        [DebuggerHidden]
+        //[DebuggerHidden]
         public void AddStateMachine<TStateMachine>(string stateMachineName, int version = 1)
             where TStateMachine : StateMachine
             => AddStateMachine(stateMachineName, version, typeof(TStateMachine));

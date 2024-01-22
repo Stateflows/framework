@@ -26,15 +26,8 @@ namespace Stateflows.Common.Lock
             }
 
             await @event.WaitOneAsync((int)(timeout?.TotalMilliseconds ?? -1));
-            @event.Reset();
 
-            return new LockHandle(id, new AsyncDisposableHandle(@event), () =>
-            {
-                lock (Events)
-                {
-                    Events.Remove(id);
-                }
-            });
+            return new LockHandle(id, new AsyncDisposableHandle(@event));
         }
     }
 }

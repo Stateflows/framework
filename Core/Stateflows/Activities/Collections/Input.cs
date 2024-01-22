@@ -33,7 +33,7 @@ namespace Stateflows.Activities
         public readonly TToken Token
             => InputTokensHolder.Tokens.Value.OfType<TToken>().First();
 
-        public readonly void Pass()
+        public readonly void PassOn()
             => new Output<TToken>().Add(Token);
     }
 
@@ -49,7 +49,7 @@ namespace Stateflows.Activities
         readonly IEnumerator IEnumerable.GetEnumerator()
             => Tokens.GetEnumerator();
 
-        public readonly void PassAll()
+        public readonly void PassAllOn()
             => new Output<TToken>().AddRange(Tokens);
     }
 
@@ -59,7 +59,7 @@ namespace Stateflows.Activities
         public readonly TToken Token
             => InputTokensHolder.Tokens.Value.OfType<TToken>().First();
 
-        public readonly void Pass()
+        public readonly void PassOn()
             => new Output<TToken>().Add(Token);
     }
 }

@@ -2,6 +2,8 @@
 using Stateflows.Activities.Engine;
 using Stateflows.Activities.Context.Interfaces;
 using Stateflows.Activities.Inspection.Interfaces;
+using Stateflows.Common.Interfaces;
+using Stateflows.Common.Context;
 
 namespace Stateflows.Activities.Context.Classes
 {

@@ -51,6 +51,12 @@ namespace Stateflows.StateMachines
         public static bool operator !=(BehaviorId behaviorId, StateMachineId stateMachineId)
             => behaviorId != stateMachineId.BehaviorId;
 
+        public static implicit operator BehaviorId(StateMachineId stateMachineId)
+            => stateMachineId.BehaviorId;
+
+        public static implicit operator StateMachineId(BehaviorId behaviorId)
+            => new StateMachineId(behaviorId);
+
         public readonly override bool Equals(object obj)
             =>
                 obj is StateMachineId id &&

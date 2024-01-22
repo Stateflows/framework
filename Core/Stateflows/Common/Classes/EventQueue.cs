@@ -6,7 +6,7 @@ using Stateflows.Common.Utilities;
 
 namespace Stateflows.Common.Classes
 {
-    internal class EventQueue<T> : LinkedList<T>
+    public class EventQueue<T> : LinkedList<T>
     {
         private readonly object LockObject = new object();
 

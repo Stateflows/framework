@@ -32,11 +32,11 @@ namespace Stateflows.Activities.Models
         public Dictionary<string, Logic<ActivityPredicateAsync>> Initializers
             => initializers ??= new Dictionary<string, Logic<ActivityPredicateAsync>>();
 
-        public List<ExceptionHandlerFactory> ExceptionHandlerFactories { get; set; } = new List<ExceptionHandlerFactory>();
+        public List<ActivityExceptionHandlerFactory> ExceptionHandlerFactories { get; set; } = new List<ActivityExceptionHandlerFactory>();
 
-        public List<InterceptorFactory> InterceptorFactories { get; set; } = new List<InterceptorFactory>();
+        public List<ActivityInterceptorFactory> InterceptorFactories { get; set; } = new List<ActivityInterceptorFactory>();
 
-        public List<ObserverFactory> ObserverFactories { get; set; } = new List<ObserverFactory>();
+        public List<ActivityObserverFactory> ObserverFactories { get; set; } = new List<ActivityObserverFactory>();
 
         [DebuggerHidden]
         public void Build()

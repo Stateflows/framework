@@ -7,12 +7,20 @@ namespace Stateflows.Activities.Models
         private string identifier = null;
         public override string Identifier
             => identifier ??= TokenType != TargetTokenType
-                ? $"{Source.Identifier}-{TokenType}|{TargetTokenType}->{Target.Identifier}"
-                : $"{Source.Identifier}-{TokenType}->{Target.Identifier}";
+                ? $"{Source.Identifier}-{TokenTypeDescriptor}|{TargetTokenTypeDescriptor}->{Target.Identifier}"
+                : $"{Source.Identifier}-{TargetTokenTypeDescriptor}->{Target.Identifier}";
 
         public Graph Graph { get; set; }
         public Type TokenType { get; set; }
+        private string TokenTypeDescriptor
+            => TokenType.GetTokenName();
+
         public Type TargetTokenType { get; set; }
+        private string targetTokenTypeDescriptor = null;
+        private string TargetTokenTypeDescriptor
+            => targetTokenTypeDescriptor ??= IsElse
+                ? $"{TargetTokenType.GetTokenName()}|else"
+                : TargetTokenType.GetTokenName();
 
         private Pipeline<TokenPipelineActionAsync> tokenPipeline = null;
         public Pipeline<TokenPipelineActionAsync> TokenPipeline

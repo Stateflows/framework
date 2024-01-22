@@ -1,5 +1,6 @@
 ﻿using Stateflows.Common;
 using Stateflows.StateMachines;
+using Stateflows.StateMachines.Sync;
 using Stateflows.StateMachines.Attributes;
 
 namespace Examples.SharedBehaviors

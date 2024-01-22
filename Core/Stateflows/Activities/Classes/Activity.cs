@@ -50,7 +50,7 @@ namespace Stateflows.Activities
             {
                 var stateMachineType = typeof(TActivity);
                 var attribute = stateMachineType.GetCustomAttribute<ActivityBehaviorAttribute>();
-                return attribute != null
+                return attribute != null && attribute.Name != null
                     ? attribute.Name
                     : stateMachineType.FullName;
             }

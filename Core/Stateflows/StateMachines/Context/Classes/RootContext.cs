@@ -4,7 +4,6 @@ using System.Collections.Generic;
 using Microsoft.Extensions.DependencyInjection;
 using Stateflows.Common;
 using Stateflows.Common.Context;
-using Stateflows.Common.Interfaces;
 using Stateflows.StateMachines.Engine;
 using Stateflows.StateMachines.Registration;
 
@@ -12,16 +11,18 @@ namespace Stateflows.StateMachines.Context.Classes
 {
     internal class RootContext
     {
-        public StateMachineId Id { get; }
+        public readonly StateMachineId Id;
 
-        internal StateflowsContext Context { get; set; }
+        internal readonly StateflowsContext Context;
 
-        internal Executor Executor { get; set; }
+        internal readonly Executor Executor;
 
-        public RootContext(StateflowsContext context)
+        public RootContext(StateflowsContext context, Executor executor, Event @event)
         {
             Context = context;
-            Id = new StateMachineId(Context.Id);
+            Id = Context.Id;
+            Executor = executor;
+            SetEvent(@event);
         }
 
         public Dictionary<string, string> GlobalValues => Context.GlobalValues;
@@ -139,7 +140,7 @@ namespace Stateflows.StateMachines.Context.Classes
             where TEvent : Event, new()
         {
             var locator = Executor.ServiceProvider.GetService<IBehaviorLocator>();
-            if (locator != null && locator.TryLocateBehavior(Id.BehaviorId, out var behavior))
+            if (locator != null && locator.TryLocateBehavior(Id, out var behavior))
             {
                 await behavior.SendAsync(@event);
             }

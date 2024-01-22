@@ -49,11 +49,11 @@ namespace Stateflows.Activities.Engine
 
         public IActivityInspection Inspection => inspection ??= new ActivityInspection(Executor);
 
-        private readonly List<ExceptionHandlerFactory> ExceptionHandlerFactories = new List<ExceptionHandlerFactory>();
+        private readonly List<ActivityExceptionHandlerFactory> ExceptionHandlerFactories = new List<ActivityExceptionHandlerFactory>();
 
-        private readonly List<InterceptorFactory> InterceptorFactories = new List<InterceptorFactory>();
+        private readonly List<ActivityInterceptorFactory> InterceptorFactories = new List<ActivityInterceptorFactory>();
 
-        private readonly List<ObserverFactory> ObserverFactories = new List<ObserverFactory>();
+        private readonly List<ActivityObserverFactory> ObserverFactories = new List<ActivityObserverFactory>();
 
         private IEnumerable<IActivityObserver> observers;
         private IEnumerable<IActivityObserver> Observers

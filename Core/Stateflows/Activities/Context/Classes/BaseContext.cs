@@ -3,10 +3,12 @@ using System.Threading;
 using Microsoft.Extensions.DependencyInjection;
 using Stateflows.Common;
 using Stateflows.Activities.Engine;
+using Stateflows.Common.Interfaces;
+using Stateflows.Common.Context;
 
 namespace Stateflows.Activities.Context.Classes
 {
-    internal class BaseContext
+    internal class BaseContext : IStateflowsContextProvider
     {
         public BaseContext(RootContext context, NodeScope nodeScope)
         {
@@ -36,6 +38,8 @@ namespace Stateflows.Activities.Context.Classes
         private IBehaviorLocator behaviorLocator;
         private IBehaviorLocator BehaviorLocator
             => behaviorLocator ??= NodeScope.ServiceProvider.GetService<IBehaviorLocator>();
+
+        StateflowsContext IStateflowsContextProvider.Context => Context.Context;
 
         public bool TryLocateBehavior(BehaviorId id, out IBehavior behavior)
             => BehaviorLocator.TryLocateBehavior(id, out behavior);

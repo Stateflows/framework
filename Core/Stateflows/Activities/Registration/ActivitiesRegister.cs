@@ -15,11 +15,11 @@ namespace Stateflows.Activities.Registration
     {
         private IServiceCollection Services { get; }
 
-        public List<ExceptionHandlerFactory> GlobalExceptionHandlerFactories { get; set; } = new List<ExceptionHandlerFactory>();
+        public List<ActivityExceptionHandlerFactory> GlobalExceptionHandlerFactories { get; set; } = new List<ActivityExceptionHandlerFactory>();
 
-        public List<InterceptorFactory> GlobalInterceptorFactories { get; set; } = new List<InterceptorFactory>();
+        public List<ActivityInterceptorFactory> GlobalInterceptorFactories { get; set; } = new List<ActivityInterceptorFactory>();
 
-        public List<ObserverFactory> GlobalObserverFactories { get; set; } = new List<ObserverFactory>();
+        public List<ActivityObserverFactory> GlobalObserverFactories { get; set; } = new List<ActivityObserverFactory>();
 
         public ActivitiesRegister(IServiceCollection services)
         {
@@ -109,7 +109,7 @@ namespace Stateflows.Activities.Registration
             => AddActivity(activityName, version, typeof(TActivity));
 
         #region Observability
-        public void AddGlobalInterceptor(InterceptorFactory interceptorFactory)
+        public void AddGlobalInterceptor(ActivityInterceptorFactory interceptorFactory)
             => GlobalInterceptorFactories.Add(interceptorFactory);
 
         public void AddGlobalInterceptor<TInterceptor>()
@@ -119,7 +119,7 @@ namespace Stateflows.Activities.Registration
             AddGlobalInterceptor(serviceProvider => serviceProvider.GetRequiredService<TInterceptor>());
         }
 
-        public void AddGlobalExceptionHandler(ExceptionHandlerFactory exceptionHandlerFactory)
+        public void AddGlobalExceptionHandler(ActivityExceptionHandlerFactory exceptionHandlerFactory)
             => GlobalExceptionHandlerFactories.Add(exceptionHandlerFactory);
 
         public void AddGlobalExceptionHandler<TExceptionHandler>()
@@ -129,7 +129,7 @@ namespace Stateflows.Activities.Registration
             AddGlobalExceptionHandler(serviceProvider => serviceProvider.GetRequiredService<TExceptionHandler>());
         }
 
-        public void AddGlobalObserver(ObserverFactory observerFactory)
+        public void AddGlobalObserver(ActivityObserverFactory observerFactory)
             => GlobalObserverFactories.Add(observerFactory);
 
         public void AddGlobalObserver<TObserver>()

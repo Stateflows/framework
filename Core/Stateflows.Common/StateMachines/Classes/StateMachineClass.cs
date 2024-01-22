@@ -1,5 +1,6 @@
 ﻿using Newtonsoft.Json;
 using Stateflows.Common.Utilities;
+using Stateflows.StateMachines;
 
 namespace Stateflows
 {
@@ -34,6 +35,12 @@ namespace Stateflows
 
         public static bool operator !=(BehaviorClass behaviorClass, StateMachineClass stateMachineClass)
             => !behaviorClass.Equals(stateMachineClass.BehaviorClass);
+
+        public static implicit operator BehaviorClass(StateMachineClass stateMachineClass)
+            => stateMachineClass.BehaviorClass;
+
+        public static implicit operator StateMachineClass(BehaviorClass behaviorClass)
+            => new StateMachineClass(behaviorClass.Name);
 
         public readonly override bool Equals(object obj)
             =>

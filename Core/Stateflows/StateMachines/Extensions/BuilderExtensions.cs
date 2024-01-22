@@ -5,7 +5,6 @@ using Stateflows.Common;
 using Stateflows.Common.Extensions;
 using Stateflows.StateMachines.Sync;
 using Stateflows.StateMachines.Context.Classes;
-using Stateflows.StateMachines.Registration;
 using Stateflows.StateMachines.Registration.Builders;
 using Stateflows.StateMachines.Registration.Interfaces;
 using Stateflows.StateMachines.Registration.Interfaces.Base;
@@ -16,7 +15,7 @@ namespace Stateflows.StateMachines.Extensions
     {
         public static void AddStateMachineEvents(this IInitializedStateMachineBuilder builder, Type stateMachineType)
         {
-            if (typeof(StateMachine).GetMethod(Constants.OnInitializeAsync).IsOverridenIn(stateMachineType))
+            if (typeof(StateMachine).GetMethod(nameof(StateMachine.OnInitializeAsync)).IsOverridenIn(stateMachineType))
             {
                 builder.AddOnInitialize(c =>
                 {
@@ -25,7 +24,7 @@ namespace Stateflows.StateMachines.Extensions
                 });
             }
 
-            if (typeof(StateMachine).GetMethod(Constants.OnFinalizeAsync).IsOverridenIn(stateMachineType))
+            if (typeof(StateMachine).GetMethod(nameof(StateMachine.OnFinalizeAsync)).IsOverridenIn(stateMachineType))
             {
                 builder.AddOnFinalize(c =>
                 {
@@ -54,12 +53,12 @@ namespace Stateflows.StateMachines.Extensions
         public static void AddStateEvents<TState, TReturn>(this IStateEvents<TReturn> builder)
             where TState : BaseState
         {
-            if (typeof(BaseState).GetMethod(Constants.OnEntryAsync).IsOverridenIn<TState>())
+            if (typeof(BaseState).GetMethod(nameof(BaseState.OnEntryAsync)).IsOverridenIn<TState>())
             {
                 builder.AddOnEntry(c => (c as BaseContext).Context.Executor.GetState<TState>(c)?.OnEntryAsync());
             }
 
-            if (typeof(BaseState).GetMethod(Constants.OnExitAsync).IsOverridenIn<TState>())
+            if (typeof(BaseState).GetMethod(nameof(BaseState.OnExitAsync)).IsOverridenIn<TState>())
             {
                 builder.AddOnExit(c => (c as BaseContext).Context.Executor.GetState<TState>(c)?.OnExitAsync());
             }
@@ -68,12 +67,12 @@ namespace Stateflows.StateMachines.Extensions
         public static void AddCompositeStateEvents<TCompositeState, TReturn>(this ICompositeStateEvents<TReturn> builder)
             where TCompositeState : CompositeState
         {
-            if (typeof(CompositeState).GetMethod(Constants.OnInitializeAsync).IsOverridenIn<TCompositeState>())
+            if (typeof(CompositeState).GetMethod(nameof(CompositeState.OnInitializeAsync)).IsOverridenIn<TCompositeState>())
             {
                 builder.AddOnInitialize(c => (c as BaseContext).Context.Executor.GetState<TCompositeState>(c)?.OnInitializeAsync());
             }
 
-            if (typeof(CompositeState).GetMethod(Constants.OnFinalizeAsync).IsOverridenIn<TCompositeState>())
+            if (typeof(CompositeState).GetMethod(nameof(CompositeState.OnFinalizeAsync)).IsOverridenIn<TCompositeState>())
             {
                 builder.AddOnFinalize(c => (c as BaseContext).Context.Executor.GetState<TCompositeState>(c)?.OnFinalizeAsync());
             }
@@ -83,7 +82,7 @@ namespace Stateflows.StateMachines.Extensions
             where TElseTransition : ElseTransition<TEvent>
             where TEvent : Event, new()
         {
-            if (typeof(Transition<TEvent>).GetMethod(Constants.EffectAsync).IsOverridenIn<TElseTransition>())
+            if (typeof(BaseTransition<TEvent>).GetMethod(nameof(BaseTransition<TEvent>.EffectAsync)).IsOverridenIn<TElseTransition>())
             {
                 builder.AddEffect(c => (c as BaseContext).Context.Executor.GetElseTransition<TElseTransition, TEvent>(c)?.EffectAsync());
             }
@@ -93,12 +92,12 @@ namespace Stateflows.StateMachines.Extensions
             where TTransition : Transition<TEvent>
             where TEvent : Event, new()
         {
-            if (typeof(Transition<TEvent>).GetMethod(Constants.GuardAsync).IsOverridenIn<TTransition>())
+            if (typeof(BaseTransition<TEvent>).GetMethod(nameof(BaseTransition<TEvent>.GuardAsync)).IsOverridenIn<TTransition>())
             {
                 builder.AddGuard(c => (c as BaseContext).Context.Executor.GetTransition<TTransition, TEvent>(c)?.GuardAsync());
             }
 
-            if (typeof(Transition<TEvent>).GetMethod(Constants.EffectAsync).IsOverridenIn<TTransition>())
+            if (typeof(BaseTransition<TEvent>).GetMethod(nameof(BaseTransition<TEvent>.EffectAsync)).IsOverridenIn<TTransition>())
             {
                 builder.AddEffect(c => (c as BaseContext).Context.Executor.GetTransition<TTransition, TEvent>(c)?.EffectAsync());
             }
