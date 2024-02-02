@@ -6,7 +6,7 @@ namespace Stateflows.Activities.Typed
 {
     public static class JoinBuilderFlowsTypedExtensions
     {
-        public static void AddTokenFlow<TToken, TTargetNode>(this IJoinBuilder builder, ObjectFlowBuilderAction<TToken> buildAction = null)
+        public static void AddTokenFlow<TToken, TTargetNode>(this IJoinBuilder builder, ObjectFlowBuildAction<TToken> buildAction = null)
             where TToken : Token, new()
             where TTargetNode : ActivityNode
             => builder.AddTokenFlow<TToken>(ActivityNodeInfo<TTargetNode>.Name, buildAction);

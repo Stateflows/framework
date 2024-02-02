@@ -14,10 +14,7 @@ namespace Stateflows
 
         public BehaviorClass ApplyCurrentEnvironment()
         {
-            if (Environment == null)
-            {
-                Environment = BehaviorClassDefaults.CurrentEnvironment;
-            }
+            Environment ??= BehaviorClassDefaults.CurrentEnvironment;
 
             return this;
         }
@@ -46,5 +43,8 @@ namespace Stateflows
 
         public readonly override string ToString()
             => StateflowsJsonConverter.SerializeObject(this);
+
+        public readonly BehaviorId ToId(string instance)
+            => new BehaviorId(this, instance);
     }
 }

@@ -17,7 +17,7 @@ namespace Examples.Storage.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "7.0.14")
+                .HasAnnotation("ProductVersion", "7.0.15")
                 .HasAnnotation("Relational:MaxIdentifierLength", 128);
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
@@ -57,6 +57,33 @@ namespace Examples.Storage.Migrations
                     b.HasIndex("TriggerTime");
 
                     b.ToTable("StateflowsContexts_v1");
+                });
+
+            modelBuilder.Entity("Stateflows.Storage.EntityFrameworkCore.EntityFrameworkCore.Entities.Trace_v1", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("BehaviorId")
+                        .IsRequired()
+                        .HasMaxLength(1024)
+                        .HasColumnType("nvarchar(1024)");
+
+                    b.Property<string>("Data")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime?>("ExecutionTime")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("BehaviorId");
+
+                    b.ToTable("StateflowsTraces_v1");
                 });
 #pragma warning restore 612, 618
         }

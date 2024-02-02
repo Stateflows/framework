@@ -4,6 +4,6 @@ namespace Stateflows.Activities.Events
 {
     public sealed class CancelResponse : Response
     {
-        public bool Cancelled { get; set; }
+        public bool CancelSuccessful { get; set; }
     }
 }

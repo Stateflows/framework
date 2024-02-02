@@ -14,7 +14,7 @@ namespace Stateflows.StateMachines.Typed
             where TTransition : Transition<Completion>
             => builder.AddTransition<Completion, TTransition>(targetVertexName);
 
-        public static ITypedStateBuilder AddDefaultTransition<TTargetState>(this ITypedStateBuilder builder, TransitionBuilderAction<Completion> transitionBuildAction = null)
+        public static ITypedStateBuilder AddDefaultTransition<TTargetState>(this ITypedStateBuilder builder, TransitionBuildAction<Completion> transitionBuildAction = null)
             where TTargetState : BaseState
             => builder.AddDefaultTransition(StateInfo<TTargetState>.Name, transitionBuildAction);
     }

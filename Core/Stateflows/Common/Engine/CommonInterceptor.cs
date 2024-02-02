@@ -6,22 +6,26 @@ using Microsoft.Extensions.Logging;
 
 namespace Stateflows.Common.Engine
 {
-    internal class CommonInterceptor : IBehaviorInterceptor, IStateflowsExecutionInterceptor
+    internal class CommonInterceptor : IBehaviorInterceptor, IStateflowsExecutionInterceptor, IStateflowsTenantInterceptor
     {
         private readonly IEnumerable<IBehaviorInterceptor> Interceptors;
 
         private readonly IEnumerable<IStateflowsExecutionInterceptor> ExecutionInterceptors;
+
+        private readonly IEnumerable<IStateflowsTenantInterceptor> TenantInterceptors;
 
         private readonly ILogger<CommonInterceptor> Logger;
 
         public CommonInterceptor(
             IEnumerable<IBehaviorInterceptor> interceptors,
             IEnumerable<IStateflowsExecutionInterceptor> executionInterceptors,
+            IEnumerable<IStateflowsTenantInterceptor> tenantInterceptors,
             ILogger<CommonInterceptor> logger
         )
         {
             Interceptors = interceptors;
             ExecutionInterceptors = executionInterceptors;
+            TenantInterceptors = tenantInterceptors;
             Logger = logger;
         }
 
@@ -56,6 +60,28 @@ namespace Stateflows.Common.Engine
             foreach (var interceptor in ExecutionInterceptors)
             {
                 interceptor.AfterExecute(@event);
+            }
+        }
+
+        public bool BeforeExecute(string tenantId)
+        {
+            var result = true;
+            foreach (var interceptor in TenantInterceptors)
+            {
+                if (!interceptor.BeforeExecute(tenantId))
+                {
+                    result = false;
+                }
+            }
+
+            return result;
+        }
+
+        public void AfterExecute(string tenantId)
+        {
+            foreach (var interceptor in TenantInterceptors)
+            {
+                interceptor.AfterExecute(tenantId);
             }
         }
     }

@@ -20,7 +20,7 @@ namespace Stateflows.Storage.EntityFrameworkCore.Utils
             return await query.FirstOrDefaultAsync() ?? new Context_v1(id.BehaviorClass.ToString(), id.ToString(), null, "");
         }
 
-        public static async Task<IEnumerable<Context_v1>> FindByClasses(this DbSet<Context_v1> dbSet, IEnumerable<BehaviorClass> behaviorClasses)
+        public static async Task<IEnumerable<Context_v1>> FindByClassesAsync(this DbSet<Context_v1> dbSet, IEnumerable<BehaviorClass> behaviorClasses)
         {
             var behaviorClassStrings = behaviorClasses.Select(bc => bc.ToString());
 
@@ -30,7 +30,7 @@ namespace Stateflows.Storage.EntityFrameworkCore.Utils
                 .ToArrayAsync();
         }
 
-        public static async Task<IEnumerable<Context_v1>> FindByTriggerTime(this DbSet<Context_v1> dbSet, IEnumerable<BehaviorClass> behaviorClasses)
+        public static async Task<IEnumerable<Context_v1>> FindByTriggerTimeAsync(this DbSet<Context_v1> dbSet, IEnumerable<BehaviorClass> behaviorClasses)
         {
             var behaviorClassStrings = behaviorClasses.Select(bc => bc.ToString());
             var now = DateTime.Now;
@@ -43,5 +43,25 @@ namespace Stateflows.Storage.EntityFrameworkCore.Utils
                 .AsNoTracking()
                 .ToArrayAsync();
         }
+
+        public static IEnumerable<Context_v1> FindByTriggerTime(this DbSet<Context_v1> dbSet, IEnumerable<BehaviorClass> behaviorClasses)
+        {
+            var behaviorClassStrings = behaviorClasses.Select(bc => bc.ToString());
+            var now = DateTime.Now;
+            return dbSet
+                .Where(c =>
+                    behaviorClassStrings.Contains(c.BehaviorClass) &&
+                    c.TriggerTime != null &&
+                    c.TriggerTime < now
+                )
+                .AsNoTracking()
+                .ToArray();
+        }
+
+        public static async Task<IEnumerable<Trace_v1>> FindByBehaviorIdAsync(this DbSet<Trace_v1> dbSet, BehaviorId behaviorId)
+            => await dbSet
+                .Where(c => c.BehaviorId == behaviorId.ToString())
+                .AsNoTracking()
+                .ToArrayAsync();
     }
 }

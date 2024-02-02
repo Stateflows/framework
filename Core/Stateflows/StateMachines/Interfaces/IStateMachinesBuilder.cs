@@ -9,8 +9,8 @@ namespace Stateflows.StateMachines
         IStateMachinesBuilder AddFromAssembly(Assembly assembly);
         IStateMachinesBuilder AddFromAssemblies(IEnumerable<Assembly> assemblies);
         IStateMachinesBuilder AddFromLoadedAssemblies();
-        IStateMachinesBuilder AddStateMachine(string stateMachineName, StateMachineBuilderAction buildAction);
-        IStateMachinesBuilder AddStateMachine(string stateMachineName, int version, StateMachineBuilderAction buildAction);
+        IStateMachinesBuilder AddStateMachine(string stateMachineName, StateMachineBuildAction buildAction);
+        IStateMachinesBuilder AddStateMachine(string stateMachineName, int version, StateMachineBuildAction buildAction);
         IStateMachinesBuilder AddStateMachine<TStateMachine>(string stateMachineName = null, int version = 1)
             where TStateMachine : StateMachine;
         IStateMachinesBuilder AddStateMachine<TStateMachine>(int version)

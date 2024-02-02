@@ -23,7 +23,7 @@ namespace Stateflows.StateMachines.Typed.Data
             );
         }
 
-        public static IStateBuilder AddTransition<TEventPayload, TTargetState>(this IStateBuilder builder, TransitionBuilderAction<Event<TEventPayload>> transitionBuildAction = null)
+        public static IStateBuilder AddTransition<TEventPayload, TTargetState>(this IStateBuilder builder, TransitionBuildAction<Event<TEventPayload>> transitionBuildAction = null)
             where TTargetState : BaseState
             => builder.AddTransition(StateInfo<TTargetState>.Name, transitionBuildAction);
     }

@@ -14,10 +14,9 @@ namespace Stateflows.StateMachines.Engine
     {
         public string BehaviorType => nameof(StateMachine);
 
-        public StateMachinesRegister Register { get; }
-        public IStateflowsStorage Storage { get; }
-        public IEnumerable<IStateMachineEventHandler> EventHandlers { get; }
-        public IServiceProvider ServiceProvider { get; }
+        public readonly StateMachinesRegister Register;
+        public readonly IEnumerable<IStateMachineEventHandler> EventHandlers;
+        public readonly IServiceProvider ServiceProvider;
 
         public Processor(
             StateMachinesRegister register,
@@ -28,7 +27,6 @@ namespace Stateflows.StateMachines.Engine
             Register = register;
             ServiceProvider = serviceProvider.CreateScope().ServiceProvider;
             EventHandlers = eventHandlers;
-            Storage = ServiceProvider.GetRequiredService<IStateflowsStorage>();
         }
 
         private Task<EventStatus> TryHandleEventAsync<TEvent>(EventContext<TEvent> context)
@@ -46,7 +44,9 @@ namespace Stateflows.StateMachines.Engine
         {
             var result = EventStatus.Undelivered;
 
-            var stateflowsContext = await Storage.Hydrate(id);
+            var storage = ServiceProvider.GetRequiredService<IStateflowsStorage>();
+
+            var stateflowsContext = await storage.HydrateAsync(id);
 
             var key = stateflowsContext.Version != 0
                 ? $"{id.Name}.{stateflowsContext.Version}"
@@ -98,7 +98,7 @@ namespace Stateflows.StateMachines.Engine
 
                 await executor.DehydrateAsync();
 
-                await Storage.Dehydrate(executor.Context.Context);
+                await storage.DehydrateAsync(executor.Context.Context);
 
                 executor.Context.ClearEvent();
             }

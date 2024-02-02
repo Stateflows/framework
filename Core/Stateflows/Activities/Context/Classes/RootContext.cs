@@ -11,6 +11,7 @@ using Stateflows.Activities.Models;
 using Stateflows.Activities.Engine;
 using Stateflows.Activities.Streams;
 using Stateflows.Activities.Registration;
+using System.Xml.Linq;
 
 namespace Stateflows.Activities.Context.Classes
 {
@@ -314,14 +315,14 @@ namespace Stateflows.Activities.Context.Classes
 
         internal Node NodeOfOrigin { get; set; }
 
-        internal void ClearTemporaryInternalValues()
-        {
-            Context.Values.Remove(Constants.Node);
-            Context.Values.Remove(Constants.Event);
-            Context.Values.Remove(Constants.SourceNode);
-            Context.Values.Remove(Constants.TargetNode);
-            Context.Values.Remove(Constants.ForceConsumed);
-        }
+        internal bool IsNodeCompleted(Node node, NodeScope nodeScope)
+            => nodeScope.IsTerminated ||
+                (nodeScope.ChildScope?.IsTerminated ?? false) ||
+                (
+                    !GetStreams(nodeScope.ThreadId).Values.Any(s => s.Tokens.Any()) &&
+                    !node.Nodes.Values.Any(node => node.Type == NodeType.AcceptEventAction && !node.IncomingEdges.Any()) &&
+                    !ActiveNodes.Any()
+                );
 
         public async Task Send<TEvent>(TEvent @event)
             where TEvent : Event, new()

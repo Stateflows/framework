@@ -5,7 +5,7 @@ namespace Stateflows.Activities.Typed.Data
 {
     public static class TypedActionBuilderFlowsTypedPayloadExtensions
     {
-        public static ITypedActionBuilder AddDataFlow<TTokenPayload, TTargetNode>(this ITypedActionBuilder builder, ObjectFlowBuilderAction<Token<TTokenPayload>> buildAction = null)
+        public static ITypedActionBuilder AddDataFlow<TTokenPayload, TTargetNode>(this ITypedActionBuilder builder, ObjectFlowBuildAction<Token<TTokenPayload>> buildAction = null)
             where TTargetNode : ActivityNode
             => builder.AddTokenFlow<Token<TTokenPayload>>(ActivityNodeInfo<TTargetNode>.Name, buildAction);
 

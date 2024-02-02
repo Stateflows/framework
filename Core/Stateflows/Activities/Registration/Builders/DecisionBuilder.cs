@@ -10,10 +10,10 @@ namespace Stateflows.Activities.Registration.Builders
             : base(builder.Node, builder.ActivityBuilder, builder.Services)
         { }
 
-        public IDecisionBuilder<TToken> AddFlow(string targetNodeName, ObjectFlowBuilderAction<TToken> buildAction = null)
+        public IDecisionBuilder<TToken> AddFlow(string targetNodeName, ObjectFlowBuildAction<TToken> buildAction = null)
             => AddTokenFlow<TToken>(targetNodeName, buildAction) as IDecisionBuilder<TToken>;
 
-        public IDecisionBuilder<TToken> AddElseFlow(string targetNodeName, ElseObjectFlowBuilderAction<TToken> buildAction = null)
+        public IDecisionBuilder<TToken> AddElseFlow(string targetNodeName, ElseObjectFlowBuildAction<TToken> buildAction = null)
             => AddElseTokenFlow<TToken>(targetNodeName, buildAction) as IDecisionBuilder<TToken>;
     }
 }

@@ -25,7 +25,7 @@ namespace Stateflows.StateMachines.Typed
             );
         }
 
-        public static IStateBuilder AddElseTransition<TEvent, TTargetState>(this IStateBuilder builder, ElseTransitionBuilderAction<TEvent> transitionBuildAction = null)
+        public static IStateBuilder AddElseTransition<TEvent, TTargetState>(this IStateBuilder builder, ElseTransitionBuildAction<TEvent> transitionBuildAction = null)
             where TEvent : Event, new()
             where TTargetState : BaseState
             => builder.AddElseTransition(StateInfo<TTargetState>.Name, transitionBuildAction);

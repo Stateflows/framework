@@ -16,7 +16,6 @@
         public static readonly string GlobalValues = nameof(GlobalValues);
         public static readonly string TimeEventIds = nameof(TimeEventIds);
         public static readonly string ActionValues = nameof(ActionValues);
-        public static readonly string Activity = nameof(Activity);
         public static readonly string NodesStack = nameof(NodesStack);
         public static readonly string Token = nameof(Token);
         public static readonly string Tokens = nameof(Tokens);

@@ -8,7 +8,7 @@ namespace Stateflows.Activities
 {
     public static class TypedActivityBuilderSpecialsExtensions
     {
-        public static ITypedActivityBuilder AddJoin(this ITypedActivityBuilder builder, string joinNodeName, JoinBuilderAction joinBuildAction)
+        public static ITypedActivityBuilder AddJoin(this ITypedActivityBuilder builder, string joinNodeName, JoinBuildAction joinBuildAction)
             => (builder as BaseActivityBuilder)
                 .AddNode(
                     NodeType.Join,
@@ -21,7 +21,7 @@ namespace Stateflows.Activities
                     b => joinBuildAction(b)
                 ) as ITypedActivityBuilder;
 
-        public static ITypedActivityBuilder AddFork(this ITypedActivityBuilder builder, string forkNodeName, ForkBuilderAction forkBuildAction)
+        public static ITypedActivityBuilder AddFork(this ITypedActivityBuilder builder, string forkNodeName, ForkBuildAction forkBuildAction)
             => (builder as BaseActivityBuilder)
                 .AddNode(
                     NodeType.Fork,
@@ -34,7 +34,7 @@ namespace Stateflows.Activities
                     b => forkBuildAction(b)
                 ) as ITypedActivityBuilder;
 
-        public static ITypedActivityBuilder AddMerge(this ITypedActivityBuilder builder, string mergeNodeName, MergeBuilderAction mergeBuildAction)
+        public static ITypedActivityBuilder AddMerge(this ITypedActivityBuilder builder, string mergeNodeName, MergeBuildAction mergeBuildAction)
             => (builder as BaseActivityBuilder)
                 .AddNode(
                     NodeType.Merge,
@@ -47,7 +47,7 @@ namespace Stateflows.Activities
                     b => mergeBuildAction(b.SetOptions(NodeOptions.None) as IMergeBuilder)
                 ) as ITypedActivityBuilder;
 
-        public static ITypedActivityBuilder AddControlDecision(this ITypedActivityBuilder builder, string decisionNodeName, DecisionBuilderAction decisionBuildAction)
+        public static ITypedActivityBuilder AddControlDecision(this ITypedActivityBuilder builder, string decisionNodeName, DecisionBuildAction decisionBuildAction)
             => (builder as BaseActivityBuilder)
                 .AddNode(
                     NodeType.Decision,
@@ -60,7 +60,7 @@ namespace Stateflows.Activities
                     b => decisionBuildAction(b.SetOptions(NodeOptions.DecisionDefault) as IDecisionBuilder)
                 ) as ITypedActivityBuilder;
 
-        public static ITypedActivityBuilder AddTokenDecision<TToken>(this ITypedActivityBuilder builder, string decisionNodeName, DecisionBuilderAction<TToken> decisionBuildAction)
+        public static ITypedActivityBuilder AddTokenDecision<TToken>(this ITypedActivityBuilder builder, string decisionNodeName, DecisionBuildAction<TToken> decisionBuildAction)
             where TToken : Token, new()
             => (builder as BaseActivityBuilder)
                 .AddNode(
@@ -74,7 +74,7 @@ namespace Stateflows.Activities
                     b => decisionBuildAction(new DecisionBuilder<TToken>(b.SetOptions(NodeOptions.DecisionDefault) as NodeBuilder))
                 ) as ITypedActivityBuilder;
 
-        public static ITypedActivityBuilder AddDataStore(this ITypedActivityBuilder builder, string dataStoreNodeName, DataStoreBuilderAction decisionBuildAction)
+        public static ITypedActivityBuilder AddDataStore(this ITypedActivityBuilder builder, string dataStoreNodeName, DataStoreBuildAction decisionBuildAction)
             => (builder as BaseActivityBuilder)
                 .AddNode(
                     NodeType.DataStore,
@@ -87,7 +87,7 @@ namespace Stateflows.Activities
                     b => decisionBuildAction(b.SetOptions(NodeOptions.DataStoreDefault) as IDataStoreBuilder)
                 ) as ITypedActivityBuilder;
 
-        public static ITypedActivityBuilder AddTimeEventAction<TTimeEvent>(this ITypedActivityBuilder builder, string actionNodeName, ActionDelegateAsync actionAsync, AcceptEventActionBuilderAction buildAction)
+        public static ITypedActivityBuilder AddTimeEventAction<TTimeEvent>(this ITypedActivityBuilder builder, string actionNodeName, ActionDelegateAsync actionAsync, AcceptEventActionBuildAction buildAction)
             where TTimeEvent : TimeEvent, new()
             => builder.AddAcceptEventAction<TTimeEvent>(actionNodeName, c => actionAsync(c), buildAction);
     }

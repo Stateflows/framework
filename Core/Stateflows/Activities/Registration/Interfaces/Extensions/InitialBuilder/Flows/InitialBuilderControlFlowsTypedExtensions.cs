@@ -5,7 +5,7 @@ namespace Stateflows.Activities.Typed
 {
     public static class InitialBuilderControlFlowsTypedExtensions
     {
-        public static IInitialBuilder AddControlFlow<TTargetNode>(this IInitialBuilder builder, ControlFlowBuilderAction buildAction = null)
+        public static IInitialBuilder AddControlFlow<TTargetNode>(this IInitialBuilder builder, ControlFlowBuildAction buildAction = null)
             where TTargetNode : ActivityNode
             => builder.AddControlFlow(ActivityNodeInfo<TTargetNode>.Name, buildAction);
 

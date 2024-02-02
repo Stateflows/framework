@@ -4,7 +4,7 @@ namespace Stateflows.Activities.Typed
 {
     public static class ReactiveStructuredActivityBuilderControlFlowsTypedExtensions
     {
-        public static IReactiveStructuredActivityBuilder AddControlFlow<TTargetNode>(this IReactiveStructuredActivityBuilder builder, ControlFlowBuilderAction buildAction = null)
+        public static IReactiveStructuredActivityBuilder AddControlFlow<TTargetNode>(this IReactiveStructuredActivityBuilder builder, ControlFlowBuildAction buildAction = null)
             where TTargetNode : ActivityNode
             => builder.AddControlFlow(ActivityNodeInfo<TTargetNode>.Name, buildAction);
 

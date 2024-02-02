@@ -5,7 +5,7 @@ namespace Stateflows.Activities.Data
 {
     public static class StructuredActivityBuilderSpecialsPayloadExtensions
     {
-        public static IStructuredActivityBuilder AddDataDecision<TTokenPayload>(this IStructuredActivityBuilder builder, string decisionNodeName, DecisionBuilderAction<Token<TTokenPayload>> decisionBuildAction)
+        public static IStructuredActivityBuilder AddDataDecision<TTokenPayload>(this IStructuredActivityBuilder builder, string decisionNodeName, DecisionBuildAction<Token<TTokenPayload>> decisionBuildAction)
             => builder.AddTokenDecision<Token<TTokenPayload>>(decisionNodeName, decisionBuildAction);
     }
 }

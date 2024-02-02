@@ -54,8 +54,10 @@ namespace Stateflows.Activities.Engine
             ThreadId = threadId;
         }
 
+        public NodeScope ChildScope { get; private set; }
+
         public NodeScope CreateChildScope(Guid? threadId = null)
-            => new NodeScope(this, threadId ?? ThreadId);
+            => ChildScope = new NodeScope(this, threadId ?? ThreadId);
 
         private readonly IDictionary<Type, ActionNode> Actions = new Dictionary<Type, ActionNode>();
 

@@ -12,12 +12,11 @@ namespace Stateflows.Activities.Engine
 {
     internal class Processor : IEventProcessor
     {
-        public string BehaviorType => nameof(Activity);
+        string IEventProcessor.BehaviorType => BehaviorType.Activity;
 
-        public ActivitiesRegister Register { get; }
-        public IStateflowsStorage Storage { get; }
-        public Dictionary<Type, IActivityEventHandler> EventHandlers { get; }
-        public IServiceProvider ServiceProvider { get; }
+        public readonly ActivitiesRegister Register;
+        public readonly Dictionary<Type, IActivityEventHandler> EventHandlers;
+        public readonly IServiceProvider ServiceProvider;
 
         public Processor(
             ActivitiesRegister register,
@@ -28,7 +27,6 @@ namespace Stateflows.Activities.Engine
             Register = register;
             EventHandlers = eventHandlers.ToDictionary(h => h.EventType, h => h);
             ServiceProvider = serviceProvider.CreateScope().ServiceProvider;
-            Storage = ServiceProvider.GetRequiredService<IStateflowsStorage>();
         }
 
         private async Task<EventStatus> TryHandleEventAsync<TEvent>(EventContext<TEvent> context)
@@ -42,7 +40,9 @@ namespace Stateflows.Activities.Engine
         {
             var result = EventStatus.Undelivered;
 
-            var stateflowsContext = await Storage.Hydrate(id);
+            var storage = ServiceProvider.GetRequiredService<IStateflowsStorage>();
+
+            var stateflowsContext = await storage.HydrateAsync(id);
 
             var key = stateflowsContext.Version != 0
                 ? $"{id.Name}.{stateflowsContext.Version}"
@@ -100,7 +100,7 @@ namespace Stateflows.Activities.Engine
                         }
                     }
 
-                    await Storage.Dehydrate((await executor.DehydrateAsync()).Context);
+                    await storage.DehydrateAsync((await executor.DehydrateAsync()).Context);
                 }
             }
 

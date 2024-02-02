@@ -1,5 +1,5 @@
 ﻿namespace Stateflows.StateMachines
 {
-    internal interface IStateMachinePlugin : IStateMachineInterceptor, IStateMachineObserver
+    internal interface IStateMachinePlugin : IStateMachineInterceptor, IStateMachineObserver, IStateMachineExceptionHandler
     { }
 }

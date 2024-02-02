@@ -50,7 +50,7 @@ namespace Stateflows.StateMachines.Registration.Builders
             => AddFromAssemblies(AppDomain.CurrentDomain.GetAssemblies());
 
         [DebuggerHidden]
-        public IStateMachinesBuilder AddStateMachine(string stateMachineName, StateMachineBuilderAction buildAction)
+        public IStateMachinesBuilder AddStateMachine(string stateMachineName, StateMachineBuildAction buildAction)
         {
             Register.AddStateMachine(stateMachineName, 1, buildAction);
 
@@ -58,7 +58,7 @@ namespace Stateflows.StateMachines.Registration.Builders
         }
 
         [DebuggerHidden]
-        public IStateMachinesBuilder AddStateMachine(string stateMachineName, int version, StateMachineBuilderAction buildAction)
+        public IStateMachinesBuilder AddStateMachine(string stateMachineName, int version, StateMachineBuildAction buildAction)
         {
             Register.AddStateMachine(stateMachineName, version, buildAction);
 

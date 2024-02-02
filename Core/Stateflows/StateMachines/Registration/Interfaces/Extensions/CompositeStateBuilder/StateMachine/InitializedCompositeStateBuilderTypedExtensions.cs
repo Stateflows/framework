@@ -18,12 +18,12 @@ namespace Stateflows.StateMachines.Typed
 
         #region AddState
         [DebuggerHidden]
-        public static IInitializedCompositeStateBuilder AddState<TState>(this IInitializedCompositeStateBuilder builder, StateTransitionsBuilderAction stateBuildAction = null)
+        public static IInitializedCompositeStateBuilder AddState<TState>(this IInitializedCompositeStateBuilder builder, StateTransitionsBuildAction stateBuildAction = null)
             where TState : State
             => builder.AddState<TState>(StateInfo<TState>.Name, stateBuildAction);
 
         [DebuggerHidden]
-        public static IInitializedCompositeStateBuilder AddState<TState>(this IInitializedCompositeStateBuilder builder, string stateName, StateTransitionsBuilderAction stateBuildAction = null)
+        public static IInitializedCompositeStateBuilder AddState<TState>(this IInitializedCompositeStateBuilder builder, string stateName, StateTransitionsBuildAction stateBuildAction = null)
             where TState : State
         {
             (builder as IInternal).Services.RegisterState<TState>();
@@ -42,12 +42,12 @@ namespace Stateflows.StateMachines.Typed
 
         #region AddCompositeState
         [DebuggerHidden]
-        public static IInitializedCompositeStateBuilder AddCompositeState<TCompositeState>(this IInitializedCompositeStateBuilder builder, CompositeStateTransitionsBuilderAction compositeStateBuildAction)
+        public static IInitializedCompositeStateBuilder AddCompositeState<TCompositeState>(this IInitializedCompositeStateBuilder builder, CompositeStateTransitionsBuildAction compositeStateBuildAction)
             where TCompositeState : CompositeState
             => builder.AddCompositeState<TCompositeState>(StateInfo<TCompositeState>.Name, compositeStateBuildAction);
 
         [DebuggerHidden]
-        public static IInitializedCompositeStateBuilder AddCompositeState<TCompositeState>(this IInitializedCompositeStateBuilder builder, string stateName, CompositeStateTransitionsBuilderAction compositeStateBuildAction)
+        public static IInitializedCompositeStateBuilder AddCompositeState<TCompositeState>(this IInitializedCompositeStateBuilder builder, string stateName, CompositeStateTransitionsBuildAction compositeStateBuildAction)
             where TCompositeState : CompositeState
         {
             (builder as IInternal).Services.RegisterState<TCompositeState>();

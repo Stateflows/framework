@@ -31,9 +31,9 @@ namespace StateMachine.IntegrationTests.Tests
                         .AddExecutionSequenceObserver()
                         .AddInitialCompositeState("state1", b => b
                             .AddInitialState("state1.1", b => b
-                                .AddDefaultTransition<FinalState>()
+                                .AddDefaultTransition("state1-final")
                             )
-                            .AddFinalState()
+                            .AddFinalState("state1-final")
                         )
                         .AddFinalState()
                     )
@@ -99,7 +99,7 @@ namespace StateMachine.IntegrationTests.Tests
                 .StateFinalize("state1")
             );
             Assert.IsTrue(initialized);
-            Assert.AreEqual(StateInfo<FinalState>.Name, currentState);
+            Assert.AreEqual("state1-final", currentState);
         }
     }
 }

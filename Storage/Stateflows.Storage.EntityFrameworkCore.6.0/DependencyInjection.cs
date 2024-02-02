@@ -20,7 +20,8 @@ namespace Stateflows
             }
 
             builder.ServiceCollection
-                .AddScoped<IStateflowsStorage, EntityFrameworkCoreStorage>()
+                //.AddScoped<IStateflowsStorage, EntityFrameworkCoreStorage>()
+                .AddTransient<IStateflowsStorage, EntityFrameworkCoreStorage>()
                 .AddTransient<IStateflowsDbContext_v1, TDbContext>()
             ;
 

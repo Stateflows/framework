@@ -1,6 +1,6 @@
 {
   "name": "@stateflows/signalr-client",
-  "version": "0.6.0",
+  "version": "0.8.0",
   "description": "SignalR-based client for Stateflows framework",
   "main": "dist/index.js",
   "module": "./dist/index.mjs",
@@ -10,11 +10,14 @@
   ],
   "scripts": {
     "build": "tsup",
+    "build:dev": "tsup --watch",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [
     "Stateflows",
     "state-machine",
+    "activity",
+    "workflow",
     "SignalR",
     "signal-r"
   ],

@@ -5,7 +5,10 @@
 <p aria-live="polite">Current count: <strong>{{ currentCount }}</strong></p>
 
 <button class="btn btn-primary" (click)="incrementCounter()">Increment</button>
+<button class="btn btn-primary" (click)="push()">Push</button>
+<button class="btn btn-primary" (click)="go()">Go</button>
+<button class="btn btn-primary" (click)="refresh()">Refresh</button>
 
 <div *ngIf="url">
-  <img src="{{ url }}" />
+    <img src="{{ url }}" />
 </div>

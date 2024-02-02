@@ -3,11 +3,11 @@
     public partial interface IStateMachine<out TReturn>
     {
         #region AddState
-        TReturn AddState(string stateName, StateBuilderAction stateBuildAction = null);
+        TReturn AddState(string stateName, StateBuildAction stateBuildAction = null);
         #endregion
 
         #region AddCompositeState
-        TReturn AddCompositeState(string stateName, CompositeStateBuilderAction compositeStateBuildAction);
+        TReturn AddCompositeState(string stateName, CompositeStateBuildAction compositeStateBuildAction);
         #endregion
     }
 }

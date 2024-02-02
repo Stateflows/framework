@@ -10,7 +10,7 @@ namespace Stateflows.StateMachines.Typed
         public static IFinalizedCompositeStateBuilder AddTransition<TEvent, TTransition, TTargetState>(this IFinalizedCompositeStateBuilder builder)
             where TEvent : Event, new()
             where TTransition : Transition<TEvent>
-            where TTargetState : State
+            where TTargetState : BaseState
             => AddTransition<TEvent, TTransition>(builder, StateInfo<TTargetState>.Name);
 
         public static IFinalizedCompositeStateBuilder AddTransition<TEvent, TTransition>(this IFinalizedCompositeStateBuilder builder, string targetVertexName)
@@ -25,9 +25,9 @@ namespace Stateflows.StateMachines.Typed
             );
         }
 
-        public static IFinalizedCompositeStateBuilder AddTransition<TEvent, TTargetState>(this IFinalizedCompositeStateBuilder builder, TransitionBuilderAction<TEvent> transitionBuildAction = null)
+        public static IFinalizedCompositeStateBuilder AddTransition<TEvent, TTargetState>(this IFinalizedCompositeStateBuilder builder, TransitionBuildAction<TEvent> transitionBuildAction = null)
             where TEvent : Event, new()
-            where TTargetState : State
+            where TTargetState : BaseState
             => builder.AddTransition(StateInfo<TTargetState>.Name, transitionBuildAction);
     }
 }

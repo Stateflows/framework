@@ -8,6 +8,7 @@ namespace Examples.Storage
     public class StateflowsDbContext : DbContext, IStateflowsDbContext_v1
     {
         public DbSet<Context_v1> Contexts_v1 { get; set; }
+        public DbSet<Trace_v1> Traces_v1 { get; set; }
 
         protected readonly IConfiguration Configuration;
 
