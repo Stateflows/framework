@@ -6,14 +6,19 @@ using Stateflows.StateMachines.Context.Classes;
 using Stateflows.StateMachines.Context.Interfaces;
 using Stateflows.StateMachines.Registration.Interfaces;
 using Stateflows.StateMachines.Registration.Extensions;
+using Stateflows.Common.Registration;
 
 namespace Stateflows.StateMachines.Registration.Builders
 {
-    internal class TransitionBuilder<TEvent> : ITransitionBuilder<TEvent>
+    internal class TransitionBuilder<TEvent> : ITransitionBuilder<TEvent>, IBehaviorBuilder
         where TEvent : Event, new()
     {
         public Edge Edge;
-       
+
+        BehaviorClass IBehaviorBuilder.BehaviorClass => new BehaviorClass(nameof(StateMachine), Edge.Source.Graph.Name);
+
+        int IBehaviorBuilder.BehaviorVersion => Edge.Source.Graph.Version;
+
         public TransitionBuilder(Edge edge)
         {
             Edge = edge;

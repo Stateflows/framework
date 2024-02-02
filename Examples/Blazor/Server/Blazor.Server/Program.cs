@@ -9,10 +9,11 @@ using Stateflows.StateMachines.Data;
 using Stateflows.StateMachines.Sync;
 using Stateflows.Activities;
 using Stateflows.Activities.Data;
+using Stateflows.Activities.Typed;
 using Stateflows.Activities.Attributes;
 using Stateflows.Activities.Registration.Interfaces;
 using Stateflows.StateMachines.Attributes;
-using Stateflows.Tools.Tracer;
+using Examples.Storage;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -27,9 +28,43 @@ builder.Services.AddStateflows(b => b
     .AddPlantUml()
 
     .AddActivities(b => b
+        .AddActivity("sync0", b => b
+            .AddInitial(b => b
+                .AddControlFlow("1")
+            )
+            .AddStructuredActivity("1", b => b
+                .AddAcceptEventAction<EveryOneMinute>("time1", async c => c.Output(c.Event), b => b
+                    .AddTokenFlow<EveryOneMinute, FinalNode>()
+                )
+                .AddFinal()
+                .AddControlFlow("2")
+            )
+            .AddStructuredActivity("2", b => b
+                .AddTimeEventAction<EveryOneMinute>("time2", async c => { })                
+            )
+            .AddTimeEventAction<EveryOneMinute>("time3", async c => { })
 
+        //.AddTimeEventAction<EveryOneMinute>("time", async c => { }, b => b
+        //    .AddControlFlow("merge")
+        //)
+        //.AddMerge("merge", b => b
+        //    .AddControlFlow("sync_table_1")
+        //)
+        //.AddAction("sync_table_1", async c =>
+        //{
+        //    /* implementation */
+        //    Debug.WriteLine("table 1 synced");
+        //})
+        )
+    )
 
+    .AddDefaultInstance(BehaviorType.Activity.ToClass("sync0"))
 
+    .AddStorage()
+
+    //.AddTracing()
+
+    .AddActivities(b => b
         .AddActivity("activity1", b => b
             .AddOnInitialize(async c =>
             {
@@ -125,13 +160,11 @@ builder.Services.AddStateflows(b => b
                 {
                     Debug.WriteLine($"finish 5! {c.Input.OfType<Token<int>>().Count()}");
                 },
-                b => b.AddControlFlow(Final.Name)
+                b => b.AddControlFlow<FinalNode>()
             )
             .AddFinal()
         )
     )
-
-    .AddTracer("W:\\traces")
 
     .AddStateMachines(b => b
         .AddStateMachine("stateMachine1", b => b
@@ -157,14 +190,15 @@ builder.Services.AddStateflows(b => b
             )
             .AddState("state2", b => b
                 .AddTransition<OtherEvent>("state3")
+                .AddOnDoActivity("activity1")
             )
             .AddState("state3", b => b
                 .AddTransition<OtherEvent>("state1", b => b
                     .AddGuard(c => Random.Shared.Next(1, 10) % 2 == 0)
-                    //.AddEffect(c => Debug.WriteLine("Even, going to state1"))
+                //.AddEffect(c => Debug.WriteLine("Even, going to state1"))
                 )
                 .AddElseTransition<OtherEvent>("state2", b => { }
-                    //.AddEffect(c => Debug.WriteLine("Odd, going to state2"))
+                //.AddEffect(c => Debug.WriteLine("Odd, going to state2"))
                 )
             )
         )
@@ -175,13 +209,12 @@ builder.Services.AddStateflows(b => b
             ? $"{StateflowsEnvironments.Development}.{Environment.MachineName}"
             : StateflowsEnvironments.Production
     )
-
-    //.AddStorage()
 );
 
 var app = builder.Build();
 
 app.MapStateflowsTransportHub();
+app.MapStateflowsEndpoints();
 
 // Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())
@@ -268,5 +301,15 @@ namespace TestNamespace
                 .AddState("2")
                 ;
         }
+    }
+}
+
+public class SynchronizeDatabase : ActionNode
+{
+    public override Task ExecuteAsync()
+    {
+        Debug.WriteLine("działam");
+
+        return Task.CompletedTask;
     }
 }

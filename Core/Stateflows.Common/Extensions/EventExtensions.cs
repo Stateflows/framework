@@ -8,10 +8,12 @@ namespace Stateflows.Common.Extensions
     {
         public static EventValidation Validate(this Event @event)
         {
-            var validationContext = new ValidationContext(@event, serviceProvider: null, items: null);
+            var objectToValidate = @event.GetPayload<object>() ?? @event;
+
+            var validationContext = new ValidationContext(objectToValidate, serviceProvider: null, items: null);
             var validationResults = new List<ValidationResult>();
 
-            bool isValid = Validator.TryValidateObject(@event, validationContext, validationResults, true);
+            bool isValid = Validator.TryValidateObject(objectToValidate, validationContext, validationResults, true);
 
             return new EventValidation(isValid, validationResults);
         }
@@ -31,6 +33,19 @@ namespace Stateflows.Common.Extensions
             }
 
             return @event.GetType().GetProperty("Response").GetValue(@event) as TResponse;
+        }
+
+        public static bool IsPayloadEvent(this Event @event)
+            => @event.GetType().IsSubclassOfRawGeneric(typeof(Event<>));
+
+        public static TPayload GetPayload<TPayload>(this Event @event)
+        {
+            if (!@event.IsPayloadEvent())
+            {
+                return default;
+            }
+
+            return (TPayload)@event.GetType().GetProperty("Payload").GetValue(@event);
         }
 
         public static Response GetResponse(this Event @event)

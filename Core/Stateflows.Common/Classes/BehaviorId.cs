@@ -8,7 +8,7 @@ namespace Stateflows
     {
         public BehaviorId(BehaviorClass behaviorClass, string instance)
         {
-            BehaviorClass = behaviorClass;
+            BehaviorClass = new BehaviorClass(behaviorClass.Type, behaviorClass.Name);
             Instance = instance;
         }
 

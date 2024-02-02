@@ -6,6 +6,20 @@ namespace Stateflows.Common.Extensions
 {
     public static class TypeExtensions
     {
+        public static string GetReadableName(this Type type)
+        {
+            if (!type.IsGenericType)
+            {
+                return type.FullName;
+            }
+            else
+            {
+                var typeName = type.GetGenericTypeDefinition().FullName.Split('`').First();
+                var typeNames = string.Join(", ", type.GetGenericArguments().Select(t => t.FullName));
+                return $"{typeName}<{typeNames}>";
+            }
+        }
+
         public static object GetUninitializedInstance(this Type type)
             => FormatterServices.GetUninitializedObject(type);
 

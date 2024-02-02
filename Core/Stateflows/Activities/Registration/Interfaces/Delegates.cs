@@ -5,7 +5,7 @@ using Stateflows.Activities.Context.Interfaces;
 
 namespace Stateflows.Activities.Registration.Interfaces
 {
-    public delegate void ActivitiesBuilderAction(IActivitiesBuilder builder);
+    public delegate void ActivitiesBuildAction(IActivitiesBuilder builder);
 
     public delegate Task<bool> GuardDelegateAsync<in TToken>(IGuardContext<TToken> context)
         where TToken : Token, new();
@@ -34,56 +34,56 @@ namespace Stateflows.Activities.Registration.Interfaces
 
     public delegate bool DecisionDelegate(IActionContext context);
 
-    public delegate void ObjectFlowBuilderAction<in TToken>(IObjectFlowBuilder<TToken> builder)
+    public delegate void ObjectFlowBuildAction<in TToken>(IObjectFlowBuilder<TToken> builder)
         where TToken : Token, new();
 
-    public delegate void ElseObjectFlowBuilderAction<in TToken>(IElseObjectFlowBuilder<TToken> builder)
+    public delegate void ElseObjectFlowBuildAction<in TToken>(IElseObjectFlowBuilder<TToken> builder)
         where TToken : Token, new();
 
-    public delegate void ControlFlowBuilderAction(IControlFlowBuilder builder);
+    public delegate void ControlFlowBuildAction(IControlFlowBuilder builder);
 
-    public delegate void ElseControlFlowBuilderAction(IElseControlFlowBuilder builder);
+    public delegate void ElseControlFlowBuildAction(IElseControlFlowBuilder builder);
 
-    public delegate void ReactiveActivityBuilderAction(IActivityBuilder builder);
+    public delegate void ReactiveActivityBuildAction(IActivityBuilder builder);
 
-    internal delegate void NodeBuilderAction(NodeBuilder builder);
+    internal delegate void NodeBuildAction(NodeBuilder builder);
 
-    public delegate void ActionBuilderAction(IActionBuilder builder);
+    public delegate void ActionBuildAction(IActionBuilder builder);
 
-    public delegate void TypedActionBuilderAction(ITypedActionBuilder builder);
+    public delegate void TypedActionBuildAction(ITypedActionBuilder builder);
 
-    public delegate void JoinBuilderAction(IJoinBuilder builder);
+    public delegate void JoinBuildAction(IJoinBuilder builder);
 
-    public delegate void InitialBuilderAction(IInitialBuilder builder);
+    public delegate void InitialBuildAction(IInitialBuilder builder);
 
-    public delegate void InputBuilderAction(IInputBuilder builder);
+    public delegate void InputBuildAction(IInputBuilder builder);
 
-    public delegate void ReactiveStructuredActivityBuilderAction(IReactiveStructuredActivityBuilder builder);
+    public delegate void ReactiveStructuredActivityBuildAction(IReactiveStructuredActivityBuilder builder);
 
-    public delegate void StructuredActivityBuilderAction(IStructuredActivityBuilder builder);
+    public delegate void StructuredActivityBuildAction(IStructuredActivityBuilder builder);
 
-    public delegate void ParallelActivityBuilderAction(IStructuredActivityBuilder builder);
+    public delegate void ParallelActivityBuildAction(IStructuredActivityBuilder builder);
 
-    public delegate void IterativeActivityBuilderAction(IStructuredActivityBuilder builder);
+    public delegate void IterativeActivityBuildAction(IStructuredActivityBuilder builder);
 
-    public delegate void ForkBuilderAction(IForkBuilder builder);
+    public delegate void ForkBuildAction(IForkBuilder builder);
 
-    public delegate void MergeBuilderAction(IMergeBuilder builder);
+    public delegate void MergeBuildAction(IMergeBuilder builder);
 
-    public delegate void DecisionBuilderAction(IDecisionBuilder builder);
+    public delegate void DecisionBuildAction(IDecisionBuilder builder);
 
-    public delegate void DecisionBuilderAction<TToken>(IDecisionBuilder<TToken> builder)
+    public delegate void DecisionBuildAction<TToken>(IDecisionBuilder<TToken> builder)
         where TToken : Token, new();
 
-    public delegate void DataStoreBuilderAction(IDataStoreBuilder builder);
+    public delegate void DataStoreBuildAction(IDataStoreBuilder builder);
 
-    public delegate void TimeEventBuilderAction(ITimeEventBuilder builder);
+    public delegate void TimeEventBuildAction(ITimeEventBuilder builder);
 
-    public delegate void AcceptEventActionBuilderAction(IAcceptEventActionBuilder builder);
+    public delegate void AcceptEventActionBuildAction(IAcceptEventActionBuilder builder);
 
-    public delegate void SendEventActionBuilderAction(ISendEventActionBuilder builder);
+    public delegate void SendEventActionBuildAction(ISendEventActionBuilder builder);
 
-    public delegate void PublishEventActionBuilderAction(IPublishEventActionBuilder builder);
+    public delegate void PublishEventActionBuildAction(IPublishEventActionBuilder builder);
 
     internal delegate void NodeValidationAction();
 

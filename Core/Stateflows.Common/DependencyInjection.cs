@@ -19,22 +19,22 @@ namespace Stateflows
 {
     public static class StateflowsCommonDependencyInjection
     {
-        public static IServiceCollection AddStateflowsClient(this IServiceCollection services, Action<IStateflowsClientBuilder> builderAction)
+        public static IServiceCollection AddStateflowsClient(this IServiceCollection services, Action<IStateflowsClientBuilder> buildAction)
         {
-            builderAction.ThrowIfNull(nameof(builderAction));
+            buildAction.ThrowIfNull(nameof(buildAction));
 
             if (services.IsServiceRegistered<BehaviorLocator>()) throw new StateflowsException("Stateflows client already registered");
 
             var builder = new StateflowsClientBuilder(services);
 
-            builderAction(builder);
+            buildAction(builder);
 
             services
-                .AddTransient<ClientInterceptor>()
-                .AddTransient<IBehaviorLocator, BehaviorLocator>()
-                .AddTransient<IStateMachineLocator, StateMachineLocator>()
-                .AddTransient<IActivityLocator, ActivityLocator>()
-                .AddTransient<ISystem>((IServiceProvider provider) =>
+                .AddScoped<ClientInterceptor>()
+                .AddScoped<IBehaviorLocator, BehaviorLocator>()
+                .AddScoped<IStateMachineLocator, StateMachineLocator>()
+                .AddScoped<IActivityLocator, ActivityLocator>()
+                .AddScoped<ISystem>((IServiceProvider provider) =>
                 {
                     if (provider.GetRequiredService<IBehaviorLocator>().TryLocateBehavior(SystemBehavior.Id, out var behavior))
                     {

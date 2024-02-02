@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Linq;
 using System.Collections.Generic;
-using Microsoft.Extensions.DependencyInjection;
 using Stateflows.Common;
 using Stateflows.Common.Classes;
 using Stateflows.Common.Utilities;
@@ -27,11 +26,13 @@ namespace Stateflows.Activities.Engine
             ServiceProvider = serviceProvider;
         }
 
+#pragma warning disable CS0067 // The event 'Provider.BehaviorClassesChanged' is never used
         public event ActionAsync<IBehaviorProvider> BehaviorClassesChanged;
+#pragma warning restore CS0067 // The event 'Provider.BehaviorClassesChanged' is never used
 
         public bool TryProvideBehavior(BehaviorId id, out IBehavior behavior)
         {
-            behavior = id.Type == nameof(Activity) && Register.Activities.ContainsKey($"{id.Name}.current")
+            behavior = id.Type == BehaviorType.Activity && Register.Activities.ContainsKey($"{id.Name}.current")
                 ? new Behavior(Engine, ServiceProvider, id)
                 : null;
 
@@ -39,6 +40,6 @@ namespace Stateflows.Activities.Engine
         }
 
         public IEnumerable<BehaviorClass> BehaviorClasses
-            => Register.Activities.Values.Select(sm => new BehaviorClass(nameof(Activity), sm.Name));
+            => Register.Activities.Values.Select(sm => new BehaviorClass(BehaviorType.Activity, sm.Name));
     }
 }

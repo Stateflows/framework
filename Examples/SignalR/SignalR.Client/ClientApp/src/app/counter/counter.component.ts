@@ -1,3 +1,4 @@
+import { HttpClient } from '@angular/common/http';
 import { Component } from '@angular/core';
 import { BehaviorClass } from '@stateflows/signalr-client';
 import { BehaviorId } from '@stateflows/signalr-client';
@@ -19,6 +20,22 @@ export class CounterComponent {
   private stateflows: StateflowsClient = new StateflowsClient("https://localhost:7067/");
   public url: string | null = null;
 
+  constructor(private http: HttpClient) { }
+
+  public async refresh() {
+    let sm = await this.stateflows.stateMachineLocator.locateStateMachine(new StateMachineId("stateMachine1", "x"));
+    let encoded = plantUmlEncoder.encode((await sm.request<PlantUmlResponse>(new PlantUmlRequest())).Response.PlantUml);
+    this.url = 'http://www.plantuml.com/plantuml/img/' + encoded;
+  }
+
+  public async go() {
+    this.http.get('https://localhost:7067/StateMachine/stateMachine1/x/go').subscribe(() => this.refresh());
+  }
+
+  public async push() {
+    this.http.post('https://localhost:7067/StateMachine/stateMachine1/x/push', { "dolor": "sit amet" }).subscribe(() => this.refresh());
+  }
+
   public async incrementCounter() {
     let sm = await this.stateflows.stateMachineLocator.locateStateMachine(new StateMachineId("stateMachine1", "x"));
     if ((await sm.getStatus()).Response.BehaviorStatus == BehaviorStatus.NotInitialized) {
@@ -33,7 +50,7 @@ export class CounterComponent {
 
     let system = await this.stateflows.system;
     // let result = await system.getAvailableBehaviorClasses();
-    console.log(await system.getBehaviorInstances());
+    // console.log(await system.getBehaviorInstances());
 
     this.currentCount++;
   }

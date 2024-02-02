@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using Stateflows.Common.Context;
 using Stateflows.Common.Utilities;
 using Stateflows.Common.Interfaces;
+using Stateflows.Common.Trace.Models;
 
 namespace Stateflows.Common.Storage
 {
@@ -12,19 +13,19 @@ namespace Stateflows.Common.Storage
     {
         private readonly Dictionary<BehaviorId, string> Contexts = new Dictionary<BehaviorId, string>();
 
-        public Task<StateflowsContext> Hydrate(BehaviorId id)
+        public Task<StateflowsContext> HydrateAsync(BehaviorId behaviorId)
         {
             lock (Contexts)
             {
-                var context = Contexts.TryGetValue(id, out var contextStr)
+                var context = Contexts.TryGetValue(behaviorId, out var contextStr)
                     ? StateflowsJsonConverter.DeserializeObject<StateflowsContext>(contextStr)
-                    : new StateflowsContext() { Id = id };
+                    : new StateflowsContext() { Id = behaviorId };
 
                 return Task.FromResult(context);
             }
         }
 
-        public Task Dehydrate(StateflowsContext context)
+        public Task DehydrateAsync(StateflowsContext context)
         {
             lock (Contexts)
             {
@@ -34,7 +35,7 @@ namespace Stateflows.Common.Storage
             return Task.CompletedTask;
         }
 
-        public Task<IEnumerable<StateflowsContext>> GetContexts(IEnumerable<BehaviorClass> behaviorClasses)
+        public Task<IEnumerable<StateflowsContext>> GetContextsAsync(IEnumerable<BehaviorClass> behaviorClasses)
         {
             IEnumerable<StateflowsContext> result;
 
@@ -49,10 +50,16 @@ namespace Stateflows.Common.Storage
             return Task.FromResult(result);
         }
 
-        public async Task<IEnumerable<StateflowsContext>> GetContextsToTimeTrigger(IEnumerable<BehaviorClass> behaviorClasses)
-            => (await GetContexts(behaviorClasses)).Where(context =>
+        public async Task<IEnumerable<StateflowsContext>> GetContextsToTimeTriggerAsync(IEnumerable<BehaviorClass> behaviorClasses)
+            => (await GetContextsAsync(behaviorClasses)).Where(context =>
                 context.TriggerTime != null &&
                 context.TriggerTime < DateTime.Now
             );
+
+        public Task SaveTraceAsync(BehaviorTrace behaviorTrace)
+            => Task.CompletedTask;
+
+        public Task<IEnumerable<BehaviorTrace>> GetTracesAsync(BehaviorId behaviorId)
+            => Task.FromResult(Array.Empty<BehaviorTrace>() as IEnumerable<BehaviorTrace>);
     }
 }

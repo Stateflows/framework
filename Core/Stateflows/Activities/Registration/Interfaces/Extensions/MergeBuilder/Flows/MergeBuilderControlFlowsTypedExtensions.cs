@@ -5,7 +5,7 @@ namespace Stateflows.Activities.Typed
 {
     public static class MergeBuilderControlFlowsTypedExtensions
     {
-        public static void AddControlFlow<TTargetNode>(this IMergeBuilder builder, ControlFlowBuilderAction buildAction = null)
+        public static void AddControlFlow<TTargetNode>(this IMergeBuilder builder, ControlFlowBuildAction buildAction = null)
             where TTargetNode : ActivityNode
             => builder.AddControlFlow(ActivityNodeInfo<TTargetNode>.Name, buildAction);
 

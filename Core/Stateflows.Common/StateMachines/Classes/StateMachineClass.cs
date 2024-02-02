@@ -6,7 +6,7 @@ namespace Stateflows
 {
     public struct StateMachineClass
     {
-        public static readonly string Type = "StateMachine";
+        public static readonly string Type = BehaviorType.StateMachine;
 
         public StateMachineClass(string name)
         {
@@ -52,5 +52,8 @@ namespace Stateflows
 
         public readonly override string ToString()
             => StateflowsJsonConverter.SerializeObject(this);
+
+        public readonly StateMachineId ToId(string instance)
+            => new StateMachineId(Name, instance);
     }
 }

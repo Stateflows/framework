@@ -6,7 +6,7 @@ namespace Stateflows.Activities.Typed
 {
     public static class DataStoreBuilderFlowsTypedExtensions
     {
-        public static void AddTokenFlow<TToken, TTargetNode>(this IDataStoreBuilder builder, ObjectFlowBuilderAction<TToken> buildAction = null)
+        public static void AddTokenFlow<TToken, TTargetNode>(this IDataStoreBuilder builder, ObjectFlowBuildAction<TToken> buildAction = null)
             where TToken : Token, new()
             where TTargetNode : ActivityNode
             => builder.AddTokenFlow<TToken>(ActivityNodeInfo<TTargetNode>.Name, buildAction);

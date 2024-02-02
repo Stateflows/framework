@@ -2,6 +2,6 @@
 {
     public interface IInitial<out TReturn>
     {
-        TReturn AddInitial(InitialBuilderAction buildAction);
+        TReturn AddInitial(InitialBuildAction buildAction);
     }
 }

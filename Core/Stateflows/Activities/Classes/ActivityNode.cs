@@ -1,4 +1,5 @@
 ﻿using Stateflows.Activities.Context.Interfaces;
+using Stateflows.Common.Extensions;
 
 namespace Stateflows.Activities
 {
@@ -10,6 +11,6 @@ namespace Stateflows.Activities
     public static class ActivityNodeInfo<TNode>
         where TNode : ActivityNode
     {
-        public static string Name => typeof(TNode).FullName;
+        public static string Name => typeof(TNode).GetReadableName();
     }
 }

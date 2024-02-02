@@ -9,14 +9,13 @@ namespace Stateflows.System.EventHandlers
 {
     internal class BehaviorInstancesHandler : ISystemEventHandler
     {
-        public IBehaviorClassesProvider BehaviorClassesProvider { get; }
-
-        public IStateflowsStorage Storage { get; }
+        public readonly IBehaviorClassesProvider BehaviorClassesProvider;
+        public readonly IServiceProvider ServiceProvider;
 
         public BehaviorInstancesHandler(IServiceProvider serviceProvider)
         {
+            ServiceProvider = serviceProvider;
             BehaviorClassesProvider = serviceProvider.GetRequiredService<IBehaviorClassesProvider>();
-            Storage = serviceProvider.GetRequiredService<IStateflowsStorage>();
         }
 
         public Type EventType => typeof(BehaviorInstancesRequest);
@@ -32,7 +31,9 @@ namespace Stateflows.System.EventHandlers
                     classes = BehaviorClassesProvider.AllBehaviorClasses;
                 }
 
-                var contexts = await Storage.GetContexts(classes);
+                var storage = ServiceProvider.GetRequiredService<IStateflowsStorage>();
+
+                var contexts = await storage.GetContextsAsync(classes);
 
                 request.Respond(new BehaviorInstancesResponse()
                     {

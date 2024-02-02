@@ -149,6 +149,11 @@ namespace Stateflows.Activities.Models
             => acceptEventActionNodes ??= Nodes.Values
                 .Where(n => n.Type == NodeType.AcceptEventAction);
 
+        private IEnumerable<Node> danglingTimeEventActionNodes = null;
+        public IEnumerable<Node> DanglingTimeEventActionNodes
+            => danglingTimeEventActionNodes ??= AcceptEventActionNodes
+                .Where(n => !n.IncomingEdges.Any() && n.EventType.IsSubclassOf(typeof(TimeEvent)));
+
         private IEnumerable<Node> exceptionHandlers = null;
         public IEnumerable<Node> ExceptionHandlers
             => exceptionHandlers ??= Edges

@@ -10,7 +10,7 @@ namespace Stateflows.StateMachines.Typed.Data
     {
         public static IInitializedCompositeStateBuilder AddTransition<TEventPayload, TTransition, TTargetState>(this IInitializedCompositeStateBuilder builder)
             where TTransition : Transition<Event<TEventPayload>>
-            where TTargetState : State
+            where TTargetState : BaseState
             => AddTransition<TEventPayload, TTransition>(builder, StateInfo<TTargetState>.Name);
 
         [DebuggerHidden]
@@ -25,8 +25,8 @@ namespace Stateflows.StateMachines.Typed.Data
             );
         }
 
-        public static IInitializedCompositeStateBuilder AddTransition<TEventPayload, TTargetState>(this IInitializedCompositeStateBuilder builder, TransitionBuilderAction<Event<TEventPayload>> transitionBuildAction = null)
-            where TTargetState : State
+        public static IInitializedCompositeStateBuilder AddTransition<TEventPayload, TTargetState>(this IInitializedCompositeStateBuilder builder, TransitionBuildAction<Event<TEventPayload>> transitionBuildAction = null)
+            where TTargetState : BaseState
             => builder.AddTransition(StateInfo<TTargetState>.Name, transitionBuildAction);
     }
 }

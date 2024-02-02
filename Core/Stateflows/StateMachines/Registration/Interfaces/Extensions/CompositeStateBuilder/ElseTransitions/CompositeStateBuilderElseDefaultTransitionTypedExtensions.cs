@@ -7,15 +7,15 @@ namespace Stateflows.StateMachines.Typed
     {
         public static ICompositeStateBuilder AddElseDefaultTransition<TElseTransition, TTargetState>(this ICompositeStateBuilder builder)
             where TElseTransition : ElseTransition<Completion>
-            where TTargetState : State
+            where TTargetState : BaseState
             => builder.AddElseDefaultTransition<TElseTransition>(StateInfo<TTargetState>.Name);
 
         public static ICompositeStateBuilder AddElseDefaultTransition<TElseTransition>(this ICompositeStateBuilder builder, string targetVertexName)
             where TElseTransition : ElseTransition<Completion>
             => builder.AddElseTransition<Completion, TElseTransition>(targetVertexName);
 
-        public static ICompositeStateBuilder AddElseDefaultTransition<TTargetState>(this ICompositeStateBuilder builder, ElseTransitionBuilderAction<Completion> transitionBuildAction = null)
-            where TTargetState : State
+        public static ICompositeStateBuilder AddElseDefaultTransition<TTargetState>(this ICompositeStateBuilder builder, ElseTransitionBuildAction<Completion> transitionBuildAction = null)
+            where TTargetState : BaseState
             => builder.AddElseDefaultTransition(StateInfo<TTargetState>.Name, transitionBuildAction);
     }
 }

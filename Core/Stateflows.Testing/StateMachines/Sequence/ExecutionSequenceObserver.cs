@@ -15,10 +15,10 @@ namespace Stateflows.Testing.StateMachines.Sequence
             SequenceBuilder = sequenceBuilder;
         }
 
-        public void Verify(Action<IExecutionSequenceBuilder> sequenceBuilderAction)
+        public void Verify(Action<IExecutionSequenceBuilder> sequenceBuildAction)
         {
             var builder = new ExecutionSequence();
-            sequenceBuilderAction(builder);
+            sequenceBuildAction(builder);
             builder.ValidateWith(SequenceBuilder);
         }
 
@@ -66,14 +66,14 @@ namespace Stateflows.Testing.StateMachines.Sequence
 
         Task IStateMachineObserver.AfterTransitionEffectAsync(ITransitionContext<Event> context)
         {
-            SequenceBuilder.TransitionEffect(context.Event.Name, context.SourceState.Name, context.TargetState.Name);
+            SequenceBuilder.TransitionEffect(context.Event.Name, context.SourceState.Name, context.TargetState?.Name);
 
             return Task.CompletedTask;
         }
 
         Task IStateMachineObserver.AfterTransitionGuardAsync(IGuardContext<Event> context, bool guardResult)
         {
-            SequenceBuilder.TransitionGuard(context.Event.Name, context.SourceState.Name, context.TargetState.Name);
+            SequenceBuilder.TransitionGuard(context.Event.Name, context.SourceState.Name, context.TargetState?.Name);
 
             return Task.CompletedTask;
         }

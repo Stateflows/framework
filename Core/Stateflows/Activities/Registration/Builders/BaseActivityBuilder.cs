@@ -29,7 +29,7 @@ namespace Stateflows.Activities.Registration
             Node = parentNode;
         }
 
-        public BaseActivityBuilder AddNode(NodeType type, string nodeName, ActionDelegateAsync actionAsync, NodeBuilderAction buildAction = null, Type exceptionOrEventType = null)
+        public BaseActivityBuilder AddNode(NodeType type, string nodeName, ActionDelegateAsync actionAsync, NodeBuildAction buildAction = null, Type exceptionOrEventType = null)
         {
             if (Node.Type != NodeType.Activity)
             {
@@ -105,7 +105,10 @@ namespace Stateflows.Activities.Registration
                     await actionAsync(c);
                     await observer.AfterNodeExecuteAsync(c as ActionContext);
 
-                    c.Output(new ControlToken());
+                    if (!(c as BaseContext).Context.Executor.StructuralTypes.Contains(node.Type))
+                    {
+                        c.Output(new ControlToken());
+                    }
                 }
                 catch (Exception e)
                 {
@@ -126,14 +129,14 @@ namespace Stateflows.Activities.Registration
             return this;
         }
 
-        public BaseActivityBuilder AddAction(string actionNodeName, ActionDelegateAsync actionAsync, NodeBuilderAction buildAction = null)
+        public BaseActivityBuilder AddAction(string actionNodeName, ActionDelegateAsync actionAsync, NodeBuildAction buildAction = null)
             => AddNode(NodeType.Action, actionNodeName, actionAsync, buildAction);
 
         public BaseActivityBuilder AddSendEventAction<TEvent>(
             string actionNodeName,
             SendEventActionDelegateAsync<TEvent> actionAsync,
             BehaviorIdSelectorAsync targetSelectorAsync,
-            SendEventActionBuilderAction buildAction = null
+            SendEventActionBuildAction buildAction = null
         )
             where TEvent : Event, new()
             => AddAction(
@@ -153,7 +156,7 @@ namespace Stateflows.Activities.Registration
         public BaseActivityBuilder AddAcceptEventAction<TEvent>(
             string actionNodeName,
             AcceptEventActionDelegateAsync<TEvent> actionAsync,
-            AcceptEventActionBuilderAction buildAction = null
+            AcceptEventActionBuildAction buildAction = null
         )
             where TEvent : Event, new()
             => AddNode(
@@ -164,7 +167,7 @@ namespace Stateflows.Activities.Registration
                 typeof(TEvent)
             );
 
-        public BaseActivityBuilder AddInitial(InitialBuilderAction buildAction)
+        public BaseActivityBuilder AddInitial(InitialBuildAction buildAction)
             => AddNode(
                 NodeType.Initial,
                 nameof(NodeType.Initial),
@@ -175,7 +178,7 @@ namespace Stateflows.Activities.Registration
         public BaseActivityBuilder AddFinal()
             => AddNode(
                 NodeType.Final,
-                Final.Name,
+                FinalNode.Name,
                 c =>
                 {
                     (c as ActionContext).NodeScope.Terminate();
@@ -184,7 +187,7 @@ namespace Stateflows.Activities.Registration
                 b => b.SetOptions(NodeOptions.ControlNodeDefault)
             );
 
-        public BaseActivityBuilder AddInput(InputBuilderAction buildAction)
+        public BaseActivityBuilder AddInput(InputBuildAction buildAction)
             => AddNode(
                 NodeType.Input,
                 nameof(NodeType.Input),
@@ -199,7 +202,7 @@ namespace Stateflows.Activities.Registration
         public BaseActivityBuilder AddOutput()
             => AddNode(
                 NodeType.Output,
-                Output.Name,
+                OutputNode.Name,
                 c =>
                 {
                     c.PassAllOn();
@@ -208,7 +211,7 @@ namespace Stateflows.Activities.Registration
                 b => b.SetOptions(NodeOptions.None)
             );
 
-        public BaseActivityBuilder AddStructuredActivity(string structuredActivityNodeName, ReactiveStructuredActivityBuilderAction builderAction = null)
+        public BaseActivityBuilder AddStructuredActivity(string structuredActivityNodeName, ReactiveStructuredActivityBuildAction buildAction = null)
             => AddNode(
                 NodeType.StructuredActivity,
                 structuredActivityNodeName,
@@ -217,18 +220,24 @@ namespace Stateflows.Activities.Registration
                     var executor = c.Activity.GetContext().Executor;
                     var node = c.GetNode();
 
-                    await executor.DoInitializeNodeAsync(node, c as ActionContext);
-                    (var output, var finalized) = await executor.DoExecuteStructuredNodeAsync(node, c.Activity.GetNodeScope(), c.Input);
+                    if (!(c as ActionContext).Context.NodesToExecute.Contains(node))
+                    {
+                        await executor.DoInitializeNodeAsync(node, c as ActionContext);
+                    }
+
+                    (var output, var finalized) = await executor.DoExecuteStructuredNodeAsync(node, c.Activity.GetNodeScope().CreateChildScope(), c.Input);
+
                     c.OutputRange(output);
+
                     if (finalized)
                     {
                         await executor.DoFinalizeNodeAsync(node, c as ActionContext);
                     }
                 },
-                b => builderAction?.Invoke(new StructuredActivityBuilder(b.Node, this, Services))
+                b => buildAction?.Invoke(new StructuredActivityBuilder(b.Node, this, Services))
             );
 
-        public BaseActivityBuilder AddParallelActivity<TToken>(string parallelActivityNodeName, ParallelActivityBuilderAction builderAction = null)
+        public BaseActivityBuilder AddParallelActivity<TToken>(string parallelActivityNodeName, ParallelActivityBuildAction buildAction = null)
             where TToken : Token, new()
             => AddNode(
                 NodeType.ParallelActivity,
@@ -242,10 +251,10 @@ namespace Stateflows.Activities.Registration
                     c.OutputRange(await executor.DoExecuteParallelNodeAsync<TToken>(c as ActionContext));
                     await executor.DoFinalizeNodeAsync(node, c as ActionContext);
                 },
-                b => builderAction?.Invoke(new StructuredActivityBuilder(b.Node, this, Services))
+                b => buildAction?.Invoke(new StructuredActivityBuilder(b.Node, this, Services))
             );
 
-        public BaseActivityBuilder AddIterativeActivity<TToken>(string parallelActivityNodeName, IterativeActivityBuilderAction builderAction = null)
+        public BaseActivityBuilder AddIterativeActivity<TToken>(string parallelActivityNodeName, IterativeActivityBuildAction buildAction = null)
             where TToken : Token, new()
             => AddNode(
                 NodeType.IterativeActivity,
@@ -259,7 +268,7 @@ namespace Stateflows.Activities.Registration
                     c.OutputRange(await executor.DoExecuteIterativeNodeAsync<TToken>(c as ActionContext));
                     await executor.DoFinalizeNodeAsync(node, c as ActionContext);
                 },
-                b => builderAction?.Invoke(new StructuredActivityBuilder(b.Node, this, Services))
+                b => buildAction?.Invoke(new StructuredActivityBuilder(b.Node, this, Services))
             );
 
         public BaseActivityBuilder AddOnFinalize(Func<IActivityNodeContext, Task> actionAsync)

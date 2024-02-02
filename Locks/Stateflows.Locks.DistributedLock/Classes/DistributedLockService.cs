@@ -18,7 +18,7 @@ namespace Stateflows.Locks.DistributedLock.Classes
         public async Task<IStateflowsLockHandle> AquireLockAsync(BehaviorId id, TimeSpan? timeout = null)
         {
             var distributedLock = await DistributedLockFactory(id.ToString());
-            var handle = await distributedLock.AcquireAsync(timeout);
+            var handle = distributedLock.Acquire(timeout);
 
             return new LockHandle(id, handle);
         }

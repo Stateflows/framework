@@ -25,7 +25,7 @@ namespace Stateflows.StateMachines.Typed
             );
         }
 
-        public static ITypedInitializedCompositeStateBuilder AddElseTransition<TEvent, TTargetState>(this ITypedInitializedCompositeStateBuilder builder, ElseTransitionBuilderAction<TEvent> transitionBuildAction = null)
+        public static ITypedInitializedCompositeStateBuilder AddElseTransition<TEvent, TTargetState>(this ITypedInitializedCompositeStateBuilder builder, ElseTransitionBuildAction<TEvent> transitionBuildAction = null)
             where TEvent : Event, new()
             where TTargetState : BaseState
             => builder.AddElseTransition(StateInfo<TTargetState>.Name, transitionBuildAction);

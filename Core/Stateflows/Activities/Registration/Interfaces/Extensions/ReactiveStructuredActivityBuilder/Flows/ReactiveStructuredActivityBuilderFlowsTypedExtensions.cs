@@ -5,7 +5,7 @@ namespace Stateflows.Activities.Typed
 {
     public static class ReactiveStructuredActivityBuilderFlowsTypedExtensions
     {
-        public static IReactiveStructuredActivityBuilder AddTokenFlow<TToken, TTargetNode>(this IReactiveStructuredActivityBuilder builder, ObjectFlowBuilderAction<TToken> buildAction = null)
+        public static IReactiveStructuredActivityBuilder AddTokenFlow<TToken, TTargetNode>(this IReactiveStructuredActivityBuilder builder, ObjectFlowBuildAction<TToken> buildAction = null)
             where TToken : Token, new()
             where TTargetNode : ActivityNode
             => builder.AddTokenFlow<TToken>(ActivityNodeInfo<TTargetNode>.Name, buildAction);

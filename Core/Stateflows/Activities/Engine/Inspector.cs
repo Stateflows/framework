@@ -67,15 +67,15 @@ namespace Stateflows.Activities.Engine
         private IEnumerable<IActivityExceptionHandler> ExceptionHandlers
             => exceptionHandlers ??= ExceptionHandlerFactories.Select(t => t(Executor.NodeScope.ServiceProvider));
 
-        public IEnumerable<IActivityInspector> inspectors;
+        private IEnumerable<IActivityInspector> inspectors;
         public IEnumerable<IActivityInspector> Inspectors
             => inspectors ??= Executor.NodeScope.ServiceProvider.GetService<IEnumerable<IActivityInspector>>();
 
-        public IEnumerable<IActivityPlugin> plugins;
+        private IEnumerable<IActivityPlugin> plugins;
         public IEnumerable<IActivityPlugin> Plugins
             => plugins ??= Executor.NodeScope.ServiceProvider.GetService<IEnumerable<IActivityPlugin>>();
 
-        public AcceptEvents acceptEventsPlugin;
+        private AcceptEvents acceptEventsPlugin;
         public AcceptEvents AcceptEventsPlugin
             => acceptEventsPlugin ??= Executor.NodeScope.ServiceProvider.GetService<AcceptEvents>();
 

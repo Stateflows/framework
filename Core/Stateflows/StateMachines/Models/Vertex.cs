@@ -23,9 +23,7 @@ namespace Stateflows.StateMachines.Models
         public Vertex Parent { get; set; }
         public string Name { get; set; }
         public VertexType Type { get; set; }
-        public string Identifier => (Parent is null)
-            ? Name
-            : $"{Parent.Identifier}:{Name}";
+        public string Identifier => Name;
 
         private Logic<StateMachineActionAsync> initialize = null;
         public Logic<StateMachineActionAsync> Initialize => initialize ??= new Logic<StateMachineActionAsync>() { Name = Constants.Initialize };
