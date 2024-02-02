@@ -166,6 +166,8 @@ builder.Services.AddStateflows(b => b
         )
     )
 
+    .AddTracer("W:\\traces")
+
     .AddStateMachines(b => b
         .AddStateMachine("stateMachine1", b => b
             .AddInitialState("state1", b => b

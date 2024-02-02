@@ -193,8 +193,6 @@ namespace Stateflows.Activities.Engine
         {
             var result = true;
 
-            Debug.WriteLine($"---> processing event {context.Event.Name}");
-
             Context = (context as BaseContext).Context;
 
             if (context.Event is TimeEvent timeEvent)
