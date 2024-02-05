@@ -1,4 +1,3 @@
-import { HubConnection } from "@microsoft/signalr";
 import { Request } from "../events/request";
 import { IBehavior } from "../interfaces/behavior";
 import { SendResult } from "../classes/send-result";
@@ -10,21 +9,21 @@ import { Response } from "../events/response";
 import { InitializationRequest } from "../events/initialization.request";
 import { Event } from "../events/event";
 import { BehaviorStatusRequest } from "../events/behavior-status.request";
+import { IStateflowsClientTransport } from "../interfaces/stateflows-client-transport";
 
 export class Behavior implements IBehavior {
-    private hubPromise: Promise<HubConnection>;
-    
-    constructor(hubPromiseOrBehavior: Promise<HubConnection> | Behavior, public behaviorId: BehaviorId) {
-        this.hubPromise = hubPromiseOrBehavior instanceof Behavior
-            ? hubPromiseOrBehavior.hubPromise
-            : this.hubPromise = hubPromiseOrBehavior;
+    #transportPromise: Promise<IStateflowsClientTransport>
+
+    constructor(transportPromiseOrBehavior: Promise<IStateflowsClientTransport> | Behavior, public behaviorId: BehaviorId) {
+        this.#transportPromise = transportPromiseOrBehavior instanceof Behavior
+            ? transportPromiseOrBehavior.#transportPromise
+            : this.#transportPromise = transportPromiseOrBehavior;
     }
 
     send(event: Event): Promise<SendResult> {
         return new Promise<SendResult>(async (resolve, reject) => {
-            let hub = await this.hubPromise;
-            let result = await hub.invoke("Send", this.behaviorId, JSON.stringify(event));
-            resolve(JSON.parse(result));
+            let hub = await this.#transportPromise;
+            resolve(await hub.send(this.behaviorId, event));
         });
     }
 

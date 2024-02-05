@@ -11,7 +11,8 @@ builder.RootComponents.Add<HeadOutlet>("head::after");
 builder.Services.AddScoped(sp => new HttpClient { BaseAddress = new Uri(builder.HostEnvironment.BaseAddress) });
 
 builder.Services.AddStateflowsClient(b => b
-    .AddSignalRTransport(provider => provider.GetRequiredService<NavigationManager>().BaseUri)
+    .AddHttpTransport(provider => new Uri(provider.GetRequiredService<NavigationManager>().BaseUri))
+    //.AddSignalRTransport(provider => provider.GetRequiredService<NavigationManager>().BaseUri)
 );
 
 await builder.Build().RunAsync();

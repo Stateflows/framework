@@ -1,4 +1,3 @@
-import { HubConnection, HubConnectionBuilder } from "@microsoft/signalr";
 import { IBehaviorLocator } from "../interfaces/behavior.locator";
 import { IStateMachineLocator } from "../interfaces/state-machine.locator";
 import { BehaviorLocator } from "../locators/behavior.locator";
@@ -9,34 +8,15 @@ import { BehaviorClass } from "../ids/behavior.class";
 import { System } from "../behaviors/system";
 import { IActivityLocator } from "../interfaces/activity.locator";
 import { ActivityLocator } from "../locators/activity.locator";
+import { IStateflowsClientTransportFactory } from "../interfaces/stateflows-client-transport-factory";
 
 export class StateflowsClient {
-    #hub: Promise<HubConnection> | null = null;
-
-    private get hub(): Promise<HubConnection> {
-        if (this.#hub == null) {
-            this.#hub = new Promise<HubConnection>((resolve, reject) => {
-                let hub = new HubConnectionBuilder()
-                    .withUrl(this.url + "stateflows_v1")
-                    .build();
-
-                hub.start().then(() => resolve(hub));
-            });
-        }
-
-        return this.#hub;
-    }
-
-    constructor(private url: string) {
-        if (url.slice(-1) != '/') {
-            url = url + '/';
-        }
-    }
+    constructor(private transportFactory: IStateflowsClientTransportFactory) { }
 
     #behaviorLocator: IBehaviorLocator | null = null;
 
     public get behaviorLocator(): IBehaviorLocator {
-        return this.#behaviorLocator ??= new BehaviorLocator(this.hub);
+        return this.#behaviorLocator ??= new BehaviorLocator(this.transportFactory.getTransport());
     }
 
     #stateMachineLocator: IStateMachineLocator | null = null;

@@ -181,7 +181,7 @@ builder.Services.AddStateflows(b => b
 
 var app = builder.Build();
 
-app.MapStateflowsTransportHub();
+app.MapStateflowsSignalRTransport();
 
 // Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())

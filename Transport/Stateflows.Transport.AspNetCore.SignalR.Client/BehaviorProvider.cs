@@ -3,7 +3,7 @@ using Stateflows.Common;
 using Stateflows.Common.Utilities;
 using Stateflows.Common.Interfaces;
 
-namespace Stateflows.Transport.AspNetCore.SignalR.Client
+namespace Stateflows.Transport.SignalR.Client
 {
     internal class BehaviorProvider : IBehaviorProvider
     {

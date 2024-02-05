@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk.Web">
+﻿<Project Sdk="Microsoft.NET.Sdk.Web">
 
   <PropertyGroup>
     <TargetFramework>net6.0</TargetFramework>
@@ -17,7 +17,6 @@
   <ItemGroup>
     <ProjectReference Include="..\..\..\..\Core\Stateflows\Stateflows.csproj" />
     <ProjectReference Include="..\..\..\..\Extensions\Stateflows.Extensions.PlantUml\Stateflows.Extensions.PlantUml.csproj" />
-    <ProjectReference Include="..\..\..\..\Storage\Stateflows.Storage.EntityFrameworkCore.7.0\Stateflows.Storage.EntityFrameworkCore.7.0.csproj" />
     <ProjectReference Include="..\..\..\..\Tools\Stateflows.Tools.Tracer\Stateflows.Tools.Tracer.csproj" />
     <ProjectReference Include="..\..\..\..\Transport\Stateflows.Transport.AspNetCore.SignalR\Stateflows.Transport.AspNetCore.SignalR.csproj" />
     <ProjectReference Include="..\..\..\Examples.Common\Examples.Common.csproj" />

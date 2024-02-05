@@ -45,7 +45,7 @@ app.UseHttpsRedirection();
 app.UseStaticFiles();
 app.UseRouting();
 
-app.MapStateflowsTransportHub();
+app.MapStateflowsSignalRTransport();
 
 app.UseCors(builder => builder
   .AllowAnyHeader()

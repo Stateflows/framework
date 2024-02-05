@@ -1,7 +1,7 @@
 {
-  "name": "@stateflows/signalr-client",
+  "name": "@stateflows/client-abstractions",
   "version": "0.9.0",
-  "description": "SignalR-based client for Stateflows framework",
+  "description": "Client abstractions package for Stateflows framework",
   "main": "dist/index.js",
   "module": "./dist/index.mjs",
   "types": "./dist/index.d.ts",
@@ -10,24 +10,19 @@
   ],
   "scripts": {
     "build": "tsup",
-    "dev": "tsup --watch",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [
     "Stateflows",
     "state-machine",
-    "SignalR",
-    "signal-r"
+    "activity",
+    "workflow"
   ],
   "author": "Stateflows",
   "license": "MIT",
   "homepage": "https://www.stateflows.net",
-  "dependencies": {
-    "@microsoft/signalr": "^8.0.0",
-    "@stateflows/client-abstractions": "file:../client-abstractions"
-  },
   "devDependencies": {
-    "tsup": "^7.3.0",
+    "tsup": "^8.0.1",
     "typescript": "^5.3.3"
   }
 }

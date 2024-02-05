@@ -1,7 +1,7 @@
 {
-  "name": "@stateflows/signalr-client",
+  "name": "@stateflows/rest-client",
   "version": "0.9.0",
-  "description": "SignalR-based client for Stateflows framework",
+  "description": "REST-based client for Stateflows framework",
   "main": "dist/index.js",
   "module": "./dist/index.mjs",
   "types": "./dist/index.d.ts",
@@ -10,7 +10,6 @@
   ],
   "scripts": {
     "build": "tsup",
-    "dev": "tsup --watch",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [
@@ -23,11 +22,10 @@
   "license": "MIT",
   "homepage": "https://www.stateflows.net",
   "dependencies": {
-    "@microsoft/signalr": "^8.0.0",
-    "@stateflows/client-abstractions": "file:../client-abstractions"
+    "@microsoft/signalr": "^8.0.0"
   },
   "devDependencies": {
-    "tsup": "^7.3.0",
+    "tsup": "^8.0.1",
     "typescript": "^5.3.3"
   }
 }
