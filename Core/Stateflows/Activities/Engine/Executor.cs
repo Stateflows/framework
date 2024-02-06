@@ -485,6 +485,7 @@ namespace Stateflows.Activities.Engine
 
                 var inputTokens = input ?? streams.SelectMany(stream => stream.Tokens).ToArray();
 
+                nodeScope = nodeScope.CreateChildScope();
                 lock (node.Graph)
                 {
                     Debug.WriteLine($">>> Executing node {node.Name}, threadId: {nodeScope.ThreadId}");

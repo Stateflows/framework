@@ -3,7 +3,7 @@
   <PropertyGroup>
     <TargetFramework>netstandard2.1</TargetFramework>
     <Title>Stateflows framework transport abstractions</Title>
-    <Version>0.8.0-alpha</Version>
+    <Version>0.8.1-alpha</Version>
     <Authors>Stateflows</Authors>
     <PackageProjectUrl>https://www.stateflows.net</PackageProjectUrl>
     <PackageIcon>stateflows-logo-1024.png</PackageIcon>

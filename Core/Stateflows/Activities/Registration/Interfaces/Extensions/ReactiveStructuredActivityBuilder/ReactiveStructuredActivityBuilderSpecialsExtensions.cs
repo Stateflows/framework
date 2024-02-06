@@ -21,6 +21,9 @@ namespace Stateflows.Activities
                     b => buildAction(b)
                 ) as IReactiveStructuredActivityBuilder;
 
+        public static IReactiveStructuredActivityBuilder AddJoin(this IReactiveStructuredActivityBuilder builder, JoinBuildAction joinBuildAction)
+            => builder.AddJoin(ActivityNodeInfo<JoinNode>.Name, joinBuildAction);
+
         public static IReactiveStructuredActivityBuilder AddFork(this IReactiveStructuredActivityBuilder builder, string forkNodeName, ForkBuildAction buildAction)
             => (builder as BaseActivityBuilder)
                 .AddNode(
@@ -33,6 +36,9 @@ namespace Stateflows.Activities
                     },
                     b => buildAction(b)
                 ) as IReactiveStructuredActivityBuilder;
+
+        public static IReactiveStructuredActivityBuilder AddFork(this IReactiveStructuredActivityBuilder builder, ForkBuildAction forkBuildAction)
+            => builder.AddFork(ActivityNodeInfo<ForkNode>.Name, forkBuildAction);
 
         public static IReactiveStructuredActivityBuilder AddMerge(this IReactiveStructuredActivityBuilder builder, string mergeNodeName, MergeBuildAction buildAction)
             => (builder as BaseActivityBuilder)
