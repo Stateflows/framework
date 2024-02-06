@@ -7,17 +7,9 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="7.0.14">
-      <PrivateAssets>all</PrivateAssets>
-      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-    </PackageReference>
-    <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="7.0.14" />
-  </ItemGroup>
-
-  <ItemGroup>
     <ProjectReference Include="..\..\..\..\Core\Stateflows\Stateflows.csproj" />
+    <ProjectReference Include="..\..\..\..\Extensions\Stateflows.Extensions.MinimalAPI\Stateflows.Extensions.MinimalApi.csproj" />
     <ProjectReference Include="..\..\..\..\Extensions\Stateflows.Extensions.PlantUml\Stateflows.Extensions.PlantUml.csproj" />
-    <ProjectReference Include="..\..\..\..\Tools\Stateflows.Tools.Tracer\Stateflows.Tools.Tracer.csproj" />
     <ProjectReference Include="..\..\..\..\Transport\Stateflows.Transport.AspNetCore.SignalR\Stateflows.Transport.AspNetCore.SignalR.csproj" />
     <ProjectReference Include="..\..\..\Examples.Common\Examples.Common.csproj" />
     <ProjectReference Include="..\..\..\Examples.Storage\Examples.Storage.csproj" />

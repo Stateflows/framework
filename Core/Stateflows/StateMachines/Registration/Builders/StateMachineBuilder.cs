@@ -12,6 +12,7 @@ using Stateflows.StateMachines.Context.Interfaces;
 using Stateflows.StateMachines.Registration.Interfaces;
 using Stateflows.StateMachines.Registration.Interfaces.Base;
 using Stateflows.StateMachines.Registration.Interfaces.Internal;
+using Stateflows.Common.Registration;
 
 namespace Stateflows.StateMachines.Registration.Builders
 {
@@ -22,11 +23,16 @@ namespace Stateflows.StateMachines.Registration.Builders
         ITypedInitializedStateMachineBuilder,
         ITypedFinalizedStateMachineBuilder,
         ITypedStateMachineBuilder,
-        IInternal
+        IInternal,
+        IBehaviorBuilder
     {
         public Graph Result { get; }
 
         public IServiceCollection Services { get; }
+
+        BehaviorClass IBehaviorBuilder.BehaviorClass => new BehaviorClass(nameof(StateMachine), Result.Name);
+
+        int IBehaviorBuilder.BehaviorVersion => Result.Version;
 
         public StateMachineBuilder(string name, int version, IServiceCollection services)
         {
@@ -127,7 +133,7 @@ namespace Stateflows.StateMachines.Registration.Builders
         }
 
         #region AddState
-        public IInitializedStateMachineBuilder AddState(string stateName, StateBuilderAction stateBuildAction = null)
+        public IInitializedStateMachineBuilder AddState(string stateName, StateBuildAction stateBuildAction = null)
             => AddVertex(stateName, VertexType.State, vertex => stateBuildAction?.Invoke(new StateBuilder(vertex, Services)));
         #endregion
 
@@ -137,16 +143,16 @@ namespace Stateflows.StateMachines.Registration.Builders
         #endregion
 
         #region AddCompositeState
-        public IInitializedStateMachineBuilder AddCompositeState(string stateName, CompositeStateBuilderAction compositeStateBuildAction)
+        public IInitializedStateMachineBuilder AddCompositeState(string stateName, CompositeStateBuildAction compositeStateBuildAction)
             => AddVertex(stateName, VertexType.CompositeState, vertex => compositeStateBuildAction?.Invoke(new CompositeStateBuilder(vertex, Services)));
 
-        public IInitializedStateMachineBuilder AddInitialState(string stateName, StateBuilderAction stateBuildAction = null)
+        public IInitializedStateMachineBuilder AddInitialState(string stateName, StateBuildAction stateBuildAction = null)
         {
             Result.InitialVertexName = stateName;
             return AddVertex(stateName, VertexType.InitialState, vertex => stateBuildAction?.Invoke(new StateBuilder(vertex, Services)));
         }
 
-        public IInitializedStateMachineBuilder AddInitialCompositeState(string stateName, CompositeStateBuilderAction compositeStateBuildAction)
+        public IInitializedStateMachineBuilder AddInitialCompositeState(string stateName, CompositeStateBuildAction compositeStateBuildAction)
         {
             Result.InitialVertexName = stateName;
             return AddVertex(stateName, VertexType.InitialCompositeState, vertex => compositeStateBuildAction?.Invoke(new CompositeStateBuilder(vertex, Services)));
@@ -239,13 +245,13 @@ namespace Stateflows.StateMachines.Registration.Builders
             => AddOnFinalize(actionAsync) as IFinalizedStateMachineBuilder;
 
 
-        ITypedInitializedStateMachineBuilder IStateMachine<ITypedInitializedStateMachineBuilder>.AddState(string stateName, StateBuilderAction stateBuildAction)
+        ITypedInitializedStateMachineBuilder IStateMachine<ITypedInitializedStateMachineBuilder>.AddState(string stateName, StateBuildAction stateBuildAction)
             => AddState(stateName, stateBuildAction) as ITypedInitializedStateMachineBuilder;
 
         ITypedFinalizedStateMachineBuilder IStateMachineFinal<ITypedFinalizedStateMachineBuilder>.AddFinalState(string stateName)
             => AddFinalState(stateName) as ITypedFinalizedStateMachineBuilder;
 
-        ITypedInitializedStateMachineBuilder IStateMachine<ITypedInitializedStateMachineBuilder>.AddCompositeState(string stateName, CompositeStateBuilderAction compositeStateBuildAction)
+        ITypedInitializedStateMachineBuilder IStateMachine<ITypedInitializedStateMachineBuilder>.AddCompositeState(string stateName, CompositeStateBuildAction compositeStateBuildAction)
             => AddCompositeState(stateName, compositeStateBuildAction) as ITypedInitializedStateMachineBuilder;
 
         ITypedInitializedStateMachineBuilder IStateMachineUtils<ITypedInitializedStateMachineBuilder>.AddInterceptor<TInterceptor>()
@@ -257,10 +263,10 @@ namespace Stateflows.StateMachines.Registration.Builders
         ITypedInitializedStateMachineBuilder IStateMachineUtils<ITypedInitializedStateMachineBuilder>.AddExceptionHandler<TExceptionHandler>()
             => AddExceptionHandler<TExceptionHandler>() as ITypedInitializedStateMachineBuilder;
 
-        ITypedInitializedStateMachineBuilder IStateMachineInitial<ITypedInitializedStateMachineBuilder>.AddInitialState(string stateName, StateBuilderAction stateBuildAction)
+        ITypedInitializedStateMachineBuilder IStateMachineInitial<ITypedInitializedStateMachineBuilder>.AddInitialState(string stateName, StateBuildAction stateBuildAction)
             => AddInitialState(stateName, stateBuildAction) as ITypedInitializedStateMachineBuilder;
 
-        ITypedInitializedStateMachineBuilder IStateMachineInitial<ITypedInitializedStateMachineBuilder>.AddInitialCompositeState(string stateName, CompositeStateBuilderAction compositeStateBuildAction)
+        ITypedInitializedStateMachineBuilder IStateMachineInitial<ITypedInitializedStateMachineBuilder>.AddInitialCompositeState(string stateName, CompositeStateBuildAction compositeStateBuildAction)
             => AddInitialCompositeState(stateName, compositeStateBuildAction) as ITypedInitializedStateMachineBuilder;
 
         ITypedStateMachineBuilder IStateMachineUtils<ITypedStateMachineBuilder>.AddInterceptor<TInterceptor>()

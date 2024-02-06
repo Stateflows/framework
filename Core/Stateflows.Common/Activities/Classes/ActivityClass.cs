@@ -1,11 +1,12 @@
 ﻿using Newtonsoft.Json;
 using Stateflows.Common.Utilities;
+using Stateflows.StateMachines;
 
 namespace Stateflows
 {
     public struct ActivityClass
     {
-        public static readonly string Type = "Activity";
+        public static readonly string Type = BehaviorType.Activity;
 
         public ActivityClass(string name)
         {
@@ -51,5 +52,8 @@ namespace Stateflows
 
         public readonly override string ToString()
             => StateflowsJsonConverter.SerializeObject(this);
+
+        public readonly StateMachineId ToId(string instance)
+            => new StateMachineId(Name, instance);
     }
 }

@@ -13,11 +13,11 @@ namespace Stateflows.Activities.Typed
     public static class TypedActivityBuilderTypedExtensions
     {
         #region AddAction
-        public static ITypedActivityBuilder AddAction<TAction>(this ITypedActivityBuilder builder, TypedActionBuilderAction buildAction = null)
+        public static ITypedActivityBuilder AddAction<TAction>(this ITypedActivityBuilder builder, TypedActionBuildAction buildAction = null)
             where TAction : ActionNode
             => AddAction<TAction>(builder, ActivityNodeInfo<TAction>.Name, buildAction);
 
-        public static ITypedActivityBuilder AddAction<TAction>(this ITypedActivityBuilder builder, string actionNodeName, TypedActionBuilderAction buildAction = null)
+        public static ITypedActivityBuilder AddAction<TAction>(this ITypedActivityBuilder builder, string actionNodeName, TypedActionBuildAction buildAction = null)
             where TAction : ActionNode
         {
             (builder as IInternal).Services.RegisterAction<TAction>();
@@ -45,12 +45,12 @@ namespace Stateflows.Activities.Typed
         #endregion
 
         #region AddAcceptEventAction
-        public static ITypedActivityBuilder AddAcceptEventAction<TEvent, TAcceptEventAction>(this ITypedActivityBuilder builder, AcceptEventActionBuilderAction buildAction = null)
+        public static ITypedActivityBuilder AddAcceptEventAction<TEvent, TAcceptEventAction>(this ITypedActivityBuilder builder, AcceptEventActionBuildAction buildAction = null)
             where TEvent : Event, new()
             where TAcceptEventAction : AcceptEventActionNode<TEvent>
             => builder.AddAcceptEventAction<TEvent, TAcceptEventAction>(ActivityNodeInfo<TAcceptEventAction>.Name, buildAction);
 
-        public static ITypedActivityBuilder AddAcceptEventAction<TEvent, TAcceptEventAction>(this ITypedActivityBuilder builder, string actionNodeName, AcceptEventActionBuilderAction buildAction = null)
+        public static ITypedActivityBuilder AddAcceptEventAction<TEvent, TAcceptEventAction>(this ITypedActivityBuilder builder, string actionNodeName, AcceptEventActionBuildAction buildAction = null)
             where TEvent : Event, new()
             where TAcceptEventAction : AcceptEventActionNode<TEvent>
             => builder.AddAcceptEventAction<TEvent>(
@@ -83,12 +83,12 @@ namespace Stateflows.Activities.Typed
             return await callback(action);
         }
 
-        public static ITypedActivityBuilder AddSendEventAction<TEvent, TSendEventAction>(this ITypedActivityBuilder builder, SendEventActionBuilderAction buildAction = null)
+        public static ITypedActivityBuilder AddSendEventAction<TEvent, TSendEventAction>(this ITypedActivityBuilder builder, SendEventActionBuildAction buildAction = null)
             where TEvent : Event, new()
             where TSendEventAction : SendEventActionNode<TEvent>
             => builder.AddSendEventAction<TEvent, TSendEventAction>(ActivityNodeInfo<TSendEventAction>.Name, buildAction);
 
-        public static ITypedActivityBuilder AddSendEventAction<TEvent, TSendEventAction>(this ITypedActivityBuilder builder, string actionNodeName, SendEventActionBuilderAction buildAction = null)
+        public static ITypedActivityBuilder AddSendEventAction<TEvent, TSendEventAction>(this ITypedActivityBuilder builder, string actionNodeName, SendEventActionBuildAction buildAction = null)
             where TEvent : Event, new()
             where TSendEventAction : SendEventActionNode<TEvent>
         {
@@ -102,11 +102,11 @@ namespace Stateflows.Activities.Typed
         #endregion
 
         #region AddStructuredActivity
-        public static ITypedActivityBuilder AddStructuredActivity<TStructuredActivity>(this ITypedActivityBuilder builder, ReactiveStructuredActivityBuilderAction buildAction = null)
+        public static ITypedActivityBuilder AddStructuredActivity<TStructuredActivity>(this ITypedActivityBuilder builder, ReactiveStructuredActivityBuildAction buildAction = null)
             where TStructuredActivity : StructuredActivityNode
             => AddStructuredActivity<TStructuredActivity>(builder, ActivityNodeInfo<TStructuredActivity>.Name, buildAction);
 
-        public static ITypedActivityBuilder AddStructuredActivity<TStructuredActivity>(this ITypedActivityBuilder builder, string structuredActivityName, ReactiveStructuredActivityBuilderAction buildAction = null)
+        public static ITypedActivityBuilder AddStructuredActivity<TStructuredActivity>(this ITypedActivityBuilder builder, string structuredActivityName, ReactiveStructuredActivityBuildAction buildAction = null)
             where TStructuredActivity : StructuredActivityNode
         {
             (builder as IInternal).Services.RegisterStructuredActivity<TStructuredActivity>();
@@ -125,12 +125,12 @@ namespace Stateflows.Activities.Typed
         #endregion
 
         #region AddParallelActivity
-        public static ITypedActivityBuilder AddParallelActivity<TParallelizationToken, TStructuredActivity>(this ITypedActivityBuilder builder, ParallelActivityBuilderAction buildAction = null)
+        public static ITypedActivityBuilder AddParallelActivity<TParallelizationToken, TStructuredActivity>(this ITypedActivityBuilder builder, ParallelActivityBuildAction buildAction = null)
             where TParallelizationToken : Token, new()
             where TStructuredActivity : StructuredActivity<TParallelizationToken>
             => AddParallelActivity<TParallelizationToken, TStructuredActivity>(builder, ActivityNodeInfo<TStructuredActivity>.Name, buildAction);
 
-        public static ITypedActivityBuilder AddParallelActivity<TParallelizationToken, TStructuredActivity>(this ITypedActivityBuilder builder, string structuredActivityName, ParallelActivityBuilderAction buildAction = null)
+        public static ITypedActivityBuilder AddParallelActivity<TParallelizationToken, TStructuredActivity>(this ITypedActivityBuilder builder, string structuredActivityName, ParallelActivityBuildAction buildAction = null)
             where TParallelizationToken : Token, new()
             where TStructuredActivity : StructuredActivity<TParallelizationToken>
         {
@@ -150,12 +150,12 @@ namespace Stateflows.Activities.Typed
         #endregion
 
         #region AddIterativeActivity
-        public static ITypedActivityBuilder AddIterativeActivity<TIterationToken, TStructuredActivity>(this ITypedActivityBuilder builder, IterativeActivityBuilderAction buildAction = null)
+        public static ITypedActivityBuilder AddIterativeActivity<TIterationToken, TStructuredActivity>(this ITypedActivityBuilder builder, IterativeActivityBuildAction buildAction = null)
             where TIterationToken : Token, new()
             where TStructuredActivity : StructuredActivity<TIterationToken>
             => AddIterativeActivity<TIterationToken, TStructuredActivity>(builder, ActivityNodeInfo<TStructuredActivity>.Name, buildAction);
 
-        public static ITypedActivityBuilder AddIterativeActivity<TIterationToken, TStructuredActivity>(this ITypedActivityBuilder builder, string structuredActivityName, IterativeActivityBuilderAction buildAction = null)
+        public static ITypedActivityBuilder AddIterativeActivity<TIterationToken, TStructuredActivity>(this ITypedActivityBuilder builder, string structuredActivityName, IterativeActivityBuildAction buildAction = null)
             where TIterationToken : Token, new()
             where TStructuredActivity : StructuredActivity<TIterationToken>
         {

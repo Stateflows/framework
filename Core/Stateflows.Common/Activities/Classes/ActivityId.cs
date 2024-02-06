@@ -1,6 +1,5 @@
-﻿using Stateflows.Common.Exceptions;
-using Stateflows.StateMachines;
-using System;
+﻿using System;
+using Stateflows.Common.Exceptions;
 
 namespace Stateflows.Activities
 {
@@ -14,7 +13,7 @@ namespace Stateflows.Activities
 
         public ActivityId(BehaviorId id)
         {
-            if (id.Type != "Activity")
+            if (id.Type != BehaviorType.Activity)
             {
                 throw new StateflowsException("BehaviorId doesn't represent Activity");
             }
@@ -27,7 +26,7 @@ namespace Stateflows.Activities
 
         public string Instance { get; set; }
 
-        public BehaviorId BehaviorId => new BehaviorId("Activity", Name, Instance);
+        public readonly BehaviorId BehaviorId => BehaviorType.Activity.ToClass(Name).ToId(Instance);
 
         public static bool operator ==(ActivityId id1, ActivityId id2)
             => id1.Equals(id2);
@@ -47,13 +46,13 @@ namespace Stateflows.Activities
         public static implicit operator ActivityId(BehaviorId behaviorId)
             => new ActivityId(behaviorId);
 
-        public override bool Equals(object obj)
+        public override readonly bool Equals(object obj)
             =>
-                obj is ActivityId &&
-                Name == ((ActivityId)obj).Name &&
-                Instance == ((ActivityId)obj).Instance;
+                obj is ActivityId id &&
+                Name == id.Name &&
+                Instance == id.Instance;
 
-        public override int GetHashCode()
+        public readonly override int GetHashCode()
             => Tuple.Create(Name, Instance).GetHashCode();
     }
 }

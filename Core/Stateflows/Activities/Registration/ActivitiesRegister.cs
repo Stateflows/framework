@@ -52,7 +52,7 @@ namespace Stateflows.Activities.Registration
         }
 
         [DebuggerHidden]
-        public void AddActivity(string activityName, int version, ReactiveActivityBuilderAction buildAction)
+        public void AddActivity(string activityName, int version, ReactiveActivityBuildAction buildAction)
         {
             var key = $"{activityName}.{version}";
             var currentKey = $"{activityName}.current";

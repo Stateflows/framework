@@ -7,7 +7,7 @@ namespace Stateflows.Testing.StateMachines.Sequence
 {
     internal class ExecutionSequence : IExecutionSequenceBuilder
     {
-        private List<string> Sequence = new List<string>();
+        private readonly List<string> Sequence = new List<string>();
 
         public void ValidateWith(IExecutionSequenceBuilder sequenceBuilder)
         {
@@ -84,15 +84,15 @@ namespace Stateflows.Testing.StateMachines.Sequence
             return this;
         }
 
-        public IExecutionSequenceBuilder TransitionEffect(string eventName, string sourceStateName, string targetVertexName)
+        public IExecutionSequenceBuilder TransitionEffect(string eventName, string sourceStateName, string? targetVertexName)
         {
-            Sequence.Add($"{sourceStateName}--{eventName}/effect-->{targetVertexName}");
+            Sequence.Add($"{sourceStateName}--{eventName}/effect-->{targetVertexName ?? string.Empty}");
             return this;
         }
 
-        public IExecutionSequenceBuilder TransitionGuard(string eventName, string sourceStateName, string targetVertexName)
+        public IExecutionSequenceBuilder TransitionGuard(string eventName, string sourceStateName, string? targetVertexName)
         {
-            Sequence.Add($"{sourceStateName}--{eventName}/[guard]-->{targetVertexName}");
+            Sequence.Add($"{sourceStateName}--{eventName}[guard]-->{targetVertexName ?? string.Empty}");
             return this;
         }
     }

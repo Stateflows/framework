@@ -11,7 +11,7 @@ namespace Stateflows.StateMachines.Typed
         public static IInitializedCompositeStateBuilder AddTransition<TEvent, TTransition, TTargetState>(this IInitializedCompositeStateBuilder builder)
             where TEvent : Event, new()
             where TTransition : Transition<TEvent>
-            where TTargetState : State
+            where TTargetState : BaseState
             => AddTransition<TEvent, TTransition>(builder, StateInfo<TTargetState>.Name);
 
         [DebuggerHidden]
@@ -27,9 +27,9 @@ namespace Stateflows.StateMachines.Typed
             );
         }
 
-        public static IInitializedCompositeStateBuilder AddTransition<TEvent, TTargetState>(this IInitializedCompositeStateBuilder builder, TransitionBuilderAction<TEvent> transitionBuildAction = null)
+        public static IInitializedCompositeStateBuilder AddTransition<TEvent, TTargetState>(this IInitializedCompositeStateBuilder builder, TransitionBuildAction<TEvent> transitionBuildAction = null)
             where TEvent : Event, new()
-            where TTargetState : State
+            where TTargetState : BaseState
             => builder.AddTransition(StateInfo<TTargetState>.Name, transitionBuildAction);
     }
 }

@@ -17,7 +17,7 @@ namespace Stateflows.StateMachines
         private readonly static Dictionary<IStateflowsBuilder, StateMachinesRegister> Registers = new Dictionary<IStateflowsBuilder, StateMachinesRegister>();
 
         [DebuggerHidden]
-        public static IStateflowsBuilder AddStateMachines(this IStateflowsBuilder stateflowsBuilder, StateMachinesBuilderAction buildAction)
+        public static IStateflowsBuilder AddStateMachines(this IStateflowsBuilder stateflowsBuilder, StateMachinesBuildAction buildAction)
         {
             buildAction(new StateMachinesBuilder(stateflowsBuilder.EnsureStateMachinesServices()));
 

@@ -22,7 +22,7 @@ namespace Stateflows.Storage.MongoDB.Stateflows
             _mongoDatabase = mongoDBClient.GetDatabase(databaseName);
         }
 
-        public async Task<StateflowsContext> Hydrate(BehaviorId id)
+        public async Task<StateflowsContext> HydrateAsync(BehaviorId id)
         {
             var context = await MongoDBSetExtension.FindOrCreate(_mongoDatabase, CollectionNames.Context_v1, id);
             StateflowsContext result = StateflowsJsonConverter.DeserializeObject<StateflowsContext>(context?.Data ?? string.Empty)
@@ -31,14 +31,14 @@ namespace Stateflows.Storage.MongoDB.Stateflows
             return result;
         }
 
-        public async Task Dehydrate(StateflowsContext context)
+        public async Task DehydrateAsync(StateflowsContext context)
         {
             var contextEntity = await _mongoDatabase.FindOrCreate(CollectionNames.Context_v1, context);
             contextEntity.Data = StateflowsJsonConverter.SerializeObject(context);
             await UpdateOrInsertContextData(contextEntity);
         }
 
-        public Task<IEnumerable<StateflowsContext>> GetContexts(IEnumerable<BehaviorClass> behaviorClasses)
+        public Task<IEnumerable<StateflowsContext>> GetContextsAsync(IEnumerable<BehaviorClass> behaviorClasses)
         {
             throw new NotImplementedException();
         }

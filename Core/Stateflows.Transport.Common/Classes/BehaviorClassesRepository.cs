@@ -3,7 +3,9 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Collections.Generic;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.DependencyInjection;
+using Stateflows.Common;
 using Stateflows.Common.Interfaces;
 using Stateflows.Transport.Common.Interfaces;
 
@@ -13,6 +15,8 @@ namespace Stateflows.Transport.Common.Classes
     {
         private readonly IServiceProvider ServiceProvider;
 
+        private readonly ILogger<BehaviorClassesRepository> Logger;
+
         private IBehaviorClassesProvider behaviorClassesProvider = null;
         private IBehaviorClassesProvider BehaviorClassesProvider 
             => behaviorClassesProvider ??= ServiceProvider.GetService<IBehaviorClassesProvider>();
@@ -21,16 +25,19 @@ namespace Stateflows.Transport.Common.Classes
 
         private readonly List<BehaviorClass> behaviorClasses = new List<BehaviorClass>();
 
-        //public readonly EventWaitHandle BehaviorClassesAvailable = new EventWaitHandle(false, EventResetMode.AutoReset);
+        public readonly EventWaitHandle BehaviorClassesAvailable = new EventWaitHandle(false, EventResetMode.AutoReset);
 
         public IEnumerable<BehaviorClass> BehaviorClasses => behaviorClasses;
 
         protected BehaviorClassesRepository(
             IServiceProvider serviceProvider,
-            IBehaviorClassesDiscoverer discoverer)
+            IBehaviorClassesDiscoverer discoverer,
+            ILogger<BehaviorClassesRepository> logger
+        )
         {
             ServiceProvider = serviceProvider;
             Discoverer = discoverer;
+            Logger = logger;
         }
 
         protected abstract Task OnBehaviorClassesChanged();
@@ -47,7 +54,7 @@ namespace Stateflows.Transport.Common.Classes
                     }
                 }
 
-                //BehaviorClassesAvailable.Set();
+                BehaviorClassesAvailable.Set();
             }
 
             lock (this.behaviorClasses)
@@ -62,11 +69,12 @@ namespace Stateflows.Transport.Common.Classes
             {
                 await Task.Delay(10 * 1000);
                 await Discoverer.DiscoverBehaviorClassesAsync(BehaviorClassesProvider.LocalBehaviorClasses);
-                //await BehaviorClassesAvailable.WaitOneAsync();
+
+                BehaviorClassesAvailable.WaitOne(1000 * 10);
             }
             catch (Exception e)
             {
-                throw e;
+                Logger.LogError(LogTemplates.ExceptionLogTemplate, typeof(BehaviorClassesRepository).FullName, nameof(StartAsync), e.GetType().Name, e.Message);
             }
         }
 

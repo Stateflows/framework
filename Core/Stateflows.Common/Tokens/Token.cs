@@ -10,23 +10,7 @@ namespace Stateflows.Common
     {
         public Guid Id { get; set; } = Guid.NewGuid();
 
-        public virtual string Name
-        {
-            get
-            {
-                var tokenType = GetType();
-                if (!tokenType.IsGenericType)
-                {
-                    return tokenType.FullName;
-                }
-                else
-                {
-                    var tokenName = tokenType.GetGenericTypeDefinition().FullName.Split('`').First();
-                    var typeNames = string.Join(", ", tokenType.GetGenericArguments().Select(t => t.FullName));
-                    return $"{tokenName}<{typeNames}>";
-                }
-            }
-        }
+        public virtual string Name => GetType().GetReadableName();
     }
 
     public class Token<T> : Token

@@ -16,7 +16,7 @@ namespace Stateflows.Activities
         private static ActivitiesRegister Register;
 
         [DebuggerHidden]
-        public static IStateflowsBuilder AddActivities(this IStateflowsBuilder stateflowsBuilder, ActivitiesBuilderAction buildAction)
+        public static IStateflowsBuilder AddActivities(this IStateflowsBuilder stateflowsBuilder, ActivitiesBuildAction buildAction)
         {
             buildAction(new ActivitiesBuilder(stateflowsBuilder.EnsureActivitiesServices()));
 
@@ -45,6 +45,8 @@ namespace Stateflows.Activities
                     .AddTransient<IBehaviorProvider, Provider>()
                     .AddSingleton<IActivityEventHandler, InitializationHandler>()
                     .AddSingleton<IActivityEventHandler, ExecutionHandler>()
+                    .AddSingleton<IActivityEventHandler, CancelHandler>()
+                    .AddSingleton<IActivityEventHandler, ResetHandler>()
                     ;
             }
 

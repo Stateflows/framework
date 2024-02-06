@@ -11,7 +11,7 @@ using Stateflows.StateMachines.Registration.Interfaces.Base;
 
 namespace Stateflows.StateMachines.Extensions
 {
-    internal static class BuilderExtensions
+    public static class BuilderExtensions
     {
         public static void AddStateMachineEvents(this IInitializedStateMachineBuilder builder, Type stateMachineType)
         {

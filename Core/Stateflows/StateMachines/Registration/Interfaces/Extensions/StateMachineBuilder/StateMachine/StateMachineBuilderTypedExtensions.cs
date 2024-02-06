@@ -7,11 +7,11 @@ namespace Stateflows.StateMachines.Typed
     public static class StateMachineBuilderTypedExtensions
     {
         #region AddInitialState
-        public static IInitializedStateMachineBuilder AddInitialState<TState>(this IStateMachineBuilder builder, StateTransitionsBuilderAction stateBuildAction = null)
+        public static IInitializedStateMachineBuilder AddInitialState<TState>(this IStateMachineBuilder builder, StateTransitionsBuildAction stateBuildAction = null)
             where TState : State
             => builder.AddInitialState<TState>(StateInfo<TState>.Name, stateBuildAction);
 
-        public static IInitializedStateMachineBuilder AddInitialState<TState>(this IStateMachineBuilder builder, string stateName, StateTransitionsBuilderAction stateBuildAction = null)
+        public static IInitializedStateMachineBuilder AddInitialState<TState>(this IStateMachineBuilder builder, string stateName, StateTransitionsBuildAction stateBuildAction = null)
             where TState : State
         {
             (builder as IInternal).Services.RegisterState<TState>();
@@ -29,11 +29,11 @@ namespace Stateflows.StateMachines.Typed
         #endregion
 
         #region AddInitialCompositeState
-        public static IInitializedStateMachineBuilder AddInitialCompositeState<TState>(this IStateMachineBuilder builder, CompositeStateTransitionsBuilderAction compositeStateBuildAction)
+        public static IInitializedStateMachineBuilder AddInitialCompositeState<TState>(this IStateMachineBuilder builder, CompositeStateTransitionsBuildAction compositeStateBuildAction)
             where TState : State
             => builder.AddInitialCompositeState<TState>(StateInfo<TState>.Name, compositeStateBuildAction);
 
-        public static IInitializedStateMachineBuilder AddInitialCompositeState<TState>(this IStateMachineBuilder builder, string stateName, CompositeStateTransitionsBuilderAction compositeStateBuildAction)
+        public static IInitializedStateMachineBuilder AddInitialCompositeState<TState>(this IStateMachineBuilder builder, string stateName, CompositeStateTransitionsBuildAction compositeStateBuildAction)
             where TState : State
         {
             (builder as IInternal).Services.RegisterState<TState>();

@@ -10,8 +10,8 @@
         IExecutionSequenceBuilder StateEntry(string stateName);
         IExecutionSequenceBuilder StateExit(string stateName);
 
-        IExecutionSequenceBuilder TransitionGuard(string eventName, string sourceStateName, string targetVertexName);
-        IExecutionSequenceBuilder TransitionEffect(string eventName, string sourceStateName, string targetVertexName);
+        IExecutionSequenceBuilder TransitionGuard(string eventName, string sourceStateName, string? targetVertexName);
+        IExecutionSequenceBuilder TransitionEffect(string eventName, string sourceStateName, string? targetVertexName);
 
         IExecutionSequenceBuilder InternalTransitionGuard(string eventName, string sourceStateName);
         IExecutionSequenceBuilder InternalTransitionEffect(string eventName, string sourceStateName);

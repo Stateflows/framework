@@ -6,7 +6,7 @@ namespace Stateflows.Activities.Typed
 {
     public static class DecisionBuilderElseObjectFlowsTypedExtensions
     {
-        public static IDecisionBuilder<TToken> AddElseFlow<TToken, TTargetNode>(this IDecisionBuilder<TToken> builder, ObjectFlowBuilderAction<TToken> buildAction = null)
+        public static IDecisionBuilder<TToken> AddElseFlow<TToken, TTargetNode>(this IDecisionBuilder<TToken> builder, ObjectFlowBuildAction<TToken> buildAction = null)
             where TToken : Token, new()
             where TTargetNode : ActivityNode
             => builder.AddElseFlow(ActivityNodeInfo<TTargetNode>.Name, b => buildAction?.Invoke(b as IObjectFlowBuilder<TToken>));

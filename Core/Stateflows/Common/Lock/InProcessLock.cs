@@ -12,7 +12,7 @@ namespace Stateflows.Common.Lock
     {
         public Dictionary<BehaviorId, EventWaitHandle> Events { get; } = new Dictionary<BehaviorId, EventWaitHandle>();
 
-        public async Task<IStateflowsLockHandle> AquireLockAsync(BehaviorId id, TimeSpan? timeout = null)
+        public Task<IStateflowsLockHandle> AquireLockAsync(BehaviorId id, TimeSpan? timeout = null)
         {
             EventWaitHandle @event = null;
 
@@ -25,9 +25,9 @@ namespace Stateflows.Common.Lock
                 }
             }
 
-            await @event.WaitOneAsync((int)(timeout?.TotalMilliseconds ?? -1));
+            @event.WaitOne((int)(timeout?.TotalMilliseconds ?? -1));
 
-            return new LockHandle(id, new AsyncDisposableHandle(@event));
+            return Task.FromResult(new LockHandle(id, new AsyncDisposableHandle(@event)) as IStateflowsLockHandle);
         }
     }
 }

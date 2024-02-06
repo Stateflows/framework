@@ -47,7 +47,7 @@ namespace Stateflows.StateMachines.Models
 
         public List<StateMachineObserverFactory> ObserverFactories { get; set; } = new List<StateMachineObserverFactory>();
 
-        [DebuggerHidden]
+        //[DebuggerHidden]
         public void Build()
         {
             Debug.Assert(InitialVertexName != null, $"Initial vertex name not assigned. Is state machine '{Name}' built properly?");
@@ -90,19 +90,28 @@ namespace Stateflows.StateMachines.Models
             {
                 if (edge.TargetName != null && edge.TargetName != Constants.DefaultTransitionTarget)
                 {
-                    var vertices = edge.Source.Parent?.Vertices ?? Vertices;
-                    if (vertices.TryGetValue(edge.TargetName, out var target))
+                    if (AllVertices.TryGetValue(edge.TargetName, out var target))
                     {
                         edge.Target = target;
                     }
                     else
                     {
-                        throw new TransitionDefinitionException(edge.Source.Parent is null
-                            ? $"Transition target state '{edge.TargetName}' is not registered in root level of state machine '{Name}'"
-                            : $"Transition target state '{edge.TargetName}' is not defined on the same level as transition source '{edge.SourceName}' in state machine '{Name}'",
-                            Class
-                        );
+                        throw new TransitionDefinitionException($"Transition target state '{edge.TargetName}' is not registered in state machine '{Name}'", Class);
                     }
+
+                    //var vertices = edge.Source.Parent?.Vertices ?? Vertices;
+                    //if (vertices.TryGetValue(edge.TargetName, out var target))
+                    //{
+                    //    edge.Target = target;
+                    //}
+                    //else
+                    //{
+                    //    throw new TransitionDefinitionException(edge.Source.Parent is null
+                    //        ? $"Transition target state '{edge.TargetName}' is not registered in root level of state machine '{Name}'"
+                    //        : $"Transition target state '{edge.TargetName}' is not defined on the same level as transition source '{edge.SourceName}' in state machine '{Name}'",
+                    //        Class
+                    //    );
+                    //}
                 }
 
                 if (edge.IsElse)

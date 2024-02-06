@@ -2,6 +2,6 @@
 {
     public interface IInput<out TReturn>
     {
-        TReturn AddInput(InputBuilderAction buildAction);
+        TReturn AddInput(InputBuildAction buildAction);
     }
 }

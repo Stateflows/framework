@@ -6,7 +6,7 @@ namespace Stateflows.Activities.Typed
 {
     public static class MergeBuilderObjectFlowsTypedExtensions
     {
-        public static void AddTokenFlow<TToken, TTargetNode>(this IMergeBuilder builder, ObjectFlowBuilderAction<TToken> buildAction = null)
+        public static void AddTokenFlow<TToken, TTargetNode>(this IMergeBuilder builder, ObjectFlowBuildAction<TToken> buildAction = null)
             where TToken : Token, new()
             where TTargetNode : ActivityNode
             => builder.AddTokenFlow<TToken>(ActivityNodeInfo<TTargetNode>.Name, buildAction);

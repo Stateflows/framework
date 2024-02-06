@@ -19,6 +19,8 @@ namespace Stateflows.Common
         private IServiceProvider ServiceProvider => Scope.ServiceProvider;
         private readonly IStateflowsLock Lock;
         private readonly IStateflowsExecutionInterceptor Interceptor;
+        private readonly IStateflowsTenantProvider TenantProvider;
+        private readonly ITenantAccessor TenantAccessor;
         private readonly ILogger<StateflowsEngine> Logger;
         private Dictionary<string, IEventProcessor> processors;
         private Dictionary<string, IEventProcessor> Processors
@@ -31,6 +33,8 @@ namespace Stateflows.Common
             Scope = serviceProvider.CreateScope();
             Lock = ServiceProvider.GetRequiredService<IStateflowsLock>();
             Interceptor = ServiceProvider.GetRequiredService<CommonInterceptor>();
+            TenantAccessor = ServiceProvider.GetRequiredService<ITenantAccessor>();
+            TenantProvider = ServiceProvider.GetRequiredService<IStateflowsTenantProvider>();
             Logger = ServiceProvider.GetRequiredService<ILogger<StateflowsEngine>>();
         }
 
@@ -51,21 +55,27 @@ namespace Stateflows.Common
         public async Task<EventStatus> ProcessEventAsync<TEvent>(BehaviorId id, TEvent @event, IServiceProvider serviceProvider)
             where TEvent : Event, new()
         {
+            
             var result = EventStatus.Undelivered;
-            try
+
+            if (Processors.TryGetValue(id.Type, out var processor))
             {
-                if (Processors.TryGetValue(id.Type, out var processor))
+                try
                 {
-                    try
+                    if (Interceptor.BeforeExecute(@event))
                     {
+                        TenantAccessor.CurrentTenantId = await TenantProvider.GetCurrentTenantIdAsync();
+
+                        await using var lockHandle = await Lock.AquireLockAsync(id);
+
                         try
                         {
-                            Interceptor.BeforeExecute(@event);
-
-                            await using (var lockHandle = await Lock.AquireLockAsync(id))
+                            try
                             {
                                 result = await processor.ProcessEventAsync(id, @event, serviceProvider);
-                            
+                            }
+                            finally
+                            {
                                 var response = @event.GetResponse();
                                 if (response != null)
                                 {
@@ -78,16 +88,11 @@ namespace Stateflows.Common
                             Interceptor.AfterExecute(@event);
                         }
                     }
-                    catch (Exception e)
-                    {
-                        Logger.LogError(LogTemplates.ExceptionLogTemplate, typeof(StateflowsEngine).FullName, nameof(ProcessEventAsync), e.GetType().Name, e.Message);
-                    }
                 }
-            }
-            catch (Exception e)
-            {
-
-                throw e;
+                catch (Exception e)
+                {
+                    Logger.LogError(LogTemplates.ExceptionLogTemplate, typeof(StateflowsEngine).FullName, nameof(ProcessEventAsync), e.GetType().Name, e.Message);
+                }
             }
 
             return result;

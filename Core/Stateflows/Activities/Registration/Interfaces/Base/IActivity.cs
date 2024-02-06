@@ -4,14 +4,14 @@ namespace Stateflows.Activities.Registration.Interfaces.Base
 {
     public interface IActivity<out TReturn>
     {
-        TReturn AddAction(string actionNodeName, ActionDelegateAsync actionAsync, ActionBuilderAction buildAction = null);
+        TReturn AddAction(string actionNodeName, ActionDelegateAsync actionAsync, ActionBuildAction buildAction = null);
 
-        TReturn AddStructuredActivity(string actionNodeName, StructuredActivityBuilderAction builderAction);
+        TReturn AddStructuredActivity(string actionNodeName, StructuredActivityBuildAction buildAction);
 
-        TReturn AddParallelActivity<TToken>(string actionNodeName, ParallelActivityBuilderAction builderAction)
+        TReturn AddParallelActivity<TToken>(string actionNodeName, ParallelActivityBuildAction buildAction)
             where TToken : Token, new();
 
-        TReturn AddIterativeActivity<TToken>(string actionNodeName, IterativeActivityBuilderAction builderAction)
+        TReturn AddIterativeActivity<TToken>(string actionNodeName, IterativeActivityBuildAction buildAction)
             where TToken : Token, new();
     }
 }

@@ -9,8 +9,8 @@ namespace Stateflows.Activities
         IActivitiesBuilder AddFromAssembly(Assembly assembly);
         IActivitiesBuilder AddFromAssemblies(IEnumerable<Assembly> assemblies);
         IActivitiesBuilder AddFromLoadedAssemblies();
-        IActivitiesBuilder AddActivity(string activityName, ReactiveActivityBuilderAction buildAction);
-        IActivitiesBuilder AddActivity(string activityName, int version, ReactiveActivityBuilderAction buildAction);
+        IActivitiesBuilder AddActivity(string activityName, ReactiveActivityBuildAction buildAction);
+        IActivitiesBuilder AddActivity(string activityName, int version, ReactiveActivityBuildAction buildAction);
         IActivitiesBuilder AddActivity<TActivity>(string activityName = null, int version = 1)
             where TActivity : Activity;
         IActivitiesBuilder AddActivity<TActivity>(int version)

@@ -13,6 +13,11 @@ using Stateflows.Common.Initializer;
 using Stateflows.Common.Registration.Builders;
 using Stateflows.Common.Registration.Interfaces;
 using Stateflows.System;
+using Stateflows.Activities;
+using ActivityTracer = Stateflows.Activities.Engine.Tracer;
+using StateMachineTracer = Stateflows.StateMachines.Engine.Tracer;
+using Stateflows.StateMachines;
+using Stateflows.Common.Trace;
 
 namespace Stateflows
 {
@@ -29,22 +34,25 @@ namespace Stateflows
                     .AddHostedService(provider => provider.GetService<StateflowsEngine>())
                     .AddHostedService<ThreadScheduler>()
                     .AddHostedService<ThreadInitializer>()
+                    .AddTransient<ScheduleExecutor>()
+                    .AddSingleton<ITenantAccessor, TenantAccessor>()
                     .AddScoped<CommonInterceptor>()
+                    .AddScoped<TenantsExecutor>()
                     ;
             }
 
             return stateflowsBuilder;
         }
 
-        public static IServiceCollection AddStateflows(this IServiceCollection services, Action<IStateflowsBuilder> builderAction)
+        public static IServiceCollection AddStateflows(this IServiceCollection services, Action<IStateflowsBuilder> buildAction)
         {
-            builderAction.ThrowIfNull(nameof(builderAction));
+            buildAction.ThrowIfNull(nameof(buildAction));
 
             var builder = new StateflowsBuilder(services);
 
             services.AddStateflowsClient(b => { });
 
-            builderAction(builder);
+            buildAction(builder);
 
             if (!services.IsServiceRegistered<IStateflowsStorage>())
             {
@@ -56,9 +64,9 @@ namespace Stateflows
                 services.AddSingleton<IStateflowsLock, InProcessLock>();
             }
 
-            if (!services.IsServiceRegistered<IStateflowsTenantsManager>())
+            if (!services.IsServiceRegistered<IStateflowsTenantProvider>())
             {
-                services.AddSingleton<IStateflowsTenantsManager, SingleTenantManager>();
+                services.AddSingleton<IStateflowsTenantProvider, DefaultTenantProvider>();
             }
 
             return services;
@@ -97,6 +105,16 @@ namespace Stateflows
         public static IStateflowsBuilder AddClientInterceptor(this IStateflowsBuilder stateflowsBuilder, ClientInterceptorFactory clientInterceptorFactory)
         {
             stateflowsBuilder.ServiceCollection.AddScoped(s => clientInterceptorFactory(s));
+
+            return stateflowsBuilder;
+        }
+
+        public static IStateflowsBuilder AddTracing(this IStateflowsBuilder stateflowsBuilder)
+        {
+            stateflowsBuilder.ServiceCollection
+                //.AddScoped<IActivityPlugin, ActivityTracer>()
+                .AddScoped<IStateMachinePlugin, StateMachineTracer>()
+                ;
 
             return stateflowsBuilder;
         }

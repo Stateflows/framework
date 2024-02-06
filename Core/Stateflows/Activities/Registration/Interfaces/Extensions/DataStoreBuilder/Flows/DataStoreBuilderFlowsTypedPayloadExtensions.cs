@@ -6,7 +6,7 @@ namespace Stateflows.Activities.Typed.Data
 {
     public static class DataStoreBuilderFlowsTypedPayloadExtensions
     {
-        public static void AddDataFlow<TTokenPayload, TTargetNode>(this IDataStoreBuilder builder, ObjectFlowBuilderAction<Token<TTokenPayload>> buildAction = null)
+        public static void AddDataFlow<TTokenPayload, TTargetNode>(this IDataStoreBuilder builder, ObjectFlowBuildAction<Token<TTokenPayload>> buildAction = null)
             where TTargetNode : ActivityNode
             => builder.AddTokenFlow<Token<TTokenPayload>>(ActivityNodeInfo<TTargetNode>.Name, buildAction);
 

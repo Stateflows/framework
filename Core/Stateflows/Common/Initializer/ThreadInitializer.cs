@@ -4,7 +4,8 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.DependencyInjection;
-using Stateflows.Common.Interfaces;
+using Stateflows.Common.Tenant;
+using Microsoft.Extensions.Logging;
 
 namespace Stateflows.Common.Initializer
 {
@@ -12,11 +13,10 @@ namespace Stateflows.Common.Initializer
     {
         private readonly CancellationTokenSource CancellationTokenSource = new CancellationTokenSource();
 
-        private readonly IStateflowsTenantsManager TenantsManager;
-
+        private readonly TenantsExecutor Executor;
         private readonly IBehaviorLocator Locator;
-
         private readonly IServiceScope Scope;
+        private readonly ILogger<ThreadInitializer> Logger;
 
         private IServiceProvider ServiceProvider
             => Scope.ServiceProvider;
@@ -24,14 +24,24 @@ namespace Stateflows.Common.Initializer
         public ThreadInitializer(IServiceProvider serviceProvider)
         {
             Scope = serviceProvider.CreateScope();
-            TenantsManager = ServiceProvider.GetRequiredService<IStateflowsTenantsManager>();
+            Executor = ServiceProvider.GetRequiredService<TenantsExecutor>();
             Locator = ServiceProvider.GetRequiredService<IBehaviorLocator>();
+            Logger = ServiceProvider.GetRequiredService<ILogger<ThreadInitializer>>();
         }
 
-        public Task StartAsync(CancellationToken cancellationToken)
-            => TenantsManager.ExecuteByTenantsAsync(InitiateBehaviors);
+        public async Task StartAsync(CancellationToken cancellationToken)
+        {
+            try
+            {
+                await Executor.ExecuteByTenantsAsync(() => InitiateBehaviors());
+            }
+            catch (Exception e)
+            {
+                Logger.LogError(LogTemplates.ExceptionLogTemplate, typeof(ThreadInitializer).FullName, nameof(StartAsync), e.GetType().Name, e.Message);
+            }
+        }
 
-        private async Task InitiateBehaviors(string tenantId)
+        private async Task InitiateBehaviors()
         {
             var tokens = BehaviorClassesInitializations.Instance.InitializationTokens;
 
@@ -40,7 +50,7 @@ namespace Stateflows.Common.Initializer
                 {
                     token.RefreshEnvironment();
 
-                    if (Locator.TryLocateBehavior(new BehaviorId(token.BehaviorClass, string.Empty), out var behavior))
+                    if (Locator.TryLocateBehavior(token.BehaviorClass.ToId(string.Empty), out var behavior))
                     {
                         await behavior.InitializeAsync(await token.InitializationRequestFactory(ServiceProvider, token.BehaviorClass));
                     }

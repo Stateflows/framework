@@ -217,5 +217,29 @@ namespace Stateflows.StateMachines.Engine
 
         public int GetHashCode(Edge obj)
             => obj.Identifier.GetHashCode();
+
+        public Task OnStateMachineInitializationExceptionAsync(IStateMachineInitializationContext context, Exception exception)
+            => Task.CompletedTask;
+
+        public Task OnStateMachineFinalizationExceptionAsync(IStateMachineActionContext context, Exception exception)
+            => Task.CompletedTask;
+
+        public Task OnTransitionGuardExceptionAsync(IGuardContext<Event> context, Exception exception)
+            => Task.CompletedTask;
+
+        public Task OnTransitionEffectExceptionAsync(ITransitionContext<Event> context, Exception exception)
+            => Task.CompletedTask;
+
+        public Task OnStateInitializationExceptionAsync(IStateActionContext context, Exception exception)
+            => Task.CompletedTask;
+
+        public Task OnStateFinalizationExceptionAsync(IStateActionContext context, Exception exception)
+            => Task.CompletedTask;
+
+        public Task OnStateEntryExceptionAsync(IStateActionContext context, Exception exception)
+            => Task.CompletedTask;
+
+        public Task OnStateExitExceptionAsync(IStateActionContext context, Exception exception)
+            => Task.CompletedTask;
     }
 }

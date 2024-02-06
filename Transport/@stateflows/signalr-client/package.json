@@ -10,12 +10,14 @@
   ],
   "scripts": {
     "build": "tsup",
-    "dev": "tsup --watch",
+    "build:dev": "tsup --watch",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [
     "Stateflows",
     "state-machine",
+    "activity",
+    "workflow",
     "SignalR",
     "signal-r"
   ],

@@ -50,11 +50,11 @@ namespace Stateflows.Activities.Registration.Builders
             => AddFromAssemblies(AppDomain.CurrentDomain.GetAssemblies());
 
         [DebuggerHidden]
-        public IActivitiesBuilder AddActivity(string activityName, ReactiveActivityBuilderAction buildAction)
+        public IActivitiesBuilder AddActivity(string activityName, ReactiveActivityBuildAction buildAction)
             => AddActivity(activityName, 1, buildAction);
 
         [DebuggerHidden]
-        public IActivitiesBuilder AddActivity(string activityName, int version, ReactiveActivityBuilderAction buildAction)
+        public IActivitiesBuilder AddActivity(string activityName, int version, ReactiveActivityBuildAction buildAction)
         {
             Register.AddActivity(activityName, version, buildAction);
 

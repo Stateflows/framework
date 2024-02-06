@@ -58,6 +58,7 @@ namespace StateMachine.IntegrationTests.Tests
                     )
 
                     .AddStateMachine("internal", b => b
+                        .AddExecutionSequenceObserver()
                         .AddInitialState("state1", b => b
                             .AddOnExit(c => StateExited = true)
                             .AddInternalTransition<SomeEvent>(b => b
@@ -67,6 +68,7 @@ namespace StateMachine.IntegrationTests.Tests
                     )
 
                     .AddStateMachine("self", b => b
+                        .AddExecutionSequenceObserver()
                         .AddInitialState("state1", b => b
                             .AddOnExit(c => StateExited = true)
                             .AddTransition<SomeEvent>("state1", b => b
@@ -144,7 +146,7 @@ namespace StateMachine.IntegrationTests.Tests
         public async Task InternalTransition()
         {
             var status = EventStatus.Rejected;
-            string currentState = "state1";
+            string currentState = string.Empty;
 
             if (Locator.TryLocateStateMachine(new StateMachineId("internal", "x"), out var sm))
             {
@@ -152,9 +154,14 @@ namespace StateMachine.IntegrationTests.Tests
 
                 status = (await sm.SendAsync(new SomeEvent())).Status;
 
-                currentState = (await sm.GetCurrentStateAsync()).Response.StatesStack.First();
+                var stack = (await sm.GetCurrentStateAsync()).Response.StatesStack;
+
+                currentState = stack.First();
             }
 
+            ExecutionSequence.Verify(b => b
+                .StateMachineInitialize()
+            );
             Assert.AreEqual(EventStatus.Consumed, status);
             Assert.IsTrue(TransitionHappened);
             Assert.IsNull(StateExited);
@@ -176,6 +183,9 @@ namespace StateMachine.IntegrationTests.Tests
                 currentState = (await sm.GetCurrentStateAsync()).Response.StatesStack.First();
             }
 
+            ExecutionSequence.Verify(b => b
+                .StateMachineInitialize()
+            );
             Assert.AreEqual(EventStatus.Consumed, status);
             Assert.IsTrue(TransitionHappened);
             Assert.IsTrue(StateExited);

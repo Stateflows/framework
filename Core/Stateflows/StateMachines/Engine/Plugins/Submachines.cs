@@ -5,6 +5,7 @@ using Stateflows.Common.Events;
 using Stateflows.StateMachines.Events;
 using Stateflows.StateMachines.Context.Classes;
 using Stateflows.StateMachines.Context.Interfaces;
+using System;
 
 namespace Stateflows.StateMachines.Engine
 {
@@ -158,6 +159,30 @@ namespace Stateflows.StateMachines.Engine
             => Task.CompletedTask;
 
         public Task BeforeDehydrateAsync(IStateMachineActionContext context)
+            => Task.CompletedTask;
+
+        public Task OnStateMachineInitializationExceptionAsync(IStateMachineInitializationContext context, Exception exception)
+            => Task.CompletedTask;
+
+        public Task OnStateMachineFinalizationExceptionAsync(IStateMachineActionContext context, Exception exception)
+            => Task.CompletedTask;
+
+        public Task OnTransitionGuardExceptionAsync(IGuardContext<Event> context, Exception exception)
+            => Task.CompletedTask;
+
+        public Task OnTransitionEffectExceptionAsync(ITransitionContext<Event> context, Exception exception)
+            => Task.CompletedTask;
+
+        public Task OnStateInitializationExceptionAsync(IStateActionContext context, Exception exception)
+            => Task.CompletedTask;
+
+        public Task OnStateFinalizationExceptionAsync(IStateActionContext context, Exception exception)
+            => Task.CompletedTask;
+
+        public Task OnStateEntryExceptionAsync(IStateActionContext context, Exception exception)
+            => Task.CompletedTask;
+
+        public Task OnStateExitExceptionAsync(IStateActionContext context, Exception exception)
             => Task.CompletedTask;
     }
 }

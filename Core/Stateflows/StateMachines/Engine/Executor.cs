@@ -160,6 +160,26 @@ namespace Stateflows.StateMachines.Engine
             }
         }
 
+        private async Task DoInitializeCascadeAsync2(Vertex vertex)
+        {
+            while (vertex != null)
+            {
+                if (vertex.InitialVertex != null)
+                {
+                    await DoEntryAsync(vertex.InitialVertex);
+
+                    if (vertex.InitialVertex.InitialVertex != null)
+                    {
+                        await DoInitializeStateAsync(vertex.InitialVertex);
+                    }
+                }
+
+                Context.StatesStack.Add(vertex.Identifier);
+
+                vertex = vertex.InitialVertex;
+            }
+        }
+
         public IEnumerable<Type> GetExpectedEvents()
         {
             var currentStack = VerticesStack.ToList();
@@ -386,69 +406,143 @@ namespace Stateflows.StateMachines.Engine
         private async Task DoConsumeAsync<TEvent>(Edge edge)
             where TEvent : Event, new()
         {
-            var nextVertex = edge.Target;
-            if (nextVertex != null)
-            {
-                Context.StatesStack.Reverse();
-                foreach (var state in Context.StatesStack)
-                {
-                    if (Graph.AllVertices.TryGetValue(state, out var vertex))
-                    {
-                        if (vertex == nextVertex.Parent)
-                        {
-                            break;
-                        }
+            var exitingVertices = new List<Vertex>();
+            var enteringVertices = new List<Vertex>();
 
-                        await DoExitAsync(vertex);
-                    }
+            var vrtx = VerticesStack.Last();
+            while (vrtx != null)
+            {
+                exitingVertices.Insert(0, vrtx);
+                vrtx = vrtx.Parent;
+            }
+
+            vrtx = edge.Target;
+            while (vrtx != null)
+            {
+                enteringVertices.Insert(0, vrtx);
+                vrtx = vrtx.Parent;
+            }
+
+            if (enteringVertices.Any() && exitingVertices.Any())
+            {
+                while (
+                    enteringVertices.Any() &&
+                    exitingVertices.Any() &&
+                    enteringVertices[0] == exitingVertices[0] &&
+                    enteringVertices[0] != edge.Target
+                )
+                {
+                    enteringVertices.RemoveAt(0);
+                    exitingVertices.RemoveAt(0);
+                }
+
+                exitingVertices.Reverse();
+                foreach (var vertex in exitingVertices)
+                {
+                    await DoExitAsync(vertex);
+                    Context.StatesStack.RemoveAt(Context.StatesStack.Count - 1);
                 }
             }
 
             await DoEffectAsync<TEvent>(edge);
 
-            if (nextVertex != null)
+            foreach (var vertex in enteringVertices)
             {
-                var previousNextVertex = nextVertex;
+                await DoEntryAsync(vertex);
 
-                Context.StatesStack.Clear();
-
-                while (nextVertex != null)
+                if (vertex.Vertices.Any())
                 {
-                    if (nextVertex.Parent != null && nextVertex.Parent.InitialVertex == nextVertex)
-                    {
-                        await DoInitializeStateAsync(nextVertex.Parent);
-                    }
+                    await DoInitializeStateAsync(vertex);
+                }
 
-                    if (nextVertex.Type == VertexType.FinalState)
-                    {
-                        if (nextVertex.Parent is null)
-                        {
-                            await DoFinalizeStateMachineAsync();
-                        }
-                        else
-                        {
-                            await DoFinalizeStateAsync(nextVertex.Parent);
-                        }
+                if (vertex != enteringVertices.Last())
+                {
+                    Context.StatesStack.Add(vertex.Identifier);
+                }
+            }
 
-                        nextVertex = null;
+            if (edge.Target != null && enteringVertices.Any())
+            {
+                var topVertex = enteringVertices.Last();
+
+                await DoInitializeCascadeAsync2(topVertex);
+
+                if (topVertex.Type == VertexType.FinalState)
+                {
+                    if (topVertex.Parent is null)
+                    {
+                        await DoFinalizeStateMachineAsync();
                     }
                     else
                     {
-                        await DoEntryAsync(nextVertex);
-
-                        previousNextVertex = nextVertex;
-                        nextVertex = nextVertex.InitialVertex;
+                        await DoFinalizeStateAsync(topVertex.Parent);
                     }
                 }
-
-                nextVertex = previousNextVertex;
-                while (nextVertex != null)
-                {
-                    Context.StatesStack.Add(nextVertex.Identifier);
-                    nextVertex = nextVertex.Parent;
-                }
-                Context.StatesStack.Reverse();
             }
+
+            //var nextVertex = edge.Target;
+            //if (nextVertex != null)
+            //{
+            //    Context.StatesStack.Reverse();
+            //    foreach (var state in Context.StatesStack)
+            //    {
+            //        if (Graph.AllVertices.TryGetValue(state, out var vertex))
+            //        {
+            //            if (vertex == nextVertex.Parent)
+            //            {
+            //                break;
+            //            }
+
+            //            await DoExitAsync(vertex);
+            //        }
+            //    }
+            //}
+
+            //await DoEffectAsync<TEvent>(edge);
+
+            //if (nextVertex != null)
+            //{
+            //    var previousNextVertex = nextVertex;
+
+            //    Context.StatesStack.Clear();
+
+            //    while (nextVertex != null)
+            //    {
+            //        if (nextVertex.Parent != null && nextVertex.Parent.InitialVertex == nextVertex)
+            //        {
+            //            await DoInitializeStateAsync(nextVertex.Parent);
+            //        }
+
+            //        if (nextVertex.Type == VertexType.FinalState)
+            //        {
+            //            if (nextVertex.Parent is null)
+            //            {
+            //                await DoFinalizeStateMachineAsync();
+            //            }
+            //            else
+            //            {
+            //                await DoFinalizeStateAsync(nextVertex.Parent);
+            //            }
+
+            //            nextVertex = null;
+            //        }
+            //        else
+            //        {
+            //            await DoEntryAsync(nextVertex);
+
+            //            previousNextVertex = nextVertex;
+            //            nextVertex = nextVertex.InitialVertex;
+            //        }
+            //    }
+
+            //    nextVertex = previousNextVertex;
+            //    while (nextVertex != null)
+            //    {
+            //        Context.StatesStack.Add(nextVertex.Identifier);
+            //        nextVertex = nextVertex.Parent;
+            //    }
+            //    Context.StatesStack.Reverse();
+            //}
         }
 
         private async Task DoCompletion()

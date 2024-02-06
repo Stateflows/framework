@@ -52,7 +52,7 @@ namespace Stateflows.StateMachines.Registration
         }
 
         //[DebuggerHidden]
-        public void AddStateMachine(string stateMachineName, int version, StateMachineBuilderAction buildAction)
+        public void AddStateMachine(string stateMachineName, int version, StateMachineBuildAction buildAction)
         {
             var key = $"{stateMachineName}.{version}";
             var currentKey = $"{stateMachineName}.current";

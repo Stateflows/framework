@@ -1,6 +1,10 @@
 using Examples.Common;
+using SignalR.Client;
 using Stateflows;
+using Stateflows.Common;
 using Stateflows.StateMachines;
+using Stateflows.StateMachines.Sync;
+using Stateflows.StateMachines.Typed;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -14,6 +18,7 @@ builder.Services.AddStateflows(b => b
         .AddStateMachine("stateMachine1", b => b
             .AddInitialState("state1", b => b
                 .AddTransition<OtherEvent>("state2")
+                .AddHttpGetInternalTransition<Payload>("/my-url")
             )
             .AddState("state2", b => b
                 .AddTransition<OtherEvent>("state1")
@@ -61,3 +66,6 @@ app.MapControllerRoute(
 app.MapFallbackToFile("index.html");
 
 app.Run();
+
+public class Tran1 : Transition<HttpRequest<Payload, Payload>> { }
+public class Tran2 : Transition<HttpEvent<Payload>> { }

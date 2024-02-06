@@ -83,69 +83,69 @@ namespace Stateflows.Activities.Registration.Builders
         }
 
         #region IActivityBuilder
-        IActivityBuilder IReactiveActivity<IActivityBuilder>.AddAction(string actionNodeName, ActionDelegateAsync actionAsync, ActionBuilderAction buildAction)
+        IActivityBuilder IReactiveActivity<IActivityBuilder>.AddAction(string actionNodeName, ActionDelegateAsync actionAsync, ActionBuildAction buildAction)
             => AddAction(actionNodeName, actionAsync, b => buildAction?.Invoke(b)) as IActivityBuilder;
 
-        IActivityBuilder IReactiveActivity<IActivityBuilder>.AddStructuredActivity(string actionNodeName, ReactiveStructuredActivityBuilderAction builderAction)
-            => AddStructuredActivity(actionNodeName, builderAction) as IActivityBuilder;
+        IActivityBuilder IReactiveActivity<IActivityBuilder>.AddStructuredActivity(string actionNodeName, ReactiveStructuredActivityBuildAction buildAction)
+            => AddStructuredActivity(actionNodeName, buildAction) as IActivityBuilder;
 
         IActivityBuilder IActivityEvents<IActivityBuilder>.AddOnFinalize(Func<IActivityActionContext, Task> actionAsync)
             => AddOnFinalize(actionAsync) as IActivityBuilder;
 
-        IActivityBuilder IInitial<IActivityBuilder>.AddInitial(InitialBuilderAction buildAction)
+        IActivityBuilder IInitial<IActivityBuilder>.AddInitial(InitialBuildAction buildAction)
             => AddInitial(buildAction) as IActivityBuilder;
 
         IActivityBuilder IFinal<IActivityBuilder>.AddFinal()
             => AddFinal() as IActivityBuilder;
 
-        IActivityBuilder IInput<IActivityBuilder>.AddInput(InputBuilderAction buildAction)
+        IActivityBuilder IInput<IActivityBuilder>.AddInput(InputBuildAction buildAction)
             => AddInput(buildAction) as IActivityBuilder;
 
         IActivityBuilder IOutput<IActivityBuilder>.AddOutput()
             => AddOutput() as IActivityBuilder;
 
-        IActivityBuilder IReactiveActivity<IActivityBuilder>.AddParallelActivity<TParallelizationToken>(string actionNodeName, ParallelActivityBuilderAction builderAction)
-            => AddParallelActivity<TParallelizationToken>(actionNodeName, builderAction) as IActivityBuilder;
+        IActivityBuilder IReactiveActivity<IActivityBuilder>.AddParallelActivity<TParallelizationToken>(string actionNodeName, ParallelActivityBuildAction buildAction)
+            => AddParallelActivity<TParallelizationToken>(actionNodeName, buildAction) as IActivityBuilder;
 
-        IActivityBuilder IReactiveActivity<IActivityBuilder>.AddIterativeActivity<TIterationToken>(string actionNodeName, IterativeActivityBuilderAction builderAction)
-            => AddIterativeActivity<TIterationToken>(actionNodeName, builderAction) as IActivityBuilder;
+        IActivityBuilder IReactiveActivity<IActivityBuilder>.AddIterativeActivity<TIterationToken>(string actionNodeName, IterativeActivityBuildAction buildAction)
+            => AddIterativeActivity<TIterationToken>(actionNodeName, buildAction) as IActivityBuilder;
 
-        IActivityBuilder IAcceptEvent<IActivityBuilder>.AddAcceptEventAction<TEvent>(string actionNodeName, AcceptEventActionDelegateAsync<TEvent> eventActionAsync, AcceptEventActionBuilderAction buildAction)
+        IActivityBuilder IAcceptEvent<IActivityBuilder>.AddAcceptEventAction<TEvent>(string actionNodeName, AcceptEventActionDelegateAsync<TEvent> eventActionAsync, AcceptEventActionBuildAction buildAction)
             => AddAcceptEventAction<TEvent>(actionNodeName, eventActionAsync, buildAction) as IActivityBuilder;
 
-        IActivityBuilder ISendEvent<IActivityBuilder>.AddSendEventAction<TEvent>(string actionNodeName, SendEventActionDelegateAsync<TEvent> actionAsync, BehaviorIdSelectorAsync targetSelectorAsync, SendEventActionBuilderAction buildAction)
+        IActivityBuilder ISendEvent<IActivityBuilder>.AddSendEventAction<TEvent>(string actionNodeName, SendEventActionDelegateAsync<TEvent> actionAsync, BehaviorIdSelectorAsync targetSelectorAsync, SendEventActionBuildAction buildAction)
             => AddSendEventAction<TEvent>(actionNodeName, actionAsync, targetSelectorAsync, buildAction) as IActivityBuilder;
         #endregion
 
         #region ITypedActivityBuilder
-        ITypedActivityBuilder IReactiveActivity<ITypedActivityBuilder>.AddAction(string actionNodeName, ActionDelegateAsync actionAsync, ActionBuilderAction buildAction)
+        ITypedActivityBuilder IReactiveActivity<ITypedActivityBuilder>.AddAction(string actionNodeName, ActionDelegateAsync actionAsync, ActionBuildAction buildAction)
             => AddAction(actionNodeName, actionAsync, b => buildAction?.Invoke(b)) as ITypedActivityBuilder;
 
-        ITypedActivityBuilder IReactiveActivity<ITypedActivityBuilder>.AddStructuredActivity(string actionNodeName, ReactiveStructuredActivityBuilderAction builderAction)
-            => AddStructuredActivity(actionNodeName, builderAction) as ITypedActivityBuilder;
+        ITypedActivityBuilder IReactiveActivity<ITypedActivityBuilder>.AddStructuredActivity(string actionNodeName, ReactiveStructuredActivityBuildAction buildAction)
+            => AddStructuredActivity(actionNodeName, buildAction) as ITypedActivityBuilder;
 
-        ITypedActivityBuilder IInitial<ITypedActivityBuilder>.AddInitial(InitialBuilderAction buildAction)
+        ITypedActivityBuilder IInitial<ITypedActivityBuilder>.AddInitial(InitialBuildAction buildAction)
             => AddInitial(buildAction) as ITypedActivityBuilder;
 
         ITypedActivityBuilder IFinal<ITypedActivityBuilder>.AddFinal()
             => AddFinal() as ITypedActivityBuilder;
 
-        ITypedActivityBuilder IInput<ITypedActivityBuilder>.AddInput(InputBuilderAction buildAction)
+        ITypedActivityBuilder IInput<ITypedActivityBuilder>.AddInput(InputBuildAction buildAction)
             => AddInput(buildAction) as ITypedActivityBuilder;
 
         ITypedActivityBuilder IOutput<ITypedActivityBuilder>.AddOutput()
             => AddOutput() as ITypedActivityBuilder;
 
-        ITypedActivityBuilder IReactiveActivity<ITypedActivityBuilder>.AddParallelActivity<TParallelizationToken>(string actionNodeName, ParallelActivityBuilderAction builderAction)
-            => AddParallelActivity<TParallelizationToken>(actionNodeName, builderAction) as ITypedActivityBuilder;
+        ITypedActivityBuilder IReactiveActivity<ITypedActivityBuilder>.AddParallelActivity<TParallelizationToken>(string actionNodeName, ParallelActivityBuildAction buildAction)
+            => AddParallelActivity<TParallelizationToken>(actionNodeName, buildAction) as ITypedActivityBuilder;
 
-        ITypedActivityBuilder IReactiveActivity<ITypedActivityBuilder>.AddIterativeActivity<TIterationToken>(string actionNodeName, IterativeActivityBuilderAction builderAction)
-            => AddIterativeActivity<TIterationToken>(actionNodeName, builderAction) as ITypedActivityBuilder;
+        ITypedActivityBuilder IReactiveActivity<ITypedActivityBuilder>.AddIterativeActivity<TIterationToken>(string actionNodeName, IterativeActivityBuildAction buildAction)
+            => AddIterativeActivity<TIterationToken>(actionNodeName, buildAction) as ITypedActivityBuilder;
 
-        ITypedActivityBuilder IAcceptEvent<ITypedActivityBuilder>.AddAcceptEventAction<TEvent>(string actionNodeName, AcceptEventActionDelegateAsync<TEvent> eventActionAsync, AcceptEventActionBuilderAction buildAction)
+        ITypedActivityBuilder IAcceptEvent<ITypedActivityBuilder>.AddAcceptEventAction<TEvent>(string actionNodeName, AcceptEventActionDelegateAsync<TEvent> eventActionAsync, AcceptEventActionBuildAction buildAction)
             => AddAcceptEventAction<TEvent>(actionNodeName, eventActionAsync, buildAction) as ITypedActivityBuilder;
 
-        ITypedActivityBuilder ISendEvent<ITypedActivityBuilder>.AddSendEventAction<TEvent>(string actionNodeName, SendEventActionDelegateAsync<TEvent> actionAsync, BehaviorIdSelectorAsync targetSelectorAsync, SendEventActionBuilderAction buildAction)
+        ITypedActivityBuilder ISendEvent<ITypedActivityBuilder>.AddSendEventAction<TEvent>(string actionNodeName, SendEventActionDelegateAsync<TEvent> actionAsync, BehaviorIdSelectorAsync targetSelectorAsync, SendEventActionBuildAction buildAction)
             => AddSendEventAction<TEvent>(actionNodeName, actionAsync, targetSelectorAsync, buildAction) as ITypedActivityBuilder;
         #endregion
 

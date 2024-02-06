@@ -17,14 +17,33 @@ namespace Stateflows.Activities.Engine
 {
     internal class Executor : IDisposable
     {
-        public Graph Graph { get; }
-
-        public ActivitiesRegister Register { get; }
-
-        public NodeScope NodeScope { get; }
-
-
+        public readonly Graph Graph;
+        public readonly ActivitiesRegister Register;
+        public readonly NodeScope NodeScope;
         private readonly ILogger<Executor> Logger;
+
+        public readonly NodeType[] CancellableTypes = new NodeType[]
+        {
+            NodeType.Action,
+            NodeType.Decision,
+            NodeType.Fork,
+            NodeType.Join,
+            NodeType.Merge,
+            NodeType.SendEventAction,
+            NodeType.AcceptEventAction,
+            NodeType.StructuredActivity,
+            NodeType.ParallelActivity,
+            NodeType.IterativeActivity,
+            NodeType.ExceptionHandler,
+            NodeType.DataStore
+        };
+
+        public readonly NodeType[] StructuralTypes = new NodeType[]
+        {
+            NodeType.StructuredActivity,
+            NodeType.ParallelActivity,
+            NodeType.IterativeActivity
+        };
 
         public Executor(ActivitiesRegister register, Graph graph, IServiceProvider serviceProvider)
         {
@@ -110,9 +129,43 @@ namespace Stateflows.Activities.Engine
                 return true;
             }
 
-            Debug.WriteLine($"{Context.Id.Instance} initialized already");
+            Logger.LogInformation("Behavior \"{id}\" is already initialized.", $"{Context.Id.BehaviorId.Type}:{Context.Id.Name}:{Context.Id.Instance}");
 
             return false;
+        }
+
+        public async Task<bool> CancelAsync()
+        {
+            Debug.Assert(Context != null, $"Context is unavailable. Is state machine '{Graph.Name}' hydrated?");
+
+            if (Initialized)
+            {
+                Context.ActiveNodes.Clear();
+                Context.NodeTimeEvents.Clear();
+                Context.NodeThreads.Clear();
+                Context.OutputTokens.Clear();
+                Context.GlobalValues.Clear();
+                Context.Streams.Clear();
+                Context.Context.PendingTimeEvents.Clear();
+                Context.Context.TriggerTime = null;
+
+                await DoFinalizeAsync();
+
+                return true;
+            }
+
+            return false;
+        }
+
+        public void Reset()
+        {
+            Debug.Assert(Context != null, $"Context is unavailable. Is state machine '{Graph.Name}' hydrated?");
+
+            if (Initialized)
+            {
+                Context.Context.Values.Clear();
+                Context.Context.Version = 0;
+            }
         }
 
         private IEnumerable<Token> OutputTokens { get; set; } = null;
@@ -183,13 +236,13 @@ namespace Stateflows.Activities.Engine
             return EventStatus.Consumed;
         }
 
-        public async Task DoFinalizeAsync(IEnumerable<Token> outputTokens)
+        public async Task DoFinalizeAsync(IEnumerable<Token> outputTokens = null)
         {
             if (Finalized) return;
 
             Finalized = true;
 
-            if (Graph.OutputNode != null)
+            if (Graph.OutputNode != null && outputTokens != null)
             {
                 OutputTokens = outputTokens;
             }
@@ -342,12 +395,7 @@ namespace Stateflows.Activities.Engine
                 nodes.Select(n => DoHandleNodeAsync(n, nodeScope, n == node.InputNode ? input : null, selectionToken))
             );
 
-            var result =
-                nodeScope.IsTerminated ||
-                (
-                    !Context.GetStreams(nodeScope.ThreadId).Values.Any(s => s.Tokens.Any()) &&
-                    !node.Nodes.Values.Any(node => node.Type == NodeType.AcceptEventAction && !node.IncomingEdges.Any())
-                );
+            var result = Context.IsNodeCompleted(node, nodeScope);
 
             return result;
         }
@@ -386,32 +434,19 @@ namespace Stateflows.Activities.Engine
 
         public async Task DoHandleNodeAsync(Node node, NodeScope nodeScope, IEnumerable<Token> input = null, Token selectionToken = null)
         {
-            var types = new NodeType[]
-            {
-                NodeType.Action,
-                NodeType.Decision,
-                NodeType.Fork,
-                NodeType.Join,
-                NodeType.Merge,
-                NodeType.SendEventAction,
-                NodeType.AcceptEventAction,
-                NodeType.StructuredActivity,
-                NodeType.ParallelActivity,
-                NodeType.IterativeActivity,
-                NodeType.ExceptionHandler,
-                NodeType.DataStore
-            };
-
-            if (types.Contains(node.Type) && nodeScope.CancellationToken.IsCancellationRequested)
+            if (CancellableTypes.Contains(node.Type) && nodeScope.CancellationToken.IsCancellationRequested)
             {
                 return;
             }
 
-            IEnumerable<Stream> streams;
+            IEnumerable<Stream> streams = Array.Empty<Stream>();
 
-            lock (node)
+            if (!Context.NodesToExecute.Contains(node))
             {
-                streams = Context.GetStreams(node, nodeScope.ThreadId);
+                lock (node)
+                {
+                    streams = Context.GetStreams(node, nodeScope.ThreadId);
+                }
             }
 
             if (
@@ -429,6 +464,9 @@ namespace Stateflows.Activities.Engine
                 ( // implicit join node - has incoming streams on all edges
                     node.IncomingEdges.Count == streams.Count() &&
                     node.Options.HasFlag(NodeOptions.ImplicitJoin)
+                ) ||
+                (
+                    Context.NodesToExecute.Contains(node)
                 )
             )
             {
@@ -447,9 +485,10 @@ namespace Stateflows.Activities.Engine
 
                 var inputTokens = input ?? streams.SelectMany(stream => stream.Tokens).ToArray();
 
+                nodeScope = nodeScope.CreateChildScope();
                 lock (node.Graph)
                 {
-                    Debug.WriteLine($">>> Executing node {node.Name.Split('.').Last()}, threadId: {nodeScope.ThreadId}");
+                    Debug.WriteLine($">>> Executing node {node.Name}, threadId: {nodeScope.ThreadId}");
                 }
 
                 var actionContext = new ActionContext(Context, nodeScope, node, inputTokens, selectionToken);
@@ -458,11 +497,25 @@ namespace Stateflows.Activities.Engine
 
                 if (node.Type == NodeType.AcceptEventAction)
                 {
+                    var @event = Context.Event;
+
                     Context.ClearEvent();
 
-                    if (node.IncomingEdges.Any())
+                    if (@event is RecurringEvent)
                     {
                         Inspector.AcceptEventsPlugin.UnregisterAcceptEventNode(node);
+
+                        if (!node.IncomingEdges.Any() && Context.NodesToExecute.Contains(node))
+                        {
+                            Inspector.AcceptEventsPlugin.RegisterAcceptEventNode(node, nodeScope.ThreadId);
+                        }
+                    }
+                    else
+                    {
+                        if (node.IncomingEdges.Any())
+                        {
+                            Inspector.AcceptEventsPlugin.UnregisterAcceptEventNode(node);
+                        }
                     }
                 }
 
@@ -472,6 +525,16 @@ namespace Stateflows.Activities.Engine
                 }
                 else
                 {
+                    if (StructuralTypes.Contains(node.Type) &&
+                        (
+                            Context.IsNodeCompleted(node, nodeScope) ||
+                            actionContext.OutputTokens.Any()
+                        )
+                    )
+                    {
+                        actionContext.OutputTokens.Add(new ControlToken());
+                    }
+
                     if (actionContext.OutputTokens.Any(t => t is ControlToken))
                     {
                         var tokenNames = actionContext.OutputTokens.Select(token => token.Name).Distinct().ToArray();
