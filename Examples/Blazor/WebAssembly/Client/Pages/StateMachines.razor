@@ -93,7 +93,7 @@
         if (locator.TryLocateStateMachine(GetCurrentId(), out var stateMachine))
         {
             var result = await stateMachine.InitializeAsync();
-            message = result.Response.InitializationSuccessful
+            message = result.Response?.InitializationSuccessful ?? false
                 ? "State Machine located and initialized"
                 : "State Machine located, it's already initialized";
 

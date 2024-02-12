@@ -1,6 +1,6 @@
 {
   "name": "@stateflows/signalr-client",
-  "version": "0.8.0",
+  "version": "0.9.0",
   "description": "SignalR-based client for Stateflows framework",
   "main": "dist/index.js",
   "module": "./dist/index.mjs",
@@ -25,10 +25,11 @@
   "license": "MIT",
   "homepage": "https://www.stateflows.net",
   "dependencies": {
-    "@microsoft/signalr": "^8.0.0"
+    "@microsoft/signalr": "^8.0.0",
+    "@stateflows/common": "^0.9.0"
   },
   "devDependencies": {
-    "tsup": "^7.3.0",
+    "tsup": "^8.0.1",
     "typescript": "^5.3.3"
   }
 }

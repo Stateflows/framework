@@ -21,6 +21,9 @@ namespace Stateflows.Activities
                     b => buildAction(b)
                 ) as IReactiveStructuredActivityBuilder;
 
+        public static IReactiveStructuredActivityBuilder AddJoin(this IReactiveStructuredActivityBuilder builder, JoinBuildAction joinBuildAction)
+            => builder.AddJoin(ActivityNodeInfo<JoinNode>.Name, joinBuildAction);
+
         public static IReactiveStructuredActivityBuilder AddFork(this IReactiveStructuredActivityBuilder builder, string forkNodeName, ForkBuildAction buildAction)
             => (builder as BaseActivityBuilder)
                 .AddNode(
@@ -33,6 +36,9 @@ namespace Stateflows.Activities
                     },
                     b => buildAction(b)
                 ) as IReactiveStructuredActivityBuilder;
+
+        public static IReactiveStructuredActivityBuilder AddFork(this IReactiveStructuredActivityBuilder builder, ForkBuildAction forkBuildAction)
+            => builder.AddFork(ActivityNodeInfo<ForkNode>.Name, forkBuildAction);
 
         public static IReactiveStructuredActivityBuilder AddMerge(this IReactiveStructuredActivityBuilder builder, string mergeNodeName, MergeBuildAction buildAction)
             => (builder as BaseActivityBuilder)
@@ -47,6 +53,9 @@ namespace Stateflows.Activities
                     b => buildAction(b.SetOptions(NodeOptions.None) as IMergeBuilder)
                 ) as IReactiveStructuredActivityBuilder;
 
+        public static IReactiveStructuredActivityBuilder AddMerge(this IReactiveStructuredActivityBuilder builder, MergeBuildAction mergeBuildAction)
+            => builder.AddMerge(ActivityNodeInfo<MergeNode>.Name, mergeBuildAction);
+
         public static IReactiveStructuredActivityBuilder AddControlDecision(this IReactiveStructuredActivityBuilder builder, string decisionNodeName, DecisionBuildAction buildAction)
             => (builder as BaseActivityBuilder)
                 .AddNode(
@@ -59,6 +68,9 @@ namespace Stateflows.Activities
                     },
                     b => buildAction(b.SetOptions(NodeOptions.DecisionDefault) as IDecisionBuilder)
                 ) as IReactiveStructuredActivityBuilder;
+
+        public static IReactiveStructuredActivityBuilder AddControlDecision(this IReactiveStructuredActivityBuilder builder, DecisionBuildAction decisionBuildAction)
+            => builder.AddControlDecision(ActivityNodeInfo<DecisionNode<ControlToken>>.Name, decisionBuildAction);
 
         public static IReactiveStructuredActivityBuilder AddTokenDecision<TToken>(this IReactiveStructuredActivityBuilder builder, string decisionNodeName, DecisionBuildAction<TToken> buildAction)
             where TToken : Token, new()
@@ -73,6 +85,10 @@ namespace Stateflows.Activities
                     },
                     b => buildAction(new DecisionBuilder<TToken>(b.SetOptions(NodeOptions.DecisionDefault) as NodeBuilder))
                 ) as IReactiveStructuredActivityBuilder;
+
+        public static IReactiveStructuredActivityBuilder AddTokenDecision<TToken>(this IReactiveStructuredActivityBuilder builder, DecisionBuildAction<TToken> decisionBuildAction)
+            where TToken : Token, new()
+            => builder.AddTokenDecision(ActivityNodeInfo<DecisionNode<TToken>>.Name, decisionBuildAction);
 
         public static IReactiveStructuredActivityBuilder AddDataStore(this IReactiveStructuredActivityBuilder builder, string dataStoreNodeName, DataStoreBuildAction buildAction)
             => (builder as BaseActivityBuilder)

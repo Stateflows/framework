@@ -9,12 +9,14 @@
   <ItemGroup>
     <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly" Version="6.0.11" />
     <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.DevServer" Version="6.0.11" PrivateAssets="all" />
+    <PackageReference Include="Microsoft.Extensions.Http" Version="6.0.0" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\..\..\..\Core\Stateflows.Common\Stateflows.Common.csproj" />
     <ProjectReference Include="..\..\..\..\Extensions\Stateflows.Extensions.PlantUml\Stateflows.Extensions.PlantUml.csproj" />
     <ProjectReference Include="..\..\..\..\Transport\Stateflows.Transport.AspNetCore.SignalR.Client\Stateflows.Transport.AspNetCore.SignalR.Client.csproj" />
+    <ProjectReference Include="..\..\..\..\Transport\Stateflows.Transport.Http.Client\Stateflows.Transport.Http.Client.csproj" />
     <ProjectReference Include="..\..\..\Examples.Common\Examples.Common.csproj" />
     <ProjectReference Include="..\Shared\Blazor.WebAssembly.Shared.csproj" />
   </ItemGroup>

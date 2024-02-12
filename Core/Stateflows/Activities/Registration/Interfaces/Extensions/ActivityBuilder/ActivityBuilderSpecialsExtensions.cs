@@ -3,7 +3,6 @@ using Stateflows.Common;
 using Stateflows.Activities.Registration;
 using Stateflows.Activities.Registration.Builders;
 using Stateflows.Activities.Registration.Interfaces;
-using Stateflows.StateMachines.Engine;
 
 namespace Stateflows.Activities
 {
@@ -22,6 +21,9 @@ namespace Stateflows.Activities
                     b => joinBuildAction(b)
                 ) as IActivityBuilder;
 
+        public static IActivityBuilder AddJoin(this IActivityBuilder builder, JoinBuildAction joinBuildAction)
+            => builder.AddJoin(ActivityNodeInfo<JoinNode>.Name, joinBuildAction);
+
         public static IActivityBuilder AddFork(this IActivityBuilder builder, string forkNodeName, ForkBuildAction forkBuildAction)
             => (builder as BaseActivityBuilder)
                 .AddNode(
@@ -34,6 +36,9 @@ namespace Stateflows.Activities
                     },
                     b => forkBuildAction(b)
                 ) as IActivityBuilder;
+
+        public static IActivityBuilder AddFork(this IActivityBuilder builder, ForkBuildAction forkBuildAction)
+            => builder.AddFork(ActivityNodeInfo<ForkNode>.Name, forkBuildAction);
 
         public static IActivityBuilder AddMerge(this IActivityBuilder builder, string mergeNodeName, MergeBuildAction mergeBuildAction)
             => (builder as BaseActivityBuilder)
@@ -48,6 +53,9 @@ namespace Stateflows.Activities
                     b => mergeBuildAction(b.SetOptions(NodeOptions.None) as IMergeBuilder)
                 ) as IActivityBuilder;
 
+        public static IActivityBuilder AddMerge(this IActivityBuilder builder, MergeBuildAction mergeBuildAction)
+            => builder.AddMerge(ActivityNodeInfo<MergeNode>.Name, mergeBuildAction);
+
         public static IActivityBuilder AddControlDecision(this IActivityBuilder builder, string decisionNodeName, DecisionBuildAction decisionBuildAction)
             => (builder as BaseActivityBuilder)
                 .AddNode(
@@ -60,6 +68,9 @@ namespace Stateflows.Activities
                     },
                     b => decisionBuildAction(b.SetOptions(NodeOptions.DecisionDefault) as IDecisionBuilder)
                 ) as IActivityBuilder;
+
+        public static IActivityBuilder AddControlDecision(this IActivityBuilder builder, DecisionBuildAction decisionBuildAction)
+            => builder.AddControlDecision(ActivityNodeInfo<DecisionNode<ControlToken>>.Name, decisionBuildAction);
 
         public static IActivityBuilder AddTokenDecision<TToken>(this IActivityBuilder builder, string decisionNodeName, DecisionBuildAction<TToken> decisionBuildAction)
             where TToken : Token, new()
@@ -74,6 +85,10 @@ namespace Stateflows.Activities
                     },
                     b => decisionBuildAction(new DecisionBuilder<TToken>(b.SetOptions(NodeOptions.DecisionDefault) as NodeBuilder))
                 ) as IActivityBuilder;
+
+        public static IActivityBuilder AddTokenDecision<TToken>(this IActivityBuilder builder, DecisionBuildAction<TToken> decisionBuildAction)
+            where TToken : Token, new()
+            => builder.AddTokenDecision(ActivityNodeInfo<DecisionNode<TToken>>.Name, decisionBuildAction);
 
         public static IActivityBuilder AddDataStore(this IActivityBuilder builder, string dataStoreNodeName, DataStoreBuildAction decisionBuildAction)
             => (builder as BaseActivityBuilder)

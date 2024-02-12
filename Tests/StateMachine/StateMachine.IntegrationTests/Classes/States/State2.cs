@@ -14,13 +14,13 @@
 
         public override Task OnEntryAsync()
         {
-            EntryFired = true;
+            EntryFired = Context != null && Context.StateMachine.Id.Instance != null;
             return Task.CompletedTask;
         }
 
         public override Task OnExitAsync()
         {
-            ExitFired = true;
+            ExitFired = Context != null && Context.StateMachine.Id.Instance != null;
             return Task.CompletedTask;
         }
     }

@@ -4,7 +4,7 @@ using Stateflows.Common.Utilities;
 using Stateflows.Common.Extensions;
 using Stateflows.Common.Exceptions;
 
-namespace Stateflows.Transport.AspNetCore.SignalR.Client
+namespace Stateflows.Transport.SignalR.Client
 {
     internal class Behavior : IBehavior
     {

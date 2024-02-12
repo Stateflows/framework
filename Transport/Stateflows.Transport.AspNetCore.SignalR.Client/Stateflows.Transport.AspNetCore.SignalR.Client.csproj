@@ -5,7 +5,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <PackageTags>Stateflows;state-machine;activity;workflow;SignalR;signal-r</PackageTags>
-    <Version>0.8.0-alpha</Version>
+    <Version>$(STATEFLOWS_VERSION)</Version>
     <Title>SignalR transport client for Stateflows framework</Title>
     <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
     <Authors>Stateflows</Authors>

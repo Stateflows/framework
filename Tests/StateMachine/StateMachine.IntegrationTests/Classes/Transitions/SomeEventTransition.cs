@@ -14,13 +14,13 @@
 
         public override Task<bool> GuardAsync()
         {
-            GuardFired = true;
+            GuardFired = Context != null && Context.StateMachine.Id.Instance != null;
             return Task.FromResult(true);
         }
 
         public override Task EffectAsync()
         {
-            EffectFired = true;
+            EffectFired = Context != null && Context.StateMachine.Id.Instance != null;
             return Task.CompletedTask;
         }
     }

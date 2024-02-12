@@ -9,7 +9,7 @@ namespace Stateflows.Common
         { }
 
         public override string Name
-            => $"Stateflows.Activities.GroupToken<{TokenInfo<TToken>.TokenName}>";
+            => $"Stateflows.Activities.GroupToken<{TokenInfo<TToken>.Name}>";
 
         public List<TToken> Tokens { get; set; } = new List<TToken>();
     }

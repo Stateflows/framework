@@ -50,7 +50,7 @@ namespace Stateflows.Common.Initializer
                 {
                     token.RefreshEnvironment();
 
-                    if (Locator.TryLocateBehavior(token.BehaviorClass.ToId(string.Empty), out var behavior))
+                    if (Locator.TryLocateBehavior(new BehaviorId(token.BehaviorClass, string.Empty), out var behavior))
                     {
                         await behavior.InitializeAsync(await token.InitializationRequestFactory(ServiceProvider, token.BehaviorClass));
                     }

@@ -6,15 +6,15 @@ namespace Stateflows.StateMachines.Typed
     public static class StateBuilderDefaultTransitionTypedExtensions
     {
         public static IStateBuilder AddDefaultTransition<TTransition, TTargetState>(this IStateBuilder builder)
-            where TTransition : Transition<Completion>
+            where TTransition : Transition<CompletionEvent>
             where TTargetState : BaseState
             => builder.AddDefaultTransition<TTransition>(StateInfo<TTargetState>.Name);
 
         public static IStateBuilder AddDefaultTransition<TTransition>(this IStateBuilder builder, string targetVertexName)
-            where TTransition : Transition<Completion>
-            => builder.AddTransition<Completion, TTransition>(targetVertexName);
+            where TTransition : Transition<CompletionEvent>
+            => builder.AddTransition<CompletionEvent, TTransition>(targetVertexName);
 
-        public static IStateBuilder AddDefaultTransition<TTargetState>(this IStateBuilder builder, TransitionBuildAction<Completion> transitionBuildAction = null)
+        public static IStateBuilder AddDefaultTransition<TTargetState>(this IStateBuilder builder, TransitionBuildAction<CompletionEvent> transitionBuildAction = null)
             where TTargetState : BaseState
             => builder.AddDefaultTransition(StateInfo<TTargetState>.Name, transitionBuildAction);
     }

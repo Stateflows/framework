@@ -1,0 +1,29 @@
+{
+  "name": "@stateflows/common",
+  "version": "0.9.0",
+  "description": "Common package for Stateflows framework clients",
+  "main": "dist/index.js",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsup",
+    "build:dev": "tsup --watch",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "Stateflows",
+    "state-machine",
+    "activity",
+    "workflow"
+  ],
+  "author": "Stateflows",
+  "license": "MIT",
+  "homepage": "https://www.stateflows.net",
+  "devDependencies": {
+    "tsup": "^8.0.1",
+    "typescript": "^5.3.3"
+  }
+}

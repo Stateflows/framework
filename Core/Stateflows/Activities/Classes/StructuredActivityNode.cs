@@ -13,7 +13,7 @@ namespace Stateflows.Activities
             => Task.CompletedTask;
     }
 
-    public abstract class StructuredActivity<TToken> : StructuredActivityNode
+    public abstract class StructuredActivityNode<TToken> : StructuredActivityNode
         where TToken : Token, new()
     {
         public new IActionContext<TToken> Context => base.Context as IActionContext<TToken>;

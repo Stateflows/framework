@@ -1,16 +1,13 @@
-﻿using MongoDB.Bson;
+﻿using System.Linq;
+using System.Threading.Tasks;
+using System.Collections.Generic;
 using MongoDB.Driver;
 using Stateflows.Common.Context;
-using Stateflows.Common.Interfaces;
 using Stateflows.Common.Utilities;
-using Stateflows.Storage.MongoDB.MongoDB.Entities;
+using Stateflows.Common.Interfaces;
+using Stateflows.Common.Trace.Models;
 using Stateflows.Storage.MongoDB.Utils;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using TimeToken = Stateflows.Common.Classes.TimeToken;
-using TimeTokenEntity = Stateflows.Storage.MongoDB.MongoDB.Entities.TimeToken_v1;
+using Stateflows.Storage.MongoDB.MongoDB.Entities;
 
 namespace Stateflows.Storage.MongoDB.Stateflows
 {
@@ -22,109 +19,42 @@ namespace Stateflows.Storage.MongoDB.Stateflows
             _mongoDatabase = mongoDBClient.GetDatabase(databaseName);
         }
 
-        public async Task<StateflowsContext> HydrateAsync(BehaviorId id)
+        public async Task<StateflowsContext> HydrateAsync(BehaviorId behaviorId)
         {
-            var context = await MongoDBSetExtension.FindOrCreate(_mongoDatabase, CollectionNames.Context_v1, id);
+            var context = await MongoDBSetExtension.FindOrCreateContextAsync(_mongoDatabase, behaviorId);
             StateflowsContext result = StateflowsJsonConverter.DeserializeObject<StateflowsContext>(context?.Data ?? string.Empty)
-                ?? new StateflowsContext() { Id = id };
+                ?? new StateflowsContext() { Id = behaviorId };
 
             return result;
         }
 
         public async Task DehydrateAsync(StateflowsContext context)
         {
-            var contextEntity = await _mongoDatabase.FindOrCreate(CollectionNames.Context_v1, context);
-            contextEntity.Data = StateflowsJsonConverter.SerializeObject(context);
-            await UpdateOrInsertContextData(contextEntity);
+            var contextEntity = await _mongoDatabase.FindOrCreateContextAsync(context.Id);
+            contextEntity.Data = StateflowsJsonConverter.SerializePolymorphicObject(context);
+            contextEntity.TriggerTime = context.TriggerTime;
+            await _mongoDatabase.UpdateOrInsertContextAsync(contextEntity);
         }
 
-        public Task<IEnumerable<StateflowsContext>> GetContextsAsync(IEnumerable<BehaviorClass> behaviorClasses)
-        {
-            throw new NotImplementedException();
-        }
+        public async Task<IEnumerable<StateflowsContext>> GetContextsAsync(IEnumerable<BehaviorClass> behaviorClasses)
+            => (await _mongoDatabase.FindContextByBehaviorClassAsync(behaviorClasses))
+                .Select(e => StateflowsJsonConverter.DeserializeObject<StateflowsContext>(e.Data));
 
-        public async Task AddTimeTokens(TimeToken[] timeTokens)
-        {
-            if (!timeTokens.Any()) return;
+        public async Task<IEnumerable<StateflowsContext>> GetContextsToTimeTriggerAsync(IEnumerable<BehaviorClass> behaviorClasses)
+            => (await _mongoDatabase.FindContextByTimeTriggerAsync(behaviorClasses))
+                .Select(e => StateflowsJsonConverter.DeserializeObject<StateflowsContext>(e.Data));
 
-            var tokens = new Dictionary<TimeToken, TimeTokenEntity>();
-            var collection = _mongoDatabase.GetCollection<TimeTokenEntity>(CollectionNames.TimeToken_v1);
+        public Task SaveTraceAsync(BehaviorTrace behaviorTrace)
+            => _mongoDatabase.InsertTraceAsync(
+                new StateflowsTrace_v1(
+                    behaviorTrace.BehaviorId,
+                    behaviorTrace.ExecutedAt,
+                    StateflowsJsonConverter.SerializePolymorphicObject(behaviorTrace)
+                )
+            );
 
-            foreach (var timeToken in timeTokens)
-            {
-                var timeTokenEntity = new TimeTokenEntity(
-                    StateflowsJsonConverter.SerializeObject(timeToken.TargetId.BehaviorClass),
-                    StateflowsJsonConverter.SerializeObject(timeToken)
-                );
-                tokens.Add(timeToken, timeTokenEntity);
-            }
-
-            await collection.InsertManyAsync(tokens.Values);
-            UpdateIdsForInsertedTimeTokens(tokens, timeTokens);
-        }
-
-        public async Task ClearTimeTokens(BehaviorId behaviorId, IEnumerable<string> ids)
-        {
-            var collection = _mongoDatabase.GetCollection<TimeTokenEntity>(CollectionNames.TimeToken_v1);
-            var objectIds = ids.Select(id => ObjectId.Parse(id)).ToList();
-
-            var filter = Builders<TimeTokenEntity>.Filter.In("_id", objectIds);
-
-            await collection.DeleteManyAsync(filter);
-        }
-
-        public async Task<IEnumerable<TimeToken>> GetTimeTokens(IEnumerable<BehaviorClass> behaviorClasses)
-        {
-            var collection = _mongoDatabase.GetCollection<TimeTokenEntity>(CollectionNames.TimeToken_v1);
-            var behaviorClassStrings = behaviorClasses.Select(bc => bc.ToString());
-
-            return (await collection.Find(p => behaviorClassStrings.Contains(p.BehaviorClass)).ToListAsync())
-                .Select(e =>
-                {
-                    var result = StateflowsJsonConverter.DeserializeObject<TimeToken>(e.Data);
-                    if (result != null)
-                    {
-                        result.Id = e.Id.ToString();
-                    }
-                    else
-                    {
-                        result = new TimeToken();
-                    }
-
-                    return result;
-                })
-                .Where(e => e.Id != null)
-                .ToArray();
-        }
-
-        private async Task UpdateOrInsertContextData(Context_v1 contextEntity)
-        {
-            var collection = _mongoDatabase.GetCollection<Context_v1>(CollectionNames.Context_v1);
-
-            if (contextEntity.Id == default)
-            {
-                await collection.InsertOneAsync(contextEntity);
-            }
-            else
-            {
-                var filter = Builders<Context_v1>.Filter.Where(x => x.Id == contextEntity.Id);
-                var updateDefBuilder = Builders<Context_v1>.Update;
-                var updateDef = updateDefBuilder.Combine(
-                    updateDefBuilder
-                    .Set(x => x.Data, contextEntity.Data));
-
-                await collection.UpdateOneAsync(filter, updateDef);
-            }
-        }
-
-        private static void UpdateIdsForInsertedTimeTokens(Dictionary<TimeToken, TimeTokenEntity> tokens, TimeToken[] timeTokens)
-        {
-            var ids = tokens.Values.Select(_ => _.Id);
-
-            for (int i = 0; i < timeTokens.Length; i++)
-            {
-                timeTokens[i].Id = ids.ElementAt(i).ToString();
-            }
-        }
+        public async Task<IEnumerable<BehaviorTrace>> GetTracesAsync(BehaviorId behaviorId)
+            => (await _mongoDatabase.FindTracesAsync(behaviorId))
+                .Select(e => StateflowsJsonConverter.DeserializeObject<BehaviorTrace>(e.Data));
     }
 }

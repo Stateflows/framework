@@ -1,6 +1,7 @@
 ﻿using System;
 using Microsoft.Extensions.DependencyInjection;
 using MongoDB.Driver;
+using Stateflows.Common.Exceptions;
 using Stateflows.Common.Interfaces;
 using Stateflows.Common.Extensions;
 using Stateflows.Common.Registration.Interfaces;
@@ -15,7 +16,7 @@ namespace Stateflows
         {
             if (builder.ServiceCollection.IsServiceRegistered<IStateflowsStorage>())
             {
-                throw new Exception("Another Stateflows storage already registered");
+                throw new StateflowsException("Another Stateflows storage already registered");
             }
 
             builder.ServiceCollection

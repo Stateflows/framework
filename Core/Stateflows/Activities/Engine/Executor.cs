@@ -48,7 +48,7 @@ namespace Stateflows.Activities.Engine
         public Executor(ActivitiesRegister register, Graph graph, IServiceProvider serviceProvider)
         {
             Register = register;
-            NodeScope = new NodeScope(serviceProvider, Guid.NewGuid());
+            NodeScope = new NodeScope(serviceProvider, graph, Guid.NewGuid());
             Graph = graph;
 
             Logger = serviceProvider.GetService<ILogger<Executor>>();
@@ -306,7 +306,7 @@ namespace Stateflows.Activities.Engine
 
                     await DoExecuteNodeStructureAsync(
                         context.Node,
-                        context.NodeScope,
+                        context.NodeScope.CreateChildScope(context.Node, threadId),
                         restOfInput.Concat(new Token[] { token }).ToArray(),
                         token
                     );
@@ -354,7 +354,7 @@ namespace Stateflows.Activities.Engine
             {
                 await DoExecuteNodeStructureAsync(
                     context.Node,
-                    context.NodeScope,
+                    context.NodeScope.CreateChildScope(context.Node, threadId),
                     restOfInput.Concat(new Token[] { token }),
                     token
                 );
@@ -485,6 +485,7 @@ namespace Stateflows.Activities.Engine
 
                 var inputTokens = input ?? streams.SelectMany(stream => stream.Tokens).ToArray();
 
+                nodeScope = nodeScope.CreateChildScope(node);
                 lock (node.Graph)
                 {
                     Debug.WriteLine($">>> Executing node {node.Name}, threadId: {nodeScope.ThreadId}");
@@ -500,11 +501,11 @@ namespace Stateflows.Activities.Engine
 
                     Context.ClearEvent();
 
-                    if (@event is RecurringEvent)
+                    if (@event is TimeEvent)
                     {
                         Inspector.AcceptEventsPlugin.UnregisterAcceptEventNode(node);
 
-                        if (!node.IncomingEdges.Any() && Context.NodesToExecute.Contains(node))
+                        if (@event is RecurringEvent && !node.IncomingEdges.Any() && Context.NodesToExecute.Contains(node))
                         {
                             Inspector.AcceptEventsPlugin.RegisterAcceptEventNode(node, nodeScope.ThreadId);
                         }
@@ -608,7 +609,7 @@ namespace Stateflows.Activities.Engine
             {
                 var stream = Context.GetStream(edge.Identifier, context.NodeScope.ThreadId);
 
-                if (edgeTokenName != TokenInfo<ControlToken>.TokenName)
+                if (edgeTokenName != TokenInfo<ControlToken>.Name)
                 {
                     processedTokens.Add(new ControlToken());
                 }

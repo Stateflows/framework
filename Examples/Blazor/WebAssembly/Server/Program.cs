@@ -4,6 +4,7 @@ using Stateflows;
 using Stateflows.Common;
 using Stateflows.StateMachines;
 using Stateflows.StateMachines.Sync;
+using Stateflows.Transport.Http;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -64,7 +65,8 @@ builder.Services.AddRazorPages();
 
 var app = builder.Build();
 
-app.MapStateflowsTransportHub();
+app.MapStateflowsSignalRTransport();
+app.MapStateflowsHttpTransport();
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())

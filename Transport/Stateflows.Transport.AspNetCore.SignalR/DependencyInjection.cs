@@ -11,7 +11,7 @@ namespace Stateflows
         private static bool hubMapped = false;
 
         [DebuggerHidden]
-        public static IEndpointRouteBuilder MapStateflowsTransportHub(this IEndpointRouteBuilder builder, Action<HttpConnectionDispatcherOptions>? configureOptions = null)
+        public static IEndpointRouteBuilder MapStateflowsSignalRTransport(this IEndpointRouteBuilder builder, Action<HttpConnectionDispatcherOptions>? configureOptions = null)
         {
             if (!hubMapped)
             {

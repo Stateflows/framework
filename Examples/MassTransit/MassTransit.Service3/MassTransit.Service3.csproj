@@ -8,7 +8,6 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\..\Core\Stateflows\Stateflows.csproj" />
-    <ProjectReference Include="..\..\..\Transport\Stateflows.Transport.AspNetCore.WebApi\Stateflows.Transport.AspNetCore.WebApi.csproj" />
     <ProjectReference Include="..\..\..\Transport\Stateflows.Transport.MassTransit\Stateflows.Transport.MassTransit.csproj" />
     <ProjectReference Include="..\..\Examples.Common\Examples.Common.csproj" />
   </ItemGroup>

@@ -1,5 +1,6 @@
 ﻿using System;
 using Stateflows.Common.Exceptions;
+using Stateflows.Common.Utilities;
 
 namespace Stateflows.Activities
 {
@@ -26,7 +27,7 @@ namespace Stateflows.Activities
 
         public string Instance { get; set; }
 
-        public readonly BehaviorId BehaviorId => BehaviorType.Activity.ToClass(Name).ToId(Instance);
+        public readonly BehaviorId BehaviorId => new BehaviorId(BehaviorType.Activity, Name, Instance);
 
         public static bool operator ==(ActivityId id1, ActivityId id2)
             => id1.Equals(id2);
@@ -54,5 +55,11 @@ namespace Stateflows.Activities
 
         public readonly override int GetHashCode()
             => Tuple.Create(Name, Instance).GetHashCode();
+
+        public readonly override string ToString()
+            => StateflowsJsonConverter.SerializeObject(this);
+
+        public static implicit operator string(ActivityId activityId)
+            => StateflowsJsonConverter.SerializeObject(activityId);
     }
 }

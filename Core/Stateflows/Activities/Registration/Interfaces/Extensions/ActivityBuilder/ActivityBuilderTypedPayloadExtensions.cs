@@ -27,21 +27,21 @@ namespace Stateflows.Activities.Typed.Data
 
         #region AddParallelActivity
         public static IActivityBuilder AddParallelActivity<TTokenPayload, TStructuredActivity>(this IActivityBuilder builder, ParallelActivityBuildAction buildAction = null)
-            where TStructuredActivity : StructuredActivity<Token<TTokenPayload>>
+            where TStructuredActivity : ParallelActivityNode<Token<TTokenPayload>>
             => builder.AddParallelActivity<TTokenPayload, TStructuredActivity>(ActivityNodeInfo<TStructuredActivity>.Name, buildAction);
 
         public static IActivityBuilder AddParallelActivity<TTokenPayload, TStructuredActivity>(this IActivityBuilder builder, string structuredActivityName, ParallelActivityBuildAction buildAction = null)
-            where TStructuredActivity : StructuredActivity<Token<TTokenPayload>>
+            where TStructuredActivity : ParallelActivityNode<Token<TTokenPayload>>
             => builder.AddParallelActivity<Token<TTokenPayload>, TStructuredActivity>(structuredActivityName, buildAction);
         #endregion
 
         #region AddIterativeActivity
         public static IActivityBuilder AddIterativeActivity<TTokenPayload, TStructuredActivity>(this IActivityBuilder builder, IterativeActivityBuildAction buildAction = null)
-            where TStructuredActivity : StructuredActivity<Token<TTokenPayload>>
+            where TStructuredActivity : IterativeActivityNode<Token<TTokenPayload>>
             => builder.AddIterativeActivity<TTokenPayload, TStructuredActivity>(ActivityNodeInfo<TStructuredActivity>.Name, buildAction);
 
         public static IActivityBuilder AddIterativeActivity<TTokenPayload, TStructuredActivity>(this IActivityBuilder builder, string structuredActivityName, IterativeActivityBuildAction buildAction = null)
-            where TStructuredActivity : StructuredActivity<Token<TTokenPayload>>
+            where TStructuredActivity : IterativeActivityNode<Token<TTokenPayload>>
             => builder.AddIterativeActivity<Token<TTokenPayload>, TStructuredActivity>(structuredActivityName, buildAction);
         #endregion
     }
