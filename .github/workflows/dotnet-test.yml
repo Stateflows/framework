@@ -21,9 +21,8 @@ jobs:
       with:
         dotnet-version: 6.0.x
     - name: Restore dependencies
-      working-directory: ./Tests/StateMachine/StateMachine.IntegrationTests
-      run: dotnet restore
+      run: dotnet restore ./Tests/StateMachine/StateMachine.IntegrationTests/StateMachine.IntegrationTests.csproj
     - name: Build
-      run: dotnet build --no-restore
+      run: dotnet build ./Tests/StateMachine/StateMachine.IntegrationTests/StateMachine.IntegrationTests.csproj --no-restore
     - name: Test
-      run: dotnet test --no-build --verbosity normal
+      run: dotnet test ./Tests/StateMachine/StateMachine.IntegrationTests/StateMachine.IntegrationTests.csproj --no-build --verbosity normal
