@@ -1,7 +1,7 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using Stateflows.Common.Interfaces;
 using Stateflows.Common.Registration.Interfaces;
-using Stateflows.Transport.AspNetCore.SignalR.Client;
+using Stateflows.Transport.SignalR.Client;
 
 namespace Stateflows
 {

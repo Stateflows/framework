@@ -1,7 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using Stateflows.Common;
+using Stateflows.Common.Exceptions;
 using Stateflows.StateMachines.Events;
+#nullable enable
 
 namespace Stateflows.Testing.StateMachines.Sequence
 {
@@ -11,7 +13,12 @@ namespace Stateflows.Testing.StateMachines.Sequence
 
         public void ValidateWith(IExecutionSequenceBuilder sequenceBuilder)
         {
-            var actualSequence = (sequenceBuilder as ExecutionSequence).Sequence;
+            if (!(sequenceBuilder is ExecutionSequence executionSequence))
+            {
+                return;
+            }
+
+            var actualSequence = executionSequence.Sequence;
 
             int index = 0;
             for (int x = 0; x < Sequence.Count; x++)
@@ -31,16 +38,16 @@ namespace Stateflows.Testing.StateMachines.Sequence
 
                 if (!found)
                 {
-                    throw new Exception($"Expected execution step \"{entry}\" not found");
+                    throw new StateflowsException($"Expected execution step \"{entry}\" not found");
                 }
             }
         }
 
         public IExecutionSequenceBuilder DefaultTransitionEffect(string sourceStateName, string targetVertexName)
-            => TransitionEffect(EventInfo<Completion>.Name, sourceStateName, targetVertexName);
+            => TransitionEffect(EventInfo<CompletionEvent>.Name, sourceStateName, targetVertexName);
 
         public IExecutionSequenceBuilder DefaultTransitionGuard(string sourceStateName, string targetVertexName)
-            => TransitionGuard(EventInfo<Completion>.Name, sourceStateName, targetVertexName);
+            => TransitionGuard(EventInfo<CompletionEvent>.Name, sourceStateName, targetVertexName);
 
         public IExecutionSequenceBuilder InternalTransitionEffect(string eventName, string sourceStateName)
             => TransitionEffect(eventName, sourceStateName, "");

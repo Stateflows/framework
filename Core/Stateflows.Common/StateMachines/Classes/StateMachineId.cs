@@ -1,6 +1,8 @@
 ﻿using System;
 using Newtonsoft.Json;
+using Stateflows.Activities;
 using Stateflows.Common.Exceptions;
+using Stateflows.Common.Utilities;
 
 namespace Stateflows.StateMachines
 {
@@ -65,5 +67,11 @@ namespace Stateflows.StateMachines
 
         public readonly override int GetHashCode()
             => Tuple.Create(Name, Instance).GetHashCode();
+
+        public readonly override string ToString()
+            => StateflowsJsonConverter.SerializeObject(this);
+
+        public static implicit operator string(StateMachineId stateMachineId)
+            => StateflowsJsonConverter.SerializeObject(stateMachineId);
     }
 }

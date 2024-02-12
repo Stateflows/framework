@@ -143,15 +143,15 @@ namespace StateMachine.IntegrationTests.Tests
                 .StateEntry("state2")
                 .StateInitialize("state2")
                 .StateEntry("state3")
-                .TransitionGuard(EventInfo<Completion>.Name, "state3", "state4")
+                .TransitionGuard(EventInfo<CompletionEvent>.Name, "state3", "state4")
                 .StateExit("state3")
-                .TransitionEffect(EventInfo<Completion>.Name, "state3", "state4")
+                .TransitionEffect(EventInfo<CompletionEvent>.Name, "state3", "state4")
                 .StateEntry("state4")
                 .StateInitialize("state4")
                 .StateEntry("state5")
-                .TransitionGuard(EventInfo<Completion>.Name, "state5", "state6")
+                .TransitionGuard(EventInfo<CompletionEvent>.Name, "state5", "state6")
                 .StateExit("state5")
-                .TransitionEffect(EventInfo<Completion>.Name, "state5", "state6")
+                .TransitionEffect(EventInfo<CompletionEvent>.Name, "state5", "state6")
                 .StateEntry("state6")
             );
 
@@ -216,7 +216,7 @@ namespace StateMachine.IntegrationTests.Tests
                 .StateEntry("state2")
                 .TransitionEffect(EventInfo<OtherEvent>.Name, "state2", "state3")
                 .StateEntry("state3")
-                .TransitionEffect(EventInfo<Completion>.Name, "state3", "state4")
+                .TransitionEffect(EventInfo<CompletionEvent>.Name, "state3", "state4")
                 .StateEntry("state4")
             );
 

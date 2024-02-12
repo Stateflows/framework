@@ -9,7 +9,7 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         TReturn AddTransition<TEvent>(string targetVertexName, TransitionBuildAction<TEvent> transitionBuildAction = null)
             where TEvent : Event, new();
 
-        TReturn AddDefaultTransition(string targetVertexName, TransitionBuildAction<Completion> transitionBuildAction = null);
+        TReturn AddDefaultTransition(string targetVertexName, TransitionBuildAction<CompletionEvent> transitionBuildAction = null);
 
         TReturn AddInternalTransition<TEvent>(TransitionBuildAction<TEvent> transitionBuildAction = null)
             where TEvent : Event, new();
@@ -19,7 +19,7 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         TReturn AddElseTransition<TEvent>(string targetVertexName, ElseTransitionBuildAction<TEvent> transitionBuildAction = null)
             where TEvent : Event, new();
 
-        TReturn AddElseDefaultTransition(string targetVertexName, ElseTransitionBuildAction<Completion> transitionBuildAction = null);
+        TReturn AddElseDefaultTransition(string targetVertexName, ElseTransitionBuildAction<CompletionEvent> transitionBuildAction = null);
 
         TReturn AddElseInternalTransition<TEvent>(ElseTransitionBuildAction<TEvent> transitionBuildAction = null)
             where TEvent : Event, new();

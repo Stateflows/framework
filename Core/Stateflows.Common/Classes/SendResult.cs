@@ -1,4 +1,6 @@
 ﻿using Newtonsoft.Json;
+using System.ComponentModel.DataAnnotations;
+using System;
 
 namespace Stateflows.Common
 {
@@ -7,11 +9,11 @@ namespace Stateflows.Common
         [JsonConstructor]
         protected SendResult() { }
 
-        public SendResult(Event @event, EventStatus status, EventValidation validation)
+        public SendResult(Event @event, EventStatus status, EventValidation validation = null)
         {
             Event = @event;
             Status = status;
-            Validation = validation;
+            Validation = validation ?? new EventValidation(true, Array.Empty<ValidationResult>());
         }
 
         public Event Event { get; set; }

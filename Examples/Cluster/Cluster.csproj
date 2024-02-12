@@ -12,7 +12,6 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\Extensions\Stateflows.Extensions.PlantUml\Stateflows.Extensions.PlantUml.csproj" />
-    <ProjectReference Include="..\..\Transport\Stateflows.Transport.AspNetCore.WebApi\Stateflows.Transport.AspNetCore.WebApi.csproj" />
     <ProjectReference Include="..\Examples.SharedBehaviors\Examples.SharedBehaviors.csproj" />
     <ProjectReference Include="..\Examples.Storage\Examples.Storage.csproj" />
   </ItemGroup>

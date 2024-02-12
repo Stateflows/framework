@@ -479,75 +479,11 @@ namespace Stateflows.StateMachines.Engine
                     }
                 }
             }
-
-            //var nextVertex = edge.Target;
-            //if (nextVertex != null)
-            //{
-            //    Context.StatesStack.Reverse();
-            //    foreach (var state in Context.StatesStack)
-            //    {
-            //        if (Graph.AllVertices.TryGetValue(state, out var vertex))
-            //        {
-            //            if (vertex == nextVertex.Parent)
-            //            {
-            //                break;
-            //            }
-
-            //            await DoExitAsync(vertex);
-            //        }
-            //    }
-            //}
-
-            //await DoEffectAsync<TEvent>(edge);
-
-            //if (nextVertex != null)
-            //{
-            //    var previousNextVertex = nextVertex;
-
-            //    Context.StatesStack.Clear();
-
-            //    while (nextVertex != null)
-            //    {
-            //        if (nextVertex.Parent != null && nextVertex.Parent.InitialVertex == nextVertex)
-            //        {
-            //            await DoInitializeStateAsync(nextVertex.Parent);
-            //        }
-
-            //        if (nextVertex.Type == VertexType.FinalState)
-            //        {
-            //            if (nextVertex.Parent is null)
-            //            {
-            //                await DoFinalizeStateMachineAsync();
-            //            }
-            //            else
-            //            {
-            //                await DoFinalizeStateAsync(nextVertex.Parent);
-            //            }
-
-            //            nextVertex = null;
-            //        }
-            //        else
-            //        {
-            //            await DoEntryAsync(nextVertex);
-
-            //            previousNextVertex = nextVertex;
-            //            nextVertex = nextVertex.InitialVertex;
-            //        }
-            //    }
-
-            //    nextVertex = previousNextVertex;
-            //    while (nextVertex != null)
-            //    {
-            //        Context.StatesStack.Add(nextVertex.Identifier);
-            //        nextVertex = nextVertex.Parent;
-            //    }
-            //    Context.StatesStack.Reverse();
-            //}
         }
 
         private async Task DoCompletion()
         {
-            Context.SetEvent(new Completion());
+            Context.SetEvent(new CompletionEvent());
 
             RebuildVerticesStack();
 
@@ -556,85 +492,41 @@ namespace Stateflows.StateMachines.Engine
             Context.ClearEvent();
         }
 
-        private readonly IDictionary<Type, StateMachine> StateMachines = new Dictionary<Type, StateMachine>();
-
         public StateMachine GetStateMachine(Type stateMachineType, RootContext context)
         {
-            lock (StateMachines)
-            {
-                if (!StateMachines.TryGetValue(stateMachineType, out var stateMachine))
-                {
-                    stateMachine = ServiceProvider.GetService(stateMachineType) as StateMachine;
-                    stateMachine.Context = new StateMachineActionContext(context);
+            var stateMachine = ServiceProvider.GetService(stateMachineType) as StateMachine;
+            stateMachine.Context = new StateMachineActionContext(context);
 
-                    StateMachines.Add(stateMachineType, stateMachine);
-                }
-
-                return stateMachine;
-            }
+            return stateMachine;
         }
-
-        private readonly IDictionary<Type, BaseState> States = new Dictionary<Type, BaseState>();
 
         public TState GetState<TState>(IStateActionContext context)
             where TState : BaseState
         {
-            if (!States.TryGetValue(typeof(TState), out var state))
-            {
-                state = ServiceProvider.GetService<TState>();
-
-                States.Add(typeof(TState), state);
-            }
-
+            var state = ServiceProvider.GetService<TState>();
             state.Context = context;
-
-            return state as TState;
+            
+            return state;
         }
-
-        private readonly IDictionary<Type, object> Transitions = new Dictionary<Type, object>();
 
         public TTransition GetTransition<TTransition, TEvent>(ITransitionContext<TEvent> context)
             where TTransition : Transition<TEvent>
             where TEvent : Event, new()
         {
-            if (!Transitions.TryGetValue(typeof(TTransition), out var transitionObj))
-            {
-                var transition = ServiceProvider.GetService<TTransition>();
-
-                transition.Context = context;
-
-                Transitions.Add(typeof(TTransition), transition);
-
-                return transition;
-            }
-            else
-            {
-                (transitionObj as TTransition).Context = context;
-
-                return transitionObj as TTransition;
-            }
+            var transition = ServiceProvider.GetService<TTransition>();
+            transition.Context = context;
+            
+            return transition;
         }
 
         public TElseTransition GetElseTransition<TElseTransition, TEvent>(ITransitionContext<TEvent> context)
             where TElseTransition : ElseTransition<TEvent>
             where TEvent : Event, new()
         {
-            if (!Transitions.TryGetValue(typeof(TElseTransition), out var transitionObj))
-            {
-                var transition = ServiceProvider.GetService<TElseTransition>();
-
-                transition.Context = context;
-
-                Transitions.Add(typeof(TElseTransition), transition);
-
-                return transition;
-            }
-            else
-            {
-                (transitionObj as TElseTransition).Context = context;
-
-                return transitionObj as TElseTransition;
-            }
+            var elseTransition = ServiceProvider.GetService<TElseTransition>();
+            elseTransition.Context = context;
+            
+            return elseTransition;
         }
     }
 }

@@ -5,6 +5,7 @@ using Stateflows.Common;
 using Stateflows.StateMachines;
 using Stateflows.StateMachines.Sync;
 using Stateflows.StateMachines.Typed;
+using Stateflows.Transport.Http;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -50,8 +51,8 @@ app.UseHttpsRedirection();
 app.UseStaticFiles();
 app.UseRouting();
 
-app.MapStateflowsTransportHub();
-app.MapStateflowsEndpoints();
+app.MapStateflowsSignalRTransport();
+app.MapStateflowsHttpTransport();
 
 app.UseCors(builder => builder
   .AllowAnyHeader()

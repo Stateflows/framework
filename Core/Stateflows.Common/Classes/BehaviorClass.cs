@@ -44,7 +44,7 @@ namespace Stateflows
         public readonly override string ToString()
             => StateflowsJsonConverter.SerializeObject(this);
 
-        public readonly BehaviorId ToId(string instance)
-            => new BehaviorId(this, instance);
+        public static implicit operator string(BehaviorClass behaviorClass)
+            => StateflowsJsonConverter.SerializeObject(behaviorClass);
     }
 }
