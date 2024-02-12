@@ -14,7 +14,7 @@ namespace Stateflows.Transport.Http
         private static bool apiMapped = false;
 
         [DebuggerHidden]
-        public static IEndpointRouteBuilder MapStateflowsHttpTransport(this IEndpointRouteBuilder builder, Action<RouteHandlerBuilder> routeHandlerBuilderAction = null)
+        public static IEndpointRouteBuilder MapStateflowsHttpTransport(this IEndpointRouteBuilder builder, Action<RouteHandlerBuilder>? routeHandlerBuilderAction = null)
         {
             if (!apiMapped)
             {
@@ -25,7 +25,8 @@ namespace Stateflows.Transport.Http
                         IBehaviorLocator locator
                     ) =>
                     {
-                        if (locator.TryLocateBehavior(input.BehaviorId, out var behavior))
+                        var behaviorId = new BehaviorId(input.BehaviorId.Type, input.BehaviorId.Name, input.BehaviorId.Instance);
+                        if (locator.TryLocateBehavior(behaviorId, out var behavior))
                         {
                             var result = await behavior.SendAsync(input.Event);
                             return Results.Ok(

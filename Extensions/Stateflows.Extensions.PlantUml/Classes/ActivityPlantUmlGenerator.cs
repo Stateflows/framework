@@ -61,20 +61,12 @@ namespace Stateflows.Extensions.PlantUml.Classes
                 var source = GetNodeName(transition.Source, parentName);
                 var target = GetNodeName(transition.Target, parentName);
 
-                if (transition.TokenName == TokenInfo<ControlToken>.TokenName)
+                if (transition.TokenName == TokenInfo<ControlToken>.Name)
                 {
                     builder.AppendLine($"{indent}{source} --> {target}");
                 }
                 else
                 {
-                    //var tokenName = transition.TokenName.Split('`').First().Split('.').Last();
-
-                    //if (tokenName == "ValueToken" || tokenName == "ExceptionToken")
-                    //{
-                    //    var typeName = transition.TokenName.Split('`').Last().Trim('1', '[', ']').Split(',').First().Split('.').Last();
-                    //    tokenName = $"{tokenName}<{typeName}>";
-                    //}
-
                     builder.AppendLine($"{indent}{source} -->[{transition.TokenName}] {target}");
                 }
             }

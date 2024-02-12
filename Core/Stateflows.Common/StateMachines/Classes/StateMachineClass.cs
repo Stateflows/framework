@@ -53,7 +53,7 @@ namespace Stateflows
         public readonly override string ToString()
             => StateflowsJsonConverter.SerializeObject(this);
 
-        public readonly StateMachineId ToId(string instance)
-            => new StateMachineId(Name, instance);
+        public static implicit operator string(StateMachineClass stateMachineClass)
+            => StateflowsJsonConverter.SerializeObject(stateMachineClass);
     }
 }

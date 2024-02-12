@@ -1,4 +1,6 @@
-﻿namespace Stateflows.Testing.StateMachines.Sequence
+﻿#nullable enable
+
+namespace Stateflows.Testing.StateMachines.Sequence
 {
     public interface IExecutionSequenceBuilder
     {

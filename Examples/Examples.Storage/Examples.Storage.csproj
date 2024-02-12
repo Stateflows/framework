@@ -18,7 +18,8 @@
   <ItemGroup>
     <ProjectReference Include="..\..\Core\Stateflows\Stateflows.csproj" />
     <ProjectReference Include="..\..\Locks\Stateflows.Locks.DistributedLock\Stateflows.Locks.DistributedLock.csproj" />
-    <ProjectReference Include="..\..\Storage\Stateflows.Storage.EntityFrameworkCore.6.0\Stateflows.Storage.EntityFrameworkCore.csproj" />
+    <ProjectReference Include="..\..\Storage\Stateflows.Storage.EntityFrameworkCore\Stateflows.Storage.EntityFrameworkCore.csproj" />
+    <ProjectReference Include="..\..\Storage\Stateflows.Storage.MongoDb\Stateflows.Storage.MongoDB.csproj" />
   </ItemGroup>
 
 </Project>

@@ -10,10 +10,10 @@ namespace Stateflows.Activities.Typed
         
         public static IActivityBuilder AddParallelActivity<TParallelizationToken>(this IActivityBuilder builder, ParallelActivityBuildAction buildAction)
             where TParallelizationToken : Token, new()
-            => builder.AddParallelActivity<TParallelizationToken>(ActivityNodeInfo<StructuredActivity<TParallelizationToken>>.Name, buildAction);
+            => builder.AddParallelActivity<TParallelizationToken>(ActivityNodeInfo<ParallelActivityNode<TParallelizationToken>>.Name, buildAction);
 
         public static IActivityBuilder AddIterativeActivity<TIterationToken>(this IActivityBuilder builder, IterativeActivityBuildAction buildAction)
             where TIterationToken : Token, new()
-            => builder.AddIterativeActivity<TIterationToken>(ActivityNodeInfo<StructuredActivity<TIterationToken>>.Name, buildAction);
+            => builder.AddIterativeActivity<TIterationToken>(ActivityNodeInfo<IterativeActivityNode<TIterationToken>>.Name, buildAction);
     }
 }

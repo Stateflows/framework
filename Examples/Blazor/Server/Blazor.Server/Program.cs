@@ -5,6 +5,7 @@ using Stateflows;
 using Stateflows.Common;
 using Stateflows.Common.Data;
 using Stateflows.StateMachines;
+using Stateflows.StateMachines.Typed;
 using Stateflows.StateMachines.Data;
 using Stateflows.StateMachines.Sync;
 using Stateflows.Activities;
@@ -14,6 +15,7 @@ using Stateflows.Activities.Attributes;
 using Stateflows.Activities.Registration.Interfaces;
 using Stateflows.StateMachines.Attributes;
 using Examples.Storage;
+using TestNamespace;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -58,11 +60,11 @@ builder.Services.AddStateflows(b => b
         )
     )
 
-    .AddDefaultInstance(BehaviorType.Activity.ToClass("sync0"))
+    .AddDefaultInstance(new ActivityClass("sync0"))
 
     .AddStorage()
 
-    //.AddTracing()
+    .AddTracing()
 
     .AddActivities(b => b
         .AddActivity("activity1", b => b
@@ -166,44 +168,43 @@ builder.Services.AddStateflows(b => b
         )
     )
 
-    .AddTracer("W:\\traces")
-
     .AddStateMachines(b => b
-        .AddStateMachine("stateMachine1", b => b
-            .AddInitialState("state1", b => b
-                .AddTransition<TestNamespace.MyClass>("state3", b => { }
-                //.AddEffect(c => Console.Write(c.Event.Payload.Prop))
-                )
-                .AddTransition<OtherEvent>("state2")
-                .AddTransition<EveryOneMinute>("state2", b => b
-                    .AddGuard(c => false)
-                )
-                //.AddElseTransition<EveryOneMinute>("state2")
-                .AddTransition<EveryFiveMinutes>("state2", b => b
-                    .AddEffect(c => throw new Exception("test"))
-                )
-                .AddInternalTransition<ExampleRequest>(b => b
-                    .AddEffect(c =>
-                    {
-                        c.Event.Respond(new ExampleResponse());
-                        c.StateMachine.Send(new TestNamespace.MyClass().ToEvent());
-                    })
-                )
-            )
-            .AddState("state2", b => b
-                .AddTransition<OtherEvent>("state3")
-                .AddOnDoActivity("activity1")
-            )
-            .AddState("state3", b => b
-                .AddTransition<OtherEvent>("state1", b => b
-                    .AddGuard(c => Random.Shared.Next(1, 10) % 2 == 0)
-                //.AddEffect(c => Debug.WriteLine("Even, going to state1"))
-                )
-                .AddElseTransition<OtherEvent>("state2", b => { }
-                //.AddEffect(c => Debug.WriteLine("Odd, going to state2"))
-                )
-            )
-        )
+        .AddStateMachine<StateMachine1>()
+        //.AddStateMachine("stateMachine1", b => b
+        //    .AddInitialState("state1", b => b
+        //        .AddTransition<TestNamespace.MyClass>("state3", b => { }
+        //        //.AddEffect(c => Console.Write(c.Event.Payload.Prop))
+        //        )
+        //        .AddTransition<OtherEvent>("state2")
+        //        .AddTransition<EveryOneMinute>("state2", b => b
+        //            .AddGuard(c => false)
+        //        )
+        //        //.AddElseTransition<EveryOneMinute>("state2")
+        //        .AddTransition<EveryFiveMinutes>("state2", b => b
+        //            .AddEffect(c => throw new Exception("test"))
+        //        )
+        //        .AddInternalTransition<ExampleRequest>(b => b
+        //            .AddEffect(c =>
+        //            {
+        //                c.Event.Respond(new ExampleResponse());
+        //                c.StateMachine.Send(new TestNamespace.MyClass().ToEvent());
+        //            })
+        //        )
+        //    )
+        //    .AddState("state2", b => b
+        //        .AddTransition<OtherEvent>("state3")
+        //        .AddOnDoActivity("activity1")
+        //    )
+        //    .AddState("state3", b => b
+        //        .AddTransition<OtherEvent>("state1", b => b
+        //            .AddGuard(c => Random.Shared.Next(1, 10) % 2 == 0)
+        //        //.AddEffect(c => Debug.WriteLine("Even, going to state1"))
+        //        )
+        //        .AddElseTransition<OtherEvent>("state2", b => { }
+        //        //.AddEffect(c => Debug.WriteLine("Odd, going to state2"))
+        //        )
+        //    )
+        //)
     )
 
     .SetEnvironment(
@@ -290,18 +291,28 @@ namespace TestNamespace
         }
     }
 
-    [StateMachineBehavior]
+    [StateMachineBehavior(nameof(StateMachine1))]
     public class StateMachine1 : Stateflows.StateMachines.StateMachine
     {
         public override void Build(ITypedStateMachineBuilder builder)
         {
             builder
                 .AddInitialState("1", b => b
-                    .AddDefaultTransition("2")
+                    .AddDefaultTransition<StateX>()
                 )
-                .AddState("2")
+                .AddState<StateX>()
                 ;
         }
+    }
+}
+
+public class StateX : State
+{
+    public override Task OnEntryAsync()
+    {
+        Debug.WriteLine(Context.StateMachine.Id.Instance);
+
+        return Task.CompletedTask;
     }
 }
 

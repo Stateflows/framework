@@ -1,5 +1,5 @@
 import { HubConnection, HubConnectionBuilder, HubConnectionState } from "@microsoft/signalr";
-import { BehaviorClass, BehaviorId, IStateflowsClientTransport, SendResult } from "@stateflows/client-abstractions";
+import { BehaviorClass, BehaviorId, IStateflowsClientTransport, SendResult } from "@stateflows/common";
 
 export class SignalRTransport implements IStateflowsClientTransport {
     #hub: Promise<HubConnection> | null = null;

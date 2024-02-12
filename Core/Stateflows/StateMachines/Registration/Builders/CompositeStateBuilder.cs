@@ -127,12 +127,12 @@ namespace Stateflows.StateMachines.Registration.Builders
         }
 
         [DebuggerHidden]
-        public IInitializedCompositeStateBuilder AddDefaultTransition(string targetVertexName, TransitionBuildAction<Completion> transitionBuildAction = null)
-            => AddTransition<Completion>(targetVertexName, transitionBuildAction);
+        public IInitializedCompositeStateBuilder AddDefaultTransition(string targetVertexName, TransitionBuildAction<CompletionEvent> transitionBuildAction = null)
+            => AddTransition<CompletionEvent>(targetVertexName, transitionBuildAction);
 
         [DebuggerHidden]
-        public IInitializedCompositeStateBuilder AddElseDefaultTransition(string targetVertexName, ElseTransitionBuildAction<Completion> transitionBuildAction = null)
-            => AddElseTransition<Completion>(targetVertexName, transitionBuildAction);
+        public IInitializedCompositeStateBuilder AddElseDefaultTransition(string targetVertexName, ElseTransitionBuildAction<CompletionEvent> transitionBuildAction = null)
+            => AddElseTransition<CompletionEvent>(targetVertexName, transitionBuildAction);
 
         [DebuggerHidden]
         public IInitializedCompositeStateBuilder AddInternalTransition<TEvent>(TransitionBuildAction<TEvent> transitionBuildAction = null)
@@ -153,11 +153,11 @@ namespace Stateflows.StateMachines.Registration.Builders
             => AddElseTransition<TEvent>(targetVertexName, transitionBuildAction) as ITypedInitializedCompositeStateBuilder;
 
         [DebuggerHidden]
-        ITypedInitializedCompositeStateBuilder IStateTransitions<ITypedInitializedCompositeStateBuilder>.AddDefaultTransition(string targetVertexName, TransitionBuildAction<Completion> transitionBuildAction)
+        ITypedInitializedCompositeStateBuilder IStateTransitions<ITypedInitializedCompositeStateBuilder>.AddDefaultTransition(string targetVertexName, TransitionBuildAction<CompletionEvent> transitionBuildAction)
             => AddDefaultTransition(targetVertexName, transitionBuildAction) as ITypedInitializedCompositeStateBuilder;
 
         [DebuggerHidden]
-        ITypedInitializedCompositeStateBuilder IStateTransitions<ITypedInitializedCompositeStateBuilder>.AddElseDefaultTransition(string targetVertexName, ElseTransitionBuildAction<Completion> transitionBuildAction)
+        ITypedInitializedCompositeStateBuilder IStateTransitions<ITypedInitializedCompositeStateBuilder>.AddElseDefaultTransition(string targetVertexName, ElseTransitionBuildAction<CompletionEvent> transitionBuildAction)
             => AddElseDefaultTransition(targetVertexName, transitionBuildAction) as ITypedInitializedCompositeStateBuilder;
 
         [DebuggerHidden]
@@ -254,11 +254,11 @@ namespace Stateflows.StateMachines.Registration.Builders
             => AddElseTransition<TEvent>(targetVertexName, transitionBuildAction) as ICompositeStateBuilder;
 
         [DebuggerHidden]
-        ICompositeStateBuilder IStateTransitions<ICompositeStateBuilder>.AddDefaultTransition(string targetVertexName, TransitionBuildAction<Completion> transitionBuildAction)
+        ICompositeStateBuilder IStateTransitions<ICompositeStateBuilder>.AddDefaultTransition(string targetVertexName, TransitionBuildAction<CompletionEvent> transitionBuildAction)
             => AddDefaultTransition(targetVertexName, transitionBuildAction) as ICompositeStateBuilder;
 
         [DebuggerHidden]
-        ICompositeStateBuilder IStateTransitions<ICompositeStateBuilder>.AddElseDefaultTransition(string targetVertexName, ElseTransitionBuildAction<Completion> transitionBuildAction)
+        ICompositeStateBuilder IStateTransitions<ICompositeStateBuilder>.AddElseDefaultTransition(string targetVertexName, ElseTransitionBuildAction<CompletionEvent> transitionBuildAction)
             => AddElseDefaultTransition(targetVertexName, transitionBuildAction) as ICompositeStateBuilder;
 
         [DebuggerHidden]
@@ -290,11 +290,11 @@ namespace Stateflows.StateMachines.Registration.Builders
             => AddElseTransition<TEvent>(targetVertexName, transitionBuildAction) as ITypedCompositeStateBuilder;
 
         [DebuggerHidden]
-        ITypedCompositeStateBuilder IStateTransitions<ITypedCompositeStateBuilder>.AddDefaultTransition(string targetVertexName, TransitionBuildAction<Completion> transitionBuildAction)
+        ITypedCompositeStateBuilder IStateTransitions<ITypedCompositeStateBuilder>.AddDefaultTransition(string targetVertexName, TransitionBuildAction<CompletionEvent> transitionBuildAction)
             => AddDefaultTransition(targetVertexName, transitionBuildAction) as ITypedCompositeStateBuilder;
 
         [DebuggerHidden]
-        ITypedCompositeStateBuilder IStateTransitions<ITypedCompositeStateBuilder>.AddElseDefaultTransition(string targetVertexName, ElseTransitionBuildAction<Completion> transitionBuildAction)
+        ITypedCompositeStateBuilder IStateTransitions<ITypedCompositeStateBuilder>.AddElseDefaultTransition(string targetVertexName, ElseTransitionBuildAction<CompletionEvent> transitionBuildAction)
             => AddElseDefaultTransition(targetVertexName, transitionBuildAction) as ITypedCompositeStateBuilder;
 
         [DebuggerHidden]
@@ -326,11 +326,11 @@ namespace Stateflows.StateMachines.Registration.Builders
             => AddElseTransition<TEvent>(targetVertexName, transitionBuildAction) as IFinalizedCompositeStateBuilder;
 
         [DebuggerHidden]
-        IFinalizedCompositeStateBuilder IStateTransitions<IFinalizedCompositeStateBuilder>.AddDefaultTransition(string targetVertexName, TransitionBuildAction<Completion> transitionBuildAction)
+        IFinalizedCompositeStateBuilder IStateTransitions<IFinalizedCompositeStateBuilder>.AddDefaultTransition(string targetVertexName, TransitionBuildAction<CompletionEvent> transitionBuildAction)
             => AddDefaultTransition(targetVertexName, transitionBuildAction) as IFinalizedCompositeStateBuilder;
 
         [DebuggerHidden]
-        IFinalizedCompositeStateBuilder IStateTransitions<IFinalizedCompositeStateBuilder>.AddElseDefaultTransition(string targetVertexName, ElseTransitionBuildAction<Completion> transitionBuildAction)
+        IFinalizedCompositeStateBuilder IStateTransitions<IFinalizedCompositeStateBuilder>.AddElseDefaultTransition(string targetVertexName, ElseTransitionBuildAction<CompletionEvent> transitionBuildAction)
             => AddElseDefaultTransition(targetVertexName, transitionBuildAction) as IFinalizedCompositeStateBuilder;
 
         [DebuggerHidden]
@@ -354,11 +354,11 @@ namespace Stateflows.StateMachines.Registration.Builders
             => AddElseTransition<TEvent>(targetVertexName, transitionBuildAction) as ITypedFinalizedCompositeStateBuilder;
 
         [DebuggerHidden]
-        ITypedFinalizedCompositeStateBuilder IStateTransitions<ITypedFinalizedCompositeStateBuilder>.AddDefaultTransition(string targetVertexName, TransitionBuildAction<Completion> transitionBuildAction)
+        ITypedFinalizedCompositeStateBuilder IStateTransitions<ITypedFinalizedCompositeStateBuilder>.AddDefaultTransition(string targetVertexName, TransitionBuildAction<CompletionEvent> transitionBuildAction)
             => AddDefaultTransition(targetVertexName, transitionBuildAction) as ITypedFinalizedCompositeStateBuilder;
 
         [DebuggerHidden]
-        ITypedFinalizedCompositeStateBuilder IStateTransitions<ITypedFinalizedCompositeStateBuilder>.AddElseDefaultTransition(string targetVertexName, ElseTransitionBuildAction<Completion> transitionBuildAction)
+        ITypedFinalizedCompositeStateBuilder IStateTransitions<ITypedFinalizedCompositeStateBuilder>.AddElseDefaultTransition(string targetVertexName, ElseTransitionBuildAction<CompletionEvent> transitionBuildAction)
             => AddElseDefaultTransition(targetVertexName, transitionBuildAction) as ITypedFinalizedCompositeStateBuilder;
 
         [DebuggerHidden]

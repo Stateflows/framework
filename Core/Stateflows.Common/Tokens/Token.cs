@@ -41,7 +41,7 @@ namespace Stateflows.Common
     public static class TokenInfo<TToken>
         where TToken : Token, new()
     {
-        public static string TokenName => TokenInfo.GetName(typeof(TToken));
+        public static string Name => TokenInfo.GetName(typeof(TToken));
     }
 
     public static class TokenInfo

@@ -53,7 +53,7 @@ namespace Stateflows.Activities.Registration.Builders
         public IActivitiesBuilder AddActivity(string activityName, ReactiveActivityBuildAction buildAction)
             => AddActivity(activityName, 1, buildAction);
 
-        [DebuggerHidden]
+        //[DebuggerHidden]
         public IActivitiesBuilder AddActivity(string activityName, int version, ReactiveActivityBuildAction buildAction)
         {
             Register.AddActivity(activityName, version, buildAction);

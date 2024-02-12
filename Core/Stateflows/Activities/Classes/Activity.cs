@@ -55,5 +55,11 @@ namespace Stateflows.Activities
                     : stateMachineType.FullName;
             }
         }
+
+        public static BehaviorClass ToClass()
+            => new BehaviorClass(BehaviorType.Activity, Name);
+
+        public static BehaviorId ToId(string instance)
+            => new BehaviorId(ToClass(), instance);
     }
 }

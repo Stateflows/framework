@@ -1,4 +1,4 @@
-import { IStateflowsClientTransport, IStateflowsClientTransportFactory } from "@stateflows/client-abstractions";
+import { IStateflowsClientTransport, IStateflowsClientTransportFactory } from "@stateflows/common";
 import { SignalRTransport } from "./signalr-transport";
 
 export class SignalRTransportFactory implements IStateflowsClientTransportFactory {
@@ -9,6 +9,6 @@ export class SignalRTransportFactory implements IStateflowsClientTransportFactor
     }
 }
 
-export function SignalR(url: string): IStateflowsClientTransportFactory {
+export function UseSignalR(url: string): IStateflowsClientTransportFactory {
     return new SignalRTransportFactory(url);
 }

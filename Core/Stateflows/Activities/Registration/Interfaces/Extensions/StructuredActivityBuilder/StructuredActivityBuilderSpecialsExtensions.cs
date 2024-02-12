@@ -3,6 +3,7 @@ using Stateflows.Common;
 using Stateflows.Activities.Registration;
 using Stateflows.Activities.Registration.Builders;
 using Stateflows.Activities.Registration.Interfaces;
+using Stateflows.Common.Classes;
 
 namespace Stateflows.Activities
 {
@@ -53,6 +54,9 @@ namespace Stateflows.Activities
                     b => mergeBuildAction(b.SetOptions(NodeOptions.None) as IMergeBuilder)
                 ) as IStructuredActivityBuilder;
 
+        public static IStructuredActivityBuilder AddMerge(this IStructuredActivityBuilder builder, MergeBuildAction mergeBuildAction)
+            => builder.AddMerge(ActivityNodeInfo<MergeNode>.Name, mergeBuildAction);
+
         public static IStructuredActivityBuilder AddControlDecision(this IStructuredActivityBuilder builder, string decisionNodeName, DecisionBuildAction decisionBuildAction)
             => (builder as BaseActivityBuilder)
                 .AddNode(
@@ -65,6 +69,9 @@ namespace Stateflows.Activities
                     },
                     b => decisionBuildAction(b.SetOptions(NodeOptions.DecisionDefault) as IDecisionBuilder)
                 ) as IStructuredActivityBuilder;
+
+        public static IStructuredActivityBuilder AddControlDecision(this IStructuredActivityBuilder builder, DecisionBuildAction decisionBuildAction)
+            => builder.AddControlDecision(ActivityNodeInfo<DecisionNode<ControlToken>>.Name, decisionBuildAction);
 
         public static IStructuredActivityBuilder AddTokenDecision<TToken>(this IStructuredActivityBuilder builder, string decisionNodeName, DecisionBuildAction<TToken> decisionBuildAction)
             where TToken : Token, new()
@@ -79,6 +86,10 @@ namespace Stateflows.Activities
                     },
                     b => decisionBuildAction(new DecisionBuilder<TToken>(b.SetOptions(NodeOptions.DecisionDefault) as NodeBuilder))
                 ) as IStructuredActivityBuilder;
+
+        public static IStructuredActivityBuilder AddTokenDecision<TToken>(this IStructuredActivityBuilder builder, DecisionBuildAction<TToken> decisionBuildAction)
+            where TToken : Token, new()
+            => builder.AddTokenDecision(ActivityNodeInfo<DecisionNode<TToken>>.Name, decisionBuildAction);
 
         public static IStructuredActivityBuilder AddDataStore(this IStructuredActivityBuilder builder, string dataStoreNodeName, DataStoreBuildAction decisionBuildAction)
             => (builder as BaseActivityBuilder)

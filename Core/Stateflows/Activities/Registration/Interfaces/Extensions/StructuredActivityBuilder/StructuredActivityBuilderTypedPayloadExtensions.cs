@@ -17,21 +17,21 @@ namespace Stateflows.Activities.Typed.Data
 
         #region AddParallelActivity
         public static IStructuredActivityBuilder AddParallelActivity<TTokenPayload, TStructuredActivity>(this IStructuredActivityBuilder builder, ParallelActivityBuildAction buildAction = null)
-            where TStructuredActivity : StructuredActivity<Token<TTokenPayload>>
+            where TStructuredActivity : ParallelActivityNode<Token<TTokenPayload>>
             => builder.AddParallelActivity<TTokenPayload, TStructuredActivity>(ActivityNodeInfo<TStructuredActivity>.Name, buildAction);
 
         public static IStructuredActivityBuilder AddParallelActivity<TTokenPayload, TStructuredActivity>(this IStructuredActivityBuilder builder, string structuredActivityName, ParallelActivityBuildAction buildAction = null)
-            where TStructuredActivity : StructuredActivity<Token<TTokenPayload>>
+            where TStructuredActivity : ParallelActivityNode<Token<TTokenPayload>>
             => builder.AddParallelActivity<Token<TTokenPayload>, TStructuredActivity>(structuredActivityName, buildAction);
         #endregion
 
         #region AddIterativeActivity
         public static IStructuredActivityBuilder AddIterativeActivity<TTokenPayload, TStructuredActivity>(this IStructuredActivityBuilder builder, IterativeActivityBuildAction buildAction = null)
-            where TStructuredActivity : StructuredActivity<Token<TTokenPayload>>
+            where TStructuredActivity : IterativeActivityNode<Token<TTokenPayload>>
             => builder.AddIterativeActivity<TTokenPayload, TStructuredActivity>(ActivityNodeInfo<TStructuredActivity>.Name, buildAction);
 
         public static IStructuredActivityBuilder AddIterativeActivity<TTokenPayload, TStructuredActivity>(this IStructuredActivityBuilder builder, string structuredActivityName, IterativeActivityBuildAction buildAction = null)
-            where TStructuredActivity : StructuredActivity<Token<TTokenPayload>>
+            where TStructuredActivity : IterativeActivityNode<Token<TTokenPayload>>
             => builder.AddIterativeActivity<Token<TTokenPayload>, TStructuredActivity>(structuredActivityName, buildAction);
         #endregion
     }

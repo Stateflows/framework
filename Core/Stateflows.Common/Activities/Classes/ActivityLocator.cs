@@ -1,5 +1,4 @@
-﻿using Stateflows.Common;
-using Stateflows.Activities;
+﻿using Stateflows.Activities;
 
 namespace Stateflows.Common.Activities.Classes
 {

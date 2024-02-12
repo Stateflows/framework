@@ -31,6 +31,9 @@ namespace Stateflows
         public readonly override string ToString()
             => StateflowsJsonConverter.SerializeObject(this);
 
+        public static implicit operator string(BehaviorId behaviorId)
+            => StateflowsJsonConverter.SerializeObject(behaviorId);
+
         public static bool operator ==(BehaviorId id1, BehaviorId id2)
             => id1.Equals(id2);
 

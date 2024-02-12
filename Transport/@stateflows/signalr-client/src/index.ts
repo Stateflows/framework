@@ -1,1 +1,1 @@
-export { SignalR } from "./classes/signalr-transport-factory";
+export { UseSignalR } from "./classes/signalr-transport-factory";
