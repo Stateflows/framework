@@ -28,12 +28,12 @@ namespace Stateflows.Activities.Extensions
             => services?.AddServiceType<TExceptionHandler>();
 
         public static IServiceCollection RegisterObjectFlow<TObjectFlow, TToken>(this IServiceCollection services)
-            where TObjectFlow : TokenFlow<TToken>
+            where TObjectFlow : Flow<TToken>
             where TToken : Token, new()
             => services?.AddServiceType<TObjectFlow>();
 
         public static IServiceCollection RegisterElseObjectFlow<TObjectFlow, TToken>(this IServiceCollection services)
-            where TObjectFlow : ElseTokenFlow<TToken>
+            where TObjectFlow : ElseFlow<TToken>
             where TToken : Token, new()
             => services?.AddServiceType<TObjectFlow>();
 

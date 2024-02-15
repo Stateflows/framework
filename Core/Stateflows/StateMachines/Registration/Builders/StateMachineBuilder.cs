@@ -3,6 +3,7 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using Stateflows.Common;
 using Stateflows.Common.Models;
+using Stateflows.Common.Registration;
 using Stateflows.StateMachines.Models;
 using Stateflows.StateMachines.Interfaces;
 using Stateflows.StateMachines.Exceptions;
@@ -12,7 +13,6 @@ using Stateflows.StateMachines.Context.Interfaces;
 using Stateflows.StateMachines.Registration.Interfaces;
 using Stateflows.StateMachines.Registration.Interfaces.Base;
 using Stateflows.StateMachines.Registration.Interfaces.Internal;
-using Stateflows.Common.Registration;
 
 namespace Stateflows.StateMachines.Registration.Builders
 {
@@ -40,7 +40,7 @@ namespace Stateflows.StateMachines.Registration.Builders
             Result = new Graph(name, version);
         }
 
-        public IInitializedStateMachineBuilder AddInitializer(string initializerName, StateMachinePredicateAsync initializerAction)
+        public IInitializedStateMachineBuilder AddInitializer(Type initializerType, string initializerName, StateMachinePredicateAsync initializerAction)
         {
             if (!Result.Initializers.TryGetValue(initializerName, out var initializer))
             {
@@ -50,6 +50,7 @@ namespace Stateflows.StateMachines.Registration.Builders
                 };
 
                 Result.Initializers.Add(initializerName, initializer);
+                Result.InitializerTypes.Add(initializerType);
             }
 
             initializer.Actions.Add(initializerAction);
@@ -72,7 +73,7 @@ namespace Stateflows.StateMachines.Registration.Builders
             
             var initializerName = EventInfo<TInitializationRequest>.Name;
 
-            return AddInitializer(initializerName, async c =>
+            return AddInitializer(typeof(TInitializationRequest), initializerName, async c =>
             {
                 var result = false;
                 var context = new StateMachineInitializationContext<TInitializationRequest>(c, c.Event as TInitializationRequest);

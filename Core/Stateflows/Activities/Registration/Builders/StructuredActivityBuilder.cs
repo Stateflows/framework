@@ -26,18 +26,18 @@ namespace Stateflows.Activities.Registration.Builders
             NodeBuilder = new NodeBuilder(Node, parentActivityBuilder, Services);
         }
 
-        public IActionBuilder AddTokenFlow<TToken>(string targetNodeName, ObjectFlowBuildAction<TToken> buildAction = null)
+        public IActionBuilder AddFlow<TToken>(string targetNodeName, ObjectFlowBuildAction<TToken> buildAction = null)
             where TToken : Token, new()
         {
-            NodeBuilder.AddTokenFlow<TToken>(targetNodeName, buildAction);
+            NodeBuilder.AddFlow<TToken>(targetNodeName, buildAction);
 
             return this;
         }
 
-        public IActionBuilder AddElseTokenFlow<TToken>(string targetNodeName, ElseObjectFlowBuildAction<TToken> buildAction = null)
+        public IActionBuilder AddElseFlow<TToken>(string targetNodeName, ElseObjectFlowBuildAction<TToken> buildAction = null)
             where TToken : Token, new()
         {
-            NodeBuilder.AddElseTokenFlow<TToken>(targetNodeName, buildAction);
+            NodeBuilder.AddElseFlow<TToken>(targetNodeName, buildAction);
 
             return this;
         }
@@ -72,8 +72,8 @@ namespace Stateflows.Activities.Registration.Builders
         }
 
         #region IActionBuilder
-        IActionBuilderWithOptions IObjectFlow<IActionBuilderWithOptions>.AddTokenFlow<TToken>(string targetNodeName, ObjectFlowBuildAction<TToken> buildAction)
-            => AddTokenFlow<TToken>(targetNodeName, buildAction) as IActionBuilderWithOptions;
+        IActionBuilderWithOptions IObjectFlow<IActionBuilderWithOptions>.AddFlow<TToken>(string targetNodeName, ObjectFlowBuildAction<TToken> buildAction)
+            => AddFlow<TToken>(targetNodeName, buildAction) as IActionBuilderWithOptions;
 
         IActionBuilderWithOptions IControlFlow<IActionBuilderWithOptions>.AddControlFlow(string targetNodeName, ControlFlowBuildAction buildAction)
             => AddControlFlow(targetNodeName, buildAction) as IActionBuilderWithOptions;
@@ -104,8 +104,8 @@ namespace Stateflows.Activities.Registration.Builders
         IReactiveStructuredActivityBuilder IInput<IReactiveStructuredActivityBuilder>.AddInput(InputBuildAction buildAction)
             => AddInput(buildAction) as IReactiveStructuredActivityBuilder;
 
-        IReactiveStructuredActivityBuilder IObjectFlow<IReactiveStructuredActivityBuilder>.AddTokenFlow<TToken>(string targetNodeName, ObjectFlowBuildAction<TToken> buildAction)
-            => AddTokenFlow<TToken>(targetNodeName, buildAction) as IReactiveStructuredActivityBuilder;
+        IReactiveStructuredActivityBuilder IObjectFlow<IReactiveStructuredActivityBuilder>.AddFlow<TToken>(string targetNodeName, ObjectFlowBuildAction<TToken> buildAction)
+            => AddFlow<TToken>(targetNodeName, buildAction) as IReactiveStructuredActivityBuilder;
 
         IReactiveStructuredActivityBuilder IStructuredActivityEvents<IReactiveStructuredActivityBuilder>.AddOnFinalize(Func<IActivityNodeContext, Task> actionAsync)
             => AddOnFinalize(actionAsync) as IReactiveStructuredActivityBuilder;
@@ -132,8 +132,8 @@ namespace Stateflows.Activities.Registration.Builders
             return this;
         }
 
-        IReactiveStructuredActivityBuilderWithOptions IObjectFlow<IReactiveStructuredActivityBuilderWithOptions>.AddTokenFlow<TToken>(string targetNodeName, ObjectFlowBuildAction<TToken> buildAction)
-            => AddTokenFlow<TToken>(targetNodeName, buildAction) as IReactiveStructuredActivityBuilderWithOptions;
+        IReactiveStructuredActivityBuilderWithOptions IObjectFlow<IReactiveStructuredActivityBuilderWithOptions>.AddFlow<TToken>(string targetNodeName, ObjectFlowBuildAction<TToken> buildAction)
+            => AddFlow<TToken>(targetNodeName, buildAction) as IReactiveStructuredActivityBuilderWithOptions;
 
         IReactiveStructuredActivityBuilderWithOptions IExceptionHandler<IReactiveStructuredActivityBuilderWithOptions>.AddExceptionHandler<TException>(ExceptionHandlerDelegateAsync<TException> exceptionHandler)
             => AddExceptionHandler(exceptionHandler) as IReactiveStructuredActivityBuilderWithOptions;
@@ -203,8 +203,8 @@ namespace Stateflows.Activities.Registration.Builders
         IStructuredActivityBuilder IInput<IStructuredActivityBuilder>.AddInput(InputBuildAction buildAction)
             => AddInput(buildAction) as IStructuredActivityBuilder;
 
-        IStructuredActivityBuilder IObjectFlow<IStructuredActivityBuilder>.AddTokenFlow<TToken>(string targetNodeName, ObjectFlowBuildAction<TToken> buildAction)
-            => AddTokenFlow<TToken>(targetNodeName, buildAction) as IStructuredActivityBuilder;
+        IStructuredActivityBuilder IObjectFlow<IStructuredActivityBuilder>.AddFlow<TToken>(string targetNodeName, ObjectFlowBuildAction<TToken> buildAction)
+            => AddFlow<TToken>(targetNodeName, buildAction) as IStructuredActivityBuilder;
 
         IStructuredActivityBuilder IStructuredActivityEvents<IStructuredActivityBuilder>.AddOnFinalize(Func<IActivityNodeContext, Task> actionAsync)
             => AddOnFinalize(actionAsync) as IStructuredActivityBuilder;
@@ -231,8 +231,8 @@ namespace Stateflows.Activities.Registration.Builders
             return this;
         }
 
-        IStructuredActivityBuilderWithOptions IObjectFlow<IStructuredActivityBuilderWithOptions>.AddTokenFlow<TToken>(string targetNodeName, ObjectFlowBuildAction<TToken> buildAction)
-            => AddTokenFlow<TToken>(targetNodeName, buildAction) as IStructuredActivityBuilderWithOptions;
+        IStructuredActivityBuilderWithOptions IObjectFlow<IStructuredActivityBuilderWithOptions>.AddFlow<TToken>(string targetNodeName, ObjectFlowBuildAction<TToken> buildAction)
+            => AddFlow<TToken>(targetNodeName, buildAction) as IStructuredActivityBuilderWithOptions;
 
         IStructuredActivityBuilderWithOptions IExceptionHandler<IStructuredActivityBuilderWithOptions>.AddExceptionHandler<TException>(ExceptionHandlerDelegateAsync<TException> exceptionHandler)
             => AddExceptionHandler(exceptionHandler) as IStructuredActivityBuilderWithOptions;

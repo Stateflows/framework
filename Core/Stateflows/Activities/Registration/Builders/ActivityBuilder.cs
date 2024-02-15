@@ -30,7 +30,7 @@ namespace Stateflows.Activities.Registration.Builders
             Result = new Graph(name, version);
         }
 
-        public IActivityBuilder AddInitializer(string initializerName, ActivityPredicateAsync initializerAction)
+        public IActivityBuilder AddInitializer(Type initializerType, string initializerName, ActivityPredicateAsync initializerAction)
         {
             if (!Result.Initializers.TryGetValue(initializerName, out var initializer))
             {
@@ -64,7 +64,7 @@ namespace Stateflows.Activities.Registration.Builders
 
             var initializerName = EventInfo<TInitializationRequest>.Name;
 
-            return AddInitializer(initializerName, async c =>
+            return AddInitializer(typeof(TInitializationRequest), initializerName, async c =>
             {
                 var result = false;
                 var context = new ActivityInitializationContext<TInitializationRequest>(c, c.Context.Event as TInitializationRequest);

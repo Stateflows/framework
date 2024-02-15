@@ -185,10 +185,19 @@ namespace Stateflows.StateMachines.Engine
             var currentStack = VerticesStack.ToList();
             currentStack.Reverse();
 
-            return currentStack
-                .SelectMany(vertex => vertex.Edges.Values)
-                .Select(edge => edge.TriggerType)
-                .Distinct();
+            if (currentStack.Any())
+            {
+                return currentStack
+                    .SelectMany(vertex => vertex.Edges.Values)
+                    .Select(edge => edge.TriggerType)
+                    .Distinct();
+            }
+            else
+            {
+                return Graph.InitializerTypes.Any()
+                    ? Graph.InitializerTypes
+                    : new List<Type>() { typeof(InitializationRequest) };
+            }
         }
 
         private List<Vertex> GetNestedVertices(Vertex vertex)

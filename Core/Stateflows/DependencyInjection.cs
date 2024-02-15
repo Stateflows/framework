@@ -37,7 +37,7 @@ namespace Stateflows
                     .AddTransient<ScheduleExecutor>()
                     .AddSingleton<ITenantAccessor, TenantAccessor>()
                     .AddScoped<CommonInterceptor>()
-                    .AddScoped<TenantsExecutor>()
+                    .AddScoped<IStateflowsTenantExecutor, TenantExecutor>()
                     ;
             }
 

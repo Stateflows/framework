@@ -20,19 +20,18 @@ namespace Stateflows.StateMachines.Models
             Version = version;
             Class = new StateMachineClass(Name);
         }
+
         public StateMachineClass Class { get; }
         public string Name { get; }
         public int Version { get; }
         public Type StateMachineType { get; set; }
         public string InitialVertexName { get; set; }
         public Vertex InitialVertex { get; set; }
-        public Dictionary<string, Vertex> Vertices { get; set; } = new Dictionary<string, Vertex>();
-        public Dictionary<string, Vertex> AllVertices { get; set; } = new Dictionary<string, Vertex>();
-        public List<Edge> AllEdges { get; set; } = new List<Edge>();
-
-        private Dictionary<string, Logic<StateMachinePredicateAsync>> initializers = null;
-        public Dictionary<string, Logic<StateMachinePredicateAsync>> Initializers
-            => initializers ??= new Dictionary<string, Logic<StateMachinePredicateAsync>>();
+        public readonly Dictionary<string, Vertex> Vertices = new Dictionary<string, Vertex>();
+        public readonly Dictionary<string, Vertex> AllVertices = new Dictionary<string, Vertex>();
+        public readonly List<Edge> AllEdges = new List<Edge>();
+        public readonly Dictionary<string, Logic<StateMachinePredicateAsync>> Initializers = new Dictionary<string, Logic<StateMachinePredicateAsync>>();
+        public readonly List<Type> InitializerTypes = new List<Type>();
 
         private Logic<StateMachineActionAsync> finalize = null;
         public Logic<StateMachineActionAsync> Finalize
@@ -41,13 +40,13 @@ namespace Stateflows.StateMachines.Models
                     Name = Constants.Finalize
                 };
 
-        public List<StateMachineExceptionHandlerFactory> ExceptionHandlerFactories { get; set; } = new List<StateMachineExceptionHandlerFactory>();
+        public readonly List<StateMachineExceptionHandlerFactory> ExceptionHandlerFactories = new List<StateMachineExceptionHandlerFactory>();
 
-        public List<StateMachineInterceptorFactory> InterceptorFactories { get; set; } = new List<StateMachineInterceptorFactory>();
+        public readonly List<StateMachineInterceptorFactory> InterceptorFactories = new List<StateMachineInterceptorFactory>();
 
-        public List<StateMachineObserverFactory> ObserverFactories { get; set; } = new List<StateMachineObserverFactory>();
+        public readonly List<StateMachineObserverFactory> ObserverFactories = new List<StateMachineObserverFactory>();
 
-        //[DebuggerHidden]
+        [DebuggerHidden]
         public void Build()
         {
             Debug.Assert(InitialVertexName != null, $"Initial vertex name not assigned. Is state machine '{Name}' built properly?");

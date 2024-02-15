@@ -22,21 +22,16 @@ namespace Stateflows.Activities.Models
 
         public int Version { get; }
         public Type ActivityType { get; set; }
-        public Dictionary<string, Node> AllNodes { get; set; } = new Dictionary<string, Node>();
-        public Dictionary<string, Node> AllNamedNodes { get; set; } = new Dictionary<string, Node>();
-        public List<Edge> AllEdgesList { get; set; } = new List<Edge>();
-        public Dictionary<string, Edge> AllEdges { get; set; } = new Dictionary<string, Edge>();
+        public readonly Dictionary<string, Node> AllNodes = new Dictionary<string, Node>();
+        public readonly Dictionary<string, Node> AllNamedNodes = new Dictionary<string, Node>();
+        public readonly List<Edge> AllEdgesList = new List<Edge>();
+        public readonly Dictionary<string, Edge> AllEdges = new Dictionary<string, Edge>();
 
-
-        private Dictionary<string, Logic<ActivityPredicateAsync>> initializers = null;
-        public Dictionary<string, Logic<ActivityPredicateAsync>> Initializers
-            => initializers ??= new Dictionary<string, Logic<ActivityPredicateAsync>>();
-
-        public List<ActivityExceptionHandlerFactory> ExceptionHandlerFactories { get; set; } = new List<ActivityExceptionHandlerFactory>();
-
-        public List<ActivityInterceptorFactory> InterceptorFactories { get; set; } = new List<ActivityInterceptorFactory>();
-
-        public List<ActivityObserverFactory> ObserverFactories { get; set; } = new List<ActivityObserverFactory>();
+        public readonly Dictionary<string, Logic<ActivityPredicateAsync>> Initializers = new Dictionary<string, Logic<ActivityPredicateAsync>>();
+        public readonly List<Type> InitializerTypes = new List<Type>();
+        public readonly List<ActivityExceptionHandlerFactory> ExceptionHandlerFactories = new List<ActivityExceptionHandlerFactory>();
+        public readonly List<ActivityInterceptorFactory> InterceptorFactories = new List<ActivityInterceptorFactory>();
+        public readonly List<ActivityObserverFactory> ObserverFactories = new List<ActivityObserverFactory>();
 
         [DebuggerHidden]
         public void Build()

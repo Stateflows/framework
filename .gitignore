@@ -491,7 +491,9 @@ $RECYCLE.BIN/
 
 # Angular
 .angular
+Transport/@stateflows/common/dist/
 Transport/@stateflows/signalr-client/dist/
+Transport/@stateflows/http-client/dist/
 Examples/SignalR/SignalR.Client/ClientApp/.angular/
 *.txt
 Publish.ps1

@@ -16,7 +16,7 @@ namespace Stateflows.Activities
     public abstract class ControlFlow : BaseControlFlow
     { }
 
-    public abstract class BaseTokenFlow<TToken> : BaseControlFlow
+    public abstract class BaseFlow<TToken> : BaseControlFlow
         where TToken : Token, new()
     {
         public virtual int Weight => 1;
@@ -24,11 +24,11 @@ namespace Stateflows.Activities
         new public IFlowContext<TToken> Context { get; internal set; }
     }
 
-    public abstract class TokenFlow<TToken> : BaseTokenFlow<TToken>
+    public abstract class Flow<TToken> : BaseFlow<TToken>
         where TToken : Token, new()
     { }
 
-    public abstract class DataFlow<TTokenPayload> : TokenFlow<Token<TTokenPayload>>
+    public abstract class DataFlow<TTokenPayload> : Flow<Token<TTokenPayload>>
     { }
 
     public abstract class BaseTokenTransformationFlow<TToken, TTransformedToken> : BaseControlFlow

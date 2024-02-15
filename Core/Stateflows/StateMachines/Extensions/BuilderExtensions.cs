@@ -41,7 +41,7 @@ namespace Stateflows.StateMachines.Extensions
                     var methodInfo = interfaceType.GetMethods().First(m => m.Name == "OnInitializeAsync");
                     var requestType = interfaceType.GenericTypeArguments[0];
                     var requestName = Stateflows.Common.EventInfo.GetName(requestType);
-                    (builder as StateMachineBuilder).AddInitializer(requestName, c =>
+                    (builder as StateMachineBuilder).AddInitializer(requestType, requestName, c =>
                     {
                         var stateMachine = c.Executor.GetStateMachine(stateMachineType, c);
                         return methodInfo.Invoke(stateMachine, new object[] { c.Event }) as Task<bool>;

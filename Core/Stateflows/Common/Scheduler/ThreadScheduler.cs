@@ -11,7 +11,7 @@ namespace Stateflows.Common.Scheduler
     internal class ThreadScheduler : IHostedService
     {
         private readonly CancellationTokenSource CancellationTokenSource = new CancellationTokenSource();
-        private readonly TenantsExecutor Executor;
+        private readonly IStateflowsTenantExecutor Executor;
         private readonly IServiceScope Scope;
         private readonly ILogger<ThreadScheduler> Logger;
 
@@ -21,7 +21,7 @@ namespace Stateflows.Common.Scheduler
         public ThreadScheduler(IServiceProvider serviceProvider)
         {
             Scope = serviceProvider.CreateScope();
-            Executor = ServiceProvider.GetRequiredService<TenantsExecutor>();
+            Executor = ServiceProvider.GetRequiredService<IStateflowsTenantExecutor>();
             Logger = ServiceProvider.GetRequiredService<ILogger<ThreadScheduler>>();
         }
 
