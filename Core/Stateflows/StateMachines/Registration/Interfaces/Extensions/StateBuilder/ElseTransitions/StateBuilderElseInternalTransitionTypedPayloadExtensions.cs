@@ -6,7 +6,7 @@ namespace Stateflows.StateMachines.Typed.Data
 {
     public static class StateBuilderElseInternalTransitionTypedPayloadExtensions
     {
-        public static IStateBuilder AddElseInternalTransition<TEventPayload, TElseTransition>(this IStateBuilder builder)
+        public static IStateBuilder AddElseInternalDataTransition<TEventPayload, TElseTransition>(this IStateBuilder builder)
             where TElseTransition : ElseTransition<Event<TEventPayload>>
             => builder.AddElseTransition<Event<TEventPayload>, TElseTransition>(Constants.DefaultTransitionTarget);
     }

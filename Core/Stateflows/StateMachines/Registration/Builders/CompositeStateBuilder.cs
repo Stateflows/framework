@@ -135,12 +135,12 @@ namespace Stateflows.StateMachines.Registration.Builders
             => AddElseTransition<CompletionEvent>(targetVertexName, transitionBuildAction);
 
         [DebuggerHidden]
-        public IInitializedCompositeStateBuilder AddInternalTransition<TEvent>(TransitionBuildAction<TEvent> transitionBuildAction = null)
+        public IInitializedCompositeStateBuilder AddInternalTransition<TEvent>(TransitionBuildAction<TEvent> transitionBuildAction)
             where TEvent : Event, new()
             => AddTransition<TEvent>(Constants.DefaultTransitionTarget, transitionBuildAction);
 
         [DebuggerHidden]
-        public IInitializedCompositeStateBuilder AddElseInternalTransition<TEvent>(ElseTransitionBuildAction<TEvent> transitionBuildAction = null)
+        public IInitializedCompositeStateBuilder AddElseInternalTransition<TEvent>(ElseTransitionBuildAction<TEvent> transitionBuildAction)
             where TEvent : Event, new()
             => AddElseTransition<TEvent>(Constants.DefaultTransitionTarget, transitionBuildAction);
 

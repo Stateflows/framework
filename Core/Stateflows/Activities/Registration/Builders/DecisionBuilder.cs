@@ -11,9 +11,9 @@ namespace Stateflows.Activities.Registration.Builders
         { }
 
         public IDecisionBuilder<TToken> AddFlow(string targetNodeName, ObjectFlowBuildAction<TToken> buildAction = null)
-            => AddTokenFlow<TToken>(targetNodeName, buildAction) as IDecisionBuilder<TToken>;
+            => AddFlow<TToken>(targetNodeName, buildAction) as IDecisionBuilder<TToken>;
 
         public IDecisionBuilder<TToken> AddElseFlow(string targetNodeName, ElseObjectFlowBuildAction<TToken> buildAction = null)
-            => AddElseTokenFlow<TToken>(targetNodeName, buildAction) as IDecisionBuilder<TToken>;
+            => AddElseFlow<TToken>(targetNodeName, buildAction) as IDecisionBuilder<TToken>;
     }
 }

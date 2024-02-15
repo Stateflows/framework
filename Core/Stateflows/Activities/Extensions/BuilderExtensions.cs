@@ -42,7 +42,7 @@ namespace Stateflows.Activities.Extensions
                     var methodInfo = interfaceType.GetMethods().First(m => m.Name == "OnInitializeAsync");
                     var requestType = interfaceType.GenericTypeArguments[0];
                     var requestName = Stateflows.Common.EventInfo.GetName(requestType);
-                    (builder as ActivityBuilder).AddInitializer(requestName, c =>
+                    (builder as ActivityBuilder).AddInitializer(requestType, requestName, c =>
                     {
                         var activity = c.Context.Executor.GetActivity(activityType, c.Context);
                         return methodInfo.Invoke(activity, new object[] { c.Context.Event }) as Task<bool>;
@@ -89,10 +89,10 @@ namespace Stateflows.Activities.Extensions
         }
 
         public static void AddObjectFlowEvents<TObjectFlow, TToken>(this IObjectFlowBuilder<TToken> builder)
-            where TObjectFlow : TokenFlow<TToken>
+            where TObjectFlow : Flow<TToken>
             where TToken : Token, new()
         {
-            if (typeof(BaseTokenFlow<TToken>).GetProperty(nameof(BaseTokenFlow<TToken>.Weight)).IsOverridenIn<TObjectFlow>())
+            if (typeof(BaseFlow<TToken>).GetProperty(nameof(BaseFlow<TToken>.Weight)).IsOverridenIn<TObjectFlow>())
             {
                 var objectFlow = FormatterServices.GetUninitializedObject(typeof(TObjectFlow)) as TObjectFlow;
 

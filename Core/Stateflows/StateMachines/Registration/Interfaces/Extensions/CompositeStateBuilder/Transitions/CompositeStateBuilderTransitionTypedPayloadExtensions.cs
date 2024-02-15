@@ -7,12 +7,12 @@ namespace Stateflows.StateMachines.Typed.Data
 {
     public static class CompositeStateBuilderTransitionTypedPayloadExtensions
     {
-        public static ICompositeStateBuilder AddTransition<TEventPayload, TTransition, TTargetState>(this ICompositeStateBuilder builder)
+        public static ICompositeStateBuilder AddDataTransition<TEventPayload, TTransition, TTargetState>(this ICompositeStateBuilder builder)
             where TTransition : Transition<Event<TEventPayload>>
             where TTargetState : BaseState
-            => AddTransition<TEventPayload, TTransition>(builder, StateInfo<TTargetState>.Name);
+            => AddDataTransition<TEventPayload, TTransition>(builder, StateInfo<TTargetState>.Name);
 
-        public static ICompositeStateBuilder AddTransition<TEventPayload, TTransition>(this ICompositeStateBuilder builder, string targetVertexName)
+        public static ICompositeStateBuilder AddDataTransition<TEventPayload, TTransition>(this ICompositeStateBuilder builder, string targetVertexName)
             where TTransition : Transition<Event<TEventPayload>>
         {
             (builder as IInternal).Services.RegisterTransition<TTransition, Event<TEventPayload>>();
@@ -23,7 +23,7 @@ namespace Stateflows.StateMachines.Typed.Data
             );
         }
 
-        public static ICompositeStateBuilder AddTransition<TEventPayload, TTargetState>(this ICompositeStateBuilder builder, TransitionBuildAction<Event<TEventPayload>> transitionBuildAction = null)
+        public static ICompositeStateBuilder AddDataTransition<TEventPayload, TTargetState>(this ICompositeStateBuilder builder, TransitionBuildAction<Event<TEventPayload>> transitionBuildAction = null)
             where TTargetState : BaseState
             => builder.AddTransition(StateInfo<TTargetState>.Name, transitionBuildAction);
     }

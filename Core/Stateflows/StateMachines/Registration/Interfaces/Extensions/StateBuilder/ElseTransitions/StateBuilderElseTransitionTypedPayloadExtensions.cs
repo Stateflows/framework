@@ -7,12 +7,12 @@ namespace Stateflows.StateMachines.Typed.Data
 {
     public static class StateBuilderElseTransitionTypedPayloadExtensions
     {
-        public static IStateBuilder AddElseTransition<TEventPayload, TElseTransition, TTargetState>(this IStateBuilder builder)
+        public static IStateBuilder AddElseDataTransition<TEventPayload, TElseTransition, TTargetState>(this IStateBuilder builder)
             where TElseTransition : ElseTransition<Event<TEventPayload>>
             where TTargetState : BaseState
-            => AddElseTransition<TEventPayload, TElseTransition>(builder, StateInfo<TTargetState>.Name);
+            => AddElseDataTransition<TEventPayload, TElseTransition>(builder, StateInfo<TTargetState>.Name);
 
-        public static IStateBuilder AddElseTransition<TEventPayload, TElseTransition>(this IStateBuilder builder, string targetVertexName)
+        public static IStateBuilder AddElseDataTransition<TEventPayload, TElseTransition>(this IStateBuilder builder, string targetVertexName)
             where TElseTransition : ElseTransition<Event<TEventPayload>>
         {
             (builder as IInternal).Services.RegisterElseTransition<TElseTransition, Event<TEventPayload>>();
@@ -23,7 +23,7 @@ namespace Stateflows.StateMachines.Typed.Data
             );
         }
 
-        public static IStateBuilder AddElseTransition<TEventPayload, TTargetState>(this IStateBuilder builder, ElseTransitionBuildAction<Event<TEventPayload>> transitionBuildAction = null)
+        public static IStateBuilder AddElseDataTransition<TEventPayload, TTargetState>(this IStateBuilder builder, ElseTransitionBuildAction<Event<TEventPayload>> transitionBuildAction = null)
             where TTargetState : BaseState
             => builder.AddElseTransition(StateInfo<TTargetState>.Name, transitionBuildAction);
     }

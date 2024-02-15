@@ -7,12 +7,12 @@ namespace Stateflows.StateMachines.Typed.Data
 {
     public static class TypedStateBuilderTransitionTypedPayloadExtensions
     {
-        public static ITypedStateBuilder AddTransition<TEventPayload, TTransition, TTargetState>(this ITypedStateBuilder builder)
+        public static ITypedStateBuilder AddDataTransition<TEventPayload, TTransition, TTargetState>(this ITypedStateBuilder builder)
             where TTransition : Transition<Event<TEventPayload>>
             where TTargetState : BaseState
-            => AddTransition<TEventPayload, TTransition>(builder, StateInfo<TTargetState>.Name);
+            => AddDataTransition<TEventPayload, TTransition>(builder, StateInfo<TTargetState>.Name);
 
-        public static ITypedStateBuilder AddTransition<TEventPayload, TTransition>(this ITypedStateBuilder builder, string targetVertexName)
+        public static ITypedStateBuilder AddDataTransition<TEventPayload, TTransition>(this ITypedStateBuilder builder, string targetVertexName)
             where TTransition : Transition<Event<TEventPayload>>
         {
             (builder as IInternal).Services.RegisterTransition<TTransition, Event<TEventPayload>>();
@@ -23,7 +23,7 @@ namespace Stateflows.StateMachines.Typed.Data
             );
         }
 
-        public static ITypedStateBuilder AddTransition<TEventPayload, TTargetState>(this ITypedStateBuilder builder, TransitionBuildAction<Event<TEventPayload>> transitionBuildAction = null)
+        public static ITypedStateBuilder AddDataTransition<TEventPayload, TTargetState>(this ITypedStateBuilder builder, TransitionBuildAction<Event<TEventPayload>> transitionBuildAction = null)
             where TTargetState : BaseState
             => builder.AddTransition(StateInfo<TTargetState>.Name, transitionBuildAction);
     }

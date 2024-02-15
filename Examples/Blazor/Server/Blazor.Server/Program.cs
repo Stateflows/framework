@@ -36,7 +36,7 @@ builder.Services.AddStateflows(b => b
             )
             .AddStructuredActivity("1", b => b
                 .AddAcceptEventAction<EveryOneMinute>("time1", async c => c.Output(c.Event), b => b
-                    .AddTokenFlow<EveryOneMinute, FinalNode>()
+                    .AddFlow<EveryOneMinute, FinalNode>()
                 )
                 .AddFinal()
                 .AddControlFlow("2")
@@ -118,6 +118,7 @@ builder.Services.AddStateflows(b => b
                     .AddDataFlow<int>("data")
             )
             .AddDataStore("data", b => b
+                .AddFlow<Token>("")
                 .AddDataFlow<int>("decision")
             )
             .AddDataDecision<int>("decision", b => b

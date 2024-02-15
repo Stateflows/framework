@@ -8,13 +8,13 @@ namespace Stateflows.StateMachines.Typed.Data
 {
     public static class TypedInitializedCompositeStateBuilderElseTransitionTypedPayloadExtensions
     {
-        public static ITypedInitializedCompositeStateBuilder AddElseTransition<TEventPayload, TElseTransition, TTargetState>(this ITypedInitializedCompositeStateBuilder builder)
+        public static ITypedInitializedCompositeStateBuilder AddElseDataTransition<TEventPayload, TElseTransition, TTargetState>(this ITypedInitializedCompositeStateBuilder builder)
             where TElseTransition : ElseTransition<Event<TEventPayload>>
             where TTargetState : BaseState
-            => AddElseTransition<TEventPayload, TElseTransition>(builder, StateInfo<TTargetState>.Name);
+            => AddElseDataTransition<TEventPayload, TElseTransition>(builder, StateInfo<TTargetState>.Name);
 
         [DebuggerHidden]
-        public static ITypedInitializedCompositeStateBuilder AddElseTransition<TEventPayload, TElseTransition>(this ITypedInitializedCompositeStateBuilder builder, string targetVertexName)
+        public static ITypedInitializedCompositeStateBuilder AddElseDataTransition<TEventPayload, TElseTransition>(this ITypedInitializedCompositeStateBuilder builder, string targetVertexName)
             where TElseTransition : ElseTransition<Event<TEventPayload>>
         {
             (builder as IInternal).Services.RegisterElseTransition<TElseTransition, Event<TEventPayload>>();
@@ -25,7 +25,7 @@ namespace Stateflows.StateMachines.Typed.Data
             );
         }
 
-        public static ITypedInitializedCompositeStateBuilder AddElseTransition<TEventPayload, TTargetState>(this ITypedInitializedCompositeStateBuilder builder, ElseTransitionBuildAction<Event<TEventPayload>> transitionBuildAction = null)
+        public static ITypedInitializedCompositeStateBuilder AddElseDataTransition<TEventPayload, TTargetState>(this ITypedInitializedCompositeStateBuilder builder, ElseTransitionBuildAction<Event<TEventPayload>> transitionBuildAction = null)
             where TTargetState : BaseState
             => builder.AddElseTransition(StateInfo<TTargetState>.Name, transitionBuildAction);
     }

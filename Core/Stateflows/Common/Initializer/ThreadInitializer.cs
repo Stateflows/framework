@@ -13,7 +13,7 @@ namespace Stateflows.Common.Initializer
     {
         private readonly CancellationTokenSource CancellationTokenSource = new CancellationTokenSource();
 
-        private readonly TenantsExecutor Executor;
+        private readonly IStateflowsTenantExecutor Executor;
         private readonly IBehaviorLocator Locator;
         private readonly IServiceScope Scope;
         private readonly ILogger<ThreadInitializer> Logger;
@@ -24,7 +24,7 @@ namespace Stateflows.Common.Initializer
         public ThreadInitializer(IServiceProvider serviceProvider)
         {
             Scope = serviceProvider.CreateScope();
-            Executor = ServiceProvider.GetRequiredService<TenantsExecutor>();
+            Executor = ServiceProvider.GetRequiredService<IStateflowsTenantExecutor>();
             Locator = ServiceProvider.GetRequiredService<IBehaviorLocator>();
             Logger = ServiceProvider.GetRequiredService<ILogger<ThreadInitializer>>();
         }

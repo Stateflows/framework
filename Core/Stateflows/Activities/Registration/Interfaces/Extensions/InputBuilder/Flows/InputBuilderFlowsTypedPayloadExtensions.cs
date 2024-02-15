@@ -7,24 +7,24 @@ namespace Stateflows.Activities.Typed.Data
     {
         public static IInputBuilder AddDataFlow<TTokenPayload, TTargetNode>(this IInputBuilder builder, ObjectFlowBuildAction<Token<TTokenPayload>> buildAction = null)
             where TTargetNode : ActivityNode
-            => builder.AddTokenFlow<Token<TTokenPayload>>(ActivityNodeInfo<TTargetNode>.Name, buildAction);
+            => builder.AddFlow<Token<TTokenPayload>>(ActivityNodeInfo<TTargetNode>.Name, buildAction);
 
         public static IInputBuilder AddDataFlow<TTokenPayload, TObjectFlow>(this IInputBuilder builder, string targetNodeName)
-            where TObjectFlow : TokenFlow<Token<TTokenPayload>>
-            => (builder as IActionBuilder).AddTokenFlow<Token<TTokenPayload>, TObjectFlow>(targetNodeName) as IInputBuilder;
+            where TObjectFlow : Flow<Token<TTokenPayload>>
+            => (builder as IActionBuilder).AddFlow<Token<TTokenPayload>, TObjectFlow>(targetNodeName) as IInputBuilder;
 
         public static IInputBuilder AddDataFlow<TTokenPayload, TFlow, TTargetNode>(this IInputBuilder builder)
-            where TFlow : TokenFlow<Token<TTokenPayload>>
+            where TFlow : Flow<Token<TTokenPayload>>
             where TTargetNode : ActivityNode
-            => builder.AddTokenFlow<Token<TTokenPayload>, TFlow>(ActivityNodeInfo<TTargetNode>.Name);
+            => builder.AddFlow<Token<TTokenPayload>, TFlow>(ActivityNodeInfo<TTargetNode>.Name);
 
         public static IInputBuilder AddDataFlow<TTokenPayload, TTransformedTokenPayload, TFlow>(this IInputBuilder builder, string targetNodeName)
             where TFlow : TokenTransformationFlow<Token<TTokenPayload>, Token<TTransformedTokenPayload>>
-            => (builder as IActionBuilder).AddTokenFlow<Token<TTokenPayload>, Token<TTransformedTokenPayload>, TFlow>(targetNodeName) as IInputBuilder;
+            => (builder as IActionBuilder).AddFlow<Token<TTokenPayload>, Token<TTransformedTokenPayload>, TFlow>(targetNodeName) as IInputBuilder;
 
         public static IInputBuilder AddDataFlow<TTokenPayload, TTransformedTokenPayload, TFlow, TTargetNode>(this IInputBuilder builder)
             where TFlow : TokenTransformationFlow<Token<TTokenPayload>, Token<TTransformedTokenPayload>>
             where TTargetNode : ActivityNode
-            => builder.AddTokenFlow<Token<TTokenPayload>, Token<TTransformedTokenPayload>, TFlow>(ActivityNodeInfo<TTargetNode>.Name);
+            => builder.AddFlow<Token<TTokenPayload>, Token<TTransformedTokenPayload>, TFlow>(ActivityNodeInfo<TTargetNode>.Name);
     }
 }

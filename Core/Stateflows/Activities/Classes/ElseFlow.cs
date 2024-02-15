@@ -9,7 +9,7 @@ namespace Stateflows.Activities
             => Task.FromResult(true);
     }
 
-    public abstract class ElseTokenFlow<TToken> : BaseTokenFlow<TToken>
+    public abstract class ElseFlow<TToken> : BaseFlow<TToken>
         where TToken : Token, new()
     {
         public override sealed Task<bool> GuardAsync()

@@ -11,7 +11,7 @@ namespace Stateflows.Activities.Typed.Data
             => builder.AddFlow(ActivityNodeInfo<TTargetNode>.Name, buildAction);
 
         public static IDecisionBuilder<Token<TTokenPayload>> AddFlow<TTokenPayload, TObjectFlow>(this IDecisionBuilder<Token<TTokenPayload>> builder, string targetNodeName)
-            where TObjectFlow : TokenFlow<Token<TTokenPayload>>
+            where TObjectFlow : Flow<Token<TTokenPayload>>
         {
             (builder as IInternal).Services.RegisterObjectFlow<TObjectFlow, Token<TTokenPayload>>();
 
@@ -22,7 +22,7 @@ namespace Stateflows.Activities.Typed.Data
         }
 
         public static IDecisionBuilder<Token<TTokenPayload>> AddFlow<TTokenPayload, TObjectFlow, TTargetNode>(this IDecisionBuilder<Token<TTokenPayload>> builder)
-            where TObjectFlow : TokenFlow<Token<TTokenPayload>>
+            where TObjectFlow : Flow<Token<TTokenPayload>>
             where TTargetNode : ActivityNode
             => builder.AddFlow<Token<TTokenPayload>, TObjectFlow>(ActivityNodeInfo<TTargetNode>.Name);
 

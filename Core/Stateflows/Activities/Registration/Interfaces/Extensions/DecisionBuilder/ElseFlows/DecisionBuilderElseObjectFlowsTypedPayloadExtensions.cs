@@ -11,7 +11,7 @@ namespace Stateflows.Activities.Typed.Data
             => builder.AddElseFlow(ActivityNodeInfo<TTargetNode>.Name, b => buildAction?.Invoke(b as IObjectFlowBuilder<Token<TTokenPayload>>));
 
         public static IDecisionBuilder<Token<TTokenPayload>> AddElseFlow<TTokenPayload, TObjectFlow>(this IDecisionBuilder<Token<TTokenPayload>> builder, string targetNodeName)
-            where TObjectFlow : TokenFlow<Token<TTokenPayload>>
+            where TObjectFlow : Flow<Token<TTokenPayload>>
         {
             (builder as IInternal).Services.RegisterObjectFlow<TObjectFlow, Token<TTokenPayload>>();
 
@@ -22,7 +22,7 @@ namespace Stateflows.Activities.Typed.Data
         }
 
         public static IDecisionBuilder<Token<TTokenPayload>> AddElseFlow<TTokenPayload, TObjectFlow, TTargetNode>(this IDecisionBuilder<Token<TTokenPayload>> builder)
-            where TObjectFlow : TokenFlow<Token<TTokenPayload>>
+            where TObjectFlow : Flow<Token<TTokenPayload>>
             where TTargetNode : ActivityNode
             => builder.AddElseFlow<Token<TTokenPayload>, TObjectFlow>(ActivityNodeInfo<TTargetNode>.Name);
 

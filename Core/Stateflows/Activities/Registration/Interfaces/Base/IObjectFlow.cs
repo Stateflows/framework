@@ -4,13 +4,13 @@ namespace Stateflows.Activities.Registration.Interfaces.Base
 {
     public interface IObjectFlow<out TReturn>
     {
-        TReturn AddTokenFlow<TToken>(string targetNodeName, ObjectFlowBuildAction<TToken> buildAction = null)
+        TReturn AddFlow<TToken>(string targetNodeName, ObjectFlowBuildAction<TToken> buildAction = null)
             where TToken : Token, new();
     }
 
     public interface IElseObjectFlow<out TReturn>
     {
-        TReturn AddElseTokenFlow<TToken>(string targetNodeName, ElseObjectFlowBuildAction<TToken> buildAction = null)
+        TReturn AddElseFlow<TToken>(string targetNodeName, ElseObjectFlowBuildAction<TToken> buildAction = null)
             where TToken : Token, new();
     }
 
@@ -28,7 +28,7 @@ namespace Stateflows.Activities.Registration.Interfaces.Base
 
     public interface IObjectFlow
     {
-        void AddTokenFlow<TToken>(string targetNodeName, ObjectFlowBuildAction<TToken> buildAction = null)
+        void AddFlow<TToken>(string targetNodeName, ObjectFlowBuildAction<TToken> buildAction = null)
             where TToken : Token, new();
     }
 }

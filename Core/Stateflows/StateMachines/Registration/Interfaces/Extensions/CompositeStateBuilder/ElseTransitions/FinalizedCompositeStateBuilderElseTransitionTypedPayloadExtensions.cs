@@ -7,12 +7,12 @@ namespace Stateflows.StateMachines.Typed.Data
 {
     public static class FinalizedCompositeStateBuilderElseTransitionTypedPayloadExtensions
     {
-        public static IFinalizedCompositeStateBuilder AddElseTransition<TEventPayload, TElseTransition, TTargetState>(this IFinalizedCompositeStateBuilder builder)
+        public static IFinalizedCompositeStateBuilder AddElseDataTransition<TEventPayload, TElseTransition, TTargetState>(this IFinalizedCompositeStateBuilder builder)
             where TElseTransition : ElseTransition<Event<TEventPayload>>
             where TTargetState : BaseState
-            => AddElseTransition<TEventPayload, TElseTransition>(builder, StateInfo<TTargetState>.Name);
+            => AddElseDataTransition<TEventPayload, TElseTransition>(builder, StateInfo<TTargetState>.Name);
 
-        public static IFinalizedCompositeStateBuilder AddElseTransition<TEventPayload, TElseTransition>(this IFinalizedCompositeStateBuilder builder, string targetVertexName)
+        public static IFinalizedCompositeStateBuilder AddElseDataTransition<TEventPayload, TElseTransition>(this IFinalizedCompositeStateBuilder builder, string targetVertexName)
             where TElseTransition : ElseTransition<Event<TEventPayload>>
         {
             (builder as IInternal).Services.RegisterElseTransition<TElseTransition, Event<TEventPayload>>();
@@ -23,7 +23,7 @@ namespace Stateflows.StateMachines.Typed.Data
             );
         }
 
-        public static IFinalizedCompositeStateBuilder AddElseTransition<TEventPayload, TTargetState>(this IFinalizedCompositeStateBuilder builder, ElseTransitionBuildAction<Event<TEventPayload>> transitionBuildAction = null)
+        public static IFinalizedCompositeStateBuilder AddElseDataTransition<TEventPayload, TTargetState>(this IFinalizedCompositeStateBuilder builder, ElseTransitionBuildAction<Event<TEventPayload>> transitionBuildAction = null)
             where TTargetState : BaseState
             => builder.AddElseTransition(StateInfo<TTargetState>.Name, transitionBuildAction);
     }

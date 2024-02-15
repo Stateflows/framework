@@ -133,7 +133,7 @@ namespace Stateflows.Activities.Engine
             => GetFlow<TControlFlow>(context);
 
         public TFlow GetObjectFlow<TFlow, TToken>(IFlowContext<TToken> context)
-            where TFlow : TokenFlow<TToken>
+            where TFlow : Flow<TToken>
             where TToken : Token, new()
             => GetFlow<TFlow>(context);
 
