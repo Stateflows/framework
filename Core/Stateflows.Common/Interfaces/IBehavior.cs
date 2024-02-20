@@ -2,7 +2,7 @@
 
 namespace Stateflows.Common
 {
-    public interface IBehavior
+    public interface IBehavior : ISubscriptions
     {
         BehaviorId Id { get; }
 

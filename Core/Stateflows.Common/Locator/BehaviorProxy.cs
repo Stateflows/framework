@@ -40,5 +40,15 @@ namespace Stateflows.Common.Locator
 
             return result;
         }
+
+        public Task<RequestResult<SubscriptionResponse>> SubscribeAsync<TEvent>(BehaviorId behaviorId) where TEvent : Event, new()
+        {
+            throw new global::System.NotImplementedException();
+        }
+
+        public Task<RequestResult<UnsubscriptionResponse>> UnsubscribeAsync<TEvent>(BehaviorId behaviorId) where TEvent : Event, new()
+        {
+            throw new global::System.NotImplementedException();
+        }
     }
 }

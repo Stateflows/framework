@@ -47,6 +47,8 @@ namespace Stateflows.Activities
                     .AddSingleton<IActivityEventHandler, ExecutionHandler>()
                     .AddSingleton<IActivityEventHandler, CancelHandler>()
                     .AddSingleton<IActivityEventHandler, ResetHandler>()
+                    .AddSingleton<IActivityEventHandler, SubscriptionHandler>()
+                    .AddSingleton<IActivityEventHandler, UnsubscriptionHandler>()
                     ;
             }
 

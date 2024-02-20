@@ -1,5 +1,4 @@
-﻿using System.Linq;
-using System.Threading.Tasks;
+﻿using System.Threading.Tasks;
 using System.Collections.Generic;
 using Stateflows.Activities;
 using Stateflows.Activities.Events;
@@ -38,5 +37,15 @@ namespace Stateflows.Common.Activities.Classes
         public Task<RequestResult<TResponse>> RequestAsync<TResponse>(Request<TResponse> request)
             where TResponse : Response, new()
             => Behavior.RequestAsync(request);
+
+        public Task<RequestResult<SubscriptionResponse>> SubscribeAsync<TEvent>(BehaviorId behaviorId) where TEvent : Event, new()
+        {
+            throw new global::System.NotImplementedException();
+        }
+
+        public Task<RequestResult<UnsubscriptionResponse>> UnsubscribeAsync<TEvent>(BehaviorId behaviorId) where TEvent : Event, new()
+        {
+            throw new global::System.NotImplementedException();
+        }
     }
 }

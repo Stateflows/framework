@@ -1,15 +1,9 @@
-﻿using Stateflows.Common;
-using Stateflows.Common.Interfaces;
+﻿using Stateflows.Common.Context.Interfaces;
 
 namespace Stateflows.Activities.Context.Interfaces
 {
-    public interface IActivityContext
+    public interface IActivityContext : IBehaviorContext
     {
-        ActivityId Id { get; }
-
-        IContextValues Values { get; }
-
-        void Send<TEvent>(TEvent @event)
-            where TEvent : Event, new();
+        new ActivityId Id { get; }
     }
 }

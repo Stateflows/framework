@@ -36,5 +36,15 @@ namespace Stateflows.Common.Classes
 
             return new RequestResult<TResponse>(request, holder.Status, holder.Validation);
         }
+
+        public Task<RequestResult<SubscriptionResponse>> SubscribeAsync<TEvent>(BehaviorId behaviorId) where TEvent : Event, new()
+        {
+            throw new NotImplementedException();
+        }
+
+        public Task<RequestResult<UnsubscriptionResponse>> UnsubscribeAsync<TEvent>(BehaviorId behaviorId) where TEvent : Event, new()
+        {
+            throw new NotImplementedException();
+        }
     }
 }

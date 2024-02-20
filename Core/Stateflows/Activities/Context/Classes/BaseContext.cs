@@ -2,13 +2,13 @@
 using System.Threading;
 using Microsoft.Extensions.DependencyInjection;
 using Stateflows.Common;
-using Stateflows.Activities.Engine;
-using Stateflows.Common.Interfaces;
 using Stateflows.Common.Context;
+using Stateflows.Common.Interfaces;
+using Stateflows.Activities.Engine;
 
 namespace Stateflows.Activities.Context.Classes
 {
-    internal class BaseContext : IStateflowsContextProvider
+    internal class BaseContext : IStateflowsContextProvider, IBehaviorLocator
     {
         public BaseContext(RootContext context, NodeScope nodeScope)
         {

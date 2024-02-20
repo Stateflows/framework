@@ -1,15 +1,9 @@
-﻿using Stateflows.Common;
-using Stateflows.Common.Interfaces;
+﻿using Stateflows.Common.Context.Interfaces;
 
 namespace Stateflows.StateMachines.Context.Interfaces
 {
-    public interface IStateMachineContext
+    public interface IStateMachineContext : IBehaviorContext
     {
-        StateMachineId Id { get; }
-
-        IContextValues Values { get; }
-
-        void Send<TEvent>(TEvent @event)
-            where TEvent : Event, new();
+        new StateMachineId Id { get; }
     }
 }

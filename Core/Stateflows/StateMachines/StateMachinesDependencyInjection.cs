@@ -50,6 +50,8 @@ namespace Stateflows.StateMachines
                     .AddSingleton<IStateMachineEventHandler, CurrentStateHandler>()
                     .AddSingleton<IStateMachineEventHandler, ExitHandler>()
                     .AddSingleton<IStateMachineEventHandler, ResetHandler>()
+                    .AddSingleton<IStateMachineEventHandler, SubscriptionHandler>()
+                    .AddSingleton<IStateMachineEventHandler, UnsubscriptionHandler>()
                     ;
             }
 
