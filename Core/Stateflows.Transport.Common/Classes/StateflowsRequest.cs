@@ -5,22 +5,26 @@ namespace Stateflows.Common.Transport.Classes
 {
     public class StateflowsRequest
     {
-        public string EventString { get; set; }
+        public Event Event { get; set; }
 
-        [JsonIgnore]
-        public Event Event
-        {
-            get => StateflowsJsonConverter.DeserializeObject<Event>(EventString);
-            set => EventString = StateflowsJsonConverter.SerializePolymorphicObject(value);
-        }
+        //public string EventString { get; set; }
 
-        public string BehaviorIdString { get; set; }
+        //[JsonIgnore]
+        //public Event Event
+        //{
+        //    get => StateflowsJsonConverter.DeserializeObject<Event>(EventString);
+        //    set => EventString = StateflowsJsonConverter.SerializePolymorphicObject(value);
+        //}
+
+        public BehaviorId BehaviorId { get; set; }
+
+        //public string BehaviorIdString { get; set; }
         
-        [JsonIgnore]
-        public BehaviorId BehaviorId
-        {
-            get => StateflowsJsonConverter.DeserializeObject<BehaviorId>(BehaviorIdString);
-            set => BehaviorIdString = StateflowsJsonConverter.SerializePolymorphicObject(value);
-        }
+        //[JsonIgnore]
+        //public BehaviorId BehaviorId
+        //{
+        //    get => StateflowsJsonConverter.DeserializeObject<BehaviorId>(BehaviorIdString);
+        //    set => BehaviorIdString = StateflowsJsonConverter.SerializePolymorphicObject(value);
+        //}
     }
 }

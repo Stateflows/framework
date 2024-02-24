@@ -1,4 +1,5 @@
-﻿using Stateflows.Common;
+﻿using Newtonsoft.Json;
+using Stateflows.Common;
 using System.Collections.Generic;
 
 namespace Stateflows.Activities.Events
@@ -13,6 +14,7 @@ namespace Stateflows.Activities.Events
 
         public InitializationRequest InitializationRequest { get; set; }
 
+        [JsonProperty(TypeNameHandling = TypeNameHandling.None)]
         public IEnumerable<Token> InputTokens { get; set; }
     }
 }

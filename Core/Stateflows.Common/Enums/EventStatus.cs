@@ -25,6 +25,10 @@
         /// <summary>
         /// Event was consumed and processed by behavior
         /// </summary>
-        Consumed
+        Consumed,
+        /// <summary>
+        /// Event was omitted because other events in CompoundRequest were invalid
+        /// </summary>
+        Omitted
     }
 }

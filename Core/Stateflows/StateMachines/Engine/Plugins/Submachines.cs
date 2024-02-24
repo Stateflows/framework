@@ -131,7 +131,7 @@ namespace Stateflows.StateMachines.Engine
                     context.TryLocateStateMachine(stateValues.SubmachineId.Value, out var stateMachine)
                 )
                 {
-                    await stateMachine.SendAsync(new Exit());
+                    await stateMachine.SendAsync(new ExitEvent());
                     stateValues.SubmachineId = null;
                 }
             }

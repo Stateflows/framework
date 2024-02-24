@@ -26,7 +26,7 @@
   "homepage": "https://www.stateflows.net",
   "dependencies": {
     "@microsoft/signalr": "^8.0.0",
-    "@stateflows/common": "^0.9.2"
+    "@stateflows/common": "file:../common"
   },
   "devDependencies": {
     "tsup": "^8.0.1",

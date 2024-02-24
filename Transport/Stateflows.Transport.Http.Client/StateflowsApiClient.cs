@@ -1,5 +1,8 @@
+using System.Text;
 using System.Net;
+using System.Net.Mime;
 using System.Net.Http.Json;
+using System.Diagnostics;
 using Stateflows.Common;
 using Stateflows.Common.Utilities;
 using Stateflows.Common.Extensions;
@@ -16,15 +19,24 @@ namespace Stateflows.Transport.Http.Client
             _httpClient = httpClient;
         }
 
+        [DebuggerHidden]
         public async Task<SendResult> SendAsync(BehaviorId behaviorId, Event @event)
         {
-            var requestResult = await _httpClient.PostAsJsonAsync(
+            var requestResult = await _httpClient.PostAsync(
                 "/stateflows/send",
-                new StateflowsRequest() { Event = @event, BehaviorId = behaviorId }
+                new StringContent(
+                    StateflowsJsonConverter.SerializePolymorphicObject(
+                        new StateflowsRequest() { Event = @event, BehaviorId = behaviorId }
+                    ),
+                    Encoding.UTF8,
+                    MediaTypeNames.Application.Json
+                )
             );
+
             if (requestResult.StatusCode == HttpStatusCode.OK)
             {
-                var result = await requestResult.Content.ReadFromJsonAsync<StateflowsResponse>();
+                var jsonString = await requestResult.Content.ReadAsStringAsync();
+                var result = StateflowsJsonConverter.DeserializeObject<StateflowsResponse>(jsonString);
                 if (result != null)
                 {
                     if (result.Response != null)
@@ -39,6 +51,7 @@ namespace Stateflows.Transport.Http.Client
             return new SendResult(@event, EventStatus.Rejected);
         }
 
+        [DebuggerHidden]
         public async Task<IEnumerable<BehaviorClass>> GetAvailableClassesAsync()
             => await _httpClient.GetFromJsonAsync<IEnumerable<BehaviorClass>>($"/stateflows/availableClasses") ?? Array.Empty<BehaviorClass>();
     }

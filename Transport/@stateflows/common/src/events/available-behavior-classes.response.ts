@@ -3,7 +3,7 @@ import { BehaviorClass } from "../ids/behavior.class";
 
 export class AvailableBehaviorClassesResponse extends Response {
     constructor(
-        public AvailableBehaviorClasses: BehaviorClass[],
+        public AvailableBehaviorClasses: Array<BehaviorClass>,
     ) {
         super();
     }

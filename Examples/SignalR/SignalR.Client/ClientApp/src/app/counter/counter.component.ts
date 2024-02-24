@@ -1,9 +1,9 @@
 import { HttpClient } from '@angular/common/http';
 import { Component } from '@angular/core';
 import * as plantUmlEncoder from 'plantuml-encoder';
-import { StateflowsClient, StateMachineId, BehaviorStatus, EventStatus, PlantUmlRequest, PlantUmlResponse, Event } from '@stateflows/client-abstractions';
+import { StateflowsClient, StateMachineId, BehaviorStatus, EventStatus, PlantUmlRequest, PlantUmlResponse, Event, InitializationRequest } from '@stateflows/common';
 import { UseHttp } from '@stateflows/http-client';
-
+import { UseSignalR } from '@stateflows/signalr-client';
 class OtherEvent extends Event {
   public $type: string = "Examples.Common.OtherEvent, Examples.Common";
   //public RequiredParameter: string | null = null;
@@ -15,7 +15,7 @@ class OtherEvent extends Event {
 })
 export class CounterComponent {
   public currentCount = 0;
-  private stateflows: StateflowsClient = new StateflowsClient(UseHttp("https://localhost:7067/"));
+  private stateflows: StateflowsClient = new StateflowsClient(UseSignalR("https://localhost:7067/"));
   public url: string | null = null;
 
   constructor(private http: HttpClient) { }
@@ -35,11 +35,12 @@ export class CounterComponent {
   }
 
   public async incrementCounter() {
-    let sm = await this.stateflows.stateMachineLocator.locateStateMachine(new StateMachineId("stateMachine1", "xx"));
+    let sm = await this.stateflows.stateMachineLocator.locateStateMachine(new StateMachineId("stateMachine1", "xxxx"));
     let x = await sm.getStatus();
+    sm.send(new Event());
     console.log(x);
     if (x.Response.BehaviorStatus == BehaviorStatus.NotInitialized) {
-      await sm.initialize();
+      await sm.initialize(new InitializationRequest());
     }
 
     let result = (await sm.send(new OtherEvent()));

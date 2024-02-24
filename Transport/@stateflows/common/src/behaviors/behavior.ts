@@ -23,14 +23,17 @@ export class Behavior implements IBehavior {
     send(event: Event): Promise<SendResult> {
         return new Promise<SendResult>(async (resolve, reject) => {
             let hub = await this.#transportPromise;
-            resolve(await hub.send(this.behaviorId, event));
+            let result = await hub.send(this.behaviorId, event);
+            resolve(result);
         });
     }
 
     request<TResponse extends Response>(request: Request<TResponse>): Promise<RequestResult<TResponse>> {
         return new Promise<RequestResult<TResponse>>(async (resolve, reject) => {
-            let result = await this.send(request);
-            resolve(new RequestResult<TResponse>(request.Response as TResponse, request, result.Status, result.Validation));
+            let sendResult = await this.send(request);
+            request.Response = (sendResult.Event as any).Response;
+            let result = new RequestResult<TResponse>(request.Response, request, sendResult.Status, sendResult.Validation);
+            resolve(result);
         });
     }
 

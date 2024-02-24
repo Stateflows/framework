@@ -1,11 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
+using Newtonsoft.Json;
 using Stateflows.Common.Extensions;
 
 namespace Stateflows.Common
 {
     public class Event : Token
     {
+        [JsonProperty(TypeNameHandling = TypeNameHandling.None)]
         public List<EventHeader> Headers { get; set; } = new List<EventHeader>();
     }
 

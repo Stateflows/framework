@@ -45,7 +45,7 @@ namespace StateMachine.IntegrationTests.Tests
         public async Task ProcessingInScale()
         {
             var sequence = Enumerable
-                .Range(0, 30)
+                .Range(0, 10000)
                 .Select(i => Locator.TryLocateStateMachine(new StateMachineId($"scale{Random.Shared.Next(1, 5)}", i.ToString()), out var stateMachine)
                     ? stateMachine
                     : null

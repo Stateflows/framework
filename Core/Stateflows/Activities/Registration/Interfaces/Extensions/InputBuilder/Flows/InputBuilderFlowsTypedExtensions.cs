@@ -24,13 +24,13 @@ namespace Stateflows.Activities.Typed
         public static IInputBuilder AddFlow<TToken, TTransformedToken, TFlow>(this IInputBuilder builder, string targetNodeName)
             where TToken : Token, new()
             where TTransformedToken : Token, new()
-            where TFlow : TokenTransformationFlow<TToken, TTransformedToken>
+            where TFlow : TransformationFlow<TToken, TTransformedToken>
             => (builder as IActionBuilder).AddFlow<TToken, TTransformedToken, TFlow>(targetNodeName) as IInputBuilder;
 
         public static IInputBuilder AddFlow<TToken, TTransformedToken, TFlow, TTargetNode>(this IInputBuilder builder)
             where TToken : Token, new()
             where TTransformedToken : Token, new()
-            where TFlow : TokenTransformationFlow<TToken, TTransformedToken>
+            where TFlow : TransformationFlow<TToken, TTransformedToken>
             where TTargetNode : ActivityNode
             => builder.AddFlow<TToken, TTransformedToken, TFlow>(ActivityNodeInfo<TTargetNode>.Name);
     }

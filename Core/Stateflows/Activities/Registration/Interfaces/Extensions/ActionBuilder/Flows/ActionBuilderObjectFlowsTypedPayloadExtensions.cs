@@ -28,7 +28,7 @@ namespace Stateflows.Activities.Typed.Data
             => builder.AddDataFlow<TTokenPayload, TObjectFlow>(ActivityNodeInfo<TTargetNode>.Name);
 
         public static IActionBuilder AddDataFlow<TTokenPayload, TTransformedTokenPayload, TObjectTransformationFlow>(this IActionBuilder builder, string targetNodeName)
-            where TObjectTransformationFlow : TokenTransformationFlow<Token<TTokenPayload>, Token<TTransformedTokenPayload>>
+            where TObjectTransformationFlow : TransformationFlow<Token<TTokenPayload>, Token<TTransformedTokenPayload>>
         {
             (builder as IInternal).Services.RegisterObjectTransformationFlow<TObjectTransformationFlow, Token<TTokenPayload>, Token<TTransformedTokenPayload>>();
 
@@ -39,7 +39,7 @@ namespace Stateflows.Activities.Typed.Data
         }
 
         public static IActionBuilder AddDataFlow<TTokenPayload, TTransformedTokenPayload, TObjectTransformationFlow, TTargetNode>(this IActionBuilder builder)
-            where TObjectTransformationFlow : TokenTransformationFlow<Event<TTokenPayload>, Token<TTransformedTokenPayload>>
+            where TObjectTransformationFlow : TransformationFlow<Event<TTokenPayload>, Token<TTransformedTokenPayload>>
             where TTargetNode : ActivityNode
             => builder.AddFlow<Event<TTokenPayload>, Token<TTransformedTokenPayload>, TObjectTransformationFlow>(ActivityNodeInfo<TTargetNode>.Name);
     }

@@ -118,7 +118,6 @@ builder.Services.AddStateflows(b => b
                     .AddDataFlow<int>("data")
             )
             .AddDataStore("data", b => b
-                .AddFlow<Token>("")
                 .AddDataFlow<int>("decision")
             )
             .AddDataDecision<int>("decision", b => b
