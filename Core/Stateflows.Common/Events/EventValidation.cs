@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
+using Newtonsoft.Json;
 using Stateflows.Common.Extensions;
 
 namespace Stateflows.Common
@@ -15,6 +16,7 @@ namespace Stateflows.Common
 
         public bool IsValid { get; }
 
+        [JsonProperty(TypeNameHandling = TypeNameHandling.None)]
         public IEnumerable<ValidationResult> ValidationResults { get; }
     }
 }

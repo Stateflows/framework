@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using Newtonsoft.Json;
 using Stateflows.Common;
 
 namespace Stateflows.Activities.Events
@@ -7,6 +8,7 @@ namespace Stateflows.Activities.Events
     {
         public bool ExecutionSuccessful { get; set; }
 
+        [JsonProperty(TypeNameHandling = TypeNameHandling.None)]
         public IEnumerable<Token> OutputTokens { get; set; } = new List<Token>();
     }
 }

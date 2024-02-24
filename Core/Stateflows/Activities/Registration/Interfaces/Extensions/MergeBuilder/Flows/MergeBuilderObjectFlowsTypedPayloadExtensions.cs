@@ -26,7 +26,7 @@ namespace Stateflows.Activities.Typed.Data
             => builder.AddFlow<Token<TTokenPayload>, TObjectFlow>(ActivityNodeInfo<TTargetNode>.Name);
 
         public static void AddDataFlow<TTokenPayload, TTransformedTokenPayload, TObjectTransformationFlow>(this IMergeBuilder builder, string targetNodeName)
-            where TObjectTransformationFlow : TokenTransformationFlow<Token<TTokenPayload>, Token<TTransformedTokenPayload>>
+            where TObjectTransformationFlow : TransformationFlow<Token<TTokenPayload>, Token<TTransformedTokenPayload>>
         {
             (builder as IInternal).Services.RegisterObjectTransformationFlow<TObjectTransformationFlow, Token<TTokenPayload>, Token<TTransformedTokenPayload>>();
             builder.AddFlow<Token<TTokenPayload>>(
@@ -36,7 +36,7 @@ namespace Stateflows.Activities.Typed.Data
         }
 
         public static void AddDataFlow<TTokenPayload, TTransformedTokenPayload, TObjectTransformationFlow, TTargetNode>(this IMergeBuilder builder)
-            where TObjectTransformationFlow : TokenTransformationFlow<Token<TTokenPayload>, Token<TTransformedTokenPayload>>
+            where TObjectTransformationFlow : TransformationFlow<Token<TTokenPayload>, Token<TTransformedTokenPayload>>
             where TTargetNode : ActivityNode
             => builder.AddFlow<Token<TTokenPayload>, Token<TTransformedTokenPayload>, TObjectTransformationFlow>(ActivityNodeInfo<TTargetNode>.Name);
     }

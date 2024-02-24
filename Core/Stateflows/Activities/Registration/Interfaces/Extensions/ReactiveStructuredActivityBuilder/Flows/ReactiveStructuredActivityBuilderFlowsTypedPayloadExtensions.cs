@@ -19,11 +19,11 @@ namespace Stateflows.Activities.Typed.Data
             => builder.AddFlow<Token<TTokenPayload>, TFlow>(ActivityNodeInfo<TTargetNode>.Name);
 
         public static IReactiveStructuredActivityBuilder AddDataFlow<TTokenPayload, TTransformedTokenPayload, TFlow>(this IReactiveStructuredActivityBuilder builder, string targetNodeName)
-            where TFlow : TokenTransformationFlow<Token<TTokenPayload>, Token<TTransformedTokenPayload>>
+            where TFlow : TransformationFlow<Token<TTokenPayload>, Token<TTransformedTokenPayload>>
             => (builder as IActionBuilder).AddFlow<Token<TTokenPayload>, Token<TTransformedTokenPayload>, TFlow>(targetNodeName) as IReactiveStructuredActivityBuilder;
 
         public static IReactiveStructuredActivityBuilder AddDataFlow<TTokenPayload, TTransformedTokenPayload, TFlow, TTargetNode>(this IReactiveStructuredActivityBuilder builder)
-            where TFlow : TokenTransformationFlow<Token<TTokenPayload>, Token<TTransformedTokenPayload>>
+            where TFlow : TransformationFlow<Token<TTokenPayload>, Token<TTransformedTokenPayload>>
             where TTargetNode : ActivityNode
             => builder.AddFlow<Token<TTokenPayload>, Token<TTransformedTokenPayload>, TFlow>(ActivityNodeInfo<TTargetNode>.Name);
     }

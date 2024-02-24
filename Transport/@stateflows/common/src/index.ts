@@ -14,6 +14,8 @@ export { BehaviorStatusRequest } from "./events/behavior-status.request";
 export { BehaviorStatusResponse } from "./events/behavior-status.response";
 export { PlantUmlRequest } from "./events/plant-uml.request";
 export { PlantUmlResponse } from "./events/plant-uml.response";
+export { CurrentStateRequest } from "./events/current-state.request";
+export { CurrentStateResponse } from "./events/current-state.response";
 export { IBehaviorLocator } from "./interfaces/behavior.locator";
 export { IBehavior } from "./interfaces/behavior";
 export { ISystem } from "./interfaces/system";

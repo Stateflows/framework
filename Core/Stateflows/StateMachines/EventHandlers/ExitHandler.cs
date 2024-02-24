@@ -9,12 +9,12 @@ namespace Stateflows.StateMachines.EventHandlers
 {
     internal class ExitHandler : IStateMachineEventHandler
     {
-        public Type EventType => typeof(Exit);
+        public Type EventType => typeof(ExitEvent);
 
         public async Task<EventStatus> TryHandleEventAsync<TEvent>(IEventInspectionContext<TEvent> context)
             where TEvent : Event, new()
         {
-            if (context.Event is Exit)
+            if (context.Event is ExitEvent)
             {
                 var executor = context.StateMachine.GetExecutor();
 

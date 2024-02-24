@@ -10,7 +10,7 @@ export class BehaviorDescriptor
 
 export class BehaviorInstancesResponse extends Response {
     constructor(
-        public Behaviors: BehaviorDescriptor[],
+        public Behaviors: Array<BehaviorDescriptor>,
     ) {
         super();
     }

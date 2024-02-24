@@ -32,7 +32,7 @@ namespace Stateflows.Activities.Typed
         public static IDecisionBuilder<TToken> AddFlow<TToken, TTransformedToken, TObjectTransformationFlow>(this IDecisionBuilder<TToken> builder, string targetNodeName)
             where TToken : Token, new()
             where TTransformedToken : Token, new()
-            where TObjectTransformationFlow : TokenTransformationFlow<TToken, TTransformedToken>
+            where TObjectTransformationFlow : TransformationFlow<TToken, TTransformedToken>
         {
             (builder as IInternal).Services.RegisterObjectTransformationFlow<TObjectTransformationFlow, TToken, TTransformedToken>();
 
@@ -45,7 +45,7 @@ namespace Stateflows.Activities.Typed
         public static IDecisionBuilder<TToken> AddFlow<TToken, TTransformedToken, TObjectTransformationFlow, TTargetNode>(this IDecisionBuilder<TToken> builder)
             where TToken : Token, new()
             where TTransformedToken : Token, new()
-            where TObjectTransformationFlow : TokenTransformationFlow<TToken, TTransformedToken>
+            where TObjectTransformationFlow : TransformationFlow<TToken, TTransformedToken>
             where TTargetNode : ActivityNode
             => builder.AddFlow<TToken, TTransformedToken, TObjectTransformationFlow>(ActivityNodeInfo<TTargetNode>.Name);
     }

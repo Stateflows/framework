@@ -2,8 +2,8 @@
 using System.Threading;
 using Microsoft.Extensions.DependencyInjection;
 using Stateflows.Common;
-using Stateflows.Activities.Context.Interfaces;
 using Stateflows.Activities.Models;
+using Stateflows.Activities.Context.Interfaces;
 
 namespace Stateflows.Activities.Engine
 {
@@ -138,7 +138,7 @@ namespace Stateflows.Activities.Engine
             => GetFlow<TFlow>(context);
 
         public TFlow GetObjectTransformationFlow<TFlow, TToken, TTransformedToken>(IFlowContext<TToken> context)
-            where TFlow : TokenTransformationFlow<TToken, TTransformedToken>
+            where TFlow : TransformationFlow<TToken, TTransformedToken>
             where TToken : Token, new()
             where TTransformedToken : Token, new()
             => GetFlow<TFlow>(context);

@@ -38,7 +38,7 @@ namespace Stateflows.Activities.Extensions
             => services?.AddServiceType<TObjectFlow>();
 
         public static IServiceCollection RegisterObjectTransformationFlow<TObjectTransformationFlow, TToken, TTransformedToken>(this IServiceCollection services)
-            where TObjectTransformationFlow : TokenTransformationFlow<TToken, TTransformedToken>
+            where TObjectTransformationFlow : TransformationFlow<TToken, TTransformedToken>
             where TToken : Token, new()
             where TTransformedToken : Token, new()
             => services?.AddServiceType<TObjectTransformationFlow>();

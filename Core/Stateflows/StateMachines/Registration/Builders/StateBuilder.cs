@@ -144,7 +144,7 @@ namespace Stateflows.StateMachines.Registration.Builders
             if (typeof(TEvent) == typeof(CompletionEvent))
                 throw new DeferralDefinitionException(EventInfo<TEvent>.Name, "Completion event cannot be deferred.", Vertex.Graph.Class);
 
-            if (typeof(TEvent) == typeof(Exit))
+            if (typeof(TEvent) == typeof(ExitEvent))
                 throw new DeferralDefinitionException(EventInfo<TEvent>.Name, "Exit event cannot be deferred.", Vertex.Graph.Class);
 
             if (typeof(TEvent).IsSubclassOf(typeof(TimeEvent)))

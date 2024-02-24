@@ -2,8 +2,6 @@
 {
     public partial interface IStateMachineFinal<out TReturn>
     {
-        #region AddFinalState
         TReturn AddFinalState(string stateName = FinalState.Name);
-        #endregion
     }
 }

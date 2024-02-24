@@ -7,22 +7,26 @@ namespace Stateflows.Common.Transport.Classes
     {
         public EventStatus EventStatus { get; set; }
 
-        public string ValidationString { get; set; }
+        public EventValidation Validation { get; set; }
 
-        [JsonIgnore]
-        public EventValidation Validation
-        {
-            get => StateflowsJsonConverter.DeserializeObject<EventValidation>(ValidationString);
-            set => ValidationString = StateflowsJsonConverter.SerializePolymorphicObject(value);
-        }
+        //public string ValidationString { get; set; }
 
-        public string ResponseString { get; set; }
+        //[JsonIgnore]
+        //public EventValidation Validation
+        //{
+        //    get => StateflowsJsonConverter.DeserializeObject<EventValidation>(ValidationString);
+        //    set => ValidationString = StateflowsJsonConverter.SerializePolymorphicObject(value);
+        //}
 
-        [JsonIgnore]
-        public Response Response
-        {
-            get => StateflowsJsonConverter.DeserializeObject<Response>(ResponseString);
-            set => ResponseString = StateflowsJsonConverter.SerializePolymorphicObject(value);
-        }
+        public Response Response { get; set; }
+
+        //public string ResponseString { get; set; }
+
+        //[JsonIgnore]
+        //public Response Response
+        //{
+        //    get => StateflowsJsonConverter.DeserializeObject<Response>(ResponseString);
+        //    set => ResponseString = StateflowsJsonConverter.SerializePolymorphicObject(value);
+        //}
     }
 }

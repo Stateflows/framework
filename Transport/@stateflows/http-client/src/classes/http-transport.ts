@@ -17,6 +17,8 @@ export class HttpTransport implements IStateflowsClientTransport {
     
     send(behaviorId: BehaviorId, event: Event): Promise<SendResult> {
         return new Promise<SendResult>(async (resolve, reject) => {
+            const eventName = event.Name;
+            delete event.Name;
             fetch(
                 `${this.url}stateflows/send`,
                 {
@@ -26,16 +28,20 @@ export class HttpTransport implements IStateflowsClientTransport {
                         'Content-Type': 'application/json'
                     },
                     body: JSON.stringify({
-                        behaviorIdString: JSON.stringify(behaviorId),
-                        eventString: JSON.stringify(event)
+                        "$type": "Stateflows.Common.Transport.Classes.StateflowsRequest, Stateflows.Common.Transport",
+                        BehaviorId: behaviorId,
+                        Event: event
                     })
                 }
             )
                 .then(async result => {
                     let stateflowsResponse = await result.json();
-                    let response = JSON.parse(stateflowsResponse.responseString);
-                    let validation = JSON.parse(stateflowsResponse.validationString);
-                    (event as any).Response = response;
+                    let response = stateflowsResponse.Response;
+                    let validation = stateflowsResponse.Validation;
+                    event.Name = eventName;
+                    if (response) {
+                        (event as any).Response = response;
+                    }
 
                     let sendResult = new SendResult(event, stateflowsResponse.eventStatus, validation);
 

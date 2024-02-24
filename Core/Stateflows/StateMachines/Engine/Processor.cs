@@ -7,6 +7,10 @@ using Stateflows.Common;
 using Stateflows.Common.Interfaces;
 using Stateflows.StateMachines.Registration;
 using Stateflows.StateMachines.Context.Classes;
+using Stateflows.Common.Context;
+using Stateflows.StateMachines.Models;
+using Stateflows.Common.Extensions;
+using System.ComponentModel.DataAnnotations;
 
 namespace Stateflows.StateMachines.Engine
 {
@@ -61,40 +65,28 @@ namespace Stateflows.StateMachines.Engine
             {
                 await executor.HydrateAsync();
 
-                executor.RebuildVerticesStack();
-
-                var eventContext = new EventContext<TEvent>(executor.Context);
-
-                if (await executor.Inspector.BeforeProcessEventAsync(eventContext))
+                if (@event is CompoundRequest compoundRequest)
                 {
-                    result = await TryHandleEventAsync(eventContext);
-
-                    if (result != EventStatus.Consumed)
+                    result = EventStatus.Consumed;
+                    var results = new List<RequestResult>();
+                    foreach (var ev in compoundRequest.Events)
                     {
-                        result = await executor.ProcessAsync(@event);
+                        ev.Headers.AddRange(@event.Headers);
+
+                        var status = await ExecuteBehaviorAsync(ev, result, stateflowsContext, graph, executor);
+
+                        results.Add(new RequestResult(ev, ev.GetResponse(), status, new EventValidation(true, new List<ValidationResult>())));
                     }
 
-                    await executor.Inspector.AfterProcessEventAsync(eventContext);
+                    compoundRequest.Respond(new CompoundResponse()
+                    {
+                         Results = results
+                    });
                 }
                 else
                 {
-                    if (executor.Context.ForceConsumed)
-                    {
-                        result = EventStatus.Consumed;
-                    }
+                    result = await ExecuteBehaviorAsync(@event, result, stateflowsContext, graph, executor);
                 }
-
-                stateflowsContext.Status = executor.BehaviorStatus;
-
-                stateflowsContext.LastExecutedAt = DateTime.Now;
-
-                stateflowsContext.Version = stateflowsContext.Status switch
-                {
-                    BehaviorStatus.NotInitialized => 0,
-                    BehaviorStatus.Initialized => graph.Version,
-                    BehaviorStatus.Finalized => graph.Version,
-                    _ => 0
-                };
 
                 await executor.DehydrateAsync();
 
@@ -102,6 +94,50 @@ namespace Stateflows.StateMachines.Engine
 
                 executor.Context.ClearEvent();
             }
+
+            return result;
+        }
+
+        private async Task<EventStatus> ExecuteBehaviorAsync<TEvent>(TEvent @event, EventStatus result, StateflowsContext stateflowsContext, Graph graph, Executor executor) where TEvent : Event, new()
+        {
+            executor.RebuildVerticesStack();
+
+            executor.Context.SetEvent(@event);
+
+            var eventContext = new EventContext<TEvent>(executor.Context);
+
+            if (await executor.Inspector.BeforeProcessEventAsync(eventContext))
+            {
+                result = await TryHandleEventAsync(eventContext);
+
+                if (result != EventStatus.Consumed)
+                {
+                    result = await executor.ProcessAsync(@event);
+                }
+
+                await executor.Inspector.AfterProcessEventAsync(eventContext);
+            }
+            else
+            {
+                if (executor.Context.ForceConsumed)
+                {
+                    result = EventStatus.Consumed;
+                }
+            }
+
+            stateflowsContext.Status = executor.BehaviorStatus;
+
+            stateflowsContext.LastExecutedAt = DateTime.Now;
+
+            stateflowsContext.Version = stateflowsContext.Status switch
+            {
+                BehaviorStatus.NotInitialized => 0,
+                BehaviorStatus.Initialized => graph.Version,
+                BehaviorStatus.Finalized => graph.Version,
+                _ => 0
+            };
+
+            executor.Context.ClearEvent();
 
             return result;
         }
