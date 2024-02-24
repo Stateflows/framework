@@ -31,7 +31,7 @@ namespace Stateflows.Activities
     public abstract class DataFlow<TTokenPayload> : Flow<Token<TTokenPayload>>
     { }
 
-    public abstract class BaseTokenTransformationFlow<TToken, TTransformedToken> : BaseControlFlow
+    public abstract class BaseTransformationFlow<TToken, TTransformedToken> : BaseControlFlow
         where TToken : Token, new()
         where TTransformedToken : Token, new()
     {
@@ -42,12 +42,12 @@ namespace Stateflows.Activities
         public abstract Task<TTransformedToken> TransformAsync();
     }
 
-    public abstract class TokenTransformationFlow<TToken, TTransformedToken> : BaseTokenTransformationFlow<TToken, TTransformedToken>
+    public abstract class TransformationFlow<TToken, TTransformedToken> : BaseTransformationFlow<TToken, TTransformedToken>
         where TToken : Token, new()
         where TTransformedToken : Token, new()
     { }
 
-    public abstract class DataTransformationFlow<TTokenPayload, TTransformedTokenPayload> : TokenTransformationFlow<Token<TTokenPayload>, Token<TTransformedTokenPayload>>
+    public abstract class DataTransformationFlow<TTokenPayload, TTransformedTokenPayload> : TransformationFlow<Token<TTokenPayload>, Token<TTransformedTokenPayload>>
     {
         public abstract Task<TTransformedTokenPayload> TransformPayloadAsync();
 

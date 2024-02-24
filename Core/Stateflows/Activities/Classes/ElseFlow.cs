@@ -16,7 +16,7 @@ namespace Stateflows.Activities
             => Task.FromResult(true);
     }
 
-    public abstract class ElseObjectTransformationFlow<TToken, TTransformedToken> : BaseTokenTransformationFlow<TToken, TTransformedToken>
+    public abstract class ElseObjectTransformationFlow<TToken, TTransformedToken> : BaseTransformationFlow<TToken, TTransformedToken>
         where TToken : Token, new()
         where TTransformedToken : Token, new()
     {

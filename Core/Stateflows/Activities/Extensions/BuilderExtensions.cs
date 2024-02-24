@@ -66,11 +66,11 @@ namespace Stateflows.Activities.Extensions
         }
 
         public static void AddObjectTransformationFlowEvents<TObjectTransformationFlow, TToken, TTransformedToken>(this IObjectFlowBuilder<TToken> builder)
-            where TObjectTransformationFlow : TokenTransformationFlow<TToken, TTransformedToken>
+            where TObjectTransformationFlow : TransformationFlow<TToken, TTransformedToken>
             where TToken : Token, new()
             where TTransformedToken : Token, new()
         {
-            if (typeof(BaseTokenTransformationFlow<TToken, TTransformedToken>).GetProperty(nameof(BaseTokenTransformationFlow<TToken, TTransformedToken>.Weight)).IsOverridenIn<TObjectTransformationFlow>())
+            if (typeof(BaseTransformationFlow<TToken, TTransformedToken>).GetProperty(nameof(BaseTransformationFlow<TToken, TTransformedToken>.Weight)).IsOverridenIn<TObjectTransformationFlow>())
             {
                 var objectFlow = FormatterServices.GetUninitializedObject(typeof(TObjectTransformationFlow)) as TObjectTransformationFlow;
 
@@ -82,7 +82,7 @@ namespace Stateflows.Activities.Extensions
                 builder.AddGuard(c => (c as BaseContext).NodeScope.GetObjectTransformationFlow<TObjectTransformationFlow, TToken, TTransformedToken>(c)?.GuardAsync());
             }
 
-            if (typeof(BaseTokenTransformationFlow<TToken, TTransformedToken>).GetMethod(nameof(BaseTokenTransformationFlow<TToken, TTransformedToken>.TransformAsync)).IsOverridenIn<TObjectTransformationFlow>())
+            if (typeof(BaseTransformationFlow<TToken, TTransformedToken>).GetMethod(nameof(BaseTransformationFlow<TToken, TTransformedToken>.TransformAsync)).IsOverridenIn<TObjectTransformationFlow>())
             {
                 builder.AddTransformation(c => (c as BaseContext).NodeScope.GetObjectTransformationFlow<TObjectTransformationFlow, TToken, TTransformedToken>(c)?.TransformAsync());
             }

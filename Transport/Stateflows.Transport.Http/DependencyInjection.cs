@@ -1,8 +1,10 @@
-﻿using System.Diagnostics;
+﻿using System.Net.Mime;
+using System.Diagnostics;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.AspNetCore.Builder;
 using Stateflows.Common;
+using Stateflows.Common.Utilities;
 using Stateflows.Common.Interfaces;
 using Stateflows.Common.Extensions;
 using Stateflows.Common.Transport.Classes;
@@ -21,21 +23,28 @@ namespace Stateflows.Transport.Http
                 var routeBuilder = builder.MapPost(
                     "/stateflows/send",
                     async (
-                        StateflowsRequest input,
+                        HttpContext context,
                         IBehaviorLocator locator
                     ) =>
                     {
+                        using var reader = new StreamReader(context.Request.Body);
+                        var body = await reader.ReadToEndAsync();
+                        var input = StateflowsJsonConverter.DeserializeObject<StateflowsRequest>(body);
+
                         var behaviorId = new BehaviorId(input.BehaviorId.Type, input.BehaviorId.Name, input.BehaviorId.Instance);
                         if (locator.TryLocateBehavior(behaviorId, out var behavior))
                         {
                             var result = await behavior.SendAsync(input.Event);
-                            return Results.Ok(
-                                new StateflowsResponse()
-                                {
-                                    EventStatus = result.Status,
-                                    Validation = result.Validation,
-                                    Response = result.Event.GetResponse()
-                                }
+                            return Results.Text(
+                                StateflowsJsonConverter.SerializePolymorphicObject(
+                                    new StateflowsResponse()
+                                    {
+                                        EventStatus = result.Status,
+                                        Validation = result.Validation,
+                                        Response = result.Event.GetResponse()
+                                    }
+                                ),
+                                MediaTypeNames.Application.Json
                             );
                         }
                         else
