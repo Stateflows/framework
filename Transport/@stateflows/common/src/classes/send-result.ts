@@ -4,8 +4,8 @@ import { EventValidation } from "./event-validation";
 
 export class SendResult {
     constructor(
-        public Event: Event,
-        public Status: EventStatus,
-        public Validation: EventValidation,
+        public event: Event,
+        public status: EventStatus,
+        public validation: EventValidation,
     ) {}
 }

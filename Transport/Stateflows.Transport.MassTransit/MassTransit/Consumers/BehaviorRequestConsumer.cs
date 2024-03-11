@@ -50,12 +50,12 @@ namespace Stateflows.Transport.MassTransit.MassTransit.Consumers
                 if (@event.IsRequest())
                 {
                     var response = @event.GetResponse();
-                    responseMessage.ResponseData = StateflowsJsonConverter.SerializePolymorphicObject(response);
+                    responseMessage.ResponseData = StateflowsJsonConverter.SerializePolymorphicObject(response, true);
                 }
 
                 if (result.Validation != null)
                 {
-                    responseMessage.ValidationData = StateflowsJsonConverter.SerializePolymorphicObject(result.Validation);
+                    responseMessage.ValidationData = StateflowsJsonConverter.SerializePolymorphicObject(result.Validation, true);
                 }
 
                 context.Respond(responseMessage);

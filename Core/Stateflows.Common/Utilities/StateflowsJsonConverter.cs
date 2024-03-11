@@ -1,15 +1,29 @@
 ﻿using System;
 using System.Diagnostics;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Serialization;
 
 namespace Stateflows.Common.Utilities
 {
     public static class StateflowsJsonConverter
     {
+        private static JsonSerializerSettings polymorphicCamelSettings = new JsonSerializerSettings()
+        {
+            TypeNameHandling = TypeNameHandling.All,
+            ReferenceLoopHandling = ReferenceLoopHandling.Ignore,
+            ContractResolver = new CamelCasePropertyNamesContractResolver()
+        };
+
         private static JsonSerializerSettings polymorphicSettings = new JsonSerializerSettings()
         {
             TypeNameHandling = TypeNameHandling.All,
             ReferenceLoopHandling = ReferenceLoopHandling.Ignore
+        };
+
+        private static JsonSerializerSettings camelSettings = new JsonSerializerSettings()
+        {
+            ReferenceLoopHandling = ReferenceLoopHandling.Ignore,
+            ContractResolver = new CamelCasePropertyNamesContractResolver()
         };
 
         private static JsonSerializerSettings settings = new JsonSerializerSettings()
@@ -28,10 +42,10 @@ namespace Stateflows.Common.Utilities
         /// <param name="value">The object to serialize.</param>
         /// <returns>A JSON string representation of the object.</returns>
         [DebuggerStepThrough]
-        public static string SerializePolymorphicObject(object value, Formatting formatting = Formatting.None)
+        public static string SerializePolymorphicObject(object value, bool useCamelCase = false, Formatting formatting = Formatting.None)
         {
             settings.Formatting = formatting;
-            return JsonConvert.SerializeObject(value, null, polymorphicSettings);
+            return JsonConvert.SerializeObject(value, null, useCamelCase ? polymorphicCamelSettings : polymorphicSettings);
         }
 
         /// <summary>
@@ -40,10 +54,10 @@ namespace Stateflows.Common.Utilities
         /// <param name="value">The object to serialize.</param>
         /// <returns>A JSON string representation of the object.</returns>
         [DebuggerStepThrough]
-        public static string SerializeObject(object value, Formatting formatting = Formatting.None)
+        public static string SerializeObject(object value, bool useCamelCase = false, Formatting formatting = Formatting.None)
         {
             settings.Formatting = formatting;
-            return JsonConvert.SerializeObject(value, null, settings);
+            return JsonConvert.SerializeObject(value, null, useCamelCase ? camelSettings : settings);
         }
 
         /// <summary>

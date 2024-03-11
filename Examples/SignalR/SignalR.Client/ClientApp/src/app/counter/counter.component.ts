@@ -15,14 +15,14 @@ class OtherEvent extends Event {
 })
 export class CounterComponent {
   public currentCount = 0;
-  private stateflows: StateflowsClient = new StateflowsClient(UseSignalR("https://localhost:7067/"));
+  private stateflows: StateflowsClient = new StateflowsClient(UseHttp("https://localhost:7067/"));
   public url: string | null = null;
 
   constructor(private http: HttpClient) { }
 
   public async refresh() {
     let sm = await this.stateflows.stateMachineLocator.locateStateMachine(new StateMachineId("stateMachine1", "x"));
-    let encoded = plantUmlEncoder.encode((await sm.request<PlantUmlResponse>(new PlantUmlRequest())).Response.PlantUml);
+    let encoded = plantUmlEncoder.encode((await sm.request<PlantUmlResponse>(new PlantUmlRequest())).response.plantUml);
     this.url = 'http://www.plantuml.com/plantuml/img/' + encoded;
   }
 
@@ -35,17 +35,17 @@ export class CounterComponent {
   }
 
   public async incrementCounter() {
-    let sm = await this.stateflows.stateMachineLocator.locateStateMachine(new StateMachineId("stateMachine1", "xxxx"));
+    let sm = await this.stateflows.stateMachineLocator.locateStateMachine(new StateMachineId("stateMachine1", "x"));
     let x = await sm.getStatus();
-    sm.send(new Event());
+    //sm.send(new Event());
     console.log(x);
-    if (x.Response.BehaviorStatus == BehaviorStatus.NotInitialized) {
+    if (x.response.behaviorStatus == BehaviorStatus.NotInitialized) {
       await sm.initialize(new InitializationRequest());
     }
 
     let result = (await sm.send(new OtherEvent()));
-    if (result.Status == EventStatus.Consumed) {
-      let encoded = plantUmlEncoder.encode((await sm.request<PlantUmlResponse>(new PlantUmlRequest())).Response.PlantUml);
+    if (result.status == EventStatus.Consumed) {
+      let encoded = plantUmlEncoder.encode((await sm.request<PlantUmlResponse>(new PlantUmlRequest())).response.plantUml);
       this.url = 'http://www.plantuml.com/plantuml/img/' + encoded;
     }
 

@@ -1,4 +1,4 @@
-import { Event, BehaviorClass, BehaviorId, IStateflowsClientTransport, SendResult } from "@stateflows/common";
+import { Event, BehaviorClass, BehaviorId, IStateflowsClientTransport, SendResult, JsonUtils } from "@stateflows/common";
 
 export class HttpTransport implements IStateflowsClientTransport {
     constructor(private url: string) {
@@ -17,8 +17,6 @@ export class HttpTransport implements IStateflowsClientTransport {
     
     send(behaviorId: BehaviorId, event: Event): Promise<SendResult> {
         return new Promise<SendResult>(async (resolve, reject) => {
-            const eventName = event.Name;
-            delete event.Name;
             fetch(
                 `${this.url}stateflows/send`,
                 {
@@ -27,20 +25,19 @@ export class HttpTransport implements IStateflowsClientTransport {
                         'Accept': 'application/json',
                         'Content-Type': 'application/json'
                     },
-                    body: JSON.stringify({
+                    body: JsonUtils.stringify({
                         "$type": "Stateflows.Common.Transport.Classes.StateflowsRequest, Stateflows.Common.Transport",
-                        BehaviorId: behaviorId,
-                        Event: event
+                        behaviorId: behaviorId,
+                        event: event
                     })
                 }
             )
                 .then(async result => {
                     let stateflowsResponse = await result.json();
-                    let response = stateflowsResponse.Response;
-                    let validation = stateflowsResponse.Validation;
-                    event.Name = eventName;
+                    let response = stateflowsResponse.response;
+                    let validation = stateflowsResponse.validation;
                     if (response) {
-                        (event as any).Response = response;
+                        (event as any).response = response;
                     }
 
                     let sendResult = new SendResult(event, stateflowsResponse.eventStatus, validation);

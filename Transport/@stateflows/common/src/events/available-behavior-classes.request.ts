@@ -3,7 +3,7 @@ import { AvailableBehaviorClassesResponse } from "./available-behavior-classes.r
 
 export class AvailableBehaviorClassesRequest extends Request<AvailableBehaviorClassesResponse> {
     public $type = "Stateflows.System.AvailableBehaviorClassesRequest, Stateflows.Common";
-    public Name = "Stateflows.System.AvailableBehaviorClassesRequest";
+    public name = "Stateflows.System.AvailableBehaviorClassesRequest";
 
     constructor() {
         super();

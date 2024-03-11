@@ -128,7 +128,7 @@ namespace StateMachine.IntegrationTests.Tests
 
             if (Locator.TryLocateStateMachine(new StateMachineId("default", "x"), out var sm))
             {
-                await sm.InitializeAsync();
+                var initRes = await sm.InitializeAsync();
 
                 status = (await sm.SendAsync(new OtherEvent() { AnswerToLifeUniverseAndEverything = 42 })).Status;
 

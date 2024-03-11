@@ -26,7 +26,8 @@ namespace Stateflows.Transport.Http.Client
                 "/stateflows/send",
                 new StringContent(
                     StateflowsJsonConverter.SerializePolymorphicObject(
-                        new StateflowsRequest() { Event = @event, BehaviorId = behaviorId }
+                        new StateflowsRequest() { Event = @event, BehaviorId = behaviorId },
+                        true
                     ),
                     Encoding.UTF8,
                     MediaTypeNames.Application.Json
