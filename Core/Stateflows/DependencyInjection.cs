@@ -17,7 +17,7 @@ using Stateflows.Activities;
 using ActivityTracer = Stateflows.Activities.Engine.Tracer;
 using StateMachineTracer = Stateflows.StateMachines.Engine.Tracer;
 using Stateflows.StateMachines;
-using Stateflows.Common.Trace;
+using Stateflows.Common.Subscription;
 
 namespace Stateflows
 {
@@ -32,6 +32,9 @@ namespace Stateflows
                     .ServiceCollection
                     .AddSingleton<StateflowsEngine>()
                     .AddHostedService(provider => provider.GetService<StateflowsEngine>())
+                    .AddSingleton<NotificationsHub>()
+                    .AddHostedService(provider => provider.GetService<NotificationsHub>())
+                    .AddSingleton<INotificationsHub>(provider => provider.GetService<NotificationsHub>())
                     .AddHostedService<ThreadScheduler>()
                     .AddHostedService<ThreadInitializer>()
                     .AddTransient<ScheduleExecutor>()

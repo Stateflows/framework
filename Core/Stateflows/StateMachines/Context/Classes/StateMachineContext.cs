@@ -1,4 +1,5 @@
 ﻿using System.Threading.Tasks;
+using Microsoft.Extensions.DependencyInjection;
 using Stateflows.Common;
 using Stateflows.Common.Classes;
 using Stateflows.Common.Interfaces;
@@ -16,7 +17,7 @@ namespace Stateflows.StateMachines.Context.Classes
 
         private BehaviorSubscriber subscriber;
         private BehaviorSubscriber Subscriber
-            => subscriber ??= new BehaviorSubscriber(Id, Context.Context, this);
+            => subscriber ??= new BehaviorSubscriber(Id, Context.Context, this, Context.Executor.ServiceProvider.GetRequiredService<NotificationsHub>());
 
         public StateMachineContext(RootContext context) : base(context)
         {
@@ -31,16 +32,16 @@ namespace Stateflows.StateMachines.Context.Classes
             where TEvent : Event, new()
             => _ = Context.Send(@event);
 
-        public void Publish<TEvent>(TEvent @event)
-            where TEvent : Event, new()
-            => Subscriber.PublishAsync(@event);
+        public void Publish<TNotification>(TNotification notification)
+            where TNotification : Notification, new()
+            => Subscriber.PublishAsync(notification);
 
-        public Task<RequestResult<SubscriptionResponse>> SubscribeAsync<TEvent>(BehaviorId behaviorId)
-            where TEvent : Event, new()
-            => Subscriber.SubscribeAsync<TEvent>(behaviorId);
+        public Task<RequestResult<SubscriptionResponse>> SubscribeAsync<TNotification>(BehaviorId behaviorId)
+            where TNotification : Notification, new()
+            => Subscriber.SubscribeAsync<TNotification>(behaviorId);
 
-        public Task<RequestResult<UnsubscriptionResponse>> UnsubscribeAsync<TEvent>(BehaviorId behaviorId)
-            where TEvent : Event, new()
-            => Subscriber.UnsubscribeAsync<TEvent>(behaviorId);
+        public Task<RequestResult<UnsubscriptionResponse>> UnsubscribeAsync<TNotification>(BehaviorId behaviorId)
+            where TNotification : Notification, new()
+            => Subscriber.UnsubscribeAsync<TNotification>(behaviorId);
     }
 }

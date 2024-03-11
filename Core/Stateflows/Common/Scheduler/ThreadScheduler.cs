@@ -4,7 +4,6 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.DependencyInjection;
-using Stateflows.Common.Tenant;
 
 namespace Stateflows.Common.Scheduler
 {

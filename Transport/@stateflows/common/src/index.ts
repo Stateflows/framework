@@ -31,3 +31,4 @@ export { BehaviorInstancesRequest } from "./events/behavior-instances.request";
 export { BehaviorInstancesResponse } from "./events/behavior-instances.response";
 export { IStateflowsClientTransport } from "./interfaces/stateflows-client-transport";
 export { IStateflowsClientTransportFactory } from "./interfaces/stateflows-client-transport-factory";
+export { JsonUtils } from "./utils/json.utils";

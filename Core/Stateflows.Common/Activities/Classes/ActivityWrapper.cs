@@ -1,4 +1,5 @@
-﻿using System.Threading.Tasks;
+﻿using System;
+using System.Threading.Tasks;
 using System.Collections.Generic;
 using Stateflows.Activities;
 using Stateflows.Activities.Events;
@@ -38,14 +39,12 @@ namespace Stateflows.Common.Activities.Classes
             where TResponse : Response, new()
             => Behavior.RequestAsync(request);
 
-        public Task<RequestResult<SubscriptionResponse>> SubscribeAsync<TEvent>(BehaviorId behaviorId) where TEvent : Event, new()
-        {
-            throw new global::System.NotImplementedException();
-        }
+        public Task WatchAsync<TNotification>(Action<TNotification> handler)
+            where TNotification : Notification, new()
+            => Behavior.WatchAsync<TNotification>(handler);
 
-        public Task<RequestResult<UnsubscriptionResponse>> UnsubscribeAsync<TEvent>(BehaviorId behaviorId) where TEvent : Event, new()
-        {
-            throw new global::System.NotImplementedException();
-        }
+        public Task UnwatchAsync<TNotification>()
+            where TNotification : Notification, new()
+            => Behavior.UnwatchAsync<TNotification>();
     }
 }

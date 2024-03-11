@@ -14,7 +14,7 @@ namespace Stateflows.Common.Context.Classes
 
         private BehaviorSubscriber subscriber;
         private BehaviorSubscriber Subscriber
-            => subscriber ??= new BehaviorSubscriber(Id, Context, this);
+            => subscriber ??= new BehaviorSubscriber(Id, Context, this, ServiceProvider.GetRequiredService<NotificationsHub>());
 
         public BehaviorContext(StateflowsContext context, IServiceProvider serviceProvider)
             : base(context, serviceProvider)
@@ -33,16 +33,16 @@ namespace Stateflows.Common.Context.Classes
             }
         }
 
-        public void Publish<TEvent>(TEvent @event)
-            where TEvent : Event, new()
-            => Subscriber.PublishAsync(@event);
+        public void Publish<TNotification>(TNotification notification)
+            where TNotification : Notification, new()
+            => _ = Subscriber.PublishAsync(notification);
 
-        public Task<RequestResult<SubscriptionResponse>> SubscribeAsync<TEvent>(BehaviorId behaviorId)
-            where TEvent : Event, new()
-            => Subscriber.SubscribeAsync<TEvent>(behaviorId);
+        public Task<RequestResult<SubscriptionResponse>> SubscribeAsync<TNotification>(BehaviorId behaviorId)
+            where TNotification : Notification, new()
+            => _ = Subscriber.SubscribeAsync<TNotification>(behaviorId);
 
-        public Task<RequestResult<UnsubscriptionResponse>> UnsubscribeAsync<TEvent>(BehaviorId behaviorId)
-            where TEvent : Event, new()
-            => Subscriber.UnsubscribeAsync<TEvent>(behaviorId);
+        public Task<RequestResult<UnsubscriptionResponse>> UnsubscribeAsync<TNotification>(BehaviorId behaviorId)
+            where TNotification : Notification, new()
+            => _ = Subscriber.UnsubscribeAsync<TNotification>(behaviorId);
     }
 }

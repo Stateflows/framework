@@ -15,7 +15,7 @@ namespace Stateflows.StateMachines.EventHandlers
         {
             if (context.Event is SubscriptionRequest request)
             {
-                var result = context.StateMachine.GetExecutor().Context.Context.AddSubscriber(request.BehaviorId, request.EventName);
+                var result = context.StateMachine.GetExecutor().Context.Context.AddSubscriber(request.BehaviorId, request.NotificationName);
 
                 request.Respond(new SubscriptionResponse() { SubscriptionSuccessful = result });
 

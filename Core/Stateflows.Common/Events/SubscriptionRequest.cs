@@ -4,6 +4,6 @@
     {
         public BehaviorId BehaviorId { get; set; }
 
-        public string EventName { get; set; }
+        public string NotificationName { get; set; }
     }
 }

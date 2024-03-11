@@ -8,54 +8,61 @@ namespace Stateflows.Common.Subscription
 {
     internal class BehaviorSubscriber
     {
-        private readonly BehaviorId id;
         private readonly StateflowsContext context;
-        private readonly IBehaviorLocator locator;
-        public BehaviorSubscriber(BehaviorId id, StateflowsContext context, IBehaviorLocator locator)
+        private readonly BehaviorId subscriberBehaviorId;
+        private readonly IBehaviorLocator behaviorLocator;
+        private readonly NotificationsHub subscriptionHub;
+        public BehaviorSubscriber(BehaviorId behaviorId, StateflowsContext context, IBehaviorLocator behaviorLocator, NotificationsHub subscriptionHub)
         {
-            this.id = id;
             this.context = context;
-            this.locator = locator;
+            this.subscriberBehaviorId = behaviorId;
+            this.behaviorLocator = behaviorLocator;
+            this.subscriptionHub = subscriptionHub;
         }
 
-        public void PublishAsync<TEvent>(TEvent @event)
-            where TEvent : Event, new()
-            => _ = context.Subscribers.TryGetValue(EventInfo<TEvent>.Name, out var behaviorIds)
-                ? Task.WhenAll(
+        public Task PublishAsync<TNotification>(TNotification notification)
+            where TNotification : Notification, new()
+        {
+            if (context.Subscribers.TryGetValue(EventInfo<TNotification>.Name, out var behaviorIds))
+            {
+                _ = Task.WhenAll(
                     behaviorIds.Select(
-                        behaviorId => locator.TryLocateBehavior(behaviorId, out var behavior)
-                            ? behavior.SendAsync(@event)
+                        behaviorId => behaviorLocator.TryLocateBehavior(behaviorId, out var behavior)
+                            ? behavior.SendAsync(notification)
                             : Task.CompletedTask
                     )
-                )
-                : Task.CompletedTask;
+                );
+            }
 
-        public Task<RequestResult<SubscriptionResponse>> SubscribeAsync<TEvent>(BehaviorId behaviorId)
-            where TEvent : Event, new()
+            return subscriptionHub.PublishAsync(notification);
+        }
+
+        public Task<RequestResult<SubscriptionResponse>> SubscribeAsync<TNotification>(BehaviorId behaviorId)
+            where TNotification : Notification, new()
         {
             var request = new SubscriptionRequest()
             {
-                BehaviorId = id,
-                EventName = EventInfo<TEvent>.Name
+                BehaviorId = subscriberBehaviorId,
+                NotificationName = EventInfo<TNotification>.Name
             };
 
-            return locator.TryLocateBehavior(behaviorId, out var behavior)
+            return behaviorLocator.TryLocateBehavior(behaviorId, out var behavior)
                 ? behavior.RequestAsync(request)
                 : Task.FromResult(
                     new RequestResult<SubscriptionResponse>(request, EventStatus.Undelivered, new EventValidation(true, Array.Empty<ValidationResult>()))
                 );
         }
 
-        public Task<RequestResult<UnsubscriptionResponse>> UnsubscribeAsync<TEvent>(BehaviorId behaviorId)
-            where TEvent : Event, new()
+        public Task<RequestResult<UnsubscriptionResponse>> UnsubscribeAsync<TNotification>(BehaviorId behaviorId)
+            where TNotification : Notification, new()
         {
             var request = new UnsubscriptionRequest()
             {
-                BehaviorId = id,
-                EventName = EventInfo<TEvent>.Name
+                BehaviorId = subscriberBehaviorId,
+                EventName = EventInfo<TNotification>.Name
             };
 
-            return locator.TryLocateBehavior(behaviorId, out var behavior)
+            return behaviorLocator.TryLocateBehavior(behaviorId, out var behavior)
                 ? behavior.RequestAsync(request)
                 : Task.FromResult(
                     new RequestResult<UnsubscriptionResponse>(request, EventStatus.Undelivered, new EventValidation(true, Array.Empty<ValidationResult>()))

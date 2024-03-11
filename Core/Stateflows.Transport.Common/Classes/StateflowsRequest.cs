@@ -1,5 +1,5 @@
-﻿using Stateflows.Common.Utilities;
-using System.Text.Json.Serialization;
+﻿using Newtonsoft.Json;
+using System.Collections.Generic;
 
 namespace Stateflows.Common.Transport.Classes
 {
@@ -7,24 +7,9 @@ namespace Stateflows.Common.Transport.Classes
     {
         public Event Event { get; set; }
 
-        //public string EventString { get; set; }
-
-        //[JsonIgnore]
-        //public Event Event
-        //{
-        //    get => StateflowsJsonConverter.DeserializeObject<Event>(EventString);
-        //    set => EventString = StateflowsJsonConverter.SerializePolymorphicObject(value);
-        //}
-
         public BehaviorId BehaviorId { get; set; }
 
-        //public string BehaviorIdString { get; set; }
-        
-        //[JsonIgnore]
-        //public BehaviorId BehaviorId
-        //{
-        //    get => StateflowsJsonConverter.DeserializeObject<BehaviorId>(BehaviorIdString);
-        //    set => BehaviorIdString = StateflowsJsonConverter.SerializePolymorphicObject(value);
-        //}
+        [JsonProperty(TypeNameHandling = TypeNameHandling.None)]
+        public IEnumerable<Watch> Watches {  get; set; }
     }
 }

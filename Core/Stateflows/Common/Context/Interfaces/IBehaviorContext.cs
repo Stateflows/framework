@@ -12,7 +12,7 @@ namespace Stateflows.Common.Context.Interfaces
         void Send<TEvent>(TEvent @event)
             where TEvent : Event, new();
 
-        void Publish<TEvent>(TEvent @event)
-            where TEvent : Event, new();
+        void Publish<TNotification>(TNotification notification)
+            where TNotification : Notification, new();
     }
 }

@@ -1,11 +1,12 @@
 import { HttpClient } from '@angular/common/http';
 import { Component } from '@angular/core';
 import * as plantUmlEncoder from 'plantuml-encoder';
-import { StateflowsClient, StateMachineId, BehaviorStatus, EventStatus, PlantUmlRequest, PlantUmlResponse, Event, InitializationRequest } from '@stateflows/common';
+import { StateflowsClient, StateMachineId, BehaviorStatus, EventStatus, PlantUmlRequest, PlantUmlResponse, Event, InitializationRequest, CompoundRequest } from '@stateflows/common';
 import { UseHttp } from '@stateflows/http-client';
 import { UseSignalR } from '@stateflows/signalr-client';
 class OtherEvent extends Event {
   public $type: string = "Examples.Common.OtherEvent, Examples.Common";
+  public Name: string = "Examples.Common.OtherEvent";
   //public RequiredParameter: string | null = null;
 }
 
@@ -15,7 +16,7 @@ class OtherEvent extends Event {
 })
 export class CounterComponent {
   public currentCount = 0;
-  private stateflows: StateflowsClient = new StateflowsClient(UseSignalR("https://localhost:7067/"));
+  private stateflows: StateflowsClient = new StateflowsClient(UseHttp("https://localhost:7067/"));
   public url: string | null = null;
 
   constructor(private http: HttpClient) { }
@@ -37,13 +38,14 @@ export class CounterComponent {
   public async incrementCounter() {
     let sm = await this.stateflows.stateMachineLocator.locateStateMachine(new StateMachineId("stateMachine1", "xxxx"));
     let x = await sm.getStatus();
-    sm.send(new Event());
     console.log(x);
     if (x.Response.BehaviorStatus == BehaviorStatus.NotInitialized) {
       await sm.initialize(new InitializationRequest());
     }
 
-    let result = (await sm.send(new OtherEvent()));
+    let result = (await sm.request(new CompoundRequest([new OtherEvent()])));
+    console.log(result);
+    // result = (await sm.send(new OtherEvent()));
     if (result.Status == EventStatus.Consumed) {
       let encoded = plantUmlEncoder.encode((await sm.request<PlantUmlResponse>(new PlantUmlRequest())).Response.PlantUml);
       this.url = 'http://www.plantuml.com/plantuml/img/' + encoded;

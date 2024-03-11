@@ -23,9 +23,37 @@ namespace Stateflows.Common.Context
 
         public Dictionary<BehaviorId, List<string>> Subscriptions { get; set; } = new Dictionary<BehaviorId, List<string>>();
 
-        public void AddSubscription(BehaviorId subscribeeBehaviorId, string eventName)
+        public bool AddSubscription(BehaviorId subscribeeBehaviorId, string eventName)
         {
+            if (!Subscriptions.TryGetValue(subscribeeBehaviorId, out var eventNames))
+            {
+                eventNames = new List<string>();
+                Subscriptions[subscribeeBehaviorId] = eventNames;
+            }
 
+            if (!eventNames.Contains(eventName))
+            {
+                eventNames.Add(eventName);
+
+                return true;
+            }
+
+            return false;
+        }
+
+        public bool RemoveSubscription(BehaviorId subscribeeBehaviorId, string eventName)
+        {
+            if (
+                Subscriptions.TryGetValue(subscribeeBehaviorId, out var eventNames) &&
+                eventNames.Contains(eventName)
+            )
+            {
+                eventNames.Remove(eventName);
+
+                return true;
+            }
+
+            return false;
         }
 
         public Dictionary<string, List<BehaviorId>> Subscribers { get; set; } = new Dictionary<string, List<BehaviorId>>();

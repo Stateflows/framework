@@ -1,8 +1,9 @@
 ﻿using System.Threading.Tasks;
+using Stateflows.Common.Interfaces;
 
 namespace Stateflows.Common
 {
-    public interface IBehavior : ISubscriptions
+    public interface IBehavior : IWatches
     {
         BehaviorId Id { get; }
 

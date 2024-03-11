@@ -1,14 +1,12 @@
-﻿using System;
-using System.Linq;
-using System.Threading.Tasks;
-using System.ComponentModel.DataAnnotations;
+﻿using System.Threading.Tasks;
 using Stateflows.Common;
 using Stateflows.Common.Classes;
 using Stateflows.Common.Interfaces;
+using Stateflows.Common.Subscription;
 using Stateflows.Common.Context.Interfaces;
 using Stateflows.Activities.Engine;
-using Stateflows.Common.Subscription;
 using Stateflows.Activities.Inspection.Interfaces;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Stateflows.Activities.Context.Classes
 {
@@ -20,7 +18,7 @@ namespace Stateflows.Activities.Context.Classes
 
         private BehaviorSubscriber subscriber;
         private BehaviorSubscriber Subscriber
-            => subscriber ??= new BehaviorSubscriber(Id, Context.Context, this);
+            => subscriber ??= new BehaviorSubscriber(Id, Context.Context, this, ServiceProvider.GetRequiredService<NotificationsHub>());
 
         public ActivityContext(RootContext context, NodeScope nodeScope)
             : base(context, nodeScope)
@@ -36,16 +34,16 @@ namespace Stateflows.Activities.Context.Classes
             where TEvent : Event, new()
             => _ = Context.Send(@event);
 
-        public void Publish<TEvent>(TEvent @event)
-            where TEvent : Event, new()
-            => Subscriber.PublishAsync(@event);
+        public void Publish<TNotification>(TNotification notification)
+            where TNotification : Notification, new()
+            => Subscriber.PublishAsync(notification);
 
-        public Task<RequestResult<SubscriptionResponse>> SubscribeAsync<TEvent>(BehaviorId behaviorId)
-            where TEvent : Event, new()
-            => Subscriber.SubscribeAsync<TEvent>(behaviorId);
+        public Task<RequestResult<SubscriptionResponse>> SubscribeAsync<TNotification>(BehaviorId behaviorId)
+            where TNotification : Notification, new()
+            => Subscriber.SubscribeAsync<TNotification>(behaviorId);
 
-        public Task<RequestResult<UnsubscriptionResponse>> UnsubscribeAsync<TEvent>(BehaviorId behaviorId)
-            where TEvent : Event, new()
-            => Subscriber.UnsubscribeAsync<TEvent>(behaviorId);
+        public Task<RequestResult<UnsubscriptionResponse>> UnsubscribeAsync<TNotification>(BehaviorId behaviorId)
+            where TNotification : Notification, new()
+            => Subscriber.UnsubscribeAsync<TNotification>(behaviorId);
     }
 }

@@ -10,7 +10,6 @@ using Stateflows.Common.Engine;
 using Stateflows.Common.Classes;
 using Stateflows.Common.Interfaces;
 using Stateflows.Common.Extensions;
-using Stateflows.Common.Context;
 
 namespace Stateflows.Common
 {
@@ -41,6 +40,8 @@ namespace Stateflows.Common
 
         public EventHolder EnqueueEvent(BehaviorId id, Event @event, IServiceProvider serviceProvider)
         {
+            @event.SentAt = DateTime.Now;
+
             var token = new EventHolder(id, @event, serviceProvider);
 
             EventQueue.Enqueue(token);
@@ -81,6 +82,7 @@ namespace Stateflows.Common
                                 if (response != null)
                                 {
                                     response.SenderId = id;
+                                    response.SentAt = DateTime.Now;
                                 }
                             }
                         }
