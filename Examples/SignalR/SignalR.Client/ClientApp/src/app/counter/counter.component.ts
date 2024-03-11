@@ -1,7 +1,7 @@
 import { HttpClient } from '@angular/common/http';
 import { Component } from '@angular/core';
 import * as plantUmlEncoder from 'plantuml-encoder';
-import { StateflowsClient, StateMachineId, BehaviorStatus, EventStatus, PlantUmlRequest, PlantUmlResponse, Event, InitializationRequest } from '@stateflows/common';
+import { StateflowsClient, StateMachineId, BehaviorStatus, EventStatus, PlantUmlRequest, PlantUmlResponse, Event, InitializationRequest, CompoundRequest } from '@stateflows/common';
 import { UseHttp } from '@stateflows/http-client';
 import { UseSignalR } from '@stateflows/signalr-client';
 class OtherEvent extends Event {
@@ -37,13 +37,12 @@ export class CounterComponent {
   public async incrementCounter() {
     let sm = await this.stateflows.stateMachineLocator.locateStateMachine(new StateMachineId("stateMachine1", "x"));
     let x = await sm.getStatus();
-    //sm.send(new Event());
-    console.log(x);
     if (x.response.behaviorStatus == BehaviorStatus.NotInitialized) {
       await sm.initialize(new InitializationRequest());
     }
 
-    let result = (await sm.send(new OtherEvent()));
+    let result = (await sm.send(new CompoundRequest([new OtherEvent()])));
+    console.log(result);
     if (result.status == EventStatus.Consumed) {
       let encoded = plantUmlEncoder.encode((await sm.request<PlantUmlResponse>(new PlantUmlRequest())).response.plantUml);
       this.url = 'http://www.plantuml.com/plantuml/img/' + encoded;

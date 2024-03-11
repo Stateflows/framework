@@ -7,6 +7,8 @@ export { StateMachineId } from "./ids/state-machine.id";
 export { ActivityId } from "./ids/activity.id";
 export { Event } from "./events/event";
 export { Request } from "./events/request";
+export { CompoundRequest } from "./events/compound.request";
+export { CompoundResponse } from "./events/compound.response";
 export { InitializationRequest } from "./events/initialization.request";
 export { InitializationResponse } from "./events/initialization.response";
 export { Response } from "./events/response";
