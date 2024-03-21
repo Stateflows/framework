@@ -1,24 +1,23 @@
 ﻿using System;
 using System.Threading.Tasks;
 using Stateflows.Common;
-using Stateflows.Activities.Events;
 using Stateflows.Activities.Extensions;
 using Stateflows.Activities.Inspection.Interfaces;
 
 namespace Stateflows.Activities.EventHandlers
 {
-    internal class CancelHandler : IActivityEventHandler
+    internal class FinalizationHandler : IActivityEventHandler
     {
-        public Type EventType => typeof(CancelRequest);
+        public Type EventType => typeof(FinalizationRequest);
 
         public async Task<EventStatus> TryHandleEventAsync<TEvent>(IEventInspectionContext<TEvent> context)
             where TEvent : Event, new()
         {
-            if (context.Event is CancelRequest cancelRequest)
+            if (context.Event is FinalizationRequest request)
             {
-                var cancelled = await context.Activity.GetExecutor().CancelAsync();
+                var finalized = await context.Activity.GetExecutor().CancelAsync();
 
-                cancelRequest.Respond(new CancelResponse() { CancelSuccessful = cancelled });
+                request.Respond(new FinalizationResponse() { FinalizationSuccessful = finalized });
 
                 return EventStatus.Consumed;
             }

@@ -6,23 +6,25 @@ namespace Stateflows.StateMachines.Registration.Interfaces
         IStateEvents<IStateBuilder>,
         IStateUtils<IStateBuilder>,
         IStateTransitions<IStateBuilder>,
-        IStateSubmachine<ISubmachineStateBuilder>
+        IStateSubmachine<IBehaviorStateBuilder>,
+        IStateDoActivity<IBehaviorStateBuilder>
     { }
 
-    public interface ISubmachineStateBuilder :
-        IStateEvents<ISubmachineStateBuilder>,
-        IStateUtils<ISubmachineStateBuilder>,
-        IStateTransitions<ISubmachineStateBuilder>
+    public interface IBehaviorStateBuilder :
+        IStateEvents<IBehaviorStateBuilder>,
+        IStateUtils<IBehaviorStateBuilder>,
+        IStateTransitions<IBehaviorStateBuilder>
     { }
 
     public interface ITypedStateBuilder :
         IStateUtils<ITypedStateBuilder>,
         IStateTransitions<ITypedStateBuilder>,
-        IStateSubmachine<ISubmachineTypedStateBuilder>
+        IStateSubmachine<IBehaviorTypedStateBuilder>,
+        IStateDoActivity<IBehaviorTypedStateBuilder>
     { }
 
-    public interface ISubmachineTypedStateBuilder :
-        IStateUtils<ISubmachineTypedStateBuilder>,
-        IStateTransitions<ISubmachineTypedStateBuilder>
+    public interface IBehaviorTypedStateBuilder :
+        IStateUtils<IBehaviorTypedStateBuilder>,
+        IStateTransitions<IBehaviorTypedStateBuilder>
     { }
 }

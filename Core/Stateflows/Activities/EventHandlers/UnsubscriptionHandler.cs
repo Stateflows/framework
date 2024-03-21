@@ -15,7 +15,7 @@ namespace Stateflows.Activities.EventHandlers
         {
             if (context.Event is UnsubscriptionRequest request)
             {
-                var result = context.Activity.GetExecutor().Context.Context.RemoveSubscriber(request.BehaviorId, request.EventName);
+                var result = context.Activity.GetExecutor().Context.Context.RemoveSubscribers(request.BehaviorId, request.NotificationNames);
 
                 request.Respond(new UnsubscriptionResponse() { UnsubscriptionSuccessful = result });
 

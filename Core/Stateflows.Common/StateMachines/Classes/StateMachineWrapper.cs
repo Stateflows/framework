@@ -34,5 +34,11 @@ namespace Stateflows.Common.StateMachines.Classes
         public Task UnwatchAsync<TNotification>()
             where TNotification : Notification, new()
             => Behavior.UnwatchAsync<TNotification>();
+
+        public Task WatchCurrentStateAsync(Action<CurrentStateNotification> handler)
+            => Behavior.WatchAsync(handler);
+
+        public Task UnwatchCurrentStateAsync()
+            => Behavior.UnwatchAsync<CurrentStateNotification>();
     }
 }

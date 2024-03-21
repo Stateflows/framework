@@ -15,7 +15,7 @@ namespace Stateflows.Activities.EventHandlers
         {
             if (context.Event is SubscriptionRequest request)
             {
-                var result = context.Activity.GetExecutor().Context.Context.AddSubscriber(request.BehaviorId, request.NotificationName);
+                var result = context.Activity.GetExecutor().Context.Context.AddSubscribers(request.BehaviorId, request.NotificationNames);
 
                 request.Respond(new SubscriptionResponse() { SubscriptionSuccessful = result });
 

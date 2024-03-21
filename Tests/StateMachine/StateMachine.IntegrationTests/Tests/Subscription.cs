@@ -1,4 +1,5 @@
 using StateMachine.IntegrationTests.Utils;
+using Stateflows.Common;
 using Stateflows.StateMachines.Sync;
 
 namespace StateMachine.IntegrationTests.Tests
@@ -21,12 +22,13 @@ namespace StateMachine.IntegrationTests.Tests
                     .AddStateMachine("subscriber", b => b
                         .AddExecutionSequenceObserver()
                         .AddInitialState("state1", b => b
-                            .AddOnEntry(c => c.StateMachine.SubscribeAsync<SomeNotification>(new StateMachineId("subscribee", "x")))
+                            //.AddDeferredEvent<OtherEvent>()
+                            .AddOnEntry(c => c.StateMachine.SubscribeAsync<SomeNotification>(new StateMachineId("subscribee", c.StateMachine.Id.Instance)))
                             .AddTransition<SomeNotification>("state2")
                         )
                         .AddState("state2", b => b
                             .AddInternalTransition<OtherEvent>(b => b
-                                .AddEffect(c => c.StateMachine.UnsubscribeAsync<SomeNotification>(new StateMachineId("subscribee", "x")))
+                                .AddEffect(c => c.StateMachine.UnsubscribeAsync<SomeNotification>(new StateMachineId("subscribee", c.StateMachine.Id.Instance)))
                             )
                             .AddTransition<SomeNotification>("state3")
                         )
@@ -70,13 +72,12 @@ namespace StateMachine.IntegrationTests.Tests
             Assert.AreEqual("state2", currentState);
         }
 
-
         [TestMethod]
         public async Task WatchSuccessful()
         {
             var watchHit = false;
 
-            if (Locator.TryLocateStateMachine(new StateMachineId("subscribee", "x"), out var subscribee))
+            if (Locator.TryLocateStateMachine(new StateMachineId("subscribee", "y"), out var subscribee))
             {
                 _ = subscribee.WatchAsync<SomeNotification>(n =>
                 {
@@ -97,6 +98,27 @@ namespace StateMachine.IntegrationTests.Tests
             {
                 Assert.AreEqual(true, watchHit);
             }
+        }
+
+        [TestMethod]
+        public async Task WatchStandardNotifications()
+        {
+            var currentStatus = BehaviorStatus.Unknown;
+            var currentState = "";
+
+            if (Locator.TryLocateStateMachine(new StateMachineId("subscribee", "z"), out var subscribee))
+            {
+                _ = subscribee.WatchCurrentStateAsync(n => currentState = n.StatesStack.First());
+
+                _ = subscribee.WatchStatusAsync(n => currentStatus = n.BehaviorStatus);
+
+                await subscribee.InitializeAsync();
+
+                await subscribee.GetCurrentStateAsync();
+            }
+
+            Assert.AreEqual("state1", currentState);
+            Assert.AreEqual(BehaviorStatus.Initialized, currentStatus);
         }
     }
 }

@@ -51,7 +51,7 @@ namespace Stateflows.StateMachines.Registration
             return result;
         }
 
-        //[DebuggerHidden]
+        [DebuggerHidden]
         public void AddStateMachine(string stateMachineName, int version, StateMachineBuildAction buildAction)
         {
             var key = $"{stateMachineName}.{version}";
@@ -74,7 +74,7 @@ namespace Stateflows.StateMachines.Registration
             }
         }
 
-        //[DebuggerHidden]
+        [DebuggerHidden]
         public void AddStateMachine(string stateMachineName, int version, Type stateMachineType)
         {
             var key = $"{stateMachineName}.{version}";
@@ -103,14 +103,16 @@ namespace Stateflows.StateMachines.Registration
             }
         }
 
-        //[DebuggerHidden]
+        [DebuggerHidden]
         public void AddStateMachine<TStateMachine>(string stateMachineName, int version = 1)
             where TStateMachine : StateMachine
             => AddStateMachine(stateMachineName, version, typeof(TStateMachine));
 
+        [DebuggerHidden]
         public void AddGlobalInterceptor(StateMachineInterceptorFactory interceptorFactory)
             => GlobalInterceptorFactories.Add(interceptorFactory);
 
+        [DebuggerHidden]
         public void AddGlobalInterceptor<TInterceptor>()
             where TInterceptor : class, IStateMachineInterceptor
         {
@@ -118,9 +120,11 @@ namespace Stateflows.StateMachines.Registration
             AddGlobalInterceptor(serviceProvider => serviceProvider.GetRequiredService<TInterceptor>());
         }
 
+        [DebuggerHidden]
         public void AddGlobalExceptionHandler(StateMachineExceptionHandlerFactory exceptionHandlerFactory)
             => GlobalExceptionHandlerFactories.Add(exceptionHandlerFactory);
 
+        [DebuggerHidden]
         public void AddGlobalExceptionHandler<TExceptionHandler>()
             where TExceptionHandler : class, IStateMachineExceptionHandler
         {
@@ -128,9 +132,11 @@ namespace Stateflows.StateMachines.Registration
             AddGlobalExceptionHandler(serviceProvider => serviceProvider.GetRequiredService<TExceptionHandler>());
         }
 
+        [DebuggerHidden]
         public void AddGlobalObserver(StateMachineObserverFactory observerFactory)
             => GlobalObserverFactories.Add(observerFactory);
 
+        [DebuggerHidden]
         public void AddGlobalObserver<TObserver>()
             where TObserver : class, IStateMachineObserver
         {

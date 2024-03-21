@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using Stateflows.Common.Models;
 using Stateflows.StateMachines.Interfaces;
@@ -44,8 +45,11 @@ namespace Stateflows.StateMachines.Models
         public Dictionary<string, Vertex> Vertices { get; set; } = new Dictionary<string, Vertex>();
         public List<string> DeferredEvents { get; set; } = new List<string>();
 
-        public Dictionary<string, object> SubmachineInitialValues { get; set; }
-        public StateActionInitializationBuilder SubmachineInitializationBuilder { get; set; }
-        public string SubmachineName { get; set; }
+        public StateActionInitializationBuilder BehaviorInitializationBuilder { get; set; }
+        public string BehaviorName { get; set; }
+        public string BehaviorType { get; set; }
+        public List<Type> BehaviorSubscriptions { get; set; } = new List<Type>();
+        public BehaviorId GetBehaviorId(StateMachineId hostId)
+            => new BehaviorId(BehaviorType, BehaviorName, $"__stateBehavior:{hostId.Name}:{hostId.Instance}:{Name}");
     }
 }

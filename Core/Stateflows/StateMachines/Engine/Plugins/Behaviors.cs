@@ -1,40 +1,47 @@
-﻿using System.Linq;
+﻿using System;
+using System.Linq;
 using System.Threading.Tasks;
 using Stateflows.Common;
-using Stateflows.Common.Events;
-using Stateflows.StateMachines.Events;
 using Stateflows.StateMachines.Context.Classes;
 using Stateflows.StateMachines.Context.Interfaces;
-using System;
 
 namespace Stateflows.StateMachines.Engine
 {
-    internal class Submachines : IStateMachinePlugin
+    internal class Behaviors : IStateMachinePlugin
     {
-        private StateMachineId GetSubmachineId(string submachineName, StateMachineId hostId, string stateName)
-            => new StateMachineId(submachineName, $"__submachine:{hostId.Name}:{hostId.Instance}:{stateName}");
-
-        public async Task AfterStateEntryAsync(IStateActionContext context)
+        public Task AfterStateEntryAsync(IStateActionContext context)
         {
             var vertex = (context as StateActionContext).Vertex;
 
             var stateValues = (context as IRootContext).Context.GetStateValues(vertex.Name);
 
-            if (vertex.SubmachineName != null)
+            if (vertex.BehaviorName != null)
             {
-                var submachineId = GetSubmachineId(
-                    vertex.SubmachineName,
-                    context.StateMachine.Id,
-                    context.CurrentState.Name
-                );
+                var behaviorId = vertex.GetBehaviorId(context.StateMachine.Id);
 
-                if (context.TryLocateStateMachine(submachineId, out var stateMachine))
+                if (context.TryLocateBehavior(behaviorId, out var behavior))
                 {
-                    stateValues.SubmachineId = submachineId;
-                    var initializationRequest = vertex.SubmachineInitializationBuilder?.Invoke(context) ?? new InitializationRequest();
-                    await stateMachine.InitializeAsync(initializationRequest);
+                    stateValues.BehaviorId = behaviorId;
+
+                    if (vertex.BehaviorSubscriptions.Any())
+                    {
+                        var subscriptionRequest = new SubscriptionRequest()
+                        {
+                            BehaviorId = context.StateMachine.Id,
+                            NotificationNames = vertex.BehaviorSubscriptions
+                                .Select(t => EventInfo.GetName(t))
+                                .ToList()
+                        };
+
+                        _ = behavior.SendAsync(subscriptionRequest);
+                    }
+
+                    var initializationRequest = vertex.BehaviorInitializationBuilder?.Invoke(context) ?? new InitializationRequest();
+                    _ = behavior.InitializeAsync(initializationRequest);
                 }
             }
+
+            return Task.CompletedTask;
         }
 
         public Task AfterStateExitAsync(IStateActionContext context)
@@ -58,62 +65,11 @@ namespace Stateflows.StateMachines.Engine
         public Task AfterTransitionGuardAsync(IGuardContext<Event> context, bool guardResult)
             => Task.CompletedTask;
 
-        private CurrentStateResponse SubmachineState = null;
-
-        public async Task<bool> BeforeProcessEventAsync(IEventContext<Event> context)
-        {
-            var rootContext = (context as IRootContext).Context;
-            var stateName = rootContext.StatesStack.LastOrDefault();
-            if (
-                stateName != null &&
-                rootContext.Executor.Graph.AllVertices.TryGetValue(stateName, out var vertex) &&
-                vertex.SubmachineName != null
-            )
-            {
-                var stateValues = rootContext.GetStateValues(stateName);
-
-                if (
-                    stateValues.SubmachineId.HasValue &&
-                    context.TryLocateStateMachine(stateValues.SubmachineId.Value, out var stateMachine)
-                )
-                {
-                    var consumed = false;
-                    if (context.Event.Name == EventInfo<CurrentStateRequest>.Name)
-                    {
-                        var @event = new CurrentStateRequest();
-                        var result = await stateMachine.SendAsync(@event);
-                        if (result.Status == EventStatus.Consumed && @event.Response != null)
-                        {
-                            SubmachineState = @event.Response;
-                        }
-                    }
-                    else
-                    {
-                        var result = await stateMachine.SendAsync(context.Event);
-                        consumed = result.Status == EventStatus.Consumed;
-                    }
-
-                    (context as IRootContext).Context.ForceConsumed = consumed;
-
-                    return !consumed;
-                }
-            }
-
-            return true;
-        }
+        public Task<bool> BeforeProcessEventAsync(IEventContext<Event> context)
+            => Task.FromResult(true);
 
         public Task AfterProcessEventAsync(IEventContext<Event> context)
-        {
-            if (context.Event.Name == EventInfo<CurrentStateRequest>.Name && SubmachineState != null)
-            {
-                var currentState = (context.Event as CurrentStateRequest).Response;
-                currentState.StatesStack = currentState.StatesStack.Concat(SubmachineState.StatesStack);
-                currentState.ExpectedEvents = currentState.ExpectedEvents.Concat(SubmachineState.ExpectedEvents);
-                SubmachineState = null;
-            }
-
-            return Task.CompletedTask;
-        }
+            => Task.CompletedTask;
 
         public Task BeforeStateEntryAsync(IStateActionContext context)
             => Task.CompletedTask;
@@ -122,17 +78,17 @@ namespace Stateflows.StateMachines.Engine
         {
             var vertex = (context as StateActionContext).Vertex;
 
-            if (vertex.SubmachineName != null)
+            if (vertex.BehaviorName != null)
             {
                 var stateValues = (context as IRootContext).Context.GetStateValues(vertex.Name);
 
                 if (
-                    stateValues.SubmachineId.HasValue &&
-                    context.TryLocateStateMachine(stateValues.SubmachineId.Value, out var stateMachine)
+                    stateValues.BehaviorId.HasValue &&
+                    context.TryLocateBehavior(stateValues.BehaviorId.Value, out var behavior)
                 )
                 {
-                    await stateMachine.SendAsync(new ExitEvent());
-                    stateValues.SubmachineId = null;
+                    await behavior.SendAsync(new FinalizationRequest());
+                    stateValues.BehaviorId = null;
                 }
             }
         }

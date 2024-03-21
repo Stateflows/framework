@@ -1,24 +1,23 @@
 ﻿using System;
 using System.Threading.Tasks;
 using Stateflows.Common;
-using Stateflows.Common.Events;
 using Stateflows.StateMachines.Extensions;
 using Stateflows.StateMachines.Inspection.Interfaces;
 
 namespace Stateflows.StateMachines.EventHandlers
 {
-    internal class ExitHandler : IStateMachineEventHandler
+    internal class FinalizationHandler : IStateMachineEventHandler
     {
-        public Type EventType => typeof(ExitEvent);
+        public Type EventType => typeof(FinalizationRequest);
 
         public async Task<EventStatus> TryHandleEventAsync<TEvent>(IEventInspectionContext<TEvent> context)
             where TEvent : Event, new()
         {
-            if (context.Event is ExitEvent)
+            if (context.Event is FinalizationRequest request)
             {
-                var executor = context.StateMachine.GetExecutor();
+                var finalized = await context.StateMachine.GetExecutor().ExitAsync();
 
-                await executor.ExitAsync();
+                request.Respond(new FinalizationResponse() { FinalizationSuccessful = finalized });
 
                 return EventStatus.Consumed;
             }

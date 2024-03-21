@@ -8,7 +8,7 @@ using Stateflows.StateMachines.Inspection.Interfaces;
 
 namespace Stateflows.StateMachines.EventHandlers
 {
-    internal class CurrentStateHandler : IStateMachineEventHandler
+    internal class CurrentStateRequestHandler : IStateMachineEventHandler
     {
         public Type EventType => typeof(CurrentStateRequest);
 
@@ -22,11 +22,7 @@ namespace Stateflows.StateMachines.EventHandlers
                 var response = new CurrentStateResponse()
                 {
                     StatesStack = executor.GetStateStack(),
-                    ExpectedEvents = executor.GetExpectedEvents()
-                        .Where(type => !type.IsSubclassOf(typeof(TimeEvent)))
-                        .Where(type => type != typeof(CompletionEvent))
-                        .Select(type => type.GetEventName())
-                        .ToArray(),
+                    ExpectedEvents = executor.GetExpectedEventNames(),
                     BehaviorStatus = executor.BehaviorStatus
                 };
 

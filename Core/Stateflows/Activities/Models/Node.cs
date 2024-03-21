@@ -6,7 +6,6 @@ using Stateflows.Common;
 using Stateflows.Common.Models;
 using Stateflows.Activities.Registration;
 using Stateflows.Activities.Context.Classes;
-using System.Runtime.InteropServices;
 
 namespace Stateflows.Activities.Models
 {

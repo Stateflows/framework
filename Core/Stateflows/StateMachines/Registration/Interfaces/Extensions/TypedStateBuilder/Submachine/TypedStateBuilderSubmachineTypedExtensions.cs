@@ -4,8 +4,8 @@ namespace Stateflows.StateMachines.Typed
 {
     public static class TypedStateBuilderSubmachineTypedExtensions
     {
-        public static ISubmachineTypedStateBuilder AddSubmachine<TStateMachine>(this ITypedStateBuilder builder, StateActionInitializationBuilder initializationBuilder = null)
+        public static IBehaviorTypedStateBuilder AddSubmachine<TStateMachine>(this ITypedStateBuilder builder, EmbeddedBehaviorBuildAction buildAction, StateActionInitializationBuilder initializationBuilder = null)
             where TStateMachine : StateMachine
-            => builder.AddSubmachine(StateMachineInfo<TStateMachine>.Name, initializationBuilder);
+            => builder.AddSubmachine(StateMachineInfo<TStateMachine>.Name, buildAction, initializationBuilder);
     }
 }

@@ -1,4 +1,5 @@
 ﻿using System.Linq;
+using System.Diagnostics;
 using Stateflows.Common;
 using Stateflows.Activities.Extensions;
 using Stateflows.StateMachines.Registration;
@@ -9,13 +10,15 @@ namespace Stateflows.Activities
     public static class TransitionBuilderExtensions
     {
         #region AddGuardActivity
+        [DebuggerHidden]
         public static ITransitionBuilder<TEvent> AddGuardActivity<TEvent>(this ITransitionBuilder<TEvent> builder, string activityName, GuardActivityInitializationBuilder<TEvent> parametersBuilder = null)
             where TEvent : Event, new()
             => builder.AddGuard(
                 async c => c.TryLocateActivity(activityName, Constants.Guard, out var a)
-                    && ((await a.ExecuteAsync(parametersBuilder?.Invoke(c))).Response?.OutputTokens.OfType<Token<bool>>().FirstOrDefault()?.Payload ?? false)
+                    && ((await a.ExecuteAsync(parametersBuilder?.Invoke(c), new Token[] { c.Event })).Response?.OutputTokens.OfType<Token<bool>>().FirstOrDefault()?.Payload ?? false)
             );
 
+        [DebuggerHidden]
         public static ITransitionBuilder<TEvent> AddGuardActivity<TEvent, TActivity>(this ITransitionBuilder<TEvent> builder, GuardActivityInitializationBuilder<TEvent> parametersBuilder = null)
             where TEvent : Event, new()
             where TActivity : Activity
@@ -23,6 +26,7 @@ namespace Stateflows.Activities
         #endregion
 
         #region AddEffectActivity
+        [DebuggerHidden]
         public static ITransitionBuilder<TEvent> AddEffectActivity<TEvent>(this ITransitionBuilder<TEvent> builder, string activityName, EffectActivityInitializationBuilder<TEvent> parametersBuilder = null)
             where TEvent : Event, new()
             => builder.AddEffect(
@@ -30,11 +34,12 @@ namespace Stateflows.Activities
                 {
                     if (c.TryLocateActivity(activityName, Constants.Guard, out var a))
                     {
-                        await a.ExecuteAsync(parametersBuilder?.Invoke(c));
+                        await a.ExecuteAsync(parametersBuilder?.Invoke(c), new Token[] { c.Event });
                     }
                 }
             );
 
+        [DebuggerHidden]
         public static ITransitionBuilder<TEvent> AddEffectActivity<TEvent, TActivity>(this ITransitionBuilder<TEvent> builder, EffectActivityInitializationBuilder<TEvent> parametersBuilder = null)
             where TEvent : Event, new()
             where TActivity : Activity

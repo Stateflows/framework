@@ -16,6 +16,7 @@ using Stateflows.Activities.Registration.Interfaces;
 using Stateflows.StateMachines.Attributes;
 using Examples.Storage;
 using TestNamespace;
+using Microsoft.Data.SqlClient;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -300,7 +301,13 @@ namespace TestNamespace
                 .AddInitialState("1", b => b
                     .AddDefaultTransition<StateX>()
                 )
-                .AddState<StateX>()
+                .AddState<StateX>(b => b
+                    .AddInternalTransition<Event<int>>(b => { })
+                    .AddElseTransition<Event<int>>("", b => { })
+                )
+                .AddState("a", b => b
+                    .AddDoActivity("")
+                )
                 ;
         }
     }
@@ -311,6 +318,10 @@ public class StateX : State
     public override Task OnEntryAsync()
     {
         Debug.WriteLine(Context.StateMachine.Id.Instance);
+
+        if (Context.TryLocateStateMachine(StateMachineInfo<StateMachine1>.ToId(""), out var sm))
+        {
+        }
 
         return Task.CompletedTask;
     }

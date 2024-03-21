@@ -70,6 +70,12 @@ namespace Stateflows.Activities.Engine
                 .OrderByDescending(node => node.Level)
                 .ToArray();
 
+        public IEnumerable<Type> GetExpectedEvents()
+            => GetActiveNodes()
+                .Select(node => node.EventType)
+                .Distinct()
+                .ToArray();
+
         public async Task<bool> HydrateAsync(RootContext context)
         {
             Context = context;
@@ -157,14 +163,17 @@ namespace Stateflows.Activities.Engine
             return false;
         }
 
-        public void Reset()
+        public void Reset(bool keepVersion)
         {
             Debug.Assert(Context != null, $"Context is unavailable. Is state machine '{Graph.Name}' hydrated?");
 
             if (Initialized)
             {
                 Context.Context.Values.Clear();
-                Context.Context.Version = 0;
+                if (!keepVersion)
+                {
+                    Context.Context.Version = 0;
+                }
             }
         }
 
@@ -220,6 +229,12 @@ namespace Stateflows.Activities.Engine
 
                 activeNode = activeNode.Parent;
             }
+
+            //var task = Task.Run(() => ExecuteGraphAsync());
+
+            //return @event.Headers.Any(h => h is Forwarding)
+            //    ? EventStatus.Forwarded
+            //    : await task;
 
             return await ExecuteGraphAsync();
         }

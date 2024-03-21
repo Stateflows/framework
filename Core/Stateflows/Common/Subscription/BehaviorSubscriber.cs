@@ -20,12 +20,12 @@ namespace Stateflows.Common.Subscription
             this.subscriptionHub = subscriptionHub;
         }
 
-        public Task PublishAsync<TNotification>(TNotification notification)
+        public async Task PublishAsync<TNotification>(TNotification notification)
             where TNotification : Notification, new()
         {
             if (context.Subscribers.TryGetValue(EventInfo<TNotification>.Name, out var behaviorIds))
             {
-                _ = Task.WhenAll(
+                await Task.WhenAll(
                     behaviorIds.Select(
                         behaviorId => behaviorLocator.TryLocateBehavior(behaviorId, out var behavior)
                             ? behavior.SendAsync(notification)
@@ -34,17 +34,15 @@ namespace Stateflows.Common.Subscription
                 );
             }
 
-            return subscriptionHub.PublishAsync(notification);
+            await subscriptionHub.PublishAsync(notification);
         }
 
         public Task<RequestResult<SubscriptionResponse>> SubscribeAsync<TNotification>(BehaviorId behaviorId)
             where TNotification : Notification, new()
         {
-            var request = new SubscriptionRequest()
-            {
-                BehaviorId = subscriberBehaviorId,
-                NotificationName = EventInfo<TNotification>.Name
-            };
+            var request = new SubscriptionRequest() { BehaviorId = subscriberBehaviorId };
+
+            request.NotificationNames.Add(EventInfo<TNotification>.Name);
 
             return behaviorLocator.TryLocateBehavior(behaviorId, out var behavior)
                 ? behavior.RequestAsync(request)
@@ -56,11 +54,9 @@ namespace Stateflows.Common.Subscription
         public Task<RequestResult<UnsubscriptionResponse>> UnsubscribeAsync<TNotification>(BehaviorId behaviorId)
             where TNotification : Notification, new()
         {
-            var request = new UnsubscriptionRequest()
-            {
-                BehaviorId = subscriberBehaviorId,
-                EventName = EventInfo<TNotification>.Name
-            };
+            var request = new UnsubscriptionRequest() { BehaviorId = subscriberBehaviorId };
+
+            request.NotificationNames.Add(EventInfo<TNotification>.Name);
 
             return behaviorLocator.TryLocateBehavior(behaviorId, out var behavior)
                 ? behavior.RequestAsync(request)

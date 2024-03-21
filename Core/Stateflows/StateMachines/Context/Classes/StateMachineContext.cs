@@ -34,7 +34,7 @@ namespace Stateflows.StateMachines.Context.Classes
 
         public void Publish<TNotification>(TNotification notification)
             where TNotification : Notification, new()
-            => Subscriber.PublishAsync(notification);
+            => _ = Subscriber.PublishAsync(notification);
 
         public Task<RequestResult<SubscriptionResponse>> SubscribeAsync<TNotification>(BehaviorId behaviorId)
             where TNotification : Notification, new()

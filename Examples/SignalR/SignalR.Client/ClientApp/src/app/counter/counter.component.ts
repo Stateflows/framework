@@ -23,14 +23,14 @@ export class CounterComponent {
 
   public async refresh() {
     let sm = await this.stateflows.stateMachineLocator.locateStateMachine(new StateMachineId("stateMachine1", "x"));
-    let encoded = plantUmlEncoder.encode((await sm.request<PlantUmlResponse>(new PlantUmlRequest())).Response.PlantUml);
+    let encoded = plantUmlEncoder.encode((await sm.request<PlantUmlResponse>(new PlantUmlRequest())).response.plantUml);
     this.url = 'http://www.plantuml.com/plantuml/img/' + encoded;
   }
 
   public async go() {
     this.http.get('https://localhost:7067/StateMachine/stateMachine1/x/go').subscribe(() => this.refresh());
   }
-
+  
   public async push() {
     this.http.post('https://localhost:7067/StateMachine/stateMachine1/x/push', { "dolor": "sit amet" }).subscribe(() => this.refresh());
   }
@@ -39,15 +39,15 @@ export class CounterComponent {
     let sm = await this.stateflows.stateMachineLocator.locateStateMachine(new StateMachineId("stateMachine1", "xxxx"));
     let x = await sm.getStatus();
     console.log(x);
-    if (x.Response.BehaviorStatus == BehaviorStatus.NotInitialized) {
+    if (x.response.behaviorStatus == BehaviorStatus.NotInitialized) {
       await sm.initialize(new InitializationRequest());
     }
 
     let result = (await sm.request(new CompoundRequest([new OtherEvent()])));
     console.log(result);
     // result = (await sm.send(new OtherEvent()));
-    if (result.Status == EventStatus.Consumed) {
-      let encoded = plantUmlEncoder.encode((await sm.request<PlantUmlResponse>(new PlantUmlRequest())).Response.PlantUml);
+    if (result.status == EventStatus.Consumed) {
+      let encoded = plantUmlEncoder.encode((await sm.request<PlantUmlResponse>(new PlantUmlRequest())).response.plantUml);
       this.url = 'http://www.plantuml.com/plantuml/img/' + encoded;
     }
 

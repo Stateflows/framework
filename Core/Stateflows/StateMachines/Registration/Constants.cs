@@ -8,6 +8,7 @@
         public static readonly string StateValues = nameof(StateValues);
         public static readonly string GlobalValues = nameof(GlobalValues);
         public static readonly string DeferredEvents = nameof(DeferredEvents);
+        public static readonly string EmbeddedBehaviorStatuses = nameof(EmbeddedBehaviorStatuses);
         public static readonly string TimeEventIds = nameof(TimeEventIds);
         public static readonly string SubmachineId = nameof(SubmachineId);
         public static readonly string Entry = nameof(Entry);
@@ -17,5 +18,6 @@
         public static readonly string Guard = nameof(Guard);
         public static readonly string Effect = nameof(Effect);
         public static readonly string Do = nameof(Do);
+        public static readonly string Redirect = nameof(Redirect);
     }
 }

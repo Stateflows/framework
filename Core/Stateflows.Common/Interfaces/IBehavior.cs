@@ -15,5 +15,8 @@ namespace Stateflows.Common
 
         Task<RequestResult<InitializationResponse>> InitializeAsync(InitializationRequest initializationRequest = null)
             => RequestAsync(initializationRequest ?? new InitializationRequest());
+
+        Task<RequestResult<FinalizationResponse>> FinalizeAsync()
+            => RequestAsync(new FinalizationRequest());
     }
 }

@@ -1,12 +1,14 @@
 ﻿using System;
+using System.Linq;
 using System.Threading.Tasks;
 using Stateflows.Common;
+using Stateflows.StateMachines.Events;
 using Stateflows.StateMachines.Extensions;
 using Stateflows.StateMachines.Inspection.Interfaces;
 
 namespace Stateflows.StateMachines.EventHandlers
 {
-    internal class BehaviorStatusHandler : IStateMachineEventHandler
+    internal class BehaviorStatusRequestHandler : IStateMachineEventHandler
     {
         public Type EventType => typeof(BehaviorStatusRequest);
 
@@ -15,7 +17,13 @@ namespace Stateflows.StateMachines.EventHandlers
         {
             if (context.Event is BehaviorStatusRequest request)
             {
-                request.Respond(new BehaviorStatusResponse() { BehaviorStatus = context.StateMachine.GetExecutor().BehaviorStatus });
+                var executor = context.StateMachine.GetExecutor();
+
+                request.Respond(new BehaviorStatusResponse()
+                {
+                    BehaviorStatus = executor.BehaviorStatus,
+                    ExpectedEvents = executor.GetExpectedEventNames(),
+                });
 
                 return Task.FromResult(EventStatus.Consumed);
             }

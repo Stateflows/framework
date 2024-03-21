@@ -8,7 +8,7 @@ namespace Stateflows.StateMachines.Data
         public static ITypedStateBuilder AddDataTransition<TEventPayload>(this ITypedStateBuilder builder, string targetVertexName, TransitionBuildAction<Event<TEventPayload>> transitionBuildAction = null)
             => builder.AddTransition<Event<TEventPayload>>(targetVertexName, transitionBuildAction);
 
-        public static ITypedStateBuilder AddInternalDataTransition<TEventPayload>(this ITypedStateBuilder builder, TransitionBuildAction<Event<TEventPayload>> transitionBuildAction = null)
+        public static ITypedStateBuilder AddInternalDataTransition<TEventPayload>(this ITypedStateBuilder builder, InternalTransitionBuildAction<Event<TEventPayload>> transitionBuildAction = null)
             => builder.AddInternalTransition<Event<TEventPayload>>(transitionBuildAction);
     }
 }

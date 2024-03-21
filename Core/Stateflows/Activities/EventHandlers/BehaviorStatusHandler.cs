@@ -1,8 +1,10 @@
 ﻿using System;
+using System.Linq;
 using System.Threading.Tasks;
 using Stateflows.Common;
 using Stateflows.Activities.Extensions;
 using Stateflows.Activities.Inspection.Interfaces;
+using Stateflows.StateMachines.Events;
 
 namespace Stateflows.Activities.EventHandlers
 {
@@ -13,18 +15,19 @@ namespace Stateflows.Activities.EventHandlers
         public Task<EventStatus> TryHandleEventAsync<TEvent>(IEventInspectionContext<TEvent> context)
             where TEvent : Event, new()
         {
-            if (context.Event is BehaviorStatusRequest)
+            if (context.Event is BehaviorStatusRequest request)
             {
                 var executor = context.Activity.GetExecutor();
-                var status = (executor.Initialized, false) switch
-                {
-                    (false, false) => BehaviorStatus.NotInitialized,
-                    (true, false) => BehaviorStatus.Initialized,
-                    (true, true) => BehaviorStatus.Finalized,
-                    _ => BehaviorStatus.NotInitialized
-                };
 
-                (context.Event as BehaviorStatusRequest).Respond(new BehaviorStatusResponse() { BehaviorStatus = status });
+                request.Respond(new BehaviorStatusResponse()
+                {
+                    BehaviorStatus = executor.BehaviorStatus,
+                    ExpectedEvents = executor.GetExpectedEvents()
+                        .Where(type => !type.IsSubclassOf(typeof(TimeEvent)))
+                        .Where(type => type != typeof(CompletionEvent))
+                        .Select(type => type.GetEventName())
+                        .ToArray(),
+                });
 
                 return Task.FromResult(EventStatus.Consumed);
             }

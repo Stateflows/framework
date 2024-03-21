@@ -11,10 +11,10 @@ namespace Stateflows.StateMachines.Context.Classes
 
         public Dictionary<string, string> Values { get; set; } = new Dictionary<string, string>();
 
-        public bool ShouldSerializeSubmachineId()
-            => SubmachineId != null;
+        public bool ShouldSerializeBehaviorId()
+            => BehaviorId != null;
 
-        public StateMachineId? SubmachineId { get; set; } = null;
+        public BehaviorId? BehaviorId { get; set; } = null;
 
         public bool ShouldSerializeTimeEventIds()
             => TimeEventIds.Any();

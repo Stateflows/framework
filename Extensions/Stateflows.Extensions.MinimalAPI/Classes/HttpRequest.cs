@@ -2,7 +2,7 @@
 
 namespace Stateflows.Common
 {
-    public class HttpRequest<TResponsePayload> : Request<Response<TResponsePayload>>
+    public class HttpRequest : Request<Response<IResult>>
     {
         public override string Name => $"{base.Name}[{Method} {Url}]";
 
@@ -20,10 +20,10 @@ namespace Stateflows.Common
             set => method = value;
         }
 
-        public HttpRequest Request { get; set; }
+        public Microsoft.AspNetCore.Http.HttpRequest Request { get; set; }
     }
 
-    public class HttpRequest<TRequestPayload, TResponsePayload> : Request<TRequestPayload, TResponsePayload>
+    public class HttpRequest<TRequestPayload> : Request<TRequestPayload, IResult>
     {
         public override string Name => $"{base.Name}[{Method} {Url}]";
 
@@ -41,6 +41,6 @@ namespace Stateflows.Common
             set => method = value;
         }
 
-        public HttpRequest Request { get; set; }
+        public Microsoft.AspNetCore.Http.HttpRequest Request { get; set; }
     }
 }

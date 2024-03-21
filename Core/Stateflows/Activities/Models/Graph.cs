@@ -2,11 +2,10 @@
 using System.Linq;
 using System.Diagnostics;
 using System.Collections.Generic;
+using Stateflows.Common;
 using Stateflows.Common.Models;
 using Stateflows.Activities.Exceptions;
 using Stateflows.Activities.Registration.Interfaces;
-using System.Xml.Linq;
-using Stateflows.Common;
 
 namespace Stateflows.Activities.Models
 {

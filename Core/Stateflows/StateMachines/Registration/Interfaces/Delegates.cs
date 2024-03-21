@@ -19,7 +19,22 @@ namespace Stateflows.StateMachines.Registration.Interfaces
     public delegate void TransitionBuildAction<TEvent>(ITransitionBuilder<TEvent> builder)
         where TEvent : Event, new();
 
+    public delegate void InternalTransitionBuildAction<TEvent>(IInternalTransitionBuilder<TEvent> builder)
+        where TEvent : Event, new();
+
+    public delegate void DefaultTransitionBuildAction(IDefaultTransitionBuilder builder);
+
     public delegate void ElseTransitionBuildAction<TEvent>(IElseTransitionBuilder<TEvent> builder)
+        where TEvent : Event, new();
+
+    public delegate void ElseInternalTransitionBuildAction<TEvent>(IElseInternalTransitionBuilder<TEvent> builder)
+        where TEvent : Event, new();
+
+    public delegate void ElseDefaultTransitionBuildAction(IElseDefaultTransitionBuilder builder);
+
+    public delegate void EmbeddedBehaviorBuildAction(IEmbeddedBehaviorBuilder builder);
+
+    public delegate void ForwardedEventBuildAction<TEvent>(IForwardedEventBuilder<TEvent> builder)
         where TEvent : Event, new();
 
     public delegate IStateMachineObserver StateMachineObserverFactory(IServiceProvider serviceProvider);

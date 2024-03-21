@@ -28,9 +28,6 @@ namespace Stateflows.Common.Activities.Classes
             return Behavior.RequestAsync(executionRequest);
         }
 
-        public Task<RequestResult<CancelResponse>> CancelAsync()
-            => RequestAsync(new CancelRequest());
-
         public Task<SendResult> SendAsync<TEvent>(TEvent @event)
             where TEvent : Event, new()
             => Behavior.SendAsync(@event);

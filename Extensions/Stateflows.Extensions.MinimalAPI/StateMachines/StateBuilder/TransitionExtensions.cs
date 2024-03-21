@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Builder;
 using Stateflows.Common;
 using Stateflows.Common.Registration;
 using Stateflows.StateMachines.Registration.Interfaces;
+using HttpRequest = Stateflows.Common.HttpRequest;
 
 namespace Stateflows.StateMachines
 {
@@ -11,7 +12,7 @@ namespace Stateflows.StateMachines
     {
         private static readonly List<string> Endpoints = new();
 
-        public static IStateBuilder AddHttpGetInternalTransition<TResponsePayload>(this IStateBuilder builder, string pattern, TransitionBuildAction<HttpRequest<TResponsePayload>>? transitionbuildAction = null, Action<IEndpointConventionBuilder>? endpointbuildAction = null)
+        public static IStateBuilder AddHttpGetInternalTransition(this IStateBuilder builder, string pattern, InternalTransitionBuildAction<HttpRequest>? transitionbuildAction = null, Action<IEndpointConventionBuilder>? endpointbuildAction = null)
         {
             if (builder is IBehaviorBuilder behaviorBuilder)
             {
@@ -31,7 +32,7 @@ namespace Stateflows.StateMachines
 
                 HttpEvent.UrlOverride = pattern;
                 HttpEvent.MethodOverride = "GET";
-                builder.AddInternalTransition<HttpRequest<TResponsePayload>>(transitionbuildAction);
+                builder.AddInternalTransition<HttpRequest>(transitionbuildAction);
                 HttpEvent.UrlOverride = null;
                 HttpEvent.MethodOverride = null;
 
@@ -43,12 +44,12 @@ namespace Stateflows.StateMachines
                             fullPattern,
                             async (string instance, HttpContext context, IBehaviorLocator locator) =>
                             {
-                                RequestResult<Response<TResponsePayload>>? result = locator.TryLocateBehavior(new BehaviorId(behaviorClass, instance), out var behavior)
-                                    ? await behavior.RequestAsync(new HttpRequest<TResponsePayload>() { Method = "GET", Url = pattern, Request = context.Request })
+                                RequestResult<Response<IResult>>? result = locator.TryLocateBehavior(new BehaviorId(behaviorClass, instance), out var behavior)
+                                    ? await behavior.RequestAsync(new HttpRequest() { Method = "GET", Url = pattern, Request = context.Request })
                                     : null;
 
                                 return result?.Status == EventStatus.Consumed
-                                    ? Results.Ok(result)
+                                    ? result?.Response?.Payload ?? Results.Ok()
                                     : Results.NotFound();
                             }
                         );
@@ -61,7 +62,7 @@ namespace Stateflows.StateMachines
             return builder;
         }
 
-        public static IStateBuilder AddHttpPostTransition<TRequestPayload, TResponsePayload>(this IStateBuilder builder, string pattern, string targetVertexName, TransitionBuildAction<HttpRequest<TRequestPayload, TResponsePayload>>? transitionbuildAction = null, Action<IEndpointConventionBuilder>? endpointbuildAction = null)
+        public static IStateBuilder AddHttpPostTransition<TRequestPayload>(this IStateBuilder builder, string pattern, string targetVertexName, TransitionBuildAction<HttpRequest<TRequestPayload>>? transitionbuildAction = null, Action<IEndpointConventionBuilder>? endpointbuildAction = null)
         {
             if (builder is IBehaviorBuilder behaviorBuilder)
             {
@@ -81,7 +82,7 @@ namespace Stateflows.StateMachines
 
                 HttpEvent.UrlOverride = pattern;
                 HttpEvent.MethodOverride = "POST";
-                builder.AddTransition<HttpRequest<TRequestPayload, TResponsePayload>>(targetVertexName, transitionbuildAction);
+                builder.AddTransition<HttpRequest<TRequestPayload>>(targetVertexName, transitionbuildAction);
                 HttpEvent.UrlOverride = null;
                 HttpEvent.MethodOverride = null;
 
@@ -93,12 +94,12 @@ namespace Stateflows.StateMachines
                             fullPattern,
                             async (string instance, TRequestPayload body, HttpContext context, IBehaviorLocator locator) =>
                             {
-                                RequestResult<Response<TResponsePayload>>? result = locator.TryLocateBehavior(new BehaviorId(behaviorClass, instance), out var behavior)
-                                    ? await behavior.RequestAsync(new HttpRequest<TRequestPayload, TResponsePayload>() { Method = "POST", Url = pattern, Request = context.Request, Payload = body })
+                                RequestResult<Response<IResult>>? result = locator.TryLocateBehavior(new BehaviorId(behaviorClass, instance), out var behavior)
+                                    ? await behavior.RequestAsync(new HttpRequest<TRequestPayload>() { Method = "POST", Url = pattern, Request = context.Request, Payload = body })
                                     : null;
 
                                 return result?.Status == EventStatus.Consumed
-                                    ? Results.Ok(result)
+                                    ? result?.Response?.Payload ?? Results.Ok()
                                     : Results.NotFound();
                             }
                         );

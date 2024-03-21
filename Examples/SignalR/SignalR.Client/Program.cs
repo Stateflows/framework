@@ -1,6 +1,7 @@
 using Examples.Common;
 using SignalR.Client;
 using Stateflows;
+using Stateflows.Activities;
 using Stateflows.Common;
 using Stateflows.StateMachines;
 using Stateflows.StateMachines.Sync;
@@ -20,9 +21,13 @@ builder.Services.AddStateflows(b => b
             .AddInitialState("state1", b => b
                 .AddTransition<OtherEvent>("state2")
                 .AddHttpGetInternalTransition<Payload>("/my-url")
+                .AddHttpPostTransition<Payload>("/asd")
             )
             .AddState("state2", b => b
-                .AddTransition<OtherEvent>("state1")
+                .AddOnDoActivity("a")
+                .AddElseInternalTransition<OtherEvent>(b => b
+                    .ForwardEventToDoActivity("a")
+                )
             )
         )
     )

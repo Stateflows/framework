@@ -11,7 +11,5 @@ namespace Stateflows.Activities.Interfaces
         Task<T> Execute<T>(IDictionary<string, object> parameters);
 
         Task Execute(IDictionary<string, object> parameters);
-
-        Task<SendResult> Cancel();
     }
 }

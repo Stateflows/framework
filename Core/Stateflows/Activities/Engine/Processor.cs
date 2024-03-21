@@ -122,19 +122,13 @@ namespace Stateflows.Activities.Engine
 
             stateflowsContext.LastExecutedAt = DateTime.Now;
 
-            var statuses = new BehaviorStatus[] { BehaviorStatus.Initialized, BehaviorStatus.Finalized };
-
-            if (statuses.Contains(stateflowsContext.Status))
+            stateflowsContext.Version = stateflowsContext.Status switch
             {
-                stateflowsContext.Version = graph.Version;
-            }
-            else
-            {
-                if (stateflowsContext.Status == BehaviorStatus.NotInitialized)
-                {
-                    stateflowsContext.Version = 0;
-                }
-            }
+                BehaviorStatus.NotInitialized => stateflowsContext.Version,
+                BehaviorStatus.Initialized => graph.Version,
+                BehaviorStatus.Finalized => graph.Version,
+                _ => 0
+            };
 
             return result;
         }

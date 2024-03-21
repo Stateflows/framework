@@ -3,7 +3,7 @@
 namespace Stateflows.Common.Attributes
 {
     [AttributeUsage(AttributeTargets.Class, AllowMultiple = false)]
-    public class BehaviorAttribute : Attribute
+    public abstract class BehaviorAttribute : Attribute
     {
         public string Name { get; set; }
 

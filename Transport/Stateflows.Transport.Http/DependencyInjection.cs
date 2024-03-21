@@ -24,8 +24,8 @@ namespace Stateflows.Transport.Http
                     "/stateflows/send",
                     async (
                         HttpContext context,
-                        IBehaviorLocator locator,
-                        INotificationsHub hub
+                        IBehaviorLocator locator
+                        //INotificationsHub hub
                     ) =>
                     {
                         using var reader = new StreamReader(context.Request.Body);
@@ -43,7 +43,7 @@ namespace Stateflows.Transport.Http
                                         EventStatus = result.Status,
                                         Validation = result.Validation,
                                         Response = result.Event.GetResponse(),
-                                        Notifications = 
+                                        //Notifications = 
                                     }
                                 ),
                                 MediaTypeNames.Application.Json

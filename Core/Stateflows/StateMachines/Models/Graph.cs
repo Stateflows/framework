@@ -95,7 +95,7 @@ namespace Stateflows.StateMachines.Models
                     }
                     else
                     {
-                        throw new TransitionDefinitionException($"Transition target state '{edge.TargetName}' is not registered in state machine '{Name}'", Class);
+                        throw new TransitionDefinitionException($"Transition target state '{edge.TargetName}' is not registered", Class);
                     }
 
                     //var vertices = edge.Source.Parent?.Vertices ?? Vertices;
@@ -117,14 +117,15 @@ namespace Stateflows.StateMachines.Models
                 {
                     var siblings = edge.Source.Edges.Values.Any(e =>
                         !e.IsElse &&
-                        e.Trigger == edge.Trigger &&
-                        e.Type == edge.Type
+                        e.Trigger == edge.Trigger
+                        //&&
+                        //e.Type == edge.Type
                     );
 
                     if (!siblings)
                     {
                         throw new TransitionDefinitionException(
-                            $"Can't register else transition outgoing from state '{edge.SourceName}' in state machine '{Name}': there are no other transitions coming out from this state with same type and trigger",
+                            $"Can't register else transition outgoing from state '{edge.SourceName}': there are no other transitions coming out from this state with same type and trigger",
                             Class
                         );
                     }

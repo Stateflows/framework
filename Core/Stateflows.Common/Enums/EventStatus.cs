@@ -29,6 +29,10 @@
         /// <summary>
         /// Event was omitted because other events in CompoundRequest were invalid
         /// </summary>
-        Omitted
+        Omitted,
+        /// <summary>
+        /// Event was forwarded to embedded behavior
+        /// </summary>
+        Forwarded
     }
 }

@@ -8,8 +8,5 @@ namespace Stateflows.StateMachines.Events
     {
         [JsonProperty(TypeNameHandling = TypeNameHandling.None)]
         public IEnumerable<string> StatesStack { get; set; }
-
-        [JsonProperty(TypeNameHandling = TypeNameHandling.None)]
-        public IEnumerable<string> ExpectedEvents { get; set; }
     }
 }

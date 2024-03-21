@@ -22,11 +22,11 @@
   "author": "Stateflows",
   "license": "MIT",
   "homepage": "https://www.stateflows.net",
-  "dependencies": {
-    "@stateflows/common": "file:../common"
-  },
   "devDependencies": {
     "tsup": "^8.0.1",
     "typescript": "^5.3.3"
+  },
+  "dependencies": {
+    "@stateflows/common": "^0.10.0"
   }
 }

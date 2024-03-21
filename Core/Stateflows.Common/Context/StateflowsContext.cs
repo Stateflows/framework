@@ -58,37 +58,39 @@ namespace Stateflows.Common.Context
 
         public Dictionary<string, List<BehaviorId>> Subscribers { get; set; } = new Dictionary<string, List<BehaviorId>>();
 
-        public bool AddSubscriber(BehaviorId subscriberBehaviorId, string eventName)
+        public bool AddSubscribers(BehaviorId subscriberBehaviorId, IEnumerable<string> notificationNames)
         {
-            if (!Subscribers.TryGetValue(eventName, out var behaviorIds))
+            foreach (var notificationName in notificationNames)
             {
-                behaviorIds = new List<BehaviorId>();
-                Subscribers[eventName] = behaviorIds;
+                if (!Subscribers.TryGetValue(notificationName, out var behaviorIds))
+                {
+                    behaviorIds = new List<BehaviorId>();
+                    Subscribers[notificationName] = behaviorIds;
+                }
+
+                if (!behaviorIds.Contains(subscriberBehaviorId))
+                {
+                    behaviorIds.Add(subscriberBehaviorId);
+                }
             }
 
-            if (!behaviorIds.Contains(subscriberBehaviorId))
-            {
-                behaviorIds.Add(subscriberBehaviorId);
-
-                return true;
-            }
-
-            return false;
+            return true;
         }
 
-        public bool RemoveSubscriber(BehaviorId subscriberBehaviorId, string eventName)
+        public bool RemoveSubscribers(BehaviorId subscriberBehaviorId, IEnumerable<string> notificationNames)
         {
-            if (
-                Subscribers.TryGetValue(eventName, out var behaviorIds) &&
-                behaviorIds.Contains(subscriberBehaviorId)
-            )
+            foreach (var notificationName in notificationNames)
             {
-                behaviorIds.Remove(subscriberBehaviorId);
-
-                return true;
+                if (
+                    Subscribers.TryGetValue(notificationName, out var behaviorIds) &&
+                    behaviorIds.Contains(subscriberBehaviorId)
+                )
+                {
+                    behaviorIds.Remove(subscriberBehaviorId);
+                }
             }
 
-            return false;
+            return true;
         }
 
         public bool ShouldSerializeValues()
