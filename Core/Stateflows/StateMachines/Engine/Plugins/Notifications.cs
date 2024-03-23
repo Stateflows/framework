@@ -1,20 +1,14 @@
 ﻿using System;
-using System.Linq;
 using System.Threading.Tasks;
-using System.Collections.Generic;
 using Stateflows.Common;
-using Stateflows.StateMachines.Models;
-using Stateflows.StateMachines.Context.Classes;
-using Stateflows.StateMachines.Context.Interfaces;
-using Stateflows.StateMachines.Extensions;
 using Stateflows.StateMachines.Events;
+using Stateflows.StateMachines.Extensions;
+using Stateflows.StateMachines.Context.Interfaces;
 
 namespace Stateflows.StateMachines.Engine
 {
     internal class Notifications : IStateMachinePlugin
     {
-        private Vertex[] PreviousStack = new Vertex[0];
-
         public Task AfterStateEntryAsync(IStateActionContext context)
             => Task.CompletedTask;
 
@@ -57,18 +51,12 @@ namespace Stateflows.StateMachines.Engine
             => Task.CompletedTask;
 
         public Task<bool> BeforeProcessEventAsync(IEventContext<Event> context)
-        {
-            PreviousStack = context.StateMachine.GetExecutor().VerticesStack.ToArray();
-
-            return Task.FromResult(true);
-        }
+            => Task.FromResult(true);
 
         public Task AfterProcessEventAsync(IEventContext<Event> context)
         {
             var executor = context.StateMachine.GetExecutor();
-            var currentStack = executor.VerticesStack.ToArray();
-
-            if (currentStack.Except(PreviousStack).Any())
+            if (executor.StateHasChanged)
             {
                 var notification = new CurrentStateNotification()
                 {

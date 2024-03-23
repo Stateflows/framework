@@ -16,9 +16,6 @@ namespace Stateflows.Common.StateMachines.Classes
             Behavior = consumer;
         }
 
-        public Task<RequestResult<CurrentStateResponse>> GetCurrentStateAsync()
-            => RequestAsync(new CurrentStateRequest());
-
         public Task<SendResult> SendAsync<TEvent>(TEvent @event)
             where TEvent : Event, new()
             => Behavior.SendAsync(@event);
@@ -34,11 +31,5 @@ namespace Stateflows.Common.StateMachines.Classes
         public Task UnwatchAsync<TNotification>()
             where TNotification : Notification, new()
             => Behavior.UnwatchAsync<TNotification>();
-
-        public Task WatchCurrentStateAsync(Action<CurrentStateNotification> handler)
-            => Behavior.WatchAsync(handler);
-
-        public Task UnwatchCurrentStateAsync()
-            => Behavior.UnwatchAsync<CurrentStateNotification>();
     }
 }

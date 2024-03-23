@@ -24,16 +24,8 @@ namespace Stateflows.StateMachines.Engine
                     stateValues.BehaviorId = behaviorId;
 
                     if (vertex.BehaviorSubscriptions.Any())
-                    {
-                        var subscriptionRequest = new SubscriptionRequest()
-                        {
-                            BehaviorId = context.StateMachine.Id,
-                            NotificationNames = vertex.BehaviorSubscriptions
-                                .Select(t => EventInfo.GetName(t))
-                                .ToList()
-                        };
-
-                        _ = behavior.SendAsync(subscriptionRequest);
+                    {                        
+                        _ = behavior.SendAsync(vertex.GetSubscriptionRequest(context.StateMachine.Id));
                     }
 
                     var initializationRequest = vertex.BehaviorInitializationBuilder?.Invoke(context) ?? new InitializationRequest();
@@ -74,7 +66,7 @@ namespace Stateflows.StateMachines.Engine
         public Task BeforeStateEntryAsync(IStateActionContext context)
             => Task.CompletedTask;
 
-        public async Task BeforeStateExitAsync(IStateActionContext context)
+        public Task BeforeStateExitAsync(IStateActionContext context)
         {
             var vertex = (context as StateActionContext).Vertex;
 
@@ -87,10 +79,17 @@ namespace Stateflows.StateMachines.Engine
                     context.TryLocateBehavior(stateValues.BehaviorId.Value, out var behavior)
                 )
                 {
-                    await behavior.SendAsync(new FinalizationRequest());
+                    if (vertex.BehaviorSubscriptions.Any())
+                    {
+                        _ = behavior.SendAsync(vertex.GetUnsubscriptionRequest(context.StateMachine.Id));
+                    }
+
+                    _ = behavior.SendAsync(new FinalizationRequest());
                     stateValues.BehaviorId = null;
                 }
             }
+
+            return Task.CompletedTask;
         }
 
         public Task BeforeStateInitializeAsync(IStateActionContext context)

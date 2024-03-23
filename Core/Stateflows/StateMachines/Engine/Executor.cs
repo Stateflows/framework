@@ -13,13 +13,14 @@ using Stateflows.StateMachines.Extensions;
 using Stateflows.StateMachines.Registration;
 using Stateflows.StateMachines.Context.Classes;
 using Stateflows.StateMachines.Context.Interfaces;
-using Stateflows.Activities.Engine;
 
 namespace Stateflows.StateMachines.Engine
 {
     internal sealed class Executor : IDisposable
     {
         public readonly Graph Graph;
+
+        public bool StateHasChanged = false;
 
         public StateMachinesRegister Register { get; set; }
 
@@ -66,6 +67,7 @@ namespace Stateflows.StateMachines.Engine
                     while (Context.StatesStack.Count > i)
                     {
                         Context.StatesStack.RemoveAt(i);
+                        StateHasChanged = true;
                     }
 
                     break;
@@ -131,6 +133,7 @@ namespace Stateflows.StateMachines.Engine
                 await DoFinalizeStateMachineAsync();
 
                 Context.StatesStack.Clear();
+                StateHasChanged = true;
 
                 return true;
             }
@@ -163,6 +166,7 @@ namespace Stateflows.StateMachines.Engine
 
                 await DoEntryAsync(vertex);
                 Context.StatesStack.Add(vertex.Identifier);
+                StateHasChanged = true;
 
                 vertex = vertex.InitialVertex;
             }
@@ -183,6 +187,7 @@ namespace Stateflows.StateMachines.Engine
                 }
 
                 Context.StatesStack.Add(vertex.Identifier);
+                StateHasChanged = true;
 
                 vertex = vertex.InitialVertex;
             }
@@ -230,6 +235,8 @@ namespace Stateflows.StateMachines.Engine
         public async Task<EventStatus> ProcessAsync<TEvent>(TEvent @event)
             where TEvent : Event, new()
         {
+            StateHasChanged = false;
+
             var result = EventStatus.Rejected;
 
             if (Initialized)
@@ -463,6 +470,7 @@ namespace Stateflows.StateMachines.Engine
                 {
                     await DoExitAsync(vertex);
                     Context.StatesStack.RemoveAt(Context.StatesStack.Count - 1);
+                    StateHasChanged = true;
                 }
             }
 
@@ -480,6 +488,7 @@ namespace Stateflows.StateMachines.Engine
                 if (vertex != enteringVertices.Last())
                 {
                     Context.StatesStack.Add(vertex.Identifier);
+                    StateHasChanged = true;
                 }
             }
 

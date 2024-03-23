@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using Stateflows.Common;
 using Stateflows.Common.Models;
 using Stateflows.StateMachines.Interfaces;
 using Stateflows.StateMachines.Registration;
@@ -49,6 +50,25 @@ namespace Stateflows.StateMachines.Models
         public string BehaviorName { get; set; }
         public string BehaviorType { get; set; }
         public List<Type> BehaviorSubscriptions { get; set; } = new List<Type>();
+        public List<string> GetBehaviorSubscriptionNames()
+            => BehaviorSubscriptions
+            .Select(t => EventInfo.GetName(t))
+            .ToList();
+
+        public SubscriptionRequest GetSubscriptionRequest(StateMachineId hostId)
+            => new SubscriptionRequest()
+            {
+                BehaviorId = hostId,
+                NotificationNames = GetBehaviorSubscriptionNames()
+            };
+
+        public UnsubscriptionRequest GetUnsubscriptionRequest(StateMachineId hostId)
+            => new UnsubscriptionRequest()
+            {
+                BehaviorId = hostId,
+                NotificationNames = GetBehaviorSubscriptionNames()
+            };
+
         public BehaviorId GetBehaviorId(StateMachineId hostId)
             => new BehaviorId(BehaviorType, BehaviorName, $"__stateBehavior:{hostId.Name}:{hostId.Instance}:{Name}");
     }

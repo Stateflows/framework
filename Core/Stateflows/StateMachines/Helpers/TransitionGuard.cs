@@ -11,7 +11,7 @@ namespace Stateflows.StateMachines
             where TEvent : Event, new()
             => Allow(context);
 
-        public static Task<bool> Allow<TEvent>(IGuardContext<TEvent> context)
+        public static Task<bool> Allow<TEvent>(IGuardContext<TEvent> _)
             where TEvent : Event, new()
             => Task.FromResult(true);
 

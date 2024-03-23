@@ -1,10 +1,9 @@
 ﻿using System;
 using System.Threading.Tasks;
 using Stateflows.Common;
+using Stateflows.Activities;
 using Stateflows.StateMachines;
 using Stateflows.Extensions.PlantUml.Events;
-using Stateflows.Activities;
-using Stateflows.Activities.Inspection.Interfaces;
 
 namespace Stateflows.Extensions.PlantUml.Classes
 {
@@ -12,11 +11,11 @@ namespace Stateflows.Extensions.PlantUml.Classes
     {
         public Type EventType => typeof(PlantUmlRequest);
 
-        public Task<EventStatus> TryHandleEventAsync<TEvent>(Stateflows.StateMachines.Inspection.Interfaces.IEventInspectionContext<TEvent> context)
+        public Task<EventStatus> TryHandleEventAsync<TEvent>(StateMachines.Inspection.Interfaces.IEventInspectionContext<TEvent> context)
             where TEvent : Event, new()
             => Task.FromResult(HandleEvent(context.Event, () => context.StateMachine.Inspection.GetPlantUml()));
 
-        public Task<EventStatus> TryHandleEventAsync<TEvent>(IEventInspectionContext<TEvent> context)
+        public Task<EventStatus> TryHandleEventAsync<TEvent>(Activities.Inspection.Interfaces.IEventInspectionContext<TEvent> context)
             where TEvent : Event, new()
             => Task.FromResult(HandleEvent(context.Event, () => context.Activity.Inspection.GetPlantUml()));
 

@@ -8,9 +8,9 @@ namespace Stateflows.StateMachines.Typed
     public static class TransitionTypedExtensions
     {
         #region AddHttpGetInternalTransition
-        public static IStateBuilder AddHttpGetInternalTransition<TTransition>(this IStateBuilder builder, string pattern, Action<IEndpointConventionBuilder> endpointbuildAction = null)
-            where TTransition : Transition<HttpRequest>
-            => builder.AddHttpGetInternalTransition(pattern, b => b.AddTransitionEvents<TTransition, HttpRequest>(), endpointbuildAction);
+        //public static IStateBuilder AddHttpGetInternalTransition<TTransition>(this IStateBuilder builder, string pattern, Action<IEndpointConventionBuilder> endpointbuildAction = null)
+        //    where TTransition : Transition<HttpRequest>
+        //    => builder.AddHttpGetInternalTransition(pattern, b => b.AddTransitionEvents<TTransition, HttpRequest>(), endpointbuildAction);
         #endregion
 
         #region AddHttpPostTransition

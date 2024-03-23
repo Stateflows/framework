@@ -11,5 +11,10 @@ export interface IBehavior {
     send(event: Event): Promise<SendResult>;
     request<TResponse extends Response>(request: Request<TResponse>): Promise<RequestResult<TResponse>>;
     initialize(initializationRequest?: InitializationRequest): Promise<RequestResult<InitializationResponse>>;
+    watch<TNotification>(handler: Func<TNotification>);
+    unwatch<TNotification>();
+
     getStatus(): Promise<RequestResult<BehaviorStatusResponse>>;
+    watchStatus(handler: Func<BehaviorStatusNotification>);
+    unwatchStatus();
 }

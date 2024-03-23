@@ -72,6 +72,8 @@
 
     private string message = "";
 
+    private IStateMachine stateMachine = null;
+
     private StateMachineId GetCurrentId()
     {
         return new StateMachineId(stateMachineName, stateMachineInstance);
@@ -86,17 +88,17 @@
 
     private async Task RefreshSMInfo(IStateMachine stateMachine)
     {
-        var result = await stateMachine.GetCurrentStateAsync();
-        expectedEvents = result.Response?.ExpectedEvents;
-        message = result.Response?.BehaviorStatus switch
-        {
-            BehaviorStatus.NotInitialized => "State Machine located, it's not initialized",
-            BehaviorStatus.Initialized => "State Machine located, it's initialized",
-            BehaviorStatus.Finalized => "State Machine located, it's finalized",
-            _ => ""
-        };
+        // var result = await stateMachine.GetCurrentStateAsync();
+        // expectedEvents = result.Response?.ExpectedEvents;
+        // message = result.Response?.BehaviorStatus switch
+        // {
+        //     BehaviorStatus.NotInitialized => "State Machine located, it's not initialized",
+        //     BehaviorStatus.Initialized => "State Machine located, it's initialized",
+        //     BehaviorStatus.Finalized => "State Machine located, it's finalized",
+        //     _ => ""
+        // };
 
-        plantUmlUrl = (await stateMachine.GetPlantUmlAsync()).Response.GetUrl();
+        // plantUmlUrl = (await stateMachine.GetPlantUmlAsync()).Response.GetUrl();
     }
 
     private async Task SystemRequest()
@@ -107,8 +109,35 @@
 
     private async Task Initialize()
     {
-        if (locator.TryLocateStateMachine(GetCurrentId(), out var stateMachine))
+        if (stateMachine != null)
         {
+            await stateMachine.UnwatchCurrentStateAsync();
+            await stateMachine.UnwatchPlantUmlAsync();
+        }
+
+        if (locator.TryLocateStateMachine(GetCurrentId(), out stateMachine))
+        {
+            await stateMachine.WatchCurrentStateAsync(async n =>
+            {
+                expectedEvents = n.ExpectedEvents;
+                message = n.BehaviorStatus switch
+                {
+                    BehaviorStatus.NotInitialized => "State Machine located, it's not initialized",
+                    BehaviorStatus.Initialized => "State Machine located, it's initialized",
+                    BehaviorStatus.Finalized => "State Machine located, it's finalized",
+                    _ => ""
+                };
+
+                await InvokeAsync(() => StateHasChanged());
+            });
+
+            await stateMachine.WatchPlantUmlAsync(async n =>
+            {
+                plantUmlUrl = n.GetUrl();
+
+                await InvokeAsync(() => StateHasChanged());
+            });
+
             var msg = (await stateMachine.InitializeAsync()).Response?.InitializationSuccessful ?? false
                 ? "State Machine located and initialized"
                 : "State Machine located, it's already initialized";
@@ -163,7 +192,7 @@
         {
             var ev = System.Activator.CreateInstance(eventType) as Event;
 
-            if (locator.TryLocateStateMachine(GetCurrentId(), out var stateMachine))
+            // if (locator.TryLocateStateMachine(GetCurrentId(), out var stateMachine))
             {
                 var result = await stateMachine.SendAsync(ev);
 

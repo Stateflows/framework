@@ -32,7 +32,7 @@ namespace Stateflows.StateMachines.Inspection.Classes
         private IEnumerable<ITransitionInspection> transitions;
 
         public IEnumerable<ITransitionInspection> Transitions
-            => transitions ??= Vertex.Edges.Values.Select(e => new TransitionInspection(Executor, e));
+            => transitions ??= Vertex.Edges.Values.Select(e => new TransitionInspection(Executor, e)).ToArray();
 
         private List<IActionInspection> actions;
 

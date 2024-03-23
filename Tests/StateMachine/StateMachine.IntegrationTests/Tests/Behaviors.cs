@@ -94,9 +94,9 @@ namespace StateMachine.IntegrationTests.Tests
                 .StateEntry("stateA")
                 .StateExit("stateA")
                 .StateEntry("stateB")
+                .StateEntry("state2")
                 .StateExit("stateB")
                 .StateMachineFinalize()
-                .StateEntry("state2")
             );
             Assert.IsTrue(initialized);
             Assert.AreEqual(EventStatus.Consumed, someStatus1);

@@ -19,7 +19,7 @@ namespace Stateflows.Activities.Engine
         string IEventProcessor.BehaviorType => BehaviorType.Activity;
 
         public readonly ActivitiesRegister Register;
-        public readonly Dictionary<Type, IActivityEventHandler> EventHandlers;
+        public readonly IEnumerable<IActivityEventHandler> EventHandlers;
         public readonly IServiceProvider ServiceProvider;
 
         public Processor(
@@ -29,15 +29,19 @@ namespace Stateflows.Activities.Engine
         )
         {
             Register = register;
-            EventHandlers = eventHandlers.ToDictionary(h => h.EventType, h => h);
             ServiceProvider = serviceProvider.CreateScope().ServiceProvider;
+            EventHandlers = eventHandlers;
         }
 
-        private async Task<EventStatus> TryHandleEventAsync<TEvent>(EventContext<TEvent> context)
+        private Task<EventStatus> TryHandleEventAsync<TEvent>(EventContext<TEvent> context)
             where TEvent : Event, new()
-            => EventHandlers.TryGetValue(context.Event.GetType(), out var eventHandler)
-                ? await eventHandler.TryHandleEventAsync(context)
-                : EventStatus.NotConsumed;
+        {
+            var eventHandler = EventHandlers.FirstOrDefault(h => h.EventType.IsInstanceOfType(context.Event));
+
+            return eventHandler != null
+                ? eventHandler.TryHandleEventAsync(context)
+                : Task.FromResult(EventStatus.NotConsumed);
+        }
 
         public async Task<EventStatus> ProcessEventAsync<TEvent>(BehaviorId id, TEvent @event, IServiceProvider serviceProvider)
             where TEvent : Event, new()

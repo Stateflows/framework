@@ -23,18 +23,24 @@ namespace Stateflows.Activities
                             Task.Run(() =>
                             {
                                 var integratedActivityBuilder = new IntegratedActivityBuilder(buildAction);
-                                var request = new CompoundRequest()
-                                {
-                                    Events = new List<Event>()
-                                    {
-                                        integratedActivityBuilder.GetSubscriptionRequest(),
-                                        new ResetRequest() { KeepVersion = true },
-                                        new ExecutionRequest(initializationRequest, new List<Token>()),
-                                        integratedActivityBuilder.GetUnsubscriptionRequest(),
-                                    }
-                                };
+                                return a.SendCompoundAsync(
+                                    integratedActivityBuilder.GetSubscriptionRequest(),
+                                    new ResetRequest() { KeepVersion = true },
+                                    new ExecutionRequest(initializationRequest, new List<Token>()),
+                                    integratedActivityBuilder.GetUnsubscriptionRequest()
+                                );
+                                //var request = new CompoundRequest()
+                                //{
+                                //    Events = new List<Event>()
+                                //    {
+                                //        integratedActivityBuilder.GetSubscriptionRequest(),
+                                //        new ResetRequest() { KeepVersion = true },
+                                //        new ExecutionRequest(initializationRequest, new List<Token>()),
+                                //        integratedActivityBuilder.GetUnsubscriptionRequest(),
+                                //    }
+                                //};
 
-                                return a.RequestAsync(request);
+                                //return a.RequestAsync(request);
                             });
                         }
                     }
@@ -55,18 +61,24 @@ namespace Stateflows.Activities
                             Task.Run(() =>
                             {
                                 var integratedActivityBuilder = new IntegratedActivityBuilder(buildAction);
-                                var request = new CompoundRequest()
-                                {
-                                    Events = new List<Event>()
-                                    {
-                                        integratedActivityBuilder.GetSubscriptionRequest(),
-                                        new ResetRequest() { KeepVersion = true },
-                                        new ExecutionRequest(initializationRequest, new List<Token>()),
-                                        integratedActivityBuilder.GetUnsubscriptionRequest(),
-                                    }
-                                };
+                                return a.SendCompoundAsync(
+                                    integratedActivityBuilder.GetSubscriptionRequest(),
+                                    new ResetRequest() { KeepVersion = true },
+                                    new ExecutionRequest(initializationRequest, new List<Token>()),
+                                    integratedActivityBuilder.GetUnsubscriptionRequest()
+                                );
+                                //var request = new CompoundRequest()
+                                //{
+                                //    Events = new List<Event>()
+                                //    {
+                                //        integratedActivityBuilder.GetSubscriptionRequest(),
+                                //        new ResetRequest() { KeepVersion = true },
+                                //        new ExecutionRequest(initializationRequest, new List<Token>()),
+                                //        integratedActivityBuilder.GetUnsubscriptionRequest(),
+                                //    }
+                                //};
 
-                                return a.RequestAsync(request);
+                                //return a.RequestAsync(request);
                             });
                         }
                     }
