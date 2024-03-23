@@ -44,7 +44,8 @@ namespace Stateflows.Transport.Http
                                         Validation = result.Validation,
                                         Response = result.Event.GetResponse(),
                                         //Notifications = 
-                                    }
+                                    },
+                                    true
                                 ),
                                 MediaTypeNames.Application.Json
                             );

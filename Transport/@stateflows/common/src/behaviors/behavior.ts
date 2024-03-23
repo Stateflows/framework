@@ -31,8 +31,8 @@ export class Behavior implements IBehavior {
     request<TResponse extends Response>(request: Request<TResponse>): Promise<RequestResult<TResponse>> {
         return new Promise<RequestResult<TResponse>>(async (resolve, reject) => {
             let sendResult = await this.send(request);
-            request.Response = (sendResult.Event as any).Response;
-            let result = new RequestResult<TResponse>(request.Response, request, sendResult.Status, sendResult.Validation);
+            request.response = (sendResult.event as any).response;
+            let result = new RequestResult<TResponse>(request.response, request, sendResult.status, sendResult.validation);
             resolve(result);
         });
     }

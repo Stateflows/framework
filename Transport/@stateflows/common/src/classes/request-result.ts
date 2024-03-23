@@ -5,7 +5,7 @@ import { SendResult } from "./send-result";
 
 export class RequestResult<TResponse> extends SendResult {
     constructor(
-        public Response: TResponse,
+        public response: TResponse,
         event: Event,
         status: EventStatus,
         validation: EventValidation,

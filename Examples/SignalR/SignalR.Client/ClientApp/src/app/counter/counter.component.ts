@@ -36,16 +36,16 @@ export class CounterComponent {
   }
 
   public async incrementCounter() {
-    let sm = await this.stateflows.stateMachineLocator.locateStateMachine(new StateMachineId("stateMachine1", "xxxx"));
+    let sm = await this.stateflows.stateMachineLocator.locateStateMachine(new StateMachineId("stateMachine1", "x"));
     let x = await sm.getStatus();
-    console.log(x);
+
     if (x.response.behaviorStatus == BehaviorStatus.NotInitialized) {
       await sm.initialize(new InitializationRequest());
     }
 
     let result = (await sm.request(new CompoundRequest([new OtherEvent()])));
     console.log(result);
-    // result = (await sm.send(new OtherEvent()));
+
     if (result.status == EventStatus.Consumed) {
       let encoded = plantUmlEncoder.encode((await sm.request<PlantUmlResponse>(new PlantUmlRequest())).response.plantUml);
       this.url = 'http://www.plantuml.com/plantuml/img/' + encoded;

@@ -4,13 +4,13 @@ import { BehaviorStatus } from "../enums/behavior-status";
 
 export class BehaviorDescriptor
 {
-    Id: BehaviorId;
-    Status: BehaviorStatus;
+    id: BehaviorId;
+    status: BehaviorStatus;
 }
 
 export class BehaviorInstancesResponse extends Response {
     constructor(
-        public Behaviors: Array<BehaviorDescriptor>,
+        public behaviors: Array<BehaviorDescriptor>,
     ) {
         super();
     }

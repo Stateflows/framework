@@ -43,7 +43,8 @@ namespace Stateflows.Transport.Http.Client
                             Event = @event,
                             BehaviorId = behaviorId,
                             Watches = watches
-                        }
+                        },
+                        true
                     ),
                     Encoding.UTF8,
                     MediaTypeNames.Application.Json

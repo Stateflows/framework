@@ -1,6 +1,6 @@
 export class ValidationResult {
     constructor(
-        public ErrorMessage: string | null,
-        public MemberNames: Array<string> | null,
+        public errorMessage: string | null,
+        public memberNames: Array<string> | null,
     ) {}
 }

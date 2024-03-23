@@ -4,10 +4,10 @@ import { CompoundResponse } from "./compound.response";
 
 export class CompoundRequest extends Request<CompoundResponse> {
     public $type = "Stateflows.Common.CompoundRequest, Stateflows.Common";
-    public Name = "Stateflows.Common.CompoundRequest";
+    public name = "Stateflows.Common.CompoundRequest";
 
     constructor(
-        public Events: Array<Event>,
+        public events: Array<Event>,
     ) {
         super();
     }

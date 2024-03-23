@@ -1,5 +1,5 @@
 import { HubConnection, HubConnectionBuilder, HubConnectionState } from "@microsoft/signalr";
-import { Event, BehaviorClass, BehaviorId, IStateflowsClientTransport, SendResult } from "@stateflows/common";
+import { Event, BehaviorClass, BehaviorId, IStateflowsClientTransport, SendResult, JsonUtils } from "@stateflows/common";
 
 export class SignalRTransport implements IStateflowsClientTransport {
     #hub: Promise<HubConnection> | null = null;
@@ -48,13 +48,13 @@ export class SignalRTransport implements IStateflowsClientTransport {
     send(behaviorId: BehaviorId, event: Event): Promise<SendResult> {
         return new Promise<SendResult>(async (resolve, reject) => {
             let hub = await this.reconnectingHub;
-            let resultString = await hub.invoke("Send", behaviorId, JSON.stringify(event));
-            let result = JSON.parse(resultString);
-            if (result.Response) {
-                (event as any).Response = result.Response;
-                delete result.Response;
+            let resultString = await hub.invoke("Send", behaviorId, JsonUtils.stringify(event));
+            let result = JsonUtils.parse(resultString);
+            if (result.response) {
+                (event as any).response = result.response;
+                delete result.response;
             }
-            resolve(new SendResult(event, result.EventStatus, result.Validation));
+            resolve(new SendResult(event, result.eventStatus, result.validation));
         });
     }
 }

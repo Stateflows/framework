@@ -35,7 +35,7 @@ namespace Stateflows.Transport.SignalR.Client
         {
             var hub = await GetHub();
 
-            var resultString = await hub.InvokeAsync<string>("Send", Id, StateflowsJsonConverter.SerializePolymorphicObject(@event));
+            var resultString = await hub.InvokeAsync<string>("Send", Id, StateflowsJsonConverter.SerializePolymorphicObject(@event, true));
 
             var result = StateflowsJsonConverter.DeserializeObject<RequestResult>(resultString);
 
@@ -52,7 +52,7 @@ namespace Stateflows.Transport.SignalR.Client
         {
             var hub = await GetHub();
 
-            var resultString = await hub.InvokeAsync<string>("Request", Id, StateflowsJsonConverter.SerializePolymorphicObject(request));
+            var resultString = await hub.InvokeAsync<string>("Request", Id, StateflowsJsonConverter.SerializePolymorphicObject(request, true));
 
             var result = StateflowsJsonConverter.DeserializeObject<RequestResult>(resultString);
 
