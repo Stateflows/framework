@@ -8,8 +8,8 @@ namespace Stateflows.Common
         [JsonConstructor]
         protected RequestResult() : base() { }
 
-        public RequestResult(Request<TResponse> request, EventStatus status, EventValidation requestValidation)
-            : base(request, status, requestValidation)
+        public RequestResult(Request<TResponse> request, EventStatus status, EventValidation validation = null)
+            : base(request, status, validation)
         {
             Response = request.Response;
         }
@@ -19,8 +19,8 @@ namespace Stateflows.Common
 
     public class RequestResult : SendResult
     {
-        public RequestResult(Event request, Response response, EventStatus status, EventValidation requestValidation)
-            : base(request, status, requestValidation)
+        public RequestResult(Event request, Response response, EventStatus status, EventValidation validation = null)
+            : base(request, status, validation)
         {
             Response = response;
         }

@@ -49,7 +49,7 @@
 
 @code {
     private string? plantUmlUrl = null;
-    private string? activityName = "activity1";
+    private string? activityName = "activity3";
     private string? ActivityName
     {
         get => activityName;
@@ -102,7 +102,7 @@
     {
         if (locator.TryLocateActivity(GetCurrentId(), out var activity))
         {
-            message = (await activity.InitializeAsync()).Response?.InitializationSuccessful ?? false
+            message = (await activity.InitializeAsync(new X.InitializationRequest1() { Foo = "bar" })).Response?.InitializationSuccessful ?? false
                 ? "Activity located and initialized"
                 : "Activity located, it's already initialized";
 

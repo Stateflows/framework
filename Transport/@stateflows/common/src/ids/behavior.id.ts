@@ -1,3 +1,4 @@
+import { JsonUtils } from "../utils/json.utils";
 import { BehaviorClass } from "./behavior.class";
 
 export class BehaviorId {
@@ -7,4 +8,8 @@ export class BehaviorId {
     ) {}
 
     public $type: string = "Stateflows.BehaviorId, Stateflows.Common";
+
+    public toString(): string {
+        return JsonUtils.stringify(this);
+    }
 }

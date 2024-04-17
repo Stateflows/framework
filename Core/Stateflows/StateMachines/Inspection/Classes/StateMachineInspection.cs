@@ -26,9 +26,29 @@ namespace Stateflows.StateMachines.Inspection.Classes
         public IEnumerable<IStateInspection> States
             => states ??= Executor.Graph.Vertices.Values.Select(v => new StateInspection(Executor, v)).ToArray();
 
+        public IEnumerable<IStateInspection> CurrentStatesStack
+        {
+            get
+            {
+                var result = new List<IStateInspection>();
+                IEnumerable<IStateInspection> statesSet = States;
+                foreach (var vertex in Executor.VerticesStack)
+                {
+                    var state = statesSet.First(s => s.Name == vertex.Name);
+                    if (state != null)
+                    {
+                        result.Add(state);
+                        statesSet = state.States;
+                    }
+                }
+                return result;
+            }
+        }
+
         public IActionInspection Initialize { get; set; }
 
         public IActionInspection Finalize { get; set; }
 
+        public bool StateHasChanged => Executor.StateHasChanged;
     }
 }

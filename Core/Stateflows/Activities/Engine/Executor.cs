@@ -12,6 +12,7 @@ using Stateflows.Activities.Models;
 using Stateflows.Activities.Streams;
 using Stateflows.Activities.Registration;
 using Stateflows.Activities.Context.Classes;
+using Stateflows.Utils;
 
 namespace Stateflows.Activities.Engine
 {
@@ -70,14 +71,18 @@ namespace Stateflows.Activities.Engine
                 .OrderByDescending(node => node.Level)
                 .ToArray();
 
-        public async Task<bool> HydrateAsync(RootContext context)
+        public IEnumerable<Type> GetExpectedEvents()
+            => GetActiveNodes()
+                .Select(node => node.EventType)
+                .Distinct()
+                .ToArray();
+
+        public Task HydrateAsync(RootContext context)
         {
             Context = context;
             Context.Executor = this;
 
-            await Inspector.AfterHydrateAsync(new ActivityActionContext(Context, NodeScope.CreateChildScope()));
-
-            return true;
+            return Inspector.AfterHydrateAsync(new ActivityActionContext(Context, NodeScope.CreateChildScope()));
         }
 
         public async Task<RootContext> DehydrateAsync()
@@ -122,7 +127,7 @@ namespace Stateflows.Activities.Engine
             {
                 Context.Initialized = true;
 
-                Context.ClearEvent();
+                //Context.ClearEvent();
 
                 await ExecuteGraphAsync();
 
@@ -157,14 +162,17 @@ namespace Stateflows.Activities.Engine
             return false;
         }
 
-        public void Reset()
+        public void Reset(bool keepVersion)
         {
             Debug.Assert(Context != null, $"Context is unavailable. Is state machine '{Graph.Name}' hydrated?");
 
             if (Initialized)
             {
                 Context.Context.Values.Clear();
-                Context.Context.Version = 0;
+                if (!keepVersion)
+                {
+                    Context.Context.Version = 0;
+                }
             }
         }
 
@@ -260,25 +268,50 @@ namespace Stateflows.Activities.Engine
 
         public async Task<(IEnumerable<Token> Output, bool Finalized)> DoExecuteStructuredNodeAsync(Node node, NodeScope nodeScope, IEnumerable<Token> input = null)
         {
-            if (Context.NodeThreads.TryGetValue(node.Identifier, out var storedThreadId))
+            if (node.Anchored)
             {
-                nodeScope.ThreadId = storedThreadId;
-            }
-            else
-            {
-                Context.NodeThreads.Add(node.Identifier, nodeScope.ThreadId);
+                if (Context.NodeThreads.TryGetValue(node.Identifier, out var storedThreadId))
+                {
+                    nodeScope.ThreadId = storedThreadId;
+                }
+                else
+                {
+                    Context.NodeThreads.Add(node.Identifier, nodeScope.ThreadId);
+                }
             }
 
-            var finalized = await DoExecuteNodeStructureAsync(
+            var finalized = await DoExecuteStructureAsync(
                 node,
                 nodeScope,
                 input
             );
 
+            //lock (Context.Streams)
+            //{
+            //    if (
+            //        node.OutputNode != null &&
+            //        Context.OutputTokens.TryGetValue(nodeScope.ThreadId, out var nodesOutputTokens) &&
+            //        nodesOutputTokens.TryGetValue(node.OutputNode.Identifier, out var tokens)
+            //    )
+            //    {
+            //        outputTokens.AddRange(Context.GetOutputTokens(node.OutputNode.Identifier, nodeScope.ThreadId));
+            //    }
+
+            //    Context.Streams.Remove(nodeScope.ThreadId);
+            //    Context.OutputTokens.Remove(nodeScope.ThreadId);
+            //}
+
+            var output = node.OutputNode != null
+                ? Context.GetOutputTokens(node.OutputNode.Identifier, nodeScope.ThreadId)
+                : new List<Token>();
+
+            if (node.ExceptionHandlers.Any())
+            {
+                output.AddRange(node.ExceptionHandlers.SelectMany(exceptionHandler => Context.GetOutputTokens(exceptionHandler.Identifier, nodeScope.ThreadId)).ToList());
+            }
+
             var result = (
-                node.OutputNode != null
-                    ? Context.GetOutputTokens(node.OutputNode.Identifier, nodeScope.ThreadId)
-                    : new List<Token>(),
+                output,
                 finalized
             );
 
@@ -290,36 +323,48 @@ namespace Stateflows.Activities.Engine
             return result;
         }
 
-        public async Task<IEnumerable<Token>> DoExecuteParallelNodeAsync<TToken>(ActionContext context)
+        public async Task<IEnumerable<Token>> DoExecuteParallelNodeAsync<TToken>(Node node, NodeScope nodeScope, IEnumerable<Token> input = null)
             where TToken : Token, new()
         {
-            var restOfInput = context.InputTokens.Where(t => !(t is TToken)).ToArray();
+            var restOfInput = input.Where(t => !(t is TToken)).ToArray();
 
-            var parallelInput = context.InputTokens.OfType<TToken>().ToArray();
+            var parallelInput = input.OfType<TToken>().Partition(node.ChunkSize).ToArray();
 
-            var threadIds = parallelInput.ToDictionary<Token, Token, Guid>(t => t, t => Guid.NewGuid());
+            var outputTokens = new List<Token>();
 
             await Task.WhenAll(parallelInput
-                .Select(async token =>
-                {
-                    var threadId = threadIds[token];
-
-                    await DoExecuteNodeStructureAsync(
-                        context.Node,
-                        context.NodeScope.CreateChildScope(context.Node, threadId),
-                        restOfInput.Concat(new Token[] { token }).ToArray(),
-                        token
-                    );
-
-                    lock (Context.Streams)
+                .Select(tokensPartition =>
+                    Task.Run(async () =>
                     {
-                        Context.Streams.Remove(threadId);
-                    }
-                })
+                        var threadId = Guid.NewGuid();
+
+                        await DoExecuteStructureAsync(
+                            node,
+                            nodeScope.CreateChildScope(node, threadId),
+                            restOfInput.Concat(tokensPartition).ToArray(),
+                            tokensPartition
+                        );
+
+                        lock (Context.Streams)
+                        {
+                            if (
+                                node.OutputNode != null &&
+                                Context.OutputTokens.TryGetValue(threadId, out var nodesOutputTokens) &&
+                                nodesOutputTokens.TryGetValue(node.OutputNode.Identifier, out var tokens)
+                            )
+                            {
+                                outputTokens.AddRange(Context.GetOutputTokens(node.OutputNode.Identifier, threadId));
+                            }
+
+                            Context.Streams.Remove(threadId);
+                            Context.OutputTokens.Remove(threadId);
+                        }
+                    })
+                ).ToArray()
             );
 
-            return context.Node.OutputNode != null
-                ? threadIds.Values.SelectMany(threadId => Context.GetOutputTokens(context.Node.OutputNode.Identifier, threadId))
+            return node.OutputNode != null
+                ? outputTokens
                 : new List<Token>();
         }
 
@@ -350,27 +395,39 @@ namespace Stateflows.Activities.Engine
 
             var threadId = Guid.NewGuid();
 
-            foreach (var token in iterativeInput)
+            var outputTokens = new List<Token>();
+
+            foreach (var tokensPartition in iterativeInput.Partition(context.Node.ChunkSize))
             {
-                await DoExecuteNodeStructureAsync(
+                await DoExecuteStructureAsync(
                     context.Node,
                     context.NodeScope.CreateChildScope(context.Node, threadId),
-                    restOfInput.Concat(new Token[] { token }),
-                    token
+                    restOfInput.Concat(tokensPartition),
+                    tokensPartition
                 );
+
+                if (
+                    context.Node.OutputNode != null &&
+                    Context.OutputTokens.TryGetValue(threadId, out var nodesOutputTokens) &&
+                    nodesOutputTokens.TryGetValue(context.Node.OutputNode.Identifier, out var iterationOutputTokens)
+                )
+                {
+                    outputTokens.AddRange(Context.GetOutputTokens(context.Node.OutputNode.Identifier, threadId));
+                }
 
                 lock (Context.Streams)
                 {
                     Context.Streams.Remove(threadId);
+                    Context.OutputTokens.Remove(threadId);
                 }
             }
 
             return context.Node.OutputNode != null
-                ? Context.GetOutputTokens(context.Node.OutputNode.Identifier, threadId)
+                ? outputTokens
                 : new List<Token>();
         }
 
-        private async Task<bool> DoExecuteNodeStructureAsync(Node node, NodeScope nodeScope, IEnumerable<Token> input = null, Token selectionToken = null)
+        private async Task<bool> DoExecuteStructureAsync(Node node, NodeScope nodeScope, IEnumerable<Token> input = null, IEnumerable<Token> selectionTokens = null)
         {
             var startingNode = Context.NodesToExecute.Any()
                 ? node.Nodes.Values.FirstOrDefault(n => Context.NodesToExecute.Contains(n))
@@ -392,7 +449,7 @@ namespace Stateflows.Activities.Engine
             }
 
             await Task.WhenAll(
-                nodes.Select(n => DoHandleNodeAsync(n, nodeScope, n == node.InputNode ? input : null, selectionToken))
+                nodes.Select(n => DoHandleNodeAsync(n, nodeScope, n == node.InputNode ? input : null, selectionTokens)).ToArray()
             );
 
             var result = Context.IsNodeCompleted(node, nodeScope);
@@ -432,7 +489,53 @@ namespace Stateflows.Activities.Engine
             return result;
         }
 
-        public async Task DoHandleNodeAsync(Node node, NodeScope nodeScope, IEnumerable<Token> input = null, Token selectionToken = null)
+        public async Task<IEnumerable<Token>> HandleExceptionAsync(Node node, Exception exception, BaseContext context)
+        {
+            Node handler = null;
+            var currentNode = node;
+            while (currentNode != null)
+            {
+                handler = currentNode.ExceptionHandlers.FirstOrDefault(n => exception.GetType().IsAssignableFrom(n.ExceptionType));
+
+                if (handler != null)
+                {
+                    break;
+                }
+
+                currentNode = currentNode.Parent;
+            }
+
+            var currentScope = context.NodeScope;
+            while (currentNode != null)
+            {
+                if (currentScope.Node == currentNode)
+                {
+                    break;
+                }
+
+                currentScope = currentScope.BaseNodeScope;
+            }
+
+            if (handler != null)
+            {
+                var exceptionContext = new ActionContext(
+                    context.Context,
+                    currentScope,
+                    handler,
+                    new Token[] { new ExceptionToken<Exception>() { Exception = exception } }
+                );
+
+                await handler.Action.WhenAll(exceptionContext);
+
+                DoHandleOutput(exceptionContext);
+
+                return exceptionContext.OutputTokens;
+            }
+
+            return new Token[0];
+        }
+
+        public async Task DoHandleNodeAsync(Node node, NodeScope nodeScope, IEnumerable<Token> input = null, IEnumerable<Token> selectionTokens = null)
         {
             if (CancellableTypes.Contains(node.Type) && nodeScope.CancellationToken.IsCancellationRequested)
             {
@@ -491,7 +594,7 @@ namespace Stateflows.Activities.Engine
                     Debug.WriteLine($">>> Executing node {node.Name}, threadId: {nodeScope.ThreadId}");
                 }
 
-                var actionContext = new ActionContext(Context, nodeScope, node, inputTokens, selectionToken);
+                var actionContext = new ActionContext(Context, nodeScope, node, inputTokens, selectionTokens);
 
                 await node.Action.WhenAll(actionContext);
 
@@ -519,25 +622,32 @@ namespace Stateflows.Activities.Engine
                     }
                 }
 
-                if (node.Type == NodeType.Output)
+                if (node.Type == NodeType.Output || node.Type == NodeType.ExceptionHandler)
                 {
                     DoHandleOutput(actionContext);
                 }
                 else
                 {
-                    if (StructuralTypes.Contains(node.Type) &&
+                    List<Token> outputTokens;
+                    lock (actionContext.OutputTokens)
+                    {
+                        outputTokens = actionContext.OutputTokens.ToList();
+                    }
+
+                    if (
+                        StructuralTypes.Contains(node.Type) &&
                         (
                             Context.IsNodeCompleted(node, nodeScope) ||
-                            actionContext.OutputTokens.Any()
+                            outputTokens.Any()
                         )
                     )
                     {
-                        actionContext.OutputTokens.Add(new ControlToken());
+                        outputTokens.Add(new ControlToken());
                     }
 
-                    if (actionContext.OutputTokens.Any(t => t is ControlToken))
+                    if (outputTokens.Any(t => t is ControlToken))
                     {
-                        var tokenNames = actionContext.OutputTokens.Select(token => token.Name).Distinct().ToArray();
+                        var tokenNames = outputTokens.Select(token => token.Name).Distinct().ToArray();
                         var edges = node.Edges
                             .Where(edge => tokenNames.Contains(edge.TokenType.GetTokenName()) || edge.Weight == 0)
                             .OrderBy(edge => edge.IsElse)
@@ -548,9 +658,9 @@ namespace Stateflows.Activities.Engine
                             _ = await DoHandleEdgeAsync(edge, actionContext);
                         }
 
-                        var nodes = edges.Select(edge => edge.Target).Distinct();
+                        var nodes = edges.Select(edge => edge.Target).Distinct().ToArray();
 
-                        await Task.WhenAll(nodes.Select(n => DoHandleNodeAsync(n, nodeScope)));
+                        await Task.WhenAll(nodes.Select(n => DoHandleNodeAsync(n, nodeScope)).ToArray());
                     }
                 }
 

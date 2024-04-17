@@ -8,6 +8,10 @@ namespace Stateflows.StateMachines.Inspection.Interfaces
 
         IEnumerable<IStateInspection> States { get; }
 
+        IEnumerable<IStateInspection> CurrentStatesStack { get; }
+
         IActionInspection Initialize { get; }
+
+        bool StateHasChanged { get; }
     }
 }

@@ -1,4 +1,5 @@
 export class Event {
-    public Headers: any[];
-    public Name: string;
+    public headers: any[];
+    public name: string;
+    public id: string;
 }

@@ -13,10 +13,36 @@ namespace Stateflows.Transport.AspNetCore.SignalR
 
         private readonly IEnumerable<IBehaviorProvider> _providers;
 
+        private readonly Dictionary<string, Guid> _clients = new();
+
+        private readonly Dictionary<Guid, Dictionary<BehaviorId, IBehavior>> _behaviors = new();
+
         public StateflowsHub(IBehaviorLocator locator, IEnumerable<IBehaviorProvider> providers)
         {
             _locator = locator;
             _providers = providers;
+        }
+
+        public override Task OnDisconnectedAsync(Exception? exception)
+        {
+            lock (_clients)
+            {
+                _clients.Remove(Context.ConnectionId);
+            }
+
+            return base.OnDisconnectedAsync(exception);
+        }
+
+        public void Greet(Guid clientId)
+        {
+            lock (_clients)
+            {
+                _clients[Context.ConnectionId] = clientId;
+                if (!_behaviors.ContainsKey(clientId))
+                {
+                    _behaviors[clientId] = new();
+                }
+            }
         }
 
         public Task<IEnumerable<BehaviorClass>> GetAvailableClasses()
@@ -52,7 +78,7 @@ namespace Stateflows.Transport.AspNetCore.SignalR
 
             result = new RequestResult(@event, @event.GetResponse(), result.Status, result.Validation);
 
-            return StateflowsJsonConverter.SerializePolymorphicObject(result);
+            return StateflowsJsonConverter.SerializePolymorphicObject(result, true);
         }
 
         public async Task<string> Request(BehaviorId behaviorId, string requestData)
@@ -83,7 +109,7 @@ namespace Stateflows.Transport.AspNetCore.SignalR
 
                 result = new RequestResult(@event, @event.GetResponse(), result.Status, result.Validation);
 
-                return StateflowsJsonConverter.SerializePolymorphicObject(result);
+                return StateflowsJsonConverter.SerializePolymorphicObject(result, true);
             }
             else
             {

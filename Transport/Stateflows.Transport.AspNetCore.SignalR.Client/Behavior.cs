@@ -35,7 +35,7 @@ namespace Stateflows.Transport.SignalR.Client
         {
             var hub = await GetHub();
 
-            var resultString = await hub.InvokeAsync<string>("Send", Id, StateflowsJsonConverter.SerializePolymorphicObject(@event));
+            var resultString = await hub.InvokeAsync<string>("Send", Id, StateflowsJsonConverter.SerializePolymorphicObject(@event, true));
 
             var result = StateflowsJsonConverter.DeserializeObject<RequestResult>(resultString);
 
@@ -52,7 +52,7 @@ namespace Stateflows.Transport.SignalR.Client
         {
             var hub = await GetHub();
 
-            var resultString = await hub.InvokeAsync<string>("Request", Id, StateflowsJsonConverter.SerializePolymorphicObject(request));
+            var resultString = await hub.InvokeAsync<string>("Request", Id, StateflowsJsonConverter.SerializePolymorphicObject(request, true));
 
             var result = StateflowsJsonConverter.DeserializeObject<RequestResult>(resultString);
 
@@ -60,5 +60,27 @@ namespace Stateflows.Transport.SignalR.Client
 
             return new RequestResult<TResponse>(request, result.Status, result.Validation);
         }
+
+        public void Dispose()
+        {
+            Dispose(true);
+            GC.SuppressFinalize(this);
+        }
+
+        protected virtual void Dispose(bool disposing)
+        { }
+
+        public Task WatchAsync<TNotification>(Action<TNotification> handler) where TNotification : Notification, new()
+        {
+            throw new NotImplementedException();
+        }
+
+        public Task UnwatchAsync<TNotification>() where TNotification : Notification, new()
+        {
+            throw new NotImplementedException();
+        }
+
+        ~Behavior()
+            => Dispose(false);
     }
 }

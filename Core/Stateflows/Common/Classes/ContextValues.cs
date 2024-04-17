@@ -16,30 +16,43 @@ namespace Stateflows.Common.Classes
 
         public void Set<T>(string key, T value)
         {
-            Values[key] = StateflowsJsonConverter.SerializePolymorphicObject(value);
+            lock (Values)
+            {
+                Values[key] = StateflowsJsonConverter.SerializePolymorphicObject(value);
+            }
         }
 
         public bool IsSet(string key)
         {
-            return Values.ContainsKey(key);
+            bool result;
+
+            lock (Values)
+            {
+                result = Values.ContainsKey(key);
+            }
+
+            return result;
         }
 
         public bool TryGet<T>(string key, out T value)
         {
             value = default;
 
-            if (Values.TryGetValue(key, out var data))
+            lock (Values)
             {
-                var type = typeof(T);
-                var deserializedData = type.IsPrimitive
-                    ? ParseStringToTypedValue<T>(data)
-                    : StateflowsJsonConverter.DeserializeObject(data);
-
-                if (deserializedData is T t)
+                if (Values.TryGetValue(key, out var data))
                 {
-                    value = t;
+                    var type = typeof(T);
+                    var deserializedData = type.IsPrimitive
+                        ? ParseStringToTypedValue<T>(data)
+                        : StateflowsJsonConverter.DeserializeObject(data);
 
-                    return true;
+                    if (deserializedData is T t)
+                    {
+                        value = t;
+
+                        return true;
+                    }
                 }
             }
 
@@ -48,16 +61,19 @@ namespace Stateflows.Common.Classes
 
         public T GetOrDefault<T>(string key, T defaultValue)
         {
-            if (Values.TryGetValue(key, out var data))
+            lock (Values)
             {
-                var type = typeof(T);
-                var deserializedData = type.IsPrimitive
-                    ? ParseStringToTypedValue<T>(data)
-                    : StateflowsJsonConverter.DeserializeObject(data);
-
-                if (deserializedData is T t)
+                if (Values.TryGetValue(key, out var data))
                 {
-                    return t;
+                    var type = typeof(T);
+                    var deserializedData = type.IsPrimitive
+                        ? ParseStringToTypedValue<T>(data)
+                        : StateflowsJsonConverter.DeserializeObject(data);
+
+                    if (deserializedData is T t)
+                    {
+                        return t;
+                    }
                 }
             }
 
@@ -66,12 +82,18 @@ namespace Stateflows.Common.Classes
 
         public void Remove(string key)
         {
-            Values.Remove(key);
+            lock (Values)
+            {
+                Values.Remove(key);
+            }
         }
 
         public void Clear()
         {
-            Values.Clear();
+            lock (Values)
+            {
+                Values.Clear();
+            }
         }
 
         private static T ParseStringToTypedValue<T>(string value)

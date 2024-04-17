@@ -13,12 +13,16 @@ using Stateflows.StateMachines.Extensions;
 using Stateflows.StateMachines.Registration;
 using Stateflows.StateMachines.Context.Classes;
 using Stateflows.StateMachines.Context.Interfaces;
+using Stateflows.Common.Initializer;
+using Stateflows.Activities.Engine;
 
 namespace Stateflows.StateMachines.Engine
 {
     internal sealed class Executor : IDisposable
     {
         public readonly Graph Graph;
+
+        public bool StateHasChanged = false;
 
         public StateMachinesRegister Register { get; set; }
 
@@ -65,6 +69,7 @@ namespace Stateflows.StateMachines.Engine
                     while (Context.StatesStack.Count > i)
                     {
                         Context.StatesStack.RemoveAt(i);
+                        StateHasChanged = true;
                     }
 
                     break;
@@ -78,7 +83,11 @@ namespace Stateflows.StateMachines.Engine
             => VerticesStack.Select(vertex => vertex.Name).ToArray();
 
         public Task HydrateAsync()
-            => Inspector.AfterHydrateAsync(new StateMachineActionContext(Context));
+        {
+            RebuildVerticesStack();
+
+            return Inspector.AfterHydrateAsync(new StateMachineActionContext(Context));
+        }
 
         public Task DehydrateAsync()
             => Inspector.BeforeDehydrateAsync(new StateMachineActionContext(Context));
@@ -116,7 +125,7 @@ namespace Stateflows.StateMachines.Engine
             return false;
         }
 
-        public async Task ExitAsync()
+        public async Task<bool> ExitAsync()
         {
             Debug.Assert(Context != null, $"Context is unavailable. Is state machine '{Graph.Name}' hydrated?");
 
@@ -130,17 +139,25 @@ namespace Stateflows.StateMachines.Engine
                 await DoFinalizeStateMachineAsync();
 
                 Context.StatesStack.Clear();
+                StateHasChanged = true;
+
+                return true;
             }
+
+            return false;
         }
 
-        public void Reset()
+        public void Reset(bool keepVersion)
         {
             Debug.Assert(Context != null, $"Context is unavailable. Is state machine '{Graph.Name}' hydrated?");
 
             if (Initialized)
             {
                 Context.Context.Values.Clear();
-                Context.Context.Version = 0;
+                if (!keepVersion)
+                {
+                    Context.Context.Version = 0;
+                }
             }
         }
 
@@ -155,6 +172,7 @@ namespace Stateflows.StateMachines.Engine
 
                 await DoEntryAsync(vertex);
                 Context.StatesStack.Add(vertex.Identifier);
+                StateHasChanged = true;
 
                 vertex = vertex.InitialVertex;
             }
@@ -175,10 +193,18 @@ namespace Stateflows.StateMachines.Engine
                 }
 
                 Context.StatesStack.Add(vertex.Identifier);
+                StateHasChanged = true;
 
                 vertex = vertex.InitialVertex;
             }
         }
+
+        public IEnumerable<string> GetExpectedEventNames()
+            => GetExpectedEvents()
+                .Where(type => !type.IsSubclassOf(typeof(TimeEvent)))
+                .Where(type => type != typeof(CompletionEvent))
+                .Select(type => type.GetEventName())
+                .ToArray();
 
         public IEnumerable<Type> GetExpectedEvents()
         {
@@ -190,7 +216,8 @@ namespace Stateflows.StateMachines.Engine
                 return currentStack
                     .SelectMany(vertex => vertex.Edges.Values)
                     .Select(edge => edge.TriggerType)
-                    .Distinct();
+                    .Distinct()
+                    .ToArray();
             }
             else
             {
@@ -214,6 +241,8 @@ namespace Stateflows.StateMachines.Engine
         public async Task<EventStatus> ProcessAsync<TEvent>(TEvent @event)
             where TEvent : Event, new()
         {
+            StateHasChanged = false;
+
             var result = EventStatus.Rejected;
 
             if (Initialized)
@@ -276,9 +305,6 @@ namespace Stateflows.StateMachines.Engine
                 {
                     foreach (var edge in vertex.OrderedEdges)
                     {
-                        Context.SourceState = edge.SourceName;
-                        Context.TargetState = edge.TargetName;
-
                         if (@event.Triggers(edge) && await DoGuardAsync<TEvent>(edge))
                         {
                             await DoConsumeAsync<TEvent>(edge);
@@ -450,6 +476,7 @@ namespace Stateflows.StateMachines.Engine
                 {
                     await DoExitAsync(vertex);
                     Context.StatesStack.RemoveAt(Context.StatesStack.Count - 1);
+                    StateHasChanged = true;
                 }
             }
 
@@ -467,6 +494,7 @@ namespace Stateflows.StateMachines.Engine
                 if (vertex != enteringVertices.Last())
                 {
                     Context.StatesStack.Add(vertex.Identifier);
+                    StateHasChanged = true;
                 }
             }
 

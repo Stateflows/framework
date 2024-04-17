@@ -85,6 +85,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Stateflows.Transport.Http",
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Stateflows.Transport.Http.Client", "Transport\Stateflows.Transport.Http.Client\Stateflows.Transport.Http.Client.csproj", "{37C61B16-A27E-487B-AEBC-126E7FDD8443}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Activity.IntegrationTests", "Tests\Activity.IntegrationTests\Activity.IntegrationTests.csproj", "{D6FD721E-4B42-4875-B774-2AD84BE5B3B6}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -203,6 +205,10 @@ Global
 		{37C61B16-A27E-487B-AEBC-126E7FDD8443}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{37C61B16-A27E-487B-AEBC-126E7FDD8443}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{37C61B16-A27E-487B-AEBC-126E7FDD8443}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D6FD721E-4B42-4875-B774-2AD84BE5B3B6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D6FD721E-4B42-4875-B774-2AD84BE5B3B6}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D6FD721E-4B42-4875-B774-2AD84BE5B3B6}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D6FD721E-4B42-4875-B774-2AD84BE5B3B6}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -242,6 +248,7 @@ Global
 		{8AD6B55A-4307-45A0-8C70-D64B7CE46313} = {580A6B03-79AD-430C-AEF6-80EC6A02FA61}
 		{8C6BEB59-8CCB-4BB9-950D-08D95FDE2BC8} = {D789B3ED-A0A0-40B3-A746-337C7EF71B9D}
 		{37C61B16-A27E-487B-AEBC-126E7FDD8443} = {D789B3ED-A0A0-40B3-A746-337C7EF71B9D}
+		{D6FD721E-4B42-4875-B774-2AD84BE5B3B6} = {76D44611-8D90-4E93-BA44-AAB939A742AE}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {602A9FD6-5053-42E4-AEAE-2813DF169A3C}

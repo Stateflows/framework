@@ -4,7 +4,6 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.DependencyInjection;
-using Stateflows.Common.Tenant;
 
 namespace Stateflows.Common.Scheduler
 {
@@ -49,7 +48,7 @@ namespace Stateflows.Common.Scheduler
 
                     try
                     {
-                        _ = Executor.ExecuteByTenantsAsync(() => HandleTimeEvents());
+                        await Executor.ExecuteByTenantsAsync(() => HandleTimeEvents());
                     }
                     catch (Exception e)
                     {
@@ -63,18 +62,17 @@ namespace Stateflows.Common.Scheduler
 
         private async Task HandleTimeEvents()
         {
-            using (var scope = ServiceProvider.CreateScope())
-            {
-                try
-                {
-                    var runner = scope.ServiceProvider.GetRequiredService<ScheduleExecutor>();
+            using var scope = ServiceProvider.CreateScope();
 
-                    await runner.ExecuteAsync();
-                }
-                catch (Exception e)
-                {
-                    Logger.LogError(LogTemplates.ExceptionLogTemplate, typeof(ThreadScheduler).FullName, nameof(HandleTimeEvents), e.GetType().Name, e.Message);
-                }
+            try
+            {
+                var runner = scope.ServiceProvider.GetRequiredService<ScheduleExecutor>();
+
+                await runner.ExecuteAsync();
+            }
+            catch (Exception e)
+            {
+                Logger.LogError(LogTemplates.ExceptionLogTemplate, typeof(ThreadScheduler).FullName, nameof(HandleTimeEvents), e.GetType().Name, e.Message);
             }
         }
 

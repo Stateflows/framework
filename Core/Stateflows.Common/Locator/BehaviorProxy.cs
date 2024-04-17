@@ -1,4 +1,5 @@
-﻿using System.Threading.Tasks;
+﻿using System;
+using System.Threading.Tasks;
 using Stateflows.Common.Engine;
 
 namespace Stateflows.Common.Locator
@@ -40,5 +41,25 @@ namespace Stateflows.Common.Locator
 
             return result;
         }
+
+        public Task WatchAsync<TNotification>(Action<TNotification> handler)
+            where TNotification : Notification, new()
+            => Behavior.WatchAsync<TNotification>(handler);
+
+        public Task UnwatchAsync<TNotification>()
+            where TNotification : Notification, new()
+            => Behavior.UnwatchAsync<TNotification>();
+
+        public void Dispose()
+        {
+            Dispose(true);
+            GC.SuppressFinalize(this);
+        }
+
+        protected virtual void Dispose(bool disposing)
+            => Behavior.Dispose();
+
+        ~BehaviorProxy()
+            => Dispose(false);
     }
 }

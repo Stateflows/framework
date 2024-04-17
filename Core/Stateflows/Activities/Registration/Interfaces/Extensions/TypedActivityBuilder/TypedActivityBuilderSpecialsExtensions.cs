@@ -87,8 +87,36 @@ namespace Stateflows.Activities
                     b => decisionBuildAction(b.SetOptions(NodeOptions.DataStoreDefault) as IDataStoreBuilder)
                 ) as ITypedActivityBuilder;
 
-        public static ITypedActivityBuilder AddTimeEventAction<TTimeEvent>(this ITypedActivityBuilder builder, string actionNodeName, ActionDelegateAsync actionAsync, AcceptEventActionBuildAction buildAction)
+        #region AddAcceptEventAction
+        public static ITypedActivityBuilder AddAcceptEventAction<TEvent>(this ITypedActivityBuilder builder, string actionNodeName, AcceptEventActionBuildAction buildAction)
+            where TEvent : Event, new()
+            => builder.AddAcceptEventAction<TEvent>(actionNodeName, c => Task.CompletedTask, buildAction);
+
+        public static ITypedActivityBuilder AddAcceptEventAction<TEvent>(this ITypedActivityBuilder builder, AcceptEventActionBuildAction buildAction)
+            where TEvent : Event, new()
+            => builder.AddAcceptEventAction<TEvent>(ActivityNodeInfo<AcceptEventActionNode<TEvent>>.Name, c => Task.CompletedTask, buildAction);
+
+        public static ITypedActivityBuilder AddAcceptEventAction<TEvent>(this ITypedActivityBuilder builder, ActionDelegateAsync actionAsync, AcceptEventActionBuildAction buildAction = null)
+            where TEvent : Event, new()
+            => builder.AddAcceptEventAction<TEvent>(ActivityNodeInfo<AcceptEventActionNode<TEvent>>.Name, c => actionAsync(c), buildAction);
+        #endregion
+
+        #region AddTimeEventAction
+        public static ITypedActivityBuilder AddTimeEventAction<TTimeEvent>(this ITypedActivityBuilder builder, string actionNodeName, AcceptEventActionBuildAction buildAction)
+            where TTimeEvent : TimeEvent, new()
+            => builder.AddAcceptEventAction<TTimeEvent>(actionNodeName, c => Task.CompletedTask, buildAction);
+
+        public static ITypedActivityBuilder AddTimeEventAction<TTimeEvent>(this ITypedActivityBuilder builder, string actionNodeName, ActionDelegateAsync actionAsync, AcceptEventActionBuildAction buildAction = null)
             where TTimeEvent : TimeEvent, new()
             => builder.AddAcceptEventAction<TTimeEvent>(actionNodeName, c => actionAsync(c), buildAction);
+
+        public static ITypedActivityBuilder AddTimeEventAction<TTimeEvent>(this ITypedActivityBuilder builder, ActionDelegateAsync actionAsync, AcceptEventActionBuildAction buildAction = null)
+            where TTimeEvent : TimeEvent, new()
+            => builder.AddAcceptEventAction<TTimeEvent>(ActivityNodeInfo<AcceptEventActionNode<TTimeEvent>>.Name, c => actionAsync(c), buildAction);
+
+        public static ITypedActivityBuilder AddTimeEventAction<TTimeEvent>(this ITypedActivityBuilder builder, AcceptEventActionBuildAction buildAction)
+            where TTimeEvent : TimeEvent, new()
+            => builder.AddAcceptEventAction<TTimeEvent>(ActivityNodeInfo<AcceptEventActionNode<TTimeEvent>>.Name, c => Task.CompletedTask, buildAction);
+        #endregion
     }
 }

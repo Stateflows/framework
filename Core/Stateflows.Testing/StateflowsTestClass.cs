@@ -10,6 +10,7 @@ using Stateflows.StateMachines;
 using Stateflows.Common.Registration.Interfaces;
 using Stateflows.Testing.StateMachines.Sequence;
 using Microsoft.Extensions.Logging;
+using Stateflows.Activities;
 
 namespace StateMachine.IntegrationTests.Utils
 {
@@ -21,8 +22,10 @@ namespace StateMachine.IntegrationTests.Utils
         private IServiceProvider _serviceProvider;
         protected IServiceProvider ServiceProvider => _serviceProvider ?? (_serviceProvider = ServiceCollection.BuildServiceProvider());
 
-        protected IStateMachineLocator Locator => ServiceProvider.GetRequiredService<IStateMachineLocator>();
-        
+        protected IStateMachineLocator StateMachineLocator => ServiceProvider.GetRequiredService<IStateMachineLocator>();
+
+        protected IActivityLocator ActivityLocator => ServiceProvider.GetRequiredService<IActivityLocator>();
+
         protected ExecutionSequenceObserver ExecutionSequence => ServiceProvider.GetRequiredService<ExecutionSequenceObserver>();
 
         public virtual void Initialize()

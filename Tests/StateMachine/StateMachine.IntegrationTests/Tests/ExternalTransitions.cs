@@ -93,7 +93,7 @@ namespace StateMachine.IntegrationTests.Tests
             var status = EventStatus.Rejected;
             string currentState = "state1";
 
-            if (Locator.TryLocateStateMachine(new StateMachineId("nested-to-root", "x"), out var sm))
+            if (StateMachineLocator.TryLocateStateMachine(new StateMachineId("nested-to-root", "x"), out var sm))
             {
                 status = (await sm.InitializeAsync()).Status;
 
@@ -126,7 +126,7 @@ namespace StateMachine.IntegrationTests.Tests
             var status = EventStatus.Rejected;
             string currentState = "state1";
 
-            if (Locator.TryLocateStateMachine(new StateMachineId("root-to-nested", "x"), out var sm))
+            if (StateMachineLocator.TryLocateStateMachine(new StateMachineId("root-to-nested", "x"), out var sm))
             {
                 status = (await sm.InitializeAsync()).Status;
 
@@ -154,7 +154,7 @@ namespace StateMachine.IntegrationTests.Tests
             var status = EventStatus.Rejected;
             string currentState = "state1";
 
-            if (Locator.TryLocateStateMachine(new StateMachineId("nested-to-nested", "x"), out var sm))
+            if (StateMachineLocator.TryLocateStateMachine(new StateMachineId("nested-to-nested", "x"), out var sm))
             {
                 status = (await sm.InitializeAsync()).Status;
 
@@ -189,7 +189,7 @@ namespace StateMachine.IntegrationTests.Tests
             var status = EventStatus.Rejected;
             string currentState = "state1";
 
-            if (Locator.TryLocateStateMachine(new StateMachineId("nested-to-parent", "x"), out var sm))
+            if (StateMachineLocator.TryLocateStateMachine(new StateMachineId("nested-to-parent", "x"), out var sm))
             {
                 await sm.InitializeAsync();
                 

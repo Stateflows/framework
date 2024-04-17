@@ -1,5 +1,6 @@
 import { HubConnection, HubConnectionBuilder, HubConnectionState } from "@microsoft/signalr";
-import { Event, BehaviorClass, BehaviorId, IStateflowsClientTransport, SendResult } from "@stateflows/common";
+import { Event, BehaviorClass, BehaviorId, IStateflowsClientTransport, SendResult, JsonUtils, IWatcher } from "@stateflows/common";
+import { HubConnectionBuilderAction } from "../types/hub-connection-builder-action";
 
 export class SignalRTransport implements IStateflowsClientTransport {
     #hub: Promise<HubConnection> | null = null;
@@ -7,8 +8,14 @@ export class SignalRTransport implements IStateflowsClientTransport {
     private get hub(): Promise<HubConnection> {
         if (this.#hub == null) {
             this.#hub = new Promise<HubConnection>((resolve, reject) => {
-                let hub = new HubConnectionBuilder()
-                    .withUrl(this.url + "stateflows_v1")
+                let hubBuilder = new HubConnectionBuilder()
+                    .withUrl(this.url + "stateflows_v1");
+
+                if (this.builderAction !== null) {
+                    hubBuilder = this.builderAction(hubBuilder);
+                }
+                
+                let hub = hubBuilder
                     .build();
 
                 hub.start().then(() => resolve(hub));
@@ -31,7 +38,10 @@ export class SignalRTransport implements IStateflowsClientTransport {
         });
     }
 
-    constructor(private url: string) {
+    constructor(
+        private url: string,
+        private builderAction: HubConnectionBuilderAction = null
+    ) {
         if (url.slice(-1) != '/') {
             url = url + '/';
         }
@@ -48,13 +58,19 @@ export class SignalRTransport implements IStateflowsClientTransport {
     send(behaviorId: BehaviorId, event: Event): Promise<SendResult> {
         return new Promise<SendResult>(async (resolve, reject) => {
             let hub = await this.reconnectingHub;
-            let resultString = await hub.invoke("Send", behaviorId, JSON.stringify(event));
-            let result = JSON.parse(resultString);
-            if (result.Response) {
-                (event as any).Response = result.Response;
-                delete result.Response;
+            let resultString = await hub.invoke("Send", behaviorId, JsonUtils.stringify(event));
+            let result = JsonUtils.parse(resultString);
+            if (result.response) {
+                (event as any).response = result.response;
+                delete result.response;
             }
-            resolve(new SendResult(event, result.EventStatus, result.Validation));
+            resolve(new SendResult(event, result.status, result.validation));
         });
+    }
+
+    async watch(watcher: IWatcher, notificationName: string): Promise<void> {
+    }
+
+    async unwatch(watcher: IWatcher, notificationName: string): Promise<void> {
     }
 }

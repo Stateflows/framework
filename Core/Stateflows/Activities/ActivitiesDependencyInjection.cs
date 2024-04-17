@@ -1,4 +1,5 @@
 ﻿using System.Diagnostics;
+using System.Collections.Generic;
 using Microsoft.Extensions.DependencyInjection;
 using Stateflows.Common.Interfaces;
 using Stateflows.Common.Initializer;
@@ -13,7 +14,7 @@ namespace Stateflows.Activities
 {
     public static class ActivitiesDependencyInjection
     {
-        private static ActivitiesRegister Register;
+        private readonly static Dictionary<IStateflowsBuilder, ActivitiesRegister> Registers = new Dictionary<IStateflowsBuilder, ActivitiesRegister>();
 
         [DebuggerHidden]
         public static IStateflowsBuilder AddActivities(this IStateflowsBuilder stateflowsBuilder, ActivitiesBuildAction buildAction)
@@ -24,33 +25,38 @@ namespace Stateflows.Activities
         }
 
         [DebuggerHidden]
-        public static IStateflowsBuilder AddDefaultInstance<TActivity>(this IStateflowsBuilder stateflowsBuilder, InitializationRequestFactoryAsync initializationRequestFactoryAsync = null)
+        public static IStateflowsBuilder AddDefaultInstance<TActivity>(this IStateflowsBuilder stateflowsBuilder, DefaultInstanceInitializationRequestFactoryAsync initializationRequestFactoryAsync = null)
             where TActivity: Activity
             => stateflowsBuilder.AddDefaultInstance(new ActivityClass(ActivityInfo<TActivity>.Name).BehaviorClass, initializationRequestFactoryAsync);
 
 
         private static ActivitiesRegister EnsureActivitiesServices(this IStateflowsBuilder stateflowsBuilder)
         {
-            if (Register == null)
+            if (!Registers.TryGetValue(stateflowsBuilder, out var register))
             {
-                Register = new ActivitiesRegister(stateflowsBuilder.ServiceCollection);
+                register = new ActivitiesRegister(stateflowsBuilder.ServiceCollection);
+                Registers.Add(stateflowsBuilder, register);
 
                 stateflowsBuilder
                     .EnsureStateflowServices()
                     .ServiceCollection
                     .AddScoped<AcceptEvents>()
                     .AddScoped<IActivityPlugin>(serviceProvider => serviceProvider.GetRequiredService<AcceptEvents>())
-                    .AddSingleton(Register)
+                    .AddSingleton(register)
                     .AddScoped<IEventProcessor, Processor>()
                     .AddTransient<IBehaviorProvider, Provider>()
+                    .AddSingleton<IActivityEventHandler, BehaviorStatusHandler>()
                     .AddSingleton<IActivityEventHandler, InitializationHandler>()
                     .AddSingleton<IActivityEventHandler, ExecutionHandler>()
-                    .AddSingleton<IActivityEventHandler, CancelHandler>()
+                    .AddSingleton<IActivityEventHandler, FinalizationHandler>()
                     .AddSingleton<IActivityEventHandler, ResetHandler>()
+                    .AddSingleton<IActivityEventHandler, SubscriptionHandler>()
+                    .AddSingleton<IActivityEventHandler, UnsubscriptionHandler>()
+                    .AddSingleton<IActivityEventHandler, NotificationsHandler>()
                     ;
             }
 
-            return Register;
+            return register;
         }
     }
 }

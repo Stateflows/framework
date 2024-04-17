@@ -82,7 +82,7 @@ namespace StateMachine.IntegrationTests.Tests
             var otherStatus = EventStatus.Rejected;
             var someStatus = EventStatus.Rejected;
 
-            if (Locator.TryLocateStateMachine(new StateMachineId("defer", "x"), out var sm))
+            if (StateMachineLocator.TryLocateStateMachine(new StateMachineId("defer", "x"), out var sm))
             {
                 initialized = (await sm.InitializeAsync()).Response.InitializationSuccessful;
 
@@ -108,7 +108,7 @@ namespace StateMachine.IntegrationTests.Tests
             var otherStatus2 = EventStatus.Rejected;
             var someStatus = EventStatus.Rejected;
 
-            if (Locator.TryLocateStateMachine(new StateMachineId("sequence", "x"), out var sm))
+            if (StateMachineLocator.TryLocateStateMachine(new StateMachineId("sequence", "x"), out var sm))
             {
                 initialized = (await sm.InitializeAsync()).Response.InitializationSuccessful;
 
@@ -137,7 +137,7 @@ namespace StateMachine.IntegrationTests.Tests
             var otherStatus2 = EventStatus.Rejected;
             var someStatus = EventStatus.Rejected;
 
-            if (Locator.TryLocateStateMachine(new StateMachineId("nested", "x"), out var sm))
+            if (StateMachineLocator.TryLocateStateMachine(new StateMachineId("nested", "x"), out var sm))
             {
                 initialized = (await sm.InitializeAsync()).Response.InitializationSuccessful;
 

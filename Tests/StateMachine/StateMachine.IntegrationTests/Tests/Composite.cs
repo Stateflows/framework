@@ -96,7 +96,7 @@ namespace StateMachine.IntegrationTests.Tests
             string currentState = "";
             string? currentInnerState = "";
 
-            if (Locator.TryLocateStateMachine(new StateMachineId("composite", "x"), out var sm))
+            if (StateMachineLocator.TryLocateStateMachine(new StateMachineId("composite", "x"), out var sm))
             {
                 await sm.InitializeAsync();
 
@@ -126,9 +126,9 @@ namespace StateMachine.IntegrationTests.Tests
             var status = EventStatus.Rejected;
             CurrentStateResponse? currentState = null;
 
-            if (Locator.TryLocateStateMachine(new StateMachineId("default", "x"), out var sm))
+            if (StateMachineLocator.TryLocateStateMachine(new StateMachineId("default", "x"), out var sm))
             {
-                await sm.InitializeAsync();
+                var initRes = await sm.InitializeAsync();
 
                 status = (await sm.SendAsync(new OtherEvent() { AnswerToLifeUniverseAndEverything = 42 })).Status;
 
@@ -167,7 +167,7 @@ namespace StateMachine.IntegrationTests.Tests
             var status = EventStatus.Rejected;
             CurrentStateResponse? currentState = null;
 
-            if (Locator.TryLocateStateMachine(new StateMachineId("exits", "x"), out var sm))
+            if (StateMachineLocator.TryLocateStateMachine(new StateMachineId("exits", "x"), out var sm))
             {
                 await sm.InitializeAsync();
 
@@ -200,7 +200,7 @@ namespace StateMachine.IntegrationTests.Tests
             var status = EventStatus.Rejected;
             CurrentStateResponse? currentState = null;
 
-            if (Locator.TryLocateStateMachine(new StateMachineId("single", "x"), out var sm))
+            if (StateMachineLocator.TryLocateStateMachine(new StateMachineId("single", "x"), out var sm))
             {
                 await sm.InitializeAsync();
 

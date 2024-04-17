@@ -1,7 +1,9 @@
-﻿namespace Stateflows.Activities
+﻿using Stateflows.Common.Extensions;
+
+namespace Stateflows.Activities
 {
     public sealed class JoinNode : ActivityNode
     {
-        public const string Name = "Stateflows.Activities.JoinNode";
+        public static string Name => typeof(JoinNode).GetReadableName();
     }
 }

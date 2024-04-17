@@ -156,7 +156,7 @@ namespace Stateflows.Activities.Engine
         Task IActivityObserver.BeforeActivityInitializationAsync(IActivityInitializationContext context)
         {
             RegisterAcceptEventNodes(
-                (context as IRootContext).Context.Executor.Graph.DanglingTimeEventActionNodes.Select(node => (node, Guid.NewGuid()))
+                (context as IRootContext).Context.Executor.Graph.AcceptEventActionNodes.Select(node => (node, Guid.NewGuid()))
             );
 
             return Task.CompletedTask;

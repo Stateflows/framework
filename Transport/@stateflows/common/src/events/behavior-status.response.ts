@@ -3,7 +3,8 @@ import { BehaviorStatus } from "../enums/behavior-status";
 
 export class BehaviorStatusResponse extends Response {
     constructor(
-        public BehaviorStatus: BehaviorStatus,
+        public behaviorStatus: BehaviorStatus,
+        public expectedEvents: Array<string>,
     ) {
         super();
     }

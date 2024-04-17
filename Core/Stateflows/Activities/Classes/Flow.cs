@@ -1,7 +1,7 @@
 ﻿using System.Threading.Tasks;
-using Stateflows.Activities.Context.Interfaces;
 using Stateflows.Common;
 using Stateflows.Common.Data;
+using Stateflows.Activities.Context.Interfaces;
 
 namespace Stateflows.Activities
 {
@@ -21,7 +21,8 @@ namespace Stateflows.Activities
     {
         public virtual int Weight => 1;
 
-        new public IFlowContext<TToken> Context { get; internal set; }
+        new public IFlowContext<TToken> Context
+            => (IFlowContext<TToken>)base.Context;
     }
 
     public abstract class Flow<TToken> : BaseFlow<TToken>
@@ -37,7 +38,8 @@ namespace Stateflows.Activities
     {
         public virtual int Weight => 1;
 
-        new public IFlowContext<TToken> Context { get; internal set; }
+        new public IFlowContext<TToken> Context
+            => (IFlowContext<TToken>)base.Context;
 
         public abstract Task<TTransformedToken> TransformAsync();
     }

@@ -43,7 +43,7 @@ namespace Stateflows.Common.Initializer
 
         private async Task InitiateBehaviors()
         {
-            var tokens = BehaviorClassesInitializations.Instance.InitializationTokens;
+            var tokens = BehaviorClassesInitializations.Instance.DefaultInstanceInitializationTokens;
 
             await Task.WhenAll(
                 tokens.Select(async token =>

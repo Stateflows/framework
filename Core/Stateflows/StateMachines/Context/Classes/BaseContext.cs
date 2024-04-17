@@ -5,7 +5,7 @@ using Stateflows.Common.Interfaces;
 
 namespace Stateflows.StateMachines.Context.Classes
 {
-    internal class BaseContext : IStateflowsContextProvider
+    internal class BaseContext : IStateflowsContextProvider, IBehaviorLocator
     {
         public BaseContext(RootContext context)
         {

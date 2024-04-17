@@ -25,7 +25,7 @@ namespace Stateflows.StateMachines
         }
 
         [DebuggerHidden]
-        public static IStateflowsBuilder AddDefaultInstance<TStateMachine>(this IStateflowsBuilder stateflowsBuilder, InitializationRequestFactoryAsync initializationRequestFactoryAsync = null)
+        public static IStateflowsBuilder AddDefaultInstance<TStateMachine>(this IStateflowsBuilder stateflowsBuilder, DefaultInstanceInitializationRequestFactoryAsync initializationRequestFactoryAsync = null)
             where TStateMachine : StateMachine
             => stateflowsBuilder.AddDefaultInstance(new StateMachineClass(StateMachineInfo<TStateMachine>.Name).BehaviorClass, initializationRequestFactoryAsync);
 
@@ -40,16 +40,20 @@ namespace Stateflows.StateMachines
                     .EnsureStateflowServices()
                     .ServiceCollection
                     .AddScoped<IStateMachinePlugin, TimeEvents>()
-                    .AddScoped<IStateMachinePlugin, Submachines>()
+                    .AddScoped<IStateMachinePlugin, Behaviors>()
                     .AddScoped<IStateMachinePlugin, ContextCleanup>()
+                    .AddScoped<IStateMachinePlugin, Notifications>()
                     .AddSingleton(register)
                     .AddSingleton<IEventProcessor, Processor>()
                     .AddTransient<IBehaviorProvider, Provider>()
                     .AddSingleton<IStateMachineEventHandler, InitializationHandler>()
-                    .AddSingleton<IStateMachineEventHandler, BehaviorStatusHandler>()
-                    .AddSingleton<IStateMachineEventHandler, CurrentStateHandler>()
-                    .AddSingleton<IStateMachineEventHandler, ExitHandler>()
+                    .AddSingleton<IStateMachineEventHandler, BehaviorStatusRequestHandler>()
+                    .AddSingleton<IStateMachineEventHandler, CurrentStateRequestHandler>()
+                    .AddSingleton<IStateMachineEventHandler, FinalizationHandler>()
                     .AddSingleton<IStateMachineEventHandler, ResetHandler>()
+                    .AddSingleton<IStateMachineEventHandler, SubscriptionHandler>()
+                    .AddSingleton<IStateMachineEventHandler, UnsubscriptionHandler>()
+                    .AddSingleton<IStateMachineEventHandler, NotificationsHandler>()
                     ;
             }
 

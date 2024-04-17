@@ -2,11 +2,10 @@
 using System.Linq;
 using System.Diagnostics;
 using System.Collections.Generic;
+using Stateflows.Common;
 using Stateflows.Common.Models;
 using Stateflows.Activities.Exceptions;
 using Stateflows.Activities.Registration.Interfaces;
-using System.Xml.Linq;
-using Stateflows.Common;
 
 namespace Stateflows.Activities.Models
 {
@@ -49,8 +48,8 @@ namespace Stateflows.Activities.Models
                 else
                 {
                     throw new FlowDefinitionException(!AllNamedNodes.ContainsKey(edge.TargetName)
-                        ? $"Flow target action '{edge.TargetName}' is not registered in activity '{Name}'"
-                        : $"Flow target action '{edge.TargetName}' is not defined on the same level as flow source '{edge.SourceName}' in activity '{Name}'"
+                        ? $"Invalid activity '{Name}': flow target action '{edge.TargetName}' is not registered."
+                        : $"Invalid activity '{Name}': flow target action '{edge.TargetName}' is not defined on the same level as flow source '{edge.SourceName}'."
                     );
                 }
             }
@@ -67,7 +66,7 @@ namespace Stateflows.Activities.Models
             if (danglingNodes.Any())
             {
                 var node = danglingNodes.First();
-                throw new NodeDefinitionException(node.Name, $"Invalid activity: node '{node.Name}' doesn't have any incoming flow.");
+                throw new NodeDefinitionException(node.Name, $"Invalid activity '{Name}': node '{node.Name}' doesn't have any incoming flow.");
             }
 
             var transitiveNodeTypes = new NodeType[] {
@@ -89,7 +88,7 @@ namespace Stateflows.Activities.Models
 
                     if (undeclaredOutgoingTokens.Any())
                     {
-                        throw new NodeDefinitionException(node.Name, $"Invalid outgoing flow: node '{node.Name}' doesn't have incoming flow with '{TokenInfo.GetName(undeclaredOutgoingTokens.First())}' tokens.");
+                        throw new NodeDefinitionException(node.Name, $"Invalid activity '{Name}': node '{node.Name}' doesn't have incoming flow with '{TokenInfo.GetName(undeclaredOutgoingTokens.First())}' tokens, outgoing flow is invalid.");
                     }
                 }
 
@@ -104,17 +103,17 @@ namespace Stateflows.Activities.Models
 
                     if (undeclaredIncomingTokens.Any())
                     {
-                        throw new NodeDefinitionException(node.Name, $"Invalid incoming flow: action '{node.Name}' doesn't accept incoming '{TokenInfo.GetName(undeclaredIncomingTokens.First())}' tokens.");
+                        throw new NodeDefinitionException(node.Name, $"Invalid activity '{Name}': action '{node.Name}' doesn't accept incoming '{TokenInfo.GetName(undeclaredIncomingTokens.First())}' tokens, incoming flow is invalid.");
                     }
 
                     if (undeclaredOutgoingTokens.Any())
                     {
-                        throw new NodeDefinitionException(node.Name, $"Invalid outgoing flow: action '{node.Name}' doesn't produce outgoing '{TokenInfo.GetName(undeclaredOutgoingTokens.First())}' tokens.");
+                        throw new NodeDefinitionException(node.Name, $"Invalid activity '{Name}': action '{node.Name}' doesn't produce outgoing '{TokenInfo.GetName(undeclaredOutgoingTokens.First())}' tokens, outgoing flow is invalid.");
                     }
 
                     if (unsatisfiedIncomingTokens.Any())
                     {
-                        throw new NodeDefinitionException(node.Name, $"Missing incoming flow: action '{node.Name}' requires '{TokenInfo.GetName(unsatisfiedIncomingTokens.First())}' input tokens, but there is no incoming flow with them.");
+                        throw new NodeDefinitionException(node.Name, $"Invalid activity '{Name}': action '{node.Name}' requires '{TokenInfo.GetName(unsatisfiedIncomingTokens.First())}' input tokens, but there is no incoming flow with them.");
                     }
                 }
             }

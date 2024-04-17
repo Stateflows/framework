@@ -1,5 +1,6 @@
-﻿using Stateflows.Common.Utilities;
-using System.Text.Json.Serialization;
+﻿using System;
+using System.Collections.Generic;
+using Newtonsoft.Json;
 
 namespace Stateflows.Common.Transport.Classes
 {
@@ -9,24 +10,11 @@ namespace Stateflows.Common.Transport.Classes
 
         public EventValidation Validation { get; set; }
 
-        //public string ValidationString { get; set; }
-
-        //[JsonIgnore]
-        //public EventValidation Validation
-        //{
-        //    get => StateflowsJsonConverter.DeserializeObject<EventValidation>(ValidationString);
-        //    set => ValidationString = StateflowsJsonConverter.SerializePolymorphicObject(value);
-        //}
-
         public Response Response { get; set; }
 
-        //public string ResponseString { get; set; }
+        public DateTime ResponseTime { get; set; }
 
-        //[JsonIgnore]
-        //public Response Response
-        //{
-        //    get => StateflowsJsonConverter.DeserializeObject<Response>(ResponseString);
-        //    set => ResponseString = StateflowsJsonConverter.SerializePolymorphicObject(value);
-        //}
+        [JsonProperty(TypeNameHandling = TypeNameHandling.None)]
+        public IEnumerable<Notification> Notifications { get; set; } = Array.Empty<Notification>();
     }
 }

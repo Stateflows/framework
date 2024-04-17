@@ -55,7 +55,7 @@ namespace StateMachine.IntegrationTests.Tests
             var status = EventStatus.Rejected;
             string currentState = "state1";
 
-            if (Locator.TryLocateStateMachine(new StateMachineId("single", "x"), out var sm))
+            if (StateMachineLocator.TryLocateStateMachine(new StateMachineId("single", "x"), out var sm))
             {
                 await sm.InitializeAsync();
 
@@ -74,7 +74,7 @@ namespace StateMachine.IntegrationTests.Tests
             var status = EventStatus.Rejected;
             string currentState = "state1";
 
-            if (Locator.TryLocateStateMachine(new StateMachineId("multiple", "x"), out var sm))
+            if (StateMachineLocator.TryLocateStateMachine(new StateMachineId("multiple", "x"), out var sm))
             {
                 await sm.InitializeAsync();
 

@@ -1,10 +1,12 @@
-import { Response } from "./response";
+import { BehaviorStatus } from "../enums/behavior-status";
+import { BehaviorStatusResponse } from "./behavior-status.response";
 
-export class CurrentStateResponse extends Response {
+export class CurrentStateResponse extends BehaviorStatusResponse {
     constructor(
-        public StatesStack: Array<string>,
-        public ExpectedEvents: Array<string>,
+        behaviorStatus: BehaviorStatus,
+        expectedEvents: Array<string>,
+        public statesStack: Array<string>,
     ) {
-        super();
+        super(behaviorStatus, expectedEvents);
     }
 }

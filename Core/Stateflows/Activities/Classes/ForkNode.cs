@@ -1,7 +1,9 @@
-﻿namespace Stateflows.Activities
+﻿using Stateflows.Common.Extensions;
+
+namespace Stateflows.Activities
 {
     public sealed class ForkNode : ActivityNode
     {
-        public const string Name = "Stateflows.Activities.ForkNode";
+        public static string Name => typeof(ForkNode).GetReadableName();
     }
 }

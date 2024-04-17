@@ -8,16 +8,25 @@ namespace Stateflows.Common.Extensions
     {
         public static string GetReadableName(this Type type)
         {
+            var result = string.Empty;
             if (!type.IsGenericType)
             {
-                return type.FullName;
+                result = type.FullName;
             }
             else
             {
                 var typeName = type.GetGenericTypeDefinition().FullName.Split('`').First();
                 var typeNames = string.Join(", ", type.GetGenericArguments().Select(t => t.FullName));
-                return $"{typeName}<{typeNames}>";
+                result = $"{typeName}<{typeNames}>";
             }
+
+            var standardPrefix = "Stateflows.Activities.";
+            if (result.StartsWith(standardPrefix))
+            {
+                result = result.Substring(standardPrefix.Length);
+            }
+
+            return result;
         }
 
         public static object GetUninitializedInstance(this Type type)

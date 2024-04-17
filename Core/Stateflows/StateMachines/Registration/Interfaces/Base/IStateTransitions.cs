@@ -1,5 +1,4 @@
 ﻿using Stateflows.Common;
-using Stateflows.StateMachines.Events;
 
 namespace Stateflows.StateMachines.Registration.Interfaces.Base
 {
@@ -9,9 +8,9 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         TReturn AddTransition<TEvent>(string targetVertexName, TransitionBuildAction<TEvent> transitionBuildAction = null)
             where TEvent : Event, new();
 
-        TReturn AddDefaultTransition(string targetVertexName, TransitionBuildAction<CompletionEvent> transitionBuildAction = null);
+        TReturn AddDefaultTransition(string targetVertexName, DefaultTransitionBuildAction transitionBuildAction = null);
 
-        TReturn AddInternalTransition<TEvent>(TransitionBuildAction<TEvent> transitionBuildAction)
+        TReturn AddInternalTransition<TEvent>(InternalTransitionBuildAction<TEvent> transitionBuildAction)
             where TEvent : Event, new();
         #endregion
 
@@ -19,9 +18,9 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         TReturn AddElseTransition<TEvent>(string targetVertexName, ElseTransitionBuildAction<TEvent> transitionBuildAction = null)
             where TEvent : Event, new();
 
-        TReturn AddElseDefaultTransition(string targetVertexName, ElseTransitionBuildAction<CompletionEvent> transitionBuildAction = null);
+        TReturn AddElseDefaultTransition(string targetVertexName, ElseDefaultTransitionBuildAction transitionBuildAction = null);
 
-        TReturn AddElseInternalTransition<TEvent>(ElseTransitionBuildAction<TEvent> transitionBuildAction)
+        TReturn AddElseInternalTransition<TEvent>(ElseInternalTransitionBuildAction<TEvent> transitionBuildAction)
             where TEvent : Event, new();
         #endregion
     }

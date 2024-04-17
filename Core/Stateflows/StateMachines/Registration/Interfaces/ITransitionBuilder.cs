@@ -1,13 +1,11 @@
-﻿using System;
-using System.Threading.Tasks;
-using Stateflows.Common;
-using Stateflows.StateMachines.Context.Interfaces;
+﻿using Stateflows.Common;
+using Stateflows.StateMachines.Registration.Interfaces.Base;
 
 namespace Stateflows.StateMachines.Registration.Interfaces
 {
-    public interface ITransitionBuilder<TEvent> : IElseTransitionBuilder<TEvent>
+    public interface ITransitionBuilder<TEvent> :
+        IEffect<TEvent, ITransitionBuilder<TEvent>>,
+        IGuard<TEvent, ITransitionBuilder<TEvent>>
         where TEvent : Event, new()
-    {
-        ITransitionBuilder<TEvent> AddGuard(Func<IGuardContext<TEvent>, Task<bool>> guardAsync);
-    }
+    { }
 }

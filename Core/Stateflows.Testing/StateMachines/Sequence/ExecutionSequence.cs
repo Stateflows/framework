@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using Stateflows.Common;
 using Stateflows.Common.Exceptions;
 using Stateflows.StateMachines.Events;

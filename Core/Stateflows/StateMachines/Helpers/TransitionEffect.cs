@@ -7,7 +7,7 @@ namespace Stateflows.StateMachines
 {
     public static class TransitionEffect
     {
-        public static Task Empty<TEvent>(ITransitionContext<TEvent> context)
+        public static Task Empty<TEvent>(ITransitionContext<TEvent> _)
             where TEvent : Event, new()
             => Task.CompletedTask;
 

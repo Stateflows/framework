@@ -2,7 +2,7 @@
 using System.Linq;
 using System.Collections.Generic;
 
-namespace Stateflows.Activities.Utils
+namespace Stateflows.Utils
 {
     public static class IEnumerableExtensions
     {
@@ -22,6 +22,25 @@ namespace Stateflows.Activities.Utils
             where TTarget : TSource
         {
             return (TTarget)source.First(i => i is TTarget);
+        }
+
+        public static IEnumerable<IEnumerable<T>> Partition<T>(this IEnumerable<T> sequence, int size)
+        {
+            List<T> partition = new List<T>(size);
+            foreach (var item in sequence)
+            {
+                partition.Add(item);
+                if (partition.Count == size)
+                {
+                    yield return partition;
+                    partition = new List<T>(size);
+                }
+            }
+
+            if (partition.Count > 0)
+            {
+                yield return partition;
+            }
         }
     }
 }

@@ -12,7 +12,7 @@ export class ActivityLocator implements IActivityLocator {
         return new Promise<IActivity>((resolve, reject) => {
             this.behaviorLocator.locateBehavior(id)
                 .then(behavior => resolve(new Activity(behavior as Behavior)))
-                .catch(_ => reject("State Machine not found"));
+                .catch(_ => reject("Activity not found"));
         });
     }
 }

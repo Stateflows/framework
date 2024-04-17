@@ -1,6 +1,6 @@
-﻿using System.Threading.Tasks;
+﻿using System;
+using System.Threading.Tasks;
 using Stateflows.StateMachines;
-using Stateflows.StateMachines.Events;
 
 namespace Stateflows.Common.StateMachines.Classes
 {
@@ -15,9 +15,6 @@ namespace Stateflows.Common.StateMachines.Classes
             Behavior = consumer;
         }
 
-        public Task<RequestResult<CurrentStateResponse>> GetCurrentStateAsync()
-            => RequestAsync(new CurrentStateRequest());
-
         public Task<SendResult> SendAsync<TEvent>(TEvent @event)
             where TEvent : Event, new()
             => Behavior.SendAsync(@event);
@@ -25,5 +22,25 @@ namespace Stateflows.Common.StateMachines.Classes
         public Task<RequestResult<TResponse>> RequestAsync<TResponse>(Request<TResponse> request)
             where TResponse : Response, new()
             => Behavior.RequestAsync(request);
+
+        public Task WatchAsync<TNotification>(Action<TNotification> handler)
+            where TNotification : Notification, new()
+            => Behavior.WatchAsync<TNotification>(handler);
+
+        public Task UnwatchAsync<TNotification>()
+            where TNotification : Notification, new()
+            => Behavior.UnwatchAsync<TNotification>();
+
+        public void Dispose()
+        {
+            Dispose(true);
+            GC.SuppressFinalize(this);
+        }
+
+        protected virtual void Dispose(bool disposing)
+            => Behavior.Dispose();
+
+        ~StateMachineWrapper()
+            => Dispose(false);
     }
 }

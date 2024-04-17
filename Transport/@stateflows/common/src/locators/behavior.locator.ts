@@ -26,12 +26,13 @@ export class BehaviorLocator implements IBehaviorLocator {
     locateBehavior(behaviorId: BehaviorId): Promise<IBehavior> {
         return new Promise<IBehavior>((resolve, reject) => {
             this.transportPromise
-                .then(hub => {
+                .then(transport => {
                     if (this.behaviorClasses.findIndex(behaviorClass => 
                         behaviorClass.type === behaviorId.behaviorClass.type &&
                         behaviorClass.name === behaviorId.behaviorClass.name
                     ) !== -1) {
-                        resolve(new Behavior(this.transportPromise, behaviorId));
+                        let behavior = new Behavior(this.transportPromise, behaviorId);
+                        resolve(behavior);
                     }
                     else
                     {

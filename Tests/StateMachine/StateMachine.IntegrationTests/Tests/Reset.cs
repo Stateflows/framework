@@ -38,7 +38,7 @@ namespace StateMachine.IntegrationTests.Tests
             CurrentStateResponse? currentState2 = null;
             ResetResponse? resetResponse = null;
 
-            if (Locator.TryLocateStateMachine(new StateMachineId("reset", "x"), out var sm))
+            if (StateMachineLocator.TryLocateStateMachine(new StateMachineId("reset", "x"), out var sm))
             {
                 await sm.InitializeAsync();
 
@@ -64,7 +64,7 @@ namespace StateMachine.IntegrationTests.Tests
             CurrentStateResponse? currentState2 = null;
             ResetResponse? resetResponse = null;
 
-            if (Locator.TryLocateStateMachine(new StateMachineId("reset", "x"), out var sm))
+            if (StateMachineLocator.TryLocateStateMachine(new StateMachineId("reset", "x"), out var sm))
             {
                 currentState1 = (await sm.GetCurrentStateAsync()).Response;
 

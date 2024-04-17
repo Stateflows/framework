@@ -11,6 +11,7 @@ using Stateflows.Common.Context;
 using Stateflows.Activities.Models;
 using Stateflows.Common.Extensions;
 using System.ComponentModel.DataAnnotations;
+using Stateflows.Common.Initializer;
 
 namespace Stateflows.Activities.Engine
 {
@@ -19,7 +20,7 @@ namespace Stateflows.Activities.Engine
         string IEventProcessor.BehaviorType => BehaviorType.Activity;
 
         public readonly ActivitiesRegister Register;
-        public readonly Dictionary<Type, IActivityEventHandler> EventHandlers;
+        public readonly IEnumerable<IActivityEventHandler> EventHandlers;
         public readonly IServiceProvider ServiceProvider;
 
         public Processor(
@@ -29,15 +30,19 @@ namespace Stateflows.Activities.Engine
         )
         {
             Register = register;
-            EventHandlers = eventHandlers.ToDictionary(h => h.EventType, h => h);
             ServiceProvider = serviceProvider.CreateScope().ServiceProvider;
+            EventHandlers = eventHandlers;
         }
 
-        private async Task<EventStatus> TryHandleEventAsync<TEvent>(EventContext<TEvent> context)
+        private Task<EventStatus> TryHandleEventAsync<TEvent>(EventContext<TEvent> context)
             where TEvent : Event, new()
-            => EventHandlers.TryGetValue(context.Event.GetType(), out var eventHandler)
-                ? await eventHandler.TryHandleEventAsync(context)
-                : EventStatus.NotConsumed;
+        {
+            var eventHandler = EventHandlers.FirstOrDefault(h => h.EventType.IsInstanceOfType(context.Event));
+
+            return eventHandler != null
+                ? eventHandler.TryHandleEventAsync(context)
+                : Task.FromResult(EventStatus.NotConsumed);
+        }
 
         public async Task<EventStatus> ProcessEventAsync<TEvent>(BehaviorId id, TEvent @event, IServiceProvider serviceProvider)
             where TEvent : Event, new()
@@ -61,33 +66,32 @@ namespace Stateflows.Activities.Engine
             {
                 var context = new RootContext(stateflowsContext);
 
-                if (await executor.HydrateAsync(context))
+                await executor.HydrateAsync(context);
+
+                if (@event is CompoundRequest compoundRequest)
                 {
-                    if (@event is CompoundRequest compoundRequest)
+                    result = EventStatus.Consumed;
+                    var results = new List<RequestResult>();
+                    foreach (var ev in compoundRequest.Events)
                     {
-                        result = EventStatus.Consumed;
-                        var results = new List<RequestResult>();
-                        foreach (var ev in compoundRequest.Events)
-                        {
-                            ev.Headers.AddRange(@event.Headers);
+                        ev.Headers.AddRange(@event.Headers);
 
-                            var status = await ExecuteBehaviorAsync(ev, result, stateflowsContext, graph, executor, context);
+                        var status = await ExecuteBehaviorAsync(ev, result, stateflowsContext, graph, executor, context);
 
-                            results.Add(new RequestResult(ev, ev.GetResponse(), status, new EventValidation(true, new List<ValidationResult>())));
-                        }
-
-                        compoundRequest.Respond(new CompoundResponse()
-                        {
-                            Results = results
-                        });
-                    }
-                    else
-                    {
-                        result = await ExecuteBehaviorAsync(@event, result, stateflowsContext, graph, executor, context);
+                        results.Add(new RequestResult(ev, ev.GetResponse(), status, new EventValidation(true, new List<ValidationResult>())));
                     }
 
-                    await storage.DehydrateAsync((await executor.DehydrateAsync()).Context);
+                    compoundRequest.Respond(new CompoundResponse()
+                    {
+                        Results = results
+                    });
                 }
+                else
+                {
+                    result = await ExecuteBehaviorAsync(@event, result, stateflowsContext, graph, executor, context);
+                }
+
+                await storage.DehydrateAsync((await executor.DehydrateAsync()).Context);
             }
 
             return result;
@@ -101,6 +105,21 @@ namespace Stateflows.Activities.Engine
 
             if (await executor.Inspector.BeforeProcessEventAsync(eventContext))
             {
+                if (!executor.Initialized)
+                {
+                    var token = BehaviorClassesInitializations.Instance.AutoInitializationTokens.Find(token => token.BehaviorClass == executor.Context.Id.ActivityClass);
+
+                    InitializationRequest initializationRequest;
+                    if (token != null && (initializationRequest = await token.InitializationRequestFactory.Invoke(executor.NodeScope.ServiceProvider, executor.Context.Id)) != null)
+                    {
+                        context.SetEvent(initializationRequest);
+
+                        await executor.InitializeAsync(initializationRequest);
+
+                        context.ClearEvent();
+                    }
+                }
+
                 result = await TryHandleEventAsync(eventContext);
 
                 if (result != EventStatus.Consumed)
@@ -122,19 +141,13 @@ namespace Stateflows.Activities.Engine
 
             stateflowsContext.LastExecutedAt = DateTime.Now;
 
-            var statuses = new BehaviorStatus[] { BehaviorStatus.Initialized, BehaviorStatus.Finalized };
-
-            if (statuses.Contains(stateflowsContext.Status))
+            stateflowsContext.Version = stateflowsContext.Status switch
             {
-                stateflowsContext.Version = graph.Version;
-            }
-            else
-            {
-                if (stateflowsContext.Status == BehaviorStatus.NotInitialized)
-                {
-                    stateflowsContext.Version = 0;
-                }
-            }
+                BehaviorStatus.NotInitialized => stateflowsContext.Version,
+                BehaviorStatus.Initialized => graph.Version,
+                BehaviorStatus.Finalized => graph.Version,
+                _ => 0
+            };
 
             return result;
         }

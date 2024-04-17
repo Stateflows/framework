@@ -4,8 +4,6 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.DependencyInjection;
 using Stateflows.Common.Interfaces;
-using Newtonsoft.Json.Linq;
-using System.Collections.Generic;
 
 namespace Stateflows.Common.Scheduler
 {
@@ -53,12 +51,13 @@ namespace Stateflows.Common.Scheduler
 
                     foreach (var context in contexts)
                     {
-                        if (Locator.TryLocateBehavior(context.Id, out var behavior))
+                        var timeEvents = context.PendingTimeEvents.Values.Where(timeEvent => timeEvent.TriggerTime < DateTime.Now).ToArray();
+
+                        if (timeEvents.Any() && Locator.TryLocateBehavior(context.Id, out var behavior))
                         {
-                            var timeEvents = context.PendingTimeEvents.Values.Where(timeEvent => timeEvent.TriggerTime < DateTime.Now).ToArray();
                             foreach (var timeEvent in timeEvents)
                             {
-                                await behavior.SendAsync(timeEvent);
+                                _ = behavior.SendAsync(timeEvent);
                             }
                         }
                     }

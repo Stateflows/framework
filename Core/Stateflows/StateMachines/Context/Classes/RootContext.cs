@@ -49,6 +49,28 @@ namespace Stateflows.StateMachines.Context.Classes
             }
         }
 
+        private Dictionary<BehaviorId, EmbeddedBehaviorStatus> embeddedBehaviorStatuses = null;
+        public Dictionary<BehaviorId, EmbeddedBehaviorStatus> EmbeddedBehaviorStatuses
+        {
+            get
+            {
+                if (embeddedBehaviorStatuses == null)
+                {
+                    if (!Context.Values.TryGetValue(Constants.EmbeddedBehaviorStatuses, out var stateContextsObj))
+                    {
+                        embeddedBehaviorStatuses = new Dictionary<BehaviorId, EmbeddedBehaviorStatus>();
+                        Context.Values[Constants.EmbeddedBehaviorStatuses] = embeddedBehaviorStatuses;
+                    }
+                    else
+                    {
+                        embeddedBehaviorStatuses = stateContextsObj as Dictionary<BehaviorId, EmbeddedBehaviorStatus>;
+                    }
+                }
+
+                return embeddedBehaviorStatuses;
+            }
+        }
+
         private Dictionary<string, StateValues> stateValues = null;
         public Dictionary<string, StateValues> StateValues
         {
@@ -130,11 +152,7 @@ namespace Stateflows.StateMachines.Context.Classes
             ? EventsStack.Peek()
             : null;
 
-        public string SourceState { get; set; } = string.Empty;
-
-        public string TargetState { get; set; } = string.Empty;
-
-        public bool ForceConsumed { get; set; } = false;
+        public EventStatus? ForceStatus { get; set; } = null;
 
         public async Task Send<TEvent>(TEvent @event)
             where TEvent : Event, new()

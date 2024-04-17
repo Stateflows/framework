@@ -8,7 +8,5 @@ namespace Stateflows.Activities
     public interface IActivity : IBehavior
     {
         Task<RequestResult<ExecutionResponse>> ExecuteAsync(InitializationRequest initializationRequest = null, IEnumerable<Token> inputTokens = null);
-
-        Task<RequestResult<CancelResponse>> CancelAsync();
     }
 }

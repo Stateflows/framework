@@ -1,4 +1,4 @@
-﻿using System.Linq;
+﻿using System;
 using System.Threading.Tasks;
 using System.Collections.Generic;
 using Stateflows.Activities;
@@ -28,9 +28,6 @@ namespace Stateflows.Common.Activities.Classes
             return Behavior.RequestAsync(executionRequest);
         }
 
-        public Task<RequestResult<CancelResponse>> CancelAsync()
-            => RequestAsync(new CancelRequest());
-
         public Task<SendResult> SendAsync<TEvent>(TEvent @event)
             where TEvent : Event, new()
             => Behavior.SendAsync(@event);
@@ -38,5 +35,25 @@ namespace Stateflows.Common.Activities.Classes
         public Task<RequestResult<TResponse>> RequestAsync<TResponse>(Request<TResponse> request)
             where TResponse : Response, new()
             => Behavior.RequestAsync(request);
+
+        public Task WatchAsync<TNotification>(Action<TNotification> handler)
+            where TNotification : Notification, new()
+            => Behavior.WatchAsync<TNotification>(handler);
+
+        public Task UnwatchAsync<TNotification>()
+            where TNotification : Notification, new()
+            => Behavior.UnwatchAsync<TNotification>();
+
+        public void Dispose()
+        {
+            Dispose(true);
+            GC.SuppressFinalize(this);
+        }
+
+        protected virtual void Dispose(bool disposing)
+            => Behavior.Dispose();
+
+        ~ActivityWrapper()
+            => Dispose(false);
     }
 }

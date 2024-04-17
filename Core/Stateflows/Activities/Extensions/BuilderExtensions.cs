@@ -8,7 +8,7 @@ using Stateflows.Activities.Context.Classes;
 using Stateflows.Activities.Context.Interfaces;
 using Stateflows.Activities.Registration.Builders;
 using Stateflows.Activities.Registration.Interfaces;
-using Stateflows.StateMachines.Registration;
+using Stateflows.Activities.Events;
 
 namespace Stateflows.Activities.Extensions
 {
@@ -45,7 +45,7 @@ namespace Stateflows.Activities.Extensions
                     (builder as ActivityBuilder).AddInitializer(requestType, requestName, c =>
                     {
                         var activity = c.Context.Executor.GetActivity(activityType, c.Context);
-                        return methodInfo.Invoke(activity, new object[] { c.Context.Event }) as Task<bool>;
+                        return methodInfo.Invoke(activity, new object[] { c.Context.Event is ExecutionRequest executionRequest ? executionRequest.InitializationRequest : c.Context.Event }) as Task<bool>;
                     });
                 }
             }

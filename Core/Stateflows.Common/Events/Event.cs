@@ -9,6 +9,8 @@ namespace Stateflows.Common
     {
         [JsonProperty(TypeNameHandling = TypeNameHandling.None)]
         public List<EventHeader> Headers { get; set; } = new List<EventHeader>();
+
+        public DateTime SentAt { get; set; }
     }
 
     public class Event<TPayload> : Event

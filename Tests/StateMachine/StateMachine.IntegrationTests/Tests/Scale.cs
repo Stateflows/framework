@@ -46,7 +46,7 @@ namespace StateMachine.IntegrationTests.Tests
         {
             var sequence = Enumerable
                 .Range(0, 10000)
-                .Select(i => Locator.TryLocateStateMachine(new StateMachineId($"scale{Random.Shared.Next(1, 5)}", i.ToString()), out var stateMachine)
+                .Select(i => StateMachineLocator.TryLocateStateMachine(new StateMachineId($"scale{Random.Shared.Next(1, 5)}", i.ToString()), out var stateMachine)
                     ? stateMachine
                     : null
                 )

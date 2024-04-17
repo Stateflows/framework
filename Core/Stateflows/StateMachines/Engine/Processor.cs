@@ -11,6 +11,7 @@ using Stateflows.Common.Context;
 using Stateflows.StateMachines.Models;
 using Stateflows.Common.Extensions;
 using System.ComponentModel.DataAnnotations;
+using Stateflows.Common.Initializer;
 
 namespace Stateflows.StateMachines.Engine
 {
@@ -73,9 +74,13 @@ namespace Stateflows.StateMachines.Engine
                     {
                         ev.Headers.AddRange(@event.Headers);
 
+                        executor.Context.SetEvent(ev);
+
                         var status = await ExecuteBehaviorAsync(ev, result, stateflowsContext, graph, executor);
 
                         results.Add(new RequestResult(ev, ev.GetResponse(), status, new EventValidation(true, new List<ValidationResult>())));
+
+                        executor.Context.ClearEvent();
                     }
 
                     compoundRequest.Respond(new CompoundResponse()
@@ -91,8 +96,6 @@ namespace Stateflows.StateMachines.Engine
                 await executor.DehydrateAsync();
 
                 await storage.DehydrateAsync(executor.Context.Context);
-
-                executor.Context.ClearEvent();
             }
 
             return result;
@@ -100,14 +103,25 @@ namespace Stateflows.StateMachines.Engine
 
         private async Task<EventStatus> ExecuteBehaviorAsync<TEvent>(TEvent @event, EventStatus result, StateflowsContext stateflowsContext, Graph graph, Executor executor) where TEvent : Event, new()
         {
-            executor.RebuildVerticesStack();
-
-            executor.Context.SetEvent(@event);
-
             var eventContext = new EventContext<TEvent>(executor.Context);
 
             if (await executor.Inspector.BeforeProcessEventAsync(eventContext))
             {
+                if (!executor.Initialized)
+                {
+                    var token = BehaviorClassesInitializations.Instance.AutoInitializationTokens.Find(token => token.BehaviorClass == executor.Context.Id.StateMachineClass);
+
+                    InitializationRequest initializationRequest;
+                    if (token != null && (initializationRequest = await token.InitializationRequestFactory.Invoke(executor.ServiceProvider, executor.Context.Id)) != null)
+                    {
+                        executor.Context.SetEvent(initializationRequest);
+
+                        await executor.InitializeAsync(initializationRequest);
+
+                        executor.Context.ClearEvent();
+                    }
+                }
+
                 result = await TryHandleEventAsync(eventContext);
 
                 if (result != EventStatus.Consumed)
@@ -119,9 +133,9 @@ namespace Stateflows.StateMachines.Engine
             }
             else
             {
-                if (executor.Context.ForceConsumed)
+                if (executor.Context.ForceStatus != null)
                 {
-                    result = EventStatus.Consumed;
+                    result = (EventStatus)executor.Context.ForceStatus;
                 }
             }
 
@@ -131,13 +145,11 @@ namespace Stateflows.StateMachines.Engine
 
             stateflowsContext.Version = stateflowsContext.Status switch
             {
-                BehaviorStatus.NotInitialized => 0,
+                BehaviorStatus.NotInitialized => stateflowsContext.Version,
                 BehaviorStatus.Initialized => graph.Version,
                 BehaviorStatus.Finalized => graph.Version,
                 _ => 0
             };
-
-            executor.Context.ClearEvent();
 
             return result;
         }

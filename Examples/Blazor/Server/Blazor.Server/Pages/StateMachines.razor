@@ -1,4 +1,5 @@
 ﻿@page "/state-machines"
+@using Examples.Common
 @inject IStateMachineLocator locator
 @inject ISystem system
 
@@ -72,6 +73,65 @@
 
     private string message = "";
 
+    private IStateMachine? _stateMachine = null;
+
+    private async Task<IStateMachine?> GetStateMachineAsync()
+    {
+        var instance = $"{stateMachineInstance}";
+        if (_stateMachine?.Id == GetCurrentId())
+        {
+            return _stateMachine;
+        }
+
+        if (_stateMachine != null)
+        {
+            await _stateMachine.UnwatchCurrentStateAsync();
+            await _stateMachine.UnwatchPlantUmlAsync();
+            _stateMachine.Dispose();
+        }
+
+
+
+        if (locator.TryLocateStateMachine(GetCurrentId(), out _stateMachine))
+        {
+            await _stateMachine.WatchAsync<SomeNotification>(async n =>
+            {
+                message = n.TheresSomethingHappeningHere;
+
+                await InvokeAsync(() => StateHasChanged());
+            });
+
+            await _stateMachine.WatchCurrentStateAsync(async n =>
+            {
+                Console.WriteLine($"current state changed: {instance}");
+                expectedEvents = n.ExpectedEvents;
+                message = n.BehaviorStatus switch
+                {
+                    BehaviorStatus.NotInitialized => "State Machine located, it's not initialized",
+                    BehaviorStatus.Initialized => "State Machine located, it's initialized",
+                    BehaviorStatus.Finalized => "State Machine located, it's finalized",
+                    _ => ""
+                };
+
+                await InvokeAsync(() => StateHasChanged());
+            });
+
+            await _stateMachine.WatchPlantUmlAsync(async n =>
+            {
+                plantUmlUrl = n.GetUrl();
+
+                await InvokeAsync(() => StateHasChanged());
+            });
+        }
+        else
+        {
+            message = "Unable to locate State Machine";
+            _stateMachine = null;
+        }
+
+        return _stateMachine;
+    }
+
     private StateMachineId GetCurrentId()
     {
         return new StateMachineId(stateMachineName, stateMachineInstance);
@@ -99,21 +159,21 @@
         plantUmlUrl = (await stateMachine.GetPlantUmlAsync()).Response.GetUrl();
     }
 
-    private async Task SystemRequest()
-    {
-        var classes = await system.GetAvailableBehaviorClassesAsync();
-        var instances = await system.GetBehaviorInstancesAsync();
-    }
-
     private async Task Initialize()
     {
-        if (locator.TryLocateStateMachine(GetCurrentId(), out var stateMachine))
+        var sm = await GetStateMachineAsync();
+        if (sm != null)
         {
-            var msg = (await stateMachine.InitializeAsync()).Response?.InitializationSuccessful ?? false
+            var result = await sm.InitializeAsync();
+
+            var msg = result.Response?.InitializationSuccessful ?? false
                 ? "State Machine located and initialized"
                 : "State Machine located, it's already initialized";
 
-            await RefreshSMInfo(stateMachine);
+            if (!result.Response?.InitializationSuccessful ?? false)
+            {
+                await RefreshSMInfo(sm);
+            }
 
             message = msg;
         }
@@ -125,28 +185,20 @@
 
     private async Task GetStatus()
     {
-        if (locator.TryLocateStateMachine(GetCurrentId(), out var stateMachine))
+        var sm = await GetStateMachineAsync();
+        if (sm != null)
         {
-            await RefreshSMInfo(stateMachine);
-        }
-        else
-        {
-            message = "Unable to locate State Machine";
+            await RefreshSMInfo(sm);
         }
     }
 
     private async Task Reset()
     {
-        if (locator.TryLocateStateMachine(GetCurrentId(), out var stateMachine))
+        var sm = await GetStateMachineAsync();
+        if (sm != null)
         {
-            var response = (await stateMachine.ResetAsync())?.Response;
+            var response = (await sm.ResetAsync())?.Response;
             message = "State Machine resetted";
-
-            await RefreshSMInfo(stateMachine);
-        }
-        else
-        {
-            message = "Unable to locate State Machine";
         }
     }
 
@@ -163,16 +215,15 @@
         {
             var ev = System.Activator.CreateInstance(eventType) as Event;
 
-            if (locator.TryLocateStateMachine(GetCurrentId(), out var stateMachine))
+            var sm = await GetStateMachineAsync();
+            if (sm != null)
             {
-                var result = await stateMachine.SendAsync(ev);
+                var result = await sm.SendAsync(ev);
 
                 if (!(result.Validation?.IsValid ?? true))
                 {
                     message = "Event invalid";
                 }
-
-                await RefreshSMInfo(stateMachine);
             }
         }
     }

@@ -1,13 +1,10 @@
-﻿using System;
-using System.Threading.Tasks;
-using Stateflows.Common;
-using Stateflows.StateMachines.Context.Interfaces;
+﻿using Stateflows.Common;
+using Stateflows.StateMachines.Registration.Interfaces.Base;
 
 namespace Stateflows.StateMachines.Registration.Interfaces
 {
-    public interface IElseTransitionBuilder<TEvent>
+    public interface IElseTransitionBuilder<TEvent> :
+        IEffect<TEvent, IElseTransitionBuilder<TEvent>>
         where TEvent : Event, new()
-    {
-        ITransitionBuilder<TEvent> AddEffect(Func<ITransitionContext<TEvent>, Task> effectAsync);
-    }
+    { }
 }

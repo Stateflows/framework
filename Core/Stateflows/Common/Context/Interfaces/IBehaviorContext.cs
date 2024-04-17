@@ -1,8 +1,9 @@
-﻿using Stateflows.Common.Interfaces;
+﻿using System.Threading.Tasks;
+using Stateflows.Common.Interfaces;
 
 namespace Stateflows.Common.Context.Interfaces
 {
-    public interface IBehaviorContext
+    public interface IBehaviorContext : ISubscriptions
     {
         BehaviorId Id { get; }
 
@@ -10,5 +11,8 @@ namespace Stateflows.Common.Context.Interfaces
 
         void Send<TEvent>(TEvent @event)
             where TEvent : Event, new();
+
+        void Publish<TNotification>(TNotification notification)
+            where TNotification : Notification, new();
     }
 }

@@ -150,12 +150,12 @@ namespace Stateflows.Activities.Typed
         #endregion
 
         #region AddIterativeActivity
-        public static ITypedActivityBuilder AddIterativeActivity<TIterationToken, TStructuredActivity>(this ITypedActivityBuilder builder, IterativeActivityBuildAction buildAction = null)
+        public static ITypedActivityBuilder AddIterativeActivity<TIterationToken, TStructuredActivity>(this ITypedActivityBuilder builder, IterativeActivityBuildAction buildAction = null, int chunkSize = 1)
             where TIterationToken : Token, new()
             where TStructuredActivity : StructuredActivityNode<TIterationToken>
-            => AddIterativeActivity<TIterationToken, TStructuredActivity>(builder, ActivityNodeInfo<TStructuredActivity>.Name, buildAction);
+            => AddIterativeActivity<TIterationToken, TStructuredActivity>(builder, ActivityNodeInfo<TStructuredActivity>.Name, buildAction, chunkSize);
 
-        public static ITypedActivityBuilder AddIterativeActivity<TIterationToken, TStructuredActivity>(this ITypedActivityBuilder builder, string structuredActivityName, IterativeActivityBuildAction buildAction = null)
+        public static ITypedActivityBuilder AddIterativeActivity<TIterationToken, TStructuredActivity>(this ITypedActivityBuilder builder, string structuredActivityName, IterativeActivityBuildAction buildAction = null, int chunkSize = 1)
             where TIterationToken : Token, new()
             where TStructuredActivity : StructuredActivityNode<TIterationToken>
         {
@@ -168,7 +168,8 @@ namespace Stateflows.Activities.Typed
                     builder.AddStructuredActivityEvents<TStructuredActivity>();
                     builder.Node.ScanForDeclaredTypes(typeof(TStructuredActivity));
                     buildAction?.Invoke(b);
-                }
+                },
+                chunkSize
             );
         }
         #endregion
