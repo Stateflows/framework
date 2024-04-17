@@ -2,36 +2,44 @@ using System.Net;
 using System.Text;
 using System.Net.Mime;
 using System.Net.Http.Json;
-using System.Threading;
 using System.Diagnostics;
 using Stateflows.Common;
 using Stateflows.Common.Utilities;
 using Stateflows.Common.Extensions;
 using Stateflows.Common.Transport.Classes;
-using System.Runtime.CompilerServices;
+using Stateflows.Common.Transport.Interfaces;
 
 namespace Stateflows.Transport.Http.Client
 {
-    public class StateflowsApiClient
+    internal class StateflowsApiClient : IDisposable
     {
         private readonly HttpClient _httpClient;
 
         private readonly Timer _timer;
 
-        public event Action<Notification> OnNotify;
+        public event Action<Notification, DateTime>? OnNotify;
 
-        public StateflowsApiClient(HttpClient httpClient)
+        public List<INotificationTarget> NotificationTargets { get; } = new();
+
+        public StateflowsApiClient(HttpClient httpClient, StateflowsApiClientConfig config)
         {
             _httpClient = httpClient;
 
-            _timer = new Timer((_) =>
-            {
-
-            }, null, 0, 1000 * 10);
-
+            _timer = new Timer(async (_) => await this.CheckForNotificationsAsync(), null, 0, 1000 * config.NotificationsCheckSecondsInverval);
         }
 
-[DebuggerHidden]
+        private async Task CheckForNotificationsAsync()
+        {
+            IEnumerable<INotificationTarget> targets;
+            lock (this)
+            {
+                targets = NotificationTargets;
+            }
+
+            await Task.WhenAll(targets.Select(target => SendAsync(target.Id, new NotificationsRequest(), target.Watches)));
+        }
+
+        [DebuggerHidden]
         public async Task<SendResult> SendAsync(BehaviorId behaviorId, Event @event, IEnumerable<Watch> watches)
         {
             var requestResult = await _httpClient.PostAsync(
@@ -62,9 +70,12 @@ namespace Stateflows.Transport.Http.Client
                         @event.Respond(result.Response);
                     }
 
-                    foreach (var notification in result.Notifications)
+                    lock (this)
                     {
-                        OnNotify?.Invoke(notification);
+                        foreach (var notification in result.Notifications)
+                        {
+                            OnNotify?.Invoke(notification, result.ResponseTime);
+                        }
                     }
 
                     return new SendResult(@event, result.EventStatus, result.Validation);
@@ -77,5 +88,20 @@ namespace Stateflows.Transport.Http.Client
         [DebuggerHidden]
         public async Task<IEnumerable<BehaviorClass>> GetAvailableClassesAsync()
             => await _httpClient.GetFromJsonAsync<IEnumerable<BehaviorClass>>($"/stateflows/availableClasses") ?? Array.Empty<BehaviorClass>();
+
+
+        public void Dispose()
+        {
+            Dispose(true);
+            GC.SuppressFinalize(this);
+        }
+
+        protected virtual void Dispose(bool disposing)
+        {
+            if (disposing)
+            {
+                _timer.Dispose();
+            }
+        }
     }
 }

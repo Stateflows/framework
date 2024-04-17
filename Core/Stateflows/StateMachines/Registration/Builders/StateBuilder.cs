@@ -215,12 +215,12 @@ namespace Stateflows.StateMachines.Registration.Builders
             => AddElseTransition<CompletionEvent>(targetVertexName, builder => transitionBuildAction?.Invoke(builder as IElseDefaultTransitionBuilder));
 
         [DebuggerHidden]
-        public IStateBuilder AddInternalTransition<TEvent>(InternalTransitionBuildAction<TEvent> transitionBuildAction = null)
+        public IStateBuilder AddInternalTransition<TEvent>(InternalTransitionBuildAction<TEvent> transitionBuildAction)
             where TEvent : Event, new()
             => AddTransition<TEvent>(Constants.DefaultTransitionTarget, builder => transitionBuildAction?.Invoke(builder as IInternalTransitionBuilder<TEvent>));
 
         [DebuggerHidden]
-        public IStateBuilder AddElseInternalTransition<TEvent>(ElseInternalTransitionBuildAction<TEvent> transitionBuildAction = null)
+        public IStateBuilder AddElseInternalTransition<TEvent>(ElseInternalTransitionBuildAction<TEvent> transitionBuildAction)
             where TEvent : Event, new()
             => AddElseTransition<TEvent>(Constants.DefaultTransitionTarget, builder => transitionBuildAction?.Invoke(builder as IElseInternalTransitionBuilder<TEvent>));
 
@@ -242,11 +242,11 @@ namespace Stateflows.StateMachines.Registration.Builders
 
         [DebuggerHidden]
         ITypedStateBuilder IStateTransitions<ITypedStateBuilder>.AddInternalTransition<TEvent>(InternalTransitionBuildAction<TEvent> transitionBuildAction)
-            => AddInternalTransition<TEvent>(builder => transitionBuildAction?.Invoke(builder as IInternalTransitionBuilder<TEvent>)) as ITypedStateBuilder;
+            => AddInternalTransition<TEvent>(builder => transitionBuildAction?.Invoke(builder)) as ITypedStateBuilder;
 
         [DebuggerHidden]
         ITypedStateBuilder IStateTransitions<ITypedStateBuilder>.AddElseInternalTransition<TEvent>(ElseInternalTransitionBuildAction<TEvent> transitionBuildAction)
-            => AddElseInternalTransition<TEvent>(builder => transitionBuildAction?.Invoke(builder as IElseInternalTransitionBuilder<TEvent>)) as ITypedStateBuilder;
+            => AddElseInternalTransition<TEvent>(builder => transitionBuildAction?.Invoke(builder)) as ITypedStateBuilder;
 
         [DebuggerHidden]
         ITypedStateBuilder IStateUtils<ITypedStateBuilder>.AddDeferredEvent<TEvent>()
@@ -285,7 +285,7 @@ namespace Stateflows.StateMachines.Registration.Builders
         }
 
         [DebuggerHidden]
-        IBehaviorTypedStateBuilder IStateDoActivity<IBehaviorTypedStateBuilder>.AddDoActivity(string doActivityName, EmbeddedBehaviorBuildAction buildAction = null, StateActionInitializationBuilder initializationBuilder = null)
+        IBehaviorTypedStateBuilder IStateDoActivity<IBehaviorTypedStateBuilder>.AddDoActivity(string doActivityName, EmbeddedBehaviorBuildAction buildAction, StateActionInitializationBuilder initializationBuilder)
             => AddDoActivity(doActivityName, buildAction, initializationBuilder) as IBehaviorTypedStateBuilder;
         #endregion
 
@@ -319,11 +319,11 @@ namespace Stateflows.StateMachines.Registration.Builders
 
         [DebuggerHidden]
         IBehaviorStateBuilder IStateTransitions<IBehaviorStateBuilder>.AddInternalTransition<TEvent>(InternalTransitionBuildAction<TEvent> transitionBuildAction)
-            => AddInternalTransition<TEvent>(builder => transitionBuildAction?.Invoke(builder as IInternalTransitionBuilder<TEvent>)) as IBehaviorStateBuilder;
+            => AddInternalTransition<TEvent>(builder => transitionBuildAction?.Invoke(builder)) as IBehaviorStateBuilder;
 
         [DebuggerHidden]
         IBehaviorStateBuilder IStateTransitions<IBehaviorStateBuilder>.AddElseInternalTransition<TEvent>(ElseInternalTransitionBuildAction<TEvent> transitionBuildAction)
-            => AddElseInternalTransition<TEvent>(builder => transitionBuildAction?.Invoke(builder as IElseInternalTransitionBuilder<TEvent>)) as IBehaviorStateBuilder;
+            => AddElseInternalTransition<TEvent>(builder => transitionBuildAction?.Invoke(builder)) as IBehaviorStateBuilder;
 
         [DebuggerHidden]
         IBehaviorTypedStateBuilder IStateUtils<IBehaviorTypedStateBuilder>.AddDeferredEvent<TEvent>()

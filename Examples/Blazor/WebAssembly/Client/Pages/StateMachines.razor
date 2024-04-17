@@ -13,6 +13,8 @@
 </div>
 <div>
     <button class="btn btn-primary" @onclick="Initialize">Locate and initialize</button>
+    <button class="btn btn-primary" @onclick="GetStatus">Check status</button>
+    <button class="btn btn-primary" @onclick="Reset">Reset</button>
 </div>
 
 @if (message != "")
@@ -29,7 +31,7 @@
                         <span>Events expected in current state:</span>
                         @foreach (var eventName in expectedEvents)
                         {
-                            <button class="btn btn-primary" style="margin-top: 5px;" @onclick="() => SendEvent(eventName)">Send <strong>@eventName.Split('.').Last()</strong></button>
+                            <button class="btn btn-primary" style="margin-top: 5px;" @onclick="() => SendEvent(eventName)">Send <strong>@GetEventName(eventName)</strong></button>
                         }
                     }
                 </div>
@@ -69,6 +71,56 @@
 
     private string message = "";
 
+    private IStateMachine? _stateMachine = null;
+
+    private async Task<IStateMachine?> GetStateMachineAsync()
+    {
+        var instance = $"{stateMachineInstance}";
+        if (_stateMachine?.Id == GetCurrentId())
+        {
+            return _stateMachine;
+        }
+
+        if (_stateMachine != null)
+        {
+            await _stateMachine.UnwatchCurrentStateAsync();
+            await _stateMachine.UnwatchPlantUmlAsync();
+            _stateMachine.Dispose();
+        }
+
+        if (locator.TryLocateStateMachine(GetCurrentId(), out _stateMachine))
+        {
+            await _stateMachine.WatchCurrentStateAsync(async n =>
+            {
+                Console.WriteLine($"current state changed: {instance}");
+                expectedEvents = n.ExpectedEvents;
+                message = n.BehaviorStatus switch
+                {
+                    BehaviorStatus.NotInitialized => "State Machine located, it's not initialized",
+                    BehaviorStatus.Initialized => "State Machine located, it's initialized",
+                    BehaviorStatus.Finalized => "State Machine located, it's finalized",
+                    _ => ""
+                };
+
+                await InvokeAsync(() => StateHasChanged());
+            });
+
+            await _stateMachine.WatchPlantUmlAsync(async n =>
+            {
+                plantUmlUrl = n.GetUrl();
+
+                await InvokeAsync(() => StateHasChanged());
+            });
+        }
+        else
+        {
+            message = "Unable to locate State Machine";
+            _stateMachine = null;
+        }
+
+        return _stateMachine;
+    }
+
     private StateMachineId GetCurrentId()
     {
         return new StateMachineId(stateMachineName, stateMachineInstance);
@@ -83,29 +135,36 @@
 
     private async Task RefreshSMInfo(IStateMachine stateMachine)
     {
-        expectedEvents = (await stateMachine.GetCurrentStateAsync()).Response.ExpectedEvents;
+        var result = await stateMachine.GetCurrentStateAsync();
+        expectedEvents = result.Response?.ExpectedEvents;
+        message = result.Response?.BehaviorStatus switch
+        {
+            BehaviorStatus.NotInitialized => "State Machine located, it's not initialized",
+            BehaviorStatus.Initialized => "State Machine located, it's initialized",
+            BehaviorStatus.Finalized => "State Machine located, it's finalized",
+            _ => ""
+        };
 
         plantUmlUrl = (await stateMachine.GetPlantUmlAsync()).Response.GetUrl();
     }
 
     private async Task Initialize()
     {
-        if (locator.TryLocateStateMachine(GetCurrentId(), out var stateMachine))
+        var sm = await GetStateMachineAsync();
+        if (sm != null)
         {
-            var result = await stateMachine.InitializeAsync();
-            await stateMachine.SendAsync(new CompoundRequest()
-            {
-                Events = new List<Event>()
-                {
-                    new Examples.Common.SomeEvent(),
-                    new Examples.Common.OtherEvent()
-                }
-            });
-            message = result.Response?.InitializationSuccessful ?? false
+            var result = await sm.InitializeAsync();
+
+            var msg = result.Response?.InitializationSuccessful ?? false
                 ? "State Machine located and initialized"
                 : "State Machine located, it's already initialized";
 
-            await RefreshSMInfo(stateMachine);
+            if (!result.Response?.InitializationSuccessful ?? false)
+            {
+                await RefreshSMInfo(sm);
+            }
+
+            message = msg;
         }
         else
         {
@@ -113,19 +172,47 @@
         }
     }
 
+    private async Task GetStatus()
+    {
+        var sm = await GetStateMachineAsync();
+        if (sm != null)
+        {
+            await RefreshSMInfo(sm);
+        }
+    }
+
+    private async Task Reset()
+    {
+        var sm = await GetStateMachineAsync();
+        if (sm != null)
+        {
+            var response = (await sm.ResetAsync())?.Response;
+            message = "State Machine resetted";
+        }
+    }
+
+    private string GetEventName(string eventName)
+        => eventName.Contains('<')
+            ? $"{eventName.Split('<').First().Split('.').Last()}<{eventName.Split('<').Last()}"
+            : eventName.Split('.').Last();
+
     private async Task SendEvent(string eventName)
     {
         var eventType = Type.GetType($"{eventName}, Examples.Common");
 
         if (eventType != null)
         {
-            var @event = System.Activator.CreateInstance(eventType);
+            var ev = System.Activator.CreateInstance(eventType) as Event;
 
-            if (locator.TryLocateStateMachine(GetCurrentId(), out var stateMachine))
+            var sm = await GetStateMachineAsync();
+            if (sm != null)
             {
-                var result = await stateMachine.SendAsync(@event as Event);
+                var result = await sm.SendAsync(ev);
 
-                await RefreshSMInfo(stateMachine);
+                if (!(result.Validation?.IsValid ?? true))
+                {
+                    message = "Event invalid";
+                }
             }
         }
     }

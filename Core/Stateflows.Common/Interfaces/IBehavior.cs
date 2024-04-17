@@ -1,5 +1,4 @@
-﻿using System.Collections.Generic;
-using System;
+﻿using System;
 using System.Linq;
 using System.Threading.Tasks;
 using Stateflows.Common.Data;
@@ -7,7 +6,7 @@ using Stateflows.Common.Interfaces;
 
 namespace Stateflows.Common
 {
-    public interface IBehavior : IWatches
+    public interface IBehavior : IWatches, IDisposable
     {
         BehaviorId Id { get; }
 
@@ -25,6 +24,7 @@ namespace Stateflows.Common
 
         Task<RequestResult<FinalizationResponse>> FinalizeAsync()
             => RequestAsync(new FinalizationRequest());
+
         Task<RequestResult<ResetResponse>> ResetAsync(bool keepVersion = false)
             => RequestAsync(new ResetRequest() { KeepVersion = keepVersion });
 

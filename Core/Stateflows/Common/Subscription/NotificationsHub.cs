@@ -5,13 +5,18 @@ using System.Threading.Tasks;
 using System.Collections.Generic;
 using Microsoft.Extensions.Hosting;
 using Stateflows.Common.Interfaces;
+using System.Diagnostics;
 
 namespace Stateflows.Common.Subscription
 {
     internal class NotificationsHub : IHostedService, INotificationsHub
     {
-        private readonly Dictionary<BehaviorId, List<Notification>> Notifications = new Dictionary<BehaviorId, List<Notification>>();
         private readonly CancellationTokenSource CancellationTokenSource = new CancellationTokenSource();
+
+        private readonly Dictionary<BehaviorId, List<Notification>> notifications = new Dictionary<BehaviorId, List<Notification>>();
+
+        public Dictionary<BehaviorId, List<Notification>> Notifications
+            => notifications;
 
         public event Action<Notification> OnPublish;
 
@@ -20,30 +25,18 @@ namespace Stateflows.Common.Subscription
         {
             lock (Notifications)
             {
-                if (!Notifications.TryGetValue(notification.SenderId, out var notifications))
+                if (!Notifications.TryGetValue(notification.SenderId, out var behaviorNotifications))
                 {
-                    notifications = new List<Notification>();
-                    Notifications.Add(notification.SenderId, notifications);
+                    behaviorNotifications = new List<Notification>();
+                    Notifications.Add(notification.SenderId, behaviorNotifications);
                 }
 
-                notifications.Add(notification);
+                behaviorNotifications.Add(notification);
             }
 
             _ = Task.Run(() => OnPublish.Invoke(notification));
 
             return Task.CompletedTask;
-        }
-
-        public Notification[] GetPendingNotifications(BehaviorId behaviorId, DateTime notificationThreshold)
-        {
-            lock (Notifications)
-            {
-                return Notifications.TryGetValue(behaviorId, out var notifications)
-                    ? notifications
-                        .Where(notification => notification.SentAt >= notificationThreshold)
-                        .ToArray()
-                    : Array.Empty<Notification>();
-            }
         }
 
         public Task StartAsync(CancellationToken cancellationToken)
@@ -71,13 +64,13 @@ namespace Stateflows.Common.Subscription
                     lock (Notifications)
                     {
                         var date = DateTime.Now.AddMinutes(-1);
-                        foreach (var notifications in Notifications.Values)
+                        foreach (var behaviorNotifications in Notifications.Values)
                         {
-                            notifications.RemoveAll(notification => notification.SentAt <= date);
+                            behaviorNotifications.RemoveAll(notification => notification.SentAt <= date);
                         }
 
                         var emptyIds = Notifications
-                            .Where(x => x.Value.Any())
+                            .Where(x => !x.Value.Any())
                             .Select(x => x.Key)
                             .ToArray();
 

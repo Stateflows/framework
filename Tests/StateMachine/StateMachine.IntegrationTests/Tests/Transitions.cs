@@ -86,7 +86,7 @@ namespace StateMachine.IntegrationTests.Tests
             var status = EventStatus.Rejected;
             string currentState = "state1";
 
-            if (Locator.TryLocateStateMachine(new StateMachineId("simple", "x"), out var sm))
+            if (StateMachineLocator.TryLocateStateMachine(new StateMachineId("simple", "x"), out var sm))
             {
                 await sm.InitializeAsync();
 
@@ -108,7 +108,7 @@ namespace StateMachine.IntegrationTests.Tests
             var status = EventStatus.Rejected;
             string currentState = "state1";
 
-            if (Locator.TryLocateStateMachine(new StateMachineId("guarded", "x"), out var sm))
+            if (StateMachineLocator.TryLocateStateMachine(new StateMachineId("guarded", "x"), out var sm))
             {
                 await sm.InitializeAsync();
 
@@ -129,7 +129,7 @@ namespace StateMachine.IntegrationTests.Tests
             var status = EventStatus.Rejected;
             string currentState = "state1";
 
-            if (Locator.TryLocateStateMachine(new StateMachineId("default", "x"), out var sm))
+            if (StateMachineLocator.TryLocateStateMachine(new StateMachineId("default", "x"), out var sm))
             {
                 await sm.InitializeAsync();
 
@@ -148,7 +148,7 @@ namespace StateMachine.IntegrationTests.Tests
             var status = EventStatus.Rejected;
             string currentState = string.Empty;
 
-            if (Locator.TryLocateStateMachine(new StateMachineId("internal", "x"), out var sm))
+            if (StateMachineLocator.TryLocateStateMachine(new StateMachineId("internal", "x"), out var sm))
             {
                 await sm.InitializeAsync();
 
@@ -174,7 +174,7 @@ namespace StateMachine.IntegrationTests.Tests
             var status = EventStatus.Rejected;
             string currentState = "state1";
 
-            if (Locator.TryLocateStateMachine(new StateMachineId("self", "x"), out var sm))
+            if (StateMachineLocator.TryLocateStateMachine(new StateMachineId("self", "x"), out var sm))
             {
                 await sm.InitializeAsync();
 

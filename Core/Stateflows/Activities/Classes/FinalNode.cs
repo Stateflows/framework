@@ -1,7 +1,9 @@
-﻿namespace Stateflows.Activities
+﻿using Stateflows.Common.Extensions;
+
+namespace Stateflows.Activities
 {
     public sealed class FinalNode : ActivityNode
     {
-        public const string Name = "Stateflows.Activities.FinalNode";
+        public static string Name => typeof(FinalNode).GetReadableName();
     }
 }

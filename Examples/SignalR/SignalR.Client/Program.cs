@@ -20,17 +20,45 @@ builder.Services.AddStateflows(b => b
         .AddStateMachine("stateMachine1", b => b
             .AddInitialState("state1", b => b
                 .AddTransition<OtherEvent>("state2")
-                .AddHttpGetInternalTransition<Payload>("/my-url")
-                .AddHttpPostTransition<Payload>("/asd")
+                .AddTransition<AfterOneMinute>("state2")
             )
             .AddState("state2", b => b
-                .AddOnDoActivity("a")
-                .AddElseInternalTransition<OtherEvent>(b => b
-                    .ForwardEventToDoActivity("a")
-                )
+                .AddOnEntry(c => c.StateMachine.Publish(new SomeNotification()))
+                .AddTransition<OtherEvent>("state1")
+                .AddTransition<AfterOneMinute>("state1")
             )
         )
     )
+
+
+    //.AddActivities(b => b
+    //    .AddActivity("handleVerification", b => b
+    //        .AddAcceptEventAction<Event<VerificationRequest>>(async c =>
+    //            {
+    //                var allDossierIds = getDossierIds(c.SelectionCriteria);
+    //                c.OutputRange(allDossierIds.ToTokens());
+    //            },
+    //            b => b.AddFlow<Token<int>>("processing")
+    //        )
+
+    //        .AddIterativeActivity<Token<int>>(
+    //            "processing",
+    //            b => b
+    //                .AddInput(b => b
+    //                    .AddFlow<Token<int>>("process")
+    //                )
+    //                .AddTimeEventAction<EveryFiveMinutes>(b => b
+    //                    .AddControlFlow("process")
+    //                )
+    //                .AddAction("process",
+    //                    async c => { /* processing */ }
+    //                ),
+    //            10
+    //        )  
+    //    )
+    //)
+
+
     .AddPlantUml()
     .SetEnvironment(
         builder.Environment.IsDevelopment()
@@ -73,6 +101,3 @@ app.MapControllerRoute(
 app.MapFallbackToFile("index.html");
 
 app.Run();
-
-public class Tran1 : Transition<HttpRequest<Payload, Payload>> { }
-public class Tran2 : Transition<HttpEvent<Payload>> { }

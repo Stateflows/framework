@@ -24,10 +24,11 @@ namespace Stateflows.Transport.Http
                     "/stateflows/send",
                     async (
                         HttpContext context,
-                        IBehaviorLocator locator
-                        //INotificationsHub hub
+                        IBehaviorLocator locator,
+                        INotificationsHub hub
                     ) =>
                     {
+                        var responseTime = DateTime.Now;
                         using var reader = new StreamReader(context.Request.Body);
                         var body = await reader.ReadToEndAsync();
                         var input = StateflowsJsonConverter.DeserializeObject<StateflowsRequest>(body);
@@ -42,8 +43,13 @@ namespace Stateflows.Transport.Http
                                     {
                                         EventStatus = result.Status,
                                         Validation = result.Validation,
-                                        Response = result.Event.GetResponse(),
-                                        //Notifications = 
+                                        Response = result.Status == EventStatus.Consumed
+                                            ? result.Event.GetResponse()
+                                            : null,
+                                        Notifications = result.Status != EventStatus.Rejected
+                                            ? hub.Notifications.GetPendingNotifications(behaviorId, input.Watches)
+                                            : Array.Empty<Notification>(),
+                                        ResponseTime = responseTime,
                                     },
                                     true
                                 ),

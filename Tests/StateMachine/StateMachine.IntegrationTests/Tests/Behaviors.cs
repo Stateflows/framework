@@ -76,7 +76,7 @@ namespace StateMachine.IntegrationTests.Tests
             string currentState1 = "";
             var someStatus1 = EventStatus.Rejected;
 
-            if (Locator.TryLocateStateMachine(new StateMachineId("submachine", "x"), out var sm))
+            if (StateMachineLocator.TryLocateStateMachine(new StateMachineId("submachine", "x"), out var sm))
             {
                 initialized = (await sm.InitializeAsync()).Response.InitializationSuccessful;
 
@@ -110,7 +110,7 @@ namespace StateMachine.IntegrationTests.Tests
             string currentState1 = "";
             var someStatus1 = EventStatus.Rejected;
 
-            if (Locator.TryLocateStateMachine(new StateMachineId("doActivity", "x"), out var sm))
+            if (StateMachineLocator.TryLocateStateMachine(new StateMachineId("doActivity", "x"), out var sm))
             {
                 initialized = (await sm.InitializeAsync()).Response.InitializationSuccessful;
 

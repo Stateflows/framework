@@ -497,3 +497,5 @@ Transport/@stateflows/http-client/dist/
 Examples/SignalR/SignalR.Client/ClientApp/.angular/
 *.txt
 Publish.ps1
+/Transport/@stateflows/common/dist
+/Transport/@stateflows/http-client/dist

@@ -11,6 +11,7 @@ using Stateflows.Common.Context;
 using Stateflows.Activities.Models;
 using Stateflows.Common.Extensions;
 using System.ComponentModel.DataAnnotations;
+using Stateflows.Common.Initializer;
 
 namespace Stateflows.Activities.Engine
 {
@@ -65,33 +66,32 @@ namespace Stateflows.Activities.Engine
             {
                 var context = new RootContext(stateflowsContext);
 
-                if (await executor.HydrateAsync(context))
+                await executor.HydrateAsync(context);
+
+                if (@event is CompoundRequest compoundRequest)
                 {
-                    if (@event is CompoundRequest compoundRequest)
+                    result = EventStatus.Consumed;
+                    var results = new List<RequestResult>();
+                    foreach (var ev in compoundRequest.Events)
                     {
-                        result = EventStatus.Consumed;
-                        var results = new List<RequestResult>();
-                        foreach (var ev in compoundRequest.Events)
-                        {
-                            ev.Headers.AddRange(@event.Headers);
+                        ev.Headers.AddRange(@event.Headers);
 
-                            var status = await ExecuteBehaviorAsync(ev, result, stateflowsContext, graph, executor, context);
+                        var status = await ExecuteBehaviorAsync(ev, result, stateflowsContext, graph, executor, context);
 
-                            results.Add(new RequestResult(ev, ev.GetResponse(), status, new EventValidation(true, new List<ValidationResult>())));
-                        }
-
-                        compoundRequest.Respond(new CompoundResponse()
-                        {
-                            Results = results
-                        });
-                    }
-                    else
-                    {
-                        result = await ExecuteBehaviorAsync(@event, result, stateflowsContext, graph, executor, context);
+                        results.Add(new RequestResult(ev, ev.GetResponse(), status, new EventValidation(true, new List<ValidationResult>())));
                     }
 
-                    await storage.DehydrateAsync((await executor.DehydrateAsync()).Context);
+                    compoundRequest.Respond(new CompoundResponse()
+                    {
+                        Results = results
+                    });
                 }
+                else
+                {
+                    result = await ExecuteBehaviorAsync(@event, result, stateflowsContext, graph, executor, context);
+                }
+
+                await storage.DehydrateAsync((await executor.DehydrateAsync()).Context);
             }
 
             return result;
@@ -105,6 +105,21 @@ namespace Stateflows.Activities.Engine
 
             if (await executor.Inspector.BeforeProcessEventAsync(eventContext))
             {
+                if (!executor.Initialized)
+                {
+                    var token = BehaviorClassesInitializations.Instance.AutoInitializationTokens.Find(token => token.BehaviorClass == executor.Context.Id.ActivityClass);
+
+                    InitializationRequest initializationRequest;
+                    if (token != null && (initializationRequest = await token.InitializationRequestFactory.Invoke(executor.NodeScope.ServiceProvider, executor.Context.Id)) != null)
+                    {
+                        context.SetEvent(initializationRequest);
+
+                        await executor.InitializeAsync(initializationRequest);
+
+                        context.ClearEvent();
+                    }
+                }
+
                 result = await TryHandleEventAsync(eventContext);
 
                 if (result != EventStatus.Consumed)

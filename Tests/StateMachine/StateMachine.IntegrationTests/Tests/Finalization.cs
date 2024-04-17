@@ -47,7 +47,7 @@ namespace StateMachine.IntegrationTests.Tests
             var status = EventStatus.Consumed;
             string? currentState = "";
 
-            if (Locator.TryLocateStateMachine(new StateMachineId("simple", "x"), out var sm))
+            if (StateMachineLocator.TryLocateStateMachine(new StateMachineId("simple", "x"), out var sm))
             {
                 status = (await sm.SendAsync(new SomeEvent())).Status;
 
@@ -65,7 +65,7 @@ namespace StateMachine.IntegrationTests.Tests
             var finalized = false;
             string currentState = string.Empty;
 
-            if (Locator.TryLocateStateMachine(new StateMachineId("simple", "x"), out var sm))
+            if (StateMachineLocator.TryLocateStateMachine(new StateMachineId("simple", "x"), out var sm))
             {
                 initialized = (await sm.InitializeAsync()).Response.InitializationSuccessful;
 
@@ -88,7 +88,7 @@ namespace StateMachine.IntegrationTests.Tests
             var initialized = false;
             string currentState = string.Empty;
 
-            if (Locator.TryLocateStateMachine(new StateMachineId("cascade", "x"), out var sm))
+            if (StateMachineLocator.TryLocateStateMachine(new StateMachineId("cascade", "x"), out var sm))
             {
                 initialized = (await sm.InitializeAsync()).Response.InitializationSuccessful;
 

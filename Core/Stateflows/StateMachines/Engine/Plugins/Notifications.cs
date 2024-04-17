@@ -4,6 +4,7 @@ using Stateflows.Common;
 using Stateflows.StateMachines.Events;
 using Stateflows.StateMachines.Extensions;
 using Stateflows.StateMachines.Context.Interfaces;
+using System.Diagnostics;
 
 namespace Stateflows.StateMachines.Engine
 {
@@ -66,6 +67,8 @@ namespace Stateflows.StateMachines.Engine
                 };
 
                 context.StateMachine.Publish(notification);
+
+                Debug.WriteLine($"--> current state notification published {DateTime.Now}");
             }
 
             return Task.CompletedTask;

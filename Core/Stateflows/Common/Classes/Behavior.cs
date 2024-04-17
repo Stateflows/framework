@@ -7,7 +7,7 @@ using Stateflows.Common.Subscription;
 
 namespace Stateflows.Common.Classes
 {
-    internal class Behavior : IBehavior, IDisposable
+    internal class Behavior : IBehavior
     {
         public BehaviorId Id { get; }
 
@@ -27,6 +27,11 @@ namespace Stateflows.Common.Classes
 
         private void SubscriptionHub_OnPublish(Notification notification)
         {
+            if (notification.SenderId != Id)
+            {
+                return;
+            }
+
             lock (handlers)
             {
                 if (handlers.TryGetValue(notification.Name, out var notificationHandlers))
@@ -89,7 +94,14 @@ namespace Stateflows.Common.Classes
 
         public void Dispose()
         {
-            subscriptionHub.OnPublish -= SubscriptionHub_OnPublish;
+            Dispose(true);
+            GC.SuppressFinalize(this);
         }
+
+        protected virtual void Dispose(bool disposing)
+            => subscriptionHub.OnPublish -= SubscriptionHub_OnPublish;
+
+        ~Behavior()
+            => Dispose(false);
     }
 }

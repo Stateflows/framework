@@ -20,9 +20,12 @@ namespace Stateflows.Common.Subscription
             this.subscriptionHub = subscriptionHub;
         }
 
-        public async Task PublishAsync<TNotification>(TNotification notification)
+        public async Task PublishAsync<TNotification>(BehaviorId behaviorId, TNotification notification)
             where TNotification : Notification, new()
         {
+            notification.SenderId = behaviorId;
+            notification.SentAt = DateTime.Now;
+
             if (context.Subscribers.TryGetValue(EventInfo<TNotification>.Name, out var behaviorIds))
             {
                 await Task.WhenAll(

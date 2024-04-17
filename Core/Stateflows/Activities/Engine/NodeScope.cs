@@ -9,7 +9,7 @@ namespace Stateflows.Activities.Engine
 {
     internal class NodeScope : IDisposable
     {
-        private readonly NodeScope BaseNodeScope = null;
+        public readonly NodeScope BaseNodeScope = null;
 
         private IServiceProvider baseServiceProvider = null;
         private IServiceProvider BaseServiceProvider

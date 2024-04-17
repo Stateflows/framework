@@ -1,10 +1,11 @@
 ﻿using Stateflows.Common;
+using Stateflows.Common.Extensions;
 
 namespace Stateflows.Activities
 {
     public abstract class IterativeActivityNode<TToken> : StructuredActivityNode<TToken>
         where TToken : Token, new()
     {
-        public string Name => $"Stateflows.Activities.IterativeActivityNode<{TokenInfo<TToken>.Name}>";
+        public static string Name => typeof(IterativeActivityNode<TToken>).GetReadableName();
     }
 }

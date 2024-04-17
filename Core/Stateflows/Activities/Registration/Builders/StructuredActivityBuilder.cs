@@ -12,6 +12,7 @@ namespace Stateflows.Activities.Registration.Builders
     internal class StructuredActivityBuilder :
         BaseActivityBuilder,
         IActionBuilder,
+        ITypedActionBuilder,
         IActionBuilderWithOptions,
         IReactiveStructuredActivityBuilder,
         IReactiveStructuredActivityBuilderWithOptions,
@@ -119,11 +120,11 @@ namespace Stateflows.Activities.Registration.Builders
         IReactiveStructuredActivityBuilder IReactiveActivity<IReactiveStructuredActivityBuilder>.AddStructuredActivity(string actionNodeName, ReactiveStructuredActivityBuildAction buildAction)
             => AddStructuredActivity(actionNodeName, buildAction) as IReactiveStructuredActivityBuilder;
 
-        IReactiveStructuredActivityBuilder IReactiveActivity<IReactiveStructuredActivityBuilder>.AddParallelActivity<TToken>(string actionNodeName, ParallelActivityBuildAction buildAction)
-            => AddParallelActivity<TToken>(actionNodeName, buildAction) as IReactiveStructuredActivityBuilder;
+        IReactiveStructuredActivityBuilder IReactiveActivity<IReactiveStructuredActivityBuilder>.AddParallelActivity<TToken>(string actionNodeName, ParallelActivityBuildAction buildAction, int chunkSize)
+            => AddParallelActivity<TToken>(actionNodeName, buildAction, chunkSize) as IReactiveStructuredActivityBuilder;
 
-        IReactiveStructuredActivityBuilder IReactiveActivity<IReactiveStructuredActivityBuilder>.AddIterativeActivity<TToken>(string actionNodeName, IterativeActivityBuildAction buildAction)
-            => AddIterativeActivity<TToken>(actionNodeName, buildAction) as IReactiveStructuredActivityBuilder;
+        IReactiveStructuredActivityBuilder IReactiveActivity<IReactiveStructuredActivityBuilder>.AddIterativeActivity<TToken>(string actionNodeName, IterativeActivityBuildAction buildAction, int chunkSize)
+            => AddIterativeActivity<TToken>(actionNodeName, buildAction, chunkSize) as IReactiveStructuredActivityBuilder;
 
         IReactiveStructuredActivityBuilderWithOptions INodeOptions<IReactiveStructuredActivityBuilderWithOptions>.SetOptions(NodeOptions nodeOptions)
         {
@@ -159,11 +160,11 @@ namespace Stateflows.Activities.Registration.Builders
         IReactiveStructuredActivityBuilderWithOptions IReactiveActivity<IReactiveStructuredActivityBuilderWithOptions>.AddStructuredActivity(string actionNodeName, ReactiveStructuredActivityBuildAction buildAction)
             => AddStructuredActivity(actionNodeName, buildAction) as IReactiveStructuredActivityBuilderWithOptions;
 
-        IReactiveStructuredActivityBuilderWithOptions IReactiveActivity<IReactiveStructuredActivityBuilderWithOptions>.AddParallelActivity<TToken>(string actionNodeName, ParallelActivityBuildAction buildAction)
-            => AddParallelActivity<TToken>(actionNodeName, buildAction) as IReactiveStructuredActivityBuilderWithOptions;
+        IReactiveStructuredActivityBuilderWithOptions IReactiveActivity<IReactiveStructuredActivityBuilderWithOptions>.AddParallelActivity<TToken>(string actionNodeName, ParallelActivityBuildAction buildAction, int chunkSize)
+            => AddParallelActivity<TToken>(actionNodeName, buildAction, chunkSize) as IReactiveStructuredActivityBuilderWithOptions;
 
-        IReactiveStructuredActivityBuilderWithOptions IReactiveActivity<IReactiveStructuredActivityBuilderWithOptions>.AddIterativeActivity<TToken>(string actionNodeName, IterativeActivityBuildAction buildAction)
-            => AddIterativeActivity<TToken>(actionNodeName, buildAction) as IReactiveStructuredActivityBuilderWithOptions;
+        IReactiveStructuredActivityBuilderWithOptions IReactiveActivity<IReactiveStructuredActivityBuilderWithOptions>.AddIterativeActivity<TToken>(string actionNodeName, IterativeActivityBuildAction buildAction, int chunkSize)
+            => AddIterativeActivity<TToken>(actionNodeName, buildAction, chunkSize) as IReactiveStructuredActivityBuilderWithOptions;
 
         IReactiveStructuredActivityBuilder IExceptionHandler<IReactiveStructuredActivityBuilder>.AddExceptionHandler<TException>(ExceptionHandlerDelegateAsync<TException> exceptionHandler)
             => AddExceptionHandler<TException>(exceptionHandler) as IReactiveStructuredActivityBuilder;
@@ -272,6 +273,17 @@ namespace Stateflows.Activities.Registration.Builders
 
         IStructuredActivityBuilderWithOptions ISendEvent<IStructuredActivityBuilderWithOptions>.AddSendEventAction<TEvent>(string actionNodeName, SendEventActionDelegateAsync<TEvent> actionAsync, BehaviorIdSelectorAsync targetSelectorAsync, SendEventActionBuildAction buildAction)
             => AddSendEventAction<TEvent>(actionNodeName, actionAsync, targetSelectorAsync, buildAction) as IStructuredActivityBuilderWithOptions;
+        #endregion
+
+        #region ITypedActionBuilder
+        ITypedActionBuilder IObjectFlow<ITypedActionBuilder>.AddFlow<TToken>(string targetNodeName, ObjectFlowBuildAction<TToken> buildAction)
+            => AddFlow(targetNodeName, buildAction) as ITypedActionBuilder;
+
+        ITypedActionBuilder IControlFlow<ITypedActionBuilder>.AddControlFlow(string targetNodeName, ControlFlowBuildAction buildAction)
+            => AddControlFlow(targetNodeName, buildAction) as ITypedActionBuilder;
+
+        ITypedActionBuilder IExceptionHandler<ITypedActionBuilder>.AddExceptionHandler<TException>(ExceptionHandlerDelegateAsync<TException> exceptionHandler)
+            => AddExceptionHandler(exceptionHandler) as ITypedActionBuilder;
         #endregion
     }
 }

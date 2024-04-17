@@ -46,6 +46,7 @@ builder.Services.AddStateflows(b => b
                         c.SourceState.Values.Set("counter", counter + 1);
                     })
                 )
+                .AddTransition<AfterOneMinute>("state2")
                 .AddDefaultTransition("state2", b => b
                     .AddGuard(c =>
                     {

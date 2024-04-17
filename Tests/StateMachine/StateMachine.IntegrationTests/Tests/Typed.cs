@@ -40,7 +40,7 @@ namespace StateMachine.IntegrationTests.Tests
             State2.Reset();
             SomeEventTransition.Reset();
 
-            if (Locator.TryLocateStateMachine(new StateMachineId(StateMachineInfo<StateMachine1>.Name, "x"), out var sm))
+            if (StateMachineLocator.TryLocateStateMachine(new StateMachineId(StateMachineInfo<StateMachine1>.Name, "x"), out var sm))
             {
                 await sm.InitializeAsync();
 

@@ -1,6 +1,7 @@
 ﻿using System;
-using System.Linq;
+using System.Diagnostics;
 using System.Threading.Tasks;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Stateflows.Common.Engine;
 using Stateflows.Common.Interfaces;
@@ -26,17 +27,14 @@ namespace Stateflows.Common.Tenant
         {
             var tenantIds = await TenantsProvider.GetAllTenantsAsync();
 
-            await Task.WhenAll(
-                tenantIds.Select(
-                    tenantId => ExecuteByTenantAsync(tenantId, tenantAction)
-                )
-            );
+            foreach (var tenantId in tenantIds)
+            {
+                await ExecuteByTenantAsync(tenantId, tenantAction);
+            }
         }
 
-        public Task ExecuteByTenantAsync(string tenantId, Func<Task> tenantAction)
+        public async Task ExecuteByTenantAsync(string tenantId, Func<Task> tenantAction)
         {
-            Task result = null;
-
             TenantAccessor.CurrentTenantId = tenantId;
 
             if (Interceptor.BeforeExecute(tenantId))
@@ -45,7 +43,7 @@ namespace Stateflows.Common.Tenant
                 {
                     try
                     {
-                        result = tenantAction();
+                        await tenantAction();
                     }
                     catch (Exception e)
                     {
@@ -58,8 +56,6 @@ namespace Stateflows.Common.Tenant
                     TenantAccessor.CurrentTenantId = null;
                 }
             }
-
-            return result ?? Task.CompletedTask;
         }
     }
 }

@@ -13,6 +13,8 @@ using Stateflows.StateMachines.Extensions;
 using Stateflows.StateMachines.Registration;
 using Stateflows.StateMachines.Context.Classes;
 using Stateflows.StateMachines.Context.Interfaces;
+using Stateflows.Common.Initializer;
+using Stateflows.Activities.Engine;
 
 namespace Stateflows.StateMachines.Engine
 {
@@ -81,7 +83,11 @@ namespace Stateflows.StateMachines.Engine
             => VerticesStack.Select(vertex => vertex.Name).ToArray();
 
         public Task HydrateAsync()
-            => Inspector.AfterHydrateAsync(new StateMachineActionContext(Context));
+        {
+            RebuildVerticesStack();
+
+            return Inspector.AfterHydrateAsync(new StateMachineActionContext(Context));
+        }
 
         public Task DehydrateAsync()
             => Inspector.BeforeDehydrateAsync(new StateMachineActionContext(Context));

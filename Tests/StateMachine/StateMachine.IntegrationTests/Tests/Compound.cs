@@ -1,7 +1,6 @@
 using Stateflows.Common;
 using Stateflows.Common.Extensions;
 using StateMachine.IntegrationTests.Utils;
-using System.Runtime.InteropServices;
 
 namespace StateMachine.IntegrationTests.Tests
 {
@@ -39,7 +38,7 @@ namespace StateMachine.IntegrationTests.Tests
             var status = EventStatus.Rejected;
             string currentState = "state1";
 
-            if (Locator.TryLocateStateMachine(new StateMachineId("simple", "x"), out var sm))
+            if (StateMachineLocator.TryLocateStateMachine(new StateMachineId("simple", "x"), out var sm))
             {
                 await sm.InitializeAsync();
 
@@ -67,7 +66,7 @@ namespace StateMachine.IntegrationTests.Tests
             var status = EventStatus.Rejected;
             string currentState = "state1";
 
-            if (Locator.TryLocateStateMachine(new StateMachineId("simple", "x"), out var sm))
+            if (StateMachineLocator.TryLocateStateMachine(new StateMachineId("simple", "x"), out var sm))
             {
                 await sm.InitializeAsync();
 
@@ -93,10 +92,10 @@ namespace StateMachine.IntegrationTests.Tests
         public async Task CompoundRequestInvalid()
         {
             var status = EventStatus.Rejected;
-            SendResult result = null;
+            SendResult? result = null;
             string currentState = "state1";
 
-            if (Locator.TryLocateStateMachine(new StateMachineId("simple", "x"), out var sm))
+            if (StateMachineLocator.TryLocateStateMachine(new StateMachineId("simple", "x"), out var sm))
             {
                 await sm.InitializeAsync();
 

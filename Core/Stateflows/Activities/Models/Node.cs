@@ -25,6 +25,8 @@ namespace Stateflows.Activities.Models
         public NodeOptions Options { get; set; } = NodeOptions.ActionDefault;
         public Type ExceptionType { get; set; }
         public Type EventType { get; set; }
+        public int ChunkSize { get; set; }
+        public bool Anchored { get; set; } = true;
 
         private Logic<ActivityActionAsync> action = null;
         public Logic<ActivityActionAsync> Action
@@ -163,19 +165,35 @@ namespace Stateflows.Activities.Models
         {
             Node handler = null;
             var currentNode = this;
-            while (handler == null && currentNode != null)
+            while (currentNode != null)
             {
                 handler = currentNode.ExceptionHandlers.FirstOrDefault(n => exception.GetType().IsAssignableFrom(n.ExceptionType));
 
+                if (handler != null)
+                {
+                    break;
+                }
+
                 currentNode = currentNode.Parent;
+            }
+
+            var currentScope = context.NodeScope;
+            while (currentNode != null)
+            {
+                if (currentScope.Node == currentNode)
+                {
+                    break;
+                }
+
+                currentScope = currentScope.BaseNodeScope;
             }
 
             if (handler != null)
             {
                 var exceptionContext = new ActionContext(
                     context.Context,
-                    context.NodeScope,
-                    this,
+                    currentScope,
+                    handler,
                     new Token[] { new ExceptionToken<Exception>() { Exception = exception } }
                 );
 

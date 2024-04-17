@@ -1,4 +1,5 @@
 ﻿using System;
+using Newtonsoft.Json;
 using Stateflows.Common.Exceptions;
 using Stateflows.Common.Utilities;
 
@@ -27,6 +28,10 @@ namespace Stateflows.Activities
 
         public string Instance { get; set; }
 
+        [JsonIgnore]
+        public readonly ActivityClass ActivityClass => new ActivityClass(Name);
+
+        [JsonIgnore]
         public readonly BehaviorId BehaviorId => new BehaviorId(BehaviorType.Activity, Name, Instance);
 
         public static bool operator ==(ActivityId id1, ActivityId id2)

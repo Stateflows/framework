@@ -1,7 +1,4 @@
-﻿using System;
-using System.Threading.Tasks;
-
-namespace Stateflows.StateMachines
+﻿namespace Stateflows.StateMachines
 {
     public interface IStateMachineLocator
     {

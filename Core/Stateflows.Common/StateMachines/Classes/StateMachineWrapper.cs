@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Threading.Tasks;
 using Stateflows.StateMachines;
-using Stateflows.StateMachines.Events;
 
 namespace Stateflows.Common.StateMachines.Classes
 {
@@ -31,5 +30,17 @@ namespace Stateflows.Common.StateMachines.Classes
         public Task UnwatchAsync<TNotification>()
             where TNotification : Notification, new()
             => Behavior.UnwatchAsync<TNotification>();
+
+        public void Dispose()
+        {
+            Dispose(true);
+            GC.SuppressFinalize(this);
+        }
+
+        protected virtual void Dispose(bool disposing)
+            => Behavior.Dispose();
+
+        ~StateMachineWrapper()
+            => Dispose(false);
     }
 }

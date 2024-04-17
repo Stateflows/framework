@@ -1,12 +1,12 @@
 ﻿namespace Stateflows.Common.Initializer
 {
-    internal class InitializationToken
+    internal class AutoInitializationToken
     {
         public BehaviorClass BehaviorClass { get; private set; }
 
-        public InitializationRequestFactoryAsync InitializationRequestFactory { get; }
+        public AutoInitializationRequestFactoryAsync InitializationRequestFactory { get; }
 
-        public InitializationToken(BehaviorClass behaviorClass, InitializationRequestFactoryAsync initializationRequestFactoryAsync)
+        public AutoInitializationToken(BehaviorClass behaviorClass, AutoInitializationRequestFactoryAsync initializationRequestFactoryAsync)
         {
             BehaviorClass = behaviorClass;
             InitializationRequestFactory = initializationRequestFactoryAsync;

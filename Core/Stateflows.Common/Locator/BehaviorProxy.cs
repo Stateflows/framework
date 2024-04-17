@@ -49,5 +49,17 @@ namespace Stateflows.Common.Locator
         public Task UnwatchAsync<TNotification>()
             where TNotification : Notification, new()
             => Behavior.UnwatchAsync<TNotification>();
+
+        public void Dispose()
+        {
+            Dispose(true);
+            GC.SuppressFinalize(this);
+        }
+
+        protected virtual void Dispose(bool disposing)
+            => Behavior.Dispose();
+
+        ~BehaviorProxy()
+            => Dispose(false);
     }
 }

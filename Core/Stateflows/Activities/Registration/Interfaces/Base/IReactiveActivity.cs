@@ -8,10 +8,10 @@ namespace Stateflows.Activities.Registration.Interfaces.Base
 
         TReturn AddStructuredActivity(string actionNodeName, ReactiveStructuredActivityBuildAction buildAction);
 
-        TReturn AddParallelActivity<TParallelizationToken>(string actionNodeName, ParallelActivityBuildAction buildAction)
+        TReturn AddParallelActivity<TParallelizationToken>(string actionNodeName, ParallelActivityBuildAction buildAction, int chunkSize = 1)
             where TParallelizationToken : Token, new();
 
-        TReturn AddIterativeActivity<TIterationToken>(string actionNodeName, IterativeActivityBuildAction buildAction)
+        TReturn AddIterativeActivity<TIterationToken>(string actionNodeName, IterativeActivityBuildAction buildAction, int chunkSize = 1)
             where TIterationToken : Token, new();
     }
 }

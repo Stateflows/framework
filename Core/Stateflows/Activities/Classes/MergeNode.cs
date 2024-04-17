@@ -1,7 +1,9 @@
-﻿namespace Stateflows.Activities
+﻿using Stateflows.Common.Extensions;
+
+namespace Stateflows.Activities
 {
     public sealed class MergeNode : ActivityNode
     {
-        public const string Name = "Stateflows.Activities.MergeNode";
+        public static string Name => typeof(MergeNode).GetReadableName();
     }
 }

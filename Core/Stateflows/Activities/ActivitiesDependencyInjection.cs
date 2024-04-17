@@ -25,7 +25,7 @@ namespace Stateflows.Activities
         }
 
         [DebuggerHidden]
-        public static IStateflowsBuilder AddDefaultInstance<TActivity>(this IStateflowsBuilder stateflowsBuilder, InitializationRequestFactoryAsync initializationRequestFactoryAsync = null)
+        public static IStateflowsBuilder AddDefaultInstance<TActivity>(this IStateflowsBuilder stateflowsBuilder, DefaultInstanceInitializationRequestFactoryAsync initializationRequestFactoryAsync = null)
             where TActivity: Activity
             => stateflowsBuilder.AddDefaultInstance(new ActivityClass(ActivityInfo<TActivity>.Name).BehaviorClass, initializationRequestFactoryAsync);
 
@@ -52,6 +52,7 @@ namespace Stateflows.Activities
                     .AddSingleton<IActivityEventHandler, ResetHandler>()
                     .AddSingleton<IActivityEventHandler, SubscriptionHandler>()
                     .AddSingleton<IActivityEventHandler, UnsubscriptionHandler>()
+                    .AddSingleton<IActivityEventHandler, NotificationsHandler>()
                     ;
             }
 

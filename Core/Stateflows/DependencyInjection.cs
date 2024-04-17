@@ -75,9 +75,16 @@ namespace Stateflows
             return services;
         }
 
-        public static IStateflowsBuilder AddDefaultInstance(this IStateflowsBuilder stateflowsBuilder, BehaviorClass behaviorClass, InitializationRequestFactoryAsync initializationRequestFactoryAsync = null)
+        public static IStateflowsBuilder AddDefaultInstance(this IStateflowsBuilder stateflowsBuilder, BehaviorClass behaviorClass, DefaultInstanceInitializationRequestFactoryAsync initializationRequestFactoryAsync = null)
         {
-            BehaviorClassesInitializations.Instance.Initialize(behaviorClass, initializationRequestFactoryAsync);
+            BehaviorClassesInitializations.Instance.AddDefaultInstanceInitialization(behaviorClass, initializationRequestFactoryAsync);
+
+            return stateflowsBuilder;
+        }
+
+        public static IStateflowsBuilder AddAutoInitialization(this IStateflowsBuilder stateflowsBuilder, BehaviorClass behaviorClass, AutoInitializationRequestFactoryAsync initializationRequestFactoryAsync = null)
+        {
+            BehaviorClassesInitializations.Instance.AddAutoInitialization(behaviorClass, initializationRequestFactoryAsync);
 
             return stateflowsBuilder;
         }

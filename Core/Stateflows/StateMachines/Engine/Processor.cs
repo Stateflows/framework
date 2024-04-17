@@ -11,6 +11,7 @@ using Stateflows.Common.Context;
 using Stateflows.StateMachines.Models;
 using Stateflows.Common.Extensions;
 using System.ComponentModel.DataAnnotations;
+using Stateflows.Common.Initializer;
 
 namespace Stateflows.StateMachines.Engine
 {
@@ -102,12 +103,25 @@ namespace Stateflows.StateMachines.Engine
 
         private async Task<EventStatus> ExecuteBehaviorAsync<TEvent>(TEvent @event, EventStatus result, StateflowsContext stateflowsContext, Graph graph, Executor executor) where TEvent : Event, new()
         {
-            executor.RebuildVerticesStack();
-
             var eventContext = new EventContext<TEvent>(executor.Context);
 
             if (await executor.Inspector.BeforeProcessEventAsync(eventContext))
             {
+                if (!executor.Initialized)
+                {
+                    var token = BehaviorClassesInitializations.Instance.AutoInitializationTokens.Find(token => token.BehaviorClass == executor.Context.Id.StateMachineClass);
+
+                    InitializationRequest initializationRequest;
+                    if (token != null && (initializationRequest = await token.InitializationRequestFactory.Invoke(executor.ServiceProvider, executor.Context.Id)) != null)
+                    {
+                        executor.Context.SetEvent(initializationRequest);
+
+                        await executor.InitializeAsync(initializationRequest);
+
+                        executor.Context.ClearEvent();
+                    }
+                }
+
                 result = await TryHandleEventAsync(eventContext);
 
                 if (result != EventStatus.Consumed)

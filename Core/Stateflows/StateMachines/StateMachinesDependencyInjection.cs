@@ -25,7 +25,7 @@ namespace Stateflows.StateMachines
         }
 
         [DebuggerHidden]
-        public static IStateflowsBuilder AddDefaultInstance<TStateMachine>(this IStateflowsBuilder stateflowsBuilder, InitializationRequestFactoryAsync initializationRequestFactoryAsync = null)
+        public static IStateflowsBuilder AddDefaultInstance<TStateMachine>(this IStateflowsBuilder stateflowsBuilder, DefaultInstanceInitializationRequestFactoryAsync initializationRequestFactoryAsync = null)
             where TStateMachine : StateMachine
             => stateflowsBuilder.AddDefaultInstance(new StateMachineClass(StateMachineInfo<TStateMachine>.Name).BehaviorClass, initializationRequestFactoryAsync);
 
@@ -53,6 +53,7 @@ namespace Stateflows.StateMachines
                     .AddSingleton<IStateMachineEventHandler, ResetHandler>()
                     .AddSingleton<IStateMachineEventHandler, SubscriptionHandler>()
                     .AddSingleton<IStateMachineEventHandler, UnsubscriptionHandler>()
+                    .AddSingleton<IStateMachineEventHandler, NotificationsHandler>()
                     ;
             }
 

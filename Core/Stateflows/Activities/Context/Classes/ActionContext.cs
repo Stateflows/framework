@@ -10,7 +10,7 @@ namespace Stateflows.Activities.Context.Classes
 {
     internal class ActionContext : ActivityNodeContext, IActionContext<Token>, IActivityNodeInspectionContext
     {
-        public ActionContext(BaseContext context, Node node, IEnumerable<Token> inputTokens = null, Token selectionToken = null)
+        public ActionContext(BaseContext context, Node node, IEnumerable<Token> inputTokens = null, IEnumerable<Token> selectionTokens = null)
             : base(context, node)
         {
             if (inputTokens != null)
@@ -18,20 +18,20 @@ namespace Stateflows.Activities.Context.Classes
                 InputTokens.AddRange(inputTokens);
             }
 
-            if (selectionToken != null)
+            if (selectionTokens != null)
             {
-                Token = selectionToken;
+                Tokens = selectionTokens;
             }
         }
 
-        public ActionContext(RootContext context, NodeScope nodeScope, Node node, IEnumerable<Token> inputTokens, Token selectionToken = null)
+        public ActionContext(RootContext context, NodeScope nodeScope, Node node, IEnumerable<Token> inputTokens, IEnumerable<Token> selectionTokens = null)
             : base(context, nodeScope, node)
         {
             InputTokens.AddRange(inputTokens);
 
-            if (selectionToken != null)
+            if (selectionTokens != null)
             {
-                Token = selectionToken;
+                Tokens = selectionTokens;
             }
         }
 
@@ -66,6 +66,6 @@ namespace Stateflows.Activities.Context.Classes
 
         public IEnumerable<Token> Input => InputTokens;
 
-        public Token Token { get; }
+        public IEnumerable<Token> Tokens { get; }
     }
 }

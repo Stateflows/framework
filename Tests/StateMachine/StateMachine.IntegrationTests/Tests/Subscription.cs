@@ -52,8 +52,8 @@ namespace StateMachine.IntegrationTests.Tests
             string? currentState = "";
 
             if (
-                Locator.TryLocateStateMachine(new StateMachineId("subscriber", "x"), out var subscriber) &&
-                Locator.TryLocateStateMachine(new StateMachineId("subscribee", "x"), out var subscribee)
+                StateMachineLocator.TryLocateStateMachine(new StateMachineId("subscriber", "x"), out var subscriber) &&
+                StateMachineLocator.TryLocateStateMachine(new StateMachineId("subscribee", "x"), out var subscribee)
             )
             {
                 await subscriber.InitializeAsync();
@@ -77,11 +77,11 @@ namespace StateMachine.IntegrationTests.Tests
         {
             var watchHit = false;
 
-            if (Locator.TryLocateStateMachine(new StateMachineId("subscribee", "y"), out var subscribee))
+            if (StateMachineLocator.TryLocateStateMachine(new StateMachineId("subscribee", "y"), out var subscribee))
             {
                 _ = subscribee.WatchAsync<SomeNotification>(n =>
                 {
-                    lock (Locator)
+                    lock (StateMachineLocator)
                     {
                         watchHit = true;
                     }
@@ -94,7 +94,7 @@ namespace StateMachine.IntegrationTests.Tests
                 await subscribee.GetCurrentStateAsync();
             }
 
-            lock (Locator)
+            lock (StateMachineLocator)
             {
                 Assert.AreEqual(true, watchHit);
             }
@@ -106,7 +106,7 @@ namespace StateMachine.IntegrationTests.Tests
             var currentStatus = BehaviorStatus.Unknown;
             var currentState = "";
 
-            if (Locator.TryLocateStateMachine(new StateMachineId("subscribee", "z"), out var subscribee))
+            if (StateMachineLocator.TryLocateStateMachine(new StateMachineId("subscribee", "z"), out var subscribee))
             {
                 _ = subscribee.WatchCurrentStateAsync(n => currentState = n.StatesStack.First());
 

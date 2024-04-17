@@ -14,6 +14,8 @@ namespace Stateflows.Activities.Context.Classes
     {
         BehaviorId IBehaviorContext.Id => Context.Id;
 
+        public object LockHandle => Context;
+
         public ActivityId Id => Context.Id;
 
         private BehaviorSubscriber subscriber;
@@ -36,7 +38,7 @@ namespace Stateflows.Activities.Context.Classes
 
         public void Publish<TNotification>(TNotification notification)
             where TNotification : Notification, new()
-            => _ = Subscriber.PublishAsync(notification);
+            => _ = Subscriber.PublishAsync(Id, notification);
 
         public Task<RequestResult<SubscriptionResponse>> SubscribeAsync<TNotification>(BehaviorId behaviorId)
             where TNotification : Notification, new()

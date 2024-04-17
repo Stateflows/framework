@@ -10,6 +10,6 @@ namespace Stateflows.Common.Transport.Classes
         public BehaviorId BehaviorId { get; set; }
 
         [JsonProperty(TypeNameHandling = TypeNameHandling.None)]
-        public IEnumerable<Watch> Watches {  get; set; }
+        public IEnumerable<Watch> Watches { get; set; }
     }
 }
