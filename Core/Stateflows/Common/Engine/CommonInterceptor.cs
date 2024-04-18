@@ -32,16 +32,16 @@ namespace Stateflows.Common.Engine
         public Task AfterHydrateAsync(IBehaviorActionContext context)
             => Interceptors.RunSafe(i => i.AfterHydrateAsync(context), nameof(AfterHydrateAsync), Logger);
 
-        public Task AfterProcessEventAsync(IEventContext<Event> context)
+        public Task AfterProcessEventAsync<TEvent>(IEventContext<TEvent> context)
             => Interceptors.RunSafe(i => i.AfterProcessEventAsync(context), nameof(AfterProcessEventAsync), Logger);
 
         public Task BeforeDehydrateAsync(IBehaviorActionContext context)
             => Interceptors.RunSafe(i => i.BeforeDehydrateAsync(context), nameof(BeforeDehydrateAsync), Logger);
 
-        public Task<bool> BeforeProcessEventAsync(IEventContext<Event> context)
+        public Task<bool> BeforeProcessEventAsync<TEvent>(IEventContext<TEvent> context)
             => Interceptors.RunSafe(i => i.BeforeProcessEventAsync(context), nameof(BeforeProcessEventAsync), Logger);
 
-        public bool BeforeExecute(Event @event)
+        public bool BeforeExecute(object @event)
         {
             var result = true;
             foreach (var interceptor in ExecutionInterceptors)
@@ -55,7 +55,7 @@ namespace Stateflows.Common.Engine
             return result;
         }
 
-        public void AfterExecute(Event @event)
+        public void AfterExecute(object @event)
         {
             foreach (var interceptor in ExecutionInterceptors)
             {

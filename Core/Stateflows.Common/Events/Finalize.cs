@@ -1,5 +1,5 @@
 ﻿namespace Stateflows.Common
 {
-    public class Response : Notification
+    public sealed class Finalize : Command
     { }
 }

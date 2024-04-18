@@ -10,7 +10,7 @@ namespace Stateflows.Activities.Context.Interfaces
     }
 
     public interface IFlowContext<out TToken> : IFlowContext
-        where TToken : Token, new()
+        // where TToken : Token, new()
     {
         TToken Token { get; }
     }

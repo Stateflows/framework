@@ -72,8 +72,7 @@ namespace Stateflows.Activities
         public static IReactiveStructuredActivityBuilder AddControlDecision(this IReactiveStructuredActivityBuilder builder, DecisionBuildAction decisionBuildAction)
             => builder.AddControlDecision(ActivityNodeInfo<DecisionNode<ControlToken>>.Name, decisionBuildAction);
 
-        public static IReactiveStructuredActivityBuilder AddTokenDecision<TToken>(this IReactiveStructuredActivityBuilder builder, string decisionNodeName, DecisionBuildAction<TToken> buildAction)
-            where TToken : Token, new()
+        public static IReactiveStructuredActivityBuilder AddDecision<TToken>(this IReactiveStructuredActivityBuilder builder, string decisionNodeName, DecisionBuildAction<TToken> buildAction)
             => (builder as BaseActivityBuilder)
                 .AddNode(
                     NodeType.Decision,
@@ -86,9 +85,8 @@ namespace Stateflows.Activities
                     b => buildAction(new DecisionBuilder<TToken>(b.SetOptions(NodeOptions.DecisionDefault) as NodeBuilder))
                 ) as IReactiveStructuredActivityBuilder;
 
-        public static IReactiveStructuredActivityBuilder AddTokenDecision<TToken>(this IReactiveStructuredActivityBuilder builder, DecisionBuildAction<TToken> decisionBuildAction)
-            where TToken : Token, new()
-            => builder.AddTokenDecision(ActivityNodeInfo<DecisionNode<TToken>>.Name, decisionBuildAction);
+        public static IReactiveStructuredActivityBuilder AddDecision<TToken>(this IReactiveStructuredActivityBuilder builder, DecisionBuildAction<TToken> decisionBuildAction)
+            => builder.AddDecision(ActivityNodeInfo<DecisionNode<TToken>>.Name, decisionBuildAction);
 
         public static IReactiveStructuredActivityBuilder AddDataStore(this IReactiveStructuredActivityBuilder builder, string dataStoreNodeName, DataStoreBuildAction buildAction)
             => (builder as BaseActivityBuilder)

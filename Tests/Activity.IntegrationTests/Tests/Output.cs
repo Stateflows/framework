@@ -1,5 +1,4 @@
-using Stateflows.Activities.Typed.Data;
-using Stateflows.Activities.Data;
+using Stateflows.Activities.Typed;
 using Stateflows.Common;
 using StateMachine.IntegrationTests.Utils;
 
@@ -9,8 +8,6 @@ namespace Activity.IntegrationTests.Tests
     public class Output : StateflowsTestClass
     {
         private bool Executed1 = false;
-        private bool Executed2 = false;
-        public static string Value = "boo";
 
         [TestInitialize]
         public override void Initialize()
@@ -35,16 +32,16 @@ namespace Activity.IntegrationTests.Tests
                             .AddAction("action1",
                                 async c =>
                                 {
-                                    c.Output(new Token<int>() { Payload = 42 });
+                                    c.Output(42);
                                 },
-                                b => b.AddDataFlow<int, OutputNode>()
+                                b => b.AddFlow<int, OutputNode>()
                             )
                             .AddOutput()
-                            .AddDataFlow<int>("final")
+                            .AddFlow<int>("final")
                         )
                         .AddAction("final", async c =>
                         {
-                            Executed1 = c.Input.OfType<Token<int>>().Any();
+                            Executed1 = c.Input.OfType<int>().Any();
                         })
                     )
                 )

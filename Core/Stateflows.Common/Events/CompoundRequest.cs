@@ -6,6 +6,6 @@ namespace Stateflows.Common
     public class CompoundRequest : Request<CompoundResponse>
     {
         [JsonProperty(TypeNameHandling = TypeNameHandling.None)]
-        public IEnumerable<Event> Events { get; set; }
+        public IEnumerable<object> Events { get; set; }
     }
 }

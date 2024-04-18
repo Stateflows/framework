@@ -6,6 +6,6 @@ namespace Stateflows.StateMachines.Context.Interfaces
     {
         IStateMachineContext StateMachine { get; }
 
-        Event ExecutionTrigger { get; }
+        object ExecutionTrigger { get; }
     }
 }

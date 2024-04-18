@@ -19,15 +19,15 @@ namespace Stateflows.StateMachines
         Task AfterStateEntryAsync(IStateActionInspectionContext context);
         Task BeforeStateExitAsync(IStateActionInspectionContext context);
         Task AfterStateExitAsync(IStateActionInspectionContext context);
-        Task BeforeTransitionGuardAsync(IGuardInspectionContext<Event> context);
-        Task AfterTransitionGuardAsync(IGuardInspectionContext<Event> context, bool guardResult);
-        Task BeforeTransitionEffectAsync(ITransitionInspectionContext<Event> context);
-        Task AfterTransitionEffectAsync(ITransitionInspectionContext<Event> context);
+        Task BeforeTransitionGuardAsync<TEvent>(IGuardInspectionContext<TEvent> context);
+        Task AfterTransitionGuardAsync<TEvent>(IGuardInspectionContext<TEvent> context, bool guardResult);
+        Task BeforeTransitionEffectAsync<TEvent>(ITransitionInspectionContext<TEvent> context);
+        Task AfterTransitionEffectAsync<TEvent>(ITransitionInspectionContext<TEvent> context);
 
         Task OnStateMachineInitializationExceptionAsync(IStateMachineInitializationInspectionContext context, Exception exception);
         Task OnStateMachineFinalizationExceptionAsync(IStateMachineActionInspectionContext context, Exception exception);
-        Task OnTransitionGuardExceptionAsync(IGuardInspectionContext<Event> context, Exception exception);
-        Task OnTransitionEffectExceptionAsync(IEventInspectionContext<Event> context, Exception exception);
+        Task OnTransitionGuardExceptionAsync<TEvent>(IGuardInspectionContext<TEvent> context, Exception exception);
+        Task OnTransitionEffectExceptionAsync<TEvent>(IEventInspectionContext<TEvent> context, Exception exception);
         Task OnStateInitializeExceptionAsync(IStateActionInspectionContext context, Exception exception);
         Task OnStateFinalizeExceptionAsync(IStateActionInspectionContext context, Exception exception);
         Task OnStateEntryExceptionAsync(IStateActionInspectionContext context, Exception exception);

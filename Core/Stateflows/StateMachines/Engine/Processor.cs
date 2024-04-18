@@ -72,7 +72,7 @@ namespace Stateflows.StateMachines.Engine
                     var results = new List<RequestResult>();
                     foreach (var ev in compoundRequest.Events)
                     {
-                        ev.Headers.AddRange(@event.Headers);
+                        ev.Headers.AddRange(compoundRequest.Headers);
 
                         executor.Context.SetEvent(ev);
 
@@ -101,7 +101,8 @@ namespace Stateflows.StateMachines.Engine
             return result;
         }
 
-        private async Task<EventStatus> ExecuteBehaviorAsync<TEvent>(TEvent @event, EventStatus result, StateflowsContext stateflowsContext, Graph graph, Executor executor) where TEvent : Event, new()
+        private async Task<EventStatus> ExecuteBehaviorAsync<TEvent>(TEvent @event, EventStatus result, StateflowsContext stateflowsContext, Graph graph, Executor executor)
+            where TEvent : Event, new()
         {
             var eventContext = new EventContext<TEvent>(executor.Context);
 

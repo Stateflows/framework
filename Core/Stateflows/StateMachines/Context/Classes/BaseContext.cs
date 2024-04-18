@@ -14,7 +14,7 @@ namespace Stateflows.StateMachines.Context.Classes
 
         public RootContext Context { get; }
 
-        public Event ExecutionTrigger => Context.Event;
+        public object ExecutionTrigger => Context.Event;
 
         public StateMachineContext stateMachine;
         public StateMachineContext StateMachine => stateMachine ??= new StateMachineContext(Context);

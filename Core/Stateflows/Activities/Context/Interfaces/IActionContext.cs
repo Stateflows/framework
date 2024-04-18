@@ -9,6 +9,6 @@ namespace Stateflows.Activities.Context.Interfaces
     { }
 
     public interface IActionContext<out TToken> : IActionContext, ITokenContext<TToken>
-        where TToken : Token, new()
+        // where TToken : Token, new()
     { }
 }

@@ -67,7 +67,7 @@ namespace StateMachine.IntegrationTests.Tests
                     )
 
                     .AddStateMachine("payload", b => b
-                        .AddOnInitialize<string>(c => c.InitializationRequest.Payload != null)
+                        .AddOnInitialize<string>(async c => c.InitializationRequest != null)
                         .AddInitialState("state1")
                     )
 
@@ -229,7 +229,8 @@ namespace StateMachine.IntegrationTests.Tests
             {
                 initialized = (await sm.InitializeAsync("bar")).Response.InitializationSuccessful;
 
-                currentState = (await sm.GetCurrentStateAsync()).Response.StatesStack.First() ?? string.Empty;
+                var response = await sm.GetCurrentStateAsync();
+                currentState = response.Response.StatesStack.First() ?? string.Empty;
             }
 
             Assert.IsTrue(initialized);

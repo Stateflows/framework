@@ -18,9 +18,9 @@ namespace Stateflows.StateMachines
         Task AfterStateEntryAsync(IStateActionContext context);
         Task BeforeStateExitAsync(IStateActionContext context);
         Task AfterStateExitAsync(IStateActionContext context);
-        Task BeforeTransitionGuardAsync(IGuardContext<Event> context);
-        Task AfterTransitionGuardAsync(IGuardContext<Event> context, bool guardResult);
-        Task BeforeTransitionEffectAsync(ITransitionContext<Event> context);
-        Task AfterTransitionEffectAsync(ITransitionContext<Event> context);
+        Task BeforeTransitionGuardAsync<TEvent>(IGuardContext<TEvent> context);
+        Task AfterTransitionGuardAsync<TEvent>(IGuardContext<TEvent> context, bool guardResult);
+        Task BeforeTransitionEffectAsync<TEvent>(ITransitionContext<TEvent> context);
+        Task AfterTransitionEffectAsync<TEvent>(ITransitionContext<TEvent> context);
     }
 }

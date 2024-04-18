@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 namespace Stateflows.Common
 {
-    public sealed class UnsubscriptionRequest : Request<UnsubscriptionResponse>
+    public sealed class Subscribe : Command
     {
         public BehaviorId BehaviorId { get; set; }
 

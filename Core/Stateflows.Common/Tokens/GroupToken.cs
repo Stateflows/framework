@@ -3,7 +3,7 @@
 namespace Stateflows.Common
 {
     public sealed class GroupToken<TToken> : Token
-        where TToken : Token, new()
+        // where TToken : Token, new()
     {
         public GroupToken()
         { }

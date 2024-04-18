@@ -6,7 +6,7 @@ namespace Stateflows.Common.Trace.Models
     {
         public BehaviorId BehaviorId { get; set; }
 
-        public Event Event { get; set; }
+        public object Event { get; set; }
 
         public StateflowsContext Context { get; set; }
     }

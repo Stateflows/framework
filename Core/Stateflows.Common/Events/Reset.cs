@@ -1,6 +1,6 @@
 ﻿namespace Stateflows.Common
 {
-    public class ResetRequest : Request<ResetResponse>
+    public sealed class Reset : Command
     {
         public bool KeepVersion { get; set; } = false;
     }

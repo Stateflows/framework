@@ -11,9 +11,9 @@ namespace Stateflows.Activities.Streams
 
         public bool IsPersistent { get; set; } = false;
 
-        public Queue<Token> Tokens { get; set; } = new Queue<Token>();
+        public Queue<object> Tokens { get; set; } = new Queue<object>();
 
-        public void Consume(IEnumerable<Token> tokens, bool isPersistent)
+        public void Consume(IEnumerable<object> tokens, bool isPersistent)
         {
             IsPersistent = isPersistent;
             foreach (var token in tokens)
@@ -23,7 +23,6 @@ namespace Stateflows.Activities.Streams
         }
 
         public void Consume<TToken>(TToken token)
-            where TToken : Token, new()
         {
             if (token is ControlToken)
             {

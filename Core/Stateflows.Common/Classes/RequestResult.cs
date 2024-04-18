@@ -3,7 +3,7 @@
 namespace Stateflows.Common
 {
     public class RequestResult<TResponse> : SendResult
-        where TResponse : Response, new()
+        //where TResponse : Response, new()
     {
         [JsonConstructor]
         protected RequestResult() : base() { }
@@ -19,12 +19,12 @@ namespace Stateflows.Common
 
     public class RequestResult : SendResult
     {
-        public RequestResult(Event request, Response response, EventStatus status, EventValidation validation = null)
+        public RequestResult(object request, object response, EventStatus status, EventValidation validation = null)
             : base(request, status, validation)
         {
             Response = response;
         }
 
-        public Response Response { get; set; }
+        public object Response { get; set; }
     }
 }

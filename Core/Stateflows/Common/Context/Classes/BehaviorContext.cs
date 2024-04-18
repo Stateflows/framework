@@ -24,7 +24,8 @@ namespace Stateflows.Common.Context.Classes
 
         public IContextValues Values { get; }
 
-        public void Send<TEvent>(TEvent @event) where TEvent : Event, new()
+        public void Send<TEvent>(TEvent @event)
+            where TEvent : Event, new()
         {
             var locator = ServiceProvider.GetService<IBehaviorLocator>();
             if (locator.TryLocateBehavior(Id, out var behavior))

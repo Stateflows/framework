@@ -4,7 +4,6 @@ using Stateflows.Activities.Models;
 using Stateflows.Activities.Context.Classes;
 using Stateflows.Activities.Context.Interfaces;
 using Stateflows.Activities.Registration.Interfaces;
-using Stateflows.Common;
 
 namespace Stateflows.Activities.Registration.Builders
 {
@@ -16,7 +15,6 @@ namespace Stateflows.Activities.Registration.Builders
         IControlFlowBuilder,
         IControlFlowBuilderWithWeight,
         IElseControlFlowBuilder
-        where TToken : Token, new()
     {
         public Edge Edge { get; set; }
        
@@ -40,7 +38,7 @@ namespace Stateflows.Activities.Registration.Builders
                         context.Token is TToken token &&
                         await guardAsync(new TokenFlowContext<TToken>(context, token))
                             ? token
-                            : null;
+                            : default;
                 }
                 catch (Exception e)
                 {
@@ -59,7 +57,6 @@ namespace Stateflows.Activities.Registration.Builders
         }
 
         public IObjectFlowBuilder<TTransformedToken> AddTransformation<TTransformedToken>(TransformationDelegateAsync<TToken, TTransformedToken> transformationAsync)
-            where TTransformedToken : Token, new()
         {
             var logic = new Logic<TokenPipelineActionAsync>()
             {
@@ -73,7 +70,7 @@ namespace Stateflows.Activities.Registration.Builders
                     return
                         context.Token is TToken token
                             ? await transformationAsync(new TokenFlowContext<TToken>(context, token))
-                            : null;
+                            : default;
                 }
                 catch (Exception e)
                 {

@@ -138,12 +138,10 @@ namespace Stateflows.Activities.Typed
 
         #region AddParallelActivity
         public static IActivityBuilder AddParallelActivity<TParallelizationToken, TStructuredActivity>(this IActivityBuilder builder, ParallelActivityBuildAction buildAction = null)
-            where TParallelizationToken : Token, new()
             where TStructuredActivity : ParallelActivityNode<TParallelizationToken>
             => AddParallelActivity<TParallelizationToken, TStructuredActivity>(builder, ActivityNodeInfo<TStructuredActivity>.Name, buildAction);
 
         public static IActivityBuilder AddParallelActivity<TParallelizationToken, TStructuredActivity>(this IActivityBuilder builder, string structuredActivityName, ParallelActivityBuildAction buildAction = null)
-            where TParallelizationToken : Token, new()
             where TStructuredActivity : ParallelActivityNode<TParallelizationToken>
         {
             (builder as IInternal).Services.RegisterStructuredActivity<TStructuredActivity>();
@@ -163,12 +161,10 @@ namespace Stateflows.Activities.Typed
 
         #region AddIterativeActivity
         public static IActivityBuilder AddIterativeActivity<TIterationToken, TStructuredActivity>(this IActivityBuilder builder, IterativeActivityBuildAction buildAction = null, int chunkSize = 1)
-            where TIterationToken : Token, new()
             where TStructuredActivity : IterativeActivityNode<TIterationToken>
             => AddIterativeActivity<TIterationToken, TStructuredActivity>(builder, ActivityNodeInfo<TStructuredActivity>.Name, buildAction, chunkSize);
 
         public static IActivityBuilder AddIterativeActivity<TIterationToken, TStructuredActivity>(this IActivityBuilder builder, string structuredActivityName, IterativeActivityBuildAction buildAction = null, int chunkSize = 1)
-            where TIterationToken : Token, new()
             where TStructuredActivity : IterativeActivityNode<TIterationToken>
         {
             (builder as IInternal).Services.RegisterStructuredActivity<TStructuredActivity>();

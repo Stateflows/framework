@@ -2,7 +2,7 @@
 {
     public interface IStateflowsExecutionInterceptor
     {
-        bool BeforeExecute(Event @event);
-        void AfterExecute(Event @event);
+        bool BeforeExecute(object @event);
+        void AfterExecute(object @event);
     }
 }

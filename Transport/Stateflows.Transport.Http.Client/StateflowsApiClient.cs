@@ -40,7 +40,7 @@ namespace Stateflows.Transport.Http.Client
         }
 
         [DebuggerHidden]
-        public async Task<SendResult> SendAsync(BehaviorId behaviorId, Event @event, IEnumerable<Watch> watches)
+        public async Task<SendResult<TEvent>> SendAsync<TEvent>(BehaviorId behaviorId, TEvent @event, IEnumerable<Watch> watches)
         {
             var requestResult = await _httpClient.PostAsync(
                 "/stateflows/send",
@@ -65,9 +65,9 @@ namespace Stateflows.Transport.Http.Client
                 var result = StateflowsJsonConverter.DeserializeObject<StateflowsResponse>(jsonString);
                 if (result != null)
                 {
-                    if (result.Response != null)
+                    if (result.Response != null && @event is Request request)
                     {
-                        @event.Respond(result.Response);
+                        request.Respond(result.Response);
                     }
 
                     lock (this)
@@ -78,11 +78,11 @@ namespace Stateflows.Transport.Http.Client
                         }
                     }
 
-                    return new SendResult(@event, result.EventStatus, result.Validation);
+                    return new SendResult<TEvent>(@event, result.EventStatus, result.Validation);
                 }
             }
 
-            return new SendResult(@event, EventStatus.Rejected);
+            return new SendResult<TEvent>(@event, EventStatus.Rejected);
         }
 
         [DebuggerHidden]

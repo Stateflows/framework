@@ -6,7 +6,7 @@ namespace Stateflows.Common.Extensions
 {
     public static class EventExtensions
     {
-        public static EventValidation Validate(this Event @event)
+        public static EventValidation Validate(this object @event)
         {
             var validationResults = new List<ValidationResult>();
             bool isValid = true;
@@ -36,54 +36,52 @@ namespace Stateflows.Common.Extensions
             }
             else
             {
-                var objectToValidate = @event.GetPayload<object>() ?? @event;
+                var validationContext = new ValidationContext(@event, serviceProvider: null, items: null);
 
-                var validationContext = new ValidationContext(objectToValidate, serviceProvider: null, items: null);
-
-                isValid = Validator.TryValidateObject(objectToValidate, validationContext, validationResults, true);
+                isValid = Validator.TryValidateObject(@event, validationContext, validationResults, true);
             }
 
             return new EventValidation(isValid, validationResults);
         }
 
-        public static bool IsRequest(this Event @event)
+        public static bool IsRequest(this object @event)
             => @event.GetType().IsSubclassOfRawGeneric(typeof(Request<>));
 
         public static Type GetResponseType(this Event @event)
             => @event.GetType().GetGenericParameterOf(typeof(Request<>));
 
-        public static TResponse GetResponse<TResponse>(this Event @event)
-            where TResponse : Response, new()
+        public static TResponse GetResponse<TResponse>(this object @event)
+            //where TResponse : Response, new()
         {
             if (!@event.IsRequest())
-            {
-                return null;
-            }
-
-            return @event.GetType().GetProperty("Response").GetValue(@event) as TResponse;
-        }
-
-        public static Response GetResponse(this Event @event)
-            => @event.GetResponse<Response>();
-
-        public static bool IsPayloadEvent(this Event @event)
-            => @event.GetType().IsSubclassOfRawGeneric(typeof(Event<>));
-
-        public static TPayload GetPayload<TPayload>(this Event @event)
-        {
-            if (!@event.IsPayloadEvent())
             {
                 return default;
             }
 
-            return (TPayload)@event.GetType().GetProperty("Payload").GetValue(@event);
+            return (TResponse)@event.GetType().GetProperty("Response").GetValue(@event);
         }
 
-        public static void Respond(this Event @event, Response response)
+        public static object GetResponse(this object @event)
+            => @event.GetResponse<object>();
+
+        //public static bool IsPayloadEvent(this Event @event)
+        //    => @event.GetType().IsSubclassOfRawGeneric(typeof(Event<>));
+
+        //public static TPayload GetPayload<TPayload>(this Event @event)
+        //{
+        //    if (!@event.IsPayloadEvent())
+        //    {
+        //        return default;
+        //    }
+
+        //    return (TPayload)@event.GetType().GetProperty("Payload").GetValue(@event);
+        //}
+
+        public static void Respond(this object @event, object response)
         {
-            if (@event.IsRequest())
+            if (@event is Request request)
             {
-                @event.GetType().GetMethod("Respond").Invoke(@event, new object[] { response });
+                request.GetType().GetMethod("Respond").Invoke(@event, new object[] { response });
             }
         }
     }

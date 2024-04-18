@@ -21,10 +21,10 @@ namespace Stateflows.Activities
         Task BeforeNodeExecuteAsync(IActivityNodeContext context);
         Task AfterNodeExecuteAsync(IActivityNodeContext context);
 
-        Task BeforeFlowGuardAsync(IGuardContext<Token> context);
-        Task AfterFlowGuardAsync(IGuardContext<Token> context, bool guardResult);
+        Task BeforeFlowGuardAsync<TToken>(IGuardContext<TToken> context);
+        Task AfterFlowGuardAsync<TToken>(IGuardContext<TToken> context, bool guardResult);
 
-        Task BeforeFlowTransformationAsync(ITransformationContext<Token> context);
-        Task AfterFlowTransformationAsync(ITransformationContext<Token> context);
+        Task BeforeFlowTransformationAsync<TToken>(ITransformationContext<TToken> context);
+        Task AfterFlowTransformationAsync<TToken>(ITransformationContext<TToken> context);
     }
 }

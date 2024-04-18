@@ -9,8 +9,8 @@ namespace Stateflows.StateMachines
     {
         Task OnStateMachineInitializationExceptionAsync(IStateMachineInitializationContext context, Exception exception);
         Task OnStateMachineFinalizationExceptionAsync(IStateMachineActionContext context, Exception exception);
-        Task OnTransitionGuardExceptionAsync(IGuardContext<Event> context, Exception exception);
-        Task OnTransitionEffectExceptionAsync(ITransitionContext<Event> context, Exception exception);
+        Task OnTransitionGuardExceptionAsync<TEvent>(IGuardContext<TEvent> context, Exception exception);
+        Task OnTransitionEffectExceptionAsync<TEvent>(ITransitionContext<TEvent> context, Exception exception);
         Task OnStateInitializationExceptionAsync(IStateActionContext context, Exception exception);
         Task OnStateFinalizationExceptionAsync(IStateActionContext context, Exception exception);
         Task OnStateEntryExceptionAsync(IStateActionContext context, Exception exception);

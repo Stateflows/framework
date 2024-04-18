@@ -12,7 +12,7 @@ namespace Stateflows.Extensions.PlantUml.Classes
         public Task AfterHydrateAsync(IStateMachineActionContext context)
             => Task.CompletedTask;
 
-        public Task AfterProcessEventAsync(IEventContext<Event> context)
+        public Task AfterProcessEventAsync<TEvent>(IEventContext<TEvent> context)
         {
             if (
                 context is IEventInspectionContext<Event> inspectionContext &&
@@ -33,7 +33,7 @@ namespace Stateflows.Extensions.PlantUml.Classes
         public Task BeforeDehydrateAsync(IStateMachineActionContext context)
             => Task.CompletedTask;
 
-        public Task<bool> BeforeProcessEventAsync(IEventContext<Event> context)
+        public Task<bool> BeforeProcessEventAsync<TEvent>(IEventContext<TEvent> context)
             => Task.FromResult(true);
     }
 }

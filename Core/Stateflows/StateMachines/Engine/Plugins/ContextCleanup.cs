@@ -37,7 +37,7 @@ namespace Stateflows.StateMachines.Engine
         public Task AfterStateMachineFinalizeAsync(IStateMachineActionContext context)
             => Task.CompletedTask;
 
-        public Task AfterTransitionEffectAsync(ITransitionContext<Event> context)
+        public Task AfterTransitionEffectAsync<TEvent>(ITransitionContext<TEvent> context)
         {
             if (context.TargetState != null)
             {
@@ -55,13 +55,13 @@ namespace Stateflows.StateMachines.Engine
             return Task.CompletedTask;
         }
 
-        public Task AfterTransitionGuardAsync(IGuardContext<Event> context, bool guardResult)
+        public Task AfterTransitionGuardAsync<TEvent>(IGuardContext<TEvent> context, bool guardResult)
             => Task.CompletedTask;
 
-        public Task<bool> BeforeProcessEventAsync(IEventContext<Event> context)
+        public Task<bool> BeforeProcessEventAsync<TEvent>(IEventContext<TEvent> context)
             => Task.FromResult(true);
 
-        public Task AfterProcessEventAsync(IEventContext<Event> context)
+        public Task AfterProcessEventAsync<TEvent>(IEventContext<TEvent> context)
             => Task.CompletedTask;
 
         public Task BeforeStateEntryAsync(IStateActionContext context)
@@ -82,10 +82,10 @@ namespace Stateflows.StateMachines.Engine
         public Task BeforeStateMachineFinalizeAsync(IStateMachineActionContext context)
             => Task.CompletedTask;
 
-        public Task BeforeTransitionEffectAsync(ITransitionContext<Event> context)
+        public Task BeforeTransitionEffectAsync<TEvent>(ITransitionContext<TEvent> context)
             => Task.CompletedTask;
 
-        public Task BeforeTransitionGuardAsync(IGuardContext<Event> context)
+        public Task BeforeTransitionGuardAsync<TEvent>(IGuardContext<TEvent> context)
             => Task.CompletedTask;
 
         public Task AfterHydrateAsync(IStateMachineActionContext context)
@@ -100,10 +100,10 @@ namespace Stateflows.StateMachines.Engine
         public Task OnStateMachineFinalizationExceptionAsync(IStateMachineActionContext context, Exception exception)
             => Task.CompletedTask;
 
-        public Task OnTransitionGuardExceptionAsync(IGuardContext<Event> context, Exception exception)
+        public Task OnTransitionGuardExceptionAsync<TEvent>(IGuardContext<TEvent> context, Exception exception)
             => Task.CompletedTask;
 
-        public Task OnTransitionEffectExceptionAsync(ITransitionContext<Event> context, Exception exception)
+        public Task OnTransitionEffectExceptionAsync<TEvent>(ITransitionContext<TEvent> context, Exception exception)
             => Task.CompletedTask;
 
         public Task OnStateInitializationExceptionAsync(IStateActionContext context, Exception exception)

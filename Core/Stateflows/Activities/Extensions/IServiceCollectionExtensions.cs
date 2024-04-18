@@ -27,26 +27,26 @@ namespace Stateflows.Activities.Extensions
             where TExceptionHandler : ExceptionHandlerNode<TException>
             => services?.AddServiceType<TExceptionHandler>();
 
-        public static IServiceCollection RegisterObjectFlow<TObjectFlow, TToken>(this IServiceCollection services)
-            where TObjectFlow : Flow<TToken>
-            where TToken : Token, new()
-            => services?.AddServiceType<TObjectFlow>();
+        public static IServiceCollection RegisterObjectFlow<TFlow, TToken>(this IServiceCollection services)
+            where TFlow : Flow<TToken>
+            // where TToken : Token, new()
+            => services?.AddServiceType<TFlow>();
 
-        public static IServiceCollection RegisterElseObjectFlow<TObjectFlow, TToken>(this IServiceCollection services)
-            where TObjectFlow : ElseFlow<TToken>
-            where TToken : Token, new()
-            => services?.AddServiceType<TObjectFlow>();
+        public static IServiceCollection RegisterElseObjectFlow<TFlow, TToken>(this IServiceCollection services)
+            where TFlow : ElseFlow<TToken>
+            // where TToken : Token, new()
+            => services?.AddServiceType<TFlow>();
 
         public static IServiceCollection RegisterObjectTransformationFlow<TObjectTransformationFlow, TToken, TTransformedToken>(this IServiceCollection services)
             where TObjectTransformationFlow : TransformationFlow<TToken, TTransformedToken>
-            where TToken : Token, new()
-            where TTransformedToken : Token, new()
+            // where TToken : Token, new()
+            ////where TTransformedToken : Token, new()
             => services?.AddServiceType<TObjectTransformationFlow>();
 
         public static IServiceCollection RegisterElseObjectTransformationFlow<TObjectTransformationFlow, TToken, TTransformedToken>(this IServiceCollection services)
             where TObjectTransformationFlow : ElseObjectTransformationFlow<TToken, TTransformedToken>
-            where TToken : Token, new()
-            where TTransformedToken : Token, new()
+            // where TToken : Token, new()
+            ////where TTransformedToken : Token, new()
             => services?.AddServiceType<TObjectTransformationFlow>();
 
         public static IServiceCollection RegisterControlFlow<TControlFlow>(this IServiceCollection services)

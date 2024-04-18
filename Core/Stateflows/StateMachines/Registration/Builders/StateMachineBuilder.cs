@@ -13,6 +13,7 @@ using Stateflows.StateMachines.Context.Interfaces;
 using Stateflows.StateMachines.Registration.Interfaces;
 using Stateflows.StateMachines.Registration.Interfaces.Base;
 using Stateflows.StateMachines.Registration.Interfaces.Internal;
+using Stateflows.Common.Extensions;
 
 namespace Stateflows.StateMachines.Registration.Builders
 {
@@ -67,16 +68,16 @@ namespace Stateflows.StateMachines.Registration.Builders
             });
 
         public IInitializedStateMachineBuilder AddOnInitialize<TInitializationRequest>(Func<IStateMachineInitializationContext<TInitializationRequest>, Task<bool>> actionAsync)
-            where TInitializationRequest : InitializationRequest, new()
+            //where TInitializationRequest : InitializationRequest, new()
         {
             actionAsync.ThrowIfNull(nameof(actionAsync));
-            
-            var initializerName = EventInfo<TInitializationRequest>.Name;
+
+            var initializerName = typeof(TInitializationRequest).GetEventName();// EventInfo<TInitializationRequest>.Name;
 
             return AddInitializer(typeof(TInitializationRequest), initializerName, async c =>
             {
                 var result = false;
-                var context = new StateMachineInitializationContext<TInitializationRequest>(c, c.Event as TInitializationRequest);
+                var context = new StateMachineInitializationContext<TInitializationRequest>(c, c.Event.GetActualInitializationRequest<TInitializationRequest>());
                 try
                 {
                     result = await actionAsync(context);

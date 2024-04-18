@@ -7,13 +7,15 @@ namespace Stateflows.Common
     {
         public static string GetTokenName(this Type @type)
         {
-            if (!@type.IsSubclassOf(typeof(Token)))
-            {
-                throw new ArgumentException("Given type is not subclass of Token class");
-            }
+            //if (!@type.IsSubclassOf(typeof(Token)))
+            //{
+            //    throw new ArgumentException("Given type is not subclass of Token class");
+            //}
 
-            var token = @type.GetUninitializedInstance() as Token;
-            return token.Name;
+            //var token = @type.GetUninitializedInstance() as Token;
+            //return token.Name;
+
+            return @type.GetReadableName();
         }
     }
 }

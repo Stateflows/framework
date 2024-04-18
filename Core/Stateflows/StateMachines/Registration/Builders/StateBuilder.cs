@@ -139,7 +139,8 @@ namespace Stateflows.StateMachines.Registration.Builders
 
         #region Utils
         [DebuggerHidden]
-        public IStateBuilder AddDeferredEvent<TEvent>() where TEvent : Event, new()
+        public IStateBuilder AddDeferredEvent<TEvent>()
+            where TEvent : Event, new()
         {
             if (typeof(TEvent) == typeof(CompletionEvent))
                 throw new DeferralDefinitionException(EventInfo<TEvent>.Name, "Completion event cannot be deferred.", Vertex.Graph.Class);

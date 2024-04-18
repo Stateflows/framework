@@ -5,12 +5,13 @@ using Stateflows.Activities.Models;
 using Stateflows.Activities.Engine;
 using Stateflows.Activities.Context.Interfaces;
 using Stateflows.Activities.Inspection.Interfaces;
+using Stateflows.Utils;
 
 namespace Stateflows.Activities.Context.Classes
 {
-    internal class ActionContext : ActivityNodeContext, IActionContext<Token>, IActivityNodeInspectionContext
+    internal class ActionContext : ActivityNodeContext, IActionContext<object>, IActivityNodeInspectionContext
     {
-        public ActionContext(BaseContext context, Node node, IEnumerable<Token> inputTokens = null, IEnumerable<Token> selectionTokens = null)
+        public ActionContext(BaseContext context, Node node, IEnumerable<object> inputTokens = null, IEnumerable<object> selectionTokens = null)
             : base(context, node)
         {
             if (inputTokens != null)
@@ -24,7 +25,7 @@ namespace Stateflows.Activities.Context.Classes
             }
         }
 
-        public ActionContext(RootContext context, NodeScope nodeScope, Node node, IEnumerable<Token> inputTokens, IEnumerable<Token> selectionTokens = null)
+        public ActionContext(RootContext context, NodeScope nodeScope, Node node, IEnumerable<object> inputTokens, IEnumerable<object> selectionTokens = null)
             : base(context, nodeScope, node)
         {
             InputTokens.AddRange(inputTokens);
@@ -35,37 +36,26 @@ namespace Stateflows.Activities.Context.Classes
             }
         }
 
-        public List<Token> InputTokens { get; } = new List<Token>();
+        public List<object> InputTokens { get; } = new List<object>();
 
-        public List<Token> OutputTokens { get; } = new List<Token>();
+        public List<object> OutputTokens { get; } = new List<object>();
 
         public void Output<TToken>(TToken token)
-            where TToken : Token, new()
             => OutputRange(new TToken[] { token });
 
         public void OutputRange<TToken>(IEnumerable<TToken> tokens)
-            where TToken : Token, new()
         {
-            OutputTokens.AddRange(tokens);
+            OutputTokens.AddRange(tokens.Box());
         }
 
-        public void OutputRangeAsGroup<TToken>(IEnumerable<TToken> tokens)
-            where TToken : Token, new()
-            => Output(tokens.ToGroupToken());
-
         public void PassTokensOfTypeOn<TToken>()
-            where TToken : Token, new()
             => OutputRange(InputTokens.OfType<TToken>());
-
-        public void PassTokensOfTypeOnAsGroup<TToken>()
-            where TToken : Token, new()
-            => Output(InputTokens.OfType<TToken>().ToGroupToken());
 
         public void PassAllOn()
             => OutputRange(InputTokens);
 
-        public IEnumerable<Token> Input => InputTokens;
+        public IEnumerable<object> Input => InputTokens;
 
-        public IEnumerable<Token> Tokens { get; }
+        public IEnumerable<object> Tokens { get; }
     }
 }

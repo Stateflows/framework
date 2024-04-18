@@ -8,7 +8,7 @@ namespace Stateflows.StateMachines.Sync.Data
 {
     public static class InitializedStateMachineBuilderEventsSyncPayloadExtensions
     {
-        public static IInitializedStateMachineBuilder AddOnInitialize<TInitializationPayload>(this IInitializedStateMachineBuilder builder, Func<IStateMachineInitializationContext<InitializationRequest<TInitializationPayload>>, bool> stateMachineAction)
+        public static IInitializedStateMachineBuilder AddOnInitialize<TInitializationPayload>(this IInitializedStateMachineBuilder builder, Func<IStateMachineInitializationContext<InitializationRequestEnvelope<TInitializationPayload>>, bool> stateMachineAction)
             => builder.AddOnInitialize(stateMachineAction
                 .AddStateMachineInvocationContext((builder as StateMachineBuilder).Result)
                 .ToAsync()

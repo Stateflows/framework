@@ -60,8 +60,7 @@ namespace Stateflows.Activities
                     b => decisionBuildAction(b.SetOptions(NodeOptions.DecisionDefault) as IDecisionBuilder)
                 ) as ITypedActivityBuilder;
 
-        public static ITypedActivityBuilder AddTokenDecision<TToken>(this ITypedActivityBuilder builder, string decisionNodeName, DecisionBuildAction<TToken> decisionBuildAction)
-            where TToken : Token, new()
+        public static ITypedActivityBuilder AddDecision<TToken>(this ITypedActivityBuilder builder, string decisionNodeName, DecisionBuildAction<TToken> decisionBuildAction)
             => (builder as BaseActivityBuilder)
                 .AddNode(
                     NodeType.Decision,

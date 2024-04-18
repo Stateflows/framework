@@ -102,7 +102,8 @@ namespace Stateflows.StateMachines.Registration.Builders
 
         #region Utils
         [DebuggerHidden]
-        public IInitializedCompositeStateBuilder AddDeferredEvent<TEvent>() where TEvent : Event, new()
+        public IInitializedCompositeStateBuilder AddDeferredEvent<TEvent>()
+            where TEvent : Event, new()
         {
             Builder.AddDeferredEvent<TEvent>();
             return this;

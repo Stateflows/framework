@@ -49,13 +49,13 @@ namespace Stateflows.StateMachines.Engine
         public Task AfterStateMachineFinalizeAsync(IStateMachineActionContext context)
             => Task.CompletedTask;
 
-        public Task AfterTransitionEffectAsync(ITransitionContext<Event> context)
+        public Task AfterTransitionEffectAsync<TEvent>(ITransitionContext<TEvent> context)
             => Task.CompletedTask;
 
-        public Task AfterTransitionGuardAsync(IGuardContext<Event> context, bool guardResult)
+        public Task AfterTransitionGuardAsync<TEvent>(IGuardContext<TEvent> context, bool guardResult)
             => Task.CompletedTask;
 
-        public Task<bool> BeforeProcessEventAsync(IEventContext<Event> context)
+        public Task<bool> BeforeProcessEventAsync<TEvent>(IEventContext<TEvent> context)
         {
             var result = true;
 
@@ -74,7 +74,7 @@ namespace Stateflows.StateMachines.Engine
             return Task.FromResult(result);
         }
 
-        public Task AfterProcessEventAsync(IEventContext<Event> context)
+        public Task AfterProcessEventAsync<TEvent>(IEventContext<TEvent> context)
         {
             ClearTimeEvents(TimeEventIdsToClear);
 
@@ -140,12 +140,12 @@ namespace Stateflows.StateMachines.Engine
         public Task BeforeStateMachineFinalizeAsync(IStateMachineActionContext context)
             => Task.CompletedTask;
 
-        public Task BeforeTransitionEffectAsync(ITransitionContext<Event> context)
+        public Task BeforeTransitionEffectAsync<TEvent>(ITransitionContext<TEvent> context)
             => Task.CompletedTask;
 
-        public Task BeforeTransitionGuardAsync(IGuardContext<Event> context)
+        public Task BeforeTransitionGuardAsync<TEvent>(IGuardContext<TEvent> context)
         {
-            if (ConsumedInTransition == null && (context as IEdgeContext).Edge.Trigger == context.ExecutionTrigger.Name)
+            if (ConsumedInTransition == null && (context as IEdgeContext).Edge.Trigger == context.ExecutionTrigger.GetType().GetEventName())
             {
                 ConsumedInTransition = (context as IEdgeContext).Edge;
             }
@@ -224,10 +224,10 @@ namespace Stateflows.StateMachines.Engine
         public Task OnStateMachineFinalizationExceptionAsync(IStateMachineActionContext context, Exception exception)
             => Task.CompletedTask;
 
-        public Task OnTransitionGuardExceptionAsync(IGuardContext<Event> context, Exception exception)
+        public Task OnTransitionGuardExceptionAsync<TEvent>(IGuardContext<TEvent> context, Exception exception)
             => Task.CompletedTask;
 
-        public Task OnTransitionEffectExceptionAsync(ITransitionContext<Event> context, Exception exception)
+        public Task OnTransitionEffectExceptionAsync<TEvent>(ITransitionContext<TEvent> context, Exception exception)
             => Task.CompletedTask;
 
         public Task OnStateInitializationExceptionAsync(IStateActionContext context, Exception exception)

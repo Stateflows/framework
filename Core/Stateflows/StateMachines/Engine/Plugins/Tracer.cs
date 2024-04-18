@@ -108,10 +108,10 @@ namespace Stateflows.StateMachines.Engine
         public Task AfterStateMachineInitializeAsync(IStateMachineInitializationContext context)
             => StopMeasureAsync("Initialize", context.StateMachine.Id.Name);
 
-        public Task BeforeTransitionEffectAsync(ITransitionContext<Event> context)
+        public Task BeforeTransitionEffectAsync<TEvent>(ITransitionContext<TEvent> context)
             => StopMeasurementAsync();
 
-        public Task AfterTransitionEffectAsync(ITransitionContext<Event> context)
+        public Task AfterTransitionEffectAsync<TEvent>(ITransitionContext<TEvent> context)
         {
             if (Trace.Event != null)
             {
@@ -120,8 +120,8 @@ namespace Stateflows.StateMachines.Engine
                 var step = Trace.AddStep(
                     "Effect",
                     context.TargetState != null
-                        ? $"{context.SourceState.Name} - {context.Event.Name} -> {context.TargetState.Name}"
-                        : $"{context.SourceState.Name} - {context.Event.Name} ->",
+                        ? $"{context.SourceState.Name} - {context.Event.GetType().GetEventName()} -> {context.TargetState.Name}"
+                        : $"{context.SourceState.Name} - {context.Event.GetType().GetEventName()} ->",
                     Stopwatch.Elapsed
                 );
 
@@ -131,10 +131,10 @@ namespace Stateflows.StateMachines.Engine
             return Task.CompletedTask;
         }
 
-        public Task BeforeTransitionGuardAsync(IGuardContext<Event> context)
+        public Task BeforeTransitionGuardAsync<TEvent>(IGuardContext<TEvent> context)
             => StopMeasurementAsync();
 
-        public Task AfterTransitionGuardAsync(IGuardContext<Event> context, bool guardResult)
+        public Task AfterTransitionGuardAsync<TEvent>(IGuardContext<TEvent> context, bool guardResult)
         {
             if (Trace.Event != null)
             {
@@ -143,8 +143,8 @@ namespace Stateflows.StateMachines.Engine
                 var step = Trace.AddStep(
                     "Guard",
                     context.TargetState != null
-                        ? $"{context.SourceState.Name} - {context.Event.Name} -> {context.TargetState.Name}"
-                        : $"{context.SourceState.Name} - {context.Event.Name} ->",
+                        ? $"{context.SourceState.Name} - {context.Event.GetType().GetEventName()} -> {context.TargetState.Name}"
+                        : $"{context.SourceState.Name} - {context.Event.GetType().GetEventName()} ->",
                     Stopwatch.Elapsed
                 );
 
@@ -166,10 +166,10 @@ namespace Stateflows.StateMachines.Engine
         public Task OnStateMachineInitializationExceptionAsync(IStateMachineInitializationContext context, Exception exception)
             => SetExceptionAsync(exception);
 
-        public Task OnTransitionGuardExceptionAsync(IGuardContext<Event> context, Exception exception)
+        public Task OnTransitionGuardExceptionAsync<TEvent>(IGuardContext<TEvent> context, Exception exception)
             => SetExceptionAsync(exception);
 
-        public Task OnTransitionEffectExceptionAsync(ITransitionContext<Event> context, Exception exception)
+        public Task OnTransitionEffectExceptionAsync<TEvent>(ITransitionContext<TEvent> context, Exception exception)
             => SetExceptionAsync(exception);
 
         public Task OnStateInitializationExceptionAsync(IStateActionContext context, Exception exception)
@@ -184,7 +184,7 @@ namespace Stateflows.StateMachines.Engine
         public Task BeforeDehydrateAsync(IStateMachineActionContext context)
             => Task.CompletedTask;
 
-        public Task<bool> BeforeProcessEventAsync(IEventContext<Event> context)
+        public Task<bool> BeforeProcessEventAsync<TEvent>(IEventContext<TEvent> context)
         {
             if (context.Event.GetType().GetCustomAttribute<DoNotTraceAttribute>() == null)
             {
@@ -195,7 +195,7 @@ namespace Stateflows.StateMachines.Engine
             return Task.FromResult(true);
         }
 
-        public Task AfterProcessEventAsync(IEventContext<Event> context)
+        public Task AfterProcessEventAsync<TEvent>(IEventContext<TEvent> context)
         {
             if (Trace.Event != null)
             {

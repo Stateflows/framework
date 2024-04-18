@@ -161,7 +161,8 @@ namespace Stateflows.Activities.Models
                 .Select(e => e.Target)
                 .Where(n => n.Type == NodeType.ExceptionHandler);
 
-        public async Task<IEnumerable<Token>> HandleExceptionAsync(Exception exception, BaseContext context)
+        //public async Task<IEnumerable<Token>> HandleExceptionAsync(Exception exception, BaseContext context)
+        public async Task<IEnumerable<object>> HandleExceptionAsync(Exception exception, BaseContext context)
         {
             Node handler = null;
             var currentNode = this;

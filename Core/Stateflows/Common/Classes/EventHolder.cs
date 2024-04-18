@@ -9,7 +9,7 @@ namespace Stateflows.Common.Classes
 
         public IServiceProvider ServiceProvider { get; private set; }
 
-        public Event Event { get; private set; }
+        public object Event { get; private set; }
 
         public EventWaitHandle Handled { get; } = new EventWaitHandle(false, EventResetMode.AutoReset);
 
@@ -17,7 +17,7 @@ namespace Stateflows.Common.Classes
 
         public EventValidation Validation { get; internal set; }
 
-        public EventHolder(BehaviorId targetId, Event @event, IServiceProvider serviceProvider)
+        public EventHolder(BehaviorId targetId, object @event, IServiceProvider serviceProvider)
         {
             TargetId = targetId;
             Event = @event;

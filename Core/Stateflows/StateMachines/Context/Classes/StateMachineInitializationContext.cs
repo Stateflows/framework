@@ -7,7 +7,7 @@ namespace Stateflows.StateMachines.Context.Classes
     internal class StateMachineInitializationContext<TInitializationRequest> :
         BaseContext,
         IStateMachineInitializationContext<TInitializationRequest>
-        where TInitializationRequest : InitializationRequest, new()
+        //where TInitializationRequest : InitializationRequest, new()
     {
         public StateMachineInitializationContext(RootContext context, TInitializationRequest initializationRequest) : base(context)
         {
@@ -20,10 +20,10 @@ namespace Stateflows.StateMachines.Context.Classes
     }
 
     internal class StateMachineInitializationContext :
-        StateMachineInitializationContext<InitializationRequest>,
+        StateMachineInitializationContext<object>,
         IStateMachineInitializationInspectionContext
     {
-        public StateMachineInitializationContext(RootContext context, InitializationRequest initializationRequest)
+        public StateMachineInitializationContext(RootContext context, object initializationRequest)
             : base(context, initializationRequest)
         { }
 

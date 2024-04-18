@@ -2,10 +2,9 @@
 
 namespace Stateflows.Common
 {
-    public abstract class Request<TResponse> : Event
-        where TResponse : Response, new()
+    public abstract class Request : Event
     {
-        public void Respond(TResponse response)
+        public void Respond(object response)
         {
             if (Response != null)
             {
@@ -15,16 +14,19 @@ namespace Stateflows.Common
             Response = response;
         }
 
-        public TResponse Response { get; private set; }
+        public object Response { get; internal set; }
     }
 
-    public class Request<TRequestPayload, TResponsePayload> : Request<Response<TResponsePayload>>
+    public abstract class Request<TResponse> : Request
+        //where TResponse : Response, new()
     {
-        public Request()
-        {
-            Payload = default;
-        }
+        public void Respond(TResponse response)
+            => base.Respond(response);
 
-        public TRequestPayload Payload { get; set; }
+        public new TResponse Response
+        {
+            get => (TResponse)base.Response;
+            private set => base.Response = value;
+        }
     }
 }

@@ -8,7 +8,7 @@ namespace Stateflows.Activities
     {
         Task AfterHydrateAsync(IActivityActionContext context);
         Task BeforeDehydrateAsync(IActivityActionContext context);
-        Task<bool> BeforeProcessEventAsync(IEventContext<Event> context);
-        Task AfterProcessEventAsync(IEventContext<Event> context);
+        Task<bool> BeforeProcessEventAsync<TEvent>(IEventContext<TEvent> context);
+        Task AfterProcessEventAsync<TEvent>(IEventContext<TEvent> context);
     }
 }
