@@ -72,8 +72,7 @@ namespace Stateflows.Activities
         public static IActivityBuilder AddControlDecision(this IActivityBuilder builder, DecisionBuildAction decisionBuildAction)
             => builder.AddControlDecision(ActivityNodeInfo<DecisionNode<ControlToken>>.Name, decisionBuildAction);
 
-        public static IActivityBuilder AddTokenDecision<TToken>(this IActivityBuilder builder, string decisionNodeName, DecisionBuildAction<TToken> decisionBuildAction)
-            where TToken : Token, new()
+        public static IActivityBuilder AddDecision<TToken>(this IActivityBuilder builder, string decisionNodeName, DecisionBuildAction<TToken> decisionBuildAction)
             => (builder as BaseActivityBuilder)
                 .AddNode(
                     NodeType.Decision,
@@ -86,9 +85,8 @@ namespace Stateflows.Activities
                     b => decisionBuildAction(new DecisionBuilder<TToken>(b.SetOptions(NodeOptions.DecisionDefault) as NodeBuilder))
                 ) as IActivityBuilder;
 
-        public static IActivityBuilder AddTokenDecision<TToken>(this IActivityBuilder builder, DecisionBuildAction<TToken> decisionBuildAction)
-            where TToken : Token, new()
-            => builder.AddTokenDecision(ActivityNodeInfo<DecisionNode<TToken>>.Name, decisionBuildAction);
+        public static IActivityBuilder AddDecision<TToken>(this IActivityBuilder builder, DecisionBuildAction<TToken> decisionBuildAction)
+            => builder.AddDecision(ActivityNodeInfo<DecisionNode<TToken>>.Name, decisionBuildAction);
 
         public static IActivityBuilder AddDataStore(this IActivityBuilder builder, string dataStoreNodeName, DataStoreBuildAction decisionBuildAction)
             => (builder as BaseActivityBuilder)

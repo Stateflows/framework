@@ -4,7 +4,7 @@ using Stateflows.Activities.Registration.Interfaces;
 namespace Stateflows.Activities.Registration.Builders
 {
     internal class DecisionBuilder<TToken> : NodeBuilder, IDecisionBuilder<TToken>
-        where TToken : Token, new()
+        // where TToken : Token, new()
     {
         public DecisionBuilder(NodeBuilder builder)
             : base(builder.Node, builder.ActivityBuilder, builder.Services)

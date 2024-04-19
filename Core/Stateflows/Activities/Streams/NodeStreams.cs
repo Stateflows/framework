@@ -34,7 +34,7 @@ namespace Stateflows.Activities.Streams
     //    public Dictionary<Edge, Stream> Outputs { get; set; } = new Dictionary<Edge, Stream>();
 
     //    //public void Output<TToken>(TToken token)
-    //    //    where TToken : Token, new();
+    //    //    // where TToken : Token, new();
     //    //{
     //    //    var controlTokenName = TokenInfo<ControlToken>.Name;
     //    //    var tokenName = token.Name;

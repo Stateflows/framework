@@ -3,16 +3,16 @@ using System.Threading;
 using System.Collections;
 using System.Collections.Generic;
 using Stateflows.Common;
+using Stateflows.Utils;
 
 namespace Stateflows.Activities
 {
     internal static class OutputTokensHolder
     {
-        public static readonly AsyncLocal<List<Token>> Tokens = new AsyncLocal<List<Token>>();
+        public static readonly AsyncLocal<List<object>> Tokens = new AsyncLocal<List<object>>();
     }
 
     public struct Output<TToken> : ICollection<TToken>
-        where TToken : Token, new()
     {
         private readonly List<TToken> GetTokens()
             => OutputTokensHolder.Tokens.Value.OfType<TToken>().ToList();
@@ -39,7 +39,7 @@ namespace Stateflows.Activities
             => OutputTokensHolder.Tokens.Value.Contains(item);
 
         public readonly void CopyTo(TToken[] array, int arrayIndex)
-            => OutputTokensHolder.Tokens.Value.CopyTo(array, arrayIndex);
+            => OutputTokensHolder.Tokens.Value.CopyTo(array.Box().ToArray(), arrayIndex);
 
         public readonly bool Remove(TToken item)
             => OutputTokensHolder.Tokens.Value.Remove(item);

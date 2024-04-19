@@ -1,7 +1,4 @@
 ﻿using System;
-using System.Linq;
-using System.Collections.Generic;
-using Stateflows.Common.Utilities;
 using Stateflows.Common.Extensions;
 
 namespace Stateflows.Common
@@ -23,23 +20,7 @@ namespace Stateflows.Common
         public T Payload { get; set; }
     }
 
-    public static class TokenExtensions
-    {
-        public static TToken CloneToken<TToken>(this TToken token)
-            where TToken : Token, new()
-        {
-            var clonedToken = StateflowsJsonConverter.CloneObject(token);
-            clonedToken.Id = Guid.NewGuid();
-            return clonedToken;
-        }
-
-        public static IEnumerable<TToken> CloneTokens<TToken>(this IEnumerable<TToken> tokens)
-            where TToken : Token, new()
-            => tokens.Select(token => token.CloneToken()).ToArray();
-    }
-
     public static class TokenInfo<TToken>
-        where TToken : Token, new()
     {
         public static string Name => TokenInfo.GetName(typeof(TToken));
     }
@@ -47,6 +28,6 @@ namespace Stateflows.Common
     public static class TokenInfo
     {
         public static string GetName(Type @type)
-            => (type.GetUninitializedInstance() as Token).Name;
+            => @type.GetReadableName();
     }
 }

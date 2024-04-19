@@ -42,5 +42,8 @@ namespace Stateflows.Utils
                 yield return partition;
             }
         }
+
+        public static IEnumerable<object> Box<T>(this IEnumerable<T> source)
+            => source.Select(t => t as object);
     }
 }

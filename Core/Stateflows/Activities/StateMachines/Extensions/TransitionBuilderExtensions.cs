@@ -15,7 +15,7 @@ namespace Stateflows.Activities
             where TEvent : Event, new()
             => builder.AddGuard(
                 async c => c.TryLocateActivity(activityName, Constants.Guard, out var a)
-                    && ((await a.ExecuteAsync(parametersBuilder?.Invoke(c), new Token[] { c.Event })).Response?.OutputTokens.OfType<Token<bool>>().FirstOrDefault()?.Payload ?? false)
+                    && ((await a.ExecuteAsync(parametersBuilder?.Invoke(c), new object[] { c.Event })).Response?.OutputTokens.OfType<bool>().FirstOrDefault() ?? false)
             );
 
         [DebuggerHidden]
@@ -34,7 +34,7 @@ namespace Stateflows.Activities
                 {
                     if (c.TryLocateActivity(activityName, Constants.Guard, out var a))
                     {
-                        await a.ExecuteAsync(parametersBuilder?.Invoke(c), new Token[] { c.Event });
+                        await a.ExecuteAsync(parametersBuilder?.Invoke(c), new object[] { c.Event });
                     }
                 }
             );

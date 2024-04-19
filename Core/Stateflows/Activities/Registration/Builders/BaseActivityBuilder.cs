@@ -244,7 +244,7 @@ namespace Stateflows.Activities.Registration
             );
 
         public BaseActivityBuilder AddParallelActivity<TToken>(string parallelActivityNodeName, ParallelActivityBuildAction buildAction = null, int chunkSize = 1)
-            where TToken : Token, new()
+            // where TToken : Token, new()
             => AddNode(
                 NodeType.ParallelActivity,
                 parallelActivityNodeName,
@@ -263,7 +263,7 @@ namespace Stateflows.Activities.Registration
             );
 
         public BaseActivityBuilder AddIterativeActivity<TToken>(string parallelActivityNodeName, IterativeActivityBuildAction buildAction = null, int chunkSize = 1)
-            where TToken : Token, new()
+            // where TToken : Token, new()
             => AddNode(
                 NodeType.IterativeActivity,
                 parallelActivityNodeName,

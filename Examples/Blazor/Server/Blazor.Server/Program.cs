@@ -86,15 +86,15 @@ builder.Services.AddStateflows(b => b
                 )
                 .AddAction(
                     "action1",
-                    async c => c.Output(new Token<int> { Payload = 42 }),
+                    async c => c.Output(42),
                     b => b
-                        .AddFlow<Token<int>, Flow1>("action2")
+                        .AddFlow<int, Flow1>("action2")
                 )
                 .AddAction(
                     "action2",
                     async c =>
                     {
-                        Debug.WriteLine(c.Input.OfType<Token<int>>().First().Payload);
+                        Debug.WriteLine(c.Input.OfType<int>().First());
                         throw new Exception("test");
                     }
                 )
@@ -157,29 +157,29 @@ namespace X
                 )
                 .AddAction(
                     "action1",
-                    async c => c.OutputRange(Enumerable.Range(0, 100).ToTokens()),
-                    b => b.AddFlow<Token<int>>("chunked")
+                    async c => c.OutputRange(Enumerable.Range(0, 100)),
+                    b => b.AddFlow<int>("chunked")
                 )
 
-                .AddParallelActivity<Token<int>>(
+                .AddParallelActivity<int>(
                     "chunked",
                     b => b
                         .AddInput(b => b
-                            .AddFlow<Token<int>>("main")
+                            .AddFlow<int>("main")
                         )
                         .AddAction(
                             "main",
                             async c =>
                             {
-                                var tokens = c.Input.OfType<Token<int>>().Select(t => $"value: {t.Payload}").ToTokens();
+                                var tokens = c.Input.OfType<int>().Select(t => $"value: {t}");
                                 c.OutputRange(tokens);
-                                Debug.WriteLine($"{tokens.Count()}/{c.Input.Count()} tokens: {string.Join(", ", c.Input.OfType<Token<int>>().Take(5).Select(t => t.Payload))}...");
+                                Debug.WriteLine($"{tokens.Count()}/{c.Input.Count()} tokens: {string.Join(", ", c.Input.OfType<int>().Take(5))}...");
                                 await Task.Delay(1000);
                             },
-                            b => b.AddFlow<Token<string>>(OutputNode.Name)
+                            b => b.AddFlow<string>(OutputNode.Name)
                         )
                         .AddOutput()
-                        .AddFlow<Token<string>>("action2", b => b
+                        .AddFlow<string>("action2", b => b
                             .AddGuard(async c =>
                             {
                                 lock (c.Activity.LockHandle)
@@ -200,13 +200,9 @@ namespace X
                     "action2",
                     async c =>
                     {
-                        Debug.WriteLine(c.Input.OfType<Token<string>>().Count().ToString());
+                        Debug.WriteLine(c.Input.OfType<string>().Count().ToString());
                         c.Activity.Values.TryGet<int>("count", out var counter);
                         Debug.WriteLine($"counter: {counter}");
-                        //foreach (var token in c.Input.OfType<Token<string>>())
-                        //{
-                        //    Debug.WriteLine(token.Payload);
-                        //}
                     }
                 );
 
@@ -218,11 +214,11 @@ namespace X
         }
     }
 
-    public class Flow1 : Flow<Token<int>>
+    public class Flow1 : Flow<int>
     {
         public override async Task<bool> GuardAsync()
         {
-            return Context.Token.Payload > 40;
+            return Context.Token > 40;
         }
     }
 }

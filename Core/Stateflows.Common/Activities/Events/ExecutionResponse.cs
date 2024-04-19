@@ -9,6 +9,6 @@ namespace Stateflows.Activities.Events
         public bool ExecutionSuccessful { get; set; }
 
         [JsonProperty(TypeNameHandling = TypeNameHandling.None)]
-        public IEnumerable<Token> OutputTokens { get; set; } = new List<Token>();
+        public IEnumerable<object> OutputTokens { get; set; } = new List<object>();
     }
 }

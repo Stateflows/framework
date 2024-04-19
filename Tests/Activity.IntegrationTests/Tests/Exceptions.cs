@@ -1,6 +1,4 @@
-using Stateflows.Activities.Typed.Data;
-using Stateflows.Activities.Data;
-using Stateflows.Common;
+using Stateflows.Activities.Typed;
 using StateMachine.IntegrationTests.Utils;
 
 namespace Activity.IntegrationTests.Tests
@@ -10,7 +8,7 @@ namespace Activity.IntegrationTests.Tests
     {
         private bool Executed1 = false;
         private bool Executed2 = false;
-        public static string Value = "boo";
+        private static string Value = "boo";
 
         [TestInitialize]
         public override void Initialize()
@@ -31,7 +29,7 @@ namespace Activity.IntegrationTests.Tests
                         .AddStructuredActivity("main", b => b
                             .AddExceptionHandler<Exception>(async c =>
                             {
-                                c.Output(new Token<string>() { Payload = c.Exception.Message });
+                                c.Output(c.Exception.Message);
                             })
                             .AddInitial(b => b
                                 .AddControlFlow("action1")
@@ -39,10 +37,10 @@ namespace Activity.IntegrationTests.Tests
                             .AddAction("action1",
                                 async c =>
                                 {
-                                    c.Output(new Token<int>() { Payload = 42 });
+                                    c.Output(42);
                                     throw new Exception("test");
                                 },
-                                b => b.AddDataFlow<int>("action2")
+                                b => b.AddFlow<int>("action2")
                             )
                             .AddAction("action2",
                                 async c =>
@@ -50,12 +48,12 @@ namespace Activity.IntegrationTests.Tests
                                     Executed2 = true;
                                 }
                             )
-                            .AddDataFlow<string>("final")
+                            .AddFlow<string>("final")
                         )
                         .AddAction("final", async c =>
                         {
                             Executed1 = true;
-                            Value = c.Input.OfType<Token<string>>().FirstOrDefault()?.Payload ?? "foo";
+                            Value = c.Input.OfType<string>().FirstOrDefault() ?? "foo";
                         })
                     )
                 )

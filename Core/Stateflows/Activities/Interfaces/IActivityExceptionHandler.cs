@@ -12,7 +12,7 @@ namespace Stateflows.Activities
         Task OnNodeInitializationExceptionAsync(IActivityNodeContext context, Exception exception);
         Task OnNodeFinalizationExceptionAsync(IActivityNodeContext context, Exception exception);
         Task OnNodeExecutionExceptionAsync(IActivityNodeContext context, Exception exception);
-        Task OnFlowGuardExceptionAsync(IGuardContext<Token> context, Exception exception);
-        Task OnFlowTransformationExceptionAsync(ITransformationContext<Token> context, Exception exception);
+        Task OnFlowGuardExceptionAsync<TToken>(IGuardContext<TToken> context, Exception exception);
+        Task OnFlowTransformationExceptionAsync<TToken>(ITransformationContext<TToken> context, Exception exception);
     }
 }

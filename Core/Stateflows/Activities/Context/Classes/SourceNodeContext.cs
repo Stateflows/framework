@@ -11,8 +11,8 @@ namespace Stateflows.Activities.Context.Classes
     {
         internal readonly Guid ThreadId;
 
-        private IEnumerable<Token> input = null;
-        public IEnumerable<Token> Input
+        private IEnumerable<object> input = null;
+        public IEnumerable<object> Input
 #pragma warning disable S2365 // Properties should not make collection or array copies
             => input ??= Context
                 .GetStreams(Node, ThreadId)

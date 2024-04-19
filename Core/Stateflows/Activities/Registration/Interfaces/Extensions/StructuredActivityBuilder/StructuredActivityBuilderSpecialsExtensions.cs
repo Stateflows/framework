@@ -1,9 +1,7 @@
 ﻿using System.Threading.Tasks;
-using Stateflows.Common;
 using Stateflows.Activities.Registration;
 using Stateflows.Activities.Registration.Builders;
 using Stateflows.Activities.Registration.Interfaces;
-using Stateflows.Common.Classes;
 
 namespace Stateflows.Activities
 {
@@ -73,8 +71,7 @@ namespace Stateflows.Activities
         public static IStructuredActivityBuilder AddControlDecision(this IStructuredActivityBuilder builder, DecisionBuildAction decisionBuildAction)
             => builder.AddControlDecision(ActivityNodeInfo<DecisionNode<ControlToken>>.Name, decisionBuildAction);
 
-        public static IStructuredActivityBuilder AddTokenDecision<TToken>(this IStructuredActivityBuilder builder, string decisionNodeName, DecisionBuildAction<TToken> decisionBuildAction)
-            where TToken : Token, new()
+        public static IStructuredActivityBuilder AddDecision<TToken>(this IStructuredActivityBuilder builder, string decisionNodeName, DecisionBuildAction<TToken> decisionBuildAction)
             => (builder as BaseActivityBuilder)
                 .AddNode(
                     NodeType.Decision,
@@ -87,9 +84,8 @@ namespace Stateflows.Activities
                     b => decisionBuildAction(new DecisionBuilder<TToken>(b.SetOptions(NodeOptions.DecisionDefault) as NodeBuilder))
                 ) as IStructuredActivityBuilder;
 
-        public static IStructuredActivityBuilder AddTokenDecision<TToken>(this IStructuredActivityBuilder builder, DecisionBuildAction<TToken> decisionBuildAction)
-            where TToken : Token, new()
-            => builder.AddTokenDecision(ActivityNodeInfo<DecisionNode<TToken>>.Name, decisionBuildAction);
+        public static IStructuredActivityBuilder AddDecision<TToken>(this IStructuredActivityBuilder builder, DecisionBuildAction<TToken> decisionBuildAction)
+            => builder.AddDecision(ActivityNodeInfo<DecisionNode<TToken>>.Name, decisionBuildAction);
 
         public static IStructuredActivityBuilder AddDataStore(this IStructuredActivityBuilder builder, string dataStoreNodeName, DataStoreBuildAction decisionBuildAction)
             => (builder as BaseActivityBuilder)

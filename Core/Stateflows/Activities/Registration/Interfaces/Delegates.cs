@@ -7,14 +7,11 @@ namespace Stateflows.Activities.Registration.Interfaces
 {
     public delegate void ActivitiesBuildAction(IActivitiesBuilder builder);
 
-    public delegate Task<bool> GuardDelegateAsync<in TToken>(IGuardContext<TToken> context)
-        where TToken : Token, new();
+    public delegate Task<bool> GuardDelegateAsync<in TToken>(IGuardContext<TToken> context);
 
     public delegate Task<bool> GuardDelegateAsync(IGuardContext context);
 
-    public delegate Task<TTargetToken> TransformationDelegateAsync<in TSourceToken, TTargetToken>(ITransformationContext<TSourceToken> context)
-        where TSourceToken : Token, new()
-        where TTargetToken : Token, new();
+    public delegate Task<TTargetToken> TransformationDelegateAsync<in TSourceToken, TTargetToken>(ITransformationContext<TSourceToken> context);
 
     public delegate Task ActionDelegateAsync(IActionContext context);
 
@@ -34,11 +31,9 @@ namespace Stateflows.Activities.Registration.Interfaces
 
     public delegate bool DecisionDelegate(IActionContext context);
 
-    public delegate void ObjectFlowBuildAction<in TToken>(IObjectFlowBuilder<TToken> builder)
-        where TToken : Token, new();
+    public delegate void ObjectFlowBuildAction<in TToken>(IObjectFlowBuilder<TToken> builder);
 
-    public delegate void ElseObjectFlowBuildAction<in TToken>(IElseObjectFlowBuilder<TToken> builder)
-        where TToken : Token, new();
+    public delegate void ElseObjectFlowBuildAction<in TToken>(IElseObjectFlowBuilder<TToken> builder);
 
     public delegate void ControlFlowBuildAction(IControlFlowBuilder builder);
 
@@ -72,8 +67,7 @@ namespace Stateflows.Activities.Registration.Interfaces
 
     public delegate void DecisionBuildAction(IDecisionBuilder builder);
 
-    public delegate void DecisionBuildAction<TToken>(IDecisionBuilder<TToken> builder)
-        where TToken : Token, new();
+    public delegate void DecisionBuildAction<TToken>(IDecisionBuilder<TToken> builder);
 
     public delegate void DataStoreBuildAction(IDataStoreBuilder builder);
 

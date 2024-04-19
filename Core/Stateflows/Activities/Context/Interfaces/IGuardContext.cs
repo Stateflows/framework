@@ -6,6 +6,6 @@ namespace Stateflows.Activities.Context.Interfaces
     { }
 
     public interface IGuardContext<out TToken> : IFlowContext<TToken>
-        where TToken : Token, new()
+        // where TToken : Token, new()
     { }
 }

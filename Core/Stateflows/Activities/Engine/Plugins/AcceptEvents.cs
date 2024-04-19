@@ -112,10 +112,10 @@ namespace Stateflows.Activities.Engine
             return Task.CompletedTask;
         }
 
-        Task IActivityObserver.AfterFlowGuardAsync(IGuardContext<Token> context, bool guardResult)
+        Task IActivityObserver.AfterFlowGuardAsync<TToken>(IGuardContext<TToken> context, bool guardResult)
             => Task.CompletedTask;
 
-        Task IActivityObserver.AfterFlowTransformationAsync(ITransformationContext<Token> context)
+        Task IActivityObserver.AfterFlowTransformationAsync<TToken>(ITransformationContext<TToken> context)
             => Task.CompletedTask;
 
         Task IActivityInterceptor.AfterHydrateAsync(IActivityActionContext context)
@@ -134,7 +134,7 @@ namespace Stateflows.Activities.Engine
         Task IActivityObserver.AfterNodeInitializationAsync(IActivityNodeContext context)
             => Task.CompletedTask;
 
-        Task IActivityInterceptor.AfterProcessEventAsync(IEventContext<Event> context)
+        Task IActivityInterceptor.AfterProcessEventAsync<TEvent>(IEventContext<TEvent> context)
         {
             Context = (context as BaseContext).Context;
 
@@ -168,10 +168,10 @@ namespace Stateflows.Activities.Engine
         Task IActivityInterceptor.BeforeDehydrateAsync(IActivityActionContext context)
             => Task.CompletedTask;
 
-        Task IActivityObserver.BeforeFlowGuardAsync(IGuardContext<Token> context)
+        Task IActivityObserver.BeforeFlowGuardAsync<TToken>(IGuardContext<TToken> context)
             => Task.CompletedTask;
 
-        Task IActivityObserver.BeforeFlowTransformationAsync(ITransformationContext<Token> context)
+        Task IActivityObserver.BeforeFlowTransformationAsync<TToken>(ITransformationContext<TToken> context)
             => Task.CompletedTask;
 
         Task IActivityObserver.BeforeNodeExecuteAsync(IActivityNodeContext context)
@@ -189,7 +189,7 @@ namespace Stateflows.Activities.Engine
         Task IActivityObserver.BeforeNodeFinalizationAsync(IActivityNodeContext context)
             => Task.CompletedTask;
 
-        Task<bool> IActivityInterceptor.BeforeProcessEventAsync(IEventContext<Event> context)
+        Task<bool> IActivityInterceptor.BeforeProcessEventAsync<TEvent>(IEventContext<TEvent> context)
         {
             var result = true;
 
@@ -218,10 +218,10 @@ namespace Stateflows.Activities.Engine
         public Task OnNodeExecutionExceptionAsync(IActivityNodeContext context, Exception exception)
             => Task.CompletedTask;
 
-        public Task OnFlowGuardExceptionAsync(IGuardContext<Token> context, Exception exception)
+        public Task OnFlowGuardExceptionAsync<TToken>(IGuardContext<TToken> context, Exception exception)
             => Task.CompletedTask;
 
-        public Task OnFlowTransformationExceptionAsync(ITransformationContext<Token> context, Exception exception)
+        public Task OnFlowTransformationExceptionAsync<TToken>(ITransformationContext<TToken> context, Exception exception)
             => Task.CompletedTask;
     }
 }

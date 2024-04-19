@@ -14,7 +14,7 @@ namespace Stateflows.Activities
     }
 
     public abstract class StructuredActivityNode<TToken> : StructuredActivityNode
-        where TToken : Token, new()
+        // where TToken : Token, new()
     {
         public new IActionContext<TToken> Context => base.Context as IActionContext<TToken>;
     }

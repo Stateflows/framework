@@ -134,13 +134,13 @@ namespace Stateflows.Activities.Engine
 
         public TFlow GetObjectFlow<TFlow, TToken>(IFlowContext<TToken> context)
             where TFlow : Flow<TToken>
-            where TToken : Token, new()
+            // where TToken : Token, new()
             => GetFlow<TFlow>(context);
 
         public TFlow GetObjectTransformationFlow<TFlow, TToken, TTransformedToken>(IFlowContext<TToken> context)
             where TFlow : TransformationFlow<TToken, TTransformedToken>
-            where TToken : Token, new()
-            where TTransformedToken : Token, new()
+            // where TToken : Token, new()
+            ////where TTransformedToken : Token, new()
             => GetFlow<TFlow>(context);
 
         public void Dispose()

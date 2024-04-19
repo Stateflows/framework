@@ -23,7 +23,7 @@ namespace Stateflows.Common.Extensions
             var standardPrefix = "Stateflows.Activities.";
             if (result.StartsWith(standardPrefix))
             {
-                result = result.Substring(standardPrefix.Length);
+                result = result[standardPrefix.Length..];
             }
 
             return result;

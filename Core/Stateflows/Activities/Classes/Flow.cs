@@ -1,6 +1,4 @@
 ﻿using System.Threading.Tasks;
-using Stateflows.Common;
-using Stateflows.Common.Data;
 using Stateflows.Activities.Context.Interfaces;
 
 namespace Stateflows.Activities
@@ -17,7 +15,6 @@ namespace Stateflows.Activities
     { }
 
     public abstract class BaseFlow<TToken> : BaseControlFlow
-        where TToken : Token, new()
     {
         public virtual int Weight => 1;
 
@@ -26,15 +23,9 @@ namespace Stateflows.Activities
     }
 
     public abstract class Flow<TToken> : BaseFlow<TToken>
-        where TToken : Token, new()
-    { }
-
-    public abstract class DataFlow<TTokenPayload> : Flow<Token<TTokenPayload>>
     { }
 
     public abstract class BaseTransformationFlow<TToken, TTransformedToken> : BaseControlFlow
-        where TToken : Token, new()
-        where TTransformedToken : Token, new()
     {
         public virtual int Weight => 1;
 
@@ -45,15 +36,5 @@ namespace Stateflows.Activities
     }
 
     public abstract class TransformationFlow<TToken, TTransformedToken> : BaseTransformationFlow<TToken, TTransformedToken>
-        where TToken : Token, new()
-        where TTransformedToken : Token, new()
     { }
-
-    public abstract class DataTransformationFlow<TTokenPayload, TTransformedTokenPayload> : TransformationFlow<Token<TTokenPayload>, Token<TTransformedTokenPayload>>
-    {
-        public abstract Task<TTransformedTokenPayload> TransformPayloadAsync();
-
-        public override async Task<Token<TTransformedTokenPayload>> TransformAsync()
-            => (await TransformPayloadAsync()).ToToken();
-    }
 }

@@ -85,7 +85,8 @@ namespace Activity.IntegrationTests.Tests
 
             if (ActivityLocator.TryLocateActivity(new ActivityId("simple", "x"), out var a))
             {
-                initialized = (await a.InitializeAsync()).Response.InitializationSuccessful;
+                var result = await a.InitializeAsync();
+                initialized = result.Response.InitializationSuccessful;
             }
 
             Assert.IsTrue(initialized);
