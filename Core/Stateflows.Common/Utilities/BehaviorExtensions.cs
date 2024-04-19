@@ -1,14 +1,21 @@
-﻿using System.Linq;
+﻿using System;
+using System.Linq;
 using System.Threading.Tasks;
 using System.Collections.Generic;
 using Stateflows.Common.Data;
 using Stateflows.StateMachines.Events;
-using System;
 
 namespace Stateflows.Common
 {
     public static class BehaviorExtensions
     {
+        internal static InitializationRequest ToInitializationRequest<TInitializationRequest>(this TInitializationRequest initializationRequest)
+            => (initializationRequest is InitializationRequest requestObj)
+                ? requestObj
+                : initializationRequest != null
+                    ? new InitializationRequest<TInitializationRequest>() { Payload = initializationRequest }
+                    : new InitializationRequest();
+
         //    public static Task<RequestResult<ResetResponse>> ResetAsync(this IBehavior behavior, bool keepVersion = false)
         //        => behavior.RequestAsync(new ResetRequest() { KeepVersion = keepVersion });
 
