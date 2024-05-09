@@ -92,7 +92,7 @@ namespace Stateflows.Activities.Context.Classes
             }
         }
 
-        internal IEnumerable<Stream> GetStreams(Node node, Guid threadId)
+        internal IEnumerable<Stream> GetActivatedStreams(Node node, Guid threadId)
         {
             lock (Streams)
             {
