@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Linq;
 using System.Collections.Generic;
+using Stateflows.Common;
+using Stateflows.Activities.Streams;
 
 namespace Stateflows.Utils
 {
@@ -42,5 +44,8 @@ namespace Stateflows.Utils
                 yield return partition;
             }
         }
+
+        public static Token[] GetTokens(this IEnumerable<Stream> streams)
+            => streams.SelectMany(stream => stream.Tokens).ToArray();
     }
 }

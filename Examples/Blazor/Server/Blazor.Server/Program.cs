@@ -80,9 +80,11 @@ builder.Services.AddStateflows(b => b
                 .AddExceptionHandler<Exception>(async c =>
                 {
                     Debug.WriteLine(c.Exception.Message);
+                    c.Output(new Token<int>() { Payload = 666 });
                 })
                 .AddInitial(b => b
                     .AddControlFlow("action1")
+                    .AddControlFlow("action3")
                 )
                 .AddAction(
                     "action1",
@@ -96,9 +98,17 @@ builder.Services.AddStateflows(b => b
                     {
                         Debug.WriteLine(c.Input.OfType<Token<int>>().First().Payload);
                         throw new Exception("test");
-                    }
+                    },
+                    b => b.AddControlFlow("action3")
                 )
+                .AddAction(
+                    "action3",
+                     async c => { }
+                )
+
+                .AddFlow<Token<int>>("action4")
             )
+            .AddAction("action4", async c => { })
         )
 
         .AddActivity<Activity3>("activity3")
