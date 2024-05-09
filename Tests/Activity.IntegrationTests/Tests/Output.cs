@@ -1,6 +1,7 @@
 using Stateflows.Activities.Typed;
 using Stateflows.Common;
 using StateMachine.IntegrationTests.Utils;
+using System.Diagnostics;
 
 namespace Activity.IntegrationTests.Tests
 {
@@ -39,9 +40,12 @@ namespace Activity.IntegrationTests.Tests
                             .AddOutput()
                             .AddFlow<int>("final")
                         )
+                        .AddAcceptEventAction<SomeEvent>(b => b
+                            .AddControlFlow("final")
+                        )
                         .AddAction("final", async c =>
                         {
-                            Executed1 = c.Input.OfType<int>().Any();
+                            Executed1 = c.GetTokensOfType<int>().Any();
                         })
                     )
                 )
@@ -49,11 +53,12 @@ namespace Activity.IntegrationTests.Tests
         }
 
         [TestMethod]
-        public async Task ExceptionHandled()
+        public async Task OutputFromStructuredActivity()
         {
             if (ActivityLocator.TryLocateActivity(new ActivityId("structured", "x"), out var a))
             {
                 await a.InitializeAsync();
+                await a.SendAsync(new SomeEvent());
             }
 
             Assert.IsTrue(Executed1);

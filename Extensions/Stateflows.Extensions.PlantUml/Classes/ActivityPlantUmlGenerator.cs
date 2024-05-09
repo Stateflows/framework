@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using Stateflows.Activities;
 using Stateflows.Activities.Inspection.Interfaces;
 using Stateflows.Common;
+using Stateflows.Common.Extensions;
 
 namespace Stateflows.Extensions.PlantUml.Classes
 {
@@ -61,7 +62,7 @@ namespace Stateflows.Extensions.PlantUml.Classes
                 var source = GetNodeName(transition.Source, parentName);
                 var target = GetNodeName(transition.Target, parentName);
 
-                if (transition.TokenName == TokenInfo<ControlToken>.Name)
+                if (transition.TokenName == typeof(Control).GetTokenName())
                 {
                     builder.AppendLine($"{indent}{source} --> {target}");
                 }

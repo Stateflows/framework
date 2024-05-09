@@ -134,7 +134,7 @@ namespace Stateflows.Activities.Engine
         Task IActivityObserver.AfterNodeInitializationAsync(IActivityNodeContext context)
             => Task.CompletedTask;
 
-        Task IActivityInterceptor.AfterProcessEventAsync<TEvent>(IEventContext<TEvent> context)
+        Task IActivityInterceptor.AfterProcessEventAsync(IEventContext<Event> context)
         {
             Context = (context as BaseContext).Context;
 
@@ -189,7 +189,7 @@ namespace Stateflows.Activities.Engine
         Task IActivityObserver.BeforeNodeFinalizationAsync(IActivityNodeContext context)
             => Task.CompletedTask;
 
-        Task<bool> IActivityInterceptor.BeforeProcessEventAsync<TEvent>(IEventContext<TEvent> context)
+        Task<bool> IActivityInterceptor.BeforeProcessEventAsync(IEventContext<Event> context)
         {
             var result = true;
 

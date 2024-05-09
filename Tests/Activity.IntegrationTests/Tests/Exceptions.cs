@@ -1,4 +1,3 @@
-using Stateflows.Activities.Typed;
 using StateMachine.IntegrationTests.Utils;
 
 namespace Activity.IntegrationTests.Tests
@@ -53,7 +52,7 @@ namespace Activity.IntegrationTests.Tests
                         .AddAction("final", async c =>
                         {
                             Executed1 = true;
-                            Value = c.Input.OfType<string>().FirstOrDefault() ?? "foo";
+                            Value = c.GetTokensOfType<string>().FirstOrDefault() ?? "foo";
                         })
                     )
                 )

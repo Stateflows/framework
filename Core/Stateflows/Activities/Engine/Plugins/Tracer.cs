@@ -106,8 +106,8 @@ namespace Stateflows.Activities.Engine
                     .AddStep(
                         "Execute",
                         context.CurrentNode.NodeName,
-                        Stopwatch.Elapsed,
-                        (context as IActionContext<Token>)?.Input ?? Array.Empty<Token>()
+                        Stopwatch.Elapsed
+                        //(context as IActionContext<Token>)?.Input ?? Array.Empty<Token>()
                     )
                     .Exceptions
                     .Add(Exception);
@@ -155,7 +155,7 @@ namespace Stateflows.Activities.Engine
         public Task BeforeDehydrateAsync(IActivityActionContext context)
             => Task.CompletedTask;
 
-        public Task<bool> BeforeProcessEventAsync<TEvent>(IEventContext<TEvent> context)
+        public Task<bool> BeforeProcessEventAsync(IEventContext<Event> context)
         {
             var eventType = context.Event.GetType();
             var attribute = eventType.GetCustomAttribute<DoNotTraceAttribute>();
@@ -168,7 +168,7 @@ namespace Stateflows.Activities.Engine
             return Task.FromResult(true);
         }
 
-        public Task AfterProcessEventAsync<TEvent>(IEventContext<TEvent> context)
+        public Task AfterProcessEventAsync(IEventContext<Event> context)
         {
             if (Trace.Event != null)
             {

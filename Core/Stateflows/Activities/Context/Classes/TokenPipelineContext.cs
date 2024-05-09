@@ -7,7 +7,7 @@ namespace Stateflows.Activities.Context.Classes
 {
     internal class TokenPipelineContext : BaseContext, IRootContext
     {
-        public TokenPipelineContext(BaseContext context, Edge edge, object token)
+        public TokenPipelineContext(BaseContext context, Edge edge, Token token)
             : base(context)
         {
             Edge = edge;
@@ -16,7 +16,7 @@ namespace Stateflows.Activities.Context.Classes
 
         internal readonly Edge Edge;
 
-        public readonly object Token;
+        public readonly Token Token;
 
         public bool TokenConsumed = false;
 

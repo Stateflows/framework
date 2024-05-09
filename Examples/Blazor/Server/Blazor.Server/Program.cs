@@ -19,6 +19,7 @@ using Examples.Storage;
 using X;
 using System.Collections.Generic;
 using Newtonsoft.Json.Linq;
+using MongoDB.Driver;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -45,7 +46,7 @@ builder.Services.AddStateflows(b => b
                 )
             )
             .AddState("state2", b => b
-                .AddOnEntry(c =>
+                .AddOnEntry(async c =>
                 {
                     c.StateMachine.Publish(new SomeNotification());
                 })
@@ -94,7 +95,7 @@ builder.Services.AddStateflows(b => b
                     "action2",
                     async c =>
                     {
-                        Debug.WriteLine(c.Input.OfType<int>().First());
+                        Debug.WriteLine(c.GetTokensOfType<int>().First());
                         throw new Exception("test");
                     }
                 )
@@ -102,6 +103,31 @@ builder.Services.AddStateflows(b => b
         )
 
         .AddActivity<Activity3>("activity3")
+
+        .AddActivity("activity4", b => b
+            .AddOnInitialize<InitializationRequest1>(async c =>
+            {
+                Debug.WriteLine(c.InitializationRequest.Foo);
+
+                return true;
+            })
+
+            .AddInitial(b => b
+                .AddControlFlow("1")
+            )
+            .AddAction(
+                "1",
+                async c => c.OutputRange(Enumerable.Range(1, 10)),
+                b => b.AddFlow<int>("2")
+            )
+            .AddAction(
+                "2",
+                async c => Debug.WriteLine($"{c.GetTokensOfType<int>().Count()}")
+            )
+            .AddAcceptEventAction<SomeEvent>(b => b
+                .AddControlFlow("2")
+            )
+        )
     )
 
     .AddAutoInitialization(new StateMachineClass("stateMachine1"))
@@ -145,11 +171,6 @@ namespace X
 
     public class Activity3 : Stateflows.Activities.Activity<InitializationRequest1>
     {
-        private async Task MethodAsync()
-        {
-            return;
-        }
-
         public override void Build(ITypedActivityBuilder builder)
             => builder
                 .AddAcceptEventAction<SomeEvent>(async c => { }, b => b
@@ -160,7 +181,6 @@ namespace X
                     async c => c.OutputRange(Enumerable.Range(0, 100)),
                     b => b.AddFlow<int>("chunked")
                 )
-
                 .AddParallelActivity<int>(
                     "chunked",
                     b => b
@@ -171,7 +191,7 @@ namespace X
                             "main",
                             async c =>
                             {
-                                var tokens = c.Input.OfType<int>().Select(t => $"value: {t}");
+                                var tokens = c.GetTokensOfType<int>().Select(t => $"value: {t}");
                                 c.OutputRange(tokens);
                                 Debug.WriteLine($"{tokens.Count()}/{c.Input.Count()} tokens: {string.Join(", ", c.Input.OfType<int>().Take(5))}...");
                                 await Task.Delay(1000);
@@ -211,6 +231,25 @@ namespace X
             Debug.WriteLine(initializationRequest.Foo);
 
             return true;
+        }
+    }
+
+    public class Action1 : ActionNode
+    {
+        public readonly Input<int> IntInput;
+
+        private readonly GlobalValue<int> Foo = new("foo");
+
+        private readonly StateValue<int> Bar = new("bar");
+
+        public override Task ExecuteAsync()
+        {
+            if (!Foo.IsSet)
+            {
+                Foo.Value = 42;
+            }
+
+            return Task.CompletedTask;
         }
     }
 

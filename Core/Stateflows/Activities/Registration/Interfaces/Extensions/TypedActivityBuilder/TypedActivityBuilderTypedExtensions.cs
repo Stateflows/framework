@@ -28,7 +28,7 @@ namespace Stateflows.Activities.Typed
                 {
                     var action = (c as BaseContext).NodeScope.GetAction<TAction>(c);
 
-                    InputTokensHolder.Tokens.Value = c.Input;
+                    InputTokensHolder.Tokens.Value = ((ActionContext)c).InputTokens;
                     OutputTokensHolder.Tokens.Value = ((ActionContext)c).OutputTokens;
 
                     var result = action.ExecuteAsync();
@@ -59,7 +59,7 @@ namespace Stateflows.Activities.Typed
                 {
                     var action = (c as BaseContext).NodeScope.GetAcceptEventAction<TEvent, TAcceptEventAction>(c);
 
-                    InputTokensHolder.Tokens.Value = c.Input;
+                    InputTokensHolder.Tokens.Value = ((ActionContext)c).InputTokens;
                     OutputTokensHolder.Tokens.Value = ((ActionContext)c).OutputTokens;
 
                     var result = action.ExecuteAsync();
@@ -77,7 +77,7 @@ namespace Stateflows.Activities.Typed
         {
             var action = (context as BaseContext).NodeScope.GetSendEventAction<TEvent, TSendEventAction>(context);
 
-            InputTokensHolder.Tokens.Value = context.Input;
+            InputTokensHolder.Tokens.Value = ((ActionContext)context).InputTokens;
             OutputTokensHolder.Tokens.Value = ((ActionContext)context).OutputTokens;
 
             return await callback(action);

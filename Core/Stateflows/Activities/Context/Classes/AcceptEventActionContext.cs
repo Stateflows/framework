@@ -32,7 +32,10 @@ namespace Stateflows.Activities.Context.Classes
         public void PassTokensOfTypeOn<TToken>()
             => ActionContext.PassTokensOfTypeOn<TToken>();
 
-        public void PassAllOn()
-            => ActionContext.PassAllOn();
+        public void PassAllTokensOn()
+            => ActionContext.PassAllTokensOn();
+
+        public IEnumerable<TToken> GetTokensOfType<TToken>()
+            => ActionContext.GetTokensOfType<TToken>();
     }
 }

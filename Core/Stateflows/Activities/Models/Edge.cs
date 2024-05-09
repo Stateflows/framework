@@ -1,4 +1,5 @@
 ﻿using System;
+using Stateflows.Common;
 
 namespace Stateflows.Activities.Models
 {

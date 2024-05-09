@@ -4,6 +4,7 @@ using Stateflows.Activities.Models;
 using Stateflows.Activities.Context.Classes;
 using Stateflows.Activities.Context.Interfaces;
 using Stateflows.Activities.Registration.Interfaces;
+using Stateflows.Utils;
 
 namespace Stateflows.Activities.Registration.Builders
 {
@@ -35,8 +36,8 @@ namespace Stateflows.Activities.Registration.Builders
                 try
                 {
                     return
-                        context.Token is TToken token &&
-                        await guardAsync(new TokenFlowContext<TToken>(context, token))
+                        context.Token is Token<TToken> token &&
+                        await guardAsync(new TokenFlowContext<TToken>(context, token.Payload))
                             ? token
                             : default;
                 }
@@ -68,8 +69,8 @@ namespace Stateflows.Activities.Registration.Builders
                 try
                 {
                     return
-                        context.Token is TToken token
-                            ? await transformationAsync(new TokenFlowContext<TToken>(context, token))
+                        context.Token is Token<TToken> token
+                            ? (await transformationAsync(new TokenFlowContext<TToken>(context, token.Payload))).ToToken()
                             : default;
                 }
                 catch (Exception e)

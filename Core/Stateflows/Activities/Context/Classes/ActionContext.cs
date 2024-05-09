@@ -1,31 +1,17 @@
 ﻿using System.Linq;
 using System.Collections.Generic;
 using Stateflows.Common;
+using Stateflows.Utils;
 using Stateflows.Activities.Models;
 using Stateflows.Activities.Engine;
 using Stateflows.Activities.Context.Interfaces;
 using Stateflows.Activities.Inspection.Interfaces;
-using Stateflows.Utils;
 
 namespace Stateflows.Activities.Context.Classes
 {
     internal class ActionContext : ActivityNodeContext, IActionContext<object>, IActivityNodeInspectionContext
     {
-        public ActionContext(BaseContext context, Node node, IEnumerable<object> inputTokens = null, IEnumerable<object> selectionTokens = null)
-            : base(context, node)
-        {
-            if (inputTokens != null)
-            {
-                InputTokens.AddRange(inputTokens);
-            }
-
-            if (selectionTokens != null)
-            {
-                Tokens = selectionTokens;
-            }
-        }
-
-        public ActionContext(RootContext context, NodeScope nodeScope, Node node, IEnumerable<object> inputTokens, IEnumerable<object> selectionTokens = null)
+        public ActionContext(RootContext context, NodeScope nodeScope, Node node, IEnumerable<Token> inputTokens, IEnumerable<Token> selectionTokens = null)
             : base(context, nodeScope, node)
         {
             InputTokens.AddRange(inputTokens);
@@ -36,25 +22,27 @@ namespace Stateflows.Activities.Context.Classes
             }
         }
 
-        public List<object> InputTokens { get; } = new List<object>();
+        public List<Token> InputTokens { get; } = new List<Token>();
 
-        public List<object> OutputTokens { get; } = new List<object>();
+        public List<Token> OutputTokens { get; } = new List<Token>();
 
         public void Output<TToken>(TToken token)
             => OutputRange(new TToken[] { token });
 
         public void OutputRange<TToken>(IEnumerable<TToken> tokens)
-        {
-            OutputTokens.AddRange(tokens.Box());
-        }
+            => OutputTokens.AddRange(tokens.ToTokens());
 
         public void PassTokensOfTypeOn<TToken>()
-            => OutputRange(InputTokens.OfType<TToken>());
+            => OutputTokens.AddRange(InputTokens.OfType<Token<TToken>>());
 
-        public void PassAllOn()
-            => OutputRange(InputTokens);
+        public void PassAllTokensOn()
+            => OutputTokens.AddRange(InputTokens);
 
-        public IEnumerable<object> Input => InputTokens;
+        public IEnumerable<TToken> GetTokensOfType<TToken>()
+            => InputTokens.OfType<Token<TToken>>().FromTokens().ToArray();
+
+        public IEnumerable<object> GetAllTokens()
+            => InputTokens.FromTokens().ToArray();
 
         public IEnumerable<object> Tokens { get; }
     }

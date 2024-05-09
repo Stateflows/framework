@@ -8,7 +8,7 @@ namespace Stateflows.Activities
 {
     internal static class InputTokensHolder
     {
-        public static readonly AsyncLocal<IEnumerable<object>> Tokens = new AsyncLocal<IEnumerable<object>>();
+        public static readonly AsyncLocal<IEnumerable<Token>> Tokens = new AsyncLocal<IEnumerable<Token>>();
     }
 
     public struct Input<TToken> : IEnumerable<TToken>

@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Linq;
 using System.Threading.Tasks;
-using Stateflows.Common.Data;
 using Stateflows.Common.Interfaces;
 
 namespace Stateflows.Common
@@ -40,9 +39,6 @@ namespace Stateflows.Common
 
             return new RequestResult<InitializationResponse>(initializationRequest, result.Status, result.Validation);
         }
-
-        Task<RequestResult<InitializationResponse>> ReinitializeAsync<TInitializationPayload>(TInitializationPayload payload, bool keepVersion = true)
-            => ReinitializeAsync(payload.ToInitializationRequest(), keepVersion);
 
         Task<RequestResult<BehaviorStatusResponse>> GetStatusAsync()
             => RequestAsync(new BehaviorStatusRequest());

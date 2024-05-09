@@ -119,8 +119,8 @@ namespace Stateflows.Activities.Context.Classes
             }
         }
 
-        private Dictionary<Guid, Dictionary<string, List<object>>> outputTokens = null;
-        public Dictionary<Guid, Dictionary<string, List<object>>> OutputTokens
+        private Dictionary<Guid, Dictionary<string, List<Token>>> outputTokens = null;
+        public Dictionary<Guid, Dictionary<string, List<Token>>> OutputTokens
         {
             get
             {
@@ -130,12 +130,12 @@ namespace Stateflows.Activities.Context.Classes
                     {
                         if (!Context.Values.TryGetValue(Constants.OutputTokens, out var outputTokensObj))
                         {
-                            outputTokens = new Dictionary<Guid, Dictionary<string, List<object>>>();
+                            outputTokens = new Dictionary<Guid, Dictionary<string, List<Token>>>();
                             Context.Values[Constants.OutputTokens] = outputTokens;
                         }
                         else
                         {
-                            outputTokens = outputTokensObj as Dictionary<Guid, Dictionary<string, List<object>>>;
+                            outputTokens = outputTokensObj as Dictionary<Guid, Dictionary<string, List<Token>>>;
                         }
                     }
                 }
@@ -144,21 +144,21 @@ namespace Stateflows.Activities.Context.Classes
             }
         }
 
-        public List<object> GetOutputTokens(string nodeName, Guid threadId)
+        public List<Token> GetOutputTokens(string nodeName, Guid threadId)
         {
-            List<object> tokens;
+            List<Token> tokens;
 
             lock (OutputTokens)
             {
                 if (!OutputTokens.TryGetValue(threadId, out var nodes))
                 {
-                    nodes = new Dictionary<string, List<object>>();
+                    nodes = new Dictionary<string, List<Token>>();
                     OutputTokens[threadId] = nodes;
                 }
 
                 if (!nodes.TryGetValue(nodeName, out tokens))
                 {
-                    tokens = new List<object>();
+                    tokens = new List<Token>();
                     nodes[nodeName] = tokens;
                 }
             }

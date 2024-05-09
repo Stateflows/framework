@@ -10,6 +10,6 @@ namespace Stateflows.Activities.Context.Interfaces
 
         void PassTokensOfTypeOn<TToken>();
 
-        void PassAllOn();
+        void PassAllTokensOn();
     }
 }

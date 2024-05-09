@@ -43,10 +43,10 @@ namespace Stateflows.Activities.Registration
         }
 
         public IActionBuilder AddControlFlow(string targetNodeName, ControlFlowBuildAction buildAction = null)
-            => AddFlowInternal<ControlToken>(targetNodeName, false, b => buildAction?.Invoke(b as IControlFlowBuilder));
+            => AddFlowInternal<Control>(targetNodeName, false, b => buildAction?.Invoke(b as IControlFlowBuilder));
 
         public IActionBuilder AddElseControlFlow(string targetNodeName, ElseControlFlowBuildAction buildAction = null)
-            => AddFlowInternal<ControlToken>(targetNodeName, true, b => buildAction?.Invoke(b as IElseControlFlowBuilder));
+            => AddFlowInternal<Control>(targetNodeName, true, b => buildAction?.Invoke(b as IElseControlFlowBuilder));
 
         public IActionBuilder AddFlow<TToken>(string targetNodeName, ObjectFlowBuildAction<TToken> buildAction = null)
             // where TToken : Token, new()
@@ -121,7 +121,8 @@ namespace Stateflows.Activities.Registration
 
                     exceptionHandler?.Invoke(context);
 
-                    c.OutputRange(context.OutputTokens.Box());
+                    contextObj.OutputTokens.AddRange(context.OutputTokens);
+                    //c.OutputRange(context.OutputTokens);
 
                     return Task.CompletedTask;
                 }),
