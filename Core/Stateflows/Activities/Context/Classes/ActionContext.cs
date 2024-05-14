@@ -10,20 +10,6 @@ namespace Stateflows.Activities.Context.Classes
 {
     internal class ActionContext : ActivityNodeContext, IActionContext<Token>, IActivityNodeInspectionContext
     {
-        public ActionContext(BaseContext context, Node node, IEnumerable<Token> inputTokens = null, IEnumerable<Token> selectionTokens = null)
-            : base(context, node)
-        {
-            if (inputTokens != null)
-            {
-                InputTokens.AddRange(inputTokens);
-            }
-
-            if (selectionTokens != null)
-            {
-                Tokens = selectionTokens;
-            }
-        }
-
         public ActionContext(RootContext context, NodeScope nodeScope, Node node, IEnumerable<Token> inputTokens, IEnumerable<Token> selectionTokens = null)
             : base(context, nodeScope, node)
         {

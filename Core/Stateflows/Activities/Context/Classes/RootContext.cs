@@ -319,7 +319,6 @@ namespace Stateflows.Activities.Context.Classes
             => nodeScope.IsTerminated ||
                 (nodeScope.ChildScope?.IsTerminated ?? false) ||
                 (
-                    !GetStreams(nodeScope.ThreadId).Values.Any(s => s.Tokens.Any()) &&
                     !node.Nodes.Values.Any(node => node.Type == NodeType.AcceptEventAction && !node.IncomingEdges.Any()) &&
                     !ActiveNodes.Any()
                 );

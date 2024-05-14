@@ -6,19 +6,20 @@ using System.Threading.Tasks;
 using System.Collections.Generic;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.DependencyInjection;
+using Stateflows.Utils;
 using Stateflows.Common;
 using Stateflows.Common.Utilities;
 using Stateflows.Activities.Models;
 using Stateflows.Activities.Streams;
 using Stateflows.Activities.Registration;
 using Stateflows.Activities.Context.Classes;
-using Stateflows.Utils;
-using Stateflows.Common.Data;
 
 namespace Stateflows.Activities.Engine
 {
     internal class Executor : IDisposable
     {
+        private static readonly object lockHandle = new object();
+
         public readonly Graph Graph;
         public readonly ActivitiesRegister Register;
         public readonly NodeScope NodeScope;
@@ -127,8 +128,6 @@ namespace Stateflows.Activities.Engine
             if (!Initialized && await DoInitializeActivityAsync(@event))
             {
                 Context.Initialized = true;
-
-                //Context.ClearEvent();
 
                 await ExecuteGraphAsync();
 
@@ -286,21 +285,6 @@ namespace Stateflows.Activities.Engine
                 nodeScope,
                 input
             );
-
-            //lock (Context.Streams)
-            //{
-            //    if (
-            //        node.OutputNode != null &&
-            //        Context.OutputTokens.TryGetValue(nodeScope.ThreadId, out var nodesOutputTokens) &&
-            //        nodesOutputTokens.TryGetValue(node.OutputNode.Identifier, out var tokens)
-            //    )
-            //    {
-            //        outputTokens.AddRange(Context.GetOutputTokens(node.OutputNode.Identifier, nodeScope.ThreadId));
-            //    }
-
-            //    Context.Streams.Remove(nodeScope.ThreadId);
-            //    Context.OutputTokens.Remove(nodeScope.ThreadId);
-            //}
 
             var output = node.OutputNode != null
                 ? Context.GetOutputTokens(node.OutputNode.Identifier, nodeScope.ThreadId)
@@ -637,6 +621,15 @@ namespace Stateflows.Activities.Engine
                 }
                 else
                 {
+                    if (
+                        StructuralTypes.Contains(node.Type) &&
+                        Context.IsNodeCompleted(node, nodeScope) &&
+                        !actionContext.OutputTokens.Any()
+                    )
+                    {
+                        actionContext.OutputTokens.Add(new ControlToken());
+                    }
+
                     List<Token> outputTokens;
                     lock (actionContext.OutputTokens)
                     {
@@ -644,17 +637,6 @@ namespace Stateflows.Activities.Engine
                     }
 
                     ReportNodeExecuted(node, outputTokens.Where(t => t.Name != TokenInfo<ControlToken>.Name).ToArray());
-
-                    if (
-                        StructuralTypes.Contains(node.Type) &&
-                        (
-                            Context.IsNodeCompleted(node, nodeScope) ||
-                            outputTokens.Any()
-                        )
-                    )
-                    {
-                        outputTokens.Add(new ControlToken());
-                    }
 
                     if (outputTokens.Any(t => t is ControlToken))
                     {
@@ -696,7 +678,7 @@ namespace Stateflows.Activities.Engine
         {
             if (Debugger.IsAttached)
             {
-                lock (node.Graph)
+                lock (lockHandle)
                 {
                     Trace.WriteLine($"⦗→s⦘ Activity '{node.Graph.Name}': executing '{node.Name}'{(!inputTokens.Any() ? ", no input" : "")}");
                     ReportTokens(inputTokens);
@@ -708,7 +690,7 @@ namespace Stateflows.Activities.Engine
         {
             if (Debugger.IsAttached)
             {
-                lock (node.Graph)
+                lock (lockHandle)
                 {
                     Trace.WriteLine($"⦗→s⦘ Activity '{node.Graph.Name}': executed '{node.Name}'{(!outputTokens.Any() ? ", no output" : "")}");
                     ReportTokens(outputTokens, false);
@@ -720,7 +702,7 @@ namespace Stateflows.Activities.Engine
         {
             if (Debugger.IsAttached)
             {
-                lock (node.Graph)
+                lock (lockHandle)
                 {
                     Trace.WriteLine($"⦗→s⦘ Activity '{node.Graph.Name}': '{exceptionName}' handled{(!outputTokens.Any() ? ", no output" : "")}");
                     ReportTokens(outputTokens, false);
@@ -732,7 +714,7 @@ namespace Stateflows.Activities.Engine
         {
             if (Debugger.IsAttached)
             {
-                lock (node.Graph)
+                lock (lockHandle)
                 {
                     Trace.WriteLine($"⦗→s⦘ Activity '{node.Graph.Name}': omitting '{node.Name}'");
                     ReportTokens(streams.GetTokens());
@@ -792,11 +774,6 @@ namespace Stateflows.Activities.Engine
             var edgeTokenName = edge.TokenType.GetTokenName();
 
             IEnumerable<Token> originalTokens = context.OutputTokens.Where(t => t.Name == edgeTokenName).ToArray();
-
-            if (!originalTokens.Any())
-            {
-                return false;
-            }
 
             var consumedTokens = new List<Token>();
             var processedTokens = new List<Token>();

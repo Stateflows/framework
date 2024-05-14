@@ -11,6 +11,12 @@ namespace Stateflows.Common
         public Guid Id { get; set; } = Guid.NewGuid();
 
         public virtual string Name => GetType().GetReadableName();
+
+        public override bool Equals(object obj)
+            => obj is Token token && token.Id == Id;
+
+        public override int GetHashCode()
+            => Id.GetHashCode();
     }
 
     public class Token<T> : Token

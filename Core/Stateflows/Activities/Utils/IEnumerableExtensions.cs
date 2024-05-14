@@ -46,6 +46,6 @@ namespace Stateflows.Utils
         }
 
         public static Token[] GetTokens(this IEnumerable<Stream> streams)
-            => streams.SelectMany(stream => stream.Tokens).ToArray();
+            => streams.SelectMany(stream => stream.Tokens).Distinct().ToArray();
     }
 }

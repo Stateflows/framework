@@ -116,9 +116,6 @@ namespace Stateflows.Activities.Registration
                 catch (Exception e)
                 {
                     await (c as BaseContext).Context.Executor.HandleExceptionAsync(node, e, c as BaseContext);
-                    //c.OutputRange(
-                    //await node.HandleExceptionAsync(e, c as BaseContext);
-                    //);
                 }
             }
             );

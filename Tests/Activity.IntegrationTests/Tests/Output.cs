@@ -9,7 +9,6 @@ namespace Activity.IntegrationTests.Tests
     public class Output : StateflowsTestClass
     {
         private bool Executed1 = false;
-        private bool Executed2 = false;
         public static string Value = "boo";
 
         [TestInitialize]
