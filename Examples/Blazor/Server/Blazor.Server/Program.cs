@@ -81,7 +81,7 @@ builder.Services.AddStateflows(b => b
                 .AddExceptionHandler<Exception>(async c =>
                 {
                     Debug.WriteLine(c.Exception.Message);
-                    c.Output(new Token<int>() { Payload = 666 });
+                    c.Output(new TokenHolder<int>() { Payload = 666 });
                 })
                 .AddInitial(b => b
                     .AddControlFlow("action1")
@@ -107,7 +107,7 @@ builder.Services.AddStateflows(b => b
                      async c => { }
                 )
 
-                .AddFlow<Token<int>>("action4")
+                .AddFlow<TokenHolder<int>>("action4")
             )
             .AddAction("action4", async c => { })
         )

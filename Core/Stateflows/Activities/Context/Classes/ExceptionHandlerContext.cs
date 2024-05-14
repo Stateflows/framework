@@ -1,8 +1,6 @@
 ﻿using System;
 using System.Linq;
-using System.Collections.Generic;
 using Stateflows.Activities.Models;
-using Stateflows.Activities.Engine;
 using Stateflows.Activities.Context.Interfaces;
 
 namespace Stateflows.Activities.Context.Classes
@@ -14,7 +12,7 @@ namespace Stateflows.Activities.Context.Classes
 
         public TException exception = null;
         public TException Exception
-            => exception ??= InputTokens.OfType<ExceptionToken<Exception>>().First(t => t.Exception is TException).Exception as TException;
+            => exception ??= InputTokens.OfType<TokenHolder<TException>>().First().Payload;
 
         public INodeContext NodeOfOrigin { get; set; }
 

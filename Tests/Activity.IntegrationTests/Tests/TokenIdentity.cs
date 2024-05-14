@@ -27,24 +27,24 @@ namespace Activity.IntegrationTests.Tests
                         )
                         .AddAction(
                             "generate",
-                            async c => c.OutputRange(Enumerable.Range(0, 10).Select(i => i.ToToken())),
+                            async c => c.OutputRange(Enumerable.Range(0, 10)),
                             b => b
-                                .AddFlow<Token<int>>("process1")
-                                .AddFlow<Token<int>>("process2")
+                                .AddFlow<int>("process1")
+                                .AddFlow<int>("process2")
                         )
                         .AddAction(
                             "process1",
-                            async c => c.PassAllOn(),
-                            b => b.AddFlow<Token<int>>("join")
+                            async c => c.PassAllTokensOn(),
+                            b => b.AddFlow<int>("join")
                         )
                         .AddAction(
                             "process2",
-                            async c => c.PassAllOn(),
-                            b => b.AddFlow<Token<int>>("join")
+                            async c => c.PassAllTokensOn(),
+                            b => b.AddFlow<int>("join")
                         )
                         .AddAction("join", async c =>
                         {
-                            Count = c.Input.OfType<Token<int>>().Count();
+                            Count = c.GetTokensOfType<int>().Count();
                         })
                     )
                 )
@@ -52,7 +52,7 @@ namespace Activity.IntegrationTests.Tests
         }
 
         [TestMethod]
-        public async Task ExceptionHandled()
+        public async Task TokensNotDuplicated()
         {
             if (ActivityLocator.TryLocateActivity(new ActivityId("identity", "x"), out var a))
             {

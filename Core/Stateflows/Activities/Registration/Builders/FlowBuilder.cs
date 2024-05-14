@@ -36,7 +36,7 @@ namespace Stateflows.Activities.Registration.Builders
                 try
                 {
                     return
-                        context.Token is Token<TToken> token &&
+                        context.Token is TokenHolder<TToken> token &&
                         await guardAsync(new TokenFlowContext<TToken>(context, token.Payload))
                             ? token
                             : default;
@@ -69,7 +69,7 @@ namespace Stateflows.Activities.Registration.Builders
                 try
                 {
                     return
-                        context.Token is Token<TToken> token
+                        context.Token is TokenHolder<TToken> token
                             ? (await transformationAsync(new TokenFlowContext<TToken>(context, token.Payload))).ToToken()
                             : default;
                 }

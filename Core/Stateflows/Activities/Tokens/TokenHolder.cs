@@ -5,8 +5,10 @@ using Stateflows.Common.Extensions;
 
 namespace Stateflows.Activities
 {
-    public abstract class Token
+    public abstract class TokenHolder
     {
+        public Guid Id { get; set; } = Guid.NewGuid();
+
         protected string name;
         public virtual string Name => name ??= GetType().GetTokenName();
 
@@ -16,9 +18,9 @@ namespace Stateflows.Activities
         protected abstract object GetBoxedPayload();
     }
 
-    public class Token<T> : Token
+    public class TokenHolder<T> : TokenHolder
     {
-        public Token()
+        public TokenHolder()
         {
             Payload = default;
         }
@@ -31,9 +33,9 @@ namespace Stateflows.Activities
             => Payload;
 
         public override bool Equals(object obj)
-            => obj is Token<T> token && token.Payload.Equals(Payload);
+            => obj is TokenHolder token && token.Id == Id;
 
         public override int GetHashCode()
-            => Payload.GetHashCode();
+            => Id.GetHashCode();
     }
 }

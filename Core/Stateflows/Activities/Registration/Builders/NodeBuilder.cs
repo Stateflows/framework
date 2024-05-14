@@ -110,7 +110,7 @@ namespace Stateflows.Activities.Registration
         {
             var targetNodeName = $"{Node.Name}.{typeof(TException).FullName}.ExceptionHandler";
 
-            AddFlow<ExceptionToken<TException>>(targetNodeName);
+            AddFlow<TException>(targetNodeName);
             ActivityBuilder.AddNode(
                 NodeType.ExceptionHandler,
                 targetNodeName,

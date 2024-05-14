@@ -41,8 +41,8 @@ namespace Activity.IntegrationTests.Tests
                         )
                         .AddAction(
                             "generate",
-                            async c => c.OutputRange(Enumerable.Range(0, 5).Select(i => i.ToToken())),
-                            b => b.AddFlow<Token<int>>("final", b => b.SetWeight(10))
+                            async c => c.OutputRange(Enumerable.Range(0, 5)),
+                            b => b.AddFlow<int>("final", b => b.SetWeight(10))
                         )
                         .AddAction("final", async c =>
                         {

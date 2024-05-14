@@ -5,7 +5,7 @@ using Stateflows.Common;
 
 namespace Stateflows.Activities.Models
 {
-    internal delegate Task<Token> TokenPipelineActionAsync(TokenPipelineContext context);
+    internal delegate Task<TokenHolder> TokenPipelineActionAsync(TokenPipelineContext context);
 
     internal delegate Task ActivityActionAsync(IActionContext context);
 

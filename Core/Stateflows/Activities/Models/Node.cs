@@ -6,6 +6,7 @@ using Stateflows.Common;
 using Stateflows.Common.Models;
 using Stateflows.Activities.Registration;
 using Stateflows.Activities.Context.Classes;
+using Stateflows.Utils;
 
 namespace Stateflows.Activities.Models
 {
@@ -49,13 +50,13 @@ namespace Stateflows.Activities.Models
         public IEnumerable<Type> GetIncomingTokenTypes()
             => IncomingEdges
                 .Select(e => e.TargetTokenType)
-                .Where(t => t != typeof(Control) && (!t.IsGenericType || t.GetGenericTypeDefinition() != typeof(ExceptionToken<>)))
+                .Where(t => t != typeof(Control) && (typeof(Exception).IsAssignableFrom(t)))
                 .Distinct();
 
         public IEnumerable<Type> GetOutgoingTokenTypes()
             => Edges
                 .Select(e => e.TokenType)
-                .Where(t => t != typeof(Control) && (!t.IsGenericType || t.GetGenericTypeDefinition() != typeof(ExceptionToken<>)))
+                .Where(t => t != typeof(Control) && (typeof(Exception).IsAssignableFrom(t)))
                 .Distinct();
 
         public void ScanForDeclaredTypes(Type nodeType)
@@ -195,7 +196,7 @@ namespace Stateflows.Activities.Models
                     context.Context,
                     currentScope,
                     handler,
-                    new Token[] { new ExceptionToken<Exception>() { Exception = exception } }
+                    new TokenHolder[] { exception.ToToken() }
                 );
 
                 await handler.Action.WhenAll(exceptionContext);
@@ -203,7 +204,7 @@ namespace Stateflows.Activities.Models
                 return exceptionContext.OutputTokens;
             }
 
-            return new Token[0];
+            return new TokenHolder[0];
         }
     }
 }

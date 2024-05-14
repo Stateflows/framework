@@ -268,7 +268,7 @@ namespace Stateflows.Activities.Engine
         }
 
         //public async Task<(IEnumerable<Token> Output, bool Finalized)> DoExecuteStructuredNodeAsync(Node node, NodeScope nodeScope, IEnumerable<Token> input = null)
-        public async Task<(IEnumerable<Token> Output, bool Finalized)> DoExecuteStructuredNodeAsync(Node node, NodeScope nodeScope, IEnumerable<Token> input = null)
+        public async Task<(IEnumerable<TokenHolder> Output, bool Finalized)> DoExecuteStructuredNodeAsync(Node node, NodeScope nodeScope, IEnumerable<TokenHolder> input = null)
         {
             if (node.Anchored)
             {
@@ -290,7 +290,7 @@ namespace Stateflows.Activities.Engine
 
             var output = node.OutputNode != null
                 ? Context.GetOutputTokens(node.OutputNode.Identifier, nodeScope.ThreadId)
-                : new List<Token>();
+                : new List<TokenHolder>();
 
             if (node.ExceptionHandlers.Any())
             {
@@ -310,15 +310,15 @@ namespace Stateflows.Activities.Engine
             return result;
         }
 
-        public async Task<IEnumerable<Token>> DoExecuteParallelNodeAsync<TToken>(Node node, NodeScope nodeScope, IEnumerable<Token> input = null)
+        public async Task<IEnumerable<TokenHolder>> DoExecuteParallelNodeAsync<TToken>(Node node, NodeScope nodeScope, IEnumerable<TokenHolder> input = null)
         {
-            var typedInput = input.OfType<Token<TToken>>().ToArray();
+            var typedInput = input.OfType<TokenHolder<TToken>>().ToArray();
 
             var restOfInput = input.Except(typedInput).ToArray();
 
             var inputPartitions = typedInput.Partition(node.ChunkSize).ToArray();
 
-            var outputTokens = new List<Token>();
+            var outputTokens = new List<TokenHolder>();
 
             await Task.WhenAll(inputPartitions
                 .Select(inputPartition =>
@@ -353,7 +353,7 @@ namespace Stateflows.Activities.Engine
 
             return node.OutputNode != null
                 ? outputTokens
-                : new List<Token>();
+                : new List<TokenHolder>();
         }
 
         public async Task DoInitializeNodeAsync(Node node, ActionContext context)
@@ -374,9 +374,9 @@ namespace Stateflows.Activities.Engine
             await Inspector.AfterNodeFinalizationAsync(context);
         }
 
-        public async Task<IEnumerable<Token>> DoExecuteIterativeNodeAsync<TToken>(ActionContext context)
+        public async Task<IEnumerable<TokenHolder>> DoExecuteIterativeNodeAsync<TToken>(ActionContext context)
         {
-            var typedInput = context.InputTokens.OfType<Token<TToken>>().ToArray();
+            var typedInput = context.InputTokens.OfType<TokenHolder<TToken>>().ToArray();
 
             var restOfInput = context.InputTokens.Except(typedInput).ToArray();
 
@@ -384,7 +384,7 @@ namespace Stateflows.Activities.Engine
 
             var threadId = Guid.NewGuid();
 
-            var outputTokens = new List<Token>();
+            var outputTokens = new List<TokenHolder>();
 
             foreach (var inputPartition in inputPartitions)
             {
@@ -413,10 +413,10 @@ namespace Stateflows.Activities.Engine
 
             return context.Node.OutputNode != null
                 ? outputTokens
-                : new List<Token>();
+                : new List<TokenHolder>();
         }
 
-        private async Task<bool> DoExecuteStructureAsync(Node node, NodeScope nodeScope, IEnumerable<Token> input = null, IEnumerable<Token> selectionTokens = null)
+        private async Task<bool> DoExecuteStructureAsync(Node node, NodeScope nodeScope, IEnumerable<TokenHolder> input = null, IEnumerable<TokenHolder> selectionTokens = null)
         {
             var startingNode = Context.NodesToExecute.Any()
                 ? node.Nodes.Values.FirstOrDefault(n => Context.NodesToExecute.Contains(n))
@@ -478,13 +478,16 @@ namespace Stateflows.Activities.Engine
             return result;
         }
 
-        public async Task<IEnumerable<object>> HandleExceptionAsync(Node node, Exception exception, BaseContext context)
+        public async Task<IEnumerable<TokenHolder>> HandleExceptionAsync(Node node, Exception exception, BaseContext context)
         {
             Node handler = null;
             var currentNode = node;
             while (currentNode != null)
             {
-                handler = currentNode.ExceptionHandlers.FirstOrDefault(n => exception.GetType().IsAssignableFrom(n.ExceptionType));
+                var handlers = currentNode.ExceptionHandlers.Where(n => n.ExceptionType.IsAssignableFrom(exception.GetType()));
+                handler = handlers.Any()
+                    ? handlers.FirstOrDefault(n => n.ExceptionType == exception.GetType()) ?? handlers.First()
+                    : null;
 
                 if (handler != null)
                 {
@@ -514,22 +517,22 @@ namespace Stateflows.Activities.Engine
                     context.Context,
                     currentScope,
                     handler,
-                    new Token[] { new ExceptionToken<Exception>() { Exception = exception } }
+                    new TokenHolder[] { exception.ToToken(exception.GetType()) }
                 );
 
                 await handler.Action.WhenAll(exceptionContext);
 
                 DoHandleOutput(exceptionContext);
 
-                ReportExceptionHandled(node, exceptionName, exceptionContext.OutputTokens.Where(t => t.Name != TokenInfo<ControlToken>.Name).ToArray());
+                ReportExceptionHandled(node, exceptionName, exceptionContext.OutputTokens.Where(t => t is TokenHolder<Control>).ToArray());
 
                 return exceptionContext.OutputTokens;
             }
 
-            return new Token[0];
+            return new TokenHolder[0];
         }
 
-        public async Task DoHandleNodeAsync(Node node, NodeScope nodeScope, IEnumerable<Token> input = null, IEnumerable<Token> selectionTokens = null)
+        public async Task DoHandleNodeAsync(Node node, NodeScope nodeScope, IEnumerable<TokenHolder> input = null, IEnumerable<TokenHolder> selectionTokens = null)
         {
             if (CancellableTypes.Contains(node.Type) && nodeScope.CancellationToken.IsCancellationRequested)
             {
@@ -585,7 +588,7 @@ namespace Stateflows.Activities.Engine
                     return;
                 }
 
-                var inputTokens = input ?? streams.GetTokens();
+                var inputTokens = input ?? streams.SelectMany(stream => stream.Tokens).Distinct().ToArray();
 
                 ReportNodeExecuting(node, inputTokens);
 
@@ -631,18 +634,18 @@ namespace Stateflows.Activities.Engine
                         !actionContext.OutputTokens.Any()
                     )
                     {
-                        actionContext.OutputTokens.Add(new ControlToken());
+                        actionContext.OutputTokens.Add(new Control().ToToken());
                     }
 
-                    List<Token> outputTokens;
+                    List<TokenHolder> outputTokens;
                     lock (actionContext.OutputTokens)
                     {
                         outputTokens = actionContext.OutputTokens.ToList();
                     }
 
-                    ReportNodeExecuted(node, outputTokens.Where(t => t.Name != TokenInfo<ControlToken>.Name).ToArray());
+                    ReportNodeExecuted(node, outputTokens.Where(t => t is TokenHolder<Control>).ToArray());
 
-                    if (outputTokens.Any(t => t is Token<Control>))
+                    if (outputTokens.Any(t => t is TokenHolder<Control>))
                     {
                         var tokenNames = outputTokens.Select(token => token.Name).Distinct().ToArray();
                         var edges = node.Edges
@@ -678,7 +681,7 @@ namespace Stateflows.Activities.Engine
             }
         }
 
-        private static void ReportNodeExecuting(Node node, IEnumerable<Token> inputTokens)
+        private static void ReportNodeExecuting(Node node, IEnumerable<TokenHolder> inputTokens)
         {
             if (Debugger.IsAttached)
             {
@@ -690,7 +693,7 @@ namespace Stateflows.Activities.Engine
             }
         }
 
-        private static void ReportNodeExecuted(Node node, IEnumerable<Token> outputTokens)
+        private static void ReportNodeExecuted(Node node, IEnumerable<TokenHolder> outputTokens)
         {
             if (Debugger.IsAttached)
             {
@@ -702,7 +705,7 @@ namespace Stateflows.Activities.Engine
             }
         }
 
-        private static void ReportExceptionHandled(Node node, string exceptionName, IEnumerable<Token> outputTokens)
+        private static void ReportExceptionHandled(Node node, string exceptionName, IEnumerable<TokenHolder> outputTokens)
         {
             if (Debugger.IsAttached)
             {
@@ -721,7 +724,7 @@ namespace Stateflows.Activities.Engine
                 lock (lockHandle)
                 {
                     Trace.WriteLine($"⦗→s⦘ Activity '{node.Graph.Name}': omitting '{node.Name}'");
-                    ReportTokens(streams.GetTokens());
+                    ReportTokens(streams.SelectMany(stream => stream.Tokens).Distinct().ToArray());
                     var activatedFlows = streams.Select(s => s.EdgeIdentifier).ToArray();
                     var missingFlows = node.IncomingEdges.Where(e => !activatedFlows.Contains(e.Identifier));
                     ReportMissingFlows(missingFlows);
@@ -729,7 +732,7 @@ namespace Stateflows.Activities.Engine
             }
         }
 
-        private static void ReportTokens(IEnumerable<Token> inputTokens, bool input = true)
+        private static void ReportTokens(IEnumerable<TokenHolder> inputTokens, bool input = true)
         {
             var inputDigest = inputTokens
                 .GroupBy(t => t.Name)
@@ -758,7 +761,7 @@ namespace Stateflows.Activities.Engine
                 foreach (var flow in flows)
                 {
                     var tokenName = flow.TargetTokenType.GetTokenName();
-                    if (tokenName == TokenInfo<ControlToken>.Name)
+                    if (tokenName == typeof(Control).GetTokenName())
                     {
                         Trace.WriteLine($"    - control flow from '{flow.SourceName}'  ");
                     }
@@ -777,10 +780,10 @@ namespace Stateflows.Activities.Engine
         {
             var edgeTokenName = edge.TokenType.GetTokenName();
 
-            IEnumerable<Token> originalTokens = context.OutputTokens.Where(t => t.Name == edgeTokenName).ToArray();
+            IEnumerable<TokenHolder> originalTokens = context.OutputTokens.Where(t => t.Name == edgeTokenName).ToArray();
 
-            var consumedTokens = new List<Token>();
-            var processedTokens = new List<Token>();
+            var consumedTokens = new List<TokenHolder>();
+            var processedTokens = new List<TokenHolder>();
 
             foreach (var token in originalTokens)
             {

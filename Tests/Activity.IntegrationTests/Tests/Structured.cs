@@ -28,8 +28,8 @@ namespace Activity.IntegrationTests.Tests
                         )
                         .AddAction(
                             "generate",
-                            async c => c.OutputRange(Enumerable.Range(0, 10).Select(i => i.ToToken())),
-                            b => b.AddFlow<Token<int>>("main")
+                            async c => c.OutputRange(Enumerable.Range(0, 10)),
+                            b => b.AddFlow<int>("main")
                         )
                         .AddStructuredActivity("main", b => b
                             .AddInitial(b => b
@@ -49,10 +49,10 @@ namespace Activity.IntegrationTests.Tests
                         )
                         .AddAction(
                             "generate",
-                            async c => c.OutputRange(Enumerable.Range(0, 10).Select(i => i.ToToken())),
-                            b => b.AddFlow<Token<int>>("main")
+                            async c => c.OutputRange(Enumerable.Range(0, 10)),
+                            b => b.AddFlow<int>("main")
                         )
-                        .AddParallelActivity<Token<int>>("main", b => b
+                        .AddParallelActivity<int>("main", b => b
                             .AddInitial(b => b
                                 .AddControlFlow("action1")
                             )
@@ -70,10 +70,10 @@ namespace Activity.IntegrationTests.Tests
                         )
                         .AddAction(
                             "generate",
-                            async c => c.OutputRange(Enumerable.Range(0, 10).Select(i => i.ToToken())),
-                            b => b.AddFlow<Token<int>>("main")
+                            async c => c.OutputRange(Enumerable.Range(0, 10)),
+                            b => b.AddFlow<int>("main")
                         )
-                        .AddParallelActivity<Token<int>>("main", b => b
+                        .AddParallelActivity<int>("main", b => b
                             .AddInitial(b => b
                                 .AddControlFlow("action1")
                             )

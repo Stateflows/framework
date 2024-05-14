@@ -28,9 +28,9 @@ namespace Stateflows.Activities.Context.Classes
 
         public IEnumerable<TToken> GetTokensOfType<TToken>()
             => Context
-                .GetStreams(Node, ThreadId)
+                .GetActivatedStreams(Node, ThreadId)
                 .SelectMany(stream => stream.Tokens)
-                .OfType<Token<TToken>>()
+                .OfType<TokenHolder<TToken>>()
                 .FromTokens()
                 .ToArray();
     }

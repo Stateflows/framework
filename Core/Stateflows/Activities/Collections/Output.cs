@@ -10,13 +10,13 @@ namespace Stateflows.Activities
 {
     internal static class OutputTokensHolder
     {
-        public static readonly AsyncLocal<List<Token>> Tokens = new AsyncLocal<List<Token>>();
+        public static readonly AsyncLocal<List<TokenHolder>> Tokens = new AsyncLocal<List<TokenHolder>>();
     }
 
     public struct Output<TToken> : ICollection<TToken>
     {
         private readonly List<TToken> GetTokens()
-            => OutputTokensHolder.Tokens.Value.OfType<Token<TToken>>().FromTokens().ToList();
+            => OutputTokensHolder.Tokens.Value.OfType<TokenHolder<TToken>>().FromTokens().ToList();
 
         public readonly int Count => GetTokens().Count;
 
