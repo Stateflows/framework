@@ -122,7 +122,6 @@ namespace Stateflows.Activities.Registration
                     exceptionHandler?.Invoke(context);
 
                     contextObj.OutputTokens.AddRange(context.OutputTokens);
-                    //c.OutputRange(context.OutputTokens);
 
                     return Task.CompletedTask;
                 }),

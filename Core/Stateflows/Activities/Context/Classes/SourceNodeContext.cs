@@ -11,15 +11,6 @@ namespace Stateflows.Activities.Context.Classes
     {
         internal readonly Guid ThreadId;
 
-//        private IEnumerable<object> input = null;
-//        public IEnumerable<object> Input
-//#pragma warning disable S2365 // Properties should not make collection or array copies
-//            => input ??= Context
-//                .GetStreams(Node, ThreadId)
-//                .SelectMany(stream => stream.Tokens)
-//                .ToArray();
-//#pragma warning restore S2365 // Properties should not make collection or array copies
-
         public SourceNodeContext(Node node, RootContext context, Guid threadId)
             : base(node, context)
         {

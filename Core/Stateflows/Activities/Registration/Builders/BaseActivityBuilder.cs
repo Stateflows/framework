@@ -233,7 +233,6 @@ namespace Stateflows.Activities.Registration
                     (var output, var finalized) = await executor.DoExecuteStructuredNodeAsync(node, c.Activity.GetNodeScope(), contextObj.InputTokens);
 
                     contextObj.OutputTokens.AddRange(output);
-                    //c.OutputRange(output);
 
                     if (finalized)
                     {
