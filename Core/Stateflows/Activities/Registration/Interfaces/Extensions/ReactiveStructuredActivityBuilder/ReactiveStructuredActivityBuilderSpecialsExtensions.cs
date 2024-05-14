@@ -15,7 +15,7 @@ namespace Stateflows.Activities
                     joinNodeName,
                     c =>
                     {
-                        c.PassAllOn();
+                        c.PassAllTokensOn();
                         return Task.CompletedTask;
                     },
                     b => buildAction(b)
@@ -31,7 +31,7 @@ namespace Stateflows.Activities
                     forkNodeName,
                     c =>
                     {
-                        c.PassAllOn();
+                        c.PassAllTokensOn();
                         return Task.CompletedTask;
                     },
                     b => buildAction(b)
@@ -47,7 +47,7 @@ namespace Stateflows.Activities
                     mergeNodeName,
                     c =>
                     {
-                        c.PassAllOn();
+                        c.PassAllTokensOn();
                         return Task.CompletedTask;
                     },
                     b => buildAction(b.SetOptions(NodeOptions.None) as IMergeBuilder)
@@ -63,32 +63,30 @@ namespace Stateflows.Activities
                     decisionNodeName,
                     c =>
                     {
-                        c.PassAllOn();
+                        c.PassAllTokensOn();
                         return Task.CompletedTask;
                     },
                     b => buildAction(b.SetOptions(NodeOptions.DecisionDefault) as IDecisionBuilder)
                 ) as IReactiveStructuredActivityBuilder;
 
         public static IReactiveStructuredActivityBuilder AddControlDecision(this IReactiveStructuredActivityBuilder builder, DecisionBuildAction decisionBuildAction)
-            => builder.AddControlDecision(ActivityNodeInfo<DecisionNode<ControlToken>>.Name, decisionBuildAction);
+            => builder.AddControlDecision(ActivityNodeInfo<DecisionNode<Control>>.Name, decisionBuildAction);
 
-        public static IReactiveStructuredActivityBuilder AddTokenDecision<TToken>(this IReactiveStructuredActivityBuilder builder, string decisionNodeName, DecisionBuildAction<TToken> buildAction)
-            where TToken : Token, new()
+        public static IReactiveStructuredActivityBuilder AddDecision<TToken>(this IReactiveStructuredActivityBuilder builder, string decisionNodeName, DecisionBuildAction<TToken> buildAction)
             => (builder as BaseActivityBuilder)
                 .AddNode(
                     NodeType.Decision,
                     decisionNodeName,
                     c =>
                     {
-                        c.PassAllOn();
+                        c.PassAllTokensOn();
                         return Task.CompletedTask;
                     },
                     b => buildAction(new DecisionBuilder<TToken>(b.SetOptions(NodeOptions.DecisionDefault) as NodeBuilder))
                 ) as IReactiveStructuredActivityBuilder;
 
-        public static IReactiveStructuredActivityBuilder AddTokenDecision<TToken>(this IReactiveStructuredActivityBuilder builder, DecisionBuildAction<TToken> decisionBuildAction)
-            where TToken : Token, new()
-            => builder.AddTokenDecision(ActivityNodeInfo<DecisionNode<TToken>>.Name, decisionBuildAction);
+        public static IReactiveStructuredActivityBuilder AddDecision<TToken>(this IReactiveStructuredActivityBuilder builder, DecisionBuildAction<TToken> decisionBuildAction)
+            => builder.AddDecision(ActivityNodeInfo<DecisionNode<TToken>>.Name, decisionBuildAction);
 
         public static IReactiveStructuredActivityBuilder AddDataStore(this IReactiveStructuredActivityBuilder builder, string dataStoreNodeName, DataStoreBuildAction buildAction)
             => (builder as BaseActivityBuilder)
@@ -97,7 +95,7 @@ namespace Stateflows.Activities
                     dataStoreNodeName,
                     c =>
                     {
-                        c.PassAllOn();
+                        c.PassAllTokensOn();
                         return Task.CompletedTask;
                     },
                     b => buildAction(b.SetOptions(NodeOptions.DataStoreDefault) as IDataStoreBuilder)

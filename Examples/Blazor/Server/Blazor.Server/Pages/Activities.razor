@@ -137,7 +137,7 @@
 
     private async Task RunActivity()
     {
-        if (locator.TryLocateActivity(new ActivityId("activity1", activityInstance), out var activity))
+        if (locator.TryLocateActivity(GetCurrentId(), out var activity))
         {
             await activity.InitializeAsync();
             await RefreshAInfo(activity);
@@ -150,7 +150,7 @@
 
     private async Task PushActivity()
     {
-        if (locator.TryLocateActivity(new ActivityId("activity1", activityInstance), out var activity))
+        if (locator.TryLocateActivity(GetCurrentId(), out var activity))
         {
             await activity.SendAsync(new Examples.Common.SomeEvent());
         }

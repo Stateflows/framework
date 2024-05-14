@@ -12,7 +12,6 @@ namespace Stateflows.Activities
     }
 
     public struct Input<TToken> : IEnumerable<TToken>
-        where TToken : Token, new()
     {
         private readonly IEnumerable<TToken> Tokens
             => InputTokensHolder.Tokens.Value.OfType<TToken>();
@@ -28,7 +27,6 @@ namespace Stateflows.Activities
     }
 
     public struct SingleInput<TToken>
-        where TToken : Token, new()
     {
         public readonly TToken Token
             => InputTokensHolder.Tokens.Value.OfType<TToken>().First();
@@ -38,7 +36,6 @@ namespace Stateflows.Activities
     }
 
     public struct OptionalInput<TToken> : IEnumerable<TToken>
-        where TToken : Token, new()
     {
         private readonly IEnumerable<TToken> Tokens
             => InputTokensHolder.Tokens.Value.OfType<TToken>();
@@ -54,7 +51,6 @@ namespace Stateflows.Activities
     }
 
     public struct OptionalSingleInput<TToken>
-        where TToken : Token, new()
     {
         public readonly TToken Token
             => InputTokensHolder.Tokens.Value.OfType<TToken>().First();

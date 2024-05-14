@@ -15,7 +15,7 @@ namespace Stateflows.Activities
                     joinNodeName,
                     c =>
                     {
-                        c.PassAllOn();
+                        c.PassAllTokensOn();
                         return Task.CompletedTask;
                     },
                     b => joinBuildAction(b)
@@ -31,7 +31,7 @@ namespace Stateflows.Activities
                     forkNodeName,
                     c =>
                     {
-                        c.PassAllOn();
+                        c.PassAllTokensOn();
                         return Task.CompletedTask;
                     },
                     b => forkBuildAction(b)
@@ -47,7 +47,7 @@ namespace Stateflows.Activities
                     mergeNodeName,
                     c =>
                     {
-                        c.PassAllOn();
+                        c.PassAllTokensOn();
                         return Task.CompletedTask;
                     },
                     b => mergeBuildAction(b.SetOptions(NodeOptions.None) as IMergeBuilder)
@@ -63,32 +63,30 @@ namespace Stateflows.Activities
                     decisionNodeName,
                     c =>
                     {
-                        c.PassAllOn();
+                        c.PassAllTokensOn();
                         return Task.CompletedTask;
                     },
                     b => decisionBuildAction(b.SetOptions(NodeOptions.DecisionDefault) as IDecisionBuilder)
                 ) as IActivityBuilder;
 
         public static IActivityBuilder AddControlDecision(this IActivityBuilder builder, DecisionBuildAction decisionBuildAction)
-            => builder.AddControlDecision(ActivityNodeInfo<DecisionNode<ControlToken>>.Name, decisionBuildAction);
+            => builder.AddControlDecision(ActivityNodeInfo<DecisionNode<Control>>.Name, decisionBuildAction);
 
-        public static IActivityBuilder AddTokenDecision<TToken>(this IActivityBuilder builder, string decisionNodeName, DecisionBuildAction<TToken> decisionBuildAction)
-            where TToken : Token, new()
+        public static IActivityBuilder AddDecision<TToken>(this IActivityBuilder builder, string decisionNodeName, DecisionBuildAction<TToken> decisionBuildAction)
             => (builder as BaseActivityBuilder)
                 .AddNode(
                     NodeType.Decision,
                     decisionNodeName,
                     c =>
                     {
-                        c.PassAllOn();
+                        c.PassAllTokensOn();
                         return Task.CompletedTask;
                     },
                     b => decisionBuildAction(new DecisionBuilder<TToken>(b.SetOptions(NodeOptions.DecisionDefault) as NodeBuilder))
                 ) as IActivityBuilder;
 
-        public static IActivityBuilder AddTokenDecision<TToken>(this IActivityBuilder builder, DecisionBuildAction<TToken> decisionBuildAction)
-            where TToken : Token, new()
-            => builder.AddTokenDecision(ActivityNodeInfo<DecisionNode<TToken>>.Name, decisionBuildAction);
+        public static IActivityBuilder AddDecision<TToken>(this IActivityBuilder builder, DecisionBuildAction<TToken> decisionBuildAction)
+            => builder.AddDecision(ActivityNodeInfo<DecisionNode<TToken>>.Name, decisionBuildAction);
 
         public static IActivityBuilder AddDataStore(this IActivityBuilder builder, string dataStoreNodeName, DataStoreBuildAction decisionBuildAction)
             => (builder as BaseActivityBuilder)
@@ -97,7 +95,7 @@ namespace Stateflows.Activities
                     dataStoreNodeName,
                     c =>
                     {
-                        c.PassAllOn();
+                        c.PassAllTokensOn();
                         return Task.CompletedTask;
                     },
                     b => decisionBuildAction(b.SetOptions(NodeOptions.DataStoreDefault) as IDataStoreBuilder)

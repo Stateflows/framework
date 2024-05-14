@@ -41,7 +41,7 @@ namespace Stateflows.Activities.Extensions
                 {
                     var methodInfo = interfaceType.GetMethods().First(m => m.Name == "OnInitializeAsync");
                     var requestType = interfaceType.GenericTypeArguments[0];
-                    var requestName = Stateflows.Common.EventInfo.GetName(requestType);
+                    var requestName = requestType.GetEventName();
                     (builder as ActivityBuilder).AddInitializer(requestType, requestName, c =>
                     {
                         var activity = c.Context.Executor.GetActivity(activityType, c.Context);
@@ -67,8 +67,8 @@ namespace Stateflows.Activities.Extensions
 
         public static void AddObjectTransformationFlowEvents<TObjectTransformationFlow, TToken, TTransformedToken>(this IObjectFlowBuilder<TToken> builder)
             where TObjectTransformationFlow : TransformationFlow<TToken, TTransformedToken>
-            where TToken : Token, new()
-            where TTransformedToken : Token, new()
+            // where TToken : Token, new()
+            ////where TTransformedToken : Token, new()
         {
             if (typeof(BaseTransformationFlow<TToken, TTransformedToken>).GetProperty(nameof(BaseTransformationFlow<TToken, TTransformedToken>.Weight)).IsOverridenIn<TObjectTransformationFlow>())
             {
@@ -88,20 +88,20 @@ namespace Stateflows.Activities.Extensions
             }
         }
 
-        public static void AddObjectFlowEvents<TObjectFlow, TToken>(this IObjectFlowBuilder<TToken> builder)
-            where TObjectFlow : Flow<TToken>
-            where TToken : Token, new()
+        public static void AddObjectFlowEvents<TFlow, TToken>(this IObjectFlowBuilder<TToken> builder)
+            where TFlow : Flow<TToken>
+            // where TToken : Token, new()
         {
-            if (typeof(BaseFlow<TToken>).GetProperty(nameof(BaseFlow<TToken>.Weight)).IsOverridenIn<TObjectFlow>())
+            if (typeof(BaseFlow<TToken>).GetProperty(nameof(BaseFlow<TToken>.Weight)).IsOverridenIn<TFlow>())
             {
-                var objectFlow = FormatterServices.GetUninitializedObject(typeof(TObjectFlow)) as TObjectFlow;
+                var objectFlow = FormatterServices.GetUninitializedObject(typeof(TFlow)) as TFlow;
 
                 builder.SetWeight(objectFlow.Weight);
             }
 
-            if (typeof(BaseControlFlow).GetMethod(nameof(BaseControlFlow.GuardAsync)).IsOverridenIn<TObjectFlow>())
+            if (typeof(BaseControlFlow).GetMethod(nameof(BaseControlFlow.GuardAsync)).IsOverridenIn<TFlow>())
             {
-                builder.AddGuard(c => (c as BaseContext).NodeScope.GetObjectFlow<TObjectFlow, TToken>(c)?.GuardAsync());
+                builder.AddGuard(c => (c as BaseContext).NodeScope.GetObjectFlow<TFlow, TToken>(c)?.GuardAsync());
             }
         }
 

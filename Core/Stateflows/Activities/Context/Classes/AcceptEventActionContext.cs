@@ -21,29 +21,21 @@ namespace Stateflows.Activities.Context.Classes
 
         public INodeContext CurrentNode => ActionContext.CurrentNode;
 
-        public IEnumerable<Token> Input => ActionContext.InputTokens;
+        public IEnumerable<object> Input => ActionContext.InputTokens;
 
         public void Output<TToken>(TToken token)
-            where TToken : Token, new()
             => ActionContext.Output<TToken>(token);
 
         public void OutputRange<TToken>(IEnumerable<TToken> tokens)
-            where TToken : Token, new()
             => ActionContext.OutputRange<TToken>(tokens);
 
-        public void OutputRangeAsGroup<TToken>(IEnumerable<TToken> tokens)
-            where TToken : Token, new()
-            => ActionContext.OutputRangeAsGroup<TToken>(tokens);
-
         public void PassTokensOfTypeOn<TToken>()
-            where TToken : Token, new()
             => ActionContext.PassTokensOfTypeOn<TToken>();
 
-        public void PassTokensOfTypeOnAsGroup<TToken>()
-            where TToken : Token, new()
-            => ActionContext.PassTokensOfTypeOnAsGroup<TToken>();
+        public void PassAllTokensOn()
+            => ActionContext.PassAllTokensOn();
 
-        public void PassAllOn()
-            => ActionContext.PassAllOn();
+        public IEnumerable<TToken> GetTokensOfType<TToken>()
+            => ActionContext.GetTokensOfType<TToken>();
     }
 }

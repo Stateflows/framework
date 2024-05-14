@@ -22,10 +22,9 @@ namespace Stateflows.Activities.Streams
             }
         }
 
-        public void Consume<TToken>(TToken token)
-            where TToken : Token, new()
+        public void Consume(Token token)
         {
-            if (token is ControlToken)
+            if (token is Token<Control>)
             {
                 IsActivated = true;
             }

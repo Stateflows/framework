@@ -1,6 +1,4 @@
-﻿using Stateflows.Common;
-
-namespace Stateflows.Activities.Context.Interfaces
+﻿namespace Stateflows.Activities.Context.Interfaces
 {
     public interface ITypedActionContext : IActivityNodeContext
     { }
@@ -8,7 +6,7 @@ namespace Stateflows.Activities.Context.Interfaces
     public interface IActionContext : ITypedActionContext, IInput, IOutput
     { }
 
-    public interface IActionContext<out TToken> : IActionContext, ITokenContext<TToken>
-        where TToken : Token, new()
+    public interface IActionContext<out TToken> : IActionContext//, ITokenContext<TToken>
+        // where TToken : Token, new()
     { }
 }

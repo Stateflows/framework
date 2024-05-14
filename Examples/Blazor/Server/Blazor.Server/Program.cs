@@ -19,6 +19,7 @@ using Examples.Storage;
 using X;
 using System.Collections.Generic;
 using Newtonsoft.Json.Linq;
+using MongoDB.Driver;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -45,7 +46,7 @@ builder.Services.AddStateflows(b => b
                 )
             )
             .AddState("state2", b => b
-                .AddOnEntry(c =>
+                .AddOnEntry(async c =>
                 {
                     c.StateMachine.Publish(new SomeNotification());
                 })
@@ -88,15 +89,15 @@ builder.Services.AddStateflows(b => b
                 )
                 .AddAction(
                     "action1",
-                    async c => c.Output(new Token<int> { Payload = 42 }),
+                    async c => c.Output(42),
                     b => b
-                        .AddFlow<Token<int>, Flow1>("action2")
+                        .AddFlow<int, Flow1>("action2")
                 )
                 .AddAction(
                     "action2",
                     async c =>
                     {
-                        Debug.WriteLine(c.Input.OfType<Token<int>>().First().Payload);
+                        Debug.WriteLine(c.GetTokensOfType<int>().First());
                         throw new Exception("test");
                     },
                     b => b.AddControlFlow("action3")
@@ -112,6 +113,31 @@ builder.Services.AddStateflows(b => b
         )
 
         .AddActivity<Activity3>("activity3")
+
+        .AddActivity("activity4", b => b
+            .AddOnInitialize<InitializationRequest1>(async c =>
+            {
+                Debug.WriteLine(c.InitializationRequest.Foo);
+
+                return true;
+            })
+
+            .AddInitial(b => b
+                .AddControlFlow("1")
+            )
+            .AddAction(
+                "1",
+                async c => c.OutputRange(Enumerable.Range(1, 10)),
+                b => b.AddFlow<int>("2")
+            )
+            .AddAction(
+                "2",
+                async c => Debug.WriteLine($"{c.GetTokensOfType<int>().Count()}")
+            )
+            .AddAcceptEventAction<SomeEvent>(b => b
+                .AddControlFlow("2")
+            )
+        )
     )
 
     .AddAutoInitialization(new StateMachineClass("stateMachine1"))
@@ -155,11 +181,6 @@ namespace X
 
     public class Activity3 : Stateflows.Activities.Activity<InitializationRequest1>
     {
-        private async Task MethodAsync()
-        {
-            return;
-        }
-
         public override void Build(ITypedActivityBuilder builder)
             => builder
                 .AddAcceptEventAction<SomeEvent>(async c => { }, b => b
@@ -167,29 +188,28 @@ namespace X
                 )
                 .AddAction(
                     "action1",
-                    async c => c.OutputRange(Enumerable.Range(0, 100).ToTokens()),
-                    b => b.AddFlow<Token<int>>("chunked")
+                    async c => c.OutputRange(Enumerable.Range(0, 100)),
+                    b => b.AddFlow<int>("chunked")
                 )
-
-                .AddParallelActivity<Token<int>>(
+                .AddParallelActivity<int>(
                     "chunked",
                     b => b
                         .AddInput(b => b
-                            .AddFlow<Token<int>>("main")
+                            .AddFlow<int>("main")
                         )
                         .AddAction(
                             "main",
                             async c =>
                             {
-                                var tokens = c.Input.OfType<Token<int>>().Select(t => $"value: {t.Payload}").ToTokens();
+                                var tokens = c.GetTokensOfType<int>().Select(t => $"value: {t}");
                                 c.OutputRange(tokens);
-                                Debug.WriteLine($"{tokens.Count()}/{c.Input.Count()} tokens: {string.Join(", ", c.Input.OfType<Token<int>>().Take(5).Select(t => t.Payload))}...");
+                                Debug.WriteLine($"{tokens.Count()}/{c.Input.Count()} tokens: {string.Join(", ", c.Input.OfType<int>().Take(5))}...");
                                 await Task.Delay(1000);
                             },
-                            b => b.AddFlow<Token<string>>(OutputNode.Name)
+                            b => b.AddFlow<string>(OutputNode.Name)
                         )
                         .AddOutput()
-                        .AddFlow<Token<string>>("action2", b => b
+                        .AddFlow<string>("action2", b => b
                             .AddGuard(async c =>
                             {
                                 lock (c.Activity.LockHandle)
@@ -210,13 +230,9 @@ namespace X
                     "action2",
                     async c =>
                     {
-                        Debug.WriteLine(c.Input.OfType<Token<string>>().Count().ToString());
+                        Debug.WriteLine(c.Input.OfType<string>().Count().ToString());
                         c.Activity.Values.TryGet<int>("count", out var counter);
                         Debug.WriteLine($"counter: {counter}");
-                        //foreach (var token in c.Input.OfType<Token<string>>())
-                        //{
-                        //    Debug.WriteLine(token.Payload);
-                        //}
                     }
                 );
 
@@ -228,11 +244,30 @@ namespace X
         }
     }
 
-    public class Flow1 : Flow<Token<int>>
+    public class Action1 : ActionNode
+    {
+        public readonly Input<int> IntInput;
+
+        private readonly GlobalValue<int> Foo = new("foo");
+
+        private readonly StateValue<int> Bar = new("bar");
+
+        public override Task ExecuteAsync()
+        {
+            if (!Foo.IsSet)
+            {
+                Foo.Value = 42;
+            }
+
+            return Task.CompletedTask;
+        }
+    }
+
+    public class Flow1 : Flow<int>
     {
         public override async Task<bool> GuardAsync()
         {
-            return Context.Token.Payload > 40;
+            return Context.Token > 40;
         }
     }
 }

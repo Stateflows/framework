@@ -4,6 +4,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Stateflows.Common;
 using Stateflows.Activities.Models;
 using Stateflows.Activities.Context.Interfaces;
+using Stateflows.Common.Classes;
 
 namespace Stateflows.Activities.Engine
 {
@@ -74,6 +75,11 @@ namespace Stateflows.Activities.Engine
         public TAction GetAction<TAction>(IActionContext context)
             where TAction : ActionNode
         {
+            ValuesHolder.GlobalValues.Value = context.Activity.Values;
+            ValuesHolder.StateValues.Value = null;
+            ValuesHolder.SourceStateValues.Value = null;
+            ValuesHolder.TargetStateValues.Value = null;
+
             var action = ServiceProvider.GetService<TAction>();
             action.Context = context;
 
@@ -84,6 +90,11 @@ namespace Stateflows.Activities.Engine
             where TEvent : Event, new()
             where TAcceptEventAction : AcceptEventActionNode<TEvent>
         {
+            ValuesHolder.GlobalValues.Value = context.Activity.Values;
+            ValuesHolder.StateValues.Value = null;
+            ValuesHolder.SourceStateValues.Value = null;
+            ValuesHolder.TargetStateValues.Value = null;
+
             var acceptEventAction = ServiceProvider.GetService<TAcceptEventAction>();
             acceptEventAction.Context = context;
 
@@ -94,6 +105,11 @@ namespace Stateflows.Activities.Engine
             where TEvent : Event, new()
             where TSendEventAction : SendEventActionNode<TEvent>
         {
+            ValuesHolder.GlobalValues.Value = context.Activity.Values;
+            ValuesHolder.StateValues.Value = null;
+            ValuesHolder.SourceStateValues.Value = null;
+            ValuesHolder.TargetStateValues.Value = null;
+
             var acceptEventAction = ServiceProvider.GetService<TSendEventAction>();
             acceptEventAction.Context = context;
 
@@ -103,6 +119,11 @@ namespace Stateflows.Activities.Engine
         public TStructuredActivity GetStructuredActivity<TStructuredActivity>(IActionContext context)
             where TStructuredActivity : StructuredActivityNode
         {
+            ValuesHolder.GlobalValues.Value = context.Activity.Values;
+            ValuesHolder.StateValues.Value = null;
+            ValuesHolder.SourceStateValues.Value = null;
+            ValuesHolder.TargetStateValues.Value = null;
+
             var structuredActivity = ServiceProvider.GetService<TStructuredActivity>();
             structuredActivity.Context = context;
 
@@ -113,6 +134,11 @@ namespace Stateflows.Activities.Engine
             where TException : Exception
             where TExceptionHandler : ExceptionHandlerNode<TException>
         {
+            ValuesHolder.GlobalValues.Value = context.Activity.Values;
+            ValuesHolder.StateValues.Value = null;
+            ValuesHolder.SourceStateValues.Value = null;
+            ValuesHolder.TargetStateValues.Value = null;
+
             var exceptionHandler = ServiceProvider.GetService<TExceptionHandler>();
             exceptionHandler.Context = context;
 
@@ -122,6 +148,11 @@ namespace Stateflows.Activities.Engine
         public TFlow GetFlow<TFlow>(IFlowContext context)
             where TFlow : BaseControlFlow
         {
+            ValuesHolder.GlobalValues.Value = context.Activity.Values;
+            ValuesHolder.StateValues.Value = null;
+            ValuesHolder.SourceStateValues.Value = null;
+            ValuesHolder.TargetStateValues.Value = null;
+
             var flow = ServiceProvider.GetService<TFlow>();
             flow.Context = context;
 
@@ -134,13 +165,13 @@ namespace Stateflows.Activities.Engine
 
         public TFlow GetObjectFlow<TFlow, TToken>(IFlowContext<TToken> context)
             where TFlow : Flow<TToken>
-            where TToken : Token, new()
+            // where TToken : Token, new()
             => GetFlow<TFlow>(context);
 
         public TFlow GetObjectTransformationFlow<TFlow, TToken, TTransformedToken>(IFlowContext<TToken> context)
             where TFlow : TransformationFlow<TToken, TTransformedToken>
-            where TToken : Token, new()
-            where TTransformedToken : Token, new()
+            // where TToken : Token, new()
+            ////where TTransformedToken : Token, new()
             => GetFlow<TFlow>(context);
 
         public void Dispose()

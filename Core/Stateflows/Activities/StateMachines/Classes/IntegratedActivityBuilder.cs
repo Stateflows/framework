@@ -20,7 +20,7 @@ namespace Stateflows.Activities.StateMachines.Interfaces
             => new SubscriptionRequest()
             {
                 NotificationNames = Notifications
-                    .Select(notificationType => EventInfo.GetName(notificationType))
+                    .Select(notificationType => notificationType.GetEventName())
                     .ToList()
             };
 
@@ -28,7 +28,7 @@ namespace Stateflows.Activities.StateMachines.Interfaces
             => new UnsubscriptionRequest()
             {
                 NotificationNames = Notifications
-                    .Select(notificationType => EventInfo.GetName(notificationType))
+                    .Select(notificationType => notificationType.GetEventName())
                     .ToList()
             };
 

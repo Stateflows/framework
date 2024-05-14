@@ -49,13 +49,13 @@ namespace Stateflows.Activities.Models
         public IEnumerable<Type> GetIncomingTokenTypes()
             => IncomingEdges
                 .Select(e => e.TargetTokenType)
-                .Where(t => t != typeof(ControlToken) && (!t.IsGenericType || t.GetGenericTypeDefinition() != typeof(ExceptionToken<>)))
+                .Where(t => t != typeof(Control) && (!t.IsGenericType || t.GetGenericTypeDefinition() != typeof(ExceptionToken<>)))
                 .Distinct();
 
         public IEnumerable<Type> GetOutgoingTokenTypes()
             => Edges
                 .Select(e => e.TokenType)
-                .Where(t => t != typeof(ControlToken) && (!t.IsGenericType || t.GetGenericTypeDefinition() != typeof(ExceptionToken<>)))
+                .Where(t => t != typeof(Control) && (!t.IsGenericType || t.GetGenericTypeDefinition() != typeof(ExceptionToken<>)))
                 .Distinct();
 
         public void ScanForDeclaredTypes(Type nodeType)
@@ -161,7 +161,8 @@ namespace Stateflows.Activities.Models
                 .Select(e => e.Target)
                 .Where(n => n.Type == NodeType.ExceptionHandler);
 
-        public async Task<IEnumerable<Token>> HandleExceptionAsync(Exception exception, BaseContext context)
+        //public async Task<IEnumerable<Token>> HandleExceptionAsync(Exception exception, BaseContext context)
+        public async Task<IEnumerable<object>> HandleExceptionAsync(Exception exception, BaseContext context)
         {
             Node handler = null;
             var currentNode = this;

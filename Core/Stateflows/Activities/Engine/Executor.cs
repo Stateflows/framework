@@ -176,9 +176,9 @@ namespace Stateflows.Activities.Engine
             }
         }
 
-        private IEnumerable<Token> OutputTokens { get; set; } = null;
+        private IEnumerable<object> OutputTokens { get; set; } = null;
 
-        public async Task<IEnumerable<Token>> GetResultAsync()
+        public async Task<IEnumerable<object>> GetResultAsync()
         {
             await FinalizationEvent.WaitOneAsync();
 
@@ -186,7 +186,7 @@ namespace Stateflows.Activities.Engine
         }
 
         public async Task<EventStatus> ProcessAsync<TEvent>(TEvent @event)
-            where TEvent : Event
+            //where TEvent : Event, new()
         {
             var result = EventStatus.Rejected;
 
@@ -201,7 +201,7 @@ namespace Stateflows.Activities.Engine
         }
 
         private async Task<EventStatus> DoProcessAsync<TEvent>(TEvent @event)
-            where TEvent : Event
+            //where TEvent : Event, new()
         {
             Debug.Assert(Context != null, $"Context is not available. Is activity '{Graph.Name}' hydrated?");
 
@@ -209,10 +209,10 @@ namespace Stateflows.Activities.Engine
             var activeNode = activeNodes.FirstOrDefault(node =>
                 node.EventType == @event.GetType() &&
                 (
-                    !(@event is TimeEvent) ||
+                    !(@event is TimeEvent timeEvent) ||
                     (
                         Context.NodeTimeEvents.TryGetValue(node.Identifier, out var timeEventId) &&
-                        @event.Id == timeEventId
+                        timeEvent.Id == timeEventId
                     )
                 )
             );
@@ -244,7 +244,8 @@ namespace Stateflows.Activities.Engine
             return EventStatus.Consumed;
         }
 
-        public async Task DoFinalizeAsync(IEnumerable<Token> outputTokens = null)
+        //public async Task DoFinalizeAsync(IEnumerable<Token> outputTokens = null)
+        public async Task DoFinalizeAsync(IEnumerable<object> outputTokens = null)
         {
             if (Finalized) return;
 
@@ -266,6 +267,7 @@ namespace Stateflows.Activities.Engine
             FinalizationEvent.Set();
         }
 
+        //public async Task<(IEnumerable<Token> Output, bool Finalized)> DoExecuteStructuredNodeAsync(Node node, NodeScope nodeScope, IEnumerable<Token> input = null)
         public async Task<(IEnumerable<Token> Output, bool Finalized)> DoExecuteStructuredNodeAsync(Node node, NodeScope nodeScope, IEnumerable<Token> input = null)
         {
             if (node.Anchored)
@@ -309,16 +311,17 @@ namespace Stateflows.Activities.Engine
         }
 
         public async Task<IEnumerable<Token>> DoExecuteParallelNodeAsync<TToken>(Node node, NodeScope nodeScope, IEnumerable<Token> input = null)
-            where TToken : Token, new()
         {
-            var restOfInput = input.Where(t => !(t is TToken)).ToArray();
+            var typedInput = input.OfType<Token<TToken>>().ToArray();
 
-            var parallelInput = input.OfType<TToken>().Partition(node.ChunkSize).ToArray();
+            var restOfInput = input.Except(typedInput).ToArray();
+
+            var inputPartitions = typedInput.Partition(node.ChunkSize).ToArray();
 
             var outputTokens = new List<Token>();
 
-            await Task.WhenAll(parallelInput
-                .Select(tokensPartition =>
+            await Task.WhenAll(inputPartitions
+                .Select(inputPartition =>
                     Task.Run(async () =>
                     {
                         var threadId = Guid.NewGuid();
@@ -326,8 +329,8 @@ namespace Stateflows.Activities.Engine
                         await DoExecuteStructureAsync(
                             node,
                             nodeScope.CreateChildScope(node, threadId),
-                            restOfInput.Concat(tokensPartition).ToArray(),
-                            tokensPartition
+                            restOfInput.Concat(inputPartition).ToArray(),
+                            inputPartition
                         );
 
                         lock (Context.Streams)
@@ -372,23 +375,24 @@ namespace Stateflows.Activities.Engine
         }
 
         public async Task<IEnumerable<Token>> DoExecuteIterativeNodeAsync<TToken>(ActionContext context)
-            where TToken : Token, new()
         {
-            var restOfInput = context.InputTokens.Where(t => !(t is TToken)).ToArray();
+            var typedInput = context.InputTokens.OfType<Token<TToken>>().ToArray();
 
-            var iterativeInput = context.InputTokens.OfType<TToken>().ToArray();
+            var restOfInput = context.InputTokens.Except(typedInput).ToArray();
+
+            var inputPartitions = typedInput.Partition(context.Node.ChunkSize).ToArray();
 
             var threadId = Guid.NewGuid();
 
             var outputTokens = new List<Token>();
 
-            foreach (var tokensPartition in iterativeInput.Partition(context.Node.ChunkSize))
+            foreach (var inputPartition in inputPartitions)
             {
                 await DoExecuteStructureAsync(
                     context.Node,
                     context.NodeScope.CreateChildScope(context.Node, threadId),
-                    restOfInput.Concat(tokensPartition),
-                    tokensPartition
+                    restOfInput.Concat(inputPartition),
+                    inputPartition
                 );
 
                 if (
@@ -474,7 +478,7 @@ namespace Stateflows.Activities.Engine
             return result;
         }
 
-        public async Task<IEnumerable<Token>> HandleExceptionAsync(Node node, Exception exception, BaseContext context)
+        public async Task<IEnumerable<object>> HandleExceptionAsync(Node node, Exception exception, BaseContext context)
         {
             Node handler = null;
             var currentNode = node;
@@ -638,7 +642,7 @@ namespace Stateflows.Activities.Engine
 
                     ReportNodeExecuted(node, outputTokens.Where(t => t.Name != TokenInfo<ControlToken>.Name).ToArray());
 
-                    if (outputTokens.Any(t => t is ControlToken))
+                    if (outputTokens.Any(t => t is Token<Control>))
                     {
                         var tokenNames = outputTokens.Select(token => token.Name).Distinct().ToArray();
                         var edges = node.Edges
@@ -803,9 +807,9 @@ namespace Stateflows.Activities.Engine
             {
                 var stream = Context.GetStream(edge.Identifier, context.NodeScope.ThreadId);
 
-                if (edgeTokenName != TokenInfo<ControlToken>.Name)
+                if (edgeTokenName != typeof(Control).GetTokenName())
                 {
-                    processedTokens.Add(new ControlToken());
+                    processedTokens.Add(new Control().ToToken());
                 }
 
                 if (!edge.Source.Options.HasFlag(NodeOptions.ImplicitFork) && consumedTokens.Any())

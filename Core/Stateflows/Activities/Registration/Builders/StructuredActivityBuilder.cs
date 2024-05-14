@@ -28,7 +28,7 @@ namespace Stateflows.Activities.Registration.Builders
         }
 
         public IActionBuilder AddFlow<TToken>(string targetNodeName, ObjectFlowBuildAction<TToken> buildAction = null)
-            where TToken : Token, new()
+            // where TToken : Token, new()
         {
             NodeBuilder.AddFlow<TToken>(targetNodeName, buildAction);
 
@@ -36,7 +36,7 @@ namespace Stateflows.Activities.Registration.Builders
         }
 
         public IActionBuilder AddElseFlow<TToken>(string targetNodeName, ElseObjectFlowBuildAction<TToken> buildAction = null)
-            where TToken : Token, new()
+            // where TToken : Token, new()
         {
             NodeBuilder.AddElseFlow<TToken>(targetNodeName, buildAction);
 
