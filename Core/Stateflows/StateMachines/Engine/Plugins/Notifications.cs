@@ -11,19 +11,37 @@ namespace Stateflows.StateMachines.Engine
     internal class Notifications : IStateMachinePlugin
     {
         public Task AfterStateEntryAsync(IStateActionContext context)
-            => Task.CompletedTask;
+        {
+            Trace.WriteLine($"⦗→s⦘ State Machine '{context.StateMachine.Id.Name}': entered state '{context.CurrentState.Name}'");
+
+            return Task.CompletedTask;
+        }
 
         public Task AfterStateExitAsync(IStateActionContext context)
-            => Task.CompletedTask;
+        {
+            Trace.WriteLine($"⦗→s⦘ State Machine '{context.StateMachine.Id.Name}': exited state '{context.CurrentState.Name}'");
+
+            return Task.CompletedTask;
+        }
 
         public Task AfterStateInitializeAsync(IStateActionContext context)
-            => Task.CompletedTask;
+        {
+            Trace.WriteLine($"⦗→s⦘ State Machine '{context.StateMachine.Id.Name}': initialized state '{context.CurrentState.Name}'");
+
+            return Task.CompletedTask;
+        }
 
         public Task AfterStateFinalizeAsync(IStateActionContext context)
-            => Task.CompletedTask;
+        {
+            Trace.WriteLine($"⦗→s⦘ State Machine '{context.StateMachine.Id.Name}': finalized state '{context.CurrentState.Name}'");
+
+            return Task.CompletedTask;
+        }
 
         public Task AfterStateMachineInitializeAsync(IStateMachineInitializationContext context)
         {
+            Trace.WriteLine($"⦗→s⦘ State Machine '{context.StateMachine.Id.Name}': initialized");
+
             var executor = context.StateMachine.GetExecutor();
             var notification = new BehaviorStatusNotification()
             {
@@ -38,6 +56,8 @@ namespace Stateflows.StateMachines.Engine
 
         public Task AfterStateMachineFinalizeAsync(IStateMachineActionContext context)
         {
+            Trace.WriteLine($"⦗→s⦘ State Machine '{context.StateMachine.Id.Name}': finalized");
+
             var notification = new BehaviorStatusNotification() { BehaviorStatus = BehaviorStatus.Finalized };
 
             context.StateMachine.Publish(notification);
@@ -49,13 +69,44 @@ namespace Stateflows.StateMachines.Engine
             => Task.CompletedTask;
 
         public Task AfterTransitionGuardAsync(IGuardContext<Event> context, bool guardResult)
-            => Task.CompletedTask;
+        {
+            if (guardResult)
+            {
+                if (context.TargetState != null)
+                {
+                    Trace.WriteLine($"⦗→s⦘ State Machine '{context.StateMachine.Id.Name}': event '{context.Event.Name}' triggered transition from state '{context.SourceState.Name}' to state '{context.TargetState.Name}'");
+                }
+                else
+                {
+                    Trace.WriteLine($"⦗→s⦘ State Machine '{context.StateMachine.Id.Name}': event '{context.Event.Name}' triggered reaction in state '{context.SourceState.Name}'");
+                }
+            }
+            else
+            {
+                if (context.TargetState != null)
+                {
+                    Trace.WriteLine($"⦗→s⦘ State Machine '{context.StateMachine.Id.Name}': guard stopped event '{context.Event.Name}' from triggering transition from state '{context.SourceState.Name}' to state '{context.TargetState.Name}'");
+                }
+                else
+                {
+                    Trace.WriteLine($"⦗→s⦘ State Machine '{context.StateMachine.Id.Name}': guard stopped event '{context.Event.Name}' from triggering reaction in state '{context.SourceState.Name}'");
+                }
+            }
+
+            return Task.CompletedTask;
+        }
 
         public Task<bool> BeforeProcessEventAsync(IEventContext<Event> context)
-            => Task.FromResult(true);
+        {
+            Trace.WriteLine($"⦗→s⦘ State Machine '{context.StateMachine.Id.Name}': received event '{context.Event.Name}', trying to process it");
+
+            return Task.FromResult(true);
+        }
 
         public Task AfterProcessEventAsync(IEventContext<Event> context)
         {
+            Trace.WriteLine($"⦗→s⦘ State Machine '{context.StateMachine.Id.Name}': processed event '{context.Event.Name}'");
+
             var executor = context.StateMachine.GetExecutor();
             if (executor.StateHasChanged)
             {
@@ -67,8 +118,6 @@ namespace Stateflows.StateMachines.Engine
                 };
 
                 context.StateMachine.Publish(notification);
-
-                Debug.WriteLine($"--> current state notification published {DateTime.Now}");
             }
 
             return Task.CompletedTask;

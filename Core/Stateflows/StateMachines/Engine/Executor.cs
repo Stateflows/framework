@@ -13,8 +13,7 @@ using Stateflows.StateMachines.Extensions;
 using Stateflows.StateMachines.Registration;
 using Stateflows.StateMachines.Context.Classes;
 using Stateflows.StateMachines.Context.Interfaces;
-using Stateflows.Common.Initializer;
-using Stateflows.Activities.Engine;
+using Stateflows.Common.Classes;
 
 namespace Stateflows.StateMachines.Engine
 {
@@ -540,6 +539,11 @@ namespace Stateflows.StateMachines.Engine
         public TState GetState<TState>(IStateActionContext context)
             where TState : BaseState
         {
+            ValuesHolder.GlobalValues.Value = context.StateMachine.Values;
+            ValuesHolder.StateValues.Value = context.CurrentState.Values;
+            ValuesHolder.SourceStateValues.Value = null;
+            ValuesHolder.TargetStateValues.Value = null;
+
             var state = ServiceProvider.GetService<TState>();
             state.Context = context;
             
@@ -550,6 +554,11 @@ namespace Stateflows.StateMachines.Engine
             where TTransition : Transition<TEvent>
             where TEvent : Event, new()
         {
+            ValuesHolder.GlobalValues.Value = context.StateMachine.Values;
+            ValuesHolder.StateValues.Value = null;
+            ValuesHolder.SourceStateValues.Value = context.SourceState.Values;
+            ValuesHolder.TargetStateValues.Value = context.TargetState?.Values;
+
             var transition = ServiceProvider.GetService<TTransition>();
             transition.Context = context;
             
@@ -560,6 +569,11 @@ namespace Stateflows.StateMachines.Engine
             where TElseTransition : ElseTransition<TEvent>
             where TEvent : Event, new()
         {
+            ValuesHolder.GlobalValues.Value = context.StateMachine.Values;
+            ValuesHolder.StateValues.Value = null;
+            ValuesHolder.SourceStateValues.Value = context.SourceState.Values;
+            ValuesHolder.TargetStateValues.Value = context.TargetState?.Values;
+
             var elseTransition = ServiceProvider.GetService<TElseTransition>();
             elseTransition.Context = context;
             

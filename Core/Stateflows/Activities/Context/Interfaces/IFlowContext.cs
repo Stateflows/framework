@@ -1,6 +1,4 @@
-﻿using Stateflows.Common;
-
-namespace Stateflows.Activities.Context.Interfaces
+﻿namespace Stateflows.Activities.Context.Interfaces
 {
     public interface IFlowContext : IActivityActionContext
     {
@@ -10,7 +8,6 @@ namespace Stateflows.Activities.Context.Interfaces
     }
 
     public interface IFlowContext<out TToken> : IFlowContext
-        // where TToken : Token, new()
     {
         TToken Token { get; }
     }

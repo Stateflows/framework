@@ -7,6 +7,7 @@ using Stateflows.Common.Models;
 using Stateflows.Activities.Registration;
 using Stateflows.Activities.Context.Classes;
 using Stateflows.Utils;
+using System.Reflection;
 
 namespace Stateflows.Activities.Models
 {
@@ -50,20 +51,20 @@ namespace Stateflows.Activities.Models
         public IEnumerable<Type> GetIncomingTokenTypes()
             => IncomingEdges
                 .Select(e => e.TargetTokenType)
-                .Where(t => t != typeof(Control) && (typeof(Exception).IsAssignableFrom(t)))
+                .Where(t => t != typeof(Control) && !typeof(Exception).IsAssignableFrom(t))
                 .Distinct();
 
         public IEnumerable<Type> GetOutgoingTokenTypes()
             => Edges
                 .Select(e => e.TokenType)
-                .Where(t => t != typeof(Control) && (typeof(Exception).IsAssignableFrom(t)))
+                .Where(t => t != typeof(Control) && !typeof(Exception).IsAssignableFrom(t))
                 .Distinct();
 
         public void ScanForDeclaredTypes(Type nodeType)
         {
             DeclaredTypesSet = true;
 
-            var fields = nodeType.GetFields().Where(field => field.FieldType.IsGenericType).ToArray();
+            var fields = nodeType.GetFields(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic).Where(field => field.FieldType.IsGenericType).ToArray();
 
             InputTokenTypes = fields
                 .Where(field => field.FieldType.GetGenericTypeDefinition() == typeof(Input<>))

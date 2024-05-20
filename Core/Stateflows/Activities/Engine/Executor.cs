@@ -134,7 +134,10 @@ namespace Stateflows.Activities.Engine
                 return true;
             }
 
-            Logger.LogInformation("Behavior \"{id}\" is already initialized.", $"{Context.Id.BehaviorId.Type}:{Context.Id.Name}:{Context.Id.Instance}");
+            if (Initialized)
+            {
+                Logger.LogInformation("Behavior \"{id}\" is already initialized.", $"{Context.Id.BehaviorId.Type}:{Context.Id.Name}:{Context.Id.Instance}");
+            }
 
             return false;
         }

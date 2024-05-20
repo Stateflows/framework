@@ -9,9 +9,7 @@ namespace Stateflows.StateMachines.Typed
     {
         #region AddFinalState
         [DebuggerHidden]
-#pragma warning disable S2326 // Unused type parameters should be removed
         public static ITypedFinalizedCompositeStateBuilder AddState<TFinalState>(this ITypedInitializedCompositeStateBuilder builder, string stateName = FinalState.Name)
-#pragma warning restore S2326 // Unused type parameters should be removed
             where TFinalState : FinalState
             => builder.AddFinalState(stateName);
         #endregion

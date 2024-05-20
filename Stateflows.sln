@@ -85,7 +85,12 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Stateflows.Transport.Http",
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Stateflows.Transport.Http.Client", "Transport\Stateflows.Transport.Http.Client\Stateflows.Transport.Http.Client.csproj", "{37C61B16-A27E-487B-AEBC-126E7FDD8443}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Activity.IntegrationTests", "Tests\Activity.IntegrationTests\Activity.IntegrationTests.csproj", "{D6FD721E-4B42-4875-B774-2AD84BE5B3B6}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Activity.IntegrationTests", "Tests\Activity.IntegrationTests\Activity.IntegrationTests.csproj", "{D6FD721E-4B42-4875-B774-2AD84BE5B3B6}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{C86A414E-4A16-4E38-AE1E-0193B3C236BD}"
+	ProjectSection(SolutionItems) = preProject
+		.editorconfig = .editorconfig
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

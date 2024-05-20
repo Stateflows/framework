@@ -2,6 +2,7 @@ using System.Reflection;
 using MassTransit;
 using Stateflows;
 using Stateflows.StateMachines;
+using Stateflows.StateMachines.Sync;
 using Examples.Common;
 
 var builder = WebApplication.CreateBuilder(args);

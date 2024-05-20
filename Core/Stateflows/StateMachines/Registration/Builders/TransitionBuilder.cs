@@ -9,6 +9,7 @@ using Stateflows.StateMachines.Registration.Interfaces;
 using Stateflows.StateMachines.Registration.Extensions;
 using Stateflows.StateMachines.Registration.Interfaces.Base;
 using Stateflows.StateMachines.Events;
+using Stateflows.Common.Exceptions;
 
 namespace Stateflows.StateMachines.Registration.Builders
 {
@@ -50,7 +51,14 @@ namespace Stateflows.StateMachines.Registration.Builders
                     }
                     catch (Exception e)
                     {
-                        await c.Executor.Inspector.OnTransitionGuardExceptionAsync(context, e);
+                        if (e is StateflowsException)
+                        {
+                            throw;
+                        }
+                        else
+                        {
+                            await c.Executor.Inspector.OnTransitionGuardExceptionAsync(context, e);
+                        }
                     }
 
                     return result;
@@ -75,7 +83,14 @@ namespace Stateflows.StateMachines.Registration.Builders
                     }
                     catch (Exception e)
                     {
-                        await c.Executor.Inspector.OnTransitionEffectExceptionAsync(context, e);
+                        if (e is StateflowsException)
+                        {
+                            throw;
+                        }
+                        else
+                        {
+                            await c.Executor.Inspector.OnTransitionEffectExceptionAsync(context, e);
+                        }
                     }
                 }
             );

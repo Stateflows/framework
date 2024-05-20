@@ -67,8 +67,6 @@ namespace Stateflows.Activities.Extensions
 
         public static void AddObjectTransformationFlowEvents<TObjectTransformationFlow, TToken, TTransformedToken>(this IObjectFlowBuilder<TToken> builder)
             where TObjectTransformationFlow : TransformationFlow<TToken, TTransformedToken>
-            // where TToken : Token, new()
-            ////where TTransformedToken : Token, new()
         {
             if (typeof(BaseTransformationFlow<TToken, TTransformedToken>).GetProperty(nameof(BaseTransformationFlow<TToken, TTransformedToken>.Weight)).IsOverridenIn<TObjectTransformationFlow>())
             {
@@ -90,7 +88,6 @@ namespace Stateflows.Activities.Extensions
 
         public static void AddObjectFlowEvents<TFlow, TToken>(this IObjectFlowBuilder<TToken> builder)
             where TFlow : Flow<TToken>
-            // where TToken : Token, new()
         {
             if (typeof(BaseFlow<TToken>).GetProperty(nameof(BaseFlow<TToken>.Weight)).IsOverridenIn<TFlow>())
             {

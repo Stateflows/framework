@@ -7,7 +7,6 @@ namespace Stateflows.Activities.Context.Classes
         IGuardContext,
         ITransformationContext<TToken>,
         IRootContext
-        // where TToken : Token, new()
     {
         IActivityContext IActivityActionContext.Activity => Activity;
 

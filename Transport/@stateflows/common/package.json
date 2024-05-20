@@ -1,6 +1,6 @@
 {
   "name": "@stateflows/common",
-  "version": "0.11.2",
+  "version": "0.12.0",
   "description": "Common package for Stateflows framework clients",
   "main": "dist/index.js",
   "module": "./dist/index.mjs",

@@ -6,7 +6,6 @@
     public interface IActionContext : ITypedActionContext, IInput, IOutput
     { }
 
-    public interface IActionContext<out TToken> : IActionContext//, ITokenContext<TToken>
-        // where TToken : Token, new()
+    public interface IActionContext<out TToken> : IActionContext, ITokenContext<TToken>
     { }
 }

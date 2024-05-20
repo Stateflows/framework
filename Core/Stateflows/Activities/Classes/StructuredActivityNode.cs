@@ -1,6 +1,5 @@
-﻿using Stateflows.Activities.Context.Interfaces;
-using Stateflows.Common;
-using System.Threading.Tasks;
+﻿using System.Threading.Tasks;
+using Stateflows.Activities.Context.Interfaces;
 
 namespace Stateflows.Activities
 {
@@ -14,7 +13,6 @@ namespace Stateflows.Activities
     }
 
     public abstract class StructuredActivityNode<TToken> : StructuredActivityNode
-        // where TToken : Token, new()
     {
         public new IActionContext<TToken> Context => base.Context as IActionContext<TToken>;
     }

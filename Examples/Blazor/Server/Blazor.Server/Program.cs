@@ -81,7 +81,7 @@ builder.Services.AddStateflows(b => b
                 .AddExceptionHandler<Exception>(async c =>
                 {
                     Debug.WriteLine(c.Exception.Message);
-                    c.Output(new TokenHolder<int>() { Payload = 666 });
+                    c.Output(666);
                 })
                 .AddInitial(b => b
                     .AddControlFlow("action1")
@@ -107,7 +107,7 @@ builder.Services.AddStateflows(b => b
                      async c => { }
                 )
 
-                .AddFlow<TokenHolder<int>>("action4")
+                .AddFlow<int>("action4")
             )
             .AddAction("action4", async c => { })
         )
@@ -203,7 +203,7 @@ namespace X
                             {
                                 var tokens = c.GetTokensOfType<int>().Select(t => $"value: {t}");
                                 c.OutputRange(tokens);
-                                Debug.WriteLine($"{tokens.Count()}/{c.Input.Count()} tokens: {string.Join(", ", c.Input.OfType<int>().Take(5))}...");
+                                Debug.WriteLine($"{tokens.Count()}/{c.GetTokensOfType<int>().Count()} tokens: {string.Join(", ", c.GetTokensOfType<int>().Take(5))}...");
                                 await Task.Delay(1000);
                             },
                             b => b.AddFlow<string>(OutputNode.Name)
@@ -230,7 +230,7 @@ namespace X
                     "action2",
                     async c =>
                     {
-                        Debug.WriteLine(c.Input.OfType<string>().Count().ToString());
+                        Debug.WriteLine(c.GetTokensOfType<string>().Count().ToString());
                         c.Activity.Values.TryGet<int>("count", out var counter);
                         Debug.WriteLine($"counter: {counter}");
                     }

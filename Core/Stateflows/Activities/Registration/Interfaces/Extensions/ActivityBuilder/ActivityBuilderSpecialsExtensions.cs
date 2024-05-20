@@ -70,7 +70,7 @@ namespace Stateflows.Activities
                 ) as IActivityBuilder;
 
         public static IActivityBuilder AddControlDecision(this IActivityBuilder builder, DecisionBuildAction decisionBuildAction)
-            => builder.AddControlDecision(ActivityNodeInfo<DecisionNode<Control>>.Name, decisionBuildAction);
+            => builder.AddControlDecision(ActivityNodeInfo<ControlDecisionNode>.Name, decisionBuildAction);
 
         public static IActivityBuilder AddDecision<TToken>(this IActivityBuilder builder, string decisionNodeName, DecisionBuildAction<TToken> decisionBuildAction)
             => (builder as BaseActivityBuilder)

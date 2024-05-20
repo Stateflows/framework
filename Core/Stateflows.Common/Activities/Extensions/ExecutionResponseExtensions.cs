@@ -1,6 +1,5 @@
 ﻿using System.Linq;
 using System.Collections.Generic;
-using Stateflows.Common;
 using Stateflows.Activities.Events;
 
 namespace Stateflows.Activities

@@ -97,20 +97,6 @@ namespace Stateflows.StateMachines.Models
                     {
                         throw new TransitionDefinitionException($"Transition target state '{edge.TargetName}' is not registered", Class);
                     }
-
-                    //var vertices = edge.Source.Parent?.Vertices ?? Vertices;
-                    //if (vertices.TryGetValue(edge.TargetName, out var target))
-                    //{
-                    //    edge.Target = target;
-                    //}
-                    //else
-                    //{
-                    //    throw new TransitionDefinitionException(edge.Source.Parent is null
-                    //        ? $"Transition target state '{edge.TargetName}' is not registered in root level of state machine '{Name}'"
-                    //        : $"Transition target state '{edge.TargetName}' is not defined on the same level as transition source '{edge.SourceName}' in state machine '{Name}'",
-                    //        Class
-                    //    );
-                    //}
                 }
 
                 if (edge.IsElse)
@@ -118,8 +104,6 @@ namespace Stateflows.StateMachines.Models
                     var siblings = edge.Source.Edges.Values.Any(e =>
                         !e.IsElse &&
                         e.Trigger == edge.Trigger
-                        //&&
-                        //e.Type == edge.Type
                     );
 
                     if (!siblings)

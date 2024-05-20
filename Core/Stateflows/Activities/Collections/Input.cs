@@ -2,7 +2,6 @@
 using System.Threading;
 using System.Collections;
 using System.Collections.Generic;
-using Stateflows.Common;
 
 namespace Stateflows.Activities
 {
@@ -14,7 +13,7 @@ namespace Stateflows.Activities
     public struct Input<TToken> : IEnumerable<TToken>
     {
         private readonly IEnumerable<TToken> Tokens
-            => InputTokensHolder.Tokens.Value.OfType<TToken>();
+            => InputTokensHolder.Tokens.Value.OfType<TokenHolder<TToken>>().Select(t => t.Payload);
 
         public readonly IEnumerator<TToken> GetEnumerator()
             => Tokens.GetEnumerator();
@@ -29,7 +28,7 @@ namespace Stateflows.Activities
     public struct SingleInput<TToken>
     {
         public readonly TToken Token
-            => InputTokensHolder.Tokens.Value.OfType<TToken>().First();
+            => InputTokensHolder.Tokens.Value.OfType<TokenHolder<TToken>>().Select(t => t.Payload).First();
 
         public readonly void PassOn()
             => new Output<TToken>().Add(Token);
@@ -38,7 +37,7 @@ namespace Stateflows.Activities
     public struct OptionalInput<TToken> : IEnumerable<TToken>
     {
         private readonly IEnumerable<TToken> Tokens
-            => InputTokensHolder.Tokens.Value.OfType<TToken>();
+            => InputTokensHolder.Tokens.Value.OfType<TokenHolder<TToken>>().Select(t => t.Payload);
 
         public readonly IEnumerator<TToken> GetEnumerator()
             => Tokens.GetEnumerator();
@@ -53,7 +52,7 @@ namespace Stateflows.Activities
     public struct OptionalSingleInput<TToken>
     {
         public readonly TToken Token
-            => InputTokensHolder.Tokens.Value.OfType<TToken>().First();
+            => InputTokensHolder.Tokens.Value.OfType<TokenHolder<TToken>>().Select(t => t.Payload).First();
 
         public readonly void PassOn()
             => new Output<TToken>().Add(Token);

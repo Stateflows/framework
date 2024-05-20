@@ -7,26 +7,26 @@ namespace Stateflows.Common.Utilities
 {
     public static class StateflowsJsonConverter
     {
-        private static JsonSerializerSettings polymorphicCamelSettings = new JsonSerializerSettings()
+        private static readonly JsonSerializerSettings polymorphicCamelSettings = new JsonSerializerSettings()
         {
             TypeNameHandling = TypeNameHandling.All,
             ReferenceLoopHandling = ReferenceLoopHandling.Ignore,
             ContractResolver = new CamelCasePropertyNamesContractResolver()
         };
 
-        private static JsonSerializerSettings polymorphicSettings = new JsonSerializerSettings()
+        private static readonly JsonSerializerSettings polymorphicSettings = new JsonSerializerSettings()
         {
             TypeNameHandling = TypeNameHandling.All,
             ReferenceLoopHandling = ReferenceLoopHandling.Ignore
         };
 
-        private static JsonSerializerSettings camelSettings = new JsonSerializerSettings()
+        private static readonly JsonSerializerSettings camelSettings = new JsonSerializerSettings()
         {
             ReferenceLoopHandling = ReferenceLoopHandling.Ignore,
             ContractResolver = new CamelCasePropertyNamesContractResolver()
         };
 
-        private static JsonSerializerSettings settings = new JsonSerializerSettings()
+        private static readonly JsonSerializerSettings settings = new JsonSerializerSettings()
         {
             ReferenceLoopHandling = ReferenceLoopHandling.Ignore
         };

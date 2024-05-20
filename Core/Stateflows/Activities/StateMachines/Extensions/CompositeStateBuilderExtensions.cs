@@ -29,18 +29,6 @@ namespace Stateflows.Activities
                                     new ExecutionRequest(initializationRequest, new List<TokenHolder>()),
                                     integratedActivityBuilder.GetUnsubscriptionRequest()
                                 );
-                                //var request = new CompoundRequest()
-                                //{
-                                //    Events = new List<Event>()
-                                //    {
-                                //        integratedActivityBuilder.GetSubscriptionRequest(),
-                                //        new ResetRequest() { KeepVersion = true },
-                                //        new ExecutionRequest(initializationRequest, new List<Token>()),
-                                //        integratedActivityBuilder.GetUnsubscriptionRequest(),
-                                //    }
-                                //};
-
-                                //return a.RequestAsync(request);
                             });
                         }
                     }
@@ -67,18 +55,6 @@ namespace Stateflows.Activities
                                     new ExecutionRequest(initializationRequest, new List<TokenHolder>()),
                                     integratedActivityBuilder.GetUnsubscriptionRequest()
                                 );
-                                //var request = new CompoundRequest()
-                                //{
-                                //    Events = new List<Event>()
-                                //    {
-                                //        integratedActivityBuilder.GetSubscriptionRequest(),
-                                //        new ResetRequest() { KeepVersion = true },
-                                //        new ExecutionRequest(initializationRequest, new List<Token>()),
-                                //        integratedActivityBuilder.GetUnsubscriptionRequest(),
-                                //    }
-                                //};
-
-                                //return a.RequestAsync(request);
                             });
                         }
                     }

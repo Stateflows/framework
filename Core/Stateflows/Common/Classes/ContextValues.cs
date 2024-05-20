@@ -1,7 +1,7 @@
-﻿using System.Collections.Generic;
-using Newtonsoft.Json.Linq;
-using Stateflows.Common.Utilities;
+﻿using Newtonsoft.Json.Linq;
 using Stateflows.Common.Interfaces;
+using Stateflows.Common.Utilities;
+using System.Collections.Generic;
 
 namespace Stateflows.Common.Classes
 {
@@ -45,7 +45,9 @@ namespace Stateflows.Common.Classes
                     var type = typeof(T);
                     var deserializedData = type.IsPrimitive
                         ? ParseStringToTypedValue<T>(data)
-                        : StateflowsJsonConverter.DeserializeObject(data);
+                        : type.IsEnum
+                            ? ParseStringToEnum<T>(data)
+                            : StateflowsJsonConverter.DeserializeObject(data);
 
                     if (deserializedData is T t)
                     {
@@ -68,7 +70,9 @@ namespace Stateflows.Common.Classes
                     var type = typeof(T);
                     var deserializedData = type.IsPrimitive
                         ? ParseStringToTypedValue<T>(data)
-                        : StateflowsJsonConverter.DeserializeObject(data);
+                        : type.IsEnum
+                            ? ParseStringToEnum<T>(data)
+                            : StateflowsJsonConverter.DeserializeObject(data);
 
                     if (deserializedData is T t)
                     {
@@ -94,6 +98,11 @@ namespace Stateflows.Common.Classes
             {
                 Values.Clear();
             }
+        }
+
+        private static T ParseStringToEnum<T>(string value)
+        {
+            return (T)(object)JToken.Parse(value).Value<int>();
         }
 
         private static T ParseStringToTypedValue<T>(string value)

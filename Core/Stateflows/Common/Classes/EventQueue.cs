@@ -3,9 +3,11 @@ using System.Threading;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Stateflows.Common.Utilities;
+using System.Runtime.Serialization;
 
 namespace Stateflows.Common.Classes
 {
+    [Serializable]
     public class EventQueue<T> : LinkedList<T>
     {
         private readonly object LockObject = new object();
@@ -16,6 +18,9 @@ namespace Stateflows.Common.Classes
         {
             Locked = locked;
         }
+
+        protected EventQueue(SerializationInfo info, StreamingContext context) : base(info, context)
+        { }
 
         private readonly EventWaitHandle Event = new EventWaitHandle(false, EventResetMode.AutoReset);
 

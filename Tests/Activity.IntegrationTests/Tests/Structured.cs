@@ -9,6 +9,7 @@ namespace Activity.IntegrationTests.Tests
     {
         private bool Executed = false;
         private int Counter = 0;
+        private readonly object LockHandle = new();
 
         [TestInitialize]
         public override void Initialize()
@@ -56,7 +57,13 @@ namespace Activity.IntegrationTests.Tests
                             .AddInitial(b => b
                                 .AddControlFlow("action1")
                             )
-                            .AddAction("action1", async c => Counter++)
+                            .AddAction("action1", async c =>
+                            {
+                                lock (LockHandle)
+                                {
+                                    Counter++;
+                                }
+                            })
                             .AddControlFlow("final")
                         )
                         .AddAction("final", async c =>
