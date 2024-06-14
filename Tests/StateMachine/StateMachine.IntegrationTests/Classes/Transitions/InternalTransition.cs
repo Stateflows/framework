@@ -8,7 +8,12 @@ namespace StateMachine.IntegrationTests.Classes.Transitions
 
         public override Task EffectAsync()
         {
-            counter.Value++;
+            if (!counter.TryGet(out var c))
+            {
+                c = 0;
+            }
+
+            counter.Set(c + 1);
 
             return Task.CompletedTask;
         }

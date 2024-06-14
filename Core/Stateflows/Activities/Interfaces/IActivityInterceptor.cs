@@ -6,9 +6,17 @@ namespace Stateflows.Activities
 {
     public interface IActivityInterceptor
     {
-        Task AfterHydrateAsync(IActivityActionContext context);
-        Task BeforeDehydrateAsync(IActivityActionContext context);
-        Task<bool> BeforeProcessEventAsync(IEventContext<Event> context);
-        Task AfterProcessEventAsync(IEventContext<Event> context);
+        Task AfterHydrateAsync(IActivityActionContext context)
+            => Task.CompletedTask;
+
+        Task BeforeDehydrateAsync(IActivityActionContext context)
+            => Task.CompletedTask;
+
+        Task<bool> BeforeProcessEventAsync(IEventContext<Event> context)
+            => Task.FromResult(true);
+
+        Task AfterProcessEventAsync(IEventContext<Event> context)
+            => Task.CompletedTask;
+
     }
 }

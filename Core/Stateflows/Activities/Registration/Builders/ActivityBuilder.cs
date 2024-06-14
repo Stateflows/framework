@@ -206,6 +206,24 @@ namespace Stateflows.Activities.Registration.Builders
 
             return this;
         }
+
+        ITypedActivityBuilder IActivityUtils<ITypedActivityBuilder>.AddExceptionHandler<TExceptionHandler>()
+            => AddExceptionHandler<TExceptionHandler>() as ITypedActivityBuilder;
+
+        ITypedActivityBuilder IActivityUtils<ITypedActivityBuilder>.AddExceptionHandler(ActivityExceptionHandlerFactory exceptionHandlerFactory)
+            => AddExceptionHandler(exceptionHandlerFactory) as ITypedActivityBuilder;
+
+        ITypedActivityBuilder IActivityUtils<ITypedActivityBuilder>.AddInterceptor<TInterceptor>()
+            => AddInterceptor<TInterceptor>() as ITypedActivityBuilder;
+
+        ITypedActivityBuilder IActivityUtils<ITypedActivityBuilder>.AddInterceptor(ActivityInterceptorFactory interceptorFactory)
+            => AddInterceptor(interceptorFactory) as ITypedActivityBuilder;
+
+        ITypedActivityBuilder IActivityUtils<ITypedActivityBuilder>.AddObserver<TObserver>()
+            => AddObserver<TObserver>() as ITypedActivityBuilder;
+
+        ITypedActivityBuilder IActivityUtils<ITypedActivityBuilder>.AddObserver(ActivityObserverFactory observerFactory)
+            => AddObserver(observerFactory) as ITypedActivityBuilder;
         #endregion
     }
 }

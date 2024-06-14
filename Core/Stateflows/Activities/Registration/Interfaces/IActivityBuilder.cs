@@ -3,6 +3,7 @@
 namespace Stateflows.Activities.Registration.Interfaces
 {
     public interface IActivityBuilder :
+        IActivityUtils<IActivityBuilder>,
         IReactiveActivity<IActivityBuilder>,
         IActivityEvents<IActivityBuilder>,
         IInitial<IActivityBuilder>,
@@ -14,6 +15,7 @@ namespace Stateflows.Activities.Registration.Interfaces
     { }
 
     public interface ITypedActivityBuilder :
+        IActivityUtils<ITypedActivityBuilder>,
         IReactiveActivity<ITypedActivityBuilder>,
         IInitial<ITypedActivityBuilder>,
         IFinal<ITypedActivityBuilder>,

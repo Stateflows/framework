@@ -2,6 +2,7 @@
 using System.Linq;
 using Stateflows.Activities.Models;
 using Stateflows.Activities.Context.Interfaces;
+using Stateflows.Activities.Engine;
 
 namespace Stateflows.Activities.Context.Classes
 {
@@ -12,14 +13,26 @@ namespace Stateflows.Activities.Context.Classes
 
         public TException exception = null;
         public TException Exception
-            => exception ??= InputTokens.OfType<TokenHolder<TException>>().First().Payload;
+        {
+            get
+            {
+                exception ??=
+                    InputTokens.OfType<ExceptionHolder<TException>>().FirstOrDefault()?.TypedException ??
+                    InputTokens.OfType<ExceptionHolder>().FirstOrDefault()?.Exception as TException;
+
+                return exception;
+            }
+        }
+
+        public INodeContext ProtectedNode { get; set; }
 
         public INodeContext NodeOfOrigin { get; set; }
 
-        public ExceptionHandlerContext(ActionContext context, Node nodeOfOrigin)
+        public ExceptionHandlerContext(ActionContext context, Node protectedNode, Node nodeOfOrigin, NodeScope nodeScope)
             : base(context.Context, context.NodeScope, context.Node, context.InputTokens)
         {
-            NodeOfOrigin = new NodeContext(nodeOfOrigin, context.Context);
+            ProtectedNode = new NodeContext(protectedNode, context.Context, nodeScope);
+            NodeOfOrigin = new NodeContext(nodeOfOrigin, context.Context, nodeScope);
         }
     }
 }

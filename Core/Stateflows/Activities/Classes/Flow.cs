@@ -1,11 +1,12 @@
 ﻿using System.Threading.Tasks;
+using Stateflows.Activities.Context.Classes;
 using Stateflows.Activities.Context.Interfaces;
 
 namespace Stateflows.Activities
 {
     public abstract class BaseControlFlow
     {
-        public IFlowContext Context { get; internal set; }
+        public IActivityFlowContext Context => ActivityFlowContextAccessor.Context.Value;
 
         public virtual Task<bool> GuardAsync()
             => Task.FromResult(true);
@@ -18,8 +19,8 @@ namespace Stateflows.Activities
     {
         public virtual int Weight => 1;
 
-        new public IFlowContext<TToken> Context
-            => (IFlowContext<TToken>)base.Context;
+        new public IActivityFlowContext<TToken> Context
+            => (IActivityFlowContext<TToken>)base.Context;
     }
 
     public abstract class Flow<TToken> : BaseFlow<TToken>
@@ -29,8 +30,8 @@ namespace Stateflows.Activities
     {
         public virtual int Weight => 1;
 
-        new public IFlowContext<TToken> Context
-            => (IFlowContext<TToken>)base.Context;
+        new public IActivityFlowContext<TToken> Context
+            => (IActivityFlowContext<TToken>)base.Context;
 
         public abstract Task<TTransformedToken> TransformAsync();
     }

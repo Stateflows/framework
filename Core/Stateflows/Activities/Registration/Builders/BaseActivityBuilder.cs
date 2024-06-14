@@ -103,10 +103,10 @@ namespace Stateflows.Activities.Registration
             {
                 try
                 {
-                    var observer = c.Activity.GetExecutor().Inspector;
-                    await observer.BeforeNodeExecuteAsync(c as ActionContext);
+                    var inspector = c.Activity.GetExecutor().Inspector;
+                    await inspector.BeforeNodeExecuteAsync(c as ActionContext);
                     await actionAsync(c);
-                    await observer.AfterNodeExecuteAsync(c as ActionContext);
+                    await inspector.AfterNodeExecuteAsync(c as ActionContext);
 
                     if (!(c as BaseContext).Context.Executor.StructuralTypes.Contains(node.Type))
                     {

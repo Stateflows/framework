@@ -2,9 +2,9 @@
 using System.Threading;
 using Microsoft.Extensions.DependencyInjection;
 using Stateflows.Common;
+using Stateflows.Common.Classes;
 using Stateflows.Activities.Models;
 using Stateflows.Activities.Context.Interfaces;
-using Stateflows.Common.Classes;
 
 namespace Stateflows.Activities.Engine
 {
@@ -75,101 +75,87 @@ namespace Stateflows.Activities.Engine
         public TAction GetAction<TAction>(IActionContext context)
             where TAction : ActionNode
         {
-            ValuesHolder.GlobalValues.Value = context.Activity.Values;
-            ValuesHolder.StateValues.Value = null;
-            ValuesHolder.SourceStateValues.Value = null;
-            ValuesHolder.TargetStateValues.Value = null;
+            ContextValuesHolder.GlobalValues.Value = context.Activity.Values;
+            ContextValuesHolder.StateValues.Value = null;
+            ContextValuesHolder.SourceStateValues.Value = null;
+            ContextValuesHolder.TargetStateValues.Value = null;
 
-            var action = ServiceProvider.GetService<TAction>();
-            action.Context = context;
-
-            return action;
+            return ServiceProvider.GetService<TAction>();
         }
 
         public TAcceptEventAction GetAcceptEventAction<TEvent, TAcceptEventAction>(IAcceptEventActionContext<TEvent> context)
             where TEvent : Event, new()
             where TAcceptEventAction : AcceptEventActionNode<TEvent>
         {
-            ValuesHolder.GlobalValues.Value = context.Activity.Values;
-            ValuesHolder.StateValues.Value = null;
-            ValuesHolder.SourceStateValues.Value = null;
-            ValuesHolder.TargetStateValues.Value = null;
+            ContextValuesHolder.GlobalValues.Value = context.Activity.Values;
+            ContextValuesHolder.StateValues.Value = null;
+            ContextValuesHolder.SourceStateValues.Value = null;
+            ContextValuesHolder.TargetStateValues.Value = null;
 
-            var acceptEventAction = ServiceProvider.GetService<TAcceptEventAction>();
-            acceptEventAction.Context = context;
-
-            return acceptEventAction;
+            return ServiceProvider.GetService<TAcceptEventAction>();
         }
 
         public TSendEventAction GetSendEventAction<TEvent, TSendEventAction>(IActionContext context)
             where TEvent : Event, new()
             where TSendEventAction : SendEventActionNode<TEvent>
         {
-            ValuesHolder.GlobalValues.Value = context.Activity.Values;
-            ValuesHolder.StateValues.Value = null;
-            ValuesHolder.SourceStateValues.Value = null;
-            ValuesHolder.TargetStateValues.Value = null;
+            ContextValuesHolder.GlobalValues.Value = context.Activity.Values;
+            ContextValuesHolder.StateValues.Value = null;
+            ContextValuesHolder.SourceStateValues.Value = null;
+            ContextValuesHolder.TargetStateValues.Value = null;
 
-            var acceptEventAction = ServiceProvider.GetService<TSendEventAction>();
-            acceptEventAction.Context = context;
-
-            return acceptEventAction;
+            return ServiceProvider.GetService<TSendEventAction>();
         }
 
         public TStructuredActivity GetStructuredActivity<TStructuredActivity>(IActionContext context)
             where TStructuredActivity : StructuredActivityNode
         {
-            ValuesHolder.GlobalValues.Value = context.Activity.Values;
-            ValuesHolder.StateValues.Value = null;
-            ValuesHolder.SourceStateValues.Value = null;
-            ValuesHolder.TargetStateValues.Value = null;
+            ContextValuesHolder.GlobalValues.Value = context.Activity.Values;
+            ContextValuesHolder.StateValues.Value = null;
+            ContextValuesHolder.SourceStateValues.Value = null;
+            ContextValuesHolder.TargetStateValues.Value = null;
 
-            var structuredActivity = ServiceProvider.GetService<TStructuredActivity>();
-            structuredActivity.Context = context;
-
-            return structuredActivity;
+            return ServiceProvider.GetService<TStructuredActivity>();
         }
 
         public TExceptionHandler GetExceptionHandler<TException, TExceptionHandler>(IExceptionHandlerContext<TException> context)
             where TException : Exception
             where TExceptionHandler : ExceptionHandlerNode<TException>
         {
-            ValuesHolder.GlobalValues.Value = context.Activity.Values;
-            ValuesHolder.StateValues.Value = null;
-            ValuesHolder.SourceStateValues.Value = null;
-            ValuesHolder.TargetStateValues.Value = null;
+            ContextValuesHolder.GlobalValues.Value = context.Activity.Values;
+            ContextValuesHolder.StateValues.Value = null;
+            ContextValuesHolder.SourceStateValues.Value = null;
+            ContextValuesHolder.TargetStateValues.Value = null;
 
-            var exceptionHandler = ServiceProvider.GetService<TExceptionHandler>();
-            exceptionHandler.Context = context;
-
-            return exceptionHandler;
+            return ServiceProvider.GetService<TExceptionHandler>();
         }
 
-        public TFlow GetFlow<TFlow>(IFlowContext context)
+        public TFlow GetFlow<TFlow>(IActivityFlowContext context)
             where TFlow : BaseControlFlow
         {
-            ValuesHolder.GlobalValues.Value = context.Activity.Values;
-            ValuesHolder.StateValues.Value = null;
-            ValuesHolder.SourceStateValues.Value = null;
-            ValuesHolder.TargetStateValues.Value = null;
+            ContextValuesHolder.GlobalValues.Value = context.Activity.Values;
+            ContextValuesHolder.StateValues.Value = null;
+            ContextValuesHolder.SourceStateValues.Value = null;
+            ContextValuesHolder.TargetStateValues.Value = null;
 
-            var flow = ServiceProvider.GetService<TFlow>();
-            flow.Context = context;
-
-            return flow;
+            return ServiceProvider.GetService<TFlow>();
         }
 
-        public TControlFlow GetControlFlow<TControlFlow>(IFlowContext context)
+        public TControlFlow GetControlFlow<TControlFlow>(IActivityFlowContext context)
             where TControlFlow : ControlFlow
             => GetFlow<TControlFlow>(context);
 
-        public TFlow GetObjectFlow<TFlow, TToken>(IFlowContext<TToken> context)
+        public TFlow GetObjectFlow<TFlow, TToken>(IActivityFlowContext<TToken> context)
             where TFlow : Flow<TToken>
             => GetFlow<TFlow>(context);
 
-        public TFlow GetObjectTransformationFlow<TFlow, TToken, TTransformedToken>(IFlowContext<TToken> context)
-            where TFlow : TransformationFlow<TToken, TTransformedToken>
-            => GetFlow<TFlow>(context);
+        public TTransformationFlow GetObjectTransformationFlow<TTransformationFlow, TToken, TTransformedToken>(IActivityFlowContext<TToken> context)
+            where TTransformationFlow : TransformationFlow<TToken, TTransformedToken>
+            => GetFlow<TTransformationFlow>(context);
+
+        public TElseTransformationFlow GetElseObjectTransformationFlow<TElseTransformationFlow, TToken, TTransformedToken>(IActivityFlowContext<TToken> context)
+            where TElseTransformationFlow : ElseTransformationFlow<TToken, TTransformedToken>
+            => GetFlow<TElseTransformationFlow>(context);
 
         public void Dispose()
         {

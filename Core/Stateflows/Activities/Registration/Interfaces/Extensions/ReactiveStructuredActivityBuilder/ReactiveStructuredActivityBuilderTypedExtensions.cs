@@ -31,7 +31,9 @@ namespace Stateflows.Activities.Typed
                     InputTokensHolder.Tokens.Value = ((ActionContext)c).InputTokens;
                     OutputTokensHolder.Tokens.Value = ((ActionContext)c).OutputTokens;
 
+                    ActivityNodeContextAccessor.Context.Value = c;
                     var result = action.ExecuteAsync();
+                    ActivityNodeContextAccessor.Context.Value = null;
 
                     return result;
                 }),
@@ -62,7 +64,9 @@ namespace Stateflows.Activities.Typed
                     InputTokensHolder.Tokens.Value = ((ActionContext)c).InputTokens;
                     OutputTokensHolder.Tokens.Value = ((ActionContext)c).OutputTokens;
 
+                    ActivityNodeContextAccessor.Context.Value = c;
                     var result = action.ExecuteAsync();
+                    ActivityNodeContextAccessor.Context.Value = null;
 
                     return result;
                 }),
@@ -92,7 +96,12 @@ namespace Stateflows.Activities.Typed
             InputTokensHolder.Tokens.Value = ((ActionContext)context).InputTokens;
             OutputTokensHolder.Tokens.Value = ((ActionContext)context).OutputTokens;
 
-            return await callback(action);
+
+            ActivityNodeContextAccessor.Context.Value = context;
+            var result = await callback(action);
+            ActivityNodeContextAccessor.Context.Value = null;
+
+            return result;
         }
 
         public static IReactiveStructuredActivityBuilder AddSendEventAction<TEvent, TSendEventAction>(this IReactiveStructuredActivityBuilder builder, SendEventActionBuildAction buildAction = null)

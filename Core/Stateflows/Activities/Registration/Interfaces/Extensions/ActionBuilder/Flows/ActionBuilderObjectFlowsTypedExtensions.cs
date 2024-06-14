@@ -29,11 +29,11 @@ namespace Stateflows.Activities.Typed
         public static IActionBuilder AddFlow<TToken, TTransformedToken, TObjectTransformationFlow>(this IActionBuilder builder, string targetNodeName)
             where TObjectTransformationFlow : TransformationFlow<TToken, TTransformedToken>
         {
-            (builder as IInternal).Services.RegisterObjectTransformationFlow<TObjectTransformationFlow, TToken, TTransformedToken>();
+            (builder as IInternal).Services.RegisterTransformationFlow<TObjectTransformationFlow, TToken, TTransformedToken>();
 
             return builder.AddFlow<TToken>(
                 targetNodeName,
-                b => b.AddObjectTransformationFlowEvents<TObjectTransformationFlow, TToken, TTransformedToken>()
+                b => b.AddTransformationFlowEvents<TObjectTransformationFlow, TToken, TTransformedToken>()
             );
         }
 

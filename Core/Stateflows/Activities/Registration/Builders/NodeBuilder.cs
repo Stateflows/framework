@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using Stateflows.Activities.Models;
@@ -105,13 +106,16 @@ namespace Stateflows.Activities.Registration
             var targetNodeName = $"{Node.Name}.{typeof(TException).FullName}.ExceptionHandler";
 
             AddFlow<TException>(targetNodeName);
+            AddFlow<NodeReference>(targetNodeName);
+
             ActivityBuilder.AddNode(
                 NodeType.ExceptionHandler,
                 targetNodeName,
                 (ActionDelegateAsync)(c =>
                 {
                     var contextObj = c as ActionContext;
-                    var context = new ExceptionHandlerContext<TException>(contextObj, Node);
+                    var nodeOfOrigin = contextObj.InputTokens.OfType<TokenHolder<NodeReference>>().FirstOrDefault()?.Payload?.Node;
+                    var context = new ExceptionHandlerContext<TException>(contextObj, Node, nodeOfOrigin, contextObj.NodeScope);
 
                     exceptionHandler?.Invoke(context);
 

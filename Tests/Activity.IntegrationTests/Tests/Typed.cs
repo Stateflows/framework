@@ -2,18 +2,21 @@ using Activity.IntegrationTests.Classes.Tokens;
 using Stateflows.Activities.Typed;
 using Stateflows.Common;
 using StateMachine.IntegrationTests.Utils;
-using System.Diagnostics;
 
 namespace Activity.IntegrationTests.Tests
 {
     public class TypedAction : ActionNode
     {
-        internal readonly Input<SomeToken> someTokens;
-        internal readonly Input<string> strings;
+        public readonly Input<SomeToken> someTokens;
+        public readonly Input<string> strings;
+
+        public readonly GlobalValue<string> value = new("global");
 
         public override Task ExecuteAsync()
         {
             Typed.TokenValue = someTokens.First().Foo;
+
+            value.Set("foo");
             
             return Task.CompletedTask;
         }

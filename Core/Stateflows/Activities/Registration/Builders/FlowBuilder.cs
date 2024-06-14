@@ -43,9 +43,9 @@ namespace Stateflows.Activities.Registration.Builders
                 }
                 catch (Exception e)
                 {
-                    if (Edge.Source.Parent != null)
+                    if (Edge.Source != null)
                     {
-                        await Edge.Source.Parent.HandleExceptionAsync(e, context);
+                        await Edge.Source.HandleExceptionAsync(e, context);
                     }
 
                     return null;
@@ -70,14 +70,14 @@ namespace Stateflows.Activities.Registration.Builders
                 {
                     return
                         context.Token is TokenHolder<TToken> token
-                            ? (await transformationAsync(new TokenFlowContext<TToken>(context, token.Payload))).ToToken()
+                            ? (await transformationAsync(new TokenFlowContext<TToken>(context, token.Payload))).ToTokenHolder()
                             : default;
                 }
                 catch (Exception e)
                 {
-                    if (Edge.Source.Parent != null)
+                    if (Edge.Source != null)
                     {
-                        await Edge.Source.Parent.HandleExceptionAsync(e, context as BaseContext);
+                        await Edge.Source.HandleExceptionAsync(e, context);
                     }
 
                     return null;

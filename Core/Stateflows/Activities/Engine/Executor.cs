@@ -189,7 +189,7 @@ namespace Stateflows.Activities.Engine
         }
 
         public async Task<EventStatus> ProcessAsync<TEvent>(TEvent @event)
-            //where TEvent : Event, new()
+            where TEvent : Event, new()
         {
             var result = EventStatus.Rejected;
 
@@ -204,7 +204,7 @@ namespace Stateflows.Activities.Engine
         }
 
         private async Task<EventStatus> DoProcessAsync<TEvent>(TEvent @event)
-            //where TEvent : Event, new()
+            where TEvent : Event, new()
         {
             Debug.Assert(Context != null, $"Context is not available. Is activity '{Graph.Name}' hydrated?");
 
@@ -247,7 +247,6 @@ namespace Stateflows.Activities.Engine
             return EventStatus.Consumed;
         }
 
-        //public async Task DoFinalizeAsync(IEnumerable<Token> outputTokens = null)
         public async Task DoFinalizeAsync(IEnumerable<object> outputTokens = null)
         {
             if (Finalized) return;
@@ -270,7 +269,6 @@ namespace Stateflows.Activities.Engine
             FinalizationEvent.Set();
         }
 
-        //public async Task<(IEnumerable<Token> Output, bool Finalized)> DoExecuteStructuredNodeAsync(Node node, NodeScope nodeScope, IEnumerable<Token> input = null)
         public async Task<(IEnumerable<TokenHolder> Output, bool Finalized)> DoExecuteStructuredNodeAsync(Node node, NodeScope nodeScope, IEnumerable<TokenHolder> input = null)
         {
             if (node.Anchored)
@@ -520,7 +518,11 @@ namespace Stateflows.Activities.Engine
                     context.Context,
                     currentScope,
                     handler,
-                    new TokenHolder[] { exception.ToToken(exception.GetType()) }
+                    new TokenHolder[]
+                    {
+                        exception.ToExceptionHolder(exception.GetType()),
+                        new NodeReference() { Node = node }.ToTokenHolder(),
+                    }
                 );
 
                 await handler.Action.WhenAll(exceptionContext);
@@ -552,7 +554,7 @@ namespace Stateflows.Activities.Engine
                 }
             }
 
-            if (
+            var activated =
                 ( // initial node case
                     node.Type == NodeType.Initial
                 ) ||
@@ -570,8 +572,17 @@ namespace Stateflows.Activities.Engine
                 ) ||
                 (
                     Context.NodesToExecute.Contains(node)
-                )
-            )
+                );
+
+            var inputTokens = input ?? streams.SelectMany(stream => stream.Tokens).Distinct().ToArray();
+
+            nodeScope = nodeScope.CreateChildScope(node);
+
+            var actionContext = new ActionContext(Context, nodeScope, node, inputTokens, selectionTokens);
+
+            await Inspector.BeforeNodeActivateAsync(actionContext, activated);
+
+            if (activated)
             {
                 if (
                     node.Type == NodeType.AcceptEventAction &&
@@ -591,13 +602,13 @@ namespace Stateflows.Activities.Engine
                     return;
                 }
 
-                var inputTokens = input ?? streams.SelectMany(stream => stream.Tokens).Distinct().ToArray();
+                //var inputTokens = input ?? streams.SelectMany(stream => stream.Tokens).Distinct().ToArray();
 
                 ReportNodeExecuting(node, inputTokens);
 
-                nodeScope = nodeScope.CreateChildScope(node);
+                //nodeScope = nodeScope.CreateChildScope(node);
 
-                var actionContext = new ActionContext(Context, nodeScope, node, inputTokens, selectionTokens);
+                //var actionContext = new ActionContext(Context, nodeScope, node, inputTokens, selectionTokens);
 
                 await node.Action.WhenAll(actionContext);
 
@@ -637,7 +648,7 @@ namespace Stateflows.Activities.Engine
                         !actionContext.OutputTokens.Any()
                     )
                     {
-                        actionContext.OutputTokens.Add(new Control().ToToken());
+                        actionContext.OutputTokens.Add(new Control().ToTokenHolder());
                     }
 
                     List<TokenHolder> outputTokens;
@@ -682,6 +693,8 @@ namespace Stateflows.Activities.Engine
             {
                 ReportNodeAttemptedExecution(node, streams);
             }
+
+            await Inspector.AfterNodeActivateAsync(null);
         }
 
         private static void ReportNodeExecuting(Node node, IEnumerable<TokenHolder> inputTokens)
@@ -815,7 +828,7 @@ namespace Stateflows.Activities.Engine
 
                 if (edgeTokenName != typeof(Control).GetTokenName())
                 {
-                    processedTokens.Add(new Control().ToToken());
+                    processedTokens.Add(new Control().ToTokenHolder());
                 }
 
                 if (!edge.Source.Options.HasFlag(NodeOptions.ImplicitFork) && consumedTokens.Any())

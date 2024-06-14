@@ -5,6 +5,9 @@ using Stateflows.Common.Interfaces;
 
 namespace Stateflows.Common
 {
+    /// <summary>
+    /// Behavior handle
+    /// </summary>
     public interface IBehavior : IWatches, IDisposable
     {
         BehaviorId Id { get; }

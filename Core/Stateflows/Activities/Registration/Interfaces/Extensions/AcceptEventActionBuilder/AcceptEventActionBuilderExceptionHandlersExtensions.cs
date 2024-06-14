@@ -13,7 +13,17 @@ namespace Stateflows.Activities.Typed
         {
             (builder as IInternal).Services.RegisterExceptionHandlerAction<TException, TExceptionHandler>();
 
-            return builder.AddExceptionHandler<TException>(c => (c as BaseContext).NodeScope.GetExceptionHandler<TException, TExceptionHandler>(c).HandleAsync());
+            return builder.AddExceptionHandler<TException>(async c =>
+            {
+                var handler = (c as BaseContext).NodeScope.GetExceptionHandler<TException, TExceptionHandler>(c);
+
+                if (handler != null)
+                {
+                    ActivityNodeContextAccessor.Context.Value = c;
+                    await handler?.HandleAsync();
+                    ActivityNodeContextAccessor.Context.Value = null;
+                }
+            });
         }
     }
 }

@@ -1,13 +1,14 @@
 ﻿using System;
 using System.Linq;
+using System.Reflection;
 using System.Threading.Tasks;
 using System.Collections.Generic;
+using Stateflows.Utils;
 using Stateflows.Common;
 using Stateflows.Common.Models;
 using Stateflows.Activities.Registration;
 using Stateflows.Activities.Context.Classes;
-using Stateflows.Utils;
-using System.Reflection;
+using System.Xml.Linq;
 
 namespace Stateflows.Activities.Models
 {
@@ -51,13 +52,13 @@ namespace Stateflows.Activities.Models
         public IEnumerable<Type> GetIncomingTokenTypes()
             => IncomingEdges
                 .Select(e => e.TargetTokenType)
-                .Where(t => t != typeof(Control) && !typeof(Exception).IsAssignableFrom(t))
+                .Where(t => t != typeof(Control) && t != typeof(NodeReference) && !typeof(Exception).IsAssignableFrom(t))
                 .Distinct();
 
         public IEnumerable<Type> GetOutgoingTokenTypes()
             => Edges
                 .Select(e => e.TokenType)
-                .Where(t => t != typeof(Control) && !typeof(Exception).IsAssignableFrom(t))
+                .Where(t => t != typeof(Control) && t != typeof(NodeReference) && !typeof(Exception).IsAssignableFrom(t))
                 .Distinct();
 
         public void ScanForDeclaredTypes(Type nodeType)
@@ -163,7 +164,6 @@ namespace Stateflows.Activities.Models
                 .Select(e => e.Target)
                 .Where(n => n.Type == NodeType.ExceptionHandler);
 
-        //public async Task<IEnumerable<Token>> HandleExceptionAsync(Exception exception, BaseContext context)
         public async Task<IEnumerable<object>> HandleExceptionAsync(Exception exception, BaseContext context)
         {
             Node handler = null;
@@ -197,7 +197,11 @@ namespace Stateflows.Activities.Models
                     context.Context,
                     currentScope,
                     handler,
-                    new TokenHolder[] { exception.ToToken() }
+                    new TokenHolder[]
+                    {
+                        exception.ToExceptionHolder(),
+                        new NodeReference() { Node = this }.ToTokenHolder(),
+                    }
                 );
 
                 await handler.Action.WhenAll(exceptionContext);

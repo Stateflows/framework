@@ -7,6 +7,9 @@ namespace StateMachine.IntegrationTests.Classes.Transitions
         private readonly SourceStateValue<int> counter = new("counter");
 
         public override Task<bool> GuardAsync()
-            => Task.FromResult(counter.IsSet && counter.Value == 1);
+        {
+            var result = counter.TryGet(out var c) && c == 1;
+            return Task.FromResult(result);
+        }
     }
 }

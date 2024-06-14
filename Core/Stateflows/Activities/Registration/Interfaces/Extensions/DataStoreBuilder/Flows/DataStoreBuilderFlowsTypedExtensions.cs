@@ -28,10 +28,10 @@ namespace Stateflows.Activities.Typed
         public static void AddFlow<TToken, TTransformedToken, TObjectTransformationFlow>(this IDataStoreBuilder builder, string targetNodeName)
             where TObjectTransformationFlow : TransformationFlow<TToken, TTransformedToken>
         {
-            (builder as IInternal).Services.RegisterObjectTransformationFlow<TObjectTransformationFlow, TToken, TTransformedToken>();
+            (builder as IInternal).Services.RegisterTransformationFlow<TObjectTransformationFlow, TToken, TTransformedToken>();
             builder.AddFlow<TToken>(
                 targetNodeName,
-                b => b.AddObjectTransformationFlowEvents<TObjectTransformationFlow, TToken, TTransformedToken>()
+                b => b.AddTransformationFlowEvents<TObjectTransformationFlow, TToken, TTransformedToken>()
             );
         }
 

@@ -6,9 +6,9 @@ namespace Stateflows.Activities.Extensions
 {
     internal static class IServiceCollectionExtensions
     {
-        public static IServiceCollection RegisterActivity<TActivity>(this IServiceCollection services)
-            where TActivity : Activity
-            => services?.AddServiceType<TActivity>();
+        //public static IServiceCollection RegisterActivity<TActivity>(this IServiceCollection services)
+        //    where TActivity : Activity
+        //    => services?.AddServiceType<TActivity>();
 
         public static IServiceCollection RegisterActivity(this IServiceCollection services, Type activityType)
             => services?.AddServiceType(activityType);
@@ -30,25 +30,25 @@ namespace Stateflows.Activities.Extensions
             where TFlow : Flow<TToken>
             => services?.AddServiceType<TFlow>();
 
-        public static IServiceCollection RegisterElseObjectFlow<TFlow, TToken>(this IServiceCollection services)
-            where TFlow : ElseFlow<TToken>
-            => services?.AddServiceType<TFlow>();
+        //public static IServiceCollection RegisterElseObjectFlow<TFlow, TToken>(this IServiceCollection services)
+        //    where TFlow : ElseFlow<TToken>
+        //    => services?.AddServiceType<TFlow>();
 
-        public static IServiceCollection RegisterObjectTransformationFlow<TObjectTransformationFlow, TToken, TTransformedToken>(this IServiceCollection services)
+        public static IServiceCollection RegisterTransformationFlow<TObjectTransformationFlow, TToken, TTransformedToken>(this IServiceCollection services)
             where TObjectTransformationFlow : TransformationFlow<TToken, TTransformedToken>
             => services?.AddServiceType<TObjectTransformationFlow>();
 
-        public static IServiceCollection RegisterElseObjectTransformationFlow<TObjectTransformationFlow, TToken, TTransformedToken>(this IServiceCollection services)
-            where TObjectTransformationFlow : ElseObjectTransformationFlow<TToken, TTransformedToken>
+        public static IServiceCollection RegisterElseTransformationFlow<TObjectTransformationFlow, TToken, TTransformedToken>(this IServiceCollection services)
+            where TObjectTransformationFlow : ElseTransformationFlow<TToken, TTransformedToken>
             => services?.AddServiceType<TObjectTransformationFlow>();
 
         public static IServiceCollection RegisterControlFlow<TControlFlow>(this IServiceCollection services)
             where TControlFlow : ControlFlow
             => services?.AddServiceType<TControlFlow>();
 
-        public static IServiceCollection RegisterElseControlFlow<TControlFlow>(this IServiceCollection services)
-            where TControlFlow : ElseControlFlow
-            => services?.AddServiceType<TControlFlow>();
+        //public static IServiceCollection RegisterElseControlFlow<TControlFlow>(this IServiceCollection services)
+        //    where TControlFlow : ElseControlFlow
+        //    => services?.AddServiceType<TControlFlow>();
 
         public static IServiceCollection RegisterObserver<TObserver>(this IServiceCollection services)
             where TObserver : class, IActivityObserver

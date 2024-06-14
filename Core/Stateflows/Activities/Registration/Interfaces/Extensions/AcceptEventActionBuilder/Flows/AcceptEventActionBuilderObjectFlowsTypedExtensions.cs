@@ -25,20 +25,20 @@ namespace Stateflows.Activities.Typed
             where TTargetNode : ActivityNode
             => builder.AddFlow<TToken, TFlow>(ActivityNodeInfo<TTargetNode>.Name);
 
-        public static IAcceptEventActionBuilder AddFlow<TToken, TTransformedToken, TObjectTransformationFlow>(this IAcceptEventActionBuilder builder, string targetNodeName)
-            where TObjectTransformationFlow : TransformationFlow<TToken, TTransformedToken>
+        public static IAcceptEventActionBuilder AddFlow<TToken, TTransformedToken, TTransformationFlow>(this IAcceptEventActionBuilder builder, string targetNodeName)
+            where TTransformationFlow : TransformationFlow<TToken, TTransformedToken>
         {
-            (builder as IInternal).Services.RegisterObjectTransformationFlow<TObjectTransformationFlow, TToken, TTransformedToken>();
+            (builder as IInternal).Services.RegisterTransformationFlow<TTransformationFlow, TToken, TTransformedToken>();
 
             return builder.AddFlow<TToken>(
                 targetNodeName,
-                b => b.AddObjectTransformationFlowEvents<TObjectTransformationFlow, TToken, TTransformedToken>()
+                b => b.AddTransformationFlowEvents<TTransformationFlow, TToken, TTransformedToken>()
             );
         }
 
-        public static IAcceptEventActionBuilder AddFlow<TToken, TTransformedToken, TObjectTransformationFlow, TTargetNode>(this IAcceptEventActionBuilder builder)
-            where TObjectTransformationFlow : TransformationFlow<TToken, TTransformedToken>
+        public static IAcceptEventActionBuilder AddFlow<TToken, TTransformedToken, TTransformationFlow, TTargetNode>(this IAcceptEventActionBuilder builder)
+            where TTransformationFlow : TransformationFlow<TToken, TTransformedToken>
             where TTargetNode : ActivityNode
-            => builder.AddFlow<TToken, TTransformedToken, TObjectTransformationFlow>(ActivityNodeInfo<TTargetNode>.Name);
+            => builder.AddFlow<TToken, TTransformedToken, TTransformationFlow>(ActivityNodeInfo<TTargetNode>.Name);
     }
 }

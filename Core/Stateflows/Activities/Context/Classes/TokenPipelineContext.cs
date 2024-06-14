@@ -1,7 +1,6 @@
 ﻿using Stateflows.Activities.Models;
 using Stateflows.Activities.Engine;
 using Stateflows.Activities.Context.Interfaces;
-using Stateflows.Common;
 
 namespace Stateflows.Activities.Context.Classes
 {
@@ -22,10 +21,10 @@ namespace Stateflows.Activities.Context.Classes
 
         public ISourceNodeContext sourceNode = null;
         public ISourceNodeContext SourceNode
-            => sourceNode ??= new SourceNodeContext(Edge.Source, Context, NodeScope.ThreadId);
+            => sourceNode ??= new SourceNodeContext(Edge.Source, Context, NodeScope);
 
         public INodeContext targetNode = null;
         public INodeContext TargetNode
-            => targetNode ??= new NodeContext(Edge.Target, Context);
+            => targetNode ??= new NodeContext(Edge.Target, Context, NodeScope);
     }
 }

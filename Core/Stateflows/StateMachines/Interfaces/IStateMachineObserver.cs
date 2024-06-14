@@ -6,21 +6,52 @@ namespace Stateflows.StateMachines
 {
     public interface IStateMachineObserver
     {
-        Task BeforeStateMachineInitializeAsync(IStateMachineInitializationContext context);
-        Task AfterStateMachineInitializeAsync(IStateMachineInitializationContext context);
-        Task BeforeStateMachineFinalizeAsync(IStateMachineActionContext context);
-        Task AfterStateMachineFinalizeAsync(IStateMachineActionContext context);
-        Task BeforeStateInitializeAsync(IStateActionContext context);
-        Task AfterStateInitializeAsync(IStateActionContext context);
-        Task BeforeStateFinalizeAsync(IStateActionContext context);
-        Task AfterStateFinalizeAsync(IStateActionContext context);
-        Task BeforeStateEntryAsync(IStateActionContext context);
-        Task AfterStateEntryAsync(IStateActionContext context);
-        Task BeforeStateExitAsync(IStateActionContext context);
-        Task AfterStateExitAsync(IStateActionContext context);
-        Task BeforeTransitionGuardAsync(IGuardContext<Event> context);
-        Task AfterTransitionGuardAsync(IGuardContext<Event> context, bool guardResult);
-        Task BeforeTransitionEffectAsync(ITransitionContext<Event> context);
-        Task AfterTransitionEffectAsync(ITransitionContext<Event> context);
+        Task BeforeStateMachineInitializeAsync(IStateMachineInitializationContext context)
+            => Task.CompletedTask;
+
+        Task AfterStateMachineInitializeAsync(IStateMachineInitializationContext context)
+            => Task.CompletedTask;
+
+        Task BeforeStateMachineFinalizeAsync(IStateMachineActionContext context)
+            => Task.CompletedTask;
+
+        Task AfterStateMachineFinalizeAsync(IStateMachineActionContext context)
+            => Task.CompletedTask;
+
+        Task BeforeStateInitializeAsync(IStateActionContext context)
+            => Task.CompletedTask;
+
+        Task AfterStateInitializeAsync(IStateActionContext context)
+            => Task.CompletedTask;
+
+        Task BeforeStateFinalizeAsync(IStateActionContext context)
+            => Task.CompletedTask;
+
+        Task AfterStateFinalizeAsync(IStateActionContext context)
+            => Task.CompletedTask;
+
+        Task BeforeStateEntryAsync(IStateActionContext context)
+            => Task.CompletedTask;
+
+        Task AfterStateEntryAsync(IStateActionContext context)
+            => Task.CompletedTask;
+
+        Task BeforeStateExitAsync(IStateActionContext context)
+            => Task.CompletedTask;
+
+        Task AfterStateExitAsync(IStateActionContext context)
+            => Task.CompletedTask;
+
+        Task BeforeTransitionGuardAsync(IGuardContext<Event> context)
+            => Task.CompletedTask;
+
+        Task AfterTransitionGuardAsync(IGuardContext<Event> context, bool guardResult)
+            => Task.CompletedTask;
+
+        Task BeforeTransitionEffectAsync(ITransitionContext<Event> context)
+            => Task.CompletedTask;
+
+        Task AfterTransitionEffectAsync(ITransitionContext<Event> context)
+            => Task.CompletedTask;
     }
 }

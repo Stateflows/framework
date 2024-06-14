@@ -1,5 +1,8 @@
-﻿using Stateflows.Activities.Models;
+﻿using System.Linq;
+using System.Collections.Generic;
+using Stateflows.Activities.Models;
 using Stateflows.Activities.Context.Interfaces;
+using Stateflows.Activities.Engine;
 
 namespace Stateflows.Activities.Context.Classes
 {
@@ -13,10 +16,21 @@ namespace Stateflows.Activities.Context.Classes
 
         internal RootContext Context { get; }
 
-        public NodeContext(Node node, RootContext context)
+        internal NodeScope NodeScope { get; }
+
+        private IEnumerable<IIncomingFlowContext> incomingFlows;
+        public IEnumerable<IIncomingFlowContext> IncomingFlows
+            => incomingFlows ??= Node.IncomingEdges.Select(edge => new FlowContext(Context, NodeScope, edge));
+
+        private IEnumerable<IFlowContext> outgoingFlows;
+        public IEnumerable<IFlowContext> OutgoingFlows
+            => outgoingFlows ??= Node.Edges.Select(edge => new FlowContext(Context, NodeScope, edge));
+
+        public NodeContext(Node node, RootContext context, NodeScope nodeScope)
         {
             Node = node;
             Context = context;
+            NodeScope = nodeScope;
         }
 
         public bool TryGetParentNode(out INodeContext parentNodeContext)
@@ -24,7 +38,7 @@ namespace Stateflows.Activities.Context.Classes
             var parent = Node.Parent;
 
             parentNodeContext = parent != null
-                ? new NodeContext(parent, Context)
+                ? new NodeContext(parent, Context, null)
                 : null;
 
             return parentNodeContext != null;

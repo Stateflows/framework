@@ -5,7 +5,7 @@ using Stateflows.Common.Exceptions;
 
 namespace Stateflows.Common.Classes
 {
-    internal static class ValuesHolder
+    public static class ContextValuesHolder
     {
         public static readonly AsyncLocal<IContextValues> GlobalValues = new AsyncLocal<IContextValues>();
         public static readonly AsyncLocal<IContextValues> StateValues = new AsyncLocal<IContextValues>();
@@ -24,16 +24,19 @@ namespace Stateflows.Common.Classes
             this.valueSet = valueSetSelector?.Invoke() ?? throw new StateflowsException($"{collectionName} set is not available in current context");
         }
 
+        public void Set(T value)
+            => valueSet.Set(valueName, value);
+
         public bool IsSet
-            => valueSet.TryGet<T>(valueName, out var _);
+            => valueSet.IsSet(valueName);
 
-        public T Value
-        {
-            get => valueSet.TryGet<T>(valueName, out var result)
-                ? result
-                : default;
+        public bool TryGet(out T value)
+            => valueSet.TryGet(valueName, out value);
 
-            set => valueSet.Set(valueName, value);
-        }
+        public T GetOrDefault(T defaultValue)
+            => valueSet.GetOrDefault(valueName, defaultValue);
+
+        public void Remove()
+            => valueSet.Remove(valueName);
     }
 }

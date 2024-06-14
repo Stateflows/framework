@@ -27,6 +27,6 @@ namespace Stateflows.Activities.Context.Classes
 
         private INodeContext currentNode = null;
         public INodeContext CurrentNode
-            => currentNode ??= new NodeContext(Node, Context);
+            => currentNode ??= new NodeContext(Node, Context, NodeScope);
     }
 }
