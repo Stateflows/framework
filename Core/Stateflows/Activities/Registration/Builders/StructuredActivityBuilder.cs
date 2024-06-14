@@ -5,7 +5,6 @@ using Stateflows.Activities.Models;
 using Stateflows.Activities.Context.Interfaces;
 using Stateflows.Activities.Registration.Interfaces;
 using Stateflows.Activities.Registration.Interfaces.Base;
-using Stateflows.Common;
 
 namespace Stateflows.Activities.Registration.Builders
 {
@@ -28,7 +27,6 @@ namespace Stateflows.Activities.Registration.Builders
         }
 
         public IActionBuilder AddFlow<TToken>(string targetNodeName, ObjectFlowBuildAction<TToken> buildAction = null)
-            where TToken : Token, new()
         {
             NodeBuilder.AddFlow<TToken>(targetNodeName, buildAction);
 
@@ -36,7 +34,6 @@ namespace Stateflows.Activities.Registration.Builders
         }
 
         public IActionBuilder AddElseFlow<TToken>(string targetNodeName, ElseObjectFlowBuildAction<TToken> buildAction = null)
-            where TToken : Token, new()
         {
             NodeBuilder.AddElseFlow<TToken>(targetNodeName, buildAction);
 

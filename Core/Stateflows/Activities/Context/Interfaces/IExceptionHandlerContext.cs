@@ -7,6 +7,8 @@ namespace Stateflows.Activities.Context.Interfaces
     {
         TException Exception { get; }
 
+        INodeContext ProtectedNode { get; }
+
         INodeContext NodeOfOrigin { get; }
     }
 }

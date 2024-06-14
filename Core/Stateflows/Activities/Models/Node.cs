@@ -1,11 +1,14 @@
 ﻿using System;
 using System.Linq;
+using System.Reflection;
 using System.Threading.Tasks;
 using System.Collections.Generic;
+using Stateflows.Utils;
 using Stateflows.Common;
 using Stateflows.Common.Models;
 using Stateflows.Activities.Registration;
 using Stateflows.Activities.Context.Classes;
+using System.Xml.Linq;
 
 namespace Stateflows.Activities.Models
 {
@@ -49,20 +52,20 @@ namespace Stateflows.Activities.Models
         public IEnumerable<Type> GetIncomingTokenTypes()
             => IncomingEdges
                 .Select(e => e.TargetTokenType)
-                .Where(t => t != typeof(ControlToken) && (!t.IsGenericType || t.GetGenericTypeDefinition() != typeof(ExceptionToken<>)))
+                .Where(t => t != typeof(Control) && t != typeof(NodeReference) && !typeof(Exception).IsAssignableFrom(t))
                 .Distinct();
 
         public IEnumerable<Type> GetOutgoingTokenTypes()
             => Edges
                 .Select(e => e.TokenType)
-                .Where(t => t != typeof(ControlToken) && (!t.IsGenericType || t.GetGenericTypeDefinition() != typeof(ExceptionToken<>)))
+                .Where(t => t != typeof(Control) && t != typeof(NodeReference) && !typeof(Exception).IsAssignableFrom(t))
                 .Distinct();
 
         public void ScanForDeclaredTypes(Type nodeType)
         {
             DeclaredTypesSet = true;
 
-            var fields = nodeType.GetFields().Where(field => field.FieldType.IsGenericType).ToArray();
+            var fields = nodeType.GetFields(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic).Where(field => field.FieldType.IsGenericType).ToArray();
 
             InputTokenTypes = fields
                 .Where(field => field.FieldType.GetGenericTypeDefinition() == typeof(Input<>))
@@ -161,7 +164,7 @@ namespace Stateflows.Activities.Models
                 .Select(e => e.Target)
                 .Where(n => n.Type == NodeType.ExceptionHandler);
 
-        public async Task<IEnumerable<Token>> HandleExceptionAsync(Exception exception, BaseContext context)
+        public async Task<IEnumerable<object>> HandleExceptionAsync(Exception exception, BaseContext context)
         {
             Node handler = null;
             var currentNode = this;
@@ -194,7 +197,11 @@ namespace Stateflows.Activities.Models
                     context.Context,
                     currentScope,
                     handler,
-                    new Token[] { new ExceptionToken<Exception>() { Exception = exception } }
+                    new TokenHolder[]
+                    {
+                        exception.ToExceptionHolder(),
+                        new NodeReference() { Node = this }.ToTokenHolder(),
+                    }
                 );
 
                 await handler.Action.WhenAll(exceptionContext);
@@ -202,7 +209,7 @@ namespace Stateflows.Activities.Models
                 return exceptionContext.OutputTokens;
             }
 
-            return new Token[0];
+            return new TokenHolder[0];
         }
     }
 }

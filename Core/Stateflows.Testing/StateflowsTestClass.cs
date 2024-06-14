@@ -4,13 +4,14 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Collections.Generic;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.DependencyInjection;
 using Stateflows;
+using Stateflows.Activities;
 using Stateflows.StateMachines;
 using Stateflows.Common.Registration.Interfaces;
+using Stateflows.Testing.Activities.Cradle;
 using Stateflows.Testing.StateMachines.Sequence;
-using Microsoft.Extensions.Logging;
-using Stateflows.Activities;
 
 namespace StateMachine.IntegrationTests.Utils
 {
@@ -25,6 +26,14 @@ namespace StateMachine.IntegrationTests.Utils
         protected IStateMachineLocator StateMachineLocator => ServiceProvider.GetRequiredService<IStateMachineLocator>();
 
         protected IActivityLocator ActivityLocator => ServiceProvider.GetRequiredService<IActivityLocator>();
+
+        //protected IFlowTestCradleBuilder<TToken> SetupCradle<TToken, TFlow>()
+        //    where TFlow : Flow<TToken>
+        //    => new FlowTestCradleBuilder<TToken, TFlow>(ServiceProvider);
+
+        protected INodeTestCradleBuilder SetupCradle<TActionNode>()
+            where TActionNode : ActionNode
+            => new NodeTestCradleBuilder<TActionNode>(ServiceProvider);
 
         protected ExecutionSequenceObserver ExecutionSequence => ServiceProvider.GetRequiredService<ExecutionSequenceObserver>();
 

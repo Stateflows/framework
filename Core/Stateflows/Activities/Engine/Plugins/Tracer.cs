@@ -69,28 +69,28 @@ namespace Stateflows.Activities.Engine
             return Task.CompletedTask;
         }
 
-        public Task BeforeActivityInitializationAsync(IActivityInitializationContext context)
+        public Task BeforeActivityInitializeAsync(IActivityInitializationContext context)
             => StartMeasureAsync();
 
-        public Task AfterActivityInitializationAsync(IActivityInitializationContext context)
+        public Task AfterActivityInitializeAsync(IActivityInitializationContext context)
                 => StopMeasureAsync("ActivityInitialization", context.Activity.Id.Name);
 
-        public Task BeforeActivityFinalizationAsync(IActivityFinalizationContext context)
+        public Task BeforeActivityFinalizeAsync(IActivityFinalizationContext context)
             => StartMeasureAsync();
 
-        public Task AfterActivityFinalizationAsync(IActivityFinalizationContext context)
+        public Task AfterActivityFinalizeAsync(IActivityFinalizationContext context)
             => StopMeasureAsync("ActivityFinalization", context.Activity.Id.Name);
 
-        public Task BeforeNodeInitializationAsync(IActivityNodeContext context)
+        public Task BeforeNodeInitializeAsync(IActivityNodeContext context)
             => StartMeasureAsync();
 
-        public Task AfterNodeInitializationAsync(IActivityNodeContext context)
+        public Task AfterNodeInitializeAsync(IActivityNodeContext context)
         => StopMeasureAsync("NodeInitialization", context.CurrentNode.NodeName);
 
-        public Task BeforeNodeFinalizationAsync(IActivityNodeContext context)
+        public Task BeforeNodeFinalizeAsync(IActivityNodeContext context)
             => StartMeasureAsync();
 
-        public Task AfterNodeFinalizationAsync(IActivityNodeContext context)
+        public Task AfterNodeFinalizeAsync(IActivityNodeContext context)
         => StopMeasureAsync("NodeFinalization", context.CurrentNode.NodeName);
 
         public Task BeforeNodeExecuteAsync(IActivityNodeContext context)
@@ -106,8 +106,8 @@ namespace Stateflows.Activities.Engine
                     .AddStep(
                         "Execute",
                         context.CurrentNode.NodeName,
-                        Stopwatch.Elapsed,
-                        (context as IActionContext<Token>)?.Input ?? Array.Empty<Token>()
+                        Stopwatch.Elapsed
+                        //(context as IActionContext<Token>)?.Input ?? Array.Empty<Token>()
                     )
                     .Exceptions
                     .Add(Exception);
@@ -116,17 +116,17 @@ namespace Stateflows.Activities.Engine
             return Task.CompletedTask;
         }
 
-        public Task BeforeFlowGuardAsync(IGuardContext<Token> context)
+        public Task BeforeFlowGuardAsync<TToken>(IGuardContext<TToken> context)
             => StartMeasureAsync();
 
-        public Task AfterFlowGuardAsync(IGuardContext<Token> context, bool guardResult)
-        => StopMeasureAsync("Guard", $"{context.SourceNode.NodeName}-{context.Token.Name}->{context.TargetNode.NodeName}");
+        public Task AfterFlowGuardAsync<TToken>(IGuardContext<TToken> context, bool guardResult)
+            => StopMeasureAsync("Guard", $"{context.SourceNode.NodeName}-{context.Token.GetType().GetTokenName()}->{context.TargetNode.NodeName}");
 
-        public Task BeforeFlowTransformationAsync(ITransformationContext<Token> context)
+        public Task BeforeFlowTransformAsync<TToken>(ITransformationContext<TToken> context)
             => StartMeasureAsync();
 
-        public Task AfterFlowTransformationAsync(ITransformationContext<Token> context)
-            => StopMeasureAsync("Transformation", $"{context.SourceNode.NodeName}-{context.Token.Name}->{context.TargetNode.NodeName}");
+        public Task AfterFlowTransformAsync<TToken>(ITransformationContext<TToken> context)
+            => StopMeasureAsync("Transformation", $"{context.SourceNode.NodeName}-{context.Token.GetType().GetTokenName()}->{context.TargetNode.NodeName}");
 
         public Task OnActivityInitializationExceptionAsync(IActivityInitializationContext context, Exception exception)
             => SetExceptionAsync(exception);
@@ -143,17 +143,11 @@ namespace Stateflows.Activities.Engine
         public Task OnNodeExecutionExceptionAsync(IActivityNodeContext context, Exception exception)
             => SetExceptionAsync(exception);
 
-        public Task OnFlowGuardExceptionAsync(IGuardContext<Token> context, Exception exception)
+        public Task OnFlowGuardExceptionAsync<TToken>(IGuardContext<TToken> context, Exception exception)
             => SetExceptionAsync(exception);
 
-        public Task OnFlowTransformationExceptionAsync(ITransformationContext<Token> context, Exception exception)
+        public Task OnFlowTransformationExceptionAsync<TToken>(ITransformationContext<TToken> context, Exception exception)
             => SetExceptionAsync(exception);
-
-        public Task AfterHydrateAsync(IActivityActionContext context)
-            => Task.CompletedTask;
-
-        public Task BeforeDehydrateAsync(IActivityActionContext context)
-            => Task.CompletedTask;
 
         public Task<bool> BeforeProcessEventAsync(IEventContext<Event> context)
         {

@@ -3,7 +3,7 @@ using Stateflows.Common;
 
 namespace Stateflows.Activities.Inspection.Interfaces
 {
-    public interface IGuardInspectionContext : IGuardContext<Token>
+    public interface IGuardInspectionContext : IGuardContext<TokenHolder>
     {
         IActivityInspection Inspection { get; }
     }

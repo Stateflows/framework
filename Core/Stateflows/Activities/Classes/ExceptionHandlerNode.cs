@@ -7,7 +7,7 @@ namespace Stateflows.Activities
     public abstract class ExceptionHandlerNode<TException> : ActivityNode
         where TException : Exception
     {
-        new public IExceptionHandlerContext<TException> Context { get; internal set; }
+        new public IExceptionHandlerContext<TException> Context => base.Context as IExceptionHandlerContext<TException>;
 
         public abstract Task HandleAsync();
     }

@@ -26,9 +26,7 @@ namespace Stateflows.StateMachines.Engine
             ServiceProvider = serviceProvider;
         }
 
-#pragma warning disable CS0067 // The event 'Provider.BehaviorClassesChanged' is never used
         public event ActionAsync<IBehaviorProvider> BehaviorClassesChanged;
-#pragma warning restore CS0067 // The event 'Provider.BehaviorClassesChanged' is never used
 
         public bool TryProvideBehavior(BehaviorId id, out IBehavior behavior)
         {

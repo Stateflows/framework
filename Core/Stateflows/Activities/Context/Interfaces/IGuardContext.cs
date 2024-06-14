@@ -1,11 +1,8 @@
-﻿using Stateflows.Common;
-
-namespace Stateflows.Activities.Context.Interfaces
+﻿namespace Stateflows.Activities.Context.Interfaces
 {
-    public interface IGuardContext : IFlowContext
+    public interface IGuardContext : IActivityFlowContext
     { }
 
-    public interface IGuardContext<out TToken> : IFlowContext<TToken>
-        where TToken : Token, new()
+    public interface IGuardContext<out TToken> : IActivityFlowContext<TToken>
     { }
 }

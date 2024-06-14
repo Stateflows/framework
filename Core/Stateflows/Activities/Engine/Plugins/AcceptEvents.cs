@@ -6,9 +6,6 @@ using Stateflows.Common;
 using Stateflows.Activities.Models;
 using Stateflows.Activities.Context.Classes;
 using Stateflows.Activities.Context.Interfaces;
-using System.Xml.Linq;
-using Microsoft.Extensions.Logging;
-using System.Diagnostics;
 
 namespace Stateflows.Activities.Engine
 {
@@ -102,36 +99,24 @@ namespace Stateflows.Activities.Engine
             }
         }
 
-        Task IActivityObserver.AfterActivityInitializationAsync(IActivityInitializationContext context)
+        Task IActivityObserver.AfterActivityInitializeAsync(IActivityInitializationContext context)
             => Task.CompletedTask;
 
-        Task IActivityObserver.AfterActivityFinalizationAsync(IActivityFinalizationContext context)
+        Task IActivityObserver.AfterActivityFinalizeAsync(IActivityFinalizationContext context)
         {
             UnregisterAcceptEventNodes((context as IRootContext).Context.Executor.Graph.DanglingTimeEventActionNodes);
 
             return Task.CompletedTask;
         }
 
-        Task IActivityObserver.AfterFlowGuardAsync(IGuardContext<Token> context, bool guardResult)
-            => Task.CompletedTask;
-
-        Task IActivityObserver.AfterFlowTransformationAsync(ITransformationContext<Token> context)
-            => Task.CompletedTask;
-
-        Task IActivityInterceptor.AfterHydrateAsync(IActivityActionContext context)
-            => Task.CompletedTask;
-
-        Task IActivityObserver.AfterNodeExecuteAsync(IActivityNodeContext context)
-            => Task.CompletedTask;
-
-        Task IActivityObserver.AfterNodeFinalizationAsync(IActivityNodeContext context)
+        Task IActivityObserver.AfterNodeFinalizeAsync(IActivityNodeContext context)
         {
             UnregisterAcceptEventNodes((context as ActionContext).Node.DanglingTimeEventActionNodes);
 
             return Task.CompletedTask;
         }
 
-        Task IActivityObserver.AfterNodeInitializationAsync(IActivityNodeContext context)
+        Task IActivityObserver.AfterNodeInitializeAsync(IActivityNodeContext context)
             => Task.CompletedTask;
 
         Task IActivityInterceptor.AfterProcessEventAsync(IEventContext<Event> context)
@@ -153,7 +138,7 @@ namespace Stateflows.Activities.Engine
             return Task.CompletedTask;
         }
 
-        Task IActivityObserver.BeforeActivityInitializationAsync(IActivityInitializationContext context)
+        Task IActivityObserver.BeforeActivityInitializeAsync(IActivityInitializationContext context)
         {
             RegisterAcceptEventNodes(
                 (context as IRootContext).Context.Executor.Graph.AcceptEventActionNodes.Select(node => (node, Guid.NewGuid()))
@@ -162,22 +147,7 @@ namespace Stateflows.Activities.Engine
             return Task.CompletedTask;
         }
 
-        Task IActivityObserver.BeforeActivityFinalizationAsync(IActivityFinalizationContext context)
-            => Task.CompletedTask;
-
-        Task IActivityInterceptor.BeforeDehydrateAsync(IActivityActionContext context)
-            => Task.CompletedTask;
-
-        Task IActivityObserver.BeforeFlowGuardAsync(IGuardContext<Token> context)
-            => Task.CompletedTask;
-
-        Task IActivityObserver.BeforeFlowTransformationAsync(ITransformationContext<Token> context)
-            => Task.CompletedTask;
-
-        Task IActivityObserver.BeforeNodeExecuteAsync(IActivityNodeContext context)
-            => Task.CompletedTask;
-
-        Task IActivityObserver.BeforeNodeInitializationAsync(IActivityNodeContext context)
+        Task IActivityObserver.BeforeNodeInitializeAsync(IActivityNodeContext context)
         {
             RegisterAcceptEventNodes(
                 (context as ActionContext).Node.DanglingTimeEventActionNodes.Select(node => (node, Guid.NewGuid()))
@@ -186,7 +156,7 @@ namespace Stateflows.Activities.Engine
             return Task.CompletedTask;
         }
 
-        Task IActivityObserver.BeforeNodeFinalizationAsync(IActivityNodeContext context)
+        Task IActivityObserver.BeforeNodeFinalizeAsync(IActivityNodeContext context)
             => Task.CompletedTask;
 
         Task<bool> IActivityInterceptor.BeforeProcessEventAsync(IEventContext<Event> context)
@@ -202,26 +172,5 @@ namespace Stateflows.Activities.Engine
 
             return Task.FromResult(result);
         }
-
-        public Task OnActivityInitializationExceptionAsync(IActivityInitializationContext context, Exception exception)
-            => Task.CompletedTask;
-
-        public Task OnActivityFinalizationExceptionAsync(IActivityFinalizationContext context, Exception exception)
-            => Task.CompletedTask;
-
-        public Task OnNodeInitializationExceptionAsync(IActivityNodeContext context, Exception exception)
-            => Task.CompletedTask;
-
-        public Task OnNodeFinalizationExceptionAsync(IActivityNodeContext context, Exception exception)
-            => Task.CompletedTask;
-
-        public Task OnNodeExecutionExceptionAsync(IActivityNodeContext context, Exception exception)
-            => Task.CompletedTask;
-
-        public Task OnFlowGuardExceptionAsync(IGuardContext<Token> context, Exception exception)
-            => Task.CompletedTask;
-
-        public Task OnFlowTransformationExceptionAsync(ITransformationContext<Token> context, Exception exception)
-            => Task.CompletedTask;
     }
 }

@@ -3,6 +3,7 @@ using System.Diagnostics;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using Stateflows.Common;
+using Stateflows.Common.Exceptions;
 using Stateflows.Common.Registration;
 using Stateflows.StateMachines.Events;
 using Stateflows.StateMachines.Models;
@@ -56,7 +57,14 @@ namespace Stateflows.StateMachines.Registration.Builders
                 }
                 catch (Exception e)
                 {
-                    await c.Executor.Inspector.OnStateInitializeExceptionAsync(context, e);
+                    if (e is StateflowsException)
+                    {
+                        throw;
+                    }
+                    else
+                    {
+                        await c.Executor.Inspector.OnStateInitializeExceptionAsync(context, e);
+                    }
                 }
             }
             );
@@ -80,7 +88,14 @@ namespace Stateflows.StateMachines.Registration.Builders
                 }
                 catch (Exception e)
                 {
-                    await c.Executor.Inspector.OnStateFinalizeExceptionAsync(context, e);
+                    if (e is StateflowsException)
+                    {
+                        throw;
+                    }
+                    else
+                    {
+                        await c.Executor.Inspector.OnStateFinalizeExceptionAsync(context, e);
+                    }
                 }
             }
             );
@@ -104,7 +119,14 @@ namespace Stateflows.StateMachines.Registration.Builders
                     }
                     catch (Exception e)
                     {
-                        await c.Executor.Inspector.OnStateEntryExceptionAsync(context, e);
+                        if (e is StateflowsException)
+                        {
+                            throw;
+                        }
+                        else
+                        {
+                            await c.Executor.Inspector.OnStateEntryExceptionAsync(context, e);
+                        }
                     }
                 }
             );
@@ -128,7 +150,14 @@ namespace Stateflows.StateMachines.Registration.Builders
                     }
                     catch (Exception e)
                     {
-                        await c.Executor.Inspector.OnStateExitExceptionAsync(context, e);
+                        if (e is StateflowsException)
+                        {
+                            throw;
+                        }
+                        else
+                        {
+                            await c.Executor.Inspector.OnStateExitExceptionAsync(context, e);
+                        }
                     }
                 }
             );

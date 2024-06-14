@@ -11,7 +11,6 @@ using Stateflows.Activities.Models;
 using Stateflows.Activities.Engine;
 using Stateflows.Activities.Streams;
 using Stateflows.Activities.Registration;
-using System.Xml.Linq;
 
 namespace Stateflows.Activities.Context.Classes
 {
@@ -119,8 +118,8 @@ namespace Stateflows.Activities.Context.Classes
             }
         }
 
-        private Dictionary<Guid, Dictionary<string, List<Token>>> outputTokens = null;
-        public Dictionary<Guid, Dictionary<string, List<Token>>> OutputTokens
+        private Dictionary<Guid, Dictionary<string, List<TokenHolder>>> outputTokens = null;
+        public Dictionary<Guid, Dictionary<string, List<TokenHolder>>> OutputTokens
         {
             get
             {
@@ -130,12 +129,12 @@ namespace Stateflows.Activities.Context.Classes
                     {
                         if (!Context.Values.TryGetValue(Constants.OutputTokens, out var outputTokensObj))
                         {
-                            outputTokens = new Dictionary<Guid, Dictionary<string, List<Token>>>();
+                            outputTokens = new Dictionary<Guid, Dictionary<string, List<TokenHolder>>>();
                             Context.Values[Constants.OutputTokens] = outputTokens;
                         }
                         else
                         {
-                            outputTokens = outputTokensObj as Dictionary<Guid, Dictionary<string, List<Token>>>;
+                            outputTokens = outputTokensObj as Dictionary<Guid, Dictionary<string, List<TokenHolder>>>;
                         }
                     }
                 }
@@ -144,21 +143,21 @@ namespace Stateflows.Activities.Context.Classes
             }
         }
 
-        public List<Token> GetOutputTokens(string nodeName, Guid threadId)
+        public List<TokenHolder> GetOutputTokens(string nodeName, Guid threadId)
         {
-            List<Token> tokens;
+            List<TokenHolder> tokens;
 
             lock (OutputTokens)
             {
                 if (!OutputTokens.TryGetValue(threadId, out var nodes))
                 {
-                    nodes = new Dictionary<string, List<Token>>();
+                    nodes = new Dictionary<string, List<TokenHolder>>();
                     OutputTokens[threadId] = nodes;
                 }
 
                 if (!nodes.TryGetValue(nodeName, out tokens))
                 {
-                    tokens = new List<Token>();
+                    tokens = new List<TokenHolder>();
                     nodes[nodeName] = tokens;
                 }
             }
@@ -319,7 +318,6 @@ namespace Stateflows.Activities.Context.Classes
             => nodeScope.IsTerminated ||
                 (nodeScope.ChildScope?.IsTerminated ?? false) ||
                 (
-                    !GetStreams(nodeScope.ThreadId).Values.Any(s => s.Tokens.Any()) &&
                     !node.Nodes.Values.Any(node => node.Type == NodeType.AcceptEventAction && !node.IncomingEdges.Any()) &&
                     !ActiveNodes.Any()
                 );

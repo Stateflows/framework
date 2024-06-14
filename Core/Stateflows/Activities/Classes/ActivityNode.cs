@@ -1,11 +1,13 @@
-﻿using Stateflows.Activities.Context.Interfaces;
-using Stateflows.Common.Extensions;
+﻿using Stateflows.Common.Extensions;
+using Stateflows.Activities.Context.Classes;
+using Stateflows.Activities.Context.Interfaces;
 
 namespace Stateflows.Activities
 {
     public abstract class ActivityNode
     {
-        public ITypedActionContext Context { get; internal set; }
+        public ITypedActionContext Context
+            => (ITypedActionContext)ActivityNodeContextAccessor.Context.Value;
     }
 
     public static class ActivityNodeInfo<TNode>

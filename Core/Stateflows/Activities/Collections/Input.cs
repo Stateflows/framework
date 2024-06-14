@@ -1,21 +1,21 @@
-﻿using System.Linq;
+﻿using System;
+using System.Linq;
 using System.Threading;
 using System.Collections;
 using System.Collections.Generic;
-using Stateflows.Common;
 
 namespace Stateflows.Activities
 {
-    internal static class InputTokensHolder
+    public static class InputTokensHolder
     {
-        public static readonly AsyncLocal<IEnumerable<Token>> Tokens = new AsyncLocal<IEnumerable<Token>>();
+        public static readonly AsyncLocal<List<TokenHolder>> Tokens = new AsyncLocal<List<TokenHolder>>();
     }
 
+    [Serializable]
     public struct Input<TToken> : IEnumerable<TToken>
-        where TToken : Token, new()
     {
         private readonly IEnumerable<TToken> Tokens
-            => InputTokensHolder.Tokens.Value.OfType<TToken>();
+            => InputTokensHolder.Tokens.Value.OfType<TokenHolder<TToken>>().Select(t => t.Payload);
 
         public readonly IEnumerator<TToken> GetEnumerator()
             => Tokens.GetEnumerator();
@@ -27,21 +27,21 @@ namespace Stateflows.Activities
             => new Output<TToken>().AddRange(Tokens);
     }
 
+    [Serializable]
     public struct SingleInput<TToken>
-        where TToken : Token, new()
     {
         public readonly TToken Token
-            => InputTokensHolder.Tokens.Value.OfType<TToken>().First();
+            => InputTokensHolder.Tokens.Value.OfType<TokenHolder<TToken>>().Select(t => t.Payload).First();
 
         public readonly void PassOn()
             => new Output<TToken>().Add(Token);
     }
 
+    [Serializable]
     public struct OptionalInput<TToken> : IEnumerable<TToken>
-        where TToken : Token, new()
     {
         private readonly IEnumerable<TToken> Tokens
-            => InputTokensHolder.Tokens.Value.OfType<TToken>();
+            => InputTokensHolder.Tokens.Value.OfType<TokenHolder<TToken>>().Select(t => t.Payload);
 
         public readonly IEnumerator<TToken> GetEnumerator()
             => Tokens.GetEnumerator();
@@ -53,11 +53,11 @@ namespace Stateflows.Activities
             => new Output<TToken>().AddRange(Tokens);
     }
 
+    [Serializable]
     public struct OptionalSingleInput<TToken>
-        where TToken : Token, new()
     {
         public readonly TToken Token
-            => InputTokensHolder.Tokens.Value.OfType<TToken>().First();
+            => InputTokensHolder.Tokens.Value.OfType<TokenHolder<TToken>>().Select(t => t.Payload).First();
 
         public readonly void PassOn()
             => new Output<TToken>().Add(Token);

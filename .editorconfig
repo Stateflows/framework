@@ -1,0 +1,10 @@
+﻿[*.cs]
+
+# S3358: Ternary operators should not be nested
+dotnet_diagnostic.S3358.severity = none
+
+# S2094: Classes should not be empty
+dotnet_diagnostic.S2094.severity = none
+dotnet_diagnostic.S2326.severity = none
+dotnet_diagnostic.S1121.severity = none
+dotnet_diagnostic.CS0067.severity = none

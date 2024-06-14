@@ -2,13 +2,11 @@
 using Stateflows.Activities.Engine;
 using Stateflows.Activities.Context.Interfaces;
 using Stateflows.Activities.Inspection.Interfaces;
-using Stateflows.Common.Interfaces;
-using Stateflows.Common.Context;
 
 namespace Stateflows.Activities.Context.Classes
 {
     internal class EventContext<TEvent> : BaseContext, IEventInspectionContext<TEvent>, IRootContext
-        where TEvent : Event
+        where TEvent : Event, new()
     {
         IActivityContext IActivityActionContext.Activity => Activity;
 

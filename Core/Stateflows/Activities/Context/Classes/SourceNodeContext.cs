@@ -3,7 +3,8 @@ using System.Linq;
 using System.Collections.Generic;
 using Stateflows.Activities.Models;
 using Stateflows.Activities.Context.Interfaces;
-using Stateflows.Common;
+using Stateflows.Utils;
+using Stateflows.Activities.Engine;
 
 namespace Stateflows.Activities.Context.Classes
 {
@@ -11,19 +12,18 @@ namespace Stateflows.Activities.Context.Classes
     {
         internal readonly Guid ThreadId;
 
-        private IEnumerable<Token> input = null;
-        public IEnumerable<Token> Input
-#pragma warning disable S2365 // Properties should not make collection or array copies
-            => input ??= Context
+        public SourceNodeContext(Node node, RootContext context, NodeScope nodeScope)
+            : base(node, context, nodeScope)
+        {
+            ThreadId = nodeScope.ThreadId;
+        }
+
+        public IEnumerable<TToken> GetTokensOfType<TToken>()
+            => Context
                 .GetActivatedStreams(Node, ThreadId)
                 .SelectMany(stream => stream.Tokens)
+                .OfType<TokenHolder<TToken>>()
+                .FromTokens()
                 .ToArray();
-#pragma warning restore S2365 // Properties should not make collection or array copies
-
-        public SourceNodeContext(Node node, RootContext context, Guid threadId)
-            : base(node, context)
-        {
-            ThreadId = threadId;
-        }
     }
 }

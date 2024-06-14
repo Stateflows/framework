@@ -88,7 +88,7 @@ namespace Stateflows.Activities.Models
 
                     if (undeclaredOutgoingTokens.Any())
                     {
-                        throw new NodeDefinitionException(node.Name, $"Invalid activity '{Name}': node '{node.Name}' doesn't have incoming flow with '{TokenInfo.GetName(undeclaredOutgoingTokens.First())}' tokens, outgoing flow is invalid.");
+                        throw new NodeDefinitionException(node.Name, $"Invalid activity '{Name}': node '{node.Name}' doesn't have incoming flow with '{undeclaredOutgoingTokens.First().GetTokenName()}' tokens, outgoing flow is invalid.");
                     }
                 }
 
@@ -103,17 +103,17 @@ namespace Stateflows.Activities.Models
 
                     if (undeclaredIncomingTokens.Any())
                     {
-                        throw new NodeDefinitionException(node.Name, $"Invalid activity '{Name}': action '{node.Name}' doesn't accept incoming '{TokenInfo.GetName(undeclaredIncomingTokens.First())}' tokens, incoming flow is invalid.");
+                        throw new NodeDefinitionException(node.Name, $"Invalid activity '{Name}': action '{node.Name}' doesn't accept incoming '{undeclaredIncomingTokens.First().GetTokenName()}' tokens, incoming flow is invalid.");
                     }
 
                     if (undeclaredOutgoingTokens.Any())
                     {
-                        throw new NodeDefinitionException(node.Name, $"Invalid activity '{Name}': action '{node.Name}' doesn't produce outgoing '{TokenInfo.GetName(undeclaredOutgoingTokens.First())}' tokens, outgoing flow is invalid.");
+                        throw new NodeDefinitionException(node.Name, $"Invalid activity '{Name}': action '{node.Name}' doesn't produce outgoing '{undeclaredOutgoingTokens.First().GetTokenName()}' tokens, outgoing flow is invalid.");
                     }
 
                     if (unsatisfiedIncomingTokens.Any())
                     {
-                        throw new NodeDefinitionException(node.Name, $"Invalid activity '{Name}': action '{node.Name}' requires '{TokenInfo.GetName(unsatisfiedIncomingTokens.First())}' input tokens, but there is no incoming flow with them.");
+                        throw new NodeDefinitionException(node.Name, $"Invalid activity '{Name}': action '{node.Name}' requires '{unsatisfiedIncomingTokens.First().GetTokenName()}' input tokens, but there is no incoming flow with them.");
                     }
                 }
             }

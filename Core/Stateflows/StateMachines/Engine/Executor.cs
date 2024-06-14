@@ -13,8 +13,7 @@ using Stateflows.StateMachines.Extensions;
 using Stateflows.StateMachines.Registration;
 using Stateflows.StateMachines.Context.Classes;
 using Stateflows.StateMachines.Context.Interfaces;
-using Stateflows.Common.Initializer;
-using Stateflows.Activities.Engine;
+using Stateflows.Common.Classes;
 
 namespace Stateflows.StateMachines.Engine
 {
@@ -540,6 +539,11 @@ namespace Stateflows.StateMachines.Engine
         public TState GetState<TState>(IStateActionContext context)
             where TState : BaseState
         {
+            ContextValuesHolder.GlobalValues.Value = context.StateMachine.Values;
+            ContextValuesHolder.StateValues.Value = context.CurrentState.Values;
+            ContextValuesHolder.SourceStateValues.Value = null;
+            ContextValuesHolder.TargetStateValues.Value = null;
+
             var state = ServiceProvider.GetService<TState>();
             state.Context = context;
             
@@ -550,6 +554,11 @@ namespace Stateflows.StateMachines.Engine
             where TTransition : Transition<TEvent>
             where TEvent : Event, new()
         {
+            ContextValuesHolder.GlobalValues.Value = context.StateMachine.Values;
+            ContextValuesHolder.StateValues.Value = null;
+            ContextValuesHolder.SourceStateValues.Value = context.SourceState.Values;
+            ContextValuesHolder.TargetStateValues.Value = context.TargetState?.Values;
+
             var transition = ServiceProvider.GetService<TTransition>();
             transition.Context = context;
             
@@ -560,6 +569,11 @@ namespace Stateflows.StateMachines.Engine
             where TElseTransition : ElseTransition<TEvent>
             where TEvent : Event, new()
         {
+            ContextValuesHolder.GlobalValues.Value = context.StateMachine.Values;
+            ContextValuesHolder.StateValues.Value = null;
+            ContextValuesHolder.SourceStateValues.Value = context.SourceState.Values;
+            ContextValuesHolder.TargetStateValues.Value = context.TargetState?.Values;
+
             var elseTransition = ServiceProvider.GetService<TElseTransition>();
             elseTransition.Context = context;
             

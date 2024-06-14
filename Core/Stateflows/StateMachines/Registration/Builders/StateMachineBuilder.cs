@@ -209,11 +209,20 @@ namespace Stateflows.StateMachines.Registration.Builders
             return this;
         }
 
+        IStateMachineBuilder IStateMachineUtils<IStateMachineBuilder>.AddInterceptor(StateMachineInterceptorFactory interceptorFactory)
+            => AddInterceptor(interceptorFactory) as IStateMachineBuilder;
+
         IStateMachineBuilder IStateMachineUtils<IStateMachineBuilder>.AddInterceptor<TInterceptor>()
             => AddInterceptor<TInterceptor>() as IStateMachineBuilder;
 
+        IStateMachineBuilder IStateMachineUtils<IStateMachineBuilder>.AddObserver(StateMachineObserverFactory observerFactory)
+            => AddObserver(observerFactory) as IStateMachineBuilder;
+
         IStateMachineBuilder IStateMachineUtils<IStateMachineBuilder>.AddObserver<TObserver>()
             => AddObserver<TObserver>() as IStateMachineBuilder;
+
+        IStateMachineBuilder IStateMachineUtils<IStateMachineBuilder>.AddExceptionHandler(StateMachineExceptionHandlerFactory exceptionHandlerFactory)
+            => AddExceptionHandler(exceptionHandlerFactory) as IStateMachineBuilder;
 
         IStateMachineBuilder IStateMachineUtils<IStateMachineBuilder>.AddExceptionHandler<TExceptionHandler>()
             => AddExceptionHandler<TExceptionHandler>() as IStateMachineBuilder;
@@ -227,11 +236,20 @@ namespace Stateflows.StateMachines.Registration.Builders
         IStateMachineBuilder IStateMachineEvents<IStateMachineBuilder>.AddOnFinalize(Func<IStateMachineActionContext, Task> actionAsync)
             => AddOnFinalize(actionAsync) as IStateMachineBuilder;
 
+        IFinalizedStateMachineBuilder IStateMachineUtils<IFinalizedStateMachineBuilder>.AddInterceptor(StateMachineInterceptorFactory interceptorFactory)
+            => AddInterceptor(interceptorFactory) as IFinalizedStateMachineBuilder;
+
         IFinalizedStateMachineBuilder IStateMachineUtils<IFinalizedStateMachineBuilder>.AddInterceptor<TInterceptor>()
             => AddInterceptor<TInterceptor>() as IFinalizedStateMachineBuilder;
 
+        IFinalizedStateMachineBuilder IStateMachineUtils<IFinalizedStateMachineBuilder>.AddObserver(StateMachineObserverFactory observerFactory)
+            => AddObserver(observerFactory) as IFinalizedStateMachineBuilder;
+
         IFinalizedStateMachineBuilder IStateMachineUtils<IFinalizedStateMachineBuilder>.AddObserver<TObserver>()
             => AddObserver<TObserver>() as IFinalizedStateMachineBuilder;
+
+        IFinalizedStateMachineBuilder IStateMachineUtils<IFinalizedStateMachineBuilder>.AddExceptionHandler(StateMachineExceptionHandlerFactory exceptionHandlerFactory)
+            => AddExceptionHandler(exceptionHandlerFactory) as IFinalizedStateMachineBuilder;
 
         IFinalizedStateMachineBuilder IStateMachineUtils<IFinalizedStateMachineBuilder>.AddExceptionHandler<TExceptionHandler>()
             => AddExceptionHandler<TExceptionHandler>() as IFinalizedStateMachineBuilder;
@@ -255,11 +273,20 @@ namespace Stateflows.StateMachines.Registration.Builders
         ITypedInitializedStateMachineBuilder IStateMachine<ITypedInitializedStateMachineBuilder>.AddCompositeState(string stateName, CompositeStateBuildAction compositeStateBuildAction)
             => AddCompositeState(stateName, compositeStateBuildAction) as ITypedInitializedStateMachineBuilder;
 
+        ITypedInitializedStateMachineBuilder IStateMachineUtils<ITypedInitializedStateMachineBuilder>.AddInterceptor(StateMachineInterceptorFactory interceptorFactory)
+            => AddInterceptor(interceptorFactory) as ITypedInitializedStateMachineBuilder;
+
         ITypedInitializedStateMachineBuilder IStateMachineUtils<ITypedInitializedStateMachineBuilder>.AddInterceptor<TInterceptor>()
             => AddInterceptor<TInterceptor>() as ITypedInitializedStateMachineBuilder;
 
+        ITypedInitializedStateMachineBuilder IStateMachineUtils<ITypedInitializedStateMachineBuilder>.AddObserver(StateMachineObserverFactory observerFactory)
+            => AddObserver(observerFactory) as ITypedInitializedStateMachineBuilder;
+
         ITypedInitializedStateMachineBuilder IStateMachineUtils<ITypedInitializedStateMachineBuilder>.AddObserver<TObserver>()
             => AddObserver<TObserver>() as ITypedInitializedStateMachineBuilder;
+
+        ITypedInitializedStateMachineBuilder IStateMachineUtils<ITypedInitializedStateMachineBuilder>.AddExceptionHandler(StateMachineExceptionHandlerFactory exceptionHandlerFactory)
+            => AddExceptionHandler(exceptionHandlerFactory) as ITypedInitializedStateMachineBuilder;
 
         ITypedInitializedStateMachineBuilder IStateMachineUtils<ITypedInitializedStateMachineBuilder>.AddExceptionHandler<TExceptionHandler>()
             => AddExceptionHandler<TExceptionHandler>() as ITypedInitializedStateMachineBuilder;
@@ -270,8 +297,14 @@ namespace Stateflows.StateMachines.Registration.Builders
         ITypedInitializedStateMachineBuilder IStateMachineInitial<ITypedInitializedStateMachineBuilder>.AddInitialCompositeState(string stateName, CompositeStateBuildAction compositeStateBuildAction)
             => AddInitialCompositeState(stateName, compositeStateBuildAction) as ITypedInitializedStateMachineBuilder;
 
+        ITypedStateMachineBuilder IStateMachineUtils<ITypedStateMachineBuilder>.AddInterceptor(StateMachineInterceptorFactory interceptorFactory)
+            => AddInterceptor(interceptorFactory) as ITypedStateMachineBuilder;
+
         ITypedStateMachineBuilder IStateMachineUtils<ITypedStateMachineBuilder>.AddInterceptor<TInterceptor>()
             => AddInterceptor<TInterceptor>() as ITypedStateMachineBuilder;
+
+        ITypedStateMachineBuilder IStateMachineUtils<ITypedStateMachineBuilder>.AddObserver(StateMachineObserverFactory observerFactory)
+            => AddObserver(observerFactory) as ITypedStateMachineBuilder;
 
         ITypedStateMachineBuilder IStateMachineUtils<ITypedStateMachineBuilder>.AddObserver<TObserver>()
             => AddObserver<TObserver>() as ITypedStateMachineBuilder;
@@ -279,11 +312,23 @@ namespace Stateflows.StateMachines.Registration.Builders
         ITypedStateMachineBuilder IStateMachineUtils<ITypedStateMachineBuilder>.AddExceptionHandler<TExceptionHandler>()
             => AddExceptionHandler<TExceptionHandler>() as ITypedStateMachineBuilder;
 
+        ITypedStateMachineBuilder IStateMachineUtils<ITypedStateMachineBuilder>.AddExceptionHandler(StateMachineExceptionHandlerFactory exceptionHandlerFactory)
+            => AddExceptionHandler(exceptionHandlerFactory) as ITypedStateMachineBuilder;
+
+        ITypedFinalizedStateMachineBuilder IStateMachineUtils<ITypedFinalizedStateMachineBuilder>.AddInterceptor(StateMachineInterceptorFactory interceptorFactory)
+            => AddInterceptor(interceptorFactory) as ITypedFinalizedStateMachineBuilder;
+
         ITypedFinalizedStateMachineBuilder IStateMachineUtils<ITypedFinalizedStateMachineBuilder>.AddInterceptor<TInterceptor>()
             => AddInterceptor<TInterceptor>() as ITypedFinalizedStateMachineBuilder;
 
+        ITypedFinalizedStateMachineBuilder IStateMachineUtils<ITypedFinalizedStateMachineBuilder>.AddObserver(StateMachineObserverFactory observerFactory)
+            => AddObserver(observerFactory) as ITypedFinalizedStateMachineBuilder;
+
         ITypedFinalizedStateMachineBuilder IStateMachineUtils<ITypedFinalizedStateMachineBuilder>.AddObserver<TObserver>()
             => AddObserver<TObserver>() as ITypedFinalizedStateMachineBuilder;
+
+        ITypedFinalizedStateMachineBuilder IStateMachineUtils<ITypedFinalizedStateMachineBuilder>.AddExceptionHandler(StateMachineExceptionHandlerFactory exceptionHandlerFactory)
+            => AddExceptionHandler(exceptionHandlerFactory) as ITypedFinalizedStateMachineBuilder;
 
         ITypedFinalizedStateMachineBuilder IStateMachineUtils<ITypedFinalizedStateMachineBuilder>.AddExceptionHandler<TExceptionHandler>()
             => AddExceptionHandler<TExceptionHandler>() as ITypedFinalizedStateMachineBuilder;

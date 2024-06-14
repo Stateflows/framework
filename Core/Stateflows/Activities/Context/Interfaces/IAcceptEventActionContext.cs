@@ -3,7 +3,7 @@
 namespace Stateflows.Activities.Context.Interfaces
 {
     public interface IAcceptEventActionContext<out TEvent> : IActionContext
-        where TEvent : Event
+        where TEvent : Event, new()
     {
         TEvent Event { get; }
     }

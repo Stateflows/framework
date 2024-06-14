@@ -1,13 +1,12 @@
 ﻿using Stateflows.Activities.Models;
 using Stateflows.Activities.Engine;
 using Stateflows.Activities.Context.Interfaces;
-using Stateflows.Common;
 
 namespace Stateflows.Activities.Context.Classes
 {
     internal class TokenPipelineContext : BaseContext, IRootContext
     {
-        public TokenPipelineContext(BaseContext context, Edge edge, Token token)
+        public TokenPipelineContext(BaseContext context, Edge edge, TokenHolder token)
             : base(context)
         {
             Edge = edge;
@@ -16,16 +15,16 @@ namespace Stateflows.Activities.Context.Classes
 
         internal readonly Edge Edge;
 
-        public readonly Token Token;
+        public readonly TokenHolder Token;
 
         public bool TokenConsumed = false;
 
         public ISourceNodeContext sourceNode = null;
         public ISourceNodeContext SourceNode
-            => sourceNode ??= new SourceNodeContext(Edge.Source, Context, NodeScope.ThreadId);
+            => sourceNode ??= new SourceNodeContext(Edge.Source, Context, NodeScope);
 
         public INodeContext targetNode = null;
         public INodeContext TargetNode
-            => targetNode ??= new NodeContext(Edge.Target, Context);
+            => targetNode ??= new NodeContext(Edge.Target, Context, NodeScope);
     }
 }

@@ -57,9 +57,9 @@ namespace Stateflows.Activities.Inspection.Classes
             }
         }
 
-        public string TokenName => TokenInfo.GetName(Edge.TokenType);
+        public string TokenName => Edge.TokenType.GetTokenName();
 
-        public FlowType Type => Edge.TokenType == typeof(ControlToken)
+        public FlowType Type => Edge.TokenType == typeof(Control)
             ? FlowType.ControlFlow
             : FlowType.ObjectFlow;
     }

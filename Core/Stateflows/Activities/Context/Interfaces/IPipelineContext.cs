@@ -1,10 +1,9 @@
 ﻿using System.Collections.Generic;
-using Stateflows.Common;
 
 namespace Stateflows.Activities.Context.Interfaces
 {
-    public interface IPipelineContext : IFlowContext
+    public interface IPipelineContext : IActivityFlowContext
     {
-        IEnumerable<Token> Tokens { get; }
+        IEnumerable<TokenHolder> Tokens { get; }
     }
 }

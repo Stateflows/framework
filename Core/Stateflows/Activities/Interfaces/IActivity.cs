@@ -6,7 +6,7 @@ namespace Stateflows.Activities.Interfaces
 {
     public interface IActivity : IBehavior
     {
-        Task<IEnumerable<Token>> Execute(IEnumerable<Token> input);
+        Task<IEnumerable<TokenHolder>> Execute(IEnumerable<TokenHolder> input);
 
         Task<T> Execute<T>(IDictionary<string, object> parameters);
 

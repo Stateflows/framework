@@ -17,9 +17,9 @@ namespace Stateflows.Common.Activities.Classes
             Behavior = consumer;
         }
 
-        public Task<RequestResult<ExecutionResponse>> ExecuteAsync(InitializationRequest initializationRequest = null, IEnumerable<Token> inputTokens = null)
+        public Task<RequestResult<ExecutionResponse>> ExecuteAsync(InitializationRequest initializationRequest = null, IEnumerable<object> inputTokens = null)
         {
-            var executionRequest = new ExecutionRequest(initializationRequest ?? new InitializationRequest(), inputTokens ?? new Token[0]);
+            var executionRequest = new ExecutionRequest(initializationRequest ?? new InitializationRequest(), inputTokens ?? new object[0]);
             if (initializationRequest != null)
             {
                 executionRequest.Headers.AddRange(initializationRequest.Headers);
