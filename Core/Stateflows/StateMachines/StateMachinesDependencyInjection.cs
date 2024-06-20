@@ -9,6 +9,10 @@ using Stateflows.StateMachines.Registration;
 using Stateflows.StateMachines.EventHandlers;
 using Stateflows.StateMachines.Registration.Builders;
 using Stateflows.StateMachines.Registration.Interfaces;
+using Stateflows.StateMachines.Context.Interfaces;
+using Stateflows.StateMachines.Context;
+using System;
+using Stateflows.Common;
 
 namespace Stateflows.StateMachines
 {
@@ -46,7 +50,7 @@ namespace Stateflows.StateMachines
                     .AddSingleton(register)
                     .AddSingleton<IEventProcessor, Processor>()
                     .AddTransient<IBehaviorProvider, Provider>()
-                    .AddSingleton<IStateMachineEventHandler, InitializationHandler>()
+                    //.AddSingleton<IStateMachineEventHandler, InitializationHandler>()
                     .AddSingleton<IStateMachineEventHandler, BehaviorStatusRequestHandler>()
                     .AddSingleton<IStateMachineEventHandler, CurrentStateRequestHandler>()
                     .AddSingleton<IStateMachineEventHandler, FinalizationHandler>()
@@ -54,7 +58,34 @@ namespace Stateflows.StateMachines
                     .AddSingleton<IStateMachineEventHandler, SubscriptionHandler>()
                     .AddSingleton<IStateMachineEventHandler, UnsubscriptionHandler>()
                     .AddSingleton<IStateMachineEventHandler, NotificationsHandler>()
-                    ;
+                    .AddTransient<IStateMachineContext>(provider =>
+                    {
+                        if (ContextHolder.StateMachineContext.Value == null)
+                        {
+                            throw new InvalidOperationException($"No service for type '{typeof(IStateMachineContext).FullName}' is available in this context.");
+                        }
+
+                        return ContextHolder.StateMachineContext.Value;
+                    })
+                    .AddTransient<IStateContext>(provider =>
+                    {
+                        if (ContextHolder.StateContext.Value == null)
+                        {
+                            throw new InvalidOperationException($"No service for type '{typeof(IStateContext).FullName}' is available in this context.");
+                        }
+
+                        return ContextHolder.StateContext.Value;
+                    })
+                    .AddTransient<IExecutionContext>(provider =>
+                    {
+                        if (ContextHolder.ExecutionContext.Value == null)
+                        {
+                            throw new InvalidOperationException($"No service for type '{typeof(IExecutionContext).FullName}' is available in this context.");
+                        }
+
+                        return ContextHolder.ExecutionContext.Value;
+                    })
+                ;
             }
 
             return register;

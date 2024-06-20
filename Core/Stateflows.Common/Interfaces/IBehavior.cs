@@ -21,8 +21,11 @@ namespace Stateflows.Common
         Task<RequestResult<TResponse>> RequestAsync<TResponse>(Request<TResponse> request)
             where TResponse : Response, new();
 
-        Task<RequestResult<InitializationResponse>> InitializeAsync(InitializationRequest initializationRequest = null)
-            => RequestAsync(initializationRequest ?? new InitializationRequest());
+        //Task<SendResult> InitializeAsync(Event initializationEvent = null)
+        //    => SendAsync(initializationEvent ?? new Initialize());
+
+        Task<RequestResult<InitializationResponse>> InitializeAsync(InitializationRequest initializationEvent = null)
+            => RequestAsync(initializationEvent ?? new InitializationRequest());
 
         Task<RequestResult<FinalizationResponse>> FinalizeAsync()
             => RequestAsync(new FinalizationRequest());
@@ -30,17 +33,17 @@ namespace Stateflows.Common
         Task<RequestResult<ResetResponse>> ResetAsync(bool keepVersion = false)
             => RequestAsync(new ResetRequest() { KeepVersion = keepVersion });
 
-        async Task<RequestResult<InitializationResponse>> ReinitializeAsync(InitializationRequest initializationRequest = null, bool keepVersion = true)
+        async Task<SendResult> ReinitializeAsync(Event initializationEvent = null, bool keepVersion = true)
         {
-            initializationRequest ??= new InitializationRequest();
+            initializationEvent ??= new Initialize();
             var compoundResult = await SendCompoundAsync(
                 new ResetRequest() { KeepVersion = keepVersion },
-                initializationRequest
+                initializationEvent
             );
 
             var result = compoundResult.Response.Results.Last();
 
-            return new RequestResult<InitializationResponse>(initializationRequest, result.Status, result.Validation);
+            return new SendResult(initializationEvent, result.Status, result.Validation);
         }
 
         Task<RequestResult<BehaviorStatusResponse>> GetStatusAsync()

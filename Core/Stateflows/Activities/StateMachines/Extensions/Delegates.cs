@@ -9,7 +9,7 @@ namespace Stateflows.Activities.Extensions
     public delegate InitializationRequest GuardActivityInitializationBuilder<in TEvent>(IGuardContext<TEvent> context)
         where TEvent : Event, new();
 
-    public delegate InitializationRequest EffectActivityInitializationBuilder<in TEvent>(IEventContext<TEvent> context)
+    public delegate InitializationRequest EffectActivityInitializationBuilder<in TEvent>(IEventActionContext<TEvent> context)
         where TEvent : Event, new();
 
     public delegate void IntegratedActivityBuildAction(IIntegratedActivityBuilder builder);

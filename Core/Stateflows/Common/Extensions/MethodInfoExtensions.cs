@@ -32,6 +32,30 @@ namespace Stateflows.Common.Extensions
             where TType : class
             => baseMethod.IsOverridenIn(typeof(TType));
 
+        public static bool IsImplementedIn(this MethodInfo baseMethod, Type type)
+        {
+            if (baseMethod == null)
+                throw new ArgumentNullException("baseMethod");
+            if (type == null)
+                throw new ArgumentNullException("type");
+            if (!baseMethod.ReflectedType.IsAssignableFrom(type))
+                throw new ArgumentException(string.Format("Type must implement interface {0}", baseMethod.DeclaringType));
+            while (type != baseMethod.ReflectedType)
+            {
+                if (!type.GetInterfaceMap(baseMethod.DeclaringType).TargetMethods.Any(m => m.GetBaseDefinition() == baseMethod))
+                    return true;
+                type = type.BaseType;
+
+                if (!baseMethod.ReflectedType.IsAssignableFrom(type))
+                    break;
+            }
+            return false;
+        }
+
+        public static bool IsImplementedIn<TType>(this MethodInfo baseMethod)
+            where TType : class
+            => baseMethod.IsImplementedIn(typeof(TType));
+
         public static bool IsOverridenIn(this PropertyInfo baseProperty, Type type)
         {
             if (baseProperty == null)

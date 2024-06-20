@@ -109,24 +109,31 @@ namespace Stateflows.StateMachines.Engine
             {
                 if (!executor.Initialized)
                 {
-                    var token = BehaviorClassesInitializations.Instance.AutoInitializationTokens.Find(token => token.BehaviorClass == executor.Context.Id.StateMachineClass);
-
-                    InitializationRequest initializationRequest;
-                    if (token != null && (initializationRequest = await token.InitializationRequestFactory.Invoke(executor.ServiceProvider, executor.Context.Id)) != null)
+                    result = await executor.InitializeAsync(@event);
+                    if (result != EventStatus.Initialized)
                     {
-                        executor.Context.SetEvent(initializationRequest);
+                        var token = BehaviorClassesInitializations.Instance.AutoInitializationTokens.Find(token => token.BehaviorClass == executor.Context.Id.StateMachineClass);
 
-                        await executor.InitializeAsync(initializationRequest);
+                        InitializationRequest initializationRequest;
+                        if (token != null && (initializationRequest = await token.InitializationRequestFactory.Invoke(executor.ServiceProvider, executor.Context.Id)) != null)
+                        {
+                            executor.Context.SetEvent(initializationRequest);
 
-                        executor.Context.ClearEvent();
+                            await executor.InitializeAsync(initializationRequest);
+
+                            executor.Context.ClearEvent();
+                        }
                     }
                 }
 
-                result = await TryHandleEventAsync(eventContext);
-
-                if (result != EventStatus.Consumed)
+                if (executor.Initialized && result != EventStatus.Initialized)
                 {
-                    result = await executor.ProcessAsync(@event);
+                    result = await TryHandleEventAsync(eventContext);
+
+                    if (result != EventStatus.Consumed)
+                    {
+                        result = await executor.ProcessAsync(@event);
+                    }
                 }
 
                 await executor.Inspector.AfterProcessEventAsync(eventContext);

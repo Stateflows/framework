@@ -7,7 +7,8 @@ namespace Stateflows.StateMachines
 {
     public interface IStateMachineExceptionHandler
     {
-        Task OnStateMachineInitializationExceptionAsync(IStateMachineInitializationContext context, Exception exception)
+        Task OnStateMachineInitializationExceptionAsync<TInitializationEvent>(IStateMachineInitializationContext<TInitializationEvent> context, Exception exception)
+            where TInitializationEvent : Event, new()
             => Task.CompletedTask;
 
         Task OnStateMachineFinalizationExceptionAsync(IStateMachineActionContext context, Exception exception)

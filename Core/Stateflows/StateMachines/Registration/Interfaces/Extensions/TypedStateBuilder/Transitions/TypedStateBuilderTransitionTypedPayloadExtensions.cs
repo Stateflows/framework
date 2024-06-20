@@ -7,24 +7,24 @@ namespace Stateflows.StateMachines.Typed.Data
 {
     public static class TypedStateBuilderTransitionTypedPayloadExtensions
     {
-        public static ITypedStateBuilder AddDataTransition<TEventPayload, TTransition, TTargetState>(this ITypedStateBuilder builder)
-            where TTransition : Transition<Event<TEventPayload>>
-            where TTargetState : BaseState
-            => AddDataTransition<TEventPayload, TTransition>(builder, StateInfo<TTargetState>.Name);
+        //public static ITypedStateBuilder AddDataTransition<TEventPayload, TTransition, TTargetState>(this ITypedStateBuilder builder)
+        //    where TTransition : Transition<Event<TEventPayload>>
+        //    where TTargetState : BaseState
+        //    => AddDataTransition<TEventPayload, TTransition>(builder, StateInfo<TTargetState>.Name);
 
-        public static ITypedStateBuilder AddDataTransition<TEventPayload, TTransition>(this ITypedStateBuilder builder, string targetVertexName)
-            where TTransition : Transition<Event<TEventPayload>>
-        {
-            (builder as IInternal).Services.RegisterTransition<TTransition, Event<TEventPayload>>();
+        //public static ITypedStateBuilder AddDataTransition<TEventPayload, TTransition>(this ITypedStateBuilder builder, string targetVertexName)
+        //    where TTransition : Transition<Event<TEventPayload>>
+        //{
+        //    (builder as IInternal).Services.RegisterTransition<TTransition, Event<TEventPayload>>();
 
-            return builder.AddTransition<Event<TEventPayload>>(
-                targetVertexName,
-                t => t.AddTransitionEvents<TTransition, Event<TEventPayload>>()
-            );
-        }
+        //    return builder.AddTransition<Event<TEventPayload>>(
+        //        targetVertexName,
+        //        t => t.AddTransitionEvents<TTransition, Event<TEventPayload>>()
+        //    );
+        //}
 
-        public static ITypedStateBuilder AddDataTransition<TEventPayload, TTargetState>(this ITypedStateBuilder builder, TransitionBuildAction<Event<TEventPayload>> transitionBuildAction = null)
-            where TTargetState : BaseState
-            => builder.AddTransition(StateInfo<TTargetState>.Name, transitionBuildAction);
+        //public static ITypedStateBuilder AddDataTransition<TEventPayload, TTargetState>(this ITypedStateBuilder builder, TransitionBuildAction<Event<TEventPayload>> transitionBuildAction = null)
+        //    where TTargetState : BaseState
+        //    => builder.AddTransition(StateInfo<TTargetState>.Name, transitionBuildAction);
     }
 }

@@ -90,7 +90,7 @@ namespace Stateflows.StateMachines.Registration
             var sm = FormatterServices.GetUninitializedObject(stateMachineType) as StateMachine;
 
             var builder = new StateMachineBuilder(stateMachineName, version, Services);
-            builder.AddStateMachineEvents(stateMachineType);
+            //builder.AddStateMachineEvents(stateMachineType);
             builder.Result.StateMachineType = stateMachineType;
             sm.Build(builder);
             builder.Result.Build();

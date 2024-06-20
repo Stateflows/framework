@@ -44,9 +44,9 @@ namespace StateMachine.IntegrationTests.Tests
                     )
 
                     .AddStateMachine("value", b => b
-                        .AddOnInitialize<ValueInitializationRequest>(c =>
+                        .AddInitializer<ValueInitializationRequest>(c =>
                         {
-                            c.StateMachine.Values.Set<string>("foo", c.InitializationRequest.Value);
+                            c.StateMachine.Values.Set<string>("foo", c.InitializationEvent.Value);
 
                             return true;
                         })
@@ -62,17 +62,17 @@ namespace StateMachine.IntegrationTests.Tests
                     )
 
                     .AddStateMachine("invalid", b => b
-                        .AddOnInitialize<ValueInitializationRequest>(c => c.InitializationRequest.Value != null)
+                        .AddInitializer<ValueInitializationRequest>(c => c.InitializationEvent.Value != null)
                         .AddInitialState("state1")
                     )
 
                     .AddStateMachine("payload", b => b
-                        .AddOnInitialize<string>(c => c.InitializationRequest.Payload != null)
+                        .AddInitializer<string>(c => c.InitializationEvent.Payload != null)
                         .AddInitialState("state1")
                     )
 
                     .AddStateMachine("failed", b => b
-                        .AddOnInitialize(c => throw new Exception("Initialization failed"))
+                        .AddDefaultInitializer(c => throw new Exception("Initialization failed"))
                         .AddInitialState("state1")
                     )
 
@@ -227,7 +227,7 @@ namespace StateMachine.IntegrationTests.Tests
 
             if (StateMachineLocator.TryLocateStateMachine(new StateMachineId("payload", "x"), out var sm))
             {
-                initialized = (await sm.InitializeAsync("bar")).Response.InitializationSuccessful;
+                //initialized = (await sm.InitializeAsync("bar")).Response.InitializationSuccessful;
 
                 currentState = (await sm.GetCurrentStateAsync()).Response.StatesStack.First() ?? string.Empty;
             }

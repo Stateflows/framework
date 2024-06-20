@@ -8,7 +8,7 @@
         public static Request<TRequestPayload, TPayload> ToRequest<TRequestPayload, TPayload>(this TRequestPayload payload)
            => new Request<TRequestPayload, TPayload>() { Payload = payload };
 
-        public static InitializationRequest<TPayload> ToInitializationRequest<TPayload>(this TPayload payload)
-           => new InitializationRequest<TPayload>() { Payload = payload };
+        public static Initialize<TPayload> ToInitialize<TPayload>(this TPayload payload)
+           => new Initialize<TPayload>() { Payload = payload };
     }
 }

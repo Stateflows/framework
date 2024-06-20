@@ -96,14 +96,14 @@ namespace Stateflows.StateMachines.Engine
             return Task.CompletedTask;
         }
 
-        public Task<bool> BeforeProcessEventAsync(IEventContext<Event> context)
+        public Task<bool> BeforeProcessEventAsync(IEventActionContext<Event> context)
         {
             Trace.WriteLine($"⦗→s⦘ State Machine '{context.StateMachine.Id.Name}': received event '{context.Event.Name}', trying to process it");
 
             return Task.FromResult(true);
         }
 
-        public Task AfterProcessEventAsync(IEventContext<Event> context)
+        public Task AfterProcessEventAsync(IEventActionContext<Event> context)
         {
             Trace.WriteLine($"⦗→s⦘ State Machine '{context.StateMachine.Id.Name}': processed event '{context.Event.Name}'");
 

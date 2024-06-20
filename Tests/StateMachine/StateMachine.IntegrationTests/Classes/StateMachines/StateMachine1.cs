@@ -18,21 +18,28 @@ namespace StateMachine.IntegrationTests.Classes.StateMachines
             FinalizeFired = false;
         }
 
-        public override Task<bool> OnInitializeAsync()
-        {
-            InitializeFired = true;
-            return Task.FromResult(true);
-        }
+        //public override Task<bool> OnInitializeAsync()
+        //{
+        //    InitializeFired = true;
+        //    return Task.FromResult(true);
+        //}
 
-        public override Task OnFinalizeAsync()
-        {
-            FinalizeFired = true;
-            return Task.CompletedTask;
-        }
+        //public override Task OnFinalizeAsync()
+        //{
+        //    FinalizeFired = true;
+        //    return Task.CompletedTask;
+        //}
 
-        public override void Build(ITypedStateMachineBuilder builder)
+        public override void Build(IStateMachineBuilder builder)
         {
             builder
+                .AddDefaultInitializer(c =>
+                {
+                    InitializeFired = true;
+                    return true;
+                })
+                .AddFinalizer(c => FinalizeFired = true)
+
                 .AddInitialState<State1>(b => b
                     .AddTransition<SomeEvent, SomeEventTransition, State2>()
                 )

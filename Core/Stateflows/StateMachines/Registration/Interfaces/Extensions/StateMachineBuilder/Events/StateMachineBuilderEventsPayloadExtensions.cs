@@ -7,7 +7,7 @@ namespace Stateflows.StateMachines.Data
 {
     public static class StateMachineBuilderEventsPayloadExtensions
     {
-        public static IStateMachineBuilder AddOnInitialize<TInitializationPayload>(this IStateMachineBuilder builder, Func<IStateMachineInitializationContext<InitializationRequest<TInitializationPayload>>, Task<bool>> actionAsync)
-            => builder.AddOnInitialize(actionAsync);
+        public static IStateMachineBuilder AddInitializer<TInitializationPayload>(this IStateMachineBuilder builder, Func<IStateMachineInitializationContext<Initialize<TInitializationPayload>>, Task<bool>> actionAsync)
+            => builder.AddInitializer(actionAsync);
     }
 }

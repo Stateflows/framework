@@ -2,7 +2,7 @@
 
 namespace Stateflows.StateMachines
 {
-    public abstract class Transition<TEvent> : BaseTransition<TEvent>
+    public abstract class Transition<TEvent> : BaseTransition<TEvent>, ITransition<TEvent>
         where TEvent : Event, new()
     { }
 }

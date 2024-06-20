@@ -14,6 +14,7 @@ using Stateflows.StateMachines.Registration;
 using Stateflows.StateMachines.Context.Classes;
 using Stateflows.StateMachines.Context.Interfaces;
 using Stateflows.Common.Classes;
+using Stateflows.StateMachines.Context;
 
 namespace Stateflows.StateMachines.Engine
 {
@@ -108,20 +109,25 @@ namespace Stateflows.StateMachines.Engine
                 _ => BehaviorStatus.NotInitialized
             };
 
-        public async Task<bool> InitializeAsync(InitializationRequest @event)
+        public async Task<EventStatus> InitializeAsync(Event @event)
         {
             Debug.Assert(Context != null, $"Context is unavailable. Is state machine '{Graph.Name}' hydrated?");
 
-            if (!Initialized && await DoInitializeStateMachineAsync(@event))
+            if (!Initialized)
             {
-                await DoInitializeCascadeAsync(Graph.InitialVertex);
+                var result = await DoInitializeStateMachineAsync(@event);
 
-                await DoCompletion();
+                if (result)
+                {
+                    await DoInitializeCascadeAsync(Graph.InitialVertex);
 
-                return true;
+                    await DoCompletion();
+
+                    return EventStatus.Initialized;
+                }
             }
 
-            return false;
+            return EventStatus.NotInitialized;
         }
 
         public async Task<bool> ExitAsync()
@@ -355,14 +361,14 @@ namespace Stateflows.StateMachines.Engine
             await Inspector.AfterEffectAsync(context);
         }
 
-        public async Task<bool> DoInitializeStateMachineAsync(InitializationRequest @event)
+        public async Task<bool> DoInitializeStateMachineAsync(Event @event)
         {
             var result = false;
 
             if (
                 Graph.Initializers.TryGetValue(@event.Name, out var initializer) ||
                 (
-                    @event.Name == EventInfo<InitializationRequest>.Name &&
+                    @event.Name == EventInfo<Initialize>.Name &&
                     !Graph.Initializers.Any()
                 )
             )
@@ -531,7 +537,7 @@ namespace Stateflows.StateMachines.Engine
         public StateMachine GetStateMachine(Type stateMachineType, RootContext context)
         {
             var stateMachine = ServiceProvider.GetService(stateMachineType) as StateMachine;
-            stateMachine.Context = new StateMachineActionContext(context);
+            //stateMachine.Context = new StateMachineActionContext(context);
 
             return stateMachine;
         }
@@ -546,7 +552,25 @@ namespace Stateflows.StateMachines.Engine
 
             var state = ServiceProvider.GetService<TState>();
             state.Context = context;
-            
+
+            return state;
+        }
+
+        public TState GetState2<TState>(IStateActionContext context)
+            where TState : class, IBaseState
+        {
+            ContextValuesHolder.GlobalValues.Value = context.StateMachine.Values;
+            ContextValuesHolder.StateValues.Value = context.CurrentState.Values;
+            ContextValuesHolder.SourceStateValues.Value = null;
+            ContextValuesHolder.TargetStateValues.Value = null;
+
+            ContextHolder.StateContext.Value = context.CurrentState;
+            ContextHolder.TransitionContext.Value = null;
+            ContextHolder.StateMachineContext.Value = context.StateMachine;
+            ContextHolder.ExecutionContext.Value = context;
+
+            var state = ServiceProvider.GetService<TState>();
+
             return state;
         }
 
@@ -561,7 +585,26 @@ namespace Stateflows.StateMachines.Engine
 
             var transition = ServiceProvider.GetService<TTransition>();
             transition.Context = context;
-            
+
+            return transition;
+        }
+
+        public TTransition GetTransition2<TTransition, TEvent>(ITransitionContext<TEvent> context)
+            where TTransition : class, ITransition<TEvent>
+            where TEvent : Event, new()
+        {
+            ContextValuesHolder.GlobalValues.Value = context.StateMachine.Values;
+            ContextValuesHolder.StateValues.Value = null;
+            ContextValuesHolder.SourceStateValues.Value = context.SourceState.Values;
+            ContextValuesHolder.TargetStateValues.Value = context.TargetState?.Values;
+
+            ContextHolder.StateContext.Value = null;
+            ContextHolder.TransitionContext.Value = context;
+            ContextHolder.StateMachineContext.Value = context.StateMachine;
+            ContextHolder.ExecutionContext.Value = context;
+
+            var transition = ServiceProvider.GetService<TTransition>();
+
             return transition;
         }
 
@@ -576,7 +619,26 @@ namespace Stateflows.StateMachines.Engine
 
             var elseTransition = ServiceProvider.GetService<TElseTransition>();
             elseTransition.Context = context;
-            
+
+            return elseTransition;
+        }
+
+        public TElseTransition GetElseTransition2<TElseTransition, TEvent>(ITransitionContext<TEvent> context)
+            where TElseTransition : class, IElseTransition<TEvent>
+            where TEvent : Event, new()
+        {
+            ContextValuesHolder.GlobalValues.Value = context.StateMachine.Values;
+            ContextValuesHolder.StateValues.Value = null;
+            ContextValuesHolder.SourceStateValues.Value = context.SourceState.Values;
+            ContextValuesHolder.TargetStateValues.Value = context.TargetState?.Values;
+
+            ContextHolder.StateContext.Value = null;
+            ContextHolder.TransitionContext.Value = context;
+            ContextHolder.StateMachineContext.Value = context.StateMachine;
+            ContextHolder.ExecutionContext.Value = context;
+
+            var elseTransition = ServiceProvider.GetService<TElseTransition>();
+
             return elseTransition;
         }
     }

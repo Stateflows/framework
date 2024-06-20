@@ -3,7 +3,7 @@ using Stateflows.Common;
 
 namespace Stateflows.StateMachines
 {
-    public abstract class ElseTransition<TEvent> : BaseTransition<TEvent>
+    public abstract class ElseTransition<TEvent> : BaseTransition<TEvent>, IElseTransition<TEvent>
         where TEvent : Event, new()
     {
         public override sealed Task<bool> GuardAsync()

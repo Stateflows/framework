@@ -184,7 +184,7 @@ namespace Stateflows.StateMachines.Engine
         public Task BeforeDehydrateAsync(IStateMachineActionContext context)
             => Task.CompletedTask;
 
-        public Task<bool> BeforeProcessEventAsync(IEventContext<Event> context)
+        public Task<bool> BeforeProcessEventAsync(IEventActionContext<Event> context)
         {
             if (context.Event.GetType().GetCustomAttribute<DoNotTraceAttribute>() == null)
             {
@@ -195,7 +195,7 @@ namespace Stateflows.StateMachines.Engine
             return Task.FromResult(true);
         }
 
-        public Task AfterProcessEventAsync(IEventContext<Event> context)
+        public Task AfterProcessEventAsync(IEventActionContext<Event> context)
         {
             if (Trace.Event != null)
             {

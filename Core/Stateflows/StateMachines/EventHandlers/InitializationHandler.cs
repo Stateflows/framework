@@ -19,7 +19,7 @@ namespace Stateflows.StateMachines.EventHandlers
 
                 var initialized = await executor.InitializeAsync(request);
 
-                request.Respond(new InitializationResponse() { InitializationSuccessful = initialized });
+                request.Respond(new InitializationResponse() { InitializationSuccessful = initialized == EventStatus.Initialized });
 
                 return EventStatus.Consumed;
             }

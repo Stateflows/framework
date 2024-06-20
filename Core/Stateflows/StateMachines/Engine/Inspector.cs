@@ -312,12 +312,12 @@ namespace Stateflows.StateMachines.Engine
             await Plugins.RunSafe(i => i.AfterProcessEventAsync(context), nameof(AfterProcessEventAsync), Logger);
         }
 
-        public async Task OnStateMachineInitializationExceptionAsync<TInitializationRequest>(StateMachineInitializationContext<TInitializationRequest> context, Exception exception)
-            where TInitializationRequest : InitializationRequest, new()
+        public async Task OnStateMachineInitializationExceptionAsync<TInitializationEvent>(StateMachineInitializationContext<TInitializationEvent> context, Exception exception)
+            where TInitializationEvent : Event, new()
         {
-            var exceptionContext = new StateMachineInitializationContext(context.Context, context.InitializationRequest);
+            var exceptionContext = new StateMachineInitializationContext<TInitializationEvent>(context.Context, context.InitializationEvent);
             await ExceptionHandlers.RunSafe(h => h.OnStateMachineInitializationExceptionAsync(exceptionContext, exception), nameof(OnStateMachineInitializationExceptionAsync), Logger);
-            await Inspectors.RunSafe(i => i.OnStateMachineInitializationExceptionAsync(exceptionContext, exception), nameof(OnStateMachineInitializationExceptionAsync), Logger);
+            //await Inspectors.RunSafe(i => i.OnStateMachineInitializationExceptionAsync(exceptionContext, exception), nameof(OnStateMachineInitializationExceptionAsync), Logger);
         }
 
         public async Task OnStateMachineFinalizationExceptionAsync(StateMachineActionContext context, Exception exception)

@@ -37,7 +37,7 @@ namespace Stateflows.StateMachines.Engine
             return Task.CompletedTask;
         }
 
-        public Task<bool> BeforeProcessEventAsync(IEventContext<Event> context)
+        public Task<bool> BeforeProcessEventAsync(IEventActionContext<Event> context)
         {
             var result = true;
 
@@ -56,7 +56,7 @@ namespace Stateflows.StateMachines.Engine
             return Task.FromResult(result);
         }
 
-        public Task AfterProcessEventAsync(IEventContext<Event> context)
+        public Task AfterProcessEventAsync(IEventActionContext<Event> context)
         {
             ClearTimeEvents(TimeEventIdsToClear);
 

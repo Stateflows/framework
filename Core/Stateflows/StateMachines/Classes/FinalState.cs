@@ -2,7 +2,7 @@
 
 namespace Stateflows.StateMachines
 {
-    public class FinalState : BaseState
+    public class FinalState : BaseState, IFinalState
     {
         public const string Name = "Stateflows.StateMachines.FinalState";
 

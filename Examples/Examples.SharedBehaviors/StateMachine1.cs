@@ -9,7 +9,7 @@ namespace Examples.SharedBehaviors
     [StateMachineBehavior(nameof(StateMachine1))]
     public class StateMachine1 : StateMachine
     {
-        public override void Build(ITypedStateMachineBuilder builder)
+        public override void Build(IStateMachineBuilder builder)
         {
             builder
                 .AddInitialState("state1", b => b

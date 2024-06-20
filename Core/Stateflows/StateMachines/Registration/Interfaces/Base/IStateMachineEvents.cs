@@ -7,11 +7,11 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
 {
     public interface IStateMachineEvents<TReturn>
     {
-        TReturn AddOnInitialize(Func<IStateMachineInitializationContext, Task<bool>> actionAsync);
+        TReturn AddDefaultInitializer(Func<IStateMachineInitializationContext, Task<bool>> actionAsync);
 
-        TReturn AddOnInitialize<TInitializationRequest>(Func<IStateMachineInitializationContext<TInitializationRequest>, Task<bool>> actionAsync)
-            where TInitializationRequest : InitializationRequest, new();
+        TReturn AddInitializer<TInitializationEvent>(Func<IStateMachineInitializationContext<TInitializationEvent>, Task<bool>> actionAsync)
+            where TInitializationEvent : Event, new();
 
-        TReturn AddOnFinalize(Func<IStateMachineActionContext, Task> actionAsync);
+        TReturn AddFinalizer(Func<IStateMachineActionContext, Task> actionAsync);
     }
 }
