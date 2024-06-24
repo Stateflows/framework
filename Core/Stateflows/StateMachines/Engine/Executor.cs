@@ -25,14 +25,15 @@ namespace Stateflows.StateMachines.Engine
 
         public StateMachinesRegister Register { get; set; }
 
-        public IServiceProvider ServiceProvider => Scope.ServiceProvider;
+        public IServiceProvider ServiceProvider => ScopesStack.Peek().ServiceProvider;
 
-        private readonly IServiceScope Scope;
+        //private readonly IServiceScope Scope;
+        private readonly Stack<IServiceScope> ScopesStack = new Stack<IServiceScope>();
 
         public Executor(StateMachinesRegister register, Graph graph, IServiceProvider serviceProvider, StateflowsContext stateflowsContext, Event @event)
         {
             Register = register;
-            Scope = serviceProvider.CreateScope();
+            ScopesStack.Push(serviceProvider.CreateScope());
             Graph = graph;
             Context = new RootContext(stateflowsContext, this, @event);
             var logger = ServiceProvider.GetService<ILogger<Executor>>();
@@ -41,7 +42,18 @@ namespace Stateflows.StateMachines.Engine
 
         public void Dispose()
         {
-            Scope.Dispose();
+            //Scope.Dispose();
+        }
+
+        public void BeginScope()
+        {
+            ScopesStack.Push(ServiceProvider.CreateScope());
+        }
+
+        public void EndScope()
+        {
+            var scope = ScopesStack.Pop();
+            scope.Dispose();
         }
 
         public readonly RootContext Context;
@@ -332,6 +344,8 @@ namespace Stateflows.StateMachines.Engine
         private async Task<bool> DoGuardAsync<TEvent>(Edge edge)
             where TEvent : Event, new()
         {
+            BeginScope();
+
             var context = new GuardContext<TEvent>(Context, edge);
 
             await Inspector.BeforeTransitionGuardAsync(context);
@@ -340,12 +354,15 @@ namespace Stateflows.StateMachines.Engine
 
             await Inspector.AfterGuardAsync(context, result);
 
+
             return result;
         }
 
         private async Task DoEffectAsync<TEvent>(Edge edge)
             where TEvent : Event, new()
         {
+            BeginScope();
+
             var context = new TransitionContext<TEvent>(Context, edge);
 
             await Inspector.BeforeEffectAsync(context);
@@ -353,10 +370,14 @@ namespace Stateflows.StateMachines.Engine
             await edge.Effects.WhenAll(Context);
 
             await Inspector.AfterEffectAsync(context);
+
+            EndScope();
         }
 
         public async Task<bool> DoInitializeStateMachineAsync(InitializationRequest @event)
         {
+            BeginScope();
+
             var result = false;
 
             if (
@@ -384,57 +405,79 @@ namespace Stateflows.StateMachines.Engine
                 await Inspector.AfterStateMachineInitializeAsync(context);
             }
 
+            EndScope();
+
             return result;
         }
 
         public async Task DoFinalizeStateMachineAsync()
         {
+            BeginScope();
+
             var context = new StateMachineActionContext(Context);
             await Inspector.BeforeStateMachineFinalizeAsync(context);
 
             await Graph.Finalize.WhenAll(Context);
 
             await Inspector.AfterStateMachineFinalizeAsync(context);
+
+            EndScope();
         }
 
         public async Task DoInitializeStateAsync(Vertex vertex)
         {
+            BeginScope();
+
             var context = new StateActionContext(Context, vertex, Constants.Initialize);
             await Inspector.BeforeStateInitializeAsync(context);
 
             await vertex.Initialize.WhenAll(Context);
 
             await Inspector.AfterStateInitializeAsync(context);
+
+            EndScope();
         }
 
         public async Task DoFinalizeStateAsync(Vertex vertex)
         {
+            BeginScope();
+
             var context = new StateActionContext(Context, vertex, Constants.Finalize);
             await Inspector.BeforeStateFinalizeAsync(context);
 
             await vertex.Finalize.WhenAll(Context);
 
             await Inspector.AfterStateFinalizeAsync(context);
+
+            EndScope();
         }
 
         public async Task DoEntryAsync(Vertex vertex)
         {
+            BeginScope();
+
             var context = new StateActionContext(Context, vertex, Constants.Entry);
             await Inspector.BeforeStateEntryAsync(context);
 
             await vertex.Entry.WhenAll(Context);
 
             await Inspector.AfterStateEntryAsync(context);
+
+            EndScope();
         }
 
         private async Task DoExitAsync(Vertex vertex)
         {
+            BeginScope();
+
             var context = new StateActionContext(Context, vertex, Constants.Exit);
             await Inspector.BeforeStateExitAsync(context);
 
             await vertex.Exit.WhenAll(Context);
 
             await Inspector.AfterStateExitAsync(context);
+
+            EndScope();
         }
 
         private async Task DoConsumeAsync<TEvent>(Edge edge)

@@ -76,11 +76,19 @@ namespace Stateflows.StateMachines.Engine
 
                         executor.Context.SetEvent(ev);
 
-                        var status = await ExecuteBehaviorAsync(ev, result, stateflowsContext, graph, executor);
+                        executor.BeginScope();
+                        try
+                        {
+                            var status = await ExecuteBehaviorAsync(ev, result, stateflowsContext, graph, executor);
 
-                        results.Add(new RequestResult(ev, ev.GetResponse(), status, new EventValidation(true, new List<ValidationResult>())));
+                            results.Add(new RequestResult(ev, ev.GetResponse(), status, new EventValidation(true, new List<ValidationResult>())));
+                        }
+                        finally
+                        {
+                            executor.EndScope();
 
-                        executor.Context.ClearEvent();
+                            executor.Context.ClearEvent();
+                        }
                     }
 
                     compoundRequest.Respond(new CompoundResponse()
@@ -90,7 +98,15 @@ namespace Stateflows.StateMachines.Engine
                 }
                 else
                 {
-                    result = await ExecuteBehaviorAsync(@event, result, stateflowsContext, graph, executor);
+                    executor.BeginScope();
+                    try
+                    {
+                        result = await ExecuteBehaviorAsync(@event, result, stateflowsContext, graph, executor);
+                    }
+                    finally
+                    {
+                        executor.EndScope();
+                    }
                 }
 
                 await executor.DehydrateAsync();
@@ -116,9 +132,17 @@ namespace Stateflows.StateMachines.Engine
                     {
                         executor.Context.SetEvent(initializationRequest);
 
-                        await executor.InitializeAsync(initializationRequest);
+                        executor.BeginScope();
+                        try
+                        {
+                            await executor.InitializeAsync(initializationRequest);
+                        }
+                        finally
+                        {
+                            executor.EndScope();
 
-                        executor.Context.ClearEvent();
+                            executor.Context.ClearEvent();
+                        }
                     }
                 }
 
