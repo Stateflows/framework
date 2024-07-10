@@ -2,6 +2,6 @@
 {
     public class ResetRequest : Request<ResetResponse>
     {
-        public bool KeepVersion { get; set; } = false;
+        public ResetMode Mode { get; set; } = ResetMode.Full;
     }
 }

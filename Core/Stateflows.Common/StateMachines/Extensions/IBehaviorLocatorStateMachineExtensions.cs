@@ -5,7 +5,7 @@ namespace Stateflows.StateMachines
 {
     public static class IBehaviorLocatorStateMachineExtensions
     {
-        public static bool TryLocateStateMachine(this IBehaviorLocator locator, StateMachineId id, out IStateMachine stateMachine)
+        public static bool TryLocateStateMachine(this IBehaviorLocator locator, StateMachineId id, out IStateMachineBehavior stateMachine)
         {
             stateMachine = locator.TryLocateBehavior(id, out var behavior)
                 ? new StateMachineWrapper(behavior)

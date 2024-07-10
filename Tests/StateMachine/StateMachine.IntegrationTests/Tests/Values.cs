@@ -27,11 +27,11 @@ namespace StateMachine.IntegrationTests.Tests
         [TestMethod]
         public async Task TypedStateMachine()
         {
-            string currentState = StateInfo<State1>.Name;
+            string currentState = State<State1>.Name;
 
             if (StateMachineLocator.TryLocateStateMachine(new StateMachineId(StateMachineInfo<ValuesStateMachine>.Name, "x"), out var sm))
             {
-                await sm.InitializeAsync();
+                //await sm.InitializeAsync();
                 await sm.SendAsync(new SomeEvent());
 
                 currentState = (await sm.GetCurrentStateAsync()).Response.StatesStack.First();

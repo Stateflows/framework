@@ -2,6 +2,6 @@
 
 namespace Stateflows.Activities.Registration.Interfaces
 {
-    public interface IInputBuilder : IObjectFlow<IInputBuilder>
+    public interface IInputBuilder : IObjectFlowBase<IInputBuilder>
     { }
 }

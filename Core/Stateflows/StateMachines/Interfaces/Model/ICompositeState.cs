@@ -2,12 +2,16 @@
 
 namespace Stateflows.StateMachines
 {
-    public interface ICompositeState : IBaseState
-    {
-        Task OnInitializeAsync()
-            => Task.CompletedTask;
+    public interface IBaseCompositeState : IBaseState
+    { }
 
-        Task OnFinalizeAsync()
-            => Task.CompletedTask;
+    public interface ICompositeStateInitialization : IBaseCompositeState
+    {
+        Task OnInitializeAsync();
+    }
+
+    public interface ICompositeStateFinalization : IBaseCompositeState
+    {
+        Task OnFinalizeAsync();
     }
 }

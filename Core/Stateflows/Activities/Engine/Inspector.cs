@@ -118,11 +118,11 @@ namespace Stateflows.Activities.Engine
             await Observers.RunSafe(o => o.BeforeActivityInitializeAsync(context), nameof(BeforeActivityInitializationAsync), Logger);
         }
 
-        public async Task AfterActivityInitializationAsync(ActivityInitializationContext context)
+        public async Task AfterActivityInitializationAsync(ActivityInitializationContext context, bool initialized)
         {
-            await Observers.RunSafe(o => o.AfterActivityInitializeAsync(context), nameof(AfterActivityInitializationAsync), Logger);
-            await Inspectors.RunSafe(i => i.AfterActivityInitializeAsync(context), nameof(AfterActivityInitializationAsync), Logger);
-            await Plugins.RunSafe(p => p.AfterActivityInitializeAsync(context), nameof(AfterActivityInitializationAsync), Logger);
+            await Observers.RunSafe(o => o.AfterActivityInitializeAsync(context, initialized), nameof(AfterActivityInitializationAsync), Logger);
+            await Inspectors.RunSafe(i => i.AfterActivityInitializeAsync(context, initialized), nameof(AfterActivityInitializationAsync), Logger);
+            await Plugins.RunSafe(p => p.AfterActivityInitializeAsync(context, initialized), nameof(AfterActivityInitializationAsync), Logger);
         }
 
         public async Task BeforeActivityFinalizationAsync(ActivityActionContext context)
@@ -195,9 +195,9 @@ namespace Stateflows.Activities.Engine
             await Plugins.RunSafe(p => p.AfterNodeActivateAsync(context), nameof(AfterNodeActivateAsync), Logger);
         }
 
-        public async Task OnActivityInitializationExceptionAsync(BaseContext context, InitializationRequest initializationRequest, Exception exception)
+        public async Task OnActivityInitializationExceptionAsync(BaseContext context, Event initializationEvent, Exception exception)
         {
-            var exceptionContext = new ActivityInitializationContext(context, initializationRequest);
+            var exceptionContext = new ActivityInitializationContext(context, initializationEvent);
             await ExceptionHandlers.RunSafe(h => h.OnActivityInitializationExceptionAsync(exceptionContext, exception), nameof(OnActivityInitializationExceptionAsync), Logger);
             await Inspectors.RunSafe(i => i.OnActivityInitializationExceptionAsync(exceptionContext, exception), nameof(OnActivityInitializationExceptionAsync), Logger);
         }

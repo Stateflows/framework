@@ -11,6 +11,9 @@ using Stateflows.Activities.Context.Interfaces;
 using Stateflows.Activities.Registration.Extensions;
 using Stateflows.Activities.Registration.Interfaces;
 using Stateflows.Activities.Registration.Interfaces.Base;
+using Stateflows.StateMachines.Context.Classes;
+using Stateflows.StateMachines.Interfaces;
+using Stateflows.Activities.Typed;
 
 namespace Stateflows.Activities.Registration.Builders
 {
@@ -41,6 +44,7 @@ namespace Stateflows.Activities.Registration.Builders
                 };
 
                 Result.Initializers.Add(initializerName, initializer);
+                Result.InitializerTypes.Add(initializerType);
             }
 
             initializer.Actions.Add(initializerAction);
@@ -48,33 +52,41 @@ namespace Stateflows.Activities.Registration.Builders
             return this;
         }
 
-        public IActivityBuilder AddOnInitialize(Func<IActivityInitializationContext, Task<bool>> actionAsync)
-            => AddOnInitialize<InitializationRequest>(c =>
+        public IActivityBuilder AddDefaultInitializer(Func<IActivityInitializationContext, Task<bool>> actionAsync)
+        {
+            Result.DefaultInitializer = new Logic<ActivityPredicateAsync>()
             {
-                var baseContext = c as BaseContext;
-                var context = new ActivityInitializationContext(baseContext, baseContext.Context.Event as InitializationRequest);
+                Name = Constants.Initialize
+            };
+
+            Result.DefaultInitializer.Actions.Add(c =>
+            {
+                var context = new ActivityInitializationContext(c, c.Context.Event as Initialize);
                 return actionAsync(context);
             });
 
-        public IActivityBuilder AddOnInitialize<TInitializationRequest>(Func<IActivityInitializationContext<TInitializationRequest>, Task<bool>> actionAsync)
-            where TInitializationRequest : InitializationRequest, new()
+            return this;
+        }
+
+        public IActivityBuilder AddInitializer<TInitializationEvent>(Func<IActivityInitializationContext<TInitializationEvent>, Task<bool>> actionAsync)
+            where TInitializationEvent : Event, new()
         {
             actionAsync.ThrowIfNull(nameof(actionAsync));
 
             actionAsync = actionAsync.AddActivityInvocationContext(Result);
 
-            var initializerName = EventInfo<TInitializationRequest>.Name;
+            var initializerName = EventInfo<TInitializationEvent>.Name;
 
-            return AddInitializer(typeof(TInitializationRequest), initializerName, async c =>
+            return AddInitializer(typeof(TInitializationEvent), initializerName, async c =>
             {
                 var result = false;
-                var context = new ActivityInitializationContext<TInitializationRequest>(
+                var context = new ActivityInitializationContext<TInitializationEvent>(
                     c,
-                    (
-                        c.Context.Event is ExecutionRequest executionRequest
-                            ? executionRequest.InitializationRequest
-                            : c.Context.Event
-                    ) as TInitializationRequest
+                    (c.Context.Event
+                    //c.Context.Event is ExecutionRequest executionRequest
+                    //    ? executionRequest.InitializationRequest
+                    //    : c.Context.Event
+                    ) as TInitializationEvent
                 );
 
                 try
@@ -83,7 +95,7 @@ namespace Stateflows.Activities.Registration.Builders
                 }
                 catch (Exception e)
                 {
-                    await c.Context.Executor.Inspector.OnActivityInitializationExceptionAsync(context, context.InitializationRequest, e);
+                    await c.Context.Executor.Inspector.OnActivityInitializationExceptionAsync(context, context.InitializationEvent, e);
                     result = false;
                 }
 
@@ -98,7 +110,7 @@ namespace Stateflows.Activities.Registration.Builders
         IActivityBuilder IReactiveActivity<IActivityBuilder>.AddStructuredActivity(string actionNodeName, ReactiveStructuredActivityBuildAction buildAction)
             => AddStructuredActivity(actionNodeName, buildAction) as IActivityBuilder;
 
-        IActivityBuilder IActivityEvents<IActivityBuilder>.AddOnFinalize(Func<IActivityActionContext, Task> actionAsync)
+        IActivityBuilder IActivityEvents<IActivityBuilder>.AddFinalizer(Func<IActivityActionContext, Task> actionAsync)
             => AddOnFinalize(actionAsync) as IActivityBuilder;
 
         IActivityBuilder IInitial<IActivityBuilder>.AddInitial(InitialBuildAction buildAction)

@@ -27,8 +27,8 @@ namespace Stateflows.StateMachines.Engine
                         _ = behavior.SendAsync(vertex.GetSubscriptionRequest(context.StateMachine.Id));
                     }
 
-                    var initializationRequest = vertex.BehaviorInitializationBuilder?.Invoke(context) ?? new InitializationRequest();
-                    _ = behavior.InitializeAsync(initializationRequest);
+                    var initializationRequest = vertex.BehaviorInitializationBuilder?.Invoke(context) ?? new Initialize();
+                    _ = behavior.SendAsync(initializationRequest);
                 }
             }
 

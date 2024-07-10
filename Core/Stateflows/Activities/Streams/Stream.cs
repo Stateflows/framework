@@ -24,7 +24,7 @@ namespace Stateflows.Activities.Streams
 
         public void Consume(TokenHolder token)
         {
-            if (token is TokenHolder<Control>)
+            if (token is TokenHolder<ControlToken>)
             {
                 IsActivated = true;
             }

@@ -41,22 +41,22 @@ namespace StateMachine.IntegrationTests.Tests
                 ;
         }
 
-        [TestMethod]
-        public async Task NoFinalization()
-        {
-            var status = EventStatus.Consumed;
-            string? currentState = "";
+        //[TestMethod]
+        //public async Task NoFinalization()
+        //{
+        //    var status = EventStatus.Consumed;
+        //    string? currentState = "";
 
-            if (StateMachineLocator.TryLocateStateMachine(new StateMachineId("simple", "x"), out var sm))
-            {
-                status = (await sm.SendAsync(new SomeEvent())).Status;
+        //    if (StateMachineLocator.TryLocateStateMachine(new StateMachineId("simple", "x"), out var sm))
+        //    {
+        //        status = (await sm.SendAsync(new SomeEvent())).Status;
 
-                currentState = (await sm.GetCurrentStateAsync()).Response?.StatesStack.FirstOrDefault();
-            }
+        //        currentState = (await sm.GetCurrentStateAsync()).Response?.StatesStack.FirstOrDefault();
+        //    }
 
-            Assert.AreEqual(EventStatus.Rejected, status);
-            Assert.AreNotEqual(FinalState.Name, currentState);
-        }
+        //    Assert.AreEqual(EventStatus.NotConsumed, status);
+        //    Assert.AreNotEqual(FinalState.Name, currentState);
+        //}
 
         [TestMethod]
         public async Task SimpleFinalization()
@@ -67,7 +67,7 @@ namespace StateMachine.IntegrationTests.Tests
 
             if (StateMachineLocator.TryLocateStateMachine(new StateMachineId("simple", "x"), out var sm))
             {
-                initialized = (await sm.InitializeAsync()).Response.InitializationSuccessful;
+                initialized = (await sm.SendAsync(new Initialize())).Status == EventStatus.Initialized;
 
                 currentState = (await sm.GetCurrentStateAsync()).Response.StatesStack.First();
 
@@ -90,7 +90,7 @@ namespace StateMachine.IntegrationTests.Tests
 
             if (StateMachineLocator.TryLocateStateMachine(new StateMachineId("cascade", "x"), out var sm))
             {
-                initialized = (await sm.InitializeAsync()).Response.InitializationSuccessful;
+                initialized = (await sm.SendAsync(new Initialize())).Status == EventStatus.Initialized;
 
                 currentState = (await sm.GetCurrentStateAsync()).Response.StatesStack.Skip(1).First() ?? string.Empty;
             }

@@ -41,10 +41,10 @@ namespace Stateflows.Activities.Registration
         }
 
         public IActionBuilder AddControlFlow(string targetNodeName, ControlFlowBuildAction buildAction = null)
-            => AddFlowInternal<Control>(targetNodeName, false, b => buildAction?.Invoke(b as IControlFlowBuilder));
+            => AddFlowInternal<ControlToken>(targetNodeName, false, b => buildAction?.Invoke(b as IControlFlowBuilder));
 
         public IActionBuilder AddElseControlFlow(string targetNodeName, ElseControlFlowBuildAction buildAction = null)
-            => AddFlowInternal<Control>(targetNodeName, true, b => buildAction?.Invoke(b as IElseControlFlowBuilder));
+            => AddFlowInternal<ControlToken>(targetNodeName, true, b => buildAction?.Invoke(b as IElseControlFlowBuilder));
 
         public IActionBuilder AddFlow<TToken>(string targetNodeName, ObjectFlowBuildAction<TToken> buildAction = null)
             => AddFlowInternal<TToken>(targetNodeName, false, buildAction);
@@ -85,19 +85,19 @@ namespace Stateflows.Activities.Registration
             return this;
         }
 
-        IActionBuilderWithOptions IControlFlow<IActionBuilderWithOptions>.AddControlFlow(string targetNodeName, ControlFlowBuildAction buildAction)
+        IActionBuilderWithOptions IControlFlowBase<IActionBuilderWithOptions>.AddControlFlow(string targetNodeName, ControlFlowBuildAction buildAction)
             => AddControlFlow(targetNodeName, buildAction) as IActionBuilderWithOptions;
 
-        IActionBuilderWithOptions IObjectFlow<IActionBuilderWithOptions>.AddFlow<TToken>(string targetNodeName, ObjectFlowBuildAction<TToken> buildAction)
+        IActionBuilderWithOptions IObjectFlowBase<IActionBuilderWithOptions>.AddFlow<TToken>(string targetNodeName, ObjectFlowBuildAction<TToken> buildAction)
             => AddFlow<TToken>(targetNodeName, buildAction) as IActionBuilderWithOptions;
 
-        IInitialBuilder IControlFlow<IInitialBuilder>.AddControlFlow(string targetNodeName, ControlFlowBuildAction buildAction)
+        IInitialBuilder IControlFlowBase<IInitialBuilder>.AddControlFlow(string targetNodeName, ControlFlowBuildAction buildAction)
             => AddControlFlow(targetNodeName, buildAction) as IInitialBuilder;
 
-        ITypedActionBuilder IObjectFlow<ITypedActionBuilder>.AddFlow<TToken>(string targetNodeName, ObjectFlowBuildAction<TToken> buildAction)
+        ITypedActionBuilder IObjectFlowBase<ITypedActionBuilder>.AddFlow<TToken>(string targetNodeName, ObjectFlowBuildAction<TToken> buildAction)
             => AddFlow<TToken>(targetNodeName, buildAction) as ITypedActionBuilder;
 
-        ITypedActionBuilder IControlFlow<ITypedActionBuilder>.AddControlFlow(string targetNodeName, ControlFlowBuildAction buildAction)
+        ITypedActionBuilder IControlFlowBase<ITypedActionBuilder>.AddControlFlow(string targetNodeName, ControlFlowBuildAction buildAction)
             => AddControlFlow(targetNodeName, buildAction) as ITypedActionBuilder;
 
         public IActionBuilderWithOptions AddExceptionHandler<TException>(ExceptionHandlerDelegateAsync<TException> exceptionHandler)
@@ -106,7 +106,7 @@ namespace Stateflows.Activities.Registration
             var targetNodeName = $"{Node.Name}.{typeof(TException).FullName}.ExceptionHandler";
 
             AddFlow<TException>(targetNodeName);
-            AddFlow<NodeReference>(targetNodeName);
+            AddFlow<NodeReferenceToken>(targetNodeName);
 
             ActivityBuilder.AddNode(
                 NodeType.ExceptionHandler,
@@ -114,7 +114,7 @@ namespace Stateflows.Activities.Registration
                 (ActionDelegateAsync)(c =>
                 {
                     var contextObj = c as ActionContext;
-                    var nodeOfOrigin = contextObj.InputTokens.OfType<TokenHolder<NodeReference>>().FirstOrDefault()?.Payload?.Node;
+                    var nodeOfOrigin = contextObj.InputTokens.OfType<TokenHolder<NodeReferenceToken>>().FirstOrDefault()?.Payload?.Node;
                     var context = new ExceptionHandlerContext<TException>(contextObj, Node, nodeOfOrigin, contextObj.NodeScope);
 
                     exceptionHandler?.Invoke(context);
@@ -130,46 +130,46 @@ namespace Stateflows.Activities.Registration
             return this;
         }
 
-        ITypedActionBuilder IExceptionHandler<ITypedActionBuilder>.AddExceptionHandler<TException>(ExceptionHandlerDelegateAsync<TException> exceptionHandler)
+        ITypedActionBuilder IExceptionHandlerBase<ITypedActionBuilder>.AddExceptionHandler<TException>(ExceptionHandlerDelegateAsync<TException> exceptionHandler)
             => AddExceptionHandler<TException>(exceptionHandler) as ITypedActionBuilder;
 
-        IActionBuilder IExceptionHandler<IActionBuilder>.AddExceptionHandler<TException>(ExceptionHandlerDelegateAsync<TException> exceptionHandler)
+        IActionBuilder IExceptionHandlerBase<IActionBuilder>.AddExceptionHandler<TException>(ExceptionHandlerDelegateAsync<TException> exceptionHandler)
             => AddExceptionHandler<TException>(exceptionHandler) as IActionBuilder;
 
-        IInputBuilder IObjectFlow<IInputBuilder>.AddFlow<TToken>(string targetNodeName, ObjectFlowBuildAction<TToken> buildAction)
+        IInputBuilder IObjectFlowBase<IInputBuilder>.AddFlow<TToken>(string targetNodeName, ObjectFlowBuildAction<TToken> buildAction)
             => AddFlow<TToken>(targetNodeName, buildAction) as IInputBuilder;
 
-        void IObjectFlow.AddFlow<TToken>(string targetNodeName, ObjectFlowBuildAction<TToken> buildAction)
+        void IObjectFlowBase.AddFlow<TToken>(string targetNodeName, ObjectFlowBuildAction<TToken> buildAction)
             => AddFlow<TToken>(targetNodeName, buildAction);
 
-        void IControlFlow.AddControlFlow(string targetNodeName, ControlFlowBuildAction buildAction)
+        void IControlFlowBase.AddControlFlow(string targetNodeName, ControlFlowBuildAction buildAction)
             => AddControlFlow(targetNodeName, buildAction);
 
-        IForkBuilder IObjectFlow<IForkBuilder>.AddFlow<TToken>(string targetNodeName, ObjectFlowBuildAction<TToken> buildAction)
+        IForkBuilder IObjectFlowBase<IForkBuilder>.AddFlow<TToken>(string targetNodeName, ObjectFlowBuildAction<TToken> buildAction)
             => AddFlow<TToken>(targetNodeName, buildAction) as IForkBuilder;
 
-        IForkBuilder IControlFlow<IForkBuilder>.AddControlFlow(string targetNodeName, ControlFlowBuildAction buildAction)
+        IForkBuilder IControlFlowBase<IForkBuilder>.AddControlFlow(string targetNodeName, ControlFlowBuildAction buildAction)
             => AddControlFlow(targetNodeName, buildAction) as IForkBuilder;
 
-        IAcceptEventActionBuilder IObjectFlow<IAcceptEventActionBuilder>.AddFlow<TToken>(string targetNodeName, ObjectFlowBuildAction<TToken> buildAction)
+        IAcceptEventActionBuilder IObjectFlowBase<IAcceptEventActionBuilder>.AddFlow<TToken>(string targetNodeName, ObjectFlowBuildAction<TToken> buildAction)
             => AddFlow<TToken>(targetNodeName, buildAction) as IAcceptEventActionBuilder;
 
-        IAcceptEventActionBuilder IControlFlow<IAcceptEventActionBuilder>.AddControlFlow(string targetNodeName, ControlFlowBuildAction buildAction)
+        IAcceptEventActionBuilder IControlFlowBase<IAcceptEventActionBuilder>.AddControlFlow(string targetNodeName, ControlFlowBuildAction buildAction)
             => AddControlFlow(targetNodeName, buildAction) as IAcceptEventActionBuilder;
 
-        IAcceptEventActionBuilder IExceptionHandler<IAcceptEventActionBuilder>.AddExceptionHandler<TException>(ExceptionHandlerDelegateAsync<TException> exceptionHandler)
+        IAcceptEventActionBuilder IExceptionHandlerBase<IAcceptEventActionBuilder>.AddExceptionHandler<TException>(ExceptionHandlerDelegateAsync<TException> exceptionHandler)
             => AddExceptionHandler<TException>(exceptionHandler) as IAcceptEventActionBuilder;
 
-        ISendEventActionBuilder IControlFlow<ISendEventActionBuilder>.AddControlFlow(string targetNodeName, ControlFlowBuildAction buildAction)
+        ISendEventActionBuilder IControlFlowBase<ISendEventActionBuilder>.AddControlFlow(string targetNodeName, ControlFlowBuildAction buildAction)
             => AddControlFlow(targetNodeName, buildAction) as ISendEventActionBuilder;
 
-        IDecisionBuilder IDecisionFlow<IDecisionBuilder>.AddFlow(string targetNodeName, ControlFlowBuildAction buildAction)
+        IDecisionBuilder IDecisionFlowBase<IDecisionBuilder>.AddFlow(string targetNodeName, ControlFlowBuildAction buildAction)
             => AddControlFlow(targetNodeName, buildAction) as IDecisionBuilder;
 
-        IDecisionBuilder IElseDecisionFlow<IDecisionBuilder>.AddElseFlow(string targetNodeName, ElseControlFlowBuildAction buildAction)
+        IDecisionBuilder IElseDecisionFlowBase<IDecisionBuilder>.AddElseFlow(string targetNodeName, ElseControlFlowBuildAction buildAction)
             => AddElseControlFlow(targetNodeName, buildAction) as IDecisionBuilder;
 
-        IDataStoreBuilder IObjectFlow<IDataStoreBuilder>.AddFlow<TToken>(string targetNodeName, ObjectFlowBuildAction<TToken> buildAction)
+        IDataStoreBuilder IObjectFlowBase<IDataStoreBuilder>.AddFlow<TToken>(string targetNodeName, ObjectFlowBuildAction<TToken> buildAction)
             => AddFlow<TToken>(targetNodeName, buildAction) as IDataStoreBuilder;
     }
 }

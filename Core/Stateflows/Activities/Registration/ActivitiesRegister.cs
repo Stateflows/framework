@@ -90,7 +90,7 @@ namespace Stateflows.Activities.Registration
             var activity = FormatterServices.GetUninitializedObject(activityType) as Activity;
 
             var builder = new ActivityBuilder(activityName, version, null, Services);
-            builder.AddActivityEvents(activityType);
+            //builder.AddActivityEvents(activityType);
             builder.Result.ActivityType = activityType;
             activity.Build(builder);
             builder.Result.Build();

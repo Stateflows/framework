@@ -2,6 +2,6 @@
 
 namespace Stateflows.Activities.Registration.Interfaces
 {
-    public interface IJoinBuilder : IObjectFlow, IControlFlow
+    public interface IJoinBuilder : IObjectFlowBase, IControlFlowBase
     { }
 }

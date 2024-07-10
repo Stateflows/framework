@@ -6,7 +6,5 @@ namespace Stateflows.StateMachines
     public abstract class BaseInitializer
     {
         public IStateMachineInitializationContext Context { get; internal set; }
-
-        public abstract Task<bool> OnInitialize();
     }
 }

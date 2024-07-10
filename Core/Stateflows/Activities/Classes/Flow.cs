@@ -23,7 +23,7 @@ namespace Stateflows.Activities
             => (IActivityFlowContext<TToken>)base.Context;
     }
 
-    public abstract class Flow<TToken> : BaseFlow<TToken>
+    public abstract class Flow<TToken> : BaseFlow<TToken>//, IGuardFlow<TToken>
     { }
 
     public abstract class BaseTransformationFlow<TToken, TTransformedToken> : BaseControlFlow
@@ -36,6 +36,8 @@ namespace Stateflows.Activities
         public abstract Task<TTransformedToken> TransformAsync();
     }
 
-    public abstract class TransformationFlow<TToken, TTransformedToken> : BaseTransformationFlow<TToken, TTransformedToken>
-    { }
+    public abstract class TransformationFlow<TToken, TTransformedToken> : BaseTransformationFlow<TToken, TTransformedToken>//, ITransformationFlow<TToken, TTransformedToken>
+    {
+        public abstract Task<TTransformedToken> TransformAsync(TToken token);
+    }
 }

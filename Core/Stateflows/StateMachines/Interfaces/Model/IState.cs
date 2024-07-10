@@ -2,23 +2,27 @@
 
 namespace Stateflows.StateMachines
 {
-    public interface IBaseState
-    {
-        Task OnEntryAsync()
-            => Task.CompletedTask;
-
-        Task OnExitAsync()
-            => Task.CompletedTask;
-    }
-
-    public interface IState : IBaseState
+    public interface IVertex
     { }
 
-    public interface IFinalState : IBaseState
+    public interface IBaseState : IVertex
+    { }
+
+    public interface IStateEntry : IBaseState
+    {
+        Task OnEntryAsync();
+    }
+
+    public interface IStateExit : IBaseState
+    {
+        Task OnExitAsync();
+    }
+
+    public interface IFinalState : IVertex
     { }
 
     public static class State<TState>
-        where TState : class, IBaseState
+        where TState : class, IVertex
     {
         public static string Name => typeof(TState).FullName;
     }

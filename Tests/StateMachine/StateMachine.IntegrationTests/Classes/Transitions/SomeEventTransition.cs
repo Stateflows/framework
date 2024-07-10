@@ -1,10 +1,18 @@
-﻿namespace StateMachine.IntegrationTests.Classes.Transitions
+﻿using Stateflows.StateMachines.Context.Interfaces;
+
+namespace StateMachine.IntegrationTests.Classes.Transitions
 {
-    internal class SomeEventTransition : Transition<SomeEvent>
+    internal class SomeEventTransition : ITransitionGuard<SomeEvent>, ITransitionEffect<SomeEvent>
     {
         public static bool GuardFired = false;
 
         public static bool EffectFired = false;
+
+        private readonly IStateMachineContext stateMachineContext;
+        public SomeEventTransition(IStateMachineContext stateMachineContext)
+        {
+            this.stateMachineContext = stateMachineContext;
+        }
 
         public static void Reset()
         {
@@ -12,15 +20,15 @@
             EffectFired = false;
         }
 
-        public override Task<bool> GuardAsync()
+        public Task<bool> GuardAsync(SomeEvent @event)
         {
-            GuardFired = Context != null && Context.StateMachine.Id.Instance != null;
+            GuardFired = stateMachineContext != null && stateMachineContext.Id.Instance != null;
             return Task.FromResult(true);
         }
 
-        public override Task EffectAsync()
+        public Task EffectAsync(SomeEvent @event)
         {
-            EffectFired = Context != null && Context.StateMachine.Id.Instance != null;
+            EffectFired = stateMachineContext != null && stateMachineContext.Id.Instance != null;
             return Task.CompletedTask;
         }
     }

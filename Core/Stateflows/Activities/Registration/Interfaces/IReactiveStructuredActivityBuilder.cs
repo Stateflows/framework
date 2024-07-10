@@ -3,14 +3,14 @@
 namespace Stateflows.Activities.Registration.Interfaces
 {
     public interface IReactiveStructuredActivityBuilder :
-        IObjectFlow<IReactiveStructuredActivityBuilder>,
-        IControlFlow<IReactiveStructuredActivityBuilder>,
+        IObjectFlowBase<IReactiveStructuredActivityBuilder>,
+        IControlFlowBase<IReactiveStructuredActivityBuilder>,
         IReactiveActivity<IReactiveStructuredActivityBuilder>,
         IInitial<IReactiveStructuredActivityBuilder>,
         IFinal<IReactiveStructuredActivityBuilder>,
         IInput<IReactiveStructuredActivityBuilder>,
         IOutput<IReactiveStructuredActivityBuilder>,
-        IExceptionHandler<IReactiveStructuredActivityBuilder>,
+        IExceptionHandlerBase<IReactiveStructuredActivityBuilder>,
         INodeOptions<IReactiveStructuredActivityBuilderWithOptions>,
         IStructuredActivityEvents<IReactiveStructuredActivityBuilder>,
         ISendEvent<IReactiveStructuredActivityBuilder>,
@@ -18,14 +18,14 @@ namespace Stateflows.Activities.Registration.Interfaces
     { }
 
     public interface IReactiveStructuredActivityBuilderWithOptions :
-        IObjectFlow<IReactiveStructuredActivityBuilderWithOptions>,
-        IControlFlow<IReactiveStructuredActivityBuilderWithOptions>,
+        IObjectFlowBase<IReactiveStructuredActivityBuilderWithOptions>,
+        IControlFlowBase<IReactiveStructuredActivityBuilderWithOptions>,
         IReactiveActivity<IReactiveStructuredActivityBuilderWithOptions>,
         IInitial<IReactiveStructuredActivityBuilderWithOptions>,
         IFinal<IReactiveStructuredActivityBuilderWithOptions>,
         IInput<IReactiveStructuredActivityBuilderWithOptions>,
         IOutput<IReactiveStructuredActivityBuilderWithOptions>,
-        IExceptionHandler<IReactiveStructuredActivityBuilderWithOptions>,
+        IExceptionHandlerBase<IReactiveStructuredActivityBuilderWithOptions>,
         IStructuredActivityEvents<IReactiveStructuredActivityBuilderWithOptions>,
         ISendEvent<IReactiveStructuredActivityBuilderWithOptions>,
         IAcceptEvent<IReactiveStructuredActivityBuilderWithOptions>

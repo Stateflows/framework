@@ -3,11 +3,11 @@
 namespace Stateflows.Activities.Context.Interfaces
 {
     public interface IActivityInitializationContext<out TInitializationRequest> : IActivityActionContext
-        where TInitializationRequest : InitializationRequest
+        where TInitializationRequest : Event
     {
-        TInitializationRequest InitializationRequest { get; }
+        TInitializationRequest InitializationEvent { get; }
     }
 
-    public interface IActivityInitializationContext : IActivityInitializationContext<InitializationRequest>
+    public interface IActivityInitializationContext : IActivityInitializationContext<Event>
     { }
 }

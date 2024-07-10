@@ -14,9 +14,11 @@ namespace Stateflows.Activities
     //        => Task.FromResult(true);
     //}
 
-    public abstract class ElseTransformationFlow<TToken, TTransformedToken> : BaseTransformationFlow<TToken, TTransformedToken>
+    public abstract class ElseTransformationFlow<TToken, TTransformedToken> : BaseTransformationFlow<TToken, TTransformedToken>//, IElseTransformationFlow<TToken, TTransformedToken>
     {
         public override sealed Task<bool> GuardAsync()
             => Task.FromResult(true);
+
+        public abstract Task<TTransformedToken> TransformAsync(TToken token);
     }
 }

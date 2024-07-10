@@ -52,13 +52,13 @@ namespace Stateflows.Activities.Models
         public IEnumerable<Type> GetIncomingTokenTypes()
             => IncomingEdges
                 .Select(e => e.TargetTokenType)
-                .Where(t => t != typeof(Control) && t != typeof(NodeReference) && !typeof(Exception).IsAssignableFrom(t))
+                .Where(t => t != typeof(ControlToken) && t != typeof(NodeReferenceToken) && !typeof(Exception).IsAssignableFrom(t))
                 .Distinct();
 
         public IEnumerable<Type> GetOutgoingTokenTypes()
             => Edges
                 .Select(e => e.TokenType)
-                .Where(t => t != typeof(Control) && t != typeof(NodeReference) && !typeof(Exception).IsAssignableFrom(t))
+                .Where(t => t != typeof(ControlToken) && t != typeof(NodeReferenceToken) && !typeof(Exception).IsAssignableFrom(t))
                 .Distinct();
 
         public void ScanForDeclaredTypes(Type nodeType)
@@ -200,7 +200,7 @@ namespace Stateflows.Activities.Models
                     new TokenHolder[]
                     {
                         exception.ToExceptionHolder(),
-                        new NodeReference() { Node = this }.ToTokenHolder(),
+                        new NodeReferenceToken() { Node = this }.ToTokenHolder(),
                     }
                 );
 

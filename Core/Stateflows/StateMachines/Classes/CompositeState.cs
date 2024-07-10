@@ -2,7 +2,7 @@
 
 namespace Stateflows.StateMachines
 {
-    public abstract class CompositeState : BaseState, ICompositeState
+    public abstract class CompositeState : BaseState, IBaseCompositeState
     {
         public virtual Task OnInitializeAsync()
             => Task.CompletedTask;

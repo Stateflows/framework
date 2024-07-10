@@ -17,7 +17,7 @@ namespace Stateflows.Storage.EntityFrameworkCore.Utils
                 query = query.AsNoTracking();
             }
                 
-            return await query.FirstOrDefaultAsync() ?? new Context_v1(id.BehaviorClass.ToString(), id.ToString(), null, "");
+            return await query.FirstOrDefaultAsync() ?? new Context_v1(id.BehaviorClass.ToString(), id.ToString(), null, false, "");
         }
 
         public static async Task<IEnumerable<Context_v1>> FindByClassesAsync(this DbSet<Context_v1> dbSet, IEnumerable<BehaviorClass> behaviorClasses)
@@ -53,6 +53,18 @@ namespace Stateflows.Storage.EntityFrameworkCore.Utils
                     behaviorClassStrings.Contains(c.BehaviorClass) &&
                     c.TriggerTime != null &&
                     c.TriggerTime < now
+                )
+                .AsNoTracking()
+                .ToArray();
+        }
+
+        public static IEnumerable<Context_v1> FindByTriggerOnStartup(this DbSet<Context_v1> dbSet, IEnumerable<BehaviorClass> behaviorClasses)
+        {
+            var behaviorClassStrings = behaviorClasses.Select(bc => bc.ToString());
+            return dbSet
+                .Where(c =>
+                    behaviorClassStrings.Contains(c.BehaviorClass) &&
+                    c.TriggerOnStartup
                 )
                 .AsNoTracking()
                 .ToArray();

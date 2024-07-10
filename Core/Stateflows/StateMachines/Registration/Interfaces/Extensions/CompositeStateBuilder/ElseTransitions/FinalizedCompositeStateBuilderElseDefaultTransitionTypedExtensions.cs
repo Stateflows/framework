@@ -6,16 +6,16 @@ namespace Stateflows.StateMachines.Typed
     public static class FinalizedCompositeStateBuilderElseDefaultTransitionTypedExtensions
     {
         public static IFinalizedCompositeStateBuilder AddElseDefaultTransition<TElseTransition, TTargetState>(this IFinalizedCompositeStateBuilder builder)
-            where TElseTransition : ElseTransition<CompletionEvent>
-            where TTargetState : BaseState
-            => builder.AddElseDefaultTransition<TElseTransition>(StateInfo<TTargetState>.Name);
+            where TElseTransition : class, ITransitionEffect<CompletionEvent>
+            where TTargetState : class, IBaseState
+            => builder.AddElseDefaultTransition<TElseTransition>(State<TTargetState>.Name);
 
         public static IFinalizedCompositeStateBuilder AddElseDefaultTransition<TElseTransition>(this IFinalizedCompositeStateBuilder builder, string targetVertexName)
-            where TElseTransition : ElseTransition<CompletionEvent>
-            => builder.AddElseTransition<CompletionEvent, TElseTransition>(targetVertexName);
+            where TElseTransition : class, ITransitionEffect<CompletionEvent>
+            => (builder as IStateBuilder).AddElseDefaultTransition<TElseTransition>(targetVertexName) as IFinalizedCompositeStateBuilder;
 
         public static IFinalizedCompositeStateBuilder AddElseDefaultTransition<TTargetState>(this IFinalizedCompositeStateBuilder builder, ElseDefaultTransitionBuildAction transitionBuildAction = null)
-            where TTargetState : BaseState
-            => builder.AddElseDefaultTransition(StateInfo<TTargetState>.Name, transitionBuildAction);
+            where TTargetState : class, IBaseState
+            => builder.AddElseDefaultTransition(State<TTargetState>.Name, transitionBuildAction);
     }
 }

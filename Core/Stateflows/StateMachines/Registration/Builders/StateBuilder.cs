@@ -386,14 +386,14 @@ namespace Stateflows.StateMachines.Registration.Builders
             where TEvent : Event, new()
             => AddInternalTransition<TEvent>(b =>
             {
-                b.AddEffect(c =>
+                b.AddEffect(async c =>
                 {
                     if (c.TryLocateBehavior(Vertex.GetBehaviorId(c.StateMachine.Id), out var behavior))
                     {
-                        _ = behavior.SendAsync(c.Event);
+                        var result = await behavior.SendAsync(c.Event);
                     }
 
-                    return Task.CompletedTask;
+                    //return Task.CompletedTask;
                 });
 
                 buildAction?.Invoke(b as IForwardedEventBuilder<TEvent>);

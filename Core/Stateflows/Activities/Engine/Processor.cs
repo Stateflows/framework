@@ -2,16 +2,15 @@
 using System.Linq;
 using System.Threading.Tasks;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
+using Microsoft.Extensions.DependencyInjection;
 using Stateflows.Common;
+using Stateflows.Common.Context;
 using Stateflows.Common.Interfaces;
+using Stateflows.Common.Extensions;
+using Stateflows.Activities.Models;
 using Stateflows.Activities.Registration;
 using Stateflows.Activities.Context.Classes;
-using Microsoft.Extensions.DependencyInjection;
-using Stateflows.Common.Context;
-using Stateflows.Activities.Models;
-using Stateflows.Common.Extensions;
-using System.ComponentModel.DataAnnotations;
-using Stateflows.Common.Initializer;
 
 namespace Stateflows.Activities.Engine
 {
@@ -105,29 +104,38 @@ namespace Stateflows.Activities.Engine
 
             if (await executor.Inspector.BeforeProcessEventAsync(eventContext))
             {
-                if (!executor.Initialized)
+                if (await executor.Inspector.BeforeProcessEventAsync(eventContext))
                 {
-                    var token = BehaviorClassesInitializations.Instance.AutoInitializationTokens.Find(token => token.BehaviorClass == executor.Context.Id.ActivityClass);
-
-                    InitializationRequest initializationRequest;
-                    if (token != null && (initializationRequest = await token.InitializationRequestFactory.Invoke(executor.NodeScope.ServiceProvider, executor.Context.Id)) != null)
+                    if (!executor.Initialized)
                     {
-                        context.SetEvent(initializationRequest);
-
-                        await executor.InitializeAsync(initializationRequest);
-
-                        context.ClearEvent();
+                        result = await executor.InitializeAsync(@event);
                     }
+
+                    if (result != EventStatus.Initialized)
+                    {
+                        var handlingResult = await TryHandleEventAsync(eventContext);
+
+                        if (executor.Initialized)
+                        {
+                            if (handlingResult != EventStatus.Consumed && handlingResult != EventStatus.NotInitialized)
+                            {
+                                result = await executor.ProcessAsync(@event);
+                            }
+                            else
+                            {
+                                result = handlingResult;
+                            }
+                        }
+                        else
+                        {
+                            result = result == EventStatus.NotInitialized
+                                ? EventStatus.NotInitialized
+                                : EventStatus.Rejected;
+                        }
+                    }
+
+                    await executor.Inspector.AfterProcessEventAsync(eventContext);
                 }
-
-                result = await TryHandleEventAsync(eventContext);
-
-                if (result != EventStatus.Consumed)
-                {
-                    result = await executor.ProcessAsync(@event);
-                }
-
-                await executor.Inspector.AfterProcessEventAsync(eventContext);
             }
             else
             {

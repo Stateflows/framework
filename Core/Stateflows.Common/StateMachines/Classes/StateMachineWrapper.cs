@@ -4,7 +4,7 @@ using Stateflows.StateMachines;
 
 namespace Stateflows.Common.StateMachines.Classes
 {
-    internal class StateMachineWrapper : IStateMachine
+    internal class StateMachineWrapper : IStateMachineBehavior
     {
         public BehaviorId Id => Behavior.Id;
 

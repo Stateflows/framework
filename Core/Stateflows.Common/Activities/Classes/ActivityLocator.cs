@@ -11,7 +11,7 @@ namespace Stateflows.Common.Activities.Classes
             Locator = locator;
         }
 
-        public bool TryLocateActivity(ActivityId id, out IActivity activity)
+        public bool TryLocateActivity(ActivityId id, out IActivityBehavior activity)
             => Locator.TryLocateActivity(id, out activity);
     }
 }

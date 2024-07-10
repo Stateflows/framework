@@ -2,11 +2,11 @@
 
 namespace StateMachine.IntegrationTests.Classes.Transitions
 {
-    internal class ValueTransition : Transition<CompletionEvent>
+    internal class ValueTransition : IBaseDefaultTransition
     {
         private readonly SourceStateValue<int> counter = new("counter");
 
-        public override Task<bool> GuardAsync()
+        public Task<bool> GuardAsync()
         {
             var result = counter.TryGet(out var c) && c == 1;
             return Task.FromResult(result);

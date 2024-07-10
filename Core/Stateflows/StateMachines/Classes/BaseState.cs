@@ -1,10 +1,12 @@
-﻿using System.Threading.Tasks;
+﻿using System;
+using System.Threading.Tasks;
 using Stateflows.StateMachines.Context.Interfaces;
 
 namespace Stateflows.StateMachines
 {
     public abstract class BaseState
     {
+        [Obsolete("Context is deprecated, use dependency injection services (IExecutionContext, IStateContext, IStateMachineContext, IBehaviorLocator) or value accesors (GlobalValue, StateValue)")]
         public IStateActionContext Context { get; internal set; }
 
         public virtual Task OnEntryAsync()

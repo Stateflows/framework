@@ -1,3 +1,4 @@
+using Stateflows.Common;
 using StateMachine.IntegrationTests.Utils;
 
 namespace StateMachine.IntegrationTests.Tests
@@ -51,10 +52,10 @@ namespace StateMachine.IntegrationTests.Tests
                     : null
                 )
                 .Where(stateMachine => stateMachine is not null)
-                .Select(stateMachine => stateMachine.InitializeAsync())
+                .Select(stateMachine => stateMachine.SendAsync(new Initialize()))
                 .ToArray();
 
-            var badResults = (await Task.WhenAll(sequence)).Count(r => !r.Response.InitializationSuccessful);
+            var badResults = (await Task.WhenAll(sequence)).Count(r => r.Status != EventStatus.Initialized);
 
             Assert.AreEqual(0, badResults);
         }

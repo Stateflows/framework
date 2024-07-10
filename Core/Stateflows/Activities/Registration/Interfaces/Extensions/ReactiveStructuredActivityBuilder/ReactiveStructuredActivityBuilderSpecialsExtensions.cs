@@ -70,7 +70,7 @@ namespace Stateflows.Activities
                 ) as IReactiveStructuredActivityBuilder;
 
         public static IReactiveStructuredActivityBuilder AddControlDecision(this IReactiveStructuredActivityBuilder builder, DecisionBuildAction decisionBuildAction)
-            => builder.AddControlDecision(ActivityNodeInfo<DecisionNode<Control>>.Name, decisionBuildAction);
+            => builder.AddControlDecision(ActivityNodeInfo<DecisionNode<ControlToken>>.Name, decisionBuildAction);
 
         public static IReactiveStructuredActivityBuilder AddDecision<TToken>(this IReactiveStructuredActivityBuilder builder, string decisionNodeName, DecisionBuildAction<TToken> buildAction)
             => (builder as BaseActivityBuilder)

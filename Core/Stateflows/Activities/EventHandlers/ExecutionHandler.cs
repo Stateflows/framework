@@ -18,17 +18,17 @@ namespace Stateflows.Activities.EventHandlers
             {
                 var executor = context.Activity.GetExecutor();
 
-                var initialized = await executor.InitializeAsync(executionRequest.InitializationRequest ?? new InitializationRequest());
+                //var initialized = await executor.InitializeAsync(executionRequest.InitializationRequest ?? new InitializationRequest());
 
-                executionRequest.Respond(
-                    new ExecutionResponse()
-                    {
-                        ExecutionSuccessful = initialized,
-                        OutputTokens = initialized
-                            ? await executor.GetResultAsync()
-                            : null
-                    }
-                );
+                //executionRequest.Respond(
+                //    new ExecutionResponse()
+                //    {
+                //        ExecutionSuccessful = initialized,
+                //        OutputTokens = initialized
+                //            ? await executor.GetResultAsync()
+                //            : null
+                //    }
+                //);
 
                 return EventStatus.Consumed;
             }

@@ -65,8 +65,8 @@ namespace StateMachine.IntegrationTests.Tests
             if (StateMachineLocator.TryLocateStateMachine(new StateMachineId("a", "x"), out var a) &&
                 StateMachineLocator.TryLocateStateMachine(new StateMachineId("b", "x"), out var b))
             {
-                _ = await a.InitializeAsync();
-                _ = await b.InitializeAsync();
+                _ = await a.SendAsync(new Initialize());
+                _ = await b.SendAsync(new Initialize());
                 await Task.WhenAll(
                     a.SendAsync(new SomeEvent()),
                     b.SendAsync(new SomeEvent())
@@ -91,8 +91,8 @@ namespace StateMachine.IntegrationTests.Tests
             if (StateMachineLocator.TryLocateStateMachine(new StateMachineId("instance", "a"), out var a) &&
                 StateMachineLocator.TryLocateStateMachine(new StateMachineId("instance", "b"), out var b))
             {
-                _ = await a.InitializeAsync();
-                _ = await b.InitializeAsync();
+                _ = await a.SendAsync(new Initialize());
+                _ = await b.SendAsync(new Initialize());
                 await Task.WhenAll(
                     a.SendAsync(new SomeEvent() { DelaySize = 100 }),
                     b.SendAsync(new SomeEvent() { DelaySize = 0 })

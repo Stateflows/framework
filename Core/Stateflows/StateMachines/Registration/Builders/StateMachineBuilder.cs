@@ -20,9 +20,6 @@ namespace Stateflows.StateMachines.Registration.Builders
         IInitializedStateMachineBuilder,
         IFinalizedStateMachineBuilder,
         IStateMachineBuilder,
-        //ITypedInitializedStateMachineBuilder,
-        //ITypedFinalizedStateMachineBuilder,
-        //ITypedStateMachineBuilder,
         IInternal,
         IBehaviorBuilder
     {
@@ -59,24 +56,32 @@ namespace Stateflows.StateMachines.Registration.Builders
         }
 
         public IInitializedStateMachineBuilder AddDefaultInitializer(Func<IStateMachineInitializationContext, Task<bool>> actionAsync)
-            => AddInitializer<InitializationRequest>(c =>
+        {
+            Result.DefaultInitializer = new Logic<StateMachinePredicateAsync>()
             {
-                var ctx = (c as BaseContext).Context;
-                var context = new StateMachineInitializationContext(ctx, ctx.Event as Initialize);
+                Name = Constants.Initialize
+            };
+
+            Result.DefaultInitializer.Actions.Add(c =>
+            {
+                var context = new StateMachineInitializationContext(c, c.Event as Initialize);
                 return actionAsync(context);
             });
 
-        public IInitializedStateMachineBuilder AddInitializer<TInitializationRequest>(Func<IStateMachineInitializationContext<TInitializationRequest>, Task<bool>> actionAsync)
-            where TInitializationRequest : Event, new()
+            return this;
+        }
+
+        public IInitializedStateMachineBuilder AddInitializer<TInitializationEvent>(Func<IStateMachineInitializationContext<TInitializationEvent>, Task<bool>> actionAsync)
+            where TInitializationEvent : Event, new()
         {
             actionAsync.ThrowIfNull(nameof(actionAsync));
             
-            var initializerName = EventInfo<TInitializationRequest>.Name;
+            var initializerName = EventInfo<TInitializationEvent>.Name;
 
-            return AddInitializer(typeof(TInitializationRequest), initializerName, async c =>
+            return AddInitializer(typeof(TInitializationEvent), initializerName, async c =>
             {
                 var result = false;
-                var context = new StateMachineInitializationContext<TInitializationRequest>(c, c.Event as TInitializationRequest);
+                var context = new StateMachineInitializationContext<TInitializationEvent>(c, c.Event as TInitializationEvent);
                 try
                 {
                     result = await actionAsync(context);
@@ -230,8 +235,8 @@ namespace Stateflows.StateMachines.Registration.Builders
         IStateMachineBuilder IStateMachineEvents<IStateMachineBuilder>.AddDefaultInitializer(Func<IStateMachineInitializationContext, Task<bool>> actionAsync)
             => AddDefaultInitializer(actionAsync) as IStateMachineBuilder;
 
-        IStateMachineBuilder IStateMachineEvents<IStateMachineBuilder>.AddInitializer<TInitializationRequest>(Func<IStateMachineInitializationContext<TInitializationRequest>, Task<bool>> actionAsync)
-            => AddInitializer<TInitializationRequest>(actionAsync) as IStateMachineBuilder;
+        IStateMachineBuilder IStateMachineEvents<IStateMachineBuilder>.AddInitializer<TInitializationEvent>(Func<IStateMachineInitializationContext<TInitializationEvent>, Task<bool>> actionAsync)
+            => AddInitializer<TInitializationEvent>(actionAsync) as IStateMachineBuilder;
 
         IStateMachineBuilder IStateMachineEvents<IStateMachineBuilder>.AddFinalizer(Func<IStateMachineActionContext, Task> actionAsync)
             => AddFinalizer(actionAsync) as IStateMachineBuilder;
@@ -257,81 +262,11 @@ namespace Stateflows.StateMachines.Registration.Builders
         IFinalizedStateMachineBuilder IStateMachineEvents<IFinalizedStateMachineBuilder>.AddDefaultInitializer(Func<IStateMachineInitializationContext, Task<bool>> actionAsync)
             => AddDefaultInitializer(actionAsync) as IFinalizedStateMachineBuilder;
 
-        IFinalizedStateMachineBuilder IStateMachineEvents<IFinalizedStateMachineBuilder>.AddInitializer<TInitializationRequest>(Func<IStateMachineInitializationContext<TInitializationRequest>, Task<bool>> actionAsync)
+        IFinalizedStateMachineBuilder IStateMachineEvents<IFinalizedStateMachineBuilder>.AddInitializer<TInitializationEvent>(Func<IStateMachineInitializationContext<TInitializationEvent>, Task<bool>> actionAsync)
             => AddInitializer(actionAsync) as IFinalizedStateMachineBuilder;
 
         IFinalizedStateMachineBuilder IStateMachineEvents<IFinalizedStateMachineBuilder>.AddFinalizer(Func<IStateMachineActionContext, Task> actionAsync)
             => AddFinalizer(actionAsync) as IFinalizedStateMachineBuilder;
-
-
-        //ITypedInitializedStateMachineBuilder IStateMachine<ITypedInitializedStateMachineBuilder>.AddState(string stateName, StateBuildAction stateBuildAction)
-        //    => AddState(stateName, stateBuildAction) as ITypedInitializedStateMachineBuilder;
-
-        //ITypedFinalizedStateMachineBuilder IStateMachineFinal<ITypedFinalizedStateMachineBuilder>.AddFinalState(string stateName)
-        //    => AddFinalState(stateName) as ITypedFinalizedStateMachineBuilder;
-
-        //ITypedInitializedStateMachineBuilder IStateMachine<ITypedInitializedStateMachineBuilder>.AddCompositeState(string stateName, CompositeStateBuildAction compositeStateBuildAction)
-        //    => AddCompositeState(stateName, compositeStateBuildAction) as ITypedInitializedStateMachineBuilder;
-
-        //ITypedInitializedStateMachineBuilder IStateMachineUtils<ITypedInitializedStateMachineBuilder>.AddInterceptor(StateMachineInterceptorFactory interceptorFactory)
-        //    => AddInterceptor(interceptorFactory) as ITypedInitializedStateMachineBuilder;
-
-        //ITypedInitializedStateMachineBuilder IStateMachineUtils<ITypedInitializedStateMachineBuilder>.AddInterceptor<TInterceptor>()
-        //    => AddInterceptor<TInterceptor>() as ITypedInitializedStateMachineBuilder;
-
-        //ITypedInitializedStateMachineBuilder IStateMachineUtils<ITypedInitializedStateMachineBuilder>.AddObserver(StateMachineObserverFactory observerFactory)
-        //    => AddObserver(observerFactory) as ITypedInitializedStateMachineBuilder;
-
-        //ITypedInitializedStateMachineBuilder IStateMachineUtils<ITypedInitializedStateMachineBuilder>.AddObserver<TObserver>()
-        //    => AddObserver<TObserver>() as ITypedInitializedStateMachineBuilder;
-
-        //ITypedInitializedStateMachineBuilder IStateMachineUtils<ITypedInitializedStateMachineBuilder>.AddExceptionHandler(StateMachineExceptionHandlerFactory exceptionHandlerFactory)
-        //    => AddExceptionHandler(exceptionHandlerFactory) as ITypedInitializedStateMachineBuilder;
-
-        //ITypedInitializedStateMachineBuilder IStateMachineUtils<ITypedInitializedStateMachineBuilder>.AddExceptionHandler<TExceptionHandler>()
-        //    => AddExceptionHandler<TExceptionHandler>() as ITypedInitializedStateMachineBuilder;
-
-        //ITypedInitializedStateMachineBuilder IStateMachineInitial<ITypedInitializedStateMachineBuilder>.AddInitialState(string stateName, StateBuildAction stateBuildAction)
-        //    => AddInitialState(stateName, stateBuildAction) as ITypedInitializedStateMachineBuilder;
-
-        //ITypedInitializedStateMachineBuilder IStateMachineInitial<ITypedInitializedStateMachineBuilder>.AddInitialCompositeState(string stateName, CompositeStateBuildAction compositeStateBuildAction)
-        //    => AddInitialCompositeState(stateName, compositeStateBuildAction) as ITypedInitializedStateMachineBuilder;
-
-        //ITypedStateMachineBuilder IStateMachineUtils<ITypedStateMachineBuilder>.AddInterceptor(StateMachineInterceptorFactory interceptorFactory)
-        //    => AddInterceptor(interceptorFactory) as ITypedStateMachineBuilder;
-
-        //ITypedStateMachineBuilder IStateMachineUtils<ITypedStateMachineBuilder>.AddInterceptor<TInterceptor>()
-        //    => AddInterceptor<TInterceptor>() as ITypedStateMachineBuilder;
-
-        //ITypedStateMachineBuilder IStateMachineUtils<ITypedStateMachineBuilder>.AddObserver(StateMachineObserverFactory observerFactory)
-        //    => AddObserver(observerFactory) as ITypedStateMachineBuilder;
-
-        //ITypedStateMachineBuilder IStateMachineUtils<ITypedStateMachineBuilder>.AddObserver<TObserver>()
-        //    => AddObserver<TObserver>() as ITypedStateMachineBuilder;
-
-        //ITypedStateMachineBuilder IStateMachineUtils<ITypedStateMachineBuilder>.AddExceptionHandler<TExceptionHandler>()
-        //    => AddExceptionHandler<TExceptionHandler>() as ITypedStateMachineBuilder;
-
-        //ITypedStateMachineBuilder IStateMachineUtils<ITypedStateMachineBuilder>.AddExceptionHandler(StateMachineExceptionHandlerFactory exceptionHandlerFactory)
-        //    => AddExceptionHandler(exceptionHandlerFactory) as ITypedStateMachineBuilder;
-
-        //ITypedFinalizedStateMachineBuilder IStateMachineUtils<ITypedFinalizedStateMachineBuilder>.AddInterceptor(StateMachineInterceptorFactory interceptorFactory)
-        //    => AddInterceptor(interceptorFactory) as ITypedFinalizedStateMachineBuilder;
-
-        //ITypedFinalizedStateMachineBuilder IStateMachineUtils<ITypedFinalizedStateMachineBuilder>.AddInterceptor<TInterceptor>()
-        //    => AddInterceptor<TInterceptor>() as ITypedFinalizedStateMachineBuilder;
-
-        //ITypedFinalizedStateMachineBuilder IStateMachineUtils<ITypedFinalizedStateMachineBuilder>.AddObserver(StateMachineObserverFactory observerFactory)
-        //    => AddObserver(observerFactory) as ITypedFinalizedStateMachineBuilder;
-
-        //ITypedFinalizedStateMachineBuilder IStateMachineUtils<ITypedFinalizedStateMachineBuilder>.AddObserver<TObserver>()
-        //    => AddObserver<TObserver>() as ITypedFinalizedStateMachineBuilder;
-
-        //ITypedFinalizedStateMachineBuilder IStateMachineUtils<ITypedFinalizedStateMachineBuilder>.AddExceptionHandler(StateMachineExceptionHandlerFactory exceptionHandlerFactory)
-        //    => AddExceptionHandler(exceptionHandlerFactory) as ITypedFinalizedStateMachineBuilder;
-
-        //ITypedFinalizedStateMachineBuilder IStateMachineUtils<ITypedFinalizedStateMachineBuilder>.AddExceptionHandler<TExceptionHandler>()
-        //    => AddExceptionHandler<TExceptionHandler>() as ITypedFinalizedStateMachineBuilder;
         #endregion
     }
 }

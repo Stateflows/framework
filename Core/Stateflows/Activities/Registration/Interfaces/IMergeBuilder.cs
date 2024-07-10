@@ -2,6 +2,6 @@
 
 namespace Stateflows.Activities.Registration.Interfaces
 {
-    public interface IMergeBuilder : IObjectFlow, IControlFlow
+    public interface IMergeBuilder : IObjectFlowBase, IControlFlowBase
     { }
 }

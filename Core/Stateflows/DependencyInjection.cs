@@ -82,12 +82,12 @@ namespace Stateflows
             return stateflowsBuilder;
         }
 
-        public static IStateflowsBuilder AddAutoInitialization(this IStateflowsBuilder stateflowsBuilder, BehaviorClass behaviorClass, AutoInitializationRequestFactoryAsync initializationRequestFactoryAsync = null)
-        {
-            BehaviorClassesInitializations.Instance.AddAutoInitialization(behaviorClass, initializationRequestFactoryAsync);
+        //public static IStateflowsBuilder AddAutoInitialization(this IStateflowsBuilder stateflowsBuilder, BehaviorClass behaviorClass, AutoInitializationRequestFactoryAsync initializationRequestFactoryAsync = null)
+        //{
+        //    BehaviorClassesInitializations.Instance.AddAutoInitialization(behaviorClass, initializationRequestFactoryAsync);
 
-            return stateflowsBuilder;
-        }
+        //    return stateflowsBuilder;
+        //}
 
         public static IStateflowsBuilder AddInterceptor<TInterceptor>(this IStateflowsBuilder stateflowsBuilder)
             where TInterceptor : class, IBehaviorInterceptor

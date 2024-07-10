@@ -69,7 +69,7 @@ namespace Stateflows.Activities
                 ) as IStructuredActivityBuilder;
 
         public static IStructuredActivityBuilder AddControlDecision(this IStructuredActivityBuilder builder, DecisionBuildAction decisionBuildAction)
-            => builder.AddControlDecision(ActivityNodeInfo<DecisionNode<Control>>.Name, decisionBuildAction);
+            => builder.AddControlDecision(ActivityNodeInfo<DecisionNode<ControlToken>>.Name, decisionBuildAction);
 
         public static IStructuredActivityBuilder AddDecision<TToken>(this IStructuredActivityBuilder builder, string decisionNodeName, DecisionBuildAction<TToken> decisionBuildAction)
             => (builder as BaseActivityBuilder)

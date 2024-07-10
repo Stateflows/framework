@@ -1,3 +1,4 @@
+using Stateflows.Common;
 using StateMachine.IntegrationTests.Utils;
 
 namespace StateMachine.IntegrationTests.Tests
@@ -57,7 +58,7 @@ namespace StateMachine.IntegrationTests.Tests
         {
             if (StateMachineLocator.TryLocateStateMachine(new StateMachineId("context", "x"), out var stateMachine))
             {
-                await stateMachine.InitializeAsync();
+                await stateMachine.SendAsync(new Initialize());
             }
 
             Assert.IsTrue(EnumGet);

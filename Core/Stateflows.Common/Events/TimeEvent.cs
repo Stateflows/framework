@@ -2,7 +2,7 @@
 
 namespace Stateflows.Common
 {
-    public class TimeEvent : Event
+    public class TimeEvent : SystemEvent
     {
         protected virtual DateTime GetTriggerTime(DateTime startedAt)
         {

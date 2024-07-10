@@ -13,7 +13,7 @@ namespace Stateflows.Common.StateMachines.Classes
             Locator = locator;
         }
 
-        public bool TryLocateStateMachine(StateMachineId id, out IStateMachine stateMachine)
+        public bool TryLocateStateMachine(StateMachineId id, out IStateMachineBehavior stateMachine)
             => Locator.TryLocateStateMachine(id, out stateMachine);
     }
 }

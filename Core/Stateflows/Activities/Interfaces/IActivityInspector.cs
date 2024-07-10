@@ -9,7 +9,7 @@ namespace Stateflows.Activities
     {
         Task BeforeActivityInitializeAsync(IActivityInitializationInspectionContext context)
             => Task.CompletedTask;
-        Task AfterActivityInitializeAsync(IActivityInitializationInspectionContext context)
+        Task AfterActivityInitializeAsync(IActivityInitializationInspectionContext context, bool initialized)
             => Task.CompletedTask;
 
         Task BeforeActivityFinalizeAsync(IActivityFinalizationInspectionContext context)

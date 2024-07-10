@@ -19,7 +19,7 @@ namespace Stateflows.Common.Storage
             {
                 var context = Contexts.TryGetValue(behaviorId, out var contextStr)
                     ? StateflowsJsonConverter.DeserializeObject<StateflowsContext>(contextStr)
-                    : new StateflowsContext() { Id = behaviorId };
+                    : new StateflowsContext(behaviorId);
 
                 return Task.FromResult(context);
             }
@@ -29,13 +29,21 @@ namespace Stateflows.Common.Storage
         {
             lock (Contexts)
             {
-                Contexts[context.Id] = StateflowsJsonConverter.SerializePolymorphicObject(context);
+                if (context.Deleted)
+                {
+                    Contexts.Remove(context.Id);
+                }
+                else
+                {
+                    Contexts[context.Id] = StateflowsJsonConverter.SerializePolymorphicObject(context);
+                    context.Stored = true;
+                }
             }
 
             return Task.CompletedTask;
         }
 
-        public Task<IEnumerable<StateflowsContext>> GetContextsAsync(IEnumerable<BehaviorClass> behaviorClasses)
+        public Task<IEnumerable<StateflowsContext>> GetAllContextsAsync(IEnumerable<BehaviorClass> behaviorClasses)
         {
             IEnumerable<StateflowsContext> result;
 
@@ -50,11 +58,14 @@ namespace Stateflows.Common.Storage
             return Task.FromResult(result);
         }
 
-        public async Task<IEnumerable<StateflowsContext>> GetContextsToTimeTriggerAsync(IEnumerable<BehaviorClass> behaviorClasses)
-            => (await GetContextsAsync(behaviorClasses)).Where(context =>
+        public async Task<IEnumerable<StateflowsContext>> GetTimeTriggeredContextsAsync(IEnumerable<BehaviorClass> behaviorClasses)
+            => (await GetAllContextsAsync(behaviorClasses)).Where(context =>
                 context.TriggerTime != null &&
                 context.TriggerTime < DateTime.Now
             );
+
+        public async Task<IEnumerable<StateflowsContext>> GetStartupTriggeredContextsAsync(IEnumerable<BehaviorClass> behaviorClasses)
+            => (await GetAllContextsAsync(behaviorClasses)).Where(context => context.TriggerOnStartup);
 
         public Task SaveTraceAsync(BehaviorTrace behaviorTrace)
             => Task.CompletedTask;

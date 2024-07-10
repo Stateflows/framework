@@ -10,19 +10,19 @@ namespace Stateflows.StateMachines.Typed
         #region AddFinalState
         [DebuggerHidden]
         public static IFinalizedStateMachineBuilder AddState<TFinalState>(this IInitializedStateMachineBuilder builder, string stateName = FinalState.Name)
-            where TFinalState : IFinalState
+            where TFinalState : class, IFinalState
             => builder.AddFinalState(stateName);
         #endregion
 
         #region AddState
         [DebuggerHidden]
         public static IInitializedStateMachineBuilder AddState<TState>(this IInitializedStateMachineBuilder builder, StateTransitionsBuildAction stateBuildAction = null)
-            where TState : class, IState
+            where TState : class, IBaseState
             => builder.AddState<TState>(State<TState>.Name, stateBuildAction);
 
         [DebuggerHidden]
         public static IInitializedStateMachineBuilder AddState<TState>(this IInitializedStateMachineBuilder builder, string stateName, StateTransitionsBuildAction stateBuildAction = null)
-            where TState : class, IState
+            where TState : class, IBaseState
         {
             (builder as IInternal).Services.RegisterState2<TState>();
 
@@ -41,12 +41,12 @@ namespace Stateflows.StateMachines.Typed
         #region AddCompositeState
         [DebuggerHidden]
         public static IInitializedStateMachineBuilder AddCompositeState<TCompositeState>(this IInitializedStateMachineBuilder builder, CompositeStateTransitionsBuildAction compositeStateBuildAction)
-            where TCompositeState : class, ICompositeState
+            where TCompositeState : class, IBaseCompositeState
             => builder.AddCompositeState<TCompositeState>(State<TCompositeState>.Name, compositeStateBuildAction);
 
         [DebuggerHidden]
         public static IInitializedStateMachineBuilder AddCompositeState<TCompositeState>(this IInitializedStateMachineBuilder builder, string stateName, CompositeStateTransitionsBuildAction compositeStateBuildAction)
-            where TCompositeState : class, ICompositeState
+            where TCompositeState : class, IBaseCompositeState
         {
             (builder as IInternal).Services.RegisterState2<TCompositeState>();
 

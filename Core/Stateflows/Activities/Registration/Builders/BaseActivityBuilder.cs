@@ -110,7 +110,7 @@ namespace Stateflows.Activities.Registration
 
                     if (!(c as BaseContext).Context.Executor.StructuralTypes.Contains(node.Type))
                     {
-                        c.Output(new Control());
+                        c.Output(new ControlToken());
                     }
                 }
                 catch (Exception e)

@@ -65,7 +65,7 @@ namespace Stateflows.Activities.Typed
                     OutputTokensHolder.Tokens.Value = ((ActionContext)c).OutputTokens;
 
                     ActivityNodeContextAccessor.Context.Value = c;
-                    var result = action.ExecuteAsync();
+                    var result = action.ExecuteAsync(c.Event);
                     ActivityNodeContextAccessor.Context.Value = null;
 
                     return result;

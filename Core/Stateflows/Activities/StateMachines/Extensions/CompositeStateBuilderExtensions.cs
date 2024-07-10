@@ -19,14 +19,15 @@ namespace Stateflows.Activities
                     {
                         if (c.TryLocateActivity(activityName, Constants.Entry, out var a))
                         {
-                            InitializationRequest initializationRequest = initializationBuilder?.Invoke(c);
+                            Event initializationRequest = initializationBuilder?.Invoke(c);
                             Task.Run(() =>
                             {
                                 var integratedActivityBuilder = new IntegratedActivityBuilder(buildAction);
                                 return a.SendCompoundAsync(
                                     integratedActivityBuilder.GetSubscriptionRequest(),
-                                    new ResetRequest() { KeepVersion = true },
-                                    new ExecutionRequest(initializationRequest, new List<TokenHolder>()),
+                                    new ResetRequest() { Mode = ResetMode.KeepVersionAndSubscriptions },
+                                    null, //TODO: execution
+                                    //new ExecutionRequest(initializationRequest, new List<TokenHolder>()),
                                     integratedActivityBuilder.GetUnsubscriptionRequest()
                                 );
                             });
@@ -45,14 +46,15 @@ namespace Stateflows.Activities
                     {
                         if (c.TryLocateActivity(activityName, Constants.Exit, out var a))
                         {
-                            InitializationRequest initializationRequest = initializationBuilder?.Invoke(c);
+                            Event initializationRequest = initializationBuilder?.Invoke(c);
                             Task.Run(() =>
                             {
                                 var integratedActivityBuilder = new IntegratedActivityBuilder(buildAction);
                                 return a.SendCompoundAsync(
                                     integratedActivityBuilder.GetSubscriptionRequest(),
-                                    new ResetRequest() { KeepVersion = true },
-                                    new ExecutionRequest(initializationRequest, new List<TokenHolder>()),
+                                    new ResetRequest() { Mode = ResetMode.KeepVersionAndSubscriptions },
+                                    null, //TODO: execution
+                                    //new ExecutionRequest(initializationRequest, new List<TokenHolder>()),
                                     integratedActivityBuilder.GetUnsubscriptionRequest()
                                 );
                             });

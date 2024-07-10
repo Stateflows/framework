@@ -62,7 +62,7 @@ namespace Stateflows.Extensions.PlantUml.Classes
                 var source = GetNodeName(transition.Source, parentName);
                 var target = GetNodeName(transition.Target, parentName);
 
-                if (transition.TokenName == typeof(Control).GetTokenName())
+                if (transition.TokenName == typeof(ControlToken).GetTokenName())
                 {
                     builder.AppendLine($"{indent}{source} --> {target}");
                 }

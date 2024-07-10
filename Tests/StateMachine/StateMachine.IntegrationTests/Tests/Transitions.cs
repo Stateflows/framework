@@ -88,7 +88,7 @@ namespace StateMachine.IntegrationTests.Tests
 
             if (StateMachineLocator.TryLocateStateMachine(new StateMachineId("simple", "x"), out var sm))
             {
-                await sm.InitializeAsync();
+                //await sm.InitializeAsync();
 
                 status = (await sm.SendAsync(new SomeEvent())).Status;
 
@@ -110,7 +110,7 @@ namespace StateMachine.IntegrationTests.Tests
 
             if (StateMachineLocator.TryLocateStateMachine(new StateMachineId("guarded", "x"), out var sm))
             {
-                await sm.InitializeAsync();
+                //await sm.InitializeAsync();
 
                 status = (await sm.SendAsync(new OtherEvent() { AnswerToLifeUniverseAndEverything = 43 })).Status;
 
@@ -131,7 +131,7 @@ namespace StateMachine.IntegrationTests.Tests
 
             if (StateMachineLocator.TryLocateStateMachine(new StateMachineId("default", "x"), out var sm))
             {
-                await sm.InitializeAsync();
+                //await sm.InitializeAsync();
 
                 status = (await sm.SendAsync(new SomeEvent())).Status;
 
@@ -150,7 +150,7 @@ namespace StateMachine.IntegrationTests.Tests
 
             if (StateMachineLocator.TryLocateStateMachine(new StateMachineId("internal", "x"), out var sm))
             {
-                await sm.InitializeAsync();
+                //await sm.InitializeAsync();
 
                 status = (await sm.SendAsync(new SomeEvent())).Status;
 
@@ -176,7 +176,7 @@ namespace StateMachine.IntegrationTests.Tests
 
             if (StateMachineLocator.TryLocateStateMachine(new StateMachineId("self", "x"), out var sm))
             {
-                await sm.InitializeAsync();
+                //await sm.InitializeAsync();
 
                 status = (await sm.SendAsync(new SomeEvent())).Status;
 

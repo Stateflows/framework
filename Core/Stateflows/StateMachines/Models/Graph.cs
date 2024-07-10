@@ -30,8 +30,10 @@ namespace Stateflows.StateMachines.Models
         public readonly Dictionary<string, Vertex> Vertices = new Dictionary<string, Vertex>();
         public readonly Dictionary<string, Vertex> AllVertices = new Dictionary<string, Vertex>();
         public readonly List<Edge> AllEdges = new List<Edge>();
+
         public readonly Dictionary<string, Logic<StateMachinePredicateAsync>> Initializers = new Dictionary<string, Logic<StateMachinePredicateAsync>>();
         public readonly List<Type> InitializerTypes = new List<Type>();
+        public Logic<StateMachinePredicateAsync> DefaultInitializer = null;
 
         private Logic<StateMachineActionAsync> finalize = null;
         public Logic<StateMachineActionAsync> Finalize

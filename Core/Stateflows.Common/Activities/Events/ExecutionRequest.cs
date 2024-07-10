@@ -6,13 +6,10 @@ namespace Stateflows.Activities.Events
 {
     public sealed class ExecutionRequest : Request<ExecutionResponse>
     {
-        public ExecutionRequest(InitializationRequest initializationRequest, IEnumerable<object> inputTokens)
-        {
-            InitializationRequest = initializationRequest;
-            InputTokens = inputTokens;
-        }
-
-        public InitializationRequest InitializationRequest { get; set; }
+        //public ExecutionRequest(IEnumerable<object> inputTokens)
+        //{
+        //    InputTokens = inputTokens;
+        //}
 
         [JsonProperty(TypeNameHandling = TypeNameHandling.None)]
         public IEnumerable<object> InputTokens { get; set; }

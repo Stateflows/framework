@@ -8,7 +8,7 @@ namespace Stateflows.StateMachines.Typed
     {
         public static ICompositeStateBuilder AddInternalTransition<TEvent, TTransition>(this ICompositeStateBuilder builder)
             where TEvent : Event, new()
-            where TTransition : Transition<TEvent>
+            where TTransition : class, IBaseTransition<TEvent>
             => builder.AddTransition<TEvent, TTransition>(Constants.DefaultTransitionTarget);
     }
 }

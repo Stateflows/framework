@@ -9,25 +9,25 @@ namespace Stateflows.StateMachines.Typed
     {
         public static ITypedFinalizedCompositeStateBuilder AddElseTransition<TEvent, TElseTransition, TTargetState>(this ITypedFinalizedCompositeStateBuilder builder)
             where TEvent : Event, new()
-            where TElseTransition : ElseTransition<TEvent>
-            where TTargetState : BaseState
-            => AddElseTransition<TEvent, TElseTransition>(builder, StateInfo<TTargetState>.Name);
+            where TElseTransition : class, ITransitionEffect<TEvent>
+            where TTargetState : class, IVertex
+            => AddElseTransition<TEvent, TElseTransition>(builder, State<TTargetState>.Name);
 
         public static ITypedFinalizedCompositeStateBuilder AddElseTransition<TEvent, TElseTransition>(this ITypedFinalizedCompositeStateBuilder builder, string targetVertexName)
             where TEvent : Event, new()
-            where TElseTransition : ElseTransition<TEvent>
+            where TElseTransition : class, ITransitionEffect<TEvent>
         {
-            (builder as IInternal).Services.RegisterElseTransition<TElseTransition, TEvent>();
+            (builder as IInternal).Services.RegisterElseTransition2<TElseTransition, TEvent>();
 
             return builder.AddElseTransition<TEvent>(
                 targetVertexName,
-                t => t.AddElseTransitionEvents<TElseTransition, TEvent>()
+                t => t.AddElseTransitionEvents2<TElseTransition, TEvent>()
             );
         }
 
         public static ITypedFinalizedCompositeStateBuilder AddElseTransition<TEvent, TTargetState>(this ITypedFinalizedCompositeStateBuilder builder, ElseTransitionBuildAction<TEvent> transitionBuildAction = null)
             where TEvent : Event, new()
-            where TTargetState : BaseState
-            => builder.AddElseTransition(StateInfo<TTargetState>.Name, transitionBuildAction);
+            where TTargetState : class, IVertex
+            => builder.AddElseTransition(State<TTargetState>.Name, transitionBuildAction);
     }
 }

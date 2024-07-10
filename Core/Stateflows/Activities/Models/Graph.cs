@@ -6,6 +6,8 @@ using Stateflows.Common;
 using Stateflows.Common.Models;
 using Stateflows.Activities.Exceptions;
 using Stateflows.Activities.Registration.Interfaces;
+using Stateflows.StateMachines.Interfaces;
+using Stateflows.Activities.Registration;
 
 namespace Stateflows.Activities.Models
 {
@@ -28,6 +30,8 @@ namespace Stateflows.Activities.Models
 
         public readonly Dictionary<string, Logic<ActivityPredicateAsync>> Initializers = new Dictionary<string, Logic<ActivityPredicateAsync>>();
         public readonly List<Type> InitializerTypes = new List<Type>();
+        public Logic<ActivityPredicateAsync> DefaultInitializer = null;
+
         public readonly List<ActivityExceptionHandlerFactory> ExceptionHandlerFactories = new List<ActivityExceptionHandlerFactory>();
         public readonly List<ActivityInterceptorFactory> InterceptorFactories = new List<ActivityInterceptorFactory>();
         public readonly List<ActivityObserverFactory> ObserverFactories = new List<ActivityObserverFactory>();

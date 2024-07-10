@@ -1,5 +1,8 @@
-﻿namespace Stateflows.StateMachines
+﻿using System;
+
+namespace Stateflows.StateMachines
 {
-    public abstract class State : BaseState, IState
+    [Obsolete("State class is deprecated, use IState instead.")]
+    public abstract class State : BaseState, IBaseState
     { }
 }

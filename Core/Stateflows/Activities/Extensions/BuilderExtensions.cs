@@ -14,42 +14,42 @@ namespace Stateflows.Activities.Extensions
 {
     internal static class BuilderExtensions
     {
-        public static void AddActivityEvents(this IActivityBuilder builder, Type activityType)
-        {
-            if (typeof(Activity).GetMethod(nameof(Activity.OnInitializeAsync)).IsOverridenIn(activityType))
-            {
-                builder.AddOnInitialize(c =>
-                {
-                    var context = (c as IRootContext).Context;
-                    return context.Executor.GetActivity(activityType, context)?.OnInitializeAsync();
-                });
-            }
+        //public static void AddActivityEvents(this IActivityBuilder builder, Type activityType)
+        //{
+        //    if (typeof(Activity).GetMethod(nameof(Activity.OnInitializeAsync)).IsOverridenIn(activityType))
+        //    {
+        //        builder.AddDefaultInitializer(c =>
+        //        {
+        //            var context = (c as IRootContext).Context;
+        //            return context.Executor.GetActivity(activityType, context)?.OnInitializeAsync();
+        //        });
+        //    }
 
-            if (typeof(Activity).GetMethod(nameof(Activity.OnFinalizeAsync)).IsOverridenIn(activityType))
-            {
-                builder.AddOnFinalize(c =>
-                {
-                    var context = (c as IRootContext).Context;
-                    return context.Executor.GetActivity(activityType, context)?.OnFinalizeAsync();
-                });
-            }
+        //    if (typeof(Activity).GetMethod(nameof(Activity.OnFinalizeAsync)).IsOverridenIn(activityType))
+        //    {
+        //        builder.AddFinalizer(c =>
+        //        {
+        //            var context = (c as IRootContext).Context;
+        //            return context.Executor.GetActivity(activityType, context)?.OnFinalizeAsync();
+        //        });
+        //    }
 
-            var baseInterfaceType = typeof(IInitializedBy<>);
-            foreach (var interfaceType in activityType.GetInterfaces())
-            {
-                if (interfaceType.GetGenericTypeDefinition() == baseInterfaceType)
-                {
-                    var methodInfo = interfaceType.GetMethods().First(m => m.Name == "OnInitializeAsync");
-                    var requestType = interfaceType.GenericTypeArguments[0];
-                    var requestName = requestType.GetEventName();
-                    (builder as ActivityBuilder).AddInitializer(requestType, requestName, c =>
-                    {
-                        var activity = c.Context.Executor.GetActivity(activityType, c.Context);
-                        return methodInfo.Invoke(activity, new object[] { c.Context.Event is ExecutionRequest executionRequest ? executionRequest.InitializationRequest : c.Context.Event }) as Task<bool>;
-                    });
-                }
-            }
-        }
+        //    //var baseInterfaceType = typeof(IInitializedBy<>);
+        //    //foreach (var interfaceType in activityType.GetInterfaces())
+        //    //{
+        //    //    if (interfaceType.GetGenericTypeDefinition() == baseInterfaceType)
+        //    //    {
+        //    //        var methodInfo = interfaceType.GetMethods().First(m => m.Name == "OnInitializeAsync");
+        //    //        var requestType = interfaceType.GenericTypeArguments[0];
+        //    //        var requestName = requestType.GetEventName();
+        //    //        (builder as ActivityBuilder).AddInitializer(requestType, requestName, c =>
+        //    //        {
+        //    //            var activity = c.Context.Executor.GetActivity(activityType, c.Context);
+        //    //            return methodInfo.Invoke(activity, new object[] { c.Context.Event is ExecutionRequest executionRequest ? executionRequest.InitializationRequest : c.Context.Event }) as Task<bool>;
+        //    //        });
+        //    //    }
+        //    //}
+        //}
 
         public static void AddStructuredActivityEvents<TStructuredActivity>(this StructuredActivityBuilder builder)
             where TStructuredActivity : StructuredActivityNode

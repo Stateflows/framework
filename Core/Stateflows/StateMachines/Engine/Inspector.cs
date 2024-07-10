@@ -94,11 +94,11 @@ namespace Stateflows.StateMachines.Engine
             await Observers.RunSafe(o => o.BeforeStateMachineInitializeAsync(context), nameof(BeforeStateMachineInitializeAsync), Logger);
         }
 
-        public async Task AfterStateMachineInitializeAsync(StateMachineInitializationContext context)
+        public async Task AfterStateMachineInitializeAsync(StateMachineInitializationContext context, bool initialized)
         {
-            await Observers.RunSafe(o => o.AfterStateMachineInitializeAsync(context), nameof(AfterStateMachineInitializeAsync), Logger);
-            await Inspectors.RunSafe(i => i.AfterStateMachineInitializeAsync(context), nameof(AfterStateMachineInitializeAsync), Logger);
-            await Plugins.RunSafe(o => o.AfterStateMachineInitializeAsync(context), nameof(AfterStateMachineInitializeAsync), Logger);
+            await Observers.RunSafe(o => o.AfterStateMachineInitializeAsync(context, initialized), nameof(AfterStateMachineInitializeAsync), Logger);
+            await Inspectors.RunSafe(i => i.AfterStateMachineInitializeAsync(context, initialized), nameof(AfterStateMachineInitializeAsync), Logger);
+            await Plugins.RunSafe(o => o.AfterStateMachineInitializeAsync(context, initialized), nameof(AfterStateMachineInitializeAsync), Logger);
 
             if (InitializeInspection != null)
             {

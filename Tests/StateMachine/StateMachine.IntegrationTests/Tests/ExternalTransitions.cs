@@ -95,7 +95,7 @@ namespace StateMachine.IntegrationTests.Tests
 
             if (StateMachineLocator.TryLocateStateMachine(new StateMachineId("nested-to-root", "x"), out var sm))
             {
-                status = (await sm.InitializeAsync()).Status;
+                status = (await sm.SendAsync(new Initialize())).Status;
 
                 currentState = (await sm.GetCurrentStateAsync()).Response.StatesStack.First();
             }
@@ -116,7 +116,7 @@ namespace StateMachine.IntegrationTests.Tests
                 .StateEntry("state2")
             );
 
-            Assert.AreEqual(EventStatus.Consumed, status);
+            Assert.AreEqual(EventStatus.Initialized, status);
             Assert.AreEqual("state2", currentState);
         }
 
@@ -128,7 +128,7 @@ namespace StateMachine.IntegrationTests.Tests
 
             if (StateMachineLocator.TryLocateStateMachine(new StateMachineId("root-to-nested", "x"), out var sm))
             {
-                status = (await sm.InitializeAsync()).Status;
+                status = (await sm.SendAsync(new Initialize())).Status;
 
                 currentState = (await sm.GetCurrentStateAsync()).Response.StatesStack.Last();
             }
@@ -144,7 +144,7 @@ namespace StateMachine.IntegrationTests.Tests
                 .StateEntry("state2.1.2")
             );
 
-            Assert.AreEqual(EventStatus.Consumed, status);
+            Assert.AreEqual(EventStatus.Initialized, status);
             Assert.AreEqual("state2.1.2", currentState);
         }
 
@@ -156,7 +156,7 @@ namespace StateMachine.IntegrationTests.Tests
 
             if (StateMachineLocator.TryLocateStateMachine(new StateMachineId("nested-to-nested", "x"), out var sm))
             {
-                status = (await sm.InitializeAsync()).Status;
+                status = (await sm.SendAsync(new Initialize())).Status;
 
                 currentState = (await sm.GetCurrentStateAsync()).Response.StatesStack.Last();
             }
@@ -179,7 +179,7 @@ namespace StateMachine.IntegrationTests.Tests
                 .StateEntry("state2.1.2")
             );
 
-            Assert.AreEqual(EventStatus.Consumed, status);
+            Assert.AreEqual(EventStatus.Initialized, status);
             Assert.AreEqual("state2.1.2", currentState);
         }
 
@@ -191,7 +191,7 @@ namespace StateMachine.IntegrationTests.Tests
 
             if (StateMachineLocator.TryLocateStateMachine(new StateMachineId("nested-to-parent", "x"), out var sm))
             {
-                await sm.InitializeAsync();
+                //await sm.InitializeAsync();
                 
                 status = (await sm.SendAsync(new SomeEvent())).Status;
 

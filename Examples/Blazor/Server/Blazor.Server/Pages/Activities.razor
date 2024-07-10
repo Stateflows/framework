@@ -87,7 +87,7 @@
         expectedEvents = null;
     }
 
-    private async Task RefreshAInfo(IActivity activity)
+    private async Task RefreshAInfo(IActivityBehavior activity)
     {
         plantUmlUrl = (await activity.GetPlantUmlAsync()).Response.GetUrl();
     }

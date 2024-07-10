@@ -84,7 +84,7 @@ namespace StateMachine.IntegrationTests.Tests
 
             if (StateMachineLocator.TryLocateStateMachine(new StateMachineId("defer", "x"), out var sm))
             {
-                initialized = (await sm.InitializeAsync()).Response.InitializationSuccessful;
+                initialized = (await sm.SendAsync(new Initialize())).Status == EventStatus.Initialized;
 
                 otherStatus = (await sm.SendAsync(new OtherEvent())).Status;
 
@@ -110,7 +110,7 @@ namespace StateMachine.IntegrationTests.Tests
 
             if (StateMachineLocator.TryLocateStateMachine(new StateMachineId("sequence", "x"), out var sm))
             {
-                initialized = (await sm.InitializeAsync()).Response.InitializationSuccessful;
+                initialized = (await sm.SendAsync(new Initialize())).Status == EventStatus.Initialized;
 
                 otherStatus1 = (await sm.SendAsync(new OtherEvent() { AnswerToLifeUniverseAndEverything = 42 })).Status;
 
@@ -139,7 +139,7 @@ namespace StateMachine.IntegrationTests.Tests
 
             if (StateMachineLocator.TryLocateStateMachine(new StateMachineId("nested", "x"), out var sm))
             {
-                initialized = (await sm.InitializeAsync()).Response.InitializationSuccessful;
+                initialized = (await sm.SendAsync(new Initialize())).Status == EventStatus.Initialized;
 
                 otherStatus1 = (await sm.SendAsync(new OtherEvent())).Status;
 

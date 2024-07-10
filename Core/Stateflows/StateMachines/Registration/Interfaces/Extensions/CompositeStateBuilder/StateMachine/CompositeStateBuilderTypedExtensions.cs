@@ -10,20 +10,20 @@ namespace Stateflows.StateMachines.Typed
         #region AddInitialState
         [DebuggerHidden]
         public static IInitializedCompositeStateBuilder AddInitialState<TState>(this ICompositeStateBuilder builder, StateTransitionsBuildAction stateBuildAction = null)
-            where TState : State
-            => builder.AddInitialState<TState>(StateInfo<TState>.Name, stateBuildAction);
+            where TState : class, IBaseState
+            => builder.AddInitialState<TState>(State<TState>.Name, stateBuildAction);
 
         [DebuggerHidden]
         public static IInitializedCompositeStateBuilder AddInitialState<TState>(this ICompositeStateBuilder builder, string stateName, StateTransitionsBuildAction stateBuildAction = null)
-            where TState : State
+            where TState : class, IBaseState
         {
-            (builder as IInternal).Services.RegisterState<TState>();
+            (builder as IInternal).Services.RegisterState2<TState>();
 
             return builder.AddInitialState(
                 stateName,
                 b =>
                 {
-                    b.AddStateEvents<TState, IStateBuilder>();
+                    b.AddStateEvents2<TState, IStateBuilder>();
 
                     stateBuildAction?.Invoke(b as ITypedStateBuilder);
                 }
@@ -34,20 +34,20 @@ namespace Stateflows.StateMachines.Typed
         #region AddInitialCompositeState
         [DebuggerHidden]
         public static IInitializedCompositeStateBuilder AddInitialCompositeState<TState>(this ICompositeStateBuilder builder, CompositeStateTransitionsBuildAction compositeStateBuildAction)
-            where TState : State
-            => builder.AddInitialCompositeState<TState>(StateInfo<TState>.Name, compositeStateBuildAction);
+            where TState : class, IBaseState
+            => builder.AddInitialCompositeState<TState>(State<TState>.Name, compositeStateBuildAction);
 
         [DebuggerHidden]
         public static IInitializedCompositeStateBuilder AddInitialCompositeState<TState>(this ICompositeStateBuilder builder, string stateName, CompositeStateTransitionsBuildAction compositeStateBuildAction)
-            where TState : State
+            where TState : class, IBaseState
         {
-            (builder as IInternal).Services.RegisterState<TState>();
+            (builder as IInternal).Services.RegisterState2<TState>();
 
             return builder.AddInitialCompositeState(
                 stateName,
                 b =>
                 {
-                    (b as IInitializedCompositeStateBuilder).AddStateEvents<TState, IInitializedCompositeStateBuilder>();
+                    (b as IInitializedCompositeStateBuilder).AddStateEvents2<TState, IInitializedCompositeStateBuilder>();
 
                     compositeStateBuildAction?.Invoke(b as ITypedCompositeStateBuilder);
                 }

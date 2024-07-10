@@ -240,6 +240,31 @@ namespace Stateflows.Activities.Context.Classes
             }
         }
 
+        private Dictionary<string, Guid> nodeStartupEvents = null;
+        public Dictionary<string, Guid> NodeStartupEvents
+        {
+            get
+            {
+                lock (Context.Values)
+                {
+                    if (nodeStartupEvents == null)
+                    {
+                        if (!Context.Values.TryGetValue(Constants.NodeStartupEvents, out var nodesStartupEventsObj))
+                        {
+                            nodeStartupEvents = new Dictionary<string, Guid>();
+                            Context.Values[Constants.NodeStartupEvents] = nodeStartupEvents;
+                        }
+                        else
+                        {
+                            nodeStartupEvents = nodesStartupEventsObj as Dictionary<string, Guid>;
+                        }
+                    }
+                }
+
+                return nodeStartupEvents;
+            }
+        }
+
         [JsonIgnore]
         internal LockedList<Node> NodesToExecute { get; set; } = new LockedList<Node>();
 
@@ -286,6 +311,12 @@ namespace Stateflows.Activities.Context.Classes
         {
             get => Context.Values.TryGetValue(Constants.Initialized, out var consumed) && (bool)consumed;
             set => Context.Values[Constants.Initialized] = value;
+        }
+
+        public bool Finalized
+        {
+            get => Context.Values.TryGetValue(Constants.Finalized, out var consumed) && (bool)consumed;
+            set => Context.Values[Constants.Finalized] = value;
         }
 
         public bool ForceConsumed

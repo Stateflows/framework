@@ -2,6 +2,6 @@
 
 namespace Stateflows.Activities.Registration.Interfaces
 {
-    public interface IInitialBuilder : IControlFlow<IInitialBuilder>
+    public interface IInitialBuilder : IControlFlowBase<IInitialBuilder>
     { }
 }

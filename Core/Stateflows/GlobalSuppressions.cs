@@ -5,5 +5,5 @@
 
 using System.Diagnostics.CodeAnalysis;
 
-[assembly: SuppressMessage("Major Code Smell", "S3246:Generic type parameters should be co/contravariant when possible", Justification = "<Pending>", Scope = "type", Target = "~T:Stateflows.Activities.Registration.Interfaces.Base.IElseDecisionFlow`2")]
-[assembly: SuppressMessage("Major Code Smell", "S3246:Generic type parameters should be co/contravariant when possible", Justification = "<Pending>", Scope = "type", Target = "~T:Stateflows.Activities.Registration.Interfaces.Base.IDecisionFlow`2")]
+[assembly: SuppressMessage("Major Code Smell", "S3246:Generic type parameters should be co/contravariant when possible", Justification = "<Pending>", Scope = "type", Target = "~T:Stateflows.Activities.Registration.Interfaces.Base.IElseDecisionFlowBase`2")]
+[assembly: SuppressMessage("Major Code Smell", "S3246:Generic type parameters should be co/contravariant when possible", Justification = "<Pending>", Scope = "type", Target = "~T:Stateflows.Activities.Registration.Interfaces.Base.IDecisionFlowBase`2")]

@@ -5,7 +5,7 @@ namespace Stateflows.Activities.Data
 {
     public static class ActivityBuilderPayloadExtensions
     {
-        public static IActivityBuilder AddAcceptEventAction<TEventPayload>(this IActivityBuilder builder, string actionNodeName, AcceptEventActionDelegateAsync<Event<TEventPayload>> eventActionAsync, AcceptEventActionBuildAction buildAction = null)
-            => builder.AddAcceptEventAction(actionNodeName, eventActionAsync, buildAction);
+        //public static IActivityBuilder AddAcceptEventAction<TEventPayload>(this IActivityBuilder builder, string actionNodeName, AcceptEventActionDelegateAsync<Event<TEventPayload>> eventActionAsync, AcceptEventActionBuildAction buildAction = null)
+        //    => builder.AddAcceptEventAction(actionNodeName, eventActionAsync, buildAction);
     }
 }

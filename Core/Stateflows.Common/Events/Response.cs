@@ -5,13 +5,13 @@
         public BehaviorId SenderId { get; set; }
     }
 
-    public sealed class Response<TPayload> : Response
-    {
-        public Response()
-        {
-            Payload = default;
-        }
+    //public sealed class Response<TPayload> : Response
+    //{
+    //    public Response()
+    //    {
+    //        Payload = default;
+    //    }
 
-        public TPayload Payload { get; set; }
-    }
+    //    public TPayload Payload { get; set; }
+    //}
 }

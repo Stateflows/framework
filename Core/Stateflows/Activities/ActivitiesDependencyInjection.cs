@@ -24,10 +24,10 @@ namespace Stateflows.Activities
             return stateflowsBuilder;
         }
 
-        [DebuggerHidden]
-        public static IStateflowsBuilder AddDefaultInstance<TActivity>(this IStateflowsBuilder stateflowsBuilder, DefaultInstanceInitializationRequestFactoryAsync initializationRequestFactoryAsync = null)
-            where TActivity: Activity
-            => stateflowsBuilder.AddDefaultInstance(new ActivityClass(ActivityInfo<TActivity>.Name).BehaviorClass, initializationRequestFactoryAsync);
+        //[DebuggerHidden]
+        //public static IStateflowsBuilder AddDefaultInstance<TActivity>(this IStateflowsBuilder stateflowsBuilder, DefaultInstanceInitializationRequestFactoryAsync initializationRequestFactoryAsync = null)
+        //    where TActivity: Activity
+        //    => stateflowsBuilder.AddDefaultInstance(new ActivityClass(ActivityInfo<TActivity>.Name).BehaviorClass, initializationRequestFactoryAsync);
 
 
         private static ActivitiesRegister EnsureActivitiesServices(this IStateflowsBuilder stateflowsBuilder)
@@ -46,8 +46,9 @@ namespace Stateflows.Activities
                     .AddScoped<IEventProcessor, Processor>()
                     .AddTransient<IBehaviorProvider, Provider>()
                     .AddSingleton<IActivityEventHandler, BehaviorStatusHandler>()
-                    .AddSingleton<IActivityEventHandler, InitializationHandler>()
-                    .AddSingleton<IActivityEventHandler, ExecutionHandler>()
+                    //.AddSingleton<IActivityEventHandler, InitializationHandler>()
+                    //.AddSingleton<IActivityEventHandler, ExecutionHandler>()
+                    .AddSingleton<IActivityEventHandler, InitializeHandler>()
                     .AddSingleton<IActivityEventHandler, FinalizationHandler>()
                     .AddSingleton<IActivityEventHandler, ResetHandler>()
                     .AddSingleton<IActivityEventHandler, SubscriptionHandler>()

@@ -53,6 +53,7 @@ namespace Stateflows.StateMachines
                     //.AddSingleton<IStateMachineEventHandler, InitializationHandler>()
                     .AddSingleton<IStateMachineEventHandler, BehaviorStatusRequestHandler>()
                     .AddSingleton<IStateMachineEventHandler, CurrentStateRequestHandler>()
+                    .AddSingleton<IStateMachineEventHandler, InitializeHandler>()
                     .AddSingleton<IStateMachineEventHandler, FinalizationHandler>()
                     .AddSingleton<IStateMachineEventHandler, ResetHandler>()
                     .AddSingleton<IStateMachineEventHandler, SubscriptionHandler>()

@@ -7,7 +7,7 @@ using Stateflows.StateMachines.Context.Interfaces;
 
 namespace StateMachine.IntegrationTests.Tests
 {
-    public class StateA : IState
+    public class StateA : IBaseState
     {
         public StateA(IStateMachineContext smContext, ITransitionContext tContext)
         {
@@ -15,7 +15,7 @@ namespace StateMachine.IntegrationTests.Tests
         }
     }
 
-    public class StateB : IState
+    public class StateB : IBaseState
     { }
 
     [TestClass]
@@ -39,7 +39,7 @@ namespace StateMachine.IntegrationTests.Tests
                 .AddStateMachines(b => b
                     
                     .AddStateMachine("berlin", b => b
-                        .AddInitializer<InitializationRequest>(async c => true)
+                        .AddDefaultInitializer(async c => true)
 
                         .AddInitialState<StateA>(b => b
                             .AddTransition<OtherEvent>(State<StateB>.Name, b => b
@@ -125,7 +125,7 @@ namespace StateMachine.IntegrationTests.Tests
 
             if (StateMachineLocator.TryLocateStateMachine(new StateMachineId("berlin", "x"), out var sm))
             {
-                await sm.InitializeAsync();
+                //await sm.InitializeAsync();
 
                 status = (await sm.SendAsync(new OtherEvent() { AnswerToLifeUniverseAndEverything = 42 })).Status;
 
@@ -142,7 +142,7 @@ namespace StateMachine.IntegrationTests.Tests
 
             if (StateMachineLocator.TryLocateStateMachine(new StateMachineId("composite", "x"), out var sm))
             {
-                await sm.InitializeAsync();
+                //await sm.InitializeAsync();
 
                 status = (await sm.SendAsync(new OtherEvent() { AnswerToLifeUniverseAndEverything = 42 })).Status;
 
@@ -172,7 +172,7 @@ namespace StateMachine.IntegrationTests.Tests
 
             if (StateMachineLocator.TryLocateStateMachine(new StateMachineId("default", "x"), out var sm))
             {
-                _ = await sm.InitializeAsync();
+                //_ = await sm.InitializeAsync();
 
                 status = (await sm.SendAsync(new OtherEvent() { AnswerToLifeUniverseAndEverything = 42 })).Status;
 
@@ -213,7 +213,7 @@ namespace StateMachine.IntegrationTests.Tests
 
             if (StateMachineLocator.TryLocateStateMachine(new StateMachineId("exits", "x"), out var sm))
             {
-                await sm.InitializeAsync();
+                //await sm.InitializeAsync();
 
                 status = (await sm.SendAsync(new OtherEvent() { AnswerToLifeUniverseAndEverything = 42 })).Status;
 
@@ -246,7 +246,7 @@ namespace StateMachine.IntegrationTests.Tests
 
             if (StateMachineLocator.TryLocateStateMachine(new StateMachineId("single", "x"), out var sm))
             {
-                await sm.InitializeAsync();
+                //await sm.InitializeAsync();
 
                 status = (await sm.SendAsync(new OtherEvent() { AnswerToLifeUniverseAndEverything = 42 })).Status;
 

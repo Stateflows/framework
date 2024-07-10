@@ -33,7 +33,7 @@ namespace Stateflows.System.EventHandlers
 
                 var storage = ServiceProvider.GetRequiredService<IStateflowsStorage>();
 
-                var contexts = await storage.GetContextsAsync(classes);
+                var contexts = await storage.GetAllContextsAsync(classes);
 
                 request.Respond(new BehaviorInstancesResponse()
                     {

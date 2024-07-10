@@ -8,11 +8,11 @@ namespace Stateflows.StateMachines.Typed
     {
         #region AddInitialState
         public static IInitializedStateMachineBuilder AddInitialState<TState>(this IStateMachineBuilder builder, StateTransitionsBuildAction stateBuildAction = null)
-            where TState : class, IState
+            where TState : class, IBaseState
             => builder.AddInitialState<TState>(State<TState>.Name, stateBuildAction);
 
         public static IInitializedStateMachineBuilder AddInitialState<TState>(this IStateMachineBuilder builder, string stateName, StateTransitionsBuildAction stateBuildAction = null)
-            where TState : class, IState
+            where TState : class, IBaseState
         {
             (builder as IInternal).Services.RegisterState2<TState>();
 
@@ -30,11 +30,11 @@ namespace Stateflows.StateMachines.Typed
 
         #region AddInitialCompositeState
         public static IInitializedStateMachineBuilder AddInitialCompositeState<TState>(this IStateMachineBuilder builder, CompositeStateTransitionsBuildAction compositeStateBuildAction)
-            where TState : class, ICompositeState
+            where TState : class, IBaseCompositeState
             => builder.AddInitialCompositeState<TState>(State<TState>.Name, compositeStateBuildAction);
 
         public static IInitializedStateMachineBuilder AddInitialCompositeState<TState>(this IStateMachineBuilder builder, string stateName, CompositeStateTransitionsBuildAction compositeStateBuildAction)
-            where TState : class, ICompositeState
+            where TState : class, IBaseCompositeState
         {
             (builder as IInternal).Services.RegisterState2<TState>();
 

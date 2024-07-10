@@ -1,6 +1,5 @@
 using Stateflows.Common;
 using Stateflows.Activities;
-using Stateflows.StateMachines.Sync;
 using StateMachine.IntegrationTests.Utils;
 
 namespace StateMachine.IntegrationTests.Tests
@@ -78,7 +77,7 @@ namespace StateMachine.IntegrationTests.Tests
 
             if (StateMachineLocator.TryLocateStateMachine(new StateMachineId("submachine", "x"), out var sm))
             {
-                initialized = (await sm.InitializeAsync()).Response.InitializationSuccessful;
+                initialized = (await sm.SendAsync(new Initialize())).Status == EventStatus.Initialized;
 
                 someStatus1 = (await sm.SendAsync(new SomeEvent())).Status;
 
@@ -112,7 +111,7 @@ namespace StateMachine.IntegrationTests.Tests
 
             if (StateMachineLocator.TryLocateStateMachine(new StateMachineId("doActivity", "x"), out var sm))
             {
-                initialized = (await sm.InitializeAsync()).Response.InitializationSuccessful;
+                initialized = (await sm.SendAsync(new Initialize())).Status == EventStatus.Initialized;
 
                 someStatus1 = (await sm.SendAsync(new SomeEvent())).Status;
 
@@ -121,7 +120,7 @@ namespace StateMachine.IntegrationTests.Tests
                 currentState1 = (await sm.GetCurrentStateAsync()).Response.StatesStack.First();
             }
 
-            ExecutionSequence.Verify(b => b
+                ExecutionSequence.Verify(b => b
                 .StateEntry("state1")
                 .StateEntry("state2")
             );

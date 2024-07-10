@@ -38,9 +38,9 @@ namespace Stateflows.StateMachines.Engine
             return Task.CompletedTask;
         }
 
-        public Task AfterStateMachineInitializeAsync(IStateMachineInitializationContext context)
+        public Task AfterStateMachineInitializeAsync(IStateMachineInitializationContext context, bool initialized)
         {
-            Trace.WriteLine($"⦗→s⦘ State Machine '{context.StateMachine.Id.Name}': initialized");
+            Trace.WriteLine($"⦗→s⦘ State Machine '{context.StateMachine.Id.Name}': {(initialized ? "" : "not ")}initialized");
 
             var executor = context.StateMachine.GetExecutor();
             var notification = new BehaviorStatusNotification()
