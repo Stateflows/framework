@@ -602,37 +602,53 @@ namespace Stateflows.Activities.Engine
                 return;
             }
 
-            IEnumerable<Stream> streams = Array.Empty<Stream>();
+            var activated = false;
 
-            if (!Context.NodesToExecute.Contains(node))
+            IEnumerable<TokenHolder> inputTokens = Array.Empty<TokenHolder>();
+
+            lock (node)
             {
-                lock (node)
+                var streams = !Context.NodesToExecute.Contains(node)
+                    ? Context.GetActivatedStreams(node, nodeScope.ThreadId)
+                    : Array.Empty<Stream>();
+
+                activated =
+                    ( // initial node case
+                        node.Type == NodeType.Initial
+                    ) ||
+                    ( // input node case - has to have input
+                        node.Type == NodeType.Input &&
+                        (input?.Any() ?? false)
+                    ) ||
+                    ( // no implicit join node - has any incoming streams
+                        streams.Any() &&
+                        !node.Options.HasFlag(NodeOptions.ImplicitJoin)
+                    ) ||
+                    ( // implicit join node - has incoming streams on all edges
+                        node.IncomingEdges.Count == streams.Count() &&
+                        node.Options.HasFlag(NodeOptions.ImplicitJoin)
+                    ) ||
+                    (
+                        Context.NodesToExecute.Contains(node)
+                    );
+
+                inputTokens = input ?? streams.SelectMany(stream => stream.Tokens).Distinct().ToArray();
+
+                if (activated)
                 {
-                    streams = Context.GetActivatedStreams(node, nodeScope.ThreadId);
+                    foreach (var stream in streams)
+                    {
+                        if (!stream.IsPersistent)
+                        {
+                            Context.ClearStream(stream.EdgeIdentifier, nodeScope.ThreadId);
+                        }
+                    }
+                }
+                else
+                {
+                    ReportNodeAttemptedExecution(node, upstreamEdge, streams);
                 }
             }
-
-            var activated =
-                ( // initial node case
-                    node.Type == NodeType.Initial
-                ) ||
-                ( // input node case - has to have input
-                    node.Type == NodeType.Input &&
-                    (input?.Any() ?? false)
-                ) ||
-                ( // no implicit join node - has any incoming streams
-                    streams.Any() &&
-                    !node.Options.HasFlag(NodeOptions.ImplicitJoin)
-                ) ||
-                ( // implicit join node - has incoming streams on all edges
-                    node.IncomingEdges.Count == streams.Count() &&
-                    node.Options.HasFlag(NodeOptions.ImplicitJoin)
-                ) ||
-                (
-                    Context.NodesToExecute.Contains(node)
-                );
-
-            var inputTokens = input ?? streams.SelectMany(stream => stream.Tokens).Distinct().ToArray();
 
             nodeScope = nodeScope.CreateChildScope(node);
 
@@ -703,10 +719,10 @@ namespace Stateflows.Activities.Engine
                         actionContext.OutputTokens.Add(new ControlToken().ToTokenHolder());
                     }
 
-                    List<TokenHolder> outputTokens;
+                    TokenHolder[] outputTokens;
                     lock (actionContext.OutputTokens)
                     {
-                        outputTokens = actionContext.OutputTokens.ToList();
+                        outputTokens = actionContext.OutputTokens.ToArray();
                     }
 
                     ReportNodeExecuted(node, outputTokens.Where(t => t is TokenHolder<ControlToken>).ToArray());
@@ -719,38 +735,15 @@ namespace Stateflows.Activities.Engine
                             .OrderBy(edge => edge.IsElse)
                             .ToArray();
 
-                        var activatedEdges = (
-                            await Task.WhenAll(
-                                edges.Select(async edge => (
-                                    Edge: edge,
-                                    Activated: await DoHandleEdgeAsync(edge, actionContext))
-                                )
-                            )
-                        )
-                            .Where(x => x.Activated)
-                            .Select(x => x.Edge)
-                            .ToArray();
-
-                        var nodes = activatedEdges.GroupBy(edge => edge.Target).ToArray();
-
-                        await Task.WhenAll(nodes.Select(n => DoHandleNodeAsync(n.Key, n.First(), nodeScope)).ToArray());
-                    }
-                }
-
-                lock (node)
-                {
-                    foreach (var stream in streams)
-                    {
-                        if (!stream.IsPersistent)
+                        foreach (var edge in edges)
                         {
-                            Context.ClearStream(stream.EdgeIdentifier, nodeScope.ThreadId);
+                            if (await DoHandleEdgeAsync(edge, actionContext))
+                            {
+                                await DoHandleNodeAsync(edge.Target, edge, nodeScope);
+                            }
                         }
                     }
                 }
-            }
-            else
-            {
-                ReportNodeAttemptedExecution(node, streams);
             }
 
             await Inspector.AfterNodeActivateAsync(null);
@@ -763,7 +756,7 @@ namespace Stateflows.Activities.Engine
                 lock (lockHandle)
                 {
                     Trace.WriteLine($"⦗→s⦘ Activity '{node.Graph.Name}': executing '{node.Name}'{(!inputTokens.Any() ? ", no input" : "")}");
-                    if (upstreamEdge.Source != null)
+                    if (upstreamEdge != null)
                     {
                         Trace.WriteLine($"    Triggered by {((upstreamEdge.TokenType == typeof(ControlToken)) ? "control" : "'" + upstreamEdge.TokenType.GetTokenName() + "'")} flow from '{upstreamEdge.Source.Name}'");
                     }
@@ -796,13 +789,17 @@ namespace Stateflows.Activities.Engine
             }
         }
 
-        private static void ReportNodeAttemptedExecution(Node node, IEnumerable<Stream> streams)
+        private static void ReportNodeAttemptedExecution(Node node, Edge upstreamEdge, IEnumerable<Stream> streams)
         {
-            if (Debugger.IsAttached)
+            if (Debugger.IsAttached && !SystemTypes.Contains(node.Type))
             {
                 lock (lockHandle)
                 {
                     Trace.WriteLine($"⦗→s⦘ Activity '{node.Graph.Name}': omitting '{node.Name}'");
+                    if (upstreamEdge != null)
+                    {
+                        Trace.WriteLine($"    Triggered by {((upstreamEdge.TokenType == typeof(ControlToken)) ? "control" : "'" + upstreamEdge.TokenType.GetTokenName() + "'")} flow from '{upstreamEdge.Source.Name}'");
+                    }
                     ReportTokens(streams.SelectMany(stream => stream.Tokens).Distinct().ToArray());
                     var activatedFlows = streams.Select(s => s.EdgeIdentifier).ToArray();
                     var missingFlows = node.IncomingEdges.Where(e => !activatedFlows.Contains(e.Identifier));
