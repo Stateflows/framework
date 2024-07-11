@@ -544,37 +544,53 @@ namespace Stateflows.Activities.Engine
                 return;
             }
 
-            IEnumerable<Stream> streams = Array.Empty<Stream>();
+            var activated = false;
 
-            if (!Context.NodesToExecute.Contains(node))
+            IEnumerable<TokenHolder> inputTokens = Array.Empty<TokenHolder>();
+
+            lock (node)
             {
-                lock (node)
+                var streams = !Context.NodesToExecute.Contains(node)
+                    ? Context.GetActivatedStreams(node, nodeScope.ThreadId)
+                    : Array.Empty<Stream>();
+
+                activated =
+                    ( // initial node case
+                        node.Type == NodeType.Initial
+                    ) ||
+                    ( // input node case - has to have input
+                        node.Type == NodeType.Input &&
+                        (input?.Any() ?? false)
+                    ) ||
+                    ( // no implicit join node - has any incoming streams
+                        streams.Any() &&
+                        !node.Options.HasFlag(NodeOptions.ImplicitJoin)
+                    ) ||
+                    ( // implicit join node - has incoming streams on all edges
+                        node.IncomingEdges.Count == streams.Count() &&
+                        node.Options.HasFlag(NodeOptions.ImplicitJoin)
+                    ) ||
+                    (
+                        Context.NodesToExecute.Contains(node)
+                    );
+
+                inputTokens = input ?? streams.SelectMany(stream => stream.Tokens).Distinct().ToArray();
+
+                if (activated)
                 {
-                    streams = Context.GetActivatedStreams(node, nodeScope.ThreadId);
+                    foreach (var stream in streams)
+                    {
+                        if (!stream.IsPersistent)
+                        {
+                            Context.ClearStream(stream.EdgeIdentifier, nodeScope.ThreadId);
+                        }
+                    }
+                }
+                else
+                {
+                    ReportNodeAttemptedExecution(node, streams);
                 }
             }
-
-            var activated =
-                ( // initial node case
-                    node.Type == NodeType.Initial
-                ) ||
-                ( // input node case - has to have input
-                    node.Type == NodeType.Input &&
-                    (input?.Any() ?? false)
-                ) ||
-                ( // no implicit join node - has any incoming streams
-                    streams.Any() &&
-                    !node.Options.HasFlag(NodeOptions.ImplicitJoin)
-                ) ||
-                ( // implicit join node - has incoming streams on all edges
-                    node.IncomingEdges.Count == streams.Count() &&
-                    node.Options.HasFlag(NodeOptions.ImplicitJoin)
-                ) ||
-                (
-                    Context.NodesToExecute.Contains(node)
-                );
-
-            var inputTokens = input ?? streams.SelectMany(stream => stream.Tokens).Distinct().ToArray();
 
             nodeScope = nodeScope.CreateChildScope(node);
 
@@ -602,13 +618,7 @@ namespace Stateflows.Activities.Engine
                     return;
                 }
 
-                //var inputTokens = input ?? streams.SelectMany(stream => stream.Tokens).Distinct().ToArray();
-
                 ReportNodeExecuting(node, inputTokens);
-
-                //nodeScope = nodeScope.CreateChildScope(node);
-
-                //var actionContext = new ActionContext(Context, nodeScope, node, inputTokens, selectionTokens);
 
                 await node.Action.WhenAll(actionContext);
 
@@ -677,21 +687,6 @@ namespace Stateflows.Activities.Engine
                         await Task.WhenAll(nodes.Select(n => DoHandleNodeAsync(n, nodeScope)).ToArray());
                     }
                 }
-
-                lock (node)
-                {
-                    foreach (var stream in streams)
-                    {
-                        if (!stream.IsPersistent)
-                        {
-                            Context.ClearStream(stream.EdgeIdentifier, nodeScope.ThreadId);
-                        }
-                    }
-                }
-            }
-            else
-            {
-                ReportNodeAttemptedExecution(node, streams);
             }
 
             await Inspector.AfterNodeActivateAsync(null);
