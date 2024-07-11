@@ -49,6 +49,53 @@ namespace Activity.IntegrationTests.Tests
                             TokenCount2 += c.GetTokensOfType<int>().Count();
                         })
                     )
+                    .AddActivity("multipleTokensDecision", b => b
+                        .AddInitial(b => b
+                            .AddControlFlow("generate")
+                        )
+                        .AddAction(
+                            "generate",
+                            async c =>
+                            {
+                                c.OutputRange(Enumerable.Range(0, 10));
+                                c.Output("test");
+                            },
+                            b => b
+                                .AddFlow<int>("main")
+                                .AddFlow<string>("main")
+                        )
+                        .AddStructuredActivity("main", b => b
+                            .AddInput(b => b
+                                .AddFlow<int, DecisionNode<int>>()
+                                .AddFlow<string>("final1")
+                                .AddFlow<string>("final2")
+                            )
+                            .AddDecision<int>(b => b
+                                .AddFlow("final1", b => b.AddGuard(async c => c.Token % 2 == 0))
+                                .AddElseFlow("final2")
+                            )
+                            .AddAction(
+                                "final1",
+                                async c =>
+                                {
+                                    ExecutionCount1++;
+                                    TokenCount1 += c.GetTokensOfType<int>().Count();
+                                    await Task.Delay(1);
+                                },
+                                b => b.AddFlow<int, OutputNode>()
+                            )
+                            .AddAction(
+                                "final2",
+                                async c =>
+                                {
+                                    ExecutionCount2++;
+                                    TokenCount2 += c.GetTokensOfType<int>().Count();
+                                },
+                                b => b.AddFlow<int, OutputNode>()
+                            )
+                            .AddOutput()
+                        )
+                    )
                     .AddActivity("controlDecision", b => b
                         .AddInitial(b => b
                             .AddControlFlow("setup")
@@ -75,6 +122,20 @@ namespace Activity.IntegrationTests.Tests
         public async Task TokenDecision()
         {
             if (ActivityLocator.TryLocateActivity(new ActivityId("tokensDecision", "x"), out var a))
+            {
+                await a.InitializeAsync();
+            }
+
+            Assert.AreEqual(1, ExecutionCount1);
+            Assert.AreEqual(5, TokenCount1);
+            Assert.AreEqual(1, ExecutionCount2);
+            Assert.AreEqual(5, TokenCount2);
+        }
+
+        [TestMethod]
+        public async Task MultipleTokenDecision()
+        {
+            if (ActivityLocator.TryLocateActivity(new ActivityId("multipleTokensDecision", "x"), out var a))
             {
                 await a.InitializeAsync();
             }
