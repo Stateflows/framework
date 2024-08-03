@@ -3,8 +3,8 @@ using System.Diagnostics;
 using System.Collections.Generic;
 using System.Runtime.Serialization;
 using Microsoft.Extensions.DependencyInjection;
+using Stateflows.Common.Extensions;
 using Stateflows.Activities.Models;
-using Stateflows.Activities.Extensions;
 using Stateflows.Activities.Exceptions;
 using Stateflows.Activities.Registration.Builders;
 using Stateflows.Activities.Registration.Interfaces;
@@ -85,12 +85,11 @@ namespace Stateflows.Activities.Registration
                 throw new ActivityDefinitionException($"Activity '{activityName}' with version '{version}' is already registered");
             }
 
-            Services.RegisterActivity(activityType);
+            Services.AddServiceType(activityType);
 
-            var activity = FormatterServices.GetUninitializedObject(activityType) as Activity;
+            var activity = FormatterServices.GetUninitializedObject(activityType) as IActivity;
 
             var builder = new ActivityBuilder(activityName, version, null, Services);
-            builder.AddActivityEvents(activityType);
             builder.Result.ActivityType = activityType;
             activity.Build(builder);
             builder.Result.Build();
@@ -105,37 +104,43 @@ namespace Stateflows.Activities.Registration
 
         [DebuggerHidden]
         public void AddActivity<TActivity>(string activityName, int version)
-            where TActivity : Activity
+            where TActivity : class, IActivity
             => AddActivity(activityName, version, typeof(TActivity));
 
         #region Observability
+        [DebuggerHidden]
         public void AddGlobalInterceptor(ActivityInterceptorFactory interceptorFactory)
             => GlobalInterceptorFactories.Add(interceptorFactory);
 
+        [DebuggerHidden]
         public void AddGlobalInterceptor<TInterceptor>()
             where TInterceptor : class, IActivityInterceptor
         {
-            Services.RegisterInterceptor<TInterceptor>();
+            Services.AddServiceType<TInterceptor>();
             AddGlobalInterceptor(serviceProvider => serviceProvider.GetRequiredService<TInterceptor>());
         }
 
+        [DebuggerHidden]
         public void AddGlobalExceptionHandler(ActivityExceptionHandlerFactory exceptionHandlerFactory)
             => GlobalExceptionHandlerFactories.Add(exceptionHandlerFactory);
 
+        [DebuggerHidden]
         public void AddGlobalExceptionHandler<TExceptionHandler>()
             where TExceptionHandler : class, IActivityExceptionHandler
         {
-            Services.RegisterExceptionHandler<TExceptionHandler>();
+            Services.AddServiceType<TExceptionHandler>();
             AddGlobalExceptionHandler(serviceProvider => serviceProvider.GetRequiredService<TExceptionHandler>());
         }
 
+        [DebuggerHidden]
         public void AddGlobalObserver(ActivityObserverFactory observerFactory)
             => GlobalObserverFactories.Add(observerFactory);
 
+        [DebuggerHidden]
         public void AddGlobalObserver<TObserver>()
             where TObserver : class, IActivityObserver
         {
-            Services.RegisterObserver<TObserver>();
+            Services.AddServiceType<TObserver>();
             AddGlobalObserver(serviceProvider => serviceProvider.GetRequiredService<TObserver>());
         }
         #endregion

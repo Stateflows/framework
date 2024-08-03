@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Linq;
 using System.Threading;
+using System.Diagnostics;
 using System.Threading.Tasks;
 using System.Collections.Generic;
 using Microsoft.Extensions.Hosting;
@@ -13,7 +14,7 @@ using Stateflows.Common.Extensions;
 
 namespace Stateflows.Common
 {
-    internal class StateflowsEngine : BackgroundService, IHostedService
+    internal class StateflowsEngine : /*BackgroundService, */IHostedService
     {
         private readonly IServiceScope Scope;
         private IServiceProvider ServiceProvider => Scope.ServiceProvider;
@@ -27,6 +28,8 @@ namespace Stateflows.Common
             => processors ??= ServiceProvider.GetRequiredService<IEnumerable<IEventProcessor>>().ToDictionary(p => p.BehaviorType, p => p);
 
         private EventQueue<EventHolder> EventQueue { get; } = new EventQueue<EventHolder>(true);
+
+        private Task executionTask;
 
         public StateflowsEngine(IServiceProvider serviceProvider)
         {
@@ -49,80 +52,106 @@ namespace Stateflows.Common
             return token;
         }
 
-        public override Task StartAsync(CancellationToken cancellationToken)
+        [DebuggerHidden]
+        public Task StartAsync(CancellationToken cancellationToken)
         {
-            return base.StartAsync(cancellationToken);
+            executionTask = Task.Run(() =>
+            {
+                while (!cancellationToken.IsCancellationRequested)
+                {
+                    EventQueue.WaitAsync().GetAwaiter().GetResult();
+
+                    var token = EventQueue.Dequeue();
+
+                    if (token != null)
+                    {
+                        _ = Task.Run(() =>
+                        {
+                            token.Validation = token.Event.Validate();
+
+                            var status = EventStatus.Invalid;
+
+                            try
+                            {
+                                if (token.Validation.IsValid)
+                                {
+                                    status = ProcessEventAsync(token.TargetId, token.Event, token.ServiceProvider, token.Exceptions)
+                                        .GetAwaiter()
+                                        .GetResult();
+                                }
+
+                                token.Status = token.Validation.IsValid
+                                    ? status
+                                    : EventStatus.Invalid;
+
+                                token.Handled.Set();
+                            }
+                            catch (Exception)
+                            {
+                                try
+                                {
+                                    throw;
+                                }
+                                finally
+                                {
+                                    token.Status = EventStatus.Failed;
+
+                                    token.Handled.Set();
+                                }
+                            }
+                        });
+                    }
+                }
+            });
+
+            return Task.CompletedTask;
         }
 
-        public async Task<EventStatus> ProcessEventAsync<TEvent>(BehaviorId id, TEvent @event, IServiceProvider serviceProvider)
+        //[DebuggerHidden]
+        public async Task<EventStatus> ProcessEventAsync<TEvent>(BehaviorId id, TEvent @event, IServiceProvider serviceProvider, List<Exception> exceptions)
             where TEvent : Event, new()
         {
-            
             var result = EventStatus.Undelivered;
 
             if (Processors.TryGetValue(id.Type, out var processor))
             {
-                try
+                if (Interceptor.BeforeExecute(@event))
                 {
-                    if (Interceptor.BeforeExecute(@event))
+                    TenantAccessor.CurrentTenantId = await TenantProvider.GetCurrentTenantIdAsync();
+
+                    await using var lockHandle = await Lock.AquireLockAsync(id);
+
+                    try
                     {
-                        TenantAccessor.CurrentTenantId = await TenantProvider.GetCurrentTenantIdAsync();
-
-                        await using var lockHandle = await Lock.AquireLockAsync(id);
-
                         try
                         {
-                            try
-                            {
-                                result = await processor.ProcessEventAsync(id, @event, serviceProvider);
-                            }
-                            finally
-                            {
-                                var response = @event.GetResponse();
-                                if (response != null)
-                                {
-                                    response.SenderId = id;
-                                    response.SentAt = DateTime.Now;
-                                }
-                            }
+                            result = await processor.ProcessEventAsync(id, @event, serviceProvider, exceptions);
                         }
                         finally
                         {
-                            Interceptor.AfterExecute(@event);
+                            var response = @event.GetResponse();
+                            if (response != null)
+                            {
+                                response.SenderId = id;
+                                response.SentAt = DateTime.Now;
+                            }
                         }
                     }
-                }
-                catch (Exception e)
-                {
-                    Logger.LogError(LogTemplates.ExceptionLogTemplate, typeof(StateflowsEngine).FullName, nameof(ProcessEventAsync), e.GetType().Name, e.Message);
+                    finally
+                    {
+                        Interceptor.AfterExecute(@event);
+                    }
                 }
             }
 
             return result;
         }
 
-        protected override async Task ExecuteAsync(CancellationToken stoppingToken)
+        public Task StopAsync(CancellationToken cancellationToken)
         {
-            while (!stoppingToken.IsCancellationRequested)
-            {
-                await EventQueue.WaitAsync();
+            executionTask.Wait();
 
-                var token = EventQueue.Dequeue();
-
-                if (token != null)
-                {
-                    _ = Task.Run(async () =>
-                    {
-                        token.Validation = token.Event.Validate();
-
-                        token.Status = token.Validation.IsValid
-                            ? await ProcessEventAsync(token.TargetId, token.Event, token.ServiceProvider)
-                            : EventStatus.Invalid;
-
-                        token.Handled.Set();
-                    });
-                }
-            }
+            return Task.CompletedTask;
         }
     }
 }

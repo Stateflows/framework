@@ -1,25 +1,26 @@
 ﻿using System.Diagnostics;
 using Blazor.Server.Data;
 using Examples.Common;
+using Examples.Storage;
 using Stateflows;
 using Stateflows.Utils;
 using Stateflows.Common;
 using Stateflows.Common.Data;
 using Stateflows.StateMachines;
 using Stateflows.StateMachines.Typed;
-using Stateflows.StateMachines.Data;
 using Stateflows.StateMachines.Sync;
 using Stateflows.Activities;
-using Stateflows.Activities.Data;
 using Stateflows.Activities.Typed;
 using Stateflows.Activities.Attributes;
 using Stateflows.Activities.Registration.Interfaces;
 using Stateflows.StateMachines.Attributes;
-using Examples.Storage;
 using X;
 using System.Collections.Generic;
 using Newtonsoft.Json.Linq;
-using MongoDB.Driver;
+using Blazor.Server;
+using Stateflows.StateMachines.Context.Interfaces;
+using Stateflows.Common.Exceptions;
+using Stateflows.Common.Utilities;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -33,17 +34,40 @@ builder.Services.AddSignalR();
 builder.Services.AddStateflows(b => b
     .AddPlantUml()
 
-    //.AddStorage()
-
-    .AddTracing()
+    .AddStorage()
 
     .AddStateMachines(b => b
         .AddStateMachine("stateMachine1", b => b
+            //.AddExceptionHandler<Handler>()
+            //.AddInterceptor<Handler>()
+            //.AddDefaultInitializer(async c => throw new CustomException("test"))
             .AddInitialState("state1", b => b
+                .AddOnEntry(async c =>
+                {
+                    //throw new CustomException("test");
+
+                    //var e = new CustomException("test");
+                    //var x = new Exception("boo", e);
+                    //var z = StateflowsJsonConverter.SerializePolymorphicObject(x, false, Newtonsoft.Json.Formatting.Indented);
+                    //Debug.WriteLine(z);
+
+                    //var s = "{\"$type\":\"System.Exception, System.Private.CoreLib\",\"ClassName\":\"System.Exception\",\"Message\":\"boo\",\"Data\":null,\"InnerException\":{\"$type\":\"Blazor.Server.CustomExceptionX, Blazor.Server\",\"Message\":\"test\",\"Data\":{\"$type\":\"System.Collections.ListDictionaryInternal, System.Private.CoreLib\"},\"InnerException\":null,\"HelpLink\":null,\"Source\":null,\"HResult\":-2146233088,\"StackTrace\":null},\"HelpURL\":null,\"StackTraceString\":null,\"RemoteStackTraceString\":null,\"RemoteStackIndex\":0,\"ExceptionMethod\":null,\"HResult\":-2146233088,\"Source\":null,\"WatsonBuckets\":null}\r\n";
+                    //var x = StateflowsJsonConverter.DeserializeObject(s);
+
+                    throw new Exception("test");
+
+                    Debug.WriteLine("x");
+                })
                 .AddTransition<SomeEvent>("state2")
+                .AddTransition<Startup>("state3")
                 .AddInternalTransition<ExampleRequest>(b => b
-                    .AddEffect(c => c.Event.Respond(new ExampleResponse() { ResponseData = "Example response data" }))
+                    .AddEffect(c =>
+                    {
+                        c.Event.Respond(new ExampleResponse() { ResponseData = "Example response data" });
+                    })
+                    .AddGuard(c => throw new Exception("test"))
                 )
+                .AddDoActivity<Activity3>()
             )
             .AddState("state2", b => b
                 .AddOnEntry(async c =>
@@ -51,26 +75,28 @@ builder.Services.AddStateflows(b => b
                     c.StateMachine.Publish(new SomeNotification());
                 })
                 .AddTransition<SomeEvent>("state1")
+                .AddTransition<OtherEvent>("state3")
             )
-        )
-
-        .AddStateMachine("stateMachine2", b => b
-            .AddInitialState("state1", b => b
-                .AddOnEntry(async c =>
-                {
-                    await c.StateMachine.SubscribeAsync<SomeNotification>(new StateMachineId("stateMachine1", "x"));
-                })
-                .AddTransition<SomeNotification>("state2")
+            .AddState("state3", b => b
+                .AddTransition<SomeEvent>("state1")
+                .AddTransition<OtherEvent, FinalState>()
             )
-            .AddState("state2")
+            .AddFinalState()
         )
     )
 
     .AddActivities(b => b
+        .AddActivity<ClearingActivity>("clearing")
+        .AddActivity("activity1", b => b
+            .AddAcceptEventAction<Startup>(b => b
+                .AddControlFlow<AcceptEventActionNode<AfterOneMinute>>()
+            )
+            .AddAcceptEventAction<AfterOneMinute>(async c => Debug.WriteLine("Yuppi!"))
+        )
         .AddActivity("activity2", b => b
-            .AddOnInitialize<InitializationRequest1>(async c =>
+            .AddInitializer<InitializationRequest1>(async c =>
             {
-                Debug.WriteLine(c.InitializationRequest.Foo);
+                Debug.WriteLine(c.InitializationEvent.Foo);
 
                 return true;
             })
@@ -115,9 +141,9 @@ builder.Services.AddStateflows(b => b
         .AddActivity<Activity3>("activity3")
 
         .AddActivity("activity4", b => b
-            .AddOnInitialize<InitializationRequest1>(async c =>
+            .AddInitializer<InitializationRequest1>(async c =>
             {
-                Debug.WriteLine(c.InitializationRequest.Foo);
+                Debug.WriteLine(c.InitializationEvent.Foo);
 
                 return true;
             })
@@ -139,8 +165,6 @@ builder.Services.AddStateflows(b => b
             )
         )
     )
-
-    .AddAutoInitialization(new StateMachineClass("stateMachine1"))
 
     .SetEnvironment(
         builder.Environment.IsDevelopment()
@@ -174,15 +198,51 @@ app.Run();
 
 namespace X
 {
-    public class InitializationRequest1 : InitializationRequest
+    public class Structured : IStructuredActivityNodeInitialization
+    {
+        public Task OnInitializeAsync()
+        {
+            throw new NotImplementedException();
+        }
+    }
+
+    public class InitializationRequest1 : Event
     {
         public string Foo { get; set; }
     }
 
-    public class Activity3 : Stateflows.Activities.Activity<InitializationRequest1>
+    public class Handler : IStateMachineExceptionHandler, IStateMachineInterceptor
     {
-        public override void Build(ITypedActivityBuilder builder)
+        public Task<bool> OnStateEntryExceptionAsync(IStateActionContext context, Exception exception)
+        {
+            return Task.FromResult(true);
+        }
+
+        public Task AfterProcessEventAsync(IEventActionContext<Event> context)
+        {
+            Debug.WriteLine($">>>>>>>>>>> after processing {context.Event.Name}");
+
+            return Task.CompletedTask;
+        }
+
+        public Task BeforeDehydrateAsync(IStateMachineActionContext context)
+        {
+            Debug.WriteLine($">>>>>>>>>>> dehydrate {context.ExecutionTrigger.Name}");
+
+            return Task.CompletedTask;
+        }
+    }
+
+    public class Activity3 : IActivity
+    {
+        public void Build(IActivityBuilder builder)
             => builder
+                .AddInitializer<InitializationRequest1>(async c =>
+                {
+                    Debug.WriteLine(c.InitializationEvent.Foo);
+
+                    return true;
+                })
                 .AddAcceptEventAction<SomeEvent>(async c => { }, b => b
                     .AddControlFlow("action1")
                 )
@@ -235,16 +295,9 @@ namespace X
                         Debug.WriteLine($"counter: {counter}");
                     }
                 );
-
-        public override async Task<bool> OnInitializeAsync(InitializationRequest1 initializationRequest)
-        {
-            Debug.WriteLine(initializationRequest.Foo);
-
-            return true;
-        }
     }
 
-    public class Action1 : ActionNode
+    public class Action1 : IActionNode
     {
         public readonly Input<int> IntInput;
 
@@ -252,22 +305,108 @@ namespace X
 
         private readonly StateValue<int> Bar = new("bar");
 
-        public override Task ExecuteAsync()
+        public Task ExecuteAsync(CancellationToken cancellationToken)
         {
             if (!Foo.IsSet)
             {
-                Foo.Value = 42;
+                Foo.Set(42);
             }
 
             return Task.CompletedTask;
         }
     }
 
-    public class Flow1 : Flow<int>
+    public class Flow1 : IFlowGuard<int>
     {
-        public override async Task<bool> GuardAsync()
+        public async Task<bool> GuardAsync(int token)
         {
-            return Context.Token > 40;
+            return token > 40;
         }
     }
+
+
+
+
+
+
+
+
+
+    public class PersonId { }
+
+    public class ClearingRequest : Event
+    {
+        public PersonId[] PersonIds { get; set; } = new PersonId[0];
+    }
+
+
+    public class ClearingActivity : IActivity
+    {
+        public void Build(IActivityBuilder builder)
+        {
+            builder
+                .AddAcceptEventAction<ClearingRequest>(
+                    async c => c.OutputRange(c.Event.PersonIds),
+                    b => b.AddFlow<PersonId>("clearing-loop")
+                )
+                .AddIterativeActivity<PersonId>(
+                    "clearing-loop",
+                    b => b
+                        .AddInput(b => b
+                            .AddFlow<PersonId>("clear")
+                        )
+                        //.AddInitial(b => b
+                        //    .AddControlFlow<AcceptEventActionNode<AfterOneMinute>>()
+                        //)
+                        //.AddTimeEventAction<AfterOneMinute>(b => b
+                        //    .AddControlFlow("clear")
+                        //)
+                        .AddAction("clear", async c => Debug.WriteLine($"cleared {c.GetTokensOfType<PersonId>().Count()} dossiers"))
+
+                        .AddControlFlow("finish"),
+                    10
+                )
+                .AddAction("finish", async c => Debug.WriteLine("finished"))
+                ;
+        }
+    }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 }

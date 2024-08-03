@@ -1,18 +1,9 @@
 ﻿using System;
-using System.Threading;
 using Stateflows.Common.Interfaces;
 using Stateflows.Common.Exceptions;
 
 namespace Stateflows.Common.Classes
 {
-    public static class ContextValuesHolder
-    {
-        public static readonly AsyncLocal<IContextValues> GlobalValues = new AsyncLocal<IContextValues>();
-        public static readonly AsyncLocal<IContextValues> StateValues = new AsyncLocal<IContextValues>();
-        public static readonly AsyncLocal<IContextValues> SourceStateValues = new AsyncLocal<IContextValues>();
-        public static readonly AsyncLocal<IContextValues> TargetStateValues = new AsyncLocal<IContextValues>();
-    }
-
     public class BaseValueAccessor<T>
     {
         private readonly string valueName;

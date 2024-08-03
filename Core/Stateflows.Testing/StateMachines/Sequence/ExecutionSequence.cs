@@ -42,11 +42,11 @@ namespace Stateflows.Testing.StateMachines.Sequence
             }
         }
 
-        public IExecutionSequenceBuilder DefaultTransitionEffect(string sourceStateName, string targetVertexName)
-            => TransitionEffect(EventInfo<CompletionEvent>.Name, sourceStateName, targetVertexName);
+        public IExecutionSequenceBuilder DefaultTransitionEffect(string sourceStateName, string targetStateName)
+            => TransitionEffect(EventInfo<CompletionEvent>.Name, sourceStateName, targetStateName);
 
-        public IExecutionSequenceBuilder DefaultTransitionGuard(string sourceStateName, string targetVertexName)
-            => TransitionGuard(EventInfo<CompletionEvent>.Name, sourceStateName, targetVertexName);
+        public IExecutionSequenceBuilder DefaultTransitionGuard(string sourceStateName, string targetStateName)
+            => TransitionGuard(EventInfo<CompletionEvent>.Name, sourceStateName, targetStateName);
 
         public IExecutionSequenceBuilder InternalTransitionEffect(string eventName, string sourceStateName)
             => TransitionEffect(eventName, sourceStateName, "");
@@ -90,15 +90,15 @@ namespace Stateflows.Testing.StateMachines.Sequence
             return this;
         }
 
-        public IExecutionSequenceBuilder TransitionEffect(string eventName, string sourceStateName, string? targetVertexName)
+        public IExecutionSequenceBuilder TransitionEffect(string eventName, string sourceStateName, string? targetStateName)
         {
-            Sequence.Add($"{sourceStateName}--{eventName}/effect-->{targetVertexName ?? string.Empty}");
+            Sequence.Add($"{sourceStateName}--{eventName}/effect-->{targetStateName ?? string.Empty}");
             return this;
         }
 
-        public IExecutionSequenceBuilder TransitionGuard(string eventName, string sourceStateName, string? targetVertexName)
+        public IExecutionSequenceBuilder TransitionGuard(string eventName, string sourceStateName, string? targetStateName)
         {
-            Sequence.Add($"{sourceStateName}--{eventName}[guard]-->{targetVertexName ?? string.Empty}");
+            Sequence.Add($"{sourceStateName}--{eventName}[guard]-->{targetStateName ?? string.Empty}");
             return this;
         }
     }

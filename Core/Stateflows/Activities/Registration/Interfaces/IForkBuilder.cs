@@ -2,6 +2,6 @@
 
 namespace Stateflows.Activities.Registration.Interfaces
 {
-    public interface IForkBuilder : IObjectFlow<IForkBuilder>, IControlFlow<IForkBuilder>
+    public interface IForkBuilder : IObjectFlowBase<IForkBuilder>, IControlFlowBase<IForkBuilder>
     { }
 }

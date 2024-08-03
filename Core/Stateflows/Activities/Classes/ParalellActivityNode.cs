@@ -1,9 +1,7 @@
-﻿using Stateflows.Common.Extensions;
-
-namespace Stateflows.Activities
+﻿namespace Stateflows.Activities
 {
-    public abstract class ParallelActivityNode<TToken> : StructuredActivityNode<TToken>
+    public sealed class ParallelActivityNode<TToken> : IBaseStructuredActivityNode
     {
-        public static string Name => typeof(ParallelActivityNode<TToken>).GetReadableName();
+        public static string Name => ActivityNode<ParallelActivityNode<TToken>>.Name;
     }
 }

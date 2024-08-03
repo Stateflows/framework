@@ -1,105 +1,85 @@
-﻿using System;
-using System.Linq;
-using System.Threading.Tasks;
-using Stateflows.Common;
-using Stateflows.Common.Extensions;
-using Stateflows.StateMachines.Sync;
+﻿using Stateflows.Common;
 using Stateflows.StateMachines.Context.Classes;
-using Stateflows.StateMachines.Registration.Builders;
 using Stateflows.StateMachines.Registration.Interfaces;
 using Stateflows.StateMachines.Registration.Interfaces.Base;
 
 namespace Stateflows.StateMachines.Extensions
 {
-    public static class BuilderExtensions
+    internal static class BuilderExtensions
     {
-        public static void AddStateMachineEvents(this IInitializedStateMachineBuilder builder, Type stateMachineType)
-        {
-            if (typeof(StateMachine).GetMethod(nameof(StateMachine.OnInitializeAsync)).IsOverridenIn(stateMachineType))
-            {
-                builder.AddOnInitialize(c =>
-                {
-                    var context = (c as BaseContext).Context;
-                    return context.Executor.GetStateMachine(stateMachineType, context).OnInitializeAsync();
-                });
-            }
-
-            if (typeof(StateMachine).GetMethod(nameof(StateMachine.OnFinalizeAsync)).IsOverridenIn(stateMachineType))
-            {
-                builder.AddOnFinalize(c =>
-                {
-                    var context = (c as BaseContext).Context;
-                    context.Executor.GetStateMachine(stateMachineType, context)?.OnFinalizeAsync();
-                });
-            }
-
-            var baseInterfaceType = typeof(IInitializedBy<>);
-            foreach (var interfaceType in stateMachineType.GetInterfaces())
-            {
-                if (interfaceType.GetGenericTypeDefinition() == baseInterfaceType)
-                {
-                    var methodInfo = interfaceType.GetMethods().First(m => m.Name == "OnInitializeAsync");
-                    var requestType = interfaceType.GenericTypeArguments[0];
-                    var requestName = Stateflows.Common.EventInfo.GetName(requestType);
-                    (builder as StateMachineBuilder).AddInitializer(requestType, requestName, c =>
-                    {
-                        var stateMachine = c.Executor.GetStateMachine(stateMachineType, c);
-                        return methodInfo.Invoke(stateMachine, new object[] { c.Event }) as Task<bool>;
-                    });
-                }
-            }
-        }
-
         public static void AddStateEvents<TState, TReturn>(this IStateEvents<TReturn> builder)
-            where TState : BaseState
+            where TState : class, IBaseState
         {
-            if (typeof(BaseState).GetMethod(nameof(BaseState.OnEntryAsync)).IsOverridenIn<TState>())
+            if (typeof(IStateEntry).IsAssignableFrom(typeof(TState)))
             {
-                builder.AddOnEntry(c => (c as BaseContext).Context.Executor.GetState<TState>(c)?.OnEntryAsync());
+                builder.AddOnEntry(c => ((c as BaseContext).Context.Executor.GetState<TState>(c) as IStateEntry)?.OnEntryAsync());
             }
 
-            if (typeof(BaseState).GetMethod(nameof(BaseState.OnExitAsync)).IsOverridenIn<TState>())
+            if (typeof(IStateExit).IsAssignableFrom(typeof(TState)))
             {
-                builder.AddOnExit(c => (c as BaseContext).Context.Executor.GetState<TState>(c)?.OnExitAsync());
+                builder.AddOnExit(c => ((c as BaseContext).Context.Executor.GetState<TState>(c) as IStateExit)?.OnExitAsync());
             }
         }
 
         public static void AddCompositeStateEvents<TCompositeState, TReturn>(this ICompositeStateEvents<TReturn> builder)
-            where TCompositeState : CompositeState
+            where TCompositeState : class, IBaseCompositeState
         {
-            if (typeof(CompositeState).GetMethod(nameof(CompositeState.OnInitializeAsync)).IsOverridenIn<TCompositeState>())
+            if (typeof(ICompositeStateInitialization).IsAssignableFrom(typeof(TCompositeState)))
             {
-                builder.AddOnInitialize(c => (c as BaseContext).Context.Executor.GetState<TCompositeState>(c)?.OnInitializeAsync());
+                builder.AddOnInitialize(c => ((c as BaseContext).Context.Executor.GetState<TCompositeState>(c) as ICompositeStateInitialization)?.OnInitializeAsync());
             }
 
-            if (typeof(CompositeState).GetMethod(nameof(CompositeState.OnFinalizeAsync)).IsOverridenIn<TCompositeState>())
+            if (typeof(ICompositeStateFinalization).IsAssignableFrom(typeof(TCompositeState)))
             {
-                builder.AddOnFinalize(c => (c as BaseContext).Context.Executor.GetState<TCompositeState>(c)?.OnFinalizeAsync());
+                builder.AddOnFinalize(c => ((c as BaseContext).Context.Executor.GetState<TCompositeState>(c) as ICompositeStateFinalization)?.OnFinalizeAsync());
             }
         }
 
         public static void AddElseTransitionEvents<TElseTransition, TEvent>(this IElseTransitionBuilder<TEvent> builder)
-            where TElseTransition : ElseTransition<TEvent>
+            where TElseTransition : class, ITransitionEffect<TEvent>
             where TEvent : Event, new()
         {
-            if (typeof(BaseTransition<TEvent>).GetMethod(nameof(BaseTransition<TEvent>.EffectAsync)).IsOverridenIn<TElseTransition>())
+            if (typeof(ITransitionEffect<TEvent>).IsAssignableFrom(typeof(TElseTransition)))
             {
-                builder.AddEffect(c => (c as BaseContext).Context.Executor.GetElseTransition<TElseTransition, TEvent>(c)?.EffectAsync());
+                builder.AddEffect(c => ((c as BaseContext).Context.Executor.GetTransition<TElseTransition, TEvent>(c) as ITransitionEffect<TEvent>)?.EffectAsync(c.Event));
             }
         }
 
         public static void AddTransitionEvents<TTransition, TEvent>(this ITransitionBuilder<TEvent> builder)
-            where TTransition : Transition<TEvent>
+            where TTransition : class, IBaseTransition<TEvent>
             where TEvent : Event, new()
         {
-            if (typeof(BaseTransition<TEvent>).GetMethod(nameof(BaseTransition<TEvent>.GuardAsync)).IsOverridenIn<TTransition>())
+            if (typeof(ITransitionGuard<TEvent>).IsAssignableFrom(typeof(TTransition)))
             {
-                builder.AddGuard(c => (c as BaseContext).Context.Executor.GetTransition<TTransition, TEvent>(c)?.GuardAsync());
+                builder.AddGuard(c => ((c as BaseContext).Context.Executor.GetTransition<TTransition, TEvent>(c) as ITransitionGuard<TEvent>)?.GuardAsync(c.Event));
             }
 
-            if (typeof(BaseTransition<TEvent>).GetMethod(nameof(BaseTransition<TEvent>.EffectAsync)).IsOverridenIn<TTransition>())
+            if (typeof(ITransitionEffect<TEvent>).IsAssignableFrom(typeof(TTransition)))
             {
-                builder.AddEffect(c => (c as BaseContext).Context.Executor.GetTransition<TTransition, TEvent>(c)?.EffectAsync());
+                builder.AddEffect(c => ((c as BaseContext).Context.Executor.GetTransition<TTransition, TEvent>(c) as ITransitionEffect<TEvent>)?.EffectAsync(c.Event));
+            }
+        }
+
+        public static void AddDefaultTransitionEvents<TTransition>(this IDefaultTransitionBuilder builder)
+            where TTransition : class, IBaseDefaultTransition
+        {
+            if (typeof(IDefaultTransitionGuard).IsAssignableFrom(typeof(TTransition)))
+            {
+                builder.AddGuard(c => ((c as BaseContext).Context.Executor.GetDefaultTransition<TTransition>(c) as IDefaultTransitionGuard)?.GuardAsync());
+            }
+
+            if (typeof(IDefaultTransitionEffect).IsAssignableFrom(typeof(TTransition)))
+            {
+                builder.AddEffect(c => ((c as BaseContext).Context.Executor.GetDefaultTransition<TTransition>(c) as IDefaultTransitionEffect)?.EffectAsync());
+            }
+        }
+
+        public static void AddElseDefaultTransitionEvents<TElseTransition>(this IElseDefaultTransitionBuilder builder)
+            where TElseTransition : class, IDefaultTransitionEffect
+        {
+            if (typeof(IDefaultTransitionEffect).IsAssignableFrom(typeof(TElseTransition)))
+            {
+                builder.AddEffect(c => ((c as BaseContext).Context.Executor.GetDefaultTransition<TElseTransition>(c) as IDefaultTransitionEffect)?.EffectAsync());
             }
         }
     }

@@ -1,44 +1,33 @@
-﻿using Stateflows.Activities.Extensions;
+﻿using System.Diagnostics;
+using Stateflows.Common.Extensions;
+using Stateflows.Activities.Extensions;
 using Stateflows.Activities.Registration.Interfaces;
 
 namespace Stateflows.Activities.Typed
 {
     public static class DecisionBuilderElseObjectFlowsTypedExtensions
     {
-        //    public static IDecisionBuilder<TToken> AddElseFlow<TToken, TTargetNode>(this IDecisionBuilder<TToken> builder, ObjectFlowBuildAction<TToken> buildAction = null)
-        //        where TTargetNode : ActivityNode
-        //        => builder.AddElseFlow(ActivityNodeInfo<TTargetNode>.Name, b => buildAction?.Invoke(b as IObjectFlowBuilder<TToken>));
+        [DebuggerHidden]
+        public static IDecisionBuilder<TToken> AddElseFlow<TToken, TTargetNode>(this IDecisionBuilder<TToken> builder, ObjectFlowBuildAction<TToken> buildAction = null)
+            where TTargetNode : class, IActivityNode
+            => builder.AddElseFlow(ActivityNode<TTargetNode>.Name, b => buildAction?.Invoke(b as IObjectFlowBuilder<TToken>));
 
-        //    public static IDecisionBuilder<TToken> AddElseFlow<TToken, TFlow>(this IDecisionBuilder<TToken> builder, string targetNodeName)
-        //        where TFlow : Flow<TToken>
-        //    {
-        //        (builder as IInternal).Services.RegisterObjectFlow<TFlow, TToken>();
+        [DebuggerHidden]
+        public static IDecisionBuilder<TToken> AddElseFlow<TToken, TTransformedToken, TTransformationFlow>(this IDecisionBuilder<TToken> builder, string targetNodeName)
+            where TTransformationFlow : class, IFlowTransformation<TToken, TTransformedToken>
+        {
+            (builder as IInternal).Services.AddServiceType<TTransformationFlow>();
 
-        //        return builder.AddElseFlow(
-        //            targetNodeName,
-        //            b => (b as IObjectFlowBuilder<TToken>).AddObjectFlowEvents<TFlow, TToken>()
-        //        );
-        //    }
+            return builder.AddElseFlow(
+                targetNodeName,
+                b => (b as IObjectFlowBuilder<TToken>).AddObjectTransformationFlowEvents<TTransformationFlow, TToken, TTransformedToken>()
+            );
+        }
 
-        //    public static IDecisionBuilder<TToken> AddElseFlow<TToken, TFlow, TTargetNode>(this IDecisionBuilder<TToken> builder)
-        //        where TFlow : Flow<TToken>
-        //        where TTargetNode : ActivityNode
-        //        => builder.AddElseFlow<TToken, TFlow>(ActivityNodeInfo<TTargetNode>.Name);
-
-        //    public static IDecisionBuilder<TToken> AddElseFlow<TToken, TTransformedToken, TObjectTransformationFlow>(this IDecisionBuilder<TToken> builder, string targetNodeName)
-        //        where TObjectTransformationFlow : TransformationFlow<TToken, TTransformedToken>
-        //    {
-        //        (builder as IInternal).Services.RegisterObjectTransformationFlow<TObjectTransformationFlow, TToken, TTransformedToken>();
-
-        //        return builder.AddElseFlow(
-        //            targetNodeName,
-        //            b => (b as IObjectFlowBuilder<TToken>).AddObjectTransformationFlowEvents<TObjectTransformationFlow, TToken, TTransformedToken>()
-        //        );
-        //    }
-
-        //    public static IDecisionBuilder<TToken> AddElseFlow<TToken, TTransformedToken, TObjectTransformationFlow, TTargetNode>(this IDecisionBuilder<TToken> builder)
-        //        where TObjectTransformationFlow : TransformationFlow<TToken, TTransformedToken>
-        //        where TTargetNode : ActivityNode
-        //        => builder.AddElseFlow<TToken, TTransformedToken, TObjectTransformationFlow>(ActivityNodeInfo<TTargetNode>.Name);
+        [DebuggerHidden]
+        public static IDecisionBuilder<TToken> AddElseFlow<TToken, TTransformedToken, TTransformationFlow, TTargetNode>(this IDecisionBuilder<TToken> builder)
+            where TTransformationFlow : class, IFlowTransformation<TToken, TTransformedToken>
+            where TTargetNode : class, IActivityNode
+            => builder.AddElseFlow<TToken, TTransformedToken, TTransformationFlow>(ActivityNode<TTargetNode>.Name);
     }
 }

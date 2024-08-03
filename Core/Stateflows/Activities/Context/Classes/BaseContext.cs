@@ -29,6 +29,8 @@ namespace Stateflows.Activities.Context.Classes
 
         public NodeScope NodeScope { get; }
 
+        public Event ExecutionTrigger { get; set; }
+
         public CancellationToken CancellationToken => NodeScope.CancellationToken;
 
         private ActivityContext activity;

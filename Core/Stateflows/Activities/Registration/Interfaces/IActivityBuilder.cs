@@ -13,15 +13,4 @@ namespace Stateflows.Activities.Registration.Interfaces
         IAcceptEvent<IActivityBuilder>,
         ISendEvent<IActivityBuilder>
     { }
-
-    public interface ITypedActivityBuilder :
-        IActivityUtils<ITypedActivityBuilder>,
-        IReactiveActivity<ITypedActivityBuilder>,
-        IInitial<ITypedActivityBuilder>,
-        IFinal<ITypedActivityBuilder>,
-        IInput<ITypedActivityBuilder>,
-        IOutput<ITypedActivityBuilder>,
-        IAcceptEvent<ITypedActivityBuilder>,
-        ISendEvent<ITypedActivityBuilder>
-    { }
 }

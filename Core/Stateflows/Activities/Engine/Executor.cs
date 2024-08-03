@@ -13,12 +13,30 @@ using Stateflows.Activities.Models;
 using Stateflows.Activities.Streams;
 using Stateflows.Activities.Registration;
 using Stateflows.Activities.Context.Classes;
+using System.Net;
 
 namespace Stateflows.Activities.Engine
 {
     internal class Executor : IDisposable
     {
         private static readonly object lockHandle = new object();
+        private static readonly object nodesLockHandle = new object();
+        private readonly Dictionary<Node, object> nodeLockHandles = new Dictionary<Node, object>();
+
+        private object GetLock(Node node)
+        {
+            object result = null;
+            lock (nodesLockHandle)
+            {
+                if (!nodeLockHandles.TryGetValue(node, out result))
+                {
+                    result = new object();
+                    nodeLockHandles[node] = result;
+                }
+            }
+
+            return result;
+        }
 
         public readonly Graph Graph;
         public readonly ActivitiesRegister Register;
@@ -34,6 +52,7 @@ namespace Stateflows.Activities.Engine
             NodeType.Merge,
             NodeType.SendEventAction,
             NodeType.AcceptEventAction,
+            NodeType.TimeEventAction,
             NodeType.StructuredActivity,
             NodeType.ParallelActivity,
             NodeType.IterativeActivity,
@@ -46,6 +65,19 @@ namespace Stateflows.Activities.Engine
             NodeType.StructuredActivity,
             NodeType.ParallelActivity,
             NodeType.IterativeActivity
+        };
+
+        public static readonly NodeType[] SystemTypes = new NodeType[]
+        {
+            NodeType.Initial,
+            NodeType.Input,
+            NodeType.Output
+        };
+
+        public static readonly NodeType[] interactiveNodeTypes = new NodeType[]
+        {
+            NodeType.AcceptEventAction,
+            NodeType.TimeEventAction,
         };
 
         public Executor(ActivitiesRegister register, Graph graph, IServiceProvider serviceProvider)
@@ -65,7 +97,15 @@ namespace Stateflows.Activities.Engine
 
         private EventWaitHandle FinalizationEvent { get; } = new EventWaitHandle(false, EventResetMode.AutoReset);
 
-        private bool Finalized { get; set; } = false;
+        private bool Finalized
+        {
+            get
+            {
+                Debug.Assert(Context != null, $"Context is unavailable. Is activity '{Graph.Name}' hydrated?");
+
+                return Context.Finalized;
+            }
+        }
 
         public IEnumerable<Node> GetActiveNodes()
             => Context.ActiveNodes.Keys
@@ -89,7 +129,7 @@ namespace Stateflows.Activities.Engine
 
         public async Task<RootContext> DehydrateAsync()
         {
-            Debug.Assert(Context != null, $"Context is unavailable. Is state machine '{Graph.Name}' already dehydrated?");
+            Debug.Assert(Context != null, $"Context is unavailable. Is activity '{Graph.Name}' already dehydrated?");
 
             await Inspector.BeforeDehydrateAsync(new ActivityActionContext(Context, NodeScope.CreateChildScope()));
 
@@ -121,30 +161,53 @@ namespace Stateflows.Activities.Engine
             }
         }
 
-        public async Task<bool> InitializeAsync(InitializationRequest @event)
+        public async Task<EventStatus> InitializeAsync(Event @event)
         {
             Debug.Assert(Context != null, $"Context is unavailable. Is activity '{Graph.Name}' hydrated?");
 
-            if (!Initialized && await DoInitializeActivityAsync(@event))
+            if (!Initialized)
             {
-                Context.Initialized = true;
+                var result = await DoInitializeActivityAsync(@event);
 
-                await ExecuteGraphAsync();
+                if (
+                    result == InitializationStatus.InitializedImplicitly ||
+                    result == InitializationStatus.InitializedExplicitly
+                )
+                {
+                    Context.Initialized = true;
 
-                return true;
+                    await ExecuteGraphAsync();
+
+                    if (result == InitializationStatus.InitializedExplicitly)
+                    {
+                        return EventStatus.Initialized;
+                    }
+                    else
+                    {
+                        if (@event is Initialize)
+                        {
+                            return EventStatus.Initialized;
+                        }
+                        else
+                        {
+                            return EventStatus.Consumed;
+                        }
+                    }
+                }
+                else
+                {
+                    return result == InitializationStatus.NoSuitableInitializer
+                        ? EventStatus.Rejected
+                        : EventStatus.NotInitialized;
+                }
             }
 
-            if (Initialized)
-            {
-                Logger.LogInformation("Behavior \"{id}\" is already initialized.", $"{Context.Id.BehaviorId.Type}:{Context.Id.Name}:{Context.Id.Instance}");
-            }
-
-            return false;
+            return EventStatus.NotInitialized;
         }
 
         public async Task<bool> CancelAsync()
         {
-            Debug.Assert(Context != null, $"Context is unavailable. Is state machine '{Graph.Name}' hydrated?");
+            Debug.Assert(Context != null, $"Context is unavailable. Is activity '{Graph.Name}' hydrated?");
 
             if (Initialized)
             {
@@ -155,6 +218,7 @@ namespace Stateflows.Activities.Engine
                 Context.GlobalValues.Clear();
                 Context.Streams.Clear();
                 Context.Context.PendingTimeEvents.Clear();
+                Context.Context.PendingStartupEvents.Clear();
                 Context.Context.TriggerTime = null;
 
                 await DoFinalizeAsync();
@@ -165,16 +229,22 @@ namespace Stateflows.Activities.Engine
             return false;
         }
 
-        public void Reset(bool keepVersion)
+        public void Reset(ResetMode resetMode)
         {
-            Debug.Assert(Context != null, $"Context is unavailable. Is state machine '{Graph.Name}' hydrated?");
+            Debug.Assert(Context != null, $"Context is unavailable. Is activity '{Graph.Name}' hydrated?");
 
             if (Initialized)
             {
                 Context.Context.Values.Clear();
-                if (!keepVersion)
+
+                if (resetMode != ResetMode.KeepVersionAndSubscriptions) // KeepSubscriptions || Full
                 {
                     Context.Context.Version = 0;
+
+                    if (resetMode != ResetMode.KeepSubscriptions) // Full
+                    {
+                        Context.Context.Deleted = true;
+                    }
                 }
             }
         }
@@ -251,7 +321,7 @@ namespace Stateflows.Activities.Engine
         {
             if (Finalized) return;
 
-            Finalized = true;
+            Context.Finalized = true;
 
             if (Graph.OutputNode != null && outputTokens != null)
             {
@@ -439,7 +509,7 @@ namespace Stateflows.Activities.Engine
             }
 
             await Task.WhenAll(
-                nodes.Select(n => DoHandleNodeAsync(n, nodeScope, n == node.InputNode ? input : null, selectionTokens)).ToArray()
+                nodes.Select(n => DoHandleNodeAsync(n, null, nodeScope, n == node.InputNode ? input : null, selectionTokens)).ToArray()
             );
 
             var result = Context.IsNodeCompleted(node, nodeScope);
@@ -447,34 +517,47 @@ namespace Stateflows.Activities.Engine
             return result;
         }
 
-        public async Task<bool> DoInitializeActivityAsync(InitializationRequest @event)
+        public async Task<InitializationStatus> DoInitializeActivityAsync(Event @event)
         {
-            var result = false;
+            InitializationStatus result;
 
-            if (
-                Graph.Initializers.TryGetValue(@event.Name, out var initializer) ||
-                (
-                    @event.Name == EventInfo<InitializationRequest>.Name &&
-                    !Graph.Initializers.Any()
-                )
-            )
+            var initializer = Graph.Initializers.ContainsKey(@event.Name)
+                ? Graph.Initializers[@event.Name]
+                : Graph.DefaultInitializer;
+
+            var context = new ActivityInitializationContext(Context, NodeScope, @event);
+            await Inspector.BeforeActivityInitializationAsync(context);
+
+            if (initializer != null)
             {
-                var context = new ActivityInitializationContext(Context, NodeScope, @event);
-                await Inspector.BeforeActivityInitializationAsync(context);
-
                 try
                 {
-                    result = (initializer == null) || await initializer.WhenAll(context);
+                    result = await initializer.WhenAll(context)
+                        ? initializer == Graph.DefaultInitializer
+                            ? InitializationStatus.InitializedImplicitly
+                            : InitializationStatus.InitializedExplicitly
+                        : InitializationStatus.NotInitialized;
                 }
                 catch (Exception e)
                 {
                     await Inspector.OnActivityInitializationExceptionAsync(context, @event, e);
 
-                    result = false;
+                    result = InitializationStatus.NotInitialized;
                 }
-
-                await Inspector.AfterActivityInitializationAsync(context);
             }
+            else
+            {
+                if (Graph.Initializers.Any())
+                {
+                    result = InitializationStatus.NotInitialized;
+                }
+                else
+                {
+                    result = InitializationStatus.InitializedImplicitly;
+                }
+            }
+
+            await Inspector.AfterActivityInitializationAsync(context, Initialized);
 
             return result;
         }
@@ -512,7 +595,7 @@ namespace Stateflows.Activities.Engine
             if (handler != null)
             {
                 var exceptionName = exception.GetType().Name;
-                Trace.WriteLine($"⦗→s⦘ Activity '{node.Graph.Name}': handling '{exceptionName}'");
+                Trace.WriteLine($"⦗→s⦘ Activity '{node.Graph.Name}:{context.Activity.Id.Instance}': handling '{exceptionName}'");
 
                 var exceptionContext = new ActionContext(
                     context.Context,
@@ -521,7 +604,7 @@ namespace Stateflows.Activities.Engine
                     new TokenHolder[]
                     {
                         exception.ToExceptionHolder(exception.GetType()),
-                        new NodeReference() { Node = node }.ToTokenHolder(),
+                        new NodeReferenceToken() { Node = node }.ToTokenHolder(),
                     }
                 );
 
@@ -529,7 +612,7 @@ namespace Stateflows.Activities.Engine
 
                 DoHandleOutput(exceptionContext);
 
-                ReportExceptionHandled(node, exceptionName, exceptionContext.OutputTokens.Where(t => t is TokenHolder<Control>).ToArray());
+                ReportExceptionHandled(node, exceptionName, exceptionContext.OutputTokens.Where(t => t is TokenHolder<ControlToken>).ToArray(), Context);
 
                 return exceptionContext.OutputTokens;
             }
@@ -537,7 +620,7 @@ namespace Stateflows.Activities.Engine
             return new TokenHolder[0];
         }
 
-        public async Task DoHandleNodeAsync(Node node, NodeScope nodeScope, IEnumerable<TokenHolder> input = null, IEnumerable<TokenHolder> selectionTokens = null)
+        public async Task DoHandleNodeAsync(Node node, Edge upstreamEdge, NodeScope nodeScope, IEnumerable<TokenHolder> input = null, IEnumerable<TokenHolder> selectionTokens = null)
         {
             if (CancellableTypes.Contains(node.Type) && nodeScope.CancellationToken.IsCancellationRequested)
             {
@@ -548,7 +631,7 @@ namespace Stateflows.Activities.Engine
 
             IEnumerable<TokenHolder> inputTokens = Array.Empty<TokenHolder>();
 
-            lock (node)
+            lock (GetLock(node))
             {
                 var streams = !Context.NodesToExecute.Contains(node)
                     ? Context.GetActivatedStreams(node, nodeScope.ThreadId)
@@ -576,19 +659,22 @@ namespace Stateflows.Activities.Engine
 
                 inputTokens = input ?? streams.SelectMany(stream => stream.Tokens).Distinct().ToArray();
 
-                if (activated)
+                if (streams.Any())
                 {
-                    foreach (var stream in streams)
+                    if (activated)
                     {
-                        if (!stream.IsPersistent)
+                        foreach (var stream in streams)
                         {
-                            Context.ClearStream(stream.EdgeIdentifier, nodeScope.ThreadId);
+                            if (!stream.IsPersistent)
+                            {
+                                Context.ClearStream(stream.EdgeIdentifier, nodeScope.ThreadId);
+                            }
                         }
                     }
-                }
-                else
-                {
-                    ReportNodeAttemptedExecution(node, streams);
+                    else
+                    {
+                        ReportNodeAttemptedExecution(node, upstreamEdge, streams, Context);
+                    }
                 }
             }
 
@@ -601,7 +687,7 @@ namespace Stateflows.Activities.Engine
             if (activated)
             {
                 if (
-                    node.Type == NodeType.AcceptEventAction &&
+                    interactiveNodeTypes.Contains(node.Type) &&
                     (
                         Context.Event == null ||
                         Context.Event.GetType() != node.EventType
@@ -612,21 +698,19 @@ namespace Stateflows.Activities.Engine
 
                     if (Debugger.IsAttached)
                     {
-                        Trace.WriteLine($"⦗→s⦘ Activity '{node.Graph.Name}': AcceptEvent node '{node.Name}' registered and waiting for event");
+                        Trace.WriteLine($"⦗→s⦘ Activity '{node.Graph.Name}:{Context.Id.Instance}': AcceptEvent node '{node.Name}' registered and waiting for event");
                     }
 
                     return;
                 }
 
-                ReportNodeExecuting(node, inputTokens);
+                ReportNodeExecuting(node, upstreamEdge, inputTokens, Context);
 
                 await node.Action.WhenAll(actionContext);
 
-                if (node.Type == NodeType.AcceptEventAction)
+                if (interactiveNodeTypes.Contains(node.Type))
                 {
                     var @event = Context.Event;
-
-                    Context.ClearEvent();
 
                     if (@event is TimeEvent)
                     {
@@ -658,33 +742,38 @@ namespace Stateflows.Activities.Engine
                         !actionContext.OutputTokens.Any()
                     )
                     {
-                        actionContext.OutputTokens.Add(new Control().ToTokenHolder());
+                        actionContext.OutputTokens.Add(new ControlToken().ToTokenHolder());
                     }
 
-                    List<TokenHolder> outputTokens;
+                    TokenHolder[] outputTokens;
                     lock (actionContext.OutputTokens)
                     {
-                        outputTokens = actionContext.OutputTokens.ToList();
+                        outputTokens = actionContext.OutputTokens.ToArray();
                     }
 
-                    ReportNodeExecuted(node, outputTokens.Where(t => t is TokenHolder<Control>).ToArray());
+                    ReportNodeExecuted(node, outputTokens.Where(t => t is TokenHolder<ControlToken>).ToArray(), Context);
 
-                    if (outputTokens.Any(t => t is TokenHolder<Control>))
+                    if (outputTokens.Any(t => t is TokenHolder<ControlToken>))
                     {
                         var tokenNames = outputTokens.Select(token => token.Name).Distinct().ToArray();
-                        var edges = node.Edges
-                            .Where(edge => tokenNames.Contains(edge.TokenType.GetTokenName()) || edge.Weight == 0)
-                            .OrderBy(edge => edge.IsElse)
+
+                        var nodes = (
+                            await Task.WhenAll(
+                                node.Edges
+                                    .Where(edge => tokenNames.Contains(edge.TokenType.GetTokenName()) || edge.Weight == 0)
+                                    .OrderBy(edge => edge.IsElse)
+                                    .Select(async edge => (
+                                        Edge: edge,
+                                        Activated: await DoHandleEdgeAsync(edge, actionContext))
+                                    )
+                            )
+                        )
+                            .Where(x => x.Activated)
+                            .Select(x => x.Edge)
+                            .GroupBy(edge => edge.Target)
                             .ToArray();
 
-                        foreach (var edge in edges)
-                        {
-                            _ = await DoHandleEdgeAsync(edge, actionContext);
-                        }
-
-                        var nodes = edges.Select(edge => edge.Target).Distinct().ToArray();
-
-                        await Task.WhenAll(nodes.Select(n => DoHandleNodeAsync(n, nodeScope)).ToArray());
+                        await Task.WhenAll(nodes.Select(n => DoHandleNodeAsync(n.Key, n.First(), nodeScope)).ToArray());
                     }
                 }
             }
@@ -692,49 +781,57 @@ namespace Stateflows.Activities.Engine
             await Inspector.AfterNodeActivateAsync(null);
         }
 
-        private static void ReportNodeExecuting(Node node, IEnumerable<TokenHolder> inputTokens)
+        private static void ReportNodeExecuting(Node node, Edge upstreamEdge, IEnumerable<TokenHolder> inputTokens, RootContext context)
         {
-            if (Debugger.IsAttached)
+            if (Debugger.IsAttached && !SystemTypes.Contains(node.Type))
             {
                 lock (lockHandle)
                 {
-                    Trace.WriteLine($"⦗→s⦘ Activity '{node.Graph.Name}': executing '{node.Name}'{(!inputTokens.Any() ? ", no input" : "")}");
-                    ReportTokens(inputTokens);
+                    Trace.WriteLine($"⦗→s⦘ Activity '{node.Graph.Name}:{context.Id.Instance}': executing '{node.Name}'{(!inputTokens.Any() ? ", no input" : "")}");
+                    if (upstreamEdge != null)
+                    {
+                        Trace.WriteLine($"    Triggered by {((upstreamEdge.TokenType == typeof(ControlToken)) ? "control" : "'" + upstreamEdge.TokenType.GetTokenName() + "'")} flow from '{upstreamEdge.Source.Name}'");
+                    }
+                    ReportTokens(inputTokens);  
                 }
             }
         }
 
-        private static void ReportNodeExecuted(Node node, IEnumerable<TokenHolder> outputTokens)
+        private static void ReportNodeExecuted(Node node, IEnumerable<TokenHolder> outputTokens, RootContext context)
         {
-            if (Debugger.IsAttached)
+            if (Debugger.IsAttached && !SystemTypes.Contains(node.Type))
             {
                 lock (lockHandle)
                 {
-                    Trace.WriteLine($"⦗→s⦘ Activity '{node.Graph.Name}': executed '{node.Name}'{(!outputTokens.Any() ? ", no output" : "")}");
+                    Trace.WriteLine($"⦗→s⦘ Activity '{node.Graph.Name}:{context.Id.Instance}': executed '{node.Name}'{(!outputTokens.Any() ? ", no output" : "")}");
                     ReportTokens(outputTokens, false);
                 }
             }
         }
 
-        private static void ReportExceptionHandled(Node node, string exceptionName, IEnumerable<TokenHolder> outputTokens)
+        private static void ReportExceptionHandled(Node node, string exceptionName, IEnumerable<TokenHolder> outputTokens, RootContext context)
         {
             if (Debugger.IsAttached)
             {
                 lock (lockHandle)
                 {
-                    Trace.WriteLine($"⦗→s⦘ Activity '{node.Graph.Name}': '{exceptionName}' handled{(!outputTokens.Any() ? ", no output" : "")}");
+                    Trace.WriteLine($"⦗→s⦘ Activity '{node.Graph.Name}:{context.Id.Instance}': '{exceptionName}' handled{(!outputTokens.Any() ? ", no output" : "")}");
                     ReportTokens(outputTokens, false);
                 }
             }
         }
 
-        private static void ReportNodeAttemptedExecution(Node node, IEnumerable<Stream> streams)
+        private static void ReportNodeAttemptedExecution(Node node, Edge upstreamEdge, IEnumerable<Stream> streams, RootContext context)
         {
-            if (Debugger.IsAttached)
+            if (Debugger.IsAttached && !SystemTypes.Contains(node.Type))
             {
                 lock (lockHandle)
                 {
-                    Trace.WriteLine($"⦗→s⦘ Activity '{node.Graph.Name}': omitting '{node.Name}'");
+                    Trace.WriteLine($"⦗→s⦘ Activity '{node.Graph.Name}:{context.Id.Instance}': omitting '{node.Name}'");
+                    if (upstreamEdge != null)
+                    {
+                        Trace.WriteLine($"    Triggered by {((upstreamEdge.TokenType == typeof(ControlToken)) ? "control" : "'" + upstreamEdge.TokenType.GetTokenName() + "'")} flow from '{upstreamEdge.Source.Name}'");
+                    }
                     ReportTokens(streams.SelectMany(stream => stream.Tokens).Distinct().ToArray());
                     var activatedFlows = streams.Select(s => s.EdgeIdentifier).ToArray();
                     var missingFlows = node.IncomingEdges.Where(e => !activatedFlows.Contains(e.Identifier));
@@ -746,6 +843,7 @@ namespace Stateflows.Activities.Engine
         private static void ReportTokens(IEnumerable<TokenHolder> inputTokens, bool input = true)
         {
             var inputDigest = inputTokens
+                .Where(t => t.Name != typeof(ControlToken).GetTokenName())
                 .GroupBy(t => t.Name)
                 .Select(g => new
                 {
@@ -772,7 +870,7 @@ namespace Stateflows.Activities.Engine
                 foreach (var flow in flows)
                 {
                     var tokenName = flow.TargetTokenType.GetTokenName();
-                    if (tokenName == typeof(Control).GetTokenName())
+                    if (tokenName == typeof(ControlToken).GetTokenName())
                     {
                         Trace.WriteLine($"    - control flow from '{flow.SourceName}'  ");
                     }
@@ -821,9 +919,9 @@ namespace Stateflows.Activities.Engine
             {
                 var stream = Context.GetStream(edge.Identifier, context.NodeScope.ThreadId);
 
-                if (edgeTokenName != typeof(Control).GetTokenName())
+                if (edgeTokenName != typeof(ControlToken).GetTokenName())
                 {
-                    processedTokens.Add(new Control().ToTokenHolder());
+                    processedTokens.Add(new ControlToken().ToTokenHolder());
                 }
 
                 if (!edge.Source.Options.HasFlag(NodeOptions.ImplicitFork) && consumedTokens.Any())
@@ -856,17 +954,9 @@ namespace Stateflows.Activities.Engine
             NodeScope.Dispose();
         }
 
-        private readonly IDictionary<Type, Activity> Activities = new Dictionary<Type, Activity>();
-
-        public Activity GetActivity(Type activityType, RootContext context)
+        public IActivity GetActivity(Type activityType)
         {
-            if (!Activities.TryGetValue(activityType, out var activity))
-            {
-                activity = NodeScope.ServiceProvider.GetService(activityType) as Activity;
-                activity.Context = new ActivityActionContext(context, NodeScope);
-
-                Activities.Add(activityType, activity);
-            }
+            var activity = NodeScope.ServiceProvider.GetService(activityType) as IActivity;
 
             return activity;
         }

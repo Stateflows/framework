@@ -11,7 +11,7 @@ namespace Stateflows.Activities
             where TEvent : Event, new()
             => $"{context.StateMachine.Id}.{context.SourceState.Name}.{Constants.Do}";
 
-        public static bool TryLocateDoActivity<TEvent>(this ITransitionContext<TEvent> context, string activityName, out IActivity activity)
+        public static bool TryLocateDoActivity<TEvent>(this ITransitionContext<TEvent> context, string activityName, out IActivityBehavior activity)
             where TEvent : Event, new()
             => context.TryLocateActivity(new ActivityId(activityName, context.GetDoActivityInstance()), out activity);
 
@@ -19,7 +19,7 @@ namespace Stateflows.Activities
             where TEvent : Event, new()
             => $"{context.StateMachine.Id}.{context.SourceState.Name}.{action}.{new Random().Next()}";
 
-        public static bool TryLocateActivity<TEvent>(this ITransitionContext<TEvent> context, string activityName, string action, out IActivity activity)
+        public static bool TryLocateActivity<TEvent>(this ITransitionContext<TEvent> context, string activityName, string action, out IActivityBehavior activity)
             where TEvent : Event, new()
             => context.TryLocateActivity(new ActivityId(activityName, context.GetActivityInstance(action)), out activity);
     }

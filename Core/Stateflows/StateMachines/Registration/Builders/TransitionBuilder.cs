@@ -1,15 +1,15 @@
 ﻿using System;
 using System.Threading.Tasks;
 using Stateflows.Common;
+using Stateflows.Common.Exceptions;
 using Stateflows.Common.Registration;
 using Stateflows.StateMachines.Models;
+using Stateflows.StateMachines.Events;
 using Stateflows.StateMachines.Context.Classes;
 using Stateflows.StateMachines.Context.Interfaces;
 using Stateflows.StateMachines.Registration.Interfaces;
 using Stateflows.StateMachines.Registration.Extensions;
 using Stateflows.StateMachines.Registration.Interfaces.Base;
-using Stateflows.StateMachines.Events;
-using Stateflows.Common.Exceptions;
 
 namespace Stateflows.StateMachines.Registration.Builders
 {
@@ -26,7 +26,7 @@ namespace Stateflows.StateMachines.Registration.Builders
     {
         public Edge Edge;
 
-        BehaviorClass IBehaviorBuilder.BehaviorClass => new BehaviorClass(nameof(StateMachine), Edge.Source.Graph.Name);
+        BehaviorClass IBehaviorBuilder.BehaviorClass => new BehaviorClass(Constants.StateMachine, Edge.Source.Graph.Name);
 
         int IBehaviorBuilder.BehaviorVersion => Edge.Source.Graph.Version;
 
@@ -57,7 +57,14 @@ namespace Stateflows.StateMachines.Registration.Builders
                         }
                         else
                         {
-                            await c.Executor.Inspector.OnTransitionGuardExceptionAsync(context, e);
+                            if (!await c.Executor.Inspector.OnTransitionGuardExceptionAsync(context, e))
+                            {
+                                throw;
+                            }
+                            else
+                            {
+                                throw new ExecutionException(e);
+                            }
                         }
                     }
 
@@ -89,7 +96,14 @@ namespace Stateflows.StateMachines.Registration.Builders
                         }
                         else
                         {
-                            await c.Executor.Inspector.OnTransitionEffectExceptionAsync(context, e);
+                            if (!await c.Executor.Inspector.OnTransitionEffectExceptionAsync(context, e))
+                            {
+                                throw;
+                            }
+                            else
+                            {
+                                throw new ExecutionException(e);
+                            }
                         }
                     }
                 }

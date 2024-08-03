@@ -6,6 +6,6 @@ namespace Stateflows.Activities
     {
         IBehaviorLocator Locator { get; }
 
-        bool TryLocateActivity(ActivityId id, out IActivity activity);
+        bool TryLocateActivity(ActivityId id, out IActivityBehavior activity);
     }
 }

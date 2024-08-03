@@ -1,6 +1,5 @@
-using StateMachine.IntegrationTests.Utils;
 using Stateflows.Common;
-using Stateflows.StateMachines.Sync;
+using StateMachine.IntegrationTests.Utils;
 
 namespace StateMachine.IntegrationTests.Tests
 {
@@ -56,9 +55,9 @@ namespace StateMachine.IntegrationTests.Tests
                 StateMachineLocator.TryLocateStateMachine(new StateMachineId("subscribee", "x"), out var subscribee)
             )
             {
-                await subscriber.InitializeAsync();
+                //await subscriber.SendAsync(new Initialize());
 
-                await subscribee.InitializeAsync();
+                //await subscribee.SendAsync(new Initialize());
 
                 await subscribee.SendAsync(new OtherEvent());
 
@@ -87,7 +86,7 @@ namespace StateMachine.IntegrationTests.Tests
                     }
                 });
 
-                await subscribee.InitializeAsync();
+                //await subscribee.InitializeAsync();
 
                 await subscribee.SendAsync(new OtherEvent());
 
@@ -112,9 +111,9 @@ namespace StateMachine.IntegrationTests.Tests
 
                 _ = subscribee.WatchStatusAsync(n => currentStatus = n.BehaviorStatus);
 
-                await subscribee.InitializeAsync();
+                await subscribee.SendAsync(new Initialize());
 
-                await subscribee.GetCurrentStateAsync();
+                await Task.Delay(10);
             }
 
             Assert.AreEqual("state1", currentState);

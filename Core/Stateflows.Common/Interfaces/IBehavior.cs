@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Linq;
 using System.Threading.Tasks;
 using Stateflows.Common.Interfaces;
 
@@ -21,27 +20,8 @@ namespace Stateflows.Common
         Task<RequestResult<TResponse>> RequestAsync<TResponse>(Request<TResponse> request)
             where TResponse : Response, new();
 
-        Task<RequestResult<InitializationResponse>> InitializeAsync(InitializationRequest initializationRequest = null)
-            => RequestAsync(initializationRequest ?? new InitializationRequest());
-
-        Task<RequestResult<FinalizationResponse>> FinalizeAsync()
-            => RequestAsync(new FinalizationRequest());
-
-        Task<RequestResult<ResetResponse>> ResetAsync(bool keepVersion = false)
-            => RequestAsync(new ResetRequest() { KeepVersion = keepVersion });
-
-        async Task<RequestResult<InitializationResponse>> ReinitializeAsync(InitializationRequest initializationRequest = null, bool keepVersion = true)
-        {
-            initializationRequest ??= new InitializationRequest();
-            var compoundResult = await SendCompoundAsync(
-                new ResetRequest() { KeepVersion = keepVersion },
-                initializationRequest
-            );
-
-            var result = compoundResult.Response.Results.Last();
-
-            return new RequestResult<InitializationResponse>(initializationRequest, result.Status, result.Validation);
-        }
+        Task<RequestResult<ResetResponse>> ResetAsync(ResetMode resetMode = ResetMode.Full)
+            => RequestAsync(new ResetRequest() { Mode = resetMode });
 
         Task<RequestResult<BehaviorStatusResponse>> GetStatusAsync()
             => RequestAsync(new BehaviorStatusRequest());

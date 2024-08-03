@@ -2,6 +2,6 @@
 
 namespace Stateflows.Activities.Registration.Interfaces
 {
-    public interface ITimeEventBuilder : IControlFlow<IDecisionBuilder>
+    public interface ITimeEventBuilder : IControlFlowBase<IDecisionBuilder>
     { }
 }

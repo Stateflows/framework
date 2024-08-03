@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics;
 using Stateflows.StateMachines.Context.Interfaces;
 using Stateflows.StateMachines.Registration.Builders;
 using Stateflows.StateMachines.Registration.Extensions;
@@ -8,26 +9,62 @@ namespace Stateflows.StateMachines.Sync
 {
     public static class FinalizedCompositeStateBuilderEventsSyncExtensions
     {
-        public static IFinalizedCompositeStateBuilder AddOnInitialize(this IFinalizedCompositeStateBuilder builder, Action<IStateActionContext> stateAction)
-            => builder.AddOnInitialize(stateAction
+        /// <summary>
+        /// Adds synchronous initialization handler to current composite state.<br/>
+        /// Use the following pattern to implement handler:
+        /// <code>c => {
+        ///     // handler logic here; action context is available via c parameter
+        /// }</code>
+        /// </summary>
+        /// <param name="action">Synchronous action handler</param>
+        [DebuggerHidden]
+        public static IFinalizedCompositeStateBuilder AddOnInitialize(this IFinalizedCompositeStateBuilder builder, Action<IStateActionContext> action)
+            => builder.AddOnInitialize(action
                 .AddStateMachineInvocationContext((builder as CompositeStateBuilder).Vertex.Graph)
                 .ToAsync()
             );
 
-        public static IFinalizedCompositeStateBuilder AddOnFinalize(this IFinalizedCompositeStateBuilder builder, Action<IStateActionContext> stateAction)
-            => builder.AddOnFinalize(stateAction
+        /// <summary>
+        /// Adds synchronous finalization handler to current composite state.<br/>
+        /// Use the following pattern to implement handler:
+        /// <code>c => {
+        ///     // handler logic here; action context is available via c parameter
+        /// }</code>
+        /// </summary>
+        /// <param name="action">Synchronous action handler</param>
+        [DebuggerHidden]
+        public static IFinalizedCompositeStateBuilder AddOnFinalize(this IFinalizedCompositeStateBuilder builder, Action<IStateActionContext> action)
+            => builder.AddOnFinalize(action
                 .AddStateMachineInvocationContext((builder as CompositeStateBuilder).Vertex.Graph)
                 .ToAsync()
             );
 
-        public static IFinalizedCompositeStateBuilder AddOnEntry(this IFinalizedCompositeStateBuilder builder, Action<IStateActionContext> stateAction)
-            => builder.AddOnEntry(stateAction
+        /// <summary>
+        /// Adds synchronous entry handler to current composite state.<br/>
+        /// Use the following pattern to implement handler:
+        /// <code>c => {
+        ///     // handler logic here; action context is available via c parameter
+        /// }</code>
+        /// </summary>
+        /// <param name="action">Synchronous action handler</param>
+        [DebuggerHidden]
+        public static IFinalizedCompositeStateBuilder AddOnEntry(this IFinalizedCompositeStateBuilder builder, Action<IStateActionContext> action)
+            => builder.AddOnEntry(action
                 .AddStateMachineInvocationContext((builder as CompositeStateBuilder).Vertex.Graph)
                 .ToAsync()
             );
 
-        public static IFinalizedCompositeStateBuilder AddOnExit(this IFinalizedCompositeStateBuilder builder, Action<IStateActionContext> stateAction)
-            => builder.AddOnExit(stateAction
+        /// <summary>
+        /// Adds synchronous exit handler to current composite state.<br/>
+        /// Use the following pattern to implement handler:
+        /// <code>c => {
+        ///     // handler logic here; action context is available via c parameter
+        /// }</code>
+        /// </summary>
+        /// <param name="action">Synchronous action handler</param>
+        [DebuggerHidden]
+        public static IFinalizedCompositeStateBuilder AddOnExit(this IFinalizedCompositeStateBuilder builder, Action<IStateActionContext> action)
+            => builder.AddOnExit(action
                 .AddStateMachineInvocationContext((builder as CompositeStateBuilder).Vertex.Graph)
                 .ToAsync()
             );

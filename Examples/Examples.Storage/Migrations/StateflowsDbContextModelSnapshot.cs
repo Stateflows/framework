@@ -44,6 +44,9 @@ namespace Examples.Storage.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<bool>("TriggerOnStartup")
+                        .HasColumnType("bit");
+
                     b.Property<DateTime?>("TriggerTime")
                         .HasColumnType("datetime2");
 
@@ -54,36 +57,11 @@ namespace Examples.Storage.Migrations
                     b.HasIndex("BehaviorId")
                         .IsUnique();
 
+                    b.HasIndex("TriggerOnStartup");
+
                     b.HasIndex("TriggerTime");
 
                     b.ToTable("StateflowsContexts_v1");
-                });
-
-            modelBuilder.Entity("Stateflows.Storage.EntityFrameworkCore.EntityFrameworkCore.Entities.Trace_v1", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("BehaviorId")
-                        .IsRequired()
-                        .HasMaxLength(1024)
-                        .HasColumnType("nvarchar(1024)");
-
-                    b.Property<string>("Data")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<DateTime?>("ExecutionTime")
-                        .HasColumnType("datetime2");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("BehaviorId");
-
-                    b.ToTable("StateflowsTraces_v1");
                 });
 #pragma warning restore 612, 618
         }

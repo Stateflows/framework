@@ -2,6 +2,6 @@
 
 namespace Stateflows.Activities.Registration.Interfaces
 {
-    public interface IDataStoreBuilder : IObjectFlow<IDataStoreBuilder>
+    public interface IDataStoreBuilder : IObjectFlowBase<IDataStoreBuilder>
     { }
 }

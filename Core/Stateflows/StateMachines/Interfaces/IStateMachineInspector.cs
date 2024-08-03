@@ -8,7 +8,7 @@ namespace Stateflows.StateMachines
     public interface IStateMachineInspector
     {
         Task BeforeStateMachineInitializeAsync(IStateMachineInitializationInspectionContext context);
-        Task AfterStateMachineInitializeAsync(IStateMachineInitializationInspectionContext context);
+        Task AfterStateMachineInitializeAsync(IStateMachineInitializationInspectionContext context, bool initialized);
         Task BeforeStateMachineFinalizeAsync(IStateMachineActionInspectionContext context);
         Task AfterStateMachineFinalizeAsync(IStateMachineActionInspectionContext context);
         Task BeforeStateInitializeAsync(IStateActionInspectionContext context);

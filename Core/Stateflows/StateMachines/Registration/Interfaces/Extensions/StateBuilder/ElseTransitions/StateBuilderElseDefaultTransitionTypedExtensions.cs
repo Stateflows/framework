@@ -1,21 +1,70 @@
-﻿using Stateflows.StateMachines.Events;
+﻿using System.Diagnostics;
+using Stateflows.Common.Extensions;
+using Stateflows.StateMachines.Extensions;
 using Stateflows.StateMachines.Registration.Interfaces;
+using Stateflows.StateMachines.Registration.Interfaces.Internal;
 
 namespace Stateflows.StateMachines.Typed
 {
     public static class StateBuilderElseDefaultTransitionTypedExtensions
     {
+        /// <summary>
+        /// Adds else alternative for all default transitions coming from current state.<br/><br/>
+        /// <a href="https://www.stateflows.net/documentation/definition#transition">Default transitions</a> are triggered automatically after every State Machine execution and are changing its state.
+        /// </summary>
+        /// <typeparam name="TElseTransition">Transition class; must implement <see cref="IDefaultTransitionEffect"/> interface</typeparam>
+        /// <typeparam name="TTargetState">Target state class; must implement at least one of the following interfaces:
+        /// <list type="bullet">
+        /// <item><see cref="IStateEntry"/></item>
+        /// <item><see cref="IStateExit"/></item>
+        /// <item><see cref="ICompositeStateEntry"/></item>
+        /// <item><see cref="ICompositeStateExit"/></item>
+        /// <item><see cref="ICompositeStateInitialization"/></item>
+        /// <item><see cref="ICompositeStateFinalization"/></item>
+        /// </list>
+        /// </typeparam>
+        [DebuggerHidden]
         public static IStateBuilder AddElseDefaultTransition<TElseTransition, TTargetState>(this IStateBuilder builder)
-            where TElseTransition : ElseTransition<CompletionEvent>
-            where TTargetState : BaseState
-            => builder.AddElseDefaultTransition<TElseTransition>(StateInfo<TTargetState>.Name);
+            where TElseTransition : class, IDefaultTransitionEffect
+            where TTargetState : class, IVertex
+            => builder.AddElseDefaultTransition<TElseTransition>(State<TTargetState>.Name);
 
-        public static IStateBuilder AddElseDefaultTransition<TElseTransition>(this IStateBuilder builder, string targetVertexName)
-            where TElseTransition : ElseTransition<CompletionEvent>
-            => builder.AddElseTransition<CompletionEvent, TElseTransition>(targetVertexName);
+        /// <summary>
+        /// Adds else alternative for all default transitions coming from current state.<br/><br/>
+        /// <a href="https://www.stateflows.net/documentation/definition#transition">Default transitions</a> are triggered automatically after every State Machine execution and are changing its state.
+        /// </summary>
+        /// <typeparam name="TElseTransition">Transition class; must implement <see cref="IDefaultTransitionEffect"/> interface</typeparam>
+        /// <param name="targetStateName">Target state name</param>
+        [DebuggerHidden]
+        public static IStateBuilder AddElseDefaultTransition<TElseTransition>(this IStateBuilder builder, string targetStateName)
+            where TElseTransition : class, IDefaultTransitionEffect
+        {
+            (builder as IInternal).Services.AddServiceType<TElseTransition>();
 
+            return builder.AddElseDefaultTransition(
+            targetStateName,
+                t => t.AddElseDefaultTransitionEvents<TElseTransition>()
+            );
+        }
+
+        /// <summary>
+        /// Adds else alternative for all default transitions coming from current state.<br/><br/>
+        /// <a href="https://www.stateflows.net/documentation/definition#transition">Default transitions</a> are triggered automatically after every State Machine execution and are changing its state.
+        /// </summary>
+        /// <typeparam name="TTargetState">Target state class; must implement at least one of the following interfaces:
+        /// <list type="bullet">
+        /// <item><see cref="IStateEntry"/></item>
+        /// <item><see cref="IStateExit"/></item>
+        /// <item><see cref="ICompositeStateEntry"/></item>
+        /// <item><see cref="ICompositeStateExit"/></item>
+        /// <item><see cref="ICompositeStateInitialization"/></item>
+        /// <item><see cref="ICompositeStateFinalization"/></item>
+        /// </list>
+        /// </typeparam>
+        /// <param name="transitionBuildAction">Transition build action</param>
+        [DebuggerHidden]
         public static IStateBuilder AddElseDefaultTransition<TTargetState>(this IStateBuilder builder, ElseDefaultTransitionBuildAction transitionBuildAction = null)
-            where TTargetState : BaseState
-            => builder.AddElseDefaultTransition(StateInfo<TTargetState>.Name, transitionBuildAction);
+            where TTargetState : class, IVertex
+            => builder.AddElseDefaultTransition(State<TTargetState>.Name, transitionBuildAction);
     }
 }

@@ -1,33 +1,28 @@
-﻿using Stateflows.Common;
-using Stateflows.StateMachines.Extensions;
+﻿using System.Diagnostics;
+using Stateflows.Common;
 using Stateflows.StateMachines.Registration.Interfaces;
-using Stateflows.StateMachines.Registration.Interfaces.Internal;
 
 namespace Stateflows.StateMachines.Typed
 {
     public static class TypedFinalizedCompositeStateBuilderElseTransitionTypedExtensions
     {
+        [DebuggerHidden]
         public static ITypedFinalizedCompositeStateBuilder AddElseTransition<TEvent, TElseTransition, TTargetState>(this ITypedFinalizedCompositeStateBuilder builder)
             where TEvent : Event, new()
-            where TElseTransition : ElseTransition<TEvent>
-            where TTargetState : BaseState
-            => AddElseTransition<TEvent, TElseTransition>(builder, StateInfo<TTargetState>.Name);
+            where TElseTransition : class, ITransitionEffect<TEvent>
+            where TTargetState : class, IVertex
+            => AddElseTransition<TEvent, TElseTransition>(builder, State<TTargetState>.Name);
 
-        public static ITypedFinalizedCompositeStateBuilder AddElseTransition<TEvent, TElseTransition>(this ITypedFinalizedCompositeStateBuilder builder, string targetVertexName)
+        [DebuggerHidden]
+        public static ITypedFinalizedCompositeStateBuilder AddElseTransition<TEvent, TElseTransition>(this ITypedFinalizedCompositeStateBuilder builder, string targetStateName)
             where TEvent : Event, new()
-            where TElseTransition : ElseTransition<TEvent>
-        {
-            (builder as IInternal).Services.RegisterElseTransition<TElseTransition, TEvent>();
+            where TElseTransition : class, ITransitionEffect<TEvent>
+            => (builder as IStateBuilder).AddElseTransition<TEvent, TElseTransition>(targetStateName) as ITypedFinalizedCompositeStateBuilder;
 
-            return builder.AddElseTransition<TEvent>(
-                targetVertexName,
-                t => t.AddElseTransitionEvents<TElseTransition, TEvent>()
-            );
-        }
-
+        [DebuggerHidden]
         public static ITypedFinalizedCompositeStateBuilder AddElseTransition<TEvent, TTargetState>(this ITypedFinalizedCompositeStateBuilder builder, ElseTransitionBuildAction<TEvent> transitionBuildAction = null)
             where TEvent : Event, new()
-            where TTargetState : BaseState
-            => builder.AddElseTransition(StateInfo<TTargetState>.Name, transitionBuildAction);
+            where TTargetState : class, IVertex
+            => builder.AddElseTransition(State<TTargetState>.Name, transitionBuildAction);
     }
 }

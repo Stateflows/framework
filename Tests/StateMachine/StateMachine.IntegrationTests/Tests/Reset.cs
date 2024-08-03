@@ -23,6 +23,7 @@ namespace StateMachine.IntegrationTests.Tests
             builder
                 .AddStateMachines(b => b
                     .AddStateMachine("reset", b => b
+                        .AddInitializer<SomeEvent>(async c => true)
                         .AddInitialState("state1", b => b
                             .AddOnEntry(c => StateEntered = true)
                         )
@@ -40,7 +41,7 @@ namespace StateMachine.IntegrationTests.Tests
 
             if (StateMachineLocator.TryLocateStateMachine(new StateMachineId("reset", "x"), out var sm))
             {
-                await sm.InitializeAsync();
+                await sm.SendAsync(new SomeEvent());
 
                 currentState1 = (await sm.GetCurrentStateAsync()).Response;
 

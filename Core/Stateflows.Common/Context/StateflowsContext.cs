@@ -1,14 +1,32 @@
 ﻿using System;
 using System.Linq;
 using System.Collections.Generic;
+using Newtonsoft.Json;
 
 namespace Stateflows.Common.Context
 {
     public class StateflowsContext
     {
+        public StateflowsContext()
+        {
+            Stored = true;
+        }
+
+        public StateflowsContext(BehaviorId id)
+        {
+            Id = id;
+            Stored = false;
+        }
+
         public BehaviorId Id { get; set; }
 
         public int Version { get; set; } = 0;
+
+        [JsonIgnore]
+        public bool Deleted { get; set; }
+
+        [JsonIgnore]
+        public bool Stored { get; set; }
 
         public BehaviorStatus Status { get; set; } = BehaviorStatus.Unknown;
 
@@ -16,10 +34,17 @@ namespace Stateflows.Common.Context
 
         public DateTime? TriggerTime { get; set; }
 
+        public bool TriggerOnStartup { get; set; }
+
         public bool ShouldSerializePendingTimeEvents()
             => PendingTimeEvents.Any();
 
         public Dictionary<Guid, TimeEvent> PendingTimeEvents { get; set; } = new Dictionary<Guid, TimeEvent>();
+
+        public bool ShouldSerializePendingStartupEvents()
+            => PendingStartupEvents.Any();
+
+        public Dictionary<Guid, Startup> PendingStartupEvents { get; set; } = new Dictionary<Guid, Startup>();
 
         public Dictionary<BehaviorId, List<string>> Subscriptions { get; set; } = new Dictionary<BehaviorId, List<string>>();
 

@@ -21,7 +21,7 @@ namespace Stateflows.StateMachines.Context.Classes
 
         public StateMachineContext(RootContext context) : base(context)
         {
-            Values = new ContextValues(Context.GlobalValues);
+            Values = new ContextValuesCollection(Context.GlobalValues);
         }
 
         public IStateMachineInspection Inspection => Context.Executor.Inspector.Inspection;

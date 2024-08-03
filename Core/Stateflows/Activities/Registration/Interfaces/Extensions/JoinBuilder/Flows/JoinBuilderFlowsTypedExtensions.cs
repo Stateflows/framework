@@ -1,42 +1,49 @@
-﻿using Stateflows.Activities.Extensions;
+﻿using System.Diagnostics;
+using Stateflows.Common.Extensions;
+using Stateflows.Activities.Extensions;
 using Stateflows.Activities.Registration.Interfaces;
 
 namespace Stateflows.Activities.Typed
 {
     public static class JoinBuilderFlowsTypedExtensions
     {
+        [DebuggerHidden]
         public static void AddFlow<TToken, TTargetNode>(this IJoinBuilder builder, ObjectFlowBuildAction<TToken> buildAction = null)
-            where TTargetNode : ActivityNode
-            => builder.AddFlow<TToken>(ActivityNodeInfo<TTargetNode>.Name, buildAction);
+            where TTargetNode : class, IActivityNode
+            => builder.AddFlow<TToken>(ActivityNode<TTargetNode>.Name, buildAction);
 
+        [DebuggerHidden]
         public static void AddFlow<TToken, TFlow>(this IJoinBuilder builder, string targetNodeName)
-            where TFlow : Flow<TToken>
+            where TFlow : class, IBaseFlow<TToken>
         {
-            (builder as IInternal).Services.RegisterObjectFlow<TFlow, TToken>();
+            (builder as IInternal).Services.AddServiceType<TFlow>();
             builder.AddFlow<TToken>(
                 targetNodeName,
                 b => b.AddObjectFlowEvents<TFlow, TToken>()
             );
         }
 
+        [DebuggerHidden]
         public static void AddFlow<TToken, TFlow, TTargetNode>(this IJoinBuilder builder)
-            where TFlow : Flow<TToken>
-            where TTargetNode : ActivityNode
-            => builder.AddFlow<TToken, TFlow>(ActivityNodeInfo<TTargetNode>.Name);
+            where TFlow : class, IBaseFlow<TToken>
+            where TTargetNode : class, IActivityNode
+            => builder.AddFlow<TToken, TFlow>(ActivityNode<TTargetNode>.Name);
 
-        public static void AddFlow<TToken, TTransformedToken, TObjectTransformationFlow>(this IJoinBuilder builder, string targetNodeName)
-            where TObjectTransformationFlow : TransformationFlow<TToken, TTransformedToken>
+        [DebuggerHidden]
+        public static void AddFlow<TToken, TTransformedToken, TTransformationFlow>(this IJoinBuilder builder, string targetNodeName)
+            where TTransformationFlow : class, IFlowTransformation<TToken, TTransformedToken>
         {
-            (builder as IInternal).Services.RegisterTransformationFlow<TObjectTransformationFlow, TToken, TTransformedToken>();
+            (builder as IInternal).Services.AddServiceType<TTransformationFlow>();
             builder.AddFlow<TToken>(
                 targetNodeName,
-                b => b.AddTransformationFlowEvents<TObjectTransformationFlow, TToken, TTransformedToken>()
+                b => b.AddObjectTransformationFlowEvents<TTransformationFlow, TToken, TTransformedToken>()
             );
         }
 
-        public static void AddFlow<TToken, TTransformedToken, TObjectTransformationFlow, TTargetNode>(this IJoinBuilder builder)
-            where TObjectTransformationFlow : TransformationFlow<TToken, TTransformedToken>
-            where TTargetNode : ActivityNode
-            => builder.AddFlow<TToken, TTransformedToken, TObjectTransformationFlow>(ActivityNodeInfo<TTargetNode>.Name);
+        [DebuggerHidden]
+        public static void AddFlow<TToken, TTransformedToken, TTransformationFlow, TTargetNode>(this IJoinBuilder builder)
+            where TTransformationFlow : class, IFlowTransformation<TToken, TTransformedToken>
+            where TTargetNode : class, IActivityNode
+            => builder.AddFlow<TToken, TTransformedToken, TTransformationFlow>(ActivityNode<TTargetNode>.Name);
     }
 }

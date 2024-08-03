@@ -9,7 +9,7 @@ namespace Stateflows.StateMachines
         Task BeforeStateMachineInitializeAsync(IStateMachineInitializationContext context)
             => Task.CompletedTask;
 
-        Task AfterStateMachineInitializeAsync(IStateMachineInitializationContext context)
+        Task AfterStateMachineInitializeAsync(IStateMachineInitializationContext context, bool initialized)
             => Task.CompletedTask;
 
         Task BeforeStateMachineFinalizeAsync(IStateMachineActionContext context)

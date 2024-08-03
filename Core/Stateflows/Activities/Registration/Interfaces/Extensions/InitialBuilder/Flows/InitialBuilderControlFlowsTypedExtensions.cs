@@ -1,18 +1,22 @@
-﻿using Stateflows.Activities.Extensions;
+﻿using System.Diagnostics;
+using Stateflows.Common.Extensions;
+using Stateflows.Activities.Extensions;
 using Stateflows.Activities.Registration.Interfaces;
 
 namespace Stateflows.Activities.Typed
 {
     public static class InitialBuilderControlFlowsTypedExtensions
     {
+        [DebuggerHidden]
         public static IInitialBuilder AddControlFlow<TTargetNode>(this IInitialBuilder builder, ControlFlowBuildAction buildAction = null)
-            where TTargetNode : ActivityNode
-            => builder.AddControlFlow(ActivityNodeInfo<TTargetNode>.Name, buildAction);
+            where TTargetNode : class, IActivityNode
+            => builder.AddControlFlow(ActivityNode<TTargetNode>.Name, buildAction);
 
+        [DebuggerHidden]
         public static IInitialBuilder AddControlFlow<TControlFlow>(this IInitialBuilder builder, string targetNodeName)
-            where TControlFlow : ControlFlow
+            where TControlFlow : class, IBaseControlFlow
         {
-            (builder as IInternal).Services.RegisterControlFlow<TControlFlow>();
+            (builder as IInternal).Services.AddServiceType<TControlFlow>();
             
             return builder.AddControlFlow(
                 targetNodeName,
@@ -20,9 +24,10 @@ namespace Stateflows.Activities.Typed
             );
         }
 
+        [DebuggerHidden]
         public static IInitialBuilder AddControlFlow<TFlow, TTargetNode>(this IInitialBuilder builder)
-            where TFlow : ControlFlow
-            where TTargetNode : ActivityNode
-            => AddControlFlow<TFlow>(builder, ActivityNodeInfo<TTargetNode>.Name);
+            where TFlow : class, IBaseControlFlow
+            where TTargetNode : class, IActivityNode
+            => AddControlFlow<TFlow>(builder, ActivityNode<TTargetNode>.Name);
     }
 }

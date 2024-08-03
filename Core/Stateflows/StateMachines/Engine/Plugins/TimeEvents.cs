@@ -15,6 +15,8 @@ namespace Stateflows.StateMachines.Engine
 
         private readonly List<Guid> TimeEventIdsToClear = new List<Guid>();
 
+        private readonly List<Guid> StartupEventIdsToClear = new List<Guid>();
+
         private Edge ConsumedInTransition { get; set; }
 
         private RootContext Context { get; set; }
@@ -31,13 +33,17 @@ namespace Stateflows.StateMachines.Engine
         {
             var vertex = (context as StateActionContext).Vertex;
             var stateValues = Context.GetStateValues(vertex.Name);
+
             var timeEventIds = stateValues.TimeEventIds.Values.ToArray();
             TimeEventIdsToClear.AddRange(timeEventIds);
+
+            var startupEventIds = stateValues.StartupEventIds.Values.ToArray();
+            StartupEventIdsToClear.AddRange(startupEventIds);
 
             return Task.CompletedTask;
         }
 
-        public Task<bool> BeforeProcessEventAsync(IEventContext<Event> context)
+        public Task<bool> BeforeProcessEventAsync(IEventActionContext<Event> context)
         {
             var result = true;
 
@@ -56,9 +62,10 @@ namespace Stateflows.StateMachines.Engine
             return Task.FromResult(result);
         }
 
-        public Task AfterProcessEventAsync(IEventContext<Event> context)
+        public Task AfterProcessEventAsync(IEventActionContext<Event> context)
         {
             ClearTimeEvents(TimeEventIdsToClear);
+            ClearStartupEvents(StartupEventIdsToClear);
 
             if (
                 ConsumedInTransition != null && 
@@ -78,6 +85,7 @@ namespace Stateflows.StateMachines.Engine
                 .ToArray();
 
             RegisterTimeEvents(enteredStack);
+            RegisterStartupEvents(enteredStack);
 
             if (
                 context.Event.GetType().IsSubclassOf(typeof(RecurringEvent)) &&
@@ -101,6 +109,8 @@ namespace Stateflows.StateMachines.Engine
                 Context.Context.TriggerTime = null;
             }
 
+            Context.Context.TriggerOnStartup = Context.Context.PendingStartupEvents.Any();
+
             return Task.CompletedTask;
         }
 
@@ -119,6 +129,58 @@ namespace Stateflows.StateMachines.Engine
 
         public Task BeforeDehydrateAsync(IStateMachineActionContext context)
             => Task.CompletedTask;
+
+        private void RegisterStartupEvent(Edge edge)
+        {
+            var startupEventIds = Context.GetStateValues(edge.Source.Name).StartupEventIds;
+            if (startupEventIds.ContainsKey(edge.Identifier))
+            {
+                return;
+            }
+
+            var startupEvent = Activator.CreateInstance(edge.TriggerType) as Startup;
+            startupEvent.ConsumerSignature = edge.Identifier;
+            Context.Context.PendingStartupEvents.Add(startupEvent.Id, startupEvent);
+            startupEventIds.Add(edge.Identifier, startupEvent.Id);
+        }
+
+        private void RegisterStartupEvents(IEnumerable<Edge> edges)
+        {
+            foreach (var edge in edges)
+            {
+                RegisterStartupEvent(edge);
+            }
+        }
+
+        private void RegisterStartupEvents(IEnumerable<Vertex> vertices)
+        {
+            foreach (var currentVertex in vertices)
+            {
+                var timeEventIds = Context.GetStateValues(currentVertex.Name).StartupEventIds;
+
+                var edges = currentVertex.Edges.Values
+                    .Where(edge =>
+                        !edge.IsElse &&
+                        edge.TriggerType == typeof(Startup) &&
+                        !timeEventIds.ContainsKey(edge.Identifier)
+                    )
+                    .Distinct(this)
+                    .ToArray();
+
+                RegisterStartupEvents(edges);
+            }
+        }
+
+        private void ClearStartupEvents(IEnumerable<Guid> startupEventIds)
+        {
+            foreach (var startupEventId in startupEventIds)
+            {
+                ClearStartupEvent(startupEventId);
+            }
+        }
+
+        private void ClearStartupEvent(Guid startupEventId)
+            => Context.Context.PendingStartupEvents.Remove(startupEventId);
 
         private void RegisterTimeEvent(Edge edge)
         {

@@ -88,8 +88,6 @@ namespace StateMachine.IntegrationTests.Tests
 
             if (StateMachineLocator.TryLocateStateMachine(new StateMachineId("simple", "x"), out var sm))
             {
-                await sm.InitializeAsync();
-
                 status = (await sm.SendAsync(new SomeEvent())).Status;
 
                 currentState = (await sm.GetCurrentStateAsync()).Response.StatesStack.First();
@@ -110,14 +108,31 @@ namespace StateMachine.IntegrationTests.Tests
 
             if (StateMachineLocator.TryLocateStateMachine(new StateMachineId("guarded", "x"), out var sm))
             {
-                await sm.InitializeAsync();
-
                 status = (await sm.SendAsync(new OtherEvent() { AnswerToLifeUniverseAndEverything = 43 })).Status;
 
                 currentState = (await sm.GetCurrentStateAsync()).Response.StatesStack.First();
             }
 
             Assert.AreEqual(EventStatus.NotConsumed, status);
+            Assert.IsNull(StateExited);
+            Assert.IsNull(StateEntered);
+            Assert.AreNotEqual("state2", currentState);
+        }
+
+        [TestMethod]
+        public async Task GuardedTransitionInvalid()
+        {
+            var status = EventStatus.Rejected;
+            string currentState = "state1";
+
+            if (StateMachineLocator.TryLocateStateMachine(new StateMachineId("guarded", "x"), out var sm))
+            {
+                status = (await sm.SendAsync(new OtherEvent() { AnswerToLifeUniverseAndEverything = 42, RequiredParameter = string.Empty })).Status;
+
+                currentState = (await sm.GetCurrentStateAsync()).Response.StatesStack.First();
+            }
+
+            Assert.AreEqual(EventStatus.Invalid, status);
             Assert.IsNull(StateExited);
             Assert.IsNull(StateEntered);
             Assert.AreNotEqual("state2", currentState);
@@ -131,8 +146,6 @@ namespace StateMachine.IntegrationTests.Tests
 
             if (StateMachineLocator.TryLocateStateMachine(new StateMachineId("default", "x"), out var sm))
             {
-                await sm.InitializeAsync();
-
                 status = (await sm.SendAsync(new SomeEvent())).Status;
 
                 currentState = (await sm.GetCurrentStateAsync()).Response.StatesStack.First();
@@ -150,8 +163,6 @@ namespace StateMachine.IntegrationTests.Tests
 
             if (StateMachineLocator.TryLocateStateMachine(new StateMachineId("internal", "x"), out var sm))
             {
-                await sm.InitializeAsync();
-
                 status = (await sm.SendAsync(new SomeEvent())).Status;
 
                 var stack = (await sm.GetCurrentStateAsync()).Response.StatesStack;
@@ -176,8 +187,6 @@ namespace StateMachine.IntegrationTests.Tests
 
             if (StateMachineLocator.TryLocateStateMachine(new StateMachineId("self", "x"), out var sm))
             {
-                await sm.InitializeAsync();
-
                 status = (await sm.SendAsync(new SomeEvent())).Status;
 
                 currentState = (await sm.GetCurrentStateAsync()).Response.StatesStack.First();

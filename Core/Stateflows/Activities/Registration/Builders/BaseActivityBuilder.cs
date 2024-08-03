@@ -36,7 +36,8 @@ namespace Stateflows.Activities.Registration
                 nodeName = $"{Node.Name}.{nodeName}";
             }
 
-            var namedNodeTypes = new NodeType[] {
+            var namedNodeTypes = new NodeType[]
+            {
                 NodeType.Action,
                 NodeType.Join,
                 NodeType.Merge,
@@ -47,9 +48,16 @@ namespace Stateflows.Activities.Registration
                 NodeType.ParallelActivity,
                 NodeType.IterativeActivity,
                 NodeType.AcceptEventAction,
+                NodeType.TimeEventAction,
                 NodeType.Output,
                 NodeType.Final,
                 NodeType.DataStore
+            };
+
+            var interactiveNodeTypes = new NodeType[]
+            {
+                NodeType.AcceptEventAction,
+                NodeType.TimeEventAction
             };
 
             if (namedNodeTypes.Contains(type))
@@ -63,6 +71,11 @@ namespace Stateflows.Activities.Registration
                 {
                     throw new NodeDefinitionException(nodeName, $"Node '{nodeName}' is already registered");
                 }
+            }
+
+            if (interactiveNodeTypes.Contains(type))
+            {
+                Result.Interactive = true;
             }
 
             var node = new Node()
@@ -85,7 +98,7 @@ namespace Stateflows.Activities.Registration
                 node.ExceptionType = exceptionOrEventType;
             }
 
-            if (type == NodeType.AcceptEventAction)
+            if (interactiveNodeTypes.Contains(type))
             {
                 if (exceptionOrEventType is null)
                 {
@@ -110,7 +123,7 @@ namespace Stateflows.Activities.Registration
 
                     if (!(c as BaseContext).Context.Executor.StructuralTypes.Contains(node.Type))
                     {
-                        c.Output(new Control());
+                        c.Output(new ControlToken());
                     }
                 }
                 catch (Exception e)
@@ -168,6 +181,20 @@ namespace Stateflows.Activities.Registration
                 c => actionAsync(new AcceptEventActionContext<TEvent>(c as ActionContext)),
                 b => buildAction?.Invoke(b),
                 typeof(TEvent)
+            );
+
+        public BaseActivityBuilder AddTimeEventAction<TTimeEvent>(
+            string actionNodeName,
+            TimeEventActionDelegateAsync actionAsync,
+            AcceptEventActionBuildAction buildAction = null
+        )
+            where TTimeEvent : TimeEvent, new()
+            => AddNode(
+                NodeType.TimeEventAction,
+                actionNodeName,
+                c => actionAsync(new AcceptEventActionContext<TTimeEvent>(c as ActionContext)),
+                b => buildAction?.Invoke(b),
+                typeof(TTimeEvent)
             );
 
         public BaseActivityBuilder AddInitial(InitialBuildAction buildAction)

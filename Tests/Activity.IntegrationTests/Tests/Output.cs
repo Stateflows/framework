@@ -57,7 +57,6 @@ namespace Activity.IntegrationTests.Tests
         {
             if (ActivityLocator.TryLocateActivity(new ActivityId("structured", "x"), out var a))
             {
-                await a.InitializeAsync();
                 await a.SendAsync(new SomeEvent());
             }
 

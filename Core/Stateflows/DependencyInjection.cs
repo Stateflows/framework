@@ -10,14 +10,10 @@ using Stateflows.Common.Scheduler;
 using Stateflows.Common.Extensions;
 using Stateflows.Common.Interfaces;
 using Stateflows.Common.Initializer;
+using Stateflows.Common.Subscription;
 using Stateflows.Common.Registration.Builders;
 using Stateflows.Common.Registration.Interfaces;
-using Stateflows.System;
-using Stateflows.Activities;
-using ActivityTracer = Stateflows.Activities.Engine.Tracer;
-using StateMachineTracer = Stateflows.StateMachines.Engine.Tracer;
 using Stateflows.StateMachines;
-using Stateflows.Common.Subscription;
 
 namespace Stateflows
 {
@@ -28,7 +24,6 @@ namespace Stateflows
             if (!stateflowsBuilder.ServiceCollection.Any(x => x.ServiceType == typeof(StateflowsEngine)))
             {
                 stateflowsBuilder
-                    .EnsureSystemServices()
                     .ServiceCollection
                     .AddSingleton<StateflowsEngine>()
                     .AddHostedService(provider => provider.GetService<StateflowsEngine>())
@@ -38,6 +33,7 @@ namespace Stateflows
                     .AddHostedService<ThreadScheduler>()
                     .AddHostedService<ThreadInitializer>()
                     .AddTransient<ScheduleExecutor>()
+                    .AddTransient<StartupExecutor>()
                     .AddSingleton<ITenantAccessor, TenantAccessor>()
                     .AddScoped<CommonInterceptor>()
                     .AddScoped<IStateflowsTenantExecutor, TenantExecutor>()
@@ -82,13 +78,6 @@ namespace Stateflows
             return stateflowsBuilder;
         }
 
-        public static IStateflowsBuilder AddAutoInitialization(this IStateflowsBuilder stateflowsBuilder, BehaviorClass behaviorClass, AutoInitializationRequestFactoryAsync initializationRequestFactoryAsync = null)
-        {
-            BehaviorClassesInitializations.Instance.AddAutoInitialization(behaviorClass, initializationRequestFactoryAsync);
-
-            return stateflowsBuilder;
-        }
-
         public static IStateflowsBuilder AddInterceptor<TInterceptor>(this IStateflowsBuilder stateflowsBuilder)
             where TInterceptor : class, IBehaviorInterceptor
         {
@@ -115,16 +104,6 @@ namespace Stateflows
         public static IStateflowsBuilder AddClientInterceptor(this IStateflowsBuilder stateflowsBuilder, ClientInterceptorFactory clientInterceptorFactory)
         {
             stateflowsBuilder.ServiceCollection.AddScoped(s => clientInterceptorFactory(s));
-
-            return stateflowsBuilder;
-        }
-
-        public static IStateflowsBuilder AddTracing(this IStateflowsBuilder stateflowsBuilder)
-        {
-            stateflowsBuilder.ServiceCollection
-                //.AddScoped<IActivityPlugin, ActivityTracer>()
-                .AddScoped<IStateMachinePlugin, StateMachineTracer>()
-                ;
 
             return stateflowsBuilder;
         }

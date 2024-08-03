@@ -1,18 +1,22 @@
-﻿using Stateflows.Activities.Extensions;
+﻿using System.Diagnostics;
+using Stateflows.Common.Extensions;
+using Stateflows.Activities.Extensions;
 using Stateflows.Activities.Registration.Interfaces;
 
 namespace Stateflows.Activities.Typed
 {
     public static class MergeBuilderControlFlowsTypedExtensions
     {
+        [DebuggerHidden]
         public static void AddControlFlow<TTargetNode>(this IMergeBuilder builder, ControlFlowBuildAction buildAction = null)
-            where TTargetNode : ActivityNode
-            => builder.AddControlFlow(ActivityNodeInfo<TTargetNode>.Name, buildAction);
+            where TTargetNode : class, IActivityNode
+            => builder.AddControlFlow(ActivityNode<TTargetNode>.Name, buildAction);
 
+        [DebuggerHidden]
         public static void AddControlFlow<TControlFlow>(this IMergeBuilder builder, string targetNodeName)
-            where TControlFlow : ControlFlow
+            where TControlFlow : class, IBaseControlFlow
         {
-            (builder as IInternal).Services.RegisterControlFlow<TControlFlow>();
+            (builder as IInternal).Services.AddServiceType<TControlFlow>();
 
             builder.AddControlFlow(
                 targetNodeName,
@@ -20,9 +24,10 @@ namespace Stateflows.Activities.Typed
             );
         }
 
+        [DebuggerHidden]
         public static void AddControlFlow<TFlow, TTargetNode>(this IMergeBuilder builder)
-            where TFlow : ControlFlow
-            where TTargetNode : ActivityNode
-            => builder.AddControlFlow<TFlow>(ActivityNodeInfo<TTargetNode>.Name);
+            where TFlow : class, IBaseControlFlow
+            where TTargetNode : class, IActivityNode
+            => builder.AddControlFlow<TFlow>(ActivityNode<TTargetNode>.Name);
     }
 }

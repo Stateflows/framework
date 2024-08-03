@@ -5,7 +5,7 @@ namespace Stateflows.Activities
 {
     public static class IBehaviorLocatorActivityExtensions
     {
-        public static bool TryLocateActivity(this IBehaviorLocator locator, ActivityId id, out IActivity activity)
+        public static bool TryLocateActivity(this IBehaviorLocator locator, ActivityId id, out IActivityBehavior activity)
             => (
                 activity = locator.TryLocateBehavior(id.BehaviorId, out var behavior)
                     ? new ActivityWrapper(behavior)

@@ -62,7 +62,7 @@ namespace Stateflows.StateMachines
             return builder;
         }
 
-        public static IStateBuilder AddHttpPostTransition<TRequestPayload>(this IStateBuilder builder, string pattern, string targetVertexName, TransitionBuildAction<HttpRequest<TRequestPayload>>? transitionbuildAction = null, Action<IEndpointConventionBuilder>? endpointbuildAction = null)
+        public static IStateBuilder AddHttpPostTransition<TRequestPayload>(this IStateBuilder builder, string pattern, string targetStateName, TransitionBuildAction<HttpRequest<TRequestPayload>>? transitionbuildAction = null, Action<IEndpointConventionBuilder>? endpointbuildAction = null)
         {
             if (builder is IBehaviorBuilder behaviorBuilder)
             {
@@ -82,7 +82,7 @@ namespace Stateflows.StateMachines
 
                 HttpEvent.UrlOverride = pattern;
                 HttpEvent.MethodOverride = "POST";
-                builder.AddTransition<HttpRequest<TRequestPayload>>(targetVertexName, transitionbuildAction);
+                builder.AddTransition<HttpRequest<TRequestPayload>>(targetStateName, transitionbuildAction);
                 HttpEvent.UrlOverride = null;
                 HttpEvent.MethodOverride = null;
 

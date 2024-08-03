@@ -50,7 +50,7 @@ namespace Stateflows.Testing.StateMachines.Sequence
             return Task.CompletedTask;
         }
 
-        Task IStateMachineObserver.AfterStateMachineInitializeAsync(IStateMachineInitializationContext context)
+        Task IStateMachineObserver.AfterStateMachineInitializeAsync(IStateMachineInitializationContext context, bool initialized)
         {
             SequenceBuilder.StateMachineInitialize();
 
@@ -75,46 +75,6 @@ namespace Stateflows.Testing.StateMachines.Sequence
         {
             SequenceBuilder.TransitionGuard(context.Event.Name, context.SourceState.Name, context.TargetState?.Name);
 
-            return Task.CompletedTask;
-        }
-
-        Task IStateMachineObserver.BeforeStateEntryAsync(IStateActionContext context)
-        {
-            return Task.CompletedTask;
-        }
-
-        Task IStateMachineObserver.BeforeStateExitAsync(IStateActionContext context)
-        {
-            return Task.CompletedTask;
-        }
-
-        Task IStateMachineObserver.BeforeStateInitializeAsync(IStateActionContext context)
-        {
-            return Task.CompletedTask;
-        }
-
-        Task IStateMachineObserver.BeforeStateFinalizeAsync(IStateActionContext context)
-        {
-            return Task.CompletedTask;
-        }
-
-        Task IStateMachineObserver.BeforeStateMachineInitializeAsync(IStateMachineInitializationContext context)
-        {
-            return Task.CompletedTask;
-        }
-
-        Task IStateMachineObserver.BeforeStateMachineFinalizeAsync(IStateMachineActionContext context)
-        {
-            return Task.CompletedTask;
-        }
-
-        Task IStateMachineObserver.BeforeTransitionEffectAsync(ITransitionContext<Event> context)
-        {
-            return Task.CompletedTask;
-        }
-
-        Task IStateMachineObserver.BeforeTransitionGuardAsync(IGuardContext<Event> context)
-        {
             return Task.CompletedTask;
         }
     }

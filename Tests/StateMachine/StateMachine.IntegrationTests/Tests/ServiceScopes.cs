@@ -17,7 +17,7 @@ namespace StateMachine.IntegrationTests.Tests
         public readonly string Value;
     }
 
-    public class ScopeState : State
+    public class ScopeState : IStateEntry, IStateExit
     {
         private readonly Service service;
         public ScopeState(Service service)
@@ -25,14 +25,14 @@ namespace StateMachine.IntegrationTests.Tests
             this.service = service;
         }
 
-        public override Task OnEntryAsync()
+        public Task OnEntryAsync()
         {
             ServiceScopes.EntryValue = service.Value;
 
             return Task.CompletedTask;
         }
 
-        public override Task OnExitAsync()
+        public Task OnExitAsync()
         {
             ServiceScopes.ExitValue = service.Value;
 
@@ -40,7 +40,7 @@ namespace StateMachine.IntegrationTests.Tests
         }
     }
 
-    public class Some : Transition<SomeEvent>
+    public class Some : ITransitionEffect<SomeEvent>
     {
         private readonly Service service;
         public Some(Service service)
@@ -48,7 +48,7 @@ namespace StateMachine.IntegrationTests.Tests
             this.service = service;
         }
 
-        public override Task EffectAsync()
+        public Task EffectAsync(SomeEvent @event)
         {
             ServiceScopes.SomeValue = service.Value;
 
@@ -56,7 +56,7 @@ namespace StateMachine.IntegrationTests.Tests
         }
     }
 
-    public class Other : Transition<OtherEvent>
+    public class Other : ITransitionEffect<OtherEvent>
     {
         private readonly Service service;
         public Other(Service service)
@@ -64,7 +64,7 @@ namespace StateMachine.IntegrationTests.Tests
             this.service = service;
         }
 
-        public override Task EffectAsync()
+        public Task EffectAsync(OtherEvent @event)
         {
             ServiceScopes.OtherValue = service.Value;
 
@@ -116,7 +116,6 @@ namespace StateMachine.IntegrationTests.Tests
         {
             if (StateMachineLocator.TryLocateStateMachine(new StateMachineId("compound", "x"), out var sm))
             {
-                await sm.InitializeAsync();
                 await sm.SendAsync(new CompoundRequest()
                 {
                     Events = new List<Event>()
@@ -135,7 +134,7 @@ namespace StateMachine.IntegrationTests.Tests
         {
             if (StateMachineLocator.TryLocateStateMachine(new StateMachineId("state", "x"), out var sm))
             {
-                await sm.InitializeAsync();
+                await sm.SendAsync(new Initialize());
             }
 
             Assert.AreNotEqual(ServiceScopes.SomeValue, ServiceScopes.OtherValue);

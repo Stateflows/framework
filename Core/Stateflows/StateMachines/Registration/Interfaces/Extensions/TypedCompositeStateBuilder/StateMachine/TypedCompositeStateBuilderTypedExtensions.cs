@@ -1,4 +1,5 @@
 ﻿using System.Diagnostics;
+using Stateflows.Common.Extensions;
 using Stateflows.StateMachines.Extensions;
 using Stateflows.StateMachines.Registration.Interfaces;
 using Stateflows.StateMachines.Registration.Interfaces.Internal;
@@ -10,14 +11,14 @@ namespace Stateflows.StateMachines.Typed
         #region AddInitialState
         [DebuggerHidden]
         public static ITypedInitializedCompositeStateBuilder AddInitialState<TState>(this ITypedCompositeStateBuilder builder, StateTransitionsBuildAction stateBuildAction = null)
-            where TState : State
-            => builder.AddInitialState<TState>(StateInfo<TState>.Name, stateBuildAction);
+            where TState : class, IBaseState
+            => builder.AddInitialState<TState>(State<TState>.Name, stateBuildAction);
 
         [DebuggerHidden]
         public static ITypedInitializedCompositeStateBuilder AddInitialState<TState>(this ITypedCompositeStateBuilder builder, string stateName, StateTransitionsBuildAction stateBuildAction = null)
-            where TState : State
+            where TState : class, IBaseState
         {
-            (builder as IInternal).Services.RegisterState<TState>();
+            (builder as IInternal).Services.AddServiceType<TState>();
 
             return builder.AddInitialState(
                 stateName,
@@ -34,14 +35,14 @@ namespace Stateflows.StateMachines.Typed
         #region AddInitialCompositeState
         [DebuggerHidden]
         public static ITypedInitializedCompositeStateBuilder AddInitialCompositeState<TState>(this ITypedCompositeStateBuilder builder, CompositeStateTransitionsBuildAction compositeStateBuildAction)
-            where TState : State
-            => builder.AddInitialCompositeState<TState>(StateInfo<TState>.Name, compositeStateBuildAction);
+            where TState : class, IBaseState
+            => builder.AddInitialCompositeState<TState>(State<TState>.Name, compositeStateBuildAction);
 
         [DebuggerHidden]
         public static ITypedInitializedCompositeStateBuilder AddInitialCompositeState<TState>(this ITypedCompositeStateBuilder builder, string stateName, CompositeStateTransitionsBuildAction compositeStateBuildAction)
-            where TState : State
+            where TState : class, IBaseState
         {
-            (builder as IInternal).Services.RegisterState<TState>();
+            (builder as IInternal).Services.AddServiceType<TState>();
 
             return builder.AddInitialCompositeState(
                 stateName,

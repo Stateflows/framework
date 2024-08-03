@@ -5,8 +5,27 @@ using StateMachine.IntegrationTests.Classes.Transitions;
 
 namespace StateMachine.IntegrationTests.Classes.StateMachines
 {
+    internal class Initializer1 : IDefaultInitializer
+    {
+        public Task<bool> OnInitializeAsync()
+        {
+            StateMachine1.InitializeFired = true;
+
+            return Task.FromResult(true);
+        }
+    }
+    internal class Finalizer1 : IFinalizer
+    {
+        public Task OnFinalizeAsync()
+        {
+            StateMachine1.FinalizeFired = true;
+
+            return Task.CompletedTask;
+        }
+    }
+
     [StateMachineBehavior]
-    internal class StateMachine1 : Stateflows.StateMachines.StateMachine
+    internal class StateMachine1 : IStateMachine
     {
         public static bool InitializeFired = false;
 
@@ -18,21 +37,11 @@ namespace StateMachine.IntegrationTests.Classes.StateMachines
             FinalizeFired = false;
         }
 
-        public override Task<bool> OnInitializeAsync()
-        {
-            InitializeFired = true;
-            return Task.FromResult(true);
-        }
-
-        public override Task OnFinalizeAsync()
-        {
-            FinalizeFired = true;
-            return Task.CompletedTask;
-        }
-
-        public override void Build(ITypedStateMachineBuilder builder)
+        public void Build(IStateMachineBuilder builder)
         {
             builder
+                .AddDefaultInitializer<Initializer1>()
+                .AddFinalizer<Finalizer1>()
                 .AddInitialState<State1>(b => b
                     .AddTransition<SomeEvent, SomeEventTransition, State2>()
                 )

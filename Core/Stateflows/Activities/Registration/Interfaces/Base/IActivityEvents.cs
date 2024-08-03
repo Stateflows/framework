@@ -7,11 +7,11 @@ namespace Stateflows.Activities.Registration.Interfaces.Base
 {
     public interface IActivityEvents<TReturn>
     {
-        TReturn AddOnInitialize(Func<IActivityInitializationContext, Task<bool>> actionAsync);
+        TReturn AddDefaultInitializer(Func<IActivityInitializationContext, Task<bool>> actionAsync);
 
-        TReturn AddOnInitialize<TInitializationRequest>(Func<IActivityInitializationContext<TInitializationRequest>, Task<bool>> actionAsync)
-            where TInitializationRequest : InitializationRequest, new();
+        TReturn AddInitializer<TInitializationEvent>(Func<IActivityInitializationContext<TInitializationEvent>, Task<bool>> actionAsync)
+            where TInitializationEvent : Event, new();
 
-        TReturn AddOnFinalize(Func<IActivityActionContext, Task> actionAsync);
+        TReturn AddFinalizer(Func<IActivityActionContext, Task> actionAsync);
     }
 }

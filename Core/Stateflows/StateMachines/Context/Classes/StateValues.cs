@@ -20,5 +20,10 @@ namespace Stateflows.StateMachines.Context.Classes
             => TimeEventIds.Any();
 
         public Dictionary<string, Guid> TimeEventIds { get; set; } = new Dictionary<string, Guid>();
+
+        public bool ShouldSerializeStartupEventIds()
+            => StartupEventIds.Any();
+
+        public Dictionary<string, Guid> StartupEventIds { get; set; } = new Dictionary<string, Guid>();
     }
 }

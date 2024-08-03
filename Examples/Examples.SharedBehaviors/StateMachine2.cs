@@ -6,9 +6,9 @@ using Stateflows.StateMachines.Attributes;
 namespace Examples.SharedBehaviors
 {
     [StateMachineBehavior(nameof(StateMachine2))]
-    public class StateMachine2 : StateMachine
+    public class StateMachine2 : IStateMachine
     {
-        public override void Build(ITypedStateMachineBuilder builder)
+        public void Build(IStateMachineBuilder builder)
         {
             builder
                 .AddInitialState("state1", b => b

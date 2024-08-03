@@ -8,7 +8,7 @@ namespace Stateflows.StateMachines.Engine
 {
     internal class Behaviors : IStateMachinePlugin
     {
-        public Task AfterStateEntryAsync(IStateActionContext context)
+        public async Task AfterStateEntryAsync(IStateActionContext context)
         {
             var vertex = (context as StateActionContext).Vertex;
 
@@ -27,12 +27,13 @@ namespace Stateflows.StateMachines.Engine
                         _ = behavior.SendAsync(vertex.GetSubscriptionRequest(context.StateMachine.Id));
                     }
 
-                    var initializationRequest = vertex.BehaviorInitializationBuilder?.Invoke(context) ?? new InitializationRequest();
-                    _ = behavior.InitializeAsync(initializationRequest);
+                    var initializationRequest = vertex.BehaviorInitializationBuilder != null
+                        ? await vertex.BehaviorInitializationBuilder(context) ?? new Initialize()
+                        : new Initialize();
+
+                    _ = behavior.SendAsync(initializationRequest);
                 }
             }
-
-            return Task.CompletedTask;
         }
 
         public Task BeforeStateExitAsync(IStateActionContext context)

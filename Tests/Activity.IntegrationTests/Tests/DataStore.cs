@@ -51,7 +51,7 @@ namespace Activity.IntegrationTests.Tests
         {
             if (ActivityLocator.TryLocateActivity(new ActivityId("dataStore", "x"), out var a))
             {
-                await a.InitializeAsync();
+                //await a.InitializeAsync();
                 await a.SendAsync(new SomeEvent());
                 await a.SendAsync(new SomeEvent());
                 await a.SendAsync(new SomeEvent());

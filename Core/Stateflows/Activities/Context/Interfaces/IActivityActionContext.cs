@@ -2,7 +2,7 @@
 
 namespace Stateflows.Activities.Context.Interfaces
 {
-    public interface IActivityActionContext : IBehaviorLocator
+    public interface IActivityActionContext : IBehaviorLocator, IExecutionContext
     {
         /// <summary>
         /// Information about activity

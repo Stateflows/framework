@@ -1,7 +1,6 @@
 ﻿@page "/state-machines"
 @using Examples.Common
 @inject IStateMachineLocator locator
-@inject ISystem system
 
 <PageTitle>State Machines</PageTitle>
 
@@ -73,9 +72,9 @@
 
     private string message = "";
 
-    private IStateMachine? _stateMachine = null;
+    private IStateMachineBehavior? _stateMachine = null;
 
-    private async Task<IStateMachine?> GetStateMachineAsync()
+    private async Task<IStateMachineBehavior?> GetStateMachineAsync()
     {
         var instance = $"{stateMachineInstance}";
         if (_stateMachine?.Id == GetCurrentId())
@@ -144,7 +143,7 @@
         expectedEvents = null;
     }
 
-    private async Task RefreshSMInfo(IStateMachine stateMachine)
+    private async Task RefreshSMInfo(IStateMachineBehavior stateMachine)
     {
         var result = await stateMachine.GetCurrentStateAsync();
         expectedEvents = result.Response?.ExpectedEvents;
@@ -164,13 +163,13 @@
         var sm = await GetStateMachineAsync();
         if (sm != null)
         {
-            var result = await sm.InitializeAsync();
+            var result = await sm.SendAsync(new Initialize());
 
-            var msg = result.Response?.InitializationSuccessful ?? false
+            var msg = result.Status == EventStatus.Initialized
                 ? "State Machine located and initialized"
                 : "State Machine located, it's already initialized";
 
-            if (!result.Response?.InitializationSuccessful ?? false)
+            if (result.Status != EventStatus.Initialized)
             {
                 await RefreshSMInfo(sm);
             }
@@ -185,6 +184,7 @@
 
     private async Task GetStatus()
     {
+        // throw new CustomException("x");
         var sm = await GetStateMachineAsync();
         if (sm != null)
         {
@@ -219,6 +219,10 @@
             if (sm != null)
             {
                 var result = await sm.SendAsync(ev);
+
+                message = result.Status == EventStatus.Failed
+                    ? "Processing failed"
+                    : "Processing done";
 
                 if (!(result.Validation?.IsValid ?? true))
                 {

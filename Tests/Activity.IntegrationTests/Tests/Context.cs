@@ -1,4 +1,5 @@
 using Stateflows.Activities.Context.Interfaces;
+using Stateflows.Common;
 using StateMachine.IntegrationTests.Utils;
 
 namespace Activity.IntegrationTests.Tests
@@ -68,7 +69,7 @@ namespace Activity.IntegrationTests.Tests
         {
             if (ActivityLocator.TryLocateActivity(new ActivityId("flow", "x"), out var a))
             {
-                await a.InitializeAsync();
+                await a.ExecuteAsync();
             }
 
             Assert.IsFalse(Activated1);

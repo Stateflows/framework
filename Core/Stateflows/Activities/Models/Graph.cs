@@ -21,6 +21,7 @@ namespace Stateflows.Activities.Models
 
         public int Version { get; }
         public Type ActivityType { get; set; }
+        public bool Interactive { get; set; } = false;
         public readonly Dictionary<string, Node> AllNodes = new Dictionary<string, Node>();
         public readonly Dictionary<string, Node> AllNamedNodes = new Dictionary<string, Node>();
         public readonly List<Edge> AllEdgesList = new List<Edge>();
@@ -28,6 +29,8 @@ namespace Stateflows.Activities.Models
 
         public readonly Dictionary<string, Logic<ActivityPredicateAsync>> Initializers = new Dictionary<string, Logic<ActivityPredicateAsync>>();
         public readonly List<Type> InitializerTypes = new List<Type>();
+        public Logic<ActivityPredicateAsync> DefaultInitializer = null;
+
         public readonly List<ActivityExceptionHandlerFactory> ExceptionHandlerFactories = new List<ActivityExceptionHandlerFactory>();
         public readonly List<ActivityInterceptorFactory> InterceptorFactories = new List<ActivityInterceptorFactory>();
         public readonly List<ActivityObserverFactory> ObserverFactories = new List<ActivityObserverFactory>();
@@ -59,6 +62,7 @@ namespace Stateflows.Activities.Models
                 NodeType.Initial,
                 NodeType.Input,
                 NodeType.AcceptEventAction,
+                NodeType.TimeEventAction,
             };
 
             var danglingNodes = AllNodes.Values.Where(node => !autoNodeTypes.Contains(node.Type) && !node.IncomingEdges.Any()).ToArray();

@@ -7,28 +7,28 @@ namespace Stateflows.StateMachines
 {
     public interface IStateMachineExceptionHandler
     {
-        Task OnStateMachineInitializationExceptionAsync(IStateMachineInitializationContext context, Exception exception)
-            => Task.CompletedTask;
+        Task<bool> OnStateMachineInitializationExceptionAsync(IStateMachineInitializationContext context, Exception exception)
+            => Task.FromResult(false);
 
-        Task OnStateMachineFinalizationExceptionAsync(IStateMachineActionContext context, Exception exception)
-            => Task.CompletedTask;
+        Task<bool> OnStateMachineFinalizationExceptionAsync(IStateMachineActionContext context, Exception exception)
+            => Task.FromResult(false);
 
-        Task OnTransitionGuardExceptionAsync(IGuardContext<Event> context, Exception exception)
-            => Task.CompletedTask;
+        Task<bool> OnTransitionGuardExceptionAsync(IGuardContext<Event> context, Exception exception)
+            => Task.FromResult(false);
 
-        Task OnTransitionEffectExceptionAsync(ITransitionContext<Event> context, Exception exception)
-            => Task.CompletedTask;
+        Task<bool> OnTransitionEffectExceptionAsync(ITransitionContext<Event> context, Exception exception)
+            => Task.FromResult(false);
 
-        Task OnStateInitializationExceptionAsync(IStateActionContext context, Exception exception)
-            => Task.CompletedTask;
+        Task<bool> OnStateInitializationExceptionAsync(IStateActionContext context, Exception exception)
+            => Task.FromResult(false);
 
-        Task OnStateFinalizationExceptionAsync(IStateActionContext context, Exception exception)
-            => Task.CompletedTask;
+        Task<bool> OnStateFinalizationExceptionAsync(IStateActionContext context, Exception exception)
+            => Task.FromResult(false);
 
-        Task OnStateEntryExceptionAsync(IStateActionContext context, Exception exception)
-            => Task.CompletedTask;
+        Task<bool> OnStateEntryExceptionAsync(IStateActionContext context, Exception exception)
+            => Task.FromResult(false);
 
-        Task OnStateExitExceptionAsync(IStateActionContext context, Exception exception)
-            => Task.CompletedTask;
+        Task<bool> OnStateExitExceptionAsync(IStateActionContext context, Exception exception)
+            => Task.FromResult(false);
     }
 }

@@ -2,11 +2,11 @@
 
 namespace StateMachine.IntegrationTests.Classes.Transitions
 {
-    internal class InternalTransition : Transition<SomeEvent>
+    internal class InternalTransition : ITransitionEffect<SomeEvent>
     {
         private readonly GlobalValue<int> counter = new("counter");
 
-        public override Task EffectAsync()
+        public Task EffectAsync(SomeEvent @event)
         {
             if (!counter.TryGet(out var c))
             {

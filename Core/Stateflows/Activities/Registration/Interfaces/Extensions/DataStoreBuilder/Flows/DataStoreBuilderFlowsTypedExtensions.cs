@@ -1,4 +1,5 @@
-﻿using Stateflows.Common;
+﻿using System.Diagnostics;
+using Stateflows.Common.Extensions;
 using Stateflows.Activities.Extensions;
 using Stateflows.Activities.Registration.Interfaces;
 
@@ -6,38 +7,43 @@ namespace Stateflows.Activities.Typed
 {
     public static class DataStoreBuilderFlowsTypedExtensions
     {
-        public static void AddFlow<TToken, TTargetNode>(this IDataStoreBuilder builder, ObjectFlowBuildAction<TToken> buildAction = null)
-            where TTargetNode : ActivityNode
-            => builder.AddFlow<TToken>(ActivityNodeInfo<TTargetNode>.Name, buildAction);
+        [DebuggerHidden]
+        public static IDataStoreBuilder AddFlow<TToken, TTargetNode>(this IDataStoreBuilder builder, ObjectFlowBuildAction<TToken> buildAction = null)
+            where TTargetNode : class, IActivityNode
+            => builder.AddFlow<TToken>(ActivityNode<TTargetNode>.Name, buildAction);
 
-        public static void AddFlow<TToken, TFlow>(this IDataStoreBuilder builder, string targetNodeName)
-            where TFlow : Flow<TToken>
+        [DebuggerHidden]
+        public static IDataStoreBuilder AddFlow<TToken, TFlow>(this IDataStoreBuilder builder, string targetNodeName)
+            where TFlow : class, IBaseFlow<TToken>
         {
-            (builder as IInternal).Services.RegisterObjectFlow<TFlow, TToken>();
-            builder.AddFlow<TToken>(
+            (builder as IInternal).Services.AddServiceType<TFlow>();
+            return builder.AddFlow<TToken>(
                 targetNodeName,
                 b => b.AddObjectFlowEvents<TFlow, TToken>()
             );
         }
 
-        public static void AddFlow<TToken, TFlow, TTargetNode>(this IDataStoreBuilder builder)
-            where TFlow : Flow<TToken>
-            where TTargetNode : ActivityNode
-            => builder.AddFlow<TToken, TFlow>(ActivityNodeInfo<TTargetNode>.Name);
+        [DebuggerHidden]
+        public static IDataStoreBuilder AddFlow<TToken, TFlow, TTargetNode>(this IDataStoreBuilder builder)
+            where TFlow : class, IBaseFlow<TToken>
+            where TTargetNode : class, IActivityNode
+            => builder.AddFlow<TToken, TFlow>(ActivityNode<TTargetNode>.Name);
 
-        public static void AddFlow<TToken, TTransformedToken, TObjectTransformationFlow>(this IDataStoreBuilder builder, string targetNodeName)
-            where TObjectTransformationFlow : TransformationFlow<TToken, TTransformedToken>
+        [DebuggerHidden]
+        public static IDataStoreBuilder AddFlow<TToken, TTransformedToken, TTransformationFlow>(this IDataStoreBuilder builder, string targetNodeName)
+            where TTransformationFlow : class, IFlowTransformation<TToken, TTransformedToken>
         {
-            (builder as IInternal).Services.RegisterTransformationFlow<TObjectTransformationFlow, TToken, TTransformedToken>();
-            builder.AddFlow<TToken>(
+            (builder as IInternal).Services.AddServiceType<TTransformationFlow>();
+            return builder.AddFlow<TToken>(
                 targetNodeName,
-                b => b.AddTransformationFlowEvents<TObjectTransformationFlow, TToken, TTransformedToken>()
+                b => b.AddObjectTransformationFlowEvents<TTransformationFlow, TToken, TTransformedToken>()
             );
         }
 
-        public static void AddFlow<TToken, TTransformedToken, TObjectTransformationFlow, TTargetNode>(this IDataStoreBuilder builder)
-            where TObjectTransformationFlow : TransformationFlow<TToken, TTransformedToken>
-            where TTargetNode : ActivityNode
-            => builder.AddFlow<TToken, TTransformedToken, TObjectTransformationFlow>(ActivityNodeInfo<TTargetNode>.Name);
+        [DebuggerHidden]
+        public static IDataStoreBuilder AddFlow<TToken, TTransformedToken, TTransformationFlow, TTargetNode>(this IDataStoreBuilder builder)
+            where TTransformationFlow : class, IFlowTransformation<TToken, TTransformedToken>
+            where TTargetNode : class, IActivityNode
+            => builder.AddFlow<TToken, TTransformedToken, TTransformationFlow>(ActivityNode<TTargetNode>.Name);
     }
 }

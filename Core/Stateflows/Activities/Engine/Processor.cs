@@ -2,16 +2,18 @@
 using System.Linq;
 using System.Threading.Tasks;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
+using Microsoft.Extensions.DependencyInjection;
 using Stateflows.Common;
+using Stateflows.Common.Context;
 using Stateflows.Common.Interfaces;
+using Stateflows.Common.Extensions;
+using Stateflows.Activities.Models;
 using Stateflows.Activities.Registration;
 using Stateflows.Activities.Context.Classes;
-using Microsoft.Extensions.DependencyInjection;
-using Stateflows.Common.Context;
-using Stateflows.Activities.Models;
-using Stateflows.Common.Extensions;
-using System.ComponentModel.DataAnnotations;
-using Stateflows.Common.Initializer;
+using Stateflows.Activities.EventHandlers;
+using Stateflows.Activities.Events;
+using System.Reflection;
 
 namespace Stateflows.Activities.Engine
 {
@@ -44,7 +46,7 @@ namespace Stateflows.Activities.Engine
                 : Task.FromResult(EventStatus.NotConsumed);
         }
 
-        public async Task<EventStatus> ProcessEventAsync<TEvent>(BehaviorId id, TEvent @event, IServiceProvider serviceProvider)
+        public async Task<EventStatus> ProcessEventAsync<TEvent>(BehaviorId id, TEvent @event, IServiceProvider serviceProvider, List<Exception> exceptions)
             where TEvent : Event, new()
         {
             var result = EventStatus.Undelivered;
@@ -81,15 +83,20 @@ namespace Stateflows.Activities.Engine
                         results.Add(new RequestResult(ev, ev.GetResponse(), status, new EventValidation(true, new List<ValidationResult>())));
                     }
 
-                    compoundRequest.Respond(new CompoundResponse()
+                    if (compoundRequest.Response == null)
                     {
-                        Results = results
-                    });
+                        compoundRequest.Respond(new CompoundResponse()
+                        {
+                            Results = results
+                        });
+                    }
                 }
                 else
                 {
                     result = await ExecuteBehaviorAsync(@event, result, stateflowsContext, graph, executor, context);
                 }
+
+                exceptions.AddRange(context.Exceptions);
 
                 await storage.DehydrateAsync((await executor.DehydrateAsync()).Context);
             }
@@ -97,7 +104,8 @@ namespace Stateflows.Activities.Engine
             return result;
         }
 
-        private async Task<EventStatus> ExecuteBehaviorAsync<TEvent>(TEvent @event, EventStatus result, StateflowsContext stateflowsContext, Graph graph, Executor executor, RootContext context) where TEvent : Event, new()
+        private async Task<EventStatus> ExecuteBehaviorAsync<TEvent>(TEvent @event, EventStatus result, StateflowsContext stateflowsContext, Graph graph, Executor executor, RootContext context)
+            where TEvent : Event, new()
         {
             context.SetEvent(@event);
 
@@ -105,26 +113,56 @@ namespace Stateflows.Activities.Engine
 
             if (await executor.Inspector.BeforeProcessEventAsync(eventContext))
             {
-                if (!executor.Initialized)
+                Event currentEvent = @event;
+
+                if (@event is ExecutionRequest executionRequest)
                 {
-                    var token = BehaviorClassesInitializations.Instance.AutoInitializationTokens.Find(token => token.BehaviorClass == executor.Context.Id.ActivityClass);
-
-                    InitializationRequest initializationRequest;
-                    if (token != null && (initializationRequest = await token.InitializationRequestFactory.Invoke(executor.NodeScope.ServiceProvider, executor.Context.Id)) != null)
+                    if (executor.Graph.Interactive || executor.BehaviorStatus != BehaviorStatus.NotInitialized)
                     {
-                        context.SetEvent(initializationRequest);
+                        return EventStatus.NotConsumed;
+                    }
 
-                        await executor.InitializeAsync(initializationRequest);
+                    context.SetEvent(executionRequest.InitializationEvent);
+                        
+                    currentEvent = executionRequest.InitializationEvent;
+                }
+                
+                var attributes = currentEvent.GetType().GetCustomAttributes<NoImplicitInitializationAttribute>();
+                if (!executor.Initialized && !attributes.Any())
+                {
+                    result = await executor.InitializeAsync(currentEvent);
+                }
 
-                        context.ClearEvent();
+                if (result != EventStatus.Initialized)
+                {
+                    var handlingResult = await TryHandleEventAsync(eventContext);
+
+                    if (executor.Initialized)
+                    {
+                        if (handlingResult != EventStatus.Consumed && handlingResult != EventStatus.NotInitialized)
+                        {
+                            result = await executor.ProcessAsync(currentEvent);
+                        }
+                        else
+                        {
+                            result = handlingResult;
+                        }
+                    }
+                    else
+                    {
+                        result = result == EventStatus.NotInitialized
+                            ? EventStatus.NotInitialized
+                            : attributes.Any()
+                                ? handlingResult
+                                : EventStatus.Rejected;
                     }
                 }
 
-                result = await TryHandleEventAsync(eventContext);
-
-                if (result != EventStatus.Consumed)
+                if (@event is ExecutionRequest executionRequest2)
                 {
-                    result = await executor.ProcessAsync(@event);
+                    context.ClearEvent();
+
+                    executionRequest2.Respond(new ExecutionResponse() { OutputTokens = await executor.GetResultAsync() });
                 }
 
                 await executor.Inspector.AfterProcessEventAsync(eventContext);

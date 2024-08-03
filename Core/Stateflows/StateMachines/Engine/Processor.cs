@@ -2,22 +2,22 @@
 using System.Linq;
 using System.Threading.Tasks;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 using Microsoft.Extensions.DependencyInjection;
 using Stateflows.Common;
+using Stateflows.Common.Context;
 using Stateflows.Common.Interfaces;
+using Stateflows.Common.Extensions;
+using Stateflows.StateMachines.Models;
 using Stateflows.StateMachines.Registration;
 using Stateflows.StateMachines.Context.Classes;
-using Stateflows.Common.Context;
-using Stateflows.StateMachines.Models;
-using Stateflows.Common.Extensions;
-using System.ComponentModel.DataAnnotations;
-using Stateflows.Common.Initializer;
+using System.Reflection;
 
 namespace Stateflows.StateMachines.Engine
 {
     internal class Processor : IEventProcessor
     {
-        public string BehaviorType => nameof(StateMachine);
+        public string BehaviorType => Constants.StateMachine;
 
         public readonly StateMachinesRegister Register;
         public readonly IEnumerable<IStateMachineEventHandler> EventHandlers;
@@ -44,7 +44,7 @@ namespace Stateflows.StateMachines.Engine
                 : Task.FromResult(EventStatus.NotConsumed);
         }
 
-        public async Task<EventStatus> ProcessEventAsync<TEvent>(BehaviorId id, TEvent @event, IServiceProvider serviceProvider)
+        public async Task<EventStatus> ProcessEventAsync<TEvent>(BehaviorId id, TEvent @event, IServiceProvider serviceProvider, List<Exception> exceptions)
             where TEvent : Event, new()
         {
             var result = EventStatus.Undelivered;
@@ -66,51 +66,62 @@ namespace Stateflows.StateMachines.Engine
             {
                 await executor.HydrateAsync();
 
-                if (@event is CompoundRequest compoundRequest)
+                try
                 {
-                    result = EventStatus.Consumed;
-                    var results = new List<RequestResult>();
-                    foreach (var ev in compoundRequest.Events)
+                    if (@event is CompoundRequest compoundRequest)
                     {
-                        ev.Headers.AddRange(@event.Headers);
+                        result = EventStatus.Consumed;
+                        var results = new List<RequestResult>();
+                        foreach (var ev in compoundRequest.Events)
+                        {
+                            ev.Headers.AddRange(@event.Headers);
 
-                        executor.Context.SetEvent(ev);
+                            executor.Context.SetEvent(ev);
 
+                            executor.BeginScope();
+                            try
+                            {
+                                var status = await ExecuteBehaviorAsync(ev, result, stateflowsContext, graph, executor);
+
+                                results.Add(new RequestResult(ev, ev.GetResponse(), status, new EventValidation(true, new List<ValidationResult>())));
+                            }
+                            finally
+                            {
+                                executor.EndScope();
+
+                                executor.Context.ClearEvent();
+                            }
+                        }
+
+                        if (compoundRequest.Response == null)
+                        {
+                            compoundRequest.Respond(new CompoundResponse()
+                            {
+                                Results = results
+                            });
+                        }
+                    }
+                    else
+                    {
                         executor.BeginScope();
                         try
                         {
-                            var status = await ExecuteBehaviorAsync(ev, result, stateflowsContext, graph, executor);
-
-                            results.Add(new RequestResult(ev, ev.GetResponse(), status, new EventValidation(true, new List<ValidationResult>())));
+                            result = await ExecuteBehaviorAsync(@event, result, stateflowsContext, graph, executor);
                         }
                         finally
                         {
                             executor.EndScope();
-
-                            executor.Context.ClearEvent();
                         }
                     }
-
-                    compoundRequest.Respond(new CompoundResponse()
-                    {
-                         Results = results
-                    });
                 }
-                else
+                finally
                 {
-                    executor.BeginScope();
-                    try
-                    {
-                        result = await ExecuteBehaviorAsync(@event, result, stateflowsContext, graph, executor);
-                    }
-                    finally
-                    {
-                        executor.EndScope();
-                    }
+                    exceptions.AddRange(executor.Context.Exceptions);
+
+                    await executor.DehydrateAsync();
                 }
 
-                await executor.DehydrateAsync();
-
+                // out of try-finally to make sure that context won't be saved when execution fails
                 await storage.DehydrateAsync(executor.Context.Context);
             }
 
@@ -123,37 +134,43 @@ namespace Stateflows.StateMachines.Engine
 
             if (await executor.Inspector.BeforeProcessEventAsync(eventContext))
             {
-                if (!executor.Initialized)
+                try
                 {
-                    var token = BehaviorClassesInitializations.Instance.AutoInitializationTokens.Find(token => token.BehaviorClass == executor.Context.Id.StateMachineClass);
-
-                    InitializationRequest initializationRequest;
-                    if (token != null && (initializationRequest = await token.InitializationRequestFactory.Invoke(executor.ServiceProvider, executor.Context.Id)) != null)
+                    var attributes = @event.GetType().GetCustomAttributes<NoImplicitInitializationAttribute>();
+                    if (!executor.Initialized && !attributes.Any())
                     {
-                        executor.Context.SetEvent(initializationRequest);
+                        result = await executor.InitializeAsync(@event);
+                    }
 
-                        executor.BeginScope();
-                        try
+                    if (result != EventStatus.Initialized)
+                    {
+                        var handlingResult = await TryHandleEventAsync(eventContext);
+
+                        if (executor.Initialized)
                         {
-                            await executor.InitializeAsync(initializationRequest);
+                            if (handlingResult != EventStatus.Consumed && handlingResult != EventStatus.NotInitialized)
+                            {
+                                result = await executor.ProcessAsync(@event);
+                            }
+                            else
+                            {
+                                result = handlingResult;
+                            }
                         }
-                        finally
+                        else
                         {
-                            executor.EndScope();
-
-                            executor.Context.ClearEvent();
+                            result = result == EventStatus.NotInitialized
+                                ? EventStatus.NotInitialized
+                                : attributes.Any()
+                                    ? handlingResult
+                                    : EventStatus.Rejected;
                         }
                     }
                 }
-
-                result = await TryHandleEventAsync(eventContext);
-
-                if (result != EventStatus.Consumed)
+                finally
                 {
-                    result = await executor.ProcessAsync(@event);
+                    await executor.Inspector.AfterProcessEventAsync(eventContext);
                 }
-
-                await executor.Inspector.AfterProcessEventAsync(eventContext);
             }
             else
             {

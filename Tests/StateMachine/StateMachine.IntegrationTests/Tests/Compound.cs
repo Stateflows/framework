@@ -40,7 +40,7 @@ namespace StateMachine.IntegrationTests.Tests
 
             if (StateMachineLocator.TryLocateStateMachine(new StateMachineId("simple", "x"), out var sm))
             {
-                await sm.InitializeAsync();
+                //await sm.InitializeAsync();
 
                 var request = new CompoundRequest()
                 {
@@ -68,7 +68,7 @@ namespace StateMachine.IntegrationTests.Tests
 
             if (StateMachineLocator.TryLocateStateMachine(new StateMachineId("simple", "x"), out var sm))
             {
-                await sm.InitializeAsync();
+                //await sm.InitializeAsync();
 
                 var request = new CompoundRequest()
                 {
@@ -97,7 +97,7 @@ namespace StateMachine.IntegrationTests.Tests
 
             if (StateMachineLocator.TryLocateStateMachine(new StateMachineId("simple", "x"), out var sm))
             {
-                await sm.InitializeAsync();
+                //await sm.InitializeAsync();
 
                 var request = new CompoundRequest()
                 {

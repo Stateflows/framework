@@ -6,6 +6,7 @@ using Stateflows.Common;
 using Stateflows.Activities.Models;
 using Stateflows.Activities.Context.Classes;
 using Stateflows.Activities.Context.Interfaces;
+using System.Diagnostics;
 
 namespace Stateflows.Activities.Engine
 {
@@ -27,13 +28,34 @@ namespace Stateflows.Activities.Engine
             Context.NodeTimeEvents[node.Identifier] = timeEvent.Id;
         }
 
-
         private void ClearTimeEvent(Node node)
         {
             if (Context.NodeTimeEvents.TryGetValue(node.Identifier, out var timeEventId))
             {
                 Context.Context.PendingTimeEvents.Remove(timeEventId);
                 Context.NodeTimeEvents.Remove(node.Identifier);
+            }
+        }
+
+        private void RegisterStartupEvent(Node node)
+        {
+            if (Context.NodeStartupEvents.ContainsKey(node.Identifier))
+            {
+                return;
+            }
+
+            var startupEvent = Activator.CreateInstance(node.EventType) as Startup;
+            startupEvent.ConsumerSignature = node.Identifier;
+            Context.Context.PendingStartupEvents.Add(startupEvent.Id, startupEvent);
+            Context.NodeStartupEvents[node.Identifier] = startupEvent.Id;
+        }
+
+        private void ClearStartupEvent(Node node)
+        {
+            if (Context.NodeStartupEvents.TryGetValue(node.Identifier, out var startupEventId))
+            {
+                Context.Context.PendingStartupEvents.Remove(startupEventId);
+                Context.NodeStartupEvents.Remove(node.Identifier);
             }
         }
 
@@ -54,6 +76,11 @@ namespace Stateflows.Activities.Engine
                     {
                         RegisterTimeEvent(node);
                     }
+
+                    if (node.EventType == typeof(Startup))
+                    {
+                        RegisterStartupEvent(node);
+                    }
                 }
             }
         }
@@ -73,6 +100,11 @@ namespace Stateflows.Activities.Engine
                 {
                     RegisterTimeEvent(node);
                 }
+
+                if (node.EventType == typeof(Startup))
+                {
+                    RegisterStartupEvent(node);
+                }
             }
         }
 
@@ -85,6 +117,8 @@ namespace Stateflows.Activities.Engine
                     Context.ActiveNodes.Remove(node.Identifier);
 
                     ClearTimeEvent(node);
+
+                    ClearStartupEvent(node);
                 }
             }
         }
@@ -96,10 +130,12 @@ namespace Stateflows.Activities.Engine
                 Context.ActiveNodes.Remove(node.Identifier);
 
                 ClearTimeEvent(node);
+
+                ClearStartupEvent(node);
             }
         }
 
-        Task IActivityObserver.AfterActivityInitializeAsync(IActivityInitializationContext context)
+        Task IActivityObserver.AfterActivityInitializeAsync(IActivityInitializationContext context, bool initialized)
             => Task.CompletedTask;
 
         Task IActivityObserver.AfterActivityFinalizeAsync(IActivityFinalizationContext context)
@@ -121,6 +157,8 @@ namespace Stateflows.Activities.Engine
 
         Task IActivityInterceptor.AfterProcessEventAsync(IEventContext<Event> context)
         {
+            Trace.WriteLine($"⦗→s⦘ Activity '{context.Activity.Id.Name}:{context.Activity.Id.Instance}': processed event '{context.Event.Name}'");
+
             Context = (context as BaseContext).Context;
 
             if (Context.Context.PendingTimeEvents.Any())
@@ -134,6 +172,8 @@ namespace Stateflows.Activities.Engine
             {
                 Context.Context.TriggerTime = null;
             }
+
+            Context.Context.TriggerOnStartup = Context.Context.PendingStartupEvents.Any();
 
             return Task.CompletedTask;
         }
@@ -168,6 +208,16 @@ namespace Stateflows.Activities.Engine
             if (context.Event is TimeEvent timeEvent)
             {
                 result = Context.Context.PendingTimeEvents.ContainsKey(timeEvent.Id);
+            }
+
+            if (context.Event is Startup startupEvent)
+            {
+                result = Context.Context.PendingStartupEvents.ContainsKey(startupEvent.Id);
+            }
+
+            if (result)
+            {
+                Trace.WriteLine($"⦗→s⦘ Activity '{context.Activity.Id.Name}:{context.Activity.Id.Instance}': received event '{context.Event.Name}', trying to process it");
             }
 
             return Task.FromResult(result);

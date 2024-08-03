@@ -1,21 +1,25 @@
-﻿using Stateflows.StateMachines.Events;
+﻿using System.Diagnostics;
+using Stateflows.StateMachines.Events;
 using Stateflows.StateMachines.Registration.Interfaces;
 
 namespace Stateflows.StateMachines.Typed
 {
     public static class TypedFinalizedCompositeStateBuilderElseDefaultTransitionTypedExtensions
     {
+        [DebuggerHidden]
         public static ITypedFinalizedCompositeStateBuilder AddElseDefaultTransition<TElseTransition, TTargetState>(this ITypedFinalizedCompositeStateBuilder builder)
-            where TElseTransition : ElseTransition<CompletionEvent>
-            where TTargetState : BaseState
-            => builder.AddElseDefaultTransition<TElseTransition>(StateInfo<TTargetState>.Name);
+            where TElseTransition : class, IDefaultTransitionEffect
+            where TTargetState : class, IVertex
+            => builder.AddElseDefaultTransition<TElseTransition>(State<TTargetState>.Name);
 
-        public static ITypedFinalizedCompositeStateBuilder AddElseDefaultTransition<TElseTransition>(this ITypedFinalizedCompositeStateBuilder builder, string targetVertexName)
-            where TElseTransition : ElseTransition<CompletionEvent>
-            => builder.AddElseTransition<CompletionEvent, TElseTransition>(targetVertexName);
+        [DebuggerHidden]
+        public static ITypedFinalizedCompositeStateBuilder AddElseDefaultTransition<TElseTransition>(this ITypedFinalizedCompositeStateBuilder builder, string targetStateName)
+            where TElseTransition : class, IDefaultTransitionEffect
+            => (builder as IStateBuilder).AddElseDefaultTransition<TElseTransition>(targetStateName) as ITypedFinalizedCompositeStateBuilder;
 
+        [DebuggerHidden]
         public static ITypedFinalizedCompositeStateBuilder AddElseDefaultTransition<TTargetState>(this ITypedFinalizedCompositeStateBuilder builder, ElseDefaultTransitionBuildAction transitionBuildAction = null)
-            where TTargetState : BaseState
-            => builder.AddElseDefaultTransition(StateInfo<TTargetState>.Name, transitionBuildAction);
+            where TTargetState : class, IVertex
+            => builder.AddElseDefaultTransition(State<TTargetState>.Name, transitionBuildAction);
     }
 }

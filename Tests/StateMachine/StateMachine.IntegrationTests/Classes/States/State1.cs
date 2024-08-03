@@ -1,10 +1,22 @@
-﻿namespace StateMachine.IntegrationTests.Classes.States
+﻿using Stateflows.StateMachines.Context.Interfaces;
+
+namespace StateMachine.IntegrationTests.Classes.States
 {
-    internal class State1 : State
+    internal class State1 : IStateEntry, IStateExit
     {
         public static bool EntryFired = false;
 
         public static bool ExitFired = false;
+
+        private readonly IStateContext stateContext;
+        private readonly IStateMachineContext stateMachineContext;
+        private readonly IExecutionContext executionContext;
+        public State1(IStateContext stateContext, IStateMachineContext stateMachineContext, IExecutionContext executionContext)
+        {
+            this.stateContext = stateContext;
+            this.stateMachineContext = stateMachineContext;
+            this.executionContext = executionContext;
+        }
 
         public static void Reset()
         {
@@ -12,15 +24,15 @@
             ExitFired = false;
         }
 
-        public override Task OnEntryAsync()
+        public Task OnEntryAsync()
         {
-            EntryFired = Context != null && Context.StateMachine.Id.Instance != null;
+            EntryFired = stateContext != null && stateMachineContext?.Id.Instance != null && executionContext != null;
             return Task.CompletedTask;
         }
 
-        public override Task OnExitAsync()
+        public Task OnExitAsync()
         {
-            ExitFired = Context != null && Context.StateMachine.Id.Instance != null;
+            ExitFired = stateContext != null && stateMachineContext?.Id.Instance != null && executionContext != null;
             return Task.CompletedTask;
         }
     }

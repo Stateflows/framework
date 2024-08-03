@@ -2,12 +2,12 @@
 
 namespace Stateflows.StateMachines.Context.Interfaces
 {
-    public interface IStateMachineInitializationContext<out TInitializationRequest> : IStateMachineActionContext
-        where TInitializationRequest : InitializationRequest, new()
-    {
-        TInitializationRequest InitializationRequest { get; }
-    }
-
-    public interface IStateMachineInitializationContext : IStateMachineInitializationContext<InitializationRequest>
+    public interface IStateMachineInitializationContext : IStateMachineActionContext
     { }
+
+    public interface IStateMachineInitializationContext<out TInitializationEvent> : IStateMachineInitializationContext
+        where TInitializationEvent : Event, new()
+    {
+        TInitializationEvent InitializationEvent { get; }
+    }
 }

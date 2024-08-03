@@ -20,27 +20,6 @@ export class HttpTransport implements IStateflowsClientTransport {
             this.#targets.forEach(async target => {
                 await this.send(target.behaviorId, new NotificationsRequest());
             });
-
-            // let body = JsonUtils.stringify({
-            //     $type: "Stateflows.Common.Transport.Classes.StateflowsNotificationRequest, Stateflows.Common.Transport",
-            //     targets: this.getTargets()
-            // });
-
-            // let result = await fetch(
-            //     `${this.url}stateflows/getNotifications`,
-            //     {
-            //         method: "POST",
-            //         headers: {
-            //             'Accept': 'application/json',
-            //             'Content-Type': 'application/json'
-            //         },
-            //         body: body
-            //     }
-            // );
-            
-            // let stateflowsNotificationResponse = await result.json();
-    
-            // this.handleNotifications(stateflowsNotificationResponse.notifications, stateflowsNotificationResponse.responseTime);
         }, 10 * 1000);
     }
 
@@ -76,43 +55,6 @@ export class HttpTransport implements IStateflowsClientTransport {
 
         this.#notificationIds = notifications.map(notification => notification.id);
     }
-
-    // private getTargets(): Array<any> {
-    //     let targets: any[] = [];
-
-    //     this.#targets.forEach((target, behaviorId) => {
-    //         let targetIndex = targets.findIndex(t => JsonUtils.stringify(t.id) === JsonUtils.stringify(behaviorId));
-    //         if (targetIndex !== -1) {
-    //             target.watches.forEach(watch => {
-    //                 let watchIndex = targets[targetIndex].watches.findIndex((w: any) => w.notificationName === watch.notificationName);
-    //                 if (watchIndex === -1) {
-    //                     targets[targetIndex].watches.push({
-    //                         notificationName: watch.notificationName,
-    //                         lastNotificationCheck: watch.lastNotificationCheck,
-    //                         milisecondsSinceLastNotificationCheck: watch.milisecondsSinceLastNotificationCheck !== null
-    //                             ? Date.now() - watch.milisecondsSinceLastNotificationCheck
-    //                             : null,
-    //                     });
-    //                 }
-    //             });
-    //         } else {
-    //             targets.push({
-    //                 id: target.behaviorId,
-    //                 watches: target.watches.map(watch => {
-    //                     return {
-    //                         notificationName: watch.notificationName,
-    //                         lastNotificationCheck: watch.lastNotificationCheck,
-    //                         milisecondsSinceLastNotificationCheck: watch.milisecondsSinceLastNotificationCheck !== null
-    //                             ? Date.now() - watch.milisecondsSinceLastNotificationCheck
-    //                             : null,
-    //                     };
-    //                 })
-    //             });
-    //         }
-    //     });
-
-    //     return targets;
-    // }
 
     private getWatches(behaviorId: BehaviorId) {
         if (this.#targets.has(JsonUtils.stringify(behaviorId))) {

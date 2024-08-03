@@ -3,9 +3,8 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.DependencyInjection;
-using Stateflows.Common.Tenant;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Stateflows.Common.Initializer
 {
@@ -52,7 +51,7 @@ namespace Stateflows.Common.Initializer
 
                     if (Locator.TryLocateBehavior(new BehaviorId(token.BehaviorClass, string.Empty), out var behavior))
                     {
-                        await behavior.InitializeAsync(await token.InitializationRequestFactory(ServiceProvider, token.BehaviorClass));
+                        await behavior.SendAsync(await token.InitializationRequestFactory(ServiceProvider, token.BehaviorClass));
                     }
                 })
             );

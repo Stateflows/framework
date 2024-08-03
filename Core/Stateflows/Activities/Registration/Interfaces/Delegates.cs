@@ -29,6 +29,8 @@ namespace Stateflows.Activities.Registration.Interfaces
     public delegate Task AcceptEventActionDelegateAsync<in TEvent>(IAcceptEventActionContext<TEvent> context)
         where TEvent : Event, new();
 
+    public delegate Task TimeEventActionDelegateAsync(IActionContext context);
+
     public delegate bool DecisionDelegate(IActionContext context);
 
     public delegate void ObjectFlowBuildAction<in TToken>(IObjectFlowBuilder<TToken> builder);

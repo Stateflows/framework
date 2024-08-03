@@ -10,30 +10,22 @@ using Stateflows;
 using Stateflows.Activities;
 using Stateflows.StateMachines;
 using Stateflows.Common.Registration.Interfaces;
-using Stateflows.Testing.Activities.Cradle;
 using Stateflows.Testing.StateMachines.Sequence;
+using Stateflows.Common.Classes;
 
 namespace StateMachine.IntegrationTests.Utils
 {
     public abstract class StateflowsTestClass
     {
         private IServiceCollection _serviceCollection;
-        protected IServiceCollection ServiceCollection => _serviceCollection ?? (_serviceCollection = new ServiceCollection());
+        protected IServiceCollection ServiceCollection => _serviceCollection ??= new ServiceCollection();
 
         private IServiceProvider _serviceProvider;
-        protected IServiceProvider ServiceProvider => _serviceProvider ?? (_serviceProvider = ServiceCollection.BuildServiceProvider());
+        protected IServiceProvider ServiceProvider => _serviceProvider ??= ServiceCollection.BuildServiceProvider();
 
         protected IStateMachineLocator StateMachineLocator => ServiceProvider.GetRequiredService<IStateMachineLocator>();
 
         protected IActivityLocator ActivityLocator => ServiceProvider.GetRequiredService<IActivityLocator>();
-
-        //protected IFlowTestCradleBuilder<TToken> SetupCradle<TToken, TFlow>()
-        //    where TFlow : Flow<TToken>
-        //    => new FlowTestCradleBuilder<TToken, TFlow>(ServiceProvider);
-
-        protected INodeTestCradleBuilder SetupCradle<TActionNode>()
-            where TActionNode : ActionNode
-            => new NodeTestCradleBuilder<TActionNode>(ServiceProvider);
 
         protected ExecutionSequenceObserver ExecutionSequence => ServiceProvider.GetRequiredService<ExecutionSequenceObserver>();
 
@@ -45,6 +37,11 @@ namespace StateMachine.IntegrationTests.Utils
 
             var hostedServices = ServiceProvider.GetRequiredService<IEnumerable<IHostedService>>();
             Task.WaitAll(hostedServices.Select(s => s.StartAsync(new CancellationToken())).ToArray());
+
+            ContextValues.GlobalValues.Clear();
+            ContextValues.StateValues.Clear();
+            ContextValues.SourceStateValues.Clear();
+            ContextValues.TargetStateValues.Clear();
         }
 
         public virtual void Cleanup()

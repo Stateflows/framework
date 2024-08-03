@@ -8,6 +8,7 @@ using Stateflows.StateMachines.Extensions;
 using Stateflows.StateMachines.Exceptions;
 using Stateflows.StateMachines.Registration.Builders;
 using Stateflows.StateMachines.Registration.Interfaces;
+using Stateflows.Common.Extensions;
 
 namespace Stateflows.StateMachines.Registration
 {
@@ -85,12 +86,11 @@ namespace Stateflows.StateMachines.Registration
                 throw new StateMachineDefinitionException($"State machine '{stateMachineName}' with version '{version}' is already registered", new StateMachineClass(stateMachineName));
             }
 
-            Services.RegisterStateMachine(stateMachineType);
+            Services.AddServiceType(stateMachineType);
 
-            var sm = FormatterServices.GetUninitializedObject(stateMachineType) as StateMachine;
+            var sm = FormatterServices.GetUninitializedObject(stateMachineType) as IStateMachine;
 
             var builder = new StateMachineBuilder(stateMachineName, version, Services);
-            builder.AddStateMachineEvents(stateMachineType);
             builder.Result.StateMachineType = stateMachineType;
             sm.Build(builder);
             builder.Result.Build();
@@ -105,7 +105,7 @@ namespace Stateflows.StateMachines.Registration
 
         [DebuggerHidden]
         public void AddStateMachine<TStateMachine>(string stateMachineName, int version = 1)
-            where TStateMachine : StateMachine
+            where TStateMachine : IStateMachine
             => AddStateMachine(stateMachineName, version, typeof(TStateMachine));
 
         [DebuggerHidden]
@@ -116,7 +116,7 @@ namespace Stateflows.StateMachines.Registration
         public void AddGlobalInterceptor<TInterceptor>()
             where TInterceptor : class, IStateMachineInterceptor
         {
-            Services.RegisterInterceptor<TInterceptor>();
+            Services.AddServiceType<TInterceptor>();
             AddGlobalInterceptor(serviceProvider => serviceProvider.GetRequiredService<TInterceptor>());
         }
 
@@ -128,7 +128,7 @@ namespace Stateflows.StateMachines.Registration
         public void AddGlobalExceptionHandler<TExceptionHandler>()
             where TExceptionHandler : class, IStateMachineExceptionHandler
         {
-            Services.RegisterExceptionHandler<TExceptionHandler>();
+            Services.AddServiceType<TExceptionHandler>();
             AddGlobalExceptionHandler(serviceProvider => serviceProvider.GetRequiredService<TExceptionHandler>());
         }
 
@@ -140,7 +140,7 @@ namespace Stateflows.StateMachines.Registration
         public void AddGlobalObserver<TObserver>()
             where TObserver : class, IStateMachineObserver
         {
-            Services.RegisterObserver<TObserver>();
+            Services.AddServiceType<TObserver>();
             AddGlobalObserver(serviceProvider => serviceProvider.GetRequiredService<TObserver>());
         }
     }

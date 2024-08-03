@@ -6,18 +6,18 @@ namespace Stateflows.Activities
 {
     public static class ExecutionResponseExtensions
     {
-        public static IEnumerable<T> GetOutputValues<T>(this ExecutionResponse response)
+        public static IEnumerable<T> GetOutputTokensOfType<T>(this ExecutionResponse response)
             => response != null
-                ? response.OutputTokens.OfType<T>().ToArray()
+                ? response.OutputTokens.OfType<TokenHolder<T>>().Select(t => t.Payload).ToArray()
                 : new T[0];
 
-        public static T GetOutputValueOrDefault<T>(this ExecutionResponse response, T defaultValue = default)
+        public static bool TryGetOutputTokenOfType<T>(this ExecutionResponse response, out T token)
         {
-            var valueTokens = response.GetOutputValues<T>();
+            var valueTokens = response.GetOutputTokensOfType<T>();
 
-            return valueTokens.Any()
-                ? valueTokens.First()
-                : defaultValue;
+            token = valueTokens.FirstOrDefault();
+
+            return valueTokens.Any();
         }
     }
 }

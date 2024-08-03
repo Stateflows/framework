@@ -123,7 +123,21 @@ namespace Activity.IntegrationTests.Tests
         {
             if (ActivityLocator.TryLocateActivity(new ActivityId("tokensDecision", "x"), out var a))
             {
-                await a.InitializeAsync();
+                await a.ExecuteAsync();
+            }
+
+            Assert.AreEqual(1, ExecutionCount1);
+            Assert.AreEqual(5, TokenCount1);
+            Assert.AreEqual(1, ExecutionCount2);
+            Assert.AreEqual(5, TokenCount2);
+        }
+
+        [TestMethod]
+        public async Task MultipleTokenDecision()
+        {
+            if (ActivityLocator.TryLocateActivity(new ActivityId("multipleTokensDecision", "x"), out var a))
+            {
+                await a.ExecuteAsync();
             }
 
             Assert.AreEqual(1, ExecutionCount1);
@@ -151,7 +165,7 @@ namespace Activity.IntegrationTests.Tests
         {
             if (ActivityLocator.TryLocateActivity(new ActivityId("controlDecision", "x"), out var a))
             {
-                await a.InitializeAsync();
+                await a.ExecuteAsync();
             }
 
             Assert.IsTrue(Execution1);

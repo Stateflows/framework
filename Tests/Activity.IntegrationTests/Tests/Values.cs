@@ -4,11 +4,11 @@ using StateMachine.IntegrationTests.Utils;
 
 namespace Activity.IntegrationTests.Tests
 {
-    public class ValueAction : ActionNode
+    public class ValueAction : IActionNode
     {
         internal readonly GlobalValue<int> globalCounter = new("x");
 
-        public override Task ExecuteAsync()
+        public Task ExecuteAsync(CancellationToken cancellationToken)
         {
             globalCounter.Set(42);
 
@@ -54,7 +54,7 @@ namespace Activity.IntegrationTests.Tests
         {
             if (ActivityLocator.TryLocateActivity(new ActivityId("values", "x"), out var a))
             {
-                await a.InitializeAsync();
+                await a.ExecuteAsync();
             }
 
             Assert.IsTrue(Executed);

@@ -3,7 +3,7 @@
 namespace Stateflows.Common
 {
     public abstract class Request<TResponse> : Event
-        where TResponse : Response, new()
+        where TResponse : Event, new()
     {
         public void Respond(TResponse response)
         {
@@ -16,15 +16,5 @@ namespace Stateflows.Common
         }
 
         public TResponse Response { get; private set; }
-    }
-
-    public class Request<TRequestPayload, TResponsePayload> : Request<Response<TResponsePayload>>
-    {
-        public Request()
-        {
-            Payload = default;
-        }
-
-        public TRequestPayload Payload { get; set; }
     }
 }

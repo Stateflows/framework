@@ -36,11 +36,9 @@ namespace Stateflows.Common.Extensions
             }
             else
             {
-                var objectToValidate = @event.GetPayload<object>() ?? @event;
+                var validationContext = new ValidationContext(@event, serviceProvider: null, items: null);
 
-                var validationContext = new ValidationContext(objectToValidate, serviceProvider: null, items: null);
-
-                isValid = Validator.TryValidateObject(objectToValidate, validationContext, validationResults, true);
+                isValid = Validator.TryValidateObject(@event, validationContext, validationResults, true);
             }
 
             return new EventValidation(isValid, validationResults);
@@ -66,18 +64,18 @@ namespace Stateflows.Common.Extensions
         public static Response GetResponse(this Event @event)
             => @event.GetResponse<Response>();
 
-        public static bool IsPayloadEvent(this Event @event)
-            => @event.GetType().IsSubclassOfRawGeneric(typeof(Event<>));
+        //public static bool IsPayloadEvent(this Event @event)
+        //    => @event.GetType().IsSubclassOfRawGeneric(typeof(Event<>));
 
-        public static TPayload GetPayload<TPayload>(this Event @event)
-        {
-            if (!@event.IsPayloadEvent())
-            {
-                return default;
-            }
+        //public static TPayload GetPayload<TPayload>(this Event @event)
+        //{
+        //    if (!@event.IsPayloadEvent())
+        //    {
+        //        return default;
+        //    }
 
-            return (TPayload)@event.GetType().GetProperty("Payload").GetValue(@event);
-        }
+        //    return (TPayload)@event.GetType().GetProperty("Payload").GetValue(@event);
+        //}
 
         public static void Respond(this Event @event, Response response)
         {

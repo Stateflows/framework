@@ -22,7 +22,7 @@ namespace Stateflows.StateMachines.Context.Classes
             Vertex = vertex;
             Context = context;
             StateValues = Context.GetStateValues(Name);
-            Values = new ContextValues(StateValues.Values);
+            Values = new ContextValuesCollection(StateValues.Values);
         }
 
         public IContextValues Values { get; }

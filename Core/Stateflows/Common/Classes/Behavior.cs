@@ -4,6 +4,8 @@ using System.Collections.Generic;
 using Microsoft.Extensions.DependencyInjection;
 using Stateflows.Common.Utilities;
 using Stateflows.Common.Subscription;
+using System.Linq;
+using System.Diagnostics;
 
 namespace Stateflows.Common.Classes
 {
@@ -44,6 +46,7 @@ namespace Stateflows.Common.Classes
             }
         }
 
+        [DebuggerHidden]
         public async Task<SendResult> SendAsync<TEvent>(TEvent @event)
             where TEvent : Event, new()
         {
@@ -53,6 +56,7 @@ namespace Stateflows.Common.Classes
             return new SendResult(@event, holder.Status, holder.Validation);
         }
 
+        [DebuggerHidden]
         public async Task<RequestResult<TResponse>> RequestAsync<TResponse>(Request<TResponse> request)
             where TResponse : Response, new()
         {

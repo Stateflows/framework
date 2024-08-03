@@ -3,21 +3,21 @@
 namespace Stateflows.Activities.Registration.Interfaces
 {
     public interface IActionBuilder :
-        IObjectFlow<IActionBuilder>,
-        IControlFlow<IActionBuilder>,
-        IExceptionHandler<IActionBuilder>,
+        IObjectFlowBase<IActionBuilder>,
+        IControlFlowBase<IActionBuilder>,
+        IExceptionHandlerBase<IActionBuilder>,
         INodeOptions<IActionBuilderWithOptions>
     { }
 
     public interface IActionBuilderWithOptions : 
-        IObjectFlow<IActionBuilderWithOptions>,
-        IControlFlow<IActionBuilderWithOptions>,
-        IExceptionHandler<IActionBuilderWithOptions>
+        IObjectFlowBase<IActionBuilderWithOptions>,
+        IControlFlowBase<IActionBuilderWithOptions>,
+        IExceptionHandlerBase<IActionBuilderWithOptions>
     { }
 
     public interface ITypedActionBuilder :
-        IObjectFlow<ITypedActionBuilder>,
-        IControlFlow<ITypedActionBuilder>,
-        IExceptionHandler<ITypedActionBuilder>
+        IObjectFlowBase<ITypedActionBuilder>,
+        IControlFlowBase<ITypedActionBuilder>,
+        IExceptionHandlerBase<ITypedActionBuilder>
     { }
 }

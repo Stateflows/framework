@@ -47,7 +47,7 @@ namespace Stateflows.Common.Scheduler
 
                 await using (await Lock.AquireLockAsync(HandlingLockId, LockTimeout))
                 {
-                    var contexts = await storage.GetContextsToTimeTriggerAsync(BehaviorClassesProvider.LocalBehaviorClasses);
+                    var contexts = await storage.GetTimeTriggeredContextsAsync(BehaviorClassesProvider.LocalBehaviorClasses);
 
                     foreach (var context in contexts)
                     {

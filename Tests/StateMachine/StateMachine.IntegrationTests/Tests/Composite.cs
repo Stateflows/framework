@@ -1,10 +1,23 @@
 ﻿using Stateflows.Common;
-using Stateflows.StateMachines.Sync;
+using Stateflows.StateMachines.Typed;
 using Stateflows.StateMachines.Events;
 using StateMachine.IntegrationTests.Utils;
+using System.Diagnostics;
+using Stateflows.StateMachines.Context.Interfaces;
 
 namespace StateMachine.IntegrationTests.Tests
 {
+    public class StateA : IBaseState
+    {
+        public StateA(IStateMachineContext smContext, ITransitionContext tContext)
+        {
+            Debug.WriteLine(smContext.Id.Instance);
+        }
+    }
+
+    public class StateB : IBaseState
+    { }
+
     [TestClass]
     public class Composite : StateflowsTestClass
     {
@@ -24,6 +37,18 @@ namespace StateMachine.IntegrationTests.Tests
         {
             builder
                 .AddStateMachines(b => b
+                    
+                    .AddStateMachine("berlin", b => b
+                        .AddDefaultInitializer(async c => true)
+
+                        .AddInitialState<StateA>(b => b
+                            .AddTransition<OtherEvent>(State<StateB>.Name, b => b
+                                .AddGuard(async c => true)
+                            )
+                        )
+                        .AddState<StateB>()
+                    )
+
                     .AddStateMachine("composite", b => b
                         .AddExecutionSequenceObserver()
                         .AddInitialCompositeState("state1", b => b
@@ -55,7 +80,7 @@ namespace StateMachine.IntegrationTests.Tests
 
                     .AddStateMachine("exits", b => b
                         .AddExecutionSequenceObserver()
-                        .AddOnInitialize(c =>
+                        .AddDefaultInitializer(c =>
                         {
                             ParentStateExited = null;
                             ChildStateExited = null;
@@ -89,6 +114,22 @@ namespace StateMachine.IntegrationTests.Tests
                 ;
         }
 
+
+
+        [TestMethod]
+        public async Task Berlin()
+        {
+            var status = EventStatus.Rejected;
+            string currentState = "";
+
+            if (StateMachineLocator.TryLocateStateMachine(new StateMachineId("berlin", "x"), out var sm))
+            {
+                status = (await sm.SendAsync(new OtherEvent() { AnswerToLifeUniverseAndEverything = 42 })).Status;
+
+                currentState = (await sm.GetCurrentStateAsync()).Response.StatesStack.First();
+            }
+        }
+
         [TestMethod]
         public async Task SelfTransition()
         {
@@ -98,8 +139,6 @@ namespace StateMachine.IntegrationTests.Tests
 
             if (StateMachineLocator.TryLocateStateMachine(new StateMachineId("composite", "x"), out var sm))
             {
-                await sm.InitializeAsync();
-
                 status = (await sm.SendAsync(new OtherEvent() { AnswerToLifeUniverseAndEverything = 42 })).Status;
 
                 currentState = (await sm.GetCurrentStateAsync()).Response.StatesStack.First();
@@ -128,8 +167,6 @@ namespace StateMachine.IntegrationTests.Tests
 
             if (StateMachineLocator.TryLocateStateMachine(new StateMachineId("default", "x"), out var sm))
             {
-                _ = await sm.InitializeAsync();
-
                 status = (await sm.SendAsync(new OtherEvent() { AnswerToLifeUniverseAndEverything = 42 })).Status;
 
                 currentState = (await sm.GetCurrentStateAsync()).Response;
@@ -169,8 +206,6 @@ namespace StateMachine.IntegrationTests.Tests
 
             if (StateMachineLocator.TryLocateStateMachine(new StateMachineId("exits", "x"), out var sm))
             {
-                await sm.InitializeAsync();
-
                 status = (await sm.SendAsync(new OtherEvent() { AnswerToLifeUniverseAndEverything = 42 })).Status;
 
                 currentState = (await sm.GetCurrentStateAsync()).Response;
@@ -202,8 +237,6 @@ namespace StateMachine.IntegrationTests.Tests
 
             if (StateMachineLocator.TryLocateStateMachine(new StateMachineId("single", "x"), out var sm))
             {
-                await sm.InitializeAsync();
-
                 status = (await sm.SendAsync(new OtherEvent() { AnswerToLifeUniverseAndEverything = 42 })).Status;
 
                 currentState = (await sm.GetCurrentStateAsync()).Response;

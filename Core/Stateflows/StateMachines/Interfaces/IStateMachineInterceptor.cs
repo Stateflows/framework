@@ -12,10 +12,10 @@ namespace Stateflows.StateMachines
         Task BeforeDehydrateAsync(IStateMachineActionContext context)
             => Task.CompletedTask;
 
-        Task<bool> BeforeProcessEventAsync(IEventContext<Event> context)
+        Task<bool> BeforeProcessEventAsync(IEventActionContext<Event> context)
             => Task.FromResult(true);
 
-        Task AfterProcessEventAsync(IEventContext<Event> context)
+        Task AfterProcessEventAsync(IEventActionContext<Event> context)
             => Task.CompletedTask;
     }
 }

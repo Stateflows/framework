@@ -3,10 +3,11 @@ using System.Threading.Tasks;
 using System.Collections.Generic;
 using Stateflows.Activities;
 using Stateflows.Activities.Events;
+using System.Linq;
 
 namespace Stateflows.Common.Activities.Classes
 {
-    internal class ActivityWrapper : IActivity
+    internal class ActivityWrapper : IActivityBehavior
     {
         BehaviorId IBehavior.Id => Behavior.Id;
 
@@ -17,16 +18,15 @@ namespace Stateflows.Common.Activities.Classes
             Behavior = consumer;
         }
 
-        public Task<RequestResult<ExecutionResponse>> ExecuteAsync(InitializationRequest initializationRequest = null, IEnumerable<object> inputTokens = null)
-        {
-            var executionRequest = new ExecutionRequest(initializationRequest ?? new InitializationRequest(), inputTokens ?? new object[0]);
-            if (initializationRequest != null)
+        public Task<RequestResult<ExecutionResponse>> ExecuteAsync(Event initializationEvent, IEnumerable<object> inputTokens = null)
+            => Behavior.RequestAsync(new ExecutionRequest()
             {
-                executionRequest.Headers.AddRange(initializationRequest.Headers);
-            }
+                InitializationEvent = initializationEvent,
+                InputTokens = inputTokens ?? new object[0],
+            });
 
-            return Behavior.RequestAsync(executionRequest);
-        }
+        public Task<RequestResult<ExecutionResponse>> ExecuteAsync(IEnumerable<object> inputTokens = null)
+            => Behavior.RequestAsync(new ExecutionRequest() { InputTokens = inputTokens ?? new object[0] });
 
         public Task<SendResult> SendAsync<TEvent>(TEvent @event)
             where TEvent : Event, new()

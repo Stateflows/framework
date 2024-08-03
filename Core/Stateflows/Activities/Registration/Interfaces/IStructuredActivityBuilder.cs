@@ -3,28 +3,28 @@
 namespace Stateflows.Activities.Registration.Interfaces
 {
     public interface IStructuredActivityBuilder :
-        IObjectFlow<IStructuredActivityBuilder>,
-        IControlFlow<IStructuredActivityBuilder>,
+        IObjectFlowBase<IStructuredActivityBuilder>,
+        IControlFlowBase<IStructuredActivityBuilder>,
         IActivity<IStructuredActivityBuilder>,
         IInitial<IStructuredActivityBuilder>,
         IFinal<IStructuredActivityBuilder>,
         IInput<IStructuredActivityBuilder>,
         IOutput<IStructuredActivityBuilder>,
-        IExceptionHandler<IStructuredActivityBuilder>,
+        IExceptionHandlerBase<IStructuredActivityBuilder>,
         INodeOptions<IStructuredActivityBuilderWithOptions>,
         IStructuredActivityEvents<IStructuredActivityBuilder>,
         ISendEvent<IStructuredActivityBuilder>
     { }
 
     public interface IStructuredActivityBuilderWithOptions :
-        IObjectFlow<IStructuredActivityBuilderWithOptions>,
-        IControlFlow<IStructuredActivityBuilderWithOptions>,
+        IObjectFlowBase<IStructuredActivityBuilderWithOptions>,
+        IControlFlowBase<IStructuredActivityBuilderWithOptions>,
         IActivity<IStructuredActivityBuilderWithOptions>,
         IInitial<IStructuredActivityBuilderWithOptions>,
         IFinal<IStructuredActivityBuilderWithOptions>,
         IInput<IStructuredActivityBuilderWithOptions>,
         IOutput<IStructuredActivityBuilderWithOptions>,
-        IExceptionHandler<IStructuredActivityBuilderWithOptions>,
+        IExceptionHandlerBase<IStructuredActivityBuilderWithOptions>,
         IStructuredActivityEvents<IStructuredActivityBuilderWithOptions>,
         ISendEvent<IStructuredActivityBuilderWithOptions>
     { }

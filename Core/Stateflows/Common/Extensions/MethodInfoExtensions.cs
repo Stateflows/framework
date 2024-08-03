@@ -32,6 +32,54 @@ namespace Stateflows.Common.Extensions
             where TType : class
             => baseMethod.IsOverridenIn(typeof(TType));
 
+        public static bool IsImplementedIn(this MethodInfo baseMethod, Type type)
+        {
+            if (baseMethod == null)
+                throw new ArgumentNullException("baseMethod");
+            if (type == null)
+                throw new ArgumentNullException("type");
+            if (!baseMethod.ReflectedType.IsAssignableFrom(type))
+                throw new ArgumentException(string.Format("Type must implement interface {0}", baseMethod.DeclaringType));
+            while (type != baseMethod.ReflectedType)
+            {
+                if (!type.GetInterfaceMap(baseMethod.DeclaringType).TargetMethods.Any(m => m.GetBaseDefinition() == baseMethod))
+                    return true;
+                type = type.BaseType;
+
+                if (!baseMethod.ReflectedType.IsAssignableFrom(type))
+                    break;
+            }
+            return false;
+        }
+
+        public static bool IsImplementedIn<TType>(this MethodInfo baseMethod)
+            where TType : class
+            => baseMethod.IsImplementedIn(typeof(TType));
+
+        public static bool IsImplementedIn(this PropertyInfo baseProperty, Type type)
+        {
+            if (baseProperty == null)
+                throw new ArgumentNullException("baseProperty");
+            if (type == null)
+                throw new ArgumentNullException("type");
+            if (!baseProperty.ReflectedType.IsAssignableFrom(type))
+                throw new ArgumentException(string.Format("Type must implement interface {0}", baseProperty.DeclaringType));
+            while (type != baseProperty.ReflectedType)
+            {
+                if (!type.GetInterfaceMap(baseProperty.DeclaringType).TargetMethods.Any(m => m.GetBaseDefinition() == baseProperty))
+                    return true;
+                type = type.BaseType;
+
+                if (!baseProperty.ReflectedType.IsAssignableFrom(type))
+                    break;
+            }
+            return false;
+        }
+
+        public static bool IsImplementedIn<TType>(this PropertyInfo baseProperty)
+            where TType : class
+            => baseProperty.IsImplementedIn(typeof(TType));
+
         public static bool IsOverridenIn(this PropertyInfo baseProperty, Type type)
         {
             if (baseProperty == null)

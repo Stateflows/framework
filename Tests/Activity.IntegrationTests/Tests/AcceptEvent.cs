@@ -60,7 +60,6 @@ namespace Activity.IntegrationTests.Tests
             SendResult result = null;
             if (ActivityLocator.TryLocateActivity(new ActivityId("acceptSingleEvent", "x"), out var a))
             {
-                await a.InitializeAsync();
                 await a.SendAsync(new SomeEvent());
                 result = await a.SendAsync(new SomeEvent());
             }
@@ -75,7 +74,7 @@ namespace Activity.IntegrationTests.Tests
         {
             if (ActivityLocator.TryLocateActivity(new ActivityId("acceptMultipleEvents", "x"), out var a))
             {
-                await a.InitializeAsync();
+                //await a.InitializeAsync();
                 await a.SendAsync(new SomeEvent());
                 await a.SendAsync(new SomeEvent());
             }

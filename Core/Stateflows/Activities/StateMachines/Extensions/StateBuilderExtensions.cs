@@ -21,15 +21,15 @@ namespace Stateflows.Activities
                     {
                         if (c.TryLocateActivity(activityName, Constants.Entry, out var a))
                         {
-                            InitializationRequest initializationRequest = initializationBuilder?.Invoke(c);
+                            Event initializationEvent = initializationBuilder?.Invoke(c) ?? new Initialize();
                             Task.Run(() =>
                             {
                                 var integratedActivityBuilder = new IntegratedActivityBuilder(buildAction);
 
                                 return a.SendCompoundAsync(
                                     integratedActivityBuilder.GetSubscriptionRequest(),
-                                    new ResetRequest() { KeepVersion = true },
-                                    new ExecutionRequest(initializationRequest, new List<TokenHolder>()),
+                                    new ResetRequest() { Mode = ResetMode.KeepVersionAndSubscriptions },
+                                    new ExecutionRequest() { InitializationEvent = initializationEvent },
                                     integratedActivityBuilder.GetUnsubscriptionRequest()
                                 );
                             });
@@ -38,8 +38,8 @@ namespace Stateflows.Activities
                 );
 
         public static IStateBuilder AddOnEntryActivity<TActivity>(this IStateBuilder builder, StateActionActivityInitializationBuilder initializationBuilder = null, IntegratedActivityBuildAction buildAction = null)
-            where TActivity : Activity
-            => AddOnEntryActivity(builder, ActivityInfo<TActivity>.Name, initializationBuilder, buildAction);
+            where TActivity : class, IActivity
+            => AddOnEntryActivity(builder, Activity<TActivity>.Name, initializationBuilder, buildAction);
 
         public static IStateBuilder AddOnExitActivity(this IStateBuilder builder, string activityName, StateActionActivityInitializationBuilder initializationBuilder = null, IntegratedActivityBuildAction buildAction = null)
             => builder
@@ -48,36 +48,24 @@ namespace Stateflows.Activities
                     {
                         if (c.TryLocateActivity(activityName, Constants.Exit, out var a))
                         {
-                            InitializationRequest initializationRequest = initializationBuilder?.Invoke(c);
+                            Event initializationEvent = initializationBuilder?.Invoke(c) ?? new Initialize();
                             Task.Run(() =>
                             {
                                 var integratedActivityBuilder = new IntegratedActivityBuilder(buildAction);
 
                                 return a.SendCompoundAsync(
                                     integratedActivityBuilder.GetSubscriptionRequest(),
-                                    new ResetRequest() { KeepVersion = true },
-                                    new ExecutionRequest(initializationRequest, new List<TokenHolder>()),
+                                    new ResetRequest() { Mode = ResetMode.KeepVersionAndSubscriptions },
+                                    new ExecutionRequest() { InitializationEvent = initializationEvent },
                                     integratedActivityBuilder.GetUnsubscriptionRequest()
                                 );
-                                //var request = new CompoundRequest()
-                                //{
-                                //    Events = new List<Event>()
-                                //    {
-                                //        integratedActivityBuilder.GetSubscriptionRequest(),
-                                //        new ResetRequest() { KeepVersion = true },
-                                //        new ExecutionRequest(initializationRequest, new List<Token>()),
-                                //        integratedActivityBuilder.GetUnsubscriptionRequest(),
-                                //    }
-                                //};
-
-                                //return a.RequestAsync(request);
                             });
                         }
                     }
                 );
 
         public static IStateBuilder AddOnExitActivity<TActivity>(this IStateBuilder builder, StateActionActivityInitializationBuilder initializationBuilder = null, IntegratedActivityBuildAction buildAction = null)
-            where TActivity : Activity
-            => AddOnExitActivity(builder, ActivityInfo<TActivity>.Name, initializationBuilder, buildAction);
+            where TActivity : class, IActivity
+            => AddOnExitActivity(builder, Activity<TActivity>.Name, initializationBuilder, buildAction);
     }
 }

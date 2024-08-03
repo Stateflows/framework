@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics;
 using Stateflows.Common;
 using Stateflows.StateMachines.Context.Interfaces;
 using Stateflows.StateMachines.Registration.Builders;
@@ -8,21 +9,24 @@ namespace Stateflows.StateMachines.Sync
 {
     public static class FinalizedStateMachineBuilderEventsSyncExtensions
     {
-        public static IFinalizedStateMachineBuilder AddOnInitialize(this IFinalizedStateMachineBuilder builder, Func<IStateMachineInitializationContext, bool> stateMachineAction)
-            => builder.AddOnInitialize(stateMachineAction
+        [DebuggerHidden]
+        public static IFinalizedStateMachineBuilder AddDefaultInitializer(this IFinalizedStateMachineBuilder builder, Func<IStateMachineInitializationContext, bool> stateMachineAction)
+            => builder.AddDefaultInitializer(stateMachineAction
                 .AddStateMachineInvocationContext((builder as StateMachineBuilder).Result)
                 .ToAsync()
             );
 
-        public static IFinalizedStateMachineBuilder AddOnInitialize<TInitializationRequest>(this IFinalizedStateMachineBuilder builder, Func<IStateMachineInitializationContext<TInitializationRequest>, bool> stateMachineAction)
-            where TInitializationRequest : InitializationRequest, new()
-            => builder.AddOnInitialize(stateMachineAction
+        [DebuggerHidden]
+        public static IFinalizedStateMachineBuilder AddInitializer<TInitializationEvent>(this IFinalizedStateMachineBuilder builder, Func<IStateMachineInitializationContext<TInitializationEvent>, bool> stateMachineAction)
+            where TInitializationEvent : Event, new()
+            => builder.AddInitializer(stateMachineAction
                 .AddStateMachineInvocationContext((builder as StateMachineBuilder).Result)
                 .ToAsync()
             );
 
-        public static IFinalizedStateMachineBuilder AddOnFinalize(this IFinalizedStateMachineBuilder builder, Action<IStateMachineActionContext> stateMachineAction)
-            => builder.AddOnFinalize(stateMachineAction
+        [DebuggerHidden]
+        public static IFinalizedStateMachineBuilder AddFinalizer(this IFinalizedStateMachineBuilder builder, Action<IStateMachineActionContext> stateMachineAction)
+            => builder.AddFinalizer(stateMachineAction
                 .AddStateMachineInvocationContext((builder as StateMachineBuilder).Result)
                 .ToAsync()
             );

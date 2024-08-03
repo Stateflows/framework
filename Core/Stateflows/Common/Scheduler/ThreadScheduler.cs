@@ -26,7 +26,11 @@ namespace Stateflows.Common.Scheduler
 
         public Task StartAsync(CancellationToken cancellationToken)
         {
-            _ = Task.Run(() => TimingLoop(CancellationTokenSource.Token));
+            _ = Task.Run(async () =>
+            {
+                await HandleStartupEvents();
+                await TimingLoop(CancellationTokenSource.Token);
+            });
 
             return Task.CompletedTask;
         }
@@ -73,6 +77,22 @@ namespace Stateflows.Common.Scheduler
             catch (Exception e)
             {
                 Logger.LogError(LogTemplates.ExceptionLogTemplate, typeof(ThreadScheduler).FullName, nameof(HandleTimeEvents), e.GetType().Name, e.Message);
+            }
+        }
+
+        private async Task HandleStartupEvents()
+        {
+            using var scope = ServiceProvider.CreateScope();
+
+            try
+            {
+                var runner = scope.ServiceProvider.GetRequiredService<StartupExecutor>();
+
+                await runner.ExecuteAsync();
+            }
+            catch (Exception e)
+            {
+                Logger.LogError(LogTemplates.ExceptionLogTemplate, typeof(ThreadScheduler).FullName, nameof(HandleStartupEvents), e.GetType().Name, e.Message);
             }
         }
 

@@ -5,40 +5,40 @@ using Stateflows.Activities.Inspection.Interfaces;
 
 namespace Stateflows.Activities.Context.Classes
 {
-    internal class ActivityInitializationContext<TInitializationRequest> :
+    internal class ActivityInitializationContext<TInitializationEvent> :
         BaseContext,
-        IActivityInitializationContext<TInitializationRequest>,
+        IActivityInitializationContext<TInitializationEvent>,
         IRootContext
-        where TInitializationRequest : InitializationRequest
+        where TInitializationEvent : Event, new()
     {
-        public ActivityInitializationContext(RootContext context, NodeScope nodeScope, TInitializationRequest initializationRequest)
+        public ActivityInitializationContext(RootContext context, NodeScope nodeScope, TInitializationEvent initializationEvent)
             : base(context, nodeScope)
         {
-            InitializationRequest = initializationRequest;
+            InitializationEvent = initializationEvent;
         }
 
-        public ActivityInitializationContext(BaseContext context, TInitializationRequest initializationRequest)
+        public ActivityInitializationContext(BaseContext context, TInitializationEvent initializationEvent)
             : base(context)
         {
-            InitializationRequest = initializationRequest;
+            InitializationEvent = initializationEvent;
         }
 
         IActivityContext IActivityActionContext.Activity => Activity;
 
-        public TInitializationRequest InitializationRequest { get; }
+        public TInitializationEvent InitializationEvent { get; }
     }
 
     internal class ActivityInitializationContext :
-        ActivityInitializationContext<InitializationRequest>,
+        ActivityInitializationContext<Event>,
         IActivityInitializationInspectionContext,
         IRootContext
     {
-        public ActivityInitializationContext(BaseContext context, InitializationRequest initializationRequest)
-            : base(context, initializationRequest)
+        public ActivityInitializationContext(BaseContext context, Event initializationEvent)
+            : base(context, initializationEvent)
         { }
 
-        public ActivityInitializationContext(RootContext context, NodeScope nodeScope, InitializationRequest initializationRequest)
-            : base(context, nodeScope, initializationRequest)
+        public ActivityInitializationContext(RootContext context, NodeScope nodeScope, Event initializationEvent)
+            : base(context, nodeScope, initializationEvent)
         { }
 
         IActivityInspectionContext IActivityInitializationInspectionContext.Activity => Activity;

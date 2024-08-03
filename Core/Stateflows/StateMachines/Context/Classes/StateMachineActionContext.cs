@@ -3,7 +3,7 @@ using Stateflows.StateMachines.Inspection.Interfaces;
 
 namespace Stateflows.StateMachines.Context.Classes
 {
-    internal class StateMachineActionContext : BaseContext, IStateMachineActionContext, IStateMachineActionInspectionContext
+    internal class StateMachineActionContext : BaseContext, IStateMachineActionContext, IStateMachineActionInspectionContext, IRootContext
     {
         IStateMachineContext IStateMachineActionContext.StateMachine => StateMachine;
 

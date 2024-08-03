@@ -14,6 +14,7 @@
         Merge,
         SendEventAction,
         AcceptEventAction,
+        TimeEventAction,
         StructuredActivity,
         ParallelActivity,
         IterativeActivity,

@@ -3,7 +3,15 @@
     public enum EventStatus
     {
         /// <summary>
-        /// Target behavior not found
+        /// Event has initialized behavior instance
+        /// </summary>
+        Initialized,
+        /// <summary>
+        /// Event has failed to initialize behavior instance
+        /// </summary>
+        NotInitialized,
+        /// <summary>
+        /// Event has executed behavior instance
         /// </summary>
         Undelivered,
         /// <summary>
@@ -15,10 +23,6 @@
         /// </summary>
         Invalid,
         /// <summary>
-        /// Event was not consumed by behavior
-        /// </summary>
-        NotConsumed,
-        /// <summary>
         /// Event was deferred by behavior and can be consumed later
         /// </summary>
         Deferred,
@@ -27,9 +31,17 @@
         /// </summary>
         Consumed,
         /// <summary>
+        /// Event was not consumed by behavior
+        /// </summary>
+        NotConsumed,
+        /// <summary>
         /// Event was omitted because other events in CompoundRequest were invalid
         /// </summary>
         Omitted,
+        /// <summary>
+        /// Event caused unhandled exception in behavior
+        /// </summary>
+        Failed,
         /// <summary>
         /// Event was forwarded to embedded behavior
         /// </summary>

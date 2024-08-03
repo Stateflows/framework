@@ -240,6 +240,31 @@ namespace Stateflows.Activities.Context.Classes
             }
         }
 
+        private Dictionary<string, Guid> nodeStartupEvents = null;
+        public Dictionary<string, Guid> NodeStartupEvents
+        {
+            get
+            {
+                lock (Context.Values)
+                {
+                    if (nodeStartupEvents == null)
+                    {
+                        if (!Context.Values.TryGetValue(Constants.NodeStartupEvents, out var nodesStartupEventsObj))
+                        {
+                            nodeStartupEvents = new Dictionary<string, Guid>();
+                            Context.Values[Constants.NodeStartupEvents] = nodeStartupEvents;
+                        }
+                        else
+                        {
+                            nodeStartupEvents = nodesStartupEventsObj as Dictionary<string, Guid>;
+                        }
+                    }
+                }
+
+                return nodeStartupEvents;
+            }
+        }
+
         [JsonIgnore]
         internal LockedList<Node> NodesToExecute { get; set; } = new LockedList<Node>();
 
@@ -288,6 +313,12 @@ namespace Stateflows.Activities.Context.Classes
             set => Context.Values[Constants.Initialized] = value;
         }
 
+        public bool Finalized
+        {
+            get => Context.Values.TryGetValue(Constants.Finalized, out var consumed) && (bool)consumed;
+            set => Context.Values[Constants.Finalized] = value;
+        }
+
         public bool ForceConsumed
         {
             get => Context.Values.TryGetValue(Constants.ForceConsumed, out var consumed) && (bool)consumed;
@@ -310,7 +341,7 @@ namespace Stateflows.Activities.Context.Classes
             ? EventsStack.Peek()
             : null;
 
-        internal Exception Exception { get; set; }
+        public readonly List<Exception> Exceptions = new List<Exception>();
 
         internal Node NodeOfOrigin { get; set; }
 
@@ -318,7 +349,13 @@ namespace Stateflows.Activities.Context.Classes
             => nodeScope.IsTerminated ||
                 (nodeScope.ChildScope?.IsTerminated ?? false) ||
                 (
-                    !node.Nodes.Values.Any(node => node.Type == NodeType.AcceptEventAction && !node.IncomingEdges.Any()) &&
+                    !node.Nodes.Values.Any(node =>
+                        (
+                            node.Type == NodeType.AcceptEventAction ||
+                            node.Type == NodeType.TimeEventAction
+                        ) &&
+                        !node.IncomingEdges.Any()
+                    ) &&
                     !ActiveNodes.Any()
                 );
 

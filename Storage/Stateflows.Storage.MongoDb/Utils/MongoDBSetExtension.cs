@@ -12,9 +12,18 @@ namespace Stateflows.Storage.MongoDB.Utils
         public static async Task<IEnumerable<StateflowsContext_v1>> FindContextByTimeTriggerAsync(this IMongoDatabase mongoDb, IEnumerable<BehaviorClass> behaviorClasses)
         {
             var collection = mongoDb.GetCollection<StateflowsContext_v1>(CollectionNames.StateflowsContexts_v1);
-            var filter = 
+            var filter =
                 Builders<StateflowsContext_v1>.Filter.In(c => c.BehaviorClass, behaviorClasses.Select(c => c.ToString())) &
                 Builders<StateflowsContext_v1>.Filter.Where(c => c.TriggerTime <= DateTime.Now);
+            return await collection.Find(filter).ToListAsync();
+        }
+
+        public static async Task<IEnumerable<StateflowsContext_v1>> FindContextByStartupTriggerAsync(this IMongoDatabase mongoDb, IEnumerable<BehaviorClass> behaviorClasses)
+        {
+            var collection = mongoDb.GetCollection<StateflowsContext_v1>(CollectionNames.StateflowsContexts_v1);
+            var filter =
+                Builders<StateflowsContext_v1>.Filter.In(c => c.BehaviorClass, behaviorClasses.Select(c => c.ToString())) &
+                Builders<StateflowsContext_v1>.Filter.Where(c => c.TriggerOnStartup);
             return await collection.Find(filter).ToListAsync();
         }
 
@@ -50,13 +59,5 @@ namespace Stateflows.Storage.MongoDB.Utils
                 await collection.UpdateOneAsync(filter, updateDef);
             }
         }
-
-        public static async Task<IEnumerable<StateflowsTrace_v1>> FindTracesAsync(this IMongoDatabase mongoDb, BehaviorId id)
-            => await mongoDb.GetCollection<StateflowsTrace_v1>(CollectionNames.StateflowsTraces_v1)
-                .Find(c => c.BehaviorId == id)
-                .ToListAsync();
-
-        public static Task InsertTraceAsync(this IMongoDatabase mongoDb, StateflowsTrace_v1 traceEntity)
-            => mongoDb.GetCollection<StateflowsTrace_v1>(CollectionNames.StateflowsTraces_v1).InsertOneAsync(traceEntity);
     }
 }

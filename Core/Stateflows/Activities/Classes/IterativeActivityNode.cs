@@ -1,9 +1,7 @@
-﻿using Stateflows.Common.Extensions;
-
-namespace Stateflows.Activities
+﻿namespace Stateflows.Activities
 {
-    public abstract class IterativeActivityNode<TToken> : StructuredActivityNode<TToken>
+    public sealed class IterativeActivityNode<TToken> : IBaseStructuredActivityNode
     {
-        public static string Name => typeof(IterativeActivityNode<TToken>).GetReadableName();
+        public static string Name => ActivityNode<IterativeActivityNode<TToken>>.Name;
     }
 }

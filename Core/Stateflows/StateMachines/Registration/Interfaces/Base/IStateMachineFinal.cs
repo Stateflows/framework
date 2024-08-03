@@ -2,6 +2,10 @@
 {
     public partial interface IStateMachineFinal<out TReturn>
     {
-        TReturn AddFinalState(string stateName = FinalState.Name);
+        /// <summary>
+        /// Adds final state to current composite state.
+        /// </summary>
+        /// <param name="finalStateName">Final state name</param>
+        TReturn AddFinalState(string finalStateName = FinalState.Name);
     }
 }

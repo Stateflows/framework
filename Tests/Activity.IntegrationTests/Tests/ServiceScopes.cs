@@ -1,9 +1,6 @@
-using Activity.IntegrationTests.Classes.Tokens;
 using Microsoft.Extensions.DependencyInjection;
 using Stateflows.Activities.Typed;
-using Stateflows.Common;
 using StateMachine.IntegrationTests.Utils;
-using System.Runtime.CompilerServices;
 
 namespace Activity.IntegrationTests.Tests
 {
@@ -17,7 +14,7 @@ namespace Activity.IntegrationTests.Tests
         public readonly string Value;
     }
 
-    public class ScopeAction1 : ActionNode
+    public class ScopeAction1 : IActionNode
     {
         private readonly Service service;
         public ScopeAction1(Service service)
@@ -25,7 +22,7 @@ namespace Activity.IntegrationTests.Tests
             this.service = service;
         }
 
-        public override Task ExecuteAsync()
+        public Task ExecuteAsync(CancellationToken cancellationToken)
         {
             ServiceScopes.Value1 = service.Value;
 
@@ -33,7 +30,7 @@ namespace Activity.IntegrationTests.Tests
         }
     }
 
-    public class ScopeAction2 : ActionNode
+    public class ScopeAction2 : IActionNode
     {
         private readonly Service service;
         public ScopeAction2(Service service)
@@ -41,7 +38,7 @@ namespace Activity.IntegrationTests.Tests
             this.service = service;
         }
 
-        public override Task ExecuteAsync()
+        public Task ExecuteAsync(CancellationToken cancellationToken)
         {
             ServiceScopes.Value1 = service.Value;
 
@@ -87,7 +84,7 @@ namespace Activity.IntegrationTests.Tests
         {
             if (ActivityLocator.TryLocateActivity(new ActivityId("scopes", "x"), out var a))
             {
-                await a.InitializeAsync();
+                await a.ExecuteAsync();
             }
 
             Assert.AreNotEqual(Value1, Value2);

@@ -2,6 +2,7 @@
 {
     internal static class Constants
     {
+        public static readonly string StateMachine = nameof(StateMachine);
         public static readonly string StatesStack = nameof(StatesStack);
         public static readonly string DefaultTransitionTarget = string.Empty;
         public static readonly string CompletionEvent = string.Empty;
