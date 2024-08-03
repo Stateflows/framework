@@ -49,7 +49,6 @@ namespace StateMachine.IntegrationTests.Tests
                         .AddState<StateB>()
                     )
 
-
                     .AddStateMachine("composite", b => b
                         .AddExecutionSequenceObserver()
                         .AddInitialCompositeState("state1", b => b
@@ -125,8 +124,6 @@ namespace StateMachine.IntegrationTests.Tests
 
             if (StateMachineLocator.TryLocateStateMachine(new StateMachineId("berlin", "x"), out var sm))
             {
-                //await sm.InitializeAsync();
-
                 status = (await sm.SendAsync(new OtherEvent() { AnswerToLifeUniverseAndEverything = 42 })).Status;
 
                 currentState = (await sm.GetCurrentStateAsync()).Response.StatesStack.First();
@@ -142,8 +139,6 @@ namespace StateMachine.IntegrationTests.Tests
 
             if (StateMachineLocator.TryLocateStateMachine(new StateMachineId("composite", "x"), out var sm))
             {
-                //await sm.InitializeAsync();
-
                 status = (await sm.SendAsync(new OtherEvent() { AnswerToLifeUniverseAndEverything = 42 })).Status;
 
                 currentState = (await sm.GetCurrentStateAsync()).Response.StatesStack.First();
@@ -172,8 +167,6 @@ namespace StateMachine.IntegrationTests.Tests
 
             if (StateMachineLocator.TryLocateStateMachine(new StateMachineId("default", "x"), out var sm))
             {
-                //_ = await sm.InitializeAsync();
-
                 status = (await sm.SendAsync(new OtherEvent() { AnswerToLifeUniverseAndEverything = 42 })).Status;
 
                 currentState = (await sm.GetCurrentStateAsync()).Response;
@@ -213,8 +206,6 @@ namespace StateMachine.IntegrationTests.Tests
 
             if (StateMachineLocator.TryLocateStateMachine(new StateMachineId("exits", "x"), out var sm))
             {
-                //await sm.InitializeAsync();
-
                 status = (await sm.SendAsync(new OtherEvent() { AnswerToLifeUniverseAndEverything = 42 })).Status;
 
                 currentState = (await sm.GetCurrentStateAsync()).Response;
@@ -246,8 +237,6 @@ namespace StateMachine.IntegrationTests.Tests
 
             if (StateMachineLocator.TryLocateStateMachine(new StateMachineId("single", "x"), out var sm))
             {
-                //await sm.InitializeAsync();
-
                 status = (await sm.SendAsync(new OtherEvent() { AnswerToLifeUniverseAndEverything = 42 })).Status;
 
                 currentState = (await sm.GetCurrentStateAsync()).Response;

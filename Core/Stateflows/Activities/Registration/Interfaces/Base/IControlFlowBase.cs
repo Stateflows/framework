@@ -12,7 +12,7 @@
 
     public interface IDecisionFlowBase<out TReturn>
     {
-        TReturn AddFlow(string targetNodeName, ControlFlowBuildAction buildAction = null);
+        TReturn AddFlow(string targetNodeName, ControlFlowBuildAction buildAction);
     }
 
     public interface IElseDecisionFlowBase<out TReturn>

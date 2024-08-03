@@ -1,10 +1,8 @@
 using Stateflows.Common;
-using Stateflows.StateMachines.Sync;
-using Stateflows.StateMachines.Typed;
-using StateMachine.IntegrationTests.Classes.StateMachines;
+using StateMachine.IntegrationTests.Utils;
 using StateMachine.IntegrationTests.Classes.States;
 using StateMachine.IntegrationTests.Classes.Transitions;
-using StateMachine.IntegrationTests.Utils;
+using StateMachine.IntegrationTests.Classes.StateMachines;
 
 namespace StateMachine.IntegrationTests.Tests
 {
@@ -40,10 +38,8 @@ namespace StateMachine.IntegrationTests.Tests
             State2.Reset();
             SomeEventTransition.Reset();
 
-            if (StateMachineLocator.TryLocateStateMachine(new StateMachineId(StateMachineInfo<StateMachine1>.Name, "x"), out var sm))
+            if (StateMachineLocator.TryLocateStateMachine(new StateMachineId(StateMachine<StateMachine1>.Name, "x"), out var sm))
             {
-                //await sm.InitializeAsync();
-
                 status1 = (await sm.SendAsync(new SomeEvent())).Status;
 
                 currentState = (await sm.GetCurrentStateAsync()).Response.StatesStack.First();

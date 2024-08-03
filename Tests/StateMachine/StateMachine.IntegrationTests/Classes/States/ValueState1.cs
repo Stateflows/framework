@@ -2,11 +2,11 @@
 
 namespace StateMachine.IntegrationTests.Classes.States
 {
-    internal class ValueState1 : State
+    internal class ValueState1 : IStateEntry
     {
         private readonly StateValue<int> counter = new("counter");
 
-        public override Task OnEntryAsync()
+        public Task OnEntryAsync()
         {
             if (counter.TryGet(out var c))
             {

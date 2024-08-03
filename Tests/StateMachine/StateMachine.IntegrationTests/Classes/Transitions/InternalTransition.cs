@@ -2,7 +2,7 @@
 
 namespace StateMachine.IntegrationTests.Classes.Transitions
 {
-    internal class InternalTransition : IBaseTransition<SomeEvent>
+    internal class InternalTransition : ITransitionEffect<SomeEvent>
     {
         private readonly GlobalValue<int> counter = new("counter");
 

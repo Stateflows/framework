@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics;
 using Stateflows.Common;
 using Stateflows.StateMachines.Context.Interfaces;
 using Stateflows.StateMachines.Registration.Builders;
@@ -8,12 +9,14 @@ namespace Stateflows.StateMachines.Sync
 {
     public static class StateMachineBuilderEventsSyncExtensions
     {
+        [DebuggerHidden]
         public static IStateMachineBuilder AddDefaultInitializer(this IStateMachineBuilder builder, Func<IStateMachineInitializationContext, bool> stateMachineAction)
             => builder.AddDefaultInitializer(stateMachineAction
                 .AddStateMachineInvocationContext((builder as StateMachineBuilder).Result)
                 .ToAsync()
             );
 
+        [DebuggerHidden]
         public static IStateMachineBuilder AddInitializer<TInitializationEvent>(this IStateMachineBuilder builder, Func<IStateMachineInitializationContext<TInitializationEvent>, bool> stateMachineAction)
             where TInitializationEvent : Event, new()
             => builder.AddInitializer(stateMachineAction
@@ -21,6 +24,7 @@ namespace Stateflows.StateMachines.Sync
                 .ToAsync()
             );
 
+        [DebuggerHidden]
         public static IStateMachineBuilder AddFinalizer(this IStateMachineBuilder builder, Action<IStateMachineActionContext> stateMachineAction)
             => builder.AddFinalizer(stateMachineAction
                 .AddStateMachineInvocationContext((builder as StateMachineBuilder).Result)

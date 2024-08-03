@@ -11,6 +11,7 @@ namespace Stateflows.Storage.MongoDB.MongoDB.Entities
         public string BehaviorId { get; set; }
         public string BehaviorClass { get; set; }
         public DateTime? TriggerTime { get; set; }
+        public bool TriggerOnStartup { get; set; }
         public string Data { get; set; }
         public StateflowsContext_v1(BehaviorId behaviorId)
         {

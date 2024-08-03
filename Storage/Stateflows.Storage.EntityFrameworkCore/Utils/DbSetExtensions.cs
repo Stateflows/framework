@@ -69,11 +69,5 @@ namespace Stateflows.Storage.EntityFrameworkCore.Utils
                 .AsNoTracking()
                 .ToArray();
         }
-
-        public static async Task<IEnumerable<Trace_v1>> FindByBehaviorIdAsync(this DbSet<Trace_v1> dbSet, BehaviorId behaviorId)
-            => await dbSet
-                .Where(c => c.BehaviorId == behaviorId.ToString())
-                .AsNoTracking()
-                .ToArrayAsync();
     }
 }

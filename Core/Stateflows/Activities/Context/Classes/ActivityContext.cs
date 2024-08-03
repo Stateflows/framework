@@ -25,7 +25,7 @@ namespace Stateflows.Activities.Context.Classes
         public ActivityContext(RootContext context, NodeScope nodeScope)
             : base(context, nodeScope)
         {
-            Values = new ContextValues(Context.GlobalValues);
+            Values = new ContextValuesCollection(Context.GlobalValues);
         }
 
         public IActivityInspection Inspection => Context.Executor.Inspector.Inspection;

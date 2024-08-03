@@ -1,5 +1,6 @@
 ﻿using System;
-using Stateflows.Activities.Extensions;
+using System.Diagnostics;
+using Stateflows.Common.Extensions;
 using Stateflows.Activities.Context.Classes;
 using Stateflows.Activities.Registration.Interfaces;
 
@@ -7,11 +8,12 @@ namespace Stateflows.Activities.Typed
 {
     public static class AcceptEventActionBuilderExceptionHandlersExtensions
     {
+        [DebuggerHidden]
         public static IAcceptEventActionBuilder AddExceptionHandler<TException, TExceptionHandler>(this IAcceptEventActionBuilder builder)
             where TException : Exception
-            where TExceptionHandler : ExceptionHandlerNode<TException>
+            where TExceptionHandler : class, IExceptionHandlerNode<TException>
         {
-            (builder as IInternal).Services.RegisterExceptionHandlerAction<TException, TExceptionHandler>();
+            (builder as IInternal).Services.AddServiceType<TExceptionHandler>();
 
             return builder.AddExceptionHandler<TException>(async c =>
             {
@@ -20,7 +22,7 @@ namespace Stateflows.Activities.Typed
                 if (handler != null)
                 {
                     ActivityNodeContextAccessor.Context.Value = c;
-                    await handler?.HandleAsync();
+                    await handler?.HandleAsync(c.Exception, c.CancellationToken);
                     ActivityNodeContextAccessor.Context.Value = null;
                 }
             });

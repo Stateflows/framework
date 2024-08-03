@@ -1,6 +1,4 @@
-﻿using Stateflows.StateMachines.Events;
-
-namespace StateMachine.IntegrationTests.Classes.Transitions
+﻿namespace StateMachine.IntegrationTests.Classes.Transitions
 {
     internal class ValueTransition : IBaseDefaultTransition
     {

@@ -3,7 +3,7 @@ using System.Threading.Tasks;
 
 namespace Stateflows.Activities
 {
-    public interface ISendEventActionNode<TEvent>
+    public interface ISendEventActionNode<TEvent> : IActivityNode
         where TEvent : Event, new()
     {
         Task<TEvent> GenerateEventAsync();

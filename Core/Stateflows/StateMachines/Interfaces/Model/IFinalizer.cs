@@ -4,6 +4,6 @@ namespace Stateflows.StateMachines
 {
     public interface IFinalizer
     {
-        Task OnFinalize();
+        Task OnFinalizeAsync();
     }
 }

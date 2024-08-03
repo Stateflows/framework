@@ -24,10 +24,10 @@ namespace Stateflows.Common.Extensions
             }
         }
 
-        public static async Task<bool> RunProtected<T>(this IEnumerable<T> enumerable, PredicateAsync<T> action, Action<Exception> exceptionHandler)
+        public static async Task<bool> RunProtected<T>(this IEnumerable<T> enumerable, PredicateAsync<T> action, Action<Exception> exceptionHandler, bool defaultResult = true)
             where T : class
         {
-            var result = true;
+            var result = defaultResult;
             foreach (var item in enumerable)
             {
                 try
@@ -53,11 +53,12 @@ namespace Stateflows.Common.Extensions
                 e => logger.LogError(LogTemplates.ExceptionLogTemplate, typeof(T).DeclaringType.FullName, methodName, e.GetType().Name, e.Message)
             );
 
-        public static Task<bool> RunSafe<T>(this IEnumerable<T> enumerable, PredicateAsync<T> action, string methodName, ILogger logger)
+        public static Task<bool> RunSafe<T>(this IEnumerable<T> enumerable, PredicateAsync<T> action, string methodName, ILogger logger, bool defaultResult = true)
             where T : class
             => enumerable.RunProtected<T>(
                 action,
-                e => logger.LogError(LogTemplates.ExceptionLogTemplate, typeof(T).DeclaringType.FullName, methodName, e.GetType().Name, e.Message)
+                e => logger.LogError(LogTemplates.ExceptionLogTemplate, typeof(T).DeclaringType.FullName, methodName, e.GetType().Name, e.Message),
+                defaultResult
             );
     }
 }

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics;
 using Stateflows.StateMachines.Context.Interfaces;
 using Stateflows.StateMachines.Registration.Builders;
 using Stateflows.StateMachines.Registration.Extensions;
@@ -8,14 +9,32 @@ namespace Stateflows.StateMachines.Sync
 {
     public static class StateBuilderEventsSyncExtensions
     {
-        public static IStateBuilder AddOnEntry(this IStateBuilder builder, Action<IStateActionContext> stateAction)
-            => builder.AddOnEntry(stateAction
+        /// <summary>
+        /// Adds synchronous entry handler coming from current state.<br/>
+        /// Use the following pattern to implement handler:
+        /// <code>c => {
+        ///     // handler logic here; action context is available via c parameter
+        /// }</code>
+        /// </summary>
+        /// <param name="action">Synchronous action handler</param>
+        [DebuggerHidden]
+        public static IStateBuilder AddOnEntry(this IStateBuilder builder, Action<IStateActionContext> action)
+            => builder.AddOnEntry(action
                 .AddStateMachineInvocationContext((builder as StateBuilder).Vertex.Graph)
                 .ToAsync()
             );
 
-        public static IStateBuilder AddOnExit(this IStateBuilder builder, Action<IStateActionContext> stateAction)
-            => builder.AddOnExit(stateAction
+        /// <summary>
+        /// Adds synchronous exit handler coming from current state.<br/>
+        /// Use the following pattern to implement handler:
+        /// <code>c => {
+        ///     // handler logic here; action context is available via c parameter
+        /// }</code>
+        /// </summary>
+        /// <param name="action">Synchronous action handler</param>
+        [DebuggerHidden]
+        public static IStateBuilder AddOnExit(this IStateBuilder builder, Action<IStateActionContext> action)
+            => builder.AddOnExit(action
                 .AddStateMachineInvocationContext((builder as StateBuilder).Vertex.Graph)
                 .ToAsync()
             );

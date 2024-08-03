@@ -1,19 +1,18 @@
 using Activity.IntegrationTests.Classes.Tokens;
-using Stateflows.Activities.Registration.Interfaces;
 using Stateflows.Activities.Typed;
 using Stateflows.Common;
 using StateMachine.IntegrationTests.Utils;
 
 namespace Activity.IntegrationTests.Tests
 {
-    public class TypedAction : ActionNode
+    public class TypedAction : IActionNode
     {
         public readonly Input<SomeToken> someTokens;
         public readonly Input<string> strings;
 
         public readonly GlobalValue<string> value = new("global");
 
-        public override Task ExecuteAsync()
+        public Task ExecuteAsync(CancellationToken cancellationToken)
         {
             Typed.TokenValue = someTokens.First().Foo;
 
@@ -75,7 +74,7 @@ namespace Activity.IntegrationTests.Tests
         {
             if (ActivityLocator.TryLocateActivity(new ActivityId("typed", "x"), out var a))
             {
-                await a.InitializeAsync();
+                await a.ExecuteAsync();
             }
 
             Assert.IsTrue(Executed);

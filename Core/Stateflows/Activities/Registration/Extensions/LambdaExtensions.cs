@@ -17,7 +17,7 @@ namespace Stateflows.Activities.Registration.Extensions
                 ? (TContext context) =>
                     {
                         var rootContext = (context as IRootContext).Context;
-                        var stateMachineInstance = rootContext.Executor.GetActivity(graph.ActivityType, rootContext);
+                        var stateMachineInstance = rootContext.Executor.GetActivity(graph.ActivityType);
 
                         return (TResult)lambdaInfo.Invoke(stateMachineInstance, new object[] { context });
                     }
@@ -33,7 +33,7 @@ namespace Stateflows.Activities.Registration.Extensions
                 ? (TContext context) =>
                     {
                         var rootContext = (context as IRootContext).Context;
-                        var stateMachineInstance = rootContext.Executor.GetActivity(graph.ActivityType, rootContext);
+                        var stateMachineInstance = rootContext.Executor.GetActivity(graph.ActivityType);
 
                         lambdaInfo.Invoke(stateMachineInstance, new object[] { context });
                     }

@@ -4,9 +4,9 @@ using StateMachine.IntegrationTests.Classes.Transitions;
 
 namespace StateMachine.IntegrationTests.Classes.StateMachines
 {
-    public class ValuesStateMachine : Stateflows.StateMachines.StateMachine
+    public class ValuesStateMachine : IStateMachine
     {
-        public override void Build(IStateMachineBuilder builder)
+        public void Build(IStateMachineBuilder builder)
             => builder
                 .AddInitialState<ValueState1>(b => b
                     .AddDefaultTransition<ValueTransition, ValueState2>()

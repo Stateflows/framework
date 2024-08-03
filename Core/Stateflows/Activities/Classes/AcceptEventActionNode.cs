@@ -1,16 +1,15 @@
-﻿using Stateflows.Common;
-using Stateflows.Activities.Context.Interfaces;
-using Stateflows.Activities.Interfaces;
+﻿using System.Threading;
 using System.Threading.Tasks;
+using Stateflows.Common;
 
 namespace Stateflows.Activities
 {
-    public abstract class AcceptEventActionNode<TEvent> : BaseActionNode, IAcceptEventActionNode<TEvent>
+    public sealed class AcceptEventActionNode<TEvent> : IAcceptEventActionNode<TEvent>
         where TEvent : Event, new()
     {
-        public new IAcceptEventActionContext<TEvent> Context
-            => (IAcceptEventActionContext<TEvent>)base.Context;
+        public Task ExecuteAsync(TEvent @event, CancellationToken cancellationToken)
+            => Task.CompletedTask;
 
-        public abstract Task ExecuteAsync(TEvent @event);
+        public static string Name => ActivityNode<AcceptEventActionNode<TEvent>>.Name;
     }
 }

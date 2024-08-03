@@ -1,6 +1,6 @@
 ﻿using Newtonsoft.Json;
-using System.ComponentModel.DataAnnotations;
 using System;
+using System.ComponentModel.DataAnnotations;
 
 namespace Stateflows.Common
 {

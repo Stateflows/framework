@@ -1,6 +1,5 @@
 ﻿using System;
 using Microsoft.Extensions.DependencyInjection;
-using Stateflows.System;
 using Stateflows.Activities;
 using Stateflows.StateMachines;
 using Stateflows.Common;
@@ -9,7 +8,6 @@ using Stateflows.Common.Locator;
 using Stateflows.Common.Interfaces;
 using Stateflows.Common.Extensions;
 using Stateflows.Common.Exceptions;
-using Stateflows.Common.System.Classes;
 using Stateflows.Common.Activities.Classes;
 using Stateflows.Common.StateMachines.Classes;
 using Stateflows.Common.Registration.Builders;
@@ -34,17 +32,6 @@ namespace Stateflows
                 .AddScoped<IBehaviorLocator, BehaviorLocator>()
                 .AddScoped<IStateMachineLocator, StateMachineLocator>()
                 .AddScoped<IActivityLocator, ActivityLocator>()
-                .AddScoped<ISystem>((IServiceProvider provider) =>
-                {
-                    if (provider.GetRequiredService<IBehaviorLocator>().TryLocateBehavior(SystemBehavior.Id, out var behavior))
-                    {
-                        return new SystemWrapper(behavior);
-                    }
-                    else
-                    {
-                        throw new StateflowsException("System behavior could not be found");
-                    }
-                })
                 .AddSingleton<IBehaviorClassesProvider, BehaviorClassesProvider>()
                 ;
 

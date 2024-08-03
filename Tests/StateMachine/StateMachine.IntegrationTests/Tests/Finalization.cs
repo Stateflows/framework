@@ -79,7 +79,7 @@ namespace StateMachine.IntegrationTests.Tests
             );
             Assert.IsTrue(initialized);
             Assert.IsTrue(finalized);
-            Assert.AreEqual(StateInfo<FinalState>.Name, currentState);
+            Assert.AreEqual(State<FinalState>.Name, currentState);
         }
 
         [TestMethod]

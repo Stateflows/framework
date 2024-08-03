@@ -11,7 +11,7 @@
         /// </summary>
         NotInitialized,
         /// <summary>
-        /// Target behavior not found
+        /// Event has executed behavior instance
         /// </summary>
         Undelivered,
         /// <summary>
@@ -38,6 +38,10 @@
         /// Event was omitted because other events in CompoundRequest were invalid
         /// </summary>
         Omitted,
+        /// <summary>
+        /// Event caused unhandled exception in behavior
+        /// </summary>
+        Failed,
         /// <summary>
         /// Event was forwarded to embedded behavior
         /// </summary>

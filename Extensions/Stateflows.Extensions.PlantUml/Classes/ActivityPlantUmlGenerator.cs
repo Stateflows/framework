@@ -1,10 +1,9 @@
 ﻿using System.Linq;
 using System.Text;
 using System.Collections.Generic;
+using Stateflows.Common;
 using Stateflows.Activities;
 using Stateflows.Activities.Inspection.Interfaces;
-using Stateflows.Common;
-using Stateflows.Common.Extensions;
 
 namespace Stateflows.Extensions.PlantUml.Classes
 {
@@ -13,6 +12,13 @@ namespace Stateflows.Extensions.PlantUml.Classes
         private static string GetNodeName(INodeInspection node, string parentName)
         {
             var nodeName = node.Name.Split('.').Last();
+
+            if (node.Type == NodeType.AcceptEventAction || node.Type == NodeType.TimeEventAction)
+            {
+                var parts = node.Name.Split('<');
+                var eventPart = parts.Last().Split('.').Last();
+                nodeName = string.Join("<", parts.First(), eventPart);
+            }
 
             if (nodeName == "ExceptionHandler")
             {
@@ -62,13 +68,16 @@ namespace Stateflows.Extensions.PlantUml.Classes
                 var source = GetNodeName(transition.Source, parentName);
                 var target = GetNodeName(transition.Target, parentName);
 
-                if (transition.TokenName == typeof(ControlToken).GetTokenName())
+                if (transition.TokenName != "NodeReferenceToken")
                 {
-                    builder.AppendLine($"{indent}{source} --> {target}");
-                }
-                else
-                {
-                    builder.AppendLine($"{indent}{source} -->[{transition.TokenName}] {target}");
+                    if (transition.TokenName == typeof(ControlToken).GetTokenName())
+                    {
+                        builder.AppendLine($"{indent}{source} --> {target}");
+                    }
+                    else
+                    {
+                        builder.AppendLine($"{indent}{source} -->[{transition.TokenName}] {target}");
+                    }
                 }
             }
         }

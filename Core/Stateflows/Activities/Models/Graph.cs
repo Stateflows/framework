@@ -6,8 +6,6 @@ using Stateflows.Common;
 using Stateflows.Common.Models;
 using Stateflows.Activities.Exceptions;
 using Stateflows.Activities.Registration.Interfaces;
-using Stateflows.StateMachines.Interfaces;
-using Stateflows.Activities.Registration;
 
 namespace Stateflows.Activities.Models
 {
@@ -23,6 +21,7 @@ namespace Stateflows.Activities.Models
 
         public int Version { get; }
         public Type ActivityType { get; set; }
+        public bool Interactive { get; set; } = false;
         public readonly Dictionary<string, Node> AllNodes = new Dictionary<string, Node>();
         public readonly Dictionary<string, Node> AllNamedNodes = new Dictionary<string, Node>();
         public readonly List<Edge> AllEdgesList = new List<Edge>();
@@ -63,6 +62,7 @@ namespace Stateflows.Activities.Models
                 NodeType.Initial,
                 NodeType.Input,
                 NodeType.AcceptEventAction,
+                NodeType.TimeEventAction,
             };
 
             var danglingNodes = AllNodes.Values.Where(node => !autoNodeTypes.Contains(node.Type) && !node.IncomingEdges.Any()).ToArray();

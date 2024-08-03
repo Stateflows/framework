@@ -18,19 +18,12 @@ namespace Stateflows.Common.Activities.Classes
             Behavior = consumer;
         }
 
-        public async Task<RequestResult<ExecutionResponse>> ExecuteAsync(Event initializationEvent, IEnumerable<object> inputTokens = null)
-        {
-            var executionRequest = new ExecutionRequest() { InputTokens = inputTokens ?? new object[0] };
-
-            var result = await Behavior.SendCompoundAsync(
-                initializationEvent,
-                executionRequest
-            );
-
-            var executionResult = result.Response.Results.Last();
-
-            return new RequestResult<ExecutionResponse>(executionRequest, executionResult.Status, executionResult.Validation);
-        }
+        public Task<RequestResult<ExecutionResponse>> ExecuteAsync(Event initializationEvent, IEnumerable<object> inputTokens = null)
+            => Behavior.RequestAsync(new ExecutionRequest()
+            {
+                InitializationEvent = initializationEvent,
+                InputTokens = inputTokens ?? new object[0],
+            });
 
         public Task<RequestResult<ExecutionResponse>> ExecuteAsync(IEnumerable<object> inputTokens = null)
             => Behavior.RequestAsync(new ExecutionRequest() { InputTokens = inputTokens ?? new object[0] });

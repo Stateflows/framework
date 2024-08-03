@@ -9,9 +9,17 @@ namespace StateMachine.IntegrationTests.Classes.Transitions
         public static bool EffectFired = false;
 
         private readonly IStateMachineContext stateMachineContext;
-        public SomeEventTransition(IStateMachineContext stateMachineContext)
+        private readonly ITransitionContext transitionContext;
+        private readonly IExecutionContext executionContext;
+        public SomeEventTransition(
+            IStateMachineContext stateMachineContext, 
+            ITransitionContext transitionContext, 
+            IExecutionContext executionContext
+        )
         {
             this.stateMachineContext = stateMachineContext;
+            this.transitionContext = transitionContext;
+            this.executionContext = executionContext;
         }
 
         public static void Reset()
@@ -22,13 +30,21 @@ namespace StateMachine.IntegrationTests.Classes.Transitions
 
         public Task<bool> GuardAsync(SomeEvent @event)
         {
-            GuardFired = stateMachineContext != null && stateMachineContext.Id.Instance != null;
+            GuardFired =
+                stateMachineContext != null &&
+                transitionContext != null &&
+                executionContext != null && stateMachineContext.Id.Instance != null;
+
             return Task.FromResult(true);
         }
 
         public Task EffectAsync(SomeEvent @event)
         {
-            EffectFired = stateMachineContext != null && stateMachineContext.Id.Instance != null;
+            EffectFired =
+                stateMachineContext != null &&
+                transitionContext != null &&
+                executionContext != null && stateMachineContext.Id.Instance != null;
+
             return Task.CompletedTask;
         }
     }

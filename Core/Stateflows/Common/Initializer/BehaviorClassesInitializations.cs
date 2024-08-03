@@ -13,25 +13,5 @@ namespace Stateflows.Common.Initializer
 
         public void AddDefaultInstanceInitialization(BehaviorClass behaviorClass, DefaultInstanceInitializationRequestFactoryAsync initializationRequestFactory = null)
             => DefaultInstanceInitializationTokens.Add(new DefaultInstanceInitializationToken(behaviorClass, initializationRequestFactory ?? DefaultDefaultInstanceFactory));
-
-        //    public readonly List<AutoInitializationToken> AutoInitializationTokens = new List<AutoInitializationToken>();
-
-        //    private static readonly AutoInitializationRequestFactoryAsync DefaultAutoFactory = (serviceProvider, behaviorClass) => Task.FromResult(new InitializationRequest());
-
-        //    public void AddAutoInitialization(BehaviorClass behaviorClass, AutoInitializationRequestFactoryAsync initializationRequestFactory = null)
-        //        => AutoInitializationTokens.Add(new AutoInitializationToken(behaviorClass, initializationRequestFactory ?? DefaultAutoFactory));
-
-        //    public void RefreshEnvironment()
-        //    {
-        //        foreach (var token in DefaultInstanceInitializationTokens)
-        //        {
-        //            token.RefreshEnvironment();
-        //        }
-
-        //        foreach (var token in AutoInitializationTokens)
-        //        {
-        //            token.RefreshEnvironment();
-        //        }
-        //    }
     }
 }

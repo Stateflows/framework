@@ -23,7 +23,7 @@ namespace Stateflows.Activities.Registration.Builders
         {
             assembly.GetAttributedTypes<ActivityBehaviorAttribute>().ToList().ForEach(@type =>
             {
-                if (typeof(Activity).IsAssignableFrom(@type))
+                if (typeof(IActivity).IsAssignableFrom(@type))
                 {
                     var attribute = @type.GetCustomAttributes(typeof(ActivityBehaviorAttribute)).FirstOrDefault() as ActivityBehaviorAttribute;
                     Register.AddActivity(attribute?.Name ?? @type.FullName, attribute?.Version ?? 1, @type);
@@ -63,16 +63,16 @@ namespace Stateflows.Activities.Registration.Builders
 
         [DebuggerHidden]
         public IActivitiesBuilder AddActivity<TActivity>(string activityName = null, int version = 1)
-            where TActivity : Activity
+            where TActivity : class, IActivity
         {
-            Register.AddActivity<TActivity>(activityName ?? ActivityInfo<TActivity>.Name, version);
+            Register.AddActivity<TActivity>(activityName ?? Activity<TActivity>.Name, version);
 
             return this;
         }
 
         [DebuggerHidden]
         public IActivitiesBuilder AddActivity<TActivity>(int version)
-            where TActivity : Activity
+            where TActivity : class, IActivity
             => AddActivity<TActivity>(null, version);
 
         #region Observability

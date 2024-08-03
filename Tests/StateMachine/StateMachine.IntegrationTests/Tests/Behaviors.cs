@@ -98,7 +98,7 @@ namespace StateMachine.IntegrationTests.Tests
                 .StateMachineFinalize()
             );
             Assert.IsTrue(initialized);
-            Assert.AreEqual(EventStatus.Consumed, someStatus1);
+            Assert.AreEqual(EventStatus.Forwarded, someStatus1);
             Assert.AreEqual("state2", currentState1);
         }
 
@@ -125,7 +125,7 @@ namespace StateMachine.IntegrationTests.Tests
                 .StateEntry("state2")
             );
             Assert.IsTrue(initialized);
-            Assert.AreEqual(EventStatus.Consumed, someStatus1);
+            Assert.AreEqual(EventStatus.Forwarded, someStatus1);
             Assert.AreEqual(true, eventConsumed);
             Assert.AreEqual("state2", currentState1);
         }

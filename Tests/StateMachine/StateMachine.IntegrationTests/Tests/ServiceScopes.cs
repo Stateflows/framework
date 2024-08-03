@@ -17,7 +17,7 @@ namespace StateMachine.IntegrationTests.Tests
         public readonly string Value;
     }
 
-    public class ScopeState : State
+    public class ScopeState : IStateEntry, IStateExit
     {
         private readonly Service service;
         public ScopeState(Service service)
@@ -25,14 +25,14 @@ namespace StateMachine.IntegrationTests.Tests
             this.service = service;
         }
 
-        public override Task OnEntryAsync()
+        public Task OnEntryAsync()
         {
             ServiceScopes.EntryValue = service.Value;
 
             return Task.CompletedTask;
         }
 
-        public override Task OnExitAsync()
+        public Task OnExitAsync()
         {
             ServiceScopes.ExitValue = service.Value;
 

@@ -6,6 +6,7 @@ using Stateflows.Common.Exceptions;
 using Stateflows.Common.Registration.Interfaces;
 using Stateflows.Storage.EntityFrameworkCore.Stateflows;
 using Stateflows.Storage.EntityFrameworkCore.EntityFrameworkCore;
+using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Stateflows
 {
@@ -20,9 +21,8 @@ namespace Stateflows
             }
 
             builder.ServiceCollection
-                //.AddScoped<IStateflowsStorage, EntityFrameworkCoreStorage>()
                 .AddTransient<IStateflowsStorage, EntityFrameworkCoreStorage>()
-                .AddTransient<IStateflowsDbContext_v1, TDbContext>()
+                .AddDbContext<IStateflowsDbContext_v1, TDbContext>()
             ;
 
             return builder;

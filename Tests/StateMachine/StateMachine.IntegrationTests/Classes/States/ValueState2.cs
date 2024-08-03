@@ -1,8 +1,8 @@
 ﻿namespace StateMachine.IntegrationTests.Classes.States
 {
-    internal class ValueState2 : State
+    internal class ValueState2 : IStateEntry
     {
-        public override Task OnEntryAsync()
+        public Task OnEntryAsync()
         {
             return Task.CompletedTask;
         }

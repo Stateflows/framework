@@ -13,19 +13,19 @@ namespace Stateflows.StateMachines.Typed
         //    => builder.AddHttpGetInternalTransition(pattern, b => b.AddTransitionEvents<TTransition, HttpRequest>(), endpointbuildAction);
         #endregion
 
-        #region AddHttpPostTransition
-        public static IStateBuilder AddHttpPostTransition<TRequestPayload, TTargetState>(this IStateBuilder builder, string pattern, TransitionBuildAction<HttpRequest<TRequestPayload>> transitionBuildAction = null, Action<IEndpointConventionBuilder> endpointBuildAction = null)
-            where TTargetState : BaseState
-            => builder.AddHttpPostTransition<TRequestPayload>(pattern, StateInfo<TTargetState>.Name, transitionBuildAction, endpointBuildAction);
+        //#region AddHttpPostTransition
+        //public static IStateBuilder AddHttpPostTransition<TRequestPayload, TTargetState>(this IStateBuilder builder, string pattern, TransitionBuildAction<HttpRequest<TRequestPayload>> transitionBuildAction = null, Action<IEndpointConventionBuilder> endpointBuildAction = null)
+        //    where TTargetState : IVertex
+        //    => builder.AddHttpPostTransition<TRequestPayload>(pattern, State<TTargetState>.Name, transitionBuildAction, endpointBuildAction);
 
-        public static IStateBuilder AddHttpPostTransition<TRequestPayload, TTransition, TTargetState>(this IStateBuilder builder, string pattern, Action<IEndpointConventionBuilder> endpointbuildAction = null)
-            where TTransition : Transition<HttpRequest<TRequestPayload>>
-            where TTargetState : BaseState
-            => builder.AddHttpPostTransition<TRequestPayload>(pattern, StateInfo<TTargetState>.Name, b => b.AddTransitionEvents<TTransition, HttpRequest<TRequestPayload>>(), endpointbuildAction);
+        //public static IStateBuilder AddHttpPostTransition<TRequestPayload, TTransition, TTargetState>(this IStateBuilder builder, string pattern, Action<IEndpointConventionBuilder> endpointbuildAction = null)
+        //    where TTransition : Transition<HttpRequest<TRequestPayload>>
+        //    where TTargetState : IVertex
+        //    => builder.AddHttpPostTransition<TRequestPayload>(pattern, State<TTargetState>.Name, b => b.AddTransitionEvents<TTransition, HttpRequest<TRequestPayload>>(), endpointbuildAction);
 
-        public static IStateBuilder AddHttpPostTransition<TRequestPayload, TTransition>(this IStateBuilder builder, string pattern, string targetVertexName, Action<IEndpointConventionBuilder> endpointbuildAction = null)
-            where TTransition : Transition<HttpRequest<TRequestPayload>>
-            => builder.AddHttpPostTransition<TRequestPayload>(pattern, targetVertexName, b => b.AddTransitionEvents<TTransition, HttpRequest<TRequestPayload>>(), endpointbuildAction);
-        #endregion
+        //public static IStateBuilder AddHttpPostTransition<TRequestPayload, TTransition>(this IStateBuilder builder, string pattern, string targetStateName, Action<IEndpointConventionBuilder> endpointbuildAction = null)
+        //    where TTransition : Transition<HttpRequest<TRequestPayload>>
+        //    => builder.AddHttpPostTransition<TRequestPayload>(pattern, targetStateName, b => b.AddTransitionEvents<TTransition, HttpRequest<TRequestPayload>>(), endpointbuildAction);
+        //#endregion
     }
 }

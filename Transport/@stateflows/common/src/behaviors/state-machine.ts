@@ -1,5 +1,7 @@
+import { RequestResult } from "../classes/request-result";
 import { CurrentStateNotification } from "../events/current-state.notification";
 import { CurrentStateRequest } from "../events/current-state.request";
+import { CurrentStateResponse } from "../events/current-state.response";
 import { IStateMachine } from "../interfaces/state-machine";
 import { NotificationHandler } from "../utils/notification-handler";
 import { Behavior } from "./behavior";
@@ -9,7 +11,7 @@ export class StateMachine extends Behavior implements IStateMachine {
         super(behavior, behavior.id);
     }
 
-    getCurrentState(): Promise<any> {
+    getCurrentState(): Promise<RequestResult<CurrentStateResponse>> {
         return this.request(new CurrentStateRequest());
     }
 

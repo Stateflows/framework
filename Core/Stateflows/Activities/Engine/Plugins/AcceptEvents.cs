@@ -6,6 +6,7 @@ using Stateflows.Common;
 using Stateflows.Activities.Models;
 using Stateflows.Activities.Context.Classes;
 using Stateflows.Activities.Context.Interfaces;
+using System.Diagnostics;
 
 namespace Stateflows.Activities.Engine
 {
@@ -156,6 +157,8 @@ namespace Stateflows.Activities.Engine
 
         Task IActivityInterceptor.AfterProcessEventAsync(IEventContext<Event> context)
         {
+            Trace.WriteLine($"⦗→s⦘ Activity '{context.Activity.Id.Name}:{context.Activity.Id.Instance}': processed event '{context.Event.Name}'");
+
             Context = (context as BaseContext).Context;
 
             if (Context.Context.PendingTimeEvents.Any())
@@ -210,6 +213,11 @@ namespace Stateflows.Activities.Engine
             if (context.Event is Startup startupEvent)
             {
                 result = Context.Context.PendingStartupEvents.ContainsKey(startupEvent.Id);
+            }
+
+            if (result)
+            {
+                Trace.WriteLine($"⦗→s⦘ Activity '{context.Activity.Id.Name}:{context.Activity.Id.Instance}': received event '{context.Event.Name}', trying to process it");
             }
 
             return Task.FromResult(result);

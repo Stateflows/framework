@@ -7,23 +7,23 @@ namespace Stateflows.Activities
         int Weight => 1;
     }
 
-    public interface IFlow : IBaseFlow
+    public interface IBaseFlow<TToken> : IBaseFlow
     { }
 
-    public interface IFlowGuard<TToken> : IFlow
+    public interface IFlowGuard<TToken> : IBaseFlow<TToken>
     {
         Task<bool> GuardAsync(TToken token);
     }
 
-    public interface IFlowTransformation<TToken, TTransformedToken> : IFlow
+    public interface IFlowTransformation<TToken, TTransformedToken> : IBaseFlow<TToken>
     {
         Task<TTransformedToken> TransformAsync(TToken token);
     }
 
-    public interface IControlFlow : IBaseFlow
+    public interface IBaseControlFlow : IBaseFlow
     { }
 
-    public interface IControlFlowGuard : IControlFlow
+    public interface IControlFlowGuard : IBaseControlFlow
     {
         Task<bool> GuardAsync();
     }

@@ -13,6 +13,7 @@ using Stateflows.StateMachines.Context.Interfaces;
 using Stateflows.StateMachines.Registration.Interfaces;
 using Stateflows.StateMachines.Registration.Interfaces.Base;
 using Stateflows.StateMachines.Registration.Interfaces.Internal;
+using Stateflows.Common.Extensions;
 
 namespace Stateflows.StateMachines.Registration.Builders
 {
@@ -27,7 +28,7 @@ namespace Stateflows.StateMachines.Registration.Builders
 
         public IServiceCollection Services { get; }
 
-        BehaviorClass IBehaviorBuilder.BehaviorClass => new BehaviorClass(nameof(StateMachine), Result.Name);
+        BehaviorClass IBehaviorBuilder.BehaviorClass => new BehaviorClass(Constants.StateMachine, Result.Name);
 
         int IBehaviorBuilder.BehaviorVersion => Result.Version;
 
@@ -82,15 +83,8 @@ namespace Stateflows.StateMachines.Registration.Builders
             {
                 var result = false;
                 var context = new StateMachineInitializationContext<TInitializationEvent>(c, c.Event as TInitializationEvent);
-                try
-                {
-                    result = await actionAsync(context);
-                }
-                catch (Exception e)
-                {
-                    await c.Executor.Inspector.OnStateMachineInitializationExceptionAsync(context, e);
-                    result = false;
-                }
+
+                result = await actionAsync(context);
 
                 return result;
             });
@@ -103,14 +97,8 @@ namespace Stateflows.StateMachines.Registration.Builders
             Result.Finalize.Actions.Add(async c =>
             {
                 var context = new StateMachineActionContext(c);
-                try
-                {
-                    await actionAsync(context);
-                }
-                catch (Exception e)
-                {
-                    await c.Executor.Inspector.OnStateMachineFinalizationExceptionAsync(context, e);
-                }
+
+                await actionAsync(context);
             });
 
             return this;
@@ -169,7 +157,7 @@ namespace Stateflows.StateMachines.Registration.Builders
         public IInitializedStateMachineBuilder AddExceptionHandler<TExceptionHandler>()
             where TExceptionHandler : class, IStateMachineExceptionHandler
         {
-            Services.RegisterExceptionHandler<TExceptionHandler>();
+            Services.AddServiceType<TExceptionHandler>();
             AddExceptionHandler(serviceProvider => serviceProvider.GetRequiredService<TExceptionHandler>());
 
             return this;
@@ -185,7 +173,7 @@ namespace Stateflows.StateMachines.Registration.Builders
         public IInitializedStateMachineBuilder AddInterceptor<TInterceptor>()
             where TInterceptor : class, IStateMachineInterceptor
         {
-            Services.RegisterInterceptor<TInterceptor>();
+            Services.AddServiceType<TInterceptor>();
             AddInterceptor(serviceProvider => serviceProvider.GetRequiredService<TInterceptor>());
 
             return this;
@@ -201,7 +189,7 @@ namespace Stateflows.StateMachines.Registration.Builders
         public IInitializedStateMachineBuilder AddObserver<TObserver>()
             where TObserver : class, IStateMachineObserver
         {
-            Services.RegisterObserver<TObserver>();
+            Services.AddServiceType<TObserver>();
             AddObserver(serviceProvider => serviceProvider.GetRequiredService<TObserver>());
 
             return this;

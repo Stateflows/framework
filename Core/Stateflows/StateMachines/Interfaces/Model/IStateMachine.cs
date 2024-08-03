@@ -1,5 +1,5 @@
-﻿using Stateflows.StateMachines.Attributes;
-using System.Reflection;
+﻿using System.Reflection;
+using Stateflows.StateMachines.Attributes;
 
 namespace Stateflows.StateMachines
 {

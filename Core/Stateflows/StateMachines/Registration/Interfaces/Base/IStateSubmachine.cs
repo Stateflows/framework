@@ -2,6 +2,6 @@
 {
     public interface IStateSubmachine<out TReturn>
     {
-        TReturn AddSubmachine(string submachineName, EmbeddedBehaviorBuildAction buildAction, StateActionInitializationBuilder initializationBuilder = null);
+        TReturn AddSubmachine(string submachineName, EmbeddedBehaviorBuildAction buildAction, StateActionInitializationBuilderAsync initializationBuilder = null);
     }
 }

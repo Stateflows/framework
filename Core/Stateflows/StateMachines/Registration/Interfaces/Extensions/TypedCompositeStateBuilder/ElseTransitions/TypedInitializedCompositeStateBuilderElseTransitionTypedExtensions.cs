@@ -1,30 +1,25 @@
-﻿using Stateflows.Common;
-using Stateflows.StateMachines.Extensions;
+﻿using System.Diagnostics;
+using Stateflows.Common;
 using Stateflows.StateMachines.Registration.Interfaces;
-using Stateflows.StateMachines.Registration.Interfaces.Internal;
 
 namespace Stateflows.StateMachines.Typed
 {
     public static class TypedInitializedCompositeStateBuilderElseTransitionTypedExtensions
     {
+        [DebuggerHidden]
         public static ITypedInitializedCompositeStateBuilder AddElseTransition<TEvent, TElseTransition, TTargetState>(this ITypedInitializedCompositeStateBuilder builder)
             where TEvent : Event, new()
             where TElseTransition : class, ITransitionEffect<TEvent>
             where TTargetState : class, IVertex
             => AddElseTransition<TEvent, TElseTransition>(builder, State<TTargetState>.Name);
 
-        public static ITypedInitializedCompositeStateBuilder AddElseTransition<TEvent, TElseTransition>(this ITypedInitializedCompositeStateBuilder builder, string targetVertexName)
+        [DebuggerHidden]
+        public static ITypedInitializedCompositeStateBuilder AddElseTransition<TEvent, TElseTransition>(this ITypedInitializedCompositeStateBuilder builder, string targetStateName)
             where TEvent : Event, new()
             where TElseTransition : class, ITransitionEffect<TEvent>
-        {
-            (builder as IInternal).Services.RegisterElseTransition2<TElseTransition, TEvent>();
+            => (builder as IStateBuilder).AddElseTransition<TEvent, TElseTransition>(targetStateName) as ITypedInitializedCompositeStateBuilder;
 
-            return builder.AddElseTransition<TEvent>(
-                targetVertexName,
-                t => t.AddElseTransitionEvents2<TElseTransition, TEvent>()
-            );
-        }
-
+        [DebuggerHidden]
         public static ITypedInitializedCompositeStateBuilder AddElseTransition<TEvent, TTargetState>(this ITypedInitializedCompositeStateBuilder builder, ElseTransitionBuildAction<TEvent> transitionBuildAction = null)
             where TEvent : Event, new()
             where TTargetState : class, IVertex

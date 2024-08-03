@@ -38,7 +38,7 @@ namespace Activity.IntegrationTests.Tests
 
             if (ActivityLocator.TryLocateActivity(new ActivityId("simple", "x"), out var a))
             {
-                initialized = (await a.InitializeAsync()).Status == EventStatus.Initialized;
+                initialized = (await a.SendAsync(new Initialize())).Status == EventStatus.Initialized;
                 finalized = (await a.GetStatusAsync()).Response.BehaviorStatus == BehaviorStatus.Finalized;
             }
 

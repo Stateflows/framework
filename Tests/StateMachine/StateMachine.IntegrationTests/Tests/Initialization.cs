@@ -110,6 +110,34 @@ namespace StateMachine.IntegrationTests.Tests
         }
 
         [TestMethod]
+        public async Task ExplicitInitializationWithInitialize()
+        {
+            EventStatus status = EventStatus.Undelivered;
+
+            if (StateMachineLocator.TryLocateStateMachine(new StateMachineId("implicit", "x"), out var sm))
+            {
+                status = (await sm.SendAsync(new Initialize())).Status;
+            }
+
+            Assert.IsTrue(StateEntered);
+            Assert.AreEqual(EventStatus.Initialized, status);
+        }
+
+        [TestMethod]
+        public async Task ExplicitDefaultInitializationWithInitialize()
+        {
+            EventStatus status = EventStatus.Undelivered;
+
+            if (StateMachineLocator.TryLocateStateMachine(new StateMachineId("default", "x"), out var sm))
+            {
+                status = (await sm.SendAsync(new Initialize())).Status;
+            }
+
+            Assert.IsTrue(StateEntered);
+            Assert.AreEqual(EventStatus.Initialized, status);
+        }
+
+        [TestMethod]
         public async Task ExplicitInitializationOK()
         {
             var status = EventStatus.Rejected;
@@ -215,7 +243,7 @@ namespace StateMachine.IntegrationTests.Tests
         }
 
         [TestMethod]
-        public async Task DefaultInitializationOK()
+        public async Task ImplicitDefaultInitializationOK()
         {
             string currentState = string.Empty;
 

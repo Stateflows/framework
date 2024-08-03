@@ -5,9 +5,7 @@ using MongoDB.Driver;
 using Stateflows.Common.Context;
 using Stateflows.Common.Utilities;
 using Stateflows.Common.Interfaces;
-using Stateflows.Common.Trace.Models;
 using Stateflows.Storage.MongoDB.Utils;
-using Stateflows.Storage.MongoDB.MongoDB.Entities;
 
 namespace Stateflows.Storage.MongoDB.Stateflows
 {
@@ -33,6 +31,7 @@ namespace Stateflows.Storage.MongoDB.Stateflows
             var contextEntity = await _mongoDatabase.FindOrCreateContextAsync(context.Id);
             contextEntity.Data = StateflowsJsonConverter.SerializePolymorphicObject(context);
             contextEntity.TriggerTime = context.TriggerTime;
+            contextEntity.TriggerOnStartup = context.TriggerOnStartup;
             await _mongoDatabase.UpdateOrInsertContextAsync(contextEntity);
         }
 
@@ -44,17 +43,8 @@ namespace Stateflows.Storage.MongoDB.Stateflows
             => (await _mongoDatabase.FindContextByTimeTriggerAsync(behaviorClasses))
                 .Select(e => StateflowsJsonConverter.DeserializeObject<StateflowsContext>(e.Data));
 
-        public Task SaveTraceAsync(BehaviorTrace behaviorTrace)
-            => _mongoDatabase.InsertTraceAsync(
-                new StateflowsTrace_v1(
-                    behaviorTrace.BehaviorId,
-                    behaviorTrace.ExecutedAt,
-                    StateflowsJsonConverter.SerializePolymorphicObject(behaviorTrace)
-                )
-            );
-
-        public async Task<IEnumerable<BehaviorTrace>> GetTracesAsync(BehaviorId behaviorId)
-            => (await _mongoDatabase.FindTracesAsync(behaviorId))
-                .Select(e => StateflowsJsonConverter.DeserializeObject<BehaviorTrace>(e.Data));
+        public async Task<IEnumerable<StateflowsContext>> GetStartupTriggeredContextsAsync(IEnumerable<BehaviorClass> behaviorClasses)
+            => (await _mongoDatabase.FindContextByStartupTriggerAsync(behaviorClasses))
+                .Select(e => StateflowsJsonConverter.DeserializeObject<StateflowsContext>(e.Data));
     }
 }

@@ -1,4 +1,5 @@
-﻿using System.Linq;
+﻿using System;
+using System.Linq;
 using System.Threading.Tasks;
 using System.Collections.Generic;
 using Microsoft.Extensions.DependencyInjection;
@@ -151,6 +152,8 @@ namespace Stateflows.StateMachines.Context.Classes
         public Event Event => EventsStack.Any()
             ? EventsStack.Peek()
             : null;
+
+        public readonly List<Exception> Exceptions = new List<Exception>();
 
         public EventStatus? ForceStatus { get; set; } = null;
 

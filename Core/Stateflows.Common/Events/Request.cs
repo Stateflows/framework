@@ -17,14 +17,4 @@ namespace Stateflows.Common
 
         public TResponse Response { get; private set; }
     }
-
-    //public class Request<TRequestPayload, TResponsePayload> : Request<Response<TResponsePayload>>
-    //{
-    //    public Request()
-    //    {
-    //        Payload = default;
-    //    }
-
-    //    public TRequestPayload Payload { get; set; }
-    //}
 }

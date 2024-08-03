@@ -1,9 +1,7 @@
-﻿using Stateflows.Common.Extensions;
-
-namespace Stateflows.Activities
+﻿namespace Stateflows.Activities
 {
     public sealed class ControlDecisionNode : ActivityNode
     {
-        public static string Name => typeof(DecisionNode<ControlToken>).GetReadableName();
+        public static string Name => ActivityNode<ControlDecisionNode>.Name;
     }
 }

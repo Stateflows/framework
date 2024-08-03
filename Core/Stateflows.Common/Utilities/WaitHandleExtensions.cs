@@ -1,10 +1,12 @@
-﻿using System.Threading;
+﻿using System.Diagnostics;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Stateflows.Common.Utilities
 {
     public static class WaitHandleExtensions
     {
+        [DebuggerHidden]
         public static Task WaitOneAsync(this WaitHandle waitHandle, int millisecondsTimeout = -1)
         {
             waitHandle.ThrowIfNull(nameof(waitHandle));

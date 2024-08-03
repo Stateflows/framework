@@ -34,8 +34,5 @@ namespace Stateflows.Activities
     {
         public static IActivityBuilder AddFinalizationResetPolicy(this IActivityBuilder builder, ResetMode resetMode = ResetMode.Full)
             => builder.AddObserver(_ => new ResetObserver(resetMode));
-
-        public static ITypedActivityBuilder AddFinalizationResetPolicy(this ITypedActivityBuilder builder, ResetMode resetMode = ResetMode.Full)
-            => builder.AddObserver(_ => new ResetObserver(resetMode));
     }
 }

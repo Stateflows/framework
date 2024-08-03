@@ -46,7 +46,7 @@ namespace Stateflows.StateMachines.Models
         public Dictionary<string, Vertex> Vertices { get; set; } = new Dictionary<string, Vertex>();
         public List<string> DeferredEvents { get; set; } = new List<string>();
 
-        public StateActionInitializationBuilder BehaviorInitializationBuilder { get; set; }
+        public StateActionInitializationBuilderAsync BehaviorInitializationBuilder { get; set; }
         public string BehaviorName { get; set; }
         public string BehaviorType { get; set; }
         public List<Type> BehaviorSubscriptions { get; set; } = new List<Type>();

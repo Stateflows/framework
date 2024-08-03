@@ -11,6 +11,9 @@ using Stateflows.Common.Extensions;
 using Stateflows.Activities.Models;
 using Stateflows.Activities.Registration;
 using Stateflows.Activities.Context.Classes;
+using Stateflows.Activities.EventHandlers;
+using Stateflows.Activities.Events;
+using System.Reflection;
 
 namespace Stateflows.Activities.Engine
 {
@@ -43,7 +46,7 @@ namespace Stateflows.Activities.Engine
                 : Task.FromResult(EventStatus.NotConsumed);
         }
 
-        public async Task<EventStatus> ProcessEventAsync<TEvent>(BehaviorId id, TEvent @event, IServiceProvider serviceProvider)
+        public async Task<EventStatus> ProcessEventAsync<TEvent>(BehaviorId id, TEvent @event, IServiceProvider serviceProvider, List<Exception> exceptions)
             where TEvent : Event, new()
         {
             var result = EventStatus.Undelivered;
@@ -80,15 +83,20 @@ namespace Stateflows.Activities.Engine
                         results.Add(new RequestResult(ev, ev.GetResponse(), status, new EventValidation(true, new List<ValidationResult>())));
                     }
 
-                    compoundRequest.Respond(new CompoundResponse()
+                    if (compoundRequest.Response == null)
                     {
-                        Results = results
-                    });
+                        compoundRequest.Respond(new CompoundResponse()
+                        {
+                            Results = results
+                        });
+                    }
                 }
                 else
                 {
                     result = await ExecuteBehaviorAsync(@event, result, stateflowsContext, graph, executor, context);
                 }
+
+                exceptions.AddRange(context.Exceptions);
 
                 await storage.DehydrateAsync((await executor.DehydrateAsync()).Context);
             }
@@ -96,7 +104,8 @@ namespace Stateflows.Activities.Engine
             return result;
         }
 
-        private async Task<EventStatus> ExecuteBehaviorAsync<TEvent>(TEvent @event, EventStatus result, StateflowsContext stateflowsContext, Graph graph, Executor executor, RootContext context) where TEvent : Event, new()
+        private async Task<EventStatus> ExecuteBehaviorAsync<TEvent>(TEvent @event, EventStatus result, StateflowsContext stateflowsContext, Graph graph, Executor executor, RootContext context)
+            where TEvent : Event, new()
         {
             context.SetEvent(@event);
 
@@ -104,38 +113,59 @@ namespace Stateflows.Activities.Engine
 
             if (await executor.Inspector.BeforeProcessEventAsync(eventContext))
             {
-                if (await executor.Inspector.BeforeProcessEventAsync(eventContext))
+                Event currentEvent = @event;
+
+                if (@event is ExecutionRequest executionRequest)
                 {
-                    if (!executor.Initialized)
+                    if (executor.Graph.Interactive || executor.BehaviorStatus != BehaviorStatus.NotInitialized)
                     {
-                        result = await executor.InitializeAsync(@event);
+                        return EventStatus.NotConsumed;
                     }
 
-                    if (result != EventStatus.Initialized)
-                    {
-                        var handlingResult = await TryHandleEventAsync(eventContext);
+                    context.SetEvent(executionRequest.InitializationEvent);
+                        
+                    currentEvent = executionRequest.InitializationEvent;
+                }
+                
+                var attributes = currentEvent.GetType().GetCustomAttributes<NoImplicitInitializationAttribute>();
+                if (!executor.Initialized && !attributes.Any())
+                {
+                    result = await executor.InitializeAsync(currentEvent);
+                }
 
-                        if (executor.Initialized)
+                if (result != EventStatus.Initialized)
+                {
+                    var handlingResult = await TryHandleEventAsync(eventContext);
+
+                    if (executor.Initialized)
+                    {
+                        if (handlingResult != EventStatus.Consumed && handlingResult != EventStatus.NotInitialized)
                         {
-                            if (handlingResult != EventStatus.Consumed && handlingResult != EventStatus.NotInitialized)
-                            {
-                                result = await executor.ProcessAsync(@event);
-                            }
-                            else
-                            {
-                                result = handlingResult;
-                            }
+                            result = await executor.ProcessAsync(currentEvent);
                         }
                         else
                         {
-                            result = result == EventStatus.NotInitialized
-                                ? EventStatus.NotInitialized
-                                : EventStatus.Rejected;
+                            result = handlingResult;
                         }
                     }
-
-                    await executor.Inspector.AfterProcessEventAsync(eventContext);
+                    else
+                    {
+                        result = result == EventStatus.NotInitialized
+                            ? EventStatus.NotInitialized
+                            : attributes.Any()
+                                ? handlingResult
+                                : EventStatus.Rejected;
+                    }
                 }
+
+                if (@event is ExecutionRequest executionRequest2)
+                {
+                    context.ClearEvent();
+
+                    executionRequest2.Respond(new ExecutionResponse() { OutputTokens = await executor.GetResultAsync() });
+                }
+
+                await executor.Inspector.AfterProcessEventAsync(eventContext);
             }
             else
             {

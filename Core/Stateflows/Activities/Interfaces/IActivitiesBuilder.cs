@@ -14,9 +14,9 @@ namespace Stateflows.Activities
         IActivitiesBuilder AddActivity(string activityName, ReactiveActivityBuildAction buildAction);
         IActivitiesBuilder AddActivity(string activityName, int version, ReactiveActivityBuildAction buildAction);
         IActivitiesBuilder AddActivity<TActivity>(string activityName = null, int version = 1)
-            where TActivity : Activity;
+            where TActivity : class, IActivity;
         IActivitiesBuilder AddActivity<TActivity>(int version)
-            where TActivity : Activity;
+            where TActivity : class, IActivity;
         IActivitiesBuilder AddInterceptor<TInterceptor>()
             where TInterceptor : class, IActivityInterceptor;
         IActivitiesBuilder AddInterceptor(ActivityInterceptorFactory interceptorFactory);

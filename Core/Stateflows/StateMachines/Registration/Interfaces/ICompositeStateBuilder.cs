@@ -8,6 +8,7 @@ namespace Stateflows.StateMachines.Registration.Interfaces
         ICompositeStateEvents<IInitializedCompositeStateBuilder>,
         IStateTransitions<IInitializedCompositeStateBuilder>,
         IStateMachine<IInitializedCompositeStateBuilder>,
+        //IStateDoActivity<IInitializedCompositeStateBuilder>,
         IStateMachineFinal<IFinalizedCompositeStateBuilder>
     { }
 
@@ -16,6 +17,7 @@ namespace Stateflows.StateMachines.Registration.Interfaces
         IStateUtils<IFinalizedCompositeStateBuilder>,
         ICompositeStateEvents<IFinalizedCompositeStateBuilder>,
         IStateTransitions<IFinalizedCompositeStateBuilder>
+        //IStateDoActivity<IFinalizedCompositeStateBuilder>
     { }
 
     public interface ICompositeStateBuilder :
@@ -23,6 +25,7 @@ namespace Stateflows.StateMachines.Registration.Interfaces
         IStateUtils<ICompositeStateBuilder>,
         ICompositeStateEvents<ICompositeStateBuilder>,
         IStateTransitions<ICompositeStateBuilder>,
+        //IStateDoActivity<ICompositeStateBuilder>,
         IStateMachineInitial<IInitializedCompositeStateBuilder>
     { }
 
@@ -30,17 +33,20 @@ namespace Stateflows.StateMachines.Registration.Interfaces
         IStateUtils<ITypedInitializedCompositeStateBuilder>,
         IStateTransitions<ITypedInitializedCompositeStateBuilder>,
         IStateMachine<ITypedInitializedCompositeStateBuilder>,
+        //IStateDoActivity<ITypedInitializedCompositeStateBuilder>,
         IStateMachineFinal<ITypedFinalizedCompositeStateBuilder>
     { }
 
     public interface ITypedFinalizedCompositeStateBuilder :
         IStateUtils<ITypedFinalizedCompositeStateBuilder>,
         IStateTransitions<ITypedFinalizedCompositeStateBuilder>
+        //IStateDoActivity<ITypedFinalizedCompositeStateBuilder>
     { }
 
     public interface ITypedCompositeStateBuilder :
         IStateUtils<ITypedCompositeStateBuilder>,
         IStateTransitions<ITypedCompositeStateBuilder>,
+        //IStateDoActivity<ITypedCompositeStateBuilder>,
         IStateMachineInitial<ITypedInitializedCompositeStateBuilder>
     { }
 }

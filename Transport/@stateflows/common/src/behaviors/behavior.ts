@@ -2,13 +2,11 @@ import { Request } from "../events/request";
 import { IBehavior } from "../interfaces/behavior";
 import { SendResult } from "../classes/send-result";
 import { RequestResult } from "../classes/request-result";
-import { InitializationResponse } from "../events/initialization.response";
 import { BehaviorStatusResponse } from "../events/behavior-status.response";
 import { BehaviorId } from "../ids/behavior.id";
 import { Response } from "../events/response";
 import { CompoundRequest } from "../events/compound.request";
 import { CompoundResponse } from "../events/compound.response";
-import { InitializationRequest } from "../events/initialization.request";
 import { Event } from "../events/event";
 import { BehaviorStatusRequest } from "../events/behavior-status.request";
 import { IStateflowsClientTransport } from "../interfaces/stateflows-client-transport";
@@ -20,6 +18,7 @@ import { BehaviorStatusNotification } from "../events/behavior-status.notificati
 import { Notification } from "../events/notification";
 import { IWatcher } from "../interfaces/watcher";
 import { NotificationHandler } from "../utils/notification-handler";
+import { ResetMode } from "../enums/reset-mode";
 
 export class Behavior implements IBehavior, IWatcher {
     #transportPromise: Promise<IStateflowsClientTransport>;
@@ -48,40 +47,12 @@ export class Behavior implements IBehavior, IWatcher {
         return result;
     }
 
-    initialize(initializationRequest?: InitializationRequest): Promise<RequestResult<InitializationResponse>> {
-        if (typeof initializationRequest === "undefined") {
-            initializationRequest = new InitializationRequest();
-        }
-
-        return this.request(initializationRequest);
-    }
-
     finalize(): Promise<RequestResult<FinalizationResponse>> {
         return this.request(new FinalizationRequest());
     }
 
-    reset(keepVersion?: boolean): Promise<RequestResult<ResetResponse>> {
-        return this.request(new ResetRequest(keepVersion ?? false));
-    }
-
-    async reinitialize(initializationRequest?: InitializationRequest, keepVersion: boolean = true): Promise<RequestResult<InitializationResponse>> {
-        if (typeof initializationRequest === "undefined") {
-            initializationRequest = new InitializationRequest();
-        }
-        
-        let result = await this.sendCompound(
-            new ResetRequest(keepVersion ?? true),
-            initializationRequest
-        );
-
-        let initializationResult = result.response.results.slice(-1)[0];
-
-        return new RequestResult<InitializationResponse>(
-            initializationResult.response as InitializationResponse,
-            initializationRequest,
-            initializationResult.status,
-            initializationResult.validation
-        );
+    reset(resetMode?: ResetMode): Promise<RequestResult<ResetResponse>> {
+        return this.request(new ResetRequest(resetMode ?? ResetMode.Full));
     }
 
     notify(notification: Notification): void {

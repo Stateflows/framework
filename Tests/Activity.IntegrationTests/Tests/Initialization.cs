@@ -76,7 +76,6 @@ namespace Activity.IntegrationTests.Tests
                         })
                     )
                 )
-                //.AddAutoInitialization(new ActivityClass("auto"))
                 ;
         }
 
@@ -87,7 +86,7 @@ namespace Activity.IntegrationTests.Tests
 
             if (ActivityLocator.TryLocateActivity(new ActivityId("simple", "x"), out var a))
             {
-                var result = await a.InitializeAsync();
+                var result = await a.SendAsync(new Initialize());
                 initialized = result.Status == EventStatus.Initialized;
             }
 
@@ -96,38 +95,6 @@ namespace Activity.IntegrationTests.Tests
             Assert.IsTrue(Executed);
         }
 
-        //[TestMethod]
-        //public async Task AutoInitialization()
-        //{
-        //    EventStatus status = EventStatus.NotConsumed;
-
-        //    if (ActivityLocator.TryLocateActivity(new ActivityId("auto", "x"), out var a))
-        //    {
-        //        status = (await a.SendAsync(new SomeEvent())).Status;
-        //    }
-
-        //    Assert.AreEqual(EventStatus.Consumed, status);
-        //    Assert.IsTrue(Initialized);
-        //    Assert.IsTrue(Executed);
-        //    Assert.IsTrue(Accepted);
-        //}
-
-        //[TestMethod]
-        //public async Task NoAutoInitialization()
-        //{
-        //    EventStatus status = EventStatus.NotConsumed;
-
-        //    if (ActivityLocator.TryLocateActivity(new ActivityId("simple", "x"), out var a))
-        //    {
-        //        status = (await a.SendAsync(new SomeEvent())).Status;
-        //    }
-
-        //    Assert.AreEqual(EventStatus.NotConsumed, status);
-        //    Assert.IsFalse(Initialized);
-        //    Assert.IsFalse(Executed);
-        //    Assert.IsFalse(Accepted);
-        //}
-
         [TestMethod]
         public async Task ValueInitialization()
         {
@@ -135,7 +102,7 @@ namespace Activity.IntegrationTests.Tests
 
             if (ActivityLocator.TryLocateActivity(new ActivityId("value", "x"), out var a))
             {
-                initialized = (await a.InitializeAsync(new ValueInitializationRequest() { Value = "bar" })).Status == EventStatus.Initialized;
+                initialized = (await a.SendAsync(new ValueInitializationRequest() { Value = "bar" })).Status == EventStatus.Initialized;
             }
 
             Assert.IsTrue(initialized);

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Threading;
 
 namespace Stateflows.Common.Classes
@@ -14,6 +15,8 @@ namespace Stateflows.Common.Classes
         public EventWaitHandle Handled { get; } = new EventWaitHandle(false, EventResetMode.AutoReset);
 
         public EventStatus Status { get; set; }
+
+        public List<Exception> Exceptions { get; set; } = new List<Exception>();
 
         public EventValidation Validation { get; internal set; }
 

@@ -54,7 +54,7 @@ namespace Activity.IntegrationTests.Tests
         {
             if (ActivityLocator.TryLocateActivity(new ActivityId("parallel", "x"), out var a))
             {
-                await a.InitializeAsync();
+                await a.ExecuteAsync();
             }
 
             Assert.AreEqual(20, ExecutionCounter);

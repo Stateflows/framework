@@ -2,9 +2,9 @@
 
 namespace StateMachine.IntegrationTests.Classes.StateMachines
 {
-    public class TypedValue : Stateflows.StateMachines.StateMachine
+    public class TypedValue : IStateMachine
     {
-        public override void Build(IStateMachineBuilder builder)
+        public void Build(IStateMachineBuilder builder)
             => builder
                 .AddInitializer<ValueInitializationRequest>(c =>
                 {

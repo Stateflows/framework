@@ -6,11 +6,11 @@ namespace Stateflows.StateMachines
     public interface IInitializer<TInitializationEvent>
         where TInitializationEvent : Event, new()
     {
-        Task<bool> OnInitialize(TInitializationEvent initializationEvent);
+        Task<bool> OnInitializeAsync(TInitializationEvent initializationEvent);
     }
 
     public interface IDefaultInitializer
     {
-        Task<bool> OnInitialize();
+        Task<bool> OnInitializeAsync();
     }
 }

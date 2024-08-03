@@ -12,13 +12,13 @@ namespace Stateflows.Testing.StateMachines.Sequence
         IExecutionSequenceBuilder StateEntry(string stateName);
         IExecutionSequenceBuilder StateExit(string stateName);
 
-        IExecutionSequenceBuilder TransitionGuard(string eventName, string sourceStateName, string? targetVertexName);
-        IExecutionSequenceBuilder TransitionEffect(string eventName, string sourceStateName, string? targetVertexName);
+        IExecutionSequenceBuilder TransitionGuard(string eventName, string sourceStateName, string? targetStateName);
+        IExecutionSequenceBuilder TransitionEffect(string eventName, string sourceStateName, string? targetStateName);
 
         IExecutionSequenceBuilder InternalTransitionGuard(string eventName, string sourceStateName);
         IExecutionSequenceBuilder InternalTransitionEffect(string eventName, string sourceStateName);
 
-        IExecutionSequenceBuilder DefaultTransitionGuard(string sourceStateName, string targetVertexName);
-        IExecutionSequenceBuilder DefaultTransitionEffect(string sourceStateName, string targetVertexName);
+        IExecutionSequenceBuilder DefaultTransitionGuard(string sourceStateName, string targetStateName);
+        IExecutionSequenceBuilder DefaultTransitionEffect(string sourceStateName, string targetStateName);
     }
 }

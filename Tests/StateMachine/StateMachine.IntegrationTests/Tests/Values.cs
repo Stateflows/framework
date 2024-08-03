@@ -29,7 +29,7 @@ namespace StateMachine.IntegrationTests.Tests
         {
             string currentState = State<State1>.Name;
 
-            if (StateMachineLocator.TryLocateStateMachine(new StateMachineId(StateMachineInfo<ValuesStateMachine>.Name, "x"), out var sm))
+            if (StateMachineLocator.TryLocateStateMachine(new StateMachineId(StateMachine<ValuesStateMachine>.Name, "x"), out var sm))
             {
                 //await sm.InitializeAsync();
                 await sm.SendAsync(new SomeEvent());
@@ -37,7 +37,7 @@ namespace StateMachine.IntegrationTests.Tests
                 currentState = (await sm.GetCurrentStateAsync()).Response.StatesStack.First();
             }
 
-            Assert.AreEqual(StateInfo<FinalState>.Name, currentState);
+            Assert.AreEqual(State<FinalState>.Name, currentState);
         }
     }
 }

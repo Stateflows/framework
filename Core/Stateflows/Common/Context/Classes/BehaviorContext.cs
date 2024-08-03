@@ -19,7 +19,7 @@ namespace Stateflows.Common.Context.Classes
         public BehaviorContext(StateflowsContext context, IServiceProvider serviceProvider)
             : base(context, serviceProvider)
         {
-            Values = new ContextValues(Context.GlobalValues);
+            Values = new ContextValuesCollection(Context.GlobalValues);
         }
 
         public IContextValues Values { get; }

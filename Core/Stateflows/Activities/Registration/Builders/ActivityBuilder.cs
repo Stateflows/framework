@@ -4,23 +4,19 @@ using Microsoft.Extensions.DependencyInjection;
 using Stateflows.Common;
 using Stateflows.Common.Models;
 using Stateflows.Activities.Models;
-using Stateflows.Activities.Events;
 using Stateflows.Activities.Extensions;
 using Stateflows.Activities.Context.Classes;
 using Stateflows.Activities.Context.Interfaces;
 using Stateflows.Activities.Registration.Extensions;
 using Stateflows.Activities.Registration.Interfaces;
 using Stateflows.Activities.Registration.Interfaces.Base;
-using Stateflows.StateMachines.Context.Classes;
-using Stateflows.StateMachines.Interfaces;
-using Stateflows.Activities.Typed;
+using Stateflows.Common.Extensions;
 
 namespace Stateflows.Activities.Registration.Builders
 {
     internal class ActivityBuilder :
         BaseActivityBuilder,
-        IActivityBuilder,
-        ITypedActivityBuilder
+        IActivityBuilder
     {
         new public Graph Result
         {
@@ -82,11 +78,7 @@ namespace Stateflows.Activities.Registration.Builders
                 var result = false;
                 var context = new ActivityInitializationContext<TInitializationEvent>(
                     c,
-                    (c.Context.Event
-                    //c.Context.Event is ExecutionRequest executionRequest
-                    //    ? executionRequest.InitializationRequest
-                    //    : c.Context.Event
-                    ) as TInitializationEvent
+                    c.Context.Event as TInitializationEvent
                 );
 
                 try
@@ -134,47 +126,18 @@ namespace Stateflows.Activities.Registration.Builders
         IActivityBuilder IAcceptEvent<IActivityBuilder>.AddAcceptEventAction<TEvent>(string actionNodeName, AcceptEventActionDelegateAsync<TEvent> eventActionAsync, AcceptEventActionBuildAction buildAction)
             => AddAcceptEventAction<TEvent>(actionNodeName, eventActionAsync, buildAction) as IActivityBuilder;
 
+        IActivityBuilder IAcceptEvent<IActivityBuilder>.AddTimeEventAction<TTimeEvent>(string actionNodeName, TimeEventActionDelegateAsync eventActionAsync, AcceptEventActionBuildAction buildAction)
+            => AddTimeEventAction<TTimeEvent>(actionNodeName, eventActionAsync, buildAction) as IActivityBuilder;
+
         IActivityBuilder ISendEvent<IActivityBuilder>.AddSendEventAction<TEvent>(string actionNodeName, SendEventActionDelegateAsync<TEvent> actionAsync, BehaviorIdSelectorAsync targetSelectorAsync, SendEventActionBuildAction buildAction)
             => AddSendEventAction<TEvent>(actionNodeName, actionAsync, targetSelectorAsync, buildAction) as IActivityBuilder;
-        #endregion
-
-        #region ITypedActivityBuilder
-        ITypedActivityBuilder IReactiveActivity<ITypedActivityBuilder>.AddAction(string actionNodeName, ActionDelegateAsync actionAsync, ActionBuildAction buildAction)
-            => AddAction(actionNodeName, actionAsync, b => buildAction?.Invoke(b)) as ITypedActivityBuilder;
-
-        ITypedActivityBuilder IReactiveActivity<ITypedActivityBuilder>.AddStructuredActivity(string actionNodeName, ReactiveStructuredActivityBuildAction buildAction)
-            => AddStructuredActivity(actionNodeName, buildAction) as ITypedActivityBuilder;
-
-        ITypedActivityBuilder IInitial<ITypedActivityBuilder>.AddInitial(InitialBuildAction buildAction)
-            => AddInitial(buildAction) as ITypedActivityBuilder;
-
-        ITypedActivityBuilder IFinal<ITypedActivityBuilder>.AddFinal()
-            => AddFinal() as ITypedActivityBuilder;
-
-        ITypedActivityBuilder IInput<ITypedActivityBuilder>.AddInput(InputBuildAction buildAction)
-            => AddInput(buildAction) as ITypedActivityBuilder;
-
-        ITypedActivityBuilder IOutput<ITypedActivityBuilder>.AddOutput()
-            => AddOutput() as ITypedActivityBuilder;
-
-        ITypedActivityBuilder IReactiveActivity<ITypedActivityBuilder>.AddParallelActivity<TParallelizationToken>(string actionNodeName, ParallelActivityBuildAction buildAction, int chunkSize)
-            => AddParallelActivity<TParallelizationToken>(actionNodeName, buildAction, chunkSize) as ITypedActivityBuilder;
-
-        ITypedActivityBuilder IReactiveActivity<ITypedActivityBuilder>.AddIterativeActivity<TIterationToken>(string actionNodeName, IterativeActivityBuildAction buildAction, int chunkSize)
-            => AddIterativeActivity<TIterationToken>(actionNodeName, buildAction, chunkSize) as ITypedActivityBuilder;
-
-        ITypedActivityBuilder IAcceptEvent<ITypedActivityBuilder>.AddAcceptEventAction<TEvent>(string actionNodeName, AcceptEventActionDelegateAsync<TEvent> eventActionAsync, AcceptEventActionBuildAction buildAction)
-            => AddAcceptEventAction<TEvent>(actionNodeName, eventActionAsync, buildAction) as ITypedActivityBuilder;
-
-        ITypedActivityBuilder ISendEvent<ITypedActivityBuilder>.AddSendEventAction<TEvent>(string actionNodeName, SendEventActionDelegateAsync<TEvent> actionAsync, BehaviorIdSelectorAsync targetSelectorAsync, SendEventActionBuildAction buildAction)
-            => AddSendEventAction<TEvent>(actionNodeName, actionAsync, targetSelectorAsync, buildAction) as ITypedActivityBuilder;
         #endregion
 
         #region Observability
         public IActivityBuilder AddExceptionHandler<TExceptionHandler>()
             where TExceptionHandler : class, IActivityExceptionHandler
         {
-            Services.RegisterExceptionHandler<TExceptionHandler>();
+            Services.AddServiceType<TExceptionHandler>();
             AddExceptionHandler(serviceProvider => serviceProvider.GetRequiredService<TExceptionHandler>());
 
             return this;
@@ -190,7 +153,7 @@ namespace Stateflows.Activities.Registration.Builders
         public IActivityBuilder AddInterceptor<TInterceptor>()
             where TInterceptor : class, IActivityInterceptor
         {
-            Services.RegisterInterceptor<TInterceptor>();
+            Services.AddServiceType<TInterceptor>();
             AddInterceptor(serviceProvider => serviceProvider.GetRequiredService<TInterceptor>());
 
             return this;
@@ -206,7 +169,7 @@ namespace Stateflows.Activities.Registration.Builders
         public IActivityBuilder AddObserver<TObserver>()
             where TObserver : class, IActivityObserver
         {
-            Services.RegisterObserver<TObserver>();
+            Services.AddServiceType<TObserver>();
             AddObserver(serviceProvider => serviceProvider.GetRequiredService<TObserver>());
 
             return this;
@@ -218,24 +181,6 @@ namespace Stateflows.Activities.Registration.Builders
 
             return this;
         }
-
-        ITypedActivityBuilder IActivityUtils<ITypedActivityBuilder>.AddExceptionHandler<TExceptionHandler>()
-            => AddExceptionHandler<TExceptionHandler>() as ITypedActivityBuilder;
-
-        ITypedActivityBuilder IActivityUtils<ITypedActivityBuilder>.AddExceptionHandler(ActivityExceptionHandlerFactory exceptionHandlerFactory)
-            => AddExceptionHandler(exceptionHandlerFactory) as ITypedActivityBuilder;
-
-        ITypedActivityBuilder IActivityUtils<ITypedActivityBuilder>.AddInterceptor<TInterceptor>()
-            => AddInterceptor<TInterceptor>() as ITypedActivityBuilder;
-
-        ITypedActivityBuilder IActivityUtils<ITypedActivityBuilder>.AddInterceptor(ActivityInterceptorFactory interceptorFactory)
-            => AddInterceptor(interceptorFactory) as ITypedActivityBuilder;
-
-        ITypedActivityBuilder IActivityUtils<ITypedActivityBuilder>.AddObserver<TObserver>()
-            => AddObserver<TObserver>() as ITypedActivityBuilder;
-
-        ITypedActivityBuilder IActivityUtils<ITypedActivityBuilder>.AddObserver(ActivityObserverFactory observerFactory)
-            => AddObserver(observerFactory) as ITypedActivityBuilder;
         #endregion
     }
 }

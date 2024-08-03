@@ -56,7 +56,7 @@ namespace Activity.IntegrationTests.Tests
         {
             if (ActivityLocator.TryLocateActivity(new ActivityId("optional", "x"), out var a))
             {
-                await a.InitializeAsync();
+                await a.ExecuteAsync();
             }
 
             Assert.IsTrue(Executed);
@@ -67,7 +67,7 @@ namespace Activity.IntegrationTests.Tests
         {
             if (ActivityLocator.TryLocateActivity(new ActivityId("required", "x"), out var a))
             {
-                await a.InitializeAsync();
+                await a.ExecuteAsync();
             }
 
             Assert.IsFalse(Executed);

@@ -2,6 +2,6 @@
 {
     public interface IStateDoActivity<out TReturn>
     {
-        TReturn AddDoActivity(string doActivityName, EmbeddedBehaviorBuildAction buildAction = null, StateActionInitializationBuilder initializationBuilder = null);
+        TReturn AddDoActivity(string doActivityName, EmbeddedBehaviorBuildAction buildAction = null, StateActionInitializationBuilderAsync initializationBuilder = null);
     }
 }

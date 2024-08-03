@@ -312,56 +312,153 @@ namespace Stateflows.StateMachines.Engine
             await Plugins.RunSafe(i => i.AfterProcessEventAsync(context), nameof(AfterProcessEventAsync), Logger);
         }
 
-        public async Task OnStateMachineInitializationExceptionAsync<TInitializationEvent>(StateMachineInitializationContext<TInitializationEvent> context, Exception exception)
-            where TInitializationEvent : Event, new()
+        private static bool ShouldPropagateException(Graph graph, bool handled)
+            => !handled;
+
+        public async Task<bool> OnStateMachineInitializationExceptionAsync(StateMachineInitializationContext context, Exception exception)
         {
-            var exceptionContext = new StateMachineInitializationContext<TInitializationEvent>(context.Context, context.InitializationEvent);
-            await ExceptionHandlers.RunSafe(h => h.OnStateMachineInitializationExceptionAsync(exceptionContext, exception), nameof(OnStateMachineInitializationExceptionAsync), Logger);
-            //await Inspectors.RunSafe(i => i.OnStateMachineInitializationExceptionAsync(exceptionContext, exception), nameof(OnStateMachineInitializationExceptionAsync), Logger);
+            var handled = await ExceptionHandlers.RunSafe(h => h.OnStateMachineInitializationExceptionAsync(context, exception), nameof(OnStateMachineInitializationExceptionAsync), Logger, false);
+            await Inspectors.RunSafe(i => i.OnStateMachineInitializationExceptionAsync(context, exception), nameof(OnStateMachineInitializationExceptionAsync), Logger);
+
+            if (!handled)
+            {
+                await Plugins.RunSafe(i => i.OnStateMachineInitializationExceptionAsync(context, exception), nameof(OnStateMachineInitializationExceptionAsync), Logger);
+            }
+
+            if (ShouldPropagateException(context.Context.Executor.Graph, handled))
+            {
+                context.Context.Exceptions.Add(exception);
+            }
+
+            return handled;
         }
 
-        public async Task OnStateMachineFinalizationExceptionAsync(StateMachineActionContext context, Exception exception)
+        public async Task<bool> OnStateMachineFinalizationExceptionAsync(StateMachineActionContext context, Exception exception)
         {
-            await ExceptionHandlers.RunSafe(h => h.OnStateMachineFinalizationExceptionAsync(context, exception), nameof(OnStateMachineFinalizationExceptionAsync), Logger);
+            var handled = await ExceptionHandlers.RunSafe(h => h.OnStateMachineFinalizationExceptionAsync(context, exception), nameof(OnStateMachineFinalizationExceptionAsync), Logger, false);
             await Inspectors.RunSafe(i => i.OnStateMachineFinalizationExceptionAsync(context, exception), nameof(OnStateMachineFinalizationExceptionAsync), Logger);
+
+            if (!handled)
+            {
+                await Plugins.RunSafe(i => i.OnStateMachineFinalizationExceptionAsync(context, exception), nameof(OnStateMachineFinalizationExceptionAsync), Logger);
+            }
+
+            if (ShouldPropagateException(context.Context.Executor.Graph, handled))
+            {
+                context.Context.Exceptions.Add(exception);
+            }
+
+            return handled;
         }
 
-        public async Task OnTransitionGuardExceptionAsync<TEvent>(GuardContext<TEvent> context, Exception exception)
+        public async Task<bool> OnTransitionGuardExceptionAsync<TEvent>(GuardContext<TEvent> context, Exception exception)
             where TEvent : Event, new()
         {
-            await ExceptionHandlers.RunSafe(h => h.OnTransitionGuardExceptionAsync(context, exception), nameof(OnTransitionGuardExceptionAsync), Logger);
+            var handled = await ExceptionHandlers.RunSafe(h => h.OnTransitionGuardExceptionAsync(context, exception), nameof(OnTransitionGuardExceptionAsync), Logger, false);
             await Inspectors.RunSafe(i => i.OnTransitionGuardExceptionAsync(context, exception), nameof(OnTransitionGuardExceptionAsync), Logger);
+
+            if (!handled)
+            {
+                await Plugins.RunSafe(i => i.OnTransitionGuardExceptionAsync(context, exception), nameof(OnTransitionGuardExceptionAsync), Logger);
+            }
+
+            if (ShouldPropagateException(context.Context.Executor.Graph, handled))
+            {
+                context.Context.Exceptions.Add(exception);
+            }
+
+            return handled;
         }
 
-        public async Task OnTransitionEffectExceptionAsync<TEvent>(TransitionContext<TEvent> context, Exception exception)
+        public async Task<bool> OnTransitionEffectExceptionAsync<TEvent>(TransitionContext<TEvent> context, Exception exception)
             where TEvent : Event, new()
         {
-            await ExceptionHandlers.RunSafe(h => h.OnTransitionEffectExceptionAsync(context, exception), nameof(OnTransitionEffectExceptionAsync), Logger);
+            var handled = await ExceptionHandlers.RunSafe(h => h.OnTransitionEffectExceptionAsync(context, exception), nameof(OnTransitionEffectExceptionAsync), Logger, false);
             await Inspectors.RunSafe(h => h.OnTransitionEffectExceptionAsync(context, exception), nameof(OnTransitionEffectExceptionAsync), Logger);
+
+            if (!handled)
+            {
+                await Plugins.RunSafe(h => h.OnTransitionEffectExceptionAsync(context, exception), nameof(OnTransitionEffectExceptionAsync), Logger);
+            }
+
+            if (ShouldPropagateException(context.Context.Executor.Graph, handled))
+            {
+                context.Context.Exceptions.Add(exception);
+            }
+
+            return handled;
         }
 
-        public async Task OnStateInitializeExceptionAsync(StateActionContext context, Exception exception)
+        public async Task<bool> OnStateInitializeExceptionAsync(StateActionContext context, Exception exception)
         {
-            await ExceptionHandlers.RunSafe(h => h.OnStateInitializationExceptionAsync(context, exception), nameof(OnStateInitializeExceptionAsync), Logger);
+            var handled = await ExceptionHandlers.RunSafe(h => h.OnStateInitializationExceptionAsync(context, exception), nameof(OnStateInitializeExceptionAsync), Logger, false);
             await Inspectors.RunSafe(i => i.OnStateInitializeExceptionAsync(context, exception), nameof(OnStateInitializeExceptionAsync), Logger);
+
+            if (!handled)
+            {
+                await Plugins.RunSafe(i => i.OnStateInitializationExceptionAsync(context, exception), nameof(OnStateInitializeExceptionAsync), Logger);
+            }
+
+            if (ShouldPropagateException(context.Context.Executor.Graph, handled))
+            {
+                context.Context.Exceptions.Add(exception);
+            }
+
+            return handled;
         }
 
-        public async Task OnStateFinalizeExceptionAsync(StateActionContext context, Exception exception)
+        public async Task<bool> OnStateFinalizeExceptionAsync(StateActionContext context, Exception exception)
         {
-            await ExceptionHandlers.RunSafe(h => h.OnStateFinalizationExceptionAsync(context, exception), nameof(OnStateFinalizeExceptionAsync), Logger);
+            var handled = await ExceptionHandlers.RunSafe(h => h.OnStateFinalizationExceptionAsync(context, exception), nameof(OnStateFinalizeExceptionAsync), Logger, false);
             await Inspectors.RunSafe(i => i.OnStateFinalizeExceptionAsync(context, exception), nameof(OnStateFinalizeExceptionAsync), Logger);
+
+            if (!handled)
+            {
+                await Plugins.RunSafe(i => i.OnStateFinalizationExceptionAsync(context, exception), nameof(OnStateFinalizeExceptionAsync), Logger);
+            }
+
+            if (ShouldPropagateException(context.Context.Executor.Graph, handled))
+            {
+                context.Context.Exceptions.Add(exception);
+            }
+
+            return handled;
         }
 
-        public async Task OnStateEntryExceptionAsync(StateActionContext context, Exception exception)
+        public async Task<bool> OnStateEntryExceptionAsync(StateActionContext context, Exception exception)
         {
-            await ExceptionHandlers.RunSafe(h => h.OnStateEntryExceptionAsync(context, exception), nameof(OnStateEntryExceptionAsync), Logger);
+            var handled = await ExceptionHandlers.RunSafe(h => h.OnStateEntryExceptionAsync(context, exception), nameof(OnStateEntryExceptionAsync), Logger, false);
             await Inspectors.RunSafe(i => i.OnStateEntryExceptionAsync(context, exception), nameof(OnStateEntryExceptionAsync), Logger);
+
+            if (!handled)
+            {
+                await Plugins.RunSafe(i => i.OnStateEntryExceptionAsync(context, exception), nameof(OnStateEntryExceptionAsync), Logger);
+            }
+
+            if (ShouldPropagateException(context.Context.Executor.Graph, handled))
+            {
+                context.Context.Exceptions.Add(exception);
+            }
+
+            return handled;
         }
 
-        public async Task OnStateExitExceptionAsync(StateActionContext context, Exception exception)
+        public async Task<bool> OnStateExitExceptionAsync(StateActionContext context, Exception exception)
         {
-            await ExceptionHandlers.RunSafe(h => h.OnStateExitExceptionAsync(context, exception), nameof(OnStateExitExceptionAsync), Logger);
+            var handled = await ExceptionHandlers.RunSafe(h => h.OnStateExitExceptionAsync(context, exception), nameof(OnStateExitExceptionAsync), Logger, false);
             await Inspectors.RunSafe(i => i.OnStateExitExceptionAsync(context, exception), nameof(OnStateExitExceptionAsync), Logger);
+
+            if (!handled)
+            {
+                await Plugins.RunSafe(i => i.OnStateExitExceptionAsync(context, exception), nameof(OnStateExitExceptionAsync), Logger);
+            }
+
+            if (ShouldPropagateException(context.Context.Executor.Graph, handled))
+            {
+                context.Context.Exceptions.Add(exception);
+            }
+
+            return handled;
         }
     }
 }

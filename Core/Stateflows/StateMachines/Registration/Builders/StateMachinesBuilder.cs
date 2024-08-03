@@ -24,7 +24,7 @@ namespace Stateflows.StateMachines.Registration.Builders
             assembly.GetAttributedTypes<StateMachineBehaviorAttribute>().ToList().ForEach(@type =>
             {
                 if (
-                    typeof(StateMachine).IsAssignableFrom(@type) &&
+                    typeof(IStateMachine).IsAssignableFrom(@type) &&
                     @type.GetCustomAttributes(typeof(StateMachineBehaviorAttribute)).FirstOrDefault() is StateMachineBehaviorAttribute attribute)
                 {
                     Register.AddStateMachine(attribute.Name ?? @type.FullName, attribute.Version, @type);
@@ -65,18 +65,18 @@ namespace Stateflows.StateMachines.Registration.Builders
             return this;
         }
 
-        //[DebuggerHidden]
+        [DebuggerHidden]
         public IStateMachinesBuilder AddStateMachine<TStateMachine>(string stateMachineName = null, int version = 1)
-            where TStateMachine : StateMachine
+            where TStateMachine : class, IStateMachine
         {
-            Register.AddStateMachine<TStateMachine>(stateMachineName ?? StateMachineInfo<TStateMachine>.Name, version);
+            Register.AddStateMachine<TStateMachine>(stateMachineName ?? StateMachine<TStateMachine>.Name, version);
 
             return this;
         }
 
         [DebuggerHidden]
         public IStateMachinesBuilder AddStateMachine<TStateMachine>(int version)
-            where TStateMachine : StateMachine
+            where TStateMachine : class, IStateMachine
             => AddStateMachine<TStateMachine>(null, version);
 
         #region Observability

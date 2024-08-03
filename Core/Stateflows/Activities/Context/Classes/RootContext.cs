@@ -341,7 +341,7 @@ namespace Stateflows.Activities.Context.Classes
             ? EventsStack.Peek()
             : null;
 
-        internal Exception Exception { get; set; }
+        public readonly List<Exception> Exceptions = new List<Exception>();
 
         internal Node NodeOfOrigin { get; set; }
 
@@ -349,7 +349,13 @@ namespace Stateflows.Activities.Context.Classes
             => nodeScope.IsTerminated ||
                 (nodeScope.ChildScope?.IsTerminated ?? false) ||
                 (
-                    !node.Nodes.Values.Any(node => node.Type == NodeType.AcceptEventAction && !node.IncomingEdges.Any()) &&
+                    !node.Nodes.Values.Any(node =>
+                        (
+                            node.Type == NodeType.AcceptEventAction ||
+                            node.Type == NodeType.TimeEventAction
+                        ) &&
+                        !node.IncomingEdges.Any()
+                    ) &&
                     !ActiveNodes.Any()
                 );
 

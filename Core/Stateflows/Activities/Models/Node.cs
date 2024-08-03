@@ -8,7 +8,6 @@ using Stateflows.Common;
 using Stateflows.Common.Models;
 using Stateflows.Activities.Registration;
 using Stateflows.Activities.Context.Classes;
-using System.Xml.Linq;
 
 namespace Stateflows.Activities.Models
 {
@@ -151,7 +150,7 @@ namespace Stateflows.Activities.Models
         private IEnumerable<Node> acceptEventActionNodes = null;
         public IEnumerable<Node> AcceptEventActionNodes
             => acceptEventActionNodes ??= Nodes.Values
-                .Where(n => n.Type == NodeType.AcceptEventAction);
+                .Where(n => n.Type == NodeType.AcceptEventAction || n.Type == NodeType.TimeEventAction);
 
         private IEnumerable<Node> danglingTimeEventActionNodes = null;
         public IEnumerable<Node> DanglingTimeEventActionNodes

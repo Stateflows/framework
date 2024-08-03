@@ -3,10 +3,8 @@ using Stateflows.Common;
 using Stateflows.Common.Context;
 using Stateflows.Common.Utilities;
 using Stateflows.Common.Interfaces;
-using Stateflows.Common.Trace.Models;
 using Stateflows.Storage.EntityFrameworkCore.Utils;
 using Stateflows.Storage.EntityFrameworkCore.EntityFrameworkCore;
-using Stateflows.Storage.EntityFrameworkCore.EntityFrameworkCore.Entities;
 
 namespace Stateflows.Storage.EntityFrameworkCore.Stateflows
 {
@@ -113,8 +111,6 @@ namespace Stateflows.Storage.EntityFrameworkCore.Stateflows
             return Task.FromResult(result as IEnumerable<StateflowsContext>);
         }
 
-
-
         public Task<IEnumerable<StateflowsContext>> GetStartupTriggeredContextsAsync(IEnumerable<BehaviorClass> behaviorClasses)
         {
             StateflowsContext[] result = Array.Empty<StateflowsContext>();
@@ -131,44 +127,6 @@ namespace Stateflows.Storage.EntityFrameworkCore.Stateflows
             }
 
             return Task.FromResult(result as IEnumerable<StateflowsContext>);
-        }
-
-        public async Task SaveTraceAsync(BehaviorTrace behaviorTrace)
-        {
-            try
-            {
-                var traceEntity = new Trace_v1(
-                    behaviorTrace.BehaviorId.ToString(),
-                    behaviorTrace.ExecutedAt,
-                    StateflowsJsonConverter.SerializePolymorphicObject(behaviorTrace)
-                );
-
-                DbContext.Traces_v1.Add(traceEntity);
-
-                await DbContext.SaveChangesAsync();
-            }
-            catch (Exception e)
-            {
-                Logger.LogError(LogTemplates.ExceptionLogTemplate, typeof(EntityFrameworkCoreStorage).FullName, nameof(SaveTraceAsync), e.GetType().Name, e.Message);
-            }
-        }
-
-        public async Task<IEnumerable<BehaviorTrace>> GetTracesAsync(BehaviorId behaviorId)
-        {
-            BehaviorTrace[] result = Array.Empty<BehaviorTrace>();
-
-            try
-            {
-                var contexts = await DbContext.Traces_v1.FindByBehaviorIdAsync(behaviorId);
-
-                result = contexts.Select(c => StateflowsJsonConverter.DeserializeObject<BehaviorTrace>(c.Data ?? string.Empty)).ToArray();
-            }
-            catch (Exception e)
-            {
-                Logger.LogError(LogTemplates.ExceptionLogTemplate, typeof(EntityFrameworkCoreStorage).FullName, nameof(GetTracesAsync), e.GetType().Name, e.Message);
-            }
-
-            return result;
         }
     }
 }

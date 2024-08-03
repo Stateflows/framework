@@ -5,7 +5,6 @@ using System.Collections.Generic;
 using Stateflows.Common.Context;
 using Stateflows.Common.Utilities;
 using Stateflows.Common.Interfaces;
-using Stateflows.Common.Trace.Models;
 
 namespace Stateflows.Common.Storage
 {
@@ -66,11 +65,5 @@ namespace Stateflows.Common.Storage
 
         public async Task<IEnumerable<StateflowsContext>> GetStartupTriggeredContextsAsync(IEnumerable<BehaviorClass> behaviorClasses)
             => (await GetAllContextsAsync(behaviorClasses)).Where(context => context.TriggerOnStartup);
-
-        public Task SaveTraceAsync(BehaviorTrace behaviorTrace)
-            => Task.CompletedTask;
-
-        public Task<IEnumerable<BehaviorTrace>> GetTracesAsync(BehaviorId behaviorId)
-            => Task.FromResult(Array.Empty<BehaviorTrace>() as IEnumerable<BehaviorTrace>);
     }
 }

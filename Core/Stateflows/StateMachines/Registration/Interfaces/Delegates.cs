@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Threading.Tasks;
 using Stateflows.Common;
 using Stateflows.StateMachines.Context.Interfaces;
 
@@ -44,4 +45,6 @@ namespace Stateflows.StateMachines.Registration.Interfaces
     public delegate IStateMachineExceptionHandler StateMachineExceptionHandlerFactory(IServiceProvider serviceProvider);
 
     public delegate Event StateActionInitializationBuilder(IStateActionContext context);
+    
+    public delegate Task<Event> StateActionInitializationBuilderAsync(IStateActionContext context);
 }
