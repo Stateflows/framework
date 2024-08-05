@@ -4,7 +4,7 @@ using System.Collections.Generic;
 namespace Stateflows.Common
 {
     [NoImplicitInitialization]
-    public sealed class UnsubscriptionRequest : Request<UnsubscriptionResponse>
+    public sealed class Unsubscribe
     {
         public BehaviorId BehaviorId { get; set; }
 

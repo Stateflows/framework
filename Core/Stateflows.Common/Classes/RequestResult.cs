@@ -3,15 +3,14 @@
 namespace Stateflows.Common
 {
     public class RequestResult<TResponse> : SendResult
-        where TResponse : Response, new()
     {
         [JsonConstructor]
         protected RequestResult() : base() { }
 
-        public RequestResult(Request<TResponse> request, EventStatus status, EventValidation validation = null)
+        public RequestResult(EventHolder<Request<TResponse>> request, EventStatus status, EventValidation validation = null)
             : base(request, status, validation)
         {
-            Response = request.Response;
+            Response = request.Payload.Response;
         }
 
         public TResponse Response { get; set; }
@@ -19,12 +18,12 @@ namespace Stateflows.Common
 
     public class RequestResult : SendResult
     {
-        public RequestResult(Event request, Response response, EventStatus status, EventValidation validation = null)
+        public RequestResult(EventHolder request, EventHolder response, EventStatus status, EventValidation validation = null)
             : base(request, status, validation)
         {
             Response = response;
         }
 
-        public Response Response { get; set; }
+        public EventHolder Response { get; set; }
     }
 }

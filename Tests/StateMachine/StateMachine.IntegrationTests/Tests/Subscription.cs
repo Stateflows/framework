@@ -109,7 +109,7 @@ namespace StateMachine.IntegrationTests.Tests
             {
                 _ = subscribee.WatchCurrentStateAsync(n => currentState = n.StatesStack.First());
 
-                _ = subscribee.WatchStatusAsync(n => currentStatus = n.BehaviorStatus);
+                _ = subscribee.WatchStatusAsync((Action<BehaviorStatusNotification>)(n => currentStatus = n.BehaviorStatus));
 
                 await subscribee.SendAsync(new Initialize());
 

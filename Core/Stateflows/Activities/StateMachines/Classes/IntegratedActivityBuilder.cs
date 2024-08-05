@@ -16,16 +16,16 @@ namespace Stateflows.Activities.StateMachines.Interfaces
             buildAction?.Invoke(this);
         }
 
-        public SubscriptionRequest GetSubscriptionRequest()
-            => new SubscriptionRequest()
+        public Subscribe GetSubscriptionRequest()
+            => new Subscribe()
             {
                 NotificationNames = Notifications
                     .Select(notificationType => notificationType.GetEventName())
                     .ToList()
             };
 
-        public UnsubscriptionRequest GetUnsubscriptionRequest()
-            => new UnsubscriptionRequest()
+        public Unsubscribe GetUnsubscriptionRequest()
+            => new Unsubscribe()
             {
                 NotificationNames = Notifications
                     .Select(notificationType => notificationType.GetEventName())

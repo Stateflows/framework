@@ -2,19 +2,20 @@
 
 namespace Stateflows.Common
 {
-    public abstract class Request<TResponse> : Event
-        where TResponse : Event, new()
+    public abstract class Request<TResponse>
     {
         public void Respond(TResponse response)
         {
             if (Response != null)
             {
-                throw new StateflowsException($"Already responded to request '{Name}'");
+                throw new StateflowsException($"Already responded to request '{EventInfo.GetName(GetType())}'");
             }
 
-            Response = response;
+            ResponseHolder = new EventHolder<TResponse>() { Payload = response };
         }
 
-        public TResponse Response { get; private set; }
+        public EventHolder<TResponse> ResponseHolder { get; private set; }
+
+        public TResponse Response => ResponseHolder.Payload;
     }
 }

@@ -7,7 +7,7 @@ namespace Stateflows.Activities
 {
     public interface IActivityBehavior : IBehavior
     {
-        Task<RequestResult<ExecutionResponse>> ExecuteAsync(Event initializationEvent, IEnumerable<object> inputTokens = null);
-        Task<RequestResult<ExecutionResponse>> ExecuteAsync(IEnumerable<object> inputTokens = null);
+        Task<RequestResult<ExecutionResponse>> ExecuteAsync(Event initializationEvent, IEnumerable<object> inputTokens = null, IEnumerable<EventHeader> headers = null);
+        Task<RequestResult<ExecutionResponse>> ExecuteAsync(IEnumerable<object> inputTokens = null, IEnumerable<EventHeader> headers = null);
     }
 }

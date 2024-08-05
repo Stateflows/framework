@@ -9,14 +9,14 @@ namespace Stateflows.Common
         [JsonConstructor]
         protected SendResult() { }
 
-        public SendResult(Event @event, EventStatus status, EventValidation validation = null)
+        public SendResult(EventHolder @event, EventStatus status, EventValidation validation = null)
         {
             Event = @event;
             Status = status;
             Validation = validation ?? new EventValidation(true, Array.Empty<ValidationResult>());
         }
 
-        public Event Event { get; set; }
+        private EventHolder Event { get; set; }
 
         public EventStatus Status { get; set; }
 

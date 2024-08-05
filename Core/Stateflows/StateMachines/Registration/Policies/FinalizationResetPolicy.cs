@@ -18,7 +18,7 @@ namespace Stateflows.StateMachines
             var stateflowsContext = (context as IRootContext).Context.Context;
             if (stateflowsContext.Stored)
             {
-                context.StateMachine.Send(new ResetRequest() { Mode = resetMode });
+                context.StateMachine.Send(new Reset() { Mode = resetMode });
             }
             else
             {

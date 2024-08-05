@@ -49,7 +49,7 @@ namespace Stateflows.StateMachines.Engine
 
             Context = (context as BaseContext).Context;
 
-            if (context.Event is ResetRequest)
+            if (context.Event is Reset)
             {
                 Context.Context.PendingTimeEvents.Clear();
             }

@@ -28,7 +28,6 @@ namespace Stateflows.Common
     //}
 
     public static class EventInfo<TEvent>
-        where TEvent : Event, new()
     {
         public static string Name => EventInfo.GetName(typeof(TEvent));
     }
@@ -36,6 +35,6 @@ namespace Stateflows.Common
     public static class EventInfo
     {
         public static string GetName(Type @type)
-            => (@type.GetUninitializedInstance() as Event).Name;
+            => @type.GetReadableName();
     }
 }

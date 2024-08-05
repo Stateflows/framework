@@ -43,7 +43,7 @@ namespace Stateflows.Common.Subscription
         public Task<RequestResult<SubscriptionResponse>> SubscribeAsync<TNotification>(BehaviorId behaviorId)
             where TNotification : Notification, new()
         {
-            var request = new SubscriptionRequest() { BehaviorId = subscriberBehaviorId };
+            var request = new Subscription() { BehaviorId = subscriberBehaviorId };
 
             request.NotificationNames.Add(EventInfo<TNotification>.Name);
 
@@ -57,7 +57,7 @@ namespace Stateflows.Common.Subscription
         public Task<RequestResult<UnsubscriptionResponse>> UnsubscribeAsync<TNotification>(BehaviorId behaviorId)
             where TNotification : Notification, new()
         {
-            var request = new UnsubscriptionRequest() { BehaviorId = subscriberBehaviorId };
+            var request = new Unsubscribe() { BehaviorId = subscriberBehaviorId };
 
             request.NotificationNames.Add(EventInfo<TNotification>.Name);
 

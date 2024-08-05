@@ -148,7 +148,11 @@ namespace Stateflows.StateMachines.Engine
 
                         if (executor.Initialized)
                         {
-                            if (handlingResult != EventStatus.Consumed && handlingResult != EventStatus.NotInitialized)
+                            if (
+                                handlingResult != EventStatus.Consumed &&
+                                handlingResult != EventStatus.Rejected && 
+                                handlingResult != EventStatus.NotInitialized
+                            )
                             {
                                 result = await executor.ProcessAsync(@event);
                             }

@@ -15,6 +15,6 @@ namespace Stateflows.Common.Transport.Classes
         public DateTime ResponseTime { get; set; }
 
         [JsonProperty(TypeNameHandling = TypeNameHandling.None)]
-        public IEnumerable<Notification> Notifications { get; set; } = Array.Empty<Notification>();
+        public IEnumerable<EventHolder> Notifications { get; set; } = Array.Empty<EventHolder>();
     }
 }

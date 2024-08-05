@@ -13,9 +13,9 @@ namespace Stateflows.Common.Transport.Classes
         public int? MilisecondsSinceLastNotificationCheck { get; set; }
 
         [JsonIgnore]
-        public List<Action<Notification>> Handlers { get; } = new List<Action<Notification>>();
+        public List<Action<EventHolder>> Handlers { get; } = new List<Action<EventHolder>>();
 
         [JsonIgnore]
-        public List<Notification> Notifications { get; }= new List<Notification>();
+        public List<EventHolder> Notifications { get; }= new List<EventHolder>();
     }
 }

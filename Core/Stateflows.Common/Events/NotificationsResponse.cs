@@ -1,5 +1,5 @@
 ﻿namespace Stateflows.Common
 {
-    public sealed class NotificationsResponse : Response
+    public sealed class NotificationsResponse
     { }
 }

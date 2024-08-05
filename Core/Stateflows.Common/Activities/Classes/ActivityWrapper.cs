@@ -28,12 +28,10 @@ namespace Stateflows.Common.Activities.Classes
         public Task<RequestResult<ExecutionResponse>> ExecuteAsync(IEnumerable<object> inputTokens = null)
             => Behavior.RequestAsync(new ExecutionRequest() { InputTokens = inputTokens ?? new object[0] });
 
-        public Task<SendResult> SendAsync<TEvent>(TEvent @event)
-            where TEvent : Event, new()
+        public Task<SendResult<TEvent>> SendAsync<TEvent>(TEvent @event)
             => Behavior.SendAsync(@event);
 
         public Task<RequestResult<TResponse>> RequestAsync<TResponse>(Request<TResponse> request)
-            where TResponse : Response, new()
             => Behavior.RequestAsync(request);
 
         public Task WatchAsync<TNotification>(Action<TNotification> handler)

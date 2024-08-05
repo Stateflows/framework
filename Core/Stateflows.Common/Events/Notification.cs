@@ -5,13 +5,13 @@
         public BehaviorId SenderId { get; set; }
     }
 
-    public class Notification<TPayload> : Notification
-    {
-        public Notification()
-        {
-            Payload = default;
-        }
+    //public class Notification<TPayload> : Notification
+    //{
+    //    public Notification()
+    //    {
+    //        Payload = default;
+    //    }
 
-        public TPayload Payload { get; set; }
-    }
+    //    public TPayload Payload { get; set; }
+    //}
 }

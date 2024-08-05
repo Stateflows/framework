@@ -55,15 +55,15 @@ namespace Stateflows.StateMachines.Models
             .Select(t => EventInfo.GetName(t))
             .ToList();
 
-        public SubscriptionRequest GetSubscriptionRequest(StateMachineId hostId)
-            => new SubscriptionRequest()
+        public Subscribe GetSubscriptionRequest(StateMachineId hostId)
+            => new Subscribe()
             {
                 BehaviorId = hostId,
                 NotificationNames = GetBehaviorSubscriptionNames()
             };
 
-        public UnsubscriptionRequest GetUnsubscriptionRequest(StateMachineId hostId)
-            => new UnsubscriptionRequest()
+        public Unsubscribe GetUnsubscriptionRequest(StateMachineId hostId)
+            => new Unsubscribe()
             {
                 BehaviorId = hostId,
                 NotificationNames = GetBehaviorSubscriptionNames()

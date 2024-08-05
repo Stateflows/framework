@@ -19,7 +19,7 @@ namespace Stateflows.Activities
             var stateflowsContext = (context as IRootContext).Context.Context;
             if (stateflowsContext.Stored)
             {
-                context.Activity.Send(new ResetRequest() { Mode = resetMode });
+                context.Activity.Send(new Reset() { Mode = resetMode });
             }
             else
             {

@@ -24,7 +24,7 @@ namespace Stateflows.Activities
                                 var integratedActivityBuilder = new IntegratedActivityBuilder(buildAction);
                                 return a.SendCompoundAsync(
                                     integratedActivityBuilder.GetSubscriptionRequest(),
-                                    new ResetRequest() { Mode = ResetMode.KeepVersionAndSubscriptions },
+                                    new Reset() { Mode = ResetMode.KeepVersionAndSubscriptions },
                                     new ExecutionRequest() { InitializationEvent = initializationEvent },
                                     integratedActivityBuilder.GetUnsubscriptionRequest()
                                 );
@@ -50,7 +50,7 @@ namespace Stateflows.Activities
                                 var integratedActivityBuilder = new IntegratedActivityBuilder(buildAction);
                                 return a.SendCompoundAsync(
                                     integratedActivityBuilder.GetSubscriptionRequest(),
-                                    new ResetRequest() { Mode = ResetMode.KeepVersionAndSubscriptions },
+                                    new Reset() { Mode = ResetMode.KeepVersionAndSubscriptions },
                                     new ExecutionRequest() { InitializationEvent = initializationEvent },
                                     integratedActivityBuilder.GetUnsubscriptionRequest()
                                 );

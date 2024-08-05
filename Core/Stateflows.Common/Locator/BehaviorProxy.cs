@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Stateflows.Common.Engine;
@@ -19,24 +20,26 @@ namespace Stateflows.Common.Locator
             Interceptor = interceptor;
         }
 
-        public async Task<SendResult> SendAsync<TEvent>(TEvent @event)
-            where TEvent : Event, new()
+        public async Task<SendResult> SendAsync<TEvent>(TEvent @event, IEnumerable<EventHeader> headers = null)
         {
-            await Interceptor.BeforeDispatchEventAsync(@event);
+            var headersList = headers?.ToList() ?? new List<EventHeader>();
 
-            var result = await Behavior.SendAsync(@event);
+            await Interceptor.BeforeDispatchEventAsync(@event, headersList);
+
+            var result = await Behavior.SendAsync(@event, headersList);
 
             await Interceptor.AfterDispatchEventAsync(@event);
 
             return result;
         }
 
-        public async Task<RequestResult<TResponse>> RequestAsync<TResponse>(Request<TResponse> request)
-            where TResponse : Response, new()
+        public async Task<RequestResult<TResponse>> RequestAsync<TResponse>(Request<TResponse> request, IEnumerable<EventHeader> headers = null)
         {
-            await Interceptor.BeforeDispatchEventAsync(@request);
+            var headersList = headers?.ToList() ?? new List<EventHeader>();
 
-            var result = await Behavior.RequestAsync(@request);
+            await Interceptor.BeforeDispatchEventAsync(@request, headersList);
+
+            var result = await Behavior.RequestAsync(@request, headersList);
 
             await Interceptor.AfterDispatchEventAsync(@request);
 
@@ -44,11 +47,9 @@ namespace Stateflows.Common.Locator
         }
 
         public Task WatchAsync<TNotification>(Action<TNotification> handler)
-            where TNotification : Notification, new()
             => Behavior.WatchAsync<TNotification>(handler);
 
         public Task UnwatchAsync<TNotification>()
-            where TNotification : Notification, new()
             => Behavior.UnwatchAsync<TNotification>();
 
         public void Dispose()

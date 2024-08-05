@@ -4,7 +4,7 @@ using System.Collections.Generic;
 namespace Stateflows.Common
 {
     [NoImplicitInitialization]
-    public sealed class SubscriptionRequest : Request<SubscriptionResponse>
+    public sealed class Subscribe
     {
         public BehaviorId BehaviorId { get; set; }
 

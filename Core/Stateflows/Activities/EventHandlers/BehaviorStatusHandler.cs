@@ -10,16 +10,16 @@ namespace Stateflows.Activities.EventHandlers
 {
     internal class BehaviorStatusHandler : IActivityEventHandler
     {
-        public Type EventType => typeof(BehaviorStatusRequest);
+        public Type EventType => typeof(BehaviorInfoRequest);
 
         public Task<EventStatus> TryHandleEventAsync<TEvent>(IEventInspectionContext<TEvent> context)
             where TEvent : Event, new()
         {
-            if (context.Event is BehaviorStatusRequest request)
+            if (context.Event is BehaviorInfoRequest request)
             {
                 var executor = context.Activity.GetExecutor();
 
-                request.Respond(new BehaviorStatusResponse()
+                request.Respond(new BehaviorStatus()
                 {
                     BehaviorStatus = executor.BehaviorStatus,
                     ExpectedEvents = executor.GetExpectedEvents()

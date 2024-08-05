@@ -1,16 +1,21 @@
 ﻿using System;
+using System.Collections.Generic;
 using Newtonsoft.Json;
-using Stateflows.Common;
 using Stateflows.Common.Extensions;
 
-namespace Stateflows.Activities
+namespace Stateflows.Common
 {
-    public abstract class TokenHolder
+    public abstract class EventHolder
     {
         public Guid Id { get; set; } = Guid.NewGuid();
 
         protected string name;
         public virtual string Name => name ??= GetType().GetTokenName();
+
+        [JsonProperty(TypeNameHandling = TypeNameHandling.None)]
+        public List<EventHeader> Headers { get; set; } = new List<EventHeader>();
+
+        public DateTime SentAt { get; set; }
 
         [JsonIgnore]
         public object BoxedPayload { get; }
@@ -18,22 +23,22 @@ namespace Stateflows.Activities
         protected abstract object GetBoxedPayload();
     }
 
-    public class TokenHolder<TToken> : TokenHolder
+    public class EventHolder<TEvent> : EventHolder
     {
-        public TokenHolder()
+        public EventHolder()
         {
             Payload = default;
         }
 
-        public override string Name => name ??= typeof(TToken).GetReadableName();
+        public override string Name => name ??= typeof(TEvent).GetReadableName();
 
-        public TToken Payload { get; set; }
+        public TEvent Payload { get; set; }
 
         protected override object GetBoxedPayload()
             => Payload;
 
         public override bool Equals(object obj)
-            => obj is TokenHolder holder && holder.Id == Id;
+            => obj is EventHolder holder && holder.Id == Id;
 
         public override int GetHashCode()
             => Id.GetHashCode();

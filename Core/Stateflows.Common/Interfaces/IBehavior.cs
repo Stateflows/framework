@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using Stateflows.Common.Interfaces;
 
@@ -11,25 +12,23 @@ namespace Stateflows.Common
     {
         BehaviorId Id { get; }
 
-        Task<SendResult> SendAsync<TEvent>(TEvent @event)
-            where TEvent : Event, new();
+        Task<SendResult> SendAsync<TEvent>(TEvent @event, IEnumerable<EventHeader> headers = null);
 
         Task<RequestResult<CompoundResponse>> SendCompoundAsync(params Event[] events)
             => RequestAsync(new CompoundRequest() { Events = events });
 
-        Task<RequestResult<TResponse>> RequestAsync<TResponse>(Request<TResponse> request)
-            where TResponse : Response, new();
+        Task<RequestResult<TResponse>> RequestAsync<TResponse>(Request<TResponse> request, IEnumerable<EventHeader> headers = null);
 
-        Task<RequestResult<ResetResponse>> ResetAsync(ResetMode resetMode = ResetMode.Full)
-            => RequestAsync(new ResetRequest() { Mode = resetMode });
+        Task<SendResult> ResetAsync(ResetMode resetMode = ResetMode.Full)
+            => SendAsync(new Reset() { Mode = resetMode });
 
-        Task<RequestResult<BehaviorStatusResponse>> GetStatusAsync()
-            => RequestAsync(new BehaviorStatusRequest());
+        Task<RequestResult<BehaviorInfo>> GetStatusAsync()
+            => RequestAsync(new BehaviorInfoRequest());
 
-        Task WatchStatusAsync(Action<BehaviorStatusNotification> handler)
+        Task WatchStatusAsync(Action<BehaviorInfo> handler)
             => WatchAsync(handler);
 
         Task UnwatchStatusAsync()
-            => UnwatchAsync<BehaviorStatusNotification>();
+            => UnwatchAsync<BehaviorInfo>();
     }
 }

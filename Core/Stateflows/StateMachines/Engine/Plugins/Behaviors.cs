@@ -54,7 +54,7 @@ namespace Stateflows.StateMachines.Engine
                         _ = behavior.SendAsync(vertex.GetUnsubscriptionRequest(context.StateMachine.Id));
                     }
 
-                    _ = behavior.SendAsync(new FinalizationRequest());
+                    _ = behavior.SendAsync(new Finalize());
                     stateValues.BehaviorId = null;
                 }
             }
