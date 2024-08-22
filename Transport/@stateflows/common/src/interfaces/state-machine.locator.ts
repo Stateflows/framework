@@ -1,6 +1,6 @@
 import { StateMachineId } from "../ids/state-machine.id";
-import { IStateMachine } from "./state-machine";
+import { IStateMachineBehavior } from "./state-machine.behavior";
 
 export interface IStateMachineLocator {
-    locateStateMachine(id: StateMachineId): Promise<IStateMachine>;
+    locateStateMachine(id: StateMachineId): Promise<IStateMachineBehavior>;
 }

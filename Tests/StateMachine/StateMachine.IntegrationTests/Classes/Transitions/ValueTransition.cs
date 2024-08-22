@@ -1,6 +1,6 @@
 ﻿namespace StateMachine.IntegrationTests.Classes.Transitions
 {
-    internal class ValueTransition : IBaseDefaultTransition
+    internal class ValueTransition : IDefaultTransitionGuard
     {
         private readonly SourceStateValue<int> counter = new("counter");
 

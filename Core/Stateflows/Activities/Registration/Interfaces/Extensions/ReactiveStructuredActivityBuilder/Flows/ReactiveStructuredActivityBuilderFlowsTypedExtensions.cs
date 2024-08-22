@@ -12,12 +12,12 @@ namespace Stateflows.Activities.Typed
 
         [DebuggerHidden]
         public static IReactiveStructuredActivityBuilder AddFlow<TToken, TFlow>(this IReactiveStructuredActivityBuilder builder, string targetNodeName)
-            where TFlow : class, IBaseFlow<TToken>
+            where TFlow : class, IFlow<TToken>
             => (builder as IActionBuilder).AddFlow<TToken, TFlow>(targetNodeName) as IReactiveStructuredActivityBuilder;
 
         [DebuggerHidden]
         public static IReactiveStructuredActivityBuilder AddFlow<TToken, TFlow, TTargetNode>(this IReactiveStructuredActivityBuilder builder)
-            where TFlow : class, IBaseFlow<TToken>
+            where TFlow : class, IFlow<TToken>
             where TTargetNode : class, IActivityNode
             => builder.AddFlow<TToken, TFlow>(ActivityNode<TTargetNode>.Name);
 

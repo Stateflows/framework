@@ -1,9 +1,7 @@
 ﻿using System;
 using System.Threading.Tasks;
-using System.Collections.Generic;
 using Stateflows.Activities;
 using Stateflows.Activities.Events;
-using System.Linq;
 
 namespace Stateflows.Common.Activities.Classes
 {
@@ -18,15 +16,23 @@ namespace Stateflows.Common.Activities.Classes
             Behavior = consumer;
         }
 
-        public Task<RequestResult<ExecutionResponse>> ExecuteAsync(Event initializationEvent, IEnumerable<object> inputTokens = null)
-            => Behavior.RequestAsync(new ExecutionRequest()
-            {
-                InitializationEvent = initializationEvent,
-                InputTokens = inputTokens ?? new object[0],
-            });
+        public Task<RequestResult<ExecutionResponse>> ExecuteAsync(Event initializationEvent, Action<IInputContainer> inputBuilder = null)
+        {
+            var request = new ExecutionRequest() { InitializationEvent = initializationEvent };
 
-        public Task<RequestResult<ExecutionResponse>> ExecuteAsync(IEnumerable<object> inputTokens = null)
-            => Behavior.RequestAsync(new ExecutionRequest() { InputTokens = inputTokens ?? new object[0] });
+            inputBuilder?.Invoke(request);
+
+            return Behavior.RequestAsync(request);
+        }
+
+        public Task<RequestResult<ExecutionResponse>> ExecuteAsync(Action<IInputContainer> inputBuilder = null)
+        {
+            var request = new ExecutionRequest();
+
+            inputBuilder?.Invoke(request);
+
+            return Behavior.RequestAsync(request);
+        }
 
         public Task<SendResult> SendAsync<TEvent>(TEvent @event)
             where TEvent : Event, new()

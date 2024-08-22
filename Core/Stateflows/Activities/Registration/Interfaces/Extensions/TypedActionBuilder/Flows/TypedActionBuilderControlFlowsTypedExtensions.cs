@@ -12,12 +12,12 @@ namespace Stateflows.Activities.Typed
 
         [DebuggerHidden]
         public static ITypedActionBuilder AddControlFlow<TControlFlow>(this ITypedActionBuilder builder, string targetNodeName)
-            where TControlFlow : class, IBaseControlFlow
+            where TControlFlow : class, IControlFlow
             => (builder as IActionBuilder).AddControlFlow<TControlFlow>(targetNodeName) as ITypedActionBuilder;
 
         [DebuggerHidden]
         public static ITypedActionBuilder AddControlFlow<TControlFlow, TTargetNode>(this ITypedActionBuilder builder)
-            where TControlFlow : class, IBaseControlFlow
+            where TControlFlow : class, IControlFlow
             where TTargetNode : class, IActivityNode
             => builder.AddControlFlow<TControlFlow>(ActivityNode<TTargetNode>.Name);
     }

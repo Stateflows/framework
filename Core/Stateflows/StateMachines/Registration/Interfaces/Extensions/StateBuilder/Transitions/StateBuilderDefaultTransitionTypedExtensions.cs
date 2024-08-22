@@ -40,7 +40,7 @@ namespace Stateflows.StateMachines.Typed
         /// </typeparam>
         [DebuggerHidden]
         public static IStateBuilder AddDefaultTransition<TTransition, TTargetState>(this IStateBuilder builder)
-            where TTransition : class, IBaseDefaultTransition
+            where TTransition : class, IDefaultTransition
             where TTargetState : class, IVertex
             => builder.AddDefaultTransition<TTransition>(State<TTargetState>.Name);
 
@@ -67,7 +67,7 @@ namespace Stateflows.StateMachines.Typed
         /// <param name="targetStateName">Target state name</param>
         [DebuggerHidden]
         public static IStateBuilder AddDefaultTransition<TTransition>(this IStateBuilder builder, string targetStateName)
-            where TTransition : class, IBaseDefaultTransition
+            where TTransition : class, IDefaultTransition
         {
             (builder as IInternal).Services.AddServiceType<TTransition>();
 

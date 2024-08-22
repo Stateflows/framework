@@ -13,7 +13,7 @@ namespace Activity.IntegrationTests.Tests
         public OtherException(string? message) : base(message) { }
     }
 
-    public class Main : IBaseStructuredActivityNode
+    public class Main : IStructuredActivityNode
     {
     }
 

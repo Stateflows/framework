@@ -37,7 +37,7 @@ namespace Stateflows.StateMachines.Typed
         /// </typeparam>
         [DebuggerHidden]
         public static ITypedCompositeStateBuilder AddDefaultTransition<TDefaultTransition, TTargetState>(this ITypedCompositeStateBuilder builder)
-            where TDefaultTransition : class, IBaseDefaultTransition
+            where TDefaultTransition : class, IDefaultTransition
             where TTargetState : class, IVertex
             => builder.AddDefaultTransition<TDefaultTransition>(State<TTargetState>.Name);
 
@@ -64,8 +64,8 @@ namespace Stateflows.StateMachines.Typed
         /// <param name="targetStateName">Target state name</param>
         [DebuggerHidden]
         public static ITypedCompositeStateBuilder AddDefaultTransition<TDefaultTransition>(this ITypedCompositeStateBuilder builder, string targetStateName)
-            where TDefaultTransition : class, IBaseDefaultTransition
-            => (builder as IStateBuilder).AddDefaultTransition<TDefaultTransition>(targetStateName) as ITypedCompositeStateBuilder;
+            where TDefaultTransition : class, IDefaultTransition
+            => (builder as ICompositeStateBuilder).AddDefaultTransition<TDefaultTransition>(targetStateName) as ITypedCompositeStateBuilder;
 
         /// <summary>
         /// Adds default transition coming from current state.<br/>

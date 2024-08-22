@@ -197,7 +197,7 @@ namespace Stateflows.Activities.Engine
 
         public async Task OnActivityInitializationExceptionAsync(BaseContext context, Event initializationEvent, Exception exception)
         {
-            var exceptionContext = new ActivityInitializationContext(context, initializationEvent);
+            var exceptionContext = new ActivityInitializationContext(context, initializationEvent, null);
             await ExceptionHandlers.RunSafe(h => h.OnActivityInitializationExceptionAsync(exceptionContext, exception), nameof(OnActivityInitializationExceptionAsync), Logger);
             await Inspectors.RunSafe(i => i.OnActivityInitializationExceptionAsync(exceptionContext, exception), nameof(OnActivityInitializationExceptionAsync), Logger);
 

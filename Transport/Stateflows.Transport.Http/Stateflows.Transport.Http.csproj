@@ -36,9 +36,4 @@
       <PackagePath>\</PackagePath>
     </None>
   </ItemGroup>
-
-  <ItemGroup>
-    <ProjectReference Include="..\..\Core\Stateflows.Transport.Common\Stateflows.Common.Transport.csproj" />
-    <ProjectReference Include="..\..\Core\Stateflows\Stateflows.csproj" />
-  </ItemGroup>
 </Project>

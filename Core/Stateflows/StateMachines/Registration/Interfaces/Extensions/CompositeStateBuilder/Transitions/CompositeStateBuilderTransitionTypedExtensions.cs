@@ -1,6 +1,9 @@
 ﻿using System.Diagnostics;
 using Stateflows.Common;
+using Stateflows.Common.Extensions;
+using Stateflows.StateMachines.Extensions;
 using Stateflows.StateMachines.Registration.Interfaces;
+using Stateflows.StateMachines.Registration.Interfaces.Internal;
 
 namespace Stateflows.StateMachines.Typed
 {
@@ -44,7 +47,7 @@ namespace Stateflows.StateMachines.Typed
         [DebuggerHidden]
         public static ICompositeStateBuilder AddTransition<TEvent, TTransition, TTargetState>(this ICompositeStateBuilder builder)
             where TEvent : Event, new()
-            where TTransition : class, IBaseTransition<TEvent>
+            where TTransition : class, ITransition<TEvent>
             where TTargetState : class, IVertex
             => AddTransition<TEvent, TTransition>(builder, State<TTargetState>.Name);
 
@@ -77,8 +80,15 @@ namespace Stateflows.StateMachines.Typed
         [DebuggerHidden]
         public static ICompositeStateBuilder AddTransition<TEvent, TTransition>(this ICompositeStateBuilder builder, string targetStateName)
             where TEvent : Event, new()
-            where TTransition : class, IBaseTransition<TEvent>
-            => (builder as IStateBuilder).AddTransition<TEvent, TTransition>(targetStateName) as ICompositeStateBuilder;
+            where TTransition : class, ITransition<TEvent>
+        {
+            (builder as IInternal).Services.AddServiceType<TTransition>();
+
+            return builder.AddTransition<TEvent>(
+                targetStateName,
+                t => t.AddTransitionEvents<TTransition, TEvent>()
+            );
+        }
 
         /// <summary>
         /// Adds transition triggered by <see cref="TEvent"/> coming from current state.<br/>

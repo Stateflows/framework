@@ -1,5 +1,8 @@
 ﻿using System;
+using System.Linq;
+using System.Collections.Generic;
 using Stateflows.Activities;
+using Stateflows.Activities.Events;
 
 namespace Stateflows.Utils
 {
@@ -30,5 +33,11 @@ namespace Stateflows.Utils
 
             return holder;
         }
+
+        public static void AddInputToken<TToken>(this ExecutionRequest executionRequest, TToken token)
+            => executionRequest.InputTokens.Add(token.ToTokenHolder());
+
+        public static void AddInputTokens<TToken>(this ExecutionRequest executionRequest, IEnumerable<TToken> tokens)
+            => executionRequest.InputTokens.AddRange(tokens.Select(token => token.ToTokenHolder()));
     }
 }

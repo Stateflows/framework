@@ -8,7 +8,7 @@ namespace Stateflows.StateMachines.Extensions
     internal static class BuilderExtensions
     {
         public static void AddStateEvents<TState, TReturn>(this IStateEvents<TReturn> builder)
-            where TState : class, IBaseState
+            where TState : class, IState
         {
             if (typeof(IStateEntry).IsAssignableFrom(typeof(TState)))
             {
@@ -22,7 +22,7 @@ namespace Stateflows.StateMachines.Extensions
         }
 
         public static void AddCompositeStateEvents<TCompositeState, TReturn>(this ICompositeStateEvents<TReturn> builder)
-            where TCompositeState : class, IBaseCompositeState
+            where TCompositeState : class, ICompositeState
         {
             if (typeof(ICompositeStateInitialization).IsAssignableFrom(typeof(TCompositeState)))
             {
@@ -46,7 +46,7 @@ namespace Stateflows.StateMachines.Extensions
         }
 
         public static void AddTransitionEvents<TTransition, TEvent>(this ITransitionBuilder<TEvent> builder)
-            where TTransition : class, IBaseTransition<TEvent>
+            where TTransition : class, ITransition<TEvent>
             where TEvent : Event, new()
         {
             if (typeof(ITransitionGuard<TEvent>).IsAssignableFrom(typeof(TTransition)))
@@ -61,7 +61,7 @@ namespace Stateflows.StateMachines.Extensions
         }
 
         public static void AddDefaultTransitionEvents<TTransition>(this IDefaultTransitionBuilder builder)
-            where TTransition : class, IBaseDefaultTransition
+            where TTransition : class, IDefaultTransition
         {
             if (typeof(IDefaultTransitionGuard).IsAssignableFrom(typeof(TTransition)))
             {

@@ -12,7 +12,7 @@ namespace Stateflows.StateMachines.Sync
     public static class TransitionBuilderSyncExtensions
     {
         [DebuggerHidden]
-        public static ITransitionBuilder<TEvent> AddGuard<TEvent>(this ITransitionBuilder<TEvent> builder, Func<IGuardContext<TEvent>, bool> guard)
+        public static ITransitionBuilder<TEvent> AddGuard<TEvent>(this ITransitionBuilder<TEvent> builder, Func<ITransitionContext<TEvent>, bool> guard)
             where TEvent : Event, new()
             => builder.AddGuard(guard
                 .AddStateMachineInvocationContext((builder as TransitionBuilder<TEvent>).Edge.Graph)
@@ -20,7 +20,7 @@ namespace Stateflows.StateMachines.Sync
             );
 
         [DebuggerHidden]
-        public static IInternalTransitionBuilder<TEvent> AddGuard<TEvent>(this IInternalTransitionBuilder<TEvent> builder, Func<IGuardContext<TEvent>, bool> guard)
+        public static IInternalTransitionBuilder<TEvent> AddGuard<TEvent>(this IInternalTransitionBuilder<TEvent> builder, Func<ITransitionContext<TEvent>, bool> guard)
             where TEvent : Event, new()
             => builder.AddGuard(guard
                 .AddStateMachineInvocationContext((builder as TransitionBuilder<TEvent>).Edge.Graph)
@@ -28,7 +28,7 @@ namespace Stateflows.StateMachines.Sync
             );
 
         [DebuggerHidden]
-        public static IDefaultTransitionBuilder AddGuard(this IDefaultTransitionBuilder builder, Func<IGuardContext<CompletionEvent>, bool> guard)
+        public static IDefaultTransitionBuilder AddGuard(this IDefaultTransitionBuilder builder, Func<ITransitionContext<CompletionEvent>, bool> guard)
             => builder.AddGuard(guard
                 .AddStateMachineInvocationContext((builder as TransitionBuilder<CompletionEvent>).Edge.Graph)
                 .ToAsync()

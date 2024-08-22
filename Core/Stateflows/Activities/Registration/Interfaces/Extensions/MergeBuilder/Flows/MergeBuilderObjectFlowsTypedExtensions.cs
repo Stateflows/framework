@@ -14,7 +14,7 @@ namespace Stateflows.Activities.Typed
 
         [DebuggerHidden]
         public static void AddFlow<TToken, TFlow>(this IMergeBuilder builder, string targetNodeName)
-            where TFlow : class, IBaseFlow<TToken>
+            where TFlow : class, IFlow<TToken>
         {
             (builder as IInternal).Services.AddServiceType<TFlow>();
             builder.AddFlow<TToken>(
@@ -25,7 +25,7 @@ namespace Stateflows.Activities.Typed
 
         [DebuggerHidden]
         public static void AddFlow<TToken, TFlow, TTargetNode>(this IMergeBuilder builder)
-            where TFlow : class, IBaseFlow<TToken>
+            where TFlow : class, IFlow<TToken>
             where TTargetNode : class, IActivityNode
             => builder.AddFlow<TToken, TFlow>(ActivityNode<TTargetNode>.Name);
 

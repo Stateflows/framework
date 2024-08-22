@@ -20,6 +20,9 @@ namespace Stateflows.Common
         Task<RequestResult<TResponse>> RequestAsync<TResponse>(Request<TResponse> request)
             where TResponse : Response, new();
 
+        Task<RequestResult<FinalizationResponse>> FinalizeAsync()
+            => RequestAsync(new FinalizationRequest());
+
         Task<RequestResult<ResetResponse>> ResetAsync(ResetMode resetMode = ResetMode.Full)
             => RequestAsync(new ResetRequest() { Mode = resetMode });
 

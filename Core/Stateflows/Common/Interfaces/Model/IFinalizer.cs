@@ -1,6 +1,6 @@
 ﻿using System.Threading.Tasks;
 
-namespace Stateflows.StateMachines
+namespace Stateflows.Common
 {
     public interface IFinalizer
     {

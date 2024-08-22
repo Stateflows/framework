@@ -1,6 +1,6 @@
 ﻿using Stateflows.Common.Context.Interfaces;
 
-namespace Stateflows.Activities.Context.Interfaces
+namespace Stateflows.Activities
 {
     public interface IActivityContext : IBehaviorContext
     {

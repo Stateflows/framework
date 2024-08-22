@@ -22,7 +22,7 @@ namespace Stateflows.Activities.Registration.Interfaces.Base
             => AddFlow(ActivityNode<TTargetNode>.Name, buildAction);
 
         TReturn AddFlow<TFlow>(string targetNodeName)
-            where TFlow : class, IBaseFlow<TToken>
+            where TFlow : class, IFlow<TToken>
         {
             (this as IInternal).Services.AddServiceType<TFlow>();
 
@@ -33,7 +33,7 @@ namespace Stateflows.Activities.Registration.Interfaces.Base
         }
 
         TReturn AddFlow<TFlow, TTargetNode>()
-            where TFlow : class, IBaseFlow<TToken>
+            where TFlow : class, IFlow<TToken>
             where TTargetNode : class, IActivityNode
             => AddFlow<TFlow>(ActivityNode<TTargetNode>.Name);
 

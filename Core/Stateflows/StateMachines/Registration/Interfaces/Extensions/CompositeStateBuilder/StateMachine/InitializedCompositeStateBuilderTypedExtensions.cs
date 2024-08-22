@@ -28,7 +28,7 @@ namespace Stateflows.StateMachines.Typed
         /// <param name="stateBuildAction">State build action</param>
         [DebuggerHidden]
         public static IInitializedCompositeStateBuilder AddState<TState>(this IInitializedCompositeStateBuilder builder, StateTransitionsBuildAction stateBuildAction = null)
-            where TState : class, IBaseState
+            where TState : class, IState
             => builder.AddState<TState>(State<TState>.Name, stateBuildAction);
 
         /// <summary>
@@ -40,7 +40,7 @@ namespace Stateflows.StateMachines.Typed
         /// <returns></returns>
         [DebuggerHidden]
         public static IInitializedCompositeStateBuilder AddState<TState>(this IInitializedCompositeStateBuilder builder, string stateName, StateTransitionsBuildAction stateBuildAction = null)
-            where TState : class, IBaseState
+            where TState : class, IState
         {
             (builder as IInternal).Services.AddServiceType<TState>();
 
@@ -64,7 +64,7 @@ namespace Stateflows.StateMachines.Typed
         /// <param name="compositeStateBuildAction">Composite state build action</param>
         [DebuggerHidden]
         public static IInitializedCompositeStateBuilder AddCompositeState<TCompositeState>(this IInitializedCompositeStateBuilder builder, CompositeStateTransitionsBuildAction compositeStateBuildAction)
-            where TCompositeState : class, IBaseCompositeState
+            where TCompositeState : class, ICompositeState
             => builder.AddCompositeState<TCompositeState>(State<TCompositeState>.Name, compositeStateBuildAction);
 
         /// <summary>
@@ -75,7 +75,7 @@ namespace Stateflows.StateMachines.Typed
         /// <param name="compositeStateBuildAction">Composite state build action</param>
         [DebuggerHidden]
         public static IInitializedCompositeStateBuilder AddCompositeState<TCompositeState>(this IInitializedCompositeStateBuilder builder, string compositeStateName, CompositeStateTransitionsBuildAction compositeStateBuildAction)
-            where TCompositeState : class, IBaseCompositeState
+            where TCompositeState : class, ICompositeState
         {
             (builder as IInternal).Services.AddServiceType<TCompositeState>();
 

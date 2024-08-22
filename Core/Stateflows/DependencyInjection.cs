@@ -13,7 +13,6 @@ using Stateflows.Common.Initializer;
 using Stateflows.Common.Subscription;
 using Stateflows.Common.Registration.Builders;
 using Stateflows.Common.Registration.Interfaces;
-using Stateflows.StateMachines;
 
 namespace Stateflows
 {

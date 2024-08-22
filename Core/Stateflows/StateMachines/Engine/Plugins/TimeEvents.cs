@@ -114,7 +114,7 @@ namespace Stateflows.StateMachines.Engine
             return Task.CompletedTask;
         }
 
-        public Task BeforeTransitionGuardAsync(IGuardContext<Event> context)
+        public Task BeforeTransitionGuardAsync(ITransitionContext<Event> context)
         {
             if (ConsumedInTransition == null && (context as IEdgeContext).Edge.Trigger == context.ExecutionTrigger.Name)
             {

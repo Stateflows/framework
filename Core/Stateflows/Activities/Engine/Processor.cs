@@ -1,19 +1,19 @@
 ﻿using System;
 using System.Linq;
+using System.Reflection;
 using System.Threading.Tasks;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using Microsoft.Extensions.DependencyInjection;
+using Stateflows.Utils;
 using Stateflows.Common;
 using Stateflows.Common.Context;
 using Stateflows.Common.Interfaces;
 using Stateflows.Common.Extensions;
 using Stateflows.Activities.Models;
+using Stateflows.Activities.Events;
 using Stateflows.Activities.Registration;
 using Stateflows.Activities.Context.Classes;
-using Stateflows.Activities.EventHandlers;
-using Stateflows.Activities.Events;
-using System.Reflection;
 
 namespace Stateflows.Activities.Engine
 {
@@ -115,6 +115,8 @@ namespace Stateflows.Activities.Engine
             {
                 Event currentEvent = @event;
 
+                IEnumerable<TokenHolder> input = null;
+
                 if (@event is ExecutionRequest executionRequest)
                 {
                     if (executor.Graph.Interactive || executor.BehaviorStatus != BehaviorStatus.NotInitialized)
@@ -125,12 +127,14 @@ namespace Stateflows.Activities.Engine
                     context.SetEvent(executionRequest.InitializationEvent);
                         
                     currentEvent = executionRequest.InitializationEvent;
+
+                    input = executionRequest.InputTokens?.ToArray() ?? Array.Empty<TokenHolder>();
                 }
                 
                 var attributes = currentEvent.GetType().GetCustomAttributes<NoImplicitInitializationAttribute>();
                 if (!executor.Initialized && !attributes.Any())
                 {
-                    result = await executor.InitializeAsync(currentEvent);
+                    result = await executor.InitializeAsync(currentEvent, input);
                 }
 
                 if (result != EventStatus.Initialized)

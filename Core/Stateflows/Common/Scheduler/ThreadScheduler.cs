@@ -28,7 +28,7 @@ namespace Stateflows.Common.Scheduler
         {
             _ = Task.Run(async () =>
             {
-                await HandleStartupEvents();
+                await Executor.ExecuteByTenantsAsync(() => HandleStartupEvents());
                 await TimingLoop(CancellationTokenSource.Token);
             });
 

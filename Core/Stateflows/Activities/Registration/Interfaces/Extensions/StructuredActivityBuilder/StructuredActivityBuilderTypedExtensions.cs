@@ -91,12 +91,12 @@ namespace Stateflows.Activities.Typed
         #region AddStructuredActivity
         [DebuggerHidden]
         public static IStructuredActivityBuilder AddStructuredActivity<TStructuredActivity>(this IStructuredActivityBuilder builder, StructuredActivityBuildAction buildAction = null)
-            where TStructuredActivity : class, IBaseStructuredActivityNode
+            where TStructuredActivity : class, IStructuredActivityNode
             => AddStructuredActivity<TStructuredActivity>(builder, ActivityNode<TStructuredActivity>.Name, buildAction);
 
         [DebuggerHidden]
         public static IStructuredActivityBuilder AddStructuredActivity<TStructuredActivity>(this IStructuredActivityBuilder builder, string structuredActivityName, StructuredActivityBuildAction buildAction = null)
-            where TStructuredActivity : class, IBaseStructuredActivityNode
+            where TStructuredActivity : class, IStructuredActivityNode
         {
             (builder as IInternal).Services.AddServiceType<TStructuredActivity>();
 
@@ -116,12 +116,12 @@ namespace Stateflows.Activities.Typed
         #region AddParallelActivity
         [DebuggerHidden]
         public static IStructuredActivityBuilder AddParallelActivity<TParallelizationToken, TStructuredActivity>(this IStructuredActivityBuilder builder, ParallelActivityBuildAction buildAction = null, int chunkSize = 1)
-            where TStructuredActivity : class, IBaseStructuredActivityNode
+            where TStructuredActivity : class, IStructuredActivityNode
             => AddParallelActivity<TParallelizationToken, TStructuredActivity>(builder, ActivityNode<TStructuredActivity>.Name, buildAction, chunkSize);
 
         [DebuggerHidden]
         public static IStructuredActivityBuilder AddParallelActivity<TParallelizationToken, TStructuredActivity>(this IStructuredActivityBuilder builder, string structuredActivityName, ParallelActivityBuildAction buildAction = null, int chunkSize = 1)
-            where TStructuredActivity : class, IBaseStructuredActivityNode
+            where TStructuredActivity : class, IStructuredActivityNode
         {
             (builder as IInternal).Services.AddServiceType<TStructuredActivity>();
 
@@ -142,12 +142,12 @@ namespace Stateflows.Activities.Typed
         #region AddIterativeActivity
         [DebuggerHidden]
         public static IStructuredActivityBuilder AddIterativeActivity<TIterationToken, TStructuredActivity>(this IStructuredActivityBuilder builder, IterativeActivityBuildAction buildAction = null, int chunkSize = 1)
-            where TStructuredActivity : class, IBaseStructuredActivityNode
+            where TStructuredActivity : class, IStructuredActivityNode
             => AddIterativeActivity<TIterationToken, TStructuredActivity>(builder, ActivityNode<TStructuredActivity>.Name, buildAction, chunkSize);
 
         [DebuggerHidden]
         public static IStructuredActivityBuilder AddIterativeActivity<TIterationToken, TStructuredActivity>(this IStructuredActivityBuilder builder, string structuredActivityName, IterativeActivityBuildAction buildAction = null, int chunkSize = 1)
-            where TStructuredActivity : class, IBaseStructuredActivityNode
+            where TStructuredActivity : class, IStructuredActivityNode
         {
             (builder as IInternal).Services.AddServiceType<TStructuredActivity>();
             return builder.AddIterativeActivity<TIterationToken>(

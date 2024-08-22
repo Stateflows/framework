@@ -13,7 +13,6 @@ using Stateflows.Activities.Models;
 using Stateflows.Activities.Streams;
 using Stateflows.Activities.Registration;
 using Stateflows.Activities.Context.Classes;
-using System.Net;
 
 namespace Stateflows.Activities.Engine
 {
@@ -161,13 +160,14 @@ namespace Stateflows.Activities.Engine
             }
         }
 
-        public async Task<EventStatus> InitializeAsync(Event @event)
+        public async Task<EventStatus> InitializeAsync(Event @event, IEnumerable<TokenHolder> input = null)
         {
             Debug.Assert(Context != null, $"Context is unavailable. Is activity '{Graph.Name}' hydrated?");
 
             if (!Initialized)
             {
-                var result = await DoInitializeActivityAsync(@event);
+                var context = new ActivityInitializationContext(Context, NodeScope, @event, null);
+                var result = await DoInitializeActivityAsync(context);
 
                 if (
                     result == InitializationStatus.InitializedImplicitly ||
@@ -176,7 +176,9 @@ namespace Stateflows.Activities.Engine
                 {
                     Context.Initialized = true;
 
-                    await ExecuteGraphAsync();
+                    input = input?.Concat(context.InputTokens).ToArray() ?? context.InputTokens.ToArray();
+
+                    await ExecuteGraphAsync(input);
 
                     if (result == InitializationStatus.InitializedExplicitly)
                     {
@@ -305,9 +307,9 @@ namespace Stateflows.Activities.Engine
             return await ExecuteGraphAsync();
         }
 
-        private async Task<EventStatus> ExecuteGraphAsync()
+        private async Task<EventStatus> ExecuteGraphAsync(IEnumerable<TokenHolder> input = null)
         {
-            (var output, var finalized) = await DoExecuteStructuredNodeAsync(Graph, NodeScope);
+            (var output, var finalized) = await DoExecuteStructuredNodeAsync(Graph, NodeScope, input);
 
             if (finalized)
             {
@@ -517,15 +519,14 @@ namespace Stateflows.Activities.Engine
             return result;
         }
 
-        public async Task<InitializationStatus> DoInitializeActivityAsync(Event @event)
+        public async Task<InitializationStatus> DoInitializeActivityAsync(ActivityInitializationContext context)
         {
             InitializationStatus result;
 
-            var initializer = Graph.Initializers.ContainsKey(@event.Name)
-                ? Graph.Initializers[@event.Name]
+            var initializer = Graph.Initializers.ContainsKey(context.InitializationEvent.Name)
+                ? Graph.Initializers[context.InitializationEvent.Name]
                 : Graph.DefaultInitializer;
 
-            var context = new ActivityInitializationContext(Context, NodeScope, @event);
             await Inspector.BeforeActivityInitializationAsync(context);
 
             if (initializer != null)
@@ -540,7 +541,7 @@ namespace Stateflows.Activities.Engine
                 }
                 catch (Exception e)
                 {
-                    await Inspector.OnActivityInitializationExceptionAsync(context, @event, e);
+                    await Inspector.OnActivityInitializationExceptionAsync(context, context.InitializationEvent, e);
 
                     result = InitializationStatus.NotInitialized;
                 }

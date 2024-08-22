@@ -38,7 +38,7 @@ namespace StateMachine.IntegrationTests.Tests
                     )
 
                     .AddStateMachine("explicit", b => b
-                        .AddInitializer<SomeEvent>(c =>
+                        .AddInitializer<SomeEvent>(async c =>
                         {
                             InitializerCalled = true;
                             return c.InitializationEvent.InitializationSuccessful;
@@ -49,7 +49,7 @@ namespace StateMachine.IntegrationTests.Tests
                     )
 
                     .AddStateMachine("default", b => b
-                        .AddDefaultInitializer(c =>
+                        .AddDefaultInitializer(async c =>
                         {
                             InitializerCalled = true;
                             return InitializationSuccessful;
@@ -60,7 +60,7 @@ namespace StateMachine.IntegrationTests.Tests
                     )
 
                     .AddStateMachine("consumption", b => b
-                        .AddInitializer<SomeEvent>(c => true)
+                        .AddInitializer<SomeEvent>(async c => true)
                         .AddInitialState("state1", b => b
                             .AddTransition<SomeEvent>("state2")
                         )

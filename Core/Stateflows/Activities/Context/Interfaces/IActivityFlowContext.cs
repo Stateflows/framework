@@ -1,18 +1,5 @@
-﻿using System;
-
-namespace Stateflows.Activities.Context.Interfaces
+﻿namespace Stateflows.Activities.Context.Interfaces
 {
-    public interface IFlowContext
-    {
-        ISourceNodeContext SourceNode { get; }
-
-        INodeContext TargetNode { get; }
-
-        Type TokenType { get; }
-
-        int Weight { get; }
-    }
-
     public interface IIncomingFlowContext : IFlowContext
     {
         bool Activated { get; }

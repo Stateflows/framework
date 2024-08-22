@@ -17,15 +17,15 @@ namespace Stateflows.Common
         public virtual string Name => GetType().GetEventName();
     }
 
-    //public class Event<TPayload> : Event
-    //{
-    //    public Event()
-    //    {
-    //        Payload = default;
-    //    }
+    public class Event<TPayload> : Event
+    {
+        public Event()
+        {
+            Payload = default;
+        }
 
-    //    public TPayload Payload { get; set; }
-    //}
+        public TPayload Payload { get; set; }
+    }
 
     public static class EventInfo<TEvent>
         where TEvent : Event, new()

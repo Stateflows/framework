@@ -1,6 +1,6 @@
 ﻿using Stateflows.StateMachines.Typed;
 using Stateflows.StateMachines.Attributes;
-using Stateflows.StateMachines.Context.Interfaces;
+using Stateflows.Common;
 
 namespace StateMachine.IntegrationTests.Classes.StateMachines
 {

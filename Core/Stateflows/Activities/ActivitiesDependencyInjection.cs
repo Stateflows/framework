@@ -1,16 +1,16 @@
-﻿using System.Diagnostics;
+﻿using System;
+using System.Diagnostics;
 using System.Collections.Generic;
 using Microsoft.Extensions.DependencyInjection;
+using Stateflows.Common;
 using Stateflows.Common.Interfaces;
 using Stateflows.Common.Registration.Interfaces;
 using Stateflows.Activities.Engine;
+using Stateflows.Activities.Context;
 using Stateflows.Activities.Registration;
 using Stateflows.Activities.EventHandlers;
 using Stateflows.Activities.Registration.Builders;
 using Stateflows.Activities.Registration.Interfaces;
-using System;
-using Stateflows.Activities.Context;
-using Stateflows.Activities.Context.Interfaces;
 
 namespace Stateflows.Activities
 {
@@ -48,6 +48,7 @@ namespace Stateflows.Activities
                     .AddSingleton<IActivityEventHandler, SubscriptionHandler>()
                     .AddSingleton<IActivityEventHandler, UnsubscriptionHandler>()
                     .AddSingleton<IActivityEventHandler, NotificationsHandler>()
+                    .AddSingleton<IActivityEventHandler, SetGlobalValuesHandler>()
                     .AddTransient(provider =>
                         ContextHolder.ActivityContext.Value ??
                         throw new InvalidOperationException($"No service for type '{typeof(IActivityContext).FullName}' is available in this context.")

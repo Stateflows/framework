@@ -1,9 +1,8 @@
 ﻿using Stateflows.Common;
 using System.Diagnostics;
-using Stateflows.StateMachines.Extensions;
+using Stateflows.Common.Extensions;
 using Stateflows.StateMachines.Context.Classes;
 using Stateflows.StateMachines.Registration.Interfaces.Internal;
-using Stateflows.Common.Extensions;
 
 namespace Stateflows.StateMachines.Typed
 {

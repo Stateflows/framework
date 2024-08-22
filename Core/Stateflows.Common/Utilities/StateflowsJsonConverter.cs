@@ -36,6 +36,10 @@ namespace Stateflows.Common.Utilities
             where T : class
             => DeserializeObject(SerializePolymorphicObject(value)) as T;
 
+        [DebuggerStepThrough]
+        public static T Clone<T>(T value)
+            => (T)DeserializeObject(SerializePolymorphicObject(value));
+
         /// <summary>
         /// Serializes the specified object to a JSON string.
         /// </summary>

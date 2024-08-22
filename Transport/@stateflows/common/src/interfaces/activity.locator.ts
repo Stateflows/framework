@@ -1,6 +1,6 @@
 import { ActivityId } from "../ids/activity.id";
-import { IActivity } from "./activity";
+import { IActivityBehavior } from "./activity.behavior";
 
 export interface IActivityLocator {
-    locateActivity(id: ActivityId): Promise<IActivity>;
+    locateActivity(id: ActivityId): Promise<IActivityBehavior>;
 }

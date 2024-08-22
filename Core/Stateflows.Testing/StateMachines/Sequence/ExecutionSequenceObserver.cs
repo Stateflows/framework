@@ -71,7 +71,7 @@ namespace Stateflows.Testing.StateMachines.Sequence
             return Task.CompletedTask;
         }
 
-        Task IStateMachineObserver.AfterTransitionGuardAsync(IGuardContext<Event> context, bool guardResult)
+        Task IStateMachineObserver.AfterTransitionGuardAsync(ITransitionContext<Event> context, bool guardResult)
         {
             SequenceBuilder.TransitionGuard(context.Event.Name, context.SourceState.Name, context.TargetState?.Name);
 

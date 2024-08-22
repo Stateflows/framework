@@ -3,11 +3,10 @@ using Stateflows.StateMachines.Typed;
 using Stateflows.StateMachines.Events;
 using StateMachine.IntegrationTests.Utils;
 using System.Diagnostics;
-using Stateflows.StateMachines.Context.Interfaces;
 
 namespace StateMachine.IntegrationTests.Tests
 {
-    public class StateA : IBaseState
+    public class StateA : IState
     {
         public StateA(IStateMachineContext smContext, ITransitionContext tContext)
         {
@@ -15,7 +14,7 @@ namespace StateMachine.IntegrationTests.Tests
         }
     }
 
-    public class StateB : IBaseState
+    public class StateB : IState
     { }
 
     [TestClass]
@@ -80,7 +79,7 @@ namespace StateMachine.IntegrationTests.Tests
 
                     .AddStateMachine("exits", b => b
                         .AddExecutionSequenceObserver()
-                        .AddDefaultInitializer(c =>
+                        .AddDefaultInitializer(async c =>
                         {
                             ParentStateExited = null;
                             ChildStateExited = null;

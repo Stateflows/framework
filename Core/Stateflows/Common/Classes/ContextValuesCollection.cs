@@ -1,6 +1,6 @@
 ﻿using Newtonsoft.Json.Linq;
-using Stateflows.Common.Interfaces;
 using Stateflows.Common.Utilities;
+using Stateflows.Common.Interfaces;
 using System.Collections.Generic;
 
 namespace Stateflows.Common.Classes
