@@ -3,6 +3,7 @@ using Stateflows.StateMachines.Attributes;
 using StateMachine.IntegrationTests.Classes.States;
 using StateMachine.IntegrationTests.Classes.Transitions;
 using Stateflows.StateMachines.Extensions;
+using Stateflows.Common;
 
 namespace StateMachine.IntegrationTests.Classes.StateMachines
 {
@@ -36,15 +37,15 @@ namespace StateMachine.IntegrationTests.Classes.StateMachines
         {
             builder
                 .AddInitializer<SomeEvent, SomeInitializer>()
-                .AddInitializer<SomeEvent>(c => true)
+                .AddInitializer<SomeEvent>(async c => true)
                 .AddInitializer<SomeEvent>(c => Task.FromResult(true))
 
                 .AddDefaultInitializer<EverythingInitializer>()
-                .AddDefaultInitializer(c => true)
+                .AddDefaultInitializer(async c => true)
                 .AddDefaultInitializer(c => Task.FromResult(true))
 
                 .AddFinalizer<EverythingFinalizer>()
-                .AddFinalizer(c => { })
+                .AddFinalizer(async c => { })
                 .AddFinalizer(c => Task.CompletedTask)
 
                 .AddInitialState<State1>(b => b

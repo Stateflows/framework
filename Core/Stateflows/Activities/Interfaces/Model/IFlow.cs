@@ -2,29 +2,21 @@
 
 namespace Stateflows.Activities
 {
-    public interface IBaseFlow
+    public interface IEdge
     {
         int Weight => 1;
     }
 
-    public interface IBaseFlow<TToken> : IBaseFlow
+    public interface IFlow<TToken> : IEdge
     { }
 
-    public interface IFlowGuard<TToken> : IBaseFlow<TToken>
+    public interface IFlowGuard<TToken> : IFlow<TToken>
     {
         Task<bool> GuardAsync(TToken token);
     }
 
-    public interface IFlowTransformation<TToken, TTransformedToken> : IBaseFlow<TToken>
+    public interface IFlowTransformation<TToken, TTransformedToken> : IFlow<TToken>
     {
         Task<TTransformedToken> TransformAsync(TToken token);
-    }
-
-    public interface IBaseControlFlow : IBaseFlow
-    { }
-
-    public interface IControlFlowGuard : IBaseControlFlow
-    {
-        Task<bool> GuardAsync();
     }
 }

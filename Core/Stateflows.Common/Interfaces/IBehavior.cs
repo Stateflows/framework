@@ -22,6 +22,12 @@ namespace Stateflows.Common
         Task<SendResult> ResetAsync(ResetMode resetMode = ResetMode.Full)
             => SendAsync(new Reset() { Mode = resetMode });
 
+        Task<RequestResult<FinalizationResponse>> FinalizeAsync()
+            => RequestAsync(new FinalizationRequest());
+
+        // Task<RequestResult<ResetResponse>> ResetAsync(ResetMode resetMode = ResetMode.Full)
+        //     => RequestAsync(new ResetRequest() { Mode = resetMode });
+
         Task<RequestResult<BehaviorInfo>> GetStatusAsync()
             => RequestAsync(new BehaviorInfoRequest());
 

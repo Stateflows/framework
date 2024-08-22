@@ -6,7 +6,7 @@ namespace StateMachine.IntegrationTests.Classes.StateMachines
     {
         public void Build(IStateMachineBuilder builder)
             => builder
-                .AddInitializer<ValueInitializationRequest>(c =>
+                .AddInitializer<ValueInitializationRequest>(async c =>
                 {
                     c.StateMachine.Values.Set<string>("foo", c.InitializationEvent.Value);
 

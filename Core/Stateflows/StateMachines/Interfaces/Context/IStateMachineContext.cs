@@ -1,6 +1,6 @@
 ﻿using Stateflows.Common.Context.Interfaces;
 
-namespace Stateflows.StateMachines.Context.Interfaces
+namespace Stateflows.StateMachines
 {
     public interface IStateMachineContext : IBehaviorContext
     {

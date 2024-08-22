@@ -5,18 +5,18 @@ namespace Stateflows.Activities
 {
     public static class TypedCompositeStateBuilderExtensions
     {
-        public static ITypedCompositeStateBuilder AddOnEntryActivity(this ITypedCompositeStateBuilder builder, string activityName, StateActionActivityInitializationBuilder parametersBuilder = null, IntegratedActivityBuildAction buildAction = null)
-            => (builder as ICompositeStateBuilder).AddOnEntryActivity(activityName, parametersBuilder, buildAction) as ITypedCompositeStateBuilder;
+        public static ITypedCompositeStateBuilder AddOnEntryActivity(this ITypedCompositeStateBuilder builder, string activityName, StateActionActivityBuildAction buildAction = null)
+            => (builder as ICompositeStateBuilder).AddOnEntryActivity(activityName, buildAction) as ITypedCompositeStateBuilder;
 
-        public static ITypedCompositeStateBuilder AddOnEntryActivity<TActivity>(this ITypedCompositeStateBuilder builder, StateActionActivityInitializationBuilder parametersBuilder = null, IntegratedActivityBuildAction buildAction = null)
+        public static ITypedCompositeStateBuilder AddOnEntryActivity<TActivity>(this ITypedCompositeStateBuilder builder, StateActionActivityBuildAction buildAction = null)
             where TActivity : class, IActivity
-            => (builder as ICompositeStateBuilder).AddOnEntryActivity<TActivity>(parametersBuilder, buildAction) as ITypedCompositeStateBuilder;
+            => (builder as ICompositeStateBuilder).AddOnEntryActivity<TActivity>(buildAction) as ITypedCompositeStateBuilder;
 
-        public static ITypedCompositeStateBuilder AddOnExitActivity(this ITypedCompositeStateBuilder builder, string activityName, StateActionActivityInitializationBuilder parametersBuilder = null, IntegratedActivityBuildAction buildAction = null)
-            => (builder as ICompositeStateBuilder).AddOnExitActivity(activityName, parametersBuilder, buildAction) as ITypedCompositeStateBuilder;
+        public static ITypedCompositeStateBuilder AddOnExitActivity(this ITypedCompositeStateBuilder builder, string activityName, StateActionActivityBuildAction buildAction = null)
+            => (builder as ICompositeStateBuilder).AddOnExitActivity(activityName, buildAction) as ITypedCompositeStateBuilder;
 
-        public static ITypedCompositeStateBuilder AddOnExitActivity<TActivity>(this ITypedCompositeStateBuilder builder, StateActionActivityInitializationBuilder parametersBuilder = null, IntegratedActivityBuildAction buildAction = null)
+        public static ITypedCompositeStateBuilder AddOnExitActivity<TActivity>(this ITypedCompositeStateBuilder builder, StateActionActivityBuildAction buildAction = null)
             where TActivity : class, IActivity
-            => (builder as ICompositeStateBuilder).AddOnExitActivity<TActivity>(parametersBuilder, buildAction) as ITypedCompositeStateBuilder;
+            => (builder as ICompositeStateBuilder).AddOnExitActivity<TActivity>(buildAction) as ITypedCompositeStateBuilder;
     }
 }

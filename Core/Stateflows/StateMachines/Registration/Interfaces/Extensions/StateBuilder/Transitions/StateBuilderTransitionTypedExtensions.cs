@@ -47,7 +47,7 @@ namespace Stateflows.StateMachines.Typed
         [DebuggerHidden]
         public static IStateBuilder AddTransition<TEvent, TTransition, TTargetState>(this IStateBuilder builder)
             where TEvent : Event, new()
-            where TTransition : class, IBaseTransition<TEvent>
+            where TTransition : class, ITransition<TEvent>
             where TTargetState : class, IVertex
             => AddTransition<TEvent, TTransition>(builder, State<TTargetState>.Name);
 
@@ -80,7 +80,7 @@ namespace Stateflows.StateMachines.Typed
         [DebuggerHidden]
         public static IStateBuilder AddTransition<TEvent, TTransition>(this IStateBuilder builder, string targetStateName)
             where TEvent : Event, new()
-            where TTransition : class, IBaseTransition<TEvent>
+            where TTransition : class, ITransition<TEvent>
         {
             (builder as IInternal).Services.AddServiceType<TTransition>();
 

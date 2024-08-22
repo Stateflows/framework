@@ -2,7 +2,7 @@
 
 namespace Stateflows.Activities.Context.Interfaces
 {
-    public interface IActivityInitializationContext<out TInitializationRequest> : IActivityActionContext
+    public interface IActivityInitializationContext<out TInitializationRequest> : IActivityActionContext, IOutput
         where TInitializationRequest : Event
     {
         TInitializationRequest InitializationEvent { get; }

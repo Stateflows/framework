@@ -8,6 +8,6 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
     public interface IGuard<TEvent, TReturn>
         where TEvent : Event, new()
     {
-        TReturn AddGuard(Func<IGuardContext<TEvent>, Task<bool>> guardAsync);
+        TReturn AddGuard(Func<ITransitionContext<TEvent>, Task<bool>> guardAsync);
     }
 }

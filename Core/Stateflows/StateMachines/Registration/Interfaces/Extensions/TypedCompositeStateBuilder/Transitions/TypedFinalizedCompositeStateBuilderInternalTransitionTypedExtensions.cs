@@ -1,7 +1,7 @@
-﻿using Stateflows.Common;
+﻿using System.Diagnostics;
+using Stateflows.Common;
 using Stateflows.StateMachines.Registration;
 using Stateflows.StateMachines.Registration.Interfaces;
-using System.Diagnostics;
 
 namespace Stateflows.StateMachines.Typed
 {
@@ -31,7 +31,7 @@ namespace Stateflows.StateMachines.Typed
         [DebuggerHidden]
         public static ITypedFinalizedCompositeStateBuilder AddInternalTransition<TEvent, TTransition>(this ITypedFinalizedCompositeStateBuilder builder)
             where TEvent : Event, new()
-            where TTransition : class, IBaseTransition<TEvent>
+            where TTransition : class, ITransition<TEvent>
             => builder.AddTransition<TEvent, TTransition>(Constants.DefaultTransitionTarget);
     }
 }

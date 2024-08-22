@@ -1,8 +1,5 @@
-﻿using Stateflows.Common;
-
-namespace Stateflows.Activities.Context.Interfaces
+﻿namespace Stateflows.Common
 {
-
     public interface IExecutionContext
     {
         Event ExecutionTrigger { get; }

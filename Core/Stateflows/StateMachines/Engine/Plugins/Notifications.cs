@@ -68,7 +68,7 @@ namespace Stateflows.StateMachines.Engine
         public Task AfterTransitionEffectAsync(ITransitionContext<Event> context)
             => Task.CompletedTask;
 
-        public Task AfterTransitionGuardAsync(IGuardContext<Event> context, bool guardResult)
+        public Task AfterTransitionGuardAsync(ITransitionContext<Event> context, bool guardResult)
         {
             if (guardResult)
             {
@@ -137,7 +137,7 @@ namespace Stateflows.StateMachines.Engine
             return Task.CompletedTask;
         }
 
-        public Task OnTransitionGuardExceptionAsync(IGuardContext<Event> context, Exception exception)
+        public Task OnTransitionGuardExceptionAsync(ITransitionContext<Event> context, Exception exception)
         {
             Trace.WriteLine($"⦗→s⦘ State Machine '{context.StateMachine.Id.Name}:{context.StateMachine.Id.Instance}': unhandled exception '{exception.GetType().Name}' with message '{exception.Message}' on transition guard");
 

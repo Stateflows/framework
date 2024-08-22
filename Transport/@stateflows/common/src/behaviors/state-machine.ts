@@ -2,11 +2,11 @@ import { RequestResult } from "../classes/request-result";
 import { CurrentStateNotification } from "../events/current-state.notification";
 import { CurrentStateRequest } from "../events/current-state.request";
 import { CurrentStateResponse } from "../events/current-state.response";
-import { IStateMachine } from "../interfaces/state-machine";
+import { IStateMachineBehavior } from "../interfaces/state-machine.behavior";
 import { NotificationHandler } from "../utils/notification-handler";
 import { Behavior } from "./behavior";
 
-export class StateMachine extends Behavior implements IStateMachine {
+export class StateMachine extends Behavior implements IStateMachineBehavior {
     constructor(behavior: Behavior) {
         super(behavior, behavior.id);
     }

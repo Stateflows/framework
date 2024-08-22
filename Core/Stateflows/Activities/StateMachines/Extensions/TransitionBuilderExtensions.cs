@@ -2,11 +2,13 @@
 using System.Diagnostics;
 using System.Threading.Tasks;
 using Stateflows.Common;
-using Stateflows.Activities.Extensions;
+using Stateflows.Common.Classes;
 using Stateflows.StateMachines.Registration;
 using Stateflows.StateMachines.Registration.Interfaces;
-using Stateflows.Activities.StateMachines.Interfaces;
 using Stateflows.Activities.Events;
+using Stateflows.Activities.Extensions;
+using Stateflows.Activities.StateMachines.Interfaces;
+using Stateflows.Common.Utilities;
 
 namespace Stateflows.Activities
 {
@@ -14,73 +16,83 @@ namespace Stateflows.Activities
     {
         #region AddGuardActivity
         [DebuggerHidden]
-        public static ITransitionBuilder<TEvent> AddGuardActivity<TEvent>(this ITransitionBuilder<TEvent> builder, string activityName, GuardActivityInitializationBuilder<TEvent> initializationBuilder = null, IntegratedActivityBuildAction buildAction = null)
+        public static ITransitionBuilder<TEvent> AddGuardActivity<TEvent>(this ITransitionBuilder<TEvent> builder, string activityName, TransitionActivityBuildAction<TEvent> buildAction = null)
             where TEvent : Event, new()
             => builder.AddGuard(
-                    async c =>
-                    {
-                        var result = false;
-                        if (c.TryLocateActivity(activityName, Constants.Entry, out var a))
-                        {
-                            Event initializationEvent = initializationBuilder?.Invoke(c) ?? new Initialize();
-                            await Task.Run(async () =>
-                            {
-                                var integratedActivityBuilder = new IntegratedActivityBuilder(buildAction);
-                                var sendResult = await a.SendCompoundAsync(
-                                    integratedActivityBuilder.GetSubscriptionRequest(),
-                                    new Reset() { Mode = ResetMode.KeepVersionAndSubscriptions },
-                                    new ExecutionRequest() { InitializationEvent = initializationEvent },
-                                    integratedActivityBuilder.GetUnsubscriptionRequest()
-                                );
-
-                                result = (sendResult.Response.Results.Skip(2).Take(1).First().Response as ExecutionResponse).OutputTokens.OfType<TokenHolder<bool>>().FirstOrDefault()?.Payload ?? false;
-                            });
-                        }
-
-                        return result;
-                    }
-            );
-
-        [DebuggerHidden]
-        public static ITransitionBuilder<TEvent> AddGuardActivity<TEvent, TActivity>(this ITransitionBuilder<TEvent> builder, GuardActivityInitializationBuilder<TEvent> initializationBuilder = null, IntegratedActivityBuildAction buildAction = null)
-            where TEvent : Event, new()
-            where TActivity : class, IActivity
-            => builder.AddGuardActivity<TEvent>(Activity<TActivity>.Name, initializationBuilder);
-        #endregion
-
-        #region AddEffectActivity
-        [DebuggerHidden]
-        public static ITransitionBuilder<TEvent> AddEffectActivity<TEvent>(this ITransitionBuilder<TEvent> builder, string activityName, EffectActivityInitializationBuilder<TEvent> initializationBuilder = null, IntegratedActivityBuildAction buildAction = null)
-            where TEvent : Event, new()
-            => builder.AddEffect(
-                c =>
+                async c =>
                 {
-                    if (c.TryLocateActivity(activityName, Constants.Entry, out var a))
+                    var result = false;
+                    if (c.TryLocateActivity(activityName, $"{c.StateMachine.Id.Instance}.{c.SourceState.Name}.{EventInfo<TEvent>.Name}.{Constants.Guard}.{c.Event.Id}", out var a))
                     {
-                        Event initializationEvent = initializationBuilder?.Invoke(c) ?? new Initialize();
-                        return Task.Run(() =>
+                        var ev = StateflowsJsonConverter.Clone(c.Event);
+                        await Task.Run(async () =>
                         {
-                            var integratedActivityBuilder = new IntegratedActivityBuilder(buildAction);
-                            return a.SendCompoundAsync(
-                                integratedActivityBuilder.GetSubscriptionRequest(),
-                                new Reset() { Mode = ResetMode.KeepVersionAndSubscriptions },
-                                new ExecutionRequest() { InitializationEvent = initializationEvent },
-                                integratedActivityBuilder.GetUnsubscriptionRequest()
+                            var integratedActivityBuilder = new TransitionActivityBuilder<TEvent>(buildAction);
+                            Event initializationEvent = (integratedActivityBuilder.InitializationBuilder != null)
+                                ? await integratedActivityBuilder.InitializationBuilder(c)
+                                : new Initialize();
+                            var executionRequest = new ExecutionRequest() { InitializationEvent = initializationEvent };
+                            executionRequest.AddInputToken(ev);
+
+                            var sendResult = await a.SendCompoundAsync(
+                                integratedActivityBuilder.GetSubscriptionRequest(c.StateMachine.Id),
+                                new SetGlobalValues() { Values = (c.StateMachine.Values as ContextValuesCollection).Values },
+                                executionRequest,
+                                integratedActivityBuilder.GetUnsubscriptionRequest(c.StateMachine.Id)
                             );
+
+                            result = (sendResult.Response.Results.Skip(2).Take(1).First()?.Response as ExecutionResponse)?.OutputTokens?.OfType<TokenHolder<bool>>()?.FirstOrDefault()?.Payload ?? false;
                         });
                     }
-                    else
-                    {
-                        return Task.CompletedTask;
-                    }    
+
+                    return result;
                 }
             );
 
         [DebuggerHidden]
-        public static ITransitionBuilder<TEvent> AddEffectActivity<TEvent, TActivity>(this ITransitionBuilder<TEvent> builder, EffectActivityInitializationBuilder<TEvent> initializationBuilder = null, IntegratedActivityBuildAction buildAction = null)
+        public static ITransitionBuilder<TEvent> AddGuardActivity<TEvent, TActivity>(this ITransitionBuilder<TEvent> builder, TransitionActivityBuildAction<TEvent> buildAction = null)
             where TEvent : Event, new()
             where TActivity : class, IActivity
-            => builder.AddEffectActivity<TEvent>(Activity<TActivity>.Name, initializationBuilder);
+            => builder.AddGuardActivity<TEvent>(Activity<TActivity>.Name, buildAction);
+        #endregion
+
+        #region AddEffectActivity
+        [DebuggerHidden]
+        public static ITransitionBuilder<TEvent> AddEffectActivity<TEvent>(this ITransitionBuilder<TEvent> builder, string activityName, TransitionActivityBuildAction<TEvent> buildAction = null)
+            where TEvent : Event, new()
+            => builder.AddEffect(
+                c =>
+                {
+                    if (c.TryLocateActivity(activityName, $"{c.StateMachine.Id.Instance}.{c.SourceState.Name}.{EventInfo<TEvent>.Name}.{Constants.Effect}.{c.Event.Id}", out var a))
+                    {
+                        var ev = StateflowsJsonConverter.Clone(c.Event);
+                        Task.Run(async () =>
+                        {
+                            var integratedActivityBuilder = new TransitionActivityBuilder<TEvent>(buildAction);
+                            Event initializationEvent = (integratedActivityBuilder.InitializationBuilder != null)
+                                ? await integratedActivityBuilder.InitializationBuilder(c)
+                                : new Initialize();
+                            var executionRequest = new ExecutionRequest() { InitializationEvent = initializationEvent };
+                            executionRequest.AddInputToken(ev);
+
+                            return a.SendCompoundAsync(
+                                integratedActivityBuilder.GetSubscriptionRequest(c.StateMachine.Id),
+                                new SetGlobalValues() { Values = (c.StateMachine.Values as ContextValuesCollection).Values },
+                                executionRequest,
+                                integratedActivityBuilder.GetUnsubscriptionRequest(c.StateMachine.Id)
+                            );
+                        });
+                    }
+
+                    return Task.CompletedTask;
+                }
+            );
+
+        [DebuggerHidden]
+        public static ITransitionBuilder<TEvent> AddEffectActivity<TEvent, TActivity>(this ITransitionBuilder<TEvent> builder, TransitionActivityBuildAction<TEvent> buildAction = null)
+            where TEvent : Event, new()
+            where TActivity : class, IActivity
+            => builder.AddEffectActivity<TEvent>(Activity<TActivity>.Name, buildAction);
         #endregion
     }
 }

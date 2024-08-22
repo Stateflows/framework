@@ -73,6 +73,64 @@ namespace Stateflows.Activities.Engine
         public NodeScope CreateChildScope(Node node = null, Guid? threadId = null)
             => ChildScope = new NodeScope(this, node ?? Node, threadId ?? ThreadId);
 
+        public TDefaultInitializer GetDefaultInitializer<TDefaultInitializer>(IActivityInitializationContext context)
+            where TDefaultInitializer : class, IDefaultInitializer
+        {
+            ContextValues.GlobalValuesHolder.Value = context.Activity.Values;
+            ContextValues.StateValuesHolder.Value = null;
+            ContextValues.SourceStateValuesHolder.Value = null;
+            ContextValues.TargetStateValuesHolder.Value = null;
+
+            ContextHolder.NodeContext.Value = null;
+            ContextHolder.FlowContext.Value = null;
+            ContextHolder.ActivityContext.Value = context.Activity;
+            ContextHolder.ExecutionContext.Value = context;
+            ContextHolder.ExceptionContext.Value = null;
+
+            var initializer = ServiceProvider.GetService<TDefaultInitializer>();
+
+            return initializer;
+        }
+
+        public TInitializer GetInitializer<TInitializer, TInitializationEvent>(IActivityInitializationContext<TInitializationEvent> context)
+            where TInitializer : class, IInitializer<TInitializationEvent>
+            where TInitializationEvent : Event, new()
+        {
+            ContextValues.GlobalValuesHolder.Value = context.Activity.Values;
+            ContextValues.StateValuesHolder.Value = null;
+            ContextValues.SourceStateValuesHolder.Value = null;
+            ContextValues.TargetStateValuesHolder.Value = null;
+
+            ContextHolder.NodeContext.Value = null;
+            ContextHolder.FlowContext.Value = null;
+            ContextHolder.ActivityContext.Value = context.Activity;
+            ContextHolder.ExecutionContext.Value = context;
+            ContextHolder.ExceptionContext.Value = null;
+
+            var initializer = ServiceProvider.GetService<TInitializer>();
+
+            return initializer;
+        }
+
+        public TFinalizer GetFinalizer<TFinalizer>(IActivityActionContext context)
+            where TFinalizer : class, IFinalizer
+        {
+            ContextValues.GlobalValuesHolder.Value = context.Activity.Values;
+            ContextValues.StateValuesHolder.Value = null;
+            ContextValues.SourceStateValuesHolder.Value = null;
+            ContextValues.TargetStateValuesHolder.Value = null;
+
+            ContextHolder.NodeContext.Value = null;
+            ContextHolder.FlowContext.Value = null;
+            ContextHolder.ActivityContext.Value = context.Activity;
+            ContextHolder.ExecutionContext.Value = context;
+            ContextHolder.ExceptionContext.Value = null;
+
+            var initializer = ServiceProvider.GetService<TFinalizer>();
+
+            return initializer;
+        }
+
         public TAction GetAction<TAction>(IActionContext context)
             where TAction : class, IActionNode
         {
@@ -144,7 +202,7 @@ namespace Stateflows.Activities.Engine
         }
 
         public TStructuredActivity GetStructuredActivity<TStructuredActivity>(IActionContext context)
-            where TStructuredActivity : class, IBaseStructuredActivityNode
+            where TStructuredActivity : class, IStructuredActivityNode
         {
             ContextValues.GlobalValuesHolder.Value = context.Activity.Values;
             ContextValues.StateValuesHolder.Value = null;
@@ -179,7 +237,7 @@ namespace Stateflows.Activities.Engine
         }
 
         public TFlow GetFlow<TFlow>(IActivityFlowContext context)
-            where TFlow : IBaseFlow
+            where TFlow : IEdge
         {
             ContextValues.GlobalValuesHolder.Value = context.Activity.Values;
             ContextValues.StateValuesHolder.Value = null;
@@ -196,11 +254,11 @@ namespace Stateflows.Activities.Engine
         }
 
         public TControlFlow GetControlFlow<TControlFlow>(IActivityFlowContext context)
-            where TControlFlow : class, IBaseControlFlow
+            where TControlFlow : class, IControlFlow
             => GetFlow<TControlFlow>(context);
 
         public TFlow GetObjectFlow<TFlow, TToken>(IActivityFlowContext<TToken> context)
-            where TFlow : class, IBaseFlow<TToken>
+            where TFlow : class, IFlow<TToken>
             => GetFlow<TFlow>(context);
 
         public TTransformationFlow GetObjectTransformationFlow<TTransformationFlow, TToken, TTransformedToken>(IActivityFlowContext<TToken> context)

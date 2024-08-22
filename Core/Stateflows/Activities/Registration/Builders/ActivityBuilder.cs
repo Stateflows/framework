@@ -3,14 +3,13 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using Stateflows.Common;
 using Stateflows.Common.Models;
+using Stateflows.Common.Extensions;
 using Stateflows.Activities.Models;
-using Stateflows.Activities.Extensions;
 using Stateflows.Activities.Context.Classes;
 using Stateflows.Activities.Context.Interfaces;
 using Stateflows.Activities.Registration.Extensions;
 using Stateflows.Activities.Registration.Interfaces;
 using Stateflows.Activities.Registration.Interfaces.Base;
-using Stateflows.Common.Extensions;
 
 namespace Stateflows.Activities.Registration.Builders
 {
@@ -57,7 +56,11 @@ namespace Stateflows.Activities.Registration.Builders
 
             Result.DefaultInitializer.Actions.Add(c =>
             {
-                var context = new ActivityInitializationContext(c, c.Context.Event as Initialize);
+                var context = new ActivityInitializationContext(
+                    c,
+                    c.Context.Event as Initialize,
+                    (c as ActivityInitializationContext).InputTokens
+                );
                 return actionAsync(context);
             });
 
@@ -78,7 +81,8 @@ namespace Stateflows.Activities.Registration.Builders
                 var result = false;
                 var context = new ActivityInitializationContext<TInitializationEvent>(
                     c,
-                    c.Context.Event as TInitializationEvent
+                    c.Context.Event as TInitializationEvent,
+                    (c as ActivityInitializationContext).InputTokens
                 );
 
                 try

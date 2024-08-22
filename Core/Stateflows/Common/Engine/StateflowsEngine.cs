@@ -22,7 +22,6 @@ namespace Stateflows.Common
         private readonly IStateflowsExecutionInterceptor Interceptor;
         private readonly IStateflowsTenantProvider TenantProvider;
         private readonly ITenantAccessor TenantAccessor;
-        private readonly ILogger<StateflowsEngine> Logger;
         private Dictionary<string, IEventProcessor> processors;
         private Dictionary<string, IEventProcessor> Processors
             => processors ??= ServiceProvider.GetRequiredService<IEnumerable<IEventProcessor>>().ToDictionary(p => p.BehaviorType, p => p);
@@ -38,7 +37,6 @@ namespace Stateflows.Common
             Interceptor = ServiceProvider.GetRequiredService<CommonInterceptor>();
             TenantAccessor = ServiceProvider.GetRequiredService<ITenantAccessor>();
             TenantProvider = ServiceProvider.GetRequiredService<IStateflowsTenantProvider>();
-            Logger = ServiceProvider.GetRequiredService<ILogger<StateflowsEngine>>();
         }
 
         public EventHolder EnqueueEvent(BehaviorId id, Event @event, IServiceProvider serviceProvider)
@@ -107,40 +105,37 @@ namespace Stateflows.Common
             return Task.CompletedTask;
         }
 
-        //[DebuggerHidden]
+        [DebuggerHidden]
         public async Task<EventStatus> ProcessEventAsync<TEvent>(BehaviorId id, TEvent @event, IServiceProvider serviceProvider, List<Exception> exceptions)
             where TEvent : Event, new()
         {
             var result = EventStatus.Undelivered;
 
-            if (Processors.TryGetValue(id.Type, out var processor))
+            if (Processors.TryGetValue(id.Type, out var processor) && Interceptor.BeforeExecute(@event))
             {
-                if (Interceptor.BeforeExecute(@event))
+                TenantAccessor.CurrentTenantId = await TenantProvider.GetCurrentTenantIdAsync();
+
+                await using var lockHandle = await Lock.AquireLockAsync(id);
+
+                try
                 {
-                    TenantAccessor.CurrentTenantId = await TenantProvider.GetCurrentTenantIdAsync();
-
-                    await using var lockHandle = await Lock.AquireLockAsync(id);
-
                     try
                     {
-                        try
-                        {
-                            result = await processor.ProcessEventAsync(id, @event, serviceProvider, exceptions);
-                        }
-                        finally
-                        {
-                            var response = @event.GetResponse();
-                            if (response != null)
-                            {
-                                response.SenderId = id;
-                                response.SentAt = DateTime.Now;
-                            }
-                        }
+                        result = await processor.ProcessEventAsync(id, @event, serviceProvider, exceptions);
                     }
                     finally
                     {
-                        Interceptor.AfterExecute(@event);
+                        var response = @event.GetResponse();
+                        if (response != null)
+                        {
+                            response.SenderId = id;
+                            response.SentAt = DateTime.Now;
+                        }
                     }
+                }
+                finally
+                {
+                    Interceptor.AfterExecute(@event);
                 }
             }
 

@@ -2,14 +2,7 @@
 
 namespace Stateflows.Activities.Context.Interfaces
 {
-    public interface IExceptionContext
-    {
-        INodeContext ProtectedNode { get; }
-
-        INodeContext NodeOfOrigin { get; }
-    }
-
-    public interface IExceptionHandlerContext<out TException> : IExceptionContext, IActivityNodeContext, IOutput
+    public interface IExceptionHandlerContext<out TException> : IExceptionContext, IActivityNodeContext, IActionOutput
         where TException : Exception
     {
         TException Exception { get; }

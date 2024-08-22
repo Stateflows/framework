@@ -14,7 +14,7 @@ namespace Stateflows.Activities.Typed
 
         [DebuggerHidden]
         public static IDecisionBuilder<TToken> AddFlow<TToken, TFlow>(this IDecisionBuilder<TToken> builder, string targetNodeName)
-            where TFlow : class, IBaseFlow<TToken>
+            where TFlow : class, IFlow<TToken>
         {
             (builder as IInternal).Services.AddServiceType<TFlow>();
 
@@ -26,7 +26,7 @@ namespace Stateflows.Activities.Typed
 
         [DebuggerHidden]
         public static IDecisionBuilder<TToken> AddFlow<TToken, TFlow, TTargetNode>(this IDecisionBuilder<TToken> builder)
-            where TFlow : class, IBaseFlow<TToken>
+            where TFlow : class, IFlow<TToken>
             where TTargetNode : class, IActivityNode
             => builder.AddFlow<TToken, TFlow>(ActivityNode<TTargetNode>.Name);
 

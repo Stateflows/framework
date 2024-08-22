@@ -713,7 +713,7 @@ namespace Stateflows.StateMachines.Engine
         }
 
         public TState GetState<TState>(IStateActionContext context)
-            where TState : class, IBaseState
+            where TState : class, IState
         {
             ContextValues.GlobalValuesHolder.Value = context.StateMachine.Values;
             ContextValues.StateValuesHolder.Value = context.CurrentState.Values;
@@ -731,7 +731,7 @@ namespace Stateflows.StateMachines.Engine
         }
 
         public TTransition GetTransition<TTransition, TEvent>(ITransitionContext<TEvent> context)
-            where TTransition : class, IBaseTransition<TEvent>
+            where TTransition : class, ITransition<TEvent>
             where TEvent : Event, new()
         {
             ContextValues.GlobalValuesHolder.Value = context.StateMachine.Values;
@@ -750,7 +750,7 @@ namespace Stateflows.StateMachines.Engine
         }
 
         public TDefaultTransition GetDefaultTransition<TDefaultTransition>(ITransitionContext<CompletionEvent> context)
-            where TDefaultTransition : class, IBaseDefaultTransition
+            where TDefaultTransition : class, IDefaultTransition
         {
             ContextValues.GlobalValuesHolder.Value = context.StateMachine.Values;
             ContextValues.StateValuesHolder.Value = null;

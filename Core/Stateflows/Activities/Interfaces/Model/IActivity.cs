@@ -1,6 +1,5 @@
 ﻿using System.Reflection;
 using Stateflows.Activities.Attributes;
-using Stateflows.Activities.Registration.Interfaces;
 
 namespace Stateflows.Activities
 {

@@ -31,7 +31,7 @@ namespace Stateflows.StateMachines.Typed
         [DebuggerHidden]
         public static IBehaviorStateBuilder AddInternalTransition<TEvent, TTransition>(this IBehaviorStateBuilder builder)
             where TEvent : Event, new()
-            where TTransition : class, IBaseTransition<TEvent>
+            where TTransition : class, ITransition<TEvent>
             => builder.AddTransition<TEvent, TTransition>(Constants.DefaultTransitionTarget);
     }
 }

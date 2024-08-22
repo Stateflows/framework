@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
+using Stateflows.Activities.Context.Interfaces;
 
-namespace Stateflows.Activities.Context.Interfaces
+namespace Stateflows.Activities
 {
     public interface INodeContext
     {

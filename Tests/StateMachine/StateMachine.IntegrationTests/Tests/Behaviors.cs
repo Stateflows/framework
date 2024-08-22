@@ -1,5 +1,6 @@
 using Stateflows.Common;
 using Stateflows.Activities;
+using Stateflows.Activities.Typed;
 using StateMachine.IntegrationTests.Utils;
 
 namespace StateMachine.IntegrationTests.Tests
@@ -55,6 +56,30 @@ namespace StateMachine.IntegrationTests.Tests
                         )
                         .AddState("state2")
                     )
+
+                    .AddStateMachine("effectActivity", b => b
+                        .AddExecutionSequenceObserver()
+                        .AddInitialState("state1", b => b
+                            .AddInternalTransition<SomeEvent>(b => b
+                                .AddEffectActivity(
+                                    "integrated",
+                                    b => b.AddSubscription<SomeNotification>()
+                                )
+                            )
+                            .AddTransition<SomeNotification>("state2")
+                        )
+                        .AddState("state2")
+                    )
+
+                    .AddStateMachine("guardActivity", b => b
+                        .AddExecutionSequenceObserver()
+                        .AddInitialState("state1", b => b
+                            .AddTransition<SomeEvent>("state2", b => b
+                                .AddGuardActivity("guard")
+                            )
+                        )
+                        .AddState("state2")
+                    )
                 )
                 .AddActivities(b => b
                     .AddActivity("nested", b => b
@@ -63,6 +88,34 @@ namespace StateMachine.IntegrationTests.Tests
                             eventConsumed = true;
                             c.Activity.Publish(new SomeNotification());
                         })
+                    )
+                    .AddActivity("integrated", b => b
+                        .AddInitial(b => b
+                            .AddControlFlow("effect")
+                        )
+                        .AddAction(
+                            "effect",
+                            async c =>
+                            {
+                                eventConsumed = true;
+                                c.Activity.Publish(new SomeNotification());
+                            }
+                        )
+                    )
+                    .AddActivity("guard", b => b
+                        .AddInput(b => b
+                            .AddFlow<SomeEvent>("guard")
+                        )
+                        .AddAction(
+                            "guard",
+                            async c =>
+                            {
+                                var t = c.GetTokensOfType<SomeEvent>().First();
+                                c.Output(t.TheresSomethingHappeningHere != string.Empty);
+                            },
+                            b => b.AddFlow<bool, OutputNode>()
+                        )
+                        .AddOutput()
                     )
                 )
                 ;
@@ -120,13 +173,68 @@ namespace StateMachine.IntegrationTests.Tests
                 currentState1 = (await sm.GetCurrentStateAsync()).Response.StatesStack.First();
             }
 
-                ExecutionSequence.Verify(b => b
+            ExecutionSequence.Verify(b => b
                 .StateEntry("state1")
                 .StateEntry("state2")
             );
             Assert.IsTrue(initialized);
             Assert.AreEqual(EventStatus.Forwarded, someStatus1);
             Assert.AreEqual(true, eventConsumed);
+            Assert.AreEqual("state2", currentState1);
+        }
+
+        [TestMethod]
+        public async Task SimpleEffectIntegration()
+        {
+            var initialized = false;
+            string currentState1 = "";
+            var someStatus1 = EventStatus.Rejected;
+
+            if (StateMachineLocator.TryLocateStateMachine(new StateMachineId("effectActivity", "x"), out var sm))
+            {
+                initialized = (await sm.SendAsync(new Initialize())).Status == EventStatus.Initialized;
+
+                someStatus1 = (await sm.SendAsync(new SomeEvent())).Status;
+
+                await Task.Delay(200);
+
+                currentState1 = (await sm.GetCurrentStateAsync()).Response.StatesStack.First();
+            }
+
+            ExecutionSequence.Verify(b => b
+                .StateEntry("state1")
+                .StateEntry("state2")
+            );
+            Assert.IsTrue(initialized);
+            Assert.AreEqual(EventStatus.Consumed, someStatus1);
+            Assert.AreEqual(true, eventConsumed);
+            Assert.AreEqual("state2", currentState1);
+        }
+
+        [TestMethod]
+        public async Task SimpleGuardIntegration()
+        {
+            var initialized = false;
+            string currentState1 = "";
+            var someStatus1 = EventStatus.Rejected;
+
+            if (StateMachineLocator.TryLocateStateMachine(new StateMachineId("guardActivity", "x"), out var sm))
+            {
+                initialized = (await sm.SendAsync(new Initialize())).Status == EventStatus.Initialized;
+
+                someStatus1 = (await sm.SendAsync(new SomeEvent())).Status;
+
+                await Task.Delay(200);
+
+                currentState1 = (await sm.GetCurrentStateAsync()).Response.StatesStack.First();
+            }
+
+            ExecutionSequence.Verify(b => b
+                .StateEntry("state1")
+                .StateEntry("state2")
+            );
+            Assert.IsTrue(initialized);
+            Assert.AreEqual(EventStatus.Consumed, someStatus1);
             Assert.AreEqual("state2", currentState1);
         }
     }

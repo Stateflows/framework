@@ -4,7 +4,7 @@ import { CurrentStateResponse } from "../events/current-state.response";
 import { NotificationHandler } from "../utils/notification-handler";
 import { IBehavior } from "./behavior";
 
-export interface IStateMachine extends IBehavior {
+export interface IStateMachineBehavior extends IBehavior {
     getCurrentState(): Promise<RequestResult<CurrentStateResponse>>;
     watchCurrentState(handler: NotificationHandler<CurrentStateNotification>): Promise<void>;
     unwatchCurrentState(): Promise<void>;

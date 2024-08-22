@@ -40,7 +40,7 @@ namespace StateMachine.IntegrationTests.Tests
                         })
                         .AddInitialState("stateA", b => b
                             .AddTransition<SomeEvent>("stateB", b => b
-                                .AddGuardActivity("guard", c => new BoolInit() { Value = c.StateMachine.Values.TryGet<bool>("value", out var value) && value })
+                                .AddGuardActivity("guard")
                                 .AddEffectActivity("effect")
                             )
                         )
@@ -52,11 +52,6 @@ namespace StateMachine.IntegrationTests.Tests
                 )
                 .AddActivities(b => b
                     .AddActivity("guard", b => b
-                        .AddInitializer<BoolInit>(async c =>
-                        {
-                            c.Activity.Values.Set("value", c.InitializationEvent.Value);
-                            return true;
-                        })
                         .AddInitial(b => b
                             .AddControlFlow("main")
                         )
@@ -75,8 +70,8 @@ namespace StateMachine.IntegrationTests.Tests
                         .AddOutput()
                     )
                     .AddActivity("effect", b => b
-                        .AddInitial(b => b
-                            .AddControlFlow("main")
+                        .AddInput(b => b
+                            .AddFlow<SomeEvent>("main")
                         )
                         .AddAction("main", async c =>
                         {

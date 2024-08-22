@@ -10,7 +10,7 @@ namespace Stateflows.Activities.Extensions
     internal static class BuilderExtensions
     {
         public static void AddStructuredActivityEvents<TStructuredActivity>(this StructuredActivityBuilder builder)
-            where TStructuredActivity : class, IBaseStructuredActivityNode
+            where TStructuredActivity : class, IStructuredActivityNode
         {
             if (typeof(IStructuredActivityNodeInitialization).IsAssignableFrom(typeof(TStructuredActivity)))
             {
@@ -44,9 +44,9 @@ namespace Stateflows.Activities.Extensions
         }
 
         public static void AddObjectFlowEvents<TFlow, TToken>(this IObjectFlowBuilder<TToken> builder)
-            where TFlow : class, IBaseFlow<TToken>
+            where TFlow : class, IFlow<TToken>
         {
-            if (typeof(IBaseFlow).GetProperty(nameof(IBaseFlow.Weight)).IsImplementedIn<TFlow>())
+            if (typeof(IEdge).GetProperty(nameof(IEdge.Weight)).IsImplementedIn<TFlow>())
             {
                 var objectFlow = FormatterServices.GetUninitializedObject(typeof(TFlow)) as TFlow;
 
@@ -74,7 +74,7 @@ namespace Stateflows.Activities.Extensions
         public static void AddObjectTransformationFlowEvents<TTransformationFlow, TToken, TTransformedToken>(this IObjectFlowBuilder<TToken> builder)
             where TTransformationFlow : class, IFlowTransformation<TToken, TTransformedToken>
         {
-            if (typeof(IBaseFlow).GetProperty(nameof(IBaseFlow.Weight)).IsImplementedIn<TTransformationFlow>())
+            if (typeof(IEdge).GetProperty(nameof(IEdge.Weight)).IsImplementedIn<TTransformationFlow>())
             {
                 var objectFlow = FormatterServices.GetUninitializedObject(typeof(TTransformationFlow)) as TTransformationFlow;
 
@@ -119,7 +119,7 @@ namespace Stateflows.Activities.Extensions
         public static void AddElseObjectTransformationFlowEvents<TTransformationFlow, TToken, TTransformedToken>(this IObjectFlowBuilder<TToken> builder)
             where TTransformationFlow : class, IFlowTransformation<TToken, TTransformedToken>
         {
-            if (typeof(IBaseFlow).GetProperty(nameof(IBaseFlow.Weight)).IsImplementedIn<TTransformationFlow>())
+            if (typeof(IEdge).GetProperty(nameof(IEdge.Weight)).IsImplementedIn<TTransformationFlow>())
             {
                 var objectFlow = FormatterServices.GetUninitializedObject(typeof(TTransformationFlow)) as TTransformationFlow;
 
@@ -145,9 +145,9 @@ namespace Stateflows.Activities.Extensions
         }
 
         public static void AddControlFlowEvents<TFlow>(this IControlFlowBuilder builder)
-            where TFlow : class, IBaseControlFlow
+            where TFlow : class, IControlFlow
         {
-            if (typeof(IBaseFlow).GetProperty(nameof(IBaseFlow.Weight)).IsImplementedIn<TFlow>())
+            if (typeof(IEdge).GetProperty(nameof(IEdge.Weight)).IsImplementedIn<TFlow>())
             {
                 var objectFlow = FormatterServices.GetUninitializedObject(typeof(TFlow)) as TFlow;
 

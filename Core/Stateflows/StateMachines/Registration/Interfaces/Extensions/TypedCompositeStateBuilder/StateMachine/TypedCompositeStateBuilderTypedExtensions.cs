@@ -11,12 +11,12 @@ namespace Stateflows.StateMachines.Typed
         #region AddInitialState
         [DebuggerHidden]
         public static ITypedInitializedCompositeStateBuilder AddInitialState<TState>(this ITypedCompositeStateBuilder builder, StateTransitionsBuildAction stateBuildAction = null)
-            where TState : class, IBaseState
+            where TState : class, IState
             => builder.AddInitialState<TState>(State<TState>.Name, stateBuildAction);
 
         [DebuggerHidden]
         public static ITypedInitializedCompositeStateBuilder AddInitialState<TState>(this ITypedCompositeStateBuilder builder, string stateName, StateTransitionsBuildAction stateBuildAction = null)
-            where TState : class, IBaseState
+            where TState : class, IState
         {
             (builder as IInternal).Services.AddServiceType<TState>();
 
@@ -35,12 +35,12 @@ namespace Stateflows.StateMachines.Typed
         #region AddInitialCompositeState
         [DebuggerHidden]
         public static ITypedInitializedCompositeStateBuilder AddInitialCompositeState<TState>(this ITypedCompositeStateBuilder builder, CompositeStateTransitionsBuildAction compositeStateBuildAction)
-            where TState : class, IBaseState
+            where TState : class, IState
             => builder.AddInitialCompositeState<TState>(State<TState>.Name, compositeStateBuildAction);
 
         [DebuggerHidden]
         public static ITypedInitializedCompositeStateBuilder AddInitialCompositeState<TState>(this ITypedCompositeStateBuilder builder, string stateName, CompositeStateTransitionsBuildAction compositeStateBuildAction)
-            where TState : class, IBaseState
+            where TState : class, IState
         {
             (builder as IInternal).Services.AddServiceType<TState>();
 

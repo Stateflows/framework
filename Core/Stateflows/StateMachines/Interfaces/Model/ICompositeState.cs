@@ -2,25 +2,25 @@
 
 namespace Stateflows.StateMachines
 {
-    public interface IBaseCompositeState : IBaseState
+    public interface ICompositeState : IState
     { }
 
-    public interface ICompositeStateEntry : IBaseCompositeState
+    public interface ICompositeStateEntry : ICompositeState
     {
         Task OnEntryAsync();
     }
 
-    public interface ICompositeStateExit : IBaseCompositeState
+    public interface ICompositeStateExit : ICompositeState
     {
         Task OnExitAsync();
     }
 
-    public interface ICompositeStateInitialization : IBaseCompositeState
+    public interface ICompositeStateInitialization : ICompositeState
     {
         Task OnInitializeAsync();
     }
 
-    public interface ICompositeStateFinalization : IBaseCompositeState
+    public interface ICompositeStateFinalization : ICompositeState
     {
         Task OnFinalizeAsync();
     }

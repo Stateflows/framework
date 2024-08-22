@@ -14,7 +14,7 @@ namespace Stateflows.Activities.Typed
 
         [DebuggerHidden]
         public static IDataStoreBuilder AddFlow<TToken, TFlow>(this IDataStoreBuilder builder, string targetNodeName)
-            where TFlow : class, IBaseFlow<TToken>
+            where TFlow : class, IFlow<TToken>
         {
             (builder as IInternal).Services.AddServiceType<TFlow>();
             return builder.AddFlow<TToken>(
@@ -25,7 +25,7 @@ namespace Stateflows.Activities.Typed
 
         [DebuggerHidden]
         public static IDataStoreBuilder AddFlow<TToken, TFlow, TTargetNode>(this IDataStoreBuilder builder)
-            where TFlow : class, IBaseFlow<TToken>
+            where TFlow : class, IFlow<TToken>
             where TTargetNode : class, IActivityNode
             => builder.AddFlow<TToken, TFlow>(ActivityNode<TTargetNode>.Name);
 

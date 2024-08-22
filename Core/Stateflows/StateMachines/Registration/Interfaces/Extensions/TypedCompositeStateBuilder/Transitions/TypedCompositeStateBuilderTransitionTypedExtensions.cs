@@ -44,7 +44,7 @@ namespace Stateflows.StateMachines.Typed
         [DebuggerHidden]
         public static ITypedCompositeStateBuilder AddTransition<TEvent, TTransition, TTargetState>(this ITypedCompositeStateBuilder builder)
             where TEvent : Event, new()
-            where TTransition : class, IBaseTransition<TEvent>
+            where TTransition : class, ITransition<TEvent>
             where TTargetState : class, IVertex
             => AddTransition<TEvent, TTransition>(builder, State<TTargetState>.Name);
 
@@ -77,8 +77,8 @@ namespace Stateflows.StateMachines.Typed
         [DebuggerHidden]
         public static ITypedCompositeStateBuilder AddTransition<TEvent, TTransition>(this ITypedCompositeStateBuilder builder, string targetStateName)
             where TEvent : Event, new()
-            where TTransition : class, IBaseTransition<TEvent>
-            => (builder as IStateBuilder).AddTransition<TEvent, TTransition>(targetStateName) as ITypedCompositeStateBuilder;
+            where TTransition : class, ITransition<TEvent>
+            => (builder as ICompositeStateBuilder).AddTransition<TEvent, TTransition>(targetStateName) as ITypedCompositeStateBuilder;
 
         /// <summary>
         /// Adds transition triggered by <see cref="TEvent"/> coming from current state.<br/>

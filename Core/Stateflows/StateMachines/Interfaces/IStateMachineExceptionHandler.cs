@@ -13,7 +13,7 @@ namespace Stateflows.StateMachines
         Task<bool> OnStateMachineFinalizationExceptionAsync(IStateMachineActionContext context, Exception exception)
             => Task.FromResult(false);
 
-        Task<bool> OnTransitionGuardExceptionAsync(IGuardContext<Event> context, Exception exception)
+        Task<bool> OnTransitionGuardExceptionAsync(ITransitionContext<Event> context, Exception exception)
             => Task.FromResult(false);
 
         Task<bool> OnTransitionEffectExceptionAsync(ITransitionContext<Event> context, Exception exception)

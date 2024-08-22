@@ -1,4 +1,6 @@
-﻿namespace Stateflows.Common.Interfaces
+﻿using System.Collections.Generic;
+
+namespace Stateflows.Common.Interfaces
 {
     public interface IContextValues
     {
@@ -8,7 +10,7 @@
 
         bool TryGet<T>(string key, out T value);
 
-        T GetOrDefault<T>(string key, T defaultValue);
+        T GetOrDefault<T>(string key, T defaultValue = default);
 
         void Remove(string key);
 

@@ -5,15 +5,15 @@ namespace Stateflows.StateMachines
     public interface IVertex
     { }
 
-    public interface IBaseState : IVertex
+    public interface IState : IVertex
     { }
 
-    public interface IStateEntry : IBaseState
+    public interface IStateEntry : IState
     {
         Task OnEntryAsync();
     }
 
-    public interface IStateExit : IBaseState
+    public interface IStateExit : IState
     {
         Task OnExitAsync();
     }

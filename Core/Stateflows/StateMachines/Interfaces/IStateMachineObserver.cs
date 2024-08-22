@@ -42,10 +42,10 @@ namespace Stateflows.StateMachines
         Task AfterStateExitAsync(IStateActionContext context)
             => Task.CompletedTask;
 
-        Task BeforeTransitionGuardAsync(IGuardContext<Event> context)
+        Task BeforeTransitionGuardAsync(ITransitionContext<Event> context)
             => Task.CompletedTask;
 
-        Task AfterTransitionGuardAsync(IGuardContext<Event> context, bool guardResult)
+        Task AfterTransitionGuardAsync(ITransitionContext<Event> context, bool guardResult)
             => Task.CompletedTask;
 
         Task BeforeTransitionEffectAsync(ITransitionContext<Event> context)

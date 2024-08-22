@@ -2,15 +2,15 @@
 
 namespace Stateflows.Activities
 {
-    public interface IBaseStructuredActivityNode : IActivityNode
+    public interface IStructuredActivityNode : IActivityNode
     { }
 
-    public interface IStructuredActivityNodeInitialization : IBaseStructuredActivityNode
+    public interface IStructuredActivityNodeInitialization : IStructuredActivityNode
     {
         Task OnInitializeAsync();
     }
 
-    public interface IStructuredActivityNodeFinalization : IBaseStructuredActivityNode
+    public interface IStructuredActivityNodeFinalization : IStructuredActivityNode
     {
         Task OnFinalizeAsync();
     }

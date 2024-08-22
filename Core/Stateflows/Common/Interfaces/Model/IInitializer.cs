@@ -1,7 +1,6 @@
-﻿using Stateflows.Common;
-using System.Threading.Tasks;
+﻿using System.Threading.Tasks;
 
-namespace Stateflows.StateMachines
+namespace Stateflows.Common
 {
     public interface IInitializer<TInitializationEvent>
         where TInitializationEvent : Event, new()

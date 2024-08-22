@@ -1,4 +1,4 @@
-﻿using Stateflows.StateMachines.Context.Interfaces;
+﻿using Stateflows.Common;
 
 namespace StateMachine.IntegrationTests.Classes.Transitions
 {

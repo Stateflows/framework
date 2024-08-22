@@ -24,7 +24,7 @@ namespace Stateflows.Common.Classes
         public bool TryGet(out T value)
             => valueSet.TryGet(valueName, out value);
 
-        public T GetOrDefault(T defaultValue)
+        public T GetOrDefault(T defaultValue = default)
             => valueSet.GetOrDefault(valueName, defaultValue);
 
         public void Remove()

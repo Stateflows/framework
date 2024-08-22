@@ -1,6 +1,6 @@
 ﻿using Stateflows.Activities.Registration.Interfaces.Base;
 
-namespace Stateflows.Activities.Registration.Interfaces
+namespace Stateflows.Activities
 {
     public interface IActivityBuilder :
         IActivityUtils<IActivityBuilder>,
