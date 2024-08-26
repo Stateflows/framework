@@ -7,13 +7,13 @@ namespace Stateflows.StateMachines
 {
     public interface IStateMachineBehavior : IBehavior
     {
-        Task<RequestResult<CurrentStateResponse>> GetCurrentStateAsync()
+        Task<RequestResult<CurrentState>> GetCurrentStateAsync()
             => RequestAsync(new CurrentStateRequest());
 
-        Task WatchCurrentStateAsync(Action<CurrentStateNotification> handler)
+        Task WatchCurrentStateAsync(Action<CurrentState> handler)
             => WatchAsync(handler);
 
         Task UnwatchCurrentStateAsync()
-            => UnwatchAsync<CurrentStateNotification>();
+            => UnwatchAsync<CurrentState>();
     }
 }

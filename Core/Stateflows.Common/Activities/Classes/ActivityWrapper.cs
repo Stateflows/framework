@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using Stateflows.Activities;
 using Stateflows.Activities.Events;
@@ -34,18 +35,16 @@ namespace Stateflows.Common.Activities.Classes
             return Behavior.RequestAsync(request);
         }
 
-        public Task<SendResult<TEvent>> SendAsync<TEvent>(TEvent @event)
-            => Behavior.SendAsync(@event);
+        public Task<SendResult> SendAsync<TEvent>(TEvent @event, IEnumerable<EventHeader> headers = null)
+            => Behavior.SendAsync(@event, headers);
 
-        public Task<RequestResult<TResponse>> RequestAsync<TResponse>(Request<TResponse> request)
-            => Behavior.RequestAsync(request);
+        public Task<RequestResult<TResponse>> RequestAsync<TResponse>(Request<TResponse> request, IEnumerable<EventHeader> headers = null)
+            => Behavior.RequestAsync(request, headers);
 
         public Task WatchAsync<TNotification>(Action<TNotification> handler)
-            where TNotification : Notification, new()
             => Behavior.WatchAsync<TNotification>(handler);
 
         public Task UnwatchAsync<TNotification>()
-            where TNotification : Notification, new()
             => Behavior.UnwatchAsync<TNotification>();
 
         public void Dispose()

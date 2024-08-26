@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using Stateflows.StateMachines;
 
@@ -15,20 +16,16 @@ namespace Stateflows.Common.StateMachines.Classes
             Behavior = consumer;
         }
 
-        public Task<SendResult> SendAsync<TEvent>(TEvent @event)
-            where TEvent : Event, new()
+        public Task<SendResult> SendAsync<TEvent>(TEvent @event, IEnumerable<EventHeader> headers = null)
             => Behavior.SendAsync(@event);
 
-        public Task<RequestResult<TResponse>> RequestAsync<TResponse>(Request<TResponse> request)
-            where TResponse : Response, new()
+        public Task<RequestResult<TResponse>> RequestAsync<TResponse>(Request<TResponse> request, IEnumerable<EventHeader> headers = null)
             => Behavior.RequestAsync(request);
 
         public Task WatchAsync<TNotification>(Action<TNotification> handler)
-            where TNotification : Notification, new()
             => Behavior.WatchAsync<TNotification>(handler);
 
         public Task UnwatchAsync<TNotification>()
-            where TNotification : Notification, new()
             => Behavior.UnwatchAsync<TNotification>();
 
         public void Dispose()

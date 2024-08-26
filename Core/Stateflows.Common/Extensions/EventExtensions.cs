@@ -6,7 +6,7 @@ namespace Stateflows.Common.Extensions
 {
     public static class EventExtensions
     {
-        public static EventValidation Validate(this Event @event)
+        public static EventValidation Validate<TEvent>(this TEvent @event)
         {
             var validationResults = new List<ValidationResult>();
             bool isValid = true;
@@ -50,32 +50,10 @@ namespace Stateflows.Common.Extensions
         public static Type GetResponseType(this Event @event)
             => @event.GetType().GetGenericParameterOf(typeof(Request<>));
 
-        public static TResponse GetResponse<TResponse>(this Event @event)
-            where TResponse : Response, new()
-        {
-            if (!@event.IsRequest())
-            {
-                return null;
-            }
-
-            return @event.GetType().GetProperty("Response").GetValue(@event) as TResponse;
-        }
-
-        public static Response GetResponse(this Event @event)
-            => @event.GetResponse<Response>();
-
-        //public static bool IsPayloadEvent(this Event @event)
-        //    => @event.GetType().IsSubclassOfRawGeneric(typeof(Event<>));
-
-        //public static TPayload GetPayload<TPayload>(this Event @event)
-        //{
-        //    if (!@event.IsPayloadEvent())
-        //    {
-        //        return default;
-        //    }
-
-        //    return (TPayload)@event.GetType().GetProperty("Payload").GetValue(@event);
-        //}
+        public static EventHolder GetResponse<TEvent>(this TEvent @event)
+            => @event is IRequest request
+            ? request.GeneralResponseHolder
+            : null;
 
         public static void Respond(this Event @event, Response response)
         {

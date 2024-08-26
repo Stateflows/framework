@@ -1,8 +1,16 @@
-﻿using Stateflows.Common.Exceptions;
+﻿using System;
+using Stateflows.Common.Exceptions;
 
 namespace Stateflows.Common
 {
-    public abstract class Request<TResponse>
+    public interface IRequest
+    {
+        EventHolder GeneralResponseHolder { get; }
+
+        void Respond<TResponse>(TResponse response);
+    }
+
+    public abstract class Request<TResponse> : IRequest
     {
         public void Respond(TResponse response)
         {
@@ -14,8 +22,22 @@ namespace Stateflows.Common
             ResponseHolder = new EventHolder<TResponse>() { Payload = response };
         }
 
-        public EventHolder<TResponse> ResponseHolder { get; private set; }
+        internal EventHolder<TResponse> ResponseHolder { get; private set; }
 
         public TResponse Response => ResponseHolder.Payload;
+
+        EventHolder IRequest.GeneralResponseHolder => ResponseHolder;
+
+        void IRequest.Respond<TResponseEvent>(TResponseEvent response)
+        {
+            if (response is TResponse typedResponse)
+            {
+                Respond(typedResponse);
+            }
+            else
+            {
+                throw new InvalidOperationException();
+            }
+        }
     }
 }

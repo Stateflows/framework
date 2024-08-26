@@ -10,9 +10,6 @@ namespace Stateflows.Activities.Extensions
     public delegate Event TransitionActivityInitializationBuilder<in TEvent>(ITransitionContext<TEvent> context)
         where TEvent : Event, new();
 
-    public delegate void IntegratedActivityBuildAction(IIntegratedActivityBuilder builder);
-
-
     public delegate Task<TInitializationEvent> StateActionActivityInitializationBuilderAsync<TInitializationEvent>(IStateActionContext context)
         where TInitializationEvent : Event, new();
 

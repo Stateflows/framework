@@ -25,12 +25,12 @@ namespace Stateflows.Activities
                                 Event initializationEvent = (integratedActivityBuilder.InitializationBuilder != null)
                                     ? await integratedActivityBuilder.InitializationBuilder(c)
                                     : new Initialize();
-                                return a.SendCompoundAsync(
-                                    integratedActivityBuilder.GetSubscriptionRequest(c.StateMachine.Id),
-                                    new SetGlobalValues() { Values = (c.StateMachine.Values as ContextValuesCollection).Values },
-                                    new ExecutionRequest() { InitializationEvent = initializationEvent },
-                                    integratedActivityBuilder.GetUnsubscriptionRequest(c.StateMachine.Id)
-                                );
+                                return a.Compound()
+                                    .AddEvent(integratedActivityBuilder.GetSubscribe(c.StateMachine.Id))
+                                    .AddEvent(new SetGlobalValues() { Values = (c.StateMachine.Values as ContextValuesCollection).Values })
+                                    .AddEvent(new ExecutionRequest() { InitializationEvent = initializationEvent })
+                                    .AddEvent(integratedActivityBuilder.GetUnsubscribe(c.StateMachine.Id))
+                                    .RequestAsync();
                             });
                         }
                     }
@@ -54,10 +54,10 @@ namespace Stateflows.Activities
                                     ? await integratedActivityBuilder.InitializationBuilder(c)
                                     : new Initialize();
                                 return a.SendCompoundAsync(
-                                    integratedActivityBuilder.GetSubscriptionRequest(c.StateMachine.Id),
+                                    integratedActivityBuilder.GetSubscribe(c.StateMachine.Id),
                                     new SetGlobalValues() { Values = (c.StateMachine.Values as ContextValuesCollection).Values },
                                     new ExecutionRequest() { InitializationEvent = initializationEvent },
-                                    integratedActivityBuilder.GetUnsubscriptionRequest(c.StateMachine.Id)
+                                    integratedActivityBuilder.GetUnsubscribe(c.StateMachine.Id)
                                 );
                             });
                         }

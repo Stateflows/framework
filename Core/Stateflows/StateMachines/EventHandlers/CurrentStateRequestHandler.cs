@@ -19,7 +19,7 @@ namespace Stateflows.StateMachines.EventHandlers
             {
                 var executor = context.StateMachine.GetExecutor();
 
-                var response = new CurrentStateResponse()
+                var response = new CurrentState()
                 {
                     StatesStack = executor.GetStateStack(),
                     ExpectedEvents = executor.GetExpectedEventNames(),

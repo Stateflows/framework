@@ -162,7 +162,7 @@ namespace StateMachine.IntegrationTests.Tests
         public async Task DefaultTransition()
         {
             var status = EventStatus.Rejected;
-            CurrentStateResponse? currentState = null;
+            CurrentState? currentState = null;
 
             if (StateMachineLocator.TryLocateStateMachine(new StateMachineId("default", "x"), out var sm))
             {
@@ -201,7 +201,7 @@ namespace StateMachine.IntegrationTests.Tests
         public async Task LocalExits()
         {
             var status = EventStatus.Rejected;
-            CurrentStateResponse? currentState = null;
+            CurrentState? currentState = null;
 
             if (StateMachineLocator.TryLocateStateMachine(new StateMachineId("exits", "x"), out var sm))
             {
@@ -232,7 +232,7 @@ namespace StateMachine.IntegrationTests.Tests
         public async Task SingleInitialization()
         {
             var status = EventStatus.Rejected;
-            CurrentStateResponse? currentState = null;
+            CurrentState? currentState = null;
 
             if (StateMachineLocator.TryLocateStateMachine(new StateMachineId("single", "x"), out var sm))
             {

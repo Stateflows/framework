@@ -3,6 +3,6 @@
     [DoNotTrace]
     public sealed class BehaviorInfoRequest : Request<BehaviorInfo>
     {
-        public override string Name => nameof(BehaviorInfoRequest);
+        //public override string Name => nameof(BehaviorInfoRequest);
     }
 }

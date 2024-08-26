@@ -35,8 +35,8 @@ namespace StateMachine.IntegrationTests.Tests
         [TestMethod]
         public async Task ResettingInitialized()
         {
-            CurrentStateResponse? currentState1 = null;
-            CurrentStateResponse? currentState2 = null;
+            CurrentState? currentState1 = null;
+            CurrentState? currentState2 = null;
             ResetResponse? resetResponse = null;
 
             if (StateMachineLocator.TryLocateStateMachine(new StateMachineId("reset", "x"), out var sm))
@@ -61,8 +61,8 @@ namespace StateMachine.IntegrationTests.Tests
         [TestMethod]
         public async Task ResettingNotInitialized()
         {
-            CurrentStateResponse? currentState1 = null;
-            CurrentStateResponse? currentState2 = null;
+            CurrentState? currentState1 = null;
+            CurrentState? currentState2 = null;
             ResetResponse? resetResponse = null;
 
             if (StateMachineLocator.TryLocateStateMachine(new StateMachineId("reset", "x"), out var sm))
