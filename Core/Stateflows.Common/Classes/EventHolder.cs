@@ -17,6 +17,8 @@ namespace Stateflows.Common
 
         public DateTime SentAt { get; set; }
 
+        public BehaviorId SenderId { get; set; }
+
         [JsonIgnore]
         public object BoxedPayload { get; }
 

@@ -29,10 +29,10 @@ namespace Stateflows.Activities
                                     ? await integratedActivityBuilder.InitializationBuilder(c)
                                     : new Initialize();
                                 return a.SendCompoundAsync(
-                                    integratedActivityBuilder.GetSubscriptionRequest(c.StateMachine.Id),
+                                    integratedActivityBuilder.GetSubscribe(c.StateMachine.Id),
                                     new SetGlobalValues() { Values = (c.StateMachine.Values as ContextValuesCollection).Values },
                                     new ExecutionRequest() { InitializationEvent = initializationEvent },
-                                    integratedActivityBuilder.GetUnsubscriptionRequest(c.StateMachine.Id)
+                                    integratedActivityBuilder.GetUnsubscribe(c.StateMachine.Id)
                                 );
                             });
                         }
@@ -57,10 +57,10 @@ namespace Stateflows.Activities
                                     ? await integratedActivityBuilder.InitializationBuilder(c)
                                     : new Initialize();
                                 return a.SendCompoundAsync(
-                                    integratedActivityBuilder.GetSubscriptionRequest(c.StateMachine.Id),
+                                    integratedActivityBuilder.GetSubscribe(c.StateMachine.Id),
                                     new SetGlobalValues() { Values = (c.StateMachine.Values as ContextValuesCollection).Values },
                                     new ExecutionRequest() { InitializationEvent = initializationEvent },
-                                    integratedActivityBuilder.GetUnsubscriptionRequest(c.StateMachine.Id)
+                                    integratedActivityBuilder.GetUnsubscribe(c.StateMachine.Id)
                                 );
                             });
                         }

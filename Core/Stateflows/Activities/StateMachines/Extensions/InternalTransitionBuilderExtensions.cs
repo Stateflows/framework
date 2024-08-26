@@ -35,10 +35,10 @@ namespace Stateflows.Activities
                             executionRequest.AddInputToken(ev);
 
                             var sendResult = await a.SendCompoundAsync(
-                                integratedActivityBuilder.GetSubscriptionRequest(c.StateMachine.Id),
+                                integratedActivityBuilder.GetSubscribe(c.StateMachine.Id),
                                 new SetGlobalValues() { Values = (c.StateMachine.Values as ContextValuesCollection).Values },
                                 executionRequest,
-                                integratedActivityBuilder.GetUnsubscriptionRequest(c.StateMachine.Id)
+                                integratedActivityBuilder.GetUnsubscribe(c.StateMachine.Id)
                             );
 
                             result = (sendResult.Response.Results.Skip(2).Take(1).First().Response as ExecutionResponse).OutputTokens.OfType<TokenHolder<bool>>().FirstOrDefault()?.Payload ?? false;
@@ -76,10 +76,10 @@ namespace Stateflows.Activities
                             executionRequest.AddInputToken(ev);
 
                             return a.SendCompoundAsync(
-                                integratedActivityBuilder.GetSubscriptionRequest(c.StateMachine.Id),
+                                integratedActivityBuilder.GetSubscribe(c.StateMachine.Id),
                                 new SetGlobalValues() { Values = (c.StateMachine.Values as ContextValuesCollection).Values },
                                 executionRequest,
-                                integratedActivityBuilder.GetUnsubscriptionRequest(c.StateMachine.Id)
+                                integratedActivityBuilder.GetUnsubscribe(c.StateMachine.Id)
                             );
                         });
                     }

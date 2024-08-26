@@ -26,7 +26,7 @@ namespace Stateflows.Common
         private Dictionary<string, IEventProcessor> Processors
             => processors ??= ServiceProvider.GetRequiredService<IEnumerable<IEventProcessor>>().ToDictionary(p => p.BehaviorType, p => p);
 
-        private EventQueue<EventHolder> EventQueue { get; } = new EventQueue<EventHolder>(true);
+        private EventQueue<ExecutionToken> EventQueue { get; } = new EventQueue<ExecutionToken>(true);
 
         private Task executionTask;
 
@@ -39,11 +39,15 @@ namespace Stateflows.Common
             TenantProvider = ServiceProvider.GetRequiredService<IStateflowsTenantProvider>();
         }
 
-        public EventHolder EnqueueEvent(BehaviorId id, Event @event, IServiceProvider serviceProvider)
+        public ExecutionToken EnqueueEvent<TEvent>(BehaviorId id, TEvent @event, IServiceProvider serviceProvider)
         {
-            @event.SentAt = DateTime.Now;
+            var holder = new EventHolder<TEvent>()
+            {
+                Payload = @event,
+                SentAt = DateTime.Now
+            };
 
-            var token = new EventHolder(id, @event, serviceProvider);
+            var token = new ExecutionToken(id, holder, serviceProvider);
 
             EventQueue.Enqueue(token);
 
@@ -65,7 +69,7 @@ namespace Stateflows.Common
                     {
                         _ = Task.Run(() =>
                         {
-                            token.Validation = token.Event.Validate();
+                            token.Validation = token.EventHolder.Validate();
 
                             var status = EventStatus.Invalid;
 
@@ -73,7 +77,7 @@ namespace Stateflows.Common
                             {
                                 if (token.Validation.IsValid)
                                 {
-                                    status = ProcessEventAsync(token.TargetId, token.Event, token.ServiceProvider, token.Exceptions)
+                                    status = ProcessEventAsync(token.TargetId, token.EventHolder, token.ServiceProvider, token.Exceptions)
                                         .GetAwaiter()
                                         .GetResult();
                                 }
@@ -106,12 +110,11 @@ namespace Stateflows.Common
         }
 
         [DebuggerHidden]
-        public async Task<EventStatus> ProcessEventAsync<TEvent>(BehaviorId id, TEvent @event, IServiceProvider serviceProvider, List<Exception> exceptions)
-            where TEvent : Event, new()
+        public async Task<EventStatus> ProcessEventAsync(BehaviorId id, EventHolder eventHolder, IServiceProvider serviceProvider, List<Exception> exceptions)
         {
             var result = EventStatus.Undelivered;
 
-            if (Processors.TryGetValue(id.Type, out var processor) && Interceptor.BeforeExecute(@event))
+            if (Processors.TryGetValue(id.Type, out var processor) && Interceptor.BeforeExecute(eventHolder))
             {
                 TenantAccessor.CurrentTenantId = await TenantProvider.GetCurrentTenantIdAsync();
 
@@ -121,11 +124,11 @@ namespace Stateflows.Common
                 {
                     try
                     {
-                        result = await processor.ProcessEventAsync(id, @event, serviceProvider, exceptions);
+                        result = await processor.ProcessEventAsync(id, eventHolder, serviceProvider, exceptions);
                     }
                     finally
                     {
-                        var response = @event.GetResponse();
+                        var response = eventHolder.GetResponse();
                         if (response != null)
                         {
                             response.SenderId = id;
@@ -135,7 +138,7 @@ namespace Stateflows.Common
                 }
                 finally
                 {
-                    Interceptor.AfterExecute(@event);
+                    Interceptor.AfterExecute(eventHolder);
                 }
             }
 

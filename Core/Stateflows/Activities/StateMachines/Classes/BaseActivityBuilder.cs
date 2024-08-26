@@ -9,8 +9,8 @@ namespace Stateflows.Activities.StateMachines.Interfaces
     {
         public List<Type> Notifications { get; } = new List<Type>();
 
-        public SubscriptionRequest GetSubscriptionRequest(BehaviorId behaviorId)
-            => new SubscriptionRequest()
+        public Subscribe GetSubscribe(BehaviorId behaviorId)
+            => new Subscribe()
             {
                 NotificationNames = Notifications
                     .Select(notificationType => notificationType.GetEventName())
@@ -18,8 +18,8 @@ namespace Stateflows.Activities.StateMachines.Interfaces
                 BehaviorId = behaviorId
             };
 
-        public UnsubscriptionRequest GetUnsubscriptionRequest(BehaviorId behaviorId)
-            => new UnsubscriptionRequest()
+        public Unsubscribe GetUnsubscribe(BehaviorId behaviorId)
+            => new Unsubscribe()
             {
                 NotificationNames = Notifications
                     .Select(notificationType => notificationType.GetEventName())

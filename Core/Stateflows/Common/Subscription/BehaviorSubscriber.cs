@@ -20,51 +20,66 @@ namespace Stateflows.Common.Subscription
             this.subscriptionHub = subscriptionHub;
         }
 
-        public async Task PublishAsync<TNotification>(BehaviorId behaviorId, TNotification notification)
-            where TNotification : Notification, new()
+        public async Task PublishAsync<TNotificationEvent>(BehaviorId behaviorId, TNotificationEvent notificationEvent)
         {
-            notification.SenderId = behaviorId;
-            notification.SentAt = DateTime.Now;
+            var eventHolder = new EventHolder<TNotificationEvent>()
+            {
+                Payload = notificationEvent,
+                SenderId = behaviorId,
+                SentAt = DateTime.Now,
+            };
 
-            if (context.Subscribers.TryGetValue(EventInfo<TNotification>.Name, out var behaviorIds))
+            if (context.Subscribers.TryGetValue(EventInfo<TNotificationEvent>.Name, out var behaviorIds))
             {
                 await Task.WhenAll(
                     behaviorIds.Select(
                         behaviorId => behaviorLocator.TryLocateBehavior(behaviorId, out var behavior)
-                            ? behavior.SendAsync(notification)
+                            ? behavior.SendAsync(notificationEvent)
                             : Task.CompletedTask
                     )
                 );
             }
 
-            await subscriptionHub.PublishAsync(notification);
+            await subscriptionHub.PublishAsync(eventHolder);
         }
 
-        public Task<RequestResult<SubscriptionResponse>> SubscribeAsync<TNotification>(BehaviorId behaviorId)
-            where TNotification : Notification, new()
+        public Task<SendResult> SubscribeAsync<TNotificationEvent>(BehaviorId behaviorId)
         {
-            var request = new Subscription() { BehaviorId = subscriberBehaviorId };
+            var request = new Subscribe() { BehaviorId = subscriberBehaviorId };
 
-            request.NotificationNames.Add(EventInfo<TNotification>.Name);
+            var eventHolder = new EventHolder<Subscribe>()
+            {
+                Payload = request,
+                SenderId = behaviorId,
+                SentAt = DateTime.Now,
+            };
+
+            request.NotificationNames.Add(EventInfo<TNotificationEvent>.Name);
 
             return behaviorLocator.TryLocateBehavior(behaviorId, out var behavior)
-                ? behavior.RequestAsync(request)
+                ? behavior.SendAsync(request)
                 : Task.FromResult(
-                    new RequestResult<SubscriptionResponse>(request, EventStatus.Undelivered, new EventValidation(true, Array.Empty<ValidationResult>()))
+                    new SendResult(eventHolder, EventStatus.Undelivered, new EventValidation(true, Array.Empty<ValidationResult>()))
                 );
         }
 
-        public Task<RequestResult<UnsubscriptionResponse>> UnsubscribeAsync<TNotification>(BehaviorId behaviorId)
-            where TNotification : Notification, new()
+        public Task<SendResult> UnsubscribeAsync<TNotificationEvent>(BehaviorId behaviorId)
         {
             var request = new Unsubscribe() { BehaviorId = subscriberBehaviorId };
 
-            request.NotificationNames.Add(EventInfo<TNotification>.Name);
+            var eventHolder = new EventHolder<Unsubscribe>()
+            {
+                Payload = request,
+                SenderId = behaviorId,
+                SentAt = DateTime.Now,
+            };
+
+            request.NotificationNames.Add(EventInfo<TNotificationEvent>.Name);
 
             return behaviorLocator.TryLocateBehavior(behaviorId, out var behavior)
-                ? behavior.RequestAsync(request)
+                ? behavior.SendAsync(request)
                 : Task.FromResult(
-                    new RequestResult<UnsubscriptionResponse>(request, EventStatus.Undelivered, new EventValidation(true, Array.Empty<ValidationResult>()))
+                    new SendResult(eventHolder, EventStatus.Undelivered, new EventValidation(true, Array.Empty<ValidationResult>()))
                 );
         }
     }

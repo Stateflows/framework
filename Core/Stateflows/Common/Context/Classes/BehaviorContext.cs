@@ -37,12 +37,10 @@ namespace Stateflows.Common.Context.Classes
             where TNotification : Notification, new()
             => _ = Subscriber.PublishAsync(Id, notification);
 
-        public Task<RequestResult<SubscriptionResponse>> SubscribeAsync<TNotification>(BehaviorId behaviorId)
-            where TNotification : Notification, new()
+        public Task<SendResult> SubscribeAsync<TNotification>(BehaviorId behaviorId)
             => _ = Subscriber.SubscribeAsync<TNotification>(behaviorId);
 
-        public Task<RequestResult<UnsubscriptionResponse>> UnsubscribeAsync<TNotification>(BehaviorId behaviorId)
-            where TNotification : Notification, new()
+        public Task<SendResult> UnsubscribeAsync<TNotification>(BehaviorId behaviorId)
             => _ = Subscriber.UnsubscribeAsync<TNotification>(behaviorId);
     }
 }

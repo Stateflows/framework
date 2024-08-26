@@ -13,28 +13,27 @@ namespace Stateflows.Common.Subscription
     {
         private readonly CancellationTokenSource CancellationTokenSource = new CancellationTokenSource();
 
-        private readonly Dictionary<BehaviorId, List<Notification>> notifications = new Dictionary<BehaviorId, List<Notification>>();
+        private readonly Dictionary<BehaviorId, List<EventHolder>> notifications = new Dictionary<BehaviorId, List<EventHolder>>();
 
-        public Dictionary<BehaviorId, List<Notification>> Notifications
+        public Dictionary<BehaviorId, List<EventHolder>> Notifications
             => notifications;
 
-        public event Action<Notification> OnPublish;
+        public event Action<EventHolder> OnPublish;
 
-        public Task PublishAsync<TNotification>(TNotification notification)
-            where TNotification : Notification, new()
+        public Task PublishAsync(EventHolder eventHolder)
         {
             lock (Notifications)
             {
-                if (!Notifications.TryGetValue(notification.SenderId, out var behaviorNotifications))
+                if (!Notifications.TryGetValue(eventHolder.SenderId, out var behaviorNotifications))
                 {
-                    behaviorNotifications = new List<Notification>();
-                    Notifications.Add(notification.SenderId, behaviorNotifications);
+                    behaviorNotifications = new List<EventHolder>();
+                    Notifications.Add(eventHolder.SenderId, behaviorNotifications);
                 }
 
-                behaviorNotifications.Add(notification);
+                behaviorNotifications.Add(eventHolder);
             }
 
-            _ = Task.Run(() => OnPublish.Invoke(notification));
+            _ = Task.Run(() => OnPublish.Invoke(eventHolder));
 
             return Task.CompletedTask;
         }

@@ -104,20 +104,19 @@ namespace Stateflows.Activities.Engine
             return result;
         }
 
-        private async Task<EventStatus> ExecuteBehaviorAsync<TEvent>(TEvent @event, EventStatus result, StateflowsContext stateflowsContext, Graph graph, Executor executor, RootContext context)
-            where TEvent : Event, new()
+        private async Task<EventStatus> ExecuteBehaviorAsync<TEvent>(EventHolder<TEvent> eventHolder, EventStatus result, StateflowsContext stateflowsContext, Graph graph, Executor executor, RootContext context)
         {
-            context.SetEvent(@event);
+            context.SetEvent(eventHolder);
 
             var eventContext = new EventContext<TEvent>(context, executor.NodeScope);
 
             if (await executor.Inspector.BeforeProcessEventAsync(eventContext))
             {
-                Event currentEvent = @event;
+                Event currentEvent = eventHolder;
 
                 IEnumerable<TokenHolder> input = null;
 
-                if (@event is ExecutionRequest executionRequest)
+                if (eventHolder is ExecutionRequest executionRequest)
                 {
                     if (executor.Graph.Interactive || executor.BehaviorStatus != BehaviorStatus.NotInitialized)
                     {
@@ -166,7 +165,7 @@ namespace Stateflows.Activities.Engine
                     }
                 }
 
-                if (@event is ExecutionRequest executionRequest2)
+                if (eventHolder is ExecutionRequest executionRequest2)
                 {
                     context.ClearEvent();
 
