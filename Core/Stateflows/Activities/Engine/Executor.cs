@@ -13,6 +13,7 @@ using Stateflows.Activities.Models;
 using Stateflows.Activities.Streams;
 using Stateflows.Activities.Registration;
 using Stateflows.Activities.Context.Classes;
+using Stateflows.Common.Exceptions;
 
 namespace Stateflows.Activities.Engine
 {
@@ -335,6 +336,21 @@ namespace Stateflows.Activities.Engine
             await Inspector.BeforeActivityFinalizationAsync(context);
 
             await Graph.Finalize.WhenAll(context);
+            try
+            {
+                await Graph.Finalize.WhenAll(context);
+            }
+            catch (Exception e)
+            {
+                if (!await Inspector.OnActivityFinalizationExceptionAsync(context, e))
+                {
+                    throw;
+                }
+                else
+                {
+                    throw new ExecutionException(e);
+                }
+            }
 
             await Inspector.AfterActivityFinalizationAsync(context);
 
@@ -541,7 +557,21 @@ namespace Stateflows.Activities.Engine
                 }
                 catch (Exception e)
                 {
-                    await Inspector.OnActivityInitializationExceptionAsync(context, context.InitializationEvent, e);
+                    if (e is StateflowsException)
+                    {
+                        throw;
+                    }
+                    else
+                    {
+                        if (!await Inspector.OnActivityInitializationExceptionAsync(context, context.InitializationEvent, e))
+                        {
+                            throw;
+                        }
+                        else
+                        {
+                            throw new ExecutionException(e);
+                        }
+                    }
 
                     result = InitializationStatus.NotInitialized;
                 }
@@ -563,7 +593,7 @@ namespace Stateflows.Activities.Engine
             return result;
         }
 
-        public async Task<IEnumerable<TokenHolder>> HandleExceptionAsync(Node node, Exception exception, BaseContext context)
+        public async Task<bool> HandleExceptionAsync(Node node, Exception exception, BaseContext context)
         {
             Node handler = null;
             var currentNode = node;
@@ -615,10 +645,10 @@ namespace Stateflows.Activities.Engine
 
                 ReportExceptionHandled(node, exceptionName, exceptionContext.OutputTokens.Where(t => t is TokenHolder<ControlToken>).ToArray(), Context);
 
-                return exceptionContext.OutputTokens;
+                return true;
             }
 
-            return new TokenHolder[0];
+            return false;
         }
 
         public async Task DoHandleNodeAsync(Node node, Edge upstreamEdge, NodeScope nodeScope, IEnumerable<TokenHolder> input = null, IEnumerable<TokenHolder> selectionTokens = null)

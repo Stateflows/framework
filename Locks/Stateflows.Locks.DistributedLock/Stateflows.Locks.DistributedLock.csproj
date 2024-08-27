@@ -36,4 +36,8 @@
     <PackageReference Include="DistributedLock.Core" Version="1.0.5" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\..\Core\Stateflows\Stateflows.csproj" />
+  </ItemGroup>
+
 </Project>

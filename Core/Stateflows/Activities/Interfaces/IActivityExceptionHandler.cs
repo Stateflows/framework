@@ -6,26 +6,26 @@ namespace Stateflows.Activities
 {
     public interface IActivityExceptionHandler
     {
-        Task OnActivityInitializationExceptionAsync(IActivityInitializationContext context, Exception exception)
-            => Task.CompletedTask;
+        Task<bool> OnActivityInitializationExceptionAsync(IActivityInitializationContext context, Exception exception)
+            => Task.FromResult(false);
 
-        Task OnActivityFinalizationExceptionAsync(IActivityFinalizationContext context, Exception exception)
-            => Task.CompletedTask;
+        Task<bool> OnActivityFinalizationExceptionAsync(IActivityFinalizationContext context, Exception exception)
+            => Task.FromResult(false);
 
-        Task OnNodeInitializationExceptionAsync(IActivityNodeContext context, Exception exception)
-            => Task.CompletedTask;
+        Task<bool> OnNodeInitializationExceptionAsync(IActivityNodeContext context, Exception exception)
+            => Task.FromResult(false);
 
-        Task OnNodeFinalizationExceptionAsync(IActivityNodeContext context, Exception exception)
-            => Task.CompletedTask;
+        Task<bool> OnNodeFinalizationExceptionAsync(IActivityNodeContext context, Exception exception)
+            => Task.FromResult(false);
 
-        Task OnNodeExecutionExceptionAsync(IActivityNodeContext context, Exception exception)
-            => Task.CompletedTask;
+        Task<bool> OnNodeExecutionExceptionAsync(IActivityNodeContext context, Exception exception)
+            => Task.FromResult(false);
 
-        Task OnFlowGuardExceptionAsync<TToken>(IGuardContext<TToken> context, Exception exception)
-            => Task.CompletedTask;
+        Task<bool> OnFlowGuardExceptionAsync<TToken>(IGuardContext<TToken> context, Exception exception)
+            => Task.FromResult(false);
 
-        Task OnFlowTransformationExceptionAsync<TToken>(ITransformationContext<TToken> context, Exception exception)
-            => Task.CompletedTask;
+        Task<bool> OnFlowTransformationExceptionAsync<TToken>(ITransformationContext<TToken> context, Exception exception)
+            => Task.FromResult(false);
 
     }
 }

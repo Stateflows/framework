@@ -27,6 +27,9 @@ namespace Stateflows.Common.Classes
         public T GetOrDefault(T defaultValue = default)
             => valueSet.GetOrDefault(valueName, defaultValue);
 
+        public void Update(Func<T, T> valueUpdater, T defaultValue = default)
+            => valueSet.Update(valueName, valueUpdater, defaultValue);
+
         public void Remove()
             => valueSet.Remove(valueName);
     }

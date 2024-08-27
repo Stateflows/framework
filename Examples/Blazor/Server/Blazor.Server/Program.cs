@@ -34,9 +34,12 @@ builder.Services.AddSignalR();
 builder.Services.AddStateflows(b => b
     .AddPlantUml()
 
-    .AddStorage()
+    //.AddStorage()
+
+    .AddDefaultInstance(StateMachine<Default>.ToClass())
 
     .AddStateMachines(b => b
+        .AddStateMachine<Default>()
         .AddStateMachine("stateMachine1", b => b
             //.AddExceptionHandler<Handler>()
             //.AddInterceptor<Handler>()
@@ -86,12 +89,16 @@ builder.Services.AddStateflows(b => b
     )
 
     .AddActivities(b => b
-        .AddActivity<ClearingActivity>("clearing")
+        .AddActivity<ClearingActivity>()
         .AddActivity("activity1", b => b
-            .AddAcceptEventAction<Startup>(b => b
-                .AddControlFlow<AcceptEventActionNode<AfterOneMinute>>()
-            )
-            .AddAcceptEventAction<AfterOneMinute>(async c => Debug.WriteLine("Yuppi!"))
+            //.AddAcceptEventAction<Startup>(b => b
+            //    .AddControlFlow<AcceptEventActionNode<AfterOneMinute>>()
+            //)
+            .AddAcceptEventAction<SomeEvent>(async c =>
+            {
+                Debug.WriteLine("Yuppi!");
+                throw new Exception("test");
+            })
         )
         .AddActivity("activity2", b => b
             .AddInitializer<InitializationRequest1>(async c =>
@@ -198,6 +205,16 @@ app.Run();
 
 namespace X
 {
+    [StateMachineBehavior(nameof(Default))]
+    public class Default : IStateMachine
+    {
+        public void Build(IStateMachineBuilder builder)
+            => builder
+                .AddInitialState("1", b => b
+                    .AddOnEntry(async c => Debug.WriteLine("dupa"))
+                );
+    }
+
     public class Structured : IStructuredActivityNodeInitialization
     {
         public Task OnInitializeAsync()
@@ -237,19 +254,31 @@ namespace X
     {
         public void Build(IActivityBuilder builder)
             => builder
-                .AddInitializer<InitializationRequest1>(async c =>
+                .AddDefaultInitializer(async c =>
                 {
-                    Debug.WriteLine(c.InitializationEvent.Foo);
+                    //Debug.WriteLine(c.InitializationEvent.Foo);
+
+                    
 
                     return true;
                 })
                 .AddAcceptEventAction<SomeEvent>(async c => { }, b => b
-                    .AddControlFlow("action1")
+                    .AddControlFlow("action1", b => b
+                        .AddGuard(async c =>
+                        {
+                            throw new NotImplementedException();
+                        })
+                    )
                 )
                 .AddAction(
                     "action1",
-                    async c => c.OutputRange(Enumerable.Range(0, 100)),
-                    b => b.AddFlow<int>("chunked")
+                    async c =>
+                    {
+                        c.OutputRange(Enumerable.Range(0, 100));
+                    },
+                    b => b
+                        .AddFlow<int>("chunked")
+                        //.AddExceptionHandler<Exception>(async c => { })
                 )
                 .AddParallelActivity<int>(
                     "chunked",
@@ -274,11 +303,11 @@ namespace X
                             {
                                 lock (c.Activity.LockHandle)
                                 {
-                                    var counter = 0;
-                                    c.Activity.Values.TryGet<int>("count", out counter);
-
-                                    counter++;
-                                    c.Activity.Values.Set<int>("count", counter);
+                                    if (c.Activity.Values.TryGet<int>("count", out var counter))
+                                    {
+                                        counter++;
+                                        c.Activity.Values.Set<int>("count", counter);
+                                    }
                                 }
 
                                 return true;

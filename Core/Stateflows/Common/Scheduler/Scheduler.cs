@@ -4,31 +4,46 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.DependencyInjection;
+using Stateflows.Common.Initializer;
+using System.Linq;
 
 namespace Stateflows.Common.Scheduler
 {
-    internal class ThreadScheduler : IHostedService
+    internal class Scheduler : IHostedService
     {
         private readonly CancellationTokenSource CancellationTokenSource = new CancellationTokenSource();
         private readonly IStateflowsTenantExecutor Executor;
         private readonly IServiceScope Scope;
-        private readonly ILogger<ThreadScheduler> Logger;
+        private readonly ILogger<Scheduler> Logger;
+        private readonly IBehaviorLocator Locator;
+        private readonly IHostApplicationLifetime Lifetime;
 
         private IServiceProvider ServiceProvider
             => Scope.ServiceProvider;
 
-        public ThreadScheduler(IServiceProvider serviceProvider)
+        public Scheduler(IServiceProvider serviceProvider, IHostApplicationLifetime lifetime)
         {
             Scope = serviceProvider.CreateScope();
             Executor = ServiceProvider.GetRequiredService<IStateflowsTenantExecutor>();
-            Logger = ServiceProvider.GetRequiredService<ILogger<ThreadScheduler>>();
+            Logger = ServiceProvider.GetRequiredService<ILogger<Scheduler>>();
+            Locator = ServiceProvider.GetRequiredService<IBehaviorLocator>();
+            Lifetime = lifetime;
+        }
+
+        public void ApplicationStarted()
+        {
+            Task.WaitAll(
+                Executor.ExecuteByTenantsAsync(() => InitiateBehaviors()),
+                Executor.ExecuteByTenantsAsync(() => HandleStartupEvents())
+            );
         }
 
         public Task StartAsync(CancellationToken cancellationToken)
         {
+            Lifetime.ApplicationStarted.Register(ApplicationStarted);
+
             _ = Task.Run(async () =>
             {
-                await Executor.ExecuteByTenantsAsync(() => HandleStartupEvents());
                 await TimingLoop(CancellationTokenSource.Token);
             });
 
@@ -56,7 +71,7 @@ namespace Stateflows.Common.Scheduler
                     }
                     catch (Exception e)
                     {
-                        Logger.LogError(LogTemplates.ExceptionLogTemplate, typeof(ThreadScheduler).FullName, nameof(TimingLoop), e.GetType().Name, e.Message);
+                        Logger.LogError(LogTemplates.ExceptionLogTemplate, typeof(Scheduler).FullName, nameof(TimingLoop), e.GetType().Name, e.Message);
                     }
                 }
 
@@ -76,8 +91,25 @@ namespace Stateflows.Common.Scheduler
             }
             catch (Exception e)
             {
-                Logger.LogError(LogTemplates.ExceptionLogTemplate, typeof(ThreadScheduler).FullName, nameof(HandleTimeEvents), e.GetType().Name, e.Message);
+                Logger.LogError(LogTemplates.ExceptionLogTemplate, typeof(Scheduler).FullName, nameof(HandleTimeEvents), e.GetType().Name, e.Message);
             }
+        }
+
+        private async Task InitiateBehaviors()
+        {
+            var tokens = BehaviorClassesInitializations.Instance.DefaultInstanceInitializationTokens;
+
+            await Task.WhenAll(
+                tokens.Select(async token =>
+                {
+                    token.RefreshEnvironment();
+
+                    if (Locator.TryLocateBehavior(new BehaviorId(token.BehaviorClass, string.Empty), out var behavior))
+                    {
+                        await behavior.SendAsync(await token.InitializationRequestFactory(ServiceProvider, token.BehaviorClass));
+                    }
+                })
+            );
         }
 
         private async Task HandleStartupEvents()
@@ -92,7 +124,7 @@ namespace Stateflows.Common.Scheduler
             }
             catch (Exception e)
             {
-                Logger.LogError(LogTemplates.ExceptionLogTemplate, typeof(ThreadScheduler).FullName, nameof(HandleStartupEvents), e.GetType().Name, e.Message);
+                Logger.LogError(LogTemplates.ExceptionLogTemplate, typeof(Scheduler).FullName, nameof(HandleStartupEvents), e.GetType().Name, e.Message);
             }
         }
 

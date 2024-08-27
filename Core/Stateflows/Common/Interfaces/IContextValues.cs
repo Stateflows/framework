@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+﻿using System;
 
 namespace Stateflows.Common.Interfaces
 {
@@ -11,6 +11,8 @@ namespace Stateflows.Common.Interfaces
         bool TryGet<T>(string key, out T value);
 
         T GetOrDefault<T>(string key, T defaultValue = default);
+
+        void Update<T>(string key, Func<T, T> valueUpdater, T defaultValue = default);
 
         void Remove(string key);
 

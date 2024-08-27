@@ -57,7 +57,10 @@ namespace Stateflows.Common
             {
                 while (!cancellationToken.IsCancellationRequested)
                 {
-                    EventQueue.WaitAsync().GetAwaiter().GetResult();
+                    if (!EventQueue.WaitAsync(cancellationToken).GetAwaiter().GetResult())
+                    {
+                        continue;
+                    }
 
                     var token = EventQueue.Dequeue();
 

@@ -15,7 +15,7 @@ namespace Stateflows.Common.Scheduler
 
         private readonly IBehaviorLocator Locator;
 
-        private readonly ILogger<ThreadScheduler> Logger;
+        private readonly ILogger<Scheduler> Logger;
 
         private readonly TimeSpan LockTimeout = new TimeSpan(0, 0, 10);
 
@@ -28,7 +28,7 @@ namespace Stateflows.Common.Scheduler
             IStateflowsLock @lock,
             IBehaviorClassesProvider behaviorClassesProvider,
             IBehaviorLocator behaviorLocator,
-            ILogger<ThreadScheduler> logger
+            ILogger<Scheduler> logger
         )
         {
             Services = services;
@@ -36,7 +36,7 @@ namespace Stateflows.Common.Scheduler
             BehaviorClassesProvider = behaviorClassesProvider;
             Locator = behaviorLocator;
             Logger = logger;
-            HandlingLockId = new BehaviorId(nameof(ThreadScheduler), nameof(HandlingLockId), new BehaviorClass("", "").Environment);
+            HandlingLockId = new BehaviorId(nameof(Scheduler), nameof(HandlingLockId), new BehaviorClass("", "").Environment);
         }
 
         public async Task ExecuteAsync()

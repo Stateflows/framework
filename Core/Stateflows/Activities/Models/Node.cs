@@ -163,7 +163,7 @@ namespace Stateflows.Activities.Models
                 .Select(e => e.Target)
                 .Where(n => n.Type == NodeType.ExceptionHandler);
 
-        public async Task<IEnumerable<object>> HandleExceptionAsync(Exception exception, BaseContext context)
+        public async Task<bool> HandleExceptionAsync(Exception exception, BaseContext context)
         {
             Node handler = null;
             var currentNode = this;
@@ -205,10 +205,10 @@ namespace Stateflows.Activities.Models
 
                 await handler.Action.WhenAll(exceptionContext);
 
-                return exceptionContext.OutputTokens;
+                return true;
             }
 
-            return new TokenHolder[0];
+            return false;
         }
     }
 }

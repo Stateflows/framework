@@ -26,6 +26,35 @@ namespace Stateflows.Common.Classes
 
         private readonly string QueueEmpty = "Queue empty.";
 
+        public async Task<bool> WaitAsync(CancellationToken cancellationToken)
+        {
+            while (!cancellationToken.IsCancellationRequested)
+            {
+                await WaitAsync(10 * 1000);
+
+                var enqueued = false;
+
+                if (Locked)
+                {
+                    lock (LockObject)
+                    {
+                        enqueued = Count > 0;
+                    }
+                }
+                else
+                {
+                    enqueued = Count > 0;
+                }
+
+                if (enqueued)
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
         public Task WaitAsync(int millisecondsTimeout = -1)
             => Event.WaitOneAsync(millisecondsTimeout);
 
