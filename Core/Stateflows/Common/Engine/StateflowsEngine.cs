@@ -5,7 +5,6 @@ using System.Diagnostics;
 using System.Threading.Tasks;
 using System.Collections.Generic;
 using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.DependencyInjection;
 using Stateflows.Common.Engine;
 using Stateflows.Common.Classes;
@@ -14,7 +13,7 @@ using Stateflows.Common.Extensions;
 
 namespace Stateflows.Common
 {
-    internal class StateflowsEngine : /*BackgroundService, */IHostedService
+    internal class StateflowsEngine : IHostedService
     {
         private readonly IServiceScope Scope;
         private IServiceProvider ServiceProvider => Scope.ServiceProvider;
@@ -23,6 +22,8 @@ namespace Stateflows.Common
         private readonly IStateflowsTenantProvider TenantProvider;
         private readonly ITenantAccessor TenantAccessor;
         private Dictionary<string, IEventProcessor> processors;
+        private readonly CancellationTokenSource CancellationTokenSource = new CancellationTokenSource();
+
         private Dictionary<string, IEventProcessor> Processors
             => processors ??= ServiceProvider.GetRequiredService<IEnumerable<IEventProcessor>>().ToDictionary(p => p.BehaviorType, p => p);
 
@@ -55,9 +56,9 @@ namespace Stateflows.Common
         {
             executionTask = Task.Run(() =>
             {
-                while (!cancellationToken.IsCancellationRequested)
+                while (!CancellationTokenSource.Token.IsCancellationRequested)
                 {
-                    if (!EventQueue.WaitAsync(cancellationToken).GetAwaiter().GetResult())
+                    if (!EventQueue.WaitAsync(CancellationTokenSource.Token).GetAwaiter().GetResult())
                     {
                         continue;
                     }
@@ -147,6 +148,8 @@ namespace Stateflows.Common
 
         public Task StopAsync(CancellationToken cancellationToken)
         {
+            CancellationTokenSource.Cancel();
+
             executionTask.Wait();
 
             return Task.CompletedTask;
