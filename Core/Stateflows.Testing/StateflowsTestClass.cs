@@ -12,6 +12,7 @@ using Stateflows.StateMachines;
 using Stateflows.Common.Registration.Interfaces;
 using Stateflows.Testing.StateMachines.Sequence;
 using Stateflows.Common.Classes;
+using Stateflows.Testing;
 
 namespace StateMachine.IntegrationTests.Utils
 {
@@ -29,14 +30,21 @@ namespace StateMachine.IntegrationTests.Utils
 
         protected ExecutionSequenceObserver ExecutionSequence => ServiceProvider.GetRequiredService<ExecutionSequenceObserver>();
 
+        private TestingHost testingHost;
+        private TestingHost TestingHost => testingHost ??= ServiceProvider.GetRequiredService<TestingHost>();
+
         public virtual void Initialize()
         {
             ServiceCollection.AddStateflows(b => InitializeStateflows(b));
             ServiceCollection.AddSingleton<IExecutionSequenceBuilder, ExecutionSequence>();
+            ServiceCollection.AddSingleton<TestingHost>();
+            ServiceCollection.AddSingleton<IHostApplicationLifetime>(services => services.GetRequiredService<TestingHost>());
             ServiceCollection.AddLogging(builder => builder.AddConsole());
 
             var hostedServices = ServiceProvider.GetRequiredService<IEnumerable<IHostedService>>();
             Task.WaitAll(hostedServices.Select(s => s.StartAsync(new CancellationToken())).ToArray());
+
+            TestingHost.StartApplication();
 
             ContextValues.GlobalValues.Clear();
             ContextValues.StateValues.Clear();
@@ -46,6 +54,8 @@ namespace StateMachine.IntegrationTests.Utils
 
         public virtual void Cleanup()
         {
+            TestingHost.StopApplication();
+
             _serviceCollection = null;
             _serviceProvider = null;
         }
