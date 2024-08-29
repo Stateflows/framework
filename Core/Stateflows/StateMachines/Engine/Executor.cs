@@ -481,7 +481,6 @@ namespace Stateflows.StateMachines.Engine
             var context = new StateMachineActionContext(Context);
             await Inspector.BeforeStateMachineFinalizeAsync(context);
 
-
             try
             {
                 await Graph.Finalize.WhenAll(Context);

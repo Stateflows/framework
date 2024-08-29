@@ -10,6 +10,7 @@ using Stateflows.Activities.Context.Classes;
 using Stateflows.Activities.Context.Interfaces;
 using Stateflows.Activities.Registration.Builders;
 using Stateflows.Activities.Registration.Interfaces;
+using Stateflows.Common.Exceptions;
 
 namespace Stateflows.Activities.Registration
 {
@@ -128,7 +129,17 @@ namespace Stateflows.Activities.Registration
                 }
                 catch (Exception e)
                 {
-                    await (c as BaseContext).Context.Executor.HandleExceptionAsync(node, e, c as BaseContext);
+                    if (e is StateflowsException)
+                    {
+                        throw;
+                    }
+                    else
+                    {
+                        if (!await (c as BaseContext).Context.Executor.HandleExceptionAsync(node, e, c as BaseContext))
+                        {
+                            throw;
+                        }
+                    }
                 }
             }
             );
@@ -317,7 +328,21 @@ namespace Stateflows.Activities.Registration
                 }
                 catch (Exception e)
                 {
-                    await context.Context.Executor.Inspector.OnNodeFinalizationExceptionAsync(context, e);
+                    if (e is StateflowsException)
+                    {
+                        throw;
+                    }
+                    else
+                    {
+                        if (!await context.Context.Executor.Inspector.OnNodeFinalizationExceptionAsync(context, e))
+                        {
+                            throw;
+                        }
+                        else
+                        {
+                            throw new ExecutionException(e);
+                        }
+                    }
                 }
             });
 
@@ -337,7 +362,21 @@ namespace Stateflows.Activities.Registration
                 }
                 catch (Exception e)
                 {
-                    await context.Context.Executor.Inspector.OnNodeInitializationExceptionAsync(context, e);
+                    if (e is StateflowsException)
+                    {
+                        throw;
+                    }
+                    else
+                    {
+                        if (!await context.Context.Executor.Inspector.OnNodeInitializationExceptionAsync(context, e))
+                        {
+                            throw;
+                        }
+                        else
+                        {
+                            throw new ExecutionException(e);
+                        }
+                    }
                 }
             });
 

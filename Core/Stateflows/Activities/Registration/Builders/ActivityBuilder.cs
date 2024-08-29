@@ -10,6 +10,7 @@ using Stateflows.Activities.Context.Interfaces;
 using Stateflows.Activities.Registration.Extensions;
 using Stateflows.Activities.Registration.Interfaces;
 using Stateflows.Activities.Registration.Interfaces.Base;
+using Stateflows.Common.Exceptions;
 
 namespace Stateflows.Activities.Registration.Builders
 {
@@ -91,7 +92,22 @@ namespace Stateflows.Activities.Registration.Builders
                 }
                 catch (Exception e)
                 {
-                    await c.Context.Executor.Inspector.OnActivityInitializationExceptionAsync(context, context.InitializationEvent, e);
+                    if (e is StateflowsException)
+                    {
+                        throw;
+                    }
+                    else
+                    {
+                        if (!await c.Context.Executor.Inspector.OnActivityInitializationExceptionAsync(context, context.InitializationEvent, e))
+                        {
+                            throw;
+                        }
+                        else
+                        {
+                            throw new ExecutionException(e);
+                        }
+                    }
+
                     result = false;
                 }
 

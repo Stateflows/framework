@@ -11,6 +11,7 @@ using Stateflows.Activities.Registration;
 using Stateflows.Activities.EventHandlers;
 using Stateflows.Activities.Registration.Builders;
 using Stateflows.Activities.Registration.Interfaces;
+using Stateflows.Common.Initializer;
 
 namespace Stateflows.Activities
 {
@@ -25,6 +26,11 @@ namespace Stateflows.Activities
 
             return stateflowsBuilder;
         }
+
+        [DebuggerHidden]
+        public static IStateflowsBuilder AddDefaultInstance<TActivity>(this IStateflowsBuilder stateflowsBuilder, DefaultInstanceInitializationRequestFactoryAsync initializationRequestFactoryAsync = null)
+            where TActivity : class, IActivity
+            => stateflowsBuilder.AddDefaultInstance(new StateMachineClass(Activity<TActivity>.Name).BehaviorClass, initializationRequestFactoryAsync);
 
         private static ActivitiesRegister EnsureActivitiesServices(this IStateflowsBuilder stateflowsBuilder)
         {

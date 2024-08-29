@@ -5,6 +5,7 @@ using Stateflows.Activities.Context.Classes;
 using Stateflows.Activities.Context.Interfaces;
 using Stateflows.Activities.Registration.Interfaces;
 using Stateflows.Utils;
+using Stateflows.Common.Exceptions;
 
 namespace Stateflows.Activities.Registration.Builders
 {
@@ -43,12 +44,21 @@ namespace Stateflows.Activities.Registration.Builders
                 }
                 catch (Exception e)
                 {
-                    if (Edge.Source != null)
+                    if (e is StateflowsException)
                     {
-                        await Edge.Source.HandleExceptionAsync(e, context);
+                        throw;
                     }
-
-                    return null;
+                    else
+                    {
+                        if (!(Edge.Source != null && await Edge.Source.HandleExceptionAsync(e, context)))
+                        {
+                            throw;
+                        }
+                        else
+                        {
+                            throw new ExecutionException(e);
+                        }
+                    }
                 }
             });
 
@@ -75,12 +85,21 @@ namespace Stateflows.Activities.Registration.Builders
                 }
                 catch (Exception e)
                 {
-                    if (Edge.Source != null)
+                    if (e is StateflowsException)
                     {
-                        await Edge.Source.HandleExceptionAsync(e, context);
+                        throw;
                     }
-
-                    return null;
+                    else
+                    {
+                        if (!(Edge.Source != null && await Edge.Source.HandleExceptionAsync(e, context)))
+                        {
+                            throw;
+                        }
+                        else
+                        {
+                            throw new ExecutionException(e);
+                        }
+                    }
                 }
 
             });
