@@ -26,8 +26,7 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         /// <typeparam name="TEvent">Event class</typeparam>
         /// <param name="targetStateName">Target state name</param>
         /// <param name="transitionBuildAction">Transition build action</param>
-        TReturn AddTransition<TEvent>(string targetStateName, TransitionBuildAction<TEvent> transitionBuildAction = null)
-            where TEvent : Event, new();
+        TReturn AddTransition<TEvent>(string targetStateName, TransitionBuildAction<TEvent> transitionBuildAction = null);
 
         /// <summary>
         /// Adds default transition coming from current state.<br/>
@@ -64,8 +63,7 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         /// <typeparam name="TEvent">Event class</typeparam>
         /// <param name="targetStateName">Target state name</param>
         /// <param name="transitionBuildAction">Transition build action</param>
-        TReturn AddInternalTransition<TEvent>(InternalTransitionBuildAction<TEvent> transitionBuildAction)
-            where TEvent : Event, new();
+        TReturn AddInternalTransition<TEvent>(InternalTransitionBuildAction<TEvent> transitionBuildAction);
         #endregion
 
         #region ElseTransitions
@@ -76,8 +74,7 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         /// <typeparam name="TEvent">Event class</typeparam>
         /// <param name="targetStateName">Target state name</param>
         /// <param name="transitionBuildAction">Transition build action</param>
-        TReturn AddElseTransition<TEvent>(string targetStateName, ElseTransitionBuildAction<TEvent> transitionBuildAction = null)
-            where TEvent : Event, new();
+        TReturn AddElseTransition<TEvent>(string targetStateName, ElseTransitionBuildAction<TEvent> transitionBuildAction = null);
 
         /// <summary>
         /// Adds else alternative for all default transitions coming from current state.<br/><br/>
@@ -93,8 +90,7 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         /// </summary>
         /// <typeparam name="TEvent">Event class</typeparam>
         /// <param name="transitionBuildAction">Transition build action</param>
-        TReturn AddElseInternalTransition<TEvent>(ElseInternalTransitionBuildAction<TEvent> transitionBuildAction)
-            where TEvent : Event, new();
+        TReturn AddElseInternalTransition<TEvent>(ElseInternalTransitionBuildAction<TEvent> transitionBuildAction);
         #endregion
     }
 }

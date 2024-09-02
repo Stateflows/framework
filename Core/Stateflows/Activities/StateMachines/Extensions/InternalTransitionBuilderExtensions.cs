@@ -22,7 +22,7 @@ namespace Stateflows.Activities
                 async c =>
                 {
                     var result = false;
-                    if (c.TryLocateActivity(activityName, $"{c.StateMachine.Id.Instance}.{c.SourceState.Name}.{EventInfo<TEvent>.Name}.{Constants.Guard}.{c.Event.Id}", out var a))
+                    if (c.TryLocateActivity(activityName, $"{c.StateMachine.Id.Instance}.{c.SourceState.Name}.{typeof(TEvent).GetEventName()}.{Constants.Guard}.{c.Event.Id}", out var a))
                     {
                         var ev = StateflowsJsonConverter.Clone(c.Event);
                         await Task.Run(async () =>
@@ -63,7 +63,7 @@ namespace Stateflows.Activities
             => builder.AddEffect(
                 c =>
                 {
-                    if (c.TryLocateActivity(activityName, $"{c.StateMachine.Id.Instance}.{c.SourceState.Name}.{EventInfo<TEvent>.Name}.{Constants.Effect}.{c.Event.Id}", out var a))
+                    if (c.TryLocateActivity(activityName, $"{c.StateMachine.Id.Instance}.{c.SourceState.Name}.{typeof(TEvent).GetEventName()}.{Constants.Effect}.{c.Event.Id}", out var a))
                     {
                         var ev = StateflowsJsonConverter.Clone(c.Event);
                         Task.Run(async () =>

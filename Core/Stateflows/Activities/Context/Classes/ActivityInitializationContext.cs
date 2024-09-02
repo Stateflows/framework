@@ -1,11 +1,10 @@
-﻿using Stateflows.Common;
+﻿using System.Linq;
+using System.Collections.Generic;
+using Stateflows.Utils;
+using Stateflows.Common;
 using Stateflows.Activities.Engine;
 using Stateflows.Activities.Context.Interfaces;
 using Stateflows.Activities.Inspection.Interfaces;
-using System.Collections.Generic;
-using Stateflows.Activities.Extensions;
-using System.Linq;
-using Stateflows.Utils;
 
 namespace Stateflows.Activities.Context.Classes
 {
@@ -13,7 +12,6 @@ namespace Stateflows.Activities.Context.Classes
         BaseContext,
         IActivityInitializationContext<TInitializationEvent>,
         IRootContext
-        where TInitializationEvent : Event, new()
     {
         public ActivityInitializationContext(RootContext context, NodeScope nodeScope, TInitializationEvent initializationEvent, List<TokenHolder> inputTokens)
             : base(context, nodeScope)
@@ -43,16 +41,16 @@ namespace Stateflows.Activities.Context.Classes
     }
 
     internal class ActivityInitializationContext :
-        ActivityInitializationContext<Event>,
+        ActivityInitializationContext<object>,
         IActivityInitializationInspectionContext,
         IRootContext
     {
-        public ActivityInitializationContext(BaseContext context, Event initializationEvent, List<TokenHolder> inputTokens)
-            : base(context, initializationEvent, inputTokens)
+        public ActivityInitializationContext(BaseContext context, EventHolder initializationEventHolder, List<TokenHolder> inputTokens)
+            : base(context, initializationEventHolder.BoxedPayload, inputTokens)
         { }
 
-        public ActivityInitializationContext(RootContext context, NodeScope nodeScope, Event initializationEvent, List<TokenHolder> inputTokens)
-            : base(context, nodeScope, initializationEvent, inputTokens)
+        public ActivityInitializationContext(RootContext context, NodeScope nodeScope, EventHolder initializationEventHolder, List<TokenHolder> inputTokens)
+            : base(context, nodeScope, initializationEventHolder.BoxedPayload, inputTokens)
         { }
 
         IActivityInspectionContext IActivityInitializationInspectionContext.Activity => Activity;

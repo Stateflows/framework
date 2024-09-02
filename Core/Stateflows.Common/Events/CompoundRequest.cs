@@ -4,15 +4,35 @@ using Newtonsoft.Json;
 
 namespace Stateflows.Common
 {
-    public class CompoundRequest : Request<CompoundResponse>
+    public interface ICompound
+    {
+        ICompound Add<TEvent>(TEvent @event);
+        ICompound AddRange<TEvent>(params TEvent[] events);
+    }
+
+    public class CompoundRequest : IRequest<CompoundResponse>, ICompound
     {
         [JsonProperty(TypeNameHandling = TypeNameHandling.None)]
         public List<EventHolder> Events { get; set; } = new List<EventHolder>();
 
-        public void AddEvent<TEvent>(TEvent @event)
-            => Events.Add(new EventHolder<TEvent>() { Payload = @event });
+        ICompound ICompound.Add<TEvent>(TEvent @event)
+            => Add(@event);
 
-        public void AddEvents<TEvent>(IEnumerable<TEvent> events)
-            => Events.AddRange(events.Select(@event => new EventHolder<TEvent>() { Payload = @event }));
+        public CompoundRequest Add<TEvent>(TEvent @event)
+        {
+            Events.Add(new EventHolder<TEvent>() { Payload = @event });
+
+            return this;
+        }
+
+        ICompound ICompound.AddRange<TEvent>(params TEvent[] events)
+            => AddRange(events);
+
+        public CompoundRequest AddRange<TEvent>(params TEvent[] events)
+        {
+            Events.AddRange(events.Select(@event => new EventHolder<TEvent>() { Payload = @event }));
+
+            return this;
+        }
     }
 }

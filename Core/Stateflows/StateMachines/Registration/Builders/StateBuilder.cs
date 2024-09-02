@@ -200,15 +200,15 @@ namespace Stateflows.StateMachines.Registration.Builders
         public IStateBuilder AddDeferredEvent<TEvent>() where TEvent : Event, new()
         {
             if (typeof(TEvent) == typeof(CompletionEvent))
-                throw new DeferralDefinitionException(EventInfo<TEvent>.Name, "Completion event cannot be deferred.", Vertex.Graph.Class);
+                throw new DeferralDefinitionException(typeof(TEvent).GetEventName(), "Completion event cannot be deferred.", Vertex.Graph.Class);
 
             if (typeof(TEvent) == typeof(Finalize))
-                throw new DeferralDefinitionException(EventInfo<TEvent>.Name, "Exit event cannot be deferred.", Vertex.Graph.Class);
+                throw new DeferralDefinitionException(typeof(TEvent).GetEventName(), "Exit event cannot be deferred.", Vertex.Graph.Class);
 
             if (typeof(TEvent).IsSubclassOf(typeof(TimeEvent)))
-                throw new DeferralDefinitionException(EventInfo<TEvent>.Name, "Time events cannot be deferred.", Vertex.Graph.Class);
+                throw new DeferralDefinitionException(typeof(TEvent).GetEventName(), "Time events cannot be deferred.", Vertex.Graph.Class);
 
-            Vertex.DeferredEvents.Add(EventInfo<TEvent>.Name);
+            Vertex.DeferredEvents.Add(typeof(TEvent).GetEventName());
 
             return this;
         }
@@ -217,7 +217,6 @@ namespace Stateflows.StateMachines.Registration.Builders
         #region Transitions
         [DebuggerHidden]
         private IStateBuilder AddTransitionInternal<TEvent>(string targetStateName, bool isElse, TransitionBuildAction<TEvent> transitionBuildAction = null)
-            where TEvent : Event, new()
         {
             var targetEdgeType = targetStateName == Constants.DefaultTransitionTarget
                 ? TriggerType.InternalTransition
@@ -225,14 +224,14 @@ namespace Stateflows.StateMachines.Registration.Builders
 
             var edge = new Edge()
             {
-                Trigger = EventInfo<TEvent>.Name,
+                Trigger = typeof(TEvent).GetEventName(),
                 TriggerType = typeof(TEvent),
                 IsElse = isElse,
                 Graph = Vertex.Graph,
                 SourceName = Vertex.Name,
                 Source = Vertex,
                 TargetName = targetStateName,
-                Type = EventInfo<TEvent>.Name == Constants.CompletionEvent
+                Type = typeof(TEvent).GetEventName() == Constants.CompletionEvent
                     ? TriggerType.DefaultTransition
                     : targetEdgeType
             };
@@ -256,12 +255,10 @@ namespace Stateflows.StateMachines.Registration.Builders
 
         [DebuggerHidden]
         public IStateBuilder AddTransition<TEvent>(string targetStateName, TransitionBuildAction<TEvent> transitionBuildAction = null)
-            where TEvent : Event, new()
             => AddTransitionInternal<TEvent>(targetStateName, false, transitionBuildAction);
 
         [DebuggerHidden]
         public IStateBuilder AddElseTransition<TEvent>(string targetStateName, ElseTransitionBuildAction<TEvent> transitionBuildAction = null)
-            where TEvent : Event, new()
             => AddTransitionInternal<TEvent>(targetStateName, true, builder => transitionBuildAction?.Invoke(builder as IElseTransitionBuilder<TEvent>));
 
         [DebuggerHidden]
@@ -274,12 +271,10 @@ namespace Stateflows.StateMachines.Registration.Builders
 
         [DebuggerHidden]
         public IStateBuilder AddInternalTransition<TEvent>(InternalTransitionBuildAction<TEvent> transitionBuildAction)
-            where TEvent : Event, new()
             => AddTransition<TEvent>(Constants.DefaultTransitionTarget, builder => transitionBuildAction?.Invoke(builder as IInternalTransitionBuilder<TEvent>));
 
         [DebuggerHidden]
         public IStateBuilder AddElseInternalTransition<TEvent>(ElseInternalTransitionBuildAction<TEvent> transitionBuildAction)
-            where TEvent : Event, new()
             => AddElseTransition<TEvent>(Constants.DefaultTransitionTarget, builder => transitionBuildAction?.Invoke(builder as IElseInternalTransitionBuilder<TEvent>));
 
         [DebuggerHidden]
@@ -412,7 +407,6 @@ namespace Stateflows.StateMachines.Registration.Builders
             => AddElseInternalTransition<TEvent>(transitionBuildAction) as IBehaviorTypedStateBuilder;
 
         public IEmbeddedBehaviorBuilder AddForwardedEvent<TEvent>(ForwardedEventBuildAction<TEvent> buildAction = null)
-            where TEvent : Event, new()
             => AddInternalTransition<TEvent>(b =>
             {
                 b.AddEffect(async c =>

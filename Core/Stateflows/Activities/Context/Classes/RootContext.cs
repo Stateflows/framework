@@ -325,11 +325,11 @@ namespace Stateflows.Activities.Context.Classes
             set => Context.Values[Constants.ForceConsumed] = value;
         }
 
-        private readonly Stack<Event> EventsStack = new Stack<Event>();
+        private readonly Stack<EventHolder> EventsStack = new Stack<EventHolder>();
 
-        public void SetEvent(Event @event)
+        public void SetEvent(EventHolder eventHolder)
         {
-            EventsStack.Push(@event);
+            EventsStack.Push(eventHolder);
         }
 
         public void ClearEvent()
@@ -337,7 +337,7 @@ namespace Stateflows.Activities.Context.Classes
             EventsStack.Pop();
         }
 
-        public Event Event => EventsStack.Any()
+        public EventHolder Event => EventsStack.Any()
             ? EventsStack.Peek()
             : null;
 

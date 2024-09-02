@@ -9,7 +9,6 @@ namespace Stateflows.Activities
     {
         Type EventType { get; }
 
-        Task<EventStatus> TryHandleEventAsync<TEvent>(IEventInspectionContext<TEvent> context)
-            where TEvent : Event, new();
+        Task<EventStatus> TryHandleEventAsync<TEvent>(IEventInspectionContext<TEvent> context);
     }
 }

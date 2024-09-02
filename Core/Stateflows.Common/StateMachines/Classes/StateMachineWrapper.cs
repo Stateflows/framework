@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Threading.Tasks;
 using Stateflows.StateMachines;
 
@@ -16,10 +15,10 @@ namespace Stateflows.Common.StateMachines.Classes
             Behavior = consumer;
         }
 
-        public Task<SendResult> SendAsync<TEvent>(TEvent @event, IEnumerable<EventHeader> headers = null)
+        public Task<SendResult> SendAsync<TEvent>(TEvent @event, params EventHeader[] headers)
             => Behavior.SendAsync(@event);
 
-        public Task<RequestResult<TResponse>> RequestAsync<TResponse>(Request<TResponse> request, IEnumerable<EventHeader> headers = null)
+        public Task<RequestResult<TResponse>> RequestAsync<TResponse>(IRequest<TResponse> request, params EventHeader[] headers)
             => Behavior.RequestAsync(request);
 
         public Task WatchAsync<TNotification>(Action<TNotification> handler)

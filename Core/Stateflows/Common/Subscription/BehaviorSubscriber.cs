@@ -29,7 +29,7 @@ namespace Stateflows.Common.Subscription
                 SentAt = DateTime.Now,
             };
 
-            if (context.Subscribers.TryGetValue(EventInfo<TNotificationEvent>.Name, out var behaviorIds))
+            if (context.Subscribers.TryGetValue(typeof(TNotificationEvent).GetEventName(), out var behaviorIds))
             {
                 await Task.WhenAll(
                     behaviorIds.Select(
@@ -54,7 +54,7 @@ namespace Stateflows.Common.Subscription
                 SentAt = DateTime.Now,
             };
 
-            request.NotificationNames.Add(EventInfo<TNotificationEvent>.Name);
+            request.NotificationNames.Add(typeof(TNotificationEvent).GetEventName());
 
             return behaviorLocator.TryLocateBehavior(behaviorId, out var behavior)
                 ? behavior.SendAsync(request)
@@ -74,7 +74,7 @@ namespace Stateflows.Common.Subscription
                 SentAt = DateTime.Now,
             };
 
-            request.NotificationNames.Add(EventInfo<TNotificationEvent>.Name);
+            request.NotificationNames.Add(typeof(TNotificationEvent).GetEventName());
 
             return behaviorLocator.TryLocateBehavior(behaviorId, out var behavior)
                 ? behavior.SendAsync(request)

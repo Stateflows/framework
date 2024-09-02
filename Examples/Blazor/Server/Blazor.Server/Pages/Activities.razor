@@ -145,6 +145,20 @@
         if (locator.TryLocateActivity(GetCurrentId(), out var activity))
         {
             await activity.SendAsync(new Examples.Common.SomeEvent());
+            await activity.SendInputAsync(34, 4, 2);
+            await activity.SendInputAsync(e => e
+                .Add(32)
+                .Add("boo")
+                .AddRange("asd", "weg")
+            );
+            await activity.WatchOutputAsync(e =>
+            {
+                var ints = e.GetAllOfType<int>();
+            });
+
+            await activity.WatchOutputAsync<int>(o => o
+               .Select(i => i.ToString())
+            );
         }
         else
         {
@@ -156,7 +170,7 @@
     {
         if (locator.TryLocateActivity(GetCurrentId(), out var activity))
         {
-            var response = (await activity.ResetAsync())?.Response;
+            await activity.ResetAsync();
             message = "Activity resetted";
 
             await RefreshAInfo(activity);

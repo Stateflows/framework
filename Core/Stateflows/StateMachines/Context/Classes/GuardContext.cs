@@ -5,7 +5,6 @@ using Stateflows.StateMachines.Inspection.Interfaces;
 namespace Stateflows.StateMachines.Context.Classes
 {
     internal class GuardContext<TEvent> : TransitionContext<TEvent>, IGuardInspectionContext<TEvent>
-        where TEvent : Event, new()
     {
         public GuardContext(RootContext context, Edge edge) : base(context, edge)
         { }

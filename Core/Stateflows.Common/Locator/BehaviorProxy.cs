@@ -20,26 +20,26 @@ namespace Stateflows.Common.Locator
             Interceptor = interceptor;
         }
 
-        public async Task<SendResult> SendAsync<TEvent>(TEvent @event, IEnumerable<EventHeader> headers = null)
+        public async Task<SendResult> SendAsync<TEvent>(TEvent @event, params EventHeader[] headers)
         {
             var headersList = headers?.ToList() ?? new List<EventHeader>();
 
             await Interceptor.BeforeDispatchEventAsync(@event, headersList);
 
-            var result = await Behavior.SendAsync(@event, headersList);
+            var result = await Behavior.SendAsync(@event, headersList.ToArray());
 
             await Interceptor.AfterDispatchEventAsync(@event);
 
             return result;
         }
 
-        public async Task<RequestResult<TResponse>> RequestAsync<TResponse>(Request<TResponse> request, IEnumerable<EventHeader> headers = null)
+        public async Task<RequestResult<TResponse>> RequestAsync<TResponse>(IRequest<TResponse> request, params EventHeader[] headers)
         {
             var headersList = headers?.ToList() ?? new List<EventHeader>();
 
             await Interceptor.BeforeDispatchEventAsync(@request, headersList);
 
-            var result = await Behavior.RequestAsync(@request, headersList);
+            var result = await Behavior.RequestAsync(@request, headersList.ToArray());
 
             await Interceptor.AfterDispatchEventAsync(@request);
 

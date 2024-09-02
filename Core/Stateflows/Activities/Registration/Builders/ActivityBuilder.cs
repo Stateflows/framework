@@ -59,7 +59,7 @@ namespace Stateflows.Activities.Registration.Builders
             {
                 var context = new ActivityInitializationContext(
                     c,
-                    c.Context.Event as Initialize,
+                    c.Context.Event as EventHolder<Initialize>,
                     (c as ActivityInitializationContext).InputTokens
                 );
                 return actionAsync(context);
@@ -75,7 +75,7 @@ namespace Stateflows.Activities.Registration.Builders
 
             actionAsync = actionAsync.AddActivityInvocationContext(Result);
 
-            var initializerName = EventInfo<TInitializationEvent>.Name;
+            var initializerName = typeof(TInitializationEvent).GetEventName();
 
             return AddInitializer(typeof(TInitializationEvent), initializerName, async c =>
             {

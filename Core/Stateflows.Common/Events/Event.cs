@@ -27,14 +27,14 @@ namespace Stateflows.Common
         public TPayload Payload { get; set; }
     }
 
-    public static class EventInfo<TEvent>
-    {
-        public static string Name => EventInfo.GetName(typeof(TEvent));
-    }
+    //public static class EventInfo<TEvent>
+    //{
+    //    public static string Name => EventInfo.GetName(typeof(TEvent));
+    //}
 
-    public static class EventInfo
-    {
-        public static string GetName(Type @type)
-            => @type.GetReadableName();
-    }
+    //public static class EventInfo
+    //{
+    //    public static string GetName(Type @type)
+    //        => @type.GetReadableName();
+    //}
 }

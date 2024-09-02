@@ -1,6 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Threading.Tasks;
 using Stateflows.Common.Interfaces;
 
@@ -13,13 +11,16 @@ namespace Stateflows.Common
     {
         BehaviorId Id { get; }
 
-        Task<SendResult> SendAsync<TEvent>(TEvent @event, IEnumerable<EventHeader> headers = null);
+        Task<SendResult> SendAsync<TEvent>(TEvent @event, params EventHeader[] headers);
 
-        [Obsolete("Use CompoundRequest with SendAsync() directly")]
-        Task<RequestResult<CompoundResponse>> SendCompoundAsync(params Event[] events)
-            => RequestAsync(new CompoundRequest() { Events = events.Select(@event => new EventHolder<Event>() { Payload = @event } as EventHolder).ToList() });
+        Task<RequestResult<TResponse>> RequestAsync<TResponse>(IRequest<TResponse> request, params EventHeader[] headers);
 
-        Task<RequestResult<TResponse>> RequestAsync<TResponse>(Request<TResponse> request, IEnumerable<EventHeader> headers = null);
+        Task<RequestResult<CompoundResponse>> SendCompoundAsync(Action<ICompound> builderAction, params EventHeader[] headers)
+        {
+            var compound = new CompoundRequest();
+            builderAction(compound);
+            return RequestAsync(compound, headers);
+        }
 
         Task<SendResult> ResetAsync(ResetMode resetMode = ResetMode.Full)
             => SendAsync(new Reset() { Mode = resetMode });

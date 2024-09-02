@@ -3,6 +3,6 @@
 namespace Stateflows.StateMachines.Events
 {
     [DoNotTrace]
-    public sealed class CurrentStateRequest : Request<CurrentState>
+    public sealed class CurrentStateRequest : IRequest<CurrentState>
     { }
 }

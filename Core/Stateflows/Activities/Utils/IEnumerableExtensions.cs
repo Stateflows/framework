@@ -25,13 +25,13 @@ namespace Stateflows.Utils
             }
         }
 
-        internal static IEnumerable<TokenHolder<T>> ToTokens<T>(this IEnumerable<T> source)
+        internal static IEnumerable<TokenHolder<T>> ToTokenHolders<T>(this IEnumerable<T> source)
             => source.Select(t => new TokenHolder<T>() { Payload = t });
 
-        internal static IEnumerable<T> FromTokens<T>(this IEnumerable<TokenHolder<T>> source)
+        internal static IEnumerable<T> ToTokens<T>(this IEnumerable<TokenHolder<T>> source)
             => source.Select(t => t.Payload);
 
-        internal static IEnumerable<object> FromTokens(this IEnumerable<TokenHolder> source)
+        internal static IEnumerable<object> ToBoxedTokens(this IEnumerable<TokenHolder> source)
             => source.Select(t => t.BoxedPayload);
     }
 }

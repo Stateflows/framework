@@ -25,16 +25,11 @@ namespace Stateflows.Common
         protected abstract object GetBoxedPayload();
     }
 
-    public class EventHolder<TEvent> : EventHolder
+    public sealed class EventHolder<TEvent> : EventHolder
     {
-        public EventHolder()
-        {
-            Payload = default;
-        }
-
         public override string Name => name ??= typeof(TEvent).GetReadableName();
 
-        public TEvent Payload { get; set; }
+        public TEvent Payload { get; set; } = default;
 
         protected override object GetBoxedPayload()
             => Payload;

@@ -8,7 +8,7 @@ namespace Stateflows.Activities.StateMachines.Interfaces
         IStateActionActivityBuilder,
         IInitializedStateActionActivityBuilder
     {
-        public StateActionActivityInitializationBuilderAsync<Event> InitializationBuilder { get; private set; } = null;
+        public StateActionActivityInitializationBuilderAsync<object> InitializationBuilder { get; private set; } = null;
 
         public StateActionActivityBuilder(StateActionActivityBuildAction buildAction)
         {

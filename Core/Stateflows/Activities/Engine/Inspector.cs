@@ -92,7 +92,6 @@ namespace Stateflows.Activities.Engine
         }
 
         public async Task<bool> BeforeProcessEventAsync<TEvent>(EventContext<TEvent> context)
-            where TEvent : Event, new()
         {
             var plugin = await Plugins.RunSafe(i => i.BeforeProcessEventAsync(context), nameof(BeforeProcessEventAsync), Logger);
             var global = await GlobalInterceptor.BeforeProcessEventAsync(
@@ -104,7 +103,6 @@ namespace Stateflows.Activities.Engine
         }
 
         public async Task AfterProcessEventAsync<TEvent>(EventContext<TEvent> context)
-            where TEvent : Event, new()
         {
             await Interceptors.RunSafe(i => i.AfterProcessEventAsync(context), nameof(AfterProcessEventAsync), Logger);
             await GlobalInterceptor.AfterProcessEventAsync(new Common.Context.Classes.EventContext<TEvent>(context.Context.Context, Executor.NodeScope.ServiceProvider, context.Event));

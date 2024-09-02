@@ -1,8 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
+using Stateflows.Common.Extensions;
 
-namespace Stateflows.Common.Extensions
+namespace Stateflows.Common
 {
     public static class EventExtensions
     {
@@ -26,7 +27,14 @@ namespace Stateflows.Common.Extensions
                         isValid = false;
                     }
 
-                    results.Add(new RequestResult(ev, @event.GetResponse(), status, validation));
+                    results.Add(new RequestResult(
+                        ev,
+                        @event is IRequest request
+                            ? request.GetResponseHolder()
+                            : null,
+                        status,
+                        validation
+                    ));
                 }
 
                 if (!isValid)
@@ -44,23 +52,23 @@ namespace Stateflows.Common.Extensions
             return new EventValidation(isValid, validationResults);
         }
 
-        public static bool IsRequest(this Event @event)
-            => @event.GetType().IsSubclassOfRawGeneric(typeof(Request<>));
+        public static bool IsRequest(this object @event)
+            => @event.GetType().IsSubclassOfRawGeneric(typeof(IRequest<>));
 
-        public static Type GetResponseType(this Event @event)
-            => @event.GetType().GetGenericParameterOf(typeof(Request<>));
+        //public static Type GetResponseType(this Event @event)
+        //    => @event.GetType().GetGenericParameterOf(typeof(IRequest<>));
 
-        public static EventHolder GetResponse<TEvent>(this TEvent @event)
-            => @event is IRequest request
-            ? request.GeneralResponseHolder
-            : null;
+        //public static EventHolder GetResponse<TEvent>(this TEvent @event)
+        //    => @event is IRequest request
+        //    ? request.GetResponse()
+        //    : null;
 
-        public static void Respond(this Event @event, Response response)
-        {
-            if (@event.IsRequest())
-            {
-                @event.GetType().GetMethod("Respond").Invoke(@event, new object[] { response });
-            }
-        }
+        //public static void Respond(this Event @event, Response response)
+        //{
+        //    if (@event.IsRequest())
+        //    {
+        //        @event.GetType().GetMethod("Respond").Invoke(@event, new object[] { response });
+        //    }
+        //}
     }
 }

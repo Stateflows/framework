@@ -2,6 +2,6 @@
 
 namespace Examples.Common
 {
-    public class ExampleRequest : Request<ExampleResponse>
+    public class ExampleRequest : IRequest<ExampleResponse>
     { }
 }

@@ -5,7 +5,6 @@ using System.Threading.Tasks;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using Microsoft.Extensions.DependencyInjection;
-using Stateflows.Utils;
 using Stateflows.Common;
 using Stateflows.Common.Context;
 using Stateflows.Common.Interfaces;
@@ -24,6 +23,7 @@ namespace Stateflows.Activities.Engine
         public readonly ActivitiesRegister Register;
         public readonly IEnumerable<IActivityEventHandler> EventHandlers;
         public readonly IServiceProvider ServiceProvider;
+        public readonly MethodInfo Method;
 
         public Processor(
             ActivitiesRegister register,
@@ -34,20 +34,19 @@ namespace Stateflows.Activities.Engine
             Register = register;
             ServiceProvider = serviceProvider.CreateScope().ServiceProvider;
             EventHandlers = eventHandlers;
+            Method = typeof(IActivityEventHandler).GetMethod(nameof(IActivityEventHandler.TryHandleEventAsync));
         }
 
-        private Task<EventStatus> TryHandleEventAsync<TEvent>(EventContext<TEvent> context)
-            where TEvent : Event, new()
+        private Task<EventStatus> TryHandleEventAsync(EventContext<object> context)
         {
             var eventHandler = EventHandlers.FirstOrDefault(h => h.EventType.IsInstanceOfType(context.Event));
-
+                        
             return eventHandler != null
-                ? eventHandler.TryHandleEventAsync(context)
+                ? Method.MakeGenericMethod(eventHandler.EventType).Invoke(eventHandler, new object[] { context }) as Task<EventStatus>
                 : Task.FromResult(EventStatus.NotConsumed);
         }
 
-        public async Task<EventStatus> ProcessEventAsync<TEvent>(BehaviorId id, TEvent @event, IServiceProvider serviceProvider, List<Exception> exceptions)
-            where TEvent : Event, new()
+        public async Task<EventStatus> ProcessEventAsync(BehaviorId id, EventHolder eventHolder, IServiceProvider serviceProvider, List<Exception> exceptions)
         {
             var result = EventStatus.Undelivered;
 
@@ -70,13 +69,14 @@ namespace Stateflows.Activities.Engine
 
                 await executor.HydrateAsync(context);
 
-                if (@event is CompoundRequest compoundRequest)
+                if (eventHolder is EventHolder<CompoundRequest> compoundRequestHolder)
                 {
+                    var compoundRequest = compoundRequestHolder.Payload;
                     result = EventStatus.Consumed;
                     var results = new List<RequestResult>();
                     foreach (var ev in compoundRequest.Events)
                     {
-                        ev.Headers.AddRange(@event.Headers);
+                        ev.Headers.AddRange(eventHolder.Headers);
 
                         var status = await ExecuteBehaviorAsync(ev, result, stateflowsContext, graph, executor, context);
 
@@ -93,7 +93,7 @@ namespace Stateflows.Activities.Engine
                 }
                 else
                 {
-                    result = await ExecuteBehaviorAsync(@event, result, stateflowsContext, graph, executor, context);
+                    result = await ExecuteBehaviorAsync(eventHolder, result, stateflowsContext, graph, executor, context);
                 }
 
                 exceptions.AddRange(context.Exceptions);
@@ -104,37 +104,41 @@ namespace Stateflows.Activities.Engine
             return result;
         }
 
-        private async Task<EventStatus> ExecuteBehaviorAsync<TEvent>(EventHolder<TEvent> eventHolder, EventStatus result, StateflowsContext stateflowsContext, Graph graph, Executor executor, RootContext context)
+        private async Task<EventStatus> ExecuteBehaviorAsync(EventHolder eventHolder, EventStatus result, StateflowsContext stateflowsContext, Graph graph, Executor executor, RootContext context)
         {
             context.SetEvent(eventHolder);
 
-            var eventContext = new EventContext<TEvent>(context, executor.NodeScope);
+            var eventContext = new EventContext<object>(context, executor.NodeScope);
 
             if (await executor.Inspector.BeforeProcessEventAsync(eventContext))
             {
-                Event currentEvent = eventHolder;
+                EventHolder currentEvent = eventHolder;
 
-                IEnumerable<TokenHolder> input = null;
-
-                if (eventHolder is ExecutionRequest executionRequest)
-                {
-                    if (executor.Graph.Interactive || executor.BehaviorStatus != BehaviorStatus.NotInitialized)
-                    {
-                        return EventStatus.NotConsumed;
-                    }
-
-                    context.SetEvent(executionRequest.InitializationEvent);
-                        
-                    currentEvent = executionRequest.InitializationEvent;
-
-                    input = executionRequest.InputTokens?.ToArray() ?? Array.Empty<TokenHolder>();
-                }
-                
                 var attributes = currentEvent.GetType().GetCustomAttributes<NoImplicitInitializationAttribute>();
                 if (!executor.Initialized && !attributes.Any())
                 {
-                    result = await executor.InitializeAsync(currentEvent, input);
+                    result = await executor.InitializeAsync(currentEvent);
                 }
+
+                //IEnumerable<TokenHolder> input = null;
+
+                //if (eventHolder is EventHolder<TokensInput> tokensInputHolder)
+                //{
+                //    var tokensInput = tokensInputHolder.Payload;
+
+                //    //if (executor.Graph.Interactive || executor.BehaviorStatus != BehaviorStatus.NotInitialized)
+                //    //{
+                //    //    return EventStatus.NotConsumed;
+                //    //}
+
+                //    //context.SetEvent(executionRequest.InitializationEvent);
+                        
+                //    //currentEvent = executionRequest.InitializationEvent;
+
+                //    var input = tokensInput.InputTokens?.ToArray() ?? Array.Empty<TokenHolder>();
+
+                //    await executor.
+                //}
 
                 if (result != EventStatus.Initialized)
                 {
@@ -165,12 +169,12 @@ namespace Stateflows.Activities.Engine
                     }
                 }
 
-                if (eventHolder is ExecutionRequest executionRequest2)
-                {
-                    context.ClearEvent();
+                //if (eventHolder is EventHolder<ExecutionRequest> executionRequestHolder2)
+                //{
+                //    context.ClearEvent();
 
-                    executionRequest2.Respond(new ExecutionResponse() { OutputTokens = await executor.GetResultAsync() });
-                }
+                //    executionRequestHolder2.Payload.Respond(new ExecutionResponse() { OutputTokens = await executor.GetResultAsync() });
+                //}
 
                 await executor.Inspector.AfterProcessEventAsync(eventContext);
             }

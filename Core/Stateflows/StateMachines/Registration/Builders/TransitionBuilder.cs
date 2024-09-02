@@ -22,7 +22,6 @@ namespace Stateflows.StateMachines.Registration.Builders
         IElseDefaultTransitionBuilder,
         IBehaviorBuilder,
         IForwardedEventBuilder<TEvent>
-        where TEvent : Event, new()
     {
         public Edge Edge;
 

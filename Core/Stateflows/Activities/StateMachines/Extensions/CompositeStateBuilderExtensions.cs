@@ -2,7 +2,6 @@
 using Stateflows.Common;
 using Stateflows.Common.Classes;
 using Stateflows.StateMachines.Sync;
-using Stateflows.Activities.Events;
 using Stateflows.Activities.Extensions;
 using Stateflows.Activities.StateMachines.Interfaces;
 using Stateflows.StateMachines.Registration;
@@ -22,15 +21,16 @@ namespace Stateflows.Activities
                             Task.Run(async () =>
                             {
                                 var integratedActivityBuilder = new StateActionActivityBuilder(buildAction);
-                                Event initializationEvent = (integratedActivityBuilder.InitializationBuilder != null)
+                                var initializationEvent = (integratedActivityBuilder.InitializationBuilder != null)
                                     ? await integratedActivityBuilder.InitializationBuilder(c)
                                     : new Initialize();
-                                return a.Compound()
-                                    .AddEvent(integratedActivityBuilder.GetSubscribe(c.StateMachine.Id))
-                                    .AddEvent(new SetGlobalValues() { Values = (c.StateMachine.Values as ContextValuesCollection).Values })
-                                    .AddEvent(new ExecutionRequest() { InitializationEvent = initializationEvent })
-                                    .AddEvent(integratedActivityBuilder.GetUnsubscribe(c.StateMachine.Id))
-                                    .RequestAsync();
+
+                                return a.SendCompoundAsync(ev => ev
+                                    .Add(integratedActivityBuilder.GetSubscribe(c.StateMachine.Id))
+                                    .Add(new SetGlobalValues() { Values = (c.StateMachine.Values as ContextValuesCollection).Values })
+                                    .Add(initializationEvent)
+                                    .Add(integratedActivityBuilder.GetUnsubscribe(c.StateMachine.Id))
+                                );
                             });
                         }
                     }
@@ -50,14 +50,15 @@ namespace Stateflows.Activities
                             Task.Run(async () =>
                             {
                                 var integratedActivityBuilder = new StateActionActivityBuilder(buildAction);
-                                Event initializationEvent = (integratedActivityBuilder.InitializationBuilder != null)
+                                var initializationEvent = (integratedActivityBuilder.InitializationBuilder != null)
                                     ? await integratedActivityBuilder.InitializationBuilder(c)
                                     : new Initialize();
-                                return a.SendCompoundAsync(
-                                    integratedActivityBuilder.GetSubscribe(c.StateMachine.Id),
-                                    new SetGlobalValues() { Values = (c.StateMachine.Values as ContextValuesCollection).Values },
-                                    new ExecutionRequest() { InitializationEvent = initializationEvent },
-                                    integratedActivityBuilder.GetUnsubscribe(c.StateMachine.Id)
+
+                                return a.SendCompoundAsync(ev => ev
+                                    .Add(integratedActivityBuilder.GetSubscribe(c.StateMachine.Id))
+                                    .Add(new SetGlobalValues() { Values = (c.StateMachine.Values as ContextValuesCollection).Values })
+                                    .Add(initializationEvent)
+                                    .Add(integratedActivityBuilder.GetUnsubscribe(c.StateMachine.Id))
                                 );
                             });
                         }

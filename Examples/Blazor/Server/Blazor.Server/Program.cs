@@ -21,6 +21,7 @@ using Blazor.Server;
 using Stateflows.StateMachines.Context.Interfaces;
 using Stateflows.Common.Exceptions;
 using Stateflows.Common.Utilities;
+using Stateflows.Common.Extensions;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -64,7 +65,7 @@ builder.Services.AddStateflows(b => b
                 .AddTransition<SomeEvent>("state2")
                 .AddTransition<Startup>("state3")
                 .AddInternalTransition<ExampleRequest>(b => b
-                    .AddEffect(c =>
+                    .AddEffect(async c =>
                     {
                         c.Event.Respond(new ExampleResponse() { ResponseData = "Example response data" });
                     })

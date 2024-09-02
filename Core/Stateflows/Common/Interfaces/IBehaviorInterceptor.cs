@@ -7,7 +7,7 @@ namespace Stateflows.Common
     {
         Task AfterHydrateAsync(IBehaviorActionContext context);
         Task BeforeDehydrateAsync(IBehaviorActionContext context);
-        Task<bool> BeforeProcessEventAsync(IEventContext<Event> context);
-        Task AfterProcessEventAsync(IEventContext<Event> context);
+        Task<bool> BeforeProcessEventAsync<TEvent>(IEventContext<TEvent> context);
+        Task AfterProcessEventAsync<TEvent>(IEventContext<TEvent> context);
     }
 }

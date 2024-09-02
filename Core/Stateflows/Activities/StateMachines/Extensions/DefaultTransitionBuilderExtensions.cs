@@ -3,13 +3,13 @@ using System.Diagnostics;
 using System.Threading.Tasks;
 using Stateflows.Common;
 using Stateflows.Common.Classes;
+using Stateflows.Common.Utilities;
 using Stateflows.Activities.Events;
 using Stateflows.Activities.Extensions;
 using Stateflows.Activities.StateMachines.Interfaces;
 using Stateflows.StateMachines.Events;
 using Stateflows.StateMachines.Registration;
 using Stateflows.StateMachines.Registration.Interfaces;
-using Stateflows.Common.Utilities;
 
 namespace Stateflows.Activities
 {
@@ -28,20 +28,20 @@ namespace Stateflows.Activities
                         await Task.Run(async () =>
                         {
                             var integratedActivityBuilder = new TransitionActivityBuilder<CompletionEvent>(buildAction);
-                            Event initializationEvent = (integratedActivityBuilder.InitializationBuilder != null)
+
+                            var initializationEvent = integratedActivityBuilder.InitializationBuilder != null
                                 ? await integratedActivityBuilder.InitializationBuilder(c)
                                 : new Initialize();
-                            var executionRequest = new ExecutionRequest() { InitializationEvent = initializationEvent };
-                            executionRequest.AddInputToken(ev);
 
-                            var sendResult = await a.SendCompoundAsync(
-                                integratedActivityBuilder.GetSubscribe(c.StateMachine.Id),
-                                new SetGlobalValues() { Values = (c.StateMachine.Values as ContextValuesCollection).Values },
-                                executionRequest,
-                                integratedActivityBuilder.GetUnsubscribe(c.StateMachine.Id)
+                            var sendResult = await a.SendCompoundAsync(async e => e
+                                .Add(integratedActivityBuilder.GetSubscribe(c.StateMachine.Id))
+                                .Add(new SetGlobalValues() { Values = (c.StateMachine.Values as ContextValuesCollection).Values })
+                                .Add(initializationEvent)
+                                .Add(new Events.TokensInput().Add(ev))
+                                .Add(integratedActivityBuilder.GetUnsubscribe(c.StateMachine.Id))
                             );
 
-                            result = (sendResult.Response.Results.Skip(2).Take(1).First().Response as ExecutionResponse).OutputTokens.OfType<TokenHolder<bool>>().FirstOrDefault()?.Payload ?? false;
+                            result = (sendResult.Response.Results.Skip(3).Take(1).First().Response as ExecutionResponse).OutputTokens.OfType<TokenHolder<bool>>().FirstOrDefault()?.Payload ?? false;
                         });
                     }
 

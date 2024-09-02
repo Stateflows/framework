@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Stateflows.Activities;
@@ -17,35 +18,48 @@ namespace Stateflows.Common.Activities.Classes
             Behavior = consumer;
         }
 
-        public Task<RequestResult<ExecutionResponse>> ExecuteAsync(Event initializationEvent, Action<IInputContainer> inputBuilder = null)
+        public Task<SendResult> SendInputAsync(Action<ITokensInput> tokensAction)
         {
-            var request = new ExecutionRequest() { InitializationEvent = initializationEvent };
-
-            inputBuilder?.Invoke(request);
-
-            return Behavior.RequestAsync(request);
+            var stream = new TokensInput();
+            tokensAction(stream);
+            return SendAsync(stream);
         }
 
-        public Task<RequestResult<ExecutionResponse>> ExecuteAsync(Action<IInputContainer> inputBuilder = null)
+        public Task<SendResult> SendInputAsync<TToken>(params TToken[] tokens)
         {
-            var request = new ExecutionRequest();
+            var stream = new TokensInput<TToken>()
+            {
+                Tokens = tokens
+                    .Select(token => new TokenHolder<TToken>() { Payload = token } as TokenHolder)
+                    .ToList()
+            };
 
-            inputBuilder?.Invoke(request);
-
-            return Behavior.RequestAsync(request);
+            return SendAsync(stream);
         }
 
-        public Task<SendResult> SendAsync<TEvent>(TEvent @event, IEnumerable<EventHeader> headers = null)
+        public Task WatchOutputAsync(Action<ITokensOutput> handler)
+            => Behavior.WatchAsync<TokensOutput>(handler);
+
+        public Task WatchOutputAsync<TToken>(Action<IEnumerable<TToken>> handler)
+            => Behavior.WatchAsync<TokensOutput<TToken>>(output => handler(output.GetAll()));
+
+        public Task UnwatchOutputAsync()
+            => Behavior.UnwatchAsync<TokensOutput>();
+
+        public Task UnwatchOutputAsync<TToken>()
+            => Behavior.UnwatchAsync<TokensOutput<TToken>>();
+
+        public Task<SendResult> SendAsync<TEvent>(TEvent @event, params EventHeader[] headers)
             => Behavior.SendAsync(@event, headers);
 
-        public Task<RequestResult<TResponse>> RequestAsync<TResponse>(Request<TResponse> request, IEnumerable<EventHeader> headers = null)
+        public Task<RequestResult<TResponse>> RequestAsync<TResponse>(IRequest<TResponse> request, params EventHeader[] headers)
             => Behavior.RequestAsync(request, headers);
 
-        public Task WatchAsync<TNotification>(Action<TNotification> handler)
-            => Behavior.WatchAsync<TNotification>(handler);
+        public Task WatchAsync<TNotificationEvent>(Action<TNotificationEvent> handler)
+            => Behavior.WatchAsync<TNotificationEvent>(handler);
 
-        public Task UnwatchAsync<TNotification>()
-            => Behavior.UnwatchAsync<TNotification>();
+        public Task UnwatchAsync<TNotificationEvent>()
+            => Behavior.UnwatchAsync<TNotificationEvent>();
 
         public void Dispose()
         {

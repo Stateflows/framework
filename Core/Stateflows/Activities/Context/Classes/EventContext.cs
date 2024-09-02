@@ -6,7 +6,6 @@ using Stateflows.Activities.Inspection.Interfaces;
 namespace Stateflows.Activities.Context.Classes
 {
     internal class EventContext<TEvent> : BaseContext, IEventInspectionContext<TEvent>, IRootContext
-        where TEvent : Event, new()
     {
         IActivityContext IActivityActionContext.Activity => Activity;
 
@@ -16,6 +15,6 @@ namespace Stateflows.Activities.Context.Classes
             : base(context, nodeScope)
         { }
 
-        public TEvent Event => Context.Event as TEvent;
+        public TEvent Event => (Context.Event as EventHolder<TEvent>).Payload;
     }
 }

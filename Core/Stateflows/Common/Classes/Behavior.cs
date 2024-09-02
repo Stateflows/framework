@@ -55,19 +55,19 @@ namespace Stateflows.Common.Classes
         }
 
         [DebuggerHidden]
-        public async Task<RequestResult<TResponse>> RequestAsync<TResponse>(Request<TResponse> request, IEnumerable<EventHeader> headers = null)
+        public async Task<RequestResult<TResponse>> RequestAsync<TResponse>(IRequest<TResponse> request, IEnumerable<EventHeader> headers = null)
         {
             var executionToken = engine.EnqueueEvent(Id, request, serviceProvider);
             await executionToken.Handled.WaitOneAsync();
 
-            return new RequestResult<TResponse>(executionToken.EventHolder as EventHolder<Request<TResponse>>, executionToken.Status, executionToken.Validation);
+            return new RequestResult<TResponse>(request.GetResponseHolder(), executionToken.Status, executionToken.Validation);
         }
 
         public Task WatchAsync<TNotification>(Action<TNotification> handler)
         {
             lock (handlers)
             {
-                var notificationName = EventInfo<TNotification>.Name;
+                var notificationName = typeof(TNotification).GetEventName();
                 if (!handlers.TryGetValue(notificationName, out var notificationHandlers))
                 {
                     notificationHandlers = new List<Action<EventHolder>>();

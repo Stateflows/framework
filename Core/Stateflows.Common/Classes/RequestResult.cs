@@ -7,10 +7,10 @@ namespace Stateflows.Common
         [JsonConstructor]
         protected RequestResult() : base() { }
 
-        public RequestResult(EventHolder<Request<TResponse>> request, EventStatus status, EventValidation validation = null)
+        public RequestResult(EventHolder<TResponse> request, EventStatus status, EventValidation validation = null)
             : base(request, status, validation)
         {
-            Response = request.Payload.Response;
+            Response = request.Payload;
         }
 
         public TResponse Response { get; set; }
