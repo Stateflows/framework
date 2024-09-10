@@ -2,7 +2,7 @@
 
 namespace Stateflows.StateMachines.Events
 {
-    [DoNotTrace]
+    [NoTracing]
     public sealed class CurrentStateRequest : IRequest<CurrentState>
     { }
 }

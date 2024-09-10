@@ -227,7 +227,7 @@ namespace Stateflows.StateMachines.Engine
         }
 
         public async Task BeforeTransitionGuardAsync<TEvent>(GuardContext<TEvent> context)
-            where TEvent : Event, new()
+
         {
             if (InspectionTransitions.TryGetValue(context.Edge, out var stateInspection))
             {
@@ -240,7 +240,7 @@ namespace Stateflows.StateMachines.Engine
         }
 
         public async Task AfterGuardAsync<TEvent>(GuardContext<TEvent> context, bool guardResult)
-            where TEvent : Event, new()
+
         {
             await Observers.RunSafe(o => o.AfterTransitionGuardAsync(context, guardResult), nameof(AfterGuardAsync), Logger);
             await Inspectors.RunSafe(i => i.AfterTransitionGuardAsync(context, guardResult), nameof(AfterGuardAsync), Logger);
@@ -253,7 +253,7 @@ namespace Stateflows.StateMachines.Engine
         }
 
         public async Task BeforeEffectAsync<TEvent>(TransitionContext<TEvent> context)
-            where TEvent : Event, new()
+
         {
             if (InspectionTransitions.TryGetValue(context.Edge, out var stateInspection))
             {
@@ -266,7 +266,7 @@ namespace Stateflows.StateMachines.Engine
         }
 
         public async Task AfterEffectAsync<TEvent>(TransitionContext<TEvent> context)
-            where TEvent : Event, new()
+
         {
             await Observers.RunSafe(o => o.AfterTransitionEffectAsync(context), nameof(AfterEffectAsync), Logger);
             await Inspectors.RunSafe(i => i.AfterTransitionEffectAsync(context), nameof(AfterEffectAsync), Logger);
@@ -293,7 +293,7 @@ namespace Stateflows.StateMachines.Engine
         }
 
         public async Task<bool> BeforeProcessEventAsync<TEvent>(Context.Classes.EventContext<TEvent> context)
-            where TEvent : Event, new()
+
         {
             var plugin = await Plugins.RunSafe(i => i.BeforeProcessEventAsync(context), nameof(BeforeProcessEventAsync), Logger);
             var global = await GlobalInterceptor.BeforeProcessEventAsync(
@@ -305,7 +305,7 @@ namespace Stateflows.StateMachines.Engine
         }
 
         public async Task AfterProcessEventAsync<TEvent>(Context.Classes.EventContext<TEvent> context)
-            where TEvent : Event, new()
+
         {
             await Interceptors.RunSafe(i => i.AfterProcessEventAsync(context), nameof(AfterProcessEventAsync), Logger);
             await GlobalInterceptor.AfterProcessEventAsync(new Common.Context.Classes.EventContext<TEvent>(context.Context.Context, Executor.ServiceProvider, context.Event));
@@ -352,7 +352,7 @@ namespace Stateflows.StateMachines.Engine
         }
 
         public async Task<bool> OnTransitionGuardExceptionAsync<TEvent>(GuardContext<TEvent> context, Exception exception)
-            where TEvent : Event, new()
+
         {
             var handled = await ExceptionHandlers.RunSafe(h => h.OnTransitionGuardExceptionAsync(context, exception), nameof(OnTransitionGuardExceptionAsync), Logger, false);
             await Inspectors.RunSafe(i => i.OnTransitionGuardExceptionAsync(context, exception), nameof(OnTransitionGuardExceptionAsync), Logger);
@@ -371,7 +371,7 @@ namespace Stateflows.StateMachines.Engine
         }
 
         public async Task<bool> OnTransitionEffectExceptionAsync<TEvent>(TransitionContext<TEvent> context, Exception exception)
-            where TEvent : Event, new()
+
         {
             var handled = await ExceptionHandlers.RunSafe(h => h.OnTransitionEffectExceptionAsync(context, exception), nameof(OnTransitionEffectExceptionAsync), Logger, false);
             await Inspectors.RunSafe(h => h.OnTransitionEffectExceptionAsync(context, exception), nameof(OnTransitionEffectExceptionAsync), Logger);

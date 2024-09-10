@@ -25,7 +25,7 @@ namespace Stateflows.StateMachines.Engine
             return Task.CompletedTask;
         }
 
-        public Task AfterTransitionEffectAsync(ITransitionContext<Event> context)
+        public Task AfterTransitionEffectAsync(ITransitionContext<EventHolder> context)
         {
             if (context.TargetState != null)
             {

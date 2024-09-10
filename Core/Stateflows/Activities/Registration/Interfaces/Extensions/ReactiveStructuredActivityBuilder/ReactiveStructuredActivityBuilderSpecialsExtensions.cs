@@ -119,18 +119,15 @@ namespace Stateflows.Activities
 
         #region AddAcceptEventAction
         [DebuggerHidden]
-        public static IReactiveStructuredActivityBuilder AddAcceptEventAction<TEvent>(this IReactiveStructuredActivityBuilder builder, string actionNodeName, AcceptEventActionBuildAction buildAction)
-            where TEvent : Event, new()
+        public static IReactiveStructuredActivityBuilder AddAcceptEventAction<TEvent>(this IReactiveStructuredActivityBuilder builder, string actionNodeName, AcceptEventActionBuildAction buildAction)
             => builder.AddAcceptEventAction<TEvent>(actionNodeName, c => Task.CompletedTask, buildAction);
 
         [DebuggerHidden]
-        public static IReactiveStructuredActivityBuilder AddAcceptEventAction<TEvent>(this IReactiveStructuredActivityBuilder builder, AcceptEventActionBuildAction buildAction)
-            where TEvent : Event, new()
+        public static IReactiveStructuredActivityBuilder AddAcceptEventAction<TEvent>(this IReactiveStructuredActivityBuilder builder, AcceptEventActionBuildAction buildAction)
             => builder.AddAcceptEventAction<TEvent>(AcceptEventActionNode<TEvent>.Name, c => Task.CompletedTask, buildAction);
 
         [DebuggerHidden]
-        public static IReactiveStructuredActivityBuilder AddAcceptEventAction<TEvent>(this IReactiveStructuredActivityBuilder builder, AcceptEventActionDelegateAsync<TEvent> actionAsync, AcceptEventActionBuildAction buildAction = null)
-            where TEvent : Event, new()
+        public static IReactiveStructuredActivityBuilder AddAcceptEventAction<TEvent>(this IReactiveStructuredActivityBuilder builder, AcceptEventActionDelegateAsync<TEvent> actionAsync, AcceptEventActionBuildAction buildAction = null)
             => builder.AddAcceptEventAction<TEvent>(AcceptEventActionNode<TEvent>.Name, c => actionAsync(c), buildAction);
         #endregion
 

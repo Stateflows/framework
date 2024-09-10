@@ -69,7 +69,7 @@ namespace Activity.IntegrationTests.Tests
         {
             if (ActivityLocator.TryLocateActivity(new ActivityId("flow", "x"), out var a))
             {
-                await a.ExecuteAsync();
+                await a.SendAsync(new Initialize());
             }
 
             Assert.IsFalse(Activated1);

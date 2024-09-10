@@ -9,8 +9,7 @@ namespace Stateflows.StateMachines.EventHandlers
     {
         public Type EventType => typeof(NotificationsRequest);
 
-        public Task<EventStatus> TryHandleEventAsync<TEvent>(IEventInspectionContext<TEvent> context)
-            where TEvent : Event, new()
+        public Task<EventStatus> TryHandleEventAsync<TEvent>(IEventInspectionContext<TEvent> context)
             => Task.FromResult(context.Event is NotificationsRequest
                 ? EventStatus.Consumed
                 : EventStatus.NotConsumed

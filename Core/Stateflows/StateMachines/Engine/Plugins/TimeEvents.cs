@@ -43,7 +43,7 @@ namespace Stateflows.StateMachines.Engine
             return Task.CompletedTask;
         }
 
-        public Task<bool> BeforeProcessEventAsync(IEventActionContext<Event> context)
+        public Task<bool> BeforeProcessEventAsync<TEvent>(IEventActionContext<TEvent> context)
         {
             var result = true;
 
@@ -62,7 +62,7 @@ namespace Stateflows.StateMachines.Engine
             return Task.FromResult(result);
         }
 
-        public Task AfterProcessEventAsync(IEventActionContext<Event> context)
+        public Task AfterProcessEventAsync<TEvent>(IEventActionContext<TEvent> context)
         {
             ClearTimeEvents(TimeEventIdsToClear);
             ClearStartupEvents(StartupEventIdsToClear);
@@ -114,7 +114,7 @@ namespace Stateflows.StateMachines.Engine
             return Task.CompletedTask;
         }
 
-        public Task BeforeTransitionGuardAsync(ITransitionContext<Event> context)
+        public Task BeforeTransitionGuardAsync<TEvent>(ITransitionContext<TEvent> context)
         {
             if (ConsumedInTransition == null && (context as IEdgeContext).Edge.Trigger == context.ExecutionTrigger.Name)
             {

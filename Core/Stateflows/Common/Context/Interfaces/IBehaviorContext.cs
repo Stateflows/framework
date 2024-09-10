@@ -19,15 +19,13 @@ namespace Stateflows.Common.Context.Interfaces
         /// </summary>
         /// <typeparam name="TEvent">Type of an event</typeparam>
         /// <param name="event">Event instance</param>
-        void Send<TEvent>(TEvent @event)
-            where TEvent : Event, new();
+        void Send<TEvent>(TEvent @event);
 
         /// <summary>
         /// Publishes a notification to all subscribers and watchers of current behavior
         /// </summary>
-        /// <typeparam name="TNotification">Type of a notification</typeparam>
+        /// <typeparam name="TNotificationEvent">Type of a notification</typeparam>
         /// <param name="notification">Notification instance</param>
-        void Publish<TNotification>(TNotification notification)
-            where TNotification : Notification, new();
+        void Publish<TNotificationEvent>(TNotificationEvent notification);
     }
 }

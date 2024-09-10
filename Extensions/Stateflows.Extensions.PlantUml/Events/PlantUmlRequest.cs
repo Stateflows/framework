@@ -2,10 +2,9 @@
 
 namespace Stateflows.Extensions.PlantUml.Events
 {
-    [DoNotTrace]
+    [NoTracing]
     [NoImplicitInitialization]
-    public sealed class PlantUmlRequest : Request<PlantUmlResponse>
-    {
-        public override string Name => nameof(PlantUmlRequest);
-    }
+    [Event(nameof(PlantUmlRequest))]
+    public sealed class PlantUmlRequest : IRequest<PlantUmlInfo>
+    { }
 }

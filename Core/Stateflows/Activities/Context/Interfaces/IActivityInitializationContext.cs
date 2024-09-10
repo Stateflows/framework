@@ -1,12 +1,10 @@
-﻿using Stateflows.Common;
-
-namespace Stateflows.Activities.Context.Interfaces
+﻿namespace Stateflows.Activities.Context.Interfaces
 {
-    public interface IActivityInitializationContext<out TInitializationRequest> : IActivityActionContext, IOutput
+    public interface IActivityInitializationContext<out TInitializationRequest> : IActivityInitializationContext
     {
         TInitializationRequest InitializationEvent { get; }
     }
 
-    public interface IActivityInitializationContext : IActivityInitializationContext<object>
+    public interface IActivityInitializationContext : IActivityActionContext, IOutput//IActivityInitializationContext<object>
     { }
 }

@@ -5,7 +5,7 @@ using Stateflows.Activities.Context.Interfaces;
 
 namespace Activity.IntegrationTests.Tests
 {
-    public class ValueInitializationRequest : Event
+    public class ValueInitializationRequest
     {
         public string Value { get; set; } = String.Empty;
     }

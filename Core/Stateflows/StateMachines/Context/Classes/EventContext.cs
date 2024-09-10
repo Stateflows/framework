@@ -5,7 +5,7 @@ using Stateflows.StateMachines.Inspection.Interfaces;
 namespace Stateflows.StateMachines.Context.Classes
 {
     internal class EventContext<TEvent> : BaseContext, IEventInspectionContext<TEvent>, IRootContext
-        where TEvent : Event, new()
+
     {
         IStateMachineContext IStateMachineActionContext.StateMachine => StateMachine;
 
@@ -14,6 +14,6 @@ namespace Stateflows.StateMachines.Context.Classes
         public EventContext(RootContext context) : base(context)
         { }
 
-        public TEvent Event => Context.Event as TEvent;
+        public TEvent Event => (Context.EventHolder as EventHolder<TEvent>).Payload;
     }
 }

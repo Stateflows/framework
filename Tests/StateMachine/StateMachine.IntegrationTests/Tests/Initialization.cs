@@ -1,11 +1,10 @@
 using Stateflows.Common;
 using StateMachine.IntegrationTests.Utils;
 using StateMachine.IntegrationTests.Classes.StateMachines;
-using Stateflows.StateMachines.Typed;
 
 namespace StateMachine.IntegrationTests.Tests
 {
-    public class ValueInitializationRequest : Event
+    public class ValueInitializationRequest
     {
         public string Value { get; set; } = String.Empty;
     }

@@ -49,14 +49,13 @@ namespace Stateflows.Transport.Http.Client
             }
         }
 
-        public async Task<SendResult> SendAsync<TEvent>(TEvent @event)
-            where TEvent : Event, new()
+        public async Task<SendResult> SendAsync<TEvent>(TEvent @event)
             => await apiClient.SendAsync(Id, @event, watches);
 
         public async Task<RequestResult<TResponse>> RequestAsync<TResponse>(Request<TResponse> request)
-            where TResponse : Response, new()
+            where TResponse : IResponse, new()
         {
-            var result = await SendAsync(request as Event);
+            var result = await SendAsync(request as EventHolder);
             return new RequestResult<TResponse>(request, result.Status, result.Validation);
         }
 

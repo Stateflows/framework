@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using Microsoft.Extensions.DependencyInjection;
 using Stateflows.Common.Utilities;
 using Stateflows.Common.Subscription;
+using Stateflows.Utils;
 
 namespace Stateflows.Common.Classes
 {
@@ -46,45 +47,51 @@ namespace Stateflows.Common.Classes
         }
 
         [DebuggerHidden]
-        public async Task<SendResult> SendAsync<TEvent>(TEvent @event, IEnumerable<EventHeader> headers = null)
+        public async Task<SendResult> SendAsync<TEvent>(TEvent @event, params EventHeader[] headers)
         {
-            var executionToken = engine.EnqueueEvent(Id, @event, serviceProvider);
+            var executionToken = engine.EnqueueEvent(Id, @event.ToEventHolder(), serviceProvider);
             await executionToken.Handled.WaitOneAsync();
 
             return new SendResult(executionToken.EventHolder, executionToken.Status, executionToken.Validation);
         }
 
         [DebuggerHidden]
-        public async Task<RequestResult<TResponse>> RequestAsync<TResponse>(IRequest<TResponse> request, IEnumerable<EventHeader> headers = null)
+        public async Task<RequestResult<TResponseEvent>> RequestAsync<TResponseEvent>(IRequest<TResponseEvent> request, params EventHeader[] headers)
         {
-            var executionToken = engine.EnqueueEvent(Id, request, serviceProvider);
+            var executionToken = engine.EnqueueEvent(Id, request.ToEventHolder(request.GetType()), serviceProvider);
             await executionToken.Handled.WaitOneAsync();
 
-            return new RequestResult<TResponse>(request.GetResponseHolder(), executionToken.Status, executionToken.Validation);
+            ResponseHolder.SetResponses(executionToken.Responses);
+
+            var result = new RequestResult<TResponseEvent>(executionToken.EventHolder, executionToken.Status, executionToken.Validation);
+
+            ResponseHolder.ClearResponses();
+
+            return result;
         }
 
-        public Task WatchAsync<TNotification>(Action<TNotification> handler)
+        public Task WatchAsync<TNotificationEvent>(Action<TNotificationEvent> handler)
         {
             lock (handlers)
             {
-                var notificationName = typeof(TNotification).GetEventName();
+                var notificationName = typeof(TNotificationEvent).GetEventName();
                 if (!handlers.TryGetValue(notificationName, out var notificationHandlers))
                 {
                     notificationHandlers = new List<Action<EventHolder>>();
                     handlers.Add(notificationName, notificationHandlers);
                 }
 
-                notificationHandlers.Add(eventHolder => handler((eventHolder as EventHolder<TNotification>).Payload));
+                notificationHandlers.Add(eventHolder => handler((eventHolder as EventHolder<TNotificationEvent>).Payload));
             }
 
             return Task.CompletedTask;
         }
 
-        public Task UnwatchAsync<TNotification>()
+        public Task UnwatchAsync<TNotificationEvent>()
         {
             lock (handlers)
             {
-                var notificationName = EventInfo<TNotification>.Name;
+                var notificationName = Event<TNotificationEvent>.Name;
                 handlers.Remove(notificationName);
             }
 

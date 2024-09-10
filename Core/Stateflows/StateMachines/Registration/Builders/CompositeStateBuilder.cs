@@ -102,7 +102,7 @@ namespace Stateflows.StateMachines.Registration.Builders
 
         #region Utils
         [DebuggerHidden]
-        public IInitializedCompositeStateBuilder AddDeferredEvent<TEvent>() where TEvent : Event, new()
+        public IInitializedCompositeStateBuilder AddDeferredEvent<TEvent>()
         {
             Builder.AddDeferredEvent<TEvent>();
             return this;
@@ -112,7 +112,7 @@ namespace Stateflows.StateMachines.Registration.Builders
         #region Transitions
         [DebuggerHidden]
         public IInitializedCompositeStateBuilder AddTransition<TEvent>(string targetStateName, TransitionBuildAction<TEvent> transitionBuildAction = null)
-            where TEvent : Event, new()
+
         {
             Builder.AddTransition<TEvent>(targetStateName, transitionBuildAction);
             return this;
@@ -120,7 +120,7 @@ namespace Stateflows.StateMachines.Registration.Builders
 
         [DebuggerHidden]
         public IInitializedCompositeStateBuilder AddElseTransition<TEvent>(string targetStateName, ElseTransitionBuildAction<TEvent> transitionBuildAction = null)
-            where TEvent : Event, new()
+
         {
             Builder.AddElseTransition<TEvent>(targetStateName, transitionBuildAction);
             return this;
@@ -136,12 +136,12 @@ namespace Stateflows.StateMachines.Registration.Builders
 
         [DebuggerHidden]
         public IInitializedCompositeStateBuilder AddInternalTransition<TEvent>(InternalTransitionBuildAction<TEvent> transitionBuildAction)
-            where TEvent : Event, new()
+
             => AddTransition<TEvent>(Constants.DefaultTransitionTarget, builder => transitionBuildAction?.Invoke(builder as IInternalTransitionBuilder<TEvent>));
 
         [DebuggerHidden]
         public IInitializedCompositeStateBuilder AddElseInternalTransition<TEvent>(ElseInternalTransitionBuildAction<TEvent> transitionBuildAction)
-            where TEvent : Event, new()
+
             => AddElseTransition<TEvent>(Constants.DefaultTransitionTarget, builder => transitionBuildAction?.Invoke(builder as IElseInternalTransitionBuilder<TEvent>));
 
         [DebuggerHidden]

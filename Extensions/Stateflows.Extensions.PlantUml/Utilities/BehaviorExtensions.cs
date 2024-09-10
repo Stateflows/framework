@@ -1,20 +1,29 @@
 ﻿using System;
 using System.Threading.Tasks;
 using Stateflows.Common;
-using Stateflows.Common.Interfaces;
 using Stateflows.Extensions.PlantUml.Events;
 
 namespace Stateflows
 {
     public static class BehaviorExtensions
     {
-        public static Task<RequestResult<PlantUmlResponse>> GetPlantUmlAsync(this IBehavior behavior)
+        public static Task<RequestResult<PlantUmlInfo>> GetPlantUmlAsync(this IBehavior behavior)
             => behavior.RequestAsync(new PlantUmlRequest());
 
-        public static Task WatchPlantUmlAsync(this IBehavior behavior, Action<PlantUmlNotification> handler)
-            => behavior.WatchAsync(handler);
+        public static async Task WatchPlantUmlAsync(this IBehavior behavior, Action<PlantUmlInfo> handler, bool immediateRequest = true)
+        {
+            await behavior.WatchAsync(handler);
+            if (immediateRequest)
+            {
+                var result = await behavior.GetPlantUmlAsync();
+                if (result.Status == EventStatus.Consumed)
+                {
+                    _ = Task.Run(() => handler(result.Response));
+                }
+            }
+        }
 
         public static Task UnwatchPlantUmlAsync(this IBehavior behavior)
-            => behavior.UnwatchAsync<PlantUmlNotification>();
+            => behavior.UnwatchAsync<PlantUmlInfo>();
     }
 }

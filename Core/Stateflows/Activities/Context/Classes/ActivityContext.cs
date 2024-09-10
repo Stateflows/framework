@@ -33,11 +33,10 @@ namespace Stateflows.Activities.Context.Classes
         public IContextValues Values { get; }
 
         public void Send<TEvent>(TEvent @event)
-            where TEvent : Event, new()
+
             => _ = Context.Send(@event);
 
         public void Publish<TNotification>(TNotification notification)
-            where TNotification : Notification, new()
             => _ = Subscriber.PublishAsync(Id, notification);
 
         public Task<SendResult> SubscribeAsync<TNotification>(BehaviorId behaviorId)

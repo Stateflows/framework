@@ -13,13 +13,13 @@ namespace Stateflows.StateMachines.EventHandlers
         public Type EventType => typeof(BehaviorInfoRequest);
 
         public Task<EventStatus> TryHandleEventAsync<TEvent>(IEventInspectionContext<TEvent> context)
-            where TEvent : Event, new()
+
         {
             if (context.Event is BehaviorInfoRequest request)
             {
                 var executor = context.StateMachine.GetExecutor();
 
-                request.Respond(new BehaviorStatus()
+                request.Respond(new BehaviorInfo()
                 {
                     BehaviorStatus = executor.BehaviorStatus,
                     ExpectedEvents = executor.GetExpectedEventNames(),

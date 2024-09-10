@@ -1,5 +1,4 @@
 ﻿using System.Threading.Tasks;
-using Stateflows.Common;
 using Stateflows.StateMachines.Context.Interfaces;
 
 namespace Stateflows.StateMachines
@@ -42,16 +41,16 @@ namespace Stateflows.StateMachines
         Task AfterStateExitAsync(IStateActionContext context)
             => Task.CompletedTask;
 
-        Task BeforeTransitionGuardAsync(ITransitionContext<Event> context)
+        Task BeforeTransitionGuardAsync<TEvent>(ITransitionContext<TEvent> context)
             => Task.CompletedTask;
 
-        Task AfterTransitionGuardAsync(ITransitionContext<Event> context, bool guardResult)
+        Task AfterTransitionGuardAsync<TEvent>(ITransitionContext<TEvent> context, bool guardResult)
             => Task.CompletedTask;
 
-        Task BeforeTransitionEffectAsync(ITransitionContext<Event> context)
+        Task BeforeTransitionEffectAsync<TEvent>(ITransitionContext<TEvent> context)
             => Task.CompletedTask;
 
-        Task AfterTransitionEffectAsync(ITransitionContext<Event> context)
+        Task AfterTransitionEffectAsync<TEvent>(ITransitionContext<TEvent> context)
             => Task.CompletedTask;
     }
 }

@@ -11,13 +11,11 @@ namespace Stateflows.StateMachines.EventHandlers
         public Type EventType => typeof(Reset);
 
         public Task<EventStatus> TryHandleEventAsync<TEvent>(IEventInspectionContext<TEvent> context)
-            where TEvent : Event, new()
+
         {
             if (context.Event is Reset request)
             {
                 context.StateMachine.GetExecutor().Reset(request.Mode);
-
-                request.Respond(new ResetResponse() { ResetSuccessful = true });
 
                 return Task.FromResult(EventStatus.Consumed);
             }

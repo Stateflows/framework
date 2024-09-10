@@ -8,8 +8,7 @@ namespace Stateflows.StateMachines.Typed
     public static class TypedInitializedCompositeStateBuilderElseInternalTransitionTypedExtensions
     {
         [DebuggerHidden]
-        public static ITypedInitializedCompositeStateBuilder AddElseInternalTransition<TEvent, TElseTransition>(this ITypedInitializedCompositeStateBuilder builder)
-            where TEvent : Event, new()
+        public static ITypedInitializedCompositeStateBuilder AddElseInternalTransition<TEvent, TElseTransition>(this ITypedInitializedCompositeStateBuilder builder)
             where TElseTransition : class, ITransitionEffect<TEvent>
             => builder.AddElseTransition<TEvent, TElseTransition>(Constants.DefaultTransitionTarget);
     }

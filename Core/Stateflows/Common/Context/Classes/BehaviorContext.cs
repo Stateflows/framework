@@ -24,7 +24,7 @@ namespace Stateflows.Common.Context.Classes
 
         public IContextValues Values { get; }
 
-        public void Send<TEvent>(TEvent @event) where TEvent : Event, new()
+        public void Send<TEvent>(TEvent @event)
         {
             var locator = ServiceProvider.GetService<IBehaviorLocator>();
             if (locator.TryLocateBehavior(Id, out var behavior))
@@ -33,14 +33,13 @@ namespace Stateflows.Common.Context.Classes
             }
         }
 
-        public void Publish<TNotification>(TNotification notification)
-            where TNotification : Notification, new()
+        public void Publish<TNotificationEvent>(TNotificationEvent notification)
             => _ = Subscriber.PublishAsync(Id, notification);
 
-        public Task<SendResult> SubscribeAsync<TNotification>(BehaviorId behaviorId)
-            => _ = Subscriber.SubscribeAsync<TNotification>(behaviorId);
+        public Task<SendResult> SubscribeAsync<TNotificationEvent>(BehaviorId behaviorId)
+            => _ = Subscriber.SubscribeAsync<TNotificationEvent>(behaviorId);
 
-        public Task<SendResult> UnsubscribeAsync<TNotification>(BehaviorId behaviorId)
-            => _ = Subscriber.UnsubscribeAsync<TNotification>(behaviorId);
+        public Task<SendResult> UnsubscribeAsync<TNotificationEvent>(BehaviorId behaviorId)
+            => _ = Subscriber.UnsubscribeAsync<TNotificationEvent>(behaviorId);
     }
 }

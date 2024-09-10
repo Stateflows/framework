@@ -43,7 +43,7 @@ namespace Stateflows.StateMachines.Engine
             Trace.WriteLine($"⦗→s⦘ State Machine '{context.StateMachine.Id.Name}:{context.StateMachine.Id.Instance}': {(initialized ? "" : "not ")}initialized");
 
             var executor = context.StateMachine.GetExecutor();
-            var notification = new BehaviorStatusNotification()
+            var notification = new BehaviorInfo()
             {
                 BehaviorStatus = BehaviorStatus.Initialized,
                 ExpectedEvents = executor.GetExpectedEventNames()
@@ -58,59 +58,59 @@ namespace Stateflows.StateMachines.Engine
         {
             Trace.WriteLine($"⦗→s⦘ State Machine '{context.StateMachine.Id.Name}:{context.StateMachine.Id.Instance}': finalized");
 
-            var notification = new BehaviorStatusNotification() { BehaviorStatus = BehaviorStatus.Finalized };
+            var notification = new BehaviorInfo() { BehaviorStatus = BehaviorStatus.Finalized };
 
             context.StateMachine.Publish(notification);
 
             return Task.CompletedTask;
         }
 
-        public Task AfterTransitionEffectAsync(ITransitionContext<Event> context)
+        public Task AfterTransitionEffectAsync<TEvent>(ITransitionContext<TEvent> context)
             => Task.CompletedTask;
 
-        public Task AfterTransitionGuardAsync(ITransitionContext<Event> context, bool guardResult)
+        public Task AfterTransitionGuardAsync<TEvent>(ITransitionContext<TEvent> context, bool guardResult)
         {
             if (guardResult)
             {
                 if (context.TargetState != null)
                 {
-                    Trace.WriteLine($"⦗→s⦘ State Machine '{context.StateMachine.Id.Name}:{context.StateMachine.Id.Instance}': event '{context.Event.Name}' triggered transition from state '{context.SourceState.Name}' to state '{context.TargetState.Name}'");
+                    Trace.WriteLine($"⦗→s⦘ State Machine '{context.StateMachine.Id.Name}:{context.StateMachine.Id.Instance}': event '{Event.GetName(context.Event.GetType())}' triggered transition from state '{context.SourceState.Name}' to state '{context.TargetState.Name}'");
                 }
                 else
                 {
-                    Trace.WriteLine($"⦗→s⦘ State Machine '{context.StateMachine.Id.Name}:{context.StateMachine.Id.Instance}': event '{context.Event.Name}' triggered reaction in state '{context.SourceState.Name}'");
+                    Trace.WriteLine($"⦗→s⦘ State Machine '{context.StateMachine.Id.Name}:{context.StateMachine.Id.Instance}': event '{Event.GetName(context.Event.GetType())}' triggered reaction in state '{context.SourceState.Name}'");
                 }
             }
             else
             {
                 if (context.TargetState != null)
                 {
-                    Trace.WriteLine($"⦗→s⦘ State Machine '{context.StateMachine.Id.Name}:{context.StateMachine.Id.Instance}': guard stopped event '{context.Event.Name}' from triggering transition from state '{context.SourceState.Name}' to state '{context.TargetState.Name}'");
+                    Trace.WriteLine($"⦗→s⦘ State Machine '{context.StateMachine.Id.Name}:{context.StateMachine.Id.Instance}': guard stopped event '{Event.GetName(context.Event.GetType())}' from triggering transition from state '{context.SourceState.Name}' to state '{context.TargetState.Name}'");
                 }
                 else
                 {
-                    Trace.WriteLine($"⦗→s⦘ State Machine '{context.StateMachine.Id.Name}:{context.StateMachine.Id.Instance}': guard stopped event '{context.Event.Name}' from triggering reaction in state '{context.SourceState.Name}'");
+                    Trace.WriteLine($"⦗→s⦘ State Machine '{context.StateMachine.Id.Name}:{context.StateMachine.Id.Instance}': guard stopped event '{Event.GetName(context.Event.GetType())}' from triggering reaction in state '{context.SourceState.Name}'");
                 }
             }
 
             return Task.CompletedTask;
         }
 
-        public Task<bool> BeforeProcessEventAsync(IEventActionContext<Event> context)
+        public Task<bool> BeforeProcessEventAsync<TEvent>(IEventActionContext<TEvent> context)
         {
-            Trace.WriteLine($"⦗→s⦘ State Machine '{context.StateMachine.Id.Name}:{context.StateMachine.Id.Instance}': received event '{context.Event.Name}', trying to process it");
+            Trace.WriteLine($"⦗→s⦘ State Machine '{context.StateMachine.Id.Name}:{context.StateMachine.Id.Instance}': received event '{Event.GetName(context.Event.GetType())}', trying to process it");
 
             return Task.FromResult(true);
         }
 
-        public Task AfterProcessEventAsync(IEventActionContext<Event> context)
+        public Task AfterProcessEventAsync<TEvent>(IEventActionContext<TEvent> context)
         {
-            Trace.WriteLine($"⦗→s⦘ State Machine '{context.StateMachine.Id.Name}:{context.StateMachine.Id.Instance}': processed event '{context.Event.Name}'");
+            Trace.WriteLine($"⦗→s⦘ State Machine '{context.StateMachine.Id.Name}:{context.StateMachine.Id.Instance}': processed event '{Event.GetName(context.Event.GetType())}'");
 
             var executor = context.StateMachine.GetExecutor();
             if (executor.StateHasChanged)
             {
-                var notification = new CurrentStateNotification()
+                var notification = new CurrentState()
                 {
                     BehaviorStatus = executor.BehaviorStatus,
                     StatesStack = executor.GetStateStack(),
@@ -137,14 +137,14 @@ namespace Stateflows.StateMachines.Engine
             return Task.CompletedTask;
         }
 
-        public Task OnTransitionGuardExceptionAsync(ITransitionContext<Event> context, Exception exception)
+        public Task OnTransitionGuardExceptionAsync<TEvent>(ITransitionContext<TEvent> context, Exception exception)
         {
             Trace.WriteLine($"⦗→s⦘ State Machine '{context.StateMachine.Id.Name}:{context.StateMachine.Id.Instance}': unhandled exception '{exception.GetType().Name}' with message '{exception.Message}' on transition guard");
 
             return Task.CompletedTask;
         }
 
-        public Task OnTransitionEffectExceptionAsync(ITransitionContext<Event> context, Exception exception)
+        public Task OnTransitionEffectExceptionAsync<TEvent>(ITransitionContext<TEvent> context, Exception exception)
         {
             Trace.WriteLine($"⦗→s⦘ State Machine '{context.StateMachine.Id.Name}:{context.StateMachine.Id.Instance}': unhandled exception '{exception.GetType().Name}' with message '{exception.Message}' on transition effect");
 

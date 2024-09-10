@@ -4,8 +4,7 @@ using Stateflows.StateMachines.Context.Interfaces;
 
 namespace Stateflows.StateMachines.Inspection.Interfaces
 {
-    public interface IEventInspectionContext<out TEvent> : IEventActionContext<TEvent>
-        where TEvent : Event, new()
+    public interface IEventInspectionContext<out TEvent> : IEventActionContext<TEvent>
     {
         new IStateMachineInspectionContext StateMachine { get; }
     }

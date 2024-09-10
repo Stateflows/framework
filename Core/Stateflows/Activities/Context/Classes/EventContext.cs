@@ -15,6 +15,6 @@ namespace Stateflows.Activities.Context.Classes
             : base(context, nodeScope)
         { }
 
-        public TEvent Event => (Context.Event as EventHolder<TEvent>).Payload;
+        public TEvent Event => (Context.EventHolder as EventHolder<TEvent>).Payload;
     }
 }

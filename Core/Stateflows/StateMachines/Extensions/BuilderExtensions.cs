@@ -36,8 +36,7 @@ namespace Stateflows.StateMachines.Extensions
         }
 
         public static void AddElseTransitionEvents<TElseTransition, TEvent>(this IElseTransitionBuilder<TEvent> builder)
-            where TElseTransition : class, ITransitionEffect<TEvent>
-            where TEvent : Event, new()
+            where TElseTransition : class, ITransitionEffect<TEvent>
         {
             if (typeof(ITransitionEffect<TEvent>).IsAssignableFrom(typeof(TElseTransition)))
             {
@@ -46,8 +45,7 @@ namespace Stateflows.StateMachines.Extensions
         }
 
         public static void AddTransitionEvents<TTransition, TEvent>(this ITransitionBuilder<TEvent> builder)
-            where TTransition : class, ITransition<TEvent>
-            where TEvent : Event, new()
+            where TTransition : class, ITransition<TEvent>
         {
             if (typeof(ITransitionGuard<TEvent>).IsAssignableFrom(typeof(TTransition)))
             {

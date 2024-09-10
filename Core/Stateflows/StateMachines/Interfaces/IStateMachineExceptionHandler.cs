@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Threading.Tasks;
-using Stateflows.Common;
 using Stateflows.StateMachines.Context.Interfaces;
 
 namespace Stateflows.StateMachines
@@ -13,10 +12,10 @@ namespace Stateflows.StateMachines
         Task<bool> OnStateMachineFinalizationExceptionAsync(IStateMachineActionContext context, Exception exception)
             => Task.FromResult(false);
 
-        Task<bool> OnTransitionGuardExceptionAsync(ITransitionContext<Event> context, Exception exception)
+        Task<bool> OnTransitionGuardExceptionAsync<TEvent>(ITransitionContext<TEvent> context, Exception exception)
             => Task.FromResult(false);
 
-        Task<bool> OnTransitionEffectExceptionAsync(ITransitionContext<Event> context, Exception exception)
+        Task<bool> OnTransitionEffectExceptionAsync<TEvent>(ITransitionContext<TEvent> context, Exception exception)
             => Task.FromResult(false);
 
         Task<bool> OnStateInitializationExceptionAsync(IStateActionContext context, Exception exception)

@@ -14,85 +14,85 @@ namespace Stateflows.Activities
 {
     public static class TransitionBuilderExtensions
     {
-        #region AddGuardActivity
-        [DebuggerHidden]
-        public static ITransitionBuilder<TEvent> AddGuardActivity<TEvent>(this ITransitionBuilder<TEvent> builder, string activityName, TransitionActivityBuildAction<TEvent> buildAction = null)
-            where TEvent : Event, new()
-            => builder.AddGuard(
-                async c =>
-                {
-                    var result = false;
-                    if (c.TryLocateActivity(activityName, $"{c.StateMachine.Id.Instance}.{c.SourceState.Name}.{typeof(TEvent).GetEventName()}.{Constants.Guard}.{c.Event.Id}", out var a))
-                    {
-                        var ev = StateflowsJsonConverter.Clone(c.Event);
-                        await Task.Run(async () =>
-                        {
-                            var integratedActivityBuilder = new TransitionActivityBuilder<TEvent>(buildAction);
-                            Event initializationEvent = (integratedActivityBuilder.InitializationBuilder != null)
-                                ? await integratedActivityBuilder.InitializationBuilder(c)
-                                : new Initialize();
-                            var executionRequest = new ExecutionRequest() { InitializationEvent = initializationEvent };
-                            executionRequest.AddInputToken(ev);
+        //#region AddGuardActivity
+        //[DebuggerHidden]
+        //public static ITransitionBuilder<TEvent> AddGuardActivity<TEvent>(this ITransitionBuilder<TEvent> builder, string activityName, TransitionActivityBuildAction<TEvent> buildAction = null)
 
-                            var sendResult = await a.SendCompoundAsync(
-                                integratedActivityBuilder.GetSubscribe(c.StateMachine.Id),
-                                new SetGlobalValues() { Values = (c.StateMachine.Values as ContextValuesCollection).Values },
-                                executionRequest,
-                                integratedActivityBuilder.GetUnsubscribe(c.StateMachine.Id)
-                            );
+        //    => builder.AddGuard(
+        //        async c =>
+        //        {
+        //            var result = false;
+        //            if (c.TryLocateActivity(activityName, $"{c.StateMachine.Id.Instance}.{c.SourceState.Name}.{typeof(TEvent).GetEventName()}.{Constants.Guard}.{c.Event.Id}", out var a))
+        //            {
+        //                var ev = StateflowsJsonConverter.Clone(c.Event);
+        //                await Task.Run(async () =>
+        //                {
+        //                    var integratedActivityBuilder = new TransitionActivityBuilder<TEvent>(buildAction);
+        //                    EventHolder initializationEvent = (integratedActivityBuilder.InitializationBuilder != null)
+        //                        ? await integratedActivityBuilder.InitializationBuilder(c)
+        //                        : new Initialize();
+        //                    var executionRequest = new ExecutionRequest() { InitializationEvent = initializationEvent };
+        //                    executionRequest.AddInputToken(ev);
 
-                            result = (sendResult.Response.Results.Skip(2).Take(1).First()?.Response as ExecutionResponse)?.OutputTokens?.OfType<TokenHolder<bool>>()?.FirstOrDefault()?.Payload ?? false;
-                        });
-                    }
+        //                    var sendResult = await a.SendCompoundAsync(
+        //                        integratedActivityBuilder.GetSubscribe(c.StateMachine.Id),
+        //                        new SetGlobalValues() { Values = (c.StateMachine.Values as ContextValuesCollection).Values },
+        //                        executionRequest,
+        //                        integratedActivityBuilder.GetUnsubscribe(c.StateMachine.Id)
+        //                    );
 
-                    return result;
-                }
-            );
+        //                    result = (sendResult.Response.Results.Skip(2).Take(1).First()?.Response as ExecutionResponse)?.OutputTokens?.OfType<TokenHolder<bool>>()?.FirstOrDefault()?.Payload ?? false;
+        //                });
+        //            }
 
-        [DebuggerHidden]
-        public static ITransitionBuilder<TEvent> AddGuardActivity<TEvent, TActivity>(this ITransitionBuilder<TEvent> builder, TransitionActivityBuildAction<TEvent> buildAction = null)
-            where TEvent : Event, new()
-            where TActivity : class, IActivity
-            => builder.AddGuardActivity<TEvent>(Activity<TActivity>.Name, buildAction);
-        #endregion
+        //            return result;
+        //        }
+        //    );
 
-        #region AddEffectActivity
-        [DebuggerHidden]
-        public static ITransitionBuilder<TEvent> AddEffectActivity<TEvent>(this ITransitionBuilder<TEvent> builder, string activityName, TransitionActivityBuildAction<TEvent> buildAction = null)
-            where TEvent : Event, new()
-            => builder.AddEffect(
-                c =>
-                {
-                    if (c.TryLocateActivity(activityName, $"{c.StateMachine.Id.Instance}.{c.SourceState.Name}.{typeof(TEvent).GetEventName()}.{Constants.Effect}.{c.Event.Id}", out var a))
-                    {
-                        var ev = StateflowsJsonConverter.Clone(c.Event);
-                        Task.Run(async () =>
-                        {
-                            var integratedActivityBuilder = new TransitionActivityBuilder<TEvent>(buildAction);
-                            Event initializationEvent = (integratedActivityBuilder.InitializationBuilder != null)
-                                ? await integratedActivityBuilder.InitializationBuilder(c)
-                                : new Initialize();
-                            var executionRequest = new ExecutionRequest() { InitializationEvent = initializationEvent };
-                            executionRequest.AddInputToken(ev);
+        //[DebuggerHidden]
+        //public static ITransitionBuilder<TEvent> AddGuardActivity<TEvent, TActivity>(this ITransitionBuilder<TEvent> builder, TransitionActivityBuildAction<TEvent> buildAction = null)
 
-                            return a.SendCompoundAsync(
-                                integratedActivityBuilder.GetSubscribe(c.StateMachine.Id),
-                                new SetGlobalValues() { Values = (c.StateMachine.Values as ContextValuesCollection).Values },
-                                executionRequest,
-                                integratedActivityBuilder.GetUnsubscribe(c.StateMachine.Id)
-                            );
-                        });
-                    }
+        //    where TActivity : class, IActivity
+        //    => builder.AddGuardActivity<TEvent>(Activity<TActivity>.Name, buildAction);
+        //#endregion
 
-                    return Task.CompletedTask;
-                }
-            );
+        //#region AddEffectActivity
+        //[DebuggerHidden]
+        //public static ITransitionBuilder<TEvent> AddEffectActivity<TEvent>(this ITransitionBuilder<TEvent> builder, string activityName, TransitionActivityBuildAction<TEvent> buildAction = null)
 
-        [DebuggerHidden]
-        public static ITransitionBuilder<TEvent> AddEffectActivity<TEvent, TActivity>(this ITransitionBuilder<TEvent> builder, TransitionActivityBuildAction<TEvent> buildAction = null)
-            where TEvent : Event, new()
-            where TActivity : class, IActivity
-            => builder.AddEffectActivity<TEvent>(Activity<TActivity>.Name, buildAction);
-        #endregion
+        //    => builder.AddEffect(
+        //        c =>
+        //        {
+        //            if (c.TryLocateActivity(activityName, $"{c.StateMachine.Id.Instance}.{c.SourceState.Name}.{typeof(TEvent).GetEventName()}.{Constants.Effect}.{c.Event.Id}", out var a))
+        //            {
+        //                var ev = StateflowsJsonConverter.Clone(c.Event);
+        //                Task.Run(async () =>
+        //                {
+        //                    var integratedActivityBuilder = new TransitionActivityBuilder<TEvent>(buildAction);
+        //                    EventHolder initializationEvent = (integratedActivityBuilder.InitializationBuilder != null)
+        //                        ? await integratedActivityBuilder.InitializationBuilder(c)
+        //                        : new Initialize();
+        //                    var executionRequest = new ExecutionRequest() { InitializationEvent = initializationEvent };
+        //                    executionRequest.AddInputToken(ev);
+
+        //                    return a.SendCompoundAsync(
+        //                        integratedActivityBuilder.GetSubscribe(c.StateMachine.Id),
+        //                        new SetGlobalValues() { Values = (c.StateMachine.Values as ContextValuesCollection).Values },
+        //                        executionRequest,
+        //                        integratedActivityBuilder.GetUnsubscribe(c.StateMachine.Id)
+        //                    );
+        //                });
+        //            }
+
+        //            return Task.CompletedTask;
+        //        }
+        //    );
+
+        //[DebuggerHidden]
+        //public static ITransitionBuilder<TEvent> AddEffectActivity<TEvent, TActivity>(this ITransitionBuilder<TEvent> builder, TransitionActivityBuildAction<TEvent> buildAction = null)
+
+        //    where TActivity : class, IActivity
+        //    => builder.AddEffectActivity<TEvent>(Activity<TActivity>.Name, buildAction);
+        //#endregion
     }
 }

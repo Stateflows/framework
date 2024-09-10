@@ -6,6 +6,6 @@ namespace Stateflows.Common.Classes
     {
         public BehaviorId TargetId { get; set; }
 
-        public Event Event { get; set; }
+        public EventHolder Event { get; set; }
     }
 }

@@ -10,7 +10,7 @@ namespace Stateflows.Common.Transport.Classes
 
         public EventValidation Validation { get; set; }
 
-        public Response Response { get; set; }
+        public IResponse Response { get; set; }
 
         public DateTime ResponseTime { get; set; }
 

@@ -3,8 +3,8 @@ using MassTransit;
 using Stateflows.Common;
 using Stateflows.Common.Utilities;
 using Stateflows.Common.Extensions;
-using Event = Stateflows.Common.Event;
-using Response = Stateflows.Common.Response;
+using EventHolder = Stateflows.Common.EventHolder;
+using IResponse = Stateflows.Common.IResponse;
 using Stateflows.Transport.MassTransit.MassTransit.Messages;
 
 namespace Stateflows.Transport.MassTransit.Stateflows
@@ -21,8 +21,7 @@ namespace Stateflows.Transport.MassTransit.Stateflows
             Id = id;
         }
 
-        public async Task<SendResult> SendAsync<TEvent>(TEvent @event)
-            where TEvent : Event, new()
+        public async Task<SendResult> SendAsync<TEvent>(TEvent @event)
         {
             var result = await Bus.Request<BehaviorRequest, BehaviorResponse>(
                 new BehaviorRequest()
@@ -34,7 +33,7 @@ namespace Stateflows.Transport.MassTransit.Stateflows
 
             if (!string.IsNullOrEmpty(result.Message.ResponseData))
             {
-                @event.Respond(StateflowsJsonConverter.DeserializeObject(result.Message.ResponseData) as Response);
+                @event.Respond(StateflowsJsonConverter.DeserializeObject(result.Message.ResponseData) as IResponse);
             }
 
             EventValidation validation = null;
@@ -47,9 +46,9 @@ namespace Stateflows.Transport.MassTransit.Stateflows
         }
 
         public async Task<RequestResult<TResponse>> RequestAsync<TResponse>(Request<TResponse> request)
-            where TResponse : Response, new()
+            where TResponse : IResponse, new()
         {
-            var result = await SendAsync(request as Event);
+            var result = await SendAsync(request as EventHolder);
 
             return new RequestResult<TResponse>(request, result.Status, result.Validation);
         }

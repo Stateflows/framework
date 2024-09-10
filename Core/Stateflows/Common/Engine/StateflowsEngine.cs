@@ -10,6 +10,7 @@ using Stateflows.Common.Engine;
 using Stateflows.Common.Classes;
 using Stateflows.Common.Interfaces;
 using Stateflows.Common.Extensions;
+using System.Reflection;
 
 namespace Stateflows.Common
 {
@@ -40,15 +41,9 @@ namespace Stateflows.Common
             TenantProvider = ServiceProvider.GetRequiredService<IStateflowsTenantProvider>();
         }
 
-        public ExecutionToken EnqueueEvent<TEvent>(BehaviorId id, TEvent @event, IServiceProvider serviceProvider)
+        public ExecutionToken EnqueueEvent(BehaviorId id, EventHolder eventHolder, IServiceProvider serviceProvider)
         {
-            var holder = new EventHolder<TEvent>()
-            {
-                Payload = @event,
-                SentAt = DateTime.Now
-            };
-
-            var token = new ExecutionToken(id, holder, serviceProvider);
+            var token = new ExecutionToken(id, eventHolder, serviceProvider);
 
             EventQueue.Enqueue(token);
 
@@ -73,7 +68,11 @@ namespace Stateflows.Common
                     {
                         _ = Task.Run(() =>
                         {
+                            ResponseHolder.SetResponses(token.Responses);
+
                             token.Validation = token.EventHolder.Validate();
+
+                            ResponseHolder.ClearResponses();
 
                             var status = EventStatus.Invalid;
 
@@ -81,7 +80,14 @@ namespace Stateflows.Common
                             {
                                 if (token.Validation.IsValid)
                                 {
-                                    status = ProcessEventAsync(token.TargetId, token.EventHolder, token.ServiceProvider, token.Exceptions)
+                                    status = ProcessEventAsyncMethod.InvokeAsync<EventStatus>(
+                                        token.EventHolder.PayloadType,
+                                        this,
+                                        token.TargetId,
+                                        token.EventHolder,
+                                        token.Exceptions,
+                                        token.Responses
+                                    )
                                         .GetAwaiter()
                                         .GetResult();
                                 }
@@ -113,8 +119,10 @@ namespace Stateflows.Common
             return Task.CompletedTask;
         }
 
+        private readonly MethodInfo ProcessEventAsyncMethod = typeof(StateflowsEngine).GetMethod(nameof(ProcessEventAsync), BindingFlags.Instance | BindingFlags.Public);
+
         [DebuggerHidden]
-        public async Task<EventStatus> ProcessEventAsync(BehaviorId id, EventHolder eventHolder, IServiceProvider serviceProvider, List<Exception> exceptions)
+        public async Task<EventStatus> ProcessEventAsync<TEvent>(BehaviorId id, EventHolder<TEvent> eventHolder, List<Exception> exceptions, Dictionary<object, EventHolder> responses)
         {
             var result = EventStatus.Undelivered;
 
@@ -128,15 +136,30 @@ namespace Stateflows.Common
                 {
                     try
                     {
-                        result = await processor.ProcessEventAsync(id, eventHolder, serviceProvider, exceptions);
+                        ResponseHolder.SetResponses(responses);
+
+                        result = await processor.ProcessEventAsync(id, eventHolder, exceptions);
                     }
                     finally
                     {
-                        var response = eventHolder.GetResponse();
-                        if (response != null)
+                        var responseHolder = eventHolder.GetResponseHolder();
+                        if (responseHolder != null)
                         {
-                            response.SenderId = id;
-                            response.SentAt = DateTime.Now;
+                            responseHolder.SenderId = id;
+                            responseHolder.SentAt = DateTime.Now;
+
+                            if (eventHolder is EventHolder<CompoundRequest> compoundRequest)
+                            {
+                                foreach (var subEventHolder in compoundRequest.Payload.Events)
+                                {
+                                    var subResponseHolder = subEventHolder.GetResponseHolder();
+                                    if (subResponseHolder != null)
+                                    {
+                                        subResponseHolder.SenderId = id;
+                                        subResponseHolder.SentAt = DateTime.Now;
+                                    }
+                                }
+                            }
                         }
                     }
                 }

@@ -30,8 +30,7 @@ namespace Stateflows.Transport.SignalR.Client
             Id = id;
         }
 
-        public async Task<SendResult> SendAsync<TEvent>(TEvent @event)
-            where TEvent : Event, new()
+        public async Task<SendResult> SendAsync<TEvent>(TEvent @event)
         {
             var hub = await GetHub();
 
@@ -48,7 +47,7 @@ namespace Stateflows.Transport.SignalR.Client
         }
 
         public async Task<RequestResult<TResponse>> RequestAsync<TResponse>(Request<TResponse> request)
-            where TResponse : Response, new()
+            where TResponse : IResponse, new()
         {
             var hub = await GetHub();
 

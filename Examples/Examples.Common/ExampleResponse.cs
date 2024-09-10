@@ -2,7 +2,7 @@
 
 namespace Examples.Common
 {
-    public class ExampleResponse : Response
+    public class ExampleResponse
     {
         public string? ResponseData { get; set; }
     }

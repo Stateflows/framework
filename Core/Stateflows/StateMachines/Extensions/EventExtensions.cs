@@ -5,12 +5,12 @@ namespace Stateflows.StateMachines.Extensions
 {
     internal static class EventExtensions
     {
-        public static bool Triggers(this Event @event, Edge edge)
+        public static bool Triggers(this EventHolder eventHolder, Edge edge)
         {
             return
-                edge.Trigger == @event.Name &&
+                edge.Trigger == eventHolder.Name &&
                 (
-                    !(@event is TimeEvent timeEvent) || 
+                    !(eventHolder.BoxedPayload is TimeEvent timeEvent) || 
                     timeEvent.ConsumerSignature == edge.Signature
                 );
         }

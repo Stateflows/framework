@@ -9,8 +9,7 @@ namespace Stateflows.Activities.EventHandlers
     {
         public Type EventType => typeof(Initialize);
 
-        public Task<EventStatus> TryHandleEventAsync<TEvent>(IEventInspectionContext<TEvent> context)
-            where TEvent : Event, new()
+        public Task<EventStatus> TryHandleEventAsync<TEvent>(IEventInspectionContext<TEvent> context)
             => Task.FromResult(
                 context.Event is Initialize
                     ? EventStatus.NotInitialized

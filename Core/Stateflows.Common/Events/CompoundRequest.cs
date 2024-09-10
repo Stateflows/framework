@@ -1,6 +1,7 @@
 ﻿using System.Linq;
 using System.Collections.Generic;
 using Newtonsoft.Json;
+using System.Numerics;
 
 namespace Stateflows.Common
 {

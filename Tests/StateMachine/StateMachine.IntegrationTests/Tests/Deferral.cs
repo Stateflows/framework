@@ -84,7 +84,8 @@ namespace StateMachine.IntegrationTests.Tests
 
             if (StateMachineLocator.TryLocateStateMachine(new StateMachineId("defer", "x"), out var sm))
             {
-                initialized = (await sm.SendAsync(new Initialize())).Status == EventStatus.Initialized;
+                var x = (await sm.SendAsync(new Initialize())).Status;
+                initialized = x == EventStatus.Initialized;
 
                 otherStatus = (await sm.SendAsync(new OtherEvent())).Status;
 

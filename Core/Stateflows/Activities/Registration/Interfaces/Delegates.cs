@@ -18,16 +18,13 @@ namespace Stateflows.Activities.Registration.Interfaces
     public delegate Task ExceptionHandlerDelegateAsync<in TException>(IExceptionHandlerContext<TException> context)
         where TException : Exception;
 
-    public delegate Task<TEvent> SendEventActionDelegateAsync<TEvent>(IActionContext context)
-        where TEvent : Event, new();
+    public delegate Task<TEvent> SendEventActionDelegateAsync<TEvent>(IActionContext context);
 
-    public delegate Task<TEvent> PublishEventActionDelegateAsync<TEvent>(IActionContext context)
-        where TEvent : Event, new();
+    public delegate Task<TEvent> PublishEventActionDelegateAsync<TEvent>(IActionContext context);
 
     public delegate Task<BehaviorId> BehaviorIdSelectorAsync(IActionContext context);
 
-    public delegate Task AcceptEventActionDelegateAsync<in TEvent>(IAcceptEventActionContext<TEvent> context)
-        where TEvent : Event, new();
+    public delegate Task AcceptEventActionDelegateAsync<in TEvent>(IAcceptEventActionContext<TEvent> context);
 
     public delegate Task TimeEventActionDelegateAsync(IActionContext context);
 

@@ -4,7 +4,7 @@ namespace Stateflows.StateMachines.Context.Interfaces
 {
     public interface IInitializationContext
     {
-        Event InitializationEvent { get; }
+        EventHolder InitializationEvent { get; }
     }
 
     public interface IStateMachineActionContext : IBehaviorLocator, IExecutionContext

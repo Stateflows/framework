@@ -29,17 +29,16 @@ namespace Stateflows.StateMachines.Context.Classes
         public IContextValues Values { get; }
 
         public void Send<TEvent>(TEvent @event)
-            where TEvent : Event, new()
+
             => _ = Context.Send(@event);
 
-        public void Publish<TNotification>(TNotification notification)
-            where TNotification : Notification, new()
+        public void Publish<TNotificationEvent>(TNotificationEvent notification)
             => _ = Subscriber.PublishAsync(Id, notification);
 
-        public Task<SendResult> SubscribeAsync<TNotification>(BehaviorId behaviorId)
-            => Subscriber.SubscribeAsync<TNotification>(behaviorId);
+        public Task<SendResult> SubscribeAsync<TNotificationEvent>(BehaviorId behaviorId)
+            => Subscriber.SubscribeAsync<TNotificationEvent>(behaviorId);
 
-        public Task<SendResult> UnsubscribeAsync<TNotification>(BehaviorId behaviorId)
-            => Subscriber.UnsubscribeAsync<TNotification>(behaviorId);
+        public Task<SendResult> UnsubscribeAsync<TNotificationEvent>(BehaviorId behaviorId)
+            => Subscriber.UnsubscribeAsync<TNotificationEvent>(behaviorId);
     }
 }

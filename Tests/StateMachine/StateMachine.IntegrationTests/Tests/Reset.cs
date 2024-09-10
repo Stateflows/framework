@@ -37,7 +37,7 @@ namespace StateMachine.IntegrationTests.Tests
         {
             CurrentState? currentState1 = null;
             CurrentState? currentState2 = null;
-            ResetResponse? resetResponse = null;
+            EventStatus? resetResponse = null;
 
             if (StateMachineLocator.TryLocateStateMachine(new StateMachineId("reset", "x"), out var sm))
             {
@@ -45,7 +45,7 @@ namespace StateMachine.IntegrationTests.Tests
 
                 currentState1 = (await sm.GetCurrentStateAsync()).Response;
 
-                resetResponse = (await sm.ResetAsync()).Response;
+                resetResponse = (await sm.ResetAsync()).Status;
 
                 currentState2 = (await sm.GetCurrentStateAsync()).Response;
             }
@@ -55,7 +55,7 @@ namespace StateMachine.IntegrationTests.Tests
             Assert.IsTrue(StateEntered);
             Assert.AreEqual(BehaviorStatus.NotInitialized, currentState2?.BehaviorStatus);
             Assert.AreNotEqual("state1", currentState2?.StatesStack.FirstOrDefault());
-            Assert.IsTrue(resetResponse?.ResetSuccessful);
+            Assert.AreEqual(EventStatus.Consumed, resetResponse);
         }
 
         [TestMethod]
@@ -63,13 +63,13 @@ namespace StateMachine.IntegrationTests.Tests
         {
             CurrentState? currentState1 = null;
             CurrentState? currentState2 = null;
-            ResetResponse? resetResponse = null;
+            EventStatus? resetStatus = null;
 
             if (StateMachineLocator.TryLocateStateMachine(new StateMachineId("reset", "x"), out var sm))
             {
                 currentState1 = (await sm.GetCurrentStateAsync()).Response;
 
-                resetResponse = (await sm.ResetAsync()).Response;
+                resetStatus = (await sm.ResetAsync()).Status;
 
                 currentState2 = (await sm.GetCurrentStateAsync()).Response;
             }
@@ -78,7 +78,7 @@ namespace StateMachine.IntegrationTests.Tests
             Assert.AreNotEqual("state1", currentState1?.StatesStack.FirstOrDefault());
             Assert.AreEqual(BehaviorStatus.NotInitialized, currentState2?.BehaviorStatus);
             Assert.AreNotEqual("state1", currentState2?.StatesStack.FirstOrDefault());
-            Assert.IsTrue(resetResponse?.ResetSuccessful);
+            Assert.AreEqual(EventStatus.Rejected, resetStatus);
         }
     }
 }

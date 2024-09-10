@@ -12,15 +12,15 @@ namespace Stateflows.Extensions.PlantUml.Classes
         public Task AfterHydrateAsync(IStateMachineActionContext context)
             => Task.CompletedTask;
 
-        public Task AfterProcessEventAsync(IEventActionContext<Event> context)
+        public Task AfterProcessEventAsync(IEventActionContext<EventHolder> context)
         {
             if (
-                context is IEventInspectionContext<Event> inspectionContext &&
+                context is IEventInspectionContext<EventHolder> inspectionContext &&
                 inspectionContext.StateMachine.Inspection.StateHasChanged
             )
             {
                 context.StateMachine.Publish(
-                    new PlantUmlNotification()
+                    new Events.PlantUmlInfo()
                     {
                         PlantUml = inspectionContext.StateMachine.Inspection.GetPlantUml()
                     }
@@ -33,7 +33,7 @@ namespace Stateflows.Extensions.PlantUml.Classes
         public Task BeforeDehydrateAsync(IStateMachineActionContext context)
             => Task.CompletedTask;
 
-        public Task<bool> BeforeProcessEventAsync(IEventActionContext<Event> context)
+        public Task<bool> BeforeProcessEventAsync(IEventActionContext<EventHolder> context)
             => Task.FromResult(true);
     }
 }

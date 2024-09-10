@@ -42,8 +42,7 @@ namespace Stateflows.StateMachines.Typed
         /// </list>
         /// </typeparam>
         [DebuggerHidden]
-        public static IInitializedCompositeStateBuilder AddTransition<TEvent, TTransition, TTargetState>(this IInitializedCompositeStateBuilder builder)
-            where TEvent : Event, new()
+        public static IInitializedCompositeStateBuilder AddTransition<TEvent, TTransition, TTargetState>(this IInitializedCompositeStateBuilder builder)
             where TTransition : class, ITransition<TEvent>
             where TTargetState : class, IVertex
             => AddTransition<TEvent, TTransition>(builder, State<TTargetState>.Name);
@@ -75,8 +74,7 @@ namespace Stateflows.StateMachines.Typed
         /// </typeparam>
         /// <param name="targetStateName">Target state name</param>
         [DebuggerHidden]
-        public static IInitializedCompositeStateBuilder AddTransition<TEvent, TTransition>(this IInitializedCompositeStateBuilder builder, string targetStateName)
-            where TEvent : Event, new()
+        public static IInitializedCompositeStateBuilder AddTransition<TEvent, TTransition>(this IInitializedCompositeStateBuilder builder, string targetStateName)
             where TTransition : class, ITransition<TEvent>
             => (builder as ICompositeStateBuilder).AddTransition<TEvent, TTransition>(targetStateName) as IInitializedCompositeStateBuilder;
 
@@ -111,8 +109,7 @@ namespace Stateflows.StateMachines.Typed
         /// </typeparam>
         /// <param name="transitionBuildAction">Transition build action</param>
         [DebuggerHidden]
-        public static IInitializedCompositeStateBuilder AddTransition<TEvent, TTargetState>(this IInitializedCompositeStateBuilder builder, TransitionBuildAction<TEvent> transitionBuildAction = null)
-            where TEvent : Event, new()
+        public static IInitializedCompositeStateBuilder AddTransition<TEvent, TTargetState>(this IInitializedCompositeStateBuilder builder, TransitionBuildAction<TEvent> transitionBuildAction = null)
             where TTargetState : class, IVertex
             => builder.AddTransition(State<TTargetState>.Name, transitionBuildAction);
     }

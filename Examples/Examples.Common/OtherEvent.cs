@@ -1,9 +1,8 @@
-﻿using Stateflows.Common;
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 
 namespace Examples.Common
 {
-    public class OtherEvent : Event
+    public class OtherEvent
     {
         public int AnswerToLifeUniverseAndEverything { get; set; } = 42;
 

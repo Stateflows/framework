@@ -2,7 +2,7 @@
 
 namespace Stateflows.Common
 {
-    public class HttpRequest : Request<Response<IResult>>
+    public class HttpRequest : Request<IResponse<IResult>>
     {
         public override string Name => $"{base.Name}[{Method} {Url}]";
 

@@ -45,8 +45,7 @@ namespace Stateflows.StateMachines.Typed
         /// </list>
         /// </typeparam>
         [DebuggerHidden]
-        public static IStateBuilder AddTransition<TEvent, TTransition, TTargetState>(this IStateBuilder builder)
-            where TEvent : Event, new()
+        public static IStateBuilder AddTransition<TEvent, TTransition, TTargetState>(this IStateBuilder builder)
             where TTransition : class, ITransition<TEvent>
             where TTargetState : class, IVertex
             => AddTransition<TEvent, TTransition>(builder, State<TTargetState>.Name);
@@ -78,8 +77,7 @@ namespace Stateflows.StateMachines.Typed
         /// </typeparam>
         /// <param name="targetStateName">Target state name</param>
         [DebuggerHidden]
-        public static IStateBuilder AddTransition<TEvent, TTransition>(this IStateBuilder builder, string targetStateName)
-            where TEvent : Event, new()
+        public static IStateBuilder AddTransition<TEvent, TTransition>(this IStateBuilder builder, string targetStateName)
             where TTransition : class, ITransition<TEvent>
         {
             (builder as IInternal).Services.AddServiceType<TTransition>();
@@ -121,8 +119,7 @@ namespace Stateflows.StateMachines.Typed
         /// </typeparam>
         /// <param name="transitionBuildAction">Transition build action</param>
         [DebuggerHidden]
-        public static IStateBuilder AddTransition<TEvent, TTargetState>(this IStateBuilder builder, TransitionBuildAction<TEvent> transitionBuildAction = null)
-            where TEvent : Event, new()
+        public static IStateBuilder AddTransition<TEvent, TTargetState>(this IStateBuilder builder, TransitionBuildAction<TEvent> transitionBuildAction = null)
             where TTargetState : class, IVertex
             => builder.AddTransition(State<TTargetState>.Name, transitionBuildAction);
     }

@@ -3,6 +3,7 @@ using System.Threading.Tasks;
 using Stateflows.Common;
 using Stateflows.StateMachines.Context.Classes;
 using Stateflows.StateMachines.Context.Interfaces;
+using Stateflows.Utils;
 
 namespace Stateflows.StateMachines.Engine
 {
@@ -28,8 +29,8 @@ namespace Stateflows.StateMachines.Engine
                     }
 
                     var initializationRequest = vertex.BehaviorInitializationBuilder != null
-                        ? await vertex.BehaviorInitializationBuilder(context) ?? new Initialize()
-                        : new Initialize();
+                        ? await vertex.BehaviorInitializationBuilder(context) ?? (new Initialize()).ToEventHolder()
+                        : (new Initialize()).ToEventHolder();
 
                     _ = behavior.SendAsync(initializationRequest);
                 }

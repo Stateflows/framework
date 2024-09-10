@@ -213,7 +213,7 @@
 
         if (eventType != null)
         {
-            var ev = System.Activator.CreateInstance(eventType) as Event;
+            var ev = System.Activator.CreateInstance(eventType) as EventHolderHolder;
 
             var sm = await GetStateMachineAsync();
             if (sm != null)

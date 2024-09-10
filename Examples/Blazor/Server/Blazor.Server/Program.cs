@@ -236,7 +236,7 @@ namespace X
             return Task.FromResult(true);
         }
 
-        public Task AfterProcessEventAsync(IEventActionContext<Event> context)
+        public Task AfterProcessEventAsync(IEventActionContext<EventHolder> context)
         {
             Debug.WriteLine($">>>>>>>>>>> after processing {context.Event.Name}");
 

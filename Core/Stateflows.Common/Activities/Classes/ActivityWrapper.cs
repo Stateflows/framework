@@ -49,10 +49,10 @@ namespace Stateflows.Common.Activities.Classes
         public Task UnwatchOutputAsync<TToken>()
             => Behavior.UnwatchAsync<TokensOutput<TToken>>();
 
-        public Task<SendResult> SendAsync<TEvent>(TEvent @event, params EventHeader[] headers)
+        public Task<SendResult> SendAsync<TEvent>(TEvent @event, IEnumerable<EventHeader> headers = null)
             => Behavior.SendAsync(@event, headers);
 
-        public Task<RequestResult<TResponse>> RequestAsync<TResponse>(IRequest<TResponse> request, params EventHeader[] headers)
+        public Task<RequestResult<TResponse>> RequestAsync<TResponse>(IRequest<TResponse> request, IEnumerable<EventHeader> headers = null)
             => Behavior.RequestAsync(request, headers);
 
         public Task WatchAsync<TNotificationEvent>(Action<TNotificationEvent> handler)

@@ -337,7 +337,7 @@ namespace Stateflows.Activities.Context.Classes
             EventsStack.Pop();
         }
 
-        public EventHolder Event => EventsStack.Any()
+        public EventHolder EventHolder => EventsStack.Any()
             ? EventsStack.Peek()
             : null;
 
@@ -359,8 +359,7 @@ namespace Stateflows.Activities.Context.Classes
                     !ActiveNodes.Any()
                 );
 
-        public async Task Send<TEvent>(TEvent @event)
-            where TEvent : Event, new()
+        public async Task Send<TEvent>(TEvent @event)
         {
             var locator = Executor.NodeScope.ServiceProvider.GetService<IBehaviorLocator>();
             if (locator != null && locator.TryLocateBehavior(Id.BehaviorId, out var behavior))

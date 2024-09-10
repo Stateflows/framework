@@ -5,7 +5,7 @@ using Stateflows.Activities.Context.Interfaces;
 namespace Stateflows.Activities.Context.Classes
 {
     internal class AcceptEventActionContext<TEvent> : BaseContext, IAcceptEventActionContext<TEvent>
-        where TEvent : Event, new()
+
     {
         IActivityContext IActivityActionContext.Activity => Activity;
 
@@ -17,7 +17,7 @@ namespace Stateflows.Activities.Context.Classes
             ActionContext = actionContext;
         }
 
-        public TEvent Event => Context.Event as TEvent;
+        public TEvent Event => (Context.EventHolder as EventHolder<TEvent>).Payload;
 
         public INodeContext CurrentNode => ActionContext.CurrentNode;
 

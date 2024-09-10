@@ -3,10 +3,9 @@ using Stateflows.Extensions.PlantUml.Classes;
 
 namespace Stateflows.Extensions.PlantUml.Events
 {
-    public sealed class PlantUmlNotification : Notification
+    [Event(nameof(PlantUmlInfo))]
+    public sealed class PlantUmlInfo
     {
-        public override string Name => nameof(PlantUmlNotification);
-
         public string PlantUml { get; set; }
 
         public string GetUrl(FileType fileType = FileType.PNG)

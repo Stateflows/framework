@@ -64,16 +64,16 @@ namespace Stateflows.Testing.StateMachines.Sequence
             return Task.CompletedTask;
         }
 
-        Task IStateMachineObserver.AfterTransitionEffectAsync(ITransitionContext<Event> context)
+        Task IStateMachineObserver.AfterTransitionEffectAsync<TEvent>(ITransitionContext<TEvent> context)
         {
-            SequenceBuilder.TransitionEffect(context.Event.Name, context.SourceState.Name, context.TargetState?.Name);
+            SequenceBuilder.TransitionEffect(Event.GetName(context.Event.GetType()), context.SourceState.Name, context.TargetState?.Name);
 
             return Task.CompletedTask;
         }
 
-        Task IStateMachineObserver.AfterTransitionGuardAsync(ITransitionContext<Event> context, bool guardResult)
+        Task IStateMachineObserver.AfterTransitionGuardAsync<TEvent>(ITransitionContext<TEvent> context, bool guardResult)
         {
-            SequenceBuilder.TransitionGuard(context.Event.Name, context.SourceState.Name, context.TargetState?.Name);
+            SequenceBuilder.TransitionGuard(Event.GetName(context.Event.GetType()), context.SourceState.Name, context.TargetState?.Name);
 
             return Task.CompletedTask;
         }

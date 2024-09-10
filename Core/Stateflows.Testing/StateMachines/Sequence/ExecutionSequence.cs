@@ -43,10 +43,10 @@ namespace Stateflows.Testing.StateMachines.Sequence
         }
 
         public IExecutionSequenceBuilder DefaultTransitionEffect(string sourceStateName, string targetStateName)
-            => TransitionEffect(EventInfo<CompletionEvent>.Name, sourceStateName, targetStateName);
+            => TransitionEffect(Event<CompletionEvent>.Name, sourceStateName, targetStateName);
 
         public IExecutionSequenceBuilder DefaultTransitionGuard(string sourceStateName, string targetStateName)
-            => TransitionGuard(EventInfo<CompletionEvent>.Name, sourceStateName, targetStateName);
+            => TransitionGuard(Event<CompletionEvent>.Name, sourceStateName, targetStateName);
 
         public IExecutionSequenceBuilder InternalTransitionEffect(string eventName, string sourceStateName)
             => TransitionEffect(eventName, sourceStateName, "");

@@ -52,14 +52,12 @@ namespace Stateflows.Activities.Typed
 
         #region AddAcceptEventAction
         [DebuggerHidden]
-        public static IReactiveStructuredActivityBuilder AddAcceptEventAction<TEvent, TAcceptEventAction>(this IReactiveStructuredActivityBuilder builder, AcceptEventActionBuildAction buildAction = null)
-            where TEvent : Event, new()
+        public static IReactiveStructuredActivityBuilder AddAcceptEventAction<TEvent, TAcceptEventAction>(this IReactiveStructuredActivityBuilder builder, AcceptEventActionBuildAction buildAction = null)
             where TAcceptEventAction : class, IAcceptEventActionNode<TEvent>
             => builder.AddAcceptEventAction<TEvent, TAcceptEventAction>(ActivityNode<TAcceptEventAction>.Name, buildAction);
 
         [DebuggerHidden]
-        public static IReactiveStructuredActivityBuilder AddAcceptEventAction<TEvent, TAcceptEventAction>(this IReactiveStructuredActivityBuilder builder, string actionNodeName, AcceptEventActionBuildAction buildAction = null)
-            where TEvent : Event, new()
+        public static IReactiveStructuredActivityBuilder AddAcceptEventAction<TEvent, TAcceptEventAction>(this IReactiveStructuredActivityBuilder builder, string actionNodeName, AcceptEventActionBuildAction buildAction = null)
             where TAcceptEventAction : class, IAcceptEventActionNode<TEvent>
             => builder.AddAcceptEventAction<TEvent>(
                 actionNodeName,
@@ -112,8 +110,7 @@ namespace Stateflows.Activities.Typed
 
         #region AddSendEventAction
         [DebuggerHidden]
-        private static async Task<TResult> GetSendEventAction<TEvent, TSendEventAction, TResult>(this IActionContext context, Func<TSendEventAction, Task<TResult>> callback)
-            where TEvent : Event, new()
+        private static async Task<TResult> GetSendEventAction<TEvent, TSendEventAction, TResult>(this IActionContext context, Func<TSendEventAction, Task<TResult>> callback)
             where TSendEventAction : class, ISendEventActionNode<TEvent>
         {
             var action = (context as BaseContext).NodeScope.GetSendEventAction<TEvent, TSendEventAction>(context);
@@ -130,14 +127,12 @@ namespace Stateflows.Activities.Typed
         }
 
         [DebuggerHidden]
-        public static IReactiveStructuredActivityBuilder AddSendEventAction<TEvent, TSendEventAction>(this IReactiveStructuredActivityBuilder builder, SendEventActionBuildAction buildAction = null)
-            where TEvent : Event, new()
+        public static IReactiveStructuredActivityBuilder AddSendEventAction<TEvent, TSendEventAction>(this IReactiveStructuredActivityBuilder builder, SendEventActionBuildAction buildAction = null)
             where TSendEventAction : class, ISendEventActionNode<TEvent>
             => builder.AddSendEventAction<TEvent, TSendEventAction>(ActivityNode<TSendEventAction>.Name, buildAction);
 
         [DebuggerHidden]
-        public static IReactiveStructuredActivityBuilder AddSendEventAction<TEvent, TSendEventAction>(this IReactiveStructuredActivityBuilder builder, string actionNodeName, SendEventActionBuildAction buildAction = null)
-            where TEvent : Event, new()
+        public static IReactiveStructuredActivityBuilder AddSendEventAction<TEvent, TSendEventAction>(this IReactiveStructuredActivityBuilder builder, string actionNodeName, SendEventActionBuildAction buildAction = null)
             where TSendEventAction : class, ISendEventActionNode<TEvent>
         {
             return builder.AddSendEventAction<TEvent>(

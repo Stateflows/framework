@@ -65,7 +65,7 @@ namespace Stateflows.StateMachines.Registration.Builders
 
             Result.DefaultInitializer.Actions.Add(c =>
             {
-                var context = new StateMachineInitializationContext(c, c.Event as Initialize);
+                var context = new StateMachineInitializationContext(c);
                 return actionAsync(context);
             });
 
@@ -73,16 +73,15 @@ namespace Stateflows.StateMachines.Registration.Builders
         }
 
         public IInitializedStateMachineBuilder AddInitializer<TInitializationEvent>(Func<IStateMachineInitializationContext<TInitializationEvent>, Task<bool>> actionAsync)
-            where TInitializationEvent : Event, new()
         {
             actionAsync.ThrowIfNull(nameof(actionAsync));
             
-            var initializerName = EventInfo<TInitializationEvent>.Name;
+            var initializerName = Event<TInitializationEvent>.Name;
 
             return AddInitializer(typeof(TInitializationEvent), initializerName, async c =>
             {
                 var result = false;
-                var context = new StateMachineInitializationContext<TInitializationEvent>(c, c.Event as TInitializationEvent);
+                var context = new StateMachineInitializationContext<TInitializationEvent>(c, c.EventHolder as EventHolder<TInitializationEvent>);
 
                 result = await actionAsync(context);
 

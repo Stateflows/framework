@@ -3,10 +3,9 @@ using Stateflows.Activities.Extensions;
 
 namespace Stateflows.Activities.StateMachines.Interfaces
 {
-    public interface ITransitionInitialization<TEvent, out TReturn>
-        where TEvent : Event, new()
+    public interface ITransitionInitialization<TEvent, out TReturn>
     {
         TReturn InitializeWith<TInitializationEvent>(TransitionActivityInitializationBuilderAsync<TEvent, TInitializationEvent> builderAsync)
-            where TInitializationEvent : Event, new();
+            where TInitializationEvent : EventHolder, new();
     }
 }

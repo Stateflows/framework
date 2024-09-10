@@ -1,5 +1,4 @@
-﻿using Stateflows.Common;
-using Stateflows.Activities.Extensions;
+﻿using Stateflows.Activities.Extensions;
 
 namespace Stateflows.Activities.StateMachines.Interfaces
 {
@@ -25,10 +24,9 @@ namespace Stateflows.Activities.StateMachines.Interfaces
             return this;
         }
 
-        public StateActionActivityBuilder AddSubscription<TNotification>()
-            where TNotification : Notification, new()
+        public StateActionActivityBuilder AddSubscription<TNotificationEvent>()
         {
-            Notifications.Add(typeof(TNotification));
+            Notifications.Add(typeof(TNotificationEvent));
 
             return this;
         }

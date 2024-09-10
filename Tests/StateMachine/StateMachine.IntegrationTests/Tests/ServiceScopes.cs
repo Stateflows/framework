@@ -116,14 +116,11 @@ namespace StateMachine.IntegrationTests.Tests
         {
             if (StateMachineLocator.TryLocateStateMachine(new StateMachineId("compound", "x"), out var sm))
             {
-                await sm.SendAsync(new CompoundRequest()
-                {
-                    Events = new List<Event>()
-                    {
-                        new SomeEvent(),
-                        new OtherEvent(),
-                    }
-                });
+                var compoundRequest = new CompoundRequest()
+                    .Add(new SomeEvent())
+                    .Add(new OtherEvent());
+
+                await sm.SendAsync(compoundRequest);
             }
 
             Assert.AreNotEqual(ServiceScopes.SomeValue, ServiceScopes.OtherValue);

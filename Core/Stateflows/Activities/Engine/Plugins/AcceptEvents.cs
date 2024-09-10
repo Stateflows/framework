@@ -155,9 +155,9 @@ namespace Stateflows.Activities.Engine
         Task IActivityObserver.AfterNodeInitializeAsync(IActivityNodeContext context)
             => Task.CompletedTask;
 
-        Task IActivityInterceptor.AfterProcessEventAsync(IEventContext<Event> context)
+        Task IActivityInterceptor.AfterProcessEventAsync<TEvent>(IEventContext<TEvent> context)
         {
-            Trace.WriteLine($"⦗→s⦘ Activity '{context.Activity.Id.Name}:{context.Activity.Id.Instance}': processed event '{context.Event.Name}'");
+            Trace.WriteLine($"⦗→s⦘ Activity '{context.Activity.Id.Name}:{context.Activity.Id.Instance}': processed event '{Event.GetName(context.Event.GetType())}'");
 
             Context = (context as BaseContext).Context;
 
@@ -199,7 +199,7 @@ namespace Stateflows.Activities.Engine
         Task IActivityObserver.BeforeNodeFinalizeAsync(IActivityNodeContext context)
             => Task.CompletedTask;
 
-        Task<bool> IActivityInterceptor.BeforeProcessEventAsync(IEventContext<Event> context)
+        Task<bool> IActivityInterceptor.BeforeProcessEventAsync<TEvent>(IEventContext<TEvent> context)
         {
             var result = true;
 
@@ -217,7 +217,7 @@ namespace Stateflows.Activities.Engine
 
             if (result)
             {
-                Trace.WriteLine($"⦗→s⦘ Activity '{context.Activity.Id.Name}:{context.Activity.Id.Instance}': received event '{context.Event.Name}', trying to process it");
+                Trace.WriteLine($"⦗→s⦘ Activity '{context.Activity.Id.Name}:{context.Activity.Id.Instance}': received event '{Event.GetName(context.Event.GetType())}', trying to process it");
             }
 
             return Task.FromResult(result);

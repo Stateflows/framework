@@ -181,7 +181,7 @@
         }
     }
 
-    private string GetEventName(string eventName)
+    private string GetEventName(sEventHolderHolder eventName)
         => eventName.Contains('<')
             ? $"{eventName.Split('<').First().Split('.').Last()}<{eventName.Split('<').Last()}"
             : eventName.Split('.').Last();

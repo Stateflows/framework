@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using Stateflows.Common.Interfaces;
 
@@ -11,11 +12,11 @@ namespace Stateflows.Common
     {
         BehaviorId Id { get; }
 
-        Task<SendResult> SendAsync<TEvent>(TEvent @event, params EventHeader[] headers);
+        Task<SendResult> SendAsync<TEvent>(TEvent @event, IEnumerable<EventHeader> headers = null);
 
-        Task<RequestResult<TResponse>> RequestAsync<TResponse>(IRequest<TResponse> request, params EventHeader[] headers);
+        Task<RequestResult<TResponseEvent>> RequestAsync<TResponseEvent>(IRequest<TResponseEvent> request, IEnumerable<EventHeader> headers = null);
 
-        Task<RequestResult<CompoundResponse>> SendCompoundAsync(Action<ICompound> builderAction, params EventHeader[] headers)
+        Task<RequestResult<CompoundResponse>> SendCompoundAsync(Action<ICompound> builderAction, IEnumerable<EventHeader> headers = null)
         {
             var compound = new CompoundRequest();
             builderAction(compound);

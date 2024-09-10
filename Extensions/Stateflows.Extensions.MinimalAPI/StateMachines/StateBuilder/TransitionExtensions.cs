@@ -12,6 +12,20 @@ namespace Stateflows.StateMachines
     {
         private static readonly List<string> Endpoints = new();
 
+        public static IStateBuilder AddHttpInternalTransition(this IStateBuilder builder, string pattern, InternalTransitionBuildAction<HttpRequest>? transitionbuildAction = null, Action<IEndpointConventionBuilder>? endpointbuildAction = null)
+        {
+            builder.
+            //DependencyInjection.Endpoints.Add(
+            //    pattern,
+            //    (IEndpointRouteBuilder applicationBuilder) =>
+            //    {
+            //        applicationBuilder.Map()
+            //    }
+            //);
+
+            return builder;
+        }
+
         public static IStateBuilder AddHttpGetInternalTransition(this IStateBuilder builder, string pattern, InternalTransitionBuildAction<HttpRequest>? transitionbuildAction = null, Action<IEndpointConventionBuilder>? endpointbuildAction = null)
         {
             if (builder is IBehaviorBuilder behaviorBuilder)
@@ -44,7 +58,7 @@ namespace Stateflows.StateMachines
                             fullPattern,
                             async (string instance, HttpContext context, IBehaviorLocator locator) =>
                             {
-                                RequestResult<Response<IResult>>? result = locator.TryLocateBehavior(new BehaviorId(behaviorClass, instance), out var behavior)
+                                RequestResult<IResponse<IResult>>? result = locator.TryLocateBehavior(new BehaviorId(behaviorClass, instance), out var behavior)
                                     ? await behavior.RequestAsync(new HttpRequest() { Method = "GET", Url = pattern, Request = context.Request })
                                     : null;
 
@@ -94,7 +108,7 @@ namespace Stateflows.StateMachines
                             fullPattern,
                             async (string instance, TRequestPayload body, HttpContext context, IBehaviorLocator locator) =>
                             {
-                                RequestResult<Response<IResult>>? result = locator.TryLocateBehavior(new BehaviorId(behaviorClass, instance), out var behavior)
+                                RequestResult<IResponse<IResult>>? result = locator.TryLocateBehavior(new BehaviorId(behaviorClass, instance), out var behavior)
                                     ? await behavior.RequestAsync(new HttpRequest<TRequestPayload>() { Method = "POST", Url = pattern, Request = context.Request, Payload = body })
                                     : null;
 

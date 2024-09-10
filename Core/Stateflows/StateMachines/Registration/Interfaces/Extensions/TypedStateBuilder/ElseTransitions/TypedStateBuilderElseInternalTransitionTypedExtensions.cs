@@ -14,8 +14,7 @@ namespace Stateflows.StateMachines.Typed
         /// <typeparam name="TEvent">Event class</typeparam>
         /// <typeparam name="TElseTransition">Transition class; must implement <see cref="ITransitionEffect&lt;TEvent&gt;"/> interface</typeparam>
         [DebuggerHidden]
-        public static ITypedStateBuilder AddElseInternalTransition<TEvent, TElseTransition>(this ITypedStateBuilder builder)
-            where TEvent : Event, new()
+        public static ITypedStateBuilder AddElseInternalTransition<TEvent, TElseTransition>(this ITypedStateBuilder builder)
             where TElseTransition : class, ITransitionEffect<TEvent>
             => builder.AddElseTransition<TEvent, TElseTransition>(Constants.DefaultTransitionTarget);
     }

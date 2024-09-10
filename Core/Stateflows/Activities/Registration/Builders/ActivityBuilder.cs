@@ -58,8 +58,8 @@ namespace Stateflows.Activities.Registration.Builders
             Result.DefaultInitializer.Actions.Add(c =>
             {
                 var context = new ActivityInitializationContext(
-                    c,
-                    c.Context.Event as EventHolder<Initialize>,
+                    c.Context,
+                    c.NodeScope,
                     (c as ActivityInitializationContext).InputTokens
                 );
                 return actionAsync(context);
@@ -69,7 +69,6 @@ namespace Stateflows.Activities.Registration.Builders
         }
 
         public IActivityBuilder AddInitializer<TInitializationEvent>(Func<IActivityInitializationContext<TInitializationEvent>, Task<bool>> actionAsync)
-            where TInitializationEvent : Event, new()
         {
             actionAsync.ThrowIfNull(nameof(actionAsync));
 
@@ -81,8 +80,9 @@ namespace Stateflows.Activities.Registration.Builders
             {
                 var result = false;
                 var context = new ActivityInitializationContext<TInitializationEvent>(
-                    c,
-                    c.Context.Event as TInitializationEvent,
+                    c.Context,
+                    c.NodeScope,
+                    c.Context.EventHolder as EventHolder<TInitializationEvent>,
                     (c as ActivityInitializationContext).InputTokens
                 );
 
@@ -98,7 +98,7 @@ namespace Stateflows.Activities.Registration.Builders
                     }
                     else
                     {
-                        if (!await c.Context.Executor.Inspector.OnActivityInitializationExceptionAsync(context, context.InitializationEvent, e))
+                        if (!await c.Context.Executor.Inspector.OnActivityInitializationExceptionAsync(context, context.InitializationEventHolder, e))
                         {
                             throw;
                         }

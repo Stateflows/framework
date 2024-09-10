@@ -29,8 +29,7 @@ namespace Stateflows.StateMachines.Typed
         /// </list>
         /// </typeparam>
         [DebuggerHidden]
-        public static ITypedCompositeStateBuilder AddInternalTransition<TEvent, TTransition>(this ITypedCompositeStateBuilder builder)
-            where TEvent : Event, new()
+        public static ITypedCompositeStateBuilder AddInternalTransition<TEvent, TTransition>(this ITypedCompositeStateBuilder builder)
             where TTransition : class, ITransition<TEvent>
             => builder.AddTransition<TEvent, TTransition>(Constants.DefaultTransitionTarget);
     }

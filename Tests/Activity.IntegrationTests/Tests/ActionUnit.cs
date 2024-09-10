@@ -70,7 +70,7 @@ namespace Activity.IntegrationTests.Tests
             var isSet = ContextValues.GlobalValues.TryGet<int>("foo", out var value);
 
             // Use OutputTokens static class to get tokens that are produced by tested action class
-            var output = OutputTokens.Get<int>().FirstOrDefault();
+            var output = OutputTokens.GetAllOfType<int>().FirstOrDefault();
 
             Assert.IsTrue(isSet);
             Assert.AreEqual(42, value);

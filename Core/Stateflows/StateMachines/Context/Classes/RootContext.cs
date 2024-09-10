@@ -18,7 +18,7 @@ namespace Stateflows.StateMachines.Context.Classes
 
         internal readonly Executor Executor;
 
-        public RootContext(StateflowsContext context, Executor executor, Event @event)
+        public RootContext(StateflowsContext context, Executor executor, EventHolder @event)
         {
             Context = context;
             Id = Context.Id;
@@ -28,8 +28,8 @@ namespace Stateflows.StateMachines.Context.Classes
 
         public Dictionary<string, string> GlobalValues => Context.GlobalValues;
 
-        private List<Event> deferredEvents = null;
-        public List<Event> DeferredEvents
+        private List<EventHolder> deferredEvents = null;
+        public List<EventHolder> DeferredEvents
         {
             get
             {
@@ -37,12 +37,12 @@ namespace Stateflows.StateMachines.Context.Classes
                 {
                     if (!Context.Values.TryGetValue(Constants.DeferredEvents, out var deferredEventsObj))
                     {
-                        deferredEvents = new List<Event>();
+                        deferredEvents = new List<EventHolder>();
                         Context.Values[Constants.DeferredEvents] = deferredEvents;
                     }
                     else
                     {
-                        deferredEvents = deferredEventsObj as List<Event>;
+                        deferredEvents = deferredEventsObj as List<EventHolder>;
                     }
                 }
 
@@ -137,11 +137,11 @@ namespace Stateflows.StateMachines.Context.Classes
 
         public string State { get; set; } = string.Empty;
 
-        private readonly Stack<Event> EventsStack = new Stack<Event>();
+        private readonly Stack<EventHolder> EventsStack = new Stack<EventHolder>();
 
-        public void SetEvent(Event @event)
+        public void SetEvent(EventHolder eventHolder)
         {
-            EventsStack.Push(@event);
+            EventsStack.Push(eventHolder);
         }
 
         public void ClearEvent()
@@ -149,7 +149,7 @@ namespace Stateflows.StateMachines.Context.Classes
             EventsStack.Pop();
         }
 
-        public Event Event => EventsStack.Any()
+        public EventHolder EventHolder => EventsStack.Any()
             ? EventsStack.Peek()
             : null;
 
@@ -157,8 +157,7 @@ namespace Stateflows.StateMachines.Context.Classes
 
         public EventStatus? ForceStatus { get; set; } = null;
 
-        public async Task Send<TEvent>(TEvent @event)
-            where TEvent : Event, new()
+        public async Task Send<TEvent>(TEvent @event)
         {
             var locator = Executor.ServiceProvider.GetService<IBehaviorLocator>();
             if (locator != null && locator.TryLocateBehavior(Id, out var behavior))

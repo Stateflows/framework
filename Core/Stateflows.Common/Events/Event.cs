@@ -7,6 +7,9 @@ namespace Stateflows.Common
 {
     public class Event
     {
+        public static string GetName(Type @type)
+            => @type.GetReadableName();
+
         public Guid Id { get; set; } = Guid.NewGuid();
 
         [JsonProperty(TypeNameHandling = TypeNameHandling.None)]
@@ -17,24 +20,8 @@ namespace Stateflows.Common
         public virtual string Name => GetType().GetEventName();
     }
 
-    public class Event<TPayload> : Event
+    public static class Event<TEvent>
     {
-        public Event()
-        {
-            Payload = default;
-        }
-
-        public TPayload Payload { get; set; }
+        public static string Name => Event.GetName(typeof(TEvent));
     }
-
-    //public static class EventInfo<TEvent>
-    //{
-    //    public static string Name => EventInfo.GetName(typeof(TEvent));
-    //}
-
-    //public static class EventInfo
-    //{
-    //    public static string GetName(Type @type)
-    //        => @type.GetReadableName();
-    //}
 }

@@ -164,8 +164,7 @@ namespace Stateflows.Activities.Registration
             SendEventActionDelegateAsync<TEvent> actionAsync,
             BehaviorIdSelectorAsync targetSelectorAsync,
             SendEventActionBuildAction buildAction = null
-        )
-            where TEvent : Event, new()
+        )
             => AddAction(
                 actionNodeName,
                 async c =>
@@ -184,8 +183,7 @@ namespace Stateflows.Activities.Registration
             string actionNodeName,
             AcceptEventActionDelegateAsync<TEvent> actionAsync,
             AcceptEventActionBuildAction buildAction = null
-        )
-            where TEvent : Event, new()
+        )
             => AddNode(
                 NodeType.AcceptEventAction,
                 actionNodeName,

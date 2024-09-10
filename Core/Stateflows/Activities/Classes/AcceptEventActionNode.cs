@@ -1,11 +1,9 @@
 ﻿using System.Threading;
 using System.Threading.Tasks;
-using Stateflows.Common;
 
 namespace Stateflows.Activities
 {
-    public sealed class AcceptEventActionNode<TEvent> : IAcceptEventActionNode<TEvent>
-        where TEvent : Event, new()
+    public sealed class AcceptEventActionNode<TEvent> : IAcceptEventActionNode<TEvent>
     {
         public Task ExecuteAsync(TEvent @event, CancellationToken cancellationToken)
             => Task.CompletedTask;

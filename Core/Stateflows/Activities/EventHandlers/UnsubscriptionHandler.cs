@@ -10,8 +10,7 @@ namespace Stateflows.Activities.EventHandlers
     {
         public Type EventType => typeof(Unsubscribe);
 
-        public Task<EventStatus> TryHandleEventAsync<TEvent>(IEventInspectionContext<TEvent> context)
-            where TEvent : Event, new()
+        public Task<EventStatus> TryHandleEventAsync<TEvent>(IEventInspectionContext<TEvent> context)
         {
             if (context.Event is Unsubscribe request)
             {

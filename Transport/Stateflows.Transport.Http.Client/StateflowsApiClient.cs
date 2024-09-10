@@ -40,7 +40,7 @@ namespace Stateflows.Transport.Http.Client
         }
 
         [DebuggerHidden]
-        public async Task<SendResult> SendAsync(BehaviorId behaviorId, Event @event, IEnumerable<Watch> watches)
+        public async Task<SendResult> SendAsync(BehaviorId behaviorId, EventHolder @event, IEnumerable<Watch> watches)
         {
             var requestResult = await _httpClient.PostAsync(
                 "/stateflows/send",

@@ -39,7 +39,7 @@ namespace Stateflows.StateMachines.Registration.Interfaces
 
     public delegate IStateMachineExceptionHandler StateMachineExceptionHandlerFactory(IServiceProvider serviceProvider);
 
-    public delegate Event StateActionInitializationBuilder(IStateActionContext context);
+    public delegate EventHolder StateActionInitializationBuilder(IStateActionContext context);
     
-    public delegate Task<Event> StateActionInitializationBuilderAsync(IStateActionContext context);
+    public delegate Task<EventHolder> StateActionInitializationBuilderAsync(IStateActionContext context);
 }

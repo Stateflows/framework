@@ -3,12 +3,11 @@ using System.Diagnostics;
 using System.Collections.Generic;
 using System.Runtime.Serialization;
 using Microsoft.Extensions.DependencyInjection;
+using Stateflows.Common.Extensions;
 using Stateflows.StateMachines.Models;
-using Stateflows.StateMachines.Extensions;
 using Stateflows.StateMachines.Exceptions;
 using Stateflows.StateMachines.Registration.Builders;
 using Stateflows.StateMachines.Registration.Interfaces;
-using Stateflows.Common.Extensions;
 
 namespace Stateflows.StateMachines.Registration
 {

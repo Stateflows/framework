@@ -54,10 +54,10 @@ namespace Stateflows.Transport.AspNetCore.SignalR
         {
             behaviorId.BehaviorClass = behaviorId.BehaviorClass.ApplyCurrentEnvironment();
 
-            Event? @event;
+            EventHolder? @event;
             try
             {
-                @event = StateflowsJsonConverter.DeserializeObject<Event>(eventData);
+                @event = StateflowsJsonConverter.DeserializeObject<EventHolder>(eventData);
             }
             catch (Exception e)
             {
@@ -83,10 +83,10 @@ namespace Stateflows.Transport.AspNetCore.SignalR
 
         public async Task<string> Request(BehaviorId behaviorId, string requestData)
         {
-            Event? @event;
+            EventHolder? @event;
             try
             {
-                @event = StateflowsJsonConverter.DeserializeObject<Event>(requestData);
+                @event = StateflowsJsonConverter.DeserializeObject<EventHolder>(requestData);
             }
             catch (Exception e)
             {

@@ -19,7 +19,7 @@ namespace Stateflows.StateMachines.Typed
 
         [DebuggerHidden]
         public static IFinalizedStateMachineBuilder AddInitializer<TInitializationEvent, TInitializer>(this IFinalizedStateMachineBuilder builder)
-            where TInitializationEvent : Event, new()
+            where TInitializationEvent : EventHolder, new()
             where TInitializer : class, IInitializer<TInitializationEvent>
         {
             (builder as IInternal).Services.AddServiceType<TInitializer>();

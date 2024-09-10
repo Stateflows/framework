@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Stateflows.Common.Interfaces;
+using System;
 using System.Collections.Generic;
 using System.Threading;
 
@@ -17,6 +18,8 @@ namespace Stateflows.Common.Classes
         public EventStatus Status { get; set; }
 
         public List<Exception> Exceptions { get; set; } = new List<Exception>();
+
+        public Dictionary<object, EventHolder> Responses { get; set; } = new Dictionary<object, EventHolder>();
 
         public EventValidation Validation { get; internal set; }
 

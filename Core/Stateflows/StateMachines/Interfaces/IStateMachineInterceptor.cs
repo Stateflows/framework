@@ -1,5 +1,4 @@
 ﻿using System.Threading.Tasks;
-using Stateflows.Common;
 using Stateflows.StateMachines.Context.Interfaces;
 
 namespace Stateflows.StateMachines
@@ -12,10 +11,10 @@ namespace Stateflows.StateMachines
         Task BeforeDehydrateAsync(IStateMachineActionContext context)
             => Task.CompletedTask;
 
-        Task<bool> BeforeProcessEventAsync(IEventActionContext<Event> context)
+        Task<bool> BeforeProcessEventAsync<TEvent>(IEventActionContext<TEvent> context)
             => Task.FromResult(true);
 
-        Task AfterProcessEventAsync(IEventActionContext<Event> context)
+        Task AfterProcessEventAsync<TEvent>(IEventActionContext<TEvent> context)
             => Task.CompletedTask;
     }
 }

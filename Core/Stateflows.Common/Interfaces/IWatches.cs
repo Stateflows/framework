@@ -9,16 +9,16 @@ namespace Stateflows.Common.Interfaces
         /// Watches for notifications from behavior.<br/>
         /// Watch is not durable; it lasts as long as behavior handle does.
         /// </summary>
-        /// <typeparam name="TNotification">Notification type</typeparam>
+        /// <typeparam name="TNotificationEvent">Notification type</typeparam>
         /// <param name="handler">Notification handler</param>
         /// <returns>Task of watch operation</returns>
-        Task WatchAsync<TNotification>(Action<TNotification> handler);
+        Task WatchAsync<TNotificationEvent>(Action<TNotificationEvent> handler);
 
         /// <summary>
         /// Unwatches for notifications from behavior.
         /// </summary>
-        /// <typeparam name="TNotification">Notification type</typeparam>
+        /// <typeparam name="TNotificationEvent">Notification type</typeparam>
         /// <returns>Task of unwatch operation</returns>
-        Task UnwatchAsync<TNotification>();
+        Task UnwatchAsync<TNotificationEvent>();
     }
 }

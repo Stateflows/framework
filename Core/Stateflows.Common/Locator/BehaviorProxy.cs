@@ -20,7 +20,7 @@ namespace Stateflows.Common.Locator
             Interceptor = interceptor;
         }
 
-        public async Task<SendResult> SendAsync<TEvent>(TEvent @event, params EventHeader[] headers)
+        public async Task<SendResult> SendAsync<TEvent>(TEvent @event, IEnumerable<EventHeader> headers = null)
         {
             var headersList = headers?.ToList() ?? new List<EventHeader>();
 
@@ -33,7 +33,7 @@ namespace Stateflows.Common.Locator
             return result;
         }
 
-        public async Task<RequestResult<TResponse>> RequestAsync<TResponse>(IRequest<TResponse> request, params EventHeader[] headers)
+        public async Task<RequestResult<TResponse>> RequestAsync<TResponse>(IRequest<TResponse> request, IEnumerable<EventHeader> headers = null)
         {
             var headersList = headers?.ToList() ?? new List<EventHeader>();
 

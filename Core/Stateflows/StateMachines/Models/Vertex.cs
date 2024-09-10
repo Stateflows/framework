@@ -52,7 +52,7 @@ namespace Stateflows.StateMachines.Models
         public List<Type> BehaviorSubscriptions { get; set; } = new List<Type>();
         public List<string> GetBehaviorSubscriptionNames()
             => BehaviorSubscriptions
-            .Select(t => EventInfo.GetName(t))
+            .Select(t => Event.GetName(t))
             .ToList();
 
         public Subscribe GetSubscriptionRequest(StateMachineId hostId)

@@ -10,8 +10,7 @@ namespace Stateflows.Activities.EventHandlers
     {
         public Type EventType => typeof(Finalize);
 
-        public async Task<EventStatus> TryHandleEventAsync<TEvent>(IEventInspectionContext<TEvent> context)
-            where TEvent : Event, new()
+        public async Task<EventStatus> TryHandleEventAsync<TEvent>(IEventInspectionContext<TEvent> context)
         {
             if (context.Event is Finalize request)
             {

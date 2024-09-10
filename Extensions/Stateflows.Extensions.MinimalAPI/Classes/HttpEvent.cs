@@ -23,7 +23,7 @@ namespace Stateflows.Common
         public HttpRequest Request { get; set; }
     }
 
-    public class HttpEvent : Event
+    public class HttpEvent : EventHolder
     {
         internal static string? UrlOverride = null;
         internal static string? MethodOverride = null;

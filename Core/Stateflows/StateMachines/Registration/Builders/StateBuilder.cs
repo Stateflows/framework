@@ -197,7 +197,7 @@ namespace Stateflows.StateMachines.Registration.Builders
 
         #region Utils
         [DebuggerHidden]
-        public IStateBuilder AddDeferredEvent<TEvent>() where TEvent : Event, new()
+        public IStateBuilder AddDeferredEvent<TEvent>()
         {
             if (typeof(TEvent) == typeof(CompletionEvent))
                 throw new DeferralDefinitionException(typeof(TEvent).GetEventName(), "Completion event cannot be deferred.", Vertex.Graph.Class);
@@ -426,10 +426,9 @@ namespace Stateflows.StateMachines.Registration.Builders
                 buildAction?.Invoke(b as IForwardedEventBuilder<TEvent>);
             }) as IEmbeddedBehaviorBuilder;
 
-        public IEmbeddedBehaviorBuilder AddSubscription<TNotification>()
-            where TNotification : Notification, new()
+        public IEmbeddedBehaviorBuilder AddSubscription<TNotificationEvent>()
         {
-            Vertex.BehaviorSubscriptions.Add(typeof(TNotification));
+            Vertex.BehaviorSubscriptions.Add(typeof(TNotificationEvent));
             
             return this;
         }

@@ -209,13 +209,13 @@ namespace Stateflows.Activities.Engine
             return EventStatus.NotInitialized;
         }
 
-        public async Task<EventStatus> InitializeAsync(EventHolder eventHolder, IEnumerable<TokenHolder> input = null)
+        public async Task<EventStatus> InitializeAsync<TEvent>(EventHolder<TEvent> eventHolder, IEnumerable<TokenHolder> input = null)
         {
             Debug.Assert(Context != null, $"Context is unavailable. Is activity '{Graph.Name}' hydrated?");
 
             if (!Initialized)
             {
-                var context = new ActivityInitializationContext(Context, NodeScope, eventHolder, null);
+                var context = new ActivityInitializationContext<TEvent>(Context, NodeScope, eventHolder, null);
                 var result = await DoInitializeActivityAsync(context);
 
                 if (
@@ -235,7 +235,7 @@ namespace Stateflows.Activities.Engine
                     }
                     else
                     {
-                        if (eventHolder is EventHolder<Initialize>)
+                        if (eventHolder.Payload is Initialize)
                         {
                             return EventStatus.Initialized;
                         }
@@ -309,7 +309,7 @@ namespace Stateflows.Activities.Engine
             return OutputTokens;
         }
 
-        public async Task<EventStatus> ProcessAsync(EventHolder eventHolder)
+        public async Task<EventStatus> ProcessAsync<TEvent>(EventHolder<TEvent> eventHolder)
         {
             var result = EventStatus.Rejected;
 
@@ -323,15 +323,15 @@ namespace Stateflows.Activities.Engine
             return result;
         }
 
-        private async Task<EventStatus> DoProcessAsync(EventHolder eventHolder)
+        private async Task<EventStatus> DoProcessAsync<TEvent>(EventHolder<TEvent> eventHolder)
         {
             Debug.Assert(Context != null, $"Context is not available. Is activity '{Graph.Name}' hydrated?");
 
             var activeNodes = GetActiveNodes();
             var activeNode = activeNodes.FirstOrDefault(node =>
-                node.EventType == eventHolder.BoxedPayload.GetType() &&
+                node.EventType == eventHolder.PayloadType &&
                 (
-                    !(eventHolder.BoxedPayload is TimeEvent timeEvent) ||
+                    !(eventHolder.Payload is TimeEvent timeEvent) ||
                     (
                         Context.NodeTimeEvents.TryGetValue(node.Identifier, out var timeEventId) &&
                         timeEvent.Id == timeEventId
@@ -351,13 +351,13 @@ namespace Stateflows.Activities.Engine
                 activeNode = activeNode.Parent;
             }
 
-            var input = eventHolder.BoxedPayload is TokensTransferEvent tokensTransferEvent
+            var input = eventHolder.Payload is TokensTransferEvent tokensTransferEvent
                 ? tokensTransferEvent.Tokens
                 : null;
 
             (var result, var output) = await ExecuteGraphAsync(input);
 
-            if (eventHolder.BoxedPayload is IRequest<TokensOutput> inputTokens)
+            if (eventHolder.Payload is IRequest<TokensOutput> inputTokens)
             {
                 inputTokens.Respond(new TokensOutput() { Tokens = output.ToList() });
             }
@@ -592,7 +592,7 @@ namespace Stateflows.Activities.Engine
             return result;
         }
 
-        public async Task<InitializationStatus> DoInitializeActivityAsync(ActivityInitializationContext context)
+        public async Task<InitializationStatus> DoInitializeActivityAsync<TInitializationEvent>(ActivityInitializationContext<TInitializationEvent> context)
         {
             InitializationStatus result;
 
@@ -620,7 +620,7 @@ namespace Stateflows.Activities.Engine
                     }
                     else
                     {
-                        if (!await Inspector.OnActivityInitializationExceptionAsync(context, context.InitializationEvent, e))
+                        if (!await Inspector.OnActivityInitializationExceptionAsync(context, context.InitializationEventHolder, e))
                         {
                             throw;
                         }
@@ -777,8 +777,8 @@ namespace Stateflows.Activities.Engine
                 if (
                     interactiveNodeTypes.Contains(node.Type) &&
                     (
-                        Context.Event == null ||
-                        Context.Event.GetType() != node.EventType
+                        Context.EventHolder == null ||
+                        Context.EventHolder.GetType() != node.EventType
                     )
                 )
                 {
@@ -798,7 +798,7 @@ namespace Stateflows.Activities.Engine
 
                 if (interactiveNodeTypes.Contains(node.Type))
                 {
-                    var @event = Context.Event;
+                    var @event = Context.EventHolder;
 
                     if (@event is TimeEvent)
                     {
