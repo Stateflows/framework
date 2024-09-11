@@ -2,8 +2,8 @@
 using System.Diagnostics;
 using System.Collections.Generic;
 using Microsoft.Extensions.DependencyInjection;
-using Stateflows.Common;
 using Stateflows.Common.Interfaces;
+using Stateflows.Common.Initializer;
 using Stateflows.Common.Registration.Interfaces;
 using Stateflows.Activities.Engine;
 using Stateflows.Activities.Context;
@@ -11,7 +11,6 @@ using Stateflows.Activities.Registration;
 using Stateflows.Activities.EventHandlers;
 using Stateflows.Activities.Registration.Builders;
 using Stateflows.Activities.Registration.Interfaces;
-using Stateflows.Common.Initializer;
 
 namespace Stateflows.Activities
 {
@@ -56,23 +55,19 @@ namespace Stateflows.Activities
                     .AddSingleton<IActivityEventHandler, NotificationsHandler>()
                     .AddSingleton<IActivityEventHandler, SetGlobalValuesHandler>()
                     .AddTransient(provider =>
-                        ContextHolder.ActivityContext.Value ??
+                        ActivitiesContextHolder.ActivityContext.Value ??
                         throw new InvalidOperationException($"No service for type '{typeof(IActivityContext).FullName}' is available in this context.")
                     )
                     .AddTransient(provider =>
-                        ContextHolder.NodeContext.Value ??
+                        ActivitiesContextHolder.NodeContext.Value ??
                         throw new InvalidOperationException($"No service for type '{typeof(INodeContext).FullName}' is available in this context.")
                     )
                     .AddTransient(provider =>
-                        ContextHolder.FlowContext.Value ??
+                        ActivitiesContextHolder.FlowContext.Value ??
                         throw new InvalidOperationException($"No service for type '{typeof(IFlowContext).FullName}' is available in this context.")
                     )
                     .AddTransient(provider =>
-                        ContextHolder.ExecutionContext.Value ??
-                        throw new InvalidOperationException($"No service for type '{typeof(IExecutionContext).FullName}' is available in this context.")
-                    )
-                    .AddTransient(provider =>
-                        ContextHolder.ExceptionContext.Value ??
+                        ActivitiesContextHolder.ExceptionContext.Value ??
                         throw new InvalidOperationException($"No service for type '{typeof(IExceptionContext).FullName}' is available in this context.")
                     )
                     ;

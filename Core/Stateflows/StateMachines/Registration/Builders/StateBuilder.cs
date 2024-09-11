@@ -1,12 +1,14 @@
 ﻿using System;
 using System.Diagnostics;
 using System.Threading.Tasks;
+using System.Collections.Generic;
 using Microsoft.Extensions.DependencyInjection;
 using Stateflows.Common;
 using Stateflows.Common.Exceptions;
 using Stateflows.Common.Registration;
 using Stateflows.StateMachines.Events;
 using Stateflows.StateMachines.Models;
+using Stateflows.StateMachines.Extensions;
 using Stateflows.StateMachines.Exceptions;
 using Stateflows.StateMachines.Context.Classes;
 using Stateflows.StateMachines.Context.Interfaces;
@@ -14,7 +16,6 @@ using Stateflows.StateMachines.Registration.Extensions;
 using Stateflows.StateMachines.Registration.Interfaces;
 using Stateflows.StateMachines.Registration.Interfaces.Base;
 using Stateflows.StateMachines.Registration.Interfaces.Internal;
-using Stateflows.StateMachines.Extensions;
 
 namespace Stateflows.StateMachines.Registration.Builders
 {
@@ -58,7 +59,7 @@ namespace Stateflows.StateMachines.Registration.Builders
                 }
                 catch (Exception e)
                 {
-                    if (e is StateflowsException)
+                    if (e is StateflowsDefinitionException)
                     {
                         throw;
                     }
@@ -96,7 +97,7 @@ namespace Stateflows.StateMachines.Registration.Builders
                 }
                 catch (Exception e)
                 {
-                    if (e is StateflowsException)
+                    if (e is StateflowsDefinitionException)
                     {
                         throw;
                     }
@@ -134,7 +135,7 @@ namespace Stateflows.StateMachines.Registration.Builders
                     }
                     catch (Exception e)
                     {
-                        if (e is StateflowsException)
+                        if (e is StateflowsDefinitionException)
                         {
                             throw;
                         }
@@ -172,7 +173,7 @@ namespace Stateflows.StateMachines.Registration.Builders
                     }
                     catch (Exception e)
                     {
-                        if (e is StateflowsException)
+                        if (e is StateflowsDefinitionException)
                         {
                             throw;
                         }
@@ -426,6 +427,10 @@ namespace Stateflows.StateMachines.Registration.Builders
                                 ? EventStatus.Forwarded
                                 : result.Status
                         );
+                    }
+                    else
+                    {
+                        throw new StateDefinitionException(c.SourceState.Name, $"DoActivity '{Vertex.BehaviorName}' not found", c.StateMachine.Id.StateMachineClass);
                     }
                 });
 

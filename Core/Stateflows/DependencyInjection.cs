@@ -6,6 +6,7 @@ using Stateflows.Common.Lock;
 using Stateflows.Common.Tenant;
 using Stateflows.Common.Engine;
 using Stateflows.Common.Storage;
+using Stateflows.Common.Context;
 using Stateflows.Common.Scheduler;
 using Stateflows.Common.Extensions;
 using Stateflows.Common.Interfaces;
@@ -35,6 +36,10 @@ namespace Stateflows
                     .AddSingleton<ITenantAccessor, TenantAccessor>()
                     .AddScoped<CommonInterceptor>()
                     .AddScoped<IStateflowsTenantExecutor, TenantExecutor>()
+                    .AddTransient(provider =>
+                        CommonContextHolder.ExecutionContext.Value ??
+                        throw new InvalidOperationException($"No service for type '{typeof(IExecutionContext).FullName}' is available in this context.")
+                    )
                     ;
             }
 

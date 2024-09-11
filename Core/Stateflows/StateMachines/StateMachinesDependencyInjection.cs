@@ -2,7 +2,6 @@
 using System.Diagnostics;
 using System.Collections.Generic;
 using Microsoft.Extensions.DependencyInjection;
-using Stateflows.Common;
 using Stateflows.Common.Interfaces;
 using Stateflows.Common.Initializer;
 using Stateflows.Common.Registration.Interfaces;
@@ -17,7 +16,7 @@ namespace Stateflows.StateMachines
 {
     public static class SystemDependencyInjection
     {
-        private readonly static Dictionary<IStateflowsBuilder, StateMachinesRegister> Registers = new Dictionary<IStateflowsBuilder, StateMachinesRegister>();
+        private static readonly Dictionary<IStateflowsBuilder, StateMachinesRegister> Registers = new Dictionary<IStateflowsBuilder, StateMachinesRegister>();
 
         [DebuggerHidden]
         public static IStateflowsBuilder AddStateMachines(this IStateflowsBuilder stateflowsBuilder, StateMachinesBuildAction buildAction)
@@ -59,20 +58,16 @@ namespace Stateflows.StateMachines
                     .AddSingleton<IStateMachineEventHandler, UnsubscriptionHandler>()
                     .AddSingleton<IStateMachineEventHandler, NotificationsHandler>()
                     .AddTransient(provider =>
-                        ContextHolder.StateMachineContext.Value ??
+                        StateMachinesContextHolder.StateMachineContext.Value ??
                         throw new InvalidOperationException($"No service for type '{typeof(IStateMachineContext).FullName}' is available in this context.")
                     )
                     .AddTransient(provider =>
-                        ContextHolder.StateContext.Value ?? 
+                        StateMachinesContextHolder.StateContext.Value ?? 
                         throw new InvalidOperationException($"No service for type '{typeof(IStateContext).FullName}' is available in this context.")
                     )
                     .AddTransient(provider =>
-                        ContextHolder.TransitionContext.Value ??
+                        StateMachinesContextHolder.TransitionContext.Value ??
                         throw new InvalidOperationException($"No service for type '{typeof(ITransitionContext).FullName}' is available in this context.")
-                    )
-                    .AddTransient(provider =>
-                        ContextHolder.ExecutionContext.Value ??
-                        throw new InvalidOperationException($"No service for type '{typeof(IExecutionContext).FullName}' is available in this context.")
                     )
                 ;
             }

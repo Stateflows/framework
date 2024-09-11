@@ -129,7 +129,7 @@ namespace Stateflows.Activities.Registration
                 }
                 catch (Exception e)
                 {
-                    if (e is StateflowsException)
+                    if (e is StateflowsDefinitionException)
                     {
                         throw;
                     }
@@ -328,7 +328,7 @@ namespace Stateflows.Activities.Registration
                 }
                 catch (Exception e)
                 {
-                    if (e is StateflowsException)
+                    if (e is StateflowsDefinitionException)
                     {
                         throw;
                     }
@@ -362,7 +362,7 @@ namespace Stateflows.Activities.Registration
                 }
                 catch (Exception e)
                 {
-                    if (e is StateflowsException)
+                    if (e is StateflowsDefinitionException)
                     {
                         throw;
                     }

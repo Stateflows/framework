@@ -9,7 +9,7 @@ namespace Stateflows.Common
         {
             if (Response != null)
             {
-                throw new StateflowsException($"Already responded to request '{Name}'");
+                throw new StateflowsRuntimeException($"Already responded to request '{Name}'");
             }
 
             Response = response;

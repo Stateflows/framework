@@ -3,12 +3,11 @@ using System.Diagnostics;
 using System.Collections.Generic;
 using System.Runtime.Serialization;
 using Microsoft.Extensions.DependencyInjection;
+using Stateflows.Common.Extensions;
 using Stateflows.StateMachines.Models;
-using Stateflows.StateMachines.Extensions;
 using Stateflows.StateMachines.Exceptions;
 using Stateflows.StateMachines.Registration.Builders;
 using Stateflows.StateMachines.Registration.Interfaces;
-using Stateflows.Common.Extensions;
 
 namespace Stateflows.StateMachines.Registration
 {
@@ -142,6 +141,15 @@ namespace Stateflows.StateMachines.Registration
         {
             Services.AddServiceType<TObserver>();
             AddGlobalObserver(serviceProvider => serviceProvider.GetRequiredService<TObserver>());
+        }
+
+        [DebuggerHidden]
+        public void Validate(IEnumerable<BehaviorClass> behaviorClasses)
+        {
+            foreach (var stateMachine in StateMachines.Values)
+            {
+                stateMachine.Validate(behaviorClasses);
+            }
         }
     }
 }

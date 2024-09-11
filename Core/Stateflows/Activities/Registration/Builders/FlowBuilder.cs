@@ -44,7 +44,7 @@ namespace Stateflows.Activities.Registration.Builders
                 }
                 catch (Exception e)
                 {
-                    if (e is StateflowsException)
+                    if (e is StateflowsDefinitionException)
                     {
                         throw;
                     }
@@ -85,7 +85,7 @@ namespace Stateflows.Activities.Registration.Builders
                 }
                 catch (Exception e)
                 {
-                    if (e is StateflowsException)
+                    if (e is StateflowsDefinitionException)
                     {
                         throw;
                     }

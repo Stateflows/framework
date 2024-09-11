@@ -557,7 +557,7 @@ namespace Stateflows.Activities.Engine
                 }
                 catch (Exception e)
                 {
-                    if (e is StateflowsException)
+                    if (e is StateflowsDefinitionException)
                     {
                         throw;
                     }

@@ -48,6 +48,17 @@ namespace Stateflows.StateMachines.Models
 
         public readonly List<StateMachineObserverFactory> ObserverFactories = new List<StateMachineObserverFactory>();
 
+        public readonly List<BehaviorClass> RequiredBehaviors = new List<BehaviorClass>();
+
+        [DebuggerHidden]
+        public void Validate(IEnumerable<BehaviorClass> behaviorClasses)
+        {
+            foreach (var behaviorClass in RequiredBehaviors.Where(bc => !behaviorClasses.Contains(bc)))
+            {
+                throw new StateMachineDefinitionException($"{behaviorClass.Type} '{behaviorClass.Name}' required by state machine '{Name}' is not registered", Class);
+            }
+        }
+
         [DebuggerHidden]
         public void Build()
         {

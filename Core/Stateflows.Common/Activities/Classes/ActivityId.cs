@@ -17,7 +17,7 @@ namespace Stateflows.Activities
         {
             if (id.Type != BehaviorType.Activity)
             {
-                throw new StateflowsException("BehaviorId doesn't represent Activity");
+                throw new StateflowsDefinitionException("BehaviorId doesn't represent Activity");
             }
 
             Name = id.Name;

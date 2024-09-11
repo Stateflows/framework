@@ -3,7 +3,7 @@
 namespace Stateflows.Activities.Exceptions
 {
 #pragma warning disable S3925 // "ISerializable" should be implemented correctly
-    public class ActivityException : StateflowsException
+    public class ActivityException : StateflowsDefinitionException
     {
         public ActivityException(string message) : base(message) { }
     }

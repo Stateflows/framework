@@ -21,7 +21,7 @@ namespace Stateflows
         {
             buildAction.ThrowIfNull(nameof(buildAction));
 
-            if (services.IsServiceRegistered<BehaviorLocator>()) throw new StateflowsException("Stateflows client already registered");
+            if (services.IsServiceRegistered<BehaviorLocator>()) throw new StateflowsDefinitionException("Stateflows client already registered");
 
             var builder = new StateflowsClientBuilder(services);
 
