@@ -34,45 +34,48 @@ namespace Stateflows.StateMachines
         [DebuggerHidden]
         private static StateMachinesRegister EnsureStateMachinesServices(this IStateflowsBuilder stateflowsBuilder)
         {
-            if (!Registers.TryGetValue(stateflowsBuilder, out var register))
+            lock (Registers)
             {
-                register = new StateMachinesRegister(stateflowsBuilder.ServiceCollection);
-                Registers.Add(stateflowsBuilder, register);
+                if (!Registers.TryGetValue(stateflowsBuilder, out var register))
+                {
+                    register = new StateMachinesRegister(stateflowsBuilder.ServiceCollection);
+                    Registers.Add(stateflowsBuilder, register);
 
-                stateflowsBuilder
-                    .EnsureStateflowServices()
-                    .ServiceCollection
-                    .AddScoped<IStateMachinePlugin, TimeEvents>()
-                    .AddScoped<IStateMachinePlugin, Behaviors>()
-                    .AddScoped<IStateMachinePlugin, ContextCleanup>()
-                    .AddScoped<IStateMachinePlugin, Notifications>()
-                    .AddSingleton(register)
-                    .AddSingleton<IEventProcessor, Processor>()
-                    .AddTransient<IBehaviorProvider, Provider>()
-                    .AddSingleton<IStateMachineEventHandler, BehaviorStatusRequestHandler>()
-                    .AddSingleton<IStateMachineEventHandler, CurrentStateRequestHandler>()
-                    .AddSingleton<IStateMachineEventHandler, InitializeHandler>()
-                    .AddSingleton<IStateMachineEventHandler, FinalizationHandler>()
-                    .AddSingleton<IStateMachineEventHandler, ResetHandler>()
-                    .AddSingleton<IStateMachineEventHandler, SubscriptionHandler>()
-                    .AddSingleton<IStateMachineEventHandler, UnsubscriptionHandler>()
-                    .AddSingleton<IStateMachineEventHandler, NotificationsHandler>()
-                    .AddTransient(provider =>
-                        StateMachinesContextHolder.StateMachineContext.Value ??
-                        throw new InvalidOperationException($"No service for type '{typeof(IStateMachineContext).FullName}' is available in this context.")
-                    )
-                    .AddTransient(provider =>
-                        StateMachinesContextHolder.StateContext.Value ?? 
-                        throw new InvalidOperationException($"No service for type '{typeof(IStateContext).FullName}' is available in this context.")
-                    )
-                    .AddTransient(provider =>
-                        StateMachinesContextHolder.TransitionContext.Value ??
-                        throw new InvalidOperationException($"No service for type '{typeof(ITransitionContext).FullName}' is available in this context.")
-                    )
-                ;
+                    stateflowsBuilder
+                        .EnsureStateflowServices()
+                        .ServiceCollection
+                        .AddScoped<IStateMachinePlugin, TimeEvents>()
+                        .AddScoped<IStateMachinePlugin, Behaviors>()
+                        .AddScoped<IStateMachinePlugin, ContextCleanup>()
+                        .AddScoped<IStateMachinePlugin, Notifications>()
+                        .AddSingleton(register)
+                        .AddSingleton<IEventProcessor, Processor>()
+                        .AddTransient<IBehaviorProvider, Provider>()
+                        .AddSingleton<IStateMachineEventHandler, BehaviorStatusRequestHandler>()
+                        .AddSingleton<IStateMachineEventHandler, CurrentStateRequestHandler>()
+                        .AddSingleton<IStateMachineEventHandler, InitializeHandler>()
+                        .AddSingleton<IStateMachineEventHandler, FinalizationHandler>()
+                        .AddSingleton<IStateMachineEventHandler, ResetHandler>()
+                        .AddSingleton<IStateMachineEventHandler, SubscriptionHandler>()
+                        .AddSingleton<IStateMachineEventHandler, UnsubscriptionHandler>()
+                        .AddSingleton<IStateMachineEventHandler, NotificationsHandler>()
+                        .AddTransient(provider =>
+                            StateMachinesContextHolder.StateMachineContext.Value ??
+                            throw new InvalidOperationException($"No service for type '{typeof(IStateMachineContext).FullName}' is available in this context.")
+                        )
+                        .AddTransient(provider =>
+                            StateMachinesContextHolder.StateContext.Value ??
+                            throw new InvalidOperationException($"No service for type '{typeof(IStateContext).FullName}' is available in this context.")
+                        )
+                        .AddTransient(provider =>
+                            StateMachinesContextHolder.TransitionContext.Value ??
+                            throw new InvalidOperationException($"No service for type '{typeof(ITransitionContext).FullName}' is available in this context.")
+                        )
+                    ;
+                }
+
+                return register;
             }
-
-            return register;
         }
     }
 }
