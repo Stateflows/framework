@@ -12,7 +12,7 @@ namespace Stateflows.Common.Classes
         public BaseValueAccessor(string valueName, Func<IContextValues> valueSetSelector, string collectionName)
         {
             this.valueName = valueName;
-            this.valueSet = valueSetSelector?.Invoke() ?? throw new StateflowsException($"{collectionName} set is not available in current context");
+            this.valueSet = valueSetSelector?.Invoke() ?? throw new StateflowsDefinitionException($"{collectionName} set is not available in current context");
         }
 
         public void Set(T value)

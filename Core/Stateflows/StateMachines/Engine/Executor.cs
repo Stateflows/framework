@@ -668,10 +668,10 @@ namespace Stateflows.StateMachines.Engine
             ContextValues.SourceStateValuesHolder.Value = null;
             ContextValues.TargetStateValuesHolder.Value = null;
 
-            ContextHolder.StateContext.Value = null;
-            ContextHolder.TransitionContext.Value = null;
-            ContextHolder.StateMachineContext.Value = context.StateMachine;
-            ContextHolder.ExecutionContext.Value = context;
+            StateMachinesContextHolder.StateContext.Value = null;
+            StateMachinesContextHolder.TransitionContext.Value = null;
+            StateMachinesContextHolder.StateMachineContext.Value = context.StateMachine;
+            StateMachinesContextHolder.ExecutionContext.Value = context;
 
             var initializer = ServiceProvider.GetService<TDefaultInitializer>();
 
@@ -686,10 +686,10 @@ namespace Stateflows.StateMachines.Engine
             ContextValues.SourceStateValuesHolder.Value = null;
             ContextValues.TargetStateValuesHolder.Value = null;
 
-            ContextHolder.StateContext.Value = null;
-            ContextHolder.TransitionContext.Value = null;
-            ContextHolder.StateMachineContext.Value = context.StateMachine;
-            ContextHolder.ExecutionContext.Value = context;
+            StateMachinesContextHolder.StateContext.Value = null;
+            StateMachinesContextHolder.TransitionContext.Value = null;
+            StateMachinesContextHolder.StateMachineContext.Value = context.StateMachine;
+            StateMachinesContextHolder.ExecutionContext.Value = context;
 
             var initializer = ServiceProvider.GetService<TInitializer>();
 
@@ -704,10 +704,10 @@ namespace Stateflows.StateMachines.Engine
             ContextValues.SourceStateValuesHolder.Value = null;
             ContextValues.TargetStateValuesHolder.Value = null;
 
-            ContextHolder.StateContext.Value = null;
-            ContextHolder.TransitionContext.Value = null;
-            ContextHolder.StateMachineContext.Value = context.StateMachine;
-            ContextHolder.ExecutionContext.Value = context;
+            StateMachinesContextHolder.StateContext.Value = null;
+            StateMachinesContextHolder.TransitionContext.Value = null;
+            StateMachinesContextHolder.StateMachineContext.Value = context.StateMachine;
+            StateMachinesContextHolder.ExecutionContext.Value = context;
 
             var initializer = ServiceProvider.GetService<TFinalizer>();
 
@@ -722,10 +722,10 @@ namespace Stateflows.StateMachines.Engine
             ContextValues.SourceStateValuesHolder.Value = null;
             ContextValues.TargetStateValuesHolder.Value = null;
 
-            ContextHolder.StateContext.Value = context.CurrentState;
-            ContextHolder.TransitionContext.Value = null;
-            ContextHolder.StateMachineContext.Value = context.StateMachine;
-            ContextHolder.ExecutionContext.Value = context;
+            StateMachinesContextHolder.StateContext.Value = context.CurrentState;
+            StateMachinesContextHolder.TransitionContext.Value = null;
+            StateMachinesContextHolder.StateMachineContext.Value = context.StateMachine;
+            StateMachinesContextHolder.ExecutionContext.Value = context;
 
             var state = ServiceProvider.GetService<TState>();
 
@@ -741,10 +741,10 @@ namespace Stateflows.StateMachines.Engine
             ContextValues.SourceStateValuesHolder.Value = context.SourceState.Values;
             ContextValues.TargetStateValuesHolder.Value = context.TargetState?.Values;
 
-            ContextHolder.StateContext.Value = null;
-            ContextHolder.TransitionContext.Value = context;
-            ContextHolder.StateMachineContext.Value = context.StateMachine;
-            ContextHolder.ExecutionContext.Value = context;
+            StateMachinesContextHolder.StateContext.Value = null;
+            StateMachinesContextHolder.TransitionContext.Value = context;
+            StateMachinesContextHolder.StateMachineContext.Value = context.StateMachine;
+            StateMachinesContextHolder.ExecutionContext.Value = context;
 
             var transition = ServiceProvider.GetService<TTransition>();
 
@@ -759,10 +759,10 @@ namespace Stateflows.StateMachines.Engine
             ContextValues.SourceStateValuesHolder.Value = context.SourceState.Values;
             ContextValues.TargetStateValuesHolder.Value = context.TargetState?.Values;
 
-            ContextHolder.StateContext.Value = null;
-            ContextHolder.TransitionContext.Value = context;
-            ContextHolder.StateMachineContext.Value = context.StateMachine;
-            ContextHolder.ExecutionContext.Value = context;
+            StateMachinesContextHolder.StateContext.Value = null;
+            StateMachinesContextHolder.TransitionContext.Value = context;
+            StateMachinesContextHolder.StateMachineContext.Value = context.StateMachine;
+            StateMachinesContextHolder.ExecutionContext.Value = context;
 
             var transition = ServiceProvider.GetService<TDefaultTransition>();
 

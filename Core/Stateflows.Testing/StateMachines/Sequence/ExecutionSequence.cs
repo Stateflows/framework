@@ -37,7 +37,7 @@ namespace Stateflows.Testing.StateMachines.Sequence
 
                 if (!found)
                 {
-                    throw new StateflowsException($"Expected execution step \"{entry}\" not found");
+                    throw new StateflowsDefinitionException($"Expected execution step \"{entry}\" not found");
                 }
             }
         }

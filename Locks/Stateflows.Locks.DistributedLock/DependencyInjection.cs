@@ -16,7 +16,7 @@ namespace Stateflows
         {
             if (builder.ServiceCollection.IsServiceRegistered<IStateflowsLock>())
             {
-                throw new StateflowsException("Another Stateflows lock already registered");
+                throw new StateflowsDefinitionException("Another Stateflows lock already registered");
             }
 
             builder

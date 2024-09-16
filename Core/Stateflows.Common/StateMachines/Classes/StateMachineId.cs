@@ -18,7 +18,7 @@ namespace Stateflows.StateMachines
         {
             if (id.Type != StateMachineClass.Type)
             {
-                throw new StateflowsException("BehaviorId doesn't represent State Machine");
+                throw new StateflowsDefinitionException("BehaviorId doesn't represent State Machine");
             }
 
             Name = id.Name;

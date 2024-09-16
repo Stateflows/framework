@@ -164,7 +164,8 @@ namespace Stateflows.Activities.Registration
             SendEventActionDelegateAsync<TEvent> actionAsync,
             BehaviorIdSelectorAsync targetSelectorAsync,
             SendEventActionBuildAction buildAction = null
-        )
+        )
+
             => AddAction(
                 actionNodeName,
                 async c =>
@@ -183,7 +184,8 @@ namespace Stateflows.Activities.Registration
             string actionNodeName,
             AcceptEventActionDelegateAsync<TEvent> actionAsync,
             AcceptEventActionBuildAction buildAction = null
-        )
+        )
+
             => AddNode(
                 NodeType.AcceptEventAction,
                 actionNodeName,

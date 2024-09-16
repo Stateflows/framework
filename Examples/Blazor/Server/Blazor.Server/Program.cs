@@ -58,7 +58,7 @@ builder.Services.AddStateflows(b => b
                     //var s = "{\"$type\":\"System.Exception, System.Private.CoreLib\",\"ClassName\":\"System.Exception\",\"Message\":\"boo\",\"Data\":null,\"InnerException\":{\"$type\":\"Blazor.Server.CustomExceptionX, Blazor.Server\",\"Message\":\"test\",\"Data\":{\"$type\":\"System.Collections.ListDictionaryInternal, System.Private.CoreLib\"},\"InnerException\":null,\"HelpLink\":null,\"Source\":null,\"HResult\":-2146233088,\"StackTrace\":null},\"HelpURL\":null,\"StackTraceString\":null,\"RemoteStackTraceString\":null,\"RemoteStackIndex\":0,\"ExceptionMethod\":null,\"HResult\":-2146233088,\"Source\":null,\"WatsonBuckets\":null}\r\n";
                     //var x = StateflowsJsonConverter.DeserializeObject(s);
 
-                    throw new Exception("test");
+                    //throw new Exception("test");
 
                     Debug.WriteLine("x");
                 })
@@ -71,7 +71,7 @@ builder.Services.AddStateflows(b => b
                     })
                     .AddGuard(c => throw new Exception("test"))
                 )
-                .AddDoActivity<Activity3>()
+                //.AddDoActivity<Activity3>()
             )
             .AddState("state2", b => b
                 .AddOnEntry(async c =>
@@ -98,7 +98,7 @@ builder.Services.AddStateflows(b => b
             .AddAcceptEventAction<SomeEvent>(async c =>
             {
                 Debug.WriteLine("Yuppi!");
-                throw new Exception("test");
+                //throw new Exception("test");
             })
         )
         .AddActivity("activity2", b => b
@@ -132,7 +132,7 @@ builder.Services.AddStateflows(b => b
                     async c =>
                     {
                         Debug.WriteLine(c.GetTokensOfType<int>().First());
-                        throw new Exception("test");
+                        //throw new Exception("test");
                     },
                     b => b.AddControlFlow("action3")
                 )

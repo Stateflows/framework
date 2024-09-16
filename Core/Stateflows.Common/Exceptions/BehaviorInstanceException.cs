@@ -3,7 +3,7 @@
 namespace Stateflows.Common.Exceptions
 {
 #pragma warning disable S3925 // "ISerializable" should be implemented correctly
-    public class BehaviorInstanceException : BehaviorException
+    public class BehaviorInstanceException : BehaviorRuntimeException
     {
         public BehaviorId BehaviorId { get; }
 

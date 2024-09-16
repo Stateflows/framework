@@ -17,7 +17,7 @@ namespace Stateflows
         {
             if (builder.ServiceCollection.IsServiceRegistered<IStateflowsStorage>())
             {
-                throw new StateflowsException("Another Stateflows storage already registered");
+                throw new StateflowsDefinitionException("Another Stateflows storage already registered");
             }
 
             builder.ServiceCollection

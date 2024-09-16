@@ -1,6 +1,7 @@
 ﻿using System.Linq;
 using System.Threading.Tasks;
 using Stateflows.Common;
+using Stateflows.StateMachines.Exceptions;
 using Stateflows.StateMachines.Context.Classes;
 using Stateflows.StateMachines.Context.Interfaces;
 using Stateflows.Utils;
@@ -33,6 +34,10 @@ namespace Stateflows.StateMachines.Engine
                         : (new Initialize()).ToEventHolder();
 
                     _ = behavior.SendAsync(initializationRequest);
+                }
+                else
+                {
+                    throw new StateDefinitionException(context.CurrentState.Name, $"DoActivity '{vertex.BehaviorName}' not found", context.StateMachine.Id.StateMachineClass);
                 }
             }
         }

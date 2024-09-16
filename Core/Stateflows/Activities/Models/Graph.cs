@@ -17,7 +17,10 @@ namespace Stateflows.Activities.Models
             Type = NodeType.Activity;
             Version = version;
             Level = 0;
+            Class = new ActivityClass(Name);
         }
+
+        public ActivityClass Class { get; }
 
         public int Version { get; }
         public Type ActivityType { get; set; }

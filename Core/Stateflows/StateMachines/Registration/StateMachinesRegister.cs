@@ -142,5 +142,14 @@ namespace Stateflows.StateMachines.Registration
             Services.AddServiceType<TObserver>();
             AddGlobalObserver(serviceProvider => serviceProvider.GetRequiredService<TObserver>());
         }
+
+        [DebuggerHidden]
+        public void Validate(IEnumerable<BehaviorClass> behaviorClasses)
+        {
+            foreach (var stateMachine in StateMachines.Values)
+            {
+                stateMachine.Validate(behaviorClasses);
+            }
+        }
     }
 }
