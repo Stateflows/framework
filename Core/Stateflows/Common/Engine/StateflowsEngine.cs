@@ -77,7 +77,7 @@ namespace Stateflows.Common
                             {
                                 if (token.Validation.IsValid)
                                 {
-                                    status = ProcessEventAsync(token.TargetId, token.Event, token.ServiceProvider, token.Exceptions)
+                                    status = ProcessEventAsync(token.TargetId, token.Event, token.Exceptions)
                                         .GetAwaiter()
                                         .GetResult();
                                 }
@@ -110,7 +110,7 @@ namespace Stateflows.Common
         }
 
         [DebuggerHidden]
-        public async Task<EventStatus> ProcessEventAsync<TEvent>(BehaviorId id, TEvent @event, IServiceProvider serviceProvider, List<Exception> exceptions)
+        public async Task<EventStatus> ProcessEventAsync<TEvent>(BehaviorId id, TEvent @event, List<Exception> exceptions)
             where TEvent : Event, new()
         {
             var result = EventStatus.Undelivered;
@@ -125,7 +125,7 @@ namespace Stateflows.Common
                 {
                     try
                     {
-                        result = await processor.ProcessEventAsync(id, @event, serviceProvider, exceptions);
+                        result = await processor.ProcessEventAsync(id, @event, exceptions);
                     }
                     finally
                     {

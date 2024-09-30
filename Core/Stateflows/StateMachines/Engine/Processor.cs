@@ -44,14 +44,14 @@ namespace Stateflows.StateMachines.Engine
                 : Task.FromResult(EventStatus.NotConsumed);
         }
 
-        public async Task<EventStatus> ProcessEventAsync<TEvent>(BehaviorId id, TEvent @event, IServiceProvider serviceProvider, List<Exception> exceptions)
+        public async Task<EventStatus> ProcessEventAsync<TEvent>(BehaviorId id, TEvent @event, List<Exception> exceptions)
             where TEvent : Event, new()
         {
             var result = EventStatus.Undelivered;
 
-            //serviceProvider = serviceProvider.CreateScope().ServiceProvider;
+            var serviceProvider = ServiceProvider.CreateScope().ServiceProvider;
 
-            var storage = ServiceProvider.GetRequiredService<IStateflowsStorage>();
+            var storage = serviceProvider.GetRequiredService<IStateflowsStorage>();
 
             var stateflowsContext = await storage.HydrateAsync(id);
 
@@ -64,7 +64,7 @@ namespace Stateflows.StateMachines.Engine
                 return result;
             }
 
-            using (var executor = new Executor(Register, graph, ServiceProvider, stateflowsContext, @event))
+            using (var executor = new Executor(Register, graph, serviceProvider, stateflowsContext, @event))
             {
                 await executor.HydrateAsync();
 

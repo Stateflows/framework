@@ -1,10 +1,10 @@
-﻿using System.Diagnostics;
+﻿using System;
+using System.Diagnostics;
 using System.Threading.Tasks;
 using Stateflows.Common;
 using Stateflows.StateMachines.Events;
 using Stateflows.StateMachines.Extensions;
 using Stateflows.StateMachines.Context.Interfaces;
-using System;
 
 namespace Stateflows.StateMachines.Engine
 {
@@ -138,60 +138,60 @@ namespace Stateflows.StateMachines.Engine
             return Task.CompletedTask;
         }
 
-        public Task OnStateMachineInitializationExceptionAsync(IStateMachineInitializationContext context, Exception exception)
+        public Task<bool> OnStateMachineInitializationExceptionAsync(IStateMachineInitializationContext context, Exception exception)
         {
             Trace.WriteLine($"⦗→s⦘ State Machine '{context.StateMachine.Id.Name}:{context.StateMachine.Id.Instance}': unhandled exception '{exception.GetType().Name}' with message '{exception.Message}' on State Machine initialization");
 
-            return Task.CompletedTask;
+            return Task.FromResult(false);
         }
 
-        public Task OnStateMachineFinalizationExceptionAsync(IStateMachineActionContext context, Exception exception)
+        public Task<bool> OnStateMachineFinalizationExceptionAsync(IStateMachineActionContext context, Exception exception)
         {
             Trace.WriteLine($"⦗→s⦘ State Machine '{context.StateMachine.Id.Name}:{context.StateMachine.Id.Instance}': unhandled exception '{exception.GetType().Name}' with message '{exception.Message}' on State Machine finalization");
 
-            return Task.CompletedTask;
+            return Task.FromResult(false);
         }
 
-        public Task OnTransitionGuardExceptionAsync(ITransitionContext<Event> context, Exception exception)
+        public Task<bool> OnTransitionGuardExceptionAsync(ITransitionContext<Event> context, Exception exception)
         {
             Trace.WriteLine($"⦗→s⦘ State Machine '{context.StateMachine.Id.Name}:{context.StateMachine.Id.Instance}': unhandled exception '{exception.GetType().Name}' with message '{exception.Message}' on transition guard");
 
-            return Task.CompletedTask;
+            return Task.FromResult(false);
         }
 
-        public Task OnTransitionEffectExceptionAsync(ITransitionContext<Event> context, Exception exception)
+        public Task<bool> OnTransitionEffectExceptionAsync(ITransitionContext<Event> context, Exception exception)
         {
             Trace.WriteLine($"⦗→s⦘ State Machine '{context.StateMachine.Id.Name}:{context.StateMachine.Id.Instance}': unhandled exception '{exception.GetType().Name}' with message '{exception.Message}' on transition effect");
 
-            return Task.CompletedTask;
+            return Task.FromResult(false);
         }
 
-        public Task OnStateInitializationExceptionAsync(IStateActionContext context, Exception exception)
+        public Task<bool> OnStateInitializationExceptionAsync(IStateActionContext context, Exception exception)
         {
             Trace.WriteLine($"⦗→s⦘ State Machine '{context.StateMachine.Id.Name}:{context.StateMachine.Id.Instance}': unhandled exception '{exception.GetType().Name}' with message '{exception.Message}' on state initialization");
 
-            return Task.CompletedTask;
+            return Task.FromResult(false);
         }
 
-        public Task OnStateFinalizationExceptionAsync(IStateActionContext context, Exception exception)
+        public Task<bool> OnStateFinalizationExceptionAsync(IStateActionContext context, Exception exception)
         {
             Trace.WriteLine($"⦗→s⦘ State Machine '{context.StateMachine.Id.Name}:{context.StateMachine.Id.Instance}': unhandled exception '{exception.GetType().Name}' with message '{exception.Message}' on state finalization");
 
-            return Task.CompletedTask;
+            return Task.FromResult(false);
         }
 
-        public Task OnStateEntryExceptionAsync(IStateActionContext context, Exception exception)
+        public Task<bool> OnStateEntryExceptionAsync(IStateActionContext context, Exception exception)
         {
             Trace.WriteLine($"⦗→s⦘ State Machine '{context.StateMachine.Id.Name}:{context.StateMachine.Id.Instance}': unhandled exception '{exception.GetType().Name}' with message '{exception.Message}' on state entry");
 
-            return Task.CompletedTask;
+            return Task.FromResult(false);
         }
 
-        public Task OnStateExitExceptionAsync(IStateActionContext context, Exception exception)
+        public Task<bool> OnStateExitExceptionAsync(IStateActionContext context, Exception exception)
         {
             Trace.WriteLine($"⦗→s⦘ State Machine '{context.StateMachine.Id.Name}:{context.StateMachine.Id.Instance}': unhandled exception '{exception.GetType().Name}' with message '{exception.Message}' on state exit");
 
-            return Task.CompletedTask;
+            return Task.FromResult(false);
         }
     }
 }
