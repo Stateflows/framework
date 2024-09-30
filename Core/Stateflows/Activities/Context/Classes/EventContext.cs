@@ -1,11 +1,11 @@
-﻿using Stateflows.Common;
+﻿using Stateflows.Common.Interfaces;
 using Stateflows.Activities.Engine;
 using Stateflows.Activities.Context.Interfaces;
 using Stateflows.Activities.Inspection.Interfaces;
 
 namespace Stateflows.Activities.Context.Classes
 {
-    internal class EventContext<TEvent> : BaseContext, IEventInspectionContext<TEvent>, IRootContext
+    internal class EventContext<TEvent> : BaseContext, IEventInspectionContext<TEvent>, IRootContext, IStateflowsEventContext<TEvent>
     {
         IActivityContext IActivityActionContext.Activity => Activity;
 
@@ -15,6 +15,6 @@ namespace Stateflows.Activities.Context.Classes
             : base(context, nodeScope)
         { }
 
-        public TEvent Event => (Context.EventHolder as EventHolder<TEvent>).Payload;
+        public TEvent Event => (TEvent)Context.EventHolder.BoxedPayload;
     }
 }

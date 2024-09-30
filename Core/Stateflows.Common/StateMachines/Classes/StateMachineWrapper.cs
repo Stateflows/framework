@@ -1,6 +1,6 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Threading.Tasks;
+using System.Collections.Generic;
 using Stateflows.StateMachines;
 
 namespace Stateflows.Common.StateMachines.Classes
@@ -22,11 +22,8 @@ namespace Stateflows.Common.StateMachines.Classes
         public Task<RequestResult<TResponse>> RequestAsync<TResponse>(IRequest<TResponse> request, IEnumerable<EventHeader> headers = null)
             => Behavior.RequestAsync(request);
 
-        public Task WatchAsync<TNotification>(Action<TNotification> handler)
-            => Behavior.WatchAsync<TNotification>(handler);
-
-        public Task UnwatchAsync<TNotification>()
-            => Behavior.UnwatchAsync<TNotification>();
+        public Task<IWatcher> WatchAsync<TNotificationEvent>(Action<TNotificationEvent> handler)
+            => Behavior.WatchAsync(handler);
 
         public void Dispose()
         {

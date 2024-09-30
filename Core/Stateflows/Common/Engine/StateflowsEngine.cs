@@ -14,7 +14,7 @@ using System.Reflection;
 
 namespace Stateflows.Common
 {
-    internal class StateflowsEngine : IHostedService
+    internal class StateflowsEngine : IHostedService, IStateflowsEngine
     {
         private readonly IServiceScope Scope;
         private IServiceProvider ServiceProvider => Scope.ServiceProvider;
@@ -80,14 +80,7 @@ namespace Stateflows.Common
                             {
                                 if (token.Validation.IsValid)
                                 {
-                                    status = ProcessEventAsyncMethod.InvokeAsync<EventStatus>(
-                                        token.EventHolder.PayloadType,
-                                        this,
-                                        token.TargetId,
-                                        token.EventHolder,
-                                        token.Exceptions,
-                                        token.Responses
-                                    )
+                                    status = token.EventHolder.ProcessEventAsync(this, token.TargetId, token.Exceptions, token.Responses)
                                         .GetAwaiter()
                                         .GetResult();
                                 }
@@ -118,8 +111,6 @@ namespace Stateflows.Common
 
             return Task.CompletedTask;
         }
-
-        private readonly MethodInfo ProcessEventAsyncMethod = typeof(StateflowsEngine).GetMethod(nameof(ProcessEventAsync), BindingFlags.Instance | BindingFlags.Public);
 
         [DebuggerHidden]
         public async Task<EventStatus> ProcessEventAsync<TEvent>(BehaviorId id, EventHolder<TEvent> eventHolder, List<Exception> exceptions, Dictionary<object, EventHolder> responses)

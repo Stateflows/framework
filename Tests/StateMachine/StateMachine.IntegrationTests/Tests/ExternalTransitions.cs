@@ -191,8 +191,6 @@ namespace StateMachine.IntegrationTests.Tests
 
             if (StateMachineLocator.TryLocateStateMachine(new StateMachineId("nested-to-parent", "x"), out var sm))
             {
-                //await sm.InitializeAsync();
-                
                 status = (await sm.SendAsync(new SomeEvent())).Status;
 
                 currentState = (await sm.GetCurrentStateAsync()).Response.StatesStack.Last();

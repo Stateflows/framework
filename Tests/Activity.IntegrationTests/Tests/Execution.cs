@@ -91,7 +91,7 @@ namespace Activity.IntegrationTests.Tests
 
             if (ActivityLocator.TryLocateActivity(new ActivityId("simple", "x"), out var a))
             {
-                initialized = (await a.ExecuteAsync()).Status == EventStatus.Initialized;
+                initialized = (await a.SendAsync(new Initialize())).Status == EventStatus.Initialized;
                 finalized = (await a.GetStatusAsync()).Response.BehaviorStatus == BehaviorStatus.Finalized;
             }
 
@@ -111,7 +111,7 @@ namespace Activity.IntegrationTests.Tests
             {
                 await a.SendAsync(new Initialize());
                 Executed = false;
-                initialized = (await a.ExecuteAsync()).Status == EventStatus.Initialized;
+                initialized = (await a.SendAsync(new Initialize())).Status == EventStatus.Initialized;
                 finalized = (await a.GetStatusAsync()).Response.BehaviorStatus == BehaviorStatus.Finalized;
             }
 
@@ -131,8 +131,12 @@ namespace Activity.IntegrationTests.Tests
 
             if (ActivityLocator.TryLocateActivity(new ActivityId("output", "x"), out var a))
             {
-                var result = await a.ExecuteAsync();
-                outputAvailable = result.Response.TryGetOutputTokenOfType<int>(out output);
+                await a.WatchOutputAsync<int>(t =>
+                {
+                    outputAvailable = true;
+                    output = t.FirstOrDefault();
+                });
+                var result = await a.SendAsync(new Initialize());
                 initialized = result.Status == EventStatus.Initialized;
                 finalized = (await a.GetStatusAsync()).Response.BehaviorStatus == BehaviorStatus.Finalized;
             }
@@ -153,7 +157,7 @@ namespace Activity.IntegrationTests.Tests
 
             if (ActivityLocator.TryLocateActivity(new ActivityId("initialized", "x"), out var a))
             {
-                initialized = (await a.ExecuteAsync(new SomeEvent())).Status == EventStatus.Initialized;
+                initialized = (await a.SendAsync(new SomeEvent())).Status == EventStatus.Initialized;
                 finalized = (await a.GetStatusAsync()).Response.BehaviorStatus == BehaviorStatus.Finalized;
             }
 
@@ -171,7 +175,7 @@ namespace Activity.IntegrationTests.Tests
 
             if (ActivityLocator.TryLocateActivity(new ActivityId("interactive", "x"), out var a))
             {
-                executed = (await a.ExecuteAsync()).Status == EventStatus.NotInitialized;
+                executed = (await a.SendAsync(new Initialize())).Status == EventStatus.NotInitialized;
                 initialized = (await a.GetStatusAsync()).Response.BehaviorStatus == BehaviorStatus.Initialized;
             }
 

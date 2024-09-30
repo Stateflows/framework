@@ -16,6 +16,11 @@ namespace Stateflows.Activities
         public object BoxedPayload { get; }
 
         protected abstract object GetBoxedPayload();
+
+        [JsonIgnore]
+        public Type PayloadType => GetPayloadType();
+
+        protected abstract Type GetPayloadType();
     }
 
     public class TokenHolder<TToken> : TokenHolder
@@ -31,6 +36,9 @@ namespace Stateflows.Activities
 
         protected override object GetBoxedPayload()
             => Payload;
+
+        protected override Type GetPayloadType()
+            => typeof(TToken);
 
         public override bool Equals(object obj)
             => obj is TokenHolder holder && holder.Id == Id;

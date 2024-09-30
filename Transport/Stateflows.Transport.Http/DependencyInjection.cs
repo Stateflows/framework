@@ -44,11 +44,11 @@ namespace Stateflows.Transport.Http
                                         EventStatus = result.Status,
                                         Validation = result.Validation,
                                         Response = result.Status == EventStatus.Consumed
-                                            ? result.Event.GetResponse()
+                                            ? input.Event.GetResponseHolder()
                                             : null,
                                         Notifications = result.Status != EventStatus.Rejected
                                             ? hub.Notifications.GetPendingNotifications(behaviorId, input.Watches)
-                                            : Array.Empty<Notification>(),
+                                            : Array.Empty<EventHolder>(),
                                         ResponseTime = responseTime,
                                     },
                                     true

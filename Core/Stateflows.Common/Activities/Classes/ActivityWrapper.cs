@@ -37,29 +37,14 @@ namespace Stateflows.Common.Activities.Classes
             return SendAsync(stream);
         }
 
-        public Task WatchOutputAsync(Action<ITokensOutput> handler)
-            => Behavior.WatchAsync<TokensOutput>(handler);
-
-        public Task WatchOutputAsync<TToken>(Action<IEnumerable<TToken>> handler)
-            => Behavior.WatchAsync<TokensOutput<TToken>>(output => handler(output.GetAll()));
-
-        public Task UnwatchOutputAsync()
-            => Behavior.UnwatchAsync<TokensOutput>();
-
-        public Task UnwatchOutputAsync<TToken>()
-            => Behavior.UnwatchAsync<TokensOutput<TToken>>();
-
         public Task<SendResult> SendAsync<TEvent>(TEvent @event, IEnumerable<EventHeader> headers = null)
             => Behavior.SendAsync(@event, headers);
 
         public Task<RequestResult<TResponse>> RequestAsync<TResponse>(IRequest<TResponse> request, IEnumerable<EventHeader> headers = null)
             => Behavior.RequestAsync(request, headers);
 
-        public Task WatchAsync<TNotificationEvent>(Action<TNotificationEvent> handler)
-            => Behavior.WatchAsync<TNotificationEvent>(handler);
-
-        public Task UnwatchAsync<TNotificationEvent>()
-            => Behavior.UnwatchAsync<TNotificationEvent>();
+        public Task<IWatcher> WatchAsync<TNotificationEvent>(Action<TNotificationEvent> handler)
+            => Behavior.WatchAsync(handler);
 
         public void Dispose()
         {

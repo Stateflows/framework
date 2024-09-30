@@ -1,9 +1,6 @@
 ﻿using System;
-using System.Data;
-using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
-using System.Threading.Tasks;
 
 namespace Stateflows.Common.Extensions
 {
@@ -107,13 +104,5 @@ namespace Stateflows.Common.Extensions
         public static bool IsOverridenIn<TType>(this PropertyInfo baseProperty)
             where TType : class
             => baseProperty.IsOverridenIn(typeof(TType));
-
-        [DebuggerHidden]
-        internal static Task<T> InvokeAsync<T>(this MethodInfo method, Type genericType, object instance, params object[] args)
-            => (Task<T>)method.MakeGenericMethod(genericType).Invoke(instance, args);
-
-        [DebuggerHidden]
-        internal static Task InvokeAsync(this MethodInfo method, Type genericType, object instance, params object[] args)
-            => (Task)method.MakeGenericMethod(genericType).Invoke(instance, args);
     }
 }

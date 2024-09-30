@@ -1,4 +1,6 @@
-﻿using Stateflows.Common;
+﻿using System;
+using System.Collections.Generic;
+using Stateflows.Common;
 using Stateflows.StateMachines.Context.Interfaces;
 using Stateflows.StateMachines.Inspection.Interfaces;
 
@@ -15,5 +17,9 @@ namespace Stateflows.StateMachines.Context.Classes
         { }
 
         public TEvent Event => (Context.EventHolder as EventHolder<TEvent>).Payload;
+
+        public Guid EventId => Context.EventHolder.Id;
+
+        public IEnumerable<EventHeader> Headers => Context.EventHolder.Headers;
     }
 }

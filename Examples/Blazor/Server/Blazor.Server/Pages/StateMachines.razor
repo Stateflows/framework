@@ -74,6 +74,9 @@
 
     private IStateMachineBehavior? _stateMachine = null;
 
+    private IWatcher currentStateWatcher = null;
+    private IWatcher plantUmlWatcher = null;
+
     private async Task<IStateMachineBehavior?> GetStateMachineAsync()
     {
         var instance = $"{stateMachineInstance}";
@@ -84,8 +87,9 @@
 
         if (_stateMachine != null)
         {
-            await _stateMachine.UnwatchCurrentStateAsync();
-            await _stateMachine.UnwatchPlantUmlAsync();
+            await currentStateWatcher.UnwatchAsync();
+            await plantUmlWatcher.UnwatchAsync();
+
             _stateMachine.Dispose();
         }
 
@@ -100,7 +104,7 @@
                 await InvokeAsync(() => StateHasChanged());
             });
 
-            await _stateMachine.WatchCurrentStateAsync(async n =>
+            currentStateWatcher = await _stateMachine.WatchCurrentStateAsync(async n =>
             {
                 Console.WriteLine($"current state changed: {instance}");
                 expectedEvents = n.ExpectedEvents;
@@ -115,7 +119,7 @@
                 await InvokeAsync(() => StateHasChanged());
             });
 
-            await _stateMachine.WatchPlantUmlAsync(async n =>
+            plantUmlWatcher = await _stateMachine.WatchPlantUmlAsync(async n =>
             {
                 plantUmlUrl = n.GetUrl();
 
@@ -197,7 +201,7 @@
         var sm = await GetStateMachineAsync();
         if (sm != null)
         {
-            var response = (await sm.ResetAsync())?.Response;
+            var response = await sm.ResetAsync();
             message = "State Machine resetted";
         }
     }
@@ -213,7 +217,7 @@
 
         if (eventType != null)
         {
-            var ev = System.Activator.CreateInstance(eventType) as EventHolderHolder;
+            var ev = System.Activator.CreateInstance(eventType) as object;
 
             var sm = await GetStateMachineAsync();
             if (sm != null)

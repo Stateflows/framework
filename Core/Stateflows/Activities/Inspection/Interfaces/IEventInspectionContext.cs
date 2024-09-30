@@ -1,5 +1,4 @@
-﻿using Stateflows.Common;
-using Stateflows.Activities.Context.Interfaces;
+﻿using Stateflows.Activities.Context.Interfaces;
 
 namespace Stateflows.Activities.Inspection.Interfaces
 {

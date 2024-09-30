@@ -1,6 +1,6 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Threading.Tasks;
+using System.Collections.Generic;
 using Stateflows.Common.Interfaces;
 
 namespace Stateflows.Common
@@ -32,10 +32,20 @@ namespace Stateflows.Common
         Task<RequestResult<BehaviorInfo>> GetStatusAsync()
             => RequestAsync(new BehaviorInfoRequest());
 
-        Task WatchStatusAsync(Action<BehaviorInfo> handler)
-            => WatchAsync(handler);
+        async Task<IWatcher> WatchStatusAsync(Action<BehaviorInfo> handler, bool immediateRequest = true)
+        {
+            var watcher = await WatchAsync(handler);
 
-        Task UnwatchStatusAsync()
-            => UnwatchAsync<BehaviorInfo>();
+            if (immediateRequest)
+            {
+                var result = await GetStatusAsync();
+                if (result.Status == EventStatus.Consumed)
+                {
+                    _ = Task.Run(() => handler(result.Response));
+                }
+            }
+
+            return watcher;
+        }
     }
 }

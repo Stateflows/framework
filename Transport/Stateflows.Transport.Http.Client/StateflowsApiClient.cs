@@ -3,9 +3,9 @@ using System.Text;
 using System.Net.Mime;
 using System.Net.Http.Json;
 using System.Diagnostics;
+using Stateflows.Utils;
 using Stateflows.Common;
 using Stateflows.Common.Utilities;
-using Stateflows.Common.Extensions;
 using Stateflows.Common.Transport.Classes;
 using Stateflows.Common.Transport.Interfaces;
 
@@ -17,7 +17,7 @@ namespace Stateflows.Transport.Http.Client
 
         private readonly Timer _timer;
 
-        public event Action<Notification, DateTime>? OnNotify;
+        public event Action<EventHolder, DateTime>? OnNotify;
 
         public List<INotificationTarget> NotificationTargets { get; } = new();
 
@@ -36,7 +36,7 @@ namespace Stateflows.Transport.Http.Client
                 targets = NotificationTargets;
             }
 
-            await Task.WhenAll(targets.Select(target => SendAsync(target.Id, new NotificationsRequest(), target.Watches)));
+            await Task.WhenAll(targets.Select(target => SendAsync(target.Id, new NotificationsRequest().ToEventHolder(), target.Watches)));
         }
 
         [DebuggerHidden]
@@ -65,7 +65,7 @@ namespace Stateflows.Transport.Http.Client
                 var result = StateflowsJsonConverter.DeserializeObject<StateflowsResponse>(jsonString);
                 if (result != null)
                 {
-                    if (result.Response != null)
+                    if (result.Response != null && @event.IsRequest())
                     {
                         @event.Respond(result.Response);
                     }

@@ -3,13 +3,13 @@ using System.Diagnostics;
 using System.Threading.Tasks;
 using System.Collections.Generic;
 using Microsoft.Extensions.DependencyInjection;
+using Stateflows.Utils;
 using Stateflows.Common.Utilities;
 using Stateflows.Common.Subscription;
-using Stateflows.Utils;
 
 namespace Stateflows.Common.Classes
 {
-    internal class Behavior : IBehavior
+    internal class Behavior : IBehavior, IUnwatcher
     {
         public BehaviorId Id { get; }
 
@@ -47,16 +47,16 @@ namespace Stateflows.Common.Classes
         }
 
         [DebuggerHidden]
-        public async Task<SendResult> SendAsync<TEvent>(TEvent @event, params EventHeader[] headers)
+        public async Task<SendResult> SendAsync<TEvent>(TEvent @event, IEnumerable<EventHeader> headers = null)
         {
-            var executionToken = engine.EnqueueEvent(Id, @event.ToEventHolder(), serviceProvider);
+            var executionToken = engine.EnqueueEvent(Id, @event.ToEventHolder(@event.GetType()), serviceProvider);
             await executionToken.Handled.WaitOneAsync();
 
             return new SendResult(executionToken.EventHolder, executionToken.Status, executionToken.Validation);
         }
 
         [DebuggerHidden]
-        public async Task<RequestResult<TResponseEvent>> RequestAsync<TResponseEvent>(IRequest<TResponseEvent> request, params EventHeader[] headers)
+        public async Task<RequestResult<TResponseEvent>> RequestAsync<TResponseEvent>(IRequest<TResponseEvent> request, IEnumerable<EventHeader> headers = null)
         {
             var executionToken = engine.EnqueueEvent(Id, request.ToEventHolder(request.GetType()), serviceProvider);
             await executionToken.Handled.WaitOneAsync();
@@ -70,7 +70,7 @@ namespace Stateflows.Common.Classes
             return result;
         }
 
-        public Task WatchAsync<TNotificationEvent>(Action<TNotificationEvent> handler)
+        public Task<IWatcher> WatchAsync<TNotificationEvent>(Action<TNotificationEvent> handler)
         {
             lock (handlers)
             {
@@ -84,7 +84,7 @@ namespace Stateflows.Common.Classes
                 notificationHandlers.Add(eventHolder => handler((eventHolder as EventHolder<TNotificationEvent>).Payload));
             }
 
-            return Task.CompletedTask;
+            return Task.FromResult((IWatcher)new Watcher<TNotificationEvent>(this));
         }
 
         public Task UnwatchAsync<TNotificationEvent>()

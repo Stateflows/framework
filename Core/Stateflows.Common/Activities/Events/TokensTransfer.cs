@@ -27,7 +27,13 @@ namespace Stateflows.Activities.Events
         public List<TokenHolder> Tokens { get; set; } = new List<TokenHolder>();
     }
 
-    public sealed class TokensInput : TokensTransferEvent, ITokensInput, IRequest<TokensOutput>
+    public class TokensInputEvent : TokensTransferEvent
+    { }
+
+    public class TokensOutputEvent : TokensTransferEvent
+    { }
+
+    public sealed class TokensInput : TokensInputEvent, ITokensInput, IRequest<TokensOutput>
     {
         ITokensInput ITokensInput.Add<TToken>(TToken token)
             => Add(token);
@@ -50,7 +56,7 @@ namespace Stateflows.Activities.Events
         }
     }
 
-    public sealed class TokensOutput : TokensTransferEvent, ITokensOutput
+    public sealed class TokensOutput : TokensOutputEvent, ITokensOutput
     {
         IEnumerable<TToken> ITokensOutput.GetAllOfType<TToken>()
             => GetOfType<TToken>();
@@ -59,16 +65,24 @@ namespace Stateflows.Activities.Events
             => Tokens.OfType<TokenHolder<TToken>>().Select(holder => holder.Payload);
     }
 
-    public sealed class TokensInput<TToken> : TokensTransferEvent, IRequest<TokensOutput>
+    public sealed class TokensInput<TToken> : TokensInputEvent, IRequest<TokensOutput>
     {
-        public void Add(TToken token)
-            => Tokens.Add(new TokenHolder<TToken>() { Payload = token });
+        public TokensInput<TToken> Add(TToken token)
+        {
+            Tokens.Add(new TokenHolder<TToken>() { Payload = token });
 
-        public void AddRange(params TToken[] tokens)
-            => Tokens.AddRange(tokens.Select(token => new TokenHolder<TToken>() { Payload = token }));
+            return this;
+        }
+
+        public TokensInput<TToken> AddRange(params TToken[] tokens)
+        {
+            Tokens.AddRange(tokens.Select(token => new TokenHolder<TToken>() { Payload = token }));
+
+            return this;
+        }
     }
 
-    public sealed class TokensOutput<TToken> : TokensTransferEvent, ITokensOutput<TToken>
+    public sealed class TokensOutput<TToken> : TokensOutputEvent, ITokensOutput<TToken>
     {
         IEnumerable<TToken> ITokensOutput<TToken>.GetAll()
             => GetAll();

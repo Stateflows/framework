@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Linq;
+using System.Reflection;
 using System.Threading.Tasks;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
@@ -7,15 +8,13 @@ using Microsoft.Extensions.DependencyInjection;
 using Stateflows.Common;
 using Stateflows.Common.Context;
 using Stateflows.Common.Interfaces;
-using Stateflows.StateMachines.Models;
+using Stateflows.Common.Extensions;
 using Stateflows.StateMachines.Registration;
 using Stateflows.StateMachines.Context.Classes;
-using System.Reflection;
-using Stateflows.Common.Extensions;
 
 namespace Stateflows.StateMachines.Engine
 {
-    internal class Processor : IEventProcessor
+    internal class Processor : IEventProcessor, IStateflowsProcessor
     {
         public string BehaviorType => Constants.StateMachine;
 
@@ -30,12 +29,11 @@ namespace Stateflows.StateMachines.Engine
         )
         {
             Register = register;
-            ServiceProvider = serviceProvider.CreateScope().ServiceProvider;
+            ServiceProvider = serviceProvider;
             EventHandlers = eventHandlers;
         }
 
         private Task<EventStatus> TryHandleEventAsync<TEvent>(EventContext<TEvent> context)
-
         {
             var eventHandler = EventHandlers.FirstOrDefault(h => h.EventType.IsInstanceOfType(context.Event));
 
@@ -48,7 +46,9 @@ namespace Stateflows.StateMachines.Engine
         {
             var result = EventStatus.Undelivered;
 
-            var storage = ServiceProvider.GetRequiredService<IStateflowsStorage>();
+            var serviceProvider = ServiceProvider.CreateScope().ServiceProvider;
+
+            var storage = serviceProvider.GetRequiredService<IStateflowsStorage>();
 
             var stateflowsContext = await storage.HydrateAsync(id);
 
@@ -61,7 +61,7 @@ namespace Stateflows.StateMachines.Engine
                 return result;
             }
 
-            using (var executor = new Executor(Register, graph, ServiceProvider, stateflowsContext, eventHolder))
+            using (var executor = new Executor(Register, graph, serviceProvider, stateflowsContext, eventHolder))
             {
                 await executor.HydrateAsync();
 
@@ -81,15 +81,7 @@ namespace Stateflows.StateMachines.Engine
                             executor.BeginScope();
                             try
                             {
-                                var status = await ExecuteBehaviorAsyncMethod.InvokeAsync<EventStatus>(
-                                    ev.PayloadType,
-                                    this,
-                                    ev,
-                                    result,
-                                    stateflowsContext,
-                                    graph,
-                                    executor
-                                );
+                                var status = await ev.ExecuteBehaviorAsync(this, result, executor);
 
                                 results.Add(new RequestResult(
                                     ev,
@@ -121,7 +113,7 @@ namespace Stateflows.StateMachines.Engine
                         executor.BeginScope();
                         try
                         {
-                            result = await ExecuteBehaviorAsync(eventHolder, result, stateflowsContext, graph, executor);
+                            result = await ExecuteBehaviorAsync(eventHolder, result, executor);
                         }
                         finally
                         {
@@ -131,6 +123,15 @@ namespace Stateflows.StateMachines.Engine
                 }
                 finally
                 {
+                    if (stateflowsContext.Status == BehaviorStatus.Initialized)
+                    {
+                        stateflowsContext.Version = graph.Version;
+                    }
+
+                    stateflowsContext.Status = executor.BehaviorStatus;
+
+                    stateflowsContext.LastExecutedAt = DateTime.Now;
+
                     exceptions.AddRange(executor.Context.Exceptions);
 
                     await executor.DehydrateAsync();
@@ -143,9 +144,14 @@ namespace Stateflows.StateMachines.Engine
             return result;
         }
 
-        private readonly MethodInfo ExecuteBehaviorAsyncMethod = typeof(Processor).GetMethod(nameof(ExecuteBehaviorAsync), BindingFlags.Instance | BindingFlags.NonPublic);
-        
-        private async Task<EventStatus> ExecuteBehaviorAsync<TEvent>(EventHolder<TEvent> eventHolder, EventStatus result, StateflowsContext stateflowsContext, Graph graph, Executor executor)
+        Task<EventStatus> IStateflowsProcessor.ExecuteBehaviorAsync<TEvent>(EventHolder<TEvent> eventHolder, EventStatus result, IStateflowsExecutor stateflowsExecutor)
+            => ExecuteBehaviorAsync(eventHolder, result, stateflowsExecutor as Executor);
+
+        private async Task<EventStatus> ExecuteBehaviorAsync<TEvent>(
+            EventHolder<TEvent> eventHolder,
+            EventStatus result,
+            Executor executor
+        )
         {
             var eventContext = new EventContext<TEvent>(executor.Context);
 
@@ -200,18 +206,6 @@ namespace Stateflows.StateMachines.Engine
                     result = (EventStatus)executor.Context.ForceStatus;
                 }
             }
-
-            stateflowsContext.Status = executor.BehaviorStatus;
-
-            stateflowsContext.LastExecutedAt = DateTime.Now;
-
-            stateflowsContext.Version = stateflowsContext.Status switch
-            {
-                BehaviorStatus.NotInitialized => stateflowsContext.Version,
-                BehaviorStatus.Initialized => graph.Version,
-                BehaviorStatus.Finalized => graph.Version,
-                _ => 0
-            };
 
             return result;
         }

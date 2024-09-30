@@ -1,13 +1,18 @@
 ﻿using System;
 using System.Linq;
+using System.Reflection;
 using System.Diagnostics;
 using System.Threading.Tasks;
 using System.Collections.Generic;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.DependencyInjection;
+using Stateflows.Utils;
 using Stateflows.Common;
 using Stateflows.Common.Context;
 using Stateflows.Common.Classes;
+using Stateflows.Common.Extensions;
+using Stateflows.Common.Interfaces;
+using Stateflows.Common.Exceptions;
 using Stateflows.StateMachines.Models;
 using Stateflows.StateMachines.Events;
 using Stateflows.StateMachines.Context;
@@ -15,14 +20,10 @@ using Stateflows.StateMachines.Extensions;
 using Stateflows.StateMachines.Registration;
 using Stateflows.StateMachines.Context.Classes;
 using Stateflows.StateMachines.Context.Interfaces;
-using Stateflows.Common.Exceptions;
-using Stateflows.Utils;
-using System.Reflection;
-using Stateflows.Common.Extensions;
 
 namespace Stateflows.StateMachines.Engine
 {
-    internal sealed class Executor : IDisposable
+    internal sealed class Executor : IDisposable, IStateflowsExecutor
     {
         public readonly Graph Graph;
 
@@ -338,7 +339,7 @@ namespace Stateflows.StateMachines.Engine
 
                     RebuildVerticesStack();
 
-                    await DoProcessAsyncMethod.InvokeAsync(eventHolder.PayloadType, this, eventHolder);
+                    await eventHolder.DoProcessAsync(this);
 
                     Context.ClearEvent();
 
@@ -347,7 +348,8 @@ namespace Stateflows.StateMachines.Engine
             }
         }
 
-        private readonly MethodInfo DoProcessAsyncMethod = typeof(Executor).GetMethod(nameof(DoProcessAsync), BindingFlags.Instance | BindingFlags.NonPublic);
+        Task<EventStatus> IStateflowsExecutor.DoProcessAsync<TEvent>(EventHolder<TEvent> eventHolder)
+            => DoProcessAsync(eventHolder);
 
         private async Task<EventStatus> DoProcessAsync<TEvent>(EventHolder<TEvent> eventHolder)
         {
@@ -641,16 +643,18 @@ namespace Stateflows.StateMachines.Engine
             }
         }
 
-        private async Task DoCompletion()
+        private async Task<bool> DoCompletion()
         {
             var completionEventHolder = (new CompletionEvent()).ToEventHolder();
             Context.SetEvent(completionEventHolder);
 
             RebuildVerticesStack();
 
-            await DoProcessAsync(completionEventHolder);
+            var result = await DoProcessAsync(completionEventHolder);
 
             Context.ClearEvent();
+
+            return result == EventStatus.Consumed;
         }
 
         public IStateMachine GetStateMachine(Type stateMachineType)

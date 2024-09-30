@@ -29,7 +29,7 @@ namespace Stateflows.StateMachines.Engine
                         _ = behavior.SendAsync(vertex.GetSubscriptionRequest(context.StateMachine.Id));
                     }
 
-                    var initializationRequest = vertex.BehaviorInitializationBuilder != null
+                    var initializationRequest = vertex.BehaviorInitializationBuilder?.Invoke(context) != null
                         ? await vertex.BehaviorInitializationBuilder(context) ?? (new Initialize()).ToEventHolder()
                         : (new Initialize()).ToEventHolder();
 

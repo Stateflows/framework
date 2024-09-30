@@ -76,7 +76,7 @@ namespace Stateflows.Transport.AspNetCore.SignalR
 
             var result = await behavior.SendAsync(@event);
 
-            result = new RequestResult(@event, @event.GetResponse(), result.Status, result.Validation);
+            result = new RequestResult(@event, @event.GetResponseHolder(), result.Status, result.Validation);
 
             return StateflowsJsonConverter.SerializePolymorphicObject(result, true);
         }
@@ -107,7 +107,7 @@ namespace Stateflows.Transport.AspNetCore.SignalR
             {
                 var result = await behavior.SendAsync(@event);
 
-                result = new RequestResult(@event, @event.GetResponse(), result.Status, result.Validation);
+                result = new RequestResult(@event, @event.GetResponseHolder(), result.Status, result.Validation);
 
                 return StateflowsJsonConverter.SerializePolymorphicObject(result, true);
             }

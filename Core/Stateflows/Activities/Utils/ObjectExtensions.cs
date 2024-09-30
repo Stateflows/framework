@@ -4,16 +4,26 @@ using Stateflows.Activities;
 
 namespace Stateflows.Utils
 {
-    internal static class ObjectExtensions
+    public static class ObjectExtensions
     {
-        internal static EventHolder<TEvent> ToEventHolder<TEvent>(this TEvent payload)
-           => new EventHolder<TEvent>() { Payload = payload };
+        public static EventHolder<TEvent> ToEventHolder<TEvent>(this TEvent payload, BehaviorId? senderId = null)
+           => new EventHolder<TEvent>()
+           {
+               Payload = payload,
+               SenderId = senderId != null
+                   ? (BehaviorId)senderId
+                   : default
+           };
 
-        internal static EventHolder ToEventHolder<TEvent>(this TEvent payload, Type tokenType)
+        public static EventHolder ToEventHolder<TEvent>(this TEvent payload, Type tokenType, BehaviorId? senderId = null)
         {
             var holderType = typeof(EventHolder<>).MakeGenericType(tokenType);
             var holder = (EventHolder)Activator.CreateInstance(holderType);
             holderType.GetProperty("Payload").SetValue(holder, payload);
+            if (senderId != null)
+            {
+                holder.SenderId = (BehaviorId)senderId;
+            }
 
             return holder;
         }

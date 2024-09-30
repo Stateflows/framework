@@ -10,9 +10,10 @@ namespace Stateflows
         public static Task<RequestResult<PlantUmlInfo>> GetPlantUmlAsync(this IBehavior behavior)
             => behavior.RequestAsync(new PlantUmlRequest());
 
-        public static async Task WatchPlantUmlAsync(this IBehavior behavior, Action<PlantUmlInfo> handler, bool immediateRequest = true)
+        public static async Task<IWatcher> WatchPlantUmlAsync(this IBehavior behavior, Action<PlantUmlInfo> handler, bool immediateRequest = true)
         {
-            await behavior.WatchAsync(handler);
+            var watcher = await behavior.WatchAsync(handler);
+
             if (immediateRequest)
             {
                 var result = await behavior.GetPlantUmlAsync();
@@ -21,9 +22,8 @@ namespace Stateflows
                     _ = Task.Run(() => handler(result.Response));
                 }
             }
-        }
 
-        public static Task UnwatchPlantUmlAsync(this IBehavior behavior)
-            => behavior.UnwatchAsync<PlantUmlInfo>();
+            return watcher;
+        }
     }
 }

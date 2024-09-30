@@ -5,7 +5,6 @@ using System.Threading.Tasks;
 using System.Collections.Generic;
 using Microsoft.Extensions.Hosting;
 using Stateflows.Common.Interfaces;
-using System.Diagnostics;
 
 namespace Stateflows.Common.Subscription
 {
@@ -21,19 +20,27 @@ namespace Stateflows.Common.Subscription
         public event Action<EventHolder> OnPublish;
 
         public Task PublishAsync(EventHolder eventHolder)
+            => PublishRangeAsync(new EventHolder[] { eventHolder });
+
+        public Task PublishRangeAsync(IEnumerable<EventHolder> eventHolders)
         {
+            var holdersBySenderIds = eventHolders.GroupBy(h => h.SenderId);
             lock (Notifications)
             {
-                if (!Notifications.TryGetValue(eventHolder.SenderId, out var behaviorNotifications))
+                foreach (var group in holdersBySenderIds)
                 {
-                    behaviorNotifications = new List<EventHolder>();
-                    Notifications.Add(eventHolder.SenderId, behaviorNotifications);
-                }
+                    if (!Notifications.TryGetValue(group.Key, out var behaviorNotifications))
+                    {
+                        behaviorNotifications = new List<EventHolder>();
+                        Notifications.Add(group.Key, behaviorNotifications);
+                    }
 
-                behaviorNotifications.Add(eventHolder);
+                    behaviorNotifications.AddRange(group);
+                }
             }
 
-            _ = Task.Run(() => OnPublish.Invoke(eventHolder));
+            var tasks = eventHolders.Select(h => Task.Run(() => OnPublish.Invoke(h)));
+            _ = Task.WhenAll(tasks);
 
             return Task.CompletedTask;
         }

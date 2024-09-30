@@ -1,15 +1,16 @@
 ﻿using System.Linq;
 using System.Diagnostics;
 using System.Threading.Tasks;
+using Stateflows.Utils;
 using Stateflows.Common;
 using Stateflows.Common.Classes;
 using Stateflows.Common.Utilities;
-using Stateflows.Activities.Events;
 using Stateflows.Activities.Extensions;
 using Stateflows.Activities.StateMachines.Interfaces;
 using Stateflows.StateMachines.Exceptions;
 using Stateflows.StateMachines.Registration;
 using Stateflows.StateMachines.Context.Interfaces;
+using Stateflows.Activities.Events;
 
 namespace Stateflows.Activities
 {
@@ -23,15 +24,20 @@ namespace Stateflows.Activities
                 Task.Run(async () =>
                 {
                     var integratedActivityBuilder = new StateActionActivityBuilder(buildAction);
-                    Event initializationEvent = (integratedActivityBuilder.InitializationBuilder != null)
+                    EventHolder initializationEvent = (integratedActivityBuilder.InitializationBuilder != null)
                         ? await integratedActivityBuilder.InitializationBuilder(context)
-                        : new Initialize();
-                    return a.SendCompoundAsync(
-                        integratedActivityBuilder.GetSubscriptionRequest(context.StateMachine.Id),
-                        new SetGlobalValues() { Values = (context.StateMachine.Values as ContextValuesCollection).Values },
-                        new ExecutionRequest() { InitializationEvent = initializationEvent },
-                        integratedActivityBuilder.GetUnsubscriptionRequest(context.StateMachine.Id)
-                    );
+                        : new Initialize().ToEventHolder();
+
+                    var request = new CompoundRequest();
+                    request.Events.AddRange(new EventHolder[]
+                    {
+                        integratedActivityBuilder.GetSubscribe(context.StateMachine.Id).ToEventHolder(),
+                        new SetGlobalValues() { Values = (context.StateMachine.Values as ContextValuesCollection).Values }.ToEventHolder(),
+                        initializationEvent,
+                        integratedActivityBuilder.GetUnsubscribe(context.StateMachine.Id).ToEventHolder()
+                    });
+                        
+                    return a.SendAsync(request);
                 });
             }
             else
@@ -40,31 +46,38 @@ namespace Stateflows.Activities
             }
         }
 
-        [DebuggerHidden]
+        //[DebuggerHidden]
         internal static async Task<bool> RunGuardActivity<TEvent>(ITransitionContext<TEvent> context, string activityName, TransitionActivityBuildAction<TEvent> buildAction)
-            where TEvent : Event, new()
         {
             var result = false;
-            if (context.TryLocateActivity(activityName, $"{context.StateMachine.Id.Instance}.{context.SourceState.Name}.{Constants.Guard}.{context.Event.Id}", out var a))
+            if (context.TryLocateActivity(activityName, $"{context.StateMachine.Id.Instance}.{context.SourceState.Name}.{Constants.Guard}.{context.EventId}", out var a))
             {
                 var ev = StateflowsJsonConverter.Clone(context.Event);
                 await Task.Run(async () =>
                 {
                     var integratedActivityBuilder = new TransitionActivityBuilder<TEvent>(buildAction);
-                    Event initializationEvent = (integratedActivityBuilder.InitializationBuilder != null)
+                    EventHolder initializationEvent = (integratedActivityBuilder.InitializationBuilder != null)
                         ? await integratedActivityBuilder.InitializationBuilder(context)
-                        : new Initialize();
-                    var executionRequest = new ExecutionRequest() { InitializationEvent = initializationEvent };
-                    executionRequest.AddInputToken(ev);
+                        : new Initialize().ToEventHolder();
 
-                    var sendResult = await a.SendCompoundAsync(
-                        integratedActivityBuilder.GetSubscriptionRequest(context.StateMachine.Id),
-                        new SetGlobalValues() { Values = (context.StateMachine.Values as ContextValuesCollection).Values },
-                        executionRequest,
-                        integratedActivityBuilder.GetUnsubscriptionRequest(context.StateMachine.Id)
-                    );
+                    var tokensInput = new TokensInput();
+                    tokensInput.Add(ev);
 
-                    result = (sendResult.Response.Results.Skip(2).Take(1).First().Response as ExecutionResponse).OutputTokens.OfType<TokenHolder<bool>>().FirstOrDefault()?.Payload ?? false;
+                    var request = new CompoundRequest();
+                    request.Events.AddRange(new EventHolder[]
+                    {
+                        integratedActivityBuilder.GetSubscribe(context.StateMachine.Id).ToEventHolder(),
+                        new SetGlobalValues() { Values = (context.StateMachine.Values as ContextValuesCollection).Values }.ToEventHolder(),
+                        initializationEvent,
+                        tokensInput.ToEventHolder(),
+                        integratedActivityBuilder.GetUnsubscribe(context.StateMachine.Id).ToEventHolder()
+                    });
+
+                    await a.WatchOutputAsync<bool>(output => result = output.First());
+
+                    await a.RequestAsync(request);
+
+                    //await a.UnwatchOutputAsync<bool>();
                 });
             }
             else
@@ -75,28 +88,33 @@ namespace Stateflows.Activities
             return result;
         }
 
-        [DebuggerHidden]
+        //[DebuggerHidden]
         internal static Task RunEffectActivity<TEvent>(ITransitionContext<TEvent> context, string activityName, TransitionActivityBuildAction<TEvent> buildAction)
-            where TEvent : Event, new()
         {
-            if (context.TryLocateActivity(activityName, $"{context.StateMachine.Id.Instance}.{context.SourceState.Name}.{EventInfo<TEvent>.Name}.{Constants.Effect}.{context.Event.Id}", out var a))
+            if (context.TryLocateActivity(activityName, $"{context.StateMachine.Id.Instance}.{context.SourceState.Name}.{Event<TEvent>.Name}.{Constants.Effect}.{context.EventId}", out var a))
             {
                 var ev = StateflowsJsonConverter.Clone(context.Event);
                 Task.Run(async () =>
                 {
                     var integratedActivityBuilder = new TransitionActivityBuilder<TEvent>(buildAction);
-                    Event initializationEvent = (integratedActivityBuilder.InitializationBuilder != null)
+                    EventHolder initializationEvent = (integratedActivityBuilder.InitializationBuilder != null)
                         ? await integratedActivityBuilder.InitializationBuilder(context)
-                        : new Initialize();
-                    var executionRequest = new ExecutionRequest() { InitializationEvent = initializationEvent };
-                    executionRequest.AddInputToken(ev);
+                        : new Initialize().ToEventHolder();
 
-                    return a.SendCompoundAsync(
-                        integratedActivityBuilder.GetSubscriptionRequest(context.StateMachine.Id),
-                        new SetGlobalValues() { Values = (context.StateMachine.Values as ContextValuesCollection).Values },
-                        executionRequest,
-                        integratedActivityBuilder.GetUnsubscriptionRequest(context.StateMachine.Id)
-                    );
+                    var tokensInput = new TokensInput();
+                    tokensInput.Add(ev);
+
+                    var request = new CompoundRequest();
+                    request.Events.AddRange(new EventHolder[]
+                    {
+                        integratedActivityBuilder.GetSubscribe(context.StateMachine.Id).ToEventHolder(),
+                        new SetGlobalValues() { Values = (context.StateMachine.Values as ContextValuesCollection).Values }.ToEventHolder(),
+                        initializationEvent,
+                        tokensInput.ToEventHolder(),
+                        integratedActivityBuilder.GetUnsubscribe(context.StateMachine.Id).ToEventHolder()
+                    });
+
+                    return a.SendAsync(request);
                 });
             }
             else

@@ -46,11 +46,8 @@ namespace Stateflows.Common.Locator
             return result;
         }
 
-        public Task WatchAsync<TNotification>(Action<TNotification> handler)
-            => Behavior.WatchAsync<TNotification>(handler);
-
-        public Task UnwatchAsync<TNotification>()
-            => Behavior.UnwatchAsync<TNotification>();
+        public Task<IWatcher> WatchAsync<TNotificationEvent>(Action<TNotificationEvent> handler)
+            => Behavior.WatchAsync(handler);
 
         public void Dispose()
         {

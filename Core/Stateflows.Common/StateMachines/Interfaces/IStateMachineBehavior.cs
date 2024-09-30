@@ -10,10 +10,20 @@ namespace Stateflows.StateMachines
         Task<RequestResult<CurrentState>> GetCurrentStateAsync()
             => RequestAsync(new CurrentStateRequest());
 
-        Task WatchCurrentStateAsync(Action<CurrentState> handler)
-            => WatchAsync(handler);
+        async Task<IWatcher> WatchCurrentStateAsync(Action<CurrentState> handler, bool immediateRequest = true)
+        {
+            var watcher = await WatchAsync(handler);
 
-        Task UnwatchCurrentStateAsync()
-            => UnwatchAsync<CurrentState>();
+            if (immediateRequest)
+            {
+                var result = await GetCurrentStateAsync();
+                if (result.Status == EventStatus.Consumed)
+                {
+                    _ = Task.Run(() => handler(result.Response));
+                }
+            }
+
+            return watcher;
+        }
     }
 }

@@ -1,4 +1,6 @@
 ﻿using Stateflows.Activities.Extensions;
+using Stateflows.Common;
+using Stateflows.Utils;
 
 namespace Stateflows.Activities.StateMachines.Interfaces
 {
@@ -7,7 +9,7 @@ namespace Stateflows.Activities.StateMachines.Interfaces
         IStateActionActivityBuilder,
         IInitializedStateActionActivityBuilder
     {
-        public StateActionActivityInitializationBuilderAsync<object> InitializationBuilder { get; private set; } = null;
+        public StateActionActivityInitializationBuilderAsync<EventHolder> InitializationBuilder { get; private set; } = null;
 
         public StateActionActivityBuilder(StateActionActivityBuildAction buildAction)
         {
@@ -18,7 +20,7 @@ namespace Stateflows.Activities.StateMachines.Interfaces
         {
             if (builderAsync != null)
             {
-                InitializationBuilder = async c => await builderAsync(c);
+                InitializationBuilder = async c => (await builderAsync(c)).ToEventHolder();
             }
 
             return this;
