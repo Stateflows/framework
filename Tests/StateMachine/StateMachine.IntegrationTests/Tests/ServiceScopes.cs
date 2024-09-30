@@ -137,7 +137,7 @@ namespace StateMachine.IntegrationTests.Tests
                 await sm.SendAsync(new Initialize());
             }
 
-            Assert.AreNotEqual(ServiceScopes.SomeValue, ServiceScopes.OtherValue);
+            Assert.AreNotEqual(ServiceScopes.EntryValue, ServiceScopes.ExitValue);
         }
     }
 }

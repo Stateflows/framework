@@ -30,7 +30,7 @@ namespace Stateflows.StateMachines.Engine
         )
         {
             Register = register;
-            ServiceProvider = serviceProvider.CreateScope().ServiceProvider;
+            ServiceProvider = serviceProvider;
             EventHandlers = eventHandlers;
         }
 
@@ -48,6 +48,8 @@ namespace Stateflows.StateMachines.Engine
             where TEvent : Event, new()
         {
             var result = EventStatus.Undelivered;
+
+            //serviceProvider = serviceProvider.CreateScope().ServiceProvider;
 
             var storage = ServiceProvider.GetRequiredService<IStateflowsStorage>();
 

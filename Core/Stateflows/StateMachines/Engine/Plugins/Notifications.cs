@@ -70,26 +70,41 @@ namespace Stateflows.StateMachines.Engine
 
         public Task AfterTransitionGuardAsync(ITransitionContext<Event> context, bool guardResult)
         {
+            var eventName = EventInfo.GetName(context.Event.GetType());
             if (guardResult)
             {
                 if (context.TargetState != null)
                 {
-                    Trace.WriteLine($"⦗→s⦘ State Machine '{context.StateMachine.Id.Name}:{context.StateMachine.Id.Instance}': event '{context.Event.Name}' triggered transition from state '{context.SourceState.Name}' to state '{context.TargetState.Name}'");
+                    if (string.IsNullOrEmpty(eventName))
+                    {
+                        Trace.WriteLine($"⦗→s⦘ State Machine '{context.StateMachine.Id.Name}:{context.StateMachine.Id.Instance}': default transition from state '{context.SourceState.Name}' to state '{context.TargetState.Name}'");
+                    }
+                    else
+                    {
+                        Trace.WriteLine($"⦗→s⦘ State Machine '{context.StateMachine.Id.Name}:{context.StateMachine.Id.Instance}': event '{eventName}' triggered transition from state '{context.SourceState.Name}' to state '{context.TargetState.Name}'");
+                    }
                 }
                 else
                 {
-                    Trace.WriteLine($"⦗→s⦘ State Machine '{context.StateMachine.Id.Name}:{context.StateMachine.Id.Instance}': event '{context.Event.Name}' triggered reaction in state '{context.SourceState.Name}'");
+                    Trace.WriteLine($"⦗→s⦘ State Machine '{context.StateMachine.Id.Name}:{context.StateMachine.Id.Instance}': event '{eventName}' triggered internal transition in state '{context.SourceState.Name}'");
                 }
             }
             else
             {
                 if (context.TargetState != null)
                 {
-                    Trace.WriteLine($"⦗→s⦘ State Machine '{context.StateMachine.Id.Name}:{context.StateMachine.Id.Instance}': guard stopped event '{context.Event.Name}' from triggering transition from state '{context.SourceState.Name}' to state '{context.TargetState.Name}'");
+                    if (string.IsNullOrEmpty(eventName))
+                    {
+                        Trace.WriteLine($"⦗→s⦘ State Machine '{context.StateMachine.Id.Name}:{context.StateMachine.Id.Instance}': guard stopped default transition from state '{context.SourceState.Name}' to state '{context.TargetState.Name}'");
+                    }
+                    else
+                    {
+                        Trace.WriteLine($"⦗→s⦘ State Machine '{context.StateMachine.Id.Name}:{context.StateMachine.Id.Instance}': guard stopped event '{eventName}' from triggering transition from state '{context.SourceState.Name}' to state '{context.TargetState.Name}'");
+                    }
                 }
                 else
                 {
-                    Trace.WriteLine($"⦗→s⦘ State Machine '{context.StateMachine.Id.Name}:{context.StateMachine.Id.Instance}': guard stopped event '{context.Event.Name}' from triggering reaction in state '{context.SourceState.Name}'");
+                    Trace.WriteLine($"⦗→s⦘ State Machine '{context.StateMachine.Id.Name}:{context.StateMachine.Id.Instance}': guard stopped event '{eventName}' from triggering internal transition in state '{context.SourceState.Name}'");
                 }
             }
 
