@@ -70,7 +70,7 @@ namespace Stateflows.StateMachines.Engine
 
         public Task AfterTransitionGuardAsync<TEvent>(ITransitionContext<TEvent> context, bool guardResult)
         {
-            var eventName = EventInfo.GetName(context.Event.GetType());
+            var eventName = Event.GetName(context.Event.GetType());
             if (guardResult)
             {
                 if (context.TargetState != null)
