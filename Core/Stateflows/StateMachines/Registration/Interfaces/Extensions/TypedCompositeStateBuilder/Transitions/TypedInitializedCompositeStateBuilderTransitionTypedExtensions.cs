@@ -1,4 +1,4 @@
-﻿using System.Diagnostics;
+using System.Diagnostics;
 using Stateflows.Common;
 using Stateflows.StateMachines.Registration.Interfaces;
 
@@ -8,11 +8,11 @@ namespace Stateflows.StateMachines.Typed
     {
         /// <summary>
         /// Adds transition triggered by <see cref="TEvent"/> coming from current state.<br/>
-        /// <a href="https://www.stateflows.net/documentation/definition#transition">Transitions</a> are triggered by events sent to State Machine and are changing its state.
+        /// <a href="https://github.com/Stateflows/framework/wiki/Transition">Transitions</a> are triggered by events sent to State Machine and are changing its state.
         /// <list type="number">
         /// <item>
         /// <term>Trigger</term>
-        /// <description>Event that is accepted by transition - <b>first type parameter</b>.</description>
+        /// <description>Event that triggers transition - <b>first type parameter</b>.</description>
         /// </item>
         /// <item>
         /// <term>Definition</term>
@@ -42,18 +42,18 @@ namespace Stateflows.StateMachines.Typed
         /// </list>
         /// </typeparam>
         [DebuggerHidden]
-        public static ITypedInitializedCompositeStateBuilder AddTransition<TEvent, TTransition, TTargetState>(this ITypedInitializedCompositeStateBuilder builder)
+        public static ITypedInitializedCompositeStateBuilder AddTransition<TEvent, TTransition, TTargetState>(this ITypedInitializedCompositeStateBuilder builder)
             where TTransition : class, ITransition<TEvent>
             where TTargetState : class, IVertex
             => AddTransition<TEvent, TTransition>(builder, State<TTargetState>.Name);
 
         /// <summary>
         /// Adds transition triggered by <see cref="TEvent"/> coming from current state.<br/>
-        /// <a href="https://www.stateflows.net/documentation/definition#transition">Transitions</a> are triggered by events sent to State Machine and are changing its state.
+        /// <a href="https://github.com/Stateflows/framework/wiki/Transition">Transitions</a> are triggered by events sent to State Machine and are changing its state.
         /// <list type="number">
         /// <item>
         /// <term>Trigger</term>
-        /// <description>Event that is accepted by transition - <b>first type parameter</b>.</description>
+        /// <description>Event that triggers transition - <b>first type parameter</b>.</description>
         /// </item>
         /// <item>
         /// <term>Definition</term>
@@ -74,17 +74,17 @@ namespace Stateflows.StateMachines.Typed
         /// </typeparam>
         /// <param name="targetStateName">Target state name</param>
         [DebuggerHidden]
-        public static ITypedInitializedCompositeStateBuilder AddTransition<TEvent, TTransition>(this ITypedInitializedCompositeStateBuilder builder, string targetStateName)
+        public static ITypedInitializedCompositeStateBuilder AddTransition<TEvent, TTransition>(this ITypedInitializedCompositeStateBuilder builder, string targetStateName)
             where TTransition : class, ITransition<TEvent>
             => (builder as ICompositeStateBuilder).AddTransition<TEvent, TTransition>(targetStateName) as ITypedInitializedCompositeStateBuilder;
 
         /// <summary>
         /// Adds transition triggered by <see cref="TEvent"/> coming from current state.<br/>
-        /// <a href="https://www.stateflows.net/documentation/definition#transition">Transitions</a> are triggered by events sent to State Machine and are changing its state.
+        /// <a href="https://github.com/Stateflows/framework/wiki/Transition">Transitions</a> are triggered by events sent to State Machine and are changing its state.
         /// <list type="number">
         /// <item>
         /// <term>Trigger</term>
-        /// <description>Event that is accepted by transition - <b>first type parameter</b>.</description>
+        /// <description>Event that triggers transition - <b>first type parameter</b>.</description>
         /// </item>
         /// <item>
         /// <term>Target</term>
@@ -109,7 +109,7 @@ namespace Stateflows.StateMachines.Typed
         /// </typeparam>
         /// <param name="transitionBuildAction">Transition build action</param>
         [DebuggerHidden]
-        public static ITypedInitializedCompositeStateBuilder AddTransition<TEvent, TTargetState>(this ITypedInitializedCompositeStateBuilder builder, TransitionBuildAction<TEvent> transitionBuildAction = null)
+        public static ITypedInitializedCompositeStateBuilder AddTransition<TEvent, TTargetState>(this ITypedInitializedCompositeStateBuilder builder, TransitionBuildAction<TEvent> transitionBuildAction = null)
             where TTargetState : class, IVertex
             => builder.AddTransition(State<TTargetState>.Name, transitionBuildAction);
     }

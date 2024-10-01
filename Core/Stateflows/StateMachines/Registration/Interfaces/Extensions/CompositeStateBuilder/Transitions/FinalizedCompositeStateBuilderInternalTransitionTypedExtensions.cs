@@ -1,7 +1,7 @@
-﻿using Stateflows.Common;
+using System.Diagnostics;
+using Stateflows.Common;
 using Stateflows.StateMachines.Registration;
 using Stateflows.StateMachines.Registration.Interfaces;
-using System.Diagnostics;
 
 namespace Stateflows.StateMachines.Typed
 {
@@ -9,11 +9,11 @@ namespace Stateflows.StateMachines.Typed
     {
         /// <summary>
         /// Adds internal transition triggered by <see cref="TEvent"/> coming from current state.<br/>
-        /// <a href="https://www.stateflows.net/documentation/definition#transition">Internal transitions</a> are triggered by events sent to State Machine and are not changing its state.
+        /// <a href="https://github.com/Stateflows/framework/wiki/Internal-Transition">Internal transitions</a> are triggered by events sent to State Machine and are not changing its state.
         /// <list type="number">
         /// <item>
         /// <term>Trigger</term>
-        /// <description>Event that is accepted by transition - <b>first type parameter</b>.</description>
+        /// <description>Event that triggers transition - <b>first type parameter</b>.</description>
         /// </item>
         /// <item>
         /// <term>Definition</term>
@@ -29,7 +29,7 @@ namespace Stateflows.StateMachines.Typed
         /// </list>
         /// </typeparam>
         [DebuggerHidden]
-        public static IFinalizedCompositeStateBuilder AddInternalTransition<TEvent, TTransition>(this IFinalizedCompositeStateBuilder builder)
+        public static IFinalizedCompositeStateBuilder AddInternalTransition<TEvent, TTransition>(this IFinalizedCompositeStateBuilder builder)
             where TTransition : class, ITransition<TEvent>
             => builder.AddTransition<TEvent, TTransition>(Constants.DefaultTransitionTarget);
     }

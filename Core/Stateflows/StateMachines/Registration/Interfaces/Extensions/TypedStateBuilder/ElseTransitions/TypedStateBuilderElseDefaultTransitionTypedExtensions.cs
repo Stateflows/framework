@@ -7,7 +7,17 @@ namespace Stateflows.StateMachines.Typed
     {
         /// <summary>
         /// Adds else alternative for all default transitions coming from current state.<br/><br/>
-        /// <a href="https://www.stateflows.net/documentation/definition#transition">Default transitions</a> are triggered automatically after every State Machine execution and are changing its state.
+        /// <a href="https://github.com/Stateflows/framework/wiki/Default-Transition">Default transitions</a> are triggered automatically after every State Machine execution and are changing its state.
+        /// <list type="number">
+        /// <item>
+        /// <term>Definition</term>
+        /// <description>Class that defines transition actions (effect) - <b>first type parameter</b>.</description>
+        /// </item>
+        /// <item>
+        /// <term>Target</term>
+        /// <description>State that transition is coming into - <b>second type parameter</b>,</description>
+        /// </item>
+        /// </list>
         /// </summary>
         /// <typeparam name="TElseTransition">Transition class; must implement <see cref="IDefaultTransitionEffect"/> interface</typeparam>
         /// <typeparam name="TTargetState">Target state class; must implement at least one of the following interfaces:
@@ -28,7 +38,17 @@ namespace Stateflows.StateMachines.Typed
 
         /// <summary>
         /// Adds else alternative for all default transitions coming from current state.<br/><br/>
-        /// <a href="https://www.stateflows.net/documentation/definition#transition">Default transitions</a> are triggered automatically after every State Machine execution and are changing its state.
+        /// <a href="https://github.com/Stateflows/framework/wiki/Default-Transition">Default transitions</a> are triggered automatically after every State Machine execution and are changing its state.
+        /// <list type="number">
+        /// <item>
+        /// <term>Definition</term>
+        /// <description>Class that defines transition actions (effect) - <b>first type parameter</b>.</description>
+        /// </item>
+        /// <item>
+        /// <term>Target</term>
+        /// <description>Name of the state that transition is coming into - <b>first parameter</b>,</description>
+        /// </item>
+        /// </list>
         /// </summary>
         /// <typeparam name="TElseTransition">Transition class; must implement <see cref="IDefaultTransitionEffect"/> interface</typeparam>
         /// <param name="targetStateName">Target state name</param>
@@ -39,7 +59,17 @@ namespace Stateflows.StateMachines.Typed
 
         /// <summary>
         /// Adds else alternative for all default transitions coming from current state.<br/><br/>
-        /// <a href="https://www.stateflows.net/documentation/definition#transition">Default transitions</a> are triggered automatically after every State Machine execution and are changing its state.
+        /// <a href="https://github.com/Stateflows/framework/wiki/Default-Transition">Default transitions</a> are triggered automatically after every State Machine execution and are changing its state.
+        /// <list type="number">
+        /// <item>
+        /// <term>Target</term>
+        /// <description>State that transition is coming into - <b>first type parameter</b>,</description>
+        /// </item>
+        /// <item>
+        /// <term>Effect</term>
+        /// <description>Transition effect action can be defined using build action - <b>first parameter</b>.</description>
+        /// </item>
+        /// </list>
         /// </summary>
         /// <typeparam name="TTargetState">Target state class; must implement at least one of the following interfaces:
         /// <list type="bullet">

@@ -7,7 +7,7 @@ namespace Stateflows.StateMachines.Typed
     {
         /// <summary>
         /// Adds else alternative for all default transitions coming from current state.<br/><br/>
-        /// <a href="https://www.stateflows.net/documentation/definition#transition">Default transitions</a> are triggered automatically after every State Machine execution and are changing its state.
+        /// <a href="https://github.com/Stateflows/framework/wiki/Default-Transition">Default transitions</a> are triggered automatically after every State Machine execution and are changing its state.
         /// </summary>
         /// <typeparam name="TElseTransition">Transition class; must implement <see cref="IDefaultTransitionEffect"/> interface</typeparam>
         /// <typeparam name="TTargetState">Target state class; must implement at least one of the following interfaces:
@@ -28,7 +28,7 @@ namespace Stateflows.StateMachines.Typed
 
         /// <summary>
         /// Adds else alternative for all default transitions coming from current state.<br/><br/>
-        /// <a href="https://www.stateflows.net/documentation/definition#transition">Default transitions</a> are triggered automatically after every State Machine execution and are changing its state.
+        /// <a href="https://github.com/Stateflows/framework/wiki/Default-Transition">Default transitions</a> are triggered automatically after every State Machine execution and are changing its state.
         /// </summary>
         /// <typeparam name="TElseTransition">Transition class; must implement <see cref="IDefaultTransitionEffect"/> interface</typeparam>
         /// <param name="targetStateName">Target state name</param>
@@ -39,7 +39,7 @@ namespace Stateflows.StateMachines.Typed
 
         /// <summary>
         /// Adds else alternative for all default transitions coming from current state.<br/><br/>
-        /// <a href="https://www.stateflows.net/documentation/definition#transition">Default transitions</a> are triggered automatically after every State Machine execution and are changing its state.
+        /// <a href="https://github.com/Stateflows/framework/wiki/Default-Transition">Default transitions</a> are triggered automatically after every State Machine execution and are changing its state.
         /// </summary>
         /// <typeparam name="TTargetState">Target state class; must implement at least one of the following interfaces:
         /// <list type="bullet">

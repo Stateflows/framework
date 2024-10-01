@@ -28,7 +28,7 @@ namespace Stateflows.Activities.Engine
         )
         {
             Register = register;
-            ServiceProvider = serviceProvider.CreateScope().ServiceProvider;
+            ServiceProvider = serviceProvider;
             EventHandlers = eventHandlers;
         }
 
@@ -45,7 +45,9 @@ namespace Stateflows.Activities.Engine
         {
             var result = EventStatus.Undelivered;
 
-            var storage = ServiceProvider.GetRequiredService<IStateflowsStorage>();
+            var serviceProvider = ServiceProvider.CreateScope().ServiceProvider;
+
+            var storage = serviceProvider.GetRequiredService<IStateflowsStorage>();
 
             var stateflowsContext = await storage.HydrateAsync(id);
 
@@ -58,7 +60,7 @@ namespace Stateflows.Activities.Engine
                 return result;
             }
 
-            using (var executor = new Executor(Register, graph, ServiceProvider))
+            using (var executor = new Executor(Register, graph, serviceProvider))
             {
                 var context = new RootContext(stateflowsContext);
 

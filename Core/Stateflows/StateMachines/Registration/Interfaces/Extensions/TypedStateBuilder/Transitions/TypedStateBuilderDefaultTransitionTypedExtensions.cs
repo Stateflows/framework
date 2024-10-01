@@ -7,7 +7,7 @@ namespace Stateflows.StateMachines.Typed
     {
         /// <summary>
         /// Adds default transition coming from current state.<br/>
-        /// <a href="https://www.stateflows.net/documentation/definition#transition">Default transitions</a> are triggered automatically after every State Machine execution and are changing its state.
+        /// <a href="https://github.com/Stateflows/framework/wiki/Default-Transition">Default transitions</a> are triggered automatically after every State Machine execution and are changing its state.
         /// <list type="number">
         /// <item>
         /// <term>Definition</term>
@@ -43,7 +43,7 @@ namespace Stateflows.StateMachines.Typed
 
         /// <summary>
         /// Adds default transition coming from current state.<br/>
-        /// <a href="https://www.stateflows.net/documentation/definition#transition">Default transitions</a> are triggered automatically after every State Machine execution and are changing its state.
+        /// <a href="https://github.com/Stateflows/framework/wiki/Default-Transition">Default transitions</a> are triggered automatically after every State Machine execution and are changing its state.
         /// <list type="number">
         /// <item>
         /// <term>Definition</term>
@@ -69,7 +69,7 @@ namespace Stateflows.StateMachines.Typed
 
         /// <summary>
         /// Adds default transition coming from current state.<br/>
-        /// <a href="https://www.stateflows.net/documentation/definition#transition">Default transitions</a> are triggered automatically after every State Machine execution and are changing its state.
+        /// <a href="https://github.com/Stateflows/framework/wiki/Default-Transition">Default transitions</a> are triggered automatically after every State Machine execution and are changing its state.
         /// <list type="number">
         /// <item>
         /// <term>Target</term>

@@ -1,5 +1,4 @@
 using Stateflows.Common;
-using Stateflows.Activities;
 using StateMachine.IntegrationTests.Utils;
 
 namespace StateMachine.IntegrationTests.Tests
@@ -29,6 +28,14 @@ namespace StateMachine.IntegrationTests.Tests
                         )
                         .AddState("state2")
                     )
+                    .AddStateMachine("reset", b => b
+                        .AddInitialState("state1", b => b
+                            .AddTransition<SomeEvent>("state2")
+                        )
+                        .AddState("state2", b => b
+                            .AddOnEntry(c => throw new Exception("example"))
+                        )
+                    )
                 )
                 ;
         }
@@ -38,17 +45,27 @@ namespace StateMachine.IntegrationTests.Tests
         {
             if (StateMachineLocator.TryLocateStateMachine(new StateMachineId("uncatched", "x"), out var sm))
             {
-                try
-                {
-                    await sm.SendAsync(new Initialize());
-                }
-                catch (Exception)
-                {
-                    throw;
-                }
+                await sm.SendAsync(new Initialize());
             }
 
             Assert.IsTrue(true);
+        }
+
+        [TestMethod]
+        public async Task ResetOnUnhandledException()
+        {
+            var state1 = string.Empty;
+            var state2 = string.Empty;
+
+            if (StateMachineLocator.TryLocateStateMachine(new StateMachineId("reset", "x"), out var sm))
+            {
+                await sm.SendAsync(new Initialize());
+                state1 = (await sm.GetCurrentStateAsync()).Response.StatesStack.FirstOrDefault();
+                await sm.SendAsync(new SomeEvent());
+                state2 = (await sm.GetCurrentStateAsync()).Response.StatesStack.FirstOrDefault();
+            }
+
+            Assert.AreEqual(state1, state2);
         }
     }
 }
