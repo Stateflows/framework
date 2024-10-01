@@ -10,8 +10,22 @@ namespace Stateflows.StateMachines.Typed
     public static class StateBuilderElseTransitionTypedExtensions
     {
         /// <summary>
-        /// Adds else alternative for all <see cref="TEvent"/>-triggered transitions coming from current state.<br/><br/>
-        /// <a href="https://www.stateflows.net/documentation/definition#transition">Transitions</a> are triggered by events sent to State Machine and are changing its state.
+        /// Adds else alternative for all <see cref="TEvent"/>-triggered transitions coming from current state.<br/>
+        /// <a href="https://github.com/Stateflows/framework/wiki/Transition">Transitions</a> are triggered by events sent to State Machine and are changing its state.
+        /// <list type="number">
+        /// <item>
+        /// <term>Trigger</term>
+        /// <description>Event that triggers transition - <b>first type parameter</b>.</description>
+        /// </item>
+        /// <item>
+        /// <term>Definition</term>
+        /// <description>Class that defines transition actions (effect) - <b>second type parameter</b>.</description>
+        /// </item>
+        /// <item>
+        /// <term>Target</term>
+        /// <description>State that transition is coming into - <b>third type parameter</b>,</description>
+        /// </item>
+        /// </list>
         /// </summary>
         /// <typeparam name="TEvent">Event class</typeparam>
         /// <typeparam name="TElseTransition">Transition class; must implement <see cref="ITransitionEffect&lt;TEvent&gt;"/> interface</typeparam>
@@ -33,8 +47,22 @@ namespace Stateflows.StateMachines.Typed
             => AddElseTransition<TEvent, TElseTransition>(builder, State<TTargetState>.Name);
 
         /// <summary>
-        /// Adds else alternative for all <see cref="TEvent"/>-triggered transitions coming from current state.<br/><br/>
-        /// <a href="https://www.stateflows.net/documentation/definition#transition">Transitions</a> are triggered by events sent to State Machine and are changing its state.
+        /// Adds else alternative for all <see cref="TEvent"/>-triggered transitions coming from current state.<br/>
+        /// <a href="https://github.com/Stateflows/framework/wiki/Transition">Transitions</a> are triggered by events sent to State Machine and are changing its state.
+        /// <list type="number">
+        /// <item>
+        /// <term>Trigger</term>
+        /// <description>Event that triggers transition - <b>first type parameter</b>.</description>
+        /// </item>
+        /// <item>
+        /// <term>Definition</term>
+        /// <description>Class that defines transition actions (effect) - <b>second type parameter</b>.</description>
+        /// </item>
+        /// <item>
+        /// <term>Target</term>
+        /// <description>Name of the state that transition is coming into - <b>first parameter</b>,</description>
+        /// </item>
+        /// </list>
         /// </summary>
         /// <typeparam name="TEvent">Event class</typeparam>
         /// <typeparam name="TElseTransition">Transition class; must implement <see cref="ITransitionEffect&lt;TEvent&gt;"/> interface</typeparam>
@@ -53,8 +81,22 @@ namespace Stateflows.StateMachines.Typed
         }
 
         /// <summary>
-        /// Adds else alternative for all <see cref="TEvent"/>-triggered transitions coming from current state.<br/><br/>
-        /// <a href="https://www.stateflows.net/documentation/definition#transition">Transitions</a> are triggered by events sent to State Machine and are changing its state.
+        /// Adds else alternative for all <see cref="TEvent"/>-triggered transitions coming from current state.<br/>
+        /// <a href="https://github.com/Stateflows/framework/wiki/Transition">Transitions</a> are triggered by events sent to State Machine and are changing its state.
+        /// <list type="number">
+        /// <item>
+        /// <term>Trigger</term>
+        /// <description>Event that triggers transition - <b>first type parameter</b>.</description>
+        /// </item>
+        /// <item>
+        /// <term>Target</term>
+        /// <description>State that transition is coming into - <b>second type parameter</b>,</description>
+        /// </item>
+        /// <item>
+        /// <term>Effect</term>
+        /// <description>Transition effect action can be defined using build action - <b>first parameter</b>.</description>
+        /// </item>
+        /// </list>
         /// </summary>
         /// <typeparam name="TEvent">Event class</typeparam>
         /// <typeparam name="TTargetState">Target state class; must implement at least one of the following interfaces:

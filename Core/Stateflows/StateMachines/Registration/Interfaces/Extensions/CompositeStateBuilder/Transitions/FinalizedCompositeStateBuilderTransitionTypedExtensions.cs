@@ -8,11 +8,11 @@ namespace Stateflows.StateMachines.Typed
     {
         /// <summary>
         /// Adds transition triggered by <see cref="TEvent"/> coming from current state.<br/>
-        /// <a href="https://www.stateflows.net/documentation/definition#transition">Transitions</a> are triggered by events sent to State Machine and are changing its state.
+        /// <a href="https://github.com/Stateflows/framework/wiki/Transition">Transitions</a> are triggered by events sent to State Machine and are changing its state.
         /// <list type="number">
         /// <item>
         /// <term>Trigger</term>
-        /// <description>Event that is accepted by transition - <b>first type parameter</b>.</description>
+        /// <description>Event that triggers transition - <b>first type parameter</b>.</description>
         /// </item>
         /// <item>
         /// <term>Definition</term>
@@ -50,11 +50,11 @@ namespace Stateflows.StateMachines.Typed
 
         /// <summary>
         /// Adds transition triggered by <see cref="TEvent"/> coming from current state.<br/>
-        /// <a href="https://www.stateflows.net/documentation/definition#transition">Transitions</a> are triggered by events sent to State Machine and are changing its state.
+        /// <a href="https://github.com/Stateflows/framework/wiki/Transition">Transitions</a> are triggered by events sent to State Machine and are changing its state.
         /// <list type="number">
         /// <item>
         /// <term>Trigger</term>
-        /// <description>Event that is accepted by transition - <b>first type parameter</b>.</description>
+        /// <description>Event that triggers transition - <b>first type parameter</b>.</description>
         /// </item>
         /// <item>
         /// <term>Definition</term>
@@ -82,11 +82,11 @@ namespace Stateflows.StateMachines.Typed
 
         /// <summary>
         /// Adds transition triggered by <see cref="TEvent"/> coming from current state.<br/>
-        /// <a href="https://www.stateflows.net/documentation/definition#transition">Transitions</a> are triggered by events sent to State Machine and are changing its state.
+        /// <a href="https://github.com/Stateflows/framework/wiki/Transition">Transitions</a> are triggered by events sent to State Machine and are changing its state.
         /// <list type="number">
         /// <item>
         /// <term>Trigger</term>
-        /// <description>Event that is accepted by transition - <b>first type parameter</b>.</description>
+        /// <description>Event that triggers transition - <b>first type parameter</b>.</description>
         /// </item>
         /// <item>
         /// <term>Target</term>

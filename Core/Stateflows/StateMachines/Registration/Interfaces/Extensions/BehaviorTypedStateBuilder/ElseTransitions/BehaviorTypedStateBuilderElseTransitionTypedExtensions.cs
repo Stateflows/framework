@@ -11,7 +11,7 @@ namespace Stateflows.StateMachines.Typed
     {
         /// <summary>
         /// Adds else alternative for all <see cref="TEvent"/>-triggered transitions coming from current state.<br/><br/>
-        /// <a href="https://www.stateflows.net/documentation/definition#transition">Transitions</a> are triggered by events sent to State Machine and are changing its state.
+        /// <a href="https://github.com/Stateflows/framework/wiki/Transition">Transitions</a> are triggered by events sent to State Machine and are changing its state.
         /// </summary>
         /// <typeparam name="TEvent">Event class</typeparam>
         /// <typeparam name="TElseTransition">Transition class; must implement <see cref="ITransitionEffect&lt;TEvent&gt;"/> interface</typeparam>
@@ -34,7 +34,7 @@ namespace Stateflows.StateMachines.Typed
 
         /// <summary>
         /// Adds else alternative for all <see cref="TEvent"/>-triggered transitions coming from current state.<br/><br/>
-        /// <a href="https://www.stateflows.net/documentation/definition#transition">Transitions</a> are triggered by events sent to State Machine and are changing its state.
+        /// <a href="https://github.com/Stateflows/framework/wiki/Transition">Transitions</a> are triggered by events sent to State Machine and are changing its state.
         /// </summary>
         /// <typeparam name="TEvent">Event class</typeparam>
         /// <typeparam name="TElseTransition">Transition class; must implement <see cref="ITransitionEffect&lt;TEvent&gt;"/> interface</typeparam>
@@ -54,7 +54,7 @@ namespace Stateflows.StateMachines.Typed
 
         /// <summary>
         /// Adds else alternative for all <see cref="TEvent"/>-triggered transitions coming from current state.<br/><br/>
-        /// <a href="https://www.stateflows.net/documentation/definition#transition">Transitions</a> are triggered by events sent to State Machine and are changing its state.
+        /// <a href="https://github.com/Stateflows/framework/wiki/Transition">Transitions</a> are triggered by events sent to State Machine and are changing its state.
         /// </summary>
         /// <typeparam name="TEvent">Event class</typeparam>
         /// <typeparam name="TTargetState">Target state class; must implement at least one of the following interfaces:
