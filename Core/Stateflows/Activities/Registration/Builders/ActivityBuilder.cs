@@ -11,6 +11,7 @@ using Stateflows.Activities.Registration.Extensions;
 using Stateflows.Activities.Registration.Interfaces;
 using Stateflows.Activities.Registration.Interfaces.Base;
 using Stateflows.Common.Exceptions;
+using Stateflows.Common.Registration.Builders;
 
 namespace Stateflows.Activities.Registration.Builders
 {
@@ -24,10 +25,10 @@ namespace Stateflows.Activities.Registration.Builders
             set => Node = value;
         }
 
-        public ActivityBuilder(string name, int version, Node parentNode, IServiceCollection services)
+        public ActivityBuilder(string name, int version, Node parentNode, StateflowsBuilder stateflowsBuilder, IServiceCollection services)
             : base(parentNode, services)
         {
-            Result = new Graph(name, version);
+            Result = new Graph(name, version, stateflowsBuilder);
         }
 
         public IActivityBuilder AddInitializer(Type initializerType, string initializerName, ActivityPredicateAsync initializerAction)

@@ -1,12 +1,12 @@
 ﻿using System;
 using System.Linq;
+using System.Diagnostics;
 using System.Threading.Tasks;
 using System.Collections.Generic;
 using Stateflows.Common;
 using Stateflows.Activities.Models;
 using Stateflows.Activities.Context.Classes;
 using Stateflows.Activities.Context.Interfaces;
-using System.Diagnostics;
 
 namespace Stateflows.Activities.Engine
 {
@@ -21,11 +21,19 @@ namespace Stateflows.Activities.Engine
                 return;
             }
 
-            var timeEvent = Activator.CreateInstance(node.EventType) as TimeEvent;
-            timeEvent.SetTriggerTime(DateTime.Now);
-            timeEvent.ConsumerSignature = node.Identifier;
-            Context.Context.PendingTimeEvents.Add(timeEvent.Id, timeEvent);
-            Context.NodeTimeEvents[node.Identifier] = timeEvent.Id;
+            foreach (var eventType in node.ActualEventTypes)
+            {
+                if (!eventType.IsSubclassOf(typeof(TimeEvent)))
+                {
+                    continue;
+                }
+
+                var timeEvent = Activator.CreateInstance(eventType) as TimeEvent;
+                timeEvent.SetTriggerTime(DateTime.Now);
+                timeEvent.ConsumerSignature = node.Identifier;
+                Context.Context.PendingTimeEvents.Add(timeEvent.Id, timeEvent);
+                Context.NodeTimeEvents[node.Identifier] = timeEvent.Id;
+            }
         }
 
         private void ClearTimeEvent(Node node)
@@ -44,8 +52,11 @@ namespace Stateflows.Activities.Engine
                 return;
             }
 
-            var startupEvent = Activator.CreateInstance(node.EventType) as Startup;
-            startupEvent.ConsumerSignature = node.Identifier;
+            var startupEvent = new Startup()
+            {
+                ConsumerSignature = node.Identifier
+            };
+
             Context.Context.PendingStartupEvents.Add(startupEvent.Id, startupEvent);
             Context.NodeStartupEvents[node.Identifier] = startupEvent.Id;
         }
@@ -72,12 +83,12 @@ namespace Stateflows.Activities.Engine
 
                     Context.ActiveNodes.Add(node.Identifier, threadId);
 
-                    if (node.EventType.IsSubclassOf(typeof(TimeEvent)))
+                    if (node.ActualEventTypes.Any(type => type.IsSubclassOf(typeof(TimeEvent))))
                     {
                         RegisterTimeEvent(node);
                     }
 
-                    if (node.EventType == typeof(Startup))
+                    if (node.ActualEventTypes.Any(type => type == typeof(TimeEvent)))
                     {
                         RegisterStartupEvent(node);
                     }
@@ -96,12 +107,12 @@ namespace Stateflows.Activities.Engine
 
                 Context.ActiveNodes.Add(node.Identifier, threadId);
 
-                if (node.EventType.IsSubclassOf(typeof(TimeEvent)))
+                if (node.ActualEventTypes.Any(type => type.IsSubclassOf(typeof(TimeEvent))))
                 {
                     RegisterTimeEvent(node);
                 }
 
-                if (node.EventType == typeof(Startup))
+                if (node.ActualEventTypes.Any(type => type == typeof(TimeEvent)))
                 {
                     RegisterStartupEvent(node);
                 }

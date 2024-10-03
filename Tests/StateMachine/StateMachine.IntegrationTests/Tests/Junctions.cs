@@ -1,11 +1,11 @@
 using Stateflows.Common;
-using Stateflows.StateMachines.Sync;
+using Stateflows.StateMachines.Typed;
 using StateMachine.IntegrationTests.Utils;
 
 namespace StateMachine.IntegrationTests.Tests
 {
     [TestClass]
-    public class ElseTransitions : StateflowsTestClass
+    public class Junctions : StateflowsTestClass
     {
         [TestInitialize]
         public override void Initialize()
@@ -20,42 +20,46 @@ namespace StateMachine.IntegrationTests.Tests
             builder
                 .AddStateMachines(b => b
 
-                    .AddStateMachine("single", b => b
+                    .AddStateMachine("simple", b => b
                         .AddInitialState("state1", b => b
-                            .AddTransition<OtherEvent>("state2", b => b
-                                .AddGuard(c => c.Event.AnswerToLifeUniverseAndEverything == 42)
+                            .AddTransition<OtherEvent, Junction>()
+                        )
+                        .AddJunction(b => b
+                            .AddTransition("state2", b => b
+                                .AddGuard(c => (c.ExecutionTrigger as OtherEvent)?.AnswerToLifeUniverseAndEverything == 42)
                             )
-                            .AddElseTransition<OtherEvent>("state3")
+                            .AddElseTransition("state3")
                         )
                         .AddState("state2")
                         .AddState("state3")
                     )
 
-                    .AddStateMachine("multiple", b => b
+                    .AddStateMachine("dynamic", b => b
                         .AddInitialState("state1", b => b
-                            .AddTransition<OtherEvent>("state2", b => b
-                                .AddGuard(c => c.Event.AnswerToLifeUniverseAndEverything == 42)
+                            .AddTransition<OtherEvent, Junction>(b => b
+                                .AddEffect(async c => c.StateMachine.Values.Set("answer", c.Event.AnswerToLifeUniverseAndEverything))
                             )
-                            .AddElseTransition<OtherEvent>("state4")
-                            .AddTransition<OtherEvent>("state3", b => b
-                                .AddGuard(c => c.Event.AnswerToLifeUniverseAndEverything == 43)
+                        )
+                        .AddJunction(b => b
+                            .AddTransition("state2", b => b
+                                .AddGuard(c => c.StateMachine.Values.GetOrDefault<int>("answer") == 42)
                             )
+                            .AddElseTransition("state3")
                         )
                         .AddState("state2")
                         .AddState("state3")
-                        .AddState("state4")
                     )
                 )
                 ;
         }
 
         [TestMethod]
-        public async Task ElseFromOneTransition()
+        public async Task SimpleJunction()
         {
             var status = EventStatus.Rejected;
             string currentState = "state1";
 
-            if (StateMachineLocator.TryLocateStateMachine(new StateMachineId("single", "x"), out var sm))
+            if (StateMachineLocator.TryLocateStateMachine(new StateMachineId("simple", "x"), out var sm))
             {
                 status = (await sm.SendAsync(new OtherEvent() { AnswerToLifeUniverseAndEverything = 43 })).Status;
 
@@ -67,14 +71,14 @@ namespace StateMachine.IntegrationTests.Tests
         }
 
         [TestMethod]
-        public async Task ElseFromTwoTransitions()
+        public async Task DynamicJunctionFail()
         {
             var status = EventStatus.Rejected;
             string currentState = "state1";
 
-            if (StateMachineLocator.TryLocateStateMachine(new StateMachineId("multiple", "x"), out var sm))
+            if (StateMachineLocator.TryLocateStateMachine(new StateMachineId("dynamic", "x"), out var sm))
             {
-                status = (await sm.SendAsync(new OtherEvent() { AnswerToLifeUniverseAndEverything = 43 })).Status;
+                status = (await sm.SendAsync(new OtherEvent() { AnswerToLifeUniverseAndEverything = 42 })).Status;
 
                 currentState = (await sm.GetCurrentStateAsync()).Response.StatesStack.First();
             }

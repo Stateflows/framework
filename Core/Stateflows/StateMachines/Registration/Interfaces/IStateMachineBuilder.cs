@@ -19,22 +19,4 @@ namespace Stateflows.StateMachines
         IStateMachineUtils<IStateMachineBuilder>,
         IStateMachineEvents<IStateMachineBuilder>
     { }
-
-    //public interface ITypedInitializedStateMachineBuilder :
-    //    IStateMachine<ITypedInitializedStateMachineBuilder>,
-    //    IStateMachineFinal<ITypedFinalizedStateMachineBuilder>,
-    //    IStateMachineUtils<ITypedInitializedStateMachineBuilder>,
-    //    IStateMachineEvents<ITypedStateMachineBuilder>
-    //{ }
-
-    //public interface ITypedFinalizedStateMachineBuilder :
-    //    IStateMachineUtils<ITypedFinalizedStateMachineBuilder>,
-    //    IStateMachineEvents<ITypedStateMachineBuilder>
-    //{ }
-
-    //public interface ITypedStateMachineBuilder :
-    //    IStateMachineInitial<ITypedInitializedStateMachineBuilder>,
-    //    IStateMachineUtils<ITypedStateMachineBuilder>,
-    //    IStateMachineEvents<ITypedStateMachineBuilder>
-    //{ }
 }

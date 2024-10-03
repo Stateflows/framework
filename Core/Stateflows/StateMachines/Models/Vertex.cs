@@ -16,7 +16,8 @@ namespace Stateflows.StateMachines.Models
         InitialCompositeState,
         CompositeState,
         FinalState,
-        Pseudostate
+        Junction,
+        Choice,
     }
 
     internal class Vertex

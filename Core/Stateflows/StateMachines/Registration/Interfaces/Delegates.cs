@@ -11,6 +11,10 @@ namespace Stateflows.StateMachines.Registration.Interfaces
 
     public delegate void StateBuildAction(IStateBuilder builder);
 
+    public delegate void JunctionBuildAction(IJunctionBuilder builder);
+
+    public delegate void ChoiceBuildAction(IChoiceBuilder builder);
+
     public delegate void StateTransitionsBuildAction(ITypedStateBuilder builder);
 
     public delegate void CompositeStateBuildAction(ICompositeStateBuilder builder);
@@ -39,7 +43,7 @@ namespace Stateflows.StateMachines.Registration.Interfaces
 
     public delegate IStateMachineExceptionHandler StateMachineExceptionHandlerFactory(IServiceProvider serviceProvider);
 
-    public delegate EventHolder StateActionInitializationBuilder(IStateActionContext context);
+    public delegate object StateActionInitializationBuilder(IStateActionContext context);
     
-    public delegate Task<EventHolder> StateActionInitializationBuilderAsync(IStateActionContext context);
+    public delegate Task<object> StateActionInitializationBuilderAsync(IStateActionContext context);
 }

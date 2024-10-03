@@ -13,6 +13,8 @@ using Stateflows.StateMachines.Context.Interfaces;
 using Stateflows.StateMachines.Registration.Interfaces;
 using Stateflows.StateMachines.Registration.Interfaces.Base;
 using Stateflows.StateMachines.Registration.Interfaces.Internal;
+using System.Diagnostics;
+using Stateflows.Common.Registration.Builders;
 
 namespace Stateflows.StateMachines.Registration.Builders
 {
@@ -23,6 +25,8 @@ namespace Stateflows.StateMachines.Registration.Builders
         IInternal,
         IBehaviorBuilder
     {
+        private readonly StateflowsBuilder stateflowsBuilder;
+
         public Graph Result { get; }
 
         public IServiceCollection Services { get; }
@@ -31,10 +35,10 @@ namespace Stateflows.StateMachines.Registration.Builders
 
         int IBehaviorBuilder.BehaviorVersion => Result.Version;
 
-        public StateMachineBuilder(string name, int version, IServiceCollection services)
+        public StateMachineBuilder(string name, int version, StateflowsBuilder stateflowsBuilder, IServiceCollection services)
         {
             Services = services;
-            Result = new Graph(name, version);
+            Result = new Graph(name, version, stateflowsBuilder);
         }
 
         public IInitializedStateMachineBuilder AddInitializer(Type initializerType, string initializerName, StateMachinePredicateAsync initializerAction)
@@ -124,19 +128,25 @@ namespace Stateflows.StateMachines.Registration.Builders
             return this;
         }
 
-        #region AddState
+        [DebuggerHidden]
         public IInitializedStateMachineBuilder AddState(string stateName, StateBuildAction stateBuildAction = null)
             => AddVertex(stateName, VertexType.State, vertex => stateBuildAction?.Invoke(new StateBuilder(vertex, Services)));
-        #endregion
 
-        #region AddFinalState
-        public IFinalizedStateMachineBuilder AddFinalState(string stateName = FinalState.Name)
-            => AddVertex(stateName, VertexType.FinalState) as IFinalizedStateMachineBuilder;
-        #endregion
+        [DebuggerHidden]
+        public IFinalizedStateMachineBuilder AddFinalState(string finalStateName = FinalState.Name)
+            => AddVertex(finalStateName, VertexType.FinalState) as IFinalizedStateMachineBuilder;
+
+        [DebuggerHidden]
+        public IInitializedStateMachineBuilder AddJunction(string junctionName, JunctionBuildAction junctionBuildAction)
+            => AddVertex(junctionName, VertexType.Junction, vertex => junctionBuildAction?.Invoke(new StateBuilder(vertex, Services)));
+
+        [DebuggerHidden]
+        public IInitializedStateMachineBuilder AddChoice(string choiceName, ChoiceBuildAction choiceBuildAction)
+            => AddVertex(choiceName, VertexType.Choice, vertex => choiceBuildAction?.Invoke(new StateBuilder(vertex, Services)));
 
         #region AddCompositeState
-        public IInitializedStateMachineBuilder AddCompositeState(string stateName, CompositeStateBuildAction compositeStateBuildAction)
-            => AddVertex(stateName, VertexType.CompositeState, vertex => compositeStateBuildAction?.Invoke(new CompositeStateBuilder(vertex, Services)));
+        public IInitializedStateMachineBuilder AddCompositeState(string compositeStateName, CompositeStateBuildAction compositeStateBuildAction)
+            => AddVertex(compositeStateName, VertexType.CompositeState, vertex => compositeStateBuildAction?.Invoke(new CompositeStateBuilder(vertex, Services)));
 
         public IInitializedStateMachineBuilder AddInitialState(string stateName, StateBuildAction stateBuildAction = null)
         {
@@ -144,10 +154,10 @@ namespace Stateflows.StateMachines.Registration.Builders
             return AddVertex(stateName, VertexType.InitialState, vertex => stateBuildAction?.Invoke(new StateBuilder(vertex, Services)));
         }
 
-        public IInitializedStateMachineBuilder AddInitialCompositeState(string stateName, CompositeStateBuildAction compositeStateBuildAction)
+        public IInitializedStateMachineBuilder AddInitialCompositeState(string compositeStateName, CompositeStateBuildAction compositeStateBuildAction)
         {
-            Result.InitialVertexName = stateName;
-            return AddVertex(stateName, VertexType.InitialCompositeState, vertex => compositeStateBuildAction?.Invoke(new CompositeStateBuilder(vertex, Services)));
+            Result.InitialVertexName = compositeStateName;
+            return AddVertex(compositeStateName, VertexType.InitialCompositeState, vertex => compositeStateBuildAction?.Invoke(new CompositeStateBuilder(vertex, Services)));
         }
         #endregion
 

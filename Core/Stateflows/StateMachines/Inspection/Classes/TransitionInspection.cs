@@ -1,4 +1,5 @@
-﻿using Stateflows.StateMachines.Models;
+﻿using System.Collections.Generic;
+using Stateflows.StateMachines.Models;
 using Stateflows.StateMachines.Engine;
 using Stateflows.StateMachines.Inspection.Interfaces;
 
@@ -17,7 +18,7 @@ namespace Stateflows.StateMachines.Inspection.Classes
             Executor.Inspector.InspectionTransitions.Add(Edge, this);
         }
 
-        public string Trigger => Edge.Trigger;
+        public IEnumerable<string> Triggers => Edge.ActualTriggers;
 
         public bool Active { get; set; }
 

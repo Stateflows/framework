@@ -11,6 +11,7 @@ using Stateflows.Activities.Registration;
 using Stateflows.Activities.EventHandlers;
 using Stateflows.Activities.Registration.Builders;
 using Stateflows.Activities.Registration.Interfaces;
+using Stateflows.Common.Registration.Builders;
 
 namespace Stateflows.Activities
 {
@@ -37,7 +38,7 @@ namespace Stateflows.Activities
             {
                 if (!Registers.TryGetValue(stateflowsBuilder, out var register))
                 {
-                    register = new ActivitiesRegister(stateflowsBuilder.ServiceCollection);
+                    register = new ActivitiesRegister(stateflowsBuilder as StateflowsBuilder, stateflowsBuilder.ServiceCollection);
                     Registers.Add(stateflowsBuilder, register);
 
                     stateflowsBuilder

@@ -118,7 +118,7 @@ namespace Stateflows.Activities.Engine
 
         public IEnumerable<Type> GetExpectedEvents()
             => GetActiveNodes()
-                .Select(node => node.EventType)
+                .SelectMany(node => node.ActualEventTypes)
                 .Distinct()
                 .ToArray();
 
@@ -293,7 +293,7 @@ namespace Stateflows.Activities.Engine
             {
                 var activeNodes = GetActiveNodes();
                 activeNode = activeNodes.FirstOrDefault(node =>
-                    node.EventType == eventHolder.PayloadType &&
+                    node.ActualEventTypes.Contains(eventHolder.PayloadType) &&
                     (
                         !(eventHolder.Payload is TimeEvent timeEvent) ||
                         (
@@ -771,7 +771,7 @@ namespace Stateflows.Activities.Engine
                     interactiveNodeTypes.Contains(node.Type) &&
                     (
                         Context.EventHolder == null ||
-                        Context.EventHolder.PayloadType != node.EventType
+                        !node.ActualEventTypes.Contains(Context.EventHolder.PayloadType)
                     )
                 )
                 {
@@ -793,11 +793,11 @@ namespace Stateflows.Activities.Engine
                 {
                     var @event = Context.EventHolder;
 
-                    if (@event is TimeEvent)
+                    if (@event.BoxedPayload is TimeEvent)
                     {
                         Inspector.AcceptEventsPlugin.UnregisterAcceptEventNode(node);
 
-                        if (@event is RecurringEvent && !node.IncomingEdges.Any() && Context.NodesToExecute.Contains(node))
+                        if (@event.BoxedPayload is RecurringEvent && !node.IncomingEdges.Any() && Context.NodesToExecute.Contains(node))
                         {
                             Inspector.AcceptEventsPlugin.RegisterAcceptEventNode(node, nodeScope.ThreadId);
                         }

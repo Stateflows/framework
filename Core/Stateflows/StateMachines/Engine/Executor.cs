@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Linq;
-using System.Reflection;
 using System.Diagnostics;
 using System.Threading.Tasks;
 using System.Collections.Generic;
@@ -10,7 +9,6 @@ using Stateflows.Utils;
 using Stateflows.Common;
 using Stateflows.Common.Context;
 using Stateflows.Common.Classes;
-using Stateflows.Common.Extensions;
 using Stateflows.Common.Interfaces;
 using Stateflows.Common.Exceptions;
 using Stateflows.StateMachines.Models;
@@ -20,6 +18,7 @@ using Stateflows.StateMachines.Extensions;
 using Stateflows.StateMachines.Registration;
 using Stateflows.StateMachines.Context.Classes;
 using Stateflows.StateMachines.Context.Interfaces;
+using System.Runtime.InteropServices;
 
 namespace Stateflows.StateMachines.Engine
 {
@@ -277,7 +276,7 @@ namespace Stateflows.StateMachines.Engine
             return currentStack.Any()
                 ? currentStack
                     .SelectMany(vertex => vertex.Edges.Values)
-                    .Select(edge => edge.TriggerType)
+                    .SelectMany(edge => edge.ActualTriggerTypes)
                     .Distinct()
                     .ToArray()
                 : Graph.InitializerTypes
@@ -366,7 +365,11 @@ namespace Stateflows.StateMachines.Engine
 
                 foreach (var vertex in currentStack)
                 {
-                    foreach (var edge in vertex.OrderedEdges)
+                    var edges = vertex.OrderedEdges
+                        .SelectMany(edge => edge.GetActualEdges())
+                        .ToArray();
+
+                    foreach (var edge in edges)
                     {
                         if (eventHolder.Triggers(edge) && await DoGuardAsync<TEvent>(edge))
                         {
@@ -394,7 +397,6 @@ namespace Stateflows.StateMachines.Engine
 
         [DebuggerStepThrough]
         private async Task<bool> DoGuardAsync<TEvent>(Edge edge)
-
         {
             BeginScope();
 

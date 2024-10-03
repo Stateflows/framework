@@ -11,6 +11,7 @@ using Stateflows.StateMachines.Exceptions;
 using Stateflows.StateMachines.Registration;
 using Stateflows.StateMachines.Context.Interfaces;
 using Stateflows.Activities.Events;
+using System;
 
 namespace Stateflows.Activities
 {
@@ -19,7 +20,7 @@ namespace Stateflows.Activities
         [DebuggerHidden]
         internal static void RunStateActivity(string actionName, IStateActionContext context, string activityName, StateActionActivityBuildAction buildAction)
         {
-            if (context.TryLocateActivity(activityName, $"{context.StateMachine.Id.Instance}.{context.CurrentState.Name}.{actionName}.{context.ExecutionTrigger.Id}", out var a))
+            if (context.TryLocateActivity(activityName, $"{context.StateMachine.Id.Instance}.{context.CurrentState.Name}.{actionName}.{Guid.NewGuid()}", out var a))
             {
                 Task.Run(async () =>
                 {
@@ -46,7 +47,7 @@ namespace Stateflows.Activities
             }
         }
 
-        //[DebuggerHidden]
+        [DebuggerHidden]
         internal static async Task<bool> RunGuardActivity<TEvent>(ITransitionContext<TEvent> context, string activityName, TransitionActivityBuildAction<TEvent> buildAction)
         {
             var result = false;
@@ -76,8 +77,6 @@ namespace Stateflows.Activities
                     await a.WatchOutputAsync<bool>(output => result = output.First());
 
                     await a.RequestAsync(request);
-
-                    //await a.UnwatchOutputAsync<bool>();
                 });
             }
             else
@@ -88,7 +87,7 @@ namespace Stateflows.Activities
             return result;
         }
 
-        //[DebuggerHidden]
+        [DebuggerHidden]
         internal static Task RunEffectActivity<TEvent>(ITransitionContext<TEvent> context, string activityName, TransitionActivityBuildAction<TEvent> buildAction)
         {
             if (context.TryLocateActivity(activityName, $"{context.StateMachine.Id.Instance}.{context.SourceState.Name}.{Event<TEvent>.Name}.{Constants.Effect}.{context.EventId}", out var a))

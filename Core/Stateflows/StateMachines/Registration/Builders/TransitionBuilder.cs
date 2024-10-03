@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Threading.Tasks;
+using Stateflows.Utils;
 using Stateflows.Common;
 using Stateflows.Common.Exceptions;
 using Stateflows.Common.Registration;
@@ -10,6 +11,8 @@ using Stateflows.StateMachines.Context.Interfaces;
 using Stateflows.StateMachines.Registration.Interfaces;
 using Stateflows.StateMachines.Registration.Extensions;
 using Stateflows.StateMachines.Registration.Interfaces.Base;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace Stateflows.StateMachines.Registration.Builders
 {
@@ -25,7 +28,12 @@ namespace Stateflows.StateMachines.Registration.Builders
     {
         public Edge Edge;
 
-        BehaviorClass IBehaviorBuilder.BehaviorClass => new BehaviorClass(Constants.StateMachine, Edge.Source.Graph.Name);
+        private IEnumerable<VertexType> transitiveVertexTypes = new HashSet<VertexType>() {
+            VertexType.Junction,
+            VertexType.Choice,
+        };
+
+    BehaviorClass IBehaviorBuilder.BehaviorClass => new BehaviorClass(Constants.StateMachine, Edge.Source.Graph.Name);
 
         int IBehaviorBuilder.BehaviorVersion => Edge.Source.Graph.Version;
 
@@ -42,6 +50,11 @@ namespace Stateflows.StateMachines.Registration.Builders
 
             Edge.Guards.Actions.Add(async c =>
                 {
+                    if (transitiveVertexTypes.Contains(Edge.Source.Type))
+                    {
+                        c.SetEvent(new CompletionEvent().ToEventHolder());
+                    }
+
                     var context = new GuardContext<TEvent>(c, Edge);
                     var result = false;
                     try
@@ -66,6 +79,13 @@ namespace Stateflows.StateMachines.Registration.Builders
                             }
                         }
                     }
+                    finally
+                    {
+                        if (transitiveVertexTypes.Contains(Edge.Source.Type))
+                        {
+                            c.ClearEvent();
+                        }
+                    }
 
                     return result;
                 }
@@ -82,6 +102,11 @@ namespace Stateflows.StateMachines.Registration.Builders
 
             Edge.Effects.Actions.Add(async c =>
                 {
+                    if (transitiveVertexTypes.Contains(Edge.Source.Type))
+                    {
+                        c.SetEvent(new CompletionEvent().ToEventHolder());
+                    }
+
                     var context = new TransitionContext<TEvent>(c, Edge);
                     try
                     {
@@ -103,6 +128,13 @@ namespace Stateflows.StateMachines.Registration.Builders
                             {
                                 throw new ExecutionException(e);
                             }
+                        }
+                    }
+                    finally
+                    {
+                        if (transitiveVertexTypes.Contains(Edge.Source.Type))
+                        {
+                            c.ClearEvent();
                         }
                     }
                 }

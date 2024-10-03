@@ -30,8 +30,8 @@ namespace Stateflows.StateMachines.Engine
                     }
 
                     var initializationRequest = vertex.BehaviorInitializationBuilder?.Invoke(context) != null
-                        ? await vertex.BehaviorInitializationBuilder(context) ?? (new Initialize()).ToEventHolder()
-                        : (new Initialize()).ToEventHolder();
+                        ? await vertex.BehaviorInitializationBuilder(context) ?? new Initialize()
+                        : new Initialize();
 
                     _ = behavior.SendAsync(initializationRequest);
                 }

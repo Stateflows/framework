@@ -305,7 +305,6 @@ namespace Stateflows.StateMachines.Engine
         }
 
         public async Task AfterProcessEventAsync<TEvent>(Context.Classes.EventContext<TEvent> context)
-
         {
             await Interceptors.RunSafe(i => i.AfterProcessEventAsync(context), nameof(AfterProcessEventAsync), Logger);
             await GlobalInterceptor.AfterProcessEventAsync(new Common.Context.Classes.EventContext<TEvent>(context.Context.Context, Executor.ServiceProvider, context.Event));

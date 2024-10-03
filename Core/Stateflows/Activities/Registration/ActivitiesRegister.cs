@@ -8,6 +8,7 @@ using Stateflows.Activities.Models;
 using Stateflows.Activities.Exceptions;
 using Stateflows.Activities.Registration.Builders;
 using Stateflows.Activities.Registration.Interfaces;
+using Stateflows.Common.Registration.Builders;
 
 namespace Stateflows.Activities.Registration
 {
@@ -21,8 +22,11 @@ namespace Stateflows.Activities.Registration
 
         public List<ActivityObserverFactory> GlobalObserverFactories { get; set; } = new List<ActivityObserverFactory>();
 
-        public ActivitiesRegister(IServiceCollection services)
+        private readonly StateflowsBuilder stateflowsBuilder = null;
+
+        public ActivitiesRegister(StateflowsBuilder stateflowsBuilder, IServiceCollection services)
         {
+            this.stateflowsBuilder = stateflowsBuilder;
             Services = services;
         }
 
@@ -62,7 +66,7 @@ namespace Stateflows.Activities.Registration
                 throw new ActivityDefinitionException($"Activity '{activityName}' with version '{version}' is already registered");
             }
 
-            var builder = new ActivityBuilder(activityName, version, null, Services);
+            var builder = new ActivityBuilder(activityName, version, null, stateflowsBuilder, Services);
             buildAction(builder);
             builder.Result.Build();
 
@@ -89,7 +93,7 @@ namespace Stateflows.Activities.Registration
 
             var activity = FormatterServices.GetUninitializedObject(activityType) as IActivity;
 
-            var builder = new ActivityBuilder(activityName, version, null, Services);
+            var builder = new ActivityBuilder(activityName, version, null, stateflowsBuilder, Services);
             builder.Result.ActivityType = activityType;
             activity.Build(builder);
             builder.Result.Build();

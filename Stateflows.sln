@@ -94,6 +94,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Stateflows.Integrations.Sputnik", "..\Cosmos\Stateflows\src\Stateflows.Integrations.Sputnik\Stateflows.Integrations.Sputnik.csproj", "{11AF9B20-CE14-4AB6-BC2A-E31B923CEF12}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Stateflows.Extensions.OneOf", "Extensions\Stateflows.Extensions.OneOf\Stateflows.Extensions.OneOf.csproj", "{CBC5B0BD-199B-4085-9B8F-0D68B6ACF33C}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -220,6 +222,10 @@ Global
 		{11AF9B20-CE14-4AB6-BC2A-E31B923CEF12}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{11AF9B20-CE14-4AB6-BC2A-E31B923CEF12}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{11AF9B20-CE14-4AB6-BC2A-E31B923CEF12}.Release|Any CPU.Build.0 = Release|Any CPU
+		{CBC5B0BD-199B-4085-9B8F-0D68B6ACF33C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{CBC5B0BD-199B-4085-9B8F-0D68B6ACF33C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{CBC5B0BD-199B-4085-9B8F-0D68B6ACF33C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{CBC5B0BD-199B-4085-9B8F-0D68B6ACF33C}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -260,6 +266,7 @@ Global
 		{8C6BEB59-8CCB-4BB9-950D-08D95FDE2BC8} = {D789B3ED-A0A0-40B3-A746-337C7EF71B9D}
 		{37C61B16-A27E-487B-AEBC-126E7FDD8443} = {D789B3ED-A0A0-40B3-A746-337C7EF71B9D}
 		{D6FD721E-4B42-4875-B774-2AD84BE5B3B6} = {76D44611-8D90-4E93-BA44-AAB939A742AE}
+		{CBC5B0BD-199B-4085-9B8F-0D68B6ACF33C} = {580A6B03-79AD-430C-AEF6-80EC6A02FA61}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {602A9FD6-5053-42E4-AEAE-2813DF169A3C}

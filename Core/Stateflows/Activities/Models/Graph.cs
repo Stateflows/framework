@@ -6,18 +6,22 @@ using Stateflows.Common;
 using Stateflows.Common.Models;
 using Stateflows.Activities.Exceptions;
 using Stateflows.Activities.Registration.Interfaces;
+using Stateflows.Common.Registration.Builders;
 
 namespace Stateflows.Activities.Models
 {
     internal class Graph : Node
     {
-        public Graph(string name, int version)
+        internal readonly StateflowsBuilder StateflowsBuilder = null;
+
+        public Graph(string name, int version, StateflowsBuilder stateflowsBuilder)
         {
             Name = name;
             Type = NodeType.Activity;
             Version = version;
             Level = 0;
             Class = new ActivityClass(Name);
+            StateflowsBuilder = stateflowsBuilder;
         }
 
         public ActivityClass Class { get; }

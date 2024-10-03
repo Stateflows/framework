@@ -342,6 +342,10 @@ namespace Stateflows.Activities.Context.Classes
             ? EventsStack.Peek()
             : null;
 
+        public EventHolder ExecutionTriggerHolder => EventsStack.Any()
+            ? EventsStack.Last()
+            : null;
+
         public readonly List<Exception> Exceptions = new List<Exception>();
 
         internal Node NodeOfOrigin { get; set; }

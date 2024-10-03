@@ -1,6 +1,4 @@
-﻿using Stateflows.Common;
-
-namespace Stateflows.StateMachines.Registration.Interfaces.Base
+﻿namespace Stateflows.StateMachines.Registration.Interfaces.Base
 {
     public interface IStateTransitions<TReturn>
     {

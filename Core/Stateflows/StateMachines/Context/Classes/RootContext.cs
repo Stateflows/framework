@@ -153,6 +153,10 @@ namespace Stateflows.StateMachines.Context.Classes
             ? EventsStack.Peek()
             : null;
 
+        public EventHolder ExecutionTriggerHolder => EventsStack.Any()
+            ? EventsStack.Last()
+            : null;
+
         public readonly List<Exception> Exceptions = new List<Exception>();
 
         public EventStatus? ForceStatus { get; set; } = null;

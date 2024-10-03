@@ -8,11 +8,27 @@ using Stateflows.Common;
 using Stateflows.Common.Models;
 using Stateflows.Activities.Registration;
 using Stateflows.Activities.Context.Classes;
+using Stateflows.Common.Registration.Builders;
 
 namespace Stateflows.Activities.Models
 {
     internal class Node : Element
     {
+        private StateflowsBuilder StateflowsBuilder => Graph.StateflowsBuilder;
+
+        private IEnumerable<Type> GetTypes(Type type)
+        {
+            foreach (var typeMapper in StateflowsBuilder.TypeMappers)
+            {
+                if (typeMapper.TryMapType(type, out var types))
+                {
+                    return types;
+                }
+            }
+
+            return new Type[] { type };
+        }
+
         private string identifier = null;
         public override string Identifier
             => identifier ??= !(Parent is null)
@@ -25,8 +41,24 @@ namespace Stateflows.Activities.Models
         public string Name { get; set; }
         public NodeType Type { get; set; }
         public NodeOptions Options { get; set; } = NodeOptions.ActionDefault;
+
         public Type ExceptionType { get; set; }
-        public Type EventType { get; set; }
+
+        private Type eventType = null;
+        public Type EventType
+        {
+            get => eventType;
+            set
+            {
+                eventType = value;
+                actualEventTypes = GetTypes(value);
+            }
+        }
+
+        private IEnumerable<Type> actualEventTypes = null;
+        public IEnumerable<Type> ActualEventTypes
+            => actualEventTypes;
+
         public int ChunkSize { get; set; }
         public bool Anchored { get; set; } = true;
 
@@ -155,7 +187,7 @@ namespace Stateflows.Activities.Models
         private IEnumerable<Node> danglingTimeEventActionNodes = null;
         public IEnumerable<Node> DanglingTimeEventActionNodes
             => danglingTimeEventActionNodes ??= AcceptEventActionNodes
-                .Where(n => !n.IncomingEdges.Any() && n.EventType.IsSubclassOf(typeof(TimeEvent)));
+                .Where(n => !n.IncomingEdges.Any() && n.ActualEventTypes.Any(type => type.IsSubclassOf(typeof(TimeEvent))));
 
         private IEnumerable<Node> exceptionHandlers = null;
         public IEnumerable<Node> ExceptionHandlers

@@ -2,6 +2,6 @@
 {
     public interface IExecutionContext
     {
-        EventHolder ExecutionTrigger { get; }
+        object ExecutionTrigger { get; }
     }
 }

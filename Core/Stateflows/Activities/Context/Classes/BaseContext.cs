@@ -29,7 +29,7 @@ namespace Stateflows.Activities.Context.Classes
 
         public NodeScope NodeScope { get; }
 
-        public EventHolder ExecutionTrigger { get; set; }
+        public object ExecutionTrigger => Context.ExecutionTriggerHolder.BoxedPayload;
 
         public CancellationToken CancellationToken => NodeScope.CancellationToken;
 

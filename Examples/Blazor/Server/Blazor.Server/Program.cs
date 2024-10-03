@@ -245,7 +245,7 @@ namespace X
 
         public Task BeforeDehydrateAsync(IStateMachineActionContext context)
         {
-            Debug.WriteLine($">>>>>>>>>>> dehydrate {context.ExecutionTrigger.Name}");
+            Debug.WriteLine($">>>>>>>>>>> dehydrate {Event.GetName(context.ExecutionTrigger.GetType())}");
 
             return Task.CompletedTask;
         }
@@ -367,6 +367,15 @@ namespace X
     public class ClearingRequest : Event
     {
         public PersonId[] PersonIds { get; set; } = new PersonId[0];
+    }
+
+
+    public class DefaultTransition : IDefaultTransitionGuard
+    {
+        public Task<bool> GuardAsync()
+        {
+            return Task.FromResult(true);
+        }
     }
 
 

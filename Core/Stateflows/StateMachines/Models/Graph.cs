@@ -7,17 +7,35 @@ using Stateflows.StateMachines.Registration;
 using Stateflows.StateMachines.Registration.Interfaces;
 using Stateflows.Common.Models;
 using Stateflows.StateMachines.Exceptions;
+using Stateflows.Common.Registration.Builders;
+using Stateflows.Common;
 
 namespace Stateflows.StateMachines.Models
 {
     internal class Graph
     {
+        internal readonly StateflowsBuilder StateflowsBuilder = null;
+
+        public IEnumerable<Type> GetTriggerTypes(Type type)
+        {
+            foreach (var typeMapper in StateflowsBuilder.TypeMappers)
+            {
+                if (typeMapper.TryMapType(type, out var triggerTypes))
+                {
+                    return triggerTypes;
+                }
+            }
+
+            return new Type[] { type };
+        }
+
         public Dictionary<string, int> InitCounter = new Dictionary<string, int>();
 
-        public Graph(string name, int version)
+        public Graph(string name, int version, StateflowsBuilder stateflowsBuilder)
         {
             Name = name;
             Version = version;
+            StateflowsBuilder = stateflowsBuilder;
             Class = new StateMachineClass(Name);
         }
 
@@ -53,9 +71,11 @@ namespace Stateflows.StateMachines.Models
         [DebuggerHidden]
         public void Validate(IEnumerable<BehaviorClass> behaviorClasses)
         {
-            foreach (var behaviorClass in RequiredBehaviors.Where(bc => !behaviorClasses.Contains(bc)))
+            var missingBehaviorClasses = RequiredBehaviors.Where(bc => !behaviorClasses.Contains(bc)).ToList();
+            if (missingBehaviorClasses.Any())
             {
-                throw new StateMachineDefinitionException($"{behaviorClass.Type} '{behaviorClass.Name}' required by state machine '{Name}' is not registered", Class);
+                var missingBehaviorClass = missingBehaviorClasses.First();
+                throw new StateMachineDefinitionException($"{missingBehaviorClass.Type} '{missingBehaviorClass.Name}' required by state machine '{Name}' is not registered", Class);
             }
         }
 
@@ -73,6 +93,16 @@ namespace Stateflows.StateMachines.Models
                 throw new StateMachineDefinitionException($"Initial state '{InitialVertexName}' is not registered in state machine '{Name}'", Class);
             }
 
+            foreach (var edge in AllEdges)
+            {
+                if (edge.TriggerType != null)
+                {
+                    edge.ActualTriggerTypes = GetTriggerTypes(edge.TriggerType).ToHashSet();
+                    edge.TimeTriggerTypes = edge.ActualTriggerTypes.Where(type => type.IsSubclassOf(typeof(TimeEvent))).ToHashSet();
+                    edge.ActualTriggers = edge.ActualTriggerTypes.Select(type => Event.GetName(type)).ToHashSet();
+                }
+            }
+
             foreach (var vertex in AllVertices.Values)
             {
                 if (!string.IsNullOrEmpty(vertex.InitialVertexName))
@@ -88,13 +118,18 @@ namespace Stateflows.StateMachines.Models
                 }
 
                 var vertexTriggers = vertex.Edges.Values
-                    .Where(edge => !string.IsNullOrEmpty(edge.Trigger))
-                    .Select(edge => edge.Trigger);
+                    .Where(edge => edge.ActualTriggers.All(trigger => !string.IsNullOrEmpty(trigger)))
+                    .SelectMany(edge => edge.ActualTriggers);
 
                 var deferredEvents = vertex.DeferredEvents.Where(deferredEvent => vertexTriggers.Contains(deferredEvent));
                 if (deferredEvents.Any())
                 {
                     throw new DeferralDefinitionException(deferredEvents.First(), $"Event '{deferredEvents.First()}' triggers a transition outgoing from state '{vertex.Name}' in state machine '{Name}' and cannot be deferred by that state.", Class);
+                }
+
+                if (vertex.Type == VertexType.Choice && vertex.Edges.Values.Count(edge => edge.IsElse) != 1)
+                {
+                    throw new StateMachineDefinitionException($"Choice pseudostate '{vertex.Name}' in state machine '{Name}' must have exactly one else transition", Class);
                 }
             }
 
@@ -116,7 +151,7 @@ namespace Stateflows.StateMachines.Models
                 {
                     var siblings = edge.Source.Edges.Values.Any(e =>
                         !e.IsElse &&
-                        e.Trigger == edge.Trigger
+                        edge.ActualTriggers.All(trigger => e.ActualTriggers.Contains(trigger))
                     );
 
                     if (!siblings)

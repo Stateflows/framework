@@ -116,7 +116,7 @@ namespace Stateflows.StateMachines.Engine
 
         public Task BeforeTransitionGuardAsync<TEvent>(ITransitionContext<TEvent> context)
         {
-            if (ConsumedInTransition == null && (context as IEdgeContext).Edge.Trigger == context.ExecutionTrigger.Name)
+            if (ConsumedInTransition == null && (context as IEdgeContext).Edge.ActualTriggers.Contains(Event.GetName(context.ExecutionTrigger.GetType())))
             {
                 ConsumedInTransition = (context as IEdgeContext).Edge;
             }
@@ -138,8 +138,10 @@ namespace Stateflows.StateMachines.Engine
                 return;
             }
 
-            var startupEvent = Activator.CreateInstance(edge.TriggerType) as Startup;
-            startupEvent.ConsumerSignature = edge.Identifier;
+            var startupEvent = new Startup
+            {
+                ConsumerSignature = edge.Identifier
+            };
             Context.Context.PendingStartupEvents.Add(startupEvent.Id, startupEvent);
             startupEventIds.Add(edge.Identifier, startupEvent.Id);
         }
@@ -158,10 +160,10 @@ namespace Stateflows.StateMachines.Engine
             {
                 var timeEventIds = Context.GetStateValues(currentVertex.Name).StartupEventIds;
 
-                var edges = currentVertex.Edges.Values
+                var edges = currentVertex.Edges.Values.SelectMany(edge => edge.GetActualEdges())
                     .Where(edge =>
                         !edge.IsElse &&
-                        edge.TriggerType == typeof(Startup) &&
+                        edge.ActualTriggerTypes.Contains(typeof(Startup)) &&
                         !timeEventIds.ContainsKey(edge.Identifier)
                     )
                     .Distinct(this)
@@ -190,11 +192,15 @@ namespace Stateflows.StateMachines.Engine
                 return;
             }
 
-            var timeEvent = Activator.CreateInstance(edge.TriggerType) as TimeEvent;
-            timeEvent.SetTriggerTime(DateTime.Now);
-            timeEvent.ConsumerSignature = edge.Signature;
-            Context.Context.PendingTimeEvents.Add(timeEvent.Id, timeEvent);
-            timeEventIds.Add(edge.Identifier, timeEvent.Id);
+            var timeEventTypes = edge.ActualTriggerTypes.Where(type => type.IsSubclassOf(typeof(TimeEvent))).ToArray();
+            foreach (var timeEventType in timeEventTypes)
+            {
+                var timeEvent = Activator.CreateInstance(timeEventType) as TimeEvent;
+                timeEvent.SetTriggerTime(DateTime.Now);
+                timeEvent.ConsumerSignature = edge.Signature;
+                Context.Context.PendingTimeEvents.Add(timeEvent.Id, timeEvent);
+                timeEventIds.Add(edge.Identifier, timeEvent.Id);
+            }
         }
 
         private void RegisterTimeEvents(IEnumerable<Edge> edges)
@@ -211,10 +217,10 @@ namespace Stateflows.StateMachines.Engine
             {
                 var timeEventIds = Context.GetStateValues(currentVertex.Name).TimeEventIds;
 
-                var edges = currentVertex.Edges.Values
+                var edges = currentVertex.Edges.Values.SelectMany(edge => edge.GetActualEdges())
                     .Where(edge =>
                         !edge.IsElse &&
-                        edge.TriggerType.IsSubclassOf(typeof(TimeEvent)) &&
+                        edge.TimeTriggerTypes.Any() &&
                         !timeEventIds.ContainsKey(edge.Identifier)
                     )
                     .Distinct(this)

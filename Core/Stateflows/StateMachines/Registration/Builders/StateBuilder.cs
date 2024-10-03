@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Diagnostics;
 using System.Threading.Tasks;
-using System.Collections.Generic;
 using Microsoft.Extensions.DependencyInjection;
 using Stateflows.Common;
 using Stateflows.Common.Exceptions;
@@ -21,6 +20,8 @@ namespace Stateflows.StateMachines.Registration.Builders
 {
     internal partial class StateBuilder : 
         IStateBuilder,
+        IJunctionBuilder,
+        IChoiceBuilder,
         IBehaviorStateBuilder, 
         ITypedStateBuilder,
         IBehaviorTypedStateBuilder,
@@ -220,8 +221,8 @@ namespace Stateflows.StateMachines.Registration.Builders
         private IStateBuilder AddTransitionInternal<TEvent>(string targetStateName, bool isElse, TransitionBuildAction<TEvent> transitionBuildAction = null)
         {
             var targetEdgeType = targetStateName == Constants.DefaultTransitionTarget
-                ? TriggerType.InternalTransition
-                : TriggerType.Transition;
+                ? EdgeType.InternalTransition
+                : EdgeType.Transition;
 
             var edge = new Edge()
             {
@@ -233,7 +234,7 @@ namespace Stateflows.StateMachines.Registration.Builders
                 Source = Vertex,
                 TargetName = targetStateName,
                 Type = typeof(TEvent).GetEventName() == Constants.CompletionEvent
-                    ? TriggerType.DefaultTransition
+                    ? EdgeType.DefaultTransition
                     : targetEdgeType
             };
 
@@ -407,6 +408,23 @@ namespace Stateflows.StateMachines.Registration.Builders
         IBehaviorTypedStateBuilder IStateTransitions<IBehaviorTypedStateBuilder>.AddElseInternalTransition<TEvent>(ElseInternalTransitionBuildAction<TEvent> transitionBuildAction)
             => AddElseInternalTransition<TEvent>(transitionBuildAction) as IBehaviorTypedStateBuilder;
 
+        [DebuggerHidden]
+        IJunctionBuilder IPseudostateTransitions<IJunctionBuilder>.AddTransition(string targetStateName, DefaultTransitionBuildAction transitionBuildAction)
+            => AddDefaultTransition(targetStateName, transitionBuildAction) as IJunctionBuilder;
+
+        [DebuggerHidden]
+        void IPseudostateTransitions<IJunctionBuilder>.AddElseTransition(string targetStateName, ElseDefaultTransitionBuildAction transitionBuildAction)
+            => AddElseDefaultTransition(targetStateName, transitionBuildAction);
+
+        [DebuggerHidden]
+        IChoiceBuilder IPseudostateTransitions<IChoiceBuilder>.AddTransition(string targetStateName, DefaultTransitionBuildAction transitionBuildAction)
+            => AddDefaultTransition(targetStateName, transitionBuildAction) as IChoiceBuilder;
+
+        [DebuggerHidden]
+        void IPseudostateTransitions<IChoiceBuilder>.AddElseTransition(string targetStateName, ElseDefaultTransitionBuildAction transitionBuildAction)
+            => AddElseDefaultTransition(targetStateName, transitionBuildAction);
+
+        [DebuggerHidden]
         public IEmbeddedBehaviorBuilder AddForwardedEvent<TEvent>(ForwardedEventBuildAction<TEvent> buildAction = null)
             => AddInternalTransition<TEvent>(b =>
             {

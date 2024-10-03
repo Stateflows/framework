@@ -2,7 +2,6 @@
 using System.Diagnostics;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
-using Stateflows.Common;
 using Stateflows.Common.Registration;
 using Stateflows.StateMachines.Events;
 using Stateflows.StateMachines.Models;
@@ -21,6 +20,8 @@ namespace Stateflows.StateMachines.Registration.Builders
         ITypedInitializedCompositeStateBuilder,
         ITypedFinalizedCompositeStateBuilder,
         ITypedCompositeStateBuilder,
+        IJunctionBuilder,
+        IChoiceBuilder,
         IInternal,
         IBehaviorBuilder
     {
@@ -376,5 +377,37 @@ namespace Stateflows.StateMachines.Registration.Builders
         [DebuggerHidden]
         IFinalizedCompositeStateBuilder ICompositeStateEvents<IFinalizedCompositeStateBuilder>.AddOnFinalize(Func<IStateActionContext, Task> actionAsync)
             => AddOnFinalize(actionAsync) as IFinalizedCompositeStateBuilder;
+
+        [DebuggerHidden]
+        public IInitializedCompositeStateBuilder AddJunction(string junctionName, JunctionBuildAction junctionBuildAction)
+            => AddVertex(junctionName, VertexType.Junction, vertex => junctionBuildAction?.Invoke(new StateBuilder(vertex, Services)));
+
+        [DebuggerHidden]
+        public IInitializedCompositeStateBuilder AddChoice(string choiceName, ChoiceBuildAction choiceBuildAction)
+            => AddVertex(choiceName, VertexType.Choice, vertex => choiceBuildAction?.Invoke(new StateBuilder(vertex, Services)));
+
+        [DebuggerHidden]
+        ITypedInitializedCompositeStateBuilder IStateMachine<ITypedInitializedCompositeStateBuilder>.AddJunction(string junctionName, JunctionBuildAction junctionBuildAction)
+            => AddJunction(junctionName, junctionBuildAction) as ITypedInitializedCompositeStateBuilder;
+
+        [DebuggerHidden]
+        ITypedInitializedCompositeStateBuilder IStateMachine<ITypedInitializedCompositeStateBuilder>.AddChoice(string choiceName, ChoiceBuildAction choiceBuildAction)
+            => AddChoice(choiceName, choiceBuildAction) as ITypedInitializedCompositeStateBuilder;
+
+        [DebuggerHidden]
+        IJunctionBuilder IPseudostateTransitions<IJunctionBuilder>.AddTransition(string targetStateName, DefaultTransitionBuildAction transitionBuildAction)
+            => AddDefaultTransition(targetStateName, transitionBuildAction) as IJunctionBuilder;
+
+        [DebuggerHidden]
+        void IPseudostateTransitions<IJunctionBuilder>.AddElseTransition(string targetStateName, ElseDefaultTransitionBuildAction transitionBuildAction)
+            => AddElseDefaultTransition(targetStateName, transitionBuildAction);
+
+        [DebuggerHidden]
+        IChoiceBuilder IPseudostateTransitions<IChoiceBuilder>.AddTransition(string targetStateName, DefaultTransitionBuildAction transitionBuildAction)
+            => AddDefaultTransition(targetStateName, transitionBuildAction) as IChoiceBuilder;
+
+        [DebuggerHidden]
+        void IPseudostateTransitions<IChoiceBuilder>.AddElseTransition(string targetStateName, ElseDefaultTransitionBuildAction transitionBuildAction)
+            => AddElseDefaultTransition(targetStateName, transitionBuildAction);
     }
 }
