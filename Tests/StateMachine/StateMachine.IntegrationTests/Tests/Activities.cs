@@ -122,6 +122,8 @@ namespace StateMachine.IntegrationTests.Tests
                 .StateEntry("stateB")
             );
 
+            await Task.Delay(100);
+
             Assert.AreEqual("stateB", currentState1);
             Assert.AreEqual(true, GuardRun);
             Assert.AreEqual(true, EffectRun);
