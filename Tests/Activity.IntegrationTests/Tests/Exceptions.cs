@@ -24,6 +24,7 @@ namespace Activity.IntegrationTests.Tests
         private bool Executed1 = false;
         private bool Executed2 = false;
         private bool Executed3 = false;
+        private bool ExceptionHandlerOutput = false;
         private static string Value1 = "boo";
         private static string Value2 = "boo";
         private static string Value3 = "boo";
@@ -254,6 +255,30 @@ namespace Activity.IntegrationTests.Tests
                             })
                         )
                     )
+                    .AddActivity("output", b => b
+                        .AddInitial(b => b
+                            .AddControlFlow("main")
+                        )
+                        .AddStructuredActivity("main", b => b
+                            .AddExceptionHandler<Exception>(async c =>
+                            {
+                                c.Output(c.Exception.Message);
+                            })
+                            .AddInitial(b => b
+                                .AddControlFlow("action1")
+                            )
+                            .AddAction("action1", async c =>
+                            {
+                                throw new Exception("test");
+                            })
+
+                            .AddFlow<string>("final")
+                        )
+                        .AddAction("final", async c =>
+                        {
+                            ExceptionHandlerOutput = c.GetTokensOfType<string>().Any();
+                        })
+                    )
                 )
                 ;
         }
@@ -372,6 +397,17 @@ namespace Activity.IntegrationTests.Tests
             Assert.IsTrue(Executed1);
             Assert.IsTrue(Executed2);
             Assert.AreEqual("faulty", Value1);
+        }
+
+        [TestMethod]
+        public async Task ExceptionHandledWithOutput()
+        {
+            if (ActivityLocator.TryLocateActivity(new ActivityId("output", "x"), out var a))
+            {
+                await a.ExecuteAsync();
+            }
+
+            Assert.IsTrue(ExceptionHandlerOutput);
         }
     }
 }

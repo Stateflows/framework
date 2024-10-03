@@ -22,7 +22,9 @@ namespace Stateflows.Activities.Typed
                 if (handler != null)
                 {
                     ActivityNodeContextAccessor.Context.Value = c;
+                    OutputTokens.TokensHolder.Value = (c as ExceptionHandlerContext<TException>).OutputTokens;
                     await handler?.HandleAsync(c.Exception, c.CancellationToken);
+                    OutputTokens.TokensHolder.Value = null;
                     ActivityNodeContextAccessor.Context.Value = null;
                 }
             });
