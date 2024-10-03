@@ -17,6 +17,10 @@ namespace Stateflows.StateMachines.Typed
         /// <term>Target</term>
         /// <description>State that transition is coming into - <b>second type parameter</b>,</description>
         /// </item>
+        /// <item>
+        /// <term>Guard/Effect</term>
+        /// <description>Transition actions can be defined using build action - <b>first parameter</b>.</description>
+        /// </item>
         /// </list>
         /// </summary>
         /// <typeparam name="TDefaultTransition">Transition class; must implement at least one of the following interfaces:
@@ -35,11 +39,12 @@ namespace Stateflows.StateMachines.Typed
         /// <item><see cref="ICompositeStateFinalization"/></item>
         /// </list>
         /// </typeparam>
+        /// <param name="transitionBuildAction">Transition build action</param>
         [DebuggerHidden]
-        public static ITypedStateBuilder AddDefaultTransition<TTransition, TTargetState>(this ITypedStateBuilder builder)
+        public static ITypedStateBuilder AddDefaultTransition<TTransition, TTargetState>(this ITypedStateBuilder builder, DefaultTransitionBuildAction transitionBuildAction = null)
             where TTransition : class, IDefaultTransition
             where TTargetState : class, IVertex
-            => builder.AddDefaultTransition<TTransition>(State<TTargetState>.Name);
+            => builder.AddDefaultTransition<TTransition>(State<TTargetState>.Name, transitionBuildAction);
 
         /// <summary>
         /// Adds default transition coming from current state.<br/>
@@ -53,6 +58,10 @@ namespace Stateflows.StateMachines.Typed
         /// <term>Target</term>
         /// <description>Name of the state that transition is coming into - <b>first parameter</b>,</description>
         /// </item>
+        /// <item>
+        /// <term>Guard/Effect</term>
+        /// <description>Transition actions can be defined using build action - <b>second parameter</b>.</description>
+        /// </item>
         /// </list>
         /// </summary>
         /// <typeparam name="TDefaultTransition">Transition class; must implement at least one of the following interfaces:
@@ -62,10 +71,11 @@ namespace Stateflows.StateMachines.Typed
         /// </list>
         /// </typeparam>
         /// <param name="targetStateName">Target state name</param>
+        /// <param name="transitionBuildAction">Transition build action</param>
         [DebuggerHidden]
-        public static ITypedStateBuilder AddDefaultTransition<TTransition>(this ITypedStateBuilder builder, string targetStateName)
+        public static ITypedStateBuilder AddDefaultTransition<TTransition>(this ITypedStateBuilder builder, string targetStateName, DefaultTransitionBuildAction transitionBuildAction = null)
             where TTransition : class, IDefaultTransition
-            => (builder as IStateBuilder).AddDefaultTransition<TTransition>(targetStateName) as ITypedStateBuilder;
+            => (builder as IStateBuilder).AddDefaultTransition<TTransition>(targetStateName, transitionBuildAction) as ITypedStateBuilder;
 
         /// <summary>
         /// Adds default transition coming from current state.<br/>

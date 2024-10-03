@@ -20,6 +20,10 @@ namespace Stateflows.StateMachines.Typed
         /// <term>Target</term>
         /// <description>State that transition is coming into - <b>second type parameter</b>,</description>
         /// </item>
+        /// <item>
+        /// <term>Guard/Effect</term>
+        /// <description>Transition actions can be defined using build action - <b>first parameter</b>.</description>
+        /// </item>
         /// </list>
         /// </summary>
         /// <typeparam name="TDefaultTransition">Transition class; must implement at least one of the following interfaces:
@@ -39,10 +43,10 @@ namespace Stateflows.StateMachines.Typed
         /// </list>
         /// </typeparam>
         [DebuggerHidden]
-        public static IChoiceBuilder AddTransition<TTransition, TTargetState>(this IChoiceBuilder builder)
+        public static IChoiceBuilder AddTransition<TTransition, TTargetState>(this IChoiceBuilder builder, DefaultTransitionBuildAction transitionBuildAction = null)
             where TTransition : class, IDefaultTransition
             where TTargetState : class, IVertex
-            => builder.AddTransition<TTransition>(State<TTargetState>.Name);
+            => builder.AddTransition<TTransition>(State<TTargetState>.Name, transitionBuildAction);
 
         /// <summary>
         /// Adds default transition coming from current state.<br/>
@@ -56,6 +60,10 @@ namespace Stateflows.StateMachines.Typed
         /// <term>Target</term>
         /// <description>Name of the state that transition is coming into - <b>first parameter</b>,</description>
         /// </item>
+        /// <item>
+        /// <term>Guard/Effect</term>
+        /// <description>Transition actions can be defined using build action - <b>second parameter</b>.</description>
+        /// </item>
         /// </list>
         /// </summary>
         /// <typeparam name="TDefaultTransition">Transition class; must implement at least one of the following interfaces:
@@ -66,14 +74,18 @@ namespace Stateflows.StateMachines.Typed
         /// </typeparam>
         /// <param name="targetStateName">Target state name</param>
         [DebuggerHidden]
-        public static IChoiceBuilder AddTransition<TTransition>(this IChoiceBuilder builder, string targetStateName)
+        public static IChoiceBuilder AddTransition<TTransition>(this IChoiceBuilder builder, string targetStateName, DefaultTransitionBuildAction transitionBuildAction = null)
             where TTransition : class, IDefaultTransition
         {
             (builder as IInternal).Services.AddServiceType<TTransition>();
 
             return builder.AddTransition(
                 targetStateName,
-                t => t.AddDefaultTransitionEvents<TTransition>()
+                t =>
+                {
+                    t.AddDefaultTransitionEvents<TTransition>();
+                    transitionBuildAction?.Invoke(t);
+                }
             );
         }
 

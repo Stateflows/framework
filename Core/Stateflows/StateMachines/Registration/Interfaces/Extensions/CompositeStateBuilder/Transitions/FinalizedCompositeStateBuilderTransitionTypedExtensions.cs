@@ -1,5 +1,4 @@
 using System.Diagnostics;
-using Stateflows.Common;
 using Stateflows.StateMachines.Registration.Interfaces;
 
 namespace Stateflows.StateMachines.Typed
@@ -42,10 +41,10 @@ namespace Stateflows.StateMachines.Typed
         /// </list>
         /// </typeparam>
         [DebuggerHidden]
-        public static IFinalizedCompositeStateBuilder AddTransition<TEvent, TTransition, TTargetState>(this IFinalizedCompositeStateBuilder builder)
+        public static IFinalizedCompositeStateBuilder AddTransition<TEvent, TTransition, TTargetState>(this IFinalizedCompositeStateBuilder builder, TransitionBuildAction<TEvent> transitionBuildAction = null)
             where TTransition : class, ITransition<TEvent>
             where TTargetState : class, IVertex
-            => AddTransition<TEvent, TTransition>(builder, State<TTargetState>.Name);
+            => AddTransition<TEvent, TTransition>(builder, State<TTargetState>.Name, transitionBuildAction);
 
         /// <summary>
         /// Adds transition triggered by <see cref="TEvent"/> coming from current state.<br/>
@@ -74,9 +73,9 @@ namespace Stateflows.StateMachines.Typed
         /// </typeparam>
         /// <param name="targetStateName">Target state name</param>
         [DebuggerHidden]
-        public static IFinalizedCompositeStateBuilder AddTransition<TEvent, TTransition>(this IFinalizedCompositeStateBuilder builder, string targetStateName)
+        public static IFinalizedCompositeStateBuilder AddTransition<TEvent, TTransition>(this IFinalizedCompositeStateBuilder builder, string targetStateName, TransitionBuildAction<TEvent> transitionBuildAction = null)
             where TTransition : class, ITransition<TEvent>
-            => (builder as ICompositeStateBuilder).AddTransition<TEvent, TTransition>(targetStateName) as IFinalizedCompositeStateBuilder;
+            => (builder as ICompositeStateBuilder).AddTransition<TEvent, TTransition>(targetStateName, transitionBuildAction) as IFinalizedCompositeStateBuilder;
 
         /// <summary>
         /// Adds transition triggered by <see cref="TEvent"/> coming from current state.<br/>

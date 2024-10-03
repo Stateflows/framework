@@ -1,5 +1,4 @@
 using System.Diagnostics;
-using Stateflows.Common;
 using Stateflows.Common.Extensions;
 using Stateflows.StateMachines.Extensions;
 using Stateflows.StateMachines.Registration.Interfaces;
@@ -45,10 +44,10 @@ namespace Stateflows.StateMachines.Typed
         /// </list>
         /// </typeparam>
         [DebuggerHidden]
-        public static ICompositeStateBuilder AddTransition<TEvent, TTransition, TTargetState>(this ICompositeStateBuilder builder)
+        public static ICompositeStateBuilder AddTransition<TEvent, TTransition, TTargetState>(this ICompositeStateBuilder builder, TransitionBuildAction<TEvent> transitionBuildAction = null)
             where TTransition : class, ITransition<TEvent>
             where TTargetState : class, IVertex
-            => AddTransition<TEvent, TTransition>(builder, State<TTargetState>.Name);
+            => AddTransition<TEvent, TTransition>(builder, State<TTargetState>.Name, transitionBuildAction);
 
         /// <summary>
         /// Adds transition triggered by <see cref="TEvent"/> coming from current state.<br/>
@@ -77,14 +76,18 @@ namespace Stateflows.StateMachines.Typed
         /// </typeparam>
         /// <param name="targetStateName">Target state name</param>
         [DebuggerHidden]
-        public static ICompositeStateBuilder AddTransition<TEvent, TTransition>(this ICompositeStateBuilder builder, string targetStateName)
+        public static ICompositeStateBuilder AddTransition<TEvent, TTransition>(this ICompositeStateBuilder builder, string targetStateName, TransitionBuildAction<TEvent> transitionBuildAction = null)
             where TTransition : class, ITransition<TEvent>
         {
             (builder as IInternal).Services.AddServiceType<TTransition>();
 
             return builder.AddTransition<TEvent>(
                 targetStateName,
-                t => t.AddTransitionEvents<TTransition, TEvent>()
+                t =>
+                {
+                    t.AddTransitionEvents<TTransition, TEvent>();
+                    transitionBuildAction?.Invoke(t);
+                }
             );
         }
 

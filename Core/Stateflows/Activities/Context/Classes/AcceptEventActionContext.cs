@@ -15,9 +15,28 @@ namespace Stateflows.Activities.Context.Classes
             : base(actionContext)
         {
             ActionContext = actionContext;
+            Event = default;
+
+            if (Context.EventHolder is EventHolder<TEvent> holder)
+            {
+                Event = holder.Payload;
+            }
+            else
+            {
+                var @event = Context.EventHolder.BoxedPayload;
+
+                var converter = typeof(TEvent).GetMethod("op_Implicit", new[] { @event.GetType() });
+
+                if (converter != null)
+                {
+                    @event = converter.Invoke(null, new[] { @event });
+                }
+
+                Event = (TEvent)@event;
+            }
         }
 
-        public TEvent Event => (Context.EventHolder as EventHolder<TEvent>).Payload;
+        public TEvent Event { get; private set; }
 
         public INodeContext CurrentNode => ActionContext.CurrentNode;
 

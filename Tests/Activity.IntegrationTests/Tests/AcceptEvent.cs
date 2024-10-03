@@ -1,3 +1,4 @@
+using OneOf;
 using Stateflows.Common;
 using StateMachine.IntegrationTests.Utils;
 
@@ -20,6 +21,7 @@ namespace Activity.IntegrationTests.Tests
         protected override void InitializeStateflows(IStateflowsBuilder builder)
         {
             builder
+                .AddOneOf()
                 .AddActivities(b => b
                     .AddActivity("acceptSingleEvent", b => b
                         .AddInitial(b => b
@@ -43,6 +45,24 @@ namespace Activity.IntegrationTests.Tests
                         .AddAcceptEventAction<SomeEvent>(
                             "accept",
                             async c => Counter++,
+                            b => b.AddControlFlow("final")
+                        )
+                        .AddAction("final", async c =>
+                        {
+                            Executed = true;
+                        })
+                    )
+                    .AddActivity("acceptOneOfEvents", b => b
+                        .AddInitial(b => b
+                            .AddControlFlow("final")
+                        )
+                        .AddAcceptEventAction<OneOf<SomeEvent, OtherEvent>>(
+                            "accept",
+                            async c =>
+                                c.Event.Match(
+                                    some => Counter++,
+                                    other => Counter++
+                                ),
                             b => b.AddControlFlow("final")
                         )
                         .AddAction("final", async c =>
@@ -74,9 +94,21 @@ namespace Activity.IntegrationTests.Tests
         {
             if (ActivityLocator.TryLocateActivity(new ActivityId("acceptMultipleEvents", "x"), out var a))
             {
-                //await a.InitializeAsync();
                 await a.SendAsync(new SomeEvent());
                 await a.SendAsync(new SomeEvent());
+            }
+
+            Assert.IsTrue(Executed);
+            Assert.AreEqual(2, Counter);
+        }
+
+        [TestMethod]
+        public async Task AcceptOneOfEvents()
+        {
+            if (ActivityLocator.TryLocateActivity(new ActivityId("acceptOneOfEvents", "x"), out var a))
+            {
+                await a.SendAsync(new SomeEvent());
+                await a.SendAsync(new OtherEvent());
             }
 
             Assert.IsTrue(Executed);

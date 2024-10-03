@@ -21,10 +21,10 @@ namespace Stateflows.StateMachines.Typed
         /// </list>
         /// </typeparam>
         [DebuggerHidden]
-        public static IInitializedCompositeStateBuilder AddElseDefaultTransition<TElseTransition, TTargetState>(this IInitializedCompositeStateBuilder builder)
+        public static IInitializedCompositeStateBuilder AddElseDefaultTransition<TElseTransition, TTargetState>(this IInitializedCompositeStateBuilder builder, ElseDefaultTransitionBuildAction transitionBuildAction = null)
             where TElseTransition : class, IDefaultTransitionEffect
             where TTargetState : class, IVertex
-            => builder.AddElseDefaultTransition<TElseTransition>(State<TTargetState>.Name);
+            => builder.AddElseDefaultTransition<TElseTransition>(State<TTargetState>.Name, transitionBuildAction);
 
         /// <summary>
         /// Adds else alternative for all default transitions coming from current state.<br/><br/>
@@ -33,9 +33,9 @@ namespace Stateflows.StateMachines.Typed
         /// <typeparam name="TElseTransition">Transition class; must implement <see cref="IDefaultTransitionEffect"/> interface</typeparam>
         /// <param name="targetStateName">Target state name</param>
         [DebuggerHidden]
-        public static IInitializedCompositeStateBuilder AddElseDefaultTransition<TElseTransition>(this IInitializedCompositeStateBuilder builder, string targetStateName)
+        public static IInitializedCompositeStateBuilder AddElseDefaultTransition<TElseTransition>(this IInitializedCompositeStateBuilder builder, string targetStateName, ElseDefaultTransitionBuildAction transitionBuildAction = null)
             where TElseTransition : class, IDefaultTransitionEffect
-            => (builder as IStateBuilder).AddElseDefaultTransition<TElseTransition>(targetStateName) as IInitializedCompositeStateBuilder;
+            => (builder as IStateBuilder).AddElseDefaultTransition<TElseTransition>(targetStateName, transitionBuildAction) as IInitializedCompositeStateBuilder;
 
         /// <summary>
         /// Adds else alternative for all default transitions coming from current state.<br/><br/>

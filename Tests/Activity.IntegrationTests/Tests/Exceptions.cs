@@ -404,7 +404,7 @@ namespace Activity.IntegrationTests.Tests
         {
             if (ActivityLocator.TryLocateActivity(new ActivityId("output", "x"), out var a))
             {
-                await a.ExecuteAsync();
+                await a.SendAsync(new Initialize());
             }
 
             Assert.IsTrue(ExceptionHandlerOutput);

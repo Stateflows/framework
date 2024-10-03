@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using Microsoft.Extensions.DependencyInjection;
 using Stateflows.Common.Interfaces;
 using Stateflows.Common.Registration.Interfaces;
@@ -7,7 +8,7 @@ namespace Stateflows.Common.Registration.Builders
 {
     internal class StateflowsBuilder : IStateflowsBuilder
     {
-        public readonly List<IStateflowsTypeMapper> TypeMappers = new List<IStateflowsTypeMapper>();
+        private readonly List<IStateflowsTypeMapper> typeMappers = new List<IStateflowsTypeMapper>();
 
         public IServiceCollection ServiceCollection { get; private set; }
 
@@ -18,9 +19,22 @@ namespace Stateflows.Common.Registration.Builders
 
         IStateflowsBuilder IStateflowsBuilder.AddTypeMapper<TTypeMapper>()
         {
-            TypeMappers.Add(new TTypeMapper());
+            typeMappers.Add(new TTypeMapper());
 
             return this;
+        }
+
+        internal IEnumerable<Type> GetMappedTypes(Type type)
+        {
+            foreach (var typeMapper in typeMappers)
+            {
+                if (typeMapper.TryMapType(type, out var triggerTypes))
+                {
+                    return triggerTypes;
+                }
+            }
+
+            return new Type[] { type };
         }
     }
 }

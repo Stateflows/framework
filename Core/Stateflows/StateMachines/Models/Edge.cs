@@ -1,10 +1,10 @@
 ﻿using System;
 using System.Linq;
 using System.Collections.Generic;
+using Stateflows.Common;
 using Stateflows.Common.Models;
 using Stateflows.StateMachines.Interfaces;
 using Stateflows.StateMachines.Registration;
-using Stateflows.Common;
 
 namespace Stateflows.StateMachines.Models
 {
@@ -15,28 +15,39 @@ namespace Stateflows.StateMachines.Models
         DefaultTransition
     }
 
+
+    //var actualTokenTypes = Node.Graph.StateflowsBuilder.GetMappedTypes(typeof(TToken)).ToHashSet();
+
+    //ActualTriggerTypes = actualTriggerTypes,
+    //        TimeTriggerTypes = actualTriggerTypes.Where(type => type.IsSubclassOf(typeof(TimeEvent))).ToHashSet(),
+    //        ActualTriggers = actualTriggerTypes.Select(type => Event.GetName(type)).ToHashSet(),
+
     internal class Edge
     {
-        private string name = null;
-        public string Name
-            => name ??= $"{SourceName}-{TriggerDescriptor}->{TargetName}";
+        //    private string name = null;
+        //    public string Name
+        //        => name ??= $"{SourceName}-{TriggerDescriptor}->{TargetName}";
+        public string Name { get; set; }
 
-        private string identifier = null;
-        public string Identifier
-            => identifier ??= Target != null
-                ? $"{Source.Identifier}-{TriggerDescriptor}->{Target.Identifier}"
-                : $"{Source.Identifier}-{TriggerDescriptor}";
+        //private string identifier = null;
+        //public string Identifier
+        //    => identifier ??= Target != null
+        //        ? $"{Source.Identifier}-{TriggerDescriptor}->{Target.Identifier}"
+        //        : $"{Source.Identifier}-{TriggerDescriptor}";
+        public string Identifier { get; set; }
 
         private string signature = null;
         public string Signature
             => signature ??= $"{Source.Identifier}-{Trigger}->";
 
         public Graph Graph { get; set; }
-        private string triggerDescriptor = null;
-        private string TriggerDescriptor
-            => triggerDescriptor ??= IsElse
-                ? $"{Trigger}|else"
-                : Trigger;
+
+        //public string TriggerDescriptor { get; set; }
+        //private string triggerDescriptor = null;
+        //private string TriggerDescriptor
+        //    => triggerDescriptor ??= IsElse
+        //        ? $"{Trigger}|else"
+        //        : Trigger;
 
         public Type TriggerType { get; set; }
 
@@ -69,7 +80,16 @@ namespace Stateflows.StateMachines.Models
 
         private Edge MergeWith(Edge edge)
         {
-            var actualTriggerTypes = Graph.GetTriggerTypes(TriggerType).ToHashSet();
+            var actualTriggerTypes = Graph.StateflowsBuilder.GetMappedTypes(TriggerType).ToHashSet();
+
+            var triggerDescriptor = edge.IsElse
+                ? $"{Trigger}|else"
+                : Trigger;
+
+            var identifier = edge.Target != null
+                ? $"{Source.Identifier}-{triggerDescriptor}->{edge.Target.Identifier}"
+                : $"{Source.Identifier}-{triggerDescriptor}";
+
             var result = new Edge()
             {
                 Graph = Graph,
@@ -83,7 +103,9 @@ namespace Stateflows.StateMachines.Models
                 SourceName = SourceName,
                 Source = Source,
                 TargetName = edge.TargetName,
-                Target = edge.Target
+                Target = edge.Target,
+                Name = $"{SourceName}-{triggerDescriptor}->{edge.TargetName}",
+                Identifier = identifier,
             };
 
             result.Guards.Actions.AddRange(Guards.Actions);

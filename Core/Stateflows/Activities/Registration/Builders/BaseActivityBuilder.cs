@@ -11,6 +11,7 @@ using Stateflows.Activities.Context.Interfaces;
 using Stateflows.Activities.Registration.Builders;
 using Stateflows.Activities.Registration.Interfaces;
 using Stateflows.Common.Exceptions;
+using Newtonsoft.Json.Linq;
 
 namespace Stateflows.Activities.Registration
 {
@@ -107,6 +108,7 @@ namespace Stateflows.Activities.Registration
                 }
 
                 node.EventType = exceptionOrEventType;
+                node.ActualEventTypes = Result.StateflowsBuilder.GetMappedTypes(exceptionOrEventType).ToHashSet();
             }
 
             node.ChunkSize = chunkSize;

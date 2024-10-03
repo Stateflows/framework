@@ -1,4 +1,5 @@
 using Stateflows.Common;
+using Stateflows.StateMachines.Events;
 using Stateflows.StateMachines.Typed;
 using StateMachine.IntegrationTests.Utils;
 
@@ -26,7 +27,10 @@ namespace StateMachine.IntegrationTests.Tests
                         )
                         .AddJunction(b => b
                             .AddTransition("state2", b => b
-                                .AddGuard(c => (c.ExecutionTrigger as OtherEvent)?.AnswerToLifeUniverseAndEverything == 42)
+                                .AddGuard(c =>
+                                    c.Event.GetType().GetEventName() == Event<CompletionEvent>.Name
+                                    && (c.ExecutionTrigger as OtherEvent)?.AnswerToLifeUniverseAndEverything == 42
+                                )
                             )
                             .AddElseTransition("state3")
                         )

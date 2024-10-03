@@ -1,6 +1,5 @@
-using Stateflows.Common;
-using Stateflows.StateMachines.Registration.Interfaces;
 using System.Diagnostics;
+using Stateflows.StateMachines.Registration.Interfaces;
 
 namespace Stateflows.StateMachines.Typed
 {

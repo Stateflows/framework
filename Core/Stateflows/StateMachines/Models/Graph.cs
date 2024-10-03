@@ -16,19 +16,6 @@ namespace Stateflows.StateMachines.Models
     {
         internal readonly StateflowsBuilder StateflowsBuilder = null;
 
-        public IEnumerable<Type> GetTriggerTypes(Type type)
-        {
-            foreach (var typeMapper in StateflowsBuilder.TypeMappers)
-            {
-                if (typeMapper.TryMapType(type, out var triggerTypes))
-                {
-                    return triggerTypes;
-                }
-            }
-
-            return new Type[] { type };
-        }
-
         public Dictionary<string, int> InitCounter = new Dictionary<string, int>();
 
         public Graph(string name, int version, StateflowsBuilder stateflowsBuilder)
@@ -97,9 +84,19 @@ namespace Stateflows.StateMachines.Models
             {
                 if (edge.TriggerType != null)
                 {
-                    edge.ActualTriggerTypes = GetTriggerTypes(edge.TriggerType).ToHashSet();
+                    edge.ActualTriggerTypes = StateflowsBuilder.GetMappedTypes(edge.TriggerType).ToHashSet();
                     edge.TimeTriggerTypes = edge.ActualTriggerTypes.Where(type => type.IsSubclassOf(typeof(TimeEvent))).ToHashSet();
                     edge.ActualTriggers = edge.ActualTriggerTypes.Select(type => Event.GetName(type)).ToHashSet();
+
+                    var triggerDescriptor = edge.IsElse
+                        ? $"{edge.Trigger}|else"
+                        : edge.Trigger;
+
+                    //edge.Name = $"{edge.SourceName}-{triggerDescriptor}->{edge.TargetName}";
+
+                    edge.Identifier = edge.Target != null
+                        ? $"{edge.Source.Identifier}-{triggerDescriptor}->{edge.Target.Identifier}"
+                        : $"{edge.Source.Identifier}-{triggerDescriptor}";
                 }
             }
 

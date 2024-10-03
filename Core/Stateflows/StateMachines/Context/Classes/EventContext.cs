@@ -14,9 +14,29 @@ namespace Stateflows.StateMachines.Context.Classes
         IStateMachineInspectionContext IEventInspectionContext<TEvent>.StateMachine => StateMachine;
 
         public EventContext(RootContext context) : base(context)
-        { }
+        {
+            Event = default;
 
-        public TEvent Event => (Context.EventHolder as EventHolder<TEvent>).Payload;
+            if (context.EventHolder is EventHolder<TEvent> holder)
+            {
+                Event = holder.Payload;
+            }
+            else
+            {
+                var @event = context.EventHolder.BoxedPayload;
+
+                var converter = typeof(TEvent).GetMethod("op_Implicit", new[] { @event.GetType() });
+
+                if (converter != null)
+                {
+                    @event = converter.Invoke(null, new[] { @event });
+                }
+
+                Event = (TEvent)@event;
+            }
+        }
+
+        public TEvent Event { get; private set; }
 
         public Guid EventId => Context.EventHolder.Id;
 

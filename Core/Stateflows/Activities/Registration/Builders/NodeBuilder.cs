@@ -7,6 +7,7 @@ using Stateflows.Activities.Context.Classes;
 using Stateflows.Activities.Registration.Builders;
 using Stateflows.Activities.Registration.Interfaces;
 using Stateflows.Activities.Registration.Interfaces.Base;
+using Stateflows.Common;
 
 namespace Stateflows.Activities.Registration
 {

@@ -1,5 +1,4 @@
-﻿using Stateflows.Common;
-using Stateflows.StateMachines.Models;
+﻿using Stateflows.StateMachines.Models;
 using Stateflows.StateMachines.Inspection.Interfaces;
 
 namespace Stateflows.StateMachines.Context.Classes

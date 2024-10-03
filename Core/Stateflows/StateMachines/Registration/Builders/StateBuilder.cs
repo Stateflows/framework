@@ -224,9 +224,17 @@ namespace Stateflows.StateMachines.Registration.Builders
                 ? EdgeType.InternalTransition
                 : EdgeType.Transition;
 
+            var triggerType = typeof(TEvent);
+
+            var trigger = Event.GetName(triggerType);
+
+            var triggerDescriptor = isElse
+                ? $"{trigger}|else"
+                : trigger;
+
             var edge = new Edge()
             {
-                Trigger = typeof(TEvent).GetEventName(),
+                Trigger = trigger,
                 TriggerType = typeof(TEvent),
                 IsElse = isElse,
                 Graph = Vertex.Graph,
@@ -235,7 +243,8 @@ namespace Stateflows.StateMachines.Registration.Builders
                 TargetName = targetStateName,
                 Type = typeof(TEvent).GetEventName() == Constants.CompletionEvent
                     ? EdgeType.DefaultTransition
-                    : targetEdgeType
+                    : targetEdgeType,
+                Name = $"{Vertex.Name}-{triggerDescriptor}->{targetStateName}",
             };
 
             if (Vertex.Edges.ContainsKey(edge.Name))
@@ -250,7 +259,7 @@ namespace Stateflows.StateMachines.Registration.Builders
             Vertex.Edges.Add(edge.Name, edge);
             Vertex.Graph.AllEdges.Add(edge);
 
-            transitionBuildAction?.Invoke(new TransitionBuilder<TEvent>(edge));
+            transitionBuildAction?.Invoke(new TransitionBuilder<TEvent>(edge, Services));
 
             return this;
         }

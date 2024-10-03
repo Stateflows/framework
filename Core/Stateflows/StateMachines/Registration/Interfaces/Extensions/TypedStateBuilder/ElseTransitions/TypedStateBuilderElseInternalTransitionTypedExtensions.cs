@@ -19,13 +19,18 @@ namespace Stateflows.StateMachines.Typed
         /// <term>Definition</term>
         /// <description>Class that defines transition actions (effect) - <b>second type parameter</b>.</description>
         /// </item>
+        /// <item>
+        /// <term>Effect</term>
+        /// <description>Transition effect action can be defined using build action - <b>first parameter</b>.</description>
+        /// </item>
         /// </list>
         /// </summary>
         /// <typeparam name="TEvent">Event class</typeparam>
         /// <typeparam name="TElseTransition">Transition class; must implement <see cref="ITransitionEffect&lt;TEvent&gt;"/> interface</typeparam>
+        /// <param name="transitionBuildAction">Transition build action</param>
         [DebuggerHidden]
-        public static ITypedStateBuilder AddElseInternalTransition<TEvent, TElseTransition>(this ITypedStateBuilder builder)
+        public static ITypedStateBuilder AddElseInternalTransition<TEvent, TElseTransition>(this ITypedStateBuilder builder, ElseInternalTransitionBuildAction<TEvent> transitionBuildAction = null)
             where TElseTransition : class, ITransitionEffect<TEvent>
-            => builder.AddElseTransition<TEvent, TElseTransition>(Constants.DefaultTransitionTarget);
+            => builder.AddElseTransition<TEvent, TElseTransition>(Constants.DefaultTransitionTarget, b => transitionBuildAction?.Invoke(b as IElseInternalTransitionBuilder<TEvent>));
     }
 }

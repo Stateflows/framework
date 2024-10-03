@@ -1,5 +1,4 @@
 using System.Diagnostics;
-using Stateflows.Common;
 using Stateflows.StateMachines.Registration.Interfaces;
 
 namespace Stateflows.StateMachines.Typed
@@ -22,6 +21,10 @@ namespace Stateflows.StateMachines.Typed
         /// <term>Target</term>
         /// <description>State that transition is coming into - <b>third type parameter</b>,</description>
         /// </item>
+        /// <item>
+        /// <term>Guard/Effect</term>
+        /// <description>Transition actions can be defined using build action - <b>first parameter</b>.</description>
+        /// </item>
         /// </list>
         /// </summary>
         /// <typeparam name="TEvent">Event class</typeparam>
@@ -41,11 +44,12 @@ namespace Stateflows.StateMachines.Typed
         /// <item><see cref="ICompositeStateFinalization"/></item>
         /// </list>
         /// </typeparam>
+        /// <param name="transitionBuildAction">Transition build action</param>
         [DebuggerHidden]
-        public static ITypedStateBuilder AddTransition<TEvent, TTransition, TTargetState>(this ITypedStateBuilder builder)
+        public static ITypedStateBuilder AddTransition<TEvent, TTransition, TTargetState>(this ITypedStateBuilder builder, InternalTransitionBuildAction<TEvent> transitionBuildAction = null)
             where TTransition : class, ITransition<TEvent>
             where TTargetState : class, IVertex
-            => AddTransition<TEvent, TTransition>(builder, State<TTargetState>.Name);
+            => AddTransition<TEvent, TTransition>(builder, State<TTargetState>.Name, transitionBuildAction);
 
         /// <summary>
         /// Adds transition triggered by <see cref="TEvent"/> coming from current state.<br/>
@@ -63,6 +67,10 @@ namespace Stateflows.StateMachines.Typed
         /// <term>Target</term>
         /// <description>Name of the state that transition is coming into - <b>first parameter</b>,</description>
         /// </item>
+        /// <item>
+        /// <term>Guard/Effect</term>
+        /// <description>Transition actions can be defined using build action - <b>second parameter</b>.</description>
+        /// </item>
         /// </list>
         /// </summary>
         /// <typeparam name="TEvent">Event class</typeparam>
@@ -73,10 +81,11 @@ namespace Stateflows.StateMachines.Typed
         /// </list>
         /// </typeparam>
         /// <param name="targetStateName">Target state name</param>
+        /// <param name="transitionBuildAction">Transition build action</param>
         [DebuggerHidden]
-        public static ITypedStateBuilder AddTransition<TEvent, TTransition>(this ITypedStateBuilder builder, string targetStateName)
+        public static ITypedStateBuilder AddTransition<TEvent, TTransition>(this ITypedStateBuilder builder, string targetStateName, InternalTransitionBuildAction<TEvent> transitionBuildAction = null)
             where TTransition : class, ITransition<TEvent>
-            => (builder as IStateBuilder).AddTransition<TEvent, TTransition>(targetStateName) as ITypedStateBuilder;
+            => (builder as IStateBuilder).AddTransition<TEvent, TTransition>(targetStateName, b => transitionBuildAction?.Invoke(b as IInternalTransitionBuilder<TEvent>)) as ITypedStateBuilder;
 
         /// <summary>
         /// Adds transition triggered by <see cref="TEvent"/> coming from current state.<br/>
@@ -109,8 +118,8 @@ namespace Stateflows.StateMachines.Typed
         /// </typeparam>
         /// <param name="transitionBuildAction">Transition build action</param>
         [DebuggerHidden]
-        public static ITypedStateBuilder AddTransition<TEvent, TTargetState>(this ITypedStateBuilder builder, TransitionBuildAction<TEvent> transitionBuildAction = null)
+        public static ITypedStateBuilder AddTransition<TEvent, TTargetState>(this ITypedStateBuilder builder, InternalTransitionBuildAction<TEvent> transitionBuildAction = null)
             where TTargetState : class, IVertex
-            => builder.AddTransition(State<TTargetState>.Name, transitionBuildAction);
+            => builder.AddTransition<TEvent>(State<TTargetState>.Name, b => transitionBuildAction?.Invoke(b as IInternalTransitionBuilder<TEvent>));
     }
 }

@@ -1,5 +1,8 @@
 ﻿using System;
+using System.Linq;
 using System.Threading.Tasks;
+using System.Collections.Generic;
+using Microsoft.Extensions.DependencyInjection;
 using Stateflows.Utils;
 using Stateflows.Common;
 using Stateflows.Common.Exceptions;
@@ -11,8 +14,7 @@ using Stateflows.StateMachines.Context.Interfaces;
 using Stateflows.StateMachines.Registration.Interfaces;
 using Stateflows.StateMachines.Registration.Extensions;
 using Stateflows.StateMachines.Registration.Interfaces.Base;
-using System.Collections.Generic;
-using System.Linq;
+using Stateflows.StateMachines.Registration.Interfaces.Internal;
 
 namespace Stateflows.StateMachines.Registration.Builders
 {
@@ -24,22 +26,26 @@ namespace Stateflows.StateMachines.Registration.Builders
         IDefaultTransitionBuilder,
         IElseDefaultTransitionBuilder,
         IBehaviorBuilder,
-        IForwardedEventBuilder<TEvent>
+        IForwardedEventBuilder<TEvent>,
+        IInternal
     {
         public Edge Edge;
 
-        private IEnumerable<VertexType> transitiveVertexTypes = new HashSet<VertexType>() {
+        private readonly IEnumerable<VertexType> transitiveVertexTypes = new HashSet<VertexType>() {
             VertexType.Junction,
             VertexType.Choice,
         };
 
-    BehaviorClass IBehaviorBuilder.BehaviorClass => new BehaviorClass(Constants.StateMachine, Edge.Source.Graph.Name);
+        BehaviorClass IBehaviorBuilder.BehaviorClass => new BehaviorClass(Constants.StateMachine, Edge.Source.Graph.Name);
 
         int IBehaviorBuilder.BehaviorVersion => Edge.Source.Graph.Version;
 
-        public TransitionBuilder(Edge edge)
+        public IServiceCollection Services { get; }
+
+        public TransitionBuilder(Edge edge, IServiceCollection services)
         {
             Edge = edge;
+            Services = services;
         }
 
         public ITransitionBuilder<TEvent> AddGuard(Func<ITransitionContext<TEvent>, Task<bool>> guardAsync)

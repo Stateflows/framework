@@ -20,6 +20,10 @@ namespace Stateflows.StateMachines.Typed
         /// <term>Target</term>
         /// <description>State that transition is coming into - <b>second type parameter</b>,</description>
         /// </item>
+        /// <item>
+        /// <term>Effect</term>
+        /// <description>Transition effect action can be defined using build action - <b>first parameter</b>.</description>
+        /// </item>
         /// </list>
         /// </summary>
         /// <typeparam name="TElseTransition">Transition class; must implement <see cref="IDefaultTransitionEffect"/> interface</typeparam>
@@ -33,11 +37,12 @@ namespace Stateflows.StateMachines.Typed
         /// <item><see cref="ICompositeStateFinalization"/></item>
         /// </list>
         /// </typeparam>
+        /// <param name="transitionBuildAction">Transition build action</param>
         [DebuggerHidden]
-        public static IStateBuilder AddElseDefaultTransition<TElseTransition, TTargetState>(this IStateBuilder builder)
+        public static IStateBuilder AddElseDefaultTransition<TElseTransition, TTargetState>(this IStateBuilder builder, ElseDefaultTransitionBuildAction transitionBuildAction = null)
             where TElseTransition : class, IDefaultTransitionEffect
             where TTargetState : class, IVertex
-            => builder.AddElseDefaultTransition<TElseTransition>(State<TTargetState>.Name);
+            => builder.AddElseDefaultTransition<TElseTransition>(State<TTargetState>.Name, transitionBuildAction);
 
         /// <summary>
         /// Adds else alternative for all default transitions coming from current state.<br/>
@@ -51,19 +56,28 @@ namespace Stateflows.StateMachines.Typed
         /// <term>Target</term>
         /// <description>Name of the state that transition is coming into - <b>first parameter</b>,</description>
         /// </item>
+        /// <item>
+        /// <term>Effect</term>
+        /// <description>Transition effect action can be defined using build action - <b>second parameter</b>.</description>
+        /// </item>
         /// </list>
         /// </summary>
         /// <typeparam name="TElseTransition">Transition class; must implement <see cref="IDefaultTransitionEffect"/> interface</typeparam>
         /// <param name="targetStateName">Target state name</param>
+        /// <param name="transitionBuildAction">Transition build action</param>
         [DebuggerHidden]
-        public static IStateBuilder AddElseDefaultTransition<TElseTransition>(this IStateBuilder builder, string targetStateName)
+        public static IStateBuilder AddElseDefaultTransition<TElseTransition>(this IStateBuilder builder, string targetStateName, ElseDefaultTransitionBuildAction transitionBuildAction = null)
             where TElseTransition : class, IDefaultTransitionEffect
         {
             (builder as IInternal).Services.AddServiceType<TElseTransition>();
 
             return builder.AddElseDefaultTransition(
                 targetStateName,
-                t => t.AddElseDefaultTransitionEvents<TElseTransition>()
+                t =>
+                {
+                    t.AddElseDefaultTransitionEvents<TElseTransition>();
+                    transitionBuildAction?.Invoke(t);
+                }
             );
         }
 

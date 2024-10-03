@@ -16,19 +16,6 @@ namespace Stateflows.Activities.Models
     {
         private StateflowsBuilder StateflowsBuilder => Graph.StateflowsBuilder;
 
-        private IEnumerable<Type> GetTypes(Type type)
-        {
-            foreach (var typeMapper in StateflowsBuilder.TypeMappers)
-            {
-                if (typeMapper.TryMapType(type, out var types))
-                {
-                    return types;
-                }
-            }
-
-            return new Type[] { type };
-        }
-
         private string identifier = null;
         public override string Identifier
             => identifier ??= !(Parent is null)
@@ -44,20 +31,9 @@ namespace Stateflows.Activities.Models
 
         public Type ExceptionType { get; set; }
 
-        private Type eventType = null;
-        public Type EventType
-        {
-            get => eventType;
-            set
-            {
-                eventType = value;
-                actualEventTypes = GetTypes(value);
-            }
-        }
+        public Type EventType { get; set; }
 
-        private IEnumerable<Type> actualEventTypes = null;
-        public IEnumerable<Type> ActualEventTypes
-            => actualEventTypes;
+        public IEnumerable<Type> ActualEventTypes { get; set; }
 
         public int ChunkSize { get; set; }
         public bool Anchored { get; set; } = true;

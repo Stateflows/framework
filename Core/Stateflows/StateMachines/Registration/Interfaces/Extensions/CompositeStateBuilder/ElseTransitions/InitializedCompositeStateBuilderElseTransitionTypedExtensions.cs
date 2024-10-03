@@ -1,5 +1,4 @@
 using System.Diagnostics;
-using Stateflows.Common;
 using Stateflows.StateMachines.Registration.Interfaces;
 
 namespace Stateflows.StateMachines.Typed
@@ -23,10 +22,10 @@ namespace Stateflows.StateMachines.Typed
         /// </list>
         /// </typeparam>
         [DebuggerHidden]
-        public static IInitializedCompositeStateBuilder AddElseTransition<TEvent, TElseTransition, TTargetState>(this IInitializedCompositeStateBuilder builder)
+        public static IInitializedCompositeStateBuilder AddElseTransition<TEvent, TElseTransition, TTargetState>(this IInitializedCompositeStateBuilder builder, ElseTransitionBuildAction<TEvent> transitionBuildAction = null)
             where TElseTransition : class, ITransitionEffect<TEvent>
             where TTargetState : class, IVertex
-            => AddElseTransition<TEvent, TElseTransition>(builder, State<TTargetState>.Name);
+            => AddElseTransition<TEvent, TElseTransition>(builder, State<TTargetState>.Name, transitionBuildAction);
 
         /// <summary>
         /// Adds else alternative for all <see cref="TEvent"/>-triggered transitions coming from current state.<br/><br/>
@@ -36,9 +35,9 @@ namespace Stateflows.StateMachines.Typed
         /// <typeparam name="TElseTransition">Transition class; must implement <see cref="ITransitionEffect&lt;TEvent&gt;"/> interface</typeparam>
         /// <param name="targetStateName">Target state name</param>
         [DebuggerHidden]
-        public static IInitializedCompositeStateBuilder AddElseTransition<TEvent, TElseTransition>(this IInitializedCompositeStateBuilder builder, string targetStateName)
+        public static IInitializedCompositeStateBuilder AddElseTransition<TEvent, TElseTransition>(this IInitializedCompositeStateBuilder builder, string targetStateName, ElseTransitionBuildAction<TEvent> transitionBuildAction = null)
             where TElseTransition : class, ITransitionEffect<TEvent>
-            => (builder as IStateBuilder).AddElseTransition<TEvent, TElseTransition>(targetStateName) as IInitializedCompositeStateBuilder;
+            => (builder as IStateBuilder).AddElseTransition<TEvent, TElseTransition>(targetStateName, transitionBuildAction) as IInitializedCompositeStateBuilder;
 
         /// <summary>
         /// Adds else alternative for all <see cref="TEvent"/>-triggered transitions coming from current state.<br/><br/>

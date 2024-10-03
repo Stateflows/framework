@@ -22,6 +22,10 @@ namespace Stateflows.StateMachines.Typed
         /// <term>Target</term>
         /// <description>State that transition is coming into - <b>third type parameter</b>.</description>
         /// </item>
+        /// <item>
+        /// <term>Effect</term>
+        /// <description>Transition effect action can be defined using build action - <b>first parameter</b>.</description>
+        /// </item>
         /// </list>
         /// </summary>
         /// <typeparam name="TEvent">Event class</typeparam>
@@ -36,11 +40,12 @@ namespace Stateflows.StateMachines.Typed
         /// <item><see cref="ICompositeStateFinalization"/></item>
         /// </list>
         /// </typeparam>
+        /// <param name="transitionBuildAction">Transition build action</param>
         [DebuggerHidden]
-        public static ITypedStateBuilder AddElseTransition<TEvent, TElseTransition, TTargetState>(this ITypedStateBuilder builder)
+        public static ITypedStateBuilder AddElseTransition<TEvent, TElseTransition, TTargetState>(this ITypedStateBuilder builder, ElseTransitionBuildAction<TEvent> transitionBuildAction = null)
             where TElseTransition : class, ITransitionEffect<TEvent>
             where TTargetState : class, IVertex
-            => AddElseTransition<TEvent, TElseTransition>(builder, State<TTargetState>.Name);
+            => AddElseTransition<TEvent, TElseTransition>(builder, State<TTargetState>.Name, transitionBuildAction);
 
         /// <summary>
         /// Adds else alternative for all <see cref="TEvent"/>-triggered transitions coming from current state.<br/><br/>
@@ -54,15 +59,20 @@ namespace Stateflows.StateMachines.Typed
         /// <term>Definition</term>
         /// <description>Class that defines transition actions (effect) - <b>second type parameter</b>.</description>
         /// </item>
+        /// <item>
+        /// <term>Effect</term>
+        /// <description>Transition effect action can be defined using build action - <b>first parameter</b>.</description>
+        /// </item>
         /// </list>
         /// </summary>
         /// <typeparam name="TEvent">Event class</typeparam>
         /// <typeparam name="TElseTransition">Transition class; must implement <see cref="ITransitionEffect&lt;TEvent&gt;"/> interface</typeparam>
         /// <param name="targetStateName">Target state name</param>
+        /// <param name="transitionBuildAction">Transition build action</param>
         [DebuggerHidden]
-        public static ITypedStateBuilder AddElseTransition<TEvent, TElseTransition>(this ITypedStateBuilder builder, string targetStateName)
+        public static ITypedStateBuilder AddElseTransition<TEvent, TElseTransition>(this ITypedStateBuilder builder, string targetStateName, ElseTransitionBuildAction<TEvent> transitionBuildAction = null)
             where TElseTransition : class, ITransitionEffect<TEvent>
-            => (builder as IStateBuilder).AddElseTransition<TEvent, TElseTransition>(targetStateName) as ITypedStateBuilder;
+            => (builder as IStateBuilder).AddElseTransition<TEvent, TElseTransition>(targetStateName, transitionBuildAction) as ITypedStateBuilder;
 
         /// <summary>
         /// Adds else alternative for all <see cref="TEvent"/>-triggered transitions coming from current state.<br/><br/>
@@ -75,6 +85,10 @@ namespace Stateflows.StateMachines.Typed
         /// <item>
         /// <term>Target</term>
         /// <description>State that transition is coming into - <b>second type parameter</b>.</description>
+        /// </item>
+        /// <item>
+        /// <term>Effect</term>
+        /// <description>Transition effect action can be defined using build action - <b>first parameter</b>.</description>
         /// </item>
         /// </list>
         /// </summary>
