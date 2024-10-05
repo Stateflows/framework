@@ -26,7 +26,7 @@ namespace Stateflows.StateMachines.Typed
                 {
                     b.AddStateEvents<TState, IStateBuilder>();
 
-                    stateBuildAction?.Invoke(b as ITypedStateBuilder);
+                    stateBuildAction?.Invoke(b);
                 }
             );
         }
@@ -51,7 +51,7 @@ namespace Stateflows.StateMachines.Typed
                     (b as IInitializedCompositeStateBuilder).AddStateEvents<TState, IInitializedCompositeStateBuilder>();
                     (b as IInitializedCompositeStateBuilder).AddCompositeStateEvents<TState, IInitializedCompositeStateBuilder>();
 
-                    compositeStateBuildAction?.Invoke(b as ITypedCompositeStateBuilder);
+                    compositeStateBuildAction?.Invoke(b);
                 }
             );
         }

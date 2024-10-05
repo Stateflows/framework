@@ -1,10 +1,8 @@
 ﻿using System.Threading.Tasks;
 using MassTransit;
+using Stateflows.Utils;
 using Stateflows.Common;
 using Stateflows.Common.Utilities;
-using Stateflows.Common.Extensions;
-using EventHolder = Stateflows.Common.EventHolder;
-using IResponse = Stateflows.Common.IResponse;
 using Stateflows.Transport.MassTransit.MassTransit.Messages;
 
 namespace Stateflows.Transport.MassTransit.Stateflows
@@ -42,13 +40,13 @@ namespace Stateflows.Transport.MassTransit.Stateflows
                 validation = StateflowsJsonConverter.DeserializeObject<EventValidation>(result.Message.ValidationData);
             }
 
-            return new SendResult(@event, result.Message.Status, validation);
+            return new SendResult(@event.ToEventHolder(@event.GetType()), result.Message.Status, validation);
         }
 
         public async Task<RequestResult<TResponse>> RequestAsync<TResponse>(Request<TResponse> request)
             where TResponse : IResponse, new()
         {
-            var result = await SendAsync(request as EventHolder);
+            var result = await SendAsync(request);
 
             return new RequestResult<TResponse>(request, result.Status, result.Validation);
         }

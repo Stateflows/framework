@@ -1,8 +1,8 @@
 ﻿using Stateflows.Utils;
 using Stateflows.Common;
+using Stateflows.Common.Classes;
 using Stateflows.Common.Transport.Classes;
 using Stateflows.Common.Transport.Interfaces;
-using Stateflows.Common.Classes;
 
 namespace Stateflows.Transport.Http.Client
 {
@@ -51,12 +51,18 @@ namespace Stateflows.Transport.Http.Client
             }
         }
 
-        public async Task<SendResult> SendAsync<TEvent>(TEvent @event, IEnumerable<EventHeader> headers = null)
-            => await apiClient.SendAsync(Id, @event.ToEventHolder(), watches);
+        public Task<SendResult> SendAsync<TEvent>(TEvent @event, IEnumerable<EventHeader> headers = null)
+        {
+            ResponseHolder.SetResponses(new Dictionary<object, EventHolder>());
+
+            return apiClient.SendAsync(Id, @event.ToEventHolder(@event.GetType()), watches);
+        }
 
         public async Task<RequestResult<TResponseEvent>> RequestAsync<TResponseEvent>(IRequest<TResponseEvent> request, IEnumerable<EventHeader> headers = null)
         {
-            var result = await SendAsync(request as EventHolder);
+            ResponseHolder.SetResponses(new Dictionary<object, EventHolder>());
+
+            var result = await SendAsync(request);
             return new RequestResult<TResponseEvent>(request.ToEventHolder(request.GetType()), result.Status, result.Validation);
         }
 

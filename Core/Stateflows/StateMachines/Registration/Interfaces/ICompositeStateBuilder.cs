@@ -28,25 +28,4 @@ namespace Stateflows.StateMachines.Registration.Interfaces
         //IStateDoActivity<ICompositeStateBuilder>,
         IStateMachineInitial<IInitializedCompositeStateBuilder>
     { }
-
-    public interface ITypedInitializedCompositeStateBuilder :
-        IStateUtils<ITypedInitializedCompositeStateBuilder>,
-        IStateTransitions<ITypedInitializedCompositeStateBuilder>,
-        IStateMachine<ITypedInitializedCompositeStateBuilder>,
-        //IStateDoActivity<ITypedInitializedCompositeStateBuilder>,
-        IStateMachineFinal<ITypedFinalizedCompositeStateBuilder>
-    { }
-
-    public interface ITypedFinalizedCompositeStateBuilder :
-        IStateUtils<ITypedFinalizedCompositeStateBuilder>,
-        IStateTransitions<ITypedFinalizedCompositeStateBuilder>
-        //IStateDoActivity<ITypedFinalizedCompositeStateBuilder>
-    { }
-
-    public interface ITypedCompositeStateBuilder :
-        IStateUtils<ITypedCompositeStateBuilder>,
-        IStateTransitions<ITypedCompositeStateBuilder>,
-        //IStateDoActivity<ITypedCompositeStateBuilder>,
-        IStateMachineInitial<ITypedInitializedCompositeStateBuilder>
-    { }
 }

@@ -3,7 +3,6 @@ using Stateflows.Common;
 using Stateflows.StateMachines;
 using Stateflows.StateMachines.Context.Interfaces;
 using Stateflows.StateMachines.Inspection.Interfaces;
-using Stateflows.Extensions.PlantUml.Events;
 
 namespace Stateflows.Extensions.PlantUml.Classes
 {
@@ -12,10 +11,10 @@ namespace Stateflows.Extensions.PlantUml.Classes
         public Task AfterHydrateAsync(IStateMachineActionContext context)
             => Task.CompletedTask;
 
-        public Task AfterProcessEventAsync(IEventActionContext<EventHolder> context)
+        public Task AfterProcessEventAsync<TEvent>(IEventActionContext<TEvent> context)
         {
             if (
-                context is IEventInspectionContext<EventHolder> inspectionContext &&
+                context is IEventInspectionContext<TEvent> inspectionContext &&
                 inspectionContext.StateMachine.Inspection.StateHasChanged
             )
             {
@@ -33,7 +32,7 @@ namespace Stateflows.Extensions.PlantUml.Classes
         public Task BeforeDehydrateAsync(IStateMachineActionContext context)
             => Task.CompletedTask;
 
-        public Task<bool> BeforeProcessEventAsync(IEventActionContext<EventHolder> context)
+        public Task<bool> BeforeProcessEventAsync<TEvent>(IEventActionContext<TEvent> context)
             => Task.FromResult(true);
     }
 }

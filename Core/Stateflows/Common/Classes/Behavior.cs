@@ -46,11 +46,16 @@ namespace Stateflows.Common.Classes
             }
         }
 
-        [DebuggerHidden]
+        //[DebuggerHidden]
         public async Task<SendResult> SendAsync<TEvent>(TEvent @event, IEnumerable<EventHeader> headers = null)
         {
             var executionToken = engine.EnqueueEvent(Id, @event.ToEventHolder(@event.GetType()), serviceProvider);
             await executionToken.Handled.WaitOneAsync();
+
+            if (ResponseHolder.ResponsesAreSet())
+            {
+                ResponseHolder.CopyResponses(executionToken.Responses);
+            }
 
             return new SendResult(executionToken.EventHolder, executionToken.Status, executionToken.Validation);
         }
@@ -61,11 +66,16 @@ namespace Stateflows.Common.Classes
             var executionToken = engine.EnqueueEvent(Id, request.ToEventHolder(request.GetType()), serviceProvider);
             await executionToken.Handled.WaitOneAsync();
 
-            ResponseHolder.SetResponses(executionToken.Responses);
+            if (ResponseHolder.ResponsesAreSet())
+            {
+                ResponseHolder.CopyResponses(executionToken.Responses);
+            }
+            else
+            {
+                ResponseHolder.SetResponses(executionToken.Responses);
+            }
 
             var result = new RequestResult<TResponseEvent>(executionToken.EventHolder, executionToken.Status, executionToken.Validation);
-
-            ResponseHolder.ClearResponses();
 
             return result;
         }

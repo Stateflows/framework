@@ -1,6 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
+using Microsoft.Extensions.Logging;
 using Stateflows.Common;
+using Stateflows.Common.Exceptions;
+using Stateflows.Common.Utilities;
 using Stateflows.StateMachines.Context.Interfaces;
 using Stateflows.StateMachines.Inspection.Interfaces;
 
@@ -23,16 +26,14 @@ namespace Stateflows.StateMachines.Context.Classes
             }
             else
             {
-                var @event = context.EventHolder.BoxedPayload;
-
-                var converter = typeof(TEvent).GetMethod("op_Implicit", new[] { @event.GetType() });
-
-                if (converter != null)
+                if (ImplicitConverter.TryConvert<TEvent>(context.EventHolder.BoxedPayload, out var @event))
                 {
-                    @event = converter.Invoke(null, new[] { @event });
+                    Event = @event;
                 }
-
-                Event = (TEvent)@event;
+                else
+                {
+                    throw new StateflowsRuntimeException($"Failed to convert event of type {context.EventHolder.BoxedPayload.GetType()} to {typeof(TEvent)}");
+                }
             }
         }
 

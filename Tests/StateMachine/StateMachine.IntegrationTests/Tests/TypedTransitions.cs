@@ -112,7 +112,7 @@ namespace StateMachine.IntegrationTests.Tests
         }
 
         [TestMethod]
-        public async Task OfConditionsTransition()
+        public async Task OrConditionsTransition()
         {
             var status = EventStatus.Rejected;
             string currentState = "state1";

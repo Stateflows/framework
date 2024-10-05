@@ -8,14 +8,11 @@ using Stateflows.Common;
 using Stateflows.Common.Models;
 using Stateflows.Activities.Registration;
 using Stateflows.Activities.Context.Classes;
-using Stateflows.Common.Registration.Builders;
 
 namespace Stateflows.Activities.Models
 {
     internal class Node : Element
     {
-        private StateflowsBuilder StateflowsBuilder => Graph.StateflowsBuilder;
-
         private string identifier = null;
         public override string Identifier
             => identifier ??= !(Parent is null)

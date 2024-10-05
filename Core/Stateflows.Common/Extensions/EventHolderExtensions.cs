@@ -7,14 +7,14 @@ namespace Stateflows.Common
 {
     public static class EventHolderExtensions
     {
-        public static void Respond<TResponse>(this EventHolder eventHolder, TResponse response)
+        public static void Respond(this EventHolder eventHolder, EventHolder response)
         {
             if (!eventHolder.IsRequest())
             {
                 throw new InvalidOperationException("Event type does not implement IRequest<> interface and cannot be responded to.");
             }
 
-            ResponseHolder.Respond(eventHolder.BoxedPayload, new EventHolder<TResponse>() { Payload = response });
+            ResponseHolder.Respond(eventHolder.BoxedPayload, response);
         }
 
         public static bool IsRequest(this EventHolder eventHolder)
@@ -24,9 +24,16 @@ namespace Stateflows.Common
             => eventHolder.IsRequest() && ResponseHolder.IsResponded(eventHolder.BoxedPayload);
 
         public static EventHolder GetResponseHolder(this EventHolder eventHolder)
-            => eventHolder.IsRequest()
-            ? ResponseHolder.GetResponseOrDefault(eventHolder.BoxedPayload)
-            : null;
+        {
+            if (eventHolder.IsRequest())
+            {
+                return ResponseHolder.GetResponseOrDefault(eventHolder.BoxedPayload);
+            }
+            else
+            {
+                return null;
+            }
+        }
 
         public static object GetResponse(this EventHolder eventHolder)
             => eventHolder.GetResponseHolder()?.BoxedPayload ?? default;

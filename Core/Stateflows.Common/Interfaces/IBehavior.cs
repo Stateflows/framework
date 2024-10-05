@@ -13,6 +13,8 @@ namespace Stateflows.Common
         BehaviorId Id { get; }
 
         Task<SendResult> SendAsync<TEvent>(TEvent @event, IEnumerable<EventHeader> headers = null);
+        
+        //Task<SendResult> SendAsync(object @event, Type eventType, IEnumerable<EventHeader> headers = null);
 
         Task<RequestResult<TResponseEvent>> RequestAsync<TResponseEvent>(IRequest<TResponseEvent> request, IEnumerable<EventHeader> headers = null);
 

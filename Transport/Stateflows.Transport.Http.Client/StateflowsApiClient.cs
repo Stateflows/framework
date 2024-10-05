@@ -39,7 +39,7 @@ namespace Stateflows.Transport.Http.Client
             await Task.WhenAll(targets.Select(target => SendAsync(target.Id, new NotificationsRequest().ToEventHolder(), target.Watches)));
         }
 
-        [DebuggerHidden]
+        //[DebuggerHidden]
         public async Task<SendResult> SendAsync(BehaviorId behaviorId, EventHolder @event, IEnumerable<Watch> watches)
         {
             var requestResult = await _httpClient.PostAsync(

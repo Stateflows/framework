@@ -36,16 +36,29 @@ namespace Stateflows.Transport.Http
                         var behaviorId = new BehaviorId(input.BehaviorId.Type, input.BehaviorId.Name, input.BehaviorId.Instance);
                         if (locator.TryLocateBehavior(behaviorId, out var behavior))
                         {
-                            var result = await behavior.SendAsync(input.Event);
+                            EventHolder response = null;
+                            
+                            var responses = new Dictionary<object, EventHolder>();
+                            ResponseHolder.SetResponses(responses);
+
+                            var result = await behavior.SendAsync(input.Event.BoxedPayload, input.Event.Headers);
+                            try
+                            {
+                                response = result.Status == EventStatus.Consumed
+                                    ? input.Event.GetResponseHolder()
+                                    : null;
+                            }
+                            catch (Exception e)
+                            {
+                                throw e;
+                            }
                             return Results.Text(
                                 StateflowsJsonConverter.SerializePolymorphicObject(
                                     new StateflowsResponse()
                                     {
                                         EventStatus = result.Status,
                                         Validation = result.Validation,
-                                        Response = result.Status == EventStatus.Consumed
-                                            ? input.Event.GetResponseHolder()
-                                            : null,
+                                        Response = response,
                                         Notifications = result.Status != EventStatus.Rejected
                                             ? hub.Notifications.GetPendingNotifications(behaviorId, input.Watches)
                                             : Array.Empty<EventHolder>(),

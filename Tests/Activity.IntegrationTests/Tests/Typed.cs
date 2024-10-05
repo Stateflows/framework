@@ -5,6 +5,11 @@ using StateMachine.IntegrationTests.Utils;
 
 namespace Activity.IntegrationTests.Tests
 {
+    public class Struct : IStructuredActivityNode
+    {
+
+    }
+
     public class TypedAction : IActionNode
     {
         public readonly Input<SomeToken> someTokens;

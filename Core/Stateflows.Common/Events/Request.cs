@@ -8,8 +8,19 @@ namespace Stateflows.Common
         private readonly static AsyncLocal<Dictionary<object, EventHolder>> Responses =
             new AsyncLocal<Dictionary<object, EventHolder>>();
 
+        public static bool ResponsesAreSet()
+            => Responses.Value != null;
+
         public static void SetResponses(Dictionary<object, EventHolder> responses)
             => Responses.Value = responses;
+
+        public static void CopyResponses(Dictionary<object, EventHolder> responses)
+        {
+            foreach (var key in responses.Keys)
+            {
+                Responses.Value[key] = responses[key];
+            }
+        }
 
         public static void ClearResponses()
             => Responses.Value = null;
@@ -21,7 +32,17 @@ namespace Stateflows.Common
             => Responses.Value.ContainsKey(request);
 
         public static EventHolder GetResponseOrDefault(object request)
-            => Responses.Value.GetValueOrDefault(request);
+        {
+            if (Responses.Value.ContainsKey(request))
+            {
+                return Responses.Value[request];
+            }
+            else
+            {
+                return default;
+            }
+            //=> Responses.Value.GetValueOrDefault(request);
+        }
     }
 
     public interface IRequest<in TResponse>

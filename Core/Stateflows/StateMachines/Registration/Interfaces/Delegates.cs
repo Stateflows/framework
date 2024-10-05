@@ -15,11 +15,11 @@ namespace Stateflows.StateMachines.Registration.Interfaces
 
     public delegate void ChoiceBuildAction(IChoiceBuilder builder);
 
-    public delegate void StateTransitionsBuildAction(ITypedStateBuilder builder);
+    public delegate void StateTransitionsBuildAction(IStateBuilder builder);
 
     public delegate void CompositeStateBuildAction(ICompositeStateBuilder builder);
 
-    public delegate void CompositeStateTransitionsBuildAction(ITypedCompositeStateBuilder builder);
+    public delegate void CompositeStateTransitionsBuildAction(ICompositeStateBuilder builder);
 
     public delegate void TransitionBuildAction<TEvent>(ITransitionBuilder<TEvent> builder);
 

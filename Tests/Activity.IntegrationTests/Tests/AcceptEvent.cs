@@ -8,7 +8,8 @@ namespace Activity.IntegrationTests.Tests
     public class AcceptEvent : StateflowsTestClass
     {
         private bool Executed = false;
-        private int Counter = 0;
+        private int Counter1 = 0;
+        private int Counter2 = 0;
 
         [TestInitialize]
         public override void Initialize()
@@ -30,7 +31,7 @@ namespace Activity.IntegrationTests.Tests
                         )
                         .AddAcceptEventAction<SomeEvent>(
                             "accept",
-                            async c => Counter++,
+                            async c => Counter1++,
                             b => b.AddControlFlow("final")
                         )
                         .AddAction("final", async c =>
@@ -44,7 +45,7 @@ namespace Activity.IntegrationTests.Tests
                         )
                         .AddAcceptEventAction<SomeEvent>(
                             "accept",
-                            async c => Counter++,
+                            async c => Counter1++,
                             b => b.AddControlFlow("final")
                         )
                         .AddAction("final", async c =>
@@ -60,8 +61,8 @@ namespace Activity.IntegrationTests.Tests
                             "accept",
                             async c =>
                                 c.Event.Match(
-                                    some => Counter++,
-                                    other => Counter++
+                                    some => Counter2++,
+                                    other => Counter2++
                                 ),
                             b => b.AddControlFlow("final")
                         )
@@ -85,7 +86,7 @@ namespace Activity.IntegrationTests.Tests
             }
 
             Assert.IsTrue(Executed);
-            Assert.AreEqual(1, Counter);
+            Assert.AreEqual(1, Counter1);
             Assert.AreEqual(EventStatus.NotConsumed, result?.Status);
         }
 
@@ -99,7 +100,7 @@ namespace Activity.IntegrationTests.Tests
             }
 
             Assert.IsTrue(Executed);
-            Assert.AreEqual(2, Counter);
+            Assert.AreEqual(2, Counter1);
         }
 
         [TestMethod]
@@ -112,7 +113,7 @@ namespace Activity.IntegrationTests.Tests
             }
 
             Assert.IsTrue(Executed);
-            Assert.AreEqual(2, Counter);
+            Assert.AreEqual(2, Counter2);
         }
     }
 }

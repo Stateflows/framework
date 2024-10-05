@@ -15,9 +15,9 @@ namespace Stateflows.Utils
                    : default
            };
 
-        public static EventHolder ToEventHolder<TEvent>(this TEvent payload, Type tokenType, BehaviorId? senderId = null)
+        public static EventHolder ToEventHolder<TEvent>(this TEvent payload, Type eventType, BehaviorId? senderId = null)
         {
-            var holderType = typeof(EventHolder<>).MakeGenericType(tokenType);
+            var holderType = typeof(EventHolder<>).MakeGenericType(eventType);
             var holder = (EventHolder)Activator.CreateInstance(holderType);
             holderType.GetProperty("Payload").SetValue(holder, payload);
             if (senderId != null)

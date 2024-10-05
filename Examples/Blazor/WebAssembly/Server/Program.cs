@@ -66,7 +66,7 @@ builder.Services.AddRazorPages();
 
 var app = builder.Build();
 
-app.MapStateflowsSignalRTransport();
+//app.MapStateflowsSignalRTransport();
 app.MapStateflowsHttpTransport();
 
 // Configure the HTTP request pipeline.

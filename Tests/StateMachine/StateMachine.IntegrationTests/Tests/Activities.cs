@@ -48,7 +48,7 @@ namespace StateMachine.IntegrationTests.Tests
                             .AddOnExitActivity("exit")
                         )
                     )
-                )
+                )   
                 .AddActivities(b => b
                     .AddActivity("guard", b => b
                         .AddInitial(b => b

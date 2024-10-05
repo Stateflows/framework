@@ -15,16 +15,4 @@ namespace Stateflows.StateMachines.Registration.Interfaces
         IStateUtils<IBehaviorStateBuilder>,
         IStateTransitions<IBehaviorStateBuilder>
     { }
-
-    public interface ITypedStateBuilder :
-        IStateUtils<ITypedStateBuilder>,
-        IStateTransitions<ITypedStateBuilder>,
-        IStateSubmachine<IBehaviorTypedStateBuilder>,
-        IStateDoActivity<IBehaviorTypedStateBuilder>
-    { }
-
-    public interface IBehaviorTypedStateBuilder :
-        IStateUtils<IBehaviorTypedStateBuilder>,
-        IStateTransitions<IBehaviorTypedStateBuilder>
-    { }
 }
