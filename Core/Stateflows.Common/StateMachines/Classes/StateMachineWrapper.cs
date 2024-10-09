@@ -19,9 +19,6 @@ namespace Stateflows.Common.StateMachines.Classes
         public Task<SendResult> SendAsync<TEvent>(TEvent @event, IEnumerable<EventHeader> headers = null)
             => Behavior.SendAsync(@event);
 
-        //public Task<SendResult> SendAsync(object @event, Type eventType, IEnumerable<EventHeader> headers = null)
-        //    => Behavior.SendAsync(@event, eventType, headers);
-
         public Task<RequestResult<TResponse>> RequestAsync<TResponse>(IRequest<TResponse> request, IEnumerable<EventHeader> headers = null)
             => Behavior.RequestAsync(request);
 

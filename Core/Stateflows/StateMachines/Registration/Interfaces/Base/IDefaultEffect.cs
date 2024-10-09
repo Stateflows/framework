@@ -17,7 +17,7 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         {
             (this as IInternal).Services.AddServiceType<TEffect>();
 
-            return AddEffect(c => (c as BaseContext).Context.Executor.GetDefaultTransition<TEffect>(c)?.EffectAsync());
+            return AddEffect(c => (c as BaseContext).Context.Executor.GetDefaultTransitionEffect<TEffect>(c)?.EffectAsync());
         }
 
         TReturn AddEffects<TEffect1, TEffect2>()

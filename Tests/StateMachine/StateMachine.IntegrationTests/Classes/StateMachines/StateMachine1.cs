@@ -1,4 +1,4 @@
-﻿using Stateflows.StateMachines.Typed;
+﻿using Stateflows.StateMachines;
 using Stateflows.StateMachines.Attributes;
 using StateMachine.IntegrationTests.Classes.States;
 using StateMachine.IntegrationTests.Classes.Transitions;
@@ -44,10 +44,16 @@ namespace StateMachine.IntegrationTests.Classes.StateMachines
                 .AddDefaultInitializer<Initializer1>()
                 .AddFinalizer<Finalizer1>()
                 .AddInitialState<State1>(b => b
-                    .AddTransition<SomeEvent, SomeEventTransition, State2>()
+                    .AddTransition<SomeEvent, State2>(b => b
+                        .AddGuard<SomeEventTransition>()
+                        .AddEffect<SomeEventTransition>()
+                    )
                 )
                 .AddState<State2>(b => b
-                    .AddTransition<SomeEvent, SomeEventTransition, FinalState>()
+                    .AddTransition<SomeEvent, FinalState>(b => b
+                        .AddGuard<SomeEventTransition>()
+                        .AddEffect<SomeEventTransition>()
+                    )
                 )
                 .AddState<FinalState>();
         }

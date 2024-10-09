@@ -1,7 +1,7 @@
 ﻿using System.Diagnostics;
 using Stateflows.Activities.Registration.Interfaces;
 
-namespace Stateflows.Activities.Typed
+namespace Stateflows.Activities
 {
     public static class DecisionBuilderElseControlFlowsTypedExtensions
     {

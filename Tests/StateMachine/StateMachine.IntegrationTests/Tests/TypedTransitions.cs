@@ -15,6 +15,18 @@ namespace StateMachine.IntegrationTests.Tests
             => @event.InitializationSuccessful;
     }
 
+    public class Guard1 : ITransitionGuard
+    {
+        public async Task<bool> GuardAsync()
+            => true;
+    }
+
+    public class Guard2 : ITransitionGuard
+    {
+        public async Task<bool> GuardAsync()
+            => false;
+    }
+
     public class Effect1 : ITransitionEffect<SomeEvent>
     {
         public async Task EffectAsync(SomeEvent @event)
@@ -97,6 +109,18 @@ namespace StateMachine.IntegrationTests.Tests
                         )
                     )
 
+                    .AddStateMachine("universal", b => b
+                        .AddInitialState("state1", b => b
+                            .AddOnExit(c => StateExited = true)
+                            .AddTransition<SomeEvent>("state2", b => b
+                                .AddOrGuards<Guard1, Guard2>()
+                            )
+                        )
+                        .AddState("state2", b => b
+                            .AddOnEntry(c => StateEntered = true)
+                        )
+                    )
+
                     .AddStateMachine("exits", b => b
                         .AddInitialState("state1", b => b
                             .AddOnExit(c => StateExited = true)
@@ -147,6 +171,25 @@ namespace StateMachine.IntegrationTests.Tests
             Assert.AreEqual(EventStatus.Consumed, status);
             Assert.IsTrue(StateExited);
             Assert.AreEqual(3, Counter1);
+            Assert.IsTrue(StateEntered);
+            Assert.AreEqual("state2", currentState);
+        }
+
+        [TestMethod]
+        public async Task UniversalGuardsTransition()
+        {
+            var status = EventStatus.Rejected;
+            string currentState = "state1";
+
+            if (StateMachineLocator.TryLocateStateMachine(new StateMachineId("universal", "x"), out var sm))
+            {
+                status = (await sm.SendAsync(new SomeEvent() { InitializationSuccessful = false })).Status;
+
+                currentState = (await sm.GetCurrentStateAsync()).Response.StatesStack.First();
+            }
+
+            Assert.AreEqual(EventStatus.Consumed, status);
+            Assert.IsTrue(StateExited);
             Assert.IsTrue(StateEntered);
             Assert.AreEqual("state2", currentState);
         }

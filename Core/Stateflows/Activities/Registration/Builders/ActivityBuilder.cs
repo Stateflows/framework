@@ -108,8 +108,6 @@ namespace Stateflows.Activities.Registration.Builders
                             throw new ExecutionException(e);
                         }
                     }
-
-                    result = false;
                 }
 
                 return result;

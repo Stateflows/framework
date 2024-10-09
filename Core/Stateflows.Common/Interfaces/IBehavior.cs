@@ -14,8 +14,6 @@ namespace Stateflows.Common
 
         Task<SendResult> SendAsync<TEvent>(TEvent @event, IEnumerable<EventHeader> headers = null);
         
-        //Task<SendResult> SendAsync(object @event, Type eventType, IEnumerable<EventHeader> headers = null);
-
         Task<RequestResult<TResponseEvent>> RequestAsync<TResponseEvent>(IRequest<TResponseEvent> request, IEnumerable<EventHeader> headers = null);
 
         Task<RequestResult<CompoundResponse>> SendCompoundAsync(Action<ICompound> builderAction, IEnumerable<EventHeader> headers = null)

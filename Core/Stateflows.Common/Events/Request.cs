@@ -32,17 +32,7 @@ namespace Stateflows.Common
             => Responses.Value.ContainsKey(request);
 
         public static EventHolder GetResponseOrDefault(object request)
-        {
-            if (Responses.Value.ContainsKey(request))
-            {
-                return Responses.Value[request];
-            }
-            else
-            {
-                return default;
-            }
-            //=> Responses.Value.GetValueOrDefault(request);
-        }
+            => Responses.Value.GetValueOrDefault(request);
     }
 
     public interface IRequest<in TResponse>

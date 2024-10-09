@@ -10,7 +10,7 @@ using Stateflows.Activities.Context.Interfaces;
 using Stateflows.Activities.Registration.Builders;
 using Stateflows.Activities.Registration.Interfaces;
 
-namespace Stateflows.Activities.Typed
+namespace Stateflows.Activities
 {
     public static class ReactiveStructuredActivityBuilderTypedExtensions
     {

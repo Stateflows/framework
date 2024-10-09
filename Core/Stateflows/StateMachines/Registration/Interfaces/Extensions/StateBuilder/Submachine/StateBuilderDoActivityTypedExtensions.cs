@@ -3,7 +3,7 @@ using System.Diagnostics;
 using Stateflows.Activities;
 using Stateflows.StateMachines.Registration.Interfaces;
 
-namespace Stateflows.StateMachines.Typed
+namespace Stateflows.StateMachines
 {
     public static class StateBuilderDoActivityTypedExtensions
     {

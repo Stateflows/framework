@@ -622,8 +622,6 @@ namespace Stateflows.Activities.Engine
                             throw new ExecutionException(e);
                         }
                     }
-
-                    result = InitializationStatus.NotInitialized;
                 }
             }
             else

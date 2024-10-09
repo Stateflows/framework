@@ -1,6 +1,4 @@
-﻿using Stateflows.Common;
-
-namespace Examples.Common
+﻿namespace Examples.Common
 {
     public class SomeEvent
     {

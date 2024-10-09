@@ -3,9 +3,10 @@ using Blazor.Server.Data;
 using Examples.Common;
 using Examples.Storage;
 using Stateflows;
+using Stateflows.Activities;
 using Stateflows.Common;
 using Stateflows.StateMachines;
-using Stateflows.StateMachines.Typed;
+using X;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -21,6 +22,18 @@ builder.Services.AddStateflows(b => b
 
     //.AddStorage()
 
+    .AddActivities(b => b
+        .AddActivity("a", b => b
+            .AddInitial(b => b
+                .AddControlFlow("action")
+            )
+            .AddAction("action", async c =>
+            {
+                Debug.WriteLine("action");
+            })
+        )
+    )
+
     .AddStateMachines(b => b
         .AddStateMachine("stateMachine1", b => b
             .AddInitialState("state1", b => b
@@ -28,7 +41,11 @@ builder.Services.AddStateflows(b => b
                 {
                     Debug.WriteLine("x");
                 })
-                .AddTransition<SomeEvent>("state2")
+                //.AddOnEntry<ActionX>()
+                //.AddTransition<SomeEvent>("state2", b => b
+                //    .AddGuard<X.Guard>()
+                //    .AddEffect<ActionX>()
+                //)
                 .AddTransition<Startup>("state3")
                 .AddInternalTransition<ExampleRequest>(b => b
                     .AddEffect(async c =>
@@ -37,7 +54,6 @@ builder.Services.AddStateflows(b => b
                     })
                     .AddGuard(c => throw new Exception("test"))
                 )
-                //.AddDoActivity<Activity3>()
             )
             .AddState("state2", b => b
                 .AddOnEntry(async c =>
@@ -83,3 +99,24 @@ app.MapBlazorHub();
 app.MapFallbackToPage("/_Host");
 
 app.Run();
+
+namespace X
+{
+    public class State1 : IState
+    {
+
+    }
+
+    public class ControlFlow : IControlFlow
+    {
+
+    }
+
+    public class Guard : ITransitionGuard
+    {
+        public Task<bool> GuardAsync()
+        {
+            throw new NotImplementedException();
+        }
+    }
+}

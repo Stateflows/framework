@@ -1,7 +1,7 @@
 ﻿using Activity.IntegrationTests.Classes.Actions;
 using Activity.IntegrationTests.Classes.Flow;
 using Stateflows.Activities.Registration.Interfaces;
-using Stateflows.Activities.Typed;
+using Stateflows.Activities;
 using Stateflows.Common;
 
 namespace Activity.IntegrationTests.Classes.Activities

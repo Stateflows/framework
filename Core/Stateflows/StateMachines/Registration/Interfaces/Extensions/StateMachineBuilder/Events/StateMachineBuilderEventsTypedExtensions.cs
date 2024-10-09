@@ -4,7 +4,7 @@ using Stateflows.Common.Extensions;
 using Stateflows.StateMachines.Context.Classes;
 using Stateflows.StateMachines.Registration.Interfaces.Internal;
 
-namespace Stateflows.StateMachines.Typed
+namespace Stateflows.StateMachines
 {
     public static class StateMachineBuilderEventsTypedExtensions
     {

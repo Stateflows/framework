@@ -1,6 +1,7 @@
-﻿using Stateflows.StateMachines.Typed;
+﻿using Stateflows.StateMachines;
 using Stateflows.StateMachines.Attributes;
 using Stateflows.Common;
+using StateMachine.IntegrationTests.Classes.Transitions;
 
 namespace StateMachine.IntegrationTests.Classes.StateMachines
 {
@@ -97,10 +98,16 @@ namespace StateMachine.IntegrationTests.Classes.StateMachines
                 .AddFinalizer<TypedFinalizer>()
                 
                 .AddInitialState<StateA>(b => b
-                    .AddTransition<SomeEvent, SomeTransition, StateB>()
+                    .AddTransition<SomeEvent, StateB>(b => b
+                        .AddGuard<SomeTransition>()
+                        .AddEffect<SomeTransition>()
+                    )
                 )
                 .AddState<StateB>(b => b
-                    .AddTransition<SomeEvent, SomeTransition, FinalState>()
+                    .AddTransition<SomeEvent, FinalState>(b => b
+                        .AddGuard<SomeTransition>()
+                        .AddEffect<SomeTransition>()
+                    )
                 )
                 .AddState<FinalState>();
         }

@@ -1,7 +1,7 @@
 using StateMachine.IntegrationTests.Classes.StateMachines;
 using StateMachine.IntegrationTests.Classes.States;
 using StateMachine.IntegrationTests.Utils;
-using Stateflows.StateMachines.Typed;
+using Stateflows.StateMachines;
 using Stateflows.Common;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -94,8 +94,12 @@ namespace StateMachine.IntegrationTests.Tests
                 .AddStateMachines(b => b
                     .AddStateMachine("compound", b => b
                         .AddInitialState("initial", b => b
-                            .AddInternalTransition<SomeEvent, Some>()
-                            .AddInternalTransition<OtherEvent, Other>()
+                            .AddInternalTransition<SomeEvent>(b => b
+                                .AddEffect<Some>()
+                            )
+                            .AddInternalTransition<OtherEvent>(b => b
+                                .AddEffect<Other>()
+                            )
                         )
                     )
 

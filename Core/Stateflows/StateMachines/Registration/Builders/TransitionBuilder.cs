@@ -161,13 +161,13 @@ namespace Stateflows.StateMachines.Registration.Builders
         IElseInternalTransitionBuilder<TEvent> IEffect<TEvent, IElseInternalTransitionBuilder<TEvent>>.AddEffect(Func<ITransitionContext<TEvent>, Task> effectAsync)
             => AddEffect(effectAsync) as IElseInternalTransitionBuilder<TEvent>;
 
-        IDefaultTransitionBuilder IEffect<CompletionEvent, IDefaultTransitionBuilder>.AddEffect(Func<ITransitionContext<CompletionEvent>, Task> effectAsync)
+        IDefaultTransitionBuilder IDefaultEffect<IDefaultTransitionBuilder>.AddEffect(Func<ITransitionContext<CompletionEvent>, Task> effectAsync)
             => AddEffect(c => effectAsync(c as ITransitionContext<CompletionEvent>)) as IDefaultTransitionBuilder;
 
-        IDefaultTransitionBuilder IGuard<CompletionEvent, IDefaultTransitionBuilder>.AddGuard(Func<ITransitionContext<CompletionEvent>, Task<bool>> guardAsync)
+        IDefaultTransitionBuilder IDefaultGuard<IDefaultTransitionBuilder>.AddGuard(Func<ITransitionContext<CompletionEvent>, Task<bool>> guardAsync)
             => AddGuard(c => guardAsync(c as ITransitionContext<CompletionEvent>)) as IDefaultTransitionBuilder;
 
-        IElseDefaultTransitionBuilder IEffect<CompletionEvent, IElseDefaultTransitionBuilder>.AddEffect(Func<ITransitionContext<CompletionEvent>, Task> effectAsync)
+        IElseDefaultTransitionBuilder IDefaultEffect<IElseDefaultTransitionBuilder>.AddEffect(Func<ITransitionContext<CompletionEvent>, Task> effectAsync)
             => AddEffect(c => effectAsync(c as ITransitionContext<CompletionEvent>)) as IElseDefaultTransitionBuilder;
 
         IForwardedEventBuilder<TEvent> IGuard<TEvent, IForwardedEventBuilder<TEvent>>.AddGuard(Func<ITransitionContext<TEvent>, Task<bool>> guardAsync)

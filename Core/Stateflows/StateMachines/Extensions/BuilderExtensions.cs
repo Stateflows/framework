@@ -35,50 +35,52 @@ namespace Stateflows.StateMachines.Extensions
             }
         }
 
-        public static void AddElseTransitionEvents<TElseTransition, TEvent>(this IElseTransitionBuilder<TEvent> builder)
-            where TElseTransition : class, ITransitionEffect<TEvent>
-        {
-            if (typeof(ITransitionEffect<TEvent>).IsAssignableFrom(typeof(TElseTransition)))
-            {
-                builder.AddEffect(c => ((c as BaseContext).Context.Executor.GetTransition<TElseTransition, TEvent>(c) as ITransitionEffect<TEvent>)?.EffectAsync(c.Event));
-            }
-        }
+        //public static void AddElseTransitionEvents<TElseTransition, TEvent>(this IElseTransitionBuilder<TEvent> builder)
+        //    where TElseTransition : class, ITransitionEffect<TEvent>
 
-        public static void AddTransitionEvents<TTransition, TEvent>(this ITransitionBuilder<TEvent> builder)
-            where TTransition : class, ITransition<TEvent>
-        {
-            if (typeof(ITransitionGuard<TEvent>).IsAssignableFrom(typeof(TTransition)))
-            {
-                builder.AddGuard(c => ((c as BaseContext).Context.Executor.GetTransition<TTransition, TEvent>(c) as ITransitionGuard<TEvent>)?.GuardAsync(c.Event));
-            }
+        //{
+        //    if (typeof(ITransitionEffect<TEvent>).IsAssignableFrom(typeof(TElseTransition)))
+        //    {
+        //        builder.AddEffect(c => ((c as BaseContext).Context.Executor.GetTransition<TElseTransition, TEvent>(c) as ITransitionEffect<TEvent>)?.EffectAsync(c.Event));
+        //    }
+        //}
 
-            if (typeof(ITransitionEffect<TEvent>).IsAssignableFrom(typeof(TTransition)))
-            {
-                builder.AddEffect(c => ((c as BaseContext).Context.Executor.GetTransition<TTransition, TEvent>(c) as ITransitionEffect<TEvent>)?.EffectAsync(c.Event));
-            }
-        }
+        //public static void AddTransitionEvents<TTransition, TEvent>(this ITransitionBuilder<TEvent> builder)
+        //    where TTransition : class, ITransition<TEvent>
 
-        public static void AddDefaultTransitionEvents<TTransition>(this IDefaultTransitionBuilder builder)
-            where TTransition : class, IDefaultTransition
-        {
-            if (typeof(IDefaultTransitionGuard).IsAssignableFrom(typeof(TTransition)))
-            {
-                builder.AddGuard(c => ((c as BaseContext).Context.Executor.GetDefaultTransition<TTransition>(c) as IDefaultTransitionGuard)?.GuardAsync());
-            }
+        //{
+        //    if (typeof(ITransitionGuard<TEvent>).IsAssignableFrom(typeof(TTransition)))
+        //    {
+        //        builder.AddGuard(c => ((c as BaseContext).Context.Executor.GetTransition<TTransition, TEvent>(c) as ITransitionGuard<TEvent>)?.GuardAsync(c.Event));
+        //    }
 
-            if (typeof(IDefaultTransitionEffect).IsAssignableFrom(typeof(TTransition)))
-            {
-                builder.AddEffect(c => ((c as BaseContext).Context.Executor.GetDefaultTransition<TTransition>(c) as IDefaultTransitionEffect)?.EffectAsync());
-            }
-        }
+        //    if (typeof(ITransitionEffect<TEvent>).IsAssignableFrom(typeof(TTransition)))
+        //    {
+        //        builder.AddEffect(c => ((c as BaseContext).Context.Executor.GetTransition<TTransition, TEvent>(c) as ITransitionEffect<TEvent>)?.EffectAsync(c.Event));
+        //    }
+        //}
 
-        public static void AddElseDefaultTransitionEvents<TElseTransition>(this IElseDefaultTransitionBuilder builder)
-            where TElseTransition : class, IDefaultTransitionEffect
-        {
-            if (typeof(IDefaultTransitionEffect).IsAssignableFrom(typeof(TElseTransition)))
-            {
-                builder.AddEffect(c => ((c as BaseContext).Context.Executor.GetDefaultTransition<TElseTransition>(c) as IDefaultTransitionEffect)?.EffectAsync());
-            }
-        }
+        //public static void AddDefaultTransitionEvents<TTransition>(this IDefaultTransitionBuilder builder)
+        //    where TTransition : class, IDefaultTransition
+        //{
+        //    if (typeof(IDefaultTransitionGuard).IsAssignableFrom(typeof(TTransition)))
+        //    {
+        //        builder.AddGuard(c => ((c as BaseContext).Context.Executor.GetDefaultTransition<TTransition>(c) as IDefaultTransitionGuard)?.GuardAsync());
+        //    }
+
+        //    if (typeof(IDefaultTransitionEffect).IsAssignableFrom(typeof(TTransition)))
+        //    {
+        //        builder.AddEffect(c => ((c as BaseContext).Context.Executor.GetDefaultTransition<TTransition>(c) as IDefaultTransitionEffect)?.EffectAsync());
+        //    }
+        //}
+
+        //public static void AddElseDefaultTransitionEvents<TElseTransition>(this IElseDefaultTransitionBuilder builder)
+        //    where TElseTransition : class, IDefaultTransitionEffect
+        //{
+        //    if (typeof(IDefaultTransitionEffect).IsAssignableFrom(typeof(TElseTransition)))
+        //    {
+        //        builder.AddEffect(c => ((c as BaseContext).Context.Executor.GetDefaultTransition<TElseTransition>(c) as IDefaultTransitionEffect)?.EffectAsync());
+        //    }
+        //}
     }
 }

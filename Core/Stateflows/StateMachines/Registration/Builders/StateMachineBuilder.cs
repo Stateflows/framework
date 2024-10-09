@@ -1,10 +1,12 @@
 ﻿using System;
+using System.Diagnostics;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using Stateflows.Common;
 using Stateflows.Common.Models;
 using Stateflows.Common.Extensions;
 using Stateflows.Common.Registration;
+using Stateflows.Common.Registration.Builders;
 using Stateflows.StateMachines.Models;
 using Stateflows.StateMachines.Interfaces;
 using Stateflows.StateMachines.Exceptions;
@@ -13,8 +15,6 @@ using Stateflows.StateMachines.Context.Interfaces;
 using Stateflows.StateMachines.Registration.Interfaces;
 using Stateflows.StateMachines.Registration.Interfaces.Base;
 using Stateflows.StateMachines.Registration.Interfaces.Internal;
-using System.Diagnostics;
-using Stateflows.Common.Registration.Builders;
 
 namespace Stateflows.StateMachines.Registration.Builders
 {
@@ -25,8 +25,6 @@ namespace Stateflows.StateMachines.Registration.Builders
         IInternal,
         IBehaviorBuilder
     {
-        private readonly StateflowsBuilder stateflowsBuilder;
-
         public Graph Result { get; }
 
         public IServiceCollection Services { get; }

@@ -4,7 +4,7 @@ using Stateflows.Common.Extensions;
 using Stateflows.Activities.Context.Classes;
 using Stateflows.Activities.Registration.Interfaces;
 
-namespace Stateflows.Activities.Typed
+namespace Stateflows.Activities
 {
     public static class AcceptEventActionBuilderExceptionHandlersExtensions
     {

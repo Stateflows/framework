@@ -1,6 +1,6 @@
 using Stateflows.Activities;
 using StateMachine.IntegrationTests.Utils;
-using Stateflows.Activities.Typed;
+using Stateflows.Activities;
 
 namespace StateMachine.IntegrationTests.Tests
 {

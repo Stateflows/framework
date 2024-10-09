@@ -738,8 +738,8 @@ namespace Stateflows.StateMachines.Engine
             return state;
         }
 
-        public TTransition GetTransition<TTransition, TEvent>(ITransitionContext<TEvent> context)
-            where TTransition : class, ITransition<TEvent>
+        public TTransitionGuard GetTransitionGuard<TTransitionGuard, TEvent>(ITransitionContext<TEvent> context)
+            where TTransitionGuard : class, ITransitionGuard<TEvent>
 
         {
             ContextValues.GlobalValuesHolder.Value = context.StateMachine.Values;
@@ -752,13 +752,14 @@ namespace Stateflows.StateMachines.Engine
             StateMachinesContextHolder.StateMachineContext.Value = context.StateMachine;
             StateMachinesContextHolder.ExecutionContext.Value = context;
 
-            var transition = ServiceProvider.GetService<TTransition>();
+            var transition = ServiceProvider.GetService<TTransitionGuard>();
 
             return transition;
         }
 
-        public TDefaultTransition GetDefaultTransition<TDefaultTransition>(ITransitionContext<CompletionEvent> context)
-            where TDefaultTransition : class, IDefaultTransition
+        public TTransitionEffect GetTransitionEffect<TTransitionEffect, TEvent>(ITransitionContext<TEvent> context)
+            where TTransitionEffect : class, ITransitionEffect<TEvent>
+
         {
             ContextValues.GlobalValuesHolder.Value = context.StateMachine.Values;
             ContextValues.StateValuesHolder.Value = null;
@@ -770,7 +771,43 @@ namespace Stateflows.StateMachines.Engine
             StateMachinesContextHolder.StateMachineContext.Value = context.StateMachine;
             StateMachinesContextHolder.ExecutionContext.Value = context;
 
-            var transition = ServiceProvider.GetService<TDefaultTransition>();
+            var transition = ServiceProvider.GetService<TTransitionEffect>();
+
+            return transition;
+        }
+
+        public TDefaultTransitionGuard GetDefaultTransitionGuard<TDefaultTransitionGuard>(ITransitionContext<CompletionEvent> context)
+            where TDefaultTransitionGuard : class, IDefaultTransitionGuard
+        {
+            ContextValues.GlobalValuesHolder.Value = context.StateMachine.Values;
+            ContextValues.StateValuesHolder.Value = null;
+            ContextValues.SourceStateValuesHolder.Value = context.SourceState.Values;
+            ContextValues.TargetStateValuesHolder.Value = context.TargetState?.Values;
+
+            StateMachinesContextHolder.StateContext.Value = null;
+            StateMachinesContextHolder.TransitionContext.Value = context;
+            StateMachinesContextHolder.StateMachineContext.Value = context.StateMachine;
+            StateMachinesContextHolder.ExecutionContext.Value = context;
+
+            var transition = ServiceProvider.GetService<TDefaultTransitionGuard>();
+
+            return transition;
+        }
+
+        public TDefaultTransitionEffect GetDefaultTransitionEffect<TDefaultTransitionEffect>(ITransitionContext<CompletionEvent> context)
+            where TDefaultTransitionEffect : class, IDefaultTransitionEffect
+        {
+            ContextValues.GlobalValuesHolder.Value = context.StateMachine.Values;
+            ContextValues.StateValuesHolder.Value = null;
+            ContextValues.SourceStateValuesHolder.Value = context.SourceState.Values;
+            ContextValues.TargetStateValuesHolder.Value = context.TargetState?.Values;
+
+            StateMachinesContextHolder.StateContext.Value = null;
+            StateMachinesContextHolder.TransitionContext.Value = context;
+            StateMachinesContextHolder.StateMachineContext.Value = context.StateMachine;
+            StateMachinesContextHolder.ExecutionContext.Value = context;
+
+            var transition = ServiceProvider.GetService<TDefaultTransitionEffect>();
 
             return transition;
         }

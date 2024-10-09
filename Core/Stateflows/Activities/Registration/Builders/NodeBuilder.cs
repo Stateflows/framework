@@ -74,7 +74,7 @@ namespace Stateflows.Activities.Registration
             Node.Edges.Add(edge);
             Node.Graph.AllEdgesList.Add(edge);
 
-            buildAction?.Invoke(new FlowBuilder<TToken>(edge));
+            buildAction?.Invoke(new FlowBuilder<TToken>(edge, Services));
 
             return this;
         }
