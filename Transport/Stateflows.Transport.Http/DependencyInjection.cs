@@ -8,8 +8,7 @@ using Stateflows.Common.Utilities;
 using Stateflows.Common.Interfaces;
 using Stateflows.Common.Extensions;
 using Stateflows.Common.Transport.Classes;
-using Stateflows.Common.Registration.Interfaces;
-using Stateflows.StateMachines.Interceptors;
+using Microsoft.AspNetCore.Authorization;
 
 namespace Stateflows.Transport.Http
 {
@@ -30,11 +29,13 @@ namespace Stateflows.Transport.Http
                         INotificationsHub hub
                     ) =>
                     {
+
                         var responseTime = DateTime.Now;
                         using var reader = new StreamReader(context.Request.Body);
                         var body = await reader.ReadToEndAsync();
                         var input = StateflowsJsonConverter.DeserializeObject<StateflowsRequest>(body);
-
+                        if (!AuthorizeUser(context, input.Event))
+                            return Results.Unauthorized();
                         var behaviorId = new BehaviorId(input.BehaviorId.Type, input.BehaviorId.Name, input.BehaviorId.Instance);
                         if (locator.TryLocateBehavior(behaviorId, out var behavior))
                         {
@@ -80,10 +81,23 @@ namespace Stateflows.Transport.Http
             return builder;
         }
 
-        public static IStateflowsBuilder AddAspAuthorization(this IStateflowsBuilder stateflowsBuilder)
+        private static bool AuthorizeUser(HttpContext context, Event stateflowsEvent)
         {
-            stateflowsBuilder.AddInterceptor<AuthorizationInterceptor>();
-            return stateflowsBuilder;
+            AuthorizeAttribute? authAttribute = (AuthorizeAttribute?)Attribute.GetCustomAttribute(stateflowsEvent.GetType(), typeof(AuthorizeAttribute));
+            if (authAttribute != null)
+            {
+                var policy = authAttribute.Policy;
+                var user = context.User;
+                if (policy == null && user != null && user.Identity!.IsAuthenticated)
+                    return true;
+                if (user != null && user.Claims.Any(c => c.Value.Equals(policy)))
+                {
+                    return true;
+                }
+                return false;
+            }
+            return true;
+
         }
     }
 }
