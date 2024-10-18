@@ -8,6 +8,8 @@ using Stateflows.Common.Utilities;
 using Stateflows.Common.Interfaces;
 using Stateflows.Common.Extensions;
 using Stateflows.Common.Transport.Classes;
+using Stateflows.Common.Registration.Interfaces;
+using Stateflows.StateMachines.Interceptors;
 
 namespace Stateflows.Transport.Http
 {
@@ -76,6 +78,12 @@ namespace Stateflows.Transport.Http
             }
 
             return builder;
+        }
+
+        public static IStateflowsBuilder AddAspAuthorization(this IStateflowsBuilder stateflowsBuilder)
+        {
+            stateflowsBuilder.AddInterceptor<AuthorizationInterceptor>();
+            return stateflowsBuilder;
         }
     }
 }
