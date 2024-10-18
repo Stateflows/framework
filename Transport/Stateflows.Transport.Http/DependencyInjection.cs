@@ -34,6 +34,7 @@ namespace Stateflows.Transport.Http
                         using var reader = new StreamReader(context.Request.Body);
                         var body = await reader.ReadToEndAsync();
                         var input = StateflowsJsonConverter.DeserializeObject<StateflowsRequest>(body);
+                        //temporary authorization solution
                         if (!AuthorizeUser(context, input.Event))
                             return Results.Unauthorized();
                         var behaviorId = new BehaviorId(input.BehaviorId.Type, input.BehaviorId.Name, input.BehaviorId.Instance);
@@ -83,7 +84,8 @@ namespace Stateflows.Transport.Http
 
         private static bool AuthorizeUser(HttpContext context, Event stateflowsEvent)
         {
-            AuthorizeAttribute? authAttribute = (AuthorizeAttribute?)Attribute.GetCustomAttribute(stateflowsEvent.GetType(), typeof(AuthorizeAttribute));
+            AuthorizeAttribute? authAttribute = (AuthorizeAttribute?)Attribute.GetCustomAttribute(stateflowsEvent.GetType(),
+                                                                                                  typeof(AuthorizeAttribute));
             if (authAttribute != null)
             {
                 var policy = authAttribute.Policy;
