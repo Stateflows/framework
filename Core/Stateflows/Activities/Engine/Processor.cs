@@ -97,7 +97,7 @@ namespace Stateflows.Activities.Engine
                     }
                     else
                     {
-                        result = await ExecuteBehaviorAsync(eventHolder  , result, executor);
+                        result = await ExecuteBehaviorAsync(eventHolder, result, executor);
                     }
                 }
                 finally

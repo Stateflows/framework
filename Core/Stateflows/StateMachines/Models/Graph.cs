@@ -87,12 +87,11 @@ namespace Stateflows.StateMachines.Models
                     edge.ActualTriggerTypes = StateflowsBuilder.GetMappedTypes(edge.TriggerType).ToHashSet();
                     edge.TimeTriggerTypes = edge.ActualTriggerTypes.Where(type => type.IsSubclassOf(typeof(TimeEvent))).ToHashSet();
                     edge.ActualTriggers = edge.ActualTriggerTypes.Select(type => Event.GetName(type)).ToHashSet();
+                    edge.Signature = $"{edge.Source.Identifier}-{edge.Trigger}->";
 
                     var triggerDescriptor = edge.IsElse
                         ? $"{edge.Trigger}|else"
                         : edge.Trigger;
-
-                    //edge.Name = $"{edge.SourceName}-{triggerDescriptor}->{edge.TargetName}";
 
                     edge.Identifier = edge.Target != null
                         ? $"{edge.Source.Identifier}-{triggerDescriptor}->{edge.Target.Identifier}"

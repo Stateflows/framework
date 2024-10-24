@@ -4,7 +4,6 @@ using System.Threading.Tasks;
 using System.Collections.Generic;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.DependencyInjection;
-using Stateflows.Common;
 using Stateflows.Common.Engine;
 using Stateflows.Common.Extensions;
 using Stateflows.Common.Context.Classes;
@@ -293,7 +292,6 @@ namespace Stateflows.StateMachines.Engine
         }
 
         public async Task<bool> BeforeProcessEventAsync<TEvent>(Context.Classes.EventContext<TEvent> context)
-
         {
             var plugin = await Plugins.RunSafe(i => i.BeforeProcessEventAsync(context), nameof(BeforeProcessEventAsync), Logger);
             var global = await GlobalInterceptor.BeforeProcessEventAsync(

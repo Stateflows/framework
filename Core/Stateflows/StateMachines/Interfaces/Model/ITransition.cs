@@ -2,15 +2,22 @@
 
 namespace Stateflows.StateMachines
 {
-    //public interface ITransition<in TEvent>
-    //{ }
+    public interface IDefaultTransitionEffect
+    {
+        Task EffectAsync();
+    }
 
-    public interface ITransitionEffect<in TEvent>// : ITransition<TEvent>
+    public interface IDefaultTransitionGuard
+    {
+        Task<bool> GuardAsync();
+    }
+
+    public interface ITransitionEffect<in TEvent>
     {
         Task EffectAsync(TEvent @event);
     }
 
-    public interface ITransitionGuard<in TEvent>// : ITransition<TEvent>
+    public interface ITransitionGuard<in TEvent>
     {
         Task<bool> GuardAsync(TEvent @event);
     }
@@ -26,32 +33,4 @@ namespace Stateflows.StateMachines
         Task ITransitionEffect<object>.EffectAsync(object @event)
             => EffectAsync();
     }
-
-    //public interface IStateMachineAction : ITransitionEffect, IStateEntry, IStateExit, ICompositeStateInitialization, ICompositeStateFinalization
-    //{
-    //    Task IDefaultTransitionEffect.EffectAsync()
-    //        => ExecuteAsync();
-
-    //    Task IStateEntry.OnEntryAsync()
-    //        => ExecuteAsync();
-
-    //    Task IStateExit.OnExitAsync()
-    //        => ExecuteAsync();
-
-    //    Task ICompositeStateInitialization.OnInitializeAsync()
-    //        => ExecuteAsync();
-
-    //    Task ICompositeStateFinalization.OnFinalizeAsync()
-    //        => ExecuteAsync();
-
-    //    Task ExecuteAsync();
-    //}
-
-    //public interface  IStateMachineCondition : ITransitionGuard
-    //{
-    //    Task<bool> IDefaultTransitionGuard.GuardAsync()
-    //        => ExecuteAsync();
-
-    //    Task<bool> ExecuteAsync();
-    //}
 }

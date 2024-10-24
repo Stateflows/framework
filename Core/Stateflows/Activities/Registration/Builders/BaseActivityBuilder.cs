@@ -12,6 +12,7 @@ using Stateflows.Activities.Registration.Builders;
 using Stateflows.Activities.Registration.Interfaces;
 using Stateflows.Common.Exceptions;
 using Newtonsoft.Json.Linq;
+using System.Xml.Linq;
 
 namespace Stateflows.Activities.Registration
 {
@@ -88,6 +89,9 @@ namespace Stateflows.Activities.Registration
                 Graph = Result,
                 Level = Node.Level + 1,
                 Anchored = type != NodeType.ParallelActivity && Node.Anchored,
+                Identifier = !(Node is null)
+                    ? $"{type}:{Node.Name}:{nodeName}"
+                    : $"{type}:{nodeName}"
             };
 
             if (type == NodeType.ExceptionHandler)

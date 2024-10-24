@@ -2,10 +2,10 @@
 {
     public interface IStateActionActivityBuilder :
         IStateActionInitialization<IInitializedStateActionActivityBuilder>,
-        ISubscription<IStateActionActivityBuilder>
+        IStateSubscription<IStateActionActivityBuilder>
     { }
 
     public interface IInitializedStateActionActivityBuilder :
-        ISubscription<IInitializedStateActionActivityBuilder>
+        IStateSubscription<IInitializedStateActionActivityBuilder>
     { }
 }

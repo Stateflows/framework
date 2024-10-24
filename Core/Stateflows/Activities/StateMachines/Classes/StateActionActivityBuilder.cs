@@ -1,6 +1,6 @@
-﻿using Stateflows.Activities.Extensions;
+﻿using Stateflows.Utils;
 using Stateflows.Common;
-using Stateflows.Utils;
+using Stateflows.Activities.Extensions;
 
 namespace Stateflows.Activities.StateMachines.Interfaces
 {
@@ -33,10 +33,10 @@ namespace Stateflows.Activities.StateMachines.Interfaces
             return this;
         }
 
-        IStateActionActivityBuilder ISubscription<IStateActionActivityBuilder>.AddSubscription<TNotification>()
-            => AddSubscription<TNotification>();
+        IStateActionActivityBuilder IStateSubscription<IStateActionActivityBuilder>.AddSubscription<TNotificationEvent>()
+            => AddSubscription<TNotificationEvent>();
 
-        IInitializedStateActionActivityBuilder ISubscription<IInitializedStateActionActivityBuilder>.AddSubscription<TNotification>()
-            => AddSubscription<TNotification>();
+        IInitializedStateActionActivityBuilder IStateSubscription<IInitializedStateActionActivityBuilder>.AddSubscription<TNotificationEvent>()
+            => AddSubscription<TNotificationEvent>();
     }
 }

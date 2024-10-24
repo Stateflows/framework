@@ -8,6 +8,7 @@ using Stateflows.Activities.Registration.Builders;
 using Stateflows.Activities.Registration.Interfaces;
 using Stateflows.Activities.Registration.Interfaces.Base;
 using Stateflows.Common;
+using Newtonsoft.Json.Linq;
 
 namespace Stateflows.Activities.Registration
 {

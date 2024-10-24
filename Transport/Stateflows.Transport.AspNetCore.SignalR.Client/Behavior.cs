@@ -30,7 +30,8 @@ namespace Stateflows.Transport.SignalR.Client
             Id = id;
         }
 
-        public async Task<SendResult> SendAsync<TEvent>(TEvent @event)
+        public async Task<SendResult> SendAsync<TEvent>(TEvent @event)
+
         {
             var hub = await GetHub();
 

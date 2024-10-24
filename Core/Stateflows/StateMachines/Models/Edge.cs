@@ -15,39 +15,15 @@ namespace Stateflows.StateMachines.Models
         DefaultTransition
     }
 
-
-    //var actualTokenTypes = Node.Graph.StateflowsBuilder.GetMappedTypes(typeof(TToken)).ToHashSet();
-
-    //ActualTriggerTypes = actualTriggerTypes,
-    //        TimeTriggerTypes = actualTriggerTypes.Where(type => type.IsSubclassOf(typeof(TimeEvent))).ToHashSet(),
-    //        ActualTriggers = actualTriggerTypes.Select(type => Event.GetName(type)).ToHashSet(),
-
     internal class Edge
     {
-        //    private string name = null;
-        //    public string Name
-        //        => name ??= $"{SourceName}-{TriggerDescriptor}->{TargetName}";
         public string Name { get; set; }
 
-        //private string identifier = null;
-        //public string Identifier
-        //    => identifier ??= Target != null
-        //        ? $"{Source.Identifier}-{TriggerDescriptor}->{Target.Identifier}"
-        //        : $"{Source.Identifier}-{TriggerDescriptor}";
         public string Identifier { get; set; }
 
-        private string signature = null;
-        public string Signature
-            => signature ??= $"{Source.Identifier}-{Trigger}->";
+        public string Signature { get; set; }
 
         public Graph Graph { get; set; }
-
-        //public string TriggerDescriptor { get; set; }
-        //private string triggerDescriptor = null;
-        //private string TriggerDescriptor
-        //    => triggerDescriptor ??= IsElse
-        //        ? $"{Trigger}|else"
-        //        : Trigger;
 
         public Type TriggerType { get; set; }
 
@@ -62,11 +38,9 @@ namespace Stateflows.StateMachines.Models
         public EdgeType Type { get; set; }
         public bool IsElse { get; set; }
 
-        private Logic<StateMachinePredicateAsync> guards = null;
-        public Logic<StateMachinePredicateAsync> Guards => guards ??= new Logic<StateMachinePredicateAsync>() { Name = Constants.Guard };
+        public Logic<StateMachinePredicateAsync> Guards { get; } = new Logic<StateMachinePredicateAsync>() { Name = Constants.Guard };
 
-        private Logic<StateMachineActionAsync> effects = null;
-        public Logic<StateMachineActionAsync> Effects => effects ??= new Logic<StateMachineActionAsync>() { Name = Constants.Effect };
+        public Logic<StateMachineActionAsync> Effects { get; } = new Logic<StateMachineActionAsync>() { Name = Constants.Effect };
 
         public string SourceName { get; set; }
         public Vertex Source { get; set; }
@@ -106,6 +80,7 @@ namespace Stateflows.StateMachines.Models
                 Target = edge.Target,
                 Name = $"{SourceName}-{triggerDescriptor}->{edge.TargetName}",
                 Identifier = identifier,
+                Signature = $"{Source.Identifier}-{Trigger}->",
             };
 
             result.Guards.Actions.AddRange(Guards.Actions);

@@ -6,7 +6,6 @@ using Microsoft.AspNetCore.Builder;
 using Stateflows.Common;
 using Stateflows.Common.Utilities;
 using Stateflows.Common.Interfaces;
-using Stateflows.Common.Extensions;
 using Stateflows.Common.Transport.Classes;
 
 namespace Stateflows.Transport.Http
@@ -36,7 +35,7 @@ namespace Stateflows.Transport.Http
                         var behaviorId = new BehaviorId(input.BehaviorId.Type, input.BehaviorId.Name, input.BehaviorId.Instance);
                         if (locator.TryLocateBehavior(behaviorId, out var behavior))
                         {
-                            EventHolder response = null;
+                            EventHolder? response = null;
                             
                             var responses = new Dictionary<object, EventHolder>();
                             ResponseHolder.SetResponses(responses);

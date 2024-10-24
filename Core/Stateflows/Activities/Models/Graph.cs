@@ -4,9 +4,9 @@ using System.Diagnostics;
 using System.Collections.Generic;
 using Stateflows.Common;
 using Stateflows.Common.Models;
+using Stateflows.Common.Registration.Builders;
 using Stateflows.Activities.Exceptions;
 using Stateflows.Activities.Registration.Interfaces;
-using Stateflows.Common.Registration.Builders;
 
 namespace Stateflows.Activities.Models
 {
@@ -22,6 +22,7 @@ namespace Stateflows.Activities.Models
             Level = 0;
             Class = new ActivityClass(Name);
             StateflowsBuilder = stateflowsBuilder;
+            Identifier = nameof(Graph);
         }
 
         public ActivityClass Class { get; }
@@ -36,7 +37,7 @@ namespace Stateflows.Activities.Models
 
         public readonly Dictionary<string, Logic<ActivityPredicateAsync>> Initializers = new Dictionary<string, Logic<ActivityPredicateAsync>>();
         public readonly List<Type> InitializerTypes = new List<Type>();
-        public Logic<ActivityPredicateAsync> DefaultInitializer = null;
+        public Logic<ActivityPredicateAsync> DefaultInitializer;
 
         public readonly List<ActivityExceptionHandlerFactory> ExceptionHandlerFactories = new List<ActivityExceptionHandlerFactory>();
         public readonly List<ActivityInterceptorFactory> InterceptorFactories = new List<ActivityInterceptorFactory>();
@@ -52,6 +53,20 @@ namespace Stateflows.Activities.Models
                 {
                     edge.Target = target;
                     target.IncomingEdges.Add(edge);
+
+                    var tokenName = edge.TokenType.GetTokenName();
+
+                    var targetTokenName = edge.TargetTokenType.GetTokenName();
+
+                    var elseDescriptor = edge.IsElse
+                        ? "|else"
+                        : string.Empty;
+
+                    var identifier = edge.TokenType != edge.TargetTokenType
+                        ? $"{edge.Source.Identifier}-{tokenName}=>{targetTokenName}{elseDescriptor}->{target.Identifier}"
+                        : $"{edge.Source.Identifier}-{targetTokenName}{elseDescriptor}->{target.Identifier}";
+
+                    edge.Identifier = identifier;
 
                     AllEdges.Add(edge.Identifier, edge);
                 }
