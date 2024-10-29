@@ -1,5 +1,5 @@
 ﻿using System;
-using System.Linq;
+using System.Diagnostics;
 using System.Threading.Tasks;
 using Stateflows.Common.Engine;
 
@@ -22,11 +22,20 @@ namespace Stateflows.Common.Locator
         public async Task<SendResult> SendAsync<TEvent>(TEvent @event)
             where TEvent : Event, new()
         {
-            await Interceptor.BeforeDispatchEventAsync(@event);
+            SendResult result = null;
 
-            var result = await Behavior.SendAsync(@event);
+            if (await Interceptor.BeforeDispatchEventAsync(@event))
+            {
+                result = await Behavior.SendAsync(@event);
 
-            await Interceptor.AfterDispatchEventAsync(@event);
+                await Interceptor.AfterDispatchEventAsync(@event);
+            }
+            else
+            {
+                Trace.WriteLine($"⦗→s⦘ Client interceptor prevented Event dispatch.");
+            }
+
+            result ??= new SendResult(@event, EventStatus.Undelivered);
 
             return result;
         }
@@ -34,11 +43,20 @@ namespace Stateflows.Common.Locator
         public async Task<RequestResult<TResponse>> RequestAsync<TResponse>(Request<TResponse> request)
             where TResponse : Response, new()
         {
-            await Interceptor.BeforeDispatchEventAsync(@request);
+            RequestResult<TResponse> result = null;
 
-            var result = await Behavior.RequestAsync(@request);
+            if (await Interceptor.BeforeDispatchEventAsync(@request))
+            {
+                result = await Behavior.RequestAsync(@request);
 
-            await Interceptor.AfterDispatchEventAsync(@request);
+                await Interceptor.AfterDispatchEventAsync(@request);
+            }
+            else
+            {
+                Trace.WriteLine($"⦗→s⦘ Client interceptor prevented Request dispatch.");
+            }
+
+            result ??= new RequestResult<TResponse>(request, EventStatus.Undelivered);
 
             return result;
         }
