@@ -23,7 +23,7 @@ export interface IBehavior {
     finalize(): Promise<RequestResult<FinalizationResponse>>;
     reset(resetMode?: ResetMode): Promise<RequestResult<ResetResponse>>;    
     
-    watch<TNotification extends Notification>(notificationName: string, handler: NotificationHandler<TNotification>): Promise<void>;
+    watch<TNotification extends Notification>(notificationName: string, handler: NotificationHandler<TNotification>, interval?: number): Promise<void>;
     unwatch(notificationName: string): Promise<void>;
 
     getStatus(): Promise<RequestResult<BehaviorStatusResponse>>;

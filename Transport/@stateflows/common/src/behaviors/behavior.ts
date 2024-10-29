@@ -63,9 +63,9 @@ export class Behavior implements IBehavior, IWatcher {
         }
     }
     
-    async watch<TNotification extends Notification>(notificationName: string, handler: NotificationHandler<TNotification>): Promise<void> {
+    async watch<TNotification extends Notification>(notificationName: string, handler: NotificationHandler<TNotification>, interval =  10 * 1000): Promise<void> {
         let transport = await this.#transportPromise;
-        await transport.watch(this, notificationName);
+        await transport.watch(this, notificationName, interval);
 
         let handlers: Array<NotificationHandler<Notification>> = this.#notificationHandlers.has(notificationName)
             ? this.#notificationHandlers.get(notificationName) as Array<NotificationHandler<Notification>>
