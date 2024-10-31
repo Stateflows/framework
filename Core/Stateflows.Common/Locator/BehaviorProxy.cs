@@ -1,7 +1,8 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Linq;
+using System.Diagnostics;
 using System.Threading.Tasks;
+using System.Collections.Generic;
 using Stateflows.Common.Engine;
 
 namespace Stateflows.Common.Locator
@@ -22,26 +23,42 @@ namespace Stateflows.Common.Locator
 
         public async Task<SendResult> SendAsync<TEvent>(TEvent @event, IEnumerable<EventHeader> headers = null)
         {
+            SendResult result = null;
             var headersList = headers?.ToList() ?? new List<EventHeader>();
 
-            await Interceptor.BeforeDispatchEventAsync(@event, headersList);
+            if (await Interceptor.BeforeDispatchEventAsync(@event, headersList))
+            {
+                result = await Behavior.SendAsync(@event, headersList.ToArray());
 
-            var result = await Behavior.SendAsync(@event, headersList.ToArray());
+                await Interceptor.AfterDispatchEventAsync(@event);
+            }
+            else
+            {
+                Trace.WriteLine($"⦗→s⦘ Client interceptor prevented Event dispatch.");
+            }
 
-            await Interceptor.AfterDispatchEventAsync(@event);
+            result ??= new SendResult(@event, EventStatus.Undelivered);
 
             return result;
         }
 
         public async Task<RequestResult<TResponse>> RequestAsync<TResponse>(IRequest<TResponse> request, IEnumerable<EventHeader> headers = null)
         {
+            RequestResult<TResponse> result = null;
             var headersList = headers?.ToList() ?? new List<EventHeader>();
 
-            await Interceptor.BeforeDispatchEventAsync(@request, headersList);
+            if (await Interceptor.BeforeDispatchEventAsync(@request, headersList))
+            {
+                result = await Behavior.RequestAsync(@request, headersList.ToArray());
 
-            var result = await Behavior.RequestAsync(@request, headersList.ToArray());
+                await Interceptor.AfterDispatchEventAsync(@request);
+            }
+            else
+            {
+                Trace.WriteLine($"⦗→s⦘ Client interceptor prevented Request dispatch.");
+            }
 
-            await Interceptor.AfterDispatchEventAsync(@request);
+            result ??= new RequestResult<TResponse>(request, EventStatus.Undelivered);
 
             return result;
         }

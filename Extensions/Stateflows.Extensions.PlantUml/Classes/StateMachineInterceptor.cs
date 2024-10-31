@@ -1,8 +1,11 @@
-﻿using System.Threading.Tasks;
+﻿using System;
+using System.Diagnostics;
+using System.Threading.Tasks;
 using Stateflows.Common;
 using Stateflows.StateMachines;
 using Stateflows.StateMachines.Context.Interfaces;
 using Stateflows.StateMachines.Inspection.Interfaces;
+using Stateflows.Extensions.PlantUml.Events;
 
 namespace Stateflows.Extensions.PlantUml.Classes
 {
@@ -13,17 +16,27 @@ namespace Stateflows.Extensions.PlantUml.Classes
 
         public Task AfterProcessEventAsync<TEvent>(IEventActionContext<TEvent> context)
         {
-            if (
-                context is IEventInspectionContext<TEvent> inspectionContext &&
-                inspectionContext.StateMachine.Inspection.StateHasChanged
-            )
+            try
             {
-                context.StateMachine.Publish(
-                    new Events.PlantUmlInfo()
-                    {
-                        PlantUml = inspectionContext.StateMachine.Inspection.GetPlantUml()
-                    }
-                );
+                if (context is IEventInspectionContext<TEvent> inspectionContext &&
+                    inspectionContext.StateMachine.Inspection.StateHasChanged
+                )
+                {
+                    context.StateMachine.Publish(
+                        new PlantUmlNotification()
+                        {
+                            PlantUml = inspectionContext.StateMachine.Inspection.GetPlantUml()
+                        }
+                    );
+                }
+            }
+            catch (Exception e)
+            {
+                Trace.WriteLine($"⦗→s⦘ PlantUML exception '{e.GetType().Name}' thrown with message '{e.Message}'; stack trace:");
+                foreach (var line in e.StackTrace.Split('\n'))
+                {
+                    Trace.WriteLine($"⦗→s⦘     {line}");
+                }
             }
 
             return Task.CompletedTask;
