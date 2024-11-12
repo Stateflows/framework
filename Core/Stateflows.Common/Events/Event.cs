@@ -1,41 +1,25 @@
 ﻿using System;
-using System.Collections.Generic;
-using Newtonsoft.Json;
 using Stateflows.Common.Extensions;
 
 namespace Stateflows.Common
 {
-    public class Event
-    {
-        public Guid Id { get; set; } = Guid.NewGuid();
-
-        [JsonProperty(TypeNameHandling = TypeNameHandling.None)]
-        public List<EventHeader> Headers { get; set; } = new List<EventHeader>();
-
-        public DateTime SentAt { get; set; }
-
-        public virtual string Name => GetType().GetEventName();
-    }
-
-    public class Event<TPayload> : Event
-    {
-        public Event()
-        {
-            Payload = default;
-        }
-
-        public TPayload Payload { get; set; }
-    }
-
-    public static class EventInfo<TEvent>
-        where TEvent : Event, new()
-    {
-        public static string Name => EventInfo.GetName(typeof(TEvent));
-    }
-
-    public static class EventInfo
+    public static class Event
     {
         public static string GetName(Type @type)
-            => (@type.GetUninitializedInstance() as Event).Name;
+            => @type.GetReadableName();
+
+        //public Guid Id { get; set; } = Guid.NewGuid();
+
+        //[JsonProperty(TypeNameHandling = TypeNameHandling.None)]
+        //public List<EventHeader> Headers { get; set; } = new List<EventHeader>();
+
+        //public DateTime SentAt { get; set; }
+
+        //public virtual string Name => GetType().GetEventName();
+    }
+
+    public static class Event<TEvent>
+    {
+        public static string Name => Event.GetName(typeof(TEvent));
     }
 }

@@ -1,11 +1,10 @@
 import { RequestResult } from "../classes/request-result";
-import { CurrentStateNotification } from "../events/current-state.notification";
-import { CurrentStateResponse } from "../events/current-state.response";
+import { StateMachineInfo } from "../events/state-machine-info";
 import { NotificationHandler } from "../utils/notification-handler";
 import { IBehavior } from "./behavior";
 
 export interface IStateMachineBehavior extends IBehavior {
-    getCurrentState(): Promise<RequestResult<CurrentStateResponse>>;
-    watchCurrentState(handler: NotificationHandler<CurrentStateNotification>): Promise<void>;
+    getCurrentState(): Promise<RequestResult<StateMachineInfo>>;
+    watchCurrentState(handler: NotificationHandler<StateMachineInfo>): Promise<void>;
     unwatchCurrentState(): Promise<void>;
 }

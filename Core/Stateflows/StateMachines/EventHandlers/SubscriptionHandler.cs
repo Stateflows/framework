@@ -8,16 +8,14 @@ namespace Stateflows.StateMachines.EventHandlers
 {
     internal class SubscriptionHandler : IStateMachineEventHandler
     {
-        public Type EventType => typeof(SubscriptionRequest);
+        public Type EventType => typeof(Subscribe);
 
         public Task<EventStatus> TryHandleEventAsync<TEvent>(IEventInspectionContext<TEvent> context)
-            where TEvent : Event, new()
+
         {
-            if (context.Event is SubscriptionRequest request)
+            if (context.Event is Subscribe request)
             {
                 var result = context.StateMachine.GetExecutor().Context.Context.AddSubscribers(request.BehaviorId, request.NotificationNames);
-
-                request.Respond(new SubscriptionResponse() { SubscriptionSuccessful = result });
 
                 return Task.FromResult(EventStatus.Consumed);
             }

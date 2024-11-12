@@ -3,6 +3,7 @@ using System.Threading;
 using System.Collections;
 using System.Collections.Generic;
 using Stateflows.Utils;
+using Stateflows.Common;
 
 namespace Stateflows.Activities
 {
@@ -13,8 +14,11 @@ namespace Stateflows.Activities
         internal static List<TokenHolder> Tokens
             => TokensHolder.Value ??= new List<TokenHolder>();
 
-        public static List<TToken> Get<TToken>()
-            => Tokens.OfType<TokenHolder<TToken>>().FromTokens().ToList();
+        public static List<TToken> GetAllOfType<TToken>()
+            => Tokens.OfType<TokenHolder<TToken>>().ToTokens().ToList();
+
+        public static List<object> GetAll()
+            => Tokens.ToBoxedTokens().ToList();
 
         public static int Count => Tokens.Count;
 
@@ -25,7 +29,7 @@ namespace Stateflows.Activities
     public struct Output<TToken> : ICollection<TToken>
     {
         private readonly List<TToken> GetTokens()
-            => OutputTokens.Tokens.OfType<TokenHolder<TToken>>().FromTokens().ToList();
+            => OutputTokens.Tokens.OfType<TokenHolder<TToken>>().ToTokens().ToList();
 
         public readonly int Count => GetTokens().Count;
 
@@ -44,7 +48,7 @@ namespace Stateflows.Activities
             => OutputTokens.Tokens.Contains(item.ToTokenHolder());
 
         public readonly void CopyTo(TToken[] array, int arrayIndex)
-            => OutputTokens.Tokens.CopyTo(array.ToTokens().ToArray(), arrayIndex);
+            => OutputTokens.Tokens.CopyTo(array.ToTokenHolders().ToArray(), arrayIndex);
 
         public readonly bool Remove(TToken item)
             => OutputTokens.Tokens.Remove(item.ToTokenHolder());

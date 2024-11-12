@@ -66,27 +66,31 @@ namespace Stateflows.Extensions.PlantUml.Classes
 
             foreach (var transition in state.Transitions)
             {
-                var trigger = transition.Trigger.Contains('<')
-                        ? $"{transition.Trigger.Split('<').First().Split('.').Last()}<{transition.Trigger.Split('<').Last().Split('.').Last()}"
-                        : transition.Trigger.Split('.').Last();
+                var triggers = transition.Triggers.Select(trigger => trigger.Contains('<')
+                    ? $"{trigger.Split('<').First().Split('.').Last()}<{trigger.Split('<').Last().Split('.').Last()}"
+                    : trigger.Split('.').Last()
+                );
 
-                if (transition.Target == null)
+                foreach (var trigger in triggers)
                 {
-                    builder.AppendLine($"{indent}{stateName} : {trigger} / on{trigger}()");
-                }
-                else
-                {
-                    var target = !transition.Target.IsFinal
-                        ? transition.Target.Name.Split('.').Last()
-                        : "[*]";
-
-                    if (transition.Trigger == Constants.CompletionEvent)
+                    if (transition.Target == null)
                     {
-                        builder.AppendLine($"{indent}{stateName} --> {target}");
+                        builder.AppendLine($"{indent}{stateName} : {trigger} / on{trigger}()");
                     }
                     else
                     {
-                        builder.AppendLine($"{indent}{stateName} --> {target} : {trigger}");
+                        var target = !transition.Target.IsFinal
+                            ? transition.Target.Name.Split('.').Last()
+                            : "[*]";
+
+                        if (trigger == Constants.CompletionEvent)
+                        {
+                            builder.AppendLine($"{indent}{stateName} --> {target}");
+                        }
+                        else
+                        {
+                            builder.AppendLine($"{indent}{stateName} --> {target} : {trigger}");
+                        }
                     }
                 }
             }

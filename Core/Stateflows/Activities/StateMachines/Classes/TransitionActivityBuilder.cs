@@ -7,9 +7,9 @@ namespace Stateflows.Activities.StateMachines.Interfaces
         BaseActivityBuilder,
         ITransitionActivityBuilder<TEvent>,
         IInitializedTransitionActivityBuilder<TEvent>
-        where TEvent : Event, new()
+
     {
-        public TransitionActivityInitializationBuilderAsync<TEvent, Event> InitializationBuilder { get; private set; } = null;
+        public TransitionActivityInitializationBuilderAsync<TEvent, EventHolder> InitializationBuilder { get; private set; } = null;
 
         public TransitionActivityBuilder(TransitionActivityBuildAction<TEvent> buildAction)
         {
@@ -26,10 +26,9 @@ namespace Stateflows.Activities.StateMachines.Interfaces
             return this;
         }
 
-        public TransitionActivityBuilder<TEvent> AddSubscription<TNotification>()
-            where TNotification : Notification, new()
+        public TransitionActivityBuilder<TEvent> AddSubscription<TNotificationEvent>()
         {
-            Notifications.Add(typeof(TNotification));
+            Notifications.Add(typeof(TNotificationEvent));
 
             return this;
         }

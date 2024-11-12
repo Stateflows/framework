@@ -4,9 +4,9 @@ using StateMachine.IntegrationTests.Utils;
 
 namespace Activity.IntegrationTests.Tests
 {
-    public class FlowObserver : IActivityObserver
+    public class FlowObserver : ActivityObserver
     {
-        public Task BeforeNodeActivateAsync(IActivityNodeContext context, bool activated)
+        public override Task BeforeNodeActivateAsync(IActivityNodeContext context, bool activated)
         {
             if (context.CurrentNode.NodeName.EndsWith("action3"))
             {
@@ -69,7 +69,7 @@ namespace Activity.IntegrationTests.Tests
         {
             if (ActivityLocator.TryLocateActivity(new ActivityId("flow", "x"), out var a))
             {
-                await a.ExecuteAsync();
+                await a.SendAsync(new Initialize());
             }
 
             Assert.IsFalse(Activated1);

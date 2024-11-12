@@ -12,7 +12,7 @@ namespace Stateflows
         {
             builder
                 .AddStateMachines(b => b
-                    .AddInterceptor<StateMachineInterceptor>()
+                    .AddInterceptor<PlantUmlStateMachineInterceptor>()
                 )
                 .ServiceCollection
                 .AddSingleton<PlantUmlHandler>()

@@ -3,7 +3,7 @@ using Stateflows.Common;
 using Stateflows.StateMachines.Registration;
 using Stateflows.StateMachines.Registration.Interfaces;
 
-namespace Stateflows.StateMachines.Typed
+namespace Stateflows.StateMachines
 {
     public static class BehaviorStateBuilderInternalTransitionTypedExtensions
     {
@@ -30,7 +30,6 @@ namespace Stateflows.StateMachines.Typed
         /// </typeparam>
         [DebuggerHidden]
         public static IBehaviorStateBuilder AddInternalTransition<TEvent, TTransition>(this IBehaviorStateBuilder builder)
-            where TEvent : Event, new()
             where TTransition : class, ITransition<TEvent>
             => builder.AddTransition<TEvent, TTransition>(Constants.DefaultTransitionTarget);
     }

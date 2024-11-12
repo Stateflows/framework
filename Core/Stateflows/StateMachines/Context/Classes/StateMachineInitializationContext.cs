@@ -4,29 +4,31 @@ using Stateflows.StateMachines.Inspection.Interfaces;
 
 namespace Stateflows.StateMachines.Context.Classes
 {
-    internal class StateMachineInitializationContext<TInitializationRequest> :
-        BaseContext,
-        IStateMachineInitializationContext<TInitializationRequest>
-        where TInitializationRequest : Event, new()
+    internal class StateMachineInitializationContext<TInitializationEvent> :
+        StateMachineInitializationContext,
+        IStateMachineInitializationContext<TInitializationEvent>
     {
-        public StateMachineInitializationContext(RootContext context, TInitializationRequest initializationRequest) : base(context)
+        public StateMachineInitializationContext(RootContext context, EventHolder<TInitializationEvent> initializationEventHolder)
+            : base(context)
         {
-            InitializationEvent = initializationRequest;
+            InitializationEventHolder = initializationEventHolder;
         }
 
-        public TInitializationRequest InitializationEvent { get; }
+        public EventHolder<TInitializationEvent> InitializationEventHolder { get; }
 
-        IStateMachineContext IStateMachineActionContext.StateMachine => StateMachine;
+        public TInitializationEvent InitializationEvent => InitializationEventHolder.Payload;
     }
 
     internal class StateMachineInitializationContext :
-        StateMachineInitializationContext<Event>,
+        BaseContext,
         IStateMachineInitializationInspectionContext
     {
-        public StateMachineInitializationContext(RootContext context, Event initializationRequest)
-            : base(context, initializationRequest)
+        public StateMachineInitializationContext(RootContext context)
+            : base(context)
         { }
 
         IStateMachineInspectionContext IStateMachineInitializationInspectionContext.StateMachine => StateMachine;
+
+        IStateMachineContext IStateMachineActionContext.StateMachine => StateMachine;
     }
 }

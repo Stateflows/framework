@@ -15,6 +15,7 @@
     <button class="btn btn-primary" @onclick="Initialize">Locate and initialize</button>
     <button class="btn btn-primary" @onclick="GetStatus">Check status</button>
     <button class="btn btn-primary" @onclick="Reset">Reset</button>
+    <button class="btn btn-primary" @onclick="Request">Request</button>
 </div>
 
 @if (message != "")
@@ -71,9 +72,15 @@
 
     private string message = "";
 
-    private IStateMachine? _stateMachine = null;
+    private IStateMachineBehavior? _stateMachine = null;
 
-    private async Task<IStateMachine?> GetStateMachineAsync()
+    private IWatcher _currentStateWatcher = null;
+    
+    private IWatcher _plantUmlWatcher = null;
+
+    private IWatcher _watcher = null;
+
+    private async Task<IStateMachineBehavior?> GetStateMachineAsync()
     {
         var instance = $"{stateMachineInstance}";
         if (_stateMachine?.Id == GetCurrentId())
@@ -83,14 +90,15 @@
 
         if (_stateMachine != null)
         {
-            await _stateMachine.UnwatchCurrentStateAsync();
-            await _stateMachine.UnwatchPlantUmlAsync();
+            await _currentStateWatcher.UnwatchAsync();
+            await _plantUmlWatcher.UnwatchAsync();
+
             _stateMachine.Dispose();
         }
 
         if (locator.TryLocateStateMachine(GetCurrentId(), out _stateMachine))
         {
-            await _stateMachine.WatchCurrentStateAsync(async n =>
+            _currentStateWatcher = await _stateMachine.WatchCurrentStateAsync(async n =>
             {
                 Console.WriteLine($"current state changed: {instance}");
                 expectedEvents = n.ExpectedEvents;
@@ -105,9 +113,16 @@
                 await InvokeAsync(() => StateHasChanged());
             });
 
-            await _stateMachine.WatchPlantUmlAsync(async n =>
+            _plantUmlWatcher = await _stateMachine.WatchPlantUmlAsync(async n =>
             {
                 plantUmlUrl = n.GetUrl();
+
+                await InvokeAsync(() => StateHasChanged());
+            });
+
+            _watcher = await _stateMachine.WatchAsync<ExampleResponse>(async n =>
+            {
+                Console.WriteLine($"watcher: {instance}");
 
                 await InvokeAsync(() => StateHasChanged());
             });
@@ -133,7 +148,7 @@
         expectedEvents = null;
     }
 
-    private async Task RefreshSMInfo(IStateMachine stateMachine)
+    private async Task RefreshSMInfo(IStateMachineBehavior stateMachine)
     {
         var result = await stateMachine.GetCurrentStateAsync();
         expectedEvents = result.Response?.ExpectedEvents;
@@ -153,16 +168,11 @@
         var sm = await GetStateMachineAsync();
         if (sm != null)
         {
-            var result = await sm.InitializeAsync();
+            var result = await sm.SendAsync(new Initialize());
 
-            var msg = result.Response?.InitializationSuccessful ?? false
+            var msg = result.Status == EventStatus.Initialized
                 ? "State Machine located and initialized"
                 : "State Machine located, it's already initialized";
-
-            if (!result.Response?.InitializationSuccessful ?? false)
-            {
-                await RefreshSMInfo(sm);
-            }
 
             message = msg;
         }
@@ -181,12 +191,22 @@
         }
     }
 
+    private async Task Request()
+    {
+        var sm = await GetStateMachineAsync();
+        if (sm != null)
+        {
+            var result = await sm.RequestAsync(new ExampleRequest());
+            Console.WriteLine(result?.Response.ToString());
+        }
+    }
+
     private async Task Reset()
     {
         var sm = await GetStateMachineAsync();
         if (sm != null)
         {
-            var response = (await sm.ResetAsync())?.Response;
+            var response = (await sm.ResetAsync()).Status == EventStatus.Consumed;
             message = "State Machine resetted";
         }
     }
@@ -202,7 +222,7 @@
 
         if (eventType != null)
         {
-            var ev = System.Activator.CreateInstance(eventType) as Event;
+            var ev = System.Activator.CreateInstance(eventType);
 
             var sm = await GetStateMachineAsync();
             if (sm != null)

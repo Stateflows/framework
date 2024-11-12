@@ -7,9 +7,9 @@ using Stateflows.StateMachines.Context.Interfaces;
 
 namespace Stateflows.StateMachines.Engine
 {
-    internal class Behaviors : IStateMachinePlugin
+    internal class Behaviors : StateMachinePlugin
     {
-        public async Task AfterStateEntryAsync(IStateActionContext context)
+        public override async Task AfterStateEntryAsync(IStateActionContext context)
         {
             var vertex = (context as StateActionContext).Vertex;
 
@@ -28,7 +28,7 @@ namespace Stateflows.StateMachines.Engine
                         _ = behavior.SendAsync(vertex.GetSubscriptionRequest(context.StateMachine.Id));
                     }
 
-                    var initializationRequest = vertex.BehaviorInitializationBuilder != null
+                    var initializationRequest = vertex.BehaviorInitializationBuilder?.Invoke(context) != null
                         ? await vertex.BehaviorInitializationBuilder(context) ?? new Initialize()
                         : new Initialize();
 
@@ -41,7 +41,7 @@ namespace Stateflows.StateMachines.Engine
             }
         }
 
-        public Task BeforeStateExitAsync(IStateActionContext context)
+        public override Task BeforeStateExitAsync(IStateActionContext context)
         {
             var vertex = (context as StateActionContext).Vertex;
 
@@ -59,7 +59,7 @@ namespace Stateflows.StateMachines.Engine
                         _ = behavior.SendAsync(vertex.GetUnsubscriptionRequest(context.StateMachine.Id));
                     }
 
-                    _ = behavior.SendAsync(new FinalizationRequest());
+                    _ = behavior.SendAsync(new Finalize());
                     stateValues.BehaviorId = null;
                 }
             }

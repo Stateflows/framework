@@ -1,6 +1,5 @@
-import { Response } from "./response";
 import { Event } from "./event";
 
-export class Request<TResponse extends Response> extends Event {
+export abstract class Request<TResponse> extends Event {
     public response: TResponse;
 }

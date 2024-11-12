@@ -1,9 +1,8 @@
-﻿using System.Diagnostics;
-using Stateflows.Common;
+using System.Diagnostics;
 using Stateflows.StateMachines.Registration;
 using Stateflows.StateMachines.Registration.Interfaces;
 
-namespace Stateflows.StateMachines.Typed
+namespace Stateflows.StateMachines
 {
     public static class FinalizedCompositeStateBuilderElseInternalTransitionTypedExtensions
     {
@@ -14,9 +13,8 @@ namespace Stateflows.StateMachines.Typed
         /// <typeparam name="TEvent">Event class</typeparam>
         /// <typeparam name="TElseTransition">Transition class; must implement <see cref="ITransitionEffect&lt;TEvent&gt;"/> interface</typeparam>
         [DebuggerHidden]
-        public static IFinalizedCompositeStateBuilder AddElseInternalTransition<TEvent, TElseTransition>(this IFinalizedCompositeStateBuilder builder)
-            where TEvent : Event, new()
+        public static IFinalizedCompositeStateBuilder AddElseInternalTransition<TEvent, TElseTransition>(this IFinalizedCompositeStateBuilder builder, ElseInternalTransitionBuildAction<TEvent> transitionBuildAction = null)
             where TElseTransition : class, ITransitionEffect<TEvent>
-            => builder.AddElseTransition<TEvent, TElseTransition>(Constants.DefaultTransitionTarget);
+            => builder.AddElseTransition<TEvent, TElseTransition>(Constants.DefaultTransitionTarget, b => transitionBuildAction?.Invoke(b as IElseInternalTransitionBuilder<TEvent>));
     }
 }

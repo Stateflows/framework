@@ -16,7 +16,8 @@ namespace Stateflows.StateMachines.Models
         InitialCompositeState,
         CompositeState,
         FinalState,
-        Pseudostate
+        Junction,
+        Choice,
     }
 
     internal class Vertex
@@ -24,6 +25,7 @@ namespace Stateflows.StateMachines.Models
         public Graph Graph { get; set; }
         public Vertex Parent { get; set; }
         public string Name { get; set; }
+        public string OriginStateMachineName { get; set; } = null;
         public VertexType Type { get; set; }
         public string Identifier => Name;
 
@@ -52,18 +54,18 @@ namespace Stateflows.StateMachines.Models
         public List<Type> BehaviorSubscriptions { get; set; } = new List<Type>();
         public List<string> GetBehaviorSubscriptionNames()
             => BehaviorSubscriptions
-            .Select(t => EventInfo.GetName(t))
+            .Select(t => Event.GetName(t))
             .ToList();
 
-        public SubscriptionRequest GetSubscriptionRequest(StateMachineId hostId)
-            => new SubscriptionRequest()
+        public Subscribe GetSubscriptionRequest(StateMachineId hostId)
+            => new Subscribe()
             {
                 BehaviorId = hostId,
                 NotificationNames = GetBehaviorSubscriptionNames()
             };
 
-        public UnsubscriptionRequest GetUnsubscriptionRequest(StateMachineId hostId)
-            => new UnsubscriptionRequest()
+        public Unsubscribe GetUnsubscriptionRequest(StateMachineId hostId)
+            => new Unsubscribe()
             {
                 BehaviorId = hostId,
                 NotificationNames = GetBehaviorSubscriptionNames()

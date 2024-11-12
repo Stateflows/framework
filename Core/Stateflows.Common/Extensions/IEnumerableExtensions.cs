@@ -3,11 +3,13 @@ using System.Threading.Tasks;
 using System.Collections.Generic;
 using Microsoft.Extensions.Logging;
 using Stateflows.Common.Utilities;
+using System.Diagnostics;
 
 namespace Stateflows.Common.Extensions
 {
     public static class IEnumerableExtensions
     {
+        [DebuggerHidden]
         public static async Task RunProtected<T>(this IEnumerable<T> enumerable, ActionAsync<T> action, Action<Exception> exceptionHandler)
             where T : class
         {
@@ -24,6 +26,7 @@ namespace Stateflows.Common.Extensions
             }
         }
 
+        [DebuggerHidden]
         public static async Task<bool> RunProtected<T>(this IEnumerable<T> enumerable, PredicateAsync<T> action, Action<Exception> exceptionHandler, bool defaultResult = true)
             where T : class
         {
@@ -46,6 +49,7 @@ namespace Stateflows.Common.Extensions
             return result;
         }
 
+        [DebuggerHidden]
         public static Task RunSafe<T>(this IEnumerable<T> enumerable, ActionAsync<T> action, string methodName, ILogger logger)
             where T : class
             => enumerable.RunProtected<T>(
@@ -53,6 +57,7 @@ namespace Stateflows.Common.Extensions
                 e => logger.LogError(LogTemplates.ExceptionLogTemplate, typeof(T).DeclaringType.FullName, methodName, e.GetType().Name, e.Message)
             );
 
+        [DebuggerHidden]
         public static Task<bool> RunSafe<T>(this IEnumerable<T> enumerable, PredicateAsync<T> action, string methodName, ILogger logger, bool defaultResult = true)
             where T : class
             => enumerable.RunProtected<T>(

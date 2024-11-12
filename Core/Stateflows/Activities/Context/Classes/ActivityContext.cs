@@ -1,4 +1,5 @@
-﻿using System.Threading.Tasks;
+﻿using System.Collections.Generic;
+using System.Threading.Tasks;
 using Stateflows.Common;
 using Stateflows.Common.Classes;
 using Stateflows.Common.Interfaces;
@@ -32,20 +33,17 @@ namespace Stateflows.Activities.Context.Classes
 
         public IContextValues Values { get; }
 
-        public void Send<TEvent>(TEvent @event)
-            where TEvent : Event, new()
-            => _ = Context.Send(@event);
+        public void Send<TEvent>(TEvent @event, IEnumerable<EventHeader> headers = null)
 
-        public void Publish<TNotification>(TNotification notification)
-            where TNotification : Notification, new()
-            => _ = Subscriber.PublishAsync(Id, notification);
+            => _ = Context.Send(@event, headers);
 
-        public Task<RequestResult<SubscriptionResponse>> SubscribeAsync<TNotification>(BehaviorId behaviorId)
-            where TNotification : Notification, new()
+        public void Publish<TNotification>(TNotification notification, IEnumerable<EventHeader> headers = null)
+            => _ = Subscriber.PublishAsync(Id, notification, headers);
+
+        public Task<SendResult> SubscribeAsync<TNotification>(BehaviorId behaviorId)
             => Subscriber.SubscribeAsync<TNotification>(behaviorId);
 
-        public Task<RequestResult<UnsubscriptionResponse>> UnsubscribeAsync<TNotification>(BehaviorId behaviorId)
-            where TNotification : Notification, new()
+        public Task<SendResult> UnsubscribeAsync<TNotification>(BehaviorId behaviorId)
             => Subscriber.UnsubscribeAsync<TNotification>(behaviorId);
     }
 }

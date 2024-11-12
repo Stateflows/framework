@@ -4,12 +4,10 @@ namespace Stateflows.Activities.StateMachines.Interfaces
 {
     public interface ITransitionActivityBuilder<TEvent> :
         ITransitionInitialization<TEvent, IInitializedTransitionActivityBuilder<TEvent>>,
-        ISubscription<ITransitionActivityBuilder<TEvent>>
-        where TEvent : Event, new()
+        ISubscription<ITransitionActivityBuilder<TEvent>>
     { }
 
     public interface IInitializedTransitionActivityBuilder<TEvent> :
-        ISubscription<IInitializedTransitionActivityBuilder<TEvent>>
-        where TEvent : Event, new()
+        ISubscription<IInitializedTransitionActivityBuilder<TEvent>>
     { }
 }

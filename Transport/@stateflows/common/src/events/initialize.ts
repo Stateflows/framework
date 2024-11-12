@@ -1,4 +1,5 @@
-export class Initialize extends Event {
-    public $type = "Stateflows.Common.Initialize, Stateflows.Common";
-    public name = "Stateflows.Common.Initialize";
-}
+import { StateflowsEvent } from "../decorators/stateflows-event";
+import { Event } from "./event";
+
+@StateflowsEvent("Stateflows.Common.Initialize, Stateflows.Common")
+export class Initialize extends Event { }

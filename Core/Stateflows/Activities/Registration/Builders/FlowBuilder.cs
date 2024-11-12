@@ -6,6 +6,8 @@ using Stateflows.Activities.Context.Interfaces;
 using Stateflows.Activities.Registration.Interfaces;
 using Stateflows.Utils;
 using Stateflows.Common.Exceptions;
+using Microsoft.Extensions.DependencyInjection;
+using Stateflows.Common;
 
 namespace Stateflows.Activities.Registration.Builders
 {
@@ -16,13 +18,19 @@ namespace Stateflows.Activities.Registration.Builders
         IElseObjectFlowBuilderWithWeight<TToken>,
         IControlFlowBuilder,
         IControlFlowBuilderWithWeight,
-        IElseControlFlowBuilder
+        IElseControlFlowBuilder,
+        IInternal
     {
         public Edge Edge { get; set; }
-       
-        public FlowBuilder(Edge edge)
+
+        public Graph Result => Edge.Graph;
+
+        public IServiceCollection Services { get; private set; }
+
+        public FlowBuilder(Edge edge, IServiceCollection services)
         {
             Edge = edge;
+            Services = services;
         }
 
         public IObjectFlowBuilder<TToken> AddGuard(GuardDelegateAsync<TToken> guardAsync)
@@ -56,7 +64,7 @@ namespace Stateflows.Activities.Registration.Builders
                         }
                         else
                         {
-                            throw new ExecutionException(e);
+                            throw new BehaviorExecutionException(e);
                         }
                     }
                 }
@@ -97,7 +105,7 @@ namespace Stateflows.Activities.Registration.Builders
                         }
                         else
                         {
-                            throw new ExecutionException(e);
+                            throw new BehaviorExecutionException(e);
                         }
                     }
                 }
@@ -107,7 +115,7 @@ namespace Stateflows.Activities.Registration.Builders
             Edge.TokenPipeline.Actions.Add(logic);
             Edge.TargetTokenType = typeof(TTransformedToken);
 
-            return new FlowBuilder<TTransformedToken>(Edge);
+            return new FlowBuilder<TTransformedToken>(Edge, Services);
         }
 
         public IObjectFlowBuilderWithWeight<TToken> SetWeight(int weight)
@@ -123,23 +131,23 @@ namespace Stateflows.Activities.Registration.Builders
         IControlFlowBuilderWithWeight IFlowWeight<IControlFlowBuilderWithWeight>.SetWeight(int weight)
             => SetWeight(weight) as IControlFlowBuilderWithWeight;
 
-        IObjectFlowBuilder<TToken> IObjectFlowTransformationBuilderBase<TToken, IObjectFlowBuilder<TToken>>.AddTransformation<TTransformedToken>(TransformationDelegateAsync<TToken, TTransformedToken> transformationAsync)
-            => AddTransformation<TTransformedToken>(transformationAsync) as IObjectFlowBuilder<TToken>;
+        IObjectFlowBuilder<TTransformedToken> IObjectFlowBuilder<TToken>.AddTransformation<TTransformedToken>(TransformationDelegateAsync<TToken, TTransformedToken> transformationAsync)
+            => AddTransformation<TTransformedToken>(transformationAsync);
 
         IObjectFlowBuilderWithWeight<TToken> IObjectFlowGuardBuilderBase<TToken, IObjectFlowBuilderWithWeight<TToken>>.AddGuard(GuardDelegateAsync<TToken> guardAsync)
             => AddGuard(guardAsync) as IObjectFlowBuilderWithWeight<TToken>;
 
-        IObjectFlowBuilderWithWeight<TToken> IObjectFlowTransformationBuilderBase<TToken, IObjectFlowBuilderWithWeight<TToken>>.AddTransformation<TTransformedToken>(TransformationDelegateAsync<TToken, TTransformedToken> transformationAsync)
-            => AddTransformation<TTransformedToken>(transformationAsync) as IObjectFlowBuilderWithWeight<TToken>;
+        IObjectFlowBuilderWithWeight<TTransformedToken> IObjectFlowBuilderWithWeight<TToken>.AddTransformation<TTransformedToken>(TransformationDelegateAsync<TToken, TTransformedToken> transformationAsync)
+            => AddTransformation<TTransformedToken>(transformationAsync) as IObjectFlowBuilderWithWeight<TTransformedToken>;
 
         IElseObjectFlowBuilderWithWeight<TToken> IFlowWeight<IElseObjectFlowBuilderWithWeight<TToken>>.SetWeight(int weight)
             => SetWeight(weight) as IElseObjectFlowBuilderWithWeight<TToken>;
 
-        IElseObjectFlowBuilder<TToken> IObjectFlowTransformationBuilderBase<TToken, IElseObjectFlowBuilder<TToken>>.AddTransformation<TTransformedToken>(TransformationDelegateAsync<TToken, TTransformedToken> transformationAsync)
-            => AddTransformation<TTransformedToken>(transformationAsync) as IElseObjectFlowBuilder<TToken>;
+        IElseObjectFlowBuilder<TTransformedToken> IElseObjectFlowBuilder<TToken>.AddTransformation<TTransformedToken>(TransformationDelegateAsync<TToken, TTransformedToken> transformationAsync)
+            => AddTransformation<TTransformedToken>(transformationAsync) as IElseObjectFlowBuilder<TTransformedToken>;
 
-        IElseObjectFlowBuilderWithWeight<TToken> IObjectFlowTransformationBuilderBase<TToken, IElseObjectFlowBuilderWithWeight<TToken>>.AddTransformation<TTransformedToken>(TransformationDelegateAsync<TToken, TTransformedToken> transformationAsync)
-            => AddTransformation<TTransformedToken>(transformationAsync) as IElseObjectFlowBuilderWithWeight<TToken>;
+        IElseObjectFlowBuilderWithWeight<TTransformedToken> IElseObjectFlowBuilderWithWeight<TToken>.AddTransformation<TTransformedToken>(TransformationDelegateAsync<TToken, TTransformedToken> transformationAsync)
+            => AddTransformation<TTransformedToken>(transformationAsync) as IElseObjectFlowBuilderWithWeight<TTransformedToken>;
 
         void IFlowWeight.SetWeight(int weight)
             => SetWeight(weight);

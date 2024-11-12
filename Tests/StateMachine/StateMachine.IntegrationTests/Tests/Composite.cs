@@ -1,5 +1,5 @@
 ﻿using Stateflows.Common;
-using Stateflows.StateMachines.Typed;
+using Stateflows.StateMachines;
 using Stateflows.StateMachines.Events;
 using StateMachine.IntegrationTests.Utils;
 using System.Diagnostics;
@@ -147,7 +147,7 @@ namespace StateMachine.IntegrationTests.Tests
             ExecutionSequence.Verify(b => b
                 .StateExit("state2")
                 .StateExit("state1")
-                .TransitionEffect(EventInfo<OtherEvent>.Name, "state1", "state3")
+                .TransitionEffect(Event<OtherEvent>.Name, "state1", "state3")
                 .StateEntry("state3")
                 .StateInitialize("state3")
                 .StateEntry("state4")
@@ -162,7 +162,7 @@ namespace StateMachine.IntegrationTests.Tests
         public async Task DefaultTransition()
         {
             var status = EventStatus.Rejected;
-            CurrentStateResponse? currentState = null;
+            StateMachineInfo? currentState = null;
 
             if (StateMachineLocator.TryLocateStateMachine(new StateMachineId("default", "x"), out var sm))
             {
@@ -173,21 +173,21 @@ namespace StateMachine.IntegrationTests.Tests
 
             ExecutionSequence.Verify(b => b
                 .StateMachineInitialize()
-                .TransitionGuard(EventInfo<OtherEvent>.Name, "state1", "state2")
+                .TransitionGuard(Event<OtherEvent>.Name, "state1", "state2")
                 .StateExit("state1")
-                .TransitionEffect(EventInfo<OtherEvent>.Name, "state1", "state2")
+                .TransitionEffect(Event<OtherEvent>.Name, "state1", "state2")
                 .StateEntry("state2")
                 .StateInitialize("state2")
                 .StateEntry("state3")
-                .TransitionGuard(EventInfo<CompletionEvent>.Name, "state3", "state4")
+                .TransitionGuard(Event<Completion>.Name, "state3", "state4")
                 .StateExit("state3")
-                .TransitionEffect(EventInfo<CompletionEvent>.Name, "state3", "state4")
+                .TransitionEffect(Event<Completion>.Name, "state3", "state4")
                 .StateEntry("state4")
                 .StateInitialize("state4")
                 .StateEntry("state5")
-                .TransitionGuard(EventInfo<CompletionEvent>.Name, "state5", "state6")
+                .TransitionGuard(Event<Completion>.Name, "state5", "state6")
                 .StateExit("state5")
-                .TransitionEffect(EventInfo<CompletionEvent>.Name, "state5", "state6")
+                .TransitionEffect(Event<Completion>.Name, "state5", "state6")
                 .StateEntry("state6")
             );
 
@@ -201,7 +201,7 @@ namespace StateMachine.IntegrationTests.Tests
         public async Task LocalExits()
         {
             var status = EventStatus.Rejected;
-            CurrentStateResponse? currentState = null;
+            StateMachineInfo? currentState = null;
 
             if (StateMachineLocator.TryLocateStateMachine(new StateMachineId("exits", "x"), out var sm))
             {
@@ -215,9 +215,9 @@ namespace StateMachine.IntegrationTests.Tests
                 .StateEntry("state1")
                 .StateInitialize("state1")
                 .StateEntry("state2")
-                .TransitionGuard(EventInfo<OtherEvent>.Name, "state2", "state3")
+                .TransitionGuard(Event<OtherEvent>.Name, "state2", "state3")
                 .StateExit("state2")
-                .TransitionEffect(EventInfo<OtherEvent>.Name, "state2", "state3")
+                .TransitionEffect(Event<OtherEvent>.Name, "state2", "state3")
                 .StateEntry("state3")
             );
 
@@ -232,7 +232,7 @@ namespace StateMachine.IntegrationTests.Tests
         public async Task SingleInitialization()
         {
             var status = EventStatus.Rejected;
-            CurrentStateResponse? currentState = null;
+            StateMachineInfo? currentState = null;
 
             if (StateMachineLocator.TryLocateStateMachine(new StateMachineId("single", "x"), out var sm))
             {
@@ -246,9 +246,9 @@ namespace StateMachine.IntegrationTests.Tests
                 .StateEntry("state1")
                 .StateInitialize("state1")
                 .StateEntry("state2")
-                .TransitionEffect(EventInfo<OtherEvent>.Name, "state2", "state3")
+                .TransitionEffect(Event<OtherEvent>.Name, "state2", "state3")
                 .StateEntry("state3")
-                .TransitionEffect(EventInfo<CompletionEvent>.Name, "state3", "state4")
+                .TransitionEffect(Event<Completion>.Name, "state3", "state4")
                 .StateEntry("state4")
             );
 

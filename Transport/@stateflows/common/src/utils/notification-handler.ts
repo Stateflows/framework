@@ -1,3 +1,1 @@
-import { Notification } from "../events/notification";
-
-export type NotificationHandler<TNotification extends Notification> = (notification: TNotification) => void;
+export type NotificationHandler<TNotification> = (notification: TNotification) => void;

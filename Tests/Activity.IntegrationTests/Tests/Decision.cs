@@ -1,4 +1,5 @@
-using Stateflows.Activities.Typed;
+using Stateflows.Activities;
+using Stateflows.Common;
 using StateMachine.IntegrationTests.Utils;
 
 namespace Activity.IntegrationTests.Tests
@@ -123,7 +124,7 @@ namespace Activity.IntegrationTests.Tests
         {
             if (ActivityLocator.TryLocateActivity(new ActivityId("tokensDecision", "x"), out var a))
             {
-                await a.ExecuteAsync();
+                await a.SendAsync(new Initialize());
             }
 
             Assert.AreEqual(1, ExecutionCount1);
@@ -137,7 +138,7 @@ namespace Activity.IntegrationTests.Tests
         {
             if (ActivityLocator.TryLocateActivity(new ActivityId("multipleTokensDecision", "x"), out var a))
             {
-                await a.ExecuteAsync();
+                await a.SendAsync(new Initialize());
             }
 
             Assert.AreEqual(1, ExecutionCount1);
@@ -151,7 +152,7 @@ namespace Activity.IntegrationTests.Tests
         {
             if (ActivityLocator.TryLocateActivity(new ActivityId("controlDecision", "x"), out var a))
             {
-                await a.ExecuteAsync();
+                await a.SendAsync(new Initialize());
             }
 
             Assert.IsTrue(Execution1);

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using Stateflows.Common.Classes;
@@ -24,25 +25,22 @@ namespace Stateflows.Common.Context.Classes
 
         public IContextValues Values { get; }
 
-        public void Send<TEvent>(TEvent @event) where TEvent : Event, new()
+        public void Send<TEvent>(TEvent @event, IEnumerable<EventHeader> headers = null)
         {
             var locator = ServiceProvider.GetService<IBehaviorLocator>();
             if (locator.TryLocateBehavior(Id, out var behavior))
             {
-                _ = behavior.SendAsync(@event);
+                _ = behavior.SendAsync(@event, headers);
             }
         }
 
-        public void Publish<TNotification>(TNotification notification)
-            where TNotification : Notification, new()
-            => _ = Subscriber.PublishAsync(Id, notification);
+        public void Publish<TNotificationEvent>(TNotificationEvent notification, IEnumerable<EventHeader> headers = null)
+            => _ = Subscriber.PublishAsync(Id, notification, headers);
 
-        public Task<RequestResult<SubscriptionResponse>> SubscribeAsync<TNotification>(BehaviorId behaviorId)
-            where TNotification : Notification, new()
-            => _ = Subscriber.SubscribeAsync<TNotification>(behaviorId);
+        public Task<SendResult> SubscribeAsync<TNotificationEvent>(BehaviorId behaviorId)
+            => _ = Subscriber.SubscribeAsync<TNotificationEvent>(behaviorId);
 
-        public Task<RequestResult<UnsubscriptionResponse>> UnsubscribeAsync<TNotification>(BehaviorId behaviorId)
-            where TNotification : Notification, new()
-            => _ = Subscriber.UnsubscribeAsync<TNotification>(behaviorId);
+        public Task<SendResult> UnsubscribeAsync<TNotificationEvent>(BehaviorId behaviorId)
+            => _ = Subscriber.UnsubscribeAsync<TNotificationEvent>(behaviorId);
     }
 }

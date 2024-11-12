@@ -2,6 +2,6 @@
 {
     internal abstract class Element
     {
-        public abstract string Identifier { get; }
+        public abstract string Identifier { get; set; }
     }
 }

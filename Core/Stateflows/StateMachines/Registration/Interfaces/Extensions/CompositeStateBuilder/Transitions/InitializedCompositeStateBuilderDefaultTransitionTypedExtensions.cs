@@ -1,7 +1,7 @@
 ﻿using System.Diagnostics;
 using Stateflows.StateMachines.Registration.Interfaces;
 
-namespace Stateflows.StateMachines.Typed
+namespace Stateflows.StateMachines
 {
     public static class InitializedCompositeStateBuilderDefaultTransitionTypedExtensions
     {
@@ -36,10 +36,10 @@ namespace Stateflows.StateMachines.Typed
         /// </list>
         /// </typeparam>
         [DebuggerHidden]
-        public static IInitializedCompositeStateBuilder AddDefaultTransition<TDefaultTransition, TTargetState>(this IInitializedCompositeStateBuilder builder)
+        public static IInitializedCompositeStateBuilder AddDefaultTransition<TDefaultTransition, TTargetState>(this IInitializedCompositeStateBuilder builder, DefaultTransitionBuildAction transitionBuildAction = null)
             where TDefaultTransition : class, IDefaultTransition
             where TTargetState : class, IVertex
-            => builder.AddDefaultTransition<TDefaultTransition>(State<TTargetState>.Name);
+            => builder.AddDefaultTransition<TDefaultTransition>(State<TTargetState>.Name, transitionBuildAction);
 
         /// <summary>
         /// Adds default transition coming from current state.<br/>
@@ -63,9 +63,9 @@ namespace Stateflows.StateMachines.Typed
         /// </typeparam>
         /// <param name="targetStateName">Target state name</param>
         [DebuggerHidden]
-        public static IInitializedCompositeStateBuilder AddDefaultTransition<TDefaultTransition>(this IInitializedCompositeStateBuilder builder, string targetStateName)
+        public static IInitializedCompositeStateBuilder AddDefaultTransition<TDefaultTransition>(this IInitializedCompositeStateBuilder builder, string targetStateName, DefaultTransitionBuildAction transitionBuildAction = null)
             where TDefaultTransition : class, IDefaultTransition
-            => (builder as ICompositeStateBuilder).AddDefaultTransition<TDefaultTransition>(targetStateName) as IInitializedCompositeStateBuilder;
+            => (builder as IStateBuilder).AddDefaultTransition<TDefaultTransition>(targetStateName, transitionBuildAction) as IInitializedCompositeStateBuilder;
 
         /// <summary>
         /// Adds default transition coming from current state.<br/>

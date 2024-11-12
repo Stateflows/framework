@@ -92,7 +92,6 @@ namespace Stateflows.Activities.Engine
         }
 
         public async Task<bool> BeforeProcessEventAsync<TEvent>(EventContext<TEvent> context)
-            where TEvent : Event, new()
         {
             var plugin = await Plugins.RunSafe(i => i.BeforeProcessEventAsync(context), nameof(BeforeProcessEventAsync), Logger);
             var global = await GlobalInterceptor.BeforeProcessEventAsync(
@@ -104,21 +103,20 @@ namespace Stateflows.Activities.Engine
         }
 
         public async Task AfterProcessEventAsync<TEvent>(EventContext<TEvent> context)
-            where TEvent : Event, new()
         {
             await Interceptors.RunSafe(i => i.AfterProcessEventAsync(context), nameof(AfterProcessEventAsync), Logger);
             await GlobalInterceptor.AfterProcessEventAsync(new Common.Context.Classes.EventContext<TEvent>(context.Context.Context, Executor.NodeScope.ServiceProvider, context.Event));
             await Plugins.RunSafe(p => p.AfterProcessEventAsync(context), nameof(AfterProcessEventAsync), Logger);
         }
 
-        public async Task BeforeActivityInitializationAsync(ActivityInitializationContext context)
+        public async Task BeforeActivityInitializationAsync(IActivityInitializationInspectionContext context)
         {
             await Plugins.RunSafe(p => p.BeforeActivityInitializeAsync(context), nameof(BeforeActivityInitializationAsync), Logger);
             await Inspectors.RunSafe(i => i.BeforeActivityInitializeAsync(context), nameof(BeforeActivityInitializationAsync), Logger);
             await Observers.RunSafe(o => o.BeforeActivityInitializeAsync(context), nameof(BeforeActivityInitializationAsync), Logger);
         }
 
-        public async Task AfterActivityInitializationAsync(ActivityInitializationContext context, bool initialized)
+        public async Task AfterActivityInitializationAsync(IActivityInitializationInspectionContext context, bool initialized)
         {
             await Observers.RunSafe(o => o.AfterActivityInitializeAsync(context, initialized), nameof(AfterActivityInitializationAsync), Logger);
             await Inspectors.RunSafe(i => i.AfterActivityInitializeAsync(context, initialized), nameof(AfterActivityInitializationAsync), Logger);
@@ -198,9 +196,9 @@ namespace Stateflows.Activities.Engine
         private static bool ShouldPropagateException(Graph graph, bool handled)
             => !handled;
 
-        public async Task<bool> OnActivityInitializationExceptionAsync(BaseContext context, Event initializationEvent, Exception exception)
+        public async Task<bool> OnActivityInitializationExceptionAsync<TEvent>(BaseContext context, EventHolder<TEvent> initializationEventHolder, Exception exception)
         {
-            var exceptionContext = new ActivityInitializationContext(context, initializationEvent, null);
+            var exceptionContext = new ActivityInitializationContext<TEvent>(context.Context, context.NodeScope, initializationEventHolder, null);
             var handled = await ExceptionHandlers.RunSafe(h => h.OnActivityInitializationExceptionAsync(exceptionContext, exception), nameof(OnActivityInitializationExceptionAsync), Logger, false);
             await Inspectors.RunSafe(i => i.OnActivityInitializationExceptionAsync(exceptionContext, exception), nameof(OnActivityInitializationExceptionAsync), Logger);
 

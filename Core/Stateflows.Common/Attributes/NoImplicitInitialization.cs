@@ -2,7 +2,7 @@
 
 namespace Stateflows.Common
 {
-    [AttributeUsage(AttributeTargets.Class, AllowMultiple = false)]
+    [AttributeUsage(AttributeTargets.Class | AttributeTargets.Enum | AttributeTargets.Interface | AttributeTargets.Struct, AllowMultiple = false)]
     public sealed class NoImplicitInitializationAttribute : Attribute
     { }
 }

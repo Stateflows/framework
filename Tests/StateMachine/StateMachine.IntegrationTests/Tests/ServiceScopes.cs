@@ -1,7 +1,7 @@
 using StateMachine.IntegrationTests.Classes.StateMachines;
 using StateMachine.IntegrationTests.Classes.States;
 using StateMachine.IntegrationTests.Utils;
-using Stateflows.StateMachines.Typed;
+using Stateflows.StateMachines;
 using Stateflows.Common;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -94,8 +94,12 @@ namespace StateMachine.IntegrationTests.Tests
                 .AddStateMachines(b => b
                     .AddStateMachine("compound", b => b
                         .AddInitialState("initial", b => b
-                            .AddInternalTransition<SomeEvent, Some>()
-                            .AddInternalTransition<OtherEvent, Other>()
+                            .AddInternalTransition<SomeEvent>(b => b
+                                .AddEffect<Some>()
+                            )
+                            .AddInternalTransition<OtherEvent>(b => b
+                                .AddEffect<Other>()
+                            )
                         )
                     )
 
@@ -116,14 +120,11 @@ namespace StateMachine.IntegrationTests.Tests
         {
             if (StateMachineLocator.TryLocateStateMachine(new StateMachineId("compound", "x"), out var sm))
             {
-                await sm.SendAsync(new CompoundRequest()
-                {
-                    Events = new List<Event>()
-                    {
-                        new SomeEvent(),
-                        new OtherEvent(),
-                    }
-                });
+                var compoundRequest = new CompoundRequest()
+                    .Add(new SomeEvent())
+                    .Add(new OtherEvent());
+
+                await sm.SendAsync(compoundRequest);
             }
 
             Assert.AreNotEqual(ServiceScopes.SomeValue, ServiceScopes.OtherValue);

@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Linq;
 using System.Threading.Tasks;
 using Stateflows.Common;
 using Stateflows.StateMachines.Events;
@@ -10,16 +9,15 @@ namespace Stateflows.StateMachines.EventHandlers
 {
     internal class CurrentStateRequestHandler : IStateMachineEventHandler
     {
-        public Type EventType => typeof(CurrentStateRequest);
+        public Type EventType => typeof(StateMachineInfoRequest);
 
         public Task<EventStatus> TryHandleEventAsync<TEvent>(IEventInspectionContext<TEvent> context)
-            where TEvent : Event, new()
         {
-            if (context.Event is CurrentStateRequest request)
+            if (context.Event is StateMachineInfoRequest request)
             {
                 var executor = context.StateMachine.GetExecutor();
 
-                var response = new CurrentStateResponse()
+                var response = new StateMachineInfo()
                 {
                     StatesStack = executor.GetStateStack(),
                     ExpectedEvents = executor.GetExpectedEventNames(),

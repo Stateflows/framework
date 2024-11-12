@@ -65,6 +65,8 @@ namespace StateMachine.IntegrationTests.Tests
 
                 await subscribee.SendAsync(new OtherEvent());
 
+                await Task.Delay(100);
+
                 currentState = (await subscriber.GetCurrentStateAsync()).Response?.StatesStack.FirstOrDefault();
             }
 
@@ -113,9 +115,9 @@ namespace StateMachine.IntegrationTests.Tests
 
                 await subscribee.SendAsync(new Initialize());
 
-                await Task.Delay(10);
+                await Task.Delay(1000);
             }
-
+            await Task.Delay(1000);
             Assert.AreEqual("state1", currentState);
             Assert.AreEqual(BehaviorStatus.Initialized, currentStatus);
         }

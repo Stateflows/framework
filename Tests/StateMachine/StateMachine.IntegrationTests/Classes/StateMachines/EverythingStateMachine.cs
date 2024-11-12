@@ -1,4 +1,4 @@
-﻿using Stateflows.StateMachines.Typed;
+﻿using Stateflows.StateMachines;
 using Stateflows.StateMachines.Attributes;
 using StateMachine.IntegrationTests.Classes.States;
 using StateMachine.IntegrationTests.Classes.Transitions;
@@ -49,20 +49,43 @@ namespace StateMachine.IntegrationTests.Classes.StateMachines
                 .AddFinalizer(c => Task.CompletedTask)
 
                 .AddInitialState<State1>(b => b
-                    .AddTransition<SomeEvent, SomeEventTransition, State2>()
-                    .AddElseTransition<SomeEvent, SomeEventTransition, State2>()
+                    .AddTransition<SomeEvent, State2>(b => b
+                        .AddGuard<SomeEventTransition>()
+                        .AddEffect<SomeEventTransition>()
+                    )
+                    .AddElseTransition<SomeEvent, State2>(b => b
+                        .AddEffect<SomeEventTransition>()
+                    )
 
-                    .AddInternalTransition<SomeEvent, SomeEventTransition>()
-                    .AddElseInternalTransition<SomeEvent, SomeEventTransition>()
+                    .AddInternalTransition<SomeEvent>(b => b
+                        .AddGuard<SomeEventTransition>()
+                        .AddEffect<SomeEventTransition>()
+                    )
+                    .AddElseInternalTransition<SomeEvent>(b => b
+                        .AddEffect<SomeEventTransition>()
+                    )
 
-                    .AddDefaultTransition<GuardedTransition, State2>()
-                    .AddElseDefaultTransition<EffectedTransition, State2>()
+                    .AddDefaultTransition<State2>(b => b
+                        .AddGuard<GuardedTransition>()
+                    )
+                    .AddElseDefaultTransition<State2>(b => b
+                        .AddEffect<EffectedTransition>()
+                    )
 
-                    .AddTransition<SomeEvent, SomeEventTransition>(State<State2>.Name)
-                    .AddElseTransition<SomeEvent, SomeEventTransition>(State<State2>.Name)
+                    .AddTransition<SomeEvent>(State<State2>.Name, b => b
+                        .AddGuard<SomeEventTransition>()
+                        .AddEffect<SomeEventTransition>()
+                    )
+                    .AddElseTransition<SomeEvent>(State<State2>.Name, b => b
+                        .AddEffect<SomeEventTransition>()
+                    )
 
-                    .AddDefaultTransition<GuardedTransition>(State<State2>.Name)
-                    .AddElseDefaultTransition<EffectedTransition>(State<State2>.Name)
+                    .AddDefaultTransition(State<State2>.Name, b => b
+                        .AddGuard<GuardedTransition>()
+                    )
+                    .AddElseDefaultTransition(State<State2>.Name, b => b
+                        .AddEffect<EffectedTransition>()
+                    )
                 )
 
                 .AddState("state1", b => b
@@ -72,20 +95,43 @@ namespace StateMachine.IntegrationTests.Classes.StateMachines
                     .AddOnExit(c => { })
                     .AddOnExit(async c => { })
 
-                    .AddTransition<SomeEvent, SomeEventTransition, State2>()
-                    .AddElseTransition<SomeEvent, SomeEventTransition, State2>()
+                    .AddTransition<SomeEvent, State2>(b => b
+                        .AddGuard<SomeEventTransition>()
+                        .AddEffect<SomeEventTransition>()
+                    )
+                    .AddElseTransition<SomeEvent, State2>(b => b
+                        .AddEffect<SomeEventTransition>()
+                    )
 
-                    .AddInternalTransition<SomeEvent, SomeEventTransition>()
-                    .AddElseInternalTransition<SomeEvent, SomeEventTransition>()
+                    .AddInternalTransition<SomeEvent>(b => b
+                        .AddGuard<SomeEventTransition>()
+                        .AddEffect<SomeEventTransition>()
+                    )
+                    .AddElseInternalTransition<SomeEvent>(b => b
+                        .AddEffect<SomeEventTransition>()
+                    )
 
-                    .AddDefaultTransition<GuardedTransition, State2>()
-                    .AddElseDefaultTransition<EffectedTransition, State2>()
+                    .AddDefaultTransition<State2>(b => b
+                        .AddGuard<GuardedTransition>()
+                    )
+                    .AddElseDefaultTransition<State2>(b => b
+                        .AddEffect<EffectedTransition>()
+                    )
 
-                    .AddTransition<SomeEvent, SomeEventTransition>(State<State2>.Name)
-                    .AddElseTransition<SomeEvent, SomeEventTransition>(State<State2>.Name)
+                    .AddTransition<SomeEvent>(State<State2>.Name, b => b
+                        .AddGuard<SomeEventTransition>()
+                        .AddEffect<SomeEventTransition>()
+                    )
+                    .AddElseTransition<SomeEvent>(State<State2>.Name, b => b
+                        .AddEffect<SomeEventTransition>()
+                    )
 
-                    .AddDefaultTransition<GuardedTransition>(State<State2>.Name)
-                    .AddElseDefaultTransition<EffectedTransition>(State<State2>.Name)
+                    .AddDefaultTransition(State<State2>.Name, b => b
+                        .AddGuard<GuardedTransition>()
+                    )
+                    .AddElseDefaultTransition(State<State2>.Name, b => b
+                        .AddEffect<EffectedTransition>()
+                    )
 
                     .AddTransition<SomeEvent, State2>(b => b
                         .AddGuard(c => true)
@@ -131,17 +177,43 @@ namespace StateMachine.IntegrationTests.Classes.StateMachines
                     .AddTransition<SomeEvent, FinalState>()
                     .AddElseTransition<SomeEvent, FinalState>()
 
-                    .AddInternalTransition<SomeEvent, SomeEventTransition>()
-                    .AddElseInternalTransition<SomeEvent, SomeEventTransition>()
+                    .AddTransition<SomeEvent, State2>(b => b
+                        .AddGuard<SomeEventTransition>()
+                        .AddEffect<SomeEventTransition>()
+                    )
+                    .AddElseTransition<SomeEvent, State2>(b => b
+                        .AddEffect<SomeEventTransition>()
+                    )
 
-                    .AddDefaultTransition<GuardedTransition, FinalState>()
-                    .AddElseDefaultTransition<EffectedTransition, FinalState>()
+                    .AddInternalTransition<SomeEvent>(b => b
+                        .AddGuard<SomeEventTransition>()
+                        .AddEffect<SomeEventTransition>()
+                    )
+                    .AddElseInternalTransition<SomeEvent>(b => b
+                        .AddEffect<SomeEventTransition>()
+                    )
 
-                    .AddTransition<SomeEvent, SomeEventTransition>(State<State2>.Name)
-                    .AddElseTransition<SomeEvent, SomeEventTransition>(State<State2>.Name)
+                    .AddDefaultTransition<State2>(b => b
+                        .AddGuard<GuardedTransition>()
+                    )
+                    .AddElseDefaultTransition<State2>(b => b
+                        .AddEffect<EffectedTransition>()
+                    )
 
-                    .AddDefaultTransition<GuardedTransition>(State<State2>.Name)
-                    .AddElseDefaultTransition<EffectedTransition>(State<State2>.Name)
+                    .AddTransition<SomeEvent>(State<State2>.Name, b => b
+                        .AddGuard<SomeEventTransition>()
+                        .AddEffect<SomeEventTransition>()
+                    )
+                    .AddElseTransition<SomeEvent>(State<State2>.Name, b => b
+                        .AddEffect<SomeEventTransition>()
+                    )
+
+                    .AddDefaultTransition(State<State2>.Name, b => b
+                        .AddGuard<GuardedTransition>()
+                    )
+                    .AddElseDefaultTransition(State<State2>.Name, b => b
+                        .AddEffect<EffectedTransition>()
+                    )
 
                     .AddTransition<SomeEvent, State2>(b => b
                         .AddGuard(c => true)
@@ -187,17 +259,43 @@ namespace StateMachine.IntegrationTests.Classes.StateMachines
                     .AddTransition<SomeEvent, FinalState>()
                     .AddElseTransition<SomeEvent, FinalState>()
 
-                    .AddInternalTransition<SomeEvent, SomeEventTransition>()
-                    .AddElseInternalTransition<SomeEvent, SomeEventTransition>()
+                    .AddTransition<SomeEvent, State2>(b => b
+                        .AddGuard<SomeEventTransition>()
+                        .AddEffect<SomeEventTransition>()
+                    )
+                    .AddElseTransition<SomeEvent, State2>(b => b
+                        .AddEffect<SomeEventTransition>()
+                    )
 
-                    .AddDefaultTransition<GuardedTransition, FinalState>()
-                    .AddElseDefaultTransition<EffectedTransition, FinalState>()
+                    .AddInternalTransition<SomeEvent>(b => b
+                        .AddGuard<SomeEventTransition>()
+                        .AddEffect<SomeEventTransition>()
+                    )
+                    .AddElseInternalTransition<SomeEvent>(b => b
+                        .AddEffect<SomeEventTransition>()
+                    )
 
-                    .AddTransition<SomeEvent, SomeEventTransition>(State<FinalState>.Name)
-                    .AddElseTransition<SomeEvent, SomeEventTransition>(State<FinalState>.Name)
+                    .AddDefaultTransition<State2>(b => b
+                        .AddGuard<GuardedTransition>()
+                    )
+                    .AddElseDefaultTransition<State2>(b => b
+                        .AddEffect<EffectedTransition>()
+                    )
 
-                    .AddDefaultTransition<GuardedTransition>(State<FinalState>.Name)
-                    .AddElseDefaultTransition<EffectedTransition>(State<FinalState>.Name)
+                    .AddTransition<SomeEvent>(State<State2>.Name, b => b
+                        .AddGuard<SomeEventTransition>()
+                        .AddEffect<SomeEventTransition>()
+                    )
+                    .AddElseTransition<SomeEvent>(State<State2>.Name, b => b
+                        .AddEffect<SomeEventTransition>()
+                    )
+
+                    .AddDefaultTransition(State<State2>.Name, b => b
+                        .AddGuard<GuardedTransition>()
+                    )
+                    .AddElseDefaultTransition(State<State2>.Name, b => b
+                        .AddEffect<EffectedTransition>()
+                    )
 
                     .AddTransition<SomeEvent, State2>(b => b
                         .AddGuard(c => true)
@@ -242,33 +340,33 @@ namespace StateMachine.IntegrationTests.Classes.StateMachines
                         .AddTransition<SomeEvent, FinalState>()
                         .AddElseTransition<SomeEvent, FinalState>()
 
-                        .AddInternalTransition<SomeEvent, SomeEventTransition>()
-                        .AddElseInternalTransition<SomeEvent, SomeEventTransition>()
+                        //.AddInternalTransition<SomeEvent, SomeEventTransition>()
+                        //.AddElseInternalTransition<SomeEvent, SomeEventTransition>()
 
-                        .AddDefaultTransition<GuardedTransition, FinalState>()
-                        .AddElseDefaultTransition<EffectedTransition, FinalState>()
+                        //.AddDefaultTransition<GuardedTransition, FinalState>()
+                        //.AddElseDefaultTransition<EffectedTransition, FinalState>()
 
-                        .AddTransition<SomeEvent, SomeEventTransition>(State<FinalState>.Name)
-                        .AddElseTransition<SomeEvent, SomeEventTransition>(State<FinalState>.Name)
+                        //.AddTransition<SomeEvent, SomeEventTransition>(State<FinalState>.Name)
+                        //.AddElseTransition<SomeEvent, SomeEventTransition>(State<FinalState>.Name)
 
-                        .AddDefaultTransition<GuardedTransition>(State<FinalState>.Name)
-                        .AddElseDefaultTransition<EffectedTransition>(State<FinalState>.Name)
+                        //.AddDefaultTransition<GuardedTransition>(State<FinalState>.Name)
+                        //.AddElseDefaultTransition<EffectedTransition>(State<FinalState>.Name)
                     )
 
                     .AddTransition<SomeEvent, FinalState>()
                     .AddElseTransition<SomeEvent, FinalState>()
 
-                    .AddInternalTransition<SomeEvent, SomeEventTransition>()
-                    .AddElseInternalTransition<SomeEvent, SomeEventTransition>()
+                    //.AddInternalTransition<SomeEvent, SomeEventTransition>()
+                    //.AddElseInternalTransition<SomeEvent, SomeEventTransition>()
 
-                    .AddDefaultTransition<GuardedTransition, FinalState>()
-                    .AddElseDefaultTransition<EffectedTransition, FinalState>()
+                    //.AddDefaultTransition<GuardedTransition, FinalState>()
+                    //.AddElseDefaultTransition<EffectedTransition, FinalState>()
 
-                    .AddTransition<SomeEvent, SomeEventTransition>(State<FinalState>.Name)
-                    .AddElseTransition<SomeEvent, SomeEventTransition>(State<FinalState>.Name)
+                    //.AddTransition<SomeEvent, SomeEventTransition>(State<FinalState>.Name)
+                    //.AddElseTransition<SomeEvent, SomeEventTransition>(State<FinalState>.Name)
 
-                    .AddDefaultTransition<GuardedTransition>(State<FinalState>.Name)
-                    .AddElseDefaultTransition<EffectedTransition>(State<FinalState>.Name)
+                    //.AddDefaultTransition<GuardedTransition>(State<FinalState>.Name)
+                    //.AddElseDefaultTransition<EffectedTransition>(State<FinalState>.Name)
 
                     .AddTransition<SomeEvent, State2>(b => b
                         .AddGuard(c => true)
@@ -314,17 +412,17 @@ namespace StateMachine.IntegrationTests.Classes.StateMachines
                     .AddTransition<SomeEvent, FinalState>()
                     .AddElseTransition<SomeEvent, FinalState>()
 
-                    .AddInternalTransition<SomeEvent, SomeEventTransition>()
-                    .AddElseInternalTransition<SomeEvent, SomeEventTransition>()
+                    //.AddInternalTransition<SomeEvent, SomeEventTransition>()
+                    //.AddElseInternalTransition<SomeEvent, SomeEventTransition>()
 
-                    .AddDefaultTransition<GuardedTransition, FinalState>()
-                    .AddElseDefaultTransition<EffectedTransition, FinalState>()
+                    //.AddDefaultTransition<GuardedTransition, FinalState>()
+                    //.AddElseDefaultTransition<EffectedTransition, FinalState>()
 
-                    .AddTransition<SomeEvent, SomeEventTransition>(State<FinalState>.Name)
-                    .AddElseTransition<SomeEvent, SomeEventTransition>(State<FinalState>.Name)
+                    //.AddTransition<SomeEvent, SomeEventTransition>(State<FinalState>.Name)
+                    //.AddElseTransition<SomeEvent, SomeEventTransition>(State<FinalState>.Name)
 
-                    .AddDefaultTransition<GuardedTransition>(State<FinalState>.Name)
-                    .AddElseDefaultTransition<EffectedTransition>(State<FinalState>.Name)
+                    //.AddDefaultTransition<GuardedTransition>(State<FinalState>.Name)
+                    //.AddElseDefaultTransition<EffectedTransition>(State<FinalState>.Name)
 
                     .AddTransition<SomeEvent, State2>(b => b
                         .AddGuard(c => true)
@@ -382,17 +480,17 @@ namespace StateMachine.IntegrationTests.Classes.StateMachines
                     .AddTransition<SomeEvent, FinalState>()
                     .AddElseTransition<SomeEvent, FinalState>()
 
-                    .AddInternalTransition<SomeEvent, SomeEventTransition>()
-                    .AddElseInternalTransition<SomeEvent, SomeEventTransition>()
+                    //.AddInternalTransition<SomeEvent, SomeEventTransition>()
+                    //.AddElseInternalTransition<SomeEvent, SomeEventTransition>()
 
-                    .AddDefaultTransition<GuardedTransition, FinalState>()
-                    .AddElseDefaultTransition<EffectedTransition, FinalState>()
+                    //.AddDefaultTransition<GuardedTransition, FinalState>()
+                    //.AddElseDefaultTransition<EffectedTransition, FinalState>()
 
-                    .AddTransition<SomeEvent, SomeEventTransition>(State<FinalState>.Name)
-                    .AddElseTransition<SomeEvent, SomeEventTransition>(State<FinalState>.Name)
+                    //.AddTransition<SomeEvent, SomeEventTransition>(State<FinalState>.Name)
+                    //.AddElseTransition<SomeEvent, SomeEventTransition>(State<FinalState>.Name)
 
-                    .AddDefaultTransition<GuardedTransition>(State<FinalState>.Name)
-                    .AddElseDefaultTransition<EffectedTransition>(State<FinalState>.Name)
+                    //.AddDefaultTransition<GuardedTransition>(State<FinalState>.Name)
+                    //.AddElseDefaultTransition<EffectedTransition>(State<FinalState>.Name)
 
                     .AddTransition<SomeEvent, State2>(b => b
                         .AddGuard(c => true)
@@ -437,33 +535,33 @@ namespace StateMachine.IntegrationTests.Classes.StateMachines
                         .AddTransition<SomeEvent, FinalState>()
                         .AddElseTransition<SomeEvent, FinalState>()
 
-                        .AddInternalTransition<SomeEvent, SomeEventTransition>()
-                        .AddElseInternalTransition<SomeEvent, SomeEventTransition>()
+                        //.AddInternalTransition<SomeEvent, SomeEventTransition>()
+                        //.AddElseInternalTransition<SomeEvent, SomeEventTransition>()
 
-                        .AddDefaultTransition<GuardedTransition, FinalState>()
-                        .AddElseDefaultTransition<EffectedTransition, FinalState>()
+                        //.AddDefaultTransition<GuardedTransition, FinalState>()
+                        //.AddElseDefaultTransition<EffectedTransition, FinalState>()
 
-                        .AddTransition<SomeEvent, SomeEventTransition>(State<FinalState>.Name)
-                        .AddElseTransition<SomeEvent, SomeEventTransition>(State<FinalState>.Name)
+                        //.AddTransition<SomeEvent, SomeEventTransition>(State<FinalState>.Name)
+                        //.AddElseTransition<SomeEvent, SomeEventTransition>(State<FinalState>.Name)
 
-                        .AddDefaultTransition<GuardedTransition>(State<FinalState>.Name)
-                        .AddElseDefaultTransition<EffectedTransition>(State<FinalState>.Name)
+                        //.AddDefaultTransition<GuardedTransition>(State<FinalState>.Name)
+                        //.AddElseDefaultTransition<EffectedTransition>(State<FinalState>.Name)
                     )
 
                     .AddTransition<SomeEvent, FinalState>()
                     .AddElseTransition<SomeEvent, FinalState>()
 
-                    .AddInternalTransition<SomeEvent, SomeEventTransition>()
-                    .AddElseInternalTransition<SomeEvent, SomeEventTransition>()
+                    //.AddInternalTransition<SomeEvent, SomeEventTransition>()
+                    //.AddElseInternalTransition<SomeEvent, SomeEventTransition>()
 
-                    .AddDefaultTransition<GuardedTransition, FinalState>()
-                    .AddElseDefaultTransition<EffectedTransition, FinalState>()
+                    //.AddDefaultTransition<GuardedTransition, FinalState>()
+                    //.AddElseDefaultTransition<EffectedTransition, FinalState>()
 
-                    .AddTransition<SomeEvent, SomeEventTransition>(State<FinalState>.Name)
-                    .AddElseTransition<SomeEvent, SomeEventTransition>(State<FinalState>.Name)
+                    //.AddTransition<SomeEvent, SomeEventTransition>(State<FinalState>.Name)
+                    //.AddElseTransition<SomeEvent, SomeEventTransition>(State<FinalState>.Name)
 
-                    .AddDefaultTransition<GuardedTransition>(State<FinalState>.Name)
-                    .AddElseDefaultTransition<EffectedTransition>(State<FinalState>.Name)
+                    //.AddDefaultTransition<GuardedTransition>(State<FinalState>.Name)
+                    //.AddElseDefaultTransition<EffectedTransition>(State<FinalState>.Name)
 
                     .AddTransition<SomeEvent, State2>(b => b
                         .AddGuard(c => true)
@@ -509,17 +607,17 @@ namespace StateMachine.IntegrationTests.Classes.StateMachines
                     .AddTransition<SomeEvent, FinalState>()
                     .AddElseTransition<SomeEvent, FinalState>()
 
-                    .AddInternalTransition<SomeEvent, SomeEventTransition>()
-                    .AddElseInternalTransition<SomeEvent, SomeEventTransition>()
+                    //.AddInternalTransition<SomeEvent, SomeEventTransition>()
+                    //.AddElseInternalTransition<SomeEvent, SomeEventTransition>()
 
-                    .AddDefaultTransition<GuardedTransition, FinalState>()
-                    .AddElseDefaultTransition<EffectedTransition, FinalState>()
+                    //.AddDefaultTransition<GuardedTransition, FinalState>()
+                    //.AddElseDefaultTransition<EffectedTransition, FinalState>()
 
-                    .AddTransition<SomeEvent, SomeEventTransition>(State<FinalState>.Name)
-                    .AddElseTransition<SomeEvent, SomeEventTransition>(State<FinalState>.Name)
+                    //.AddTransition<SomeEvent, SomeEventTransition>(State<FinalState>.Name)
+                    //.AddElseTransition<SomeEvent, SomeEventTransition>(State<FinalState>.Name)
 
-                    .AddDefaultTransition<GuardedTransition>(State<FinalState>.Name)
-                    .AddElseDefaultTransition<EffectedTransition>(State<FinalState>.Name)
+                    //.AddDefaultTransition<GuardedTransition>(State<FinalState>.Name)
+                    //.AddElseDefaultTransition<EffectedTransition>(State<FinalState>.Name)
 
                     .AddTransition<SomeEvent, State2>(b => b
                         .AddGuard(c => true)

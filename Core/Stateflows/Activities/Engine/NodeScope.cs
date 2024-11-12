@@ -94,7 +94,6 @@ namespace Stateflows.Activities.Engine
 
         public TInitializer GetInitializer<TInitializer, TInitializationEvent>(IActivityInitializationContext<TInitializationEvent> context)
             where TInitializer : class, IInitializer<TInitializationEvent>
-            where TInitializationEvent : Event, new()
         {
             ContextValues.GlobalValuesHolder.Value = context.Activity.Values;
             ContextValues.StateValuesHolder.Value = null;
@@ -149,7 +148,7 @@ namespace Stateflows.Activities.Engine
         }
 
         public TAcceptEventAction GetAcceptEventAction<TEvent, TAcceptEventAction>(IAcceptEventActionContext<TEvent> context)
-            where TEvent : Event, new()
+
             where TAcceptEventAction : class, IAcceptEventActionNode<TEvent>
         {
             ContextValues.GlobalValuesHolder.Value = context.Activity.Values;
@@ -184,7 +183,6 @@ namespace Stateflows.Activities.Engine
         }
 
         public TSendEventAction GetSendEventAction<TEvent, TSendEventAction>(IActionContext context)
-            where TEvent : Event, new()
             where TSendEventAction : class, ISendEventActionNode<TEvent>
         {
             ContextValues.GlobalValuesHolder.Value = context.Activity.Values;

@@ -7,10 +7,13 @@ using Stateflows.Common.Extensions;
 using Stateflows.Activities.Models;
 using Stateflows.Activities.Context.Classes;
 using Stateflows.Activities.Context.Interfaces;
+using Stateflows.Activities.Engine;
 using Stateflows.Activities.Registration.Extensions;
 using Stateflows.Activities.Registration.Interfaces;
 using Stateflows.Activities.Registration.Interfaces.Base;
+using Stateflows.Activities.Utils;
 using Stateflows.Common.Exceptions;
+using Stateflows.Common.Registration.Builders;
 
 namespace Stateflows.Activities.Registration.Builders
 {
@@ -24,10 +27,10 @@ namespace Stateflows.Activities.Registration.Builders
             set => Node = value;
         }
 
-        public ActivityBuilder(string name, int version, Node parentNode, IServiceCollection services)
+        public ActivityBuilder(string name, int version, Node parentNode, StateflowsBuilder stateflowsBuilder, IServiceCollection services)
             : base(parentNode, services)
         {
-            Result = new Graph(name, version);
+            Result = new Graph(name, version, stateflowsBuilder);
         }
 
         public IActivityBuilder AddInitializer(Type initializerType, string initializerName, ActivityPredicateAsync initializerAction)
@@ -58,8 +61,8 @@ namespace Stateflows.Activities.Registration.Builders
             Result.DefaultInitializer.Actions.Add(c =>
             {
                 var context = new ActivityInitializationContext(
-                    c,
-                    c.Context.Event as Initialize,
+                    c.Context,
+                    c.NodeScope,
                     (c as ActivityInitializationContext).InputTokens
                 );
                 return actionAsync(context);
@@ -69,20 +72,20 @@ namespace Stateflows.Activities.Registration.Builders
         }
 
         public IActivityBuilder AddInitializer<TInitializationEvent>(Func<IActivityInitializationContext<TInitializationEvent>, Task<bool>> actionAsync)
-            where TInitializationEvent : Event, new()
         {
             actionAsync.ThrowIfNull(nameof(actionAsync));
 
             actionAsync = actionAsync.AddActivityInvocationContext(Result);
 
-            var initializerName = EventInfo<TInitializationEvent>.Name;
+            var initializerName = typeof(TInitializationEvent).GetEventName();
 
             return AddInitializer(typeof(TInitializationEvent), initializerName, async c =>
             {
                 var result = false;
                 var context = new ActivityInitializationContext<TInitializationEvent>(
-                    c,
-                    c.Context.Event as TInitializationEvent,
+                    c.Context,
+                    c.NodeScope,
+                    c.Context.EventHolder as EventHolder<TInitializationEvent>,
                     (c as ActivityInitializationContext).InputTokens
                 );
 
@@ -98,17 +101,15 @@ namespace Stateflows.Activities.Registration.Builders
                     }
                     else
                     {
-                        if (!await c.Context.Executor.Inspector.OnActivityInitializationExceptionAsync(context, context.InitializationEvent, e))
+                        if (!await c.Context.Executor.Inspector.OnActivityInitializationExceptionAsync(context, context.InitializationEventHolder, e))
                         {
                             throw;
                         }
                         else
                         {
-                            throw new ExecutionException(e);
+                            throw new BehaviorExecutionException(e);
                         }
                     }
-
-                    result = false;
                 }
 
                 return result;
@@ -162,6 +163,16 @@ namespace Stateflows.Activities.Registration.Builders
 
             return this;
         }
+
+        //public IActivityBuilder AddExceptionHandler<TException>(ExceptionHandlerDelegateAsync<TException> exceptionHandler)
+        //    where TException : Exception
+        //{
+        //    AddExceptionHandler(serviceProvider
+        //        => new AnonymousExceptionHandler<TException>(new NodeScope(serviceProvider, Node, Guid.NewGuid()), Node, exceptionHandler)
+        //    );
+            
+        //    return this;
+        //}
 
         public IActivityBuilder AddExceptionHandler(ActivityExceptionHandlerFactory exceptionHandlerFactory)
         {

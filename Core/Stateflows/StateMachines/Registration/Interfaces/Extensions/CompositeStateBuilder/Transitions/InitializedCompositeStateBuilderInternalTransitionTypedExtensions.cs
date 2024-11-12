@@ -1,9 +1,8 @@
-﻿using Stateflows.Common;
+using System.Diagnostics;
 using Stateflows.StateMachines.Registration;
 using Stateflows.StateMachines.Registration.Interfaces;
-using System.Diagnostics;
 
-namespace Stateflows.StateMachines.Typed
+namespace Stateflows.StateMachines
 {
     public static class InitializedCompositeStateBuilderInternalTransitionTypedExtensions
     {
@@ -29,9 +28,8 @@ namespace Stateflows.StateMachines.Typed
         /// </list>
         /// </typeparam>
         [DebuggerHidden]
-        public static IInitializedCompositeStateBuilder AddInternalTransition<TEvent, TTransition>(this IInitializedCompositeStateBuilder builder)
-            where TEvent : Event, new()
+        public static IInitializedCompositeStateBuilder AddInternalTransition<TEvent, TTransition>(this IInitializedCompositeStateBuilder builder, InternalTransitionBuildAction<TEvent> transitionBuildAction = null)
             where TTransition : class, ITransition<TEvent>
-            => builder.AddTransition<TEvent, TTransition>(Constants.DefaultTransitionTarget);
+            => builder.AddTransition<TEvent, TTransition>(Constants.DefaultTransitionTarget, b => transitionBuildAction?.Invoke(b as IInternalTransitionBuilder<TEvent>));
     }
 }

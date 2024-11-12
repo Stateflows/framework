@@ -1,6 +1,6 @@
 ﻿namespace Stateflows.Common
 {
     [NoImplicitInitialization]
-    public sealed class NotificationsRequest : Request<NotificationsResponse>
+    public sealed class NotificationsRequest : IRequest<NotificationsResponse>
     { }
 }

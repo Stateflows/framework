@@ -1,7 +1,7 @@
 ﻿using System.Diagnostics;
 using Stateflows.StateMachines.Registration.Interfaces;
 
-namespace Stateflows.StateMachines.Typed
+namespace Stateflows.StateMachines
 {
     public static class CompositeStateBuilderDefaultTransitionTypedExtensions
     {
@@ -36,10 +36,10 @@ namespace Stateflows.StateMachines.Typed
         /// </list>
         /// </typeparam>
         [DebuggerHidden]
-        public static ICompositeStateBuilder AddDefaultTransition<TDefaultTransition, TTargetState>(this ICompositeStateBuilder builder)
+        public static ICompositeStateBuilder AddDefaultTransition<TDefaultTransition, TTargetState>(this ICompositeStateBuilder builder, DefaultTransitionBuildAction transitionBuildAction = null)
             where TDefaultTransition : class, IDefaultTransition
             where TTargetState : class, IVertex
-            => builder.AddDefaultTransition<TDefaultTransition>(State<TTargetState>.Name);
+            => builder.AddDefaultTransition<TDefaultTransition>(State<TTargetState>.Name, transitionBuildAction);
 
         /// <summary>
         /// Adds default transition coming from current state.<br/>
@@ -63,9 +63,9 @@ namespace Stateflows.StateMachines.Typed
         /// </typeparam>
         /// <param name="targetStateName">Target state name</param>
         [DebuggerHidden]
-        public static ICompositeStateBuilder AddDefaultTransition<TDefaultTransition>(this ICompositeStateBuilder builder, string targetStateName)
+        public static ICompositeStateBuilder AddDefaultTransition<TDefaultTransition>(this ICompositeStateBuilder builder, string targetStateName, DefaultTransitionBuildAction transitionBuildAction = null)
             where TDefaultTransition : class, IDefaultTransition
-            => builder.AddDefaultTransition<TDefaultTransition>(targetStateName);
+            => (builder as IStateBuilder).AddDefaultTransition<TDefaultTransition>(targetStateName, transitionBuildAction) as ICompositeStateBuilder;
 
         /// <summary>
         /// Adds default transition coming from current state.<br/>

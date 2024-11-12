@@ -10,10 +10,11 @@ using Stateflows.Common.Engine;
 using Stateflows.Common.Classes;
 using Stateflows.Common.Interfaces;
 using Stateflows.Common.Extensions;
+using System.Reflection;
 
 namespace Stateflows.Common
 {
-    internal class StateflowsEngine : IHostedService
+    internal class StateflowsEngine : IHostedService, IStateflowsEngine
     {
         private readonly IServiceScope Scope;
         private IServiceProvider ServiceProvider => Scope.ServiceProvider;
@@ -27,7 +28,7 @@ namespace Stateflows.Common
         private Dictionary<string, IEventProcessor> Processors
             => processors ??= ServiceProvider.GetRequiredService<IEnumerable<IEventProcessor>>().ToDictionary(p => p.BehaviorType, p => p);
 
-        private EventQueue<EventHolder> EventQueue { get; } = new EventQueue<EventHolder>(true);
+        private EventQueue<ExecutionToken> EventQueue { get; } = new EventQueue<ExecutionToken>(true);
 
         private Task executionTask;
 
@@ -40,11 +41,9 @@ namespace Stateflows.Common
             TenantProvider = ServiceProvider.GetRequiredService<IStateflowsTenantProvider>();
         }
 
-        public EventHolder EnqueueEvent(BehaviorId id, Event @event, IServiceProvider serviceProvider)
+        public ExecutionToken EnqueueEvent(BehaviorId id, EventHolder eventHolder, IServiceProvider serviceProvider)
         {
-            @event.SentAt = DateTime.Now;
-
-            var token = new EventHolder(id, @event, serviceProvider);
+            var token = new ExecutionToken(id, eventHolder, serviceProvider);
 
             EventQueue.Enqueue(token);
 
@@ -69,7 +68,11 @@ namespace Stateflows.Common
                     {
                         _ = Task.Run(() =>
                         {
-                            token.Validation = token.Event.Validate();
+                            ResponseHolder.SetResponses(token.Responses);
+
+                            token.Validation = token.EventHolder.Validate();
+
+                            ResponseHolder.ClearResponses();
 
                             var status = EventStatus.Invalid;
 
@@ -77,7 +80,7 @@ namespace Stateflows.Common
                             {
                                 if (token.Validation.IsValid)
                                 {
-                                    status = ProcessEventAsync(token.TargetId, token.Event, token.Exceptions)
+                                    status = token.EventHolder.ProcessEventAsync(this, token.TargetId, token.Exceptions, token.Responses)
                                         .GetAwaiter()
                                         .GetResult();
                                 }
@@ -109,37 +112,51 @@ namespace Stateflows.Common
             return Task.CompletedTask;
         }
 
-        [DebuggerHidden]
-        public async Task<EventStatus> ProcessEventAsync<TEvent>(BehaviorId id, TEvent @event, List<Exception> exceptions)
-            where TEvent : Event, new()
+        //[DebuggerHidden]
+        public async Task<EventStatus> ProcessEventAsync<TEvent>(BehaviorId id, EventHolder<TEvent> eventHolder, List<Exception> exceptions, Dictionary<object, EventHolder> responses)
         {
             var result = EventStatus.Undelivered;
 
-            if (Processors.TryGetValue(id.Type, out var processor) && Interceptor.BeforeExecute(@event))
+            if (Processors.TryGetValue(id.Type, out var processor) && Interceptor.BeforeExecute(eventHolder))
             {
-                TenantAccessor.CurrentTenantId = await TenantProvider.GetCurrentTenantIdAsync();
+                TenantAccessor.CurrentTenantId = await TenantProvider.GetCurrentTenantIdAsync().ConfigureAwait(false);
 
-                await using var lockHandle = await Lock.AquireLockAsync(id);
+                await using var lockHandle = await Lock.AquireLockAsync(id).ConfigureAwait(false);
 
                 try
                 {
                     try
                     {
-                        result = await processor.ProcessEventAsync(id, @event, exceptions);
+                        ResponseHolder.SetResponses(responses);
+
+                        result = await processor.ProcessEventAsync(id, eventHolder, exceptions).ConfigureAwait(false);
                     }
                     finally
                     {
-                        var response = @event.GetResponse();
-                        if (response != null)
+                        var responseHolder = eventHolder.GetResponseHolder();
+                        if (responseHolder != null)
                         {
-                            response.SenderId = id;
-                            response.SentAt = DateTime.Now;
+                            responseHolder.SenderId = id;
+                            responseHolder.SentAt = DateTime.Now;
+
+                            if (eventHolder is EventHolder<CompoundRequest> compoundRequest)
+                            {
+                                foreach (var subEventHolder in compoundRequest.Payload.Events)
+                                {
+                                    var subResponseHolder = subEventHolder.GetResponseHolder();
+                                    if (subResponseHolder != null)
+                                    {
+                                        subResponseHolder.SenderId = id;
+                                        subResponseHolder.SentAt = DateTime.Now;
+                                    }
+                                }
+                            }
                         }
                     }
                 }
                 finally
                 {
-                    Interceptor.AfterExecute(@event);
+                    Interceptor.AfterExecute(eventHolder);
                 }
             }
 

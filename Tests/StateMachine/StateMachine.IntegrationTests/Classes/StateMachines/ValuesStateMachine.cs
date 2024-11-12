@@ -1,4 +1,4 @@
-﻿using Stateflows.StateMachines.Typed;
+﻿using Stateflows.StateMachines;
 using StateMachine.IntegrationTests.Classes.States;
 using StateMachine.IntegrationTests.Classes.Transitions;
 
@@ -9,11 +9,17 @@ namespace StateMachine.IntegrationTests.Classes.StateMachines
         public void Build(IStateMachineBuilder builder)
             => builder
                 .AddInitialState<ValueState1>(b => b
-                    .AddDefaultTransition<ValueTransition, ValueState2>()
+                    .AddDefaultTransition<ValueState2>(b => b
+                        .AddGuard<ValueTransition>()
+                    )
                 )
                 .AddState<ValueState2>(b => b
-                    .AddInternalTransition<SomeEvent, InternalTransition>()
-                    .AddDefaultTransition<GuardedTransition, FinalState>()
+                    .AddInternalTransition<SomeEvent>(b => b
+                        .AddEffect<InternalTransition>()
+                    )
+                    .AddDefaultTransition<FinalState>(b => b
+                        .AddGuard<GuardedTransition>()
+                    )
                 )
                 .AddFinalState()
             ;

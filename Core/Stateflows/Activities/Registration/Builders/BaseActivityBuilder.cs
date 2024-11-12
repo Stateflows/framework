@@ -3,6 +3,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using Stateflows.Common;
+using Stateflows.Common.Exceptions;
 using Stateflows.Activities.Models;
 using Stateflows.Activities.Extensions;
 using Stateflows.Activities.Exceptions;
@@ -10,7 +11,6 @@ using Stateflows.Activities.Context.Classes;
 using Stateflows.Activities.Context.Interfaces;
 using Stateflows.Activities.Registration.Builders;
 using Stateflows.Activities.Registration.Interfaces;
-using Stateflows.Common.Exceptions;
 
 namespace Stateflows.Activities.Registration
 {
@@ -87,6 +87,9 @@ namespace Stateflows.Activities.Registration
                 Graph = Result,
                 Level = Node.Level + 1,
                 Anchored = type != NodeType.ParallelActivity && Node.Anchored,
+                Identifier = !(Node is null)
+                    ? $"{type}:{Node.Name}:{nodeName}"
+                    : $"{type}:{nodeName}"
             };
 
             if (type == NodeType.ExceptionHandler)
@@ -107,6 +110,7 @@ namespace Stateflows.Activities.Registration
                 }
 
                 node.EventType = exceptionOrEventType;
+                node.ActualEventTypes = Result.StateflowsBuilder.GetMappedTypes(exceptionOrEventType).ToHashSet();
             }
 
             node.ChunkSize = chunkSize;
@@ -129,7 +133,7 @@ namespace Stateflows.Activities.Registration
                 }
                 catch (Exception e)
                 {
-                    if (e is StateflowsDefinitionException)
+                    if (e is StateflowsException)
                     {
                         throw;
                     }
@@ -165,7 +169,7 @@ namespace Stateflows.Activities.Registration
             BehaviorIdSelectorAsync targetSelectorAsync,
             SendEventActionBuildAction buildAction = null
         )
-            where TEvent : Event, new()
+
             => AddAction(
                 actionNodeName,
                 async c =>
@@ -185,7 +189,7 @@ namespace Stateflows.Activities.Registration
             AcceptEventActionDelegateAsync<TEvent> actionAsync,
             AcceptEventActionBuildAction buildAction = null
         )
-            where TEvent : Event, new()
+
             => AddNode(
                 NodeType.AcceptEventAction,
                 actionNodeName,
@@ -328,7 +332,7 @@ namespace Stateflows.Activities.Registration
                 }
                 catch (Exception e)
                 {
-                    if (e is StateflowsDefinitionException)
+                    if (e is StateflowsException)
                     {
                         throw;
                     }
@@ -340,7 +344,7 @@ namespace Stateflows.Activities.Registration
                         }
                         else
                         {
-                            throw new ExecutionException(e);
+                            throw new BehaviorExecutionException(e);
                         }
                     }
                 }
@@ -362,7 +366,7 @@ namespace Stateflows.Activities.Registration
                 }
                 catch (Exception e)
                 {
-                    if (e is StateflowsDefinitionException)
+                    if (e is StateflowsException)
                     {
                         throw;
                     }
@@ -374,7 +378,7 @@ namespace Stateflows.Activities.Registration
                         }
                         else
                         {
-                            throw new ExecutionException(e);
+                            throw new BehaviorExecutionException(e);
                         }
                     }
                 }

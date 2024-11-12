@@ -10,7 +10,7 @@ using Stateflows.Activities.Context.Interfaces;
 using Stateflows.Activities.Registration.Builders;
 using Stateflows.Activities.Registration.Interfaces;
 
-namespace Stateflows.Activities.Typed
+namespace Stateflows.Activities
 {
     public static class StructuredActivityBuilderTypedExtensions
     {
@@ -52,8 +52,7 @@ namespace Stateflows.Activities.Typed
 
         #region AddSendEventAction
         [DebuggerHidden]
-        private static async Task<TResult> GetSendEventAction<TEvent, TSendEventAction, TResult>(this IActionContext context, Func<TSendEventAction, Task<TResult>> callback)
-            where TEvent : Event, new()
+        private static async Task<TResult> GetSendEventAction<TEvent, TSendEventAction, TResult>(this IActionContext context, Func<TSendEventAction, Task<TResult>> callback)
             where TSendEventAction : class, ISendEventActionNode<TEvent>
         {
             var action = (context as BaseContext).NodeScope.GetSendEventAction<TEvent, TSendEventAction>(context);
@@ -69,14 +68,12 @@ namespace Stateflows.Activities.Typed
         }
 
         [DebuggerHidden]
-        public static IStructuredActivityBuilder AddSendEventAction<TEvent, TSendEventAction>(this IStructuredActivityBuilder builder, SendEventActionBuildAction buildAction = null)
-            where TEvent : Event, new()
+        public static IStructuredActivityBuilder AddSendEventAction<TEvent, TSendEventAction>(this IStructuredActivityBuilder builder, SendEventActionBuildAction buildAction = null)
             where TSendEventAction : class, ISendEventActionNode<TEvent>
             => builder.AddSendEventAction<TEvent, TSendEventAction>(ActivityNode<TSendEventAction>.Name, buildAction);
 
         [DebuggerHidden]
-        public static IStructuredActivityBuilder AddSendEventAction<TEvent, TSendEventAction>(this IStructuredActivityBuilder builder, string actionNodeName, SendEventActionBuildAction buildAction = null)
-            where TEvent : Event, new()
+        public static IStructuredActivityBuilder AddSendEventAction<TEvent, TSendEventAction>(this IStructuredActivityBuilder builder, string actionNodeName, SendEventActionBuildAction buildAction = null)
             where TSendEventAction : class, ISendEventActionNode<TEvent>
         {
             return builder.AddSendEventAction<TEvent>(

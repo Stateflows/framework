@@ -5,12 +5,12 @@ using Stateflows.StateMachines.Extensions;
 using Stateflows.StateMachines.Registration.Interfaces;
 using Stateflows.StateMachines.Registration.Interfaces.Internal;
 
-namespace Stateflows.StateMachines.Typed
+namespace Stateflows.StateMachines
 {
     public static class BehaviorStateBuilderElseTransitionTypedExtensions
     {
         /// <summary>
-        /// Adds else alternative for all <see cref="TEvent"/>-triggered transitions coming from current state.<br/><br/>
+        /// Adds else alternative for all transitions triggered by <see cref="TEvent"/> coming from current state.<br/><br/>
         /// <a href="https://github.com/Stateflows/framework/wiki/Transition">Transitions</a> are triggered by events sent to State Machine and are changing its state.
         /// </summary>
         /// <typeparam name="TEvent">Event class</typeparam>
@@ -27,13 +27,12 @@ namespace Stateflows.StateMachines.Typed
         /// </typeparam>
         [DebuggerHidden]
         public static IBehaviorStateBuilder AddElseTransition<TEvent, TElseTransition, TTargetState>(this IBehaviorStateBuilder builder)
-            where TEvent : Event, new()
             where TElseTransition : class, ITransitionEffect<TEvent>
             where TTargetState : class, IVertex
             => AddElseTransition<TEvent, TElseTransition>(builder, State<TTargetState>.Name);
 
         /// <summary>
-        /// Adds else alternative for all <see cref="TEvent"/>-triggered transitions coming from current state.<br/><br/>
+        /// Adds else alternative for all transitions triggered by <see cref="TEvent"/> coming from current state.<br/><br/>
         /// <a href="https://github.com/Stateflows/framework/wiki/Transition">Transitions</a> are triggered by events sent to State Machine and are changing its state.
         /// </summary>
         /// <typeparam name="TEvent">Event class</typeparam>
@@ -41,7 +40,6 @@ namespace Stateflows.StateMachines.Typed
         /// <param name="targetStateName">Target state name</param>
         [DebuggerHidden]
         public static IBehaviorStateBuilder AddElseTransition<TEvent, TElseTransition>(this IBehaviorStateBuilder builder, string targetStateName)
-            where TEvent : Event, new()
             where TElseTransition : class, ITransitionEffect<TEvent>
         {
             (builder as IInternal).Services.AddServiceType<TElseTransition>();
@@ -53,7 +51,7 @@ namespace Stateflows.StateMachines.Typed
         }
 
         /// <summary>
-        /// Adds else alternative for all <see cref="TEvent"/>-triggered transitions coming from current state.<br/><br/>
+        /// Adds else alternative for all transitions triggered by <see cref="TEvent"/> coming from current state.<br/><br/>
         /// <a href="https://github.com/Stateflows/framework/wiki/Transition">Transitions</a> are triggered by events sent to State Machine and are changing its state.
         /// </summary>
         /// <typeparam name="TEvent">Event class</typeparam>
@@ -70,7 +68,6 @@ namespace Stateflows.StateMachines.Typed
         /// <param name="transitionBuildAction">Transition build action</param>
         [DebuggerHidden]
         public static IBehaviorStateBuilder AddElseTransition<TEvent, TTargetState>(this IBehaviorStateBuilder builder, ElseTransitionBuildAction<TEvent> transitionBuildAction = null)
-            where TEvent : Event, new()
             where TTargetState : class, IVertex
             => builder.AddElseTransition(State<TTargetState>.Name, transitionBuildAction);
     }

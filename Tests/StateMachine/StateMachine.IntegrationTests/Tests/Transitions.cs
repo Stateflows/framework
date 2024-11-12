@@ -1,6 +1,6 @@
 using Stateflows.Common;
 using Stateflows.StateMachines.Sync;
-using Stateflows.StateMachines.Typed;
+using Stateflows.StateMachines;
 using StateMachine.IntegrationTests.Classes.States;
 using StateMachine.IntegrationTests.Classes.Transitions;
 using StateMachine.IntegrationTests.Utils;

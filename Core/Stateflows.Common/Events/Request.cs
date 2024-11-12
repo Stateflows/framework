@@ -1,20 +1,40 @@
-﻿using Stateflows.Common.Exceptions;
+﻿using System.Threading;
+using System.Collections.Generic;
 
 namespace Stateflows.Common
 {
-    public abstract class Request<TResponse> : Event
-        where TResponse : Event, new()
+    public static class ResponseHolder
     {
-        public void Respond(TResponse response)
-        {
-            if (Response != null)
-            {
-                throw new StateflowsRuntimeException($"Already responded to request '{Name}'");
-            }
+        private readonly static AsyncLocal<Dictionary<object, EventHolder>> Responses =
+            new AsyncLocal<Dictionary<object, EventHolder>>();
 
-            Response = response;
+        public static bool ResponsesAreSet()
+            => Responses.Value != null;
+
+        public static void SetResponses(Dictionary<object, EventHolder> responses)
+            => Responses.Value = responses;
+
+        public static void CopyResponses(Dictionary<object, EventHolder> responses)
+        {
+            foreach (var key in responses.Keys)
+            {
+                Responses.Value[key] = responses[key];
+            }
         }
 
-        public TResponse Response { get; private set; }
+        public static void ClearResponses()
+            => Responses.Value = null;
+
+        public static void Respond(object request, EventHolder response)
+            => Responses.Value[request] = response;
+
+        public static bool IsResponded(object request)
+            => Responses.Value.ContainsKey(request);
+
+        public static EventHolder GetResponseOrDefault(object request)
+            => Responses.Value.GetValueOrDefault(request);
     }
+
+    public interface IRequest<in TResponse>
+    { }
 }

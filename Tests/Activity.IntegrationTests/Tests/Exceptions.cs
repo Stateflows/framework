@@ -1,4 +1,5 @@
-using Stateflows.Activities.Typed;
+using Stateflows.Activities;
+using Stateflows.Common;
 using StateMachine.IntegrationTests.Utils;
 
 namespace Activity.IntegrationTests.Tests
@@ -278,6 +279,21 @@ namespace Activity.IntegrationTests.Tests
                             ExceptionHandlerOutput = c.GetTokensOfType<string>().Any();
                         })
                     )
+                    //.AddActivity("global", b => b
+                    //    .AddExceptionHandler<Exception>(async c =>
+                    //    {
+                    //        Executed1 = true;
+                    //        Value1 = c.NodeOfOrigin.NodeName;
+                    //        Value2 = c.ProtectedNode.NodeName;
+                    //    })
+                    //    .AddInitial(b => b
+                    //        .AddControlFlow("faulty")
+                    //    )
+                    //    .AddAction(
+                    //        "faulty",
+                    //        async c => throw new Exception()
+                    //    )
+                    //)
                 )
                 ;
         }
@@ -287,7 +303,7 @@ namespace Activity.IntegrationTests.Tests
         {
             if (ActivityLocator.TryLocateActivity(new ActivityId("specific", "x"), out var a))
             {
-                await a.ExecuteAsync();
+                await a.SendAsync(new Initialize());
             }
 
             Assert.IsTrue(Executed1);
@@ -300,7 +316,7 @@ namespace Activity.IntegrationTests.Tests
         {
             if (ActivityLocator.TryLocateActivity(new ActivityId("generic", "x"), out var a))
             {
-                await a.ExecuteAsync();
+                await a.SendAsync(new Initialize());
             }
 
             Assert.IsTrue(Executed1);
@@ -313,7 +329,7 @@ namespace Activity.IntegrationTests.Tests
         {
             if (ActivityLocator.TryLocateActivity(new ActivityId("structured", "x"), out var a))
             {
-                await a.ExecuteAsync();
+                await a.SendAsync(new Initialize());
             }
 
             Assert.IsTrue(Executed1);
@@ -327,7 +343,7 @@ namespace Activity.IntegrationTests.Tests
         {
             if (ActivityLocator.TryLocateActivity(new ActivityId("structured-typed", "x"), out var a))
             {
-                await a.ExecuteAsync();
+                await a.SendAsync(new Initialize());
             }
 
             Assert.IsTrue(Executed1);
@@ -341,7 +357,7 @@ namespace Activity.IntegrationTests.Tests
         {
             if (ActivityLocator.TryLocateActivity(new ActivityId("structured-guard", "x"), out var a))
             {
-                await a.ExecuteAsync();
+                await a.SendAsync(new Initialize());
             }
 
             Assert.IsTrue(Executed1);
@@ -356,7 +372,7 @@ namespace Activity.IntegrationTests.Tests
         {
             if (ActivityLocator.TryLocateActivity(new ActivityId("plain", "x"), out var a))
             {
-                await a.ExecuteAsync();
+                await a.SendAsync(new Initialize());
             }
 
             Assert.IsTrue(Executed1);
@@ -368,7 +384,7 @@ namespace Activity.IntegrationTests.Tests
         {
             if (ActivityLocator.TryLocateActivity(new ActivityId("plain-specific", "x"), out var a))
             {
-                await a.ExecuteAsync();
+                await a.SendAsync(new Initialize());
             }
 
             Assert.IsTrue(Executed2);
@@ -379,7 +395,7 @@ namespace Activity.IntegrationTests.Tests
         {
             if (ActivityLocator.TryLocateActivity(new ActivityId("plain-generic", "x"), out var a))
             {
-                await a.ExecuteAsync();
+                await a.SendAsync(new Initialize());
             }
 
             Assert.IsTrue(Executed1);
@@ -390,7 +406,7 @@ namespace Activity.IntegrationTests.Tests
         {
             if (ActivityLocator.TryLocateActivity(new ActivityId("guard", "x"), out var a))
             {
-                await a.ExecuteAsync();
+                await a.SendAsync(new Initialize());
             }
 
             Assert.IsTrue(Executed1);
@@ -403,10 +419,22 @@ namespace Activity.IntegrationTests.Tests
         {
             if (ActivityLocator.TryLocateActivity(new ActivityId("output", "x"), out var a))
             {
-                await a.ExecuteAsync();
+                await a.SendAsync(new Initialize());
             }
 
             Assert.IsTrue(ExceptionHandlerOutput);
         }
+
+        //[TestMethod]
+        //public async Task ExceptionHandledGlobally()
+        //{
+        //    if (ActivityLocator.TryLocateActivity(new ActivityId("global", "x"), out var a))
+        //    {
+        //        await a.SendAsync(new Initialize());
+        //    }
+
+        //    Assert.IsTrue(Executed1);
+        //    Assert.AreEqual("faulty", Value1);
+        //}
     }
 }

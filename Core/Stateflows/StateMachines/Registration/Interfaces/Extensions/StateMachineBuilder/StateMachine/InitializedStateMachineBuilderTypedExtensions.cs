@@ -4,7 +4,7 @@ using Stateflows.StateMachines.Extensions;
 using Stateflows.StateMachines.Registration.Interfaces;
 using Stateflows.StateMachines.Registration.Interfaces.Internal;
 
-namespace Stateflows.StateMachines.Typed
+namespace Stateflows.StateMachines
 {
     public static class InitializedStateMachineBuilderTypedExtensions
     {
@@ -33,7 +33,7 @@ namespace Stateflows.StateMachines.Typed
                 {
                     b.AddStateEvents<TState, IStateBuilder>();
 
-                    stateBuildAction?.Invoke(b as ITypedStateBuilder);
+                    stateBuildAction?.Invoke(b);
                 }
             );
         }
@@ -58,7 +58,7 @@ namespace Stateflows.StateMachines.Typed
                     (b as IInitializedCompositeStateBuilder).AddStateEvents<TCompositeState, IInitializedCompositeStateBuilder>();
                     (b as IInitializedCompositeStateBuilder).AddCompositeStateEvents<TCompositeState, IInitializedCompositeStateBuilder>();
 
-                    compositeStateBuildAction?.Invoke(b as ITypedCompositeStateBuilder);
+                    compositeStateBuildAction?.Invoke(b);
                 }
             );
         }

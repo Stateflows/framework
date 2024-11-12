@@ -1,7 +1,7 @@
-import { Notification } from "../events/notification";
+import { EventHolder } from "../classes/event-holder";
 import { BehaviorId } from "../ids/behavior.id";
 
 export interface IWatcher {
     id: BehaviorId;
-    notify(notification: Notification): void;
+    notify(notification: EventHolder): void;
 }

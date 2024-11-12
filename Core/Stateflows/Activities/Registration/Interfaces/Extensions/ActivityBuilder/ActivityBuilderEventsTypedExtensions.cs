@@ -4,7 +4,7 @@ using Stateflows.Common.Extensions;
 using Stateflows.Activities.Context.Classes;
 using Stateflows.Activities.Registration.Interfaces;
 
-namespace Stateflows.Activities.Typed
+namespace Stateflows.Activities
 {
     public static class ActivityBuilderEventsTypedExtensions
     {
@@ -19,7 +19,7 @@ namespace Stateflows.Activities.Typed
 
         [DebuggerHidden]
         public static IActivityBuilder AddInitializer<TInitializationEvent, TInitializer>(this IActivityBuilder builder)
-            where TInitializationEvent : Event, new()
+            where TInitializationEvent : EventHolder, new()
             where TInitializer : class, IInitializer<TInitializationEvent>
         {
             (builder as IInternal).Services.AddServiceType<TInitializer>();

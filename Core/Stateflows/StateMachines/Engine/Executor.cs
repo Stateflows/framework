@@ -5,9 +5,12 @@ using System.Threading.Tasks;
 using System.Collections.Generic;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.DependencyInjection;
+using Stateflows.Utils;
 using Stateflows.Common;
 using Stateflows.Common.Context;
 using Stateflows.Common.Classes;
+using Stateflows.Common.Interfaces;
+using Stateflows.Common.Exceptions;
 using Stateflows.StateMachines.Models;
 using Stateflows.StateMachines.Events;
 using Stateflows.StateMachines.Context;
@@ -15,11 +18,11 @@ using Stateflows.StateMachines.Extensions;
 using Stateflows.StateMachines.Registration;
 using Stateflows.StateMachines.Context.Classes;
 using Stateflows.StateMachines.Context.Interfaces;
-using Stateflows.Common.Exceptions;
+using System.Runtime.InteropServices;
 
 namespace Stateflows.StateMachines.Engine
 {
-    internal sealed class Executor : IDisposable
+    internal sealed class Executor : IDisposable, IStateflowsExecutor
     {
         public readonly Graph Graph;
 
@@ -40,7 +43,7 @@ namespace Stateflows.StateMachines.Engine
             IsEventStatusOverriden = true;
         }
 
-        public Executor(StateMachinesRegister register, Graph graph, IServiceProvider serviceProvider, StateflowsContext stateflowsContext, Event @event)
+        public Executor(StateMachinesRegister register, Graph graph, IServiceProvider serviceProvider, StateflowsContext stateflowsContext, EventHolder @event)
         {
             Register = register;
             ScopesStack.Push(serviceProvider.CreateScope());
@@ -133,13 +136,13 @@ namespace Stateflows.StateMachines.Engine
                 _ => BehaviorStatus.NotInitialized
             };
 
-        public async Task<EventStatus> InitializeAsync(Event @event)
+        public async Task<EventStatus> InitializeAsync<TEvent>(EventHolder<TEvent> eventHolder)
         {
             Debug.Assert(Context != null, $"Context is unavailable. Is state machine '{Graph.Name}' hydrated?");
 
             if (!Initialized)
             {
-                var result = await DoInitializeStateMachineAsync(@event);
+                var result = await DoInitializeStateMachineAsync(eventHolder);
 
                 if (
                     result == InitializationStatus.InitializedImplicitly ||
@@ -156,7 +159,7 @@ namespace Stateflows.StateMachines.Engine
                     }
                     else
                     {
-                        if (@event is Initialize)
+                        if (eventHolder.Payload is Initialize)
                         {
                             return EventStatus.Initialized;
                         }
@@ -261,7 +264,7 @@ namespace Stateflows.StateMachines.Engine
             => GetExpectedEvents()
                 .Where(type => !type.IsSubclassOf(typeof(TimeEvent)))
                 .Where(type => type != typeof(Startup))
-                .Where(type => type != typeof(CompletionEvent))
+                .Where(type => type != typeof(Completion))
                 .Select(type => type.GetEventName())
                 .ToArray();
 
@@ -273,7 +276,7 @@ namespace Stateflows.StateMachines.Engine
             return currentStack.Any()
                 ? currentStack
                     .SelectMany(vertex => vertex.Edges.Values)
-                    .Select(edge => edge.TriggerType)
+                    .SelectMany(edge => edge.ActualTriggerTypes)
                     .Distinct()
                     .ToArray()
                 : Graph.InitializerTypes
@@ -291,8 +294,7 @@ namespace Stateflows.StateMachines.Engine
             return result;
         }
 
-        public async Task<EventStatus> ProcessAsync<TEvent>(TEvent @event)
-            where TEvent : Event, new()
+        public async Task<EventStatus> ProcessAsync<TEvent>(EventHolder<TEvent> eventHolder)
         {
             StateHasChanged = false;
 
@@ -300,7 +302,7 @@ namespace Stateflows.StateMachines.Engine
 
             if (Initialized)
             {
-                result = await DoProcessAsync(@event);
+                result = await DoProcessAsync(eventHolder);
             }
 
             if (IsEventStatusOverriden)
@@ -311,13 +313,13 @@ namespace Stateflows.StateMachines.Engine
             return result;
         }
 
-        private bool TryDeferEvent<TEvent>(TEvent @event)
-            where TEvent : Event, new()
+        private bool TryDeferEvent<TEvent>(EventHolder<TEvent> eventHolder)
+
         {
             var deferredEvents = GetDeferredEvents();
-            if (deferredEvents.Any() && deferredEvents.Contains(@event.Name))
+            if (deferredEvents.Any() && deferredEvents.Contains(eventHolder.Name))
             {
-                Context.DeferredEvents.Add(@event);
+                Context.DeferredEvents.Add(eventHolder);
                 return true;
             }
             return false;
@@ -326,17 +328,17 @@ namespace Stateflows.StateMachines.Engine
         private async Task DispatchNextDeferredEvent()
         {
             var deferredEvents = GetDeferredEvents();
-            foreach (var @event in Context.DeferredEvents)
+            foreach (var eventHolder in Context.DeferredEvents)
             {
-                if (!deferredEvents.Any() || !deferredEvents.Contains(@event.Name))
+                if (!deferredEvents.Any() || !deferredEvents.Contains(eventHolder.Name))
                 {
-                    Context.DeferredEvents.Remove(@event);
+                    Context.DeferredEvents.Remove(eventHolder);
 
-                    Context.SetEvent(@event);
+                    Context.SetEvent(eventHolder);
 
                     RebuildVerticesStack();
 
-                    await DoProcessAsync(@event);
+                    await eventHolder.DoProcessAsync(this);
 
                     Context.ClearEvent();
 
@@ -345,8 +347,10 @@ namespace Stateflows.StateMachines.Engine
             }
         }
 
-        private async Task<EventStatus> DoProcessAsync<TEvent>(TEvent @event)
-            where TEvent : Event, new()
+        Task<EventStatus> IStateflowsExecutor.DoProcessAsync<TEvent>(EventHolder<TEvent> eventHolder)
+            => DoProcessAsync(eventHolder);
+
+        private async Task<EventStatus> DoProcessAsync<TEvent>(EventHolder<TEvent> eventHolder)
         {
             Debug.Assert(Context != null, $"Context is not available. Is state machine '{Graph.Name}' hydrated?");
 
@@ -355,15 +359,19 @@ namespace Stateflows.StateMachines.Engine
 
             var deferred = true;
 
-            if (!TryDeferEvent(@event))
+            if (!TryDeferEvent(eventHolder))
             {
                 deferred = false;
 
                 foreach (var vertex in currentStack)
                 {
-                    foreach (var edge in vertex.OrderedEdges)
+                    var edges = vertex.OrderedEdges
+                        .SelectMany(edge => edge.GetActualEdges())
+                        .ToArray();
+
+                    foreach (var edge in edges)
                     {
-                        if (@event.Triggers(edge) && await DoGuardAsync<TEvent>(edge))
+                        if (eventHolder.Triggers(edge) && await DoGuardAsync<TEvent>(edge))
                         {
                             await DoConsumeAsync<TEvent>(edge);
 
@@ -389,7 +397,6 @@ namespace Stateflows.StateMachines.Engine
 
         [DebuggerStepThrough]
         private async Task<bool> DoGuardAsync<TEvent>(Edge edge)
-            where TEvent : Event, new()
         {
             BeginScope();
 
@@ -406,7 +413,7 @@ namespace Stateflows.StateMachines.Engine
         }
 
         private async Task DoEffectAsync<TEvent>(Edge edge)
-            where TEvent : Event, new()
+
         {
             BeginScope();
 
@@ -421,7 +428,7 @@ namespace Stateflows.StateMachines.Engine
             EndScope();
         }
 
-        public async Task<InitializationStatus> DoInitializeStateMachineAsync(Event @event)
+        public async Task<InitializationStatus> DoInitializeStateMachineAsync(EventHolder @event)
         {
             BeginScope();
 
@@ -431,7 +438,7 @@ namespace Stateflows.StateMachines.Engine
                 ? Graph.Initializers[@event.Name]
                 : Graph.DefaultInitializer;
 
-            var context = new StateMachineInitializationContext(Context, @event);
+            var context = new StateMachineInitializationContext(Context);
             await Inspector.BeforeStateMachineInitializeAsync(context);
 
             if (initializer != null)
@@ -452,7 +459,7 @@ namespace Stateflows.StateMachines.Engine
                     }
                     else
                     {
-                        throw new ExecutionException(e);
+                        throw new BehaviorExecutionException(e);
                     }
                 }
             }
@@ -493,7 +500,7 @@ namespace Stateflows.StateMachines.Engine
                 }
                 else
                 {
-                    throw new ExecutionException(e);
+                    throw new BehaviorExecutionException(e);
                 }
             }
 
@@ -559,7 +566,7 @@ namespace Stateflows.StateMachines.Engine
         }
 
         private async Task DoConsumeAsync<TEvent>(Edge edge)
-            where TEvent : Event, new()
+
         {
             var exitingVertices = new List<Vertex>();
             var enteringVertices = new List<Vertex>();
@@ -638,15 +645,18 @@ namespace Stateflows.StateMachines.Engine
             }
         }
 
-        private async Task DoCompletion()
+        private async Task<bool> DoCompletion()
         {
-            Context.SetEvent(new CompletionEvent());
+            var completionEventHolder = (new Completion()).ToEventHolder();
+            Context.SetEvent(completionEventHolder);
 
             RebuildVerticesStack();
 
-            await DoProcessAsync(Context.Event);
+            var result = await DoProcessAsync(completionEventHolder);
 
             Context.ClearEvent();
+
+            return result == EventStatus.Consumed;
         }
 
         public IStateMachine GetStateMachine(Type stateMachineType)
@@ -676,7 +686,6 @@ namespace Stateflows.StateMachines.Engine
 
         public TInitializer GetInitializer<TInitializer, TInitializationEvent>(IStateMachineInitializationContext<TInitializationEvent> context)
             where TInitializer : class, IInitializer<TInitializationEvent>
-            where TInitializationEvent : Event, new()
         {
             ContextValues.GlobalValuesHolder.Value = context.StateMachine.Values;
             ContextValues.StateValuesHolder.Value = null;
@@ -731,7 +740,7 @@ namespace Stateflows.StateMachines.Engine
 
         public TTransition GetTransition<TTransition, TEvent>(ITransitionContext<TEvent> context)
             where TTransition : class, ITransition<TEvent>
-            where TEvent : Event, new()
+
         {
             ContextValues.GlobalValuesHolder.Value = context.StateMachine.Values;
             ContextValues.StateValuesHolder.Value = null;
@@ -748,7 +757,45 @@ namespace Stateflows.StateMachines.Engine
             return transition;
         }
 
-        public TDefaultTransition GetDefaultTransition<TDefaultTransition>(ITransitionContext<CompletionEvent> context)
+        public TTransitionGuard GetTransitionGuard<TTransitionGuard, TEvent>(ITransitionContext<TEvent> context)
+            where TTransitionGuard : class, ITransitionGuard<TEvent>
+
+        {
+            ContextValues.GlobalValuesHolder.Value = context.StateMachine.Values;
+            ContextValues.StateValuesHolder.Value = null;
+            ContextValues.SourceStateValuesHolder.Value = context.SourceState.Values;
+            ContextValues.TargetStateValuesHolder.Value = context.TargetState?.Values;
+
+            StateMachinesContextHolder.StateContext.Value = null;
+            StateMachinesContextHolder.TransitionContext.Value = context;
+            StateMachinesContextHolder.StateMachineContext.Value = context.StateMachine;
+            StateMachinesContextHolder.ExecutionContext.Value = context;
+
+            var transition = ServiceProvider.GetService<TTransitionGuard>();
+
+            return transition;
+        }
+
+        public TTransitionEffect GetTransitionEffect<TTransitionEffect, TEvent>(ITransitionContext<TEvent> context)
+            where TTransitionEffect : class, ITransitionEffect<TEvent>
+
+        {
+            ContextValues.GlobalValuesHolder.Value = context.StateMachine.Values;
+            ContextValues.StateValuesHolder.Value = null;
+            ContextValues.SourceStateValuesHolder.Value = context.SourceState.Values;
+            ContextValues.TargetStateValuesHolder.Value = context.TargetState?.Values;
+
+            StateMachinesContextHolder.StateContext.Value = null;
+            StateMachinesContextHolder.TransitionContext.Value = context;
+            StateMachinesContextHolder.StateMachineContext.Value = context.StateMachine;
+            StateMachinesContextHolder.ExecutionContext.Value = context;
+
+            var transition = ServiceProvider.GetService<TTransitionEffect>();
+
+            return transition;
+        }
+
+        public TDefaultTransition GetDefaultTransition<TDefaultTransition>(ITransitionContext<Completion> context)
             where TDefaultTransition : class, IDefaultTransition
         {
             ContextValues.GlobalValuesHolder.Value = context.StateMachine.Values;
@@ -762,6 +809,42 @@ namespace Stateflows.StateMachines.Engine
             StateMachinesContextHolder.ExecutionContext.Value = context;
 
             var transition = ServiceProvider.GetService<TDefaultTransition>();
+
+            return transition;
+        }
+
+        public TDefaultTransitionGuard GetDefaultTransitionGuard<TDefaultTransitionGuard>(ITransitionContext<Completion> context)
+            where TDefaultTransitionGuard : class, IDefaultTransitionGuard
+        {
+            ContextValues.GlobalValuesHolder.Value = context.StateMachine.Values;
+            ContextValues.StateValuesHolder.Value = null;
+            ContextValues.SourceStateValuesHolder.Value = context.SourceState.Values;
+            ContextValues.TargetStateValuesHolder.Value = context.TargetState?.Values;
+
+            StateMachinesContextHolder.StateContext.Value = null;
+            StateMachinesContextHolder.TransitionContext.Value = context;
+            StateMachinesContextHolder.StateMachineContext.Value = context.StateMachine;
+            StateMachinesContextHolder.ExecutionContext.Value = context;
+
+            var transition = ServiceProvider.GetService<TDefaultTransitionGuard>();
+
+            return transition;
+        }
+
+        public TDefaultTransitionEffect GetDefaultTransitionEffect<TDefaultTransitionEffect>(ITransitionContext<Completion> context)
+            where TDefaultTransitionEffect : class, IDefaultTransitionEffect
+        {
+            ContextValues.GlobalValuesHolder.Value = context.StateMachine.Values;
+            ContextValues.StateValuesHolder.Value = null;
+            ContextValues.SourceStateValuesHolder.Value = context.SourceState.Values;
+            ContextValues.TargetStateValuesHolder.Value = context.TargetState?.Values;
+
+            StateMachinesContextHolder.StateContext.Value = null;
+            StateMachinesContextHolder.TransitionContext.Value = context;
+            StateMachinesContextHolder.StateMachineContext.Value = context.StateMachine;
+            StateMachinesContextHolder.ExecutionContext.Value = context;
+
+            var transition = ServiceProvider.GetService<TDefaultTransitionEffect>();
 
             return transition;
         }

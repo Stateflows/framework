@@ -8,13 +8,15 @@ namespace Stateflows.Common.Transport.Classes
     {
         public EventStatus EventStatus { get; set; }
 
+        public string EventStatusText => EventStatus.ToString();
+
         public EventValidation Validation { get; set; }
 
-        public Response Response { get; set; }
+        public EventHolder Response { get; set; }
 
         public DateTime ResponseTime { get; set; }
 
         [JsonProperty(TypeNameHandling = TypeNameHandling.None)]
-        public IEnumerable<Notification> Notifications { get; set; } = Array.Empty<Notification>();
+        public IEnumerable<EventHolder> Notifications { get; set; } = Array.Empty<EventHolder>();
     }
 }

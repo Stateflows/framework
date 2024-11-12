@@ -1,4 +1,4 @@
-import { Notification, NotificationHandler } from "@stateflows/common";
+import { NotificationHandler } from "@stateflows/common";
 
 export class Watch {
     constructor(
@@ -6,7 +6,7 @@ export class Watch {
         public milisecondsSinceLastNotificationCheck: number    
     ) {}
 
-    handlers: Array<NotificationHandler<Notification>> = [];
-    notifications: Array<Notification> = [];
+    handlers: Array<NotificationHandler<any>> = [];
+    notifications: Array<any> = [];
     lastNotificationCheck: string;
 }

@@ -105,14 +105,14 @@ namespace StateMachine.IntegrationTests.Tests
                 .StateEntry("state1")
                 .StateInitialize("state1")
                 .StateEntry("state1.1")
-                .TransitionGuard(EventInfo<CompletionEvent>.Name, "state1.1", "state1.2")
+                .TransitionGuard(Event<Completion>.Name, "state1.1", "state1.2")
                 .StateExit("state1.1")
-                .TransitionEffect(EventInfo<CompletionEvent>.Name, "state1.1", "state1.2")
+                .TransitionEffect(Event<Completion>.Name, "state1.1", "state1.2")
                 .StateEntry("state1.2")
-                .TransitionGuard(EventInfo<CompletionEvent>.Name, "state1.2", "state2")
+                .TransitionGuard(Event<Completion>.Name, "state1.2", "state2")
                 .StateExit("state1.2")
                 .StateExit("state1")
-                .TransitionEffect(EventInfo<CompletionEvent>.Name, "state1.2", "state2")
+                .TransitionEffect(Event<Completion>.Name, "state1.2", "state2")
                 .StateEntry("state2")
             );
 
@@ -136,9 +136,9 @@ namespace StateMachine.IntegrationTests.Tests
             ExecutionSequence.Verify(b => b
                 .StateMachineInitialize()
                 .StateEntry("state1")
-                .TransitionGuard(EventInfo<CompletionEvent>.Name, "state1", "state2.1.2")
+                .TransitionGuard(Event<Completion>.Name, "state1", "state2.1.2")
                 .StateExit("state1")
-                .TransitionEffect(EventInfo<CompletionEvent>.Name, "state1", "state2.1.2")
+                .TransitionEffect(Event<Completion>.Name, "state1", "state2.1.2")
                 .StateEntry("state2")
                 .StateEntry("state2.1")
                 .StateEntry("state2.1.2")
@@ -166,14 +166,14 @@ namespace StateMachine.IntegrationTests.Tests
                 .StateEntry("state1")
                 .StateInitialize("state1")
                 .StateEntry("state1.1")
-                .TransitionGuard(EventInfo<CompletionEvent>.Name, "state1.1", "state1.2")
+                .TransitionGuard(Event<Completion>.Name, "state1.1", "state1.2")
                 .StateExit("state1.1")
-                .TransitionEffect(EventInfo<CompletionEvent>.Name, "state1.1", "state1.2")
+                .TransitionEffect(Event<Completion>.Name, "state1.1", "state1.2")
                 .StateEntry("state1.2")
-                .TransitionGuard(EventInfo<CompletionEvent>.Name, "state1.2", "state2.1")
+                .TransitionGuard(Event<Completion>.Name, "state1.2", "state2.1")
                 .StateExit("state1.2")
                 .StateExit("state1")
-                .TransitionEffect(EventInfo<CompletionEvent>.Name, "state1.2", "state2.1")
+                .TransitionEffect(Event<Completion>.Name, "state1.2", "state2.1")
                 .StateEntry("state2")
                 .StateEntry("state2.1")
                 .StateEntry("state2.1.2")
@@ -191,8 +191,6 @@ namespace StateMachine.IntegrationTests.Tests
 
             if (StateMachineLocator.TryLocateStateMachine(new StateMachineId("nested-to-parent", "x"), out var sm))
             {
-                //await sm.InitializeAsync();
-                
                 status = (await sm.SendAsync(new SomeEvent())).Status;
 
                 currentState = (await sm.GetCurrentStateAsync()).Response.StatesStack.Last();
@@ -205,14 +203,14 @@ namespace StateMachine.IntegrationTests.Tests
                 .StateEntry("state1.1")
                 .StateInitialize("state1.1")
                 .StateEntry("state1.1.1")
-                .TransitionGuard(EventInfo<SomeEvent>.Name, "state1.1.1", "state1.1.2")
+                .TransitionGuard(Event<SomeEvent>.Name, "state1.1.1", "state1.1.2")
                 .StateExit("state1.1.1")
-                .TransitionEffect(EventInfo<SomeEvent>.Name, "state1.1.1", "state1.1.2")
+                .TransitionEffect(Event<SomeEvent>.Name, "state1.1.1", "state1.1.2")
                 .StateEntry("state1.1.2")
-                .TransitionGuard(EventInfo<CompletionEvent>.Name, "state1.1.2", "state1.1")
+                .TransitionGuard(Event<Completion>.Name, "state1.1.2", "state1.1")
                 .StateExit("state1.1.2")
                 .StateExit("state1.1")
-                .TransitionEffect(EventInfo<CompletionEvent>.Name, "state1.1.2", "state1.1")
+                .TransitionEffect(Event<Completion>.Name, "state1.1.2", "state1.1")
                 .StateEntry("state1.1")
                 .StateInitialize("state1.1")
                 .StateEntry("state1.1.1")

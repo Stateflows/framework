@@ -1,5 +1,9 @@
 ﻿using System;
+using System.Linq;
 using System.Threading.Tasks;
+using System.Collections.Generic;
+using Microsoft.Extensions.DependencyInjection;
+using Stateflows.Utils;
 using Stateflows.Common;
 using Stateflows.Common.Exceptions;
 using Stateflows.Common.Registration;
@@ -10,6 +14,7 @@ using Stateflows.StateMachines.Context.Interfaces;
 using Stateflows.StateMachines.Registration.Interfaces;
 using Stateflows.StateMachines.Registration.Extensions;
 using Stateflows.StateMachines.Registration.Interfaces.Base;
+using Stateflows.StateMachines.Registration.Interfaces.Internal;
 
 namespace Stateflows.StateMachines.Registration.Builders
 {
@@ -21,18 +26,26 @@ namespace Stateflows.StateMachines.Registration.Builders
         IDefaultTransitionBuilder,
         IElseDefaultTransitionBuilder,
         IBehaviorBuilder,
-        IForwardedEventBuilder<TEvent>
-        where TEvent : Event, new()
+        IForwardedEventBuilder<TEvent>,
+        IInternal
     {
         public Edge Edge;
+
+        private readonly IEnumerable<VertexType> transitiveVertexTypes = new HashSet<VertexType>() {
+            VertexType.Junction,
+            VertexType.Choice,
+        };
 
         BehaviorClass IBehaviorBuilder.BehaviorClass => new BehaviorClass(Constants.StateMachine, Edge.Source.Graph.Name);
 
         int IBehaviorBuilder.BehaviorVersion => Edge.Source.Graph.Version;
 
-        public TransitionBuilder(Edge edge)
+        public IServiceCollection Services { get; }
+
+        public TransitionBuilder(Edge edge, IServiceCollection services)
         {
             Edge = edge;
+            Services = services;
         }
 
         public ITransitionBuilder<TEvent> AddGuard(Func<ITransitionContext<TEvent>, Task<bool>> guardAsync)
@@ -43,6 +56,11 @@ namespace Stateflows.StateMachines.Registration.Builders
 
             Edge.Guards.Actions.Add(async c =>
                 {
+                    if (transitiveVertexTypes.Contains(Edge.Source.Type))
+                    {
+                        c.SetEvent(new Completion().ToEventHolder());
+                    }
+
                     var context = new GuardContext<TEvent>(c, Edge);
                     var result = false;
                     try
@@ -63,8 +81,15 @@ namespace Stateflows.StateMachines.Registration.Builders
                             }
                             else
                             {
-                                throw new ExecutionException(e);
+                                throw new BehaviorExecutionException(e);
                             }
+                        }
+                    }
+                    finally
+                    {
+                        if (transitiveVertexTypes.Contains(Edge.Source.Type))
+                        {
+                            c.ClearEvent();
                         }
                     }
 
@@ -83,6 +108,11 @@ namespace Stateflows.StateMachines.Registration.Builders
 
             Edge.Effects.Actions.Add(async c =>
                 {
+                    if (transitiveVertexTypes.Contains(Edge.Source.Type))
+                    {
+                        c.SetEvent(new Completion().ToEventHolder());
+                    }
+
                     var context = new TransitionContext<TEvent>(c, Edge);
                     try
                     {
@@ -102,8 +132,15 @@ namespace Stateflows.StateMachines.Registration.Builders
                             }
                             else
                             {
-                                throw new ExecutionException(e);
+                                throw new BehaviorExecutionException(e);
                             }
+                        }
+                    }
+                    finally
+                    {
+                        if (transitiveVertexTypes.Contains(Edge.Source.Type))
+                        {
+                            c.ClearEvent();
                         }
                     }
                 }
@@ -124,14 +161,14 @@ namespace Stateflows.StateMachines.Registration.Builders
         IElseInternalTransitionBuilder<TEvent> IEffect<TEvent, IElseInternalTransitionBuilder<TEvent>>.AddEffect(Func<ITransitionContext<TEvent>, Task> effectAsync)
             => AddEffect(effectAsync) as IElseInternalTransitionBuilder<TEvent>;
 
-        IDefaultTransitionBuilder IEffect<CompletionEvent, IDefaultTransitionBuilder>.AddEffect(Func<ITransitionContext<CompletionEvent>, Task> effectAsync)
-            => AddEffect(c => effectAsync(c as ITransitionContext<CompletionEvent>)) as IDefaultTransitionBuilder;
+        IDefaultTransitionBuilder IDefaultEffect<IDefaultTransitionBuilder>.AddEffect(Func<ITransitionContext<Completion>, Task> effectAsync)
+            => AddEffect(c => effectAsync(c as ITransitionContext<Completion>)) as IDefaultTransitionBuilder;
 
-        IDefaultTransitionBuilder IGuard<CompletionEvent, IDefaultTransitionBuilder>.AddGuard(Func<ITransitionContext<CompletionEvent>, Task<bool>> guardAsync)
-            => AddGuard(c => guardAsync(c as ITransitionContext<CompletionEvent>)) as IDefaultTransitionBuilder;
+        IDefaultTransitionBuilder IDefaultGuard<IDefaultTransitionBuilder>.AddGuard(Func<ITransitionContext<Completion>, Task<bool>> guardAsync)
+            => AddGuard(c => guardAsync(c as ITransitionContext<Completion>)) as IDefaultTransitionBuilder;
 
-        IElseDefaultTransitionBuilder IEffect<CompletionEvent, IElseDefaultTransitionBuilder>.AddEffect(Func<ITransitionContext<CompletionEvent>, Task> effectAsync)
-            => AddEffect(c => effectAsync(c as ITransitionContext<CompletionEvent>)) as IElseDefaultTransitionBuilder;
+        IElseDefaultTransitionBuilder IDefaultEffect<IElseDefaultTransitionBuilder>.AddEffect(Func<ITransitionContext<Completion>, Task> effectAsync)
+            => AddEffect(c => effectAsync(c as ITransitionContext<Completion>)) as IElseDefaultTransitionBuilder;
 
         IForwardedEventBuilder<TEvent> IGuard<TEvent, IForwardedEventBuilder<TEvent>>.AddGuard(Func<ITransitionContext<TEvent>, Task<bool>> guardAsync)
             => AddGuard(guardAsync) as IForwardedEventBuilder<TEvent>;

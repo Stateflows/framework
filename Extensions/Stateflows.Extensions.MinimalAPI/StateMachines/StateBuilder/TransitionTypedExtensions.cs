@@ -3,7 +3,7 @@ using Stateflows.Common;
 using Stateflows.StateMachines.Extensions;
 using Stateflows.StateMachines.Registration.Interfaces;
 
-namespace Stateflows.StateMachines.Typed
+namespace Stateflows.StateMachines
 {
     public static class TransitionTypedExtensions
     {

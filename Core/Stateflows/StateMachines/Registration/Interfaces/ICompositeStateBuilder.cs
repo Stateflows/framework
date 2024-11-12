@@ -8,7 +8,6 @@ namespace Stateflows.StateMachines.Registration.Interfaces
         ICompositeStateEvents<IInitializedCompositeStateBuilder>,
         IStateTransitions<IInitializedCompositeStateBuilder>,
         IStateMachine<IInitializedCompositeStateBuilder>,
-        //IStateDoActivity<IInitializedCompositeStateBuilder>,
         IStateMachineFinal<IFinalizedCompositeStateBuilder>
     { }
 
@@ -17,7 +16,6 @@ namespace Stateflows.StateMachines.Registration.Interfaces
         IStateUtils<IFinalizedCompositeStateBuilder>,
         ICompositeStateEvents<IFinalizedCompositeStateBuilder>,
         IStateTransitions<IFinalizedCompositeStateBuilder>
-        //IStateDoActivity<IFinalizedCompositeStateBuilder>
     { }
 
     public interface ICompositeStateBuilder :
@@ -25,28 +23,25 @@ namespace Stateflows.StateMachines.Registration.Interfaces
         IStateUtils<ICompositeStateBuilder>,
         ICompositeStateEvents<ICompositeStateBuilder>,
         IStateTransitions<ICompositeStateBuilder>,
-        //IStateDoActivity<ICompositeStateBuilder>,
         IStateMachineInitial<IInitializedCompositeStateBuilder>
     { }
 
-    public interface ITypedInitializedCompositeStateBuilder :
-        IStateUtils<ITypedInitializedCompositeStateBuilder>,
-        IStateTransitions<ITypedInitializedCompositeStateBuilder>,
-        IStateMachine<ITypedInitializedCompositeStateBuilder>,
-        //IStateDoActivity<ITypedInitializedCompositeStateBuilder>,
-        IStateMachineFinal<ITypedFinalizedCompositeStateBuilder>
+    public interface IFinalizedOverridenCompositeStateBuilder :
+        IStateEvents<IFinalizedOverridenCompositeStateBuilder>,
+        IStateUtils<IFinalizedOverridenCompositeStateBuilder>,
+        ICompositeStateEvents<IFinalizedOverridenCompositeStateBuilder>,
+        IStateTransitions<IFinalizedOverridenCompositeStateBuilder>,
+        IStateTransitionsOverrides<IFinalizedOverridenCompositeStateBuilder>
     { }
 
-    public interface ITypedFinalizedCompositeStateBuilder :
-        IStateUtils<ITypedFinalizedCompositeStateBuilder>,
-        IStateTransitions<ITypedFinalizedCompositeStateBuilder>
-        //IStateDoActivity<ITypedFinalizedCompositeStateBuilder>
-    { }
-
-    public interface ITypedCompositeStateBuilder :
-        IStateUtils<ITypedCompositeStateBuilder>,
-        IStateTransitions<ITypedCompositeStateBuilder>,
-        //IStateDoActivity<ITypedCompositeStateBuilder>,
-        IStateMachineInitial<ITypedInitializedCompositeStateBuilder>
+    public interface IOverridenCompositeStateBuilder :
+        IStateEvents<IOverridenCompositeStateBuilder>,
+        IStateUtils<IOverridenCompositeStateBuilder>,
+        ICompositeStateEvents<IOverridenCompositeStateBuilder>,
+        IStateTransitions<IOverridenCompositeStateBuilder>,
+        IStateTransitionsOverrides<IOverridenCompositeStateBuilder>,
+        IStateMachine<IOverridenCompositeStateBuilder>,
+        IStateMachineOverrides<IOverridenCompositeStateBuilder>,
+        IStateMachineFinal<IFinalizedOverridenCompositeStateBuilder>
     { }
 }

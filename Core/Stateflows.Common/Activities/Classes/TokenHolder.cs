@@ -16,24 +16,32 @@ namespace Stateflows.Activities
         public object BoxedPayload { get; }
 
         protected abstract object GetBoxedPayload();
+
+        [JsonIgnore]
+        public Type PayloadType => GetPayloadType();
+
+        protected abstract Type GetPayloadType();
     }
 
-    public class TokenHolder<T> : TokenHolder
+    public class TokenHolder<TToken> : TokenHolder
     {
         public TokenHolder()
         {
             Payload = default;
         }
 
-        public override string Name => name ??= typeof(T).GetReadableName();
+        public override string Name => name ??= typeof(TToken).GetReadableName();
 
-        public T Payload { get; set; }
+        public TToken Payload { get; set; }
 
         protected override object GetBoxedPayload()
             => Payload;
 
+        protected override Type GetPayloadType()
+            => typeof(TToken);
+
         public override bool Equals(object obj)
-            => obj is TokenHolder token && token.Id == Id;
+            => obj is TokenHolder holder && holder.Id == Id;
 
         public override int GetHashCode()
             => Id.GetHashCode();

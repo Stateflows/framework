@@ -1,6 +1,8 @@
 ﻿using System;
+using System.Linq;
 using System.Diagnostics;
 using System.Threading.Tasks;
+using System.Collections.Generic;
 using Stateflows.Common.Engine;
 
 namespace Stateflows.Common.Locator
@@ -19,55 +21,54 @@ namespace Stateflows.Common.Locator
             Interceptor = interceptor;
         }
 
-        public async Task<SendResult> SendAsync<TEvent>(TEvent @event)
-            where TEvent : Event, new()
+        public async Task<SendResult> SendAsync<TEvent>(TEvent @event, IEnumerable<EventHeader> headers = null)
         {
             SendResult result = null;
-
-            if (await Interceptor.BeforeDispatchEventAsync(@event))
+            var eventHolder = new EventHolder<TEvent>()
             {
-                result = await Behavior.SendAsync(@event);
+                Payload = @event,
+                Headers = headers?.ToList() ?? new List<EventHeader>()
+            };
 
-                await Interceptor.AfterDispatchEventAsync(@event);
+            if (await Interceptor.BeforeDispatchEventAsync(eventHolder))
+            {
+                result = await Behavior.SendAsync(eventHolder.Payload, eventHolder.Headers);
+
+                await Interceptor.AfterDispatchEventAsync(eventHolder);
             }
             else
             {
                 Trace.WriteLine($"⦗→s⦘ Client interceptor prevented Event dispatch.");
             }
 
-            result ??= new SendResult(@event, EventStatus.Undelivered);
+            result ??= new SendResult(eventHolder, EventStatus.Undelivered);
 
             return result;
         }
 
-        public async Task<RequestResult<TResponse>> RequestAsync<TResponse>(Request<TResponse> request)
-            where TResponse : Response, new()
+        public async Task<RequestResult<TResponseEvent>> RequestAsync<TResponseEvent>(IRequest<TResponseEvent> request, IEnumerable<EventHeader> headers = null)
         {
-            RequestResult<TResponse> result = null;
+            RequestResult<TResponseEvent> result = null;
+            var eventHolder = request.ToTypedEventHolder(headers);
 
-            if (await Interceptor.BeforeDispatchEventAsync(@request))
+            if (await Interceptor.BeforeDispatchEventAsync(eventHolder))
             {
-                result = await Behavior.RequestAsync(@request);
+                result = await Behavior.RequestAsync(eventHolder.BoxedPayload as IRequest<TResponseEvent>, eventHolder.Headers);
 
-                await Interceptor.AfterDispatchEventAsync(@request);
+                await Interceptor.AfterDispatchEventAsync(eventHolder);
             }
             else
             {
                 Trace.WriteLine($"⦗→s⦘ Client interceptor prevented Request dispatch.");
             }
 
-            result ??= new RequestResult<TResponse>(request, EventStatus.Undelivered);
+            result ??= new RequestResult<TResponseEvent>(eventHolder, EventStatus.Undelivered);
 
             return result;
         }
 
-        public Task WatchAsync<TNotification>(Action<TNotification> handler)
-            where TNotification : Notification, new()
-            => Behavior.WatchAsync<TNotification>(handler);
-
-        public Task UnwatchAsync<TNotification>()
-            where TNotification : Notification, new()
-            => Behavior.UnwatchAsync<TNotification>();
+        public Task<IWatcher> WatchAsync<TNotificationEvent>(Action<TNotificationEvent> handler)
+            => Behavior.WatchAsync(handler);
 
         public void Dispose()
         {

@@ -1,11 +1,11 @@
-﻿using System.Diagnostics;
+using System.Diagnostics;
 using Stateflows.Common;
 using Stateflows.Common.Extensions;
 using Stateflows.StateMachines.Extensions;
 using Stateflows.StateMachines.Registration.Interfaces;
 using Stateflows.StateMachines.Registration.Interfaces.Internal;
 
-namespace Stateflows.StateMachines.Typed
+namespace Stateflows.StateMachines
 {
     public static class BehaviorStateBuilderTransitionTypedExtensions
     {
@@ -46,7 +46,6 @@ namespace Stateflows.StateMachines.Typed
         /// </typeparam>
         [DebuggerHidden]
         public static IBehaviorStateBuilder AddTransition<TEvent, TTransition, TTargetState>(this IBehaviorStateBuilder builder)
-            where TEvent : Event, new()
             where TTransition : class, ITransition<TEvent>
             where TTargetState : class, IVertex
             => AddTransition<TEvent, TTransition>(builder, State<TTargetState>.Name);
@@ -79,7 +78,6 @@ namespace Stateflows.StateMachines.Typed
         /// <param name="targetStateName">Target state name</param>
         [DebuggerHidden]
         public static IBehaviorStateBuilder AddTransition<TEvent, TTransition>(this IBehaviorStateBuilder builder, string targetStateName)
-            where TEvent : Event, new()
             where TTransition : class, ITransition<TEvent>
         {
             (builder as IInternal).Services.AddServiceType<TTransition>();
@@ -122,7 +120,6 @@ namespace Stateflows.StateMachines.Typed
         /// <param name="transitionBuildAction">Transition build action</param>
         [DebuggerHidden]
         public static IBehaviorStateBuilder AddTransition<TEvent, TTargetState>(this IBehaviorStateBuilder builder, TransitionBuildAction<TEvent> transitionBuildAction = null)
-            where TEvent : Event, new()
             where TTargetState : class, IVertex
             => builder.AddTransition(State<TTargetState>.Name, transitionBuildAction);
     }

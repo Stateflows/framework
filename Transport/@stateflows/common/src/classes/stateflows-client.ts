@@ -2,8 +2,6 @@ import { IBehaviorLocator } from "../interfaces/behavior.locator";
 import { IStateMachineLocator } from "../interfaces/state-machine.locator";
 import { BehaviorLocator } from "../locators/behavior.locator";
 import { StateMachineLocator } from "../locators/state-machine.locator";
-import { BehaviorId } from "../ids/behavior.id";
-import { BehaviorClass } from "../ids/behavior.class";
 import { IActivityLocator } from "../interfaces/activity.locator";
 import { ActivityLocator } from "../locators/activity.locator";
 import { IStateflowsClientTransportFactory } from "../interfaces/stateflows-client-transport-factory";

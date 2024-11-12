@@ -13,29 +13,27 @@ namespace Stateflows.Activities.Models
 {
     internal class Node : Element
     {
-        private string identifier = null;
-        public override string Identifier
-            => identifier ??= !(Parent is null)
-                ? $"{Type}:{Parent.Name}:{Name}"
-                : $"{Type}:{Name}";
-
+        public override string Identifier { get; set; }
         public int Level { get; set; }
         public Graph Graph { get; set; }
         public Node Parent { get; set; }
         public string Name { get; set; }
         public NodeType Type { get; set; }
         public NodeOptions Options { get; set; } = NodeOptions.ActionDefault;
+
         public Type ExceptionType { get; set; }
+
         public Type EventType { get; set; }
+
+        public IEnumerable<Type> ActualEventTypes { get; set; }
+
         public int ChunkSize { get; set; }
         public bool Anchored { get; set; } = true;
 
-        private Logic<ActivityActionAsync> action = null;
-        public Logic<ActivityActionAsync> Action
-            => action ??= new Logic<ActivityActionAsync>()
-                {
-                    Name = Constants.Action
-                };
+        public Logic<ActivityActionAsync> Action { get; } =  new Logic<ActivityActionAsync>()
+        {
+            Name = Constants.Action
+        };
 
         public List<Edge> Edges { get; set; } = new List<Edge>();
         public List<Edge> IncomingEdges { get; set; } = new List<Edge>();
@@ -155,7 +153,7 @@ namespace Stateflows.Activities.Models
         private IEnumerable<Node> danglingTimeEventActionNodes = null;
         public IEnumerable<Node> DanglingTimeEventActionNodes
             => danglingTimeEventActionNodes ??= AcceptEventActionNodes
-                .Where(n => !n.IncomingEdges.Any() && n.EventType.IsSubclassOf(typeof(TimeEvent)));
+                .Where(n => !n.IncomingEdges.Any() && n.ActualEventTypes.Any(type => type.IsSubclassOf(typeof(TimeEvent))));
 
         private IEnumerable<Node> exceptionHandlers = null;
         public IEnumerable<Node> ExceptionHandlers

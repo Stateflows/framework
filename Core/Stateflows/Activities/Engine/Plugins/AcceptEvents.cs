@@ -1,16 +1,16 @@
 ﻿using System;
 using System.Linq;
+using System.Diagnostics;
 using System.Threading.Tasks;
 using System.Collections.Generic;
 using Stateflows.Common;
 using Stateflows.Activities.Models;
 using Stateflows.Activities.Context.Classes;
 using Stateflows.Activities.Context.Interfaces;
-using System.Diagnostics;
 
 namespace Stateflows.Activities.Engine
 {
-    internal class AcceptEvents : IActivityPlugin
+    internal class AcceptEvents : ActivityPlugin
     {
         private RootContext Context { get; set; }
 
@@ -21,11 +21,19 @@ namespace Stateflows.Activities.Engine
                 return;
             }
 
-            var timeEvent = Activator.CreateInstance(node.EventType) as TimeEvent;
-            timeEvent.SetTriggerTime(DateTime.Now);
-            timeEvent.ConsumerSignature = node.Identifier;
-            Context.Context.PendingTimeEvents.Add(timeEvent.Id, timeEvent);
-            Context.NodeTimeEvents[node.Identifier] = timeEvent.Id;
+            foreach (var eventType in node.ActualEventTypes)
+            {
+                if (!eventType.IsSubclassOf(typeof(TimeEvent)))
+                {
+                    continue;
+                }
+
+                var timeEvent = Activator.CreateInstance(eventType) as TimeEvent;
+                timeEvent.SetTriggerTime(DateTime.Now);
+                timeEvent.ConsumerSignature = node.Identifier;
+                Context.Context.PendingTimeEvents.Add(timeEvent.Id, timeEvent);
+                Context.NodeTimeEvents[node.Identifier] = timeEvent.Id;
+            }
         }
 
         private void ClearTimeEvent(Node node)
@@ -44,8 +52,11 @@ namespace Stateflows.Activities.Engine
                 return;
             }
 
-            var startupEvent = Activator.CreateInstance(node.EventType) as Startup;
-            startupEvent.ConsumerSignature = node.Identifier;
+            var startupEvent = new Startup()
+            {
+                ConsumerSignature = node.Identifier
+            };
+
             Context.Context.PendingStartupEvents.Add(startupEvent.Id, startupEvent);
             Context.NodeStartupEvents[node.Identifier] = startupEvent.Id;
         }
@@ -72,12 +83,12 @@ namespace Stateflows.Activities.Engine
 
                     Context.ActiveNodes.Add(node.Identifier, threadId);
 
-                    if (node.EventType.IsSubclassOf(typeof(TimeEvent)))
+                    if (node.ActualEventTypes.Any(type => type.IsSubclassOf(typeof(TimeEvent))))
                     {
                         RegisterTimeEvent(node);
                     }
 
-                    if (node.EventType == typeof(Startup))
+                    if (node.ActualEventTypes.Any(type => type == typeof(TimeEvent)))
                     {
                         RegisterStartupEvent(node);
                     }
@@ -96,12 +107,12 @@ namespace Stateflows.Activities.Engine
 
                 Context.ActiveNodes.Add(node.Identifier, threadId);
 
-                if (node.EventType.IsSubclassOf(typeof(TimeEvent)))
+                if (node.ActualEventTypes.Any(type => type.IsSubclassOf(typeof(TimeEvent))))
                 {
                     RegisterTimeEvent(node);
                 }
 
-                if (node.EventType == typeof(Startup))
+                if (node.ActualEventTypes.Any(type => type == typeof(TimeEvent)))
                 {
                     RegisterStartupEvent(node);
                 }
@@ -135,29 +146,29 @@ namespace Stateflows.Activities.Engine
             }
         }
 
-        Task IActivityObserver.AfterActivityInitializeAsync(IActivityInitializationContext context, bool initialized)
+        public override Task AfterActivityInitializeAsync(IActivityInitializationContext context, bool initialized)
             => Task.CompletedTask;
 
-        Task IActivityObserver.AfterActivityFinalizeAsync(IActivityFinalizationContext context)
+        public override Task AfterActivityFinalizeAsync(IActivityFinalizationContext context)
         {
             UnregisterAcceptEventNodes((context as IRootContext).Context.Executor.Graph.DanglingTimeEventActionNodes);
 
             return Task.CompletedTask;
         }
 
-        Task IActivityObserver.AfterNodeFinalizeAsync(IActivityNodeContext context)
+        public override Task AfterNodeFinalizeAsync(IActivityNodeContext context)
         {
             UnregisterAcceptEventNodes((context as ActionContext).Node.DanglingTimeEventActionNodes);
 
             return Task.CompletedTask;
         }
 
-        Task IActivityObserver.AfterNodeInitializeAsync(IActivityNodeContext context)
+        public override Task AfterNodeInitializeAsync(IActivityNodeContext context)
             => Task.CompletedTask;
 
-        Task IActivityInterceptor.AfterProcessEventAsync(IEventContext<Event> context)
+        public override Task AfterProcessEventAsync<TEvent>(IEventContext<TEvent> context)
         {
-            Trace.WriteLine($"⦗→s⦘ Activity '{context.Activity.Id.Name}:{context.Activity.Id.Instance}': processed event '{context.Event.Name}'");
+            Trace.WriteLine($"⦗→s⦘ Activity '{context.Activity.Id.Name}:{context.Activity.Id.Instance}': processed event '{Event.GetName(context.Event.GetType())}'");
 
             Context = (context as BaseContext).Context;
 
@@ -178,7 +189,7 @@ namespace Stateflows.Activities.Engine
             return Task.CompletedTask;
         }
 
-        Task IActivityObserver.BeforeActivityInitializeAsync(IActivityInitializationContext context)
+        public override Task BeforeActivityInitializeAsync(IActivityInitializationContext context)
         {
             RegisterAcceptEventNodes(
                 (context as IRootContext).Context.Executor.Graph.AcceptEventActionNodes.Select(node => (node, Guid.NewGuid()))
@@ -187,7 +198,7 @@ namespace Stateflows.Activities.Engine
             return Task.CompletedTask;
         }
 
-        Task IActivityObserver.BeforeNodeInitializeAsync(IActivityNodeContext context)
+        public override Task BeforeNodeInitializeAsync(IActivityNodeContext context)
         {
             RegisterAcceptEventNodes(
                 (context as ActionContext).Node.DanglingTimeEventActionNodes.Select(node => (node, Guid.NewGuid()))
@@ -196,10 +207,10 @@ namespace Stateflows.Activities.Engine
             return Task.CompletedTask;
         }
 
-        Task IActivityObserver.BeforeNodeFinalizeAsync(IActivityNodeContext context)
+        public override Task BeforeNodeFinalizeAsync(IActivityNodeContext context)
             => Task.CompletedTask;
 
-        Task<bool> IActivityInterceptor.BeforeProcessEventAsync(IEventContext<Event> context)
+        public override Task<bool> BeforeProcessEventAsync<TEvent>(IEventContext<TEvent> context)
         {
             var result = true;
 
@@ -217,7 +228,7 @@ namespace Stateflows.Activities.Engine
 
             if (result)
             {
-                Trace.WriteLine($"⦗→s⦘ Activity '{context.Activity.Id.Name}:{context.Activity.Id.Instance}': received event '{context.Event.Name}', trying to process it");
+                Trace.WriteLine($"⦗→s⦘ Activity '{context.Activity.Id.Name}:{context.Activity.Id.Instance}': received event '{Event.GetName(context.Event.GetType())}', trying to process it");
             }
 
             return Task.FromResult(result);

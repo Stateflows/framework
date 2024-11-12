@@ -5,7 +5,6 @@ using System.Threading.Tasks;
 using System.Collections.Generic;
 using Microsoft.Extensions.Hosting;
 using Stateflows.Common.Interfaces;
-using System.Diagnostics;
 
 namespace Stateflows.Common.Subscription
 {
@@ -13,28 +12,38 @@ namespace Stateflows.Common.Subscription
     {
         private readonly CancellationTokenSource CancellationTokenSource = new CancellationTokenSource();
 
-        private readonly Dictionary<BehaviorId, List<Notification>> notifications = new Dictionary<BehaviorId, List<Notification>>();
+        private readonly Dictionary<BehaviorId, List<EventHolder>> notifications = new Dictionary<BehaviorId, List<EventHolder>>();
 
-        public Dictionary<BehaviorId, List<Notification>> Notifications
+        public Dictionary<BehaviorId, List<EventHolder>> Notifications
             => notifications;
 
-        public event Action<Notification> OnPublish;
+        public event Action<EventHolder> OnPublish;
 
-        public Task PublishAsync<TNotification>(TNotification notification)
-            where TNotification : Notification, new()
+        public Task PublishAsync(EventHolder eventHolder)
+            => PublishRangeAsync(new EventHolder[] { eventHolder });
+
+        public Task PublishRangeAsync(IEnumerable<EventHolder> eventHolders)
         {
+            var holdersBySenderIds = eventHolders
+                .Where(h => h.SenderId != null)
+                .GroupBy(h => (BehaviorId)h.SenderId);
+
             lock (Notifications)
             {
-                if (!Notifications.TryGetValue(notification.SenderId, out var behaviorNotifications))
+                foreach (var group in holdersBySenderIds)
                 {
-                    behaviorNotifications = new List<Notification>();
-                    Notifications.Add(notification.SenderId, behaviorNotifications);
-                }
+                    if (!Notifications.TryGetValue(group.Key, out var behaviorNotifications))
+                    {
+                        behaviorNotifications = new List<EventHolder>();
+                        Notifications.Add(group.Key, behaviorNotifications);
+                    }
 
-                behaviorNotifications.Add(notification);
+                    behaviorNotifications.AddRange(group);
+                }
             }
 
-            _ = Task.Run(() => OnPublish.Invoke(notification));
+            var tasks = eventHolders.Select(h => Task.Run(() => OnPublish.Invoke(h)));
+            _ = Task.WhenAll(tasks);
 
             return Task.CompletedTask;
         }

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Linq;
+using System.Reflection;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.DependencyInjection;
@@ -22,6 +23,8 @@ namespace Stateflows.Common.Scheduler
         private BehaviorId HandlingLockId;
 
         private readonly IServiceProvider Services;
+
+        private readonly MethodInfo SendAsyncMethod = typeof(IBehavior).GetMethod(nameof(IBehavior.SendAsync));
 
         public ScheduleExecutor(
             IServiceProvider services,
@@ -57,7 +60,9 @@ namespace Stateflows.Common.Scheduler
                         {
                             foreach (var timeEvent in timeEvents)
                             {
-                                _ = behavior.SendAsync(timeEvent);
+                                _ = SendAsyncMethod
+                                    .MakeGenericMethod(timeEvent.GetType())
+                                    .Invoke(behavior, new object[] { timeEvent });
                             }
                         }
                     }

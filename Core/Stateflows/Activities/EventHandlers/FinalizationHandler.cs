@@ -8,18 +8,17 @@ namespace Stateflows.Activities.EventHandlers
 {
     internal class FinalizationHandler : IActivityEventHandler
     {
-        public Type EventType => typeof(FinalizationRequest);
+        public Type EventType => typeof(Finalize);
 
-        public async Task<EventStatus> TryHandleEventAsync<TEvent>(IEventInspectionContext<TEvent> context)
-            where TEvent : Event, new()
+        public async Task<EventStatus> TryHandleEventAsync<TEvent>(IEventInspectionContext<TEvent> context)
         {
-            if (context.Event is FinalizationRequest request)
+            if (context.Event is Finalize request)
             {
                 var finalized = await context.Activity.GetExecutor().CancelAsync();
 
-                request.Respond(new FinalizationResponse() { FinalizationSuccessful = finalized });
-
-                return EventStatus.Consumed;
+                return finalized
+                    ? EventStatus.Consumed
+                    : EventStatus.Rejected;
             }
 
             return EventStatus.NotConsumed;

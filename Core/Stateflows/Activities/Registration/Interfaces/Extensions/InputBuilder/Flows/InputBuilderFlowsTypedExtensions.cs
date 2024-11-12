@@ -1,7 +1,7 @@
 ﻿using System.Diagnostics;
 using Stateflows.Activities.Registration.Interfaces;
 
-namespace Stateflows.Activities.Typed
+namespace Stateflows.Activities
 {
     public static class InputBuilderFlowsTypedExtensions
     {
@@ -11,25 +11,25 @@ namespace Stateflows.Activities.Typed
             => builder.AddFlow<TToken>(ActivityNode<TTargetNode>.Name, buildAction);
 
         [DebuggerHidden]
-        public static IInputBuilder AddFlow<TToken, TFlow>(this IInputBuilder builder, string targetNodeName)
+        public static IInputBuilder AddFlow<TToken, TFlow>(this IInputBuilder builder, string targetNodeName, ObjectFlowBuildAction<TToken> buildAction = null)
             where TFlow : class, IFlow<TToken>
-            => (builder as IActionBuilder).AddFlow<TToken, TFlow>(targetNodeName) as IInputBuilder;
+            => (builder as IActionBuilder).AddFlow<TToken, TFlow>(targetNodeName, buildAction) as IInputBuilder;
 
         [DebuggerHidden]
-        public static IInputBuilder AddFlow<TToken, TFlow, TTargetNode>(this IInputBuilder builder)
+        public static IInputBuilder AddFlow<TToken, TFlow, TTargetNode>(this IInputBuilder builder, ObjectFlowBuildAction<TToken> buildAction = null)
             where TFlow : class, IFlow<TToken>
             where TTargetNode : class, IActivityNode
-            => builder.AddFlow<TToken, TFlow>(ActivityNode<TTargetNode>.Name);
+            => builder.AddFlow<TToken, TFlow>(ActivityNode<TTargetNode>.Name, buildAction);
 
         [DebuggerHidden]
-        public static IInputBuilder AddFlow<TToken, TTransformedToken, TFlow>(this IInputBuilder builder, string targetNodeName)
+        public static IInputBuilder AddFlow<TToken, TTransformedToken, TFlow>(this IInputBuilder builder, string targetNodeName, ObjectFlowBuildAction<TTransformedToken> buildAction = null)
             where TFlow : class, IFlowTransformation<TToken, TTransformedToken>
-            => (builder as IActionBuilder).AddFlow<TToken, TTransformedToken, TFlow>(targetNodeName) as IInputBuilder;
+            => (builder as IActionBuilder).AddFlow<TToken, TTransformedToken, TFlow>(targetNodeName, buildAction) as IInputBuilder;
 
         [DebuggerHidden]
-        public static IInputBuilder AddFlow<TToken, TTransformedToken, TFlow, TTargetNode>(this IInputBuilder builder)
+        public static IInputBuilder AddFlow<TToken, TTransformedToken, TFlow, TTargetNode>(this IInputBuilder builder, ObjectFlowBuildAction<TTransformedToken> buildAction = null)
             where TFlow : class, IFlowTransformation<TToken, TTransformedToken>
             where TTargetNode : class, IActivityNode
-            => builder.AddFlow<TToken, TTransformedToken, TFlow>(ActivityNode<TTargetNode>.Name);
+            => builder.AddFlow<TToken, TTransformedToken, TFlow>(ActivityNode<TTargetNode>.Name, buildAction);
     }
 }

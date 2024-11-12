@@ -15,26 +15,23 @@ namespace Stateflows.StateMachines
     { }
 
     public interface IStateMachineBuilder :
+        IStateMachineOverride<IOverridenStateMachineBuilder>,
         IStateMachineInitial<IInitializedStateMachineBuilder>,
         IStateMachineUtils<IStateMachineBuilder>,
         IStateMachineEvents<IStateMachineBuilder>
     { }
-
-    //public interface ITypedInitializedStateMachineBuilder :
-    //    IStateMachine<ITypedInitializedStateMachineBuilder>,
-    //    IStateMachineFinal<ITypedFinalizedStateMachineBuilder>,
-    //    IStateMachineUtils<ITypedInitializedStateMachineBuilder>,
-    //    IStateMachineEvents<ITypedStateMachineBuilder>
-    //{ }
-
-    //public interface ITypedFinalizedStateMachineBuilder :
-    //    IStateMachineUtils<ITypedFinalizedStateMachineBuilder>,
-    //    IStateMachineEvents<ITypedStateMachineBuilder>
-    //{ }
-
-    //public interface ITypedStateMachineBuilder :
-    //    IStateMachineInitial<ITypedInitializedStateMachineBuilder>,
-    //    IStateMachineUtils<ITypedStateMachineBuilder>,
-    //    IStateMachineEvents<ITypedStateMachineBuilder>
-    //{ }
+    
+    public interface IOverridenStateMachineBuilder :
+        IStateMachine<IOverridenStateMachineBuilder>,
+        IStateMachineFinal<IFinalizedOverridenStateMachineBuilder>,
+        IStateMachineOverrides<IOverridenStateMachineBuilder>,
+        IStateMachineUtils<IOverridenStateMachineBuilder>,
+        IStateMachineEvents<IOverridenStateMachineBuilder>
+    { }
+    
+    public interface IFinalizedOverridenStateMachineBuilder :
+        IStateMachine<IFinalizedOverridenStateMachineBuilder>,
+        IStateMachineUtils<IFinalizedOverridenStateMachineBuilder>,
+        IStateMachineEvents<IFinalizedOverridenStateMachineBuilder>
+    { }
 }

@@ -7,7 +7,7 @@ using Stateflows.Common;
 using Stateflows.Common.Utilities;
 using Stateflows.Common.Interfaces;
 using Stateflows.Common.Extensions;
-using StateflowsEvent = Stateflows.Common.Event;
+using StateflowsEvent = Stateflows.Common.EventHolder;
 using Stateflows.Transport.MassTransit.MassTransit.Messages;
 
 namespace Stateflows.Transport.MassTransit.MassTransit.Consumers

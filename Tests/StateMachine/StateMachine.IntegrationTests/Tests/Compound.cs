@@ -42,14 +42,10 @@ namespace StateMachine.IntegrationTests.Tests
             {
                 //await sm.InitializeAsync();
 
-                var request = new CompoundRequest()
-                {
-                    Events = new List<Event>()
-                    {
-                        new SomeEvent(),
-                        new OtherEvent(),
-                    }
-                };
+                var request = new CompoundRequest();
+                request
+                    .Add(new SomeEvent())
+                    .Add(new OtherEvent());
 
                 status = (await sm.SendAsync(request)).Status;
 
@@ -71,13 +67,8 @@ namespace StateMachine.IntegrationTests.Tests
                 //await sm.InitializeAsync();
 
                 var request = new CompoundRequest()
-                {
-                    Events = new List<Event>()
-                    {
-                        new OtherEvent(),
-                        new SomeEvent(),
-                    }
-                };
+                    .Add(new OtherEvent())
+                    .Add(new SomeEvent());
 
                 var result = await sm.SendAsync(request);
                 status = result.Status;
@@ -92,29 +83,22 @@ namespace StateMachine.IntegrationTests.Tests
         public async Task CompoundRequestInvalid()
         {
             var status = EventStatus.Rejected;
-            SendResult? result = null;
+            RequestResult<CompoundResponse>? result = null;
             string currentState = "state1";
 
             if (StateMachineLocator.TryLocateStateMachine(new StateMachineId("simple", "x"), out var sm))
             {
-                //await sm.InitializeAsync();
-
                 var request = new CompoundRequest()
-                {
-                    Events = new List<Event>()
-                    {
-                        new SomeEvent(),
-                        new OtherEvent() { RequiredParameter = "" },
-                    }
-                };
+                    .Add(new SomeEvent())
+                    .Add(new OtherEvent() { RequiredParameter = "" });
 
-                result = await sm.SendAsync(request);
+                result = await sm.RequestAsync(request);
                 status = result.Status;
 
                 currentState = (await sm.GetCurrentStateAsync()).Response.StatesStack.First();
             }
 
-            var response = result?.Event.GetResponse() as CompoundResponse;
+            var response = result?.Response;
 
             Assert.AreEqual(EventStatus.Invalid, status);
             Assert.AreEqual("state1", currentState);

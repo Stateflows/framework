@@ -3,7 +3,7 @@ using StateMachine.IntegrationTests.Utils;
 
 namespace Activity.IntegrationTests.Tests
 {
-    public class ValueInitializationRequest : Event
+    public class ValueInitializationRequest
     {
         public string Value { get; set; } = String.Empty;
     }

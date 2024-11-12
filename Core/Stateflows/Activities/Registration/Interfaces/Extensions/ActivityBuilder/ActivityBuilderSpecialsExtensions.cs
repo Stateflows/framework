@@ -120,17 +120,14 @@ namespace Stateflows.Activities
         #region AddAcceptEventAction
         [DebuggerHidden]
         public static IActivityBuilder AddAcceptEventAction<TEvent>(this IActivityBuilder builder, string actionNodeName, AcceptEventActionBuildAction buildAction)
-            where TEvent : Event, new()
             => builder.AddAcceptEventAction<TEvent>(actionNodeName, c => Task.CompletedTask, buildAction);
 
         [DebuggerHidden]
         public static IActivityBuilder AddAcceptEventAction<TEvent>(this IActivityBuilder builder, AcceptEventActionBuildAction buildAction)
-            where TEvent : Event, new()
             => builder.AddAcceptEventAction<TEvent>(AcceptEventActionNode<TEvent>.Name, c => Task.CompletedTask, buildAction);
 
         [DebuggerHidden]
         public static IActivityBuilder AddAcceptEventAction<TEvent>(this IActivityBuilder builder, AcceptEventActionDelegateAsync<TEvent> actionAsync, AcceptEventActionBuildAction buildAction = null)
-            where TEvent : Event, new()
             => builder.AddAcceptEventAction<TEvent>(AcceptEventActionNode<TEvent>.Name, actionAsync, buildAction);
         #endregion
 

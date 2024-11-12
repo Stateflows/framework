@@ -23,7 +23,7 @@ namespace Stateflows.Activities.Context.Classes
                 .GetActivatedStreams(Node, ThreadId)
                 .SelectMany(stream => stream.Tokens)
                 .OfType<TokenHolder<TToken>>()
-                .FromTokens()
+                .ToTokens()
                 .ToArray();
     }
 }

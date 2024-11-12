@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Threading.Tasks;
+using System.Collections.Generic;
 using Stateflows.Common.Interfaces;
 
 namespace Stateflows.Common
@@ -11,28 +12,40 @@ namespace Stateflows.Common
     {
         BehaviorId Id { get; }
 
-        Task<SendResult> SendAsync<TEvent>(TEvent @event)
-            where TEvent : Event, new();
+        Task<SendResult> SendAsync<TEvent>(TEvent @event, IEnumerable<EventHeader> headers = null);
+        
+        Task<RequestResult<TResponseEvent>> RequestAsync<TResponseEvent>(IRequest<TResponseEvent> request, IEnumerable<EventHeader> headers = null);
 
-        Task<RequestResult<CompoundResponse>> SendCompoundAsync(params Event[] events)
-            => RequestAsync(new CompoundRequest() { Events = events });
+        Task<RequestResult<CompoundResponse>> SendCompoundAsync(Action<ICompound> builderAction, IEnumerable<EventHeader> headers = null)
+        {
+            var compound = new CompoundRequest();
+            builderAction(compound);
+            return RequestAsync(compound, headers);
+        }
 
-        Task<RequestResult<TResponse>> RequestAsync<TResponse>(Request<TResponse> request)
-            where TResponse : Response, new();
+        Task<SendResult> ResetAsync(ResetMode resetMode = ResetMode.Full)
+            => SendAsync(new Reset() { Mode = resetMode });
 
-        Task<RequestResult<FinalizationResponse>> FinalizeAsync()
-            => RequestAsync(new FinalizationRequest());
+        Task<SendResult> FinalizeAsync()
+            => SendAsync(new Finalize());
 
-        Task<RequestResult<ResetResponse>> ResetAsync(ResetMode resetMode = ResetMode.Full)
-            => RequestAsync(new ResetRequest() { Mode = resetMode });
+        Task<RequestResult<BehaviorInfo>> GetStatusAsync()
+            => RequestAsync(new BehaviorInfoRequest());
 
-        Task<RequestResult<BehaviorStatusResponse>> GetStatusAsync()
-            => RequestAsync(new BehaviorStatusRequest());
+        async Task<IWatcher> WatchStatusAsync(Action<BehaviorInfo> handler, bool immediateRequest = true)
+        {
+            var watcher = await WatchAsync(handler);
 
-        Task WatchStatusAsync(Action<BehaviorStatusNotification> handler)
-            => WatchAsync(handler);
+            if (immediateRequest)
+            {
+                var result = await GetStatusAsync();
+                if (result.Status == EventStatus.Consumed)
+                {
+                    _ = Task.Run(() => handler(result.Response));
+                }
+            }
 
-        Task UnwatchStatusAsync()
-            => UnwatchAsync<BehaviorStatusNotification>();
+            return watcher;
+        }
     }
 }

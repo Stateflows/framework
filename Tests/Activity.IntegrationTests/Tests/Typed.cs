@@ -1,10 +1,15 @@
 using Activity.IntegrationTests.Classes.Tokens;
-using Stateflows.Activities.Typed;
+using Stateflows.Activities;
 using Stateflows.Common;
 using StateMachine.IntegrationTests.Utils;
 
 namespace Activity.IntegrationTests.Tests
 {
+    public class Struct : IStructuredActivityNode
+    {
+
+    }
+
     public class TypedAction : IActionNode
     {
         public readonly Input<SomeToken> someTokens;
@@ -74,7 +79,7 @@ namespace Activity.IntegrationTests.Tests
         {
             if (ActivityLocator.TryLocateActivity(new ActivityId("typed", "x"), out var a))
             {
-                await a.ExecuteAsync();
+                await a.SendAsync(new Initialize());
             }
 
             Assert.IsTrue(Executed);

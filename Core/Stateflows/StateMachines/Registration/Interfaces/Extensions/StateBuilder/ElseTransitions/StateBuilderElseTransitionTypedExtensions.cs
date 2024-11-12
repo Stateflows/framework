@@ -1,11 +1,10 @@
-﻿using System.Diagnostics;
-using Stateflows.Common;
+using System.Diagnostics;
 using Stateflows.Common.Extensions;
 using Stateflows.StateMachines.Extensions;
 using Stateflows.StateMachines.Registration.Interfaces;
 using Stateflows.StateMachines.Registration.Interfaces.Internal;
 
-namespace Stateflows.StateMachines.Typed
+namespace Stateflows.StateMachines
 {
     public static class StateBuilderElseTransitionTypedExtensions
     {
@@ -25,6 +24,10 @@ namespace Stateflows.StateMachines.Typed
         /// <term>Target</term>
         /// <description>State that transition is coming into - <b>third type parameter</b>,</description>
         /// </item>
+        /// <item>
+        /// <term>Effect</term>
+        /// <description>Transition effect action can be defined using build action - <b>first parameter</b>.</description>
+        /// </item>
         /// </list>
         /// </summary>
         /// <typeparam name="TEvent">Event class</typeparam>
@@ -39,12 +42,12 @@ namespace Stateflows.StateMachines.Typed
         /// <item><see cref="ICompositeStateFinalization"/></item>
         /// </list>
         /// </typeparam>
+        /// <param name="transitionBuildAction">Transition build action</param>
         [DebuggerHidden]
-        public static IStateBuilder AddElseTransition<TEvent, TElseTransition, TTargetState>(this IStateBuilder builder)
-            where TEvent : Event, new()
+        public static IStateBuilder AddElseTransition<TEvent, TElseTransition, TTargetState>(this IStateBuilder builder, ElseTransitionBuildAction<TEvent> transitionBuildAction = null)
             where TElseTransition : class, ITransitionEffect<TEvent>
             where TTargetState : class, IVertex
-            => AddElseTransition<TEvent, TElseTransition>(builder, State<TTargetState>.Name);
+            => AddElseTransition<TEvent, TElseTransition>(builder, State<TTargetState>.Name, transitionBuildAction);
 
         /// <summary>
         /// Adds else alternative for all <see cref="TEvent"/>-triggered transitions coming from current state.<br/>
@@ -62,21 +65,29 @@ namespace Stateflows.StateMachines.Typed
         /// <term>Target</term>
         /// <description>Name of the state that transition is coming into - <b>first parameter</b>,</description>
         /// </item>
+        /// <item>
+        /// <term>Effect</term>
+        /// <description>Transition effect action can be defined using build action - <b>second parameter</b>.</description>
+        /// </item>
         /// </list>
         /// </summary>
         /// <typeparam name="TEvent">Event class</typeparam>
         /// <typeparam name="TElseTransition">Transition class; must implement <see cref="ITransitionEffect&lt;TEvent&gt;"/> interface</typeparam>
         /// <param name="targetStateName">Target state name</param>
+        /// <param name="transitionBuildAction">Transition build action</param>
         [DebuggerHidden]
-        public static IStateBuilder AddElseTransition<TEvent, TElseTransition>(this IStateBuilder builder, string targetStateName)
-            where TEvent : Event, new()
+        public static IStateBuilder AddElseTransition<TEvent, TElseTransition>(this IStateBuilder builder, string targetStateName, ElseTransitionBuildAction<TEvent> transitionBuildAction = null)
             where TElseTransition : class, ITransitionEffect<TEvent>
         {
             (builder as IInternal).Services.AddServiceType<TElseTransition>();
 
             return builder.AddElseTransition<TEvent>(
                 targetStateName,
-                t => t.AddElseTransitionEvents<TElseTransition, TEvent>()
+                t =>
+                {
+                    t.AddElseTransitionEvents<TElseTransition, TEvent>();
+                    transitionBuildAction?.Invoke(t);
+                }
             );
         }
 
@@ -112,7 +123,6 @@ namespace Stateflows.StateMachines.Typed
         /// <param name="transitionBuildAction">Transition build action</param>
         [DebuggerHidden]
         public static IStateBuilder AddElseTransition<TEvent, TTargetState>(this IStateBuilder builder, ElseTransitionBuildAction<TEvent> transitionBuildAction = null)
-            where TEvent : Event, new()
             where TTargetState : class, IVertex
             => builder.AddElseTransition(State<TTargetState>.Name, transitionBuildAction);
     }

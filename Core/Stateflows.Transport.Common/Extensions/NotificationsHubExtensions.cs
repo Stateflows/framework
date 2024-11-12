@@ -7,7 +7,7 @@ namespace Stateflows.Common.Interfaces
 {
     public static class NotificationsHubExtensions
     {
-        public static Notification[] GetPendingNotifications(this Dictionary<BehaviorId, List<Notification>> notifications, BehaviorId behaviorId, IEnumerable<Watch> watches)
+        public static EventHolder[] GetPendingNotifications(this Dictionary<BehaviorId, List<EventHolder>> notifications, BehaviorId behaviorId, IEnumerable<Watch> watches)
         {
             lock (notifications)
             {
@@ -29,7 +29,7 @@ namespace Stateflows.Common.Interfaces
                             ) ?? false
                         )
                         .ToArray()
-                    : Array.Empty<Notification>();
+                    : Array.Empty<EventHolder>();
 
                 return result;
             }

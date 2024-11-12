@@ -7,6 +7,8 @@ using Stateflows.Activities.Context.Classes;
 using Stateflows.Activities.Registration.Builders;
 using Stateflows.Activities.Registration.Interfaces;
 using Stateflows.Activities.Registration.Interfaces.Base;
+using Stateflows.Common;
+using Newtonsoft.Json.Linq;
 
 namespace Stateflows.Activities.Registration
 {
@@ -73,7 +75,7 @@ namespace Stateflows.Activities.Registration
             Node.Edges.Add(edge);
             Node.Graph.AllEdgesList.Add(edge);
 
-            buildAction?.Invoke(new FlowBuilder<TToken>(edge));
+            buildAction?.Invoke(new FlowBuilder<TToken>(edge, Services));
 
             return this;
         }

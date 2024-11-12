@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Linq;
+using System.Reflection;
 using System.Runtime.Serialization;
 
 namespace Stateflows.Common.Extensions
@@ -8,6 +9,12 @@ namespace Stateflows.Common.Extensions
     {
         public static string GetReadableName(this Type type)
         {
+            var attribute = type.GetCustomAttribute<EventAttribute>(true);
+            if (attribute != null)
+            {
+                return attribute.Name;
+            }
+
             var result = string.Empty;
             if (!type.IsGenericType)
             {
@@ -20,10 +27,22 @@ namespace Stateflows.Common.Extensions
                 result = $"{typeName}<{typeNames}>";
             }
 
-            var standardPrefix = "Stateflows.Activities.";
-            if (result.StartsWith(standardPrefix))
+            var activitiesPrefix = "Stateflows.Activities.";
+            if (result.StartsWith(activitiesPrefix))
             {
-                result = result[standardPrefix.Length..];
+                result = result[activitiesPrefix.Length..];
+            }
+
+            var stateMachinesPrefix = "Stateflows.StateMachines.";
+            if (result.StartsWith(stateMachinesPrefix))
+            {
+                result = result[stateMachinesPrefix.Length..];
+            }
+
+            var commonPrefix = "Stateflows.Common.";
+            if (result.StartsWith(commonPrefix))
+            {
+                result = result[commonPrefix.Length..];
             }
 
             return result;
@@ -68,6 +87,22 @@ namespace Stateflows.Common.Extensions
             }
 
             return null;
+        }
+        public static bool IsImplementerOfRawGeneric(this Type type, Type toCheck)
+        {
+            if (toCheck.GetTypeInfo().IsClass)
+            {
+                return false;
+            }
+
+            return type.GetInterfaces().Any(interfaceType =>
+            {
+                var current = interfaceType.GetTypeInfo().IsGenericType
+                    ? interfaceType.GetGenericTypeDefinition()
+                    : interfaceType;
+
+                return current == toCheck;
+            });
         }
     }
 }

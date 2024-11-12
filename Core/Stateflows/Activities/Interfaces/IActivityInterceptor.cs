@@ -1,22 +1,18 @@
 ﻿using System.Threading.Tasks;
-using Stateflows.Common;
 using Stateflows.Activities.Context.Interfaces;
+using Stateflows.Common;
 
 namespace Stateflows.Activities
 {
     public interface IActivityInterceptor
     {
-        Task AfterHydrateAsync(IActivityActionContext context)
-            => Task.CompletedTask;
+        Task AfterHydrateAsync(IActivityActionContext context);
 
-        Task BeforeDehydrateAsync(IActivityActionContext context)
-            => Task.CompletedTask;
+        Task BeforeDehydrateAsync(IActivityActionContext context);
 
-        Task<bool> BeforeProcessEventAsync(IEventContext<Event> context)
-            => Task.FromResult(true);
+        Task<bool> BeforeProcessEventAsync<TEvent>(IEventContext<TEvent> context);
 
-        Task AfterProcessEventAsync(IEventContext<Event> context)
-            => Task.CompletedTask;
+        Task AfterProcessEventAsync<TEvent>(IEventContext<TEvent> context);
 
     }
 }

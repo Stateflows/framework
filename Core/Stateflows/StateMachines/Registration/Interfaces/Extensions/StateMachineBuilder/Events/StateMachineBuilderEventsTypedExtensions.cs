@@ -4,7 +4,7 @@ using Stateflows.Common.Extensions;
 using Stateflows.StateMachines.Context.Classes;
 using Stateflows.StateMachines.Registration.Interfaces.Internal;
 
-namespace Stateflows.StateMachines.Typed
+namespace Stateflows.StateMachines
 {
     public static class StateMachineBuilderEventsTypedExtensions
     {
@@ -19,7 +19,6 @@ namespace Stateflows.StateMachines.Typed
 
         [DebuggerHidden]
         public static IStateMachineBuilder AddInitializer<TInitializationEvent, TInitializer>(this IStateMachineBuilder builder)
-            where TInitializationEvent : Event, new()
             where TInitializer : class, IInitializer<TInitializationEvent>
         {
             (builder as IInternal).Services.AddServiceType<TInitializer>();

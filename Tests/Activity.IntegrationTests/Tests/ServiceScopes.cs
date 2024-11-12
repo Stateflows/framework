@@ -1,5 +1,6 @@
 using Microsoft.Extensions.DependencyInjection;
-using Stateflows.Activities.Typed;
+using Stateflows.Activities;
+using Stateflows.Common;
 using StateMachine.IntegrationTests.Utils;
 
 namespace Activity.IntegrationTests.Tests
@@ -84,7 +85,7 @@ namespace Activity.IntegrationTests.Tests
         {
             if (ActivityLocator.TryLocateActivity(new ActivityId("scopes", "x"), out var a))
             {
-                await a.ExecuteAsync();
+                await a.SendAsync(new Initialize());
             }
 
             Assert.AreNotEqual(Value1, Value2);

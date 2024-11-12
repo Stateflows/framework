@@ -6,11 +6,10 @@ namespace Stateflows.Common.Interfaces
 {
     public interface INotificationsHub
     {
-        Task PublishAsync<TNotification>(TNotification notification)
-            where TNotification : Notification, new();
+        Task PublishAsync(EventHolder eventHolder);
         
-        event Action<Notification> OnPublish;
+        event Action<EventHolder> OnPublish;
 
-        public Dictionary<BehaviorId, List<Notification>> Notifications { get; }
+        public Dictionary<BehaviorId, List<EventHolder>> Notifications { get; }
     }
 }

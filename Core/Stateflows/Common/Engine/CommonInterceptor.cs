@@ -1,8 +1,8 @@
 ﻿using System.Threading.Tasks;
 using System.Collections.Generic;
+using Microsoft.Extensions.Logging;
 using Stateflows.Common.Extensions;
 using Stateflows.Common.Context.Interfaces;
-using Microsoft.Extensions.Logging;
 
 namespace Stateflows.Common.Engine
 {
@@ -32,21 +32,21 @@ namespace Stateflows.Common.Engine
         public Task AfterHydrateAsync(IBehaviorActionContext context)
             => Interceptors.RunSafe(i => i.AfterHydrateAsync(context), nameof(AfterHydrateAsync), Logger);
 
-        public Task AfterProcessEventAsync(IEventContext<Event> context)
+        public Task AfterProcessEventAsync<TEvent>(IEventContext<TEvent> context)
             => Interceptors.RunSafe(i => i.AfterProcessEventAsync(context), nameof(AfterProcessEventAsync), Logger);
 
         public Task BeforeDehydrateAsync(IBehaviorActionContext context)
             => Interceptors.RunSafe(i => i.BeforeDehydrateAsync(context), nameof(BeforeDehydrateAsync), Logger);
 
-        public Task<bool> BeforeProcessEventAsync(IEventContext<Event> context)
+        public Task<bool> BeforeProcessEventAsync<TEvent>(IEventContext<TEvent> context)
             => Interceptors.RunSafe(i => i.BeforeProcessEventAsync(context), nameof(BeforeProcessEventAsync), Logger);
 
-        public bool BeforeExecute(Event @event)
+        public bool BeforeExecute(EventHolder eventHolder)
         {
             var result = true;
             foreach (var interceptor in ExecutionInterceptors)
             {
-                if (!interceptor.BeforeExecute(@event))
+                if (!interceptor.BeforeExecute(eventHolder))
                 {
                     result = false;
                 }
@@ -55,11 +55,11 @@ namespace Stateflows.Common.Engine
             return result;
         }
 
-        public void AfterExecute(Event @event)
+        public void AfterExecute(EventHolder eventHolder)
         {
             foreach (var interceptor in ExecutionInterceptors)
             {
-                interceptor.AfterExecute(@event);
+                interceptor.AfterExecute(eventHolder);
             }
         }
 

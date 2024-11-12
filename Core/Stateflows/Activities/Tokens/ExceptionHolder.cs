@@ -8,24 +8,27 @@ namespace Stateflows.Activities
         public Exception Exception { get; set; }
     }
 
-    public class ExceptionHolder<T> : ExceptionHolder
-        where T : Exception
+    public class ExceptionHolder<TException> : ExceptionHolder
+        where TException : Exception
     {
         public ExceptionHolder()
         {
             Exception = default;
         }
 
-        public override string Name => name ??= typeof(T).GetReadableName();
+        public override string Name => name ??= typeof(TException).GetReadableName();
 
-        public T TypedException
+        public TException TypedException
         {
-            get => Exception as T;
+            get => Exception as TException;
             set => Exception = value;
         }
 
         protected override object GetBoxedPayload()
             => Exception;
+
+        protected override Type GetPayloadType()
+            => typeof(TException);
 
         public override bool Equals(object obj)
             => obj is ExceptionHolder token && token.Id == Id;

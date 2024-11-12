@@ -5,7 +5,6 @@ using System.Net.Http.Json;
 using System.Diagnostics;
 using Stateflows.Common;
 using Stateflows.Common.Utilities;
-using Stateflows.Common.Extensions;
 using Stateflows.Common.Transport.Classes;
 using Stateflows.Common.Transport.Interfaces;
 
@@ -17,7 +16,7 @@ namespace Stateflows.Transport.Http.Client
 
         private readonly Timer _timer;
 
-        public event Action<Notification, DateTime>? OnNotify;
+        public event Action<EventHolder, DateTime>? OnNotify;
 
         public List<INotificationTarget> NotificationTargets { get; } = new();
 
@@ -36,19 +35,20 @@ namespace Stateflows.Transport.Http.Client
                 targets = NotificationTargets;
             }
 
-            await Task.WhenAll(targets.Select(target => SendAsync(target.Id, new NotificationsRequest(), target.Watches)));
+            await Task.WhenAll(targets.Select(target => SendAsync(target.Id, new NotificationsRequest().ToEventHolder(), target.Watches)));
         }
 
         [DebuggerHidden]
-        public async Task<SendResult> SendAsync(BehaviorId behaviorId, Event @event, IEnumerable<Watch> watches)
+        public async Task<SendResult> SendAsync(BehaviorId behaviorId, EventHolder eventHolder, IEnumerable<Watch> watches)
         {
+            var eventName = eventHolder.PayloadType.GetEventName().Split('.').Last();
             var requestResult = await _httpClient.PostAsync(
-                "/stateflows/send",
+                $"/stateflows/send?{eventName}",
                 new StringContent(
                     StateflowsJsonConverter.SerializePolymorphicObject(
                         new StateflowsRequest()
                         {
-                            Event = @event,
+                            Event = eventHolder,
                             BehaviorId = behaviorId,
                             Watches = watches
                         },
@@ -65,9 +65,9 @@ namespace Stateflows.Transport.Http.Client
                 var result = StateflowsJsonConverter.DeserializeObject<StateflowsResponse>(jsonString);
                 if (result != null)
                 {
-                    if (result.Response != null)
+                    if (result.Response != null && eventHolder.IsRequest())
                     {
-                        @event.Respond(result.Response);
+                        eventHolder.Respond(result.Response);
                     }
 
                     lock (this)
@@ -78,11 +78,11 @@ namespace Stateflows.Transport.Http.Client
                         }
                     }
 
-                    return new SendResult(@event, result.EventStatus, result.Validation);
+                    return new SendResult(eventHolder, result.EventStatus, result.Validation);
                 }
             }
 
-            return new SendResult(@event, EventStatus.Rejected);
+            return new SendResult(eventHolder, EventStatus.Rejected);
         }
 
         [DebuggerHidden]

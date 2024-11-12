@@ -1,7 +1,6 @@
 ﻿using Microsoft.AspNetCore.SignalR.Client;
 using Stateflows.Common;
 using Stateflows.Common.Utilities;
-using Stateflows.Common.Extensions;
 using Stateflows.Common.Exceptions;
 
 namespace Stateflows.Transport.SignalR.Client
@@ -30,35 +29,36 @@ namespace Stateflows.Transport.SignalR.Client
             Id = id;
         }
 
-        public async Task<SendResult> SendAsync<TEvent>(TEvent @event)
-            where TEvent : Event, new()
+        public async Task<SendResult> SendAsync<TEvent>(TEvent @event, IEnumerable<EventHeader> headers = null)
         {
+            var eventHolder = @event.ToTypedEventHolder();
+            eventHolder.Headers.AddRange(headers);
+
+            ResponseHolder.SetResponses(new Dictionary<object, EventHolder>());
+
             var hub = await GetHub();
 
-            var resultString = await hub.InvokeAsync<string>("Send", Id, StateflowsJsonConverter.SerializePolymorphicObject(@event, true));
+            var resultString = await hub.InvokeAsync<string>("Send", Id, StateflowsJsonConverter.SerializePolymorphicObject(eventHolder, true));
 
             var result = StateflowsJsonConverter.DeserializeObject<RequestResult>(resultString);
 
-            if (result.Response != null)
-            {
-                @event.Respond(result.Response);
-            }
-
-            return new SendResult(@event, result.Status, result.Validation);
+            return new SendResult(eventHolder, result.Status, result.Validation);
         }
 
-        public async Task<RequestResult<TResponse>> RequestAsync<TResponse>(Request<TResponse> request)
-            where TResponse : Response, new()
+        public async Task<RequestResult<TResponse>> RequestAsync<TResponse>(IRequest<TResponse> request, IEnumerable<EventHeader> headers = null)
         {
+            var requestHolder = request.ToTypedEventHolder();
+            requestHolder.Headers.AddRange(headers);
+
+            ResponseHolder.SetResponses(new Dictionary<object, EventHolder>());
+
             var hub = await GetHub();
 
             var resultString = await hub.InvokeAsync<string>("Request", Id, StateflowsJsonConverter.SerializePolymorphicObject(request, true));
 
             var result = StateflowsJsonConverter.DeserializeObject<RequestResult>(resultString);
 
-            request.Respond(result.Response);
-
-            return new RequestResult<TResponse>(request, result.Status, result.Validation);
+            return new RequestResult<TResponse>(requestHolder, result.Status, result.Validation);
         }
 
         public void Dispose()
@@ -70,12 +70,12 @@ namespace Stateflows.Transport.SignalR.Client
         protected virtual void Dispose(bool disposing)
         { }
 
-        public Task WatchAsync<TNotification>(Action<TNotification> handler) where TNotification : Notification, new()
+        public Task<IWatcher> WatchAsync<TNotification>(Action<TNotification> handler)
         {
             throw new NotImplementedException();
         }
 
-        public Task UnwatchAsync<TNotification>() where TNotification : Notification, new()
+        public Task<IWatcher> UnwatchAsync<TNotification>()
         {
             throw new NotImplementedException();
         }

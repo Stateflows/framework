@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Threading.Tasks;
-using Stateflows.Common;
 using Stateflows.Activities.Context.Interfaces;
 
 namespace Stateflows.Activities.Registration.Interfaces.Base
@@ -9,8 +8,7 @@ namespace Stateflows.Activities.Registration.Interfaces.Base
     {
         TReturn AddDefaultInitializer(Func<IActivityInitializationContext, Task<bool>> actionAsync);
 
-        TReturn AddInitializer<TInitializationEvent>(Func<IActivityInitializationContext<TInitializationEvent>, Task<bool>> actionAsync)
-            where TInitializationEvent : Event, new();
+        TReturn AddInitializer<TInitializationEvent>(Func<IActivityInitializationContext<TInitializationEvent>, Task<bool>> actionAsync);
 
         TReturn AddFinalizer(Func<IActivityActionContext, Task> actionAsync);
     }

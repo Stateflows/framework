@@ -1,8 +1,10 @@
-﻿namespace Stateflows.StateMachines.Inspection.Interfaces
+﻿using System.Collections.Generic;
+
+namespace Stateflows.StateMachines.Inspection.Interfaces
 {
     public interface ITransitionInspection
     {
-        string Trigger { get; }
+        IEnumerable<string> Triggers { get; }
 
         bool Active { get; }
 

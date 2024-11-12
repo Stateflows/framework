@@ -1,10 +1,8 @@
 ﻿using System.Threading.Tasks;
 using MassTransit;
+using Stateflows.Utils;
 using Stateflows.Common;
 using Stateflows.Common.Utilities;
-using Stateflows.Common.Extensions;
-using Event = Stateflows.Common.Event;
-using Response = Stateflows.Common.Response;
 using Stateflows.Transport.MassTransit.MassTransit.Messages;
 
 namespace Stateflows.Transport.MassTransit.Stateflows
@@ -21,8 +19,7 @@ namespace Stateflows.Transport.MassTransit.Stateflows
             Id = id;
         }
 
-        public async Task<SendResult> SendAsync<TEvent>(TEvent @event)
-            where TEvent : Event, new()
+        public async Task<SendResult> SendAsync<TEvent>(TEvent @event)
         {
             var result = await Bus.Request<BehaviorRequest, BehaviorResponse>(
                 new BehaviorRequest()
@@ -34,7 +31,7 @@ namespace Stateflows.Transport.MassTransit.Stateflows
 
             if (!string.IsNullOrEmpty(result.Message.ResponseData))
             {
-                @event.Respond(StateflowsJsonConverter.DeserializeObject(result.Message.ResponseData) as Response);
+                @event.Respond(StateflowsJsonConverter.DeserializeObject(result.Message.ResponseData) as IResponse);
             }
 
             EventValidation validation = null;
@@ -43,13 +40,13 @@ namespace Stateflows.Transport.MassTransit.Stateflows
                 validation = StateflowsJsonConverter.DeserializeObject<EventValidation>(result.Message.ValidationData);
             }
 
-            return new SendResult(@event, result.Message.Status, validation);
+            return new SendResult(@event.ToEventHolder(@event.GetType()), result.Message.Status, validation);
         }
 
         public async Task<RequestResult<TResponse>> RequestAsync<TResponse>(Request<TResponse> request)
-            where TResponse : Response, new()
+            where TResponse : IResponse, new()
         {
-            var result = await SendAsync(request as Event);
+            var result = await SendAsync(request);
 
             return new RequestResult<TResponse>(request, result.Status, result.Validation);
         }

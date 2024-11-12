@@ -7,6 +7,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Stateflows.Common;
 using Stateflows.Common.Classes;
 using Stateflows.Common.Context;
+using Stateflows.Common.Interfaces;
 using Stateflows.Activities.Models;
 using Stateflows.Activities.Engine;
 using Stateflows.Activities.Streams;
@@ -325,11 +326,11 @@ namespace Stateflows.Activities.Context.Classes
             set => Context.Values[Constants.ForceConsumed] = value;
         }
 
-        private readonly Stack<Event> EventsStack = new Stack<Event>();
+        private readonly Stack<EventHolder> EventsStack = new Stack<EventHolder>();
 
-        public void SetEvent(Event @event)
+        public void SetEvent(EventHolder eventHolder)
         {
-            EventsStack.Push(@event);
+            EventsStack.Push(eventHolder);
         }
 
         public void ClearEvent()
@@ -337,8 +338,12 @@ namespace Stateflows.Activities.Context.Classes
             EventsStack.Pop();
         }
 
-        public Event Event => EventsStack.Any()
+        public EventHolder EventHolder => EventsStack.Any()
             ? EventsStack.Peek()
+            : null;
+
+        public EventHolder ExecutionTriggerHolder => EventsStack.Any()
+            ? EventsStack.Last()
             : null;
 
         public readonly List<Exception> Exceptions = new List<Exception>();
@@ -359,13 +364,13 @@ namespace Stateflows.Activities.Context.Classes
                     !ActiveNodes.Any()
                 );
 
-        public async Task Send<TEvent>(TEvent @event)
-            where TEvent : Event, new()
+        public async Task Send<TEvent>(TEvent @event, IEnumerable<EventHeader> headers = null)
+
         {
             var locator = Executor.NodeScope.ServiceProvider.GetService<IBehaviorLocator>();
             if (locator != null && locator.TryLocateBehavior(Id.BehaviorId, out var behavior))
             {
-                await behavior.SendAsync(@event);
+                await behavior.SendAsync(@event, headers);
             }
         }
     }

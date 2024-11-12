@@ -1,4 +1,6 @@
-﻿namespace Stateflows.Activities.Registration.Interfaces.Base
+﻿using System;
+
+namespace Stateflows.Activities.Registration.Interfaces.Base
 {
     public interface IActivityUtils<out TReturn>
     {
@@ -16,5 +18,8 @@
 
         TReturn AddExceptionHandler<TExceptionHandler>()
             where TExceptionHandler : class, IActivityExceptionHandler;
+        
+        //TReturn AddExceptionHandler<TException>(ExceptionHandlerDelegateAsync<TException> exceptionHandler)
+        //    where TException : Exception;
     }
 }

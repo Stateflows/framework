@@ -1,11 +1,10 @@
 using Stateflows.Activities;
 using StateMachine.IntegrationTests.Utils;
-using Stateflows.Activities.Typed;
-using Stateflows.Common;
+using Stateflows.Activities;
 
 namespace StateMachine.IntegrationTests.Tests
 {
-    public class BoolInit : Event
+    public class BoolInit
     {
         public bool Value { get; set; }
     }
@@ -49,7 +48,7 @@ namespace StateMachine.IntegrationTests.Tests
                             .AddOnExitActivity("exit")
                         )
                     )
-                )
+                )   
                 .AddActivities(b => b
                     .AddActivity("guard", b => b
                         .AddInitial(b => b
@@ -101,7 +100,7 @@ namespace StateMachine.IntegrationTests.Tests
         }
 
         [TestMethod]
-        public async Task ActivityActions()
+            public async Task ActivityActions()
         {
             string currentState1 = "";
 

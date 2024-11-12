@@ -8,8 +8,7 @@ namespace Stateflows.StateMachines.Context.Classes
     internal class TransitionContext<TEvent> : EventContext<TEvent>,
         ITransitionInspectionContext<TEvent>,
         IEdgeContext,
-        IRootContext
-        where TEvent : Event, new()
+        IRootContext
     {
         public Edge Edge { get; }
 

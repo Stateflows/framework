@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using Microsoft.Extensions.DependencyInjection;
 using Stateflows.Common.Interfaces;
 using Stateflows.Common.Initializer;
+using Stateflows.Common.Registration.Builders;
 using Stateflows.Common.Registration.Interfaces;
 using Stateflows.StateMachines.Context;
 using Stateflows.StateMachines.Engine;
@@ -38,7 +39,7 @@ namespace Stateflows.StateMachines
             {
                 if (!Registers.TryGetValue(stateflowsBuilder, out var register))
                 {
-                    register = new StateMachinesRegister(stateflowsBuilder.ServiceCollection);
+                    register = new StateMachinesRegister(stateflowsBuilder as StateflowsBuilder, stateflowsBuilder.ServiceCollection);
                     Registers.Add(stateflowsBuilder, register);
 
                     stateflowsBuilder
@@ -48,6 +49,7 @@ namespace Stateflows.StateMachines
                         .AddScoped<IStateMachinePlugin, Behaviors>()
                         .AddScoped<IStateMachinePlugin, ContextCleanup>()
                         .AddScoped<IStateMachinePlugin, Notifications>()
+                        .AddScoped<IStateMachinePlugin, Engine.Exceptions>()
                         .AddSingleton(register)
                         .AddSingleton<IEventProcessor, Processor>()
                         .AddTransient<IBehaviorProvider, Provider>()

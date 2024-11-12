@@ -1,10 +1,11 @@
-﻿using System.Threading.Tasks;
+﻿using System.Collections.Generic;
+using System.Threading.Tasks;
 
 namespace Stateflows.Common
 {
     public interface IStateflowsClientInterceptor
     {
-        Task<bool> BeforeDispatchEventAsync(Event @event);
-        Task AfterDispatchEventAsync(Event @event);
+        Task<bool> BeforeDispatchEventAsync(EventHolder eventHolder);
+        Task AfterDispatchEventAsync(EventHolder eventHolder);
     }
 }

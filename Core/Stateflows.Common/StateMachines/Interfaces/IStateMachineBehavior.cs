@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using Stateflows.Common;
 using Stateflows.StateMachines.Events;
@@ -7,13 +8,23 @@ namespace Stateflows.StateMachines
 {
     public interface IStateMachineBehavior : IBehavior
     {
-        Task<RequestResult<CurrentStateResponse>> GetCurrentStateAsync()
-            => RequestAsync(new CurrentStateRequest());
+        Task<RequestResult<StateMachineInfo>> GetCurrentStateAsync()
+            => RequestAsync(new StateMachineInfoRequest());
 
-        Task WatchCurrentStateAsync(Action<CurrentStateNotification> handler)
-            => WatchAsync(handler);
+        async Task<IWatcher> WatchCurrentStateAsync(Action<StateMachineInfo> handler, bool immediateRequest = true)
+        {
+            var watcher = await WatchAsync(handler);
 
-        Task UnwatchCurrentStateAsync()
-            => UnwatchAsync<CurrentStateNotification>();
+            if (immediateRequest)
+            {
+                var result = await GetCurrentStateAsync();
+                if (result.Status == EventStatus.Consumed)
+                {
+                    _ = Task.Run(() => handler(result.Response));
+                }
+            }
+
+            return watcher;
+        }
     }
 }

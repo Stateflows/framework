@@ -1,11 +1,6 @@
 import { Request } from "./request";
 import { NotificationsResponse } from "./notifications.response";
+import { StateflowsEvent } from "../decorators/stateflows-event";
 
-export class NotificationsRequest extends Request<NotificationsResponse> {
-    public $type = "Stateflows.Common.NotificationsRequest, Stateflows.Common";
-    public name = "Stateflows.Common.NotificationsRequest";
-
-    constructor() {
-        super();
-    }
-}
+@StateflowsEvent("Stateflows.Common.NotificationsRequest, Stateflows.Common")
+export class NotificationsRequest extends Request<NotificationsResponse> { }

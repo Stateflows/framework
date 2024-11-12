@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Linq;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using Stateflows.Activities;
 using Stateflows.Activities.Events;
@@ -16,39 +18,33 @@ namespace Stateflows.Common.Activities.Classes
             Behavior = consumer;
         }
 
-        public Task<RequestResult<ExecutionResponse>> ExecuteAsync(Event initializationEvent, Action<IInputContainer> inputBuilder = null)
+        public Task<SendResult> SendInputAsync(Action<ITokensInput> tokensAction)
         {
-            var request = new ExecutionRequest() { InitializationEvent = initializationEvent };
-
-            inputBuilder?.Invoke(request);
-
-            return Behavior.RequestAsync(request);
+            var stream = new TokensInput();
+            tokensAction(stream);
+            return SendAsync(stream);
         }
 
-        public Task<RequestResult<ExecutionResponse>> ExecuteAsync(Action<IInputContainer> inputBuilder = null)
+        public Task<SendResult> SendInputAsync<TToken>(params TToken[] tokens)
         {
-            var request = new ExecutionRequest();
+            var stream = new TokensInput<TToken>()
+            {
+                Tokens = tokens
+                    .Select(token => new TokenHolder<TToken>() { Payload = token } as TokenHolder)
+                    .ToList()
+            };
 
-            inputBuilder?.Invoke(request);
-
-            return Behavior.RequestAsync(request);
+            return SendAsync(stream);
         }
 
-        public Task<SendResult> SendAsync<TEvent>(TEvent @event)
-            where TEvent : Event, new()
-            => Behavior.SendAsync(@event);
+        public Task<SendResult> SendAsync<TEvent>(TEvent @event, IEnumerable<EventHeader> headers = null)
+            => Behavior.SendAsync(@event, headers);
 
-        public Task<RequestResult<TResponse>> RequestAsync<TResponse>(Request<TResponse> request)
-            where TResponse : Response, new()
-            => Behavior.RequestAsync(request);
+        public Task<RequestResult<TResponse>> RequestAsync<TResponse>(IRequest<TResponse> request, IEnumerable<EventHeader> headers = null)
+            => Behavior.RequestAsync(request, headers);
 
-        public Task WatchAsync<TNotification>(Action<TNotification> handler)
-            where TNotification : Notification, new()
-            => Behavior.WatchAsync<TNotification>(handler);
-
-        public Task UnwatchAsync<TNotification>()
-            where TNotification : Notification, new()
-            => Behavior.UnwatchAsync<TNotification>();
+        public Task<IWatcher> WatchAsync<TNotificationEvent>(Action<TNotificationEvent> handler)
+            => Behavior.WatchAsync(handler);
 
         public void Dispose()
         {

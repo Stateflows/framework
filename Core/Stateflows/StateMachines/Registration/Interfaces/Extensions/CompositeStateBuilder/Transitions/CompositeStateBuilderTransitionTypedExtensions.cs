@@ -1,11 +1,10 @@
-﻿using System.Diagnostics;
-using Stateflows.Common;
+using System.Diagnostics;
 using Stateflows.Common.Extensions;
 using Stateflows.StateMachines.Extensions;
 using Stateflows.StateMachines.Registration.Interfaces;
 using Stateflows.StateMachines.Registration.Interfaces.Internal;
 
-namespace Stateflows.StateMachines.Typed
+namespace Stateflows.StateMachines
 {
     public static class CompositeStateBuilderTransitionTypedExtensions
     {
@@ -45,11 +44,10 @@ namespace Stateflows.StateMachines.Typed
         /// </list>
         /// </typeparam>
         [DebuggerHidden]
-        public static ICompositeStateBuilder AddTransition<TEvent, TTransition, TTargetState>(this ICompositeStateBuilder builder)
-            where TEvent : Event, new()
+        public static ICompositeStateBuilder AddTransition<TEvent, TTransition, TTargetState>(this ICompositeStateBuilder builder, TransitionBuildAction<TEvent> transitionBuildAction = null)
             where TTransition : class, ITransition<TEvent>
             where TTargetState : class, IVertex
-            => AddTransition<TEvent, TTransition>(builder, State<TTargetState>.Name);
+            => AddTransition<TEvent, TTransition>(builder, State<TTargetState>.Name, transitionBuildAction);
 
         /// <summary>
         /// Adds transition triggered by <see cref="TEvent"/> coming from current state.<br/>
@@ -78,15 +76,18 @@ namespace Stateflows.StateMachines.Typed
         /// </typeparam>
         /// <param name="targetStateName">Target state name</param>
         [DebuggerHidden]
-        public static ICompositeStateBuilder AddTransition<TEvent, TTransition>(this ICompositeStateBuilder builder, string targetStateName)
-            where TEvent : Event, new()
+        public static ICompositeStateBuilder AddTransition<TEvent, TTransition>(this ICompositeStateBuilder builder, string targetStateName, TransitionBuildAction<TEvent> transitionBuildAction = null)
             where TTransition : class, ITransition<TEvent>
         {
             (builder as IInternal).Services.AddServiceType<TTransition>();
 
             return builder.AddTransition<TEvent>(
                 targetStateName,
-                t => t.AddTransitionEvents<TTransition, TEvent>()
+                t =>
+                {
+                    t.AddTransitionEvents<TTransition, TEvent>();
+                    transitionBuildAction?.Invoke(t);
+                }
             );
         }
 
@@ -122,7 +123,6 @@ namespace Stateflows.StateMachines.Typed
         /// <param name="transitionBuildAction">Transition build action</param>
         [DebuggerHidden]
         public static ICompositeStateBuilder AddTransition<TEvent, TTargetState>(this ICompositeStateBuilder builder, TransitionBuildAction<TEvent> transitionBuildAction = null)
-            where TEvent : Event, new()
             where TTargetState : class, IVertex
             => builder.AddTransition(State<TTargetState>.Name, transitionBuildAction);
     }

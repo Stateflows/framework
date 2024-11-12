@@ -1,9 +1,8 @@
-﻿using System.Diagnostics;
-using Stateflows.Common;
+using System.Diagnostics;
 using Stateflows.StateMachines.Registration;
 using Stateflows.StateMachines.Registration.Interfaces;
 
-namespace Stateflows.StateMachines.Typed
+namespace Stateflows.StateMachines
 {
     public static class StateBuilderInternalTransitionTypedExtensions
     {
@@ -19,6 +18,10 @@ namespace Stateflows.StateMachines.Typed
         /// <term>Definition</term>
         /// <description>Class that defines transition actions (guard and/or effect) - <b>second type parameter</b>.</description>
         /// </item>
+        /// <item>
+        /// <term>Guard/Effect</term>
+        /// <description>Transition actions can be defined using build action - <b>first parameter</b>.</description>
+        /// </item>
         /// </list>
         /// </summary>
         /// <typeparam name="TEvent">Event class</typeparam>
@@ -28,10 +31,10 @@ namespace Stateflows.StateMachines.Typed
         /// <item><see cref="ITransitionEffect&lt;TEvent&gt;"/></item>
         /// </list>
         /// </typeparam>
+        /// <param name="transitionBuildAction">Transition build action</param>
         [DebuggerHidden]
-        public static IStateBuilder AddInternalTransition<TEvent, TTransition>(this IStateBuilder builder)
-            where TEvent : Event, new()
+        public static IStateBuilder AddInternalTransition<TEvent, TTransition>(this IStateBuilder builder, InternalTransitionBuildAction<TEvent> transitionBuildAction = null)
             where TTransition : class, ITransition<TEvent>
-            => builder.AddTransition<TEvent, TTransition>(Constants.DefaultTransitionTarget);
+            => builder.AddTransition<TEvent, TTransition>(Constants.DefaultTransitionTarget, b => transitionBuildAction?.Invoke(b as IInternalTransitionBuilder<TEvent>));
     }
 }

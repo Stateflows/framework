@@ -1,4 +1,5 @@
-﻿using Stateflows.Common;
+﻿using Stateflows.Utils;
+using Stateflows.Common;
 using Stateflows.Activities.Extensions;
 
 namespace Stateflows.Activities.StateMachines.Interfaces
@@ -8,7 +9,7 @@ namespace Stateflows.Activities.StateMachines.Interfaces
         IStateActionActivityBuilder,
         IInitializedStateActionActivityBuilder
     {
-        public StateActionActivityInitializationBuilderAsync<Event> InitializationBuilder { get; private set; } = null;
+        public StateActionActivityInitializationBuilderAsync<EventHolder> InitializationBuilder { get; private set; } = null;
 
         public StateActionActivityBuilder(StateActionActivityBuildAction buildAction)
         {
@@ -19,24 +20,23 @@ namespace Stateflows.Activities.StateMachines.Interfaces
         {
             if (builderAsync != null)
             {
-                InitializationBuilder = async c => await builderAsync(c);
+                InitializationBuilder = async c => (await builderAsync(c)).ToEventHolder();
             }
 
             return this;
         }
 
-        public StateActionActivityBuilder AddSubscription<TNotification>()
-            where TNotification : Notification, new()
+        public StateActionActivityBuilder AddSubscription<TNotificationEvent>()
         {
-            Notifications.Add(typeof(TNotification));
+            Notifications.Add(typeof(TNotificationEvent));
 
             return this;
         }
 
-        IStateActionActivityBuilder ISubscription<IStateActionActivityBuilder>.AddSubscription<TNotification>()
-            => AddSubscription<TNotification>();
+        IStateActionActivityBuilder IStateSubscription<IStateActionActivityBuilder>.AddSubscription<TNotificationEvent>()
+            => AddSubscription<TNotificationEvent>();
 
-        IInitializedStateActionActivityBuilder ISubscription<IInitializedStateActionActivityBuilder>.AddSubscription<TNotification>()
-            => AddSubscription<TNotification>();
+        IInitializedStateActionActivityBuilder IStateSubscription<IInitializedStateActionActivityBuilder>.AddSubscription<TNotificationEvent>()
+            => AddSubscription<TNotificationEvent>();
     }
 }

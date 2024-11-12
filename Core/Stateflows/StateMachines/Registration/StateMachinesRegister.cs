@@ -8,11 +8,14 @@ using Stateflows.StateMachines.Models;
 using Stateflows.StateMachines.Exceptions;
 using Stateflows.StateMachines.Registration.Builders;
 using Stateflows.StateMachines.Registration.Interfaces;
+using Stateflows.Common.Registration.Builders;
 
 namespace Stateflows.StateMachines.Registration
 {
     internal class StateMachinesRegister
     {
+        private readonly StateflowsBuilder stateflowsBuilder;
+
         private IServiceCollection Services { get; }
 
         public List<StateMachineExceptionHandlerFactory> GlobalExceptionHandlerFactories { get; set; } = new List<StateMachineExceptionHandlerFactory>();
@@ -21,8 +24,9 @@ namespace Stateflows.StateMachines.Registration
 
         public List<StateMachineObserverFactory> GlobalObserverFactories { get; set; } = new List<StateMachineObserverFactory>();
 
-        public StateMachinesRegister(IServiceCollection services)
+        public StateMachinesRegister(StateflowsBuilder stateflowsBuilder, IServiceCollection services)
         {
+            this.stateflowsBuilder = stateflowsBuilder;
             Services = services;
         }
 
@@ -62,7 +66,7 @@ namespace Stateflows.StateMachines.Registration
                 throw new StateMachineDefinitionException($"State machine '{stateMachineName}' with version '{version}' is already registered", new StateMachineClass(stateMachineName));
             }
 
-            var builder = new StateMachineBuilder(stateMachineName, version, Services);
+            var builder = new StateMachineBuilderBuilder(stateMachineName, version, stateflowsBuilder, Services);
             buildAction(builder);
             builder.Result.Build();
 
@@ -89,7 +93,7 @@ namespace Stateflows.StateMachines.Registration
 
             var sm = FormatterServices.GetUninitializedObject(stateMachineType) as IStateMachine;
 
-            var builder = new StateMachineBuilder(stateMachineName, version, Services);
+            var builder = new StateMachineBuilderBuilder(stateMachineName, version, stateflowsBuilder, Services);
             builder.Result.StateMachineType = stateMachineType;
             sm.Build(builder);
             builder.Result.Build();

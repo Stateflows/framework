@@ -1,7 +1,7 @@
-import { Event, BehaviorClass, BehaviorId, IStateflowsClientTransport, SendResult, JsonUtils, IWatcher, Notification, CompoundRequest } from "@stateflows/common";
+import { BehaviorClass, BehaviorId, IStateflowsClientTransport, SendResult, JsonUtils, IWatcher, CompoundRequest } from "@stateflows/common";
 import { NotificationTarget } from "./notification-target";
 import { Watch } from "./watch";
-import { NotificationsRequest } from "@stateflows/common";
+import { EventHolder, NotificationsRequest } from "@stateflows/common";
 
 export class HttpTransport implements IStateflowsClientTransport {
     #targets: Map<string, NotificationTarget> = new Map<string, NotificationTarget>();
@@ -32,12 +32,12 @@ export class HttpTransport implements IStateflowsClientTransport {
         });
     }
 
-    private handleNotifications(notifications: Array<Notification>, responseTime: string | null = null) {
+    private handleNotifications(notifications: Array<EventHolder>, responseTime: string | null = null) {
         if (responseTime !== null) {
             this.updateTimestamp(responseTime);
         }
         
-        notifications.forEach((notification: Notification) => {
+        notifications.forEach(notification => {
             if (this.#notificationIds.includes(notification.id)) {
                 return;
             }
@@ -78,8 +78,8 @@ export class HttpTransport implements IStateflowsClientTransport {
         return await result.json() as BehaviorClass[];
     }
     
-    async send(behaviorId: BehaviorId, event: Event): Promise<SendResult> {
-        const eventNameParts = (event as any).$type.split(',')[0].split('.');
+    async send(behaviorId: BehaviorId, event: any): Promise<SendResult> {
+        const eventNameParts = event.$type.split(',')[0].split('.');
         let eventName = eventNameParts[eventNameParts.length - 1];
         if (eventName === 'CompoundRequest') {
             const eventNames = (event as CompoundRequest).events.map(event => {
@@ -99,7 +99,10 @@ export class HttpTransport implements IStateflowsClientTransport {
                 body: JsonUtils.stringify({
                     "$type": "Stateflows.Common.Transport.Classes.StateflowsRequest, Stateflows.Common.Transport",
                     behaviorId: behaviorId,
-                    event: event,
+                    event: {
+                        "$type": "Stateflows.Common.EventHolder, Stateflows.Common",
+                        Payload: event,
+                    },
                     watches: this.getWatches(behaviorId)
                 })
             }
@@ -109,7 +112,7 @@ export class HttpTransport implements IStateflowsClientTransport {
         let response = stateflowsResponse.response;
         let validation = stateflowsResponse.validation;
         if (response) {
-            (event as any).response = response;
+            event.response = response;
         }
 
         this.handleNotifications(stateflowsResponse.notifications, stateflowsResponse.responseTime);
