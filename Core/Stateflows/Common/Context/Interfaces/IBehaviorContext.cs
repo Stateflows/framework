@@ -1,4 +1,5 @@
-﻿using Stateflows.Common.Interfaces;
+﻿using System.Collections.Generic;
+using Stateflows.Common.Interfaces;
 
 namespace Stateflows.Common.Context.Interfaces
 {
@@ -17,15 +18,17 @@ namespace Stateflows.Common.Context.Interfaces
         /// <summary>
         /// Sends an event to current behavior
         /// </summary>
-        /// <typeparam name="TEvent">Type of an event</typeparam>
+        /// <typeparam name="TEvent">Type of event</typeparam>
         /// <param name="event">Event instance</param>
-        void Send<TEvent>(TEvent @event);
+        /// <param name="headers">Event headers</param>
+        void Send<TEvent>(TEvent @event, IEnumerable<EventHeader> headers = null);
 
         /// <summary>
         /// Publishes a notification to all subscribers and watchers of current behavior
         /// </summary>
-        /// <typeparam name="TNotificationEvent">Type of a notification</typeparam>
-        /// <param name="notification">Notification instance</param>
-        void Publish<TNotificationEvent>(TNotificationEvent notification);
+        /// <typeparam name="TNotificationEvent">Type of notification</typeparam>
+        /// <param name="notification">Notification event instance</param>
+        /// <param name="headers">Notification event headers</param>
+        void Publish<TNotificationEvent>(TNotificationEvent notification, IEnumerable<EventHeader> headers = null);
     }
 }

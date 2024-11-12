@@ -15,6 +15,7 @@
     <button class="btn btn-primary" @onclick="Initialize">Locate and initialize</button>
     <button class="btn btn-primary" @onclick="GetStatus">Check status</button>
     <button class="btn btn-primary" @onclick="Reset">Reset</button>
+    <button class="btn btn-primary" @onclick="Request">Request</button>
 </div>
 
 @if (message != "")
@@ -72,10 +73,12 @@
     private string message = "";
 
     private IStateMachineBehavior? _stateMachine = null;
-    
-    private IWatcher _currentStateWatcher = null;
 
+    private IWatcher _currentStateWatcher = null;
+    
     private IWatcher _plantUmlWatcher = null;
+
+    private IWatcher _watcher = null;
 
     private async Task<IStateMachineBehavior?> GetStateMachineAsync()
     {
@@ -113,6 +116,13 @@
             _plantUmlWatcher = await _stateMachine.WatchPlantUmlAsync(async n =>
             {
                 plantUmlUrl = n.GetUrl();
+
+                await InvokeAsync(() => StateHasChanged());
+            });
+
+            _watcher = await _stateMachine.WatchAsync<ExampleResponse>(async n =>
+            {
+                Console.WriteLine($"watcher: {instance}");
 
                 await InvokeAsync(() => StateHasChanged());
             });
@@ -178,6 +188,16 @@
         if (sm != null)
         {
             await RefreshSMInfo(sm);
+        }
+    }
+
+    private async Task Request()
+    {
+        var sm = await GetStateMachineAsync();
+        if (sm != null)
+        {
+            var result = await sm.RequestAsync(new ExampleRequest());
+            Console.WriteLine(result?.Response.ToString());
         }
     }
 

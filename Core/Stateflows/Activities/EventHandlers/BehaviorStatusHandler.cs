@@ -24,7 +24,7 @@ namespace Stateflows.Activities.EventHandlers
                     BehaviorStatus = executor.BehaviorStatus,
                     ExpectedEvents = executor.GetExpectedEvents()
                         .Where(type => !type.IsSubclassOf(typeof(TimeEvent)))
-                        .Where(type => type != typeof(CompletionEvent))
+                        .Where(type => type != typeof(Completion))
                         .Select(type => type.GetEventName())
                         .ToArray(),
                 });

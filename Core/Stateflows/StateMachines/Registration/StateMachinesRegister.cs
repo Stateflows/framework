@@ -66,7 +66,7 @@ namespace Stateflows.StateMachines.Registration
                 throw new StateMachineDefinitionException($"State machine '{stateMachineName}' with version '{version}' is already registered", new StateMachineClass(stateMachineName));
             }
 
-            var builder = new StateMachineBuilder(stateMachineName, version, stateflowsBuilder, Services);
+            var builder = new StateMachineBuilderBuilder(stateMachineName, version, stateflowsBuilder, Services);
             buildAction(builder);
             builder.Result.Build();
 
@@ -93,7 +93,7 @@ namespace Stateflows.StateMachines.Registration
 
             var sm = FormatterServices.GetUninitializedObject(stateMachineType) as IStateMachine;
 
-            var builder = new StateMachineBuilder(stateMachineName, version, stateflowsBuilder, Services);
+            var builder = new StateMachineBuilderBuilder(stateMachineName, version, stateflowsBuilder, Services);
             builder.Result.StateMachineType = stateMachineType;
             sm.Build(builder);
             builder.Result.Build();

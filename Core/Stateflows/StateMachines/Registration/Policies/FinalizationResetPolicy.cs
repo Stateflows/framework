@@ -4,7 +4,7 @@ using Stateflows.StateMachines.Context.Interfaces;
 
 namespace Stateflows.StateMachines
 {
-    internal class ResetObserver : IStateMachineObserver
+    internal class ResetObserver : StateMachineObserver
     {
         private readonly ResetMode resetMode;
 
@@ -13,7 +13,7 @@ namespace Stateflows.StateMachines
             this.resetMode = resetMode;
         }
 
-        public Task AfterStateMachineFinalizeAsync(IStateMachineActionContext context)
+        public override Task AfterStateMachineFinalizeAsync(IStateMachineActionContext context)
         {
             var stateflowsContext = (context as IRootContext).Context.Context;
             if (stateflowsContext.Stored)
@@ -24,11 +24,6 @@ namespace Stateflows.StateMachines
             {
                 stateflowsContext.Deleted = true;
             }
-            //var c = (context as IRootContext);
-            //if (c.Context.Context.Stored)
-            //{
-            //    context.StateMachine.Send(new ResetRequest() { Mode = resetMode });
-            //}
 
             return Task.CompletedTask;
         }

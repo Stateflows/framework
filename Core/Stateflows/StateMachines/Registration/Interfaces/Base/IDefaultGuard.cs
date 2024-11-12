@@ -10,7 +10,7 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
 {
     public interface IDefaultGuard<TReturn>
     {
-        TReturn AddGuard(Func<ITransitionContext<CompletionEvent>, Task<bool>> guardAsync);
+        TReturn AddGuard(Func<ITransitionContext<Completion>, Task<bool>> guardAsync);
 
         TReturn AddGuard<TGuard>()
             where TGuard : class, IDefaultTransitionGuard

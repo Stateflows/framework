@@ -1,10 +1,7 @@
-import { Response } from "./response";
 import { RequestResult } from "../classes/request-result";
 
-export class CompoundResponse extends Response {
+export class CompoundResponse {
     constructor(
-        public results: Array<RequestResult<Response>>,
-    ) {
-        super();
-    }
+        public results: Array<RequestResult<any>>,
+    ) { }
 }

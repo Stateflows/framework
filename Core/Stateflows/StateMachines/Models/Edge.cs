@@ -17,6 +17,8 @@ namespace Stateflows.StateMachines.Models
 
     internal class Edge
     {
+        public string OriginStateMachineName { get; set; } = null;
+        
         public string Name { get; set; }
 
         public string Identifier { get; set; }

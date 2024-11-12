@@ -25,6 +25,7 @@ namespace Stateflows.StateMachines.Models
         public Graph Graph { get; set; }
         public Vertex Parent { get; set; }
         public string Name { get; set; }
+        public string OriginStateMachineName { get; set; } = null;
         public VertexType Type { get; set; }
         public string Identifier => Name;
 

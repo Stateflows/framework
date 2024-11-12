@@ -1,5 +1,9 @@
-﻿namespace Stateflows.Common
+﻿using System;
+
+namespace Stateflows.Common
 {
-    public class SystemEvent : Event
-    { }
+    public class SystemEvent
+    {
+        public Guid Id { get; set; } = Guid.NewGuid();
+    }
 }

@@ -7,6 +7,7 @@ using Stateflows.Activities.Registration.Interfaces;
 using Stateflows.Utils;
 using Stateflows.Common.Exceptions;
 using Microsoft.Extensions.DependencyInjection;
+using Stateflows.Common;
 
 namespace Stateflows.Activities.Registration.Builders
 {
@@ -63,7 +64,7 @@ namespace Stateflows.Activities.Registration.Builders
                         }
                         else
                         {
-                            throw new ExecutionException(e);
+                            throw new BehaviorExecutionException(e);
                         }
                     }
                 }
@@ -104,7 +105,7 @@ namespace Stateflows.Activities.Registration.Builders
                         }
                         else
                         {
-                            throw new ExecutionException(e);
+                            throw new BehaviorExecutionException(e);
                         }
                     }
                 }

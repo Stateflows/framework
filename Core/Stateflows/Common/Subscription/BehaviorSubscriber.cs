@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using System.ComponentModel.DataAnnotations;
@@ -20,13 +21,14 @@ namespace Stateflows.Common.Subscription
             this.subscriptionHub = subscriptionHub;
         }
 
-        public async Task PublishAsync<TNotificationEvent>(BehaviorId behaviorId, TNotificationEvent notificationEvent)
+        public async Task PublishAsync<TNotificationEvent>(BehaviorId behaviorId, TNotificationEvent notificationEvent, IEnumerable<EventHeader> headers = null)
         {
             var eventHolder = new EventHolder<TNotificationEvent>()
             {
                 Payload = notificationEvent,
                 SenderId = behaviorId,
                 SentAt = DateTime.Now,
+                Headers = headers?.ToList() ?? new List<EventHeader>()
             };
 
             if (context.Subscribers.TryGetValue(typeof(TNotificationEvent).GetEventName(), out var behaviorIds))

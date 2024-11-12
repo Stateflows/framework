@@ -7,6 +7,8 @@ using Stateflows.Activities;
 using Stateflows.Common;
 using Stateflows.StateMachines;
 using X;
+using Microsoft.AspNetCore.OpenApi;
+using Stateflows.Transport.Http;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -14,6 +16,9 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddRazorPages();
 builder.Services.AddServerSideBlazor();
 builder.Services.AddSingleton<WeatherForecastService>();
+
+builder.Services.AddEndpointsApiExplorer();
+//builder.Services.AddSwaggerGen();
 
 builder.Services.AddSignalR();
 
@@ -79,7 +84,14 @@ builder.Services.AddStateflows(b => b
 
 var app = builder.Build();
 
+//if (app.Environment.IsDevelopment())
+//{
+//    app.UseSwagger();
+//    app.UseSwaggerUI();
+//}
+
 //app.MapStateflowsSignalRTransport();
+app.MapStateflowsHttpTransport();
 
 // Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())
@@ -97,6 +109,8 @@ app.UseRouting();
 
 app.MapBlazorHub();
 app.MapFallbackToPage("/_Host");
+
+app.MapGet("/swagger", () => { return Results.Redirect("/swagger/index.html"); }).WithOpenApi();
 
 app.Run();
 

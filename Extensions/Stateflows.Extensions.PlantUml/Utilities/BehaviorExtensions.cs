@@ -8,7 +8,7 @@ namespace Stateflows
     public static class BehaviorExtensions
     {
         public static Task<RequestResult<PlantUmlInfo>> GetPlantUmlAsync(this IBehavior behavior)
-            => behavior.RequestAsync(new PlantUmlRequest());
+            => behavior.RequestAsync(new PlantUmlInfoRequest());
 
         public static async Task<IWatcher> WatchPlantUmlAsync(this IBehavior behavior, Action<PlantUmlInfo> handler, bool immediateRequest = true)
         {

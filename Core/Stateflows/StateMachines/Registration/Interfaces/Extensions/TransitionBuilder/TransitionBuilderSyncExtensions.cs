@@ -25,9 +25,9 @@ namespace Stateflows.StateMachines.Sync
             );
 
         [DebuggerHidden]
-        public static IDefaultTransitionBuilder AddGuard(this IDefaultTransitionBuilder builder, Func<ITransitionContext<CompletionEvent>, bool> guard)
+        public static IDefaultTransitionBuilder AddGuard(this IDefaultTransitionBuilder builder, Func<ITransitionContext<Completion>, bool> guard)
             => builder.AddGuard(guard
-                .AddStateMachineInvocationContext((builder as TransitionBuilder<CompletionEvent>).Edge.Graph)
+                .AddStateMachineInvocationContext((builder as TransitionBuilder<Completion>).Edge.Graph)
                 .ToAsync()
             );
 
@@ -60,16 +60,16 @@ namespace Stateflows.StateMachines.Sync
             );
 
         [DebuggerHidden]
-        public static IDefaultTransitionBuilder AddEffect(this IDefaultTransitionBuilder builder, Action<ITransitionContext<CompletionEvent>> effect)
+        public static IDefaultTransitionBuilder AddEffect(this IDefaultTransitionBuilder builder, Action<ITransitionContext<Completion>> effect)
             => builder.AddEffect(effect
-                .AddStateMachineInvocationContext((builder as TransitionBuilder<CompletionEvent>).Edge.Graph)
+                .AddStateMachineInvocationContext((builder as TransitionBuilder<Completion>).Edge.Graph)
                 .ToAsync()
             );
 
         [DebuggerHidden]
-        public static IElseDefaultTransitionBuilder AddEffect(this IElseDefaultTransitionBuilder builder, Action<ITransitionContext<CompletionEvent>> effect)
+        public static IElseDefaultTransitionBuilder AddEffect(this IElseDefaultTransitionBuilder builder, Action<ITransitionContext<Completion>> effect)
             => builder.AddEffect(effect
-                .AddStateMachineInvocationContext((builder as TransitionBuilder<CompletionEvent>).Edge.Graph)
+                .AddStateMachineInvocationContext((builder as TransitionBuilder<Completion>).Edge.Graph)
                 .ToAsync()
             );
     }

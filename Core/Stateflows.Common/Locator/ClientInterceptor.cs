@@ -19,10 +19,10 @@ namespace Stateflows.Common.Engine
             Logger = logger;
         }
 
-        public Task<bool> BeforeDispatchEventAsync<TEvent>(TEvent @event, List<EventHeader> headers)
-            => ClientInterceptors.RunSafe(i => i.BeforeDispatchEventAsync(@event, headers), nameof(BeforeDispatchEventAsync), Logger);
+        public Task<bool> BeforeDispatchEventAsync(EventHolder eventHolder)
+            => ClientInterceptors.RunSafe(i => i.BeforeDispatchEventAsync(eventHolder), nameof(BeforeDispatchEventAsync), Logger);
 
-        public Task AfterDispatchEventAsync<TEvent>(TEvent @event)
-            => ClientInterceptors.RunSafe(i => i.AfterDispatchEventAsync(@event), nameof(AfterDispatchEventAsync), Logger);
+        public Task AfterDispatchEventAsync(EventHolder eventHolder)
+            => ClientInterceptors.RunSafe(i => i.AfterDispatchEventAsync(eventHolder), nameof(AfterDispatchEventAsync), Logger);
     }
 }

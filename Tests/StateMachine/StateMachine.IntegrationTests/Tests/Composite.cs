@@ -162,7 +162,7 @@ namespace StateMachine.IntegrationTests.Tests
         public async Task DefaultTransition()
         {
             var status = EventStatus.Rejected;
-            CurrentState? currentState = null;
+            StateMachineInfo? currentState = null;
 
             if (StateMachineLocator.TryLocateStateMachine(new StateMachineId("default", "x"), out var sm))
             {
@@ -179,15 +179,15 @@ namespace StateMachine.IntegrationTests.Tests
                 .StateEntry("state2")
                 .StateInitialize("state2")
                 .StateEntry("state3")
-                .TransitionGuard(Event<CompletionEvent>.Name, "state3", "state4")
+                .TransitionGuard(Event<Completion>.Name, "state3", "state4")
                 .StateExit("state3")
-                .TransitionEffect(Event<CompletionEvent>.Name, "state3", "state4")
+                .TransitionEffect(Event<Completion>.Name, "state3", "state4")
                 .StateEntry("state4")
                 .StateInitialize("state4")
                 .StateEntry("state5")
-                .TransitionGuard(Event<CompletionEvent>.Name, "state5", "state6")
+                .TransitionGuard(Event<Completion>.Name, "state5", "state6")
                 .StateExit("state5")
-                .TransitionEffect(Event<CompletionEvent>.Name, "state5", "state6")
+                .TransitionEffect(Event<Completion>.Name, "state5", "state6")
                 .StateEntry("state6")
             );
 
@@ -201,7 +201,7 @@ namespace StateMachine.IntegrationTests.Tests
         public async Task LocalExits()
         {
             var status = EventStatus.Rejected;
-            CurrentState? currentState = null;
+            StateMachineInfo? currentState = null;
 
             if (StateMachineLocator.TryLocateStateMachine(new StateMachineId("exits", "x"), out var sm))
             {
@@ -232,7 +232,7 @@ namespace StateMachine.IntegrationTests.Tests
         public async Task SingleInitialization()
         {
             var status = EventStatus.Rejected;
-            CurrentState? currentState = null;
+            StateMachineInfo? currentState = null;
 
             if (StateMachineLocator.TryLocateStateMachine(new StateMachineId("single", "x"), out var sm))
             {
@@ -248,7 +248,7 @@ namespace StateMachine.IntegrationTests.Tests
                 .StateEntry("state2")
                 .TransitionEffect(Event<OtherEvent>.Name, "state2", "state3")
                 .StateEntry("state3")
-                .TransitionEffect(Event<CompletionEvent>.Name, "state3", "state4")
+                .TransitionEffect(Event<Completion>.Name, "state3", "state4")
                 .StateEntry("state4")
             );
 

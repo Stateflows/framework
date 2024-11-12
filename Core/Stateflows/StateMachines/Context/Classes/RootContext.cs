@@ -43,6 +43,11 @@ namespace Stateflows.StateMachines.Context.Classes
                     else
                     {
                         deferredEvents = deferredEventsObj as List<EventHolder>;
+                        if (deferredEvents == null)
+                        {
+                            deferredEvents = new List<EventHolder>();
+                            Context.Values[Constants.DeferredEvents] = deferredEvents;
+                        }
                     }
                 }
 
@@ -161,12 +166,12 @@ namespace Stateflows.StateMachines.Context.Classes
 
         public EventStatus? ForceStatus { get; set; } = null;
 
-        public async Task Send<TEvent>(TEvent @event)
+        public async Task Send<TEvent>(TEvent @event, IEnumerable<EventHeader> headers = null)
         {
             var locator = Executor.ServiceProvider.GetService<IBehaviorLocator>();
             if (locator != null && locator.TryLocateBehavior(Id, out var behavior))
             {
-                await behavior.SendAsync(@event);
+                await behavior.SendAsync(@event, headers);
             }
         }
     }

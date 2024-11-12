@@ -1,5 +1,4 @@
-﻿using Stateflows.Utils;
-using Stateflows.Common;
+﻿using Stateflows.Common;
 using Stateflows.Common.Classes;
 using Stateflows.Common.Transport.Classes;
 using Stateflows.Common.Transport.Interfaces;
@@ -55,15 +54,19 @@ namespace Stateflows.Transport.Http.Client
         {
             ResponseHolder.SetResponses(new Dictionary<object, EventHolder>());
 
-            return apiClient.SendAsync(Id, @event.ToEventHolder(@event.GetType()), watches);
+            var eventHolder = @event.ToTypedEventHolder(headers);
+
+            return apiClient.SendAsync(Id, eventHolder, watches);
         }
 
         public async Task<RequestResult<TResponseEvent>> RequestAsync<TResponseEvent>(IRequest<TResponseEvent> request, IEnumerable<EventHeader> headers = null)
         {
             ResponseHolder.SetResponses(new Dictionary<object, EventHolder>());
 
+            var eventHolder = request.ToTypedEventHolder(headers);
+
             var result = await SendAsync(request);
-            return new RequestResult<TResponseEvent>(request.ToEventHolder(request.GetType()), result.Status, result.Validation);
+            return new RequestResult<TResponseEvent>(eventHolder, result.Status, result.Validation);
         }
 
         public Task<IWatcher> WatchAsync<TNotificationEvent>(Action<TNotificationEvent> handler)

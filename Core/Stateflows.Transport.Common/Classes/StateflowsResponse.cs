@@ -8,6 +8,8 @@ namespace Stateflows.Common.Transport.Classes
     {
         public EventStatus EventStatus { get; set; }
 
+        public string EventStatusText => EventStatus.ToString();
+
         public EventValidation Validation { get; set; }
 
         public EventHolder Response { get; set; }

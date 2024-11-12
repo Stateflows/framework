@@ -19,4 +19,8 @@ export class JsonUtils {
     public static parse(json: string): any {
         return JSON.parse(json);
     }
+
+    public static deepClone<T>(object: T): T {
+        return JsonUtils.parse(JsonUtils.stringify(object)) as T;
+    }
 }

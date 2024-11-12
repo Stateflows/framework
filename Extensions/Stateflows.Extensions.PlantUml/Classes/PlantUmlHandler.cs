@@ -9,7 +9,7 @@ namespace Stateflows.Extensions.PlantUml.Classes
 {
     internal class PlantUmlHandler : IStateMachineEventHandler, IActivityEventHandler
     {
-        public Type EventType => typeof(PlantUmlRequest);
+        public Type EventType => typeof(PlantUmlInfoRequest);
 
         public Task<EventStatus> TryHandleEventAsync<TEvent>(StateMachines.Inspection.Interfaces.IEventInspectionContext<TEvent> context)
 
@@ -22,7 +22,7 @@ namespace Stateflows.Extensions.PlantUml.Classes
         private EventStatus HandleEvent<TEvent>(TEvent @event, Func<string> plantUmlGenerator)
 
         {
-            if (@event is PlantUmlRequest request)
+            if (@event is PlantUmlInfoRequest request)
             {
                 var plantUml = plantUmlGenerator();
                 request.Respond(new PlantUmlInfo() { PlantUml = plantUml });

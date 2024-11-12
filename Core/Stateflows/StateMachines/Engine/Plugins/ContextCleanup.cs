@@ -1,22 +1,20 @@
-﻿using System;
-using System.Linq;
+﻿using System.Linq;
 using System.Threading.Tasks;
 using System.Collections.Generic;
-using Stateflows.Common;
 using Stateflows.StateMachines.Models;
 using Stateflows.StateMachines.Context.Classes;
 using Stateflows.StateMachines.Context.Interfaces;
 
 namespace Stateflows.StateMachines.Engine
 {
-    internal class ContextCleanup : IStateMachinePlugin
+    internal class ContextCleanup : StateMachinePlugin
     {
         private readonly List<Vertex> ExitedStates = new List<Vertex>();
 
-        public Task AfterStateEntryAsync(IStateActionContext context)
+        public override Task AfterStateEntryAsync(IStateActionContext context)
             => Task.CompletedTask;
 
-        public Task AfterStateExitAsync(IStateActionContext context)
+        public override Task AfterStateExitAsync(IStateActionContext context)
         {
             var vertex = (context as StateActionContext).Vertex;
 
@@ -25,7 +23,7 @@ namespace Stateflows.StateMachines.Engine
             return Task.CompletedTask;
         }
 
-        public Task AfterTransitionEffectAsync(ITransitionContext<EventHolder> context)
+        public override Task AfterTransitionEffectAsync<TEvent>(ITransitionContext<TEvent> context)
         {
             if (context.TargetState != null)
             {

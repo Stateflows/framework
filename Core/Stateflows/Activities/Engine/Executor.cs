@@ -356,7 +356,7 @@ namespace Stateflows.Activities.Engine
                         var tokensOutput = (TokensTransferEvent)Activator.CreateInstance(tokensOutputGenericType);
                         tokensOutput.Tokens = output.Where(t => t.PayloadType == type).ToList();
 
-                        return tokensOutput.ToEventHolder(tokensOutputGenericType, Context.Id);
+                        return tokensOutput.ToTypedEventHolder(Context.Id);
                     })
                     .ToList();
 
@@ -398,7 +398,7 @@ namespace Stateflows.Activities.Engine
                 }
                 else
                 {
-                    throw new ExecutionException(e);
+                    throw new BehaviorExecutionException(e);
                 }
             }
 
@@ -619,7 +619,7 @@ namespace Stateflows.Activities.Engine
                         }
                         else
                         {
-                            throw new ExecutionException(e);
+                            throw new BehaviorExecutionException(e);
                         }
                     }
                 }

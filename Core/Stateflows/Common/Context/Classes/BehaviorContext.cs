@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using Stateflows.Common.Classes;
@@ -24,17 +25,17 @@ namespace Stateflows.Common.Context.Classes
 
         public IContextValues Values { get; }
 
-        public void Send<TEvent>(TEvent @event)
+        public void Send<TEvent>(TEvent @event, IEnumerable<EventHeader> headers = null)
         {
             var locator = ServiceProvider.GetService<IBehaviorLocator>();
             if (locator.TryLocateBehavior(Id, out var behavior))
             {
-                _ = behavior.SendAsync(@event);
+                _ = behavior.SendAsync(@event, headers);
             }
         }
 
-        public void Publish<TNotificationEvent>(TNotificationEvent notification)
-            => _ = Subscriber.PublishAsync(Id, notification);
+        public void Publish<TNotificationEvent>(TNotificationEvent notification, IEnumerable<EventHeader> headers = null)
+            => _ = Subscriber.PublishAsync(Id, notification, headers);
 
         public Task<SendResult> SubscribeAsync<TNotificationEvent>(BehaviorId behaviorId)
             => _ = Subscriber.SubscribeAsync<TNotificationEvent>(behaviorId);

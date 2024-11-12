@@ -4,5 +4,5 @@ using System.Threading.Tasks;
 namespace Stateflows.Common.Initializer
 {
 
-    public delegate Task<EventHolder> DefaultInstanceInitializationRequestFactoryAsync(IServiceProvider serviceProvider, BehaviorClass behaviorClass);
+    public delegate Task<object> DefaultInstanceInitializationRequestFactoryAsync(IServiceProvider serviceProvider, BehaviorClass behaviorClass);
 }

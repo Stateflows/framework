@@ -5,7 +5,7 @@
         public const string StateMachine = nameof(StateMachine);
         public const string StatesStack = nameof(StatesStack);
         public const string DefaultTransitionTarget = "";
-        public const string CompletionEvent = "";
+        public const string Completion = "";
         public const string StateValues = nameof(StateValues);
         public const string GlobalValues = nameof(GlobalValues);
         public const string DeferredEvents = nameof(DeferredEvents);

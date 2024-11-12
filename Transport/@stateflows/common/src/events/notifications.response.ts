@@ -1,7 +1,5 @@
-import { Response } from "./response";
+import { StateflowsEvent } from "../decorators/stateflows-event";
+import { Event } from "./event";
 
-export class NotificationsResponse extends Response {
-    constructor() {
-        super();
-    }
-}
+@StateflowsEvent("Stateflows.Common.NotificationsResponse, Stateflows.Common")
+export class NotificationsResponse extends Event { }

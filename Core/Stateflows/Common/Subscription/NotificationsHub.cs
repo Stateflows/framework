@@ -24,7 +24,10 @@ namespace Stateflows.Common.Subscription
 
         public Task PublishRangeAsync(IEnumerable<EventHolder> eventHolders)
         {
-            var holdersBySenderIds = eventHolders.GroupBy(h => h.SenderId);
+            var holdersBySenderIds = eventHolders
+                .Where(h => h.SenderId != null)
+                .GroupBy(h => (BehaviorId)h.SenderId);
+
             lock (Notifications)
             {
                 foreach (var group in holdersBySenderIds)

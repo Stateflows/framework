@@ -1,23 +1,21 @@
 ﻿using System;
-using System.Collections.Generic;
-using Newtonsoft.Json;
 using Stateflows.Common.Extensions;
 
 namespace Stateflows.Common
 {
-    public class Event
+    public static class Event
     {
         public static string GetName(Type @type)
             => @type.GetReadableName();
 
-        public Guid Id { get; set; } = Guid.NewGuid();
+        //public Guid Id { get; set; } = Guid.NewGuid();
 
-        [JsonProperty(TypeNameHandling = TypeNameHandling.None)]
-        public List<EventHeader> Headers { get; set; } = new List<EventHeader>();
+        //[JsonProperty(TypeNameHandling = TypeNameHandling.None)]
+        //public List<EventHeader> Headers { get; set; } = new List<EventHeader>();
 
-        public DateTime SentAt { get; set; }
+        //public DateTime SentAt { get; set; }
 
-        public virtual string Name => GetType().GetEventName();
+        //public virtual string Name => GetType().GetEventName();
     }
 
     public static class Event<TEvent>

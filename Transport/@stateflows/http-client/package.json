@@ -27,6 +27,6 @@
     "typescript": "^5.5.4"
   },
   "dependencies": {
-    "@stateflows/common": "^0.13.0"
+    "@stateflows/common": "file:../common"
   }
 }

@@ -1,11 +1,10 @@
 ﻿using System.Threading.Tasks;
 using Stateflows.Common;
 using Stateflows.Activities.Context.Interfaces;
-using Stateflows.Activities.Registration.Interfaces;
 
 namespace Stateflows.Activities
 {
-    internal class ResetObserver : IActivityObserver
+    internal class ResetObserver : ActivityObserver
     {
         private readonly ResetMode resetMode;
 
@@ -14,7 +13,7 @@ namespace Stateflows.Activities
             this.resetMode = resetMode;
         }
 
-        public Task AfterActivityFinalizeAsync(IActivityFinalizationContext context)
+        public override Task AfterActivityFinalizeAsync(IActivityFinalizationContext context)
         {
             var stateflowsContext = (context as IRootContext).Context.Context;
             if (stateflowsContext.Stored)

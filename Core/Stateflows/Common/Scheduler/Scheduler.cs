@@ -1,11 +1,12 @@
 ﻿using System;
+using System.Linq;
 using System.Threading;
+using System.Reflection;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.DependencyInjection;
 using Stateflows.Common.Initializer;
-using System.Linq;
 
 namespace Stateflows.Common.Scheduler
 {
@@ -20,6 +21,8 @@ namespace Stateflows.Common.Scheduler
 
         private IServiceProvider ServiceProvider
             => Scope.ServiceProvider;
+
+        private readonly MethodInfo SendAsyncMethod = typeof(IBehavior).GetMethod(nameof(IBehavior.SendAsync));
 
         public Scheduler(IServiceProvider serviceProvider, IHostApplicationLifetime lifetime)
         {
@@ -44,7 +47,7 @@ namespace Stateflows.Common.Scheduler
 
             _ = Task.Run(async () =>
             {
-                await TimingLoop(CancellationTokenSource.Token);
+                await TimingLoop(CancellationTokenSource.Token).ConfigureAwait(false);
             });
 
             return Task.CompletedTask;
@@ -67,7 +70,7 @@ namespace Stateflows.Common.Scheduler
 
                     try
                     {
-                        await Executor.ExecuteByTenantsAsync(() => HandleTimeEvents());
+                        await Executor.ExecuteByTenantsAsync(() => HandleTimeEvents()).ConfigureAwait(false);
                     }
                     catch (Exception e)
                     {
@@ -75,7 +78,7 @@ namespace Stateflows.Common.Scheduler
                     }
                 }
 
-                await Task.Delay(1000);
+                await Task.Delay(1000).ConfigureAwait(false);
             }
         }
 
@@ -87,7 +90,7 @@ namespace Stateflows.Common.Scheduler
             {
                 var runner = scope.ServiceProvider.GetRequiredService<ScheduleExecutor>();
 
-                await runner.ExecuteAsync();
+                await runner.ExecuteAsync().ConfigureAwait(false);
             }
             catch (Exception e)
             {
@@ -106,10 +109,13 @@ namespace Stateflows.Common.Scheduler
 
                     if (Locator.TryLocateBehavior(new BehaviorId(token.BehaviorClass, string.Empty), out var behavior))
                     {
-                        await behavior.SendAsync(await token.InitializationRequestFactory(ServiceProvider, token.BehaviorClass));
+                        var initializationEvent = await token.InitializationRequestFactory(ServiceProvider, token.BehaviorClass).ConfigureAwait(false);
+                        _ = SendAsyncMethod
+                            .MakeGenericMethod(initializationEvent.GetType())
+                            .Invoke(behavior, new object[] { initializationEvent });
                     }
                 })
-            );
+            ).ConfigureAwait(false);
         }
 
         private async Task HandleStartupEvents()
@@ -120,7 +126,7 @@ namespace Stateflows.Common.Scheduler
             {
                 var runner = scope.ServiceProvider.GetRequiredService<StartupExecutor>();
 
-                await runner.ExecuteAsync();
+                await runner.ExecuteAsync().ConfigureAwait(false);
             }
             catch (Exception e)
             {

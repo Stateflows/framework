@@ -28,7 +28,7 @@ namespace StateMachine.IntegrationTests.Tests
                         .AddJunction(b => b
                             .AddTransition("state2", b => b
                                 .AddGuard(c =>
-                                    c.Event.GetType().GetEventName() == Event<CompletionEvent>.Name
+                                    c.Event.GetType().GetEventName() == Event<Completion>.Name
                                     && (c.ExecutionTrigger as OtherEvent)?.AnswerToLifeUniverseAndEverything == 42
                                 )
                             )

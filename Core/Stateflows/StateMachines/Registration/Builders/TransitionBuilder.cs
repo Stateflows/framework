@@ -58,7 +58,7 @@ namespace Stateflows.StateMachines.Registration.Builders
                 {
                     if (transitiveVertexTypes.Contains(Edge.Source.Type))
                     {
-                        c.SetEvent(new CompletionEvent().ToEventHolder());
+                        c.SetEvent(new Completion().ToEventHolder());
                     }
 
                     var context = new GuardContext<TEvent>(c, Edge);
@@ -81,7 +81,7 @@ namespace Stateflows.StateMachines.Registration.Builders
                             }
                             else
                             {
-                                throw new ExecutionException(e);
+                                throw new BehaviorExecutionException(e);
                             }
                         }
                     }
@@ -110,7 +110,7 @@ namespace Stateflows.StateMachines.Registration.Builders
                 {
                     if (transitiveVertexTypes.Contains(Edge.Source.Type))
                     {
-                        c.SetEvent(new CompletionEvent().ToEventHolder());
+                        c.SetEvent(new Completion().ToEventHolder());
                     }
 
                     var context = new TransitionContext<TEvent>(c, Edge);
@@ -132,7 +132,7 @@ namespace Stateflows.StateMachines.Registration.Builders
                             }
                             else
                             {
-                                throw new ExecutionException(e);
+                                throw new BehaviorExecutionException(e);
                             }
                         }
                     }
@@ -161,14 +161,14 @@ namespace Stateflows.StateMachines.Registration.Builders
         IElseInternalTransitionBuilder<TEvent> IEffect<TEvent, IElseInternalTransitionBuilder<TEvent>>.AddEffect(Func<ITransitionContext<TEvent>, Task> effectAsync)
             => AddEffect(effectAsync) as IElseInternalTransitionBuilder<TEvent>;
 
-        IDefaultTransitionBuilder IDefaultEffect<IDefaultTransitionBuilder>.AddEffect(Func<ITransitionContext<CompletionEvent>, Task> effectAsync)
-            => AddEffect(c => effectAsync(c as ITransitionContext<CompletionEvent>)) as IDefaultTransitionBuilder;
+        IDefaultTransitionBuilder IDefaultEffect<IDefaultTransitionBuilder>.AddEffect(Func<ITransitionContext<Completion>, Task> effectAsync)
+            => AddEffect(c => effectAsync(c as ITransitionContext<Completion>)) as IDefaultTransitionBuilder;
 
-        IDefaultTransitionBuilder IDefaultGuard<IDefaultTransitionBuilder>.AddGuard(Func<ITransitionContext<CompletionEvent>, Task<bool>> guardAsync)
-            => AddGuard(c => guardAsync(c as ITransitionContext<CompletionEvent>)) as IDefaultTransitionBuilder;
+        IDefaultTransitionBuilder IDefaultGuard<IDefaultTransitionBuilder>.AddGuard(Func<ITransitionContext<Completion>, Task<bool>> guardAsync)
+            => AddGuard(c => guardAsync(c as ITransitionContext<Completion>)) as IDefaultTransitionBuilder;
 
-        IElseDefaultTransitionBuilder IDefaultEffect<IElseDefaultTransitionBuilder>.AddEffect(Func<ITransitionContext<CompletionEvent>, Task> effectAsync)
-            => AddEffect(c => effectAsync(c as ITransitionContext<CompletionEvent>)) as IElseDefaultTransitionBuilder;
+        IElseDefaultTransitionBuilder IDefaultEffect<IElseDefaultTransitionBuilder>.AddEffect(Func<ITransitionContext<Completion>, Task> effectAsync)
+            => AddEffect(c => effectAsync(c as ITransitionContext<Completion>)) as IElseDefaultTransitionBuilder;
 
         IForwardedEventBuilder<TEvent> IGuard<TEvent, IForwardedEventBuilder<TEvent>>.AddGuard(Func<ITransitionContext<TEvent>, Task<bool>> guardAsync)
             => AddGuard(guardAsync) as IForwardedEventBuilder<TEvent>;

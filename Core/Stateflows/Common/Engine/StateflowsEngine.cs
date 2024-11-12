@@ -112,16 +112,16 @@ namespace Stateflows.Common
             return Task.CompletedTask;
         }
 
-        [DebuggerHidden]
+        //[DebuggerHidden]
         public async Task<EventStatus> ProcessEventAsync<TEvent>(BehaviorId id, EventHolder<TEvent> eventHolder, List<Exception> exceptions, Dictionary<object, EventHolder> responses)
         {
             var result = EventStatus.Undelivered;
 
             if (Processors.TryGetValue(id.Type, out var processor) && Interceptor.BeforeExecute(eventHolder))
             {
-                TenantAccessor.CurrentTenantId = await TenantProvider.GetCurrentTenantIdAsync();
+                TenantAccessor.CurrentTenantId = await TenantProvider.GetCurrentTenantIdAsync().ConfigureAwait(false);
 
-                await using var lockHandle = await Lock.AquireLockAsync(id);
+                await using var lockHandle = await Lock.AquireLockAsync(id).ConfigureAwait(false);
 
                 try
                 {
@@ -129,7 +129,7 @@ namespace Stateflows.Common
                     {
                         ResponseHolder.SetResponses(responses);
 
-                        result = await processor.ProcessEventAsync(id, eventHolder, exceptions);
+                        result = await processor.ProcessEventAsync(id, eventHolder, exceptions).ConfigureAwait(false);
                     }
                     finally
                     {

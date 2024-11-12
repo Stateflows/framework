@@ -1,32 +1,28 @@
 import { RequestResult } from "../classes/request-result";
 import { SendResult } from "../classes/send-result";
-import { BehaviorStatusResponse } from "../events/behavior-status.response";
-import { BehaviorStatusNotification } from "../events/behavior-status.notification";
-import { FinalizationResponse } from "../events/finalization.response";
-import { ResetResponse } from "../events/reset.response";
 import { CompoundResponse } from "../events/compound.response";
-import { Event } from "../events/event";
-import { Request } from "../events/request";
-import { Response } from "../events/response";
-import { Notification } from "../events/notification";
 import { NotificationHandler } from "../utils/notification-handler";
 import { BehaviorId } from "../ids/behavior.id";
 import { ResetMode } from "../enums/reset-mode";
+import { Request } from "../events/request";
+import { BehaviorInfo } from "../events/behavior-info";
+import { EventHeader } from "../classes/event-header";
+import { Event } from "../events/event";
 
 export interface IBehavior {
     id: BehaviorId;
     
-    send(event: Event): Promise<SendResult>;
+    send(event: Event, headers?: EventHeader[] | null): Promise<SendResult>;
     sendCompound(...events: Event[]): Promise<RequestResult<CompoundResponse>>;
-    request<TResponse extends Response>(request: Request<TResponse>): Promise<RequestResult<TResponse>>;
+    request<TResponse>(request: Request<TResponse>, headers?: EventHeader[] | null): Promise<RequestResult<TResponse>>;
     
-    finalize(): Promise<RequestResult<FinalizationResponse>>;
-    reset(resetMode?: ResetMode): Promise<RequestResult<ResetResponse>>;    
+    finalize(): Promise<SendResult>;
+    reset(resetMode?: ResetMode): Promise<SendResult>;
     
-    watch<TNotification extends Notification>(notificationName: string, handler: NotificationHandler<TNotification>): Promise<void>;
+    watch<TNotification extends Event>(notificationName: string, handler: NotificationHandler<TNotification>): Promise<void>;
     unwatch(notificationName: string): Promise<void>;
 
-    getStatus(): Promise<RequestResult<BehaviorStatusResponse>>;
-    watchStatus(handler: NotificationHandler<BehaviorStatusNotification>): Promise<void>;
+    getStatus(): Promise<RequestResult<BehaviorInfo>>;
+    watchStatus(handler: NotificationHandler<BehaviorInfo>): Promise<void>;
     unwatchStatus(): Promise<void>;
 }

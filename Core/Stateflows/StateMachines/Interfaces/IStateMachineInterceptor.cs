@@ -5,16 +5,12 @@ namespace Stateflows.StateMachines
 {
     public interface IStateMachineInterceptor
     {
-        Task AfterHydrateAsync(IStateMachineActionContext context)
-            => Task.CompletedTask;
+        Task AfterHydrateAsync(IStateMachineActionContext context);
 
-        Task BeforeDehydrateAsync(IStateMachineActionContext context)
-            => Task.CompletedTask;
+        Task BeforeDehydrateAsync(IStateMachineActionContext context);
 
-        Task<bool> BeforeProcessEventAsync<TEvent>(IEventActionContext<TEvent> context)
-            => Task.FromResult(true);
+        Task<bool> BeforeProcessEventAsync<TEvent>(IEventActionContext<TEvent> context);
 
-        Task AfterProcessEventAsync<TEvent>(IEventActionContext<TEvent> context)
-            => Task.CompletedTask;
+        Task AfterProcessEventAsync<TEvent>(IEventActionContext<TEvent> context);
     }
 }

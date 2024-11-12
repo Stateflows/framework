@@ -2,22 +2,26 @@
 
 namespace Stateflows.StateMachines
 {
-    public interface IDefaultTransitionEffect
+    public interface IDefaultTransition { }
+
+    public interface IDefaultTransitionEffect : IDefaultTransition
     {
         Task EffectAsync();
     }
 
-    public interface IDefaultTransitionGuard
+    public interface IDefaultTransitionGuard : IDefaultTransition
     {
         Task<bool> GuardAsync();
     }
 
-    public interface ITransitionEffect<in TEvent>
+    public interface ITransition<in TEvent> { }
+
+    public interface ITransitionEffect<in TEvent> : ITransition<TEvent>
     {
         Task EffectAsync(TEvent @event);
     }
 
-    public interface ITransitionGuard<in TEvent>
+    public interface ITransitionGuard<in TEvent> : ITransition<TEvent>
     {
         Task<bool> GuardAsync(TEvent @event);
     }

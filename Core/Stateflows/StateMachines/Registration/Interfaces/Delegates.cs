@@ -8,16 +8,26 @@ namespace Stateflows.StateMachines.Registration.Interfaces
     public delegate void StateMachinesBuildAction(IStateMachinesBuilder builder);
 
     public delegate void StateMachineBuildAction(IStateMachineBuilder builder);
+    
+    public delegate void OverridenStateMachineBuildAction(IOverridenStateMachineBuilder builder);
 
     public delegate void StateBuildAction(IStateBuilder builder);
+    
+    public delegate void OverridenStateBuildAction(IOverridenStateBuilder builder);
 
     public delegate void JunctionBuildAction(IJunctionBuilder builder);
+    
+    public delegate void OverridenJunctionBuildAction(IOverridenJunctionBuilder builder);
 
     public delegate void ChoiceBuildAction(IChoiceBuilder builder);
+    
+    public delegate void OverridenChoiceBuildAction(IOverridenChoiceBuilder builder);
 
     public delegate void StateTransitionsBuildAction(IStateBuilder builder);
 
     public delegate void CompositeStateBuildAction(ICompositeStateBuilder builder);
+    
+    public delegate void OverridenCompositeStateBuildAction(IOverridenCompositeStateBuilder builder);
 
     public delegate void CompositeStateTransitionsBuildAction(ICompositeStateBuilder builder);
 

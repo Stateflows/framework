@@ -10,7 +10,7 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
 {
     public interface IDefaultEffect<TReturn>
     {
-        TReturn AddEffect(Func<ITransitionContext<CompletionEvent>, Task> effectAsync);
+        TReturn AddEffect(Func<ITransitionContext<Completion>, Task> effectAsync);
 
         TReturn AddEffect<TEffect>()
             where TEffect : class, IDefaultTransitionEffect

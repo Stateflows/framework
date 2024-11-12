@@ -279,6 +279,21 @@ namespace Activity.IntegrationTests.Tests
                             ExceptionHandlerOutput = c.GetTokensOfType<string>().Any();
                         })
                     )
+                    //.AddActivity("global", b => b
+                    //    .AddExceptionHandler<Exception>(async c =>
+                    //    {
+                    //        Executed1 = true;
+                    //        Value1 = c.NodeOfOrigin.NodeName;
+                    //        Value2 = c.ProtectedNode.NodeName;
+                    //    })
+                    //    .AddInitial(b => b
+                    //        .AddControlFlow("faulty")
+                    //    )
+                    //    .AddAction(
+                    //        "faulty",
+                    //        async c => throw new Exception()
+                    //    )
+                    //)
                 )
                 ;
         }
@@ -409,5 +424,17 @@ namespace Activity.IntegrationTests.Tests
 
             Assert.IsTrue(ExceptionHandlerOutput);
         }
+
+        //[TestMethod]
+        //public async Task ExceptionHandledGlobally()
+        //{
+        //    if (ActivityLocator.TryLocateActivity(new ActivityId("global", "x"), out var a))
+        //    {
+        //        await a.SendAsync(new Initialize());
+        //    }
+
+        //    Assert.IsTrue(Executed1);
+        //    Assert.AreEqual("faulty", Value1);
+        //}
     }
 }

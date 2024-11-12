@@ -17,7 +17,7 @@ namespace Stateflows.Common
 
         public DateTime SentAt { get; set; }
 
-        public BehaviorId SenderId { get; set; }
+        public BehaviorId? SenderId { get; set; }
 
         private object boxedPayload;
 

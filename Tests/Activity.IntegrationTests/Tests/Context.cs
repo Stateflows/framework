@@ -4,9 +4,9 @@ using StateMachine.IntegrationTests.Utils;
 
 namespace Activity.IntegrationTests.Tests
 {
-    public class FlowObserver : IActivityObserver
+    public class FlowObserver : ActivityObserver
     {
-        public Task BeforeNodeActivateAsync(IActivityNodeContext context, bool activated)
+        public override Task BeforeNodeActivateAsync(IActivityNodeContext context, bool activated)
         {
             if (context.CurrentNode.NodeName.EndsWith("action3"))
             {

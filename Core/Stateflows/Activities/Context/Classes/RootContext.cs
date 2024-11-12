@@ -364,12 +364,13 @@ namespace Stateflows.Activities.Context.Classes
                     !ActiveNodes.Any()
                 );
 
-        public async Task Send<TEvent>(TEvent @event)
+        public async Task Send<TEvent>(TEvent @event, IEnumerable<EventHeader> headers = null)
+
         {
             var locator = Executor.NodeScope.ServiceProvider.GetService<IBehaviorLocator>();
             if (locator != null && locator.TryLocateBehavior(Id.BehaviorId, out var behavior))
             {
-                await behavior.SendAsync(@event);
+                await behavior.SendAsync(@event, headers);
             }
         }
     }

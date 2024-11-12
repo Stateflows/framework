@@ -9,7 +9,7 @@ using Stateflows.StateMachines.Context.Interfaces;
 
 namespace Stateflows.StateMachines.Engine
 {
-    internal class TimeEvents : IStateMachinePlugin, IEqualityComparer<Edge>
+    internal class TimeEvents : StateMachinePlugin, IEqualityComparer<Edge>
     {
         private readonly List<Vertex> EnteredStates = new List<Vertex>();
 
@@ -21,7 +21,7 @@ namespace Stateflows.StateMachines.Engine
 
         private RootContext Context { get; set; }
 
-        public Task AfterStateEntryAsync(IStateActionContext context)
+        public override Task AfterStateEntryAsync(IStateActionContext context)
         {
             var vertex = (context as StateActionContext).Vertex;
             EnteredStates.Add(vertex);
@@ -29,7 +29,7 @@ namespace Stateflows.StateMachines.Engine
             return Task.CompletedTask;
         }
 
-        public Task AfterStateExitAsync(IStateActionContext context)
+        public override Task AfterStateExitAsync(IStateActionContext context)
         {
             var vertex = (context as StateActionContext).Vertex;
             var stateValues = Context.GetStateValues(vertex.Name);
@@ -43,7 +43,7 @@ namespace Stateflows.StateMachines.Engine
             return Task.CompletedTask;
         }
 
-        public Task<bool> BeforeProcessEventAsync<TEvent>(IEventActionContext<TEvent> context)
+        public override Task<bool> BeforeProcessEventAsync<TEvent>(IEventActionContext<TEvent> context)
         {
             var result = true;
 
@@ -62,7 +62,7 @@ namespace Stateflows.StateMachines.Engine
             return Task.FromResult(result);
         }
 
-        public Task AfterProcessEventAsync<TEvent>(IEventActionContext<TEvent> context)
+        public override Task AfterProcessEventAsync<TEvent>(IEventActionContext<TEvent> context)
         {
             ClearTimeEvents(TimeEventIdsToClear);
             ClearStartupEvents(StartupEventIdsToClear);
@@ -114,7 +114,7 @@ namespace Stateflows.StateMachines.Engine
             return Task.CompletedTask;
         }
 
-        public Task BeforeTransitionGuardAsync<TEvent>(ITransitionContext<TEvent> context)
+        public override Task BeforeTransitionGuardAsync<TEvent>(ITransitionContext<TEvent> context)
         {
             if (ConsumedInTransition == null && (context as IEdgeContext).Edge.ActualTriggers.Contains(Event.GetName(context.ExecutionTrigger.GetType())))
             {
@@ -124,10 +124,10 @@ namespace Stateflows.StateMachines.Engine
             return Task.CompletedTask;
         }
 
-        public Task AfterHydrateAsync(IStateMachineActionContext context)
+        public override Task AfterHydrateAsync(IStateMachineActionContext context)
             => Task.CompletedTask;
 
-        public Task BeforeDehydrateAsync(IStateMachineActionContext context)
+        public override Task BeforeDehydrateAsync(IStateMachineActionContext context)
             => Task.CompletedTask;
 
         private void RegisterStartupEvent(Edge edge)

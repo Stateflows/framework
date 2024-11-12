@@ -7,9 +7,11 @@ using Stateflows.Common.Extensions;
 using Stateflows.Activities.Models;
 using Stateflows.Activities.Context.Classes;
 using Stateflows.Activities.Context.Interfaces;
+using Stateflows.Activities.Engine;
 using Stateflows.Activities.Registration.Extensions;
 using Stateflows.Activities.Registration.Interfaces;
 using Stateflows.Activities.Registration.Interfaces.Base;
+using Stateflows.Activities.Utils;
 using Stateflows.Common.Exceptions;
 using Stateflows.Common.Registration.Builders;
 
@@ -105,7 +107,7 @@ namespace Stateflows.Activities.Registration.Builders
                         }
                         else
                         {
-                            throw new ExecutionException(e);
+                            throw new BehaviorExecutionException(e);
                         }
                     }
                 }
@@ -161,6 +163,16 @@ namespace Stateflows.Activities.Registration.Builders
 
             return this;
         }
+
+        //public IActivityBuilder AddExceptionHandler<TException>(ExceptionHandlerDelegateAsync<TException> exceptionHandler)
+        //    where TException : Exception
+        //{
+        //    AddExceptionHandler(serviceProvider
+        //        => new AnonymousExceptionHandler<TException>(new NodeScope(serviceProvider, Node, Guid.NewGuid()), Node, exceptionHandler)
+        //    );
+            
+        //    return this;
+        //}
 
         public IActivityBuilder AddExceptionHandler(ActivityExceptionHandlerFactory exceptionHandlerFactory)
         {

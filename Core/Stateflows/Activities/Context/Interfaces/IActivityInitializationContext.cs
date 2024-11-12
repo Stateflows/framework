@@ -5,6 +5,6 @@
         TInitializationRequest InitializationEvent { get; }
     }
 
-    public interface IActivityInitializationContext : IActivityActionContext, IOutput//IActivityInitializationContext<object>
+    public interface IActivityInitializationContext : IActivityActionContext, IOutput
     { }
 }

@@ -49,8 +49,9 @@ namespace Stateflows.Common.Classes
         //[DebuggerHidden]
         public async Task<SendResult> SendAsync<TEvent>(TEvent @event, IEnumerable<EventHeader> headers = null)
         {
-            var executionToken = engine.EnqueueEvent(Id, @event.ToEventHolder(@event.GetType()), serviceProvider);
-            await executionToken.Handled.WaitOneAsync();
+            var eventHolder = @event.ToTypedEventHolder(headers);
+            var executionToken = engine.EnqueueEvent(Id, eventHolder, serviceProvider);
+            await executionToken.Handled.WaitOneAsync().ConfigureAwait(false);
 
             if (ResponseHolder.ResponsesAreSet())
             {
@@ -63,8 +64,8 @@ namespace Stateflows.Common.Classes
         [DebuggerHidden]
         public async Task<RequestResult<TResponseEvent>> RequestAsync<TResponseEvent>(IRequest<TResponseEvent> request, IEnumerable<EventHeader> headers = null)
         {
-            var executionToken = engine.EnqueueEvent(Id, request.ToEventHolder(request.GetType()), serviceProvider);
-            await executionToken.Handled.WaitOneAsync();
+            var executionToken = engine.EnqueueEvent(Id, request.ToTypedEventHolder(headers), serviceProvider);
+            await executionToken.Handled.WaitOneAsync().ConfigureAwait(false);
 
             if (ResponseHolder.ResponsesAreSet())
             {

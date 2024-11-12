@@ -1,6 +1,5 @@
 ﻿using System.Threading.Tasks;
 using System.Collections.Generic;
-using Stateflows.Utils;
 
 namespace Stateflows.Common.Initializer
 {
@@ -11,7 +10,7 @@ namespace Stateflows.Common.Initializer
         public readonly List<DefaultInstanceInitializationToken> DefaultInstanceInitializationTokens = new List<DefaultInstanceInitializationToken>();
 
         private static readonly DefaultInstanceInitializationRequestFactoryAsync DefaultDefaultInstanceFactory = (serviceProvider, behaviorClass)
-            => Task.FromResult((new Initialize()).ToEventHolder() as EventHolder);
+            => Task.FromResult(new Initialize() as object);
 
         public void AddDefaultInstanceInitialization(BehaviorClass behaviorClass, DefaultInstanceInitializationRequestFactoryAsync initializationRequestFactory = null)
             => DefaultInstanceInitializationTokens.Add(new DefaultInstanceInitializationToken(behaviorClass, initializationRequestFactory ?? DefaultDefaultInstanceFactory));

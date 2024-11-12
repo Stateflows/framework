@@ -6,7 +6,7 @@ namespace Stateflows.Common
     {
         /// <summary>
         /// Subscribes for notifications from given behavior (by sending <see cref="Subscribe"/> to it).<br/>
-        /// Subscription is durable over time; the only way to end it is by calling <see cref="UnsubscribeAsync"/>.
+        /// Subscription is durable over time; the only way to end it is by calling <see cref="UnsubscribeAsync"/> with same parameter.
         /// </summary>
         /// <typeparam name="TNotificationEvent">Subscribed notification type</typeparam>
         /// <param name="behaviorId">Identifier of a behavior being subscribed to</param>

@@ -3,6 +3,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using Stateflows.Common;
+using Stateflows.Common.Exceptions;
 using Stateflows.Activities.Models;
 using Stateflows.Activities.Extensions;
 using Stateflows.Activities.Exceptions;
@@ -10,9 +11,6 @@ using Stateflows.Activities.Context.Classes;
 using Stateflows.Activities.Context.Interfaces;
 using Stateflows.Activities.Registration.Builders;
 using Stateflows.Activities.Registration.Interfaces;
-using Stateflows.Common.Exceptions;
-using Newtonsoft.Json.Linq;
-using System.Xml.Linq;
 
 namespace Stateflows.Activities.Registration
 {
@@ -346,7 +344,7 @@ namespace Stateflows.Activities.Registration
                         }
                         else
                         {
-                            throw new ExecutionException(e);
+                            throw new BehaviorExecutionException(e);
                         }
                     }
                 }
@@ -380,7 +378,7 @@ namespace Stateflows.Activities.Registration
                         }
                         else
                         {
-                            throw new ExecutionException(e);
+                            throw new BehaviorExecutionException(e);
                         }
                     }
                 }

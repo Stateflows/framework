@@ -1,7 +1,6 @@
 import { RequestResult } from "../classes/request-result";
-import { CurrentStateNotification } from "../events/current-state.notification";
-import { CurrentStateRequest } from "../events/current-state.request";
-import { CurrentStateResponse } from "../events/current-state.response";
+import { StateMachineInfo } from "../events/state-machine-info";
+import { StateMachineInfoRequest } from "../events/state-machine-info.request";
 import { IStateMachineBehavior } from "../interfaces/state-machine.behavior";
 import { NotificationHandler } from "../utils/notification-handler";
 import { Behavior } from "./behavior";
@@ -11,15 +10,15 @@ export class StateMachine extends Behavior implements IStateMachineBehavior {
         super(behavior, behavior.id);
     }
 
-    getCurrentState(): Promise<RequestResult<CurrentStateResponse>> {
-        return this.request(new CurrentStateRequest());
+    getCurrentState(): Promise<RequestResult<StateMachineInfo>> {
+        return this.request(new StateMachineInfoRequest());
     }
 
-    watchCurrentState(handler: NotificationHandler<CurrentStateNotification>): Promise<void> {
-        return this.watch<CurrentStateNotification>(CurrentStateNotification.notificationName, handler);
+    watchCurrentState(handler: NotificationHandler<StateMachineInfo>): Promise<void> {
+        return this.watch<StateMachineInfo>(StateMachineInfo.eventName, handler);
     }
 
     unwatchCurrentState(): Promise<void> {
-        return this.unwatch(CurrentStateNotification.notificationName);
+        return this.unwatch(StateMachineInfo.eventName);
     }
 }

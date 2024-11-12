@@ -2,27 +2,24 @@ import { Request } from "../events/request";
 import { IBehavior } from "../interfaces/behavior";
 import { SendResult } from "../classes/send-result";
 import { RequestResult } from "../classes/request-result";
-import { BehaviorStatusResponse } from "../events/behavior-status.response";
+import { BehaviorInfo } from "../events/behavior-info";
 import { BehaviorId } from "../ids/behavior.id";
-import { Response } from "../events/response";
 import { CompoundRequest } from "../events/compound.request";
 import { CompoundResponse } from "../events/compound.response";
-import { Event } from "../events/event";
-import { BehaviorStatusRequest } from "../events/behavior-status.request";
+import { BehaviorInfoRequest } from "../events/behavior-info.request";
 import { IStateflowsClientTransport } from "../interfaces/stateflows-client-transport";
-import { FinalizationResponse } from "../events/finalization.response";
-import { ResetResponse } from "../events/reset.response";
-import { FinalizationRequest } from "../events/finalization.request";
-import { ResetRequest } from "../events/reset.request";
-import { BehaviorStatusNotification } from "../events/behavior-status.notification";
-import { Notification } from "../events/notification";
+import { Finalize } from "../events/finalize";
+import { Reset } from "../events/reset";
 import { IWatcher } from "../interfaces/watcher";
 import { NotificationHandler } from "../utils/notification-handler";
 import { ResetMode } from "../enums/reset-mode";
+import { EventHolder } from "../classes/event-holder";
+import { EventHeader } from "../classes/event-header";
+import { Event } from "../events/event";
 
 export class Behavior implements IBehavior, IWatcher {
     #transportPromise: Promise<IStateflowsClientTransport>;
-    #notificationHandlers: Map<string, Array<NotificationHandler<Notification>>> = new Map<string, Array<NotificationHandler<Notification>>>();
+    #notificationHandlers: Map<string, Array<NotificationHandler<any>>> = new Map<string, Array<NotificationHandler<any>>>();
 
     constructor(transportPromiseOrBehavior: Promise<IStateflowsClientTransport> | Behavior, public id: BehaviorId) {
         this.#transportPromise = transportPromiseOrBehavior instanceof Behavior
@@ -30,9 +27,10 @@ export class Behavior implements IBehavior, IWatcher {
             : this.#transportPromise = transportPromiseOrBehavior;
     }
 
-    async send(event: Event): Promise<SendResult> {
+    async send(event: Event, headers: EventHeader[] = []): Promise<SendResult> {
         let transport = await this.#transportPromise;
-        let result = await transport.send(this.id, event);
+        let result = await transport.send(this.id, new EventHolder(event, headers));
+        result.event = result.event.payload;
         return result;
     }
 
@@ -40,35 +38,37 @@ export class Behavior implements IBehavior, IWatcher {
         return this.request(new CompoundRequest(events))
     }
     
-    async request<TResponse extends Response>(request: Request<TResponse>): Promise<RequestResult<TResponse>> {
-        let sendResult = await this.send(request);
-        request.response = (sendResult.event as any).response;
+    async request<TResponse>(request: Request<TResponse>, headers: EventHeader[] = []): Promise<RequestResult<TResponse>> {
+        let sendResult = await this.send(request, headers);
+        request.response = sendResult.event.response;
         let result = new RequestResult<TResponse>(request.response, request, sendResult.status, sendResult.validation);
         return result;
     }
 
-    finalize(): Promise<RequestResult<FinalizationResponse>> {
-        return this.request(new FinalizationRequest());
+    finalize(): Promise<SendResult> {
+        return this.send(new Finalize());
     }
 
-    reset(resetMode?: ResetMode): Promise<RequestResult<ResetResponse>> {
-        return this.request(new ResetRequest(resetMode ?? ResetMode.Full));
+    reset(resetMode?: ResetMode): Promise<SendResult> {
+        return this.send(new Reset(resetMode ?? ResetMode.Full));
     }
 
-    notify(notification: Notification): void {
+    notify(notification: EventHolder): void {
         if (this.#notificationHandlers.has(notification.name))
         {
-            let handlers = this.#notificationHandlers.get(notification.name) as Array<NotificationHandler<Notification>>;
-            handlers.forEach(handler => handler(notification));
+            notification.payload.eventName = notification.name;
+            notification.payload.$type = notification.$type;
+            let handlers = this.#notificationHandlers.get(notification.name) as Array<NotificationHandler<any>>;
+            handlers.forEach(handler => handler(notification.payload));
         }
     }
     
-    async watch<TNotification extends Notification>(notificationName: string, handler: NotificationHandler<TNotification>): Promise<void> {
+    async watch<TNotification extends Event>(notificationName: string, handler: NotificationHandler<TNotification>): Promise<void> {
         let transport = await this.#transportPromise;
         await transport.watch(this, notificationName);
 
-        let handlers: Array<NotificationHandler<Notification>> = this.#notificationHandlers.has(notificationName)
-            ? this.#notificationHandlers.get(notificationName) as Array<NotificationHandler<Notification>>
+        let handlers: Array<NotificationHandler<any>> = this.#notificationHandlers.has(notificationName)
+            ? this.#notificationHandlers.get(notificationName) as Array<NotificationHandler<any>>
             : [];
 
         handlers.push(n => handler(n as TNotification));
@@ -83,15 +83,15 @@ export class Behavior implements IBehavior, IWatcher {
         this.#notificationHandlers.delete(notificationName);
     }
 
-    getStatus(): Promise<RequestResult<BehaviorStatusResponse>> {
-        return this.request(new BehaviorStatusRequest());
+    getStatus(): Promise<RequestResult<BehaviorInfo>> {
+        return this.request(new BehaviorInfoRequest());
     }
 
-    watchStatus(handler: NotificationHandler<BehaviorStatusNotification>): Promise<void> {
-        return this.watch<BehaviorStatusNotification>(BehaviorStatusNotification.notificationName, handler);
+    watchStatus(handler: NotificationHandler<BehaviorInfo>): Promise<void> {
+        return this.watch<BehaviorInfo>(BehaviorInfo.eventName, handler);
     }
 
     unwatchStatus(): Promise<void> {
-        return this.unwatch(BehaviorStatusNotification.notificationName);
+        return this.unwatch(BehaviorInfo.eventName);
     }
 }

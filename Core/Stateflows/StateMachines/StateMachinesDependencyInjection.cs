@@ -49,6 +49,7 @@ namespace Stateflows.StateMachines
                         .AddScoped<IStateMachinePlugin, Behaviors>()
                         .AddScoped<IStateMachinePlugin, ContextCleanup>()
                         .AddScoped<IStateMachinePlugin, Notifications>()
+                        .AddScoped<IStateMachinePlugin, Engine.Exceptions>()
                         .AddSingleton(register)
                         .AddSingleton<IEventProcessor, Processor>()
                         .AddTransient<IBehaviorProvider, Provider>()

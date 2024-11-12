@@ -264,7 +264,7 @@ namespace Stateflows.StateMachines.Engine
             => GetExpectedEvents()
                 .Where(type => !type.IsSubclassOf(typeof(TimeEvent)))
                 .Where(type => type != typeof(Startup))
-                .Where(type => type != typeof(CompletionEvent))
+                .Where(type => type != typeof(Completion))
                 .Select(type => type.GetEventName())
                 .ToArray();
 
@@ -459,7 +459,7 @@ namespace Stateflows.StateMachines.Engine
                     }
                     else
                     {
-                        throw new ExecutionException(e);
+                        throw new BehaviorExecutionException(e);
                     }
                 }
             }
@@ -500,7 +500,7 @@ namespace Stateflows.StateMachines.Engine
                 }
                 else
                 {
-                    throw new ExecutionException(e);
+                    throw new BehaviorExecutionException(e);
                 }
             }
 
@@ -647,7 +647,7 @@ namespace Stateflows.StateMachines.Engine
 
         private async Task<bool> DoCompletion()
         {
-            var completionEventHolder = (new CompletionEvent()).ToEventHolder();
+            var completionEventHolder = (new Completion()).ToEventHolder();
             Context.SetEvent(completionEventHolder);
 
             RebuildVerticesStack();
@@ -738,6 +738,25 @@ namespace Stateflows.StateMachines.Engine
             return state;
         }
 
+        public TTransition GetTransition<TTransition, TEvent>(ITransitionContext<TEvent> context)
+            where TTransition : class, ITransition<TEvent>
+
+        {
+            ContextValues.GlobalValuesHolder.Value = context.StateMachine.Values;
+            ContextValues.StateValuesHolder.Value = null;
+            ContextValues.SourceStateValuesHolder.Value = context.SourceState.Values;
+            ContextValues.TargetStateValuesHolder.Value = context.TargetState?.Values;
+
+            StateMachinesContextHolder.StateContext.Value = null;
+            StateMachinesContextHolder.TransitionContext.Value = context;
+            StateMachinesContextHolder.StateMachineContext.Value = context.StateMachine;
+            StateMachinesContextHolder.ExecutionContext.Value = context;
+
+            var transition = ServiceProvider.GetService<TTransition>();
+
+            return transition;
+        }
+
         public TTransitionGuard GetTransitionGuard<TTransitionGuard, TEvent>(ITransitionContext<TEvent> context)
             where TTransitionGuard : class, ITransitionGuard<TEvent>
 
@@ -776,7 +795,25 @@ namespace Stateflows.StateMachines.Engine
             return transition;
         }
 
-        public TDefaultTransitionGuard GetDefaultTransitionGuard<TDefaultTransitionGuard>(ITransitionContext<CompletionEvent> context)
+        public TDefaultTransition GetDefaultTransition<TDefaultTransition>(ITransitionContext<Completion> context)
+            where TDefaultTransition : class, IDefaultTransition
+        {
+            ContextValues.GlobalValuesHolder.Value = context.StateMachine.Values;
+            ContextValues.StateValuesHolder.Value = null;
+            ContextValues.SourceStateValuesHolder.Value = context.SourceState.Values;
+            ContextValues.TargetStateValuesHolder.Value = context.TargetState?.Values;
+
+            StateMachinesContextHolder.StateContext.Value = null;
+            StateMachinesContextHolder.TransitionContext.Value = context;
+            StateMachinesContextHolder.StateMachineContext.Value = context.StateMachine;
+            StateMachinesContextHolder.ExecutionContext.Value = context;
+
+            var transition = ServiceProvider.GetService<TDefaultTransition>();
+
+            return transition;
+        }
+
+        public TDefaultTransitionGuard GetDefaultTransitionGuard<TDefaultTransitionGuard>(ITransitionContext<Completion> context)
             where TDefaultTransitionGuard : class, IDefaultTransitionGuard
         {
             ContextValues.GlobalValuesHolder.Value = context.StateMachine.Values;
@@ -794,7 +831,7 @@ namespace Stateflows.StateMachines.Engine
             return transition;
         }
 
-        public TDefaultTransitionEffect GetDefaultTransitionEffect<TDefaultTransitionEffect>(ITransitionContext<CompletionEvent> context)
+        public TDefaultTransitionEffect GetDefaultTransitionEffect<TDefaultTransitionEffect>(ITransitionContext<Completion> context)
             where TDefaultTransitionEffect : class, IDefaultTransitionEffect
         {
             ContextValues.GlobalValuesHolder.Value = context.StateMachine.Values;

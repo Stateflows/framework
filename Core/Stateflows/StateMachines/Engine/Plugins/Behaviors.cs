@@ -4,13 +4,12 @@ using Stateflows.Common;
 using Stateflows.StateMachines.Exceptions;
 using Stateflows.StateMachines.Context.Classes;
 using Stateflows.StateMachines.Context.Interfaces;
-using Stateflows.Utils;
 
 namespace Stateflows.StateMachines.Engine
 {
-    internal class Behaviors : IStateMachinePlugin
+    internal class Behaviors : StateMachinePlugin
     {
-        public async Task AfterStateEntryAsync(IStateActionContext context)
+        public override async Task AfterStateEntryAsync(IStateActionContext context)
         {
             var vertex = (context as StateActionContext).Vertex;
 
@@ -42,7 +41,7 @@ namespace Stateflows.StateMachines.Engine
             }
         }
 
-        public Task BeforeStateExitAsync(IStateActionContext context)
+        public override Task BeforeStateExitAsync(IStateActionContext context)
         {
             var vertex = (context as StateActionContext).Vertex;
 

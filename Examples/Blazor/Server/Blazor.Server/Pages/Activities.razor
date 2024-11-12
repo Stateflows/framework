@@ -94,7 +94,7 @@
     {
         if (locator.TryLocateActivity(GetCurrentId(), out var activity))
         {
-            message = (await activity.SendAsync(new X.ClearingRequest() { PersonIds = Enumerable.Range(0, 30).Select(i => new X.PersonId()).ToArray() })).Status == EventStatus.Initialized
+            message = (await activity.SendAsync(new Initialize())).Status == EventStatus.Initialized
                 ? "Activity located and initialized"
                 : "Activity located, it's already initialized";
 
@@ -192,7 +192,7 @@
 
         if (eventType != null)
         {
-            var ev = System.Activator.CreateInstance(eventType) as Event;
+            var ev = System.Activator.CreateInstance(eventType);
 
             if (locator.TryLocateActivity(GetCurrentId(), out var activity))
             {

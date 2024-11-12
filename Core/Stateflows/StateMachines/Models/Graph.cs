@@ -27,6 +27,7 @@ namespace Stateflows.StateMachines.Models
         }
 
         public StateMachineClass Class { get; }
+        public string BaseStateMachineName { get; set; } = null;
         public string Name { get; }
         public int Version { get; }
         public Type StateMachineType { get; set; }
