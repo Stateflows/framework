@@ -73,6 +73,10 @@ namespace Stateflows.StateMachines
                             StateMachinesContextHolder.TransitionContext.Value ??
                             throw new InvalidOperationException($"No service for type '{typeof(ITransitionContext).FullName}' is available in this context.")
                         )
+                        .AddTransient(provider =>
+                            StateMachinesContextHolder.ExecutionContext.Value ??
+                            throw new InvalidOperationException($"No service for type '{typeof(IExecutionContext).FullName}' is available in this context.")
+                        )
                     ;
                 }
 

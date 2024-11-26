@@ -2,19 +2,19 @@
 using System.Linq;
 using System.Diagnostics;
 using System.Collections.Generic;
+using Stateflows.Common;
+using Stateflows.Common.Models;
+using Stateflows.Common.Registration.Builders;
+using Stateflows.StateMachines.Exceptions;
 using Stateflows.StateMachines.Interfaces;
 using Stateflows.StateMachines.Registration;
 using Stateflows.StateMachines.Registration.Interfaces;
-using Stateflows.Common.Models;
-using Stateflows.StateMachines.Exceptions;
-using Stateflows.Common.Registration.Builders;
-using Stateflows.Common;
 
 namespace Stateflows.StateMachines.Models
 {
     internal class Graph
     {
-        internal readonly StateflowsBuilder StateflowsBuilder = null;
+        internal readonly StateflowsBuilder StateflowsBuilder;
 
         public Dictionary<string, int> InitCounter = new Dictionary<string, int>();
 
@@ -39,14 +39,10 @@ namespace Stateflows.StateMachines.Models
 
         public readonly Dictionary<string, Logic<StateMachinePredicateAsync>> Initializers = new Dictionary<string, Logic<StateMachinePredicateAsync>>();
         public readonly List<Type> InitializerTypes = new List<Type>();
-        public Logic<StateMachinePredicateAsync> DefaultInitializer = null;
+        public Logic<StateMachinePredicateAsync> DefaultInitializer;
 
-        private Logic<StateMachineActionAsync> finalize = null;
-        public Logic<StateMachineActionAsync> Finalize
-            => finalize ??= new Logic<StateMachineActionAsync>()
-                {
-                    Name = Constants.Finalize
-                };
+        public Logic<StateMachineActionAsync> Finalize { get; } =
+            new Logic<StateMachineActionAsync>(Constants.Finalize);
 
         public readonly List<StateMachineExceptionHandlerFactory> ExceptionHandlerFactories = new List<StateMachineExceptionHandlerFactory>();
 
@@ -132,7 +128,7 @@ namespace Stateflows.StateMachines.Models
 
             foreach (var edge in AllEdges)
             {
-                if (edge.TargetName != null && edge.TargetName != Constants.DefaultTransitionTarget)
+                if (!string.IsNullOrEmpty(edge.TargetName) && string.Compare(edge.TargetName, Constants.DefaultTransitionTarget) != 0)
                 {
                     if (AllVertices.TryGetValue(edge.TargetName, out var target))
                     {

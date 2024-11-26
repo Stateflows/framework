@@ -17,6 +17,7 @@ using Stateflows.Activities.Events;
 using Stateflows.Activities.Streams;
 using Stateflows.Activities.Registration;
 using Stateflows.Activities.Context.Classes;
+using Stateflows.Activities.Enums;
 
 namespace Stateflows.Activities.Engine
 {
@@ -641,7 +642,7 @@ namespace Stateflows.Activities.Engine
             return result;
         }
 
-        public async Task<bool> HandleExceptionAsync(Node node, Exception exception, BaseContext context)
+        public async Task<ExceptionHandlingResult> HandleExceptionAsync(Node node, Exception exception, ActionContext context)
         {
             Node handler = null;
             var currentNode = node;
@@ -689,14 +690,23 @@ namespace Stateflows.Activities.Engine
 
                 await handler.Action.WhenAll(exceptionContext);
 
-                DoHandleOutput(exceptionContext);
+                if (node.ExceptionHandlers.Contains(handler))
+                {
+                    context.OutputTokens.AddRange(exceptionContext.OutputTokens);
+                }
+                else
+                {
+                    DoHandleOutput(exceptionContext);
+                }
 
                 ReportExceptionHandled(node, exceptionName, exceptionContext.OutputTokens.Where(t => t is TokenHolder<ControlToken>).ToArray(), Context);
 
-                return true;
+                return node.ExceptionHandlers.Contains(handler)
+                    ? ExceptionHandlingResult.HandledDirectly
+                    : ExceptionHandlingResult.HandledIndirectly;
             }
 
-            return false;
+            return ExceptionHandlingResult.NotHandled;
         }
 
         public async Task DoHandleNodeAsync(Node node, Edge upstreamEdge, NodeScope nodeScope, IEnumerable<TokenHolder> input = null, IEnumerable<TokenHolder> selectionTokens = null)
@@ -713,7 +723,7 @@ namespace Stateflows.Activities.Engine
             lock (GetLock(node))
             {
                 var streams = !Context.NodesToExecute.Contains(node)
-                    ? Context.GetActivatedStreams(node, nodeScope.ThreadId)
+                    ? Context.GetNodeStreams(node, nodeScope.ThreadId, node.Type != NodeType.Output)
                     : Array.Empty<Stream>();
 
                 activated =
@@ -832,13 +842,14 @@ namespace Stateflows.Activities.Engine
 
                     ReportNodeExecuted(node, outputTokens.Where(t => t is TokenHolder<ControlToken>).ToArray(), Context);
 
-                    if (outputTokens.Any(t => t is TokenHolder<ControlToken>))
+                    //if (outputTokens.Any(t => t is TokenHolder<ControlToken>))
                     {
                         var tokenNames = outputTokens.Select(token => token.Name).Distinct().ToArray();
 
                         var nodes = (
                             await Task.WhenAll(
                                 node.Edges
+                                    .Where(edge => edge.Target.Type == NodeType.Output || outputTokens.Any(t => t is TokenHolder<ControlToken>))
                                     .Where(edge => tokenNames.Contains(edge.TokenType.GetTokenName()) || edge.Weight == 0)
                                     .OrderBy(edge => edge.IsElse)
                                     .Select(async edge => (
@@ -961,7 +972,7 @@ namespace Stateflows.Activities.Engine
             }
         }
 
-        private void DoHandleOutput(ActionContext context)
+        internal void DoHandleOutput(ActionContext context)
             => context.Context.GetOutputTokens(context.Node.Identifier, context.NodeScope.ThreadId).AddRange(context.OutputTokens);
 
         private async Task<bool> DoHandleEdgeAsync(Edge edge, ActionContext context)

@@ -14,19 +14,30 @@ namespace Stateflows.StateMachines.Context.Classes
     {
         public readonly StateMachineId Id;
 
-        internal readonly StateflowsContext Context;
+        private StateflowsContext stateflowsContext;
+
+        internal StateflowsContext Context => stateflowsContext;
 
         internal readonly Executor Executor;
 
         public RootContext(StateflowsContext context, Executor executor, EventHolder @event)
         {
-            Context = context;
-            Id = Context.Id;
+            stateflowsContext = context;
+            Id = stateflowsContext.Id;
             Executor = executor;
             SetEvent(@event);
         }
 
-        public Dictionary<string, string> GlobalValues => Context.GlobalValues;
+        public void SetContext(StateflowsContext context)
+        {
+            stateflowsContext = context;
+            deferredEvents = null;
+            embeddedBehaviorStatuses = null;
+            stateValues = null;
+            statesStack = null;
+        }
+
+        public Dictionary<string, string> GlobalValues => stateflowsContext.GlobalValues;
 
         private List<EventHolder> deferredEvents = null;
         public List<EventHolder> DeferredEvents
@@ -35,10 +46,10 @@ namespace Stateflows.StateMachines.Context.Classes
             {
                 if (deferredEvents == null)
                 {
-                    if (!Context.Values.TryGetValue(Constants.DeferredEvents, out var deferredEventsObj))
+                    if (!stateflowsContext.Values.TryGetValue(Constants.DeferredEvents, out var deferredEventsObj))
                     {
                         deferredEvents = new List<EventHolder>();
-                        Context.Values[Constants.DeferredEvents] = deferredEvents;
+                        stateflowsContext.Values[Constants.DeferredEvents] = deferredEvents;
                     }
                     else
                     {
@@ -46,7 +57,7 @@ namespace Stateflows.StateMachines.Context.Classes
                         if (deferredEvents == null)
                         {
                             deferredEvents = new List<EventHolder>();
-                            Context.Values[Constants.DeferredEvents] = deferredEvents;
+                            stateflowsContext.Values[Constants.DeferredEvents] = deferredEvents;
                         }
                     }
                 }
@@ -62,10 +73,10 @@ namespace Stateflows.StateMachines.Context.Classes
             {
                 if (embeddedBehaviorStatuses == null)
                 {
-                    if (!Context.Values.TryGetValue(Constants.EmbeddedBehaviorStatuses, out var stateContextsObj))
+                    if (!stateflowsContext.Values.TryGetValue(Constants.EmbeddedBehaviorStatuses, out var stateContextsObj))
                     {
                         embeddedBehaviorStatuses = new Dictionary<BehaviorId, EmbeddedBehaviorStatus>();
-                        Context.Values[Constants.EmbeddedBehaviorStatuses] = embeddedBehaviorStatuses;
+                        stateflowsContext.Values[Constants.EmbeddedBehaviorStatuses] = embeddedBehaviorStatuses;
                     }
                     else
                     {
@@ -84,10 +95,10 @@ namespace Stateflows.StateMachines.Context.Classes
             {
                 if (stateValues == null)
                 {
-                    if (!Context.Values.TryGetValue(Constants.StateValues, out var stateContextsObj))
+                    if (!stateflowsContext.Values.TryGetValue(Constants.StateValues, out var stateContextsObj))
                     {
                         stateValues = new Dictionary<string, StateValues>();
-                        Context.Values[Constants.StateValues] = stateValues;
+                        stateflowsContext.Values[Constants.StateValues] = stateValues;
                     }
                     else
                     {
@@ -125,10 +136,10 @@ namespace Stateflows.StateMachines.Context.Classes
             {
                 if (statesStack == null)
                 {
-                    if (!Context.Values.TryGetValue(Constants.StatesStack, out var statesStackObj))
+                    if (!stateflowsContext.Values.TryGetValue(Constants.StatesStack, out var statesStackObj))
                     {
                         statesStack = new List<string>();
-                        Context.Values[Constants.StatesStack] = statesStack;
+                        stateflowsContext.Values[Constants.StatesStack] = statesStack;
                     }
                     else
                     {
@@ -162,16 +173,34 @@ namespace Stateflows.StateMachines.Context.Classes
             ? EventsStack.Last()
             : null;
 
-        public readonly List<Exception> Exceptions = new List<Exception>();
+        private readonly List<IExecutionStep> executionSteps = new List<IExecutionStep>();
+
+        public IEnumerable<IExecutionStep> ExecutionSteps => executionSteps;
+
+        public void AddExecutionStep(string sourceStateName, string targetStateName, object transitionTrigger)
+            => executionSteps.Add(new ExecutionStep(sourceStateName, targetStateName, transitionTrigger));
+
+        private readonly List<Exception> exceptions = new List<Exception>();
+
+        public IEnumerable<Exception> Exceptions => exceptions;
+
+        public void AddException(Exception exception)
+            => exceptions.Add(exception);
+
+        public void RemoveException(Exception exception)
+            => exceptions.Remove(exception);
+
+        public void ClearExceptions()
+            => exceptions.Clear();
 
         public EventStatus? ForceStatus { get; set; } = null;
 
-        public async Task Send<TEvent>(TEvent @event, IEnumerable<EventHeader> headers = null)
+        public async Task SendAsync<TEvent>(TEvent @event, IEnumerable<EventHeader> headers = null)
         {
             var locator = Executor.ServiceProvider.GetService<IBehaviorLocator>();
             if (locator != null && locator.TryLocateBehavior(Id, out var behavior))
             {
-                await behavior.SendAsync(@event, headers);
+                await behavior.SendAsync(@event, headers).ConfigureAwait(false);
             }
         }
     }

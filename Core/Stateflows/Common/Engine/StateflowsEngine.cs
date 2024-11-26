@@ -55,7 +55,7 @@ namespace Stateflows.Common
         {
             executionTask = Task.Run(() =>
             {
-                while (!CancellationTokenSource.Token.IsCancellationRequested)
+                while (!CancellationTokenSource.Token.IsCancellationRequested && !cancellationToken.IsCancellationRequested)
                 {
                     if (!EventQueue.WaitAsync(CancellationTokenSource.Token).GetAwaiter().GetResult())
                     {

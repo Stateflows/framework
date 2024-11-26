@@ -1,10 +1,10 @@
 ﻿using System;
 using System.Linq;
 using System.Collections.Generic;
-using Stateflows.Activities.Models;
-using Stateflows.Activities.Context.Interfaces;
 using Stateflows.Utils;
 using Stateflows.Activities.Engine;
+using Stateflows.Activities.Models;
+using Stateflows.Activities.Context.Interfaces;
 
 namespace Stateflows.Activities.Context.Classes
 {
@@ -20,7 +20,7 @@ namespace Stateflows.Activities.Context.Classes
 
         public IEnumerable<TToken> GetTokensOfType<TToken>()
             => Context
-                .GetActivatedStreams(Node, ThreadId)
+                .GetNodeStreams(Node, ThreadId, true)
                 .SelectMany(stream => stream.Tokens)
                 .OfType<TokenHolder<TToken>>()
                 .ToTokens()

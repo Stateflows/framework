@@ -35,10 +35,7 @@ namespace Stateflows.Activities.Registration.Builders
 
         public IObjectFlowBuilder<TToken> AddGuard(GuardDelegateAsync<TToken> guardAsync)
         {
-            var logic = new Logic<TokenPipelineActionAsync>()
-            {
-                Name = Constants.Guard
-            };
+            var logic = new Logic<TokenPipelineActionAsync>(Constants.Guard);
 
             logic.Actions.Add(async context =>
             {
@@ -77,10 +74,7 @@ namespace Stateflows.Activities.Registration.Builders
 
         public IObjectFlowBuilder<TTransformedToken> AddTransformation<TTransformedToken>(TransformationDelegateAsync<TToken, TTransformedToken> transformationAsync)
         {
-            var logic = new Logic<TokenPipelineActionAsync>()
-            {
-                Name = Constants.Guard
-            };
+            var logic = new Logic<TokenPipelineActionAsync>(Constants.Guard);
 
             logic.Actions.Add(async context =>
             {

@@ -160,7 +160,7 @@ namespace Stateflows.StateMachines.Engine
                 try
                 {
                     var attributes = eventHolder.GetType().GetCustomAttributes<NoImplicitInitializationAttribute>();
-                    if (!executor.Initialized && !attributes.Any())
+                    if (!executor.Initialized && !attributes.Any() && !typeof(Exception).IsAssignableFrom(eventHolder.PayloadType))
                     {
                         result = await executor.InitializeAsync(eventHolder);
                     }

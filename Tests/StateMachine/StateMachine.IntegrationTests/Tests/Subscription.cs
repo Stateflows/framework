@@ -55,10 +55,6 @@ namespace StateMachine.IntegrationTests.Tests
                 StateMachineLocator.TryLocateStateMachine(new StateMachineId("subscribee", "x"), out var subscribee)
             )
             {
-                //await subscriber.SendAsync(new Initialize());
-
-                //await subscribee.SendAsync(new Initialize());
-
                 await subscribee.SendAsync(new OtherEvent());
 
                 await subscriber.SendAsync(new OtherEvent());
@@ -87,8 +83,6 @@ namespace StateMachine.IntegrationTests.Tests
                         watchHit = true;
                     }
                 });
-
-                //await subscribee.InitializeAsync();
 
                 await subscribee.SendAsync(new OtherEvent());
 

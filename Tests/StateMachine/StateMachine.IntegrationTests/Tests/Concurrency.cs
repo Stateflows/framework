@@ -58,10 +58,6 @@ namespace StateMachine.IntegrationTests.Tests
         [TestMethod]
         public async Task TwoConcurrentBehaviors()
         {
-            var initialized = false;
-            string currentState1 = "";
-            var someStatus1 = EventStatus.Rejected;
-
             if (StateMachineLocator.TryLocateStateMachine(new StateMachineId("a", "x"), out var a) &&
                 StateMachineLocator.TryLocateStateMachine(new StateMachineId("b", "x"), out var b))
             {
@@ -84,10 +80,6 @@ namespace StateMachine.IntegrationTests.Tests
         [TestMethod]
         public async Task TwoConcurrentInstances()
         {
-            var initialized = false;
-            string currentState1 = "";
-            var someStatus1 = EventStatus.Rejected;
-
             if (StateMachineLocator.TryLocateStateMachine(new StateMachineId("instance", "a"), out var a) &&
                 StateMachineLocator.TryLocateStateMachine(new StateMachineId("instance", "b"), out var b))
             {

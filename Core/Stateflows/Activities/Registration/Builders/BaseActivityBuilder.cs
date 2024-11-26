@@ -11,6 +11,8 @@ using Stateflows.Activities.Context.Classes;
 using Stateflows.Activities.Context.Interfaces;
 using Stateflows.Activities.Registration.Builders;
 using Stateflows.Activities.Registration.Interfaces;
+using System.Threading;
+using Stateflows.Activities.Enums;
 
 namespace Stateflows.Activities.Registration
 {
@@ -119,17 +121,14 @@ namespace Stateflows.Activities.Registration
 
             node.Action.Actions.Add(async c =>
             {
+                var context = c as ActionContext;
+                var faulty = false;
                 try
                 {
                     var inspector = c.Activity.GetExecutor().Inspector;
-                    await inspector.BeforeNodeExecuteAsync(c as ActionContext);
+                    await inspector.BeforeNodeExecuteAsync(context);
                     await actionAsync(c);
-                    await inspector.AfterNodeExecuteAsync(c as ActionContext);
-
-                    if (!(c as BaseContext).Context.Executor.StructuralTypes.Contains(node.Type))
-                    {
-                        c.Output(new ControlToken());
-                    }
+                    await inspector.AfterNodeExecuteAsync(context);
                 }
                 catch (Exception e)
                 {
@@ -139,14 +138,27 @@ namespace Stateflows.Activities.Registration
                     }
                     else
                     {
-                        if (!await (c as BaseContext).Context.Executor.HandleExceptionAsync(node, e, c as BaseContext))
+                        var executor = context.Context.Executor;
+                        var result = await executor.HandleExceptionAsync(node, e, context);
+                        if (result == ExceptionHandlingResult.NotHandled)
                         {
+                            faulty = true;
                             throw;
+                        }
+                        else
+                        {
+                            faulty = result == ExceptionHandlingResult.HandledIndirectly;
                         }
                     }
                 }
-            }
-            );
+                finally
+                {
+                    if (!faulty && !context.Context.Executor.StructuralTypes.Contains(node.Type))
+                    {
+                        c.Output(new ControlToken());
+                    }
+                }
+            });
 
             Node.Nodes.Add(node.Identifier, node);
             Result.AllNodes.Add(node.Identifier, node);

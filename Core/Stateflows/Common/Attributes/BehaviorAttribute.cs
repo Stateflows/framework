@@ -9,7 +9,7 @@ namespace Stateflows.Common.Attributes
 
         public int Version { get; set; }
 
-        public BehaviorAttribute(string name, int version = 1)
+        protected BehaviorAttribute(string name, int version = 1)
         {
             Name = name;
             Version = version;

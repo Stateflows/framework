@@ -25,6 +25,7 @@ namespace Activity.IntegrationTests.Tests
         private bool Executed2 = false;
         private bool Executed3 = false;
         private bool ExceptionHandlerOutput = false;
+        private int ExceptionHandlerOutputCount = 0;
         private static string Value1 = "boo";
         private static string Value2 = "boo";
         private static string Value3 = "boo";
@@ -279,21 +280,71 @@ namespace Activity.IntegrationTests.Tests
                             ExceptionHandlerOutput = c.GetTokensOfType<string>().Any();
                         })
                     )
-                    //.AddActivity("global", b => b
-                    //    .AddExceptionHandler<Exception>(async c =>
-                    //    {
-                    //        Executed1 = true;
-                    //        Value1 = c.NodeOfOrigin.NodeName;
-                    //        Value2 = c.ProtectedNode.NodeName;
-                    //    })
-                    //    .AddInitial(b => b
-                    //        .AddControlFlow("faulty")
-                    //    )
-                    //    .AddAction(
-                    //        "faulty",
-                    //        async c => throw new Exception()
-                    //    )
-                    //)
+                    .AddActivity("structured-output-merge", b => b
+                        .AddInitial(b => b
+                            .AddControlFlow("main")
+                        )
+                        .AddStructuredActivity("main", b => b
+                            .AddExceptionHandler<Exception>(async c =>
+                            {
+                                c.Output(c.Exception.Message);
+                            })
+                            .AddInitial(b => b
+                                .AddControlFlow("action1")
+                            )
+                            .AddAction("action1", async c =>
+                            {
+                                c.Output("test");
+                                throw new Exception("test");
+                            }, b => b
+                                .AddFlow<string, OutputNode>()
+                            )
+                            .AddOutput()
+
+                            .AddFlow<string>("final")
+                        )
+                        .AddAction("final", async c =>
+                        {
+                            ExceptionHandlerOutputCount = c.GetTokensOfType<string>().Count();
+                        })
+                    )
+                    .AddActivity("output-merge", b => b
+                        .AddInitial(b => b
+                            .AddControlFlow("action1")
+                        )
+                        .AddAction("action1",
+                            async c =>
+                            {
+                                c.Output("test");
+                                throw new Exception("test");
+                            },
+                            b => b
+                                .AddFlow<string>("final")
+                                .AddExceptionHandler<Exception>(async c =>
+                                {
+                                    c.Output(c.Exception.Message);
+                                })
+                        )
+                        .AddAction("final", async c =>
+                        {
+                            ExceptionHandlerOutputCount = c.GetTokensOfType<string>().Count();
+                        })
+                    )
+                //.AddActivity("global", b => b
+                //    .AddExceptionHandler<Exception>(async c =>
+                //    {
+                //        Executed1 = true;
+                //        Value1 = c.NodeOfOrigin.NodeName;
+                //        Value2 = c.ProtectedNode.NodeName;
+                //    })
+                //    .AddInitial(b => b
+                //        .AddControlFlow("faulty")
+                //    )
+                //    .AddAction(
+                //        "faulty",
+                //        async c => throw new Exception()
+                //    )
+                //)
                 )
                 ;
         }
@@ -423,6 +474,28 @@ namespace Activity.IntegrationTests.Tests
             }
 
             Assert.IsTrue(ExceptionHandlerOutput);
+        }
+
+        [TestMethod]
+        public async Task ExceptionHandledInStructureWithMergedOutput()
+        {
+            if (ActivityLocator.TryLocateActivity(new ActivityId("structured-output-merge", "x"), out var a))
+            {
+                await a.SendAsync(new Initialize());
+            }
+
+            Assert.AreEqual(2, ExceptionHandlerOutputCount);
+        }
+
+        [TestMethod]
+        public async Task ExceptionHandledWithMergedOutput()
+        {
+            if (ActivityLocator.TryLocateActivity(new ActivityId("output-merge", "x"), out var a))
+            {
+                await a.SendAsync(new Initialize());
+            }
+
+            Assert.AreEqual(2, ExceptionHandlerOutputCount);
         }
 
         //[TestMethod]

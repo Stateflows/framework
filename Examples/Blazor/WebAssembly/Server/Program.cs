@@ -14,6 +14,23 @@ builder.Services.AddStateflows(b => b
     .AddPlantUml()
 
     .AddStateMachines(b => b
+        .AddStateMachine("zemanowa-maszyna", b => b
+            .AddInitialState("draft", b => b
+                .AddTransition<SomeEvent>("active")
+            )
+            .AddCompositeState("active", b => b
+                .AddInitialState("normal", b => b
+                    .AddTransition<OtherEvent>("special")
+                )
+                .AddState("special", b => b
+                    .AddTransition<OtherEvent>("normal")
+                    .AddInternalTransition<SomeEvent>(b => b
+                        .AddEffect(async c => { })
+                    )
+                )
+            )
+        )
+
         .AddStateMachine("stateMachine1", b => b
             .AddInitialState("state1", b => b
                 .AddTransition<SomeEvent>("state2")
@@ -22,6 +39,10 @@ builder.Services.AddStateflows(b => b
                 )
             )
             .AddState("state2", b => b
+                .AddOnEntry(async c =>
+                {
+                    // logic
+                })
                 .AddTransition<OtherEvent>("state3", b => b
                     .AddGuard(c => c.Event.AnswerToLifeUniverseAndEverything == 42)
                 )

@@ -5,7 +5,6 @@ using System.Threading.Tasks;
 using System.Collections.Generic;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.DependencyInjection;
-using Stateflows.Utils;
 using Stateflows.Common;
 using Stateflows.Common.Context;
 using Stateflows.Common.Classes;
@@ -18,7 +17,6 @@ using Stateflows.StateMachines.Extensions;
 using Stateflows.StateMachines.Registration;
 using Stateflows.StateMachines.Context.Classes;
 using Stateflows.StateMachines.Context.Interfaces;
-using System.Runtime.InteropServices;
 
 namespace Stateflows.StateMachines.Engine
 {
@@ -26,7 +24,7 @@ namespace Stateflows.StateMachines.Engine
     {
         public readonly Graph Graph;
 
-        public bool StateHasChanged = false;
+        public bool StateHasChanged;
 
         public StateMachinesRegister Register { get; set; }
 
@@ -35,7 +33,7 @@ namespace Stateflows.StateMachines.Engine
         private readonly Stack<IServiceScope> ScopesStack = new Stack<IServiceScope>();
 
         private EventStatus EventStatus;
-        private bool IsEventStatusOverriden = false;
+        private bool IsEventStatusOverriden;
 
         public void OverrideEventStatus(EventStatus eventStatus)
         {
@@ -151,7 +149,7 @@ namespace Stateflows.StateMachines.Engine
                 {
                     await DoInitializeCascadeAsync(Graph.InitialVertex);
 
-                    await DoCompletion();
+                    await DoCompletionAsync();
 
                     if (result == InitializationStatus.InitializedExplicitly)
                     {
@@ -373,9 +371,17 @@ namespace Stateflows.StateMachines.Engine
                     {
                         if (eventHolder.Triggers(edge) && await DoGuardAsync<TEvent>(edge))
                         {
+                            Context.AddExecutionStep(
+                                edge.SourceName,
+                                edge.TargetName == string.Empty
+                                    ? null
+                                    : edge.TargetName,
+                                eventHolder.Payload
+                            );
+
                             await DoConsumeAsync<TEvent>(edge);
 
-                            await DoCompletion();
+                            await DoCompletionAsync();
 
                             return EventStatus.Consumed;
                         }
@@ -645,7 +651,7 @@ namespace Stateflows.StateMachines.Engine
             }
         }
 
-        private async Task<bool> DoCompletion()
+        private async Task<bool> DoCompletionAsync()
         {
             var completionEventHolder = (new Completion()).ToEventHolder();
             Context.SetEvent(completionEventHolder);

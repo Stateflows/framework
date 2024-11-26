@@ -40,9 +40,9 @@ namespace Stateflows.StateMachines.Models
         public EdgeType Type { get; set; }
         public bool IsElse { get; set; }
 
-        public Logic<StateMachinePredicateAsync> Guards { get; } = new Logic<StateMachinePredicateAsync>() { Name = Constants.Guard };
+        public Logic<StateMachinePredicateAsync> Guards { get; } = new Logic<StateMachinePredicateAsync>(Constants.Guard);
 
-        public Logic<StateMachineActionAsync> Effects { get; } = new Logic<StateMachineActionAsync>() { Name = Constants.Effect };
+        public Logic<StateMachineActionAsync> Effects { get; } = new Logic<StateMachineActionAsync>(Constants.Effect);
 
         public string SourceName { get; set; }
         public Vertex Source { get; set; }
