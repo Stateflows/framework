@@ -324,7 +324,7 @@ namespace Stateflows.StateMachines.Engine
 
             if (ShouldPropagateException(context.Context.Executor.Graph, handled))
             {
-                context.Context.Exceptions.Add(exception);
+                context.Context.AddException(exception);
             }
 
             return handled;
@@ -342,7 +342,7 @@ namespace Stateflows.StateMachines.Engine
 
             if (ShouldPropagateException(context.Context.Executor.Graph, handled))
             {
-                context.Context.Exceptions.Add(exception);
+                context.Context.AddException(exception);
             }
 
             return handled;
@@ -361,7 +361,7 @@ namespace Stateflows.StateMachines.Engine
 
             if (ShouldPropagateException(context.Context.Executor.Graph, handled))
             {
-                context.Context.Exceptions.Add(exception);
+                context.Context.AddException(exception);
             }
 
             return handled;
@@ -380,7 +380,7 @@ namespace Stateflows.StateMachines.Engine
 
             if (ShouldPropagateException(context.Context.Executor.Graph, handled))
             {
-                context.Context.Exceptions.Add(exception);
+                context.Context.AddException(exception);
             }
 
             return handled;
@@ -398,7 +398,7 @@ namespace Stateflows.StateMachines.Engine
 
             if (ShouldPropagateException(context.Context.Executor.Graph, handled))
             {
-                context.Context.Exceptions.Add(exception);
+                context.Context.AddException(exception);
             }
 
             return handled;
@@ -416,7 +416,7 @@ namespace Stateflows.StateMachines.Engine
 
             if (ShouldPropagateException(context.Context.Executor.Graph, handled))
             {
-                context.Context.Exceptions.Add(exception);
+                context.Context.AddException(exception);
             }
 
             return handled;
@@ -434,7 +434,7 @@ namespace Stateflows.StateMachines.Engine
 
             if (ShouldPropagateException(context.Context.Executor.Graph, handled))
             {
-                context.Context.Exceptions.Add(exception);
+                context.Context.AddException(exception);
             }
 
             return handled;
@@ -452,7 +452,7 @@ namespace Stateflows.StateMachines.Engine
 
             if (ShouldPropagateException(context.Context.Executor.Graph, handled))
             {
-                context.Context.Exceptions.Add(exception);
+                context.Context.AddException(exception);
             }
 
             return handled;

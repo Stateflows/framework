@@ -1,6 +1,6 @@
-﻿using Stateflows.StateMachines;
+﻿using Stateflows.Common;
+using Stateflows.StateMachines;
 using Stateflows.StateMachines.Attributes;
-using Stateflows.Common;
 using StateMachine.IntegrationTests.Classes.Transitions;
 
 namespace StateMachine.IntegrationTests.Classes.StateMachines
@@ -33,8 +33,8 @@ namespace StateMachine.IntegrationTests.Classes.StateMachines
     {
         private readonly IStateContext stateContext;
         private readonly IStateMachineContext stateMachineContext;
-        private readonly IExecutionContext executionContext;
-        public StateA(IStateContext stateContext, IStateMachineContext stateMachineContext, IExecutionContext executionContext)
+        private readonly Stateflows.StateMachines.IExecutionContext executionContext;
+        public StateA(IStateContext stateContext, IStateMachineContext stateMachineContext, Stateflows.StateMachines.IExecutionContext executionContext)
         {
             this.stateContext = stateContext;
             this.stateMachineContext = stateMachineContext;
@@ -64,12 +64,12 @@ namespace StateMachine.IntegrationTests.Classes.StateMachines
     {
         private readonly IStateMachineContext stateMachineContext;
         private readonly ITransitionContext transitionContext;
-        private readonly IExecutionContext executionContext;
+        private readonly Stateflows.StateMachines.IExecutionContext executionContext;
 
         public SomeTransition(
             IStateMachineContext stateMachineContext,
             ITransitionContext transitionContext,
-            IExecutionContext executionContext
+            Stateflows.StateMachines.IExecutionContext executionContext
         )
         {
             this.stateMachineContext = stateMachineContext;

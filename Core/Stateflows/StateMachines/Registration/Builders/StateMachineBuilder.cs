@@ -4,7 +4,6 @@ using System.Runtime.Serialization;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using Stateflows.Common;
-using Stateflows.Common.Exceptions;
 using Stateflows.Common.Models;
 using Stateflows.Common.Extensions;
 using Stateflows.Common.Registration;
@@ -47,10 +46,7 @@ namespace Stateflows.StateMachines.Registration.Builders
         {
             if (!Result.Initializers.TryGetValue(initializerName, out var initializer))
             {
-                initializer = new Logic<StateMachinePredicateAsync>()
-                {
-                    Name = Constants.Initialize
-                };
+                initializer = new Logic<StateMachinePredicateAsync>(Constants.Initialize);
 
                 Result.Initializers.Add(initializerName, initializer);
                 Result.InitializerTypes.Add(initializerType);
@@ -63,10 +59,7 @@ namespace Stateflows.StateMachines.Registration.Builders
 
         public IInitializedStateMachineBuilder AddDefaultInitializer(Func<IStateMachineInitializationContext, Task<bool>> actionAsync)
         {
-            Result.DefaultInitializer = new Logic<StateMachinePredicateAsync>()
-            {
-                Name = Constants.Initialize
-            };
+            Result.DefaultInitializer = new Logic<StateMachinePredicateAsync>(Constants.Initialize);
 
             Result.DefaultInitializer.Actions.Add(c =>
             {

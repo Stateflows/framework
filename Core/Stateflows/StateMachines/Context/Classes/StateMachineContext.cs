@@ -31,7 +31,7 @@ namespace Stateflows.StateMachines.Context.Classes
 
         public void Send<TEvent>(TEvent @event, IEnumerable<EventHeader> headers = null)
 
-            => _ = Context.Send(@event, headers);
+            => _ = Context.SendAsync(@event, headers);
 
         public void Publish<TNotificationEvent>(TNotificationEvent notification, IEnumerable<EventHeader> headers = null)
             => _ = Subscriber.PublishAsync(Id, notification, headers);

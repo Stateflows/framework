@@ -92,13 +92,13 @@ namespace Stateflows.Activities.Context.Classes
             }
         }
 
-        internal IEnumerable<Stream> GetActivatedStreams(Node node, Guid threadId)
+        internal IEnumerable<Stream> GetNodeStreams(Node node, Guid threadId, bool activatedOnly)
         {
             lock (Streams)
             {
                 return node.IncomingEdges
                     .Select(edge => GetStream(edge.Identifier, threadId))
-                    .Where(stream => stream.IsActivated)
+                    .Where(stream => stream.IsActivated || !activatedOnly)
                     .ToArray();
             }
         }

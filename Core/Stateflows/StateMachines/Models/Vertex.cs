@@ -30,16 +30,16 @@ namespace Stateflows.StateMachines.Models
         public string Identifier => Name;
 
         private Logic<StateMachineActionAsync> initialize = null;
-        public Logic<StateMachineActionAsync> Initialize => initialize ??= new Logic<StateMachineActionAsync>() { Name = Constants.Initialize };
+        public Logic<StateMachineActionAsync> Initialize => initialize ??= new Logic<StateMachineActionAsync>(Constants.Initialize);
 
         private Logic<StateMachineActionAsync> finalize = null;
-        public Logic<StateMachineActionAsync> Finalize => finalize ??= new Logic<StateMachineActionAsync>() { Name = Constants.Finalize };
+        public Logic<StateMachineActionAsync> Finalize => finalize ??= new Logic<StateMachineActionAsync>(Constants.Finalize);
 
         private Logic<StateMachineActionAsync> entry = null;
-        public Logic<StateMachineActionAsync> Entry => entry ??= new Logic<StateMachineActionAsync>() { Name = Constants.Entry };
+        public Logic<StateMachineActionAsync> Entry => entry ??= new Logic<StateMachineActionAsync>(Constants.Entry);
 
         private Logic<StateMachineActionAsync> exit = null;
-        public Logic<StateMachineActionAsync> Exit => exit ??= new Logic<StateMachineActionAsync>() { Name = Constants.Exit };
+        public Logic<StateMachineActionAsync> Exit => exit ??= new Logic<StateMachineActionAsync>(Constants.Exit);
 
         public Dictionary<string, Edge> Edges { get; set; } = new Dictionary<string, Edge>();
         public IEnumerable<Edge> OrderedEdges => Edges.Values.OrderBy(edge => edge.IsElse);

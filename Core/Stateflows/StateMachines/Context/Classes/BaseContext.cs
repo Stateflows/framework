@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+﻿using System.Collections.Generic;
+using Microsoft.Extensions.DependencyInjection;
 using Stateflows.Common;
 using Stateflows.Common.Context;
 using Stateflows.Common.Interfaces;
@@ -15,6 +16,8 @@ namespace Stateflows.StateMachines.Context.Classes
         public RootContext Context { get; }
 
         public object ExecutionTrigger => Context.ExecutionTriggerHolder.BoxedPayload;
+
+        public IEnumerable<IExecutionStep> ExecutionSteps => Context.ExecutionSteps;
 
         public StateMachineContext stateMachine;
         public StateMachineContext StateMachine => stateMachine ??= new StateMachineContext(Context);

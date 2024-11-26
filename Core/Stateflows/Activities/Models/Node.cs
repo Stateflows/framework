@@ -30,10 +30,7 @@ namespace Stateflows.Activities.Models
         public int ChunkSize { get; set; }
         public bool Anchored { get; set; } = true;
 
-        public Logic<ActivityActionAsync> Action { get; } =  new Logic<ActivityActionAsync>()
-        {
-            Name = Constants.Action
-        };
+        public Logic<ActivityActionAsync> Action { get; } =  new Logic<ActivityActionAsync>(Constants.Action);
 
         public List<Edge> Edges { get; set; } = new List<Edge>();
         public List<Edge> IncomingEdges { get; set; } = new List<Edge>();
@@ -94,27 +91,19 @@ namespace Stateflows.Activities.Models
                 .ToList();
         }
 
-        private Logic<ActivityEventActionAsync> initialize = null;
-        public Logic<ActivityEventActionAsync> Initialize
-            => initialize ??= new Logic<ActivityEventActionAsync>()
-            {
-                Name = Constants.Initialize
-            };
+        public Logic<ActivityEventActionAsync> Initialize { get; } =
+            new Logic<ActivityEventActionAsync>(Constants.Initialize);
 
-        private Logic<ActivityEventActionAsync> finalize = null;
-        public Logic<ActivityEventActionAsync> Finalize
-            => finalize ??= new Logic<ActivityEventActionAsync>()
-            {
-                Name = Constants.Finalize
-            };
+        public Logic<ActivityEventActionAsync> Finalize { get; } =
+            new Logic<ActivityEventActionAsync>(Constants.Finalize);
 
-        private IEnumerable<Node> initialNodes = null;
+        private IEnumerable<Node> initialNodes;
         public IEnumerable<Node> InitialNodes
             => initialNodes ??= Nodes.Values
                 .Where(n => n.Type == NodeType.Initial);
 
-        private Node inputNode = null;
-        private bool inputNodeSet = false;
+        private Node inputNode;
+        private bool inputNodeSet;
         public Node InputNode
         {
             get
@@ -129,8 +118,8 @@ namespace Stateflows.Activities.Models
             }
         }
 
-        private Node outputNode = null;
-        private bool outputNodeSet = false;
+        private Node outputNode;
+        private bool outputNodeSet;
         public Node OutputNode
         {
             get
@@ -145,17 +134,17 @@ namespace Stateflows.Activities.Models
             }
         }
 
-        private IEnumerable<Node> acceptEventActionNodes = null;
+        private IEnumerable<Node> acceptEventActionNodes;
         public IEnumerable<Node> AcceptEventActionNodes
             => acceptEventActionNodes ??= Nodes.Values
                 .Where(n => n.Type == NodeType.AcceptEventAction || n.Type == NodeType.TimeEventAction);
 
-        private IEnumerable<Node> danglingTimeEventActionNodes = null;
+        private IEnumerable<Node> danglingTimeEventActionNodes;
         public IEnumerable<Node> DanglingTimeEventActionNodes
             => danglingTimeEventActionNodes ??= AcceptEventActionNodes
                 .Where(n => !n.IncomingEdges.Any() && n.ActualEventTypes.Any(type => type.IsSubclassOf(typeof(TimeEvent))));
 
-        private IEnumerable<Node> exceptionHandlers = null;
+        private IEnumerable<Node> exceptionHandlers;
         public IEnumerable<Node> ExceptionHandlers
             => exceptionHandlers ??= Edges
                 .Select(e => e.Target)

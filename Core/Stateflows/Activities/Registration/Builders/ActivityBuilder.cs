@@ -37,10 +37,7 @@ namespace Stateflows.Activities.Registration.Builders
         {
             if (!Result.Initializers.TryGetValue(initializerName, out var initializer))
             {
-                initializer = new Logic<ActivityPredicateAsync>()
-                {
-                    Name = Constants.Initialize
-                };
+                initializer = new Logic<ActivityPredicateAsync>(Constants.Initialize);
 
                 Result.Initializers.Add(initializerName, initializer);
                 Result.InitializerTypes.Add(initializerType);
@@ -53,10 +50,7 @@ namespace Stateflows.Activities.Registration.Builders
 
         public IActivityBuilder AddDefaultInitializer(Func<IActivityInitializationContext, Task<bool>> actionAsync)
         {
-            Result.DefaultInitializer = new Logic<ActivityPredicateAsync>()
-            {
-                Name = Constants.Initialize
-            };
+            Result.DefaultInitializer = new Logic<ActivityPredicateAsync>(Constants.Initialize);
 
             Result.DefaultInitializer.Actions.Add(c =>
             {
@@ -163,16 +157,6 @@ namespace Stateflows.Activities.Registration.Builders
 
             return this;
         }
-
-        //public IActivityBuilder AddExceptionHandler<TException>(ExceptionHandlerDelegateAsync<TException> exceptionHandler)
-        //    where TException : Exception
-        //{
-        //    AddExceptionHandler(serviceProvider
-        //        => new AnonymousExceptionHandler<TException>(new NodeScope(serviceProvider, Node, Guid.NewGuid()), Node, exceptionHandler)
-        //    );
-            
-        //    return this;
-        //}
 
         public IActivityBuilder AddExceptionHandler(ActivityExceptionHandlerFactory exceptionHandlerFactory)
         {

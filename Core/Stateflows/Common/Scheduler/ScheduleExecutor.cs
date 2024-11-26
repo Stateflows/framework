@@ -62,7 +62,7 @@ namespace Stateflows.Common.Scheduler
                             {
                                 _ = SendAsyncMethod
                                     .MakeGenericMethod(timeEvent.GetType())
-                                    .Invoke(behavior, new object[] { timeEvent });
+                                    .Invoke(behavior, new object[] { timeEvent, null });
                             }
                         }
                     }
