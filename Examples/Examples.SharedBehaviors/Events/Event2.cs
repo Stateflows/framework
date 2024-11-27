@@ -2,7 +2,7 @@
 
 namespace Examples.SharedBehaviors.Events
 {
-    public class Event2 : EventHolder
+    public class Event2
     {
     }
 }

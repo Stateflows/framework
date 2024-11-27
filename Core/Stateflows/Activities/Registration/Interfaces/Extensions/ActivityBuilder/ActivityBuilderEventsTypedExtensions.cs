@@ -19,7 +19,6 @@ namespace Stateflows.Activities
 
         [DebuggerHidden]
         public static IActivityBuilder AddInitializer<TInitializationEvent, TInitializer>(this IActivityBuilder builder)
-            where TInitializationEvent : EventHolder, new()
             where TInitializer : class, IInitializer<TInitializationEvent>
         {
             (builder as IInternal).Services.AddServiceType<TInitializer>();
