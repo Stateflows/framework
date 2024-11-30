@@ -23,8 +23,8 @@ namespace Stateflows.StateMachines.Inspection.Classes
 
         public bool Active => Executor.VerticesStack.Contains(Vertex);
 
-        public bool IsInitial => Vertex.Parent != null
-            ? Vertex.Parent.InitialVertex == Vertex
+        public bool IsInitial => Vertex.ParentRegion != null
+            ? Vertex.ParentRegion.InitialVertex == Vertex
             : Vertex.Graph.InitialVertex == Vertex;
 
         public bool IsFinal => Vertex.Type == VertexType.FinalState;
@@ -59,15 +59,15 @@ namespace Stateflows.StateMachines.Inspection.Classes
             }
         }
 
-        public IEnumerable<IStateInspection> states;
+        public IEnumerable<IRegionInspection> regions;
 
-        public IEnumerable<IStateInspection> States
+        public IEnumerable<IRegionInspection> Regions
         {
             get
             {
-                states ??= Vertex.Vertices.Values.Select(subVertex => new StateInspection(Executor, subVertex)).ToArray();
+                regions ??= Vertex.Regions.Select(region => new RegionInspection(Executor, region)).ToArray();
 
-                return states;
+                return regions;
             }
         }
     }

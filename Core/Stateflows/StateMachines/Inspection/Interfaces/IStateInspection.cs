@@ -16,6 +16,6 @@ namespace Stateflows.StateMachines.Inspection.Interfaces
 
         IEnumerable<IActionInspection> Actions { get; }
 
-        IEnumerable<IStateInspection> States { get; }
+        IEnumerable<IRegionInspection> Regions { get; }
     }
 }

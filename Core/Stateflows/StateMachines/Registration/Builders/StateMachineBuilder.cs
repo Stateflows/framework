@@ -190,7 +190,7 @@ namespace Stateflows.StateMachines.Registration.Builders
             => AddState(stateName, stateBuildAction) as IOverridenStateMachineBuilder;
 
         public IInitializedStateMachineBuilder AddCompositeState(string compositeStateName, CompositeStateBuildAction compositeStateBuildAction)
-            => AddVertex(compositeStateName, VertexType.CompositeState, vertex => compositeStateBuildAction?.Invoke(new CompositeStateBuilder(vertex, Services)));
+            => AddVertex(compositeStateName, VertexType.CompositeState, vertex => compositeStateBuildAction?.Invoke(new CompositeStateBuilder(vertex.DefaultRegion, Services)));
 
         public IInitializedStateMachineBuilder AddInitialState(string stateName, StateBuildAction stateBuildAction = null)
         {
@@ -201,7 +201,7 @@ namespace Stateflows.StateMachines.Registration.Builders
         public IInitializedStateMachineBuilder AddInitialCompositeState(string compositeStateName, CompositeStateBuildAction compositeStateBuildAction)
         {
             Result.InitialVertexName = compositeStateName;
-            return AddVertex(compositeStateName, VertexType.InitialCompositeState, vertex => compositeStateBuildAction?.Invoke(new CompositeStateBuilder(vertex, Services)));
+            return AddVertex(compositeStateName, VertexType.InitialCompositeState, vertex => compositeStateBuildAction?.Invoke(new CompositeStateBuilder(vertex.DefaultRegion, Services)));
         }
         #endregion
 
@@ -407,7 +407,7 @@ namespace Stateflows.StateMachines.Registration.Builders
                 throw new StateMachineOverrideException($"Composite state '{compositeStateName}' not found in overriden state machine '{Result.BaseStateMachineName}'", Result.Class);
             }
             
-            compositeStateBuildAction?.Invoke(new CompositeStateBuilder(vertex, Services));
+            compositeStateBuildAction?.Invoke(new CompositeStateBuilder(vertex.DefaultRegion, Services));
 
             return this;
         }

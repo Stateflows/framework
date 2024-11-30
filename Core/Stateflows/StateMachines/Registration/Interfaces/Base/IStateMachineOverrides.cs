@@ -19,6 +19,14 @@
         TReturn UseCompositeState(string compositeStateName, OverridenCompositeStateBuildAction compositeStateBuildAction);
 
         /// <summary>
+        /// Uses a Orthogonal State of overriden state machine.<br/>
+        /// <a href="https://github.com/Stateflows/framework/wiki/Orthogonal-State">Orthogonal state</a> represent a stable configuration of a <a href="https://github.com/Stateflows/framework/wiki/Behaviors">Behavior</a>, which is a parent for set of substates.
+        /// </summary>
+        /// <param name="orthogonalStateName">Orthogonal state name</param>
+        /// <param name="orthogonalStateBuildAction">Orthogonal state build action</param>
+        TReturn UseOrthogonalState(string orthogonalStateName, OverridenOrthogonalStateBuildAction orthogonalStateBuildAction);
+
+        /// <summary>
         /// Uses a Junction pseudostate of overriden state machine.<br/>
         /// <a href="https://github.com/Stateflows/framework/wiki/Junction">Junctions</a> are pseudostates used to statically combine multiple transition guards; guards of transitions incoming to Junction and outgoing from Junction are evaluated together, <i>before</i> any transition happens.
         /// </summary>

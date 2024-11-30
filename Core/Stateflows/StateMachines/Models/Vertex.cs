@@ -15,15 +15,18 @@ namespace Stateflows.StateMachines.Models
         State,
         InitialCompositeState,
         CompositeState,
+        OrthogonalState,
         FinalState,
         Junction,
         Choice,
+        Join,
+        Fork,
     }
 
     internal class Vertex
     {
         public Graph Graph { get; set; }
-        public Vertex Parent { get; set; }
+        public Region ParentRegion { get; set; }
         public string Name { get; set; }
         public string OriginStateMachineName { get; set; } = null;
         public VertexType Type { get; set; }
@@ -43,10 +46,26 @@ namespace Stateflows.StateMachines.Models
 
         public Dictionary<string, Edge> Edges { get; set; } = new Dictionary<string, Edge>();
         public IEnumerable<Edge> OrderedEdges => Edges.Values.OrderBy(edge => edge.IsElse);
-        public string InitialVertexName { get; set; }
-        public Vertex InitialVertex { get; set; }
-        public Dictionary<string, Vertex> Vertices { get; set; } = new Dictionary<string, Vertex>();
+
         public List<string> DeferredEvents { get; set; } = new List<string>();
+        public List<Region> Regions { get; set; } = new List<Region>();
+        public Region DefaultRegion
+        {
+            get
+            {
+                if (!Regions.Any())
+                {
+                    Regions.Add(new Region()
+                    {
+                        Graph = Graph,
+                        ParentVertex = this,
+                        OriginStateMachineName = OriginStateMachineName
+                    });
+                }
+
+                return Regions.First();
+            }
+        }
 
         public StateActionInitializationBuilderAsync BehaviorInitializationBuilder { get; set; }
         public string BehaviorName { get; set; }

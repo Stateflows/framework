@@ -44,9 +44,9 @@ namespace Stateflows.Extensions.PlantUml.Classes
                 builder.AppendLine($"{indent}state {stateName} {{");
             }
 
-            if (state.States.Any())
+            if (state.Regions.Any())
             {
-                GetPlantUml(indentCount + 2, state.States, builder);
+                GetPlantUml(indentCount + 2, state.Regions.First().States, builder);
             }
 
             builder.AppendLine($"{indent}}}");

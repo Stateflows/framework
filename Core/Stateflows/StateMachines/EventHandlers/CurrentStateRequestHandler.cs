@@ -19,7 +19,7 @@ namespace Stateflows.StateMachines.EventHandlers
 
                 var response = new StateMachineInfo()
                 {
-                    StatesStack = executor.GetStateStack(),
+                    StatesTree = executor.GetStateTree(),
                     ExpectedEvents = executor.GetExpectedEventNames(),
                     BehaviorStatus = executor.BehaviorStatus
                 };

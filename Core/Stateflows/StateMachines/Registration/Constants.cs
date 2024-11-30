@@ -4,6 +4,7 @@
     {
         public const string StateMachine = nameof(StateMachine);
         public const string StatesStack = nameof(StatesStack);
+        public const string StatesTree = nameof(StatesTree);
         public const string DefaultTransitionTarget = "";
         public const string Completion = "";
         public const string StateValues = nameof(StateValues);

@@ -26,19 +26,19 @@ namespace Stateflows.StateMachines.Registration.Builders
         IInternal,
         IBehaviorBuilder
     {
-        public Vertex Vertex { get; }
+        public Region Region { get; }
 
         public IServiceCollection Services { get; }
 
-        BehaviorClass IBehaviorBuilder.BehaviorClass => new BehaviorClass(Constants.StateMachine, Vertex.Graph.Name);
+        BehaviorClass IBehaviorBuilder.BehaviorClass => new BehaviorClass(Constants.StateMachine, Region.Graph.Name);
 
-        int IBehaviorBuilder.BehaviorVersion => Vertex.Graph.Version;
+        int IBehaviorBuilder.BehaviorVersion => Region.Graph.Version;
 
-        public CompositeStateBuilder(Vertex vertex, IServiceCollection services)
+        public CompositeStateBuilder(Region region, IServiceCollection services)
         {
-            Vertex = vertex;
+            Region = region;
             Services = services;
-            Builder = new StateBuilder(Vertex, Services);
+            Builder = new StateBuilder(Region.ParentVertex, Services);
         }
 
         private StateBuilder Builder { get; set; }
@@ -48,26 +48,26 @@ namespace Stateflows.StateMachines.Registration.Builders
         {
             if (string.IsNullOrEmpty(stateName))
             {
-                throw new StateDefinitionException(stateName, $"State name cannot be empty", Vertex.Graph.Class);
+                throw new StateDefinitionException(stateName, $"State name cannot be empty", Region.Graph.Class);
             }
 
-            if (Vertex.Vertices.ContainsKey(stateName))
+            if (Region.Vertices.ContainsKey(stateName))
             {
-                throw new StateDefinitionException(stateName, $"State '{stateName}' is already registered", Vertex.Graph.Class);
+                throw new StateDefinitionException(stateName, $"State '{stateName}' is already registered", Region.Graph.Class);
             }
 
             var vertex = new Vertex()
             {
                 Name = stateName,
                 Type = type,
-                Parent = Vertex,
-                Graph = Vertex.Graph,
+                ParentRegion = Region,
+                Graph = Region.Graph,
             };
 
             vertexBuildAction?.Invoke(vertex);
 
-            Vertex.Vertices.Add(vertex.Name, vertex);
-            Vertex.Graph.AllVertices.Add(vertex.Identifier, vertex);
+            Region.Vertices.Add(vertex.Name, vertex);
+            Region.Graph.AllVertices.Add(vertex.Identifier, vertex);
 
             return this;
         }
@@ -260,20 +260,20 @@ namespace Stateflows.StateMachines.Registration.Builders
 
         [DebuggerHidden]
         public IInitializedCompositeStateBuilder AddCompositeState(string compositeStateName, CompositeStateBuildAction compositeStateBuildAction)
-            => AddVertex(compositeStateName, VertexType.CompositeState, vertex => compositeStateBuildAction?.Invoke(new CompositeStateBuilder(vertex, Services)));
+            => AddVertex(compositeStateName, VertexType.CompositeState, vertex => compositeStateBuildAction?.Invoke(new CompositeStateBuilder(vertex.DefaultRegion, Services)));
 
         [DebuggerHidden]
         public IInitializedCompositeStateBuilder AddInitialState(string stateName, StateBuildAction stateBuildAction = null)
         {
-            Vertex.InitialVertexName = stateName;
+            Region.InitialVertexName = stateName;
             return AddVertex(stateName, VertexType.InitialState, vertex => stateBuildAction?.Invoke(new StateBuilder(vertex, Services)));
         }
 
         [DebuggerHidden]
         public IInitializedCompositeStateBuilder AddInitialCompositeState(string stateName, CompositeStateBuildAction compositeStateBuildAction)
         {
-            Vertex.InitialVertexName = stateName;
-            return AddVertex(stateName, VertexType.InitialCompositeState, vertex => compositeStateBuildAction?.Invoke(new CompositeStateBuilder(vertex, Services)));
+            Region.InitialVertexName = stateName;
+            return AddVertex(stateName, VertexType.InitialCompositeState, vertex => compositeStateBuildAction?.Invoke(new CompositeStateBuilder(vertex.DefaultRegion, Services)));
         }
         #endregion
 
@@ -509,7 +509,7 @@ namespace Stateflows.StateMachines.Registration.Builders
         public IOverridenCompositeStateBuilder UseState(string stateName, OverridenStateBuildAction stateBuildAction)
         {
             if (
-                !Vertex.Vertices.TryGetValue(stateName, out var vertex) ||
+                !Region.Vertices.TryGetValue(stateName, out var vertex) ||
                 (
                     vertex.Type != VertexType.State && 
                     vertex.Type != VertexType.InitialState
@@ -517,7 +517,7 @@ namespace Stateflows.StateMachines.Registration.Builders
                 vertex.OriginStateMachineName == null
             )
             {
-                throw new StateMachineOverrideException($"State '{stateName}' not found in overriden composite state '{Vertex.Name}'", Vertex.Graph.Class);
+                throw new StateMachineOverrideException($"State '{stateName}' not found in overriden composite state '{Region.ParentVertex.Name}'", Region.Graph.Class);
             }
             
             stateBuildAction?.Invoke(new StateBuilder(vertex, Services));
@@ -529,7 +529,7 @@ namespace Stateflows.StateMachines.Registration.Builders
             OverridenCompositeStateBuildAction compositeStateBuildAction)
         {
             if (
-                !Vertex.Vertices.TryGetValue(compositeStateName, out var vertex) ||
+                !Region.Vertices.TryGetValue(compositeStateName, out var vertex) ||
                 (
                     vertex.Type != VertexType.CompositeState &&
                     vertex.Type != VertexType.InitialCompositeState
@@ -537,19 +537,19 @@ namespace Stateflows.StateMachines.Registration.Builders
                 vertex.OriginStateMachineName == null
             )
             {
-                throw new StateMachineOverrideException($"Composite state '{compositeStateName}' not found in overriden composite state '{Vertex.Name}'", Vertex.Graph.Class);
+                throw new StateMachineOverrideException($"Composite state '{compositeStateName}' not found in overriden composite state '{Region.ParentVertex.Name}'", Region.Graph.Class);
             }
             
-            compositeStateBuildAction?.Invoke(new CompositeStateBuilder(vertex, Services));
+            compositeStateBuildAction?.Invoke(new CompositeStateBuilder(vertex.DefaultRegion, Services));
 
             return this;
         }
 
         public IOverridenCompositeStateBuilder UseJunction(string junctionName, OverridenJunctionBuildAction junctionBuildAction)
         {
-            if (!Vertex.Vertices.TryGetValue(junctionName, out var vertex) || vertex.Type != VertexType.Junction || vertex.OriginStateMachineName == null)
+            if (!Region.Vertices.TryGetValue(junctionName, out var vertex) || vertex.Type != VertexType.Junction || vertex.OriginStateMachineName == null)
             {
-                throw new StateMachineOverrideException($"Junction '{junctionName}' not found in overriden composite state '{Vertex.Name}'", Vertex.Graph.Class);
+                throw new StateMachineOverrideException($"Junction '{junctionName}' not found in overriden composite state '{Region.ParentVertex.Name}'", Region.Graph.Class);
             }
             
             junctionBuildAction?.Invoke(new StateBuilder(vertex, Services));
@@ -559,9 +559,9 @@ namespace Stateflows.StateMachines.Registration.Builders
 
         public IOverridenCompositeStateBuilder UseChoice(string choiceName, OverridenChoiceBuildAction choiceBuildAction)
         {
-            if (!Vertex.Vertices.TryGetValue(choiceName, out var vertex) || vertex.Type != VertexType.Choice || vertex.OriginStateMachineName == null)
+            if (!Region.Vertices.TryGetValue(choiceName, out var vertex) || vertex.Type != VertexType.Choice || vertex.OriginStateMachineName == null)
             {
-                throw new StateMachineOverrideException($"Choice '{choiceName}' not found in overriden composite state '{Vertex.Name}'", Vertex.Graph.Class);
+                throw new StateMachineOverrideException($"Choice '{choiceName}' not found in overriden composite state '{Region.ParentVertex.Name}'", Region.Graph.Class);
             }
             
             choiceBuildAction?.Invoke(new StateBuilder(vertex, Services));

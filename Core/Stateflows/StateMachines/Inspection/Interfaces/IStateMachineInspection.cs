@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using Stateflows.Common.Utilities;
+using System.Collections.Generic;
 
 namespace Stateflows.StateMachines.Inspection.Interfaces
 {
@@ -9,6 +10,8 @@ namespace Stateflows.StateMachines.Inspection.Interfaces
         IEnumerable<IStateInspection> States { get; }
 
         IEnumerable<IStateInspection> CurrentStatesStack { get; }
+
+        IReadOnlyTree<IStateInspection> CurrentStatesTree { get; }
 
         IActionInspection Initialize { get; }
 

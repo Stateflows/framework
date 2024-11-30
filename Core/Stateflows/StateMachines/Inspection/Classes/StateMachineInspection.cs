@@ -1,7 +1,9 @@
-﻿using System.Linq;
+﻿using System;
+using System.Linq;
 using System.Collections.Generic;
 using Stateflows.StateMachines.Engine;
 using Stateflows.StateMachines.Inspection.Interfaces;
+using Stateflows.Common.Utilities;
 
 namespace Stateflows.StateMachines.Inspection.Classes
 {
@@ -30,18 +32,27 @@ namespace Stateflows.StateMachines.Inspection.Classes
         {
             get
             {
-                var result = new List<IStateInspection>();
-                IEnumerable<IStateInspection> statesSet = States;
-                foreach (var vertex in Executor.VerticesStack)
-                {
-                    var state = statesSet.First(s => s.Name == vertex.Name);
-                    if (state != null)
-                    {
-                        result.Add(state);
-                        statesSet = state.States;
-                    }
-                }
-                return result;
+                throw new NotImplementedException("implement states tree inspection instead of states stack inspection");
+                //var result = new List<IStateInspection>();
+                //IEnumerable<IStateInspection> statesSet = States;
+                //foreach (var vertex in Executor.VerticesStack)
+                //{
+                //    var state = statesSet.First(s => s.Name == vertex.Name);
+                //    if (state != null)
+                //    {
+                //        result.Add(state);
+                //        statesSet = state.States;
+                //    }
+                //}
+                //return result;
+            }
+        }
+
+        public IReadOnlyTree<IStateInspection> CurrentStatesTree
+        {
+            get
+            {
+                throw new NotImplementedException("implement states tree inspection instead of states stack inspection");
             }
         }
 

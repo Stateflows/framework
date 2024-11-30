@@ -26,10 +26,18 @@ namespace Stateflows.StateMachines.Registration.Interfaces
     public delegate void StateTransitionsBuildAction(IStateBuilder builder);
 
     public delegate void CompositeStateBuildAction(ICompositeStateBuilder builder);
-    
+
     public delegate void OverridenCompositeStateBuildAction(IOverridenCompositeStateBuilder builder);
 
     public delegate void CompositeStateTransitionsBuildAction(ICompositeStateBuilder builder);
+
+    public delegate void OrthogonalStateBuildAction(IOrthogonalStateBuilder builder);
+
+    public delegate void OverridenOrthogonalStateBuildAction(IOverridenOrthogonalStateBuilder builder);
+
+    public delegate void RegionBuildAction(IRegionBuilder builder);
+
+    public delegate void OverridenRegionBuildAction(IOverridenRegionBuilder builder);
 
     public delegate void TransitionBuildAction<TEvent>(ITransitionBuilder<TEvent> builder);
 

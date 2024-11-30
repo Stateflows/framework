@@ -21,6 +21,15 @@
         TReturn AddCompositeState(string compositeStateName, CompositeStateBuildAction compositeStateBuildAction);
 
         /// <summary>
+        /// Adds a Orthogonal State to the state machine.<br/>
+        /// <a href="https://github.com/Stateflows/framework/wiki/Orthogonal-State">Orthogonal state</a> represent a stable configuration of a <a href="https://github.com/Stateflows/framework/wiki/Behaviors">Behavior</a>, which is a parent for set of substates.
+        /// </summary>
+        /// <param name="orthogonalStateName">Orthogonal state name</param>
+        /// <param name="orthogonalStateBuildAction">Orthogonal state build action</param>
+        /// <returns>Returns the state machine instance</returns>
+        TReturn AddOrthogonalState(string orthogonalStateName, OrthogonalStateBuildAction orthogonalStateBuildAction);
+
+        /// <summary>
         /// Adds a Junction pseudostate to the state machine.<br/>
         /// <a href="https://github.com/Stateflows/framework/wiki/Junction">Junctions</a> are pseudostates used to statically combine multiple transition guards; guards of transitions incoming to Junction and outgoing from Junction are evaluated together, <i>before</i> any transition happens.
         /// </summary>

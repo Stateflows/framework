@@ -20,7 +20,7 @@ namespace Stateflows.StateMachines.Sync
         [DebuggerHidden]
         public static ICompositeStateBuilder AddOnInitialize(this ICompositeStateBuilder builder, Action<IStateActionContext> action)
             => builder.AddOnInitialize(action
-                .AddStateMachineInvocationContext((builder as CompositeStateBuilder).Vertex.Graph)
+                .AddStateMachineInvocationContext((builder as CompositeStateBuilder).Region.Graph)
                 .ToAsync()
             );
 
@@ -35,7 +35,7 @@ namespace Stateflows.StateMachines.Sync
         [DebuggerHidden]
         public static ICompositeStateBuilder AddOnFinalize(this ICompositeStateBuilder builder, Action<IStateActionContext> action)
             => builder.AddOnFinalize(action
-                .AddStateMachineInvocationContext((builder as CompositeStateBuilder).Vertex.Graph)
+                .AddStateMachineInvocationContext((builder as CompositeStateBuilder).Region.Graph)
                 .ToAsync()
             );
 
@@ -50,7 +50,7 @@ namespace Stateflows.StateMachines.Sync
         [DebuggerHidden]
         public static ICompositeStateBuilder AddOnEntry(this ICompositeStateBuilder builder, Action<IStateActionContext> action)
             => builder.AddOnEntry(action
-                .AddStateMachineInvocationContext((builder as CompositeStateBuilder).Vertex.Graph)
+                .AddStateMachineInvocationContext((builder as CompositeStateBuilder).Region.Graph)
                 .ToAsync()
             );
 
@@ -65,7 +65,7 @@ namespace Stateflows.StateMachines.Sync
         [DebuggerHidden]
         public static ICompositeStateBuilder AddOnExit(this ICompositeStateBuilder builder, Action<IStateActionContext> action)
             => builder.AddOnExit(action
-                .AddStateMachineInvocationContext((builder as CompositeStateBuilder).Vertex.Graph)
+                .AddStateMachineInvocationContext((builder as CompositeStateBuilder).Region.Graph)
                 .ToAsync()
             );
     }

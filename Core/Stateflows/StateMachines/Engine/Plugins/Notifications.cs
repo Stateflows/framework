@@ -128,7 +128,7 @@ namespace Stateflows.StateMachines.Engine
                 var notification = new StateMachineInfo()
                 {
                     BehaviorStatus = executor.BehaviorStatus,
-                    StatesStack = executor.GetStateStack(),
+                    StatesTree = executor.GetStateTree(),
                     ExpectedEvents = executor.GetExpectedEventNames(),
                 };
 
