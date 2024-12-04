@@ -57,7 +57,7 @@ namespace Stateflows.Common.Scheduler
                         {
                             foreach (var startupEvent in startupEvents)
                             {
-                                _ = behavior.SendAsync(startupEvent);
+                                await behavior.SendAsync(startupEvent);
                             }
                         }
                     }
