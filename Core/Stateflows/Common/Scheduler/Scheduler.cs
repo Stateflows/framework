@@ -112,7 +112,7 @@ namespace Stateflows.Common.Scheduler
                         var initializationEvent = await token.InitializationRequestFactory(ServiceProvider, token.BehaviorClass).ConfigureAwait(false);
                         _ = SendAsyncMethod
                             .MakeGenericMethod(initializationEvent.GetType())
-                            .Invoke(behavior, new object[] { initializationEvent });
+                            .Invoke(behavior, new object[] { initializationEvent, null });
                     }
                 })
             ).ConfigureAwait(false);

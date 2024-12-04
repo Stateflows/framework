@@ -31,7 +31,7 @@ namespace Stateflows.Common.Subscription
                 Headers = headers?.ToList() ?? new List<EventHeader>()
             };
 
-            if (context.Subscribers.TryGetValue(typeof(TNotificationEvent).GetEventName(), out var behaviorIds))
+            if (context.Subscribers.TryGetValue(Event<TNotificationEvent>.Name, out var behaviorIds))
             {
                 await Task.WhenAll(
                     behaviorIds.Select(

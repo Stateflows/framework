@@ -138,7 +138,7 @@ namespace StateMachine.IntegrationTests.Tests
 
                 var currentState = (await sm.GetCurrentStateAsync()).Response;
 
-                currentState1 = currentState.StatesStack.First();
+                currentState1 = currentState.StatesTree.Value;
             }
 
             ExecutionSequence.Verify(b => b
@@ -170,7 +170,7 @@ namespace StateMachine.IntegrationTests.Tests
 
                 await Task.Delay(200);
 
-                currentState1 = (await sm.GetCurrentStateAsync()).Response.StatesStack.First();
+                currentState1 = (await sm.GetCurrentStateAsync()).Response.StatesTree.Value;
             }
 
             ExecutionSequence.Verify(b => b
@@ -198,7 +198,7 @@ namespace StateMachine.IntegrationTests.Tests
 
                 await Task.Delay(200);
 
-                currentState1 = (await sm.GetCurrentStateAsync()).Response.StatesStack.First();
+                currentState1 = (await sm.GetCurrentStateAsync()).Response.StatesTree.Value;
             }
 
             ExecutionSequence.Verify(b => b
@@ -226,7 +226,7 @@ namespace StateMachine.IntegrationTests.Tests
 
                 await Task.Delay(200);
 
-                currentState1 = (await sm.GetCurrentStateAsync()).Response.StatesStack.First();
+                currentState1 = (await sm.GetCurrentStateAsync()).Response.StatesTree.Value;
             }
 
             ExecutionSequence.Verify(b => b

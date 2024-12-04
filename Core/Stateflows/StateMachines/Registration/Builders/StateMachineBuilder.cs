@@ -153,6 +153,12 @@ namespace Stateflows.StateMachines.Registration.Builders
             => AddCompositeState(compositeStateName, compositeStateBuildAction) as
                 IFinalizedOverridenStateMachineBuilder;
 
+        IFinalizedOverridenStateMachineBuilder IStateMachine<IFinalizedOverridenStateMachineBuilder>.AddOrthogonalState(
+            string orthogonalStateName,
+            OrthogonalStateBuildAction orthogonalStateBuildAction)
+            => AddOrthogonalState(orthogonalStateName, orthogonalStateBuildAction) as
+                IFinalizedOverridenStateMachineBuilder;
+
         IFinalizedOverridenStateMachineBuilder IStateMachine<IFinalizedOverridenStateMachineBuilder>.AddJunction(string junctionName, JunctionBuildAction junctionBuildAction)
             => AddJunction(junctionName, junctionBuildAction) as IFinalizedOverridenStateMachineBuilder;
 
@@ -162,9 +168,16 @@ namespace Stateflows.StateMachines.Registration.Builders
         IFinalizedOverridenStateMachineBuilder IStateMachine<IFinalizedOverridenStateMachineBuilder>.AddState(string stateName, StateBuildAction stateBuildAction)
             => AddState(stateName, stateBuildAction) as IFinalizedOverridenStateMachineBuilder;
 
+        IOverridenStateMachineBuilder IStateMachine<IOverridenStateMachineBuilder>.AddState(string stateName, StateBuildAction stateBuildAction)
+            => AddState(stateName, stateBuildAction) as IOverridenStateMachineBuilder;
+
         IOverridenStateMachineBuilder IStateMachine<IOverridenStateMachineBuilder>.AddCompositeState(string compositeStateName,
             CompositeStateBuildAction compositeStateBuildAction)
             => AddCompositeState(compositeStateName, compositeStateBuildAction) as IOverridenStateMachineBuilder;
+
+        IOverridenStateMachineBuilder IStateMachine<IOverridenStateMachineBuilder>.AddOrthogonalState(string orthogonalStateName,
+            OrthogonalStateBuildAction orthogonalStateBuildAction)
+            => AddOrthogonalState(orthogonalStateName, orthogonalStateBuildAction) as IOverridenStateMachineBuilder;
 
         IOverridenStateMachineBuilder IStateMachine<IOverridenStateMachineBuilder>.AddJunction(string junctionName, JunctionBuildAction junctionBuildAction)
             => AddJunction(junctionName, junctionBuildAction) as IOverridenStateMachineBuilder;
@@ -186,11 +199,11 @@ namespace Stateflows.StateMachines.Registration.Builders
 
         #region AddCompositeState
 
-        IOverridenStateMachineBuilder IStateMachine<IOverridenStateMachineBuilder>.AddState(string stateName, StateBuildAction stateBuildAction)
-            => AddState(stateName, stateBuildAction) as IOverridenStateMachineBuilder;
-
         public IInitializedStateMachineBuilder AddCompositeState(string compositeStateName, CompositeStateBuildAction compositeStateBuildAction)
             => AddVertex(compositeStateName, VertexType.CompositeState, vertex => compositeStateBuildAction?.Invoke(new CompositeStateBuilder(vertex.DefaultRegion, Services)));
+
+        public IInitializedStateMachineBuilder AddOrthogonalState(string orthogonalStateName, OrthogonalStateBuildAction orthogonalStateBuildAction)
+            => AddVertex(orthogonalStateName, VertexType.OrthogonalState, vertex => orthogonalStateBuildAction?.Invoke(new OrthogonalStateBuilder(vertex, Services)));
 
         public IInitializedStateMachineBuilder AddInitialState(string stateName, StateBuildAction stateBuildAction = null)
         {
@@ -202,6 +215,12 @@ namespace Stateflows.StateMachines.Registration.Builders
         {
             Result.InitialVertexName = compositeStateName;
             return AddVertex(compositeStateName, VertexType.InitialCompositeState, vertex => compositeStateBuildAction?.Invoke(new CompositeStateBuilder(vertex.DefaultRegion, Services)));
+        }
+
+        public IInitializedStateMachineBuilder AddInitialOrthogonalState(string orthogonalStateName, OrthogonalStateBuildAction orthogonalStateBuildAction)
+        {
+            Result.InitialVertexName = orthogonalStateName;
+            return AddVertex(orthogonalStateName, VertexType.InitialOrthogonalState, vertex => orthogonalStateBuildAction?.Invoke(new OrthogonalStateBuilder(vertex, Services)));
         }
         #endregion
 
@@ -406,8 +425,28 @@ namespace Stateflows.StateMachines.Registration.Builders
             {
                 throw new StateMachineOverrideException($"Composite state '{compositeStateName}' not found in overriden state machine '{Result.BaseStateMachineName}'", Result.Class);
             }
-            
+
             compositeStateBuildAction?.Invoke(new CompositeStateBuilder(vertex.DefaultRegion, Services));
+
+            return this;
+        }
+
+        public IOverridenStateMachineBuilder UseOrthogonalState(string orthogonalStateName,
+            OverridenOrthogonalStateBuildAction orthogonalStateBuildAction)
+        {
+            if (
+                !Result.Vertices.TryGetValue(orthogonalStateName, out var vertex) ||
+                (
+                    vertex.Type != VertexType.OrthogonalState &&
+                    vertex.Type != VertexType.InitialOrthogonalState
+                ) ||
+                vertex.OriginStateMachineName == null
+            )
+            {
+                throw new StateMachineOverrideException($"Orthogonal state '{orthogonalStateName}' not found in overriden state machine '{Result.BaseStateMachineName}'", Result.Class);
+            }
+
+            orthogonalStateBuildAction?.Invoke(new OrthogonalStateBuilder(vertex, Services));
 
             return this;
         }

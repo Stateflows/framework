@@ -63,7 +63,7 @@ namespace StateMachine.IntegrationTests.Tests
 
                 await Task.Delay(100);
 
-                currentState = (await subscriber.GetCurrentStateAsync()).Response?.StatesStack.FirstOrDefault();
+                currentState = (await subscriber.GetCurrentStateAsync()).Response?.StatesTree.Value;
             }
 
             Assert.AreEqual("state2", currentState);
@@ -103,7 +103,7 @@ namespace StateMachine.IntegrationTests.Tests
 
             if (StateMachineLocator.TryLocateStateMachine(new StateMachineId("subscribee", "z"), out var subscribee))
             {
-                _ = subscribee.WatchCurrentStateAsync(n => currentState = n.StatesStack.First());
+                _ = subscribee.WatchCurrentStateAsync(n => currentState = n.StatesTree.Value);
 
                 _ = subscribee.WatchStatusAsync(n => currentStatus = n.BehaviorStatus);
 

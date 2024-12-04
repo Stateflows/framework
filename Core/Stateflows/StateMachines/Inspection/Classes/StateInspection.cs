@@ -21,7 +21,7 @@ namespace Stateflows.StateMachines.Inspection.Classes
 
         public string Name => Vertex.Name;
 
-        public bool Active => Executor.VerticesStack.Contains(Vertex);
+        public bool Active => Executor.VerticesTree.AllItems.Select(node => node.Value).Contains(Vertex);
 
         public bool IsInitial => Vertex.ParentRegion != null
             ? Vertex.ParentRegion.InitialVertex == Vertex

@@ -153,8 +153,8 @@ namespace Stateflows.StateMachines.Context.Classes
             }
         }
 
-        private TreeHolder<string> statesTree = null;
-        public TreeHolder<string> StatesTree
+        private Tree<string> statesTree = null;
+        public Tree<string> StatesTree
         {
             get
             {
@@ -162,20 +162,20 @@ namespace Stateflows.StateMachines.Context.Classes
                 {
                     if (!stateflowsContext.Values.TryGetValue(Constants.StatesTree, out var statesTreeObj))
                     {
-                        statesTree = new TreeHolder<string>();
+                        statesTree = new Tree<string>();
 
                         // import historical, linear entries
                         if (stateflowsContext.Values.TryGetValue(Constants.StatesStack, out var stackObj))
                         {
                             var stack = stackObj as List<string>;
-                            Tree<string> tree = null;
+                            TreeNode<string> tree = null;
                             foreach (var state in stack)
                             {
                                 tree = tree == null
-                                    ? new Tree<string>(state)
+                                    ? new TreeNode<string>(state)
                                     : tree.Add(state);
                             }
-                            statesTree.Tree = tree;
+                            statesTree.Root = tree;
                             stateflowsContext.Values.Remove(Constants.StatesStack);
                         }
 
@@ -183,7 +183,7 @@ namespace Stateflows.StateMachines.Context.Classes
                     }
                     else
                     {
-                        statesTree = statesTreeObj as TreeHolder<string>;
+                        statesTree = statesTreeObj as Tree<string>;
                     }
                 }
 

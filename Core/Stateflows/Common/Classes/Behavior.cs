@@ -3,13 +3,13 @@ using System.Diagnostics;
 using System.Threading.Tasks;
 using System.Collections.Generic;
 using Microsoft.Extensions.DependencyInjection;
-using Stateflows.Utils;
 using Stateflows.Common.Utilities;
 using Stateflows.Common.Subscription;
+using Stateflows.Common.Interfaces;
 
 namespace Stateflows.Common.Classes
 {
-    internal class Behavior : IBehavior, IUnwatcher
+    internal class Behavior : IBehavior, IUnwatcher, INotificationHandler
     {
         public BehaviorId Id { get; }
 
@@ -23,30 +23,31 @@ namespace Stateflows.Common.Classes
             this.engine = engine;
             this.serviceProvider = serviceProvider;
             subscriptionHub = serviceProvider.GetRequiredService<NotificationsHub>();
-            subscriptionHub.OnPublish += SubscriptionHub_OnPublish;
+            subscriptionHub.RegisterHandler(this);
+            
             Id = id;
         }
 
-        private void SubscriptionHub_OnPublish(EventHolder eventHolder)
+        public Task HandleNotificationAsync(EventHolder eventHolder)
         {
-            if (eventHolder.SenderId != Id)
+            if (eventHolder.SenderId == Id)
             {
-                return;
-            }
-
-            lock (handlers)
-            {
-                if (handlers.TryGetValue(eventHolder.Name, out var notificationHandlers))
+                lock (handlers)
                 {
-                    foreach (var handler in notificationHandlers)
+                    if (handlers.TryGetValue(eventHolder.Name, out var notificationHandlers))
                     {
-                        handler.Invoke(eventHolder);
+                        foreach (var handler in notificationHandlers)
+                        {
+                            handler.Invoke(eventHolder);
+                        }
                     }
                 }
             }
+
+            return Task.CompletedTask;
         }
 
-        //[DebuggerHidden]
+        
         public async Task<SendResult> SendAsync<TEvent>(TEvent @event, IEnumerable<EventHeader> headers = null)
         {
             var eventHolder = @event.ToTypedEventHolder(headers);
@@ -116,7 +117,10 @@ namespace Stateflows.Common.Classes
         }
 
         protected virtual void Dispose(bool disposing)
-            => subscriptionHub.OnPublish -= SubscriptionHub_OnPublish;
+        {
+            
+            subscriptionHub.UnregisterHandler(this);
+        }
 
         ~Behavior()
             => Dispose(false);

@@ -51,7 +51,7 @@ namespace StateMachine.IntegrationTests.Tests
         //    {
         //        status = (await sm.SendAsync(new SomeEvent())).Status;
 
-        //        currentState = (await sm.GetCurrentStateAsync()).Response?.StatesStack.FirstOrDefault();
+        //        currentState = (await sm.GetCurrentStateAsync()).Response?.StatesTree.Value;
         //    }
 
         //    Assert.AreEqual(EventStatus.NotConsumed, status);
@@ -69,7 +69,7 @@ namespace StateMachine.IntegrationTests.Tests
             {
                 initialized = (await sm.SendAsync(new Initialize())).Status == EventStatus.Initialized;
 
-                currentState = (await sm.GetCurrentStateAsync()).Response.StatesStack.First();
+                currentState = (await sm.GetCurrentStateAsync()).Response.StatesTree.Value;
 
                 finalized = (await sm.GetStatusAsync())?.Response.BehaviorStatus == BehaviorStatus.Finalized;
             }
@@ -92,7 +92,7 @@ namespace StateMachine.IntegrationTests.Tests
             {
                 initialized = (await sm.SendAsync(new Initialize())).Status == EventStatus.Initialized;
 
-                currentState = (await sm.GetCurrentStateAsync()).Response.StatesStack.Skip(1).First() ?? string.Empty;
+                currentState = (await sm.GetCurrentStateAsync()).Response.StatesTree.Root.Items.First().Value ?? string.Empty;
             }
 
             ExecutionSequence.Verify(b => b

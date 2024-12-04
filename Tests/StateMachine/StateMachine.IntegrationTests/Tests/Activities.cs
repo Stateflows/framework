@@ -1,5 +1,6 @@
 using Stateflows.Activities;
 using StateMachine.IntegrationTests.Utils;
+using System.Diagnostics;
 
 namespace StateMachine.IntegrationTests.Tests
 {
@@ -33,6 +34,7 @@ namespace StateMachine.IntegrationTests.Tests
                         .AddExecutionSequenceObserver()
                         .AddInitializer<BoolInit>(async c =>
                         {
+                            Debug.WriteLine($"InitializationEvent.Value: {c.InitializationEvent.Value}");
                             c.StateMachine.Values.Set("value", c.InitializationEvent.Value);
                             return true;
                         })
@@ -60,7 +62,12 @@ namespace StateMachine.IntegrationTests.Tests
                                 GuardRun = true;
                                 if (c.Activity.Values.TryGet<bool>("value", out var value))
                                 {
+                                    Debug.WriteLine($"value: {value}");
                                     c.Output(value);
+                                }
+                                else
+                                {
+                                    Debug.WriteLine($"value: not available");
                                 }
                             },
                             b => b.AddFlow<bool, OutputNode>()
@@ -99,7 +106,7 @@ namespace StateMachine.IntegrationTests.Tests
         }
 
         [TestMethod]
-            public async Task ActivityActions()
+        public async Task ActivityActions()
         {
             string currentState1 = "";
 
@@ -111,7 +118,7 @@ namespace StateMachine.IntegrationTests.Tests
 
                 var currentState = (await sm.GetCurrentStateAsync()).Response;
 
-                currentState1 = currentState.StatesStack.First();
+                currentState1 = currentState.StatesTree.Value;
             }
 
             ExecutionSequence.Verify(b => b
@@ -134,7 +141,7 @@ namespace StateMachine.IntegrationTests.Tests
         {
             string currentState1 = "";
 
-            if (StateMachineLocator.TryLocateStateMachine(new StateMachineId("extended", "x"), out var sm))
+            if (StateMachineLocator.TryLocateStateMachine(new StateMachineId("extended", "y"), out var sm))
             {
                 await sm.SendAsync(new BoolInit() { Value = false });
 
@@ -142,7 +149,7 @@ namespace StateMachine.IntegrationTests.Tests
 
                 var currentState = (await sm.GetCurrentStateAsync()).Response;
 
-                currentState1 = currentState.StatesStack.First();
+                currentState1 = currentState.StatesTree.Value;
             }
 
             ExecutionSequence.Verify(b => b

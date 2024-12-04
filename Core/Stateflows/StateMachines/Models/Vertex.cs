@@ -15,6 +15,7 @@ namespace Stateflows.StateMachines.Models
         State,
         InitialCompositeState,
         CompositeState,
+        InitialOrthogonalState,
         OrthogonalState,
         FinalState,
         Junction,

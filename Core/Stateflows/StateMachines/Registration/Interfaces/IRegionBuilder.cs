@@ -15,7 +15,8 @@ namespace Stateflows.StateMachines.Registration.Interfaces
         IStateMachine<IInitializedRegionBuilder>
     { }
 
-    public interface IFinalizedOverridenRegionBuilder
+    public interface IFinalizedOverridenRegionBuilder :
+        IStateMachineOverrides<IFinalizedOverridenRegionBuilder>
     { }
 
     public interface IOverridenRegionBuilder :

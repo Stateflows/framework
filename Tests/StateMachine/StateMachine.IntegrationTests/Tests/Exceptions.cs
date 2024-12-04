@@ -1,5 +1,4 @@
 using Stateflows.Common;
-using Stateflows.StateMachines.Events;
 using StateMachine.IntegrationTests.Utils;
 
 namespace StateMachine.IntegrationTests.Tests
@@ -84,9 +83,10 @@ namespace StateMachine.IntegrationTests.Tests
             if (StateMachineLocator.TryLocateStateMachine(new StateMachineId("reset", "x"), out var sm))
             {
                 await sm.SendAsync(new Initialize());
-                state1 = (await sm.GetCurrentStateAsync()).Response.StatesStack.FirstOrDefault();
+                state1 = (await sm.GetCurrentStateAsync()).Response.StatesTree.Value;
                 await sm.SendAsync(new SomeEvent());
-                state2 = (await sm.GetCurrentStateAsync()).Response.StatesStack.FirstOrDefault();
+                await Task.Delay(100);
+                state2 = (await sm.GetCurrentStateAsync()).Response.StatesTree.Value;
             }
 
             Assert.AreEqual(state1, state2);
@@ -101,10 +101,11 @@ namespace StateMachine.IntegrationTests.Tests
             if (StateMachineLocator.TryLocateStateMachine(new StateMachineId("transition", "x"), out var sm))
             {
                 await sm.SendAsync(new Initialize());
-                state1 = (await sm.GetCurrentStateAsync()).Response.StatesStack.FirstOrDefault();
+                state1 = (await sm.GetCurrentStateAsync()).Response.StatesTree.Value;
                 
                 await sm.SendAsync(new SomeEvent());
-                state2 = (await sm.GetCurrentStateAsync()).Response.StatesStack.FirstOrDefault();
+                await Task.Delay(100);
+                state2 = (await sm.GetCurrentStateAsync()).Response.StatesTree.Value;
             }
 
             Assert.AreEqual("state1", state1);
@@ -120,10 +121,11 @@ namespace StateMachine.IntegrationTests.Tests
             if (StateMachineLocator.TryLocateStateMachine(new StateMachineId("generalTransition", "x"), out var sm))
             {
                 await sm.SendAsync(new Initialize());
-                state1 = (await sm.GetCurrentStateAsync()).Response.StatesStack.FirstOrDefault();
+                state1 = (await sm.GetCurrentStateAsync()).Response.StatesTree.Value;
                 
                 await sm.SendAsync(new SomeEvent());
-                state2 = (await sm.GetCurrentStateAsync()).Response.StatesStack.FirstOrDefault();
+                await Task.Delay(100);
+                state2 = (await sm.GetCurrentStateAsync()).Response.StatesTree.Value;
             }
 
             Assert.AreEqual("state1", state1);

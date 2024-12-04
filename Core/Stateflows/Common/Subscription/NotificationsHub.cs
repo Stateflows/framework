@@ -17,12 +17,32 @@ namespace Stateflows.Common.Subscription
         public Dictionary<BehaviorId, List<EventHolder>> Notifications
             => notifications;
 
-        public event Action<EventHolder> OnPublish;
+        private readonly List<INotificationHandler> Handlers = new List<INotificationHandler>();
+
+        public void RegisterHandler(INotificationHandler notificationHandler)
+        {
+            Handlers.Add(notificationHandler);
+        }
+
+        public void UnregisterHandler(INotificationHandler notificationHandler)
+        {
+            Handlers.Remove(notificationHandler);
+        }
+
+        private async Task RunHandlersAsync(EventHolder eventHolder)
+        {
+            foreach (var handler in Handlers)
+            {
+                await handler.HandleNotificationAsync(eventHolder);
+            }
+            //var tasks = Handlers.Select(h => h.HandleNotificationAsync(eventHolder)).ToArray();
+            //return Task.WhenAll(tasks);
+        }   
 
         public Task PublishAsync(EventHolder eventHolder)
             => PublishRangeAsync(new EventHolder[] { eventHolder });
 
-        public Task PublishRangeAsync(IEnumerable<EventHolder> eventHolders)
+        public async Task PublishRangeAsync(IEnumerable<EventHolder> eventHolders)
         {
             var holdersBySenderIds = eventHolders
                 .Where(h => h.SenderId != null)
@@ -42,10 +62,12 @@ namespace Stateflows.Common.Subscription
                 }
             }
 
-            var tasks = eventHolders.Select(h => Task.Run(() => OnPublish.Invoke(h)));
-            _ = Task.WhenAll(tasks);
+            foreach (var eventHolder in eventHolders)
+            {
+                await RunHandlersAsync(eventHolder);
+            }
 
-            return Task.CompletedTask;
+            //return Task.WhenAll(eventHolders.Select(h => RunHandlersAsync(h)).ToArray());
         }
 
         public Task StartAsync(CancellationToken cancellationToken)

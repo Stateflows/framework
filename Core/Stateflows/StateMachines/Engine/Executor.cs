@@ -17,7 +17,6 @@ using Stateflows.StateMachines.Extensions;
 using Stateflows.StateMachines.Registration;
 using Stateflows.StateMachines.Context.Classes;
 using Stateflows.StateMachines.Context.Interfaces;
-using Stateflows.Common.Utilities;
 
 namespace Stateflows.StateMachines.Engine
 {
@@ -76,44 +75,15 @@ namespace Stateflows.StateMachines.Engine
         public readonly Inspector Inspector;
 
         public IEnumerable<string> GetDeferredEvents()
-            => VerticesTree.AllItems.SelectMany(vertex => vertex.Value.DeferredEvents).ToArray();
-
-        public IEnumerable<Vertex> VerticesStack { get; private set; } = null;
+            => VerticesTree.AllItems_FromTheTop.SelectMany(vertex => vertex.Value.DeferredEvents).ToArray();
 
         public Tree<Vertex> VerticesTree { get; private set; } = null;
 
-        //public void RebuildVerticesStack()
-        //{
-        //    var result = new List<Vertex>();
-        //    for (int i = 0; i < Context.StatesStack.Count; i++)
-        //    {
-        //        var vertexName = Context.StatesStack[i];
-        //        if (Graph.AllVertices.TryGetValue(vertexName, out var vertex))
-        //        {
-        //            result.Add(vertex);
-        //        }
-        //        else
-        //        {
-        //            while (Context.StatesStack.Count > i)
-        //            {
-        //                Context.StatesStack.RemoveAt(i);
-        //                StateHasChanged = true;
-        //            }
-
-        //            break;
-        //        }
-        //    }
-
-        //    VerticesStack = result;
-        //}
-
         public void RebuildVerticesTree()
         {
-            VerticesTree = Context.StatesTree.Tree?.Translate(
-                vertexName => Graph.AllVertices.TryGetValue(vertexName, out var vertex)
-                    ? vertex
-                    : null,
-                vertex => vertex != null
+            VerticesTree = Context.StatesTree.Translate(
+                vertexName => Graph.AllVertices[vertexName],
+                vertexName => Graph.AllVertices.ContainsKey(vertexName)
             );
         }
 
@@ -131,10 +101,10 @@ namespace Stateflows.StateMachines.Engine
             => Inspector.BeforeDehydrateAsync(new StateMachineActionContext(Context));
 
         public bool Initialized
-            => VerticesTree != null;
+            => VerticesTree.HasValue;
 
         public bool Finalized
-            => VerticesTree.Value.Type == VertexType.FinalState;
+            => VerticesTree.Value?.Type == VertexType.FinalState;
 
         public BehaviorStatus BehaviorStatus =>
             (Initialized, Finalized) switch
@@ -195,14 +165,14 @@ namespace Stateflows.StateMachines.Engine
 
             if (Initialized)
             {
-                foreach (var vertex in VerticesTree.AllItemsFromTheTop.Select(node => node.Value))
+                foreach (var vertex in VerticesTree.AllItems_ChildrenFirst.Select(node => node.Value))
                 {
                     await DoExitAsync(vertex);
                 }
 
                 await DoFinalizeStateMachineAsync();
 
-                Context.StatesStack.Clear();
+                Context.StatesTree.Root = null;
                 StateHasChanged = true;
 
                 return true;
@@ -231,13 +201,18 @@ namespace Stateflows.StateMachines.Engine
             }
         }
 
-        private async Task DoInitializeCascadeAsync(Vertex vertex)
+        private async Task DoInitializeCascadeAsync(Vertex vertex, bool omitRoot = false)
         {
-            await DoEntryAsync(vertex);
-            Context.StatesStack.Add(vertex.Identifier);
+            if (!omitRoot)
+            {
+                await DoEntryAsync(vertex);
+            }
+
+            Context.StatesTree.AddTo(vertex.Identifier, vertex?.ParentRegion?.ParentVertex?.Identifier);
+
             StateHasChanged = true;
 
-            if (vertex.Regions.Any())
+            if (vertex.Regions.Any() && !omitRoot)
             {
                 await DoInitializeStateAsync(vertex);
             }
@@ -246,6 +221,30 @@ namespace Stateflows.StateMachines.Engine
                 .Where(region => region.InitialVertex != null)
                 .Select(region => DoInitializeCascadeAsync(region.InitialVertex))
             );
+
+            Context.StatesTree.Sort((v1, v2) =>
+            {
+                var region1 = Graph.AllVertices[v1]?.ParentRegion;
+                var index1 = region1?.ParentVertex.Regions.IndexOf(region1) ?? -1;
+                var region2 = Graph.AllVertices[v2]?.ParentRegion;
+                var index2 = region2?.ParentVertex.Regions.IndexOf(region2) ?? -1;
+
+                if (index1 < index2)
+                {
+                    return -1;
+                }
+                else
+                {
+                    if (index1 > index2)
+                    {
+                        return 1;
+                    }
+                    else
+                    {
+                        return 0;
+                    }
+                }
+            });
         }
 
         public IEnumerable<string> GetExpectedEventNames()
@@ -258,8 +257,7 @@ namespace Stateflows.StateMachines.Engine
 
         public IEnumerable<Type> GetExpectedEvents()
         {
-            var currentStack = VerticesStack.ToList();
-            currentStack.Reverse();
+            var currentStack = VerticesTree.AllItems_FromTheTop.Select(node => node.Value).ToArray() ?? new Vertex[0];
 
             return currentStack.Any()
                 ? currentStack
@@ -332,8 +330,7 @@ namespace Stateflows.StateMachines.Engine
         {
             Debug.Assert(Context != null, $"Context is not available. Is state machine '{Graph.Name}' hydrated?");
 
-            var currentStack = VerticesStack.ToList();
-            currentStack.Reverse();
+            var currentStack = VerticesTree.AllItems_FromTheTop.Select(node => node.Value).ToArray();
 
             var deferred = true;
 
@@ -556,14 +553,19 @@ namespace Stateflows.StateMachines.Engine
             var exitingVertices = new List<Vertex>();
             var enteringVertices = new List<Vertex>();
 
-            var vertex = VerticesStack.Last();
+            var vertex = edge.Source?.ParentRegion?.ParentVertex;
             while (vertex != null)
             {
                 exitingVertices.Insert(0, vertex);
                 vertex = vertex.ParentRegion?.ParentVertex;
             }
 
-            vertex = edge.Target;
+            if (VerticesTree.TryFind(edge.Source, out var node))
+            {
+                exitingVertices.AddRange(node.AllNodes_FromTheBottom.Select(node => node.Value));
+            }
+
+            vertex = edge.Target;//?.ParentRegion?.ParentVertex;
             while (vertex != null)
             {
                 enteringVertices.Insert(0, vertex);
@@ -587,7 +589,9 @@ namespace Stateflows.StateMachines.Engine
                 foreach (var exitingVertex in exitingVertices)
                 {
                     await DoExitAsync(exitingVertex);
-                    Context.StatesStack.RemoveAt(Context.StatesStack.Count - 1);
+
+                    Context.StatesTree.Remove(exitingVertex.Identifier);
+
                     StateHasChanged = true;
                 }
             }
@@ -605,7 +609,8 @@ namespace Stateflows.StateMachines.Engine
 
                 if (enteringVertex != enteringVertices.Last())
                 {
-                    Context.StatesStack.Add(enteringVertex.Identifier);
+                    Context.StatesTree.AddTo(enteringVertex.Identifier, enteringVertex?.ParentRegion?.ParentVertex?.Identifier);
+
                     StateHasChanged = true;
                 }
             }
@@ -614,7 +619,7 @@ namespace Stateflows.StateMachines.Engine
             {
                 var topVertex = enteringVertices.Last();
 
-                await DoInitializeCascadeAsync(topVertex);
+                await DoInitializeCascadeAsync(topVertex, true);
 
                 if (topVertex.Type == VertexType.FinalState)
                 {

@@ -2,7 +2,6 @@
 using System.Linq;
 using System.Diagnostics;
 using System.Threading.Tasks;
-using Stateflows.Utils;
 using Stateflows.Common;
 using Stateflows.Common.Classes;
 using Stateflows.Common.Utilities;
@@ -74,9 +73,14 @@ namespace Stateflows.Activities
                         integratedActivityBuilder.GetUnsubscribe(context.StateMachine.Id).ToEventHolder()
                     });
 
-                    await a.WatchOutputAsync<bool>(output => result = output.First());
-
-                    await a.RequestAsync(request);
+                    using (var watcher = await a.WatchOutputAsync<bool>(output =>
+                    {
+                        Debug.WriteLine("GuardActivity output: " + output.First());
+                        result = output.First();
+                    }))
+                    {
+                        await a.RequestAsync(request);
+                    }
                 });
             }
             else

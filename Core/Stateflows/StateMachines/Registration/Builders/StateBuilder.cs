@@ -728,9 +728,22 @@ namespace Stateflows.StateMachines.Registration.Builders
 
         public IOverridenRegionalizedStateBuilder MakeComposite(CompositeStateBuildAction compositeStateBuildAction)
         {
-            Vertex.Type = VertexType.CompositeState;
-            
+            Vertex.Type = Vertex.Type == VertexType.InitialState
+                ? VertexType.InitialCompositeState
+                : VertexType.CompositeState;
+
             compositeStateBuildAction?.Invoke(new CompositeStateBuilder(Vertex.DefaultRegion, Services));
+
+            return this;
+        }
+
+        public IOverridenRegionalizedStateBuilder MakeOrthogonal(OrthogonalStateBuildAction orthogonalStateBuildAction)
+        {
+            Vertex.Type = Vertex.Type == VertexType.InitialState
+                ? VertexType.InitialOrthogonalState
+                : VertexType.OrthogonalState;
+
+            orthogonalStateBuildAction?.Invoke(new OrthogonalStateBuilder(Vertex, Services));
 
             return this;
         }
@@ -777,6 +790,11 @@ namespace Stateflows.StateMachines.Registration.Builders
         IBehaviorOverridenRegionalizedStateBuilder IStateComposition<IBehaviorOverridenRegionalizedStateBuilder>.
             MakeComposite(CompositeStateBuildAction compositeStateBuildAction)
             => MakeComposite(compositeStateBuildAction) as IBehaviorOverridenRegionalizedStateBuilder;
+
+        [DebuggerHidden]
+        IBehaviorOverridenRegionalizedStateBuilder IStateOrthogonalization<IBehaviorOverridenRegionalizedStateBuilder>.
+            MakeOrthogonal(OrthogonalStateBuildAction orthogonalStateBuildAction)
+            => MakeOrthogonal(orthogonalStateBuildAction) as IBehaviorOverridenRegionalizedStateBuilder;
 
         [DebuggerHidden]
         IOverridenRegionalizedStateBuilder IStateEntry<IOverridenRegionalizedStateBuilder>.AddOnEntry(Func<IStateActionContext, Task> actionAsync)

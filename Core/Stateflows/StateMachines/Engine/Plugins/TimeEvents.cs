@@ -78,7 +78,7 @@ namespace Stateflows.StateMachines.Engine
                 stateValues.TimeEventIds.Remove(ConsumedInTransition.Identifier);
             }
 
-            var currentStack = (context as BaseContext).Context.Executor.VerticesStack;
+            var currentStack = (context as BaseContext).Context.Executor.VerticesTree.AllItems.Select(node => node.Value).ToArray();
 
             var enteredStack = currentStack
                 .Where(vertex => EnteredStates.Contains(vertex))
