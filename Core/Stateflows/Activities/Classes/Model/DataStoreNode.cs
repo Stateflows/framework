@@ -1,6 +1,6 @@
 ﻿namespace Stateflows.Activities
 {
-    public sealed class DataStoreNode : ActivityNode
+    public sealed class DataStoreNode : IActivityNode
     {
         public static string Name => ActivityNode<DataStoreNode>.Name;
     }

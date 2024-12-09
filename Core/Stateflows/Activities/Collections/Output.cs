@@ -26,37 +26,37 @@ namespace Stateflows.Activities
             => Tokens.Contains(item.ToTokenHolder());
     }
 
-    public struct Output<TToken> : ICollection<TToken>
+    public class Output<TToken> : ICollection<TToken>
     {
-        private readonly List<TToken> GetTokens()
+        private List<TToken> GetTokens()
             => OutputTokens.Tokens.OfType<TokenHolder<TToken>>().ToTokens().ToList();
 
-        public readonly int Count => GetTokens().Count;
+        public int Count => GetTokens().Count;
 
-        public readonly bool IsReadOnly => false;
+        public bool IsReadOnly => false;
 
-        public readonly void Add(TToken item)
+        public void Add(TToken item)
             => OutputTokens.Tokens.Add(item.ToTokenHolder());
 
-        public readonly void AddRange(IEnumerable<TToken> items)
+        public void AddRange(IEnumerable<TToken> items)
             => OutputTokens.Tokens.AddRange(items.Select(item => item.ToTokenHolder()));
 
-        public readonly void Clear()
+        public void Clear()
         => OutputTokens.Tokens.RemoveAll(token => token is TToken);
 
-        public readonly bool Contains(TToken item)
+        public bool Contains(TToken item)
             => OutputTokens.Tokens.Contains(item.ToTokenHolder());
 
-        public readonly void CopyTo(TToken[] array, int arrayIndex)
+        public void CopyTo(TToken[] array, int arrayIndex)
             => OutputTokens.Tokens.CopyTo(array.ToTokenHolders().ToArray(), arrayIndex);
 
-        public readonly bool Remove(TToken item)
+        public bool Remove(TToken item)
             => OutputTokens.Tokens.Remove(item.ToTokenHolder());
 
-        public readonly IEnumerator<TToken> GetEnumerator()
+        public IEnumerator<TToken> GetEnumerator()
             => GetTokens().GetEnumerator();
 
-        readonly IEnumerator IEnumerable.GetEnumerator()
+        IEnumerator IEnumerable.GetEnumerator()
             => GetTokens().GetEnumerator();
     }
 }

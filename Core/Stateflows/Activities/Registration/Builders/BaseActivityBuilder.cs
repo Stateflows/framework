@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using Stateflows.Common;
 using Stateflows.Common.Exceptions;
+using Stateflows.Activities.Enums;
 using Stateflows.Activities.Models;
 using Stateflows.Activities.Extensions;
 using Stateflows.Activities.Exceptions;
@@ -11,8 +12,6 @@ using Stateflows.Activities.Context.Classes;
 using Stateflows.Activities.Context.Interfaces;
 using Stateflows.Activities.Registration.Builders;
 using Stateflows.Activities.Registration.Interfaces;
-using System.Threading;
-using Stateflows.Activities.Enums;
 
 namespace Stateflows.Activities.Registration
 {
@@ -67,12 +66,12 @@ namespace Stateflows.Activities.Registration
             {
                 if (string.IsNullOrEmpty(nodeName))
                 {
-                    throw new NodeDefinitionException(nodeName, $"Node name cannot be empty");
+                    throw new NodeDefinitionException(nodeName, $"Node name cannot be empty", Result.Class);
                 }
 
                 if (Result.AllNamedNodes.ContainsKey(nodeName))
                 {
-                    throw new NodeDefinitionException(nodeName, $"Node '{nodeName}' is already registered");
+                    throw new NodeDefinitionException(nodeName, $"Node '{nodeName}' is already registered", Result.Class);
                 }
             }
 
@@ -98,7 +97,7 @@ namespace Stateflows.Activities.Registration
             {
                 if (exceptionOrEventType is null)
                 {
-                    throw new ExceptionHandlerDefinitionException(nodeName, "Exception type not provided");
+                    throw new ExceptionHandlerDefinitionException(nodeName, "Exception type not provided", Result.Class);
                 }
 
                 node.ExceptionType = exceptionOrEventType;
@@ -108,7 +107,7 @@ namespace Stateflows.Activities.Registration
             {
                 if (exceptionOrEventType is null)
                 {
-                    throw new AcceptEventActionDefinitionException(nodeName, "Event type not provided");
+                    throw new AcceptEventActionDefinitionException(nodeName, "Event type not provided", Result.Class);
                 }
 
                 node.EventType = exceptionOrEventType;

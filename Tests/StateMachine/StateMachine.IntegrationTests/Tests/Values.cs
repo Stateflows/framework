@@ -31,10 +31,9 @@ namespace StateMachine.IntegrationTests.Tests
 
             if (StateMachineLocator.TryLocateStateMachine(new StateMachineId(StateMachine<ValuesStateMachine>.Name, "x"), out var sm))
             {
-                //await sm.InitializeAsync();
                 await sm.SendAsync(new SomeEvent());
 
-                currentState = (await sm.GetCurrentStateAsync()).Response.StatesStack.First();
+                currentState = (await sm.GetCurrentStateAsync()).Response?.StatesStack?.First();
             }
 
             Assert.AreEqual(State<FinalState>.Name, currentState);

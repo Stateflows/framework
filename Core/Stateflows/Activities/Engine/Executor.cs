@@ -842,29 +842,26 @@ namespace Stateflows.Activities.Engine
 
                     ReportNodeExecuted(node, outputTokens.Where(t => t is TokenHolder<ControlToken>).ToArray(), Context);
 
-                    //if (outputTokens.Any(t => t is TokenHolder<ControlToken>))
-                    {
-                        var tokenNames = outputTokens.Select(token => token.Name).Distinct().ToArray();
+                    var tokenNames = outputTokens.Select(token => token.Name).Distinct().ToArray();
 
-                        var nodes = (
-                            await Task.WhenAll(
-                                node.Edges
-                                    .Where(edge => edge.Target.Type == NodeType.Output || outputTokens.Any(t => t is TokenHolder<ControlToken>))
-                                    .Where(edge => tokenNames.Contains(edge.TokenType.GetTokenName()) || edge.Weight == 0)
-                                    .OrderBy(edge => edge.IsElse)
-                                    .Select(async edge => (
-                                        Edge: edge,
-                                        Activated: await DoHandleEdgeAsync(edge, actionContext))
-                                    )
-                            )
+                    var nodes = (
+                        await Task.WhenAll(
+                            node.Edges
+                                .Where(edge => edge.Target.Type == NodeType.Output || outputTokens.Any(t => t is TokenHolder<ControlToken>))
+                                .Where(edge => tokenNames.Contains(edge.TokenType.GetTokenName()) || edge.Weight == 0)
+                                .OrderBy(edge => edge.IsElse)
+                                .Select(async edge => (
+                                    Edge: edge,
+                                    Activated: await DoHandleEdgeAsync(edge, actionContext))
+                                )
                         )
-                            .Where(x => x.Activated)
-                            .Select(x => x.Edge)
-                            .GroupBy(edge => edge.Target)
-                            .ToArray();
+                    )
+                        .Where(x => x.Activated)
+                        .Select(x => x.Edge)
+                        .GroupBy(edge => edge.Target)
+                        .ToArray();
 
-                        await Task.WhenAll(nodes.Select(n => DoHandleNodeAsync(n.Key, n.First(), nodeScope)).ToArray());
-                    }
+                    await Task.WhenAll(nodes.Select(n => DoHandleNodeAsync(n.Key, n.First(), nodeScope)).ToArray());
                 }
             }
 

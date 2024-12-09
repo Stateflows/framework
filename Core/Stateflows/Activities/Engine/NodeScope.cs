@@ -15,7 +15,7 @@ namespace Stateflows.Activities.Engine
 
         private IServiceProvider baseServiceProvider = null;
         private IServiceProvider BaseServiceProvider
-            => baseServiceProvider ??= BaseNodeScope.ServiceProvider;
+            => baseServiceProvider ??= new StateflowsServiceProvider(BaseNodeScope.ServiceProvider);
 
         private IServiceScope scope = null;
         private IServiceScope Scope
@@ -56,7 +56,7 @@ namespace Stateflows.Activities.Engine
 
         public NodeScope(IServiceProvider serviceProvider, Node node, Guid threadId)
         {
-            baseServiceProvider = serviceProvider;
+            baseServiceProvider = new StateflowsServiceProvider(serviceProvider);
             Node = node;
             ThreadId = threadId;
         }

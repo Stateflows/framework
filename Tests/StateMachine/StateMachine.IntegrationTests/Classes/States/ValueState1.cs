@@ -1,10 +1,15 @@
-﻿using Stateflows.Common;
+﻿using Stateflows.Common.Attributes;
 
 namespace StateMachine.IntegrationTests.Classes.States
 {
     internal class ValueState1 : IStateEntry
     {
-        private readonly StateValue<int> counter = new("counter");
+        public ValueState1([ValueName("counter")] StateValue<int> counter)
+        {
+            this.counter = counter;
+        }
+
+        private readonly StateValue<int> counter;
 
         public Task OnEntryAsync()
         {
