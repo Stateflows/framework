@@ -46,7 +46,7 @@ namespace Stateflows.Common.Classes
             }
         }
 
-        //[DebuggerHidden]
+        [DebuggerHidden]
         public async Task<SendResult> SendAsync<TEvent>(TEvent @event, IEnumerable<EventHeader> headers = null)
         {
             var eventHolder = @event.ToTypedEventHolder(headers);
