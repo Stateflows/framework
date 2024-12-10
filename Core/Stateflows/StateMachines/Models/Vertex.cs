@@ -93,5 +93,38 @@ namespace Stateflows.StateMachines.Models
 
         public BehaviorId GetBehaviorId(StateMachineId hostId)
             => new BehaviorId(BehaviorType, BehaviorName, $"__stateBehavior:{hostId.Name}:{hostId.Instance}:{Name}");
+
+        public bool IsOrthogonalTo(Vertex vertex)
+        {
+            if (this == vertex)
+            {
+                return false;
+            }
+
+            var stack = new List<Vertex>();
+            var currentVertex = this;
+            while (currentVertex != null)
+            {
+                stack.Add(currentVertex);
+
+                currentVertex = currentVertex?.ParentRegion?.ParentVertex;
+            }
+
+            currentVertex = vertex;
+            var previousVertex = vertex;
+            while (currentVertex != null)
+            {
+                var index = stack.IndexOf(currentVertex);
+                if (index > 0 && stack[index - 1].ParentRegion != previousVertex.ParentRegion)
+                {
+                    return true;
+                }
+
+                previousVertex = currentVertex;
+                currentVertex = currentVertex?.ParentRegion?.ParentVertex;
+            }
+
+            return false;
+        }
     }
 }

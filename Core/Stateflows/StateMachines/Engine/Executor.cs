@@ -334,9 +334,15 @@ namespace Stateflows.StateMachines.Engine
 
             var deferred = true;
 
+            var result = EventStatus.NotConsumed;
+
             if (!TryDeferEvent(eventHolder))
             {
                 deferred = false;
+
+                var activatedEdges = new List<Edge>();
+
+                Edge lastActivatedEdge = null;
 
                 foreach (var vertex in currentStack)
                 {
@@ -346,23 +352,40 @@ namespace Stateflows.StateMachines.Engine
 
                     foreach (var edge in edges)
                     {
-                        if (eventHolder.Triggers(edge) && await DoGuardAsync<TEvent>(edge))
+                        if (
+                            eventHolder.Triggers(edge) && 
+                            await DoGuardAsync<TEvent>(edge) &&
+                            (
+                                lastActivatedEdge == null ||
+                                edge.Source.IsOrthogonalTo(lastActivatedEdge.Source)
+                            )
+                        )
                         {
-                            Context.AddExecutionStep(
-                                edge.SourceName,
-                                edge.TargetName == string.Empty
-                                    ? null
-                                    : edge.TargetName,
-                                eventHolder.Payload
-                            );
+                            activatedEdges.Add(edge);
 
-                            await DoConsumeAsync<TEvent>(edge);
-
-                            await DoCompletionAsync();
-
-                            return EventStatus.Consumed;
+                            lastActivatedEdge = edge;
                         }
                     }
+                }
+
+                foreach (var edge in activatedEdges)
+                {
+                    Context.AddExecutionStep(
+                        edge.SourceName,
+                        edge.TargetName == string.Empty
+                            ? null
+                            : edge.TargetName,
+                        eventHolder.Payload
+                    );
+
+                    await DoConsumeAsync<TEvent>(edge);
+
+                    result = EventStatus.Consumed;
+                }
+
+                if (result == EventStatus.Consumed)
+                {
+                    await DoCompletionAsync();
                 }
             }
 
@@ -375,7 +398,7 @@ namespace Stateflows.StateMachines.Engine
 
             return deferred
                 ? EventStatus.Deferred
-                : EventStatus.NotConsumed;
+                : result;
         }
 
         [DebuggerStepThrough]
