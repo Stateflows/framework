@@ -135,6 +135,31 @@ namespace StateMachine.IntegrationTests.Tests
                             )
                         )
                     )
+
+                    .AddStateMachine("transitionToRegion", b => b
+                        .AddInitialState("state1", b => b
+                            .AddTransition<OtherEvent>("state2.1.3")
+                        )
+                        .AddOrthogonalState("state2", b => b
+                            .AddRegion(b => b
+                                .AddInitialState("state2.1.1", b => b
+                                    .AddDefaultTransition("state2.1.2")
+                                )
+                                .AddState("state2.1.2", b => b
+                                    .AddTransition<SomeEvent>("state2.1.3")
+                                )
+                                .AddCompositeState("state2.1.3", b => b
+                                    .AddInitialState("state2.1.3.1", b => b
+                                        .AddTransition<SomeEvent>("state2.1.3.2")
+                                    )
+                                    .AddState("state2.1.3.2")
+                                )
+                            )
+                            .AddRegion(b => b
+                                .AddInitialState("state2.2.1")
+                            )
+                        )
+                    )
                 )
                 ;
         }
@@ -153,8 +178,8 @@ namespace StateMachine.IntegrationTests.Tests
 
                 var tree = (await sm.GetCurrentStateAsync()).Response.StatesTree;
                 currentState = tree.Value;
-                substate1 = tree.Root.Items.First().Value;
-                substate2 = tree.Root.Items.Last().Value;
+                substate1 = tree.Root.Nodes.First().Value;
+                substate2 = tree.Root.Nodes.Last().Value;
             }
 
             Assert.AreEqual("state2", currentState);
@@ -176,12 +201,35 @@ namespace StateMachine.IntegrationTests.Tests
 
                 var tree = (await sm.GetCurrentStateAsync()).Response.StatesTree;
                 currentState = tree.Value;
-                substate1 = tree.Root.Items.First().Value;
-                substate2 = tree.Root.Items.Last().Value;
+                substate1 = tree.Root.Nodes.First().Value;
+                substate2 = tree.Root.Nodes.Last().Value;
             }
 
             Assert.AreEqual("state2", currentState);
             Assert.AreEqual("state2.1.2", substate1);
+            Assert.AreEqual("state2.2.1", substate2);
+        }
+
+        [TestMethod]
+        public async Task SimpleOrthogonalStateWithTransitionToRegion()
+        {
+            var status = EventStatus.Rejected;
+            string currentState = "";
+            string substate1 = "";
+            string substate2 = "";
+
+            if (StateMachineLocator.TryLocateStateMachine(new StateMachineId("transitionToRegion", "x"), out var sm))
+            {
+                status = (await sm.SendAsync(new OtherEvent() { AnswerToLifeUniverseAndEverything = 42 })).Status;
+
+                var tree = (await sm.GetCurrentStateAsync()).Response.StatesTree;
+                currentState = tree.Value;
+                substate1 = tree.Root.Nodes.First().Value;
+                substate2 = tree.Root.Nodes.Last().Value;
+            }
+
+            Assert.AreEqual("state2", currentState);
+            Assert.AreEqual("state2.1.3", substate1);
             Assert.AreEqual("state2.2.1", substate2);
         }
 
@@ -199,8 +247,8 @@ namespace StateMachine.IntegrationTests.Tests
 
                 var tree = (await sm.GetCurrentStateAsync()).Response.StatesTree;
                 currentState = tree.Value;
-                substate1 = tree.Root.Items.First().Value;
-                substate2 = tree.Root.Items.Last().Value;
+                substate1 = tree.Root.Nodes.First().Value;
+                substate2 = tree.Root.Nodes.Last().Value;
             }
 
             Assert.AreEqual("state2", currentState);
@@ -223,8 +271,8 @@ namespace StateMachine.IntegrationTests.Tests
 
                 var tree = (await sm.GetCurrentStateAsync()).Response.StatesTree;
                 currentState = tree.Value;
-                substate1 = tree.Root.Items.First().Value;
-                substate2 = tree.Root.Items.Last().Value;
+                substate1 = tree.Root.Nodes.First().Value;
+                substate2 = tree.Root.Nodes.Last().Value;
             }
 
             Assert.AreEqual("state2", currentState);
@@ -247,7 +295,7 @@ namespace StateMachine.IntegrationTests.Tests
 
                 var tree = (await sm.GetCurrentStateAsync()).Response.StatesTree;
                 currentState = tree.Value;
-                var allNodes = tree.AllItems_FromTheTop.ToArray();
+                var allNodes = tree.AllNodes_FromTheTop.ToArray();
                 substate1 = allNodes.Skip(0).Take(1).First().Value;
                 substate2 = allNodes.Skip(1).Take(1).First().Value;
                 substate3 = allNodes.Skip(2).Take(1).First().Value;

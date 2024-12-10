@@ -92,7 +92,7 @@ namespace StateMachine.IntegrationTests.Tests
             {
                 initialized = (await sm.SendAsync(new Initialize())).Status == EventStatus.Initialized;
 
-                currentState = (await sm.GetCurrentStateAsync()).Response.StatesTree.Root.Items.First().Value ?? string.Empty;
+                currentState = (await sm.GetCurrentStateAsync()).Response.StatesTree.Root.Nodes.First().Value ?? string.Empty;
             }
 
             ExecutionSequence.Verify(b => b

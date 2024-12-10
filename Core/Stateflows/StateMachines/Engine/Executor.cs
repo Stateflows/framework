@@ -75,7 +75,7 @@ namespace Stateflows.StateMachines.Engine
         public readonly Inspector Inspector;
 
         public IEnumerable<string> GetDeferredEvents()
-            => VerticesTree.AllItems_FromTheTop.SelectMany(vertex => vertex.Value.DeferredEvents).ToArray();
+            => VerticesTree.AllNodes_FromTheTop.SelectMany(vertex => vertex.Value.DeferredEvents).ToArray();
 
         public Tree<Vertex> VerticesTree { get; private set; } = null;
 
@@ -165,7 +165,7 @@ namespace Stateflows.StateMachines.Engine
 
             if (Initialized)
             {
-                foreach (var vertex in VerticesTree.AllItems_ChildrenFirst.Select(node => node.Value))
+                foreach (var vertex in VerticesTree.AllNodes_ChildrenFirst.Select(node => node.Value))
                 {
                     await DoExitAsync(vertex);
                 }
@@ -257,7 +257,7 @@ namespace Stateflows.StateMachines.Engine
 
         public IEnumerable<Type> GetExpectedEvents()
         {
-            var currentStack = VerticesTree.AllItems_FromTheTop.Select(node => node.Value).ToArray() ?? new Vertex[0];
+            var currentStack = VerticesTree.AllNodes_FromTheTop.Select(node => node.Value).ToArray() ?? new Vertex[0];
 
             return currentStack.Any()
                 ? currentStack
@@ -330,7 +330,7 @@ namespace Stateflows.StateMachines.Engine
         {
             Debug.Assert(Context != null, $"Context is not available. Is state machine '{Graph.Name}' hydrated?");
 
-            var currentStack = VerticesTree.AllItems_FromTheTop.Select(node => node.Value).ToArray();
+            var currentStack = VerticesTree.AllNodes_FromTheTop.Select(node => node.Value).ToArray();
 
             var deferred = true;
 
@@ -588,7 +588,7 @@ namespace Stateflows.StateMachines.Engine
                 exitingVertices.AddRange(node.AllNodes_FromTheBottom.Select(node => node.Value));
             }
 
-            vertex = edge.Target;//?.ParentRegion?.ParentVertex;
+            vertex = edge.Target;
             while (vertex != null)
             {
                 enteringVertices.Insert(0, vertex);
@@ -621,13 +621,41 @@ namespace Stateflows.StateMachines.Engine
 
             await DoEffectAsync<TEvent>(edge);
 
-            foreach (var enteringVertex in enteringVertices)
+            List<Region> regions = new List<Region>();
+
+            for (var i = 0; i < enteringVertices.Count; i++)
             {
+                var enteringVertex = enteringVertices[i];
+
                 await DoEntryAsync(enteringVertex);
 
                 if (enteringVertex.Regions.Any())
                 {
                     await DoInitializeStateAsync(enteringVertex);
+                }
+
+                if (enteringVertex.Regions.Count > 1 && i < enteringVertices.Count - 1)
+                {
+                    var enteredRegion = enteringVertices[i + 1].ParentRegion;
+
+                    bool initializing = true;
+                    foreach (var region in enteringVertex.Regions)
+                    {
+                        if (region == enteredRegion)
+                        {
+                            initializing = false;
+                            continue;
+                        }
+
+                        if (initializing)
+                        {
+                            await DoInitializeCascadeAsync(region.InitialVertex);
+                        }
+                        else
+                        {
+                            regions.Add(region);
+                        }
+                    }
                 }
 
                 if (enteringVertex != enteringVertices.Last())
@@ -655,6 +683,11 @@ namespace Stateflows.StateMachines.Engine
                         await DoFinalizeStateAsync(topVertex.ParentRegion.ParentVertex);
                     }
                 }
+            }
+
+            foreach (var region in regions)
+            {
+                await DoInitializeCascadeAsync(region.InitialVertex);
             }
         }
 

@@ -226,31 +226,21 @@ namespace Stateflows.StateMachines.Registration.Builders
             => AddFinalState(finalStateName) as IFinalizedOverridenRegionBuilder;
 
         IOverridenRegionBuilder IStateMachineOverrides<IOverridenRegionBuilder>.UseOrthogonalState(string orthogonalStateName, OverridenOrthogonalStateBuildAction orthogonalStateBuildAction)
-            => UseOrthogonalState(orthogonalStateName, orthogonalStateBuildAction) as IOverridenRegionBuilder;
+            => UseOrthogonalState(orthogonalStateName, orthogonalStateBuildAction);
 
         IFinalizedOverridenRegionBuilder IStateMachineOverrides<IFinalizedOverridenRegionBuilder>.UseState(string stateName, OverridenStateBuildAction stateBuildAction)
-        {
-            throw new NotImplementedException();
-        }
+            => UseState(stateName, stateBuildAction) as IFinalizedOverridenRegionBuilder;
 
         IFinalizedOverridenRegionBuilder IStateMachineOverrides<IFinalizedOverridenRegionBuilder>.UseCompositeState(string compositeStateName, OverridenCompositeStateBuildAction compositeStateBuildAction)
-        {
-            throw new NotImplementedException();
-        }
+            => UseCompositeState(compositeStateName, compositeStateBuildAction) as IFinalizedOverridenRegionBuilder;
 
         IFinalizedOverridenRegionBuilder IStateMachineOverrides<IFinalizedOverridenRegionBuilder>.UseOrthogonalState(string orthogonalStateName, OverridenOrthogonalStateBuildAction orthogonalStateBuildAction)
-        {
-            throw new NotImplementedException();
-        }
+            => UseOrthogonalState(orthogonalStateName, orthogonalStateBuildAction) as IFinalizedOverridenRegionBuilder;
 
         IFinalizedOverridenRegionBuilder IStateMachineOverrides<IFinalizedOverridenRegionBuilder>.UseJunction(string junctionName, OverridenJunctionBuildAction junctionBuildAction)
-        {
-            throw new NotImplementedException();
-        }
+            => UseJunction(junctionName, junctionBuildAction) as IFinalizedOverridenRegionBuilder;
 
         IFinalizedOverridenRegionBuilder IStateMachineOverrides<IFinalizedOverridenRegionBuilder>.UseChoice(string choiceName, OverridenChoiceBuildAction choiceBuildAction)
-        {
-            throw new NotImplementedException();
-        }
+            => UseChoice(choiceName, choiceBuildAction) as IFinalizedOverridenRegionBuilder;
     }
 }

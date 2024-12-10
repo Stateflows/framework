@@ -23,7 +23,45 @@ namespace StateMachine.IntegrationTests.Tests
                 .AddState("state2")
             );
     }
-    
+
+    public class OrthogonalizedStateMachine : IStateMachine
+    {
+        public void Build(IStateMachineBuilder builder) => builder
+            .UseStateMachine<BaseStateMachine>(b => b
+                .UseState("state1", b => b
+                    .MakeOrthogonal(b => b
+                        .AddRegion(b => b
+                            .AddInitialState("state1.A.1")
+                        )
+                        .AddRegion(b => b
+                            .AddInitialState("state1.B.1")
+                        )
+                    )
+                )
+            );
+    }
+
+    public class InheritedOrthogonalStateMachine : IStateMachine
+    {
+        public void Build(IStateMachineBuilder builder) => builder
+            .UseStateMachine<OrthogonalizedStateMachine>(b => b
+                .UseOrthogonalState("state1", b => b
+                    .UseRegion(0, b => b
+                        .UseState("state1.A.1", b => b
+                            .AddDefaultTransition("state1.A.2")
+                        )
+                        .AddState("state1.A.2")
+                    )
+                    .UseRegion(1, b => b
+                        .UseState("state1.B.1", b => b
+                            .AddDefaultTransition("state1.B.2")
+                        )
+                        .AddState("state1.B.2")
+                    )
+                )
+            );
+    }
+
     public class OverrideState1 : IState { }
     public class OverrideState2 : IState { }
     public class OverrideState3 : IState { }
@@ -134,6 +172,10 @@ namespace StateMachine.IntegrationTests.Tests
                             .AddState<OverrideState3>()
                         )
                     )
+
+                    .AddStateMachine<OrthogonalizedStateMachine>(nameof(OrthogonalizedStateMachine))
+
+                    .AddStateMachine<InheritedOrthogonalStateMachine>(nameof(InheritedOrthogonalStateMachine))
                 )
                 ;
         }
@@ -218,7 +260,7 @@ namespace StateMachine.IntegrationTests.Tests
             {
                 status = (await sm.SendAsync(new SomeEvent())).Status;
 
-                currentState = (await sm.GetCurrentStateAsync()).Response.StatesTree.AllItems_ChildrenFirst.First().Value;
+                currentState = (await sm.GetCurrentStateAsync()).Response.StatesTree.AllNodes_ChildrenFirst.First().Value;
             }
 
             Assert.AreEqual(EventStatus.Consumed, status);
@@ -235,7 +277,7 @@ namespace StateMachine.IntegrationTests.Tests
             {
                 status = (await sm.SendAsync(new SomeEvent())).Status;
 
-                currentState = (await sm.GetCurrentStateAsync()).Response.StatesTree.AllItems_ChildrenFirst.First().Value;
+                currentState = (await sm.GetCurrentStateAsync()).Response.StatesTree.AllNodes_ChildrenFirst.First().Value;
             }
 
             Assert.AreEqual(EventStatus.Consumed, status);
@@ -252,11 +294,59 @@ namespace StateMachine.IntegrationTests.Tests
             {
                 status = (await sm.SendAsync(new SomeEvent())).Status;
 
-                currentState = (await sm.GetCurrentStateAsync()).Response.StatesTree.AllItems_ChildrenFirst.First().Value;
+                currentState = (await sm.GetCurrentStateAsync()).Response.StatesTree.AllNodes_ChildrenFirst.First().Value;
             }
 
             Assert.AreEqual(EventStatus.Consumed, status);
             Assert.AreEqual(State<OverrideState3>.Name, currentState);
+        }
+
+        [TestMethod]
+        public async Task OrthogonalizedState()
+        {
+            var status = EventStatus.Rejected;
+            string currentState = "";
+            string currentSubstate1 = "";
+            string currentSubstate2 = "";
+
+            if (StateMachineLocator.TryLocateStateMachine(new StateMachineId(nameof(OrthogonalizedStateMachine), "x"), out var sm))
+            {
+                status = (await sm.SendAsync(new SomeEvent())).Status;
+
+                var tree = (await sm.GetCurrentStateAsync()).Response.StatesTree;
+                currentState = tree.Value;
+                currentSubstate1 = tree.Root.Nodes.First().Value;
+                currentSubstate2 = tree.Root.Nodes.Last().Value;
+            }
+
+            Assert.AreEqual(EventStatus.Consumed, status);
+            Assert.AreEqual("state1", currentState);
+            Assert.AreEqual("state1.A.1", currentSubstate1);
+            Assert.AreEqual("state1.B.1", currentSubstate2);
+        }
+
+        [TestMethod]
+        public async Task InheritedOrthogonalState()
+        {
+            var status = EventStatus.Rejected;
+            string currentState = "";
+            string currentSubstate1 = "";
+            string currentSubstate2 = "";
+
+            if (StateMachineLocator.TryLocateStateMachine(new StateMachineId(nameof(InheritedOrthogonalStateMachine), "x"), out var sm))
+            {
+                status = (await sm.SendAsync(new SomeEvent())).Status;
+
+                var tree = (await sm.GetCurrentStateAsync()).Response.StatesTree;
+                currentState = tree.Value;
+                currentSubstate1 = tree.Root.Nodes.First().Value;
+                currentSubstate2 = tree.Root.Nodes.Last().Value;
+            }
+
+            Assert.AreEqual(EventStatus.Consumed, status);
+            Assert.AreEqual("state1", currentState);
+            Assert.AreEqual("state1.A.2", currentSubstate1);
+            Assert.AreEqual("state1.B.2", currentSubstate2);
         }
     }
 }

@@ -8,7 +8,7 @@ namespace Stateflows.Common
     public interface IReadOnlyTreeNode<T>
     {
         T Value { get; }
-        IEnumerable<IReadOnlyTreeNode<T>> Items { get; }
+        IEnumerable<IReadOnlyTreeNode<T>> Nodes { get; }
         bool Contains(T value);
         bool TryFind(T value, out IReadOnlyTreeNode<T> node);
         bool SubtreeContains(T value);
@@ -22,7 +22,7 @@ namespace Stateflows.Common
     public interface ITreeNode<T>
     {
         T Value { get; }
-        IEnumerable<ITreeNode<T>> Items { get; }
+        IEnumerable<ITreeNode<T>> Nodes { get; }
         ITreeNode<T> Add(T value);
         ITreeNode<T> AddTo(T value, T parent);
         void AddRange(IEnumerable<T> values);
@@ -51,11 +51,11 @@ namespace Stateflows.Common
             Parent = parent;
         }
 
-        private TreeNode(T value, List<TreeNode<T>> itemsList)
+        private TreeNode(T value, List<TreeNode<T>> nodesList)
             : this(value, parent: null)
         {
-            itemsList.ForEach(item => item.Parent = this);
-            NodesList = itemsList;
+            nodesList.ForEach(item => item.Parent = this);
+            NodesList = nodesList;
         }
 
         private bool parentsAssigned = false;
@@ -178,7 +178,7 @@ namespace Stateflows.Common
         #region ITree
         T ITreeNode<T>.Value
             => Value;
-        IEnumerable<ITreeNode<T>> ITreeNode<T>.Items
+        IEnumerable<ITreeNode<T>> ITreeNode<T>.Nodes
             => Nodes;
         ITreeNode<T> ITreeNode<T>.Add(T value)
             => Add(value);
@@ -205,7 +205,7 @@ namespace Stateflows.Common
         #region IReadOnlyTree
         T IReadOnlyTreeNode<T>.Value
             => Value;
-        IEnumerable<IReadOnlyTreeNode<T>> IReadOnlyTreeNode<T>.Items
+        IEnumerable<IReadOnlyTreeNode<T>> IReadOnlyTreeNode<T>.Nodes
             => Nodes;
         bool IReadOnlyTreeNode<T>.Contains(T value)
             => Contains(value);
@@ -243,11 +243,11 @@ namespace Stateflows.Common
         bool TryFind(T value, out ITreeNode<T> node);
         ITreeNode<T> AddTo(T value, T parent);
         void Sort(Comparison<T> comparison);
-        IEnumerable<ITreeNode<T>> AllItems { get; }
-        IEnumerable<ITreeNode<T>> AllItems_ParentsFirst { get; }
-        IEnumerable<ITreeNode<T>> AllItems_ChildrenFirst { get; }
-        IEnumerable<ITreeNode<T>> AllItems_FromTheTop { get; }
-        IEnumerable<ITreeNode<T>> AllItems_FromTheBottom { get; }
+        IEnumerable<ITreeNode<T>> AllNodes { get; }
+        IEnumerable<ITreeNode<T>> AllNodes_ParentsFirst { get; }
+        IEnumerable<ITreeNode<T>> AllNodes_ChildrenFirst { get; }
+        IEnumerable<ITreeNode<T>> AllNodes_FromTheTop { get; }
+        IEnumerable<ITreeNode<T>> AllNodes_FromTheBottom { get; }
         ITree<Target> Translate<Target>(Func<T, Target> selector, Func<T, bool> guard = null);
         IReadOnlyTree<T> AsReadOnly()
             => this as IReadOnlyTree<T>;
@@ -260,11 +260,11 @@ namespace Stateflows.Common
         T Value { get; }
         bool Contains(T value);
         bool TryFind(T value, out IReadOnlyTreeNode<T> node);
-        IEnumerable<IReadOnlyTreeNode<T>> AllItems { get; }
-        IEnumerable<IReadOnlyTreeNode<T>> AllItems_ParentsFirst { get; }
-        IEnumerable<IReadOnlyTreeNode<T>> AllItems_ChildrenFirst { get; }
-        IEnumerable<IReadOnlyTreeNode<T>> AllItems_FromTheTop { get; }
-        IEnumerable<IReadOnlyTreeNode<T>> AllItems_FromTheBottom { get; }
+        IEnumerable<IReadOnlyTreeNode<T>> AllNodes { get; }
+        IEnumerable<IReadOnlyTreeNode<T>> AllNodes_ParentsFirst { get; }
+        IEnumerable<IReadOnlyTreeNode<T>> AllNodes_ChildrenFirst { get; }
+        IEnumerable<IReadOnlyTreeNode<T>> AllNodes_FromTheTop { get; }
+        IEnumerable<IReadOnlyTreeNode<T>> AllNodes_FromTheBottom { get; }
         ITree<Target> Translate<Target>(Func<T, Target> selector, Func<T, bool> guard = null);
     }
 
@@ -325,31 +325,31 @@ namespace Stateflows.Common
         }
         public void Sort(Comparison<T> comparison)
             => Root?.SortSubtree(comparison);
-        public IEnumerable<TreeNode<T>> AllItems
+        public IEnumerable<TreeNode<T>> AllNodes
             => Root?.AllNodes ?? new TreeNode<T>[0];
-        public IEnumerable<TreeNode<T>> AllItems_ParentsFirst
+        public IEnumerable<TreeNode<T>> AllNodes_ParentsFirst
             => Root?.AllNodes_ParentsFirst ?? new TreeNode<T>[0];
-        public IEnumerable<TreeNode<T>> AllItems_ChildrenFirst
+        public IEnumerable<TreeNode<T>> AllNodes_ChildrenFirst
             => Root?.AllNodes_ChildrenFirst ?? new TreeNode<T>[0];
-        public IEnumerable<TreeNode<T>> AllItems_FromTheTop
+        public IEnumerable<TreeNode<T>> AllNodes_FromTheTop
             => Root?.AllNodes_FromTheTop ?? new TreeNode<T>[0];
-        public IEnumerable<TreeNode<T>> AllItems_FromTheBottom
+        public IEnumerable<TreeNode<T>> AllNodes_FromTheBottom
             => Root?.AllNodes_FromTheBottom ?? new TreeNode<T>[0];
 
-        IEnumerable<ITreeNode<T>> ITree<T>.AllItems
-            => AllItems;
+        IEnumerable<ITreeNode<T>> ITree<T>.AllNodes
+            => AllNodes;
 
-        IEnumerable<ITreeNode<T>> ITree<T>.AllItems_ParentsFirst
-            => AllItems_ParentsFirst;
+        IEnumerable<ITreeNode<T>> ITree<T>.AllNodes_ParentsFirst
+            => AllNodes_ParentsFirst;
 
-        IEnumerable<ITreeNode<T>> ITree<T>.AllItems_ChildrenFirst
-            => AllItems_ChildrenFirst;
+        IEnumerable<ITreeNode<T>> ITree<T>.AllNodes_ChildrenFirst
+            => AllNodes_ChildrenFirst;
 
-        IEnumerable<ITreeNode<T>> ITree<T>.AllItems_FromTheTop
-            => AllItems_FromTheTop;
+        IEnumerable<ITreeNode<T>> ITree<T>.AllNodes_FromTheTop
+            => AllNodes_FromTheTop;
 
-        IEnumerable<ITreeNode<T>> ITree<T>.AllItems_FromTheBottom
-            => AllItems_FromTheBottom;
+        IEnumerable<ITreeNode<T>> ITree<T>.AllNodes_FromTheBottom
+            => AllNodes_FromTheBottom;
 
         public Tree<Target> Translate<Target>(Func<T, Target> selector, Func<T, bool> guard = null)
             => new Tree<Target> { Root = Root?.Translate(selector, guard) };
@@ -371,20 +371,20 @@ namespace Stateflows.Common
                 ? node = nodeObj
                 : node = null) != null;
 
-        IEnumerable<IReadOnlyTreeNode<T>> IReadOnlyTree<T>.AllItems
-            => AllItems;
+        IEnumerable<IReadOnlyTreeNode<T>> IReadOnlyTree<T>.AllNodes
+            => AllNodes;
 
-        IEnumerable<IReadOnlyTreeNode<T>> IReadOnlyTree<T>.AllItems_ParentsFirst
-            => AllItems_ParentsFirst;
+        IEnumerable<IReadOnlyTreeNode<T>> IReadOnlyTree<T>.AllNodes_ParentsFirst
+            => AllNodes_ParentsFirst;
 
-        IEnumerable<IReadOnlyTreeNode<T>> IReadOnlyTree<T>.AllItems_ChildrenFirst
-            => AllItems_ChildrenFirst;
+        IEnumerable<IReadOnlyTreeNode<T>> IReadOnlyTree<T>.AllNodes_ChildrenFirst
+            => AllNodes_ChildrenFirst;
 
-        IEnumerable<IReadOnlyTreeNode<T>> IReadOnlyTree<T>.AllItems_FromTheTop
-            => AllItems_FromTheTop;
+        IEnumerable<IReadOnlyTreeNode<T>> IReadOnlyTree<T>.AllNodes_FromTheTop
+            => AllNodes_FromTheTop;
 
-        IEnumerable<IReadOnlyTreeNode<T>> IReadOnlyTree<T>.AllItems_FromTheBottom
-            => AllItems_FromTheBottom;
+        IEnumerable<IReadOnlyTreeNode<T>> IReadOnlyTree<T>.AllNodes_FromTheBottom
+            => AllNodes_FromTheBottom;
 
         ITree<Target> IReadOnlyTree<T>.Translate<Target>(Func<T, Target> selector, Func<T, bool> guard)
             => Translate(selector, guard);

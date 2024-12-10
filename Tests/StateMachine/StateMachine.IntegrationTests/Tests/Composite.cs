@@ -140,7 +140,7 @@ namespace StateMachine.IntegrationTests.Tests
                 status = (await sm.SendAsync(new OtherEvent() { AnswerToLifeUniverseAndEverything = 42 })).Status;
 
                 currentState = (await sm.GetCurrentStateAsync()).Response.StatesTree.Value;
-                currentInnerState = (await sm.GetCurrentStateAsync()).Response.StatesTree.Root.Items.First().Value;
+                currentInnerState = (await sm.GetCurrentStateAsync()).Response.StatesTree.Root.Nodes.First().Value;
             }
 
             ExecutionSequence.Verify(b => b
@@ -192,8 +192,8 @@ namespace StateMachine.IntegrationTests.Tests
 
             Assert.AreEqual(EventStatus.Consumed, status);
             Assert.AreEqual("state2", currentState?.StatesTree.Value);
-            Assert.AreEqual("state4", currentState?.StatesTree.Root.Items.First().Value);
-            Assert.AreEqual("state6", currentState?.StatesTree.Root.Items.First().Items.First().Value);
+            Assert.AreEqual("state4", currentState?.StatesTree.Root.Nodes.First().Value);
+            Assert.AreEqual("state6", currentState?.StatesTree.Root.Nodes.First().Nodes.First().Value);
         }
 
         [TestMethod]
@@ -224,7 +224,7 @@ namespace StateMachine.IntegrationTests.Tests
             Assert.IsNull(ParentStateExited);
             Assert.IsTrue(ChildStateExited);
             Assert.AreEqual("state1", currentState?.StatesTree.Value);
-            Assert.AreEqual("state3", currentState?.StatesTree.Root.Items.First().Value);
+            Assert.AreEqual("state3", currentState?.StatesTree.Root.Nodes.First().Value);
         }
 
         [TestMethod]
@@ -254,7 +254,7 @@ namespace StateMachine.IntegrationTests.Tests
             Assert.AreEqual(EventStatus.Consumed, status);
             Assert.AreEqual(1, InitializeCounter);
             Assert.AreEqual("state1", currentState?.StatesTree.Value);
-            Assert.AreEqual("state4", currentState?.StatesTree.Root.Items.First().Value);
+            Assert.AreEqual("state4", currentState?.StatesTree.Root.Nodes.First().Value);
         }
     }
 }
