@@ -104,5 +104,8 @@ namespace Stateflows.Common.Extensions
                 return current == toCheck;
             });
         }
+
+        public static bool IsRequest(this Type eventType)
+            => eventType.IsImplementerOfRawGeneric(typeof(IRequest<>));
     }
 }

@@ -94,6 +94,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Stateflows.Extensions.OneOf
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Stateflows.Transport.Cosmos.EventBus", "..\Cosmos\Stateflows\src\Stateflows.Transport.Cosmos.EventBus\Stateflows.Transport.Cosmos.EventBus.csproj", "{B785A87B-6A20-47A6-93A1-F1C1D5A5B46A}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Stateflows.Transport.REST", "Transport\Stateflows.Transport.REST\Stateflows.Transport.REST.csproj", "{2D535693-FAF1-4ECC-8CA4-0D5E2108A117}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -220,6 +222,10 @@ Global
 		{B785A87B-6A20-47A6-93A1-F1C1D5A5B46A}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{B785A87B-6A20-47A6-93A1-F1C1D5A5B46A}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{B785A87B-6A20-47A6-93A1-F1C1D5A5B46A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{2D535693-FAF1-4ECC-8CA4-0D5E2108A117}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2D535693-FAF1-4ECC-8CA4-0D5E2108A117}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2D535693-FAF1-4ECC-8CA4-0D5E2108A117}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2D535693-FAF1-4ECC-8CA4-0D5E2108A117}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -259,6 +265,7 @@ Global
 		{37C61B16-A27E-487B-AEBC-126E7FDD8443} = {D789B3ED-A0A0-40B3-A746-337C7EF71B9D}
 		{D6FD721E-4B42-4875-B774-2AD84BE5B3B6} = {76D44611-8D90-4E93-BA44-AAB939A742AE}
 		{CBC5B0BD-199B-4085-9B8F-0D68B6ACF33C} = {580A6B03-79AD-430C-AEF6-80EC6A02FA61}
+		{2D535693-FAF1-4ECC-8CA4-0D5E2108A117} = {D789B3ED-A0A0-40B3-A746-337C7EF71B9D}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {602A9FD6-5053-42E4-AEAE-2813DF169A3C}

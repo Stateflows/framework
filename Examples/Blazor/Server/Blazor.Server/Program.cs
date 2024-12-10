@@ -110,6 +110,8 @@ app.UseRouting();
 app.MapBlazorHub();
 app.MapFallbackToPage("/_Host");
 
+app.MapGroup("/x");
+
 app.MapGet("/swagger", () => { return Results.Redirect("/swagger/index.html"); }).WithOpenApi();
 
 app.Run();

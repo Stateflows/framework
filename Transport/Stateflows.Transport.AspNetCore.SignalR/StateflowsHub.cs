@@ -83,31 +83,31 @@ namespace Stateflows.Transport.AspNetCore.SignalR
 
         public async Task<string> Request(BehaviorId behaviorId, string requestData)
         {
-            EventHolder? @event;
+            EventHolder? eventHolder;
             try
             {
-                @event = StateflowsJsonConverter.DeserializeObject<EventHolder>(requestData);
+                eventHolder = StateflowsJsonConverter.DeserializeObject<EventHolder>(requestData);
             }
             catch (Exception e)
             {
                 throw new SerializationException("Unable to parse request data", e);
             }
 
-            if (@event == null)
+            if (eventHolder == null)
             {
                 throw new SerializationException("Unable to parse request data");
             }
 
-            if (!@event.IsRequest())
+            if (!eventHolder.IsRequest())
             {
                 throw new SerializationException("Request data is invalid");
             }
 
             if (_locator.TryLocateBehavior(behaviorId, out var behavior))
             {
-                var result = await behavior.SendAsync(@event);
+                var result = await behavior.SendAsync(eventHolder);
 
-                result = new RequestResult(@event, @event.GetResponseHolder(), result.Status, result.Validation);
+                result = new RequestResult(eventHolder, eventHolder.GetResponseHolder(), result.Status, result.Validation);
 
                 return StateflowsJsonConverter.SerializePolymorphicObject(result, true);
             }

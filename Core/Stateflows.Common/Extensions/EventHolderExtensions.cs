@@ -18,7 +18,7 @@ namespace Stateflows.Common
         }
 
         public static bool IsRequest(this EventHolder eventHolder)
-            => eventHolder.PayloadType.IsImplementerOfRawGeneric(typeof(IRequest<>));
+            => eventHolder.PayloadType.IsRequest();
 
         public static bool IsRespondedTo(this EventHolder eventHolder)
             => eventHolder.IsRequest() && ResponseHolder.IsResponded(eventHolder.BoxedPayload);
