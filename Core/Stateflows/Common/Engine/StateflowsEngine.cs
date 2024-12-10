@@ -112,7 +112,7 @@ namespace Stateflows.Common
             return Task.CompletedTask;
         }
 
-        //[DebuggerHidden]
+        [DebuggerHidden]
         public async Task<EventStatus> ProcessEventAsync<TEvent>(BehaviorId id, EventHolder<TEvent> eventHolder, List<Exception> exceptions, Dictionary<object, EventHolder> responses)
         {
             var result = EventStatus.Undelivered;

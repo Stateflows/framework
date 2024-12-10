@@ -35,10 +35,8 @@ namespace Stateflows.Common.Scheduler
 
         public void ApplicationStarted()
         {
-            Task.WaitAll(
-                Executor.ExecuteByTenantsAsync(() => InitiateBehaviors()),
-                Executor.ExecuteByTenantsAsync(() => HandleStartupEvents())
-            );
+            Task.WaitAll(Executor.ExecuteByTenantsAsync(() => InitiateBehaviors()));
+            Task.WaitAll(Executor.ExecuteByTenantsAsync(() => HandleStartupEvents()));
         }
 
         public Task StartAsync(CancellationToken cancellationToken)
@@ -110,9 +108,9 @@ namespace Stateflows.Common.Scheduler
                     if (Locator.TryLocateBehavior(new BehaviorId(token.BehaviorClass, string.Empty), out var behavior))
                     {
                         var initializationEvent = await token.InitializationRequestFactory(ServiceProvider, token.BehaviorClass).ConfigureAwait(false);
-                        _ = SendAsyncMethod
+                        await (SendAsyncMethod
                             .MakeGenericMethod(initializationEvent.GetType())
-                            .Invoke(behavior, new object[] { initializationEvent, null });
+                            .Invoke(behavior, new object[] { initializationEvent, null }) as Task);
                     }
                 })
             ).ConfigureAwait(false);

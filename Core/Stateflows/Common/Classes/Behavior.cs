@@ -4,8 +4,8 @@ using System.Threading.Tasks;
 using System.Collections.Generic;
 using Microsoft.Extensions.DependencyInjection;
 using Stateflows.Common.Utilities;
-using Stateflows.Common.Subscription;
 using Stateflows.Common.Interfaces;
+using Stateflows.Common.Subscription;
 
 namespace Stateflows.Common.Classes
 {
@@ -47,7 +47,7 @@ namespace Stateflows.Common.Classes
             return Task.CompletedTask;
         }
 
-        
+        [DebuggerHidden]
         public async Task<SendResult> SendAsync<TEvent>(TEvent @event, IEnumerable<EventHeader> headers = null)
         {
             var eventHolder = @event.ToTypedEventHolder(headers);
