@@ -10,6 +10,6 @@ namespace Stateflows.Common
             => startedAt;
 
         protected override DateTime GetTriggerTime(DateTime startedAt)
-            => GetDelayStart(startedAt).Add(Delay);
+            => GetDelayStart(startedAt).Add(Delay).Add(Delay);
     }
 }

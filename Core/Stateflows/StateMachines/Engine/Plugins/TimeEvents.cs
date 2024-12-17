@@ -64,6 +64,20 @@ namespace Stateflows.StateMachines.Engine
 
         public override Task AfterProcessEventAsync<TEvent>(IEventActionContext<TEvent> context)
         {
+            // fallback: removing time events removed from structure, but still scheduled
+            if (ConsumedInTransition == null)
+            {
+                if (context.Event is TimeEvent timeEvent)
+                {
+                    TimeEventIdsToClear.Add(timeEvent.Id);
+                }
+
+                if (context.Event is Startup startup)
+                {
+                    StartupEventIdsToClear.Add(startup.Id);
+                }
+            }
+
             ClearTimeEvents(TimeEventIdsToClear);
             ClearStartupEvents(StartupEventIdsToClear);
 
@@ -85,7 +99,9 @@ namespace Stateflows.StateMachines.Engine
                 .ToArray();
 
             RegisterTimeEvents(enteredStack);
-            RegisterStartupEvents(enteredStack);
+            // fallback: registering startup events in whole stack, not only entered part
+            // because some Startup events may be newly added to the structure
+            RegisterStartupEvents(currentStack);
 
             if (
                 context.Event.GetType().IsSubclassOf(typeof(RecurringEvent)) &&
@@ -96,6 +112,10 @@ namespace Stateflows.StateMachines.Engine
             {
                 RegisterTimeEvent(ConsumedInTransition);
             }
+
+            // fallback: registering recurring events newly added to the structure
+            // non-recurring time events are not registered here
+            RegisterRecurringTimeEvents(currentStack);
 
             if (Context.Context.PendingTimeEvents.Any())
             {
@@ -116,7 +136,10 @@ namespace Stateflows.StateMachines.Engine
 
         public override Task BeforeTransitionGuardAsync<TEvent>(ITransitionContext<TEvent> context)
         {
-            if (ConsumedInTransition == null && (context as IEdgeContext).Edge.ActualTriggers.Contains(Event.GetName(context.ExecutionTrigger.GetType())))
+            if (
+                ConsumedInTransition == null &&
+                (context as IEdgeContext).Edge.ActualTriggers.Contains(Event.GetName(context.ExecutionTrigger.GetType()))
+            )
             {
                 ConsumedInTransition = (context as IEdgeContext).Edge;
             }
@@ -221,6 +244,25 @@ namespace Stateflows.StateMachines.Engine
                     .Where(edge =>
                         !edge.IsElse &&
                         edge.TimeTriggerTypes.Any() &&
+                        !timeEventIds.ContainsKey(edge.Identifier)
+                    )
+                    .Distinct(this)
+                    .ToArray();
+
+                RegisterTimeEvents(edges);
+            }
+        }
+
+        private void RegisterRecurringTimeEvents(IEnumerable<Vertex> vertices)
+        {
+            foreach (var currentVertex in vertices)
+            {
+                var timeEventIds = Context.GetStateValues(currentVertex.Name).TimeEventIds;
+
+                var edges = currentVertex.Edges.Values.SelectMany(edge => edge.GetActualEdges())
+                    .Where(edge =>
+                        !edge.IsElse &&
+                        edge.RecurringTypes.Any() &&
                         !timeEventIds.ContainsKey(edge.Identifier)
                     )
                     .Distinct(this)

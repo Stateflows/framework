@@ -83,6 +83,7 @@ namespace Stateflows.StateMachines.Models
                 {
                     edge.ActualTriggerTypes = StateflowsBuilder.GetMappedTypes(edge.TriggerType).ToHashSet();
                     edge.TimeTriggerTypes = edge.ActualTriggerTypes.Where(type => type.IsSubclassOf(typeof(TimeEvent))).ToHashSet();
+                    edge.RecurringTypes = edge.ActualTriggerTypes.Where(type => type.IsSubclassOf(typeof(RecurringEvent))).ToHashSet();
                     edge.ActualTriggers = edge.ActualTriggerTypes.Select(type => Event.GetName(type)).ToHashSet();
                     edge.Signature = $"{edge.Source.Identifier}-{edge.Trigger}->";
 
