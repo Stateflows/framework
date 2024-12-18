@@ -57,7 +57,7 @@ builder.Services.AddStateflows(b => b
                     {
                         c.Event.Respond(new ExampleResponse() { ResponseData = "Example response data" });
                     })
-                    .AddGuard(c => throw new Exception("test"))
+                    .AddGuardExpression(c => throw new Exception("test"))
                 )
             )
             .AddState("state2", b => b

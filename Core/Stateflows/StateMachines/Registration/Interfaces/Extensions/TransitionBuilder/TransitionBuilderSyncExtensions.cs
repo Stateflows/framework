@@ -30,6 +30,27 @@ namespace Stateflows.StateMachines.Sync
                 .AddStateMachineInvocationContext((builder as TransitionBuilder<Completion>).Edge.Graph)
                 .ToAsync()
             );
+        
+        [DebuggerHidden]
+        public static ITransitionBuilder<TEvent> AddNegatedGuard<TEvent>(this ITransitionBuilder<TEvent> builder, Func<ITransitionContext<TEvent>, bool> guard)
+            => builder.AddNegatedGuard(guard
+                .AddStateMachineInvocationContext((builder as TransitionBuilder<TEvent>).Edge.Graph)
+                .ToAsync()
+            );
+        
+        [DebuggerHidden]
+        public static IInternalTransitionBuilder<TEvent> AddNegatedGuard<TEvent>(this IInternalTransitionBuilder<TEvent> builder, Func<ITransitionContext<TEvent>, bool> guard)
+            => builder.AddNegatedGuard(guard
+                .AddStateMachineInvocationContext((builder as TransitionBuilder<TEvent>).Edge.Graph)
+                .ToAsync()
+            );
+        
+        [DebuggerHidden]
+        public static IDefaultTransitionBuilder AddNegatedGuard(this IDefaultTransitionBuilder builder, Func<ITransitionContext<Completion>, bool> guard)
+            => builder.AddNegatedGuard(guard
+                .AddStateMachineInvocationContext((builder as TransitionBuilder<Completion>).Edge.Graph)
+                .ToAsync()
+            );
 
         [DebuggerHidden]
         public static ITransitionBuilder<TEvent> AddEffect<TEvent>(this ITransitionBuilder<TEvent> builder, Action<ITransitionContext<TEvent>> effect)

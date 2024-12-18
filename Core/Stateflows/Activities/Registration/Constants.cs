@@ -26,6 +26,7 @@
         public static readonly string NodeTimeEvents = nameof(NodeTimeEvents);
         public static readonly string NodeStartupEvents = nameof(NodeStartupEvents);
         public static readonly string OutputTokens = nameof(OutputTokens);
+        public static readonly string ActivityOutputTokens = nameof(ActivityOutputTokens);
         public static readonly string Event = nameof(Event);
     }
 }

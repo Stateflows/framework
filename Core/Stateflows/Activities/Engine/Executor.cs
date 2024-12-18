@@ -342,6 +342,8 @@ namespace Stateflows.Activities.Engine
             }
 
             output = output.Where(h => h.PayloadType != typeof(ControlToken)).ToList();
+            
+            Context.ActivityOutputTokens.AddRange(output);
 
             if (output.Any())
             {

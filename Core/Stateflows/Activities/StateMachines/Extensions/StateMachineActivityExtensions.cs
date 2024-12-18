@@ -71,12 +71,13 @@ namespace Stateflows.Activities
                         new SetGlobalValues() { Values = (context.StateMachine.Values as ContextValuesCollection).Values }.ToEventHolder(),
                         initializationEvent,
                         tokensInput.ToEventHolder(),
-                        integratedActivityBuilder.GetUnsubscribe(context.StateMachine.Id).ToEventHolder()
+                        integratedActivityBuilder.GetUnsubscribe(context.StateMachine.Id).ToEventHolder(),
+                        new TokensOutputRequest<bool>().ToEventHolder()
                     });
 
-                    await a.WatchOutputAsync<bool>(output => result = output.First());
-
-                    await a.RequestAsync(request);
+                    var requestResult = await a.RequestAsync(request);
+                    var responseHolder = requestResult.Response.Results.Last().Response as EventHolder<TokensOutput<bool>>;
+                    result = responseHolder?.Payload?.GetAll()?.FirstOrDefault() ?? false;
                 });
             }
             else
