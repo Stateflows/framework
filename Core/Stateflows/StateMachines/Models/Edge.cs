@@ -33,6 +33,8 @@ namespace Stateflows.StateMachines.Models
 
         public IEnumerable<Type> TimeTriggerTypes { get; set; }
 
+        public IEnumerable<Type> RecurringTypes { get; set; }
+
         public string Trigger { get; set; }
 
         public IEnumerable<string> ActualTriggers { get; set; }
@@ -73,6 +75,7 @@ namespace Stateflows.StateMachines.Models
                 TriggerType = TriggerType,
                 ActualTriggerTypes = actualTriggerTypes,
                 TimeTriggerTypes = actualTriggerTypes.Where(type => type.IsSubclassOf(typeof(TimeEvent))).ToHashSet(),
+                RecurringTypes = actualTriggerTypes.Where(type => type.IsSubclassOf(typeof(RecurringEvent))).ToHashSet(),
                 ActualTriggers = actualTriggerTypes.Select(type => Event.GetName(type)).ToHashSet(),
                 Type = Type,
                 IsElse = edge.IsElse,

@@ -34,7 +34,11 @@ namespace Stateflows.Activities.Engine
 
         private Task<EventStatus> TryHandleEventAsync<TEvent>(EventContext<TEvent> context)
         {
-            var eventHandler = EventHandlers.FirstOrDefault(h => h.EventType.IsInstanceOfType(context.Event));
+            var eventHandler = EventHandlers.FirstOrDefault(h => 
+                h.EventType.IsGenericType && context.Event.GetType().IsGenericType
+                    ? context.Event.GetType().GetGenericTypeDefinition() == h.EventType
+                    : h.EventType.IsInstanceOfType(context.Event)
+            );
                         
             return eventHandler != null
                 ? eventHandler.TryHandleEventAsync(context)

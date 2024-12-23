@@ -8,6 +8,7 @@ namespace StateMachine.IntegrationTests.Tests
     {
         public bool Initialized = false;
         public bool Started = false;
+        public bool InternalStarted = false;
 
         [TestInitialize]
         public override void Initialize()
@@ -34,10 +35,18 @@ namespace StateMachine.IntegrationTests.Tests
                             .AddOnEntry(async c => Started = true)
                         )
                     )
+                    .AddStateMachine("startupInternal", b => b
+                        .AddInitialState("state1", b => b
+                            .AddInternalTransition<Startup>(b => b
+                                .AddEffect(async c => InternalStarted = true)
+                            )
+                        )
+                    )
                 )
 
                 .AddDefaultInstance(new StateMachineClass("default"))
                 .AddDefaultInstance(new StateMachineClass("startup"))
+                .AddDefaultInstance(new StateMachineClass("startupInternal"))
                 ;
         }
 
@@ -53,6 +62,7 @@ namespace StateMachine.IntegrationTests.Tests
         {
             await Task.Delay(100);
             Assert.IsTrue(Started);
+            Assert.IsTrue(InternalStarted);
         }
     }
 }

@@ -25,7 +25,7 @@ builder.Services.AddSignalR();
 builder.Services.AddStateflows(b => b
     .AddPlantUml()
 
-    //.AddStorage()
+    .AddStorage()
 
     .AddActivities(b => b
         .AddActivity("a", b => b
@@ -57,7 +57,7 @@ builder.Services.AddStateflows(b => b
                     {
                         c.Event.Respond(new ExampleResponse() { ResponseData = "Example response data" });
                     })
-                    .AddGuard(c => throw new Exception("test"))
+                    .AddGuardExpression(c => throw new Exception("test"))
                 )
             )
             .AddState("state2", b => b
@@ -73,6 +73,14 @@ builder.Services.AddStateflows(b => b
                 .AddTransition<OtherEvent, FinalState>()
             )
             .AddFinalState()
+        )
+
+        .AddStateMachine("startupInternal", b => b
+            .AddInitialState("state1", b => b
+                .AddInternalTransition<Startup>(b => b
+                    .AddEffect(async c => Console.WriteLine("startup!"))
+                )
+            )
         )
     )
     .SetEnvironment(

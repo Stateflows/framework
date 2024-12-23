@@ -88,7 +88,12 @@ namespace StateMachine.IntegrationTests.Tests
                         .AddInitialState("state1", b => b
                             .AddOnExit(c => StateExited = true)
                             .AddTransition<SomeEvent>("state2", b => b
-                                .AddOrGuards<Condition1, Condition2>()
+                                .AddGuardExpression(b => b
+                                    .AddOrExpression(b => b
+                                        .AddGuard<Condition1>()
+                                        .AddGuard<Condition2>()
+                                    )
+                                )
                                 .AddEffect(c => TransitionHappened = true)
                             )
                         )
@@ -113,7 +118,12 @@ namespace StateMachine.IntegrationTests.Tests
                         .AddInitialState("state1", b => b
                             .AddOnExit(c => StateExited = true)
                             .AddTransition<SomeEvent>("state2", b => b
-                                .AddOrGuards<Guard1, Guard2>()
+                                .AddGuardExpression(b => b
+                                    .AddOrExpression(b => b
+                                        .AddGuard<Guard1>()
+                                        .AddGuard<Guard2>()
+                                    )
+                                )
                             )
                         )
                         .AddState("state2", b => b

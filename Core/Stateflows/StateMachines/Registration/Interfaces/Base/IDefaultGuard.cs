@@ -1,30 +1,31 @@
 ﻿using System;
-using System.Threading.Tasks;
 using Stateflows.Common.Extensions;
-using Stateflows.StateMachines.Context.Classes;
-using Stateflows.StateMachines.Context.Interfaces;
 using Stateflows.StateMachines.Events;
+using Stateflows.StateMachines.Context.Classes;
+using Stateflows.StateMachines.Registration.Builders;
 using Stateflows.StateMachines.Registration.Interfaces.Internal;
 
 namespace Stateflows.StateMachines.Registration.Interfaces.Base
 {
-    public interface IDefaultGuard<TReturn>
+    public interface IDefaultGuard<TReturn> : IBaseDefaultGuard<TReturn>
     {
-        TReturn AddGuard(Func<ITransitionContext<Completion>, Task<bool>> guardAsync);
-
-        TReturn AddGuard<TGuard>()
-            where TGuard : class, IDefaultTransitionGuard
+        TReturn AddGuardExpression(Func<IDefaultGuardBuilder, IDefaultGuardBuilder> guardExpression)
         {
-            (this as IInternal).Services.AddServiceType<TGuard>();
-
-            return AddGuard(c => (c as BaseContext).Context.Executor.GetDefaultTransitionGuard<TGuard>(c)?.GuardAsync());
+            var builder = new GuardBuilder<Completion>(this as IInternal, (this as TransitionBuilder<Completion>).Edge);
+            guardExpression.Invoke(builder);
+            
+            return AddGuard(builder.GetAndGuard());
         }
 
         TReturn AddGuards<TGuard1, TGuard2>()
             where TGuard1 : class, IDefaultTransitionGuard
             where TGuard2 : class, IDefaultTransitionGuard
-            => AddAndGuards<TGuard1, TGuard2>();
+            => AddGuardExpression(b => b
+                .AddGuard<TGuard1>()
+                .AddGuard<TGuard2>()
+            );
 
+        [Obsolete("AddAndGuards method is obsolete. Use AddGuardExpression instead")]
         TReturn AddAndGuards<TGuard1, TGuard2>()
             where TGuard1 : class, IDefaultTransitionGuard
             where TGuard2 : class, IDefaultTransitionGuard
@@ -46,8 +47,13 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
             where TGuard1 : class, IDefaultTransitionGuard
             where TGuard2 : class, IDefaultTransitionGuard
             where TGuard3 : class, IDefaultTransitionGuard
-            => AddAndGuards<TGuard1, TGuard2, TGuard3>();
+            => AddGuardExpression(b => b
+                .AddGuard<TGuard1>()
+                .AddGuard<TGuard2>()
+                .AddGuard<TGuard3>()
+            );
 
+        [Obsolete("AddAndGuards method is obsolete. Use AddGuardExpression instead")]
         TReturn AddAndGuards<TGuard1, TGuard2, TGuard3>()
             where TGuard1 : class, IDefaultTransitionGuard
             where TGuard2 : class, IDefaultTransitionGuard
@@ -73,8 +79,14 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
             where TGuard2 : class, IDefaultTransitionGuard
             where TGuard3 : class, IDefaultTransitionGuard
             where TGuard4 : class, IDefaultTransitionGuard
-            => AddAndGuards<TGuard1, TGuard2, TGuard3, TGuard4>();
+            => AddGuardExpression(b => b
+                .AddGuard<TGuard1>()
+                .AddGuard<TGuard2>()
+                .AddGuard<TGuard3>()
+                .AddGuard<TGuard4>()
+            );
 
+        [Obsolete("AddAndGuards method is obsolete. Use AddGuardExpression instead")]
         TReturn AddAndGuards<TGuard1, TGuard2, TGuard3, TGuard4>()
             where TGuard1 : class, IDefaultTransitionGuard
             where TGuard2 : class, IDefaultTransitionGuard
@@ -98,14 +110,21 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
             });
         }
 
-        TReturn Adduards<TGuard1, TGuard2, TGuard3, TGuard4, TGuard5>()
+        TReturn AddGuards<TGuard1, TGuard2, TGuard3, TGuard4, TGuard5>()
             where TGuard1 : class, IDefaultTransitionGuard
             where TGuard2 : class, IDefaultTransitionGuard
             where TGuard3 : class, IDefaultTransitionGuard
             where TGuard4 : class, IDefaultTransitionGuard
             where TGuard5 : class, IDefaultTransitionGuard
-            => AddAndGuards<TGuard1, TGuard2, TGuard3, TGuard4, TGuard5>();
-
+            => AddGuardExpression(b => b
+                .AddGuard<TGuard1>()
+                .AddGuard<TGuard2>()
+                .AddGuard<TGuard3>()
+                .AddGuard<TGuard4>()
+                .AddGuard<TGuard5>()
+            );
+        
+        [Obsolete("AddAndGuards method is obsolete. Use AddGuardExpression instead")]
         TReturn AddAndGuards<TGuard1, TGuard2, TGuard3, TGuard4, TGuard5>()
             where TGuard1 : class, IDefaultTransitionGuard
             where TGuard2 : class, IDefaultTransitionGuard
@@ -132,6 +151,7 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
             });
         }
 
+        [Obsolete("AddOrGuards method is obsolete. Use AddGuardExpression instead")]
         TReturn AddOrGuards<TGuard1, TGuard2>()
             where TGuard1 : class, IDefaultTransitionGuard
             where TGuard2 : class, IDefaultTransitionGuard
@@ -149,6 +169,7 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
             });
         }
 
+        [Obsolete("AddOrGuards method is obsolete. Use AddGuardExpression instead")]
         TReturn AddOrGuards<TGuard1, TGuard2, TGuard3>()
             where TGuard1 : class, IDefaultTransitionGuard
             where TGuard2 : class, IDefaultTransitionGuard
@@ -169,6 +190,7 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
             });
         }
 
+        [Obsolete("AddOrGuards method is obsolete. Use AddGuardExpression instead")]
         TReturn AddOrGuards<TGuard1, TGuard2, TGuard3, TGuard4>()
             where TGuard1 : class, IDefaultTransitionGuard
             where TGuard2 : class, IDefaultTransitionGuard
@@ -192,6 +214,7 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
             });
         }
 
+        [Obsolete("AddOrGuards method is obsolete. Use AddGuardExpression instead")]
         TReturn AddOrGuards<TGuard1, TGuard2, TGuard3, TGuard4, TGuard5>()
             where TGuard1 : class, IDefaultTransitionGuard
             where TGuard2 : class, IDefaultTransitionGuard

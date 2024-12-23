@@ -57,6 +57,8 @@ namespace Stateflows.Activities
                         .AddSingleton<IActivityEventHandler, UnsubscriptionHandler>()
                         .AddSingleton<IActivityEventHandler, NotificationsHandler>()
                         .AddSingleton<IActivityEventHandler, SetGlobalValuesHandler>()
+                        .AddSingleton<IActivityEventHandler, TokensOutputHandler>()
+                        .AddSingleton<IActivityEventHandler, TypedTokensOutputHandler>()
                         .AddTransient(provider =>
                             ActivitiesContextHolder.ActivityContext.Value ??
                             throw new InvalidOperationException($"No service for type '{typeof(IActivityContext).FullName}' is available in this context.")

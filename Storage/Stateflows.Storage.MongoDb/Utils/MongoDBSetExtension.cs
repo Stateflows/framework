@@ -54,7 +54,8 @@ namespace Stateflows.Storage.MongoDB.Utils
                 var updateDef = updateDefBuilder.Combine(
                     updateDefBuilder
                     .Set(x => x.Data, contextEntity.Data))
-                    .Set(x => x.TriggerTime, contextEntity.TriggerTime);
+                    .Set(x => x.TriggerTime, contextEntity.TriggerTime)
+                    .Set(x => x.TriggerOnStartup, contextEntity.TriggerOnStartup);
 
                 await collection.UpdateOneAsync(filter, updateDef);
             }

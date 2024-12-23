@@ -122,7 +122,6 @@ namespace StateMachine.IntegrationTests.Tests
             {
                 await sm.SendAsync(new Initialize());
                 state1 = (await sm.GetCurrentStateAsync()).Response.StatesTree.Value;
-                
                 await sm.SendAsync(new SomeEvent());
                 await Task.Delay(100);
                 state2 = (await sm.GetCurrentStateAsync()).Response.StatesTree.Value;

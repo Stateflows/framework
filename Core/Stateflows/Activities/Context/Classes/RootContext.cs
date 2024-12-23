@@ -2,12 +2,11 @@
 using System.Linq;
 using System.Threading.Tasks;
 using System.Collections.Generic;
-using System.Text.Json.Serialization;
 using Microsoft.Extensions.DependencyInjection;
+using Newtonsoft.Json;
 using Stateflows.Common;
 using Stateflows.Common.Classes;
 using Stateflows.Common.Context;
-using Stateflows.Common.Interfaces;
 using Stateflows.Activities.Models;
 using Stateflows.Activities.Engine;
 using Stateflows.Activities.Streams;
@@ -164,6 +163,31 @@ namespace Stateflows.Activities.Context.Classes
             }
 
             return tokens;
+        }
+
+        private List<TokenHolder> activityOutputTokens = null;
+        public List<TokenHolder> ActivityOutputTokens
+        {
+            get
+            {
+                lock (Context.Values)
+                {
+                    if (activityOutputTokens == null)
+                    {
+                        if (!Context.Values.TryGetValue(Constants.ActivityOutputTokens, out var activityOutputTokensObj))
+                        {
+                            activityOutputTokens = new List<TokenHolder>();
+                            Context.Values[Constants.ActivityOutputTokens] = activityOutputTokens;
+                        }
+                        else
+                        {
+                            activityOutputTokens = activityOutputTokensObj as List<TokenHolder>;
+                        }
+                    }
+                }
+
+                return activityOutputTokens;
+            }
         }
 
         private Dictionary<string, Guid> activeNodes = null;
