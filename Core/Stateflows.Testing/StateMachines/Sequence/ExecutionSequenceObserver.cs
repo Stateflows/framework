@@ -66,14 +66,14 @@ namespace Stateflows.Testing.StateMachines.Sequence
 
         public override Task AfterTransitionEffectAsync<TEvent>(ITransitionContext<TEvent> context)
         {
-            SequenceBuilder.TransitionEffect(Event.GetName(context.Event.GetType()), context.SourceState.Name, context.TargetState?.Name);
+            SequenceBuilder.TransitionEffect(Event.GetName(context.Event.GetType()), context.Source.Name, context.Target?.Name);
 
             return Task.CompletedTask;
         }
 
         public override Task AfterTransitionGuardAsync<TEvent>(ITransitionContext<TEvent> context, bool guardResult)
         {
-            SequenceBuilder.TransitionGuard(Event.GetName(context.Event.GetType()), context.SourceState.Name, context.TargetState?.Name);
+            SequenceBuilder.TransitionGuard(Event.GetName(context.Event.GetType()), context.Source.Name, context.Target?.Name);
 
             return Task.CompletedTask;
         }

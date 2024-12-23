@@ -66,5 +66,15 @@
         /// <returns>Returns the state machine instance</returns>
         TReturn AddChoice(ChoiceBuildAction choiceBuildAction)
             => AddChoice(Choice.Name, choiceBuildAction);
+        
+        TReturn AddFork(string forkName, ForkBuildAction forkBuildAction);
+        
+        TReturn AddFork(ForkBuildAction forkBuildAction)
+            => AddFork(Fork.Name, forkBuildAction);
+        
+        TReturn AddJoin(string joinName, JoinBuildAction joinBuildAction);
+        
+        TReturn AddJoin(JoinBuildAction joinBuildAction)
+            => AddJoin(Join.Name, joinBuildAction);
     }
 }

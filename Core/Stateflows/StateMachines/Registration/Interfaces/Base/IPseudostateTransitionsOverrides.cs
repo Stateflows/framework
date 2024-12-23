@@ -2,7 +2,6 @@
 {
     public interface IPseudostateTransitionsOverrides<out TReturn>
     {
-        #region Transitions
         /// <summary>
         /// Uses default transition coming from current pseudostate.<br/>
         /// <a href="https://github.com/Stateflows/framework/wiki/Default-Transition">Default transitions</a> are triggered automatically after every State Machine execution and are changing its state.
@@ -20,9 +19,10 @@
         /// <param name="targetStateName">Target state name</param>
         /// <param name="transitionBuildAction">Transition build action</param>
         TReturn UseTransition(string targetStateName, DefaultTransitionBuildAction transitionBuildAction);
-        #endregion
-
-        #region ElseTransitions
+    }
+    
+    public interface IPseudostateElseTransitionsOverrides<out TReturn> : IPseudostateTransitionsOverrides<TReturn>
+    {
         /// <summary>
         /// Uses else alternative for all default transitions coming from current pseudostate.<br/><br/>
         /// <a href="https://github.com/Stateflows/framework/wiki/Default-Transition">Default transitions</a> are triggered automatically after every State Machine execution and are changing its state.
@@ -30,6 +30,5 @@
         /// <param name="targetStateName">Target state name</param>
         /// <param name="transitionBuildAction">Transition build action</param>
         void UseElseTransition(string targetStateName, ElseDefaultTransitionBuildAction transitionBuildAction);
-        #endregion
     }
 }

@@ -34,7 +34,7 @@ namespace StateMachine.IntegrationTests.Tests
                             )
                         )
                         .AddState("state2", b => b
-                            .AddOnEntry(c => StateEntered = c.ExecutionSteps.LastOrDefault()?.SourceStateName == "state1")
+                            .AddOnEntry(c => StateEntered = c.ExecutionSteps.LastOrDefault()?.SourceName == "state1")
                         )
                     )
 

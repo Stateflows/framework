@@ -3,12 +3,12 @@
 namespace Stateflows.StateMachines.Registration.Interfaces
 {
     public interface IJunctionBuilder :
-        IPseudostateTransitions<IJunctionBuilder>
+        IPseudostateElseTransitions<IJunctionBuilder>
     { }
     
     public interface IOverridenJunctionBuilder :
-        IPseudostateTransitions<IOverridenJunctionBuilder>,
-        IPseudostateTransitionsOverrides<IOverridenJunctionBuilder>
+        IPseudostateElseTransitions<IOverridenJunctionBuilder>,
+        IPseudostateElseTransitionsOverrides<IOverridenJunctionBuilder>
     { }
 
 }

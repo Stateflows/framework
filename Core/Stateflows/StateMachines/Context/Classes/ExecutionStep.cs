@@ -4,14 +4,14 @@
     {
         public ExecutionStep(string sourceStateName, string targetStateName, object transitionTrigger)
         {
-            SourceStateName = sourceStateName;
-            TargetStateName = targetStateName;
+            SourceName = sourceStateName;
+            TargetName = targetStateName;
             TransitionTrigger = transitionTrigger;
         }
 
-        public string SourceStateName { get; }
+        public string SourceName { get; }
 
-        public string TargetStateName { get; }
+        public string TargetName { get; }
 
         public object TransitionTrigger { get; }
     }

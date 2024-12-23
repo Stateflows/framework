@@ -20,12 +20,12 @@ namespace Stateflows.StateMachines.Context.Classes
 
         IStateMachineInspectionContext ITransitionInspectionContext<TEvent>.StateMachine => StateMachine;
 
-        private IStateContext sourceState = null;
-        public IStateContext SourceState => sourceState ??= new StateContext(Edge.Source, Context);
+        private IVertexContext sourceVertex = null;
+        public IVertexContext Source => sourceVertex ??= new VertexContext(Edge.Source, Context);
 
         private bool targetStateSet = false;
-        private IStateContext targetState = null;
-        public IStateContext TargetState
+        private IVertexContext targetVertex = null;
+        public IVertexContext Target
         {
             get
             {
@@ -35,11 +35,11 @@ namespace Stateflows.StateMachines.Context.Classes
 
                     if (!(Edge.Target is null))
                     {
-                        targetState = new StateContext(Edge.Target, Context);
+                        targetVertex = new VertexContext(Edge.Target, Context);
                     }
                 }
 
-                return targetState;
+                return targetVertex;
             }
         }
     }

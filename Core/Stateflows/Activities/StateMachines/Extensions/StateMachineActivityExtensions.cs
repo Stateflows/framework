@@ -50,7 +50,7 @@ namespace Stateflows.Activities
         internal static async Task<bool> RunGuardActivity<TEvent>(ITransitionContext<TEvent> context, string activityName, TransitionActivityBuildAction<TEvent> buildAction)
         {
             var result = false;
-            if (context.TryLocateActivity(activityName, $"{context.StateMachine.Id.Instance}.{context.SourceState.Name}.{Constants.Guard}.{context.EventId}", out var a))
+            if (context.TryLocateActivity(activityName, $"{context.StateMachine.Id.Instance}.{context.Source.Name}.{Constants.Guard}.{context.EventId}", out var a))
             {
                 var ev = StateflowsJsonConverter.Clone(context.Event);
                 await Task.Run(async () =>
@@ -94,7 +94,7 @@ namespace Stateflows.Activities
         [DebuggerHidden]
         internal static Task RunEffectActivity<TEvent>(ITransitionContext<TEvent> context, string activityName, TransitionActivityBuildAction<TEvent> buildAction)
         {
-            if (context.TryLocateActivity(activityName, $"{context.StateMachine.Id.Instance}.{context.SourceState.Name}.{Event<TEvent>.Name}.{Constants.Effect}.{context.EventId}", out var a))
+            if (context.TryLocateActivity(activityName, $"{context.StateMachine.Id.Instance}.{context.Source.Name}.{Event<TEvent>.Name}.{Constants.Effect}.{context.EventId}", out var a))
             {
                 var ev = StateflowsJsonConverter.Clone(context.Event);
                 Task.Run(async () =>

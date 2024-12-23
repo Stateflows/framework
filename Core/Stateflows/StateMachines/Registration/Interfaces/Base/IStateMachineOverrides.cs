@@ -59,5 +59,15 @@
         /// <param name="choiceBuildAction">Choice build action</param>
         TReturn UseChoice(OverridenChoiceBuildAction choiceBuildAction)
             => UseChoice(Choice.Name, choiceBuildAction);
+        
+        TReturn UseFork(string forkName, OverridenForkBuildAction forkBuildAction);
+        
+        TReturn UseFork(OverridenForkBuildAction forkBuildAction)
+            => UseFork(Fork.Name, forkBuildAction);
+        
+        TReturn UseJoin(string joinName, OverridenJoinBuildAction joinBuildAction);
+        
+        TReturn UseJoin(OverridenJoinBuildAction joinBuildAction)
+            => UseJoin(Join.Name, joinBuildAction);
     }
 }

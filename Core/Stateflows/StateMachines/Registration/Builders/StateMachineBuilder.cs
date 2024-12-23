@@ -165,6 +165,24 @@ namespace Stateflows.StateMachines.Registration.Builders
         IFinalizedOverridenStateMachineBuilder IStateMachine<IFinalizedOverridenStateMachineBuilder>.AddChoice(string choiceName, ChoiceBuildAction choiceBuildAction)
             => AddChoice(choiceName, choiceBuildAction) as IFinalizedOverridenStateMachineBuilder;
 
+        IOverridenStateMachineBuilder IStateMachine<IOverridenStateMachineBuilder>.AddFork(string forkName, ForkBuildAction forkBuildAction)
+            => AddFork(forkName, forkBuildAction) as IOverridenStateMachineBuilder;
+
+        IOverridenStateMachineBuilder IStateMachine<IOverridenStateMachineBuilder>.AddJoin(string joinName, JoinBuildAction joinBuildAction)
+            => AddJoin(joinName, joinBuildAction) as IOverridenStateMachineBuilder;
+
+        IFinalizedOverridenStateMachineBuilder IStateMachine<IFinalizedOverridenStateMachineBuilder>.AddFork(string forkName, ForkBuildAction forkBuildAction)
+            => AddFork(forkName, forkBuildAction) as IFinalizedOverridenStateMachineBuilder;
+
+        IFinalizedOverridenStateMachineBuilder IStateMachine<IFinalizedOverridenStateMachineBuilder>.AddJoin(string joinName, JoinBuildAction joinBuildAction)
+            => AddJoin(joinName, joinBuildAction) as IFinalizedOverridenStateMachineBuilder;
+
+        public IInitializedStateMachineBuilder AddFork(string forkName, ForkBuildAction forkBuildAction)
+            => AddVertex(forkName, VertexType.Fork, vertex => forkBuildAction?.Invoke(new StateBuilder(vertex, Services)));
+
+        public IInitializedStateMachineBuilder AddJoin(string joinName, JoinBuildAction joinBuildAction)
+            => AddVertex(joinName, VertexType.Join, vertex => joinBuildAction?.Invoke(new StateBuilder(vertex, Services)));
+
         IFinalizedOverridenStateMachineBuilder IStateMachine<IFinalizedOverridenStateMachineBuilder>.AddState(string stateName, StateBuildAction stateBuildAction)
             => AddState(stateName, stateBuildAction) as IFinalizedOverridenStateMachineBuilder;
 
@@ -411,6 +429,37 @@ namespace Stateflows.StateMachines.Registration.Builders
             return this;
         }
 
+        IFinalizedOverridenStateMachineBuilder IStateMachineOverrides<IFinalizedOverridenStateMachineBuilder>.
+            UseCompositeState(string compositeStateName,
+                OverridenCompositeStateBuildAction compositeStateBuildAction)
+            => UseCompositeState(compositeStateName, compositeStateBuildAction) as
+                IFinalizedOverridenStateMachineBuilder;
+
+        IFinalizedOverridenStateMachineBuilder IStateMachineOverrides<IFinalizedOverridenStateMachineBuilder>.UseOrthogonalState(string orthogonalStateName,
+            OverridenOrthogonalStateBuildAction orthogonalStateBuildAction)
+            => UseOrthogonalState(orthogonalStateName, orthogonalStateBuildAction) as IFinalizedOverridenStateMachineBuilder;
+
+        IFinalizedOverridenStateMachineBuilder IStateMachineOverrides<IFinalizedOverridenStateMachineBuilder>.
+            UseJunction(string junctionName,
+                OverridenJunctionBuildAction junctionBuildAction)
+            => UseJunction(junctionName, junctionBuildAction) as IFinalizedOverridenStateMachineBuilder;
+
+        IFinalizedOverridenStateMachineBuilder IStateMachineOverrides<IFinalizedOverridenStateMachineBuilder>.UseChoice(
+            string choiceName, OverridenChoiceBuildAction choiceBuildAction)
+            => UseChoice(choiceName, choiceBuildAction) as IFinalizedOverridenStateMachineBuilder;
+
+        IFinalizedOverridenStateMachineBuilder IStateMachineOverrides<IFinalizedOverridenStateMachineBuilder>.UseFork(
+            string forkName, OverridenForkBuildAction forkBuildAction)
+            => UseFork(forkName, forkBuildAction) as IFinalizedOverridenStateMachineBuilder;
+
+        IFinalizedOverridenStateMachineBuilder IStateMachineOverrides<IFinalizedOverridenStateMachineBuilder>.UseJoin(
+            string joinName, OverridenJoinBuildAction joinBuildAction)
+            => UseJoin(joinName, joinBuildAction) as IFinalizedOverridenStateMachineBuilder;
+
+        IFinalizedOverridenStateMachineBuilder IStateMachineOverrides<IFinalizedOverridenStateMachineBuilder>.UseState(
+            string stateName, OverridenStateBuildAction stateBuildAction)
+            => UseState(stateName, stateBuildAction) as IFinalizedOverridenStateMachineBuilder;
+
         public IOverridenStateMachineBuilder UseCompositeState(string compositeStateName,
             OverridenCompositeStateBuildAction compositeStateBuildAction)
         {
@@ -471,6 +520,30 @@ namespace Stateflows.StateMachines.Registration.Builders
             }
             
             choiceBuildAction?.Invoke(new StateBuilder(vertex, Services));
+
+            return this;
+        }
+
+        public IOverridenStateMachineBuilder UseFork(string forkName, OverridenForkBuildAction forkBuildAction)
+        {
+            if (!Result.Vertices.TryGetValue(forkName, out var vertex) || vertex.Type != VertexType.Fork || vertex.OriginStateMachineName == null)
+            {
+                throw new StateMachineOverrideException($"Fork '{forkName}' not found in overriden state machine '{Result.BaseStateMachineName}'", Result.Class);
+            }
+            
+            forkBuildAction?.Invoke(new StateBuilder(vertex, Services));
+
+            return this;
+        }
+
+        public IOverridenStateMachineBuilder UseJoin(string joinName, OverridenJoinBuildAction joinBuildAction)
+        {
+            if (!Result.Vertices.TryGetValue(joinName, out var vertex) || vertex.Type != VertexType.Join || vertex.OriginStateMachineName == null)
+            {
+                throw new StateMachineOverrideException($"Join '{joinName}' not found in overriden state machine '{Result.BaseStateMachineName}'", Result.Class);
+            }
+            
+            joinBuildAction?.Invoke(new StateBuilder(vertex, Services));
 
             return this;
         }

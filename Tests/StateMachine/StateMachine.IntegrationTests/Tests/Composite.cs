@@ -35,6 +35,19 @@ namespace StateMachine.IntegrationTests.Tests
         {
             builder
                 .AddStateMachines(b => b
+                        
+                    .AddStateMachine("noAutoInitialization", b => b
+                        .AddExecutionSequenceObserver()
+                        .AddInitialState("state1", b => b
+                            .AddDefaultTransition("state2")
+                        )
+                        .AddCompositeState("state2", b => b
+                            .AddState("state2.1", b => b
+                                .AddDefaultTransition("state2.2")
+                            )
+                            .AddState("state2.2")
+                        )
+                    )
                     
                     .AddStateMachine("berlin", b => b
                         .AddDefaultInitializer(async c => true)
@@ -255,6 +268,28 @@ namespace StateMachine.IntegrationTests.Tests
             Assert.AreEqual(1, InitializeCounter);
             Assert.AreEqual("state1", currentState?.StatesTree.Value);
             Assert.AreEqual("state4", currentState?.StatesTree.Root.Nodes.First().Value);
+        }
+
+        [TestMethod]
+        public async Task NoAutoInitialization()
+        {
+            StateMachineInfo? currentState = null;
+            if (StateMachineLocator.TryLocateStateMachine(new StateMachineId("noAutoInitialization", "x"), out var sm))
+            {
+                // status = (await sm.SendAsync(new OtherEvent() { AnswerToLifeUniverseAndEverything = 42 })).Status;
+
+                currentState = (await sm.GetCurrentStateAsync()).Response;
+            }
+
+            ExecutionSequence.Verify(b => b
+                .StateMachineInitialize()
+                .StateEntry("state1")
+                .DefaultTransitionEffect("state1", "state2")
+                .StateEntry("state2")
+            );
+
+            Assert.AreEqual("state2", currentState?.StatesTree.Root.Value);
+            Assert.IsFalse(currentState?.StatesTree.Root.Nodes.Any());
         }
     }
 }

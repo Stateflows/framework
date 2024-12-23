@@ -2,12 +2,12 @@
 
 namespace Stateflows.StateMachines
 {
-    public interface IStateContext
+    public interface IVertexContext
     {
         string Name { get; }
 
         IContextValues Values { get; }
 
-        bool TryGetParentState(out IStateContext parentStateContext);
+        bool TryGetParent(out IVertexContext parentVertexContext);
     }
 }

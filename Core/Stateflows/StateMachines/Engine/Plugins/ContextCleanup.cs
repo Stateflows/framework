@@ -25,12 +25,12 @@ namespace Stateflows.StateMachines.Engine
 
         public override Task AfterTransitionEffectAsync<TEvent>(ITransitionContext<TEvent> context)
         {
-            if (context.TargetState != null)
+            if (context.Target != null)
             {
                 var ctx = (context as IRootContext).Context;
                 foreach (var vertexName in ExitedStates.Select(v => v.Name))
                 {
-                    if (vertexName != context.TargetState.Name)
+                    if (vertexName != context.Target.Name)
                     {
                         ctx.ClearStateValues(vertexName);
                     }

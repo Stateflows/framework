@@ -23,6 +23,14 @@ namespace Stateflows.StateMachines.Registration.Interfaces
     
     public delegate void OverridenChoiceBuildAction(IOverridenChoiceBuilder builder);
 
+    public delegate void ForkBuildAction(IForkBuilder builder);
+    
+    public delegate void OverridenForkBuildAction(IOverridenForkBuilder builder);
+    
+    public delegate void JoinBuildAction(IJoinBuilder builder);
+    
+    public delegate void OverridenJoinBuildAction(IOverridenJoinBuilder builder);
+
     public delegate void StateTransitionsBuildAction(IStateBuilder builder);
 
     public delegate void CompositeStateBuildAction(ICompositeStateBuilder builder);

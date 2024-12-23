@@ -63,15 +63,15 @@ builder.Services.AddStateflows(b => b
                 .AddInternalTransition<ExampleRequest>(b => b
                     .AddEffect(c =>
                     {
-                        var counter = c.SourceState.Values.GetOrDefault<int>("counter", 0);
-                        c.SourceState.Values.Set("counter", counter + 1);
+                        var counter = c.Source.Values.GetOrDefault<int>("counter", 0);
+                        c.Source.Values.Set("counter", counter + 1);
                     })
                 )
                 .AddTransition<AfterOneMinute>("state2")
                 .AddDefaultTransition("state2", b => b
                     .AddGuard(c =>
                     {
-                        var counter = c.SourceState.Values.GetOrDefault<int>("counter", 0);
+                        var counter = c.Source.Values.GetOrDefault<int>("counter", 0);
                         return counter > 2;
                     })
                 )

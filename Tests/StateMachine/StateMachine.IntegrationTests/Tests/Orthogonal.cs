@@ -25,6 +25,24 @@ namespace StateMachine.IntegrationTests.Tests
         {
             builder
                 .AddStateMachines(b => b
+                        
+                    .AddStateMachine("forkAndJoin", b => b
+                        .AddInitialState("state1", b => b
+                            .AddTransition<SomeEvent>(Fork.Name)
+                        )
+                        .AddFork(b => b
+                            .AddTransition("stateA")
+                            .AddTransition("stateB")
+                        )
+                        .AddOrthogonalState("orthogonal", b => b
+                            .AddRegion(b => b
+                                .AddState("stateA")
+                            )
+                            .AddRegion(b => b
+                                .AddState("stateB")
+                            )
+                        )
+                    )
 
                     .AddStateMachine("defaultTransition", b => b
                         .AddInitialState("state1", b => b
@@ -306,6 +324,29 @@ namespace StateMachine.IntegrationTests.Tests
             Assert.AreEqual("state1.A.2.A.3", substate1);
             Assert.AreEqual("state1.A.2.B.3", substate2);
             Assert.AreEqual("state1.A.2", substate3);
+        }
+
+        [TestMethod]
+        public async Task ForkAndJoin()
+        {
+            var status = EventStatus.Rejected;
+            string currentState = "";
+            string substate1 = "";
+            string substate2 = "";
+
+            if (StateMachineLocator.TryLocateStateMachine(new StateMachineId("forkAndJoin", "x"), out var sm))
+            {
+                status = (await sm.SendAsync(new SomeEvent())).Status;
+
+                var tree = (await sm.GetCurrentStateAsync()).Response.StatesTree;
+                currentState = tree.Value;
+                substate1 = tree.Root.Nodes.First().Value;
+                substate2 = tree.Root.Nodes.Last().Value;
+            }
+
+            Assert.AreEqual("orthogonal", currentState);
+            Assert.AreEqual("stateA", substate1);
+            Assert.AreEqual("stateB", substate2);
         }
     }
 }

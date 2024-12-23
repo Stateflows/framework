@@ -5,7 +5,7 @@ using Stateflows.StateMachines.Models;
 
 namespace Stateflows.StateMachines.Context.Classes
 {
-    internal class StateContext : IStateContext
+    internal class VertexContext : IVertexContext
     {
         public Vertex Vertex { get; }
 
@@ -17,7 +17,7 @@ namespace Stateflows.StateMachines.Context.Classes
 
         private StateValues StateValues { get; }
 
-        public StateContext(Vertex vertex, RootContext context)
+        public VertexContext(Vertex vertex, RootContext context)
         {
             Vertex = vertex;
             Context = context;
@@ -27,15 +27,15 @@ namespace Stateflows.StateMachines.Context.Classes
 
         public IContextValues Values { get; }
 
-        public bool TryGetParentState(out IStateContext parentStateContext)
+        public bool TryGetParent(out IVertexContext parentVertexContext)
         {
             var parent = Context.Executor.Graph.AllVertices[Identifier].ParentRegion.ParentVertex;
 
-            parentStateContext = parent != null
-                ? new StateContext(parent, Context)
+            parentVertexContext = parent != null
+                ? new VertexContext(parent, Context)
                 : null;
 
-            return parentStateContext != null;
+            return parentVertexContext != null;
         }
     }
 }

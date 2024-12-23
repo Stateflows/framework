@@ -243,17 +243,31 @@ namespace Stateflows.StateMachines.Registration.Builders
         IOverridenCompositeStateBuilder IStateMachine<IOverridenCompositeStateBuilder>.AddChoice(string choiceName, ChoiceBuildAction choiceBuildAction)
             => AddChoice(choiceName, choiceBuildAction) as IOverridenCompositeStateBuilder;
 
+        IOverridenRegionalizedCompositeStateBuilder IStateMachine<IOverridenRegionalizedCompositeStateBuilder>.AddFork(
+            string forkName, ForkBuildAction forkBuildAction)
+            => AddFork(forkName, forkBuildAction) as IOverridenRegionalizedCompositeStateBuilder;
+
+        IOverridenRegionalizedCompositeStateBuilder IStateMachine<IOverridenRegionalizedCompositeStateBuilder>.AddJoin(string joinName, JoinBuildAction joinBuildAction)
+            => AddJoin(joinName, joinBuildAction) as IOverridenRegionalizedCompositeStateBuilder;
+
+        IOverridenCompositeStateBuilder IStateMachine<IOverridenCompositeStateBuilder>.AddFork(string forkName,
+            ForkBuildAction forkBuildAction)
+            => AddFork(forkName, forkBuildAction) as IOverridenCompositeStateBuilder;
+
+        IOverridenCompositeStateBuilder IStateMachine<IOverridenCompositeStateBuilder>.AddJoin(string joinName, JoinBuildAction joinBuildAction)
+            => AddJoin(joinName, joinBuildAction) as IOverridenCompositeStateBuilder;
+
+        public IInitializedCompositeStateBuilder AddFork(string forkName, ForkBuildAction forkBuildAction)
+            => AddVertex(forkName, VertexType.Fork, vertex => forkBuildAction?.Invoke(new StateBuilder(vertex, Services)));
+
+        public IInitializedCompositeStateBuilder AddJoin(string joinName, JoinBuildAction joinBuildAction)
+            => AddVertex(joinName, VertexType.Join, vertex => joinBuildAction?.Invoke(new StateBuilder(vertex, Services)));
+
         #endregion
 
-        #region AddFinalState
         [DebuggerHidden]
         public IFinalizedCompositeStateBuilder AddFinalState(string finalStateName = FinalState.Name)
             => AddVertex(finalStateName, VertexType.FinalState) as IFinalizedCompositeStateBuilder;
-
-        //[DebuggerHidden]
-        //IFinalizedCompositeStateBuilder IStateMachineFinal<IFinalizedCompositeStateBuilder>.AddFinalState(string finalStateName)
-        //    => AddVertex(finalStateName, VertexType.FinalState) as IFinalizedCompositeStateBuilder;
-        #endregion
 
         #region AddCompositeState
         [DebuggerHidden]
@@ -561,6 +575,42 @@ namespace Stateflows.StateMachines.Registration.Builders
             }
             
             choiceBuildAction?.Invoke(new StateBuilder(vertex, Services));
+
+            return this;
+        }
+
+        IFinalizedOverridenCompositeStateBuilder IStateMachineOverrides<IFinalizedOverridenCompositeStateBuilder>.UseFork(string forkName, OverridenForkBuildAction forkBuildAction)
+            => UseFork(forkName, forkBuildAction) as IFinalizedOverridenCompositeStateBuilder;
+
+        IFinalizedOverridenCompositeStateBuilder IStateMachineOverrides<IFinalizedOverridenCompositeStateBuilder>.UseJoin(string joinName, OverridenJoinBuildAction joinBuildAction)
+            => UseJoin(joinName, joinBuildAction) as IFinalizedOverridenCompositeStateBuilder;
+
+        IOverridenRegionalizedCompositeStateBuilder IStateMachineOverrides<IOverridenRegionalizedCompositeStateBuilder>.UseFork(string forkName, OverridenForkBuildAction forkBuildAction)
+            => UseFork(forkName, forkBuildAction) as IOverridenRegionalizedCompositeStateBuilder;
+
+        IOverridenRegionalizedCompositeStateBuilder IStateMachineOverrides<IOverridenRegionalizedCompositeStateBuilder>.UseJoin(string joinName, OverridenJoinBuildAction joinBuildAction)
+            => UseJoin(joinName, joinBuildAction) as IOverridenRegionalizedCompositeStateBuilder;
+
+        public IOverridenCompositeStateBuilder UseFork(string forkName, OverridenForkBuildAction forkBuildAction)
+        {
+            if (!Region.Vertices.TryGetValue(forkName, out var vertex) || vertex.Type != VertexType.Choice || vertex.OriginStateMachineName == null)
+            {
+                throw new StateMachineOverrideException($"Fork '{forkName}' not found in overriden composite state '{Region.ParentVertex.Name}'", Region.Graph.Class);
+            }
+            
+            forkBuildAction?.Invoke(new StateBuilder(vertex, Services));
+
+            return this;
+        }
+
+        public IOverridenCompositeStateBuilder UseJoin(string joinName, OverridenJoinBuildAction joinBuildAction)
+        {
+            if (!Region.Vertices.TryGetValue(joinName, out var vertex) || vertex.Type != VertexType.Choice || vertex.OriginStateMachineName == null)
+            {
+                throw new StateMachineOverrideException($"Join '{joinName}' not found in overriden composite state '{Region.ParentVertex.Name}'", Region.Graph.Class);
+            }
+            
+            joinBuildAction?.Invoke(new StateBuilder(vertex, Services));
 
             return this;
         }

@@ -350,21 +350,29 @@ namespace Stateflows.StateMachines.Engine
                         .SelectMany(edge => edge.GetActualEdges())
                         .ToArray();
 
-                    foreach (var edge in edges)
+                    if (vertex.Type == VertexType.Fork)
                     {
-                        if (
-                            eventHolder.Triggers(edge) && 
-                            await DoGuardAsync<TEvent>(edge) &&
-                            (
-                                lastActivatedEdge == null ||
-                                edge.Source.IsOrthogonalTo(lastActivatedEdge.Source)
-                            )
-                        )
+                        activatedEdges.AddRange(edges);
+                    }
+                    else
+                    {
+                        foreach (var edge in edges)
                         {
-                            activatedEdges.Add(edge);
+                            if (
+                                eventHolder.Triggers(edge) &&
+                                (
+                                    lastActivatedEdge == null ||
+                                    edge.Source.IsOrthogonalTo(lastActivatedEdge.Source)
+                                ) &&
+                                await DoGuardAsync<TEvent>(edge)
+                            )
+                            {
+                                activatedEdges.Add(edge);
 
-                            lastActivatedEdge = edge;
+                                lastActivatedEdge = edge;
+                            }
                         }
+                        
                     }
                 }
 
@@ -389,16 +397,17 @@ namespace Stateflows.StateMachines.Engine
                 }
             }
 
-            if (!deferred)
+            if (deferred)
             {
-                RebuildVerticesTree();
-
-                await DispatchNextDeferredEvent();
+                return EventStatus.Deferred;
             }
+            
+            RebuildVerticesTree();
 
-            return deferred
-                ? EventStatus.Deferred
-                : result;
+            await DispatchNextDeferredEvent();
+
+            return result;
+
         }
 
         [DebuggerStepThrough]
@@ -585,7 +594,7 @@ namespace Stateflows.StateMachines.Engine
 
             if (VerticesTree.TryFind(edge.Source, out var node))
             {
-                exitingVertices.AddRange(node.AllNodes_FromTheBottom.Select(node => node.Value));
+                exitingVertices.AddRange(node.AllNodes_FromTheBottom.Select(n => n.Value));
             }
 
             vertex = edge.Target;
@@ -621,7 +630,7 @@ namespace Stateflows.StateMachines.Engine
 
             await DoEffectAsync<TEvent>(edge);
 
-            List<Region> regions = new List<Region>();
+            var regions = new List<Region>();
 
             for (var i = 0; i < enteringVertices.Count; i++)
             {
@@ -684,11 +693,11 @@ namespace Stateflows.StateMachines.Engine
                     }
                 }
             }
-
-            foreach (var region in regions)
-            {
-                await DoInitializeCascadeAsync(region.InitialVertex);
-            }
+            
+            await Task.WhenAll(regions
+                .Where(region => region.InitialVertex != null)
+                .Select(region => DoInitializeCascadeAsync(region.InitialVertex))
+            );
         }
 
         private async Task<bool> DoCompletionAsync()
@@ -790,8 +799,8 @@ namespace Stateflows.StateMachines.Engine
         {
             ContextValues.GlobalValuesHolder.Value = context.StateMachine.Values;
             ContextValues.StateValuesHolder.Value = null;
-            ContextValues.SourceStateValuesHolder.Value = context.SourceState.Values;
-            ContextValues.TargetStateValuesHolder.Value = context.TargetState?.Values;
+            ContextValues.SourceStateValuesHolder.Value = context.Source.Values;
+            ContextValues.TargetStateValuesHolder.Value = context.Target?.Values;
 
             StateMachinesContextHolder.StateContext.Value = null;
             StateMachinesContextHolder.TransitionContext.Value = context;
@@ -809,8 +818,8 @@ namespace Stateflows.StateMachines.Engine
         {
             ContextValues.GlobalValuesHolder.Value = context.StateMachine.Values;
             ContextValues.StateValuesHolder.Value = null;
-            ContextValues.SourceStateValuesHolder.Value = context.SourceState.Values;
-            ContextValues.TargetStateValuesHolder.Value = context.TargetState?.Values;
+            ContextValues.SourceStateValuesHolder.Value = context.Source.Values;
+            ContextValues.TargetStateValuesHolder.Value = context.Target?.Values;
 
             StateMachinesContextHolder.StateContext.Value = null;
             StateMachinesContextHolder.TransitionContext.Value = context;
@@ -828,8 +837,8 @@ namespace Stateflows.StateMachines.Engine
         {
             ContextValues.GlobalValuesHolder.Value = context.StateMachine.Values;
             ContextValues.StateValuesHolder.Value = null;
-            ContextValues.SourceStateValuesHolder.Value = context.SourceState.Values;
-            ContextValues.TargetStateValuesHolder.Value = context.TargetState?.Values;
+            ContextValues.SourceStateValuesHolder.Value = context.Source.Values;
+            ContextValues.TargetStateValuesHolder.Value = context.Target?.Values;
 
             StateMachinesContextHolder.StateContext.Value = null;
             StateMachinesContextHolder.TransitionContext.Value = context;
@@ -846,8 +855,8 @@ namespace Stateflows.StateMachines.Engine
         {
             ContextValues.GlobalValuesHolder.Value = context.StateMachine.Values;
             ContextValues.StateValuesHolder.Value = null;
-            ContextValues.SourceStateValuesHolder.Value = context.SourceState.Values;
-            ContextValues.TargetStateValuesHolder.Value = context.TargetState?.Values;
+            ContextValues.SourceStateValuesHolder.Value = context.Source.Values;
+            ContextValues.TargetStateValuesHolder.Value = context.Target?.Values;
 
             StateMachinesContextHolder.StateContext.Value = null;
             StateMachinesContextHolder.TransitionContext.Value = context;
@@ -864,8 +873,8 @@ namespace Stateflows.StateMachines.Engine
         {
             ContextValues.GlobalValuesHolder.Value = context.StateMachine.Values;
             ContextValues.StateValuesHolder.Value = null;
-            ContextValues.SourceStateValuesHolder.Value = context.SourceState.Values;
-            ContextValues.TargetStateValuesHolder.Value = context.TargetState?.Values;
+            ContextValues.SourceStateValuesHolder.Value = context.Source.Values;
+            ContextValues.TargetStateValuesHolder.Value = context.Target?.Values;
 
             StateMachinesContextHolder.StateContext.Value = null;
             StateMachinesContextHolder.TransitionContext.Value = context;
@@ -882,8 +891,8 @@ namespace Stateflows.StateMachines.Engine
         {
             ContextValues.GlobalValuesHolder.Value = context.StateMachine.Values;
             ContextValues.StateValuesHolder.Value = null;
-            ContextValues.SourceStateValuesHolder.Value = context.SourceState.Values;
-            ContextValues.TargetStateValuesHolder.Value = context.TargetState?.Values;
+            ContextValues.SourceStateValuesHolder.Value = context.Source.Values;
+            ContextValues.TargetStateValuesHolder.Value = context.Target?.Values;
 
             StateMachinesContextHolder.StateContext.Value = null;
             StateMachinesContextHolder.TransitionContext.Value = context;

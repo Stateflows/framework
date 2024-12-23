@@ -3,11 +3,11 @@
 namespace Stateflows.StateMachines.Registration.Interfaces
 {
     public interface IChoiceBuilder :
-        IPseudostateTransitions<IChoiceBuilder>
+        IPseudostateElseTransitions<IChoiceBuilder>
     { }
     
     public interface IOverridenChoiceBuilder :
-        IPseudostateTransitions<IOverridenChoiceBuilder>,
-        IPseudostateTransitionsOverrides<IOverridenChoiceBuilder>
+        IPseudostateElseTransitions<IOverridenChoiceBuilder>,
+        IPseudostateElseTransitionsOverrides<IOverridenChoiceBuilder>
     { }
 }
