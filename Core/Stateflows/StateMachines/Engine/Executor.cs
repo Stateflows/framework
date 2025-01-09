@@ -75,7 +75,7 @@ namespace Stateflows.StateMachines.Engine
         public readonly Inspector Inspector;
 
         public IEnumerable<string> GetDeferredEvents()
-            => VerticesTree.AllNodes_FromTheTop.SelectMany(vertex => vertex.Value.DeferredEvents).ToArray();
+            => VerticesTree.GetAllNodes_FromTheTop().SelectMany(vertex => vertex.Value.DeferredEvents).ToArray();
 
         public Tree<Vertex> VerticesTree { get; private set; } = null;
 
@@ -163,22 +163,20 @@ namespace Stateflows.StateMachines.Engine
         {
             Debug.Assert(Context != null, $"Context is unavailable. Is state machine '{Graph.Name}' hydrated?");
 
-            if (Initialized)
+            if (!Initialized) return false;
+            
+            foreach (var vertex in VerticesTree.GetAllNodes_ChildrenFirst().Select(node => node.Value))
             {
-                foreach (var vertex in VerticesTree.AllNodes_ChildrenFirst.Select(node => node.Value))
-                {
-                    await DoExitAsync(vertex);
-                }
-
-                await DoFinalizeStateMachineAsync();
-
-                Context.StatesTree.Root = null;
-                StateHasChanged = true;
-
-                return true;
+                await DoExitAsync(vertex);
             }
 
-            return false;
+            await DoFinalizeStateMachineAsync();
+
+            Context.StatesTree.Root = null;
+            StateHasChanged = true;
+
+            return true;
+
         }
 
         public void Reset(ResetMode resetMode)
@@ -203,18 +201,21 @@ namespace Stateflows.StateMachines.Engine
 
         private async Task DoInitializeCascadeAsync(Vertex vertex, bool omitRoot = false)
         {
-            if (!omitRoot)
+            if (!Context.StatesTree.Contains(vertex.Identifier))
             {
-                await DoEntryAsync(vertex);
-            }
+                if (!omitRoot)
+                {
+                    await DoEntryAsync(vertex);
+                }
 
-            Context.StatesTree.AddTo(vertex.Identifier, vertex?.ParentRegion?.ParentVertex?.Identifier);
+                Context.StatesTree.AddTo(vertex.Identifier, vertex?.ParentRegion?.ParentVertex?.Identifier);
 
-            StateHasChanged = true;
+                StateHasChanged = true;
 
-            if (vertex.Regions.Any() && !omitRoot)
-            {
-                await DoInitializeStateAsync(vertex);
+                if (vertex.Regions.Any() && !omitRoot)
+                {
+                    await DoInitializeStateAsync(vertex);
+                }
             }
 
             await Task.WhenAll(vertex.Regions
@@ -235,14 +236,7 @@ namespace Stateflows.StateMachines.Engine
                 }
                 else
                 {
-                    if (index1 > index2)
-                    {
-                        return 1;
-                    }
-                    else
-                    {
-                        return 0;
-                    }
+                    return index1 > index2 ? 1 : 0;
                 }
             });
         }
@@ -257,7 +251,7 @@ namespace Stateflows.StateMachines.Engine
 
         public IEnumerable<Type> GetExpectedEvents()
         {
-            var currentStack = VerticesTree.AllNodes_FromTheTop.Select(node => node.Value).ToArray() ?? new Vertex[0];
+            var currentStack = VerticesTree.GetAllNodes_FromTheTop().Select(node => node.Value).ToArray() ?? new Vertex[0];
 
             return currentStack.Any()
                 ? currentStack
@@ -330,7 +324,7 @@ namespace Stateflows.StateMachines.Engine
         {
             Debug.Assert(Context != null, $"Context is not available. Is state machine '{Graph.Name}' hydrated?");
 
-            var currentStack = VerticesTree.AllNodes_FromTheTop.Select(node => node.Value).ToArray();
+            var currentStack = VerticesTree.GetAllNodes_FromTheTop().Select(node => node.Value).ToArray();
 
             var deferred = true;
 
@@ -376,17 +370,66 @@ namespace Stateflows.StateMachines.Engine
                     }
                 }
 
+                // var forks = new Dictionary<Vertex, List<Edge>>();
+                var joins = new Dictionary<Vertex, List<Edge>>();
                 foreach (var edge in activatedEdges)
                 {
-                    Context.AddExecutionStep(
-                        edge.SourceName,
-                        edge.TargetName == string.Empty
-                            ? null
-                            : edge.TargetName,
-                        eventHolder.Payload
-                    );
+                    if (
+                        !Context.StatesTree.Contains(edge.Source.Identifier) &&
+                        edge.Source.Type != VertexType.Fork
+                    )
+                    {
+                        continue;
+                    }
 
-                    await DoConsumeAsync<TEvent>(edge);
+                    // if (edge.Source.Type == VertexType.Fork)
+                    // {
+                    //     if (!forks.TryGetValue(edge.Source, out var edges))
+                    //     {
+                    //         edges = new List<Edge>();
+                    //         forks[edge.Source] = edges;
+                    //     }
+                    //
+                    //     edges.Add(edge);
+                    // }
+                    
+                    if (edge.Target?.Type == VertexType.Join)
+                    {
+                        if (!joins.TryGetValue(edge.Target, out var edges))
+                        {
+                            edges = new List<Edge>();
+                            joins[edge.Target] = edges;
+                        }
+                        
+                        edges.Add(edge);
+                    
+                        if (edges.Count == edge.Target.IncomingEdges.Count())
+                        {
+                            // complete join
+                    
+                            await DoJoinAsync(edges, edge.Target);
+                        }
+                    }
+                    else
+                    {
+                        Context.AddExecutionStep(
+                            edge.SourceName,
+                            edge.TargetName == string.Empty
+                                ? null
+                                : edge.TargetName,
+                            eventHolder.Payload
+                        );
+
+                        await DoConsumeAsync<TEvent>(
+                            edge,
+                            true
+                            // edge.Source.Type != VertexType.Fork ||
+                            // (
+                            //     forks.TryGetValue(edge.Source, out var forkEdges) &&
+                            //     forkEdges.Count == edge.Source.Edges.Count
+                            // )
+                        );
+                    }
 
                     result = EventStatus.Consumed;
                 }
@@ -428,7 +471,6 @@ namespace Stateflows.StateMachines.Engine
         }
 
         private async Task DoEffectAsync<TEvent>(Edge edge)
-
         {
             BeginScope();
 
@@ -580,24 +622,27 @@ namespace Stateflows.StateMachines.Engine
             EndScope();
         }
 
-        private async Task DoConsumeAsync<TEvent>(Edge edge)
+        private async Task DoConsumeAsync<TEvent>(Edge edge, bool exitSource)
         {
             var exitingVertices = new List<Vertex>();
             var enteringVertices = new List<Vertex>();
 
-            var vertex = edge.Source?.ParentRegion?.ParentVertex;
-            while (vertex != null)
+            if (exitSource)
             {
-                exitingVertices.Insert(0, vertex);
-                vertex = vertex.ParentRegion?.ParentVertex;
+                var exitingVertex = edge.Source?.ParentRegion?.ParentVertex;
+                while (exitingVertex != null)
+                {
+                    exitingVertices.Insert(0, exitingVertex);
+                    exitingVertex = exitingVertex.ParentRegion?.ParentVertex;
+                }
+
+                if (VerticesTree.TryFind(edge.Source, out var node))
+                {
+                    exitingVertices.AddRange(node.GetAllNodes_FromTheBottom().Select(n => n.Value));
+                }
             }
 
-            if (VerticesTree.TryFind(edge.Source, out var node))
-            {
-                exitingVertices.AddRange(node.AllNodes_FromTheBottom.Select(n => n.Value));
-            }
-
-            vertex = edge.Target;
+            var vertex = edge.Target;
             while (vertex != null)
             {
                 enteringVertices.Insert(0, vertex);
@@ -616,10 +661,19 @@ namespace Stateflows.StateMachines.Engine
                     enteringVertices.RemoveAt(0);
                     exitingVertices.RemoveAt(0);
                 }
-
+                
                 exitingVertices.Reverse();
+
+                // exit non-exited regions of exited orthogonal states
+                exitingVertices = exitingVertices.SelectMany(exitingVertex => exitingVertex.GetBranch().Reverse()).Distinct().ToList();
+
                 foreach (var exitingVertex in exitingVertices)
                 {
+                    if (!Context.StatesTree.TryFind(exitingVertex.Identifier, out var _))
+                    {
+                        continue;
+                    }
+                    
                     await DoExitAsync(exitingVertex);
 
                     Context.StatesTree.Remove(exitingVertex.Identifier);
@@ -636,18 +690,21 @@ namespace Stateflows.StateMachines.Engine
             {
                 var enteringVertex = enteringVertices[i];
 
-                await DoEntryAsync(enteringVertex);
-
-                if (enteringVertex.Regions.Any())
+                if (!Context.StatesTree.Contains(enteringVertex.Identifier))
                 {
-                    await DoInitializeStateAsync(enteringVertex);
+                    await DoEntryAsync(enteringVertex);
+
+                    if (enteringVertex.Regions.Any())
+                    {
+                        await DoInitializeStateAsync(enteringVertex);
+                    }
                 }
 
                 if (enteringVertex.Regions.Count > 1 && i < enteringVertices.Count - 1)
                 {
                     var enteredRegion = enteringVertices[i + 1].ParentRegion;
 
-                    bool initializing = true;
+                    var initializing = true;
                     foreach (var region in enteringVertex.Regions)
                     {
                         if (region == enteredRegion)
@@ -658,7 +715,10 @@ namespace Stateflows.StateMachines.Engine
 
                         if (initializing)
                         {
-                            await DoInitializeCascadeAsync(region.InitialVertex);
+                            if (region.InitialVertex != null)
+                            {
+                                await DoInitializeCascadeAsync(region.InitialVertex);
+                            }
                         }
                         else
                         {
@@ -700,6 +760,150 @@ namespace Stateflows.StateMachines.Engine
             );
         }
 
+        private async Task DoJoinAsync(IEnumerable<Edge> edges, Vertex join)
+        {
+            var enteringVertices = new List<Vertex>();
+            while (join != null)
+            {
+                enteringVertices.Insert(0, join);
+                join = join.ParentRegion?.ParentVertex;
+            }
+            
+            foreach (var edge in edges)
+            {
+                var exitingVertices = new List<Vertex>();
+
+                var vertex = edge.Source?.ParentRegion?.ParentVertex;
+                while (vertex != null)
+                {
+                    exitingVertices.Insert(0, vertex);
+                    vertex = vertex.ParentRegion?.ParentVertex;
+                }
+
+                if (VerticesTree.TryFind(edge.Source, out var node))
+                {
+                    exitingVertices.AddRange(node.GetAllNodes_FromTheBottom().Select(n => n.Value));
+                }
+
+                // vertex = edge.Target;
+                // while (vertex != null)
+                // {
+                //     enteringVertices.Insert(0, vertex);
+                //     vertex = vertex.ParentRegion?.ParentVertex;
+                // }
+
+                if (enteringVertices.Any() && exitingVertices.Any())
+                {
+                    while (
+                        enteringVertices.Any() &&
+                        exitingVertices.Any() &&
+                        enteringVertices[0] == exitingVertices[0] &&
+                        enteringVertices[0] != edge.Target
+                    )
+                    {
+                        enteringVertices.RemoveAt(0);
+                        exitingVertices.RemoveAt(0);
+                    }
+
+                    exitingVertices.Reverse();
+
+                    // exit non-exited regions of exited orthogonal states
+                    // exitingVertices = exitingVertices.SelectMany(exitingVertex => exitingVertex.GetBranch().Reverse()).Distinct().ToList();
+
+                    foreach (var exitingVertex in exitingVertices)
+                    {
+                        if (Context.StatesTree.TryFind(exitingVertex.Identifier, out var treeNode) && treeNode.Nodes.Any())
+                        {
+                            continue;
+                        }
+                        
+                        await DoExitAsync(exitingVertex);
+
+                        Context.StatesTree.Remove(exitingVertex.Identifier);
+
+                        StateHasChanged = true;
+                    }
+                }
+
+                await DoEffectAsync<Completion>(edge);
+            }
+
+            var regions = new List<Region>();
+
+            for (var i = 0; i < enteringVertices.Count; i++)
+            {
+                var enteringVertex = enteringVertices[i];
+
+                if (!Context.StatesTree.Contains(enteringVertex.Identifier))
+                {
+                    await DoEntryAsync(enteringVertex);
+
+                    if (enteringVertex.Regions.Any())
+                    {
+                        await DoInitializeStateAsync(enteringVertex);
+                    }
+                }
+
+                if (enteringVertex.Regions.Count > 1 && i < enteringVertices.Count - 1)
+                {
+                    var enteredRegion = enteringVertices[i + 1].ParentRegion;
+
+                    var initializing = true;
+                    foreach (var region in enteringVertex.Regions)
+                    {
+                        if (region == enteredRegion)
+                        {
+                            initializing = false;
+                            continue;
+                        }
+
+                        if (initializing)
+                        {
+                            if (region.InitialVertex != null)
+                            {
+                                await DoInitializeCascadeAsync(region.InitialVertex);
+                            }
+                        }
+                        else
+                        {
+                            regions.Add(region);
+                        }
+                    }
+                }
+
+                if (!enteringVertex.Regions.Any() || enteringVertex != enteringVertices.Last())
+                {
+                    Context.StatesTree.AddTo(enteringVertex.Identifier, enteringVertex?.ParentRegion?.ParentVertex?.Identifier);
+
+                    StateHasChanged = true;
+                }
+            }
+
+            // if (edge.Target != null && enteringVertices.Any())
+            // {
+            //     var topVertex = enteringVertices.Last();
+            //
+            //     await DoInitializeCascadeAsync(topVertex, true);
+            //
+            //     // if (topVertex.Type == VertexType.FinalState)
+            //     // {
+            //     //     if (topVertex.ParentRegion is null)
+            //     //     {
+            //     //         await DoFinalizeStateMachineAsync();
+            //     //     }
+            //     //     else
+            //     //     {
+            //     //         await DoFinalizeStateAsync(topVertex.ParentRegion.ParentVertex);
+            //     //     }
+            //     // }
+            // }
+            
+            await Task.WhenAll(regions
+                .Where(region => region.InitialVertex != null)
+                .Select(region => DoInitializeCascadeAsync(region.InitialVertex))
+            );
+        }
+        
         private async Task<bool> DoCompletionAsync()
         {
             var completionEventHolder = (new Completion()).ToEventHolder();

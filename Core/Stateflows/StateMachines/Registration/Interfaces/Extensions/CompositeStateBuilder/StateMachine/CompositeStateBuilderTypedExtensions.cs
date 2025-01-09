@@ -15,7 +15,7 @@ namespace Stateflows.StateMachines
         /// <typeparam name="TState">State class; must implement at least one of following interfaces: <see cref="IStateEntry"/>, <see cref="IStateExit"/></typeparam>
         /// <param name="stateBuildAction">State build action</param>
         [DebuggerHidden]
-        public static IInitializedCompositeStateBuilder AddInitialState<TState>(this ICompositeStateBuilder builder, StateTransitionsBuildAction stateBuildAction = null)
+        public static IInitializedCompositeStateBuilder AddInitialState<TState>(this ICompositeStateBuilder builder, StateBuildAction stateBuildAction = null)
             where TState : class, IState
             => builder.AddInitialState<TState>(State<TState>.Name, stateBuildAction);
 
@@ -26,7 +26,7 @@ namespace Stateflows.StateMachines
         /// <param name="stateName">State name</param>
         /// <param name="stateBuildAction">State build action</param>
         [DebuggerHidden]
-        public static IInitializedCompositeStateBuilder AddInitialState<TState>(this ICompositeStateBuilder builder, string stateName, StateTransitionsBuildAction stateBuildAction = null)
+        public static IInitializedCompositeStateBuilder AddInitialState<TState>(this ICompositeStateBuilder builder, string stateName, StateBuildAction stateBuildAction = null)
             where TState : class, IState
         {
             (builder as IInternal).Services.AddServiceType<TState>();
@@ -50,7 +50,7 @@ namespace Stateflows.StateMachines
         /// <typeparam name="TCompositeState">Composite state class; must implement at least one of following interfaces: <see cref="ICompositeStateEntry"/>, <see cref="ICompositeStateExit"/>, <see cref="ICompositeStateInitialization"/>, <see cref="ICompositeStateFinalization"/></typeparam>
         /// <param name="compositeStateBuildAction">Composite state build action</param>
         [DebuggerHidden]
-        public static IInitializedCompositeStateBuilder AddInitialCompositeState<TCompositeState>(this ICompositeStateBuilder builder, CompositeStateTransitionsBuildAction compositeStateBuildAction)
+        public static IInitializedCompositeStateBuilder AddInitialCompositeState<TCompositeState>(this ICompositeStateBuilder builder, CompositeStateBuildAction compositeStateBuildAction)
             where TCompositeState : class, ICompositeState
             => builder.AddInitialCompositeState<TCompositeState>(State<TCompositeState>.Name, compositeStateBuildAction);
 
@@ -61,7 +61,7 @@ namespace Stateflows.StateMachines
         /// <param name="compositeStateName">Composite state name</param>
         /// <param name="compositeStateBuildAction">Composite state build action</param>
         [DebuggerHidden]
-        public static IInitializedCompositeStateBuilder AddInitialCompositeState<TCompositeState>(this ICompositeStateBuilder builder, string compositeStateName, CompositeStateTransitionsBuildAction compositeStateBuildAction)
+        public static IInitializedCompositeStateBuilder AddInitialCompositeState<TCompositeState>(this ICompositeStateBuilder builder, string compositeStateName, CompositeStateBuildAction compositeStateBuildAction)
             where TCompositeState : class, ICompositeState
         {
             (builder as IInternal).Services.AddServiceType<TCompositeState>();
@@ -70,9 +70,46 @@ namespace Stateflows.StateMachines
                 compositeStateName,
                 b =>
                 {
-                    (b as IInitializedCompositeStateBuilder).AddStateEvents<TCompositeState, IInitializedCompositeStateBuilder>();
+                    b.AddStateEvents<TCompositeState, ICompositeStateBuilder>();
+                    b.AddCompositeStateEvents<TCompositeState, ICompositeStateBuilder>();
 
                     compositeStateBuildAction?.Invoke(b);
+                }
+            );
+        }
+        #endregion
+
+        #region AddInitialOrthogonalState
+        /// <summary>
+        /// Adds initial orthogonal state to current orthogonal state.
+        /// </summary>
+        /// <typeparam name="TOrthogonalState">Orthogonal state class; must implement at least one of following interfaces: <see cref="IOrthogonalStateEntry"/>, <see cref="IOrthogonalStateExit"/>, <see cref="IOrthogonalStateInitialization"/>, <see cref="IOrthogonalStateFinalization"/></typeparam>
+        /// <param name="orthogonalStateBuildAction">Orthogonal state build action</param>
+        [DebuggerHidden]
+        public static IInitializedCompositeStateBuilder AddInitialOrthogonalState<TOrthogonalState>(this ICompositeStateBuilder builder, OrthogonalStateBuildAction orthogonalStateBuildAction)
+            where TOrthogonalState : class, IOrthogonalState
+            => builder.AddInitialOrthogonalState<TOrthogonalState>(State<TOrthogonalState>.Name, orthogonalStateBuildAction);
+
+        /// <summary>
+        /// Adds initial orthogonal state to current orthogonal state.
+        /// </summary>
+        /// <typeparam name="TOrthogonalState">Orthogonal state class; must implement at least one of following interfaces: <see cref="IOrthogonalStateEntry"/>, <see cref="IOrthogonalStateExit"/>, <see cref="IOrthogonalStateInitialization"/>, <see cref="IOrthogonalStateFinalization"/></typeparam>
+        /// <param name="orthogonalStateName">Orthogonal state name</param>
+        /// <param name="orthogonalStateBuildAction">Composite state build action</param>
+        [DebuggerHidden]
+        public static IInitializedCompositeStateBuilder AddInitialOrthogonalState<TOrthogonalState>(this ICompositeStateBuilder builder, string orthogonalStateName, OrthogonalStateBuildAction orthogonalStateBuildAction)
+            where TOrthogonalState : class, IOrthogonalState
+        {
+            (builder as IInternal).Services.AddServiceType<TOrthogonalState>();
+
+            return builder.AddInitialOrthogonalState(
+                orthogonalStateName,
+                b =>
+                {
+                    b.AddStateEvents<TOrthogonalState, IOrthogonalStateBuilder>();
+                    b.AddCompositeStateEvents<TOrthogonalState, IOrthogonalStateBuilder>();
+
+                    orthogonalStateBuildAction?.Invoke(b);
                 }
             );
         }

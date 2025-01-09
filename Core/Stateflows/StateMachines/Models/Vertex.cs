@@ -47,6 +47,7 @@ namespace Stateflows.StateMachines.Models
 
         public Dictionary<string, Edge> Edges { get; set; } = new Dictionary<string, Edge>();
         public IEnumerable<Edge> OrderedEdges => Edges.Values.OrderBy(edge => edge.IsElse);
+        public IEnumerable<Edge> IncomingEdges => Graph.AllEdges.Where(edge => edge.Target == this);
 
         public List<string> DeferredEvents { get; set; } = new List<string>();
         public List<Region> Regions { get; set; } = new List<Region>();
@@ -111,11 +112,11 @@ namespace Stateflows.StateMachines.Models
             }
 
             currentVertex = vertex;
-            var previousVertex = vertex;
+            Vertex previousVertex = null;
             while (currentVertex != null)
             {
                 var index = stack.IndexOf(currentVertex);
-                if (index > 0 && stack[index - 1].ParentRegion != previousVertex.ParentRegion)
+                if (index > 0 && previousVertex != null && stack[index - 1].ParentRegion != previousVertex.ParentRegion)
                 {
                     return true;
                 }
@@ -125,6 +126,18 @@ namespace Stateflows.StateMachines.Models
             }
 
             return false;
+        }
+
+        public IEnumerable<Vertex> GetBranch()
+        {
+            var result = new List<Vertex> { this };
+            if (Regions.Any())
+            {
+                result.AddRange(Regions.SelectMany(region =>
+                    region.Vertices.Values.SelectMany(vertex => vertex.GetBranch())));
+            }
+
+            return result;
         }
     }
 }

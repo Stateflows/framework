@@ -1,6 +1,6 @@
 ﻿namespace Stateflows.StateMachines.Registration.Interfaces.Base
 {
-    public partial interface IStateMachineFinal<out TReturn>
+    public interface IStateMachineFinal<out TReturn>
     {
         /// <summary>
         /// Adds final state to current composite state.

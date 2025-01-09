@@ -160,7 +160,7 @@ namespace StateMachine.IntegrationTests.Tests
             {
                 status = (await sm.SendAsync(new OtherEvent() { AnswerToLifeUniverseAndEverything = 43 })).Status;
 
-                currentState = (await sm.GetCurrentStateAsync()).Response.StatesStack.First();
+                currentState = (await sm.GetCurrentStateAsync()).Response.StatesTree.Value;
             }
 
             Assert.AreEqual(EventStatus.NotConsumed, status);
@@ -179,7 +179,7 @@ namespace StateMachine.IntegrationTests.Tests
             {
                 status = (await sm.SendAsync(new OtherEvent() { AnswerToLifeUniverseAndEverything = 43 })).Status;
 
-                currentState = (await sm.GetCurrentStateAsync()).Response.StatesStack.First();
+                currentState = (await sm.GetCurrentStateAsync()).Response.StatesTree.Value;
             }
 
             Assert.AreEqual(EventStatus.NotConsumed, status);

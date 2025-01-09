@@ -4,7 +4,7 @@ using Stateflows.StateMachines.Context.Interfaces;
 
 namespace Stateflows.StateMachines.Registration.Interfaces.Base
 {
-    public interface ICompositeStateEvents<TReturn>
+    public interface ICompositeStateEvents<out TReturn>
     {
         /// <summary>
         /// Adds initialization handler to current state.<br/>

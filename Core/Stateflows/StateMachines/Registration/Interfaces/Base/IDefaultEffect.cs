@@ -8,7 +8,7 @@ using Stateflows.StateMachines.Registration.Interfaces.Internal;
 
 namespace Stateflows.StateMachines.Registration.Interfaces.Base
 {
-    public interface IDefaultEffect<TReturn>
+    public interface IDefaultEffect<out TReturn>
     {
         TReturn AddEffect(Func<ITransitionContext<Completion>, Task> effectAsync);
 

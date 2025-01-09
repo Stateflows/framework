@@ -32,7 +32,7 @@ export class CounterComponent {
   public async go() {
     this.http.get('https://localhost:7067/StateMachine/stateMachine1/x/go').subscribe(() => this.refresh());
   }
-  
+
   public async push() {
     this.http.post('https://localhost:7067/StateMachine/stateMachine1/x/push', { "dolor": "sit amet" }).subscribe(() => this.refresh());
   }

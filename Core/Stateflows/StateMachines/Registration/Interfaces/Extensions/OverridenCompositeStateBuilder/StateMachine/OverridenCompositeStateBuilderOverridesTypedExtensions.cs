@@ -14,5 +14,10 @@ namespace Stateflows.StateMachines
         public static IOverridenCompositeStateBuilder UseCompositeState<TCompositeState>(this IOverridenCompositeStateBuilder builder, OverridenCompositeStateBuildAction compositeStateBuildAction)
             where TCompositeState : class, ICompositeState
             => builder.UseCompositeState(State<TCompositeState>.Name, compositeStateBuildAction);
+
+        [DebuggerHidden]
+        public static IOverridenCompositeStateBuilder UseOrthogonalState<TOrthogonalState>(this IOverridenCompositeStateBuilder builder, OverridenOrthogonalStateBuildAction orthogonalStateBuildAction)
+            where TOrthogonalState : class, IOrthogonalState
+            => builder.UseOrthogonalState(State<TOrthogonalState>.Name, orthogonalStateBuildAction);
     }
 }

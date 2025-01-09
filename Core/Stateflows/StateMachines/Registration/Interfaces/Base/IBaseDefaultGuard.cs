@@ -1,10 +1,9 @@
 ﻿using System;
 using System.Threading.Tasks;
 using Stateflows.Common.Extensions;
+using Stateflows.StateMachines.Events;
 using Stateflows.StateMachines.Context.Classes;
 using Stateflows.StateMachines.Context.Interfaces;
-using Stateflows.StateMachines.Events;
-using Stateflows.StateMachines.Registration.Builders;
 using Stateflows.StateMachines.Registration.Interfaces.Internal;
 
 namespace Stateflows.StateMachines.Registration.Interfaces.Base

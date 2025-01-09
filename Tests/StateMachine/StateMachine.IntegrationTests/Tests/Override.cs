@@ -19,8 +19,24 @@ namespace StateMachine.IntegrationTests.Tests
             .UseStateMachine<BaseStateMachine>(b => b
                 .UseState("state1", b => b
                     .AddDefaultTransition("state2")
+                    .AddTransition<SomeEvent>("orthogonal")
                 )
                 .AddState("state2")
+                .AddOrthogonalState("orthogonal", b => b
+                    .AddRegion(b => b
+                        .AddInitialState("a", b => b
+                            .AddDefaultTransition<Join>()
+                        )
+                    )
+                    .AddRegion(b => b
+                        .AddInitialState("b", b => b
+                            .AddDefaultTransition<Join>()
+                        )
+                    )
+                )
+                .AddJoin(b => b
+                    .AddTransition("state2")
+                )
             );
     }
 
@@ -31,13 +47,16 @@ namespace StateMachine.IntegrationTests.Tests
                 .UseState("state1", b => b
                     .MakeOrthogonal(b => b
                         .AddRegion(b => b
-                            .AddInitialState("state1.A.1")
+                            .AddInitialState("state1.A.1", b => b
+                                .AddTransition<SomeEvent>("state2")
+                            )
                         )
                         .AddRegion(b => b
                             .AddInitialState("state1.B.1")
                         )
                     )
                 )
+                .AddState("state2")
             );
     }
 
@@ -122,6 +141,11 @@ namespace StateMachine.IntegrationTests.Tests
                                 .AddDefaultTransition("state3")
                             )
                             .AddState("state3")
+                            .UseJoin(b => b
+                                .UseTransition("state2", b => b
+                                    .AddEffect(c => { })
+                                )
+                            )
                         )
                     )
                     
@@ -260,7 +284,7 @@ namespace StateMachine.IntegrationTests.Tests
             {
                 status = (await sm.SendAsync(new SomeEvent())).Status;
 
-                currentState = (await sm.GetCurrentStateAsync()).Response.StatesTree.AllNodes_ChildrenFirst.First().Value;
+                currentState = (await sm.GetCurrentStateAsync()).Response.StatesTree.GetAllNodes_ChildrenFirst().First().Value;
             }
 
             Assert.AreEqual(EventStatus.Consumed, status);
@@ -277,7 +301,7 @@ namespace StateMachine.IntegrationTests.Tests
             {
                 status = (await sm.SendAsync(new SomeEvent())).Status;
 
-                currentState = (await sm.GetCurrentStateAsync()).Response.StatesTree.AllNodes_ChildrenFirst.First().Value;
+                currentState = (await sm.GetCurrentStateAsync()).Response.StatesTree.GetAllNodes_ChildrenFirst().First().Value;
             }
 
             Assert.AreEqual(EventStatus.Consumed, status);
@@ -294,7 +318,7 @@ namespace StateMachine.IntegrationTests.Tests
             {
                 status = (await sm.SendAsync(new SomeEvent())).Status;
 
-                currentState = (await sm.GetCurrentStateAsync()).Response.StatesTree.AllNodes_ChildrenFirst.First().Value;
+                currentState = (await sm.GetCurrentStateAsync()).Response.StatesTree.GetAllNodes_ChildrenFirst().First().Value;
             }
 
             Assert.AreEqual(EventStatus.Consumed, status);

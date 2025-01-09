@@ -10,6 +10,7 @@ using Stateflows.StateMachines.Models;
 using Stateflows.StateMachines.Events;
 using Stateflows.StateMachines.Context.Classes;
 using Stateflows.StateMachines.Context.Interfaces;
+using Stateflows.StateMachines.Exceptions;
 using Stateflows.StateMachines.Registration.Interfaces;
 using Stateflows.StateMachines.Registration.Extensions;
 using Stateflows.StateMachines.Registration.Interfaces.Base;
@@ -23,6 +24,7 @@ namespace Stateflows.StateMachines.Registration.Builders
         IInternalTransitionBuilder<TEvent>,
         IElseInternalTransitionBuilder<TEvent>,
         IDefaultTransitionBuilder,
+        IDefaultTransitionEffectBuilder,
         IElseDefaultTransitionBuilder,
         IBehaviorBuilder,
         IForwardedEventBuilder<TEvent>,
@@ -50,6 +52,14 @@ namespace Stateflows.StateMachines.Registration.Builders
         public ITransitionBuilder<TEvent> AddGuard(Func<ITransitionContext<TEvent>, Task<bool>> guardAsync)
         {
             guardAsync.ThrowIfNull(nameof(guardAsync));
+
+            if (Edge.Source.Type == VertexType.Fork)
+            {
+                throw new TransitionDefinitionException(
+                    $"Transition outgoing from fork '{Edge.SourceName}' cannot have guards",
+                    Edge.Graph.Class
+                );
+            }
 
             guardAsync = guardAsync.AddStateMachineInvocationContext(Edge.Graph);
 
@@ -162,6 +172,9 @@ namespace Stateflows.StateMachines.Registration.Builders
 
         IDefaultTransitionBuilder IDefaultEffect<IDefaultTransitionBuilder>.AddEffect(Func<ITransitionContext<Completion>, Task> effectAsync)
             => AddEffect(c => effectAsync(c as ITransitionContext<Completion>)) as IDefaultTransitionBuilder;
+
+        IDefaultTransitionEffectBuilder IDefaultEffect<IDefaultTransitionEffectBuilder>.AddEffect(Func<ITransitionContext<Completion>, Task> effectAsync)
+            => AddEffect(c => effectAsync(c as ITransitionContext<Completion>)) as IDefaultTransitionEffectBuilder;
 
         IDefaultTransitionBuilder IBaseDefaultGuard<IDefaultTransitionBuilder>.AddGuard(Func<ITransitionContext<Completion>, Task<bool>> guardAsync)
             => AddGuard(c => guardAsync(c as ITransitionContext<Completion>)) as IDefaultTransitionBuilder;

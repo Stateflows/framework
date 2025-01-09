@@ -7,7 +7,7 @@ using Stateflows.StateMachines.Registration.Interfaces.Internal;
 
 namespace Stateflows.StateMachines.Registration.Interfaces.Base
 {
-    public interface IDefaultGuard<TReturn> : IBaseDefaultGuard<TReturn>
+    public interface IDefaultGuard<out TReturn> : IBaseDefaultGuard<TReturn>
     {
         TReturn AddGuardExpression(Func<IDefaultGuardBuilder, IDefaultGuardBuilder> guardExpression)
         {

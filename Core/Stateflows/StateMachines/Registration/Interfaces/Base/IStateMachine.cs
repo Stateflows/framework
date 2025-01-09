@@ -1,6 +1,6 @@
 ﻿namespace Stateflows.StateMachines.Registration.Interfaces.Base
 {
-    public partial interface IStateMachine<out TReturn>
+    public interface IStateMachine<out TReturn>
     {
         /// <summary>
         /// Adds a State to the state machine.<br/>

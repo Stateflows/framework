@@ -120,7 +120,7 @@ namespace Stateflows.StateMachines.Models
                     var deferredEvents = vertex.DeferredEvents.Where(deferredEvent => vertexTriggers.Contains(deferredEvent));
                     if (deferredEvents.Any())
                     {
-                        throw new DeferralDefinitionException(deferredEvents.First(), $"Event '{deferredEvents.First()}' triggers a transition outgoing from state '{vertex.Name}' in state machine '{Name}' and cannot be deferred by that state.", Class);
+                        throw new DeferralDefinitionException(deferredEvents.First(), $"Event '{deferredEvents.First()}' triggers a transition outgoing from state '{vertex.Name}' in state machine '{Name}' and cannot be deferred by that state", Class);
                     }
 
                     if (vertex.Type == VertexType.Choice && region.Edges.Values.Count(edge => edge.IsElse) != 1)
@@ -140,8 +140,27 @@ namespace Stateflows.StateMachines.Models
                     }
                     else
                     {
-                        throw new TransitionDefinitionException($"Transition target state '{edge.TargetName}' is not registered", Class);
+                        throw new TransitionDefinitionException($"Transition target '{edge.TargetName}' is not registered", Class);
                     }
+                }
+
+                if (edge.Target is { Type: VertexType.Join })
+                {
+                    if (edge.Guards.Any)
+                    {
+                        throw new TransitionDefinitionException(
+                            $"Transition incoming to join '{edge.TargetName}' cannot have guards",
+                            Class
+                        );
+                    }
+                }
+
+                if (edge.Target != null && edge.Source.IsOrthogonalTo(edge.Target))
+                {
+                    throw new TransitionDefinitionException(
+                        $"Can't register transition from '{edge.SourceName}' to '{edge.TargetName}': no transition can go between orthogonal regions",
+                        Class
+                    );
                 }
 
                 if (edge.IsElse)
@@ -154,7 +173,7 @@ namespace Stateflows.StateMachines.Models
                     if (!siblings)
                     {
                         throw new TransitionDefinitionException(
-                            $"Can't register else transition outgoing from state '{edge.SourceName}': there are no other transitions coming out from this state with same type and trigger",
+                            $"Can't register else transition outgoing from '{edge.SourceName}': there are no other transitions coming out from this vertex with same type and trigger",
                             Class
                         );
                     }

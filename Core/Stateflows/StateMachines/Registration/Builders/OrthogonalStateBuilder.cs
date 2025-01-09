@@ -18,7 +18,7 @@ using Stateflows.StateMachines.Registration.Interfaces.Internal;
 
 namespace Stateflows.StateMachines.Registration.Builders
 {
-    internal partial class OrthogonalStateBuilder :
+    internal class OrthogonalStateBuilder :
         IOrthogonalStateBuilder,
         IOverridenOrthogonalStateBuilder,
         IInternal,
@@ -312,6 +312,7 @@ namespace Stateflows.StateMachines.Registration.Builders
             => AddElseTransition<TEvent>(Constants.DefaultTransitionTarget, builder => transitionBuildAction?.Invoke(builder as IElseInternalTransitionBuilder<TEvent>));
         #endregion
 
+        [DebuggerHidden]
         public IOverridenOrthogonalStateBuilder UseTransition<TEvent>(string targetStateName, TransitionBuildAction<TEvent> transitionBuildAction)
         {
             var edge = Vertex.Edges.Values.FirstOrDefault(edge =>
@@ -331,6 +332,7 @@ namespace Stateflows.StateMachines.Registration.Builders
             return this;
         }
 
+        [DebuggerHidden]
         public IOverridenOrthogonalStateBuilder UseDefaultTransition(string targetStateName, DefaultTransitionBuildAction transitionBuildAction)
         {
             var edge = Vertex.Edges.Values.FirstOrDefault(edge =>
@@ -349,6 +351,7 @@ namespace Stateflows.StateMachines.Registration.Builders
             return this;
         }
 
+        [DebuggerHidden]
         public IOverridenOrthogonalStateBuilder UseInternalTransition<TEvent>(InternalTransitionBuildAction<TEvent> transitionBuildAction)
         {
             var edge = Vertex.Edges.Values.FirstOrDefault(edge =>
@@ -367,6 +370,7 @@ namespace Stateflows.StateMachines.Registration.Builders
             return this;
         }
 
+        [DebuggerHidden]
         public IOverridenOrthogonalStateBuilder UseElseTransition<TEvent>(string targetStateName, ElseTransitionBuildAction<TEvent> transitionBuildAction)
         {
             var edge = Vertex.Edges.Values.FirstOrDefault(edge =>
@@ -386,6 +390,7 @@ namespace Stateflows.StateMachines.Registration.Builders
             return this;
         }
 
+        [DebuggerHidden]
         public IOverridenOrthogonalStateBuilder UseElseDefaultTransition(string targetStateName, ElseDefaultTransitionBuildAction transitionBuildAction)
         {
             var edge = Vertex.Edges.Values.FirstOrDefault(edge =>
@@ -404,6 +409,7 @@ namespace Stateflows.StateMachines.Registration.Builders
             return this;
         }
 
+        [DebuggerHidden]
         public IOverridenOrthogonalStateBuilder UseElseInternalTransition<TEvent>(ElseInternalTransitionBuildAction<TEvent> transitionBuildAction)
         {
             var edge = Vertex.Edges.Values.FirstOrDefault(edge =>
@@ -422,6 +428,7 @@ namespace Stateflows.StateMachines.Registration.Builders
             return this;
         }
 
+        [DebuggerHidden]
         public IOrthogonalStateBuilder AddRegion(RegionBuildAction buildAction)
         {
             var region = new Region()
@@ -438,18 +445,30 @@ namespace Stateflows.StateMachines.Registration.Builders
             return this;
         }
 
+        [DebuggerHidden]
         IOverridenOrthogonalStateBuilder IStateEntry<IOverridenOrthogonalStateBuilder>.AddOnEntry(Func<IStateActionContext, Task> actionAsync)
             => AddOnEntry(actionAsync) as IOverridenOrthogonalStateBuilder;
 
+        [DebuggerHidden]
         IOverridenOrthogonalStateBuilder IStateExit<IOverridenOrthogonalStateBuilder>.AddOnExit(Func<IStateActionContext, Task> actionAsync)
             => AddOnExit(actionAsync) as IOverridenOrthogonalStateBuilder;
+
+        [DebuggerHidden]
+        IOverridenOrthogonalStateBuilder ICompositeStateEvents<IOverridenOrthogonalStateBuilder>.AddOnInitialize(Func<IStateActionContext, Task> actionAsync)
+            => AddOnInitialize(actionAsync) as IOverridenOrthogonalStateBuilder;
+        
+        [DebuggerHidden]
+        IOverridenOrthogonalStateBuilder ICompositeStateEvents<IOverridenOrthogonalStateBuilder>.AddOnFinalize(Func<IStateActionContext, Task> actionAsync)
+            => AddOnFinalize(actionAsync) as IOverridenOrthogonalStateBuilder;
 
         IOverridenOrthogonalStateBuilder IStateUtils<IOverridenOrthogonalStateBuilder>.AddDeferredEvent<TEvent>()
             => AddDeferredEvent<TEvent>() as IOverridenOrthogonalStateBuilder;
 
+        [DebuggerHidden]
         IOverridenOrthogonalStateBuilder IRegions<IOverridenOrthogonalStateBuilder>.AddRegion(RegionBuildAction buildAction)
             => AddRegion(buildAction) as IOverridenOrthogonalStateBuilder;
 
+        [DebuggerHidden]
         IOverridenOrthogonalStateBuilder IRegionsOverrides<IOverridenOrthogonalStateBuilder>.UseRegion(int index, OverridenRegionBuildAction buildAction)
         {
             if (index < 0 || index >= Vertex.Regions.Count)

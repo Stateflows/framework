@@ -1,11 +1,8 @@
 ﻿using Stateflows.Common;
-using Stateflows.StateMachines.Events;
 using StateMachine.IntegrationTests.Utils;
-using System.Diagnostics;
 
 namespace StateMachine.IntegrationTests.Tests
 {
-
     [TestClass]
     public class Orthogonal : StateflowsTestClass
     {
@@ -26,7 +23,8 @@ namespace StateMachine.IntegrationTests.Tests
             builder
                 .AddStateMachines(b => b
                         
-                    .AddStateMachine("forkAndJoin", b => b
+                    .AddStateMachine("fork", b => b
+                        .AddExecutionSequenceObserver()
                         .AddInitialState("state1", b => b
                             .AddTransition<SomeEvent>(Fork.Name)
                         )
@@ -42,6 +40,55 @@ namespace StateMachine.IntegrationTests.Tests
                                 .AddState("stateB")
                             )
                         )
+                    )
+                        
+                    .AddStateMachine("join", b => b
+                        .AddExecutionSequenceObserver()
+                        .AddInitialState("state1", b => b
+                            .AddTransition<SomeEvent>(Fork.Name)
+                        )
+                        .AddFork(b => b
+                            .AddTransition("stateA")
+                            .AddTransition("stateB")
+                        )
+                        .AddOrthogonalState("orthogonal", b => b
+                            .AddRegion(b => b
+                                .AddState("stateA", b => b
+                                    .AddDefaultTransition(Join.Name)
+                                )
+                            )
+                            .AddRegion(b => b
+                                .AddState("stateB", b => b
+                                    .AddDefaultTransition(Join.Name)
+                                )
+                            )
+                        )
+                        .AddJoin(b => b
+                            .AddTransition("final")
+                        )
+                        .AddFinalState("final")
+                    )
+                        
+                    .AddStateMachine("nonExitedRegion", b => b
+                        .AddExecutionSequenceObserver()
+                        .AddInitialState("state1", b => b
+                            .AddTransition<SomeEvent>(Fork.Name)
+                        )
+                        .AddFork(b => b
+                            .AddTransition("stateA")
+                            .AddTransition("stateB")
+                        )
+                        .AddOrthogonalState("orthogonal", b => b
+                            .AddRegion(b => b
+                                .AddState("stateA")
+                            )
+                            .AddRegion(b => b
+                                .AddState("stateB", b => b
+                                    .AddDefaultTransition("final")
+                                )
+                            )
+                        )
+                        .AddFinalState("final")
                     )
 
                     .AddStateMachine("defaultTransition", b => b
@@ -79,6 +126,26 @@ namespace StateMachine.IntegrationTests.Tests
                                 .AddState("state2.2.2")
                             )
                         )
+                    )
+
+                    .AddStateMachine("outsideTransition", b => b
+                        .AddInitialState("state1", b => b
+                            .AddTransition<OtherEvent>("state2")
+                        )
+                        .AddOrthogonalState("state2", b => b
+                            .AddRegion(b => b
+                                .AddInitialState("stateA", b => b
+                                    .AddDefaultTransition("state3")
+                                )
+                            )
+                            .AddRegion(b => b
+                                .AddInitialState("stateB", b => b
+                                    .AddDefaultTransition("stateB-final")
+                                )
+                                .AddState("stateB-final")
+                            )
+                        )
+                        .AddState("state3")
                     )
 
                     .AddStateMachine("simple", b => b
@@ -229,6 +296,23 @@ namespace StateMachine.IntegrationTests.Tests
         }
 
         [TestMethod]
+        public async Task SimpleOrthogonalStateWithOutsideTransition()
+        {
+            var status = EventStatus.Rejected;
+            string currentState = "";
+
+            if (StateMachineLocator.TryLocateStateMachine(new StateMachineId("outsideTransition", "x"), out var sm))
+            {
+                status = (await sm.SendAsync(new OtherEvent() { AnswerToLifeUniverseAndEverything = 42 })).Status;
+
+                var tree = (await sm.GetCurrentStateAsync()).Response.StatesTree;
+                currentState = tree.Value;
+            }
+
+            Assert.AreEqual("state3", currentState);
+        }
+
+        [TestMethod]
         public async Task SimpleOrthogonalStateWithTransitionToRegion()
         {
             var status = EventStatus.Rejected;
@@ -313,7 +397,7 @@ namespace StateMachine.IntegrationTests.Tests
 
                 var tree = (await sm.GetCurrentStateAsync()).Response.StatesTree;
                 currentState = tree.Value;
-                var allNodes = tree.AllNodes_FromTheTop.ToArray();
+                var allNodes = tree.GetAllNodes_FromTheTop().ToArray();
                 substate1 = allNodes.Skip(0).Take(1).First().Value;
                 substate2 = allNodes.Skip(1).Take(1).First().Value;
                 substate3 = allNodes.Skip(2).Take(1).First().Value;
@@ -327,14 +411,14 @@ namespace StateMachine.IntegrationTests.Tests
         }
 
         [TestMethod]
-        public async Task ForkAndJoin()
+        public async Task PlainFork()
         {
             var status = EventStatus.Rejected;
             string currentState = "";
             string substate1 = "";
             string substate2 = "";
 
-            if (StateMachineLocator.TryLocateStateMachine(new StateMachineId("forkAndJoin", "x"), out var sm))
+            if (StateMachineLocator.TryLocateStateMachine(new StateMachineId("fork", "x"), out var sm))
             {
                 status = (await sm.SendAsync(new SomeEvent())).Status;
 
@@ -343,10 +427,97 @@ namespace StateMachine.IntegrationTests.Tests
                 substate1 = tree.Root.Nodes.First().Value;
                 substate2 = tree.Root.Nodes.Last().Value;
             }
+            
+            ExecutionSequence.Verify(b => b
+                .StateMachineInitialize()
+                .StateEntry("state1")
+                .StateExit("state1")
+                .TransitionEffect(Event<SomeEvent>.Name, "state1", Fork.Name)
+                .StateEntry(Fork.Name)
+                .StateExit(Fork.Name)
+                .DefaultTransitionEffect(Fork.Name, "stateA")
+                .StateEntry("orthogonal")
+                .StateInitialize("orthogonal")
+                .StateEntry("stateA")
+                .DefaultTransitionEffect(Fork.Name, "stateB")
+                .StateEntry("stateB")
+            );
 
+            Assert.AreEqual(EventStatus.Consumed, status);
             Assert.AreEqual("orthogonal", currentState);
             Assert.AreEqual("stateA", substate1);
             Assert.AreEqual("stateB", substate2);
+        }
+
+        [TestMethod]
+        public async Task PlainJoin()
+        {
+            var status = EventStatus.Rejected;
+            string currentState = "";
+
+            if (StateMachineLocator.TryLocateStateMachine(new StateMachineId("join", "x"), out var sm))
+            {
+                status = (await sm.SendAsync(new SomeEvent())).Status;
+
+                var tree = (await sm.GetCurrentStateAsync()).Response.StatesTree;
+                currentState = tree.Value;
+            }
+            
+            ExecutionSequence.Verify(b => b
+                .StateMachineInitialize()
+                .StateEntry("state1")
+                .StateExit("state1")
+                .TransitionEffect(Event<SomeEvent>.Name, "state1", Fork.Name)
+                .StateEntry(Fork.Name)
+                .StateExit(Fork.Name)
+                .DefaultTransitionEffect(Fork.Name, "stateA")
+                .StateEntry("orthogonal")
+                .StateInitialize("orthogonal")
+                .StateEntry("stateA")
+                .DefaultTransitionEffect(Fork.Name, "stateB")
+                .StateEntry("stateB")
+            );
+
+            Assert.AreEqual(EventStatus.Consumed, status);
+            Assert.AreEqual("final", currentState);
+        }
+
+        [TestMethod]
+        public async Task NonExitedRegionSuccessfulExit()
+        {
+            var status = EventStatus.Rejected;
+            string currentState = "";
+
+            if (StateMachineLocator.TryLocateStateMachine(new StateMachineId("nonExitedRegion", "x"), out var sm))
+            {
+                status = (await sm.SendAsync(new SomeEvent())).Status;
+
+                var tree = (await sm.GetCurrentStateAsync()).Response.StatesTree;
+                currentState = tree.Value;
+            }
+            
+            ExecutionSequence.Verify(b => b
+                .StateMachineInitialize()
+                .StateEntry("state1")
+                .StateExit("state1")
+                .TransitionEffect(Event<SomeEvent>.Name, "state1", Fork.Name)
+                .StateEntry(Fork.Name)
+                .StateExit(Fork.Name)
+                .DefaultTransitionEffect(Fork.Name, "stateA")
+                .StateEntry("orthogonal")
+                .StateInitialize("orthogonal")
+                .StateEntry("stateA")
+                .DefaultTransitionEffect(Fork.Name, "stateB")
+                .StateEntry("stateB")
+                .StateExit("stateB")
+                .StateExit("stateA")
+                .StateExit("orthogonal")
+                .DefaultTransitionEffect("stateB", "final")
+                .StateEntry("final")
+            );
+
+            Assert.AreEqual(EventStatus.Consumed, status);
+            Assert.AreEqual("final", currentState);
         }
     }
 }

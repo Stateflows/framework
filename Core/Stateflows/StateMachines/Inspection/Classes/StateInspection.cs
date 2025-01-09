@@ -1,5 +1,6 @@
 ﻿using System.Linq;
 using System.Collections.Generic;
+using Stateflows.Common;
 using Stateflows.StateMachines.Models;
 using Stateflows.StateMachines.Engine;
 using Stateflows.StateMachines.Inspection.Interfaces;
@@ -21,7 +22,7 @@ namespace Stateflows.StateMachines.Inspection.Classes
 
         public string Name => Vertex.Name;
 
-        public bool Active => Executor.VerticesTree.AllNodes.Select(node => node.Value).Contains(Vertex);
+        public bool Active => Executor.VerticesTree.GetAllNodes().Select(node => node.Value).Contains(Vertex);
 
         public bool IsInitial => Vertex.ParentRegion != null
             ? Vertex.ParentRegion.InitialVertex == Vertex

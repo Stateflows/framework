@@ -13,6 +13,7 @@
         /// </list>
         /// </summary>
         /// <param name="targetStateName">Target state name</param>
-        TReturn AddTransition(string targetStateName);
+        /// <param name="transitionBuildAction">Transition build action</param>
+        TReturn AddTransition(string targetStateName, DefaultTransitionEffectBuildAction transitionBuildAction = null);
     }
 }

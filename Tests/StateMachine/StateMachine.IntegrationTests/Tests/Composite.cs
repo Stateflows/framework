@@ -16,12 +16,23 @@ namespace StateMachine.IntegrationTests.Tests
     public class StateB : IState
     { }
 
+    public class CompositeStateA : ICompositeStateEntry
+    {
+        public Task OnEntryAsync()
+        {
+            Composite.CompositeStateEntered = true;
+            
+            return Task.CompletedTask;
+        }
+    }
+
     [TestClass]
     public class Composite : StateflowsTestClass
     {
         private bool? ParentStateExited = null;
         private bool? ChildStateExited = null;
         private int InitializeCounter = 0;
+        public static bool CompositeStateEntered = false;
 
         [TestInitialize]
         public override void Initialize()
@@ -121,12 +132,36 @@ namespace StateMachine.IntegrationTests.Tests
                             .AddState("state4")
                         )
                     )
+                
+                    .AddStateMachine("typed", b => b
+                        .AddInitialCompositeState<CompositeStateA>(b => b
+                            .AddInitialState("state1")
+                        )
+                    )
                 )
                 ;
         }
 
 
 
+
+
+
+        [TestMethod]
+        public async Task TypedCompositeState()
+        {
+            var status = EventStatus.Rejected;
+            string currentState = "";
+
+            if (StateMachineLocator.TryLocateStateMachine(new StateMachineId("typed", "x"), out var sm))
+            {
+                currentState = (await sm.GetCurrentStateAsync()).Response.StatesTree.Value;
+            }
+            
+            Assert.AreEqual(State<CompositeStateA>.Name, currentState);
+            Assert.IsTrue(CompositeStateEntered);
+        }
+        
         [TestMethod]
         public async Task Berlin()
         {

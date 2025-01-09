@@ -17,12 +17,12 @@ namespace Stateflows.StateMachines
 
         #region AddState
         [DebuggerHidden]
-        public static IOverridenStateMachineBuilder AddState<TState>(this IOverridenStateMachineBuilder builder, StateTransitionsBuildAction stateBuildAction = null)
+        public static IOverridenStateMachineBuilder AddState<TState>(this IOverridenStateMachineBuilder builder, StateBuildAction stateBuildAction = null)
             where TState : class, IState
             => builder.AddState<TState>(State<TState>.Name, stateBuildAction);
 
         [DebuggerHidden]
-        public static IOverridenStateMachineBuilder AddState<TState>(this IOverridenStateMachineBuilder builder, string stateName, StateTransitionsBuildAction stateBuildAction = null)
+        public static IOverridenStateMachineBuilder AddState<TState>(this IOverridenStateMachineBuilder builder, string stateName, StateBuildAction stateBuildAction = null)
             where TState : class, IState
         {
             (builder as IInternal).Services.AddServiceType<TState>();
@@ -41,12 +41,12 @@ namespace Stateflows.StateMachines
 
         #region AddCompositeState
         [DebuggerHidden]
-        public static IOverridenStateMachineBuilder AddCompositeState<TCompositeState>(this IOverridenStateMachineBuilder builder, CompositeStateTransitionsBuildAction compositeStateBuildAction)
+        public static IOverridenStateMachineBuilder AddCompositeState<TCompositeState>(this IOverridenStateMachineBuilder builder, CompositeStateBuildAction compositeStateBuildAction)
             where TCompositeState : class, ICompositeState
             => builder.AddCompositeState<TCompositeState>(State<TCompositeState>.Name, compositeStateBuildAction);
 
         [DebuggerHidden]
-        public static IOverridenStateMachineBuilder AddCompositeState<TCompositeState>(this IOverridenStateMachineBuilder builder, string stateName, CompositeStateTransitionsBuildAction compositeStateBuildAction)
+        public static IOverridenStateMachineBuilder AddCompositeState<TCompositeState>(this IOverridenStateMachineBuilder builder, string stateName, CompositeStateBuildAction compositeStateBuildAction)
             where TCompositeState : class, ICompositeState
         {
             (builder as IInternal).Services.AddServiceType<TCompositeState>();
@@ -55,10 +55,35 @@ namespace Stateflows.StateMachines
                 stateName,
                 b =>
                 {
-                    (b as IInitializedCompositeStateBuilder).AddStateEvents<TCompositeState, IInitializedCompositeStateBuilder>();
-                    (b as IInitializedCompositeStateBuilder).AddCompositeStateEvents<TCompositeState, IInitializedCompositeStateBuilder>();
+                    b.AddStateEvents<TCompositeState, ICompositeStateBuilder>();
+                    b.AddCompositeStateEvents<TCompositeState, ICompositeStateBuilder>();
 
                     compositeStateBuildAction?.Invoke(b);
+                }
+            );
+        }
+        #endregion
+
+        #region AddOrthogonalState
+        [DebuggerHidden]
+        public static IOverridenStateMachineBuilder AddOrthogonalState<TOrthogonalState>(this IOverridenStateMachineBuilder builder, OrthogonalStateBuildAction orthogonalStateBuildAction)
+            where TOrthogonalState : class, IOrthogonalState
+            => builder.AddOrthogonalState<TOrthogonalState>(State<TOrthogonalState>.Name, orthogonalStateBuildAction);
+
+        [DebuggerHidden]
+        public static IOverridenStateMachineBuilder AddOrthogonalState<TOrthogonalState>(this IOverridenStateMachineBuilder builder, string stateName, OrthogonalStateBuildAction orthogonalStateBuildAction)
+            where TOrthogonalState : class, IOrthogonalState
+        {
+            (builder as IInternal).Services.AddServiceType<TOrthogonalState>();
+
+            return builder.AddOrthogonalState(
+                stateName,
+                b =>
+                {
+                    b.AddStateEvents<TOrthogonalState, IOrthogonalStateBuilder>();
+                    b.AddCompositeStateEvents<TOrthogonalState, IOrthogonalStateBuilder>();
+
+                    orthogonalStateBuildAction?.Invoke(b);
                 }
             );
         }

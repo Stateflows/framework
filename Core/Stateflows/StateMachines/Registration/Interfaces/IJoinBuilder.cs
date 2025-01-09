@@ -3,11 +3,11 @@
 namespace Stateflows.StateMachines.Registration.Interfaces
 {
     public interface IJoinBuilder :
-        IStateTransitions<IJoinBuilder>
+        IPseudostateTransitionsEffects<IJoinBuilder>
     { }
     
     public interface IOverridenJoinBuilder :
-        IStateTransitions<IOverridenJoinBuilder>,
-        IStateTransitionsOverrides<IOverridenJoinBuilder>
+        IPseudostateTransitionsEffects<IOverridenJoinBuilder>,
+        IPseudostateTransitionsEffectsOverrides<IOverridenJoinBuilder>
     { }
 }

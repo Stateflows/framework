@@ -1,6 +1,6 @@
 ﻿namespace Stateflows.StateMachines.Registration.Interfaces.Base
 {
-    public partial interface IStateMachineInitial<out TReturn>
+    public interface IStateMachineInitial<out TReturn>
     {
         TReturn AddInitialState(string stateName, StateBuildAction stateBuildAction = null);
 

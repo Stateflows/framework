@@ -1,6 +1,6 @@
 ﻿namespace Stateflows.StateMachines.Registration.Interfaces.Base
 {
-    public partial interface IStateMachineOverrides<out TReturn>
+    public interface IStateMachineOverrides<out TReturn>
     {
         /// <summary>
         /// Uses a State of overriden state machine.<br/>

@@ -88,6 +88,13 @@ namespace Stateflows.StateMachines.Sync
             );
 
         [DebuggerHidden]
+        public static IDefaultTransitionEffectBuilder AddEffect(this IDefaultTransitionEffectBuilder builder, Action<ITransitionContext<Completion>> effect)
+            => builder.AddEffect(effect
+                .AddStateMachineInvocationContext((builder as TransitionBuilder<Completion>).Edge.Graph)
+                .ToAsync()
+            );
+
+        [DebuggerHidden]
         public static IElseDefaultTransitionBuilder AddEffect(this IElseDefaultTransitionBuilder builder, Action<ITransitionContext<Completion>> effect)
             => builder.AddEffect(effect
                 .AddStateMachineInvocationContext((builder as TransitionBuilder<Completion>).Edge.Graph)
