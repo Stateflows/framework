@@ -16,7 +16,9 @@ namespace Stateflows.Common
 
         private EventHolder<TResponse> ResponseHolder { get; set; }
 
-        public TResponse Response => ResponseHolder.Payload;
+        public TResponse Response => ResponseHolder != null 
+            ? ResponseHolder.Payload
+            : default;
     }
 
     public class RequestResult : SendResult

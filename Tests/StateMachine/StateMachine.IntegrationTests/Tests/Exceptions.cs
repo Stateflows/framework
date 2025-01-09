@@ -104,6 +104,7 @@ namespace StateMachine.IntegrationTests.Tests
                 state1 = (await sm.GetCurrentStateAsync()).Response.StatesStack.FirstOrDefault();
                 
                 await sm.SendAsync(new SomeEvent());
+                await Task.Delay(100);
                 state2 = (await sm.GetCurrentStateAsync()).Response.StatesStack.FirstOrDefault();
             }
 
@@ -121,10 +122,9 @@ namespace StateMachine.IntegrationTests.Tests
             {
                 await sm.SendAsync(new Initialize());
                 state1 = (await sm.GetCurrentStateAsync()).Response.StatesStack.FirstOrDefault();
-
-                await Task.Delay(100);
                 
                 await sm.SendAsync(new SomeEvent());
+                await Task.Delay(100);
                 state2 = (await sm.GetCurrentStateAsync()).Response.StatesStack.FirstOrDefault();
             }
 
