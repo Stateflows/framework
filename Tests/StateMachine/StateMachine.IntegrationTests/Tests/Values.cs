@@ -34,7 +34,7 @@ namespace StateMachine.IntegrationTests.Tests
                 //await sm.InitializeAsync();
                 await sm.SendAsync(new SomeEvent());
 
-                currentState = (await sm.GetCurrentStateAsync()).Response.StatesTree.Value;
+                currentState = (await sm.GetCurrentStateAsync()).Response?.StatesTree?.Value;
             }
 
             Assert.AreEqual(State<FinalState>.Name, currentState);
