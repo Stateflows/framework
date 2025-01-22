@@ -59,21 +59,21 @@ namespace Stateflows.Transport.Http.Client
             return apiClient.SendAsync(Id, eventHolder, watches);
         }
 
-        public async Task<RequestResult<TResponseEvent>> RequestAsync<TResponseEvent>(IRequest<TResponseEvent> request, IEnumerable<EventHeader> headers = null)
+        public async Task<RequestResult<TResponse>> RequestAsync<TResponse>(IRequest<TResponse> request, IEnumerable<EventHeader> headers = null)
         {
             ResponseHolder.SetResponses(new Dictionary<object, EventHolder>());
 
             var eventHolder = request.ToTypedEventHolder(headers);
 
             var result = await SendAsync(request);
-            return new RequestResult<TResponseEvent>(eventHolder, result.Status, result.Validation);
+            return new RequestResult<TResponse>(eventHolder, result.Status, result.Validation);
         }
 
-        public Task<IWatcher> WatchAsync<TNotificationEvent>(Action<TNotificationEvent> handler)
+        public Task<IWatcher> WatchAsync<TNotification>(Action<TNotification> handler)
         {
             lock (watches)
             {
-                var notificationName = Event<TNotificationEvent>.Name;
+                var notificationName = Event<TNotification>.Name;
                 var watch = watches.Find(watch => watch.NotificationName == notificationName);
                 if (watch == null)
                 {
@@ -86,17 +86,17 @@ namespace Stateflows.Transport.Http.Client
                     watches.Add(watch);
                 }
 
-                watch.Handlers.Add(notification => handler((TNotificationEvent)notification.BoxedPayload));
+                watch.Handlers.Add(notification => handler((TNotification)notification.BoxedPayload));
             }
 
-            return Task.FromResult((IWatcher)new Watcher<TNotificationEvent>(this));
+            return Task.FromResult<IWatcher>(new Watcher<TNotification>(this));
         }
 
-        public Task UnwatchAsync<TNotificationEvent>()
+        public Task UnwatchAsync<TNotification>()
         {
             lock (watches)
             {
-                var notificationName = Event<TNotificationEvent>.Name;
+                var notificationName = Event<TNotification>.Name;
                 var watch = watches.Find(watch => watch.NotificationName == notificationName);
                 if (watch != null)
                 {
@@ -115,7 +115,11 @@ namespace Stateflows.Transport.Http.Client
 
         protected virtual void Dispose(bool disposing)
         {
-            watches.Clear();
+            lock (watches)
+            {
+                watches.Clear();
+            }
+
             lock (apiClient)
             {
                 apiClient.OnNotify -= ApiClient_OnNotify;

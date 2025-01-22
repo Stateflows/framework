@@ -18,6 +18,7 @@ namespace Stateflows.StateMachines.Inspection.Classes
             Executor = executor;
             Vertex = vertex;
             Executor.Inspector.InspectionStates.Add(Vertex.Identifier, this);
+            Regions = Vertex.Regions.Select(region => new RegionInspection(Executor, region)).ToArray();
         }
 
         public string Name => Vertex.Name;
@@ -29,6 +30,10 @@ namespace Stateflows.StateMachines.Inspection.Classes
             : Vertex.Graph.InitialVertex == Vertex;
 
         public bool IsFinal => Vertex.Type == VertexType.FinalState;
+        public bool IsChoice => Vertex.Type == VertexType.Choice;
+        public bool IsJunction => Vertex.Type == VertexType.Junction;
+        public bool IsFork => Vertex.Type == VertexType.Fork;
+        public bool IsJoin => Vertex.Type == VertexType.Join;
 
         private IEnumerable<ITransitionInspection> transitions;
 
@@ -60,16 +65,6 @@ namespace Stateflows.StateMachines.Inspection.Classes
             }
         }
 
-        public IEnumerable<IRegionInspection> regions;
-
-        public IEnumerable<IRegionInspection> Regions
-        {
-            get
-            {
-                regions ??= Vertex.Regions.Select(region => new RegionInspection(Executor, region)).ToArray();
-
-                return regions;
-            }
-        }
+        public IEnumerable<IRegionInspection> Regions { get; }
     }
 }

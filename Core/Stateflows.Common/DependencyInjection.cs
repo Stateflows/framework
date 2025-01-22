@@ -5,6 +5,7 @@ using Stateflows.StateMachines;
 using Stateflows.Common;
 using Stateflows.Common.Engine;
 using Stateflows.Common.Locator;
+using Stateflows.Common.Validators;
 using Stateflows.Common.Interfaces;
 using Stateflows.Common.Extensions;
 using Stateflows.Common.Exceptions;
@@ -35,6 +36,8 @@ namespace Stateflows
                 .AddSingleton<IBehaviorClassesProvider, BehaviorClassesProvider>()
                 ;
 
+            builder.AddValidator<AttributeValidator>();
+
             return services;
         }
 
@@ -46,10 +49,25 @@ namespace Stateflows
             return stateflowsBuilder;
         }
 
-        public static IStateflowsClientBuilder AddClientInterceptor(this IStateflowsClientBuilder stateflowsBuilder, ClientInterceptorFactory envelopeHandlerFactory)
+        public static IStateflowsClientBuilder AddClientInterceptor(this IStateflowsClientBuilder stateflowsBuilder, ClientInterceptorFactory clientInterceptorFactory)
         {
-            stateflowsBuilder.ServiceCollection.AddScoped(s => envelopeHandlerFactory(s));
+            stateflowsBuilder.ServiceCollection.AddScoped(s => clientInterceptorFactory(s));
 
+            return stateflowsBuilder;
+        }
+
+        public static IStateflowsClientBuilder AddValidator<TValidator>(this IStateflowsClientBuilder stateflowsBuilder)
+            where TValidator : class, IStateflowsValidator
+        {
+            stateflowsBuilder.ServiceCollection.AddScoped<IStateflowsValidator, TValidator>();
+        
+            return stateflowsBuilder;
+        }
+        
+        public static IStateflowsClientBuilder AddValidator(this IStateflowsClientBuilder stateflowsBuilder, ValidatorFactory validatorFactory)
+        {
+            stateflowsBuilder.ServiceCollection.AddScoped(s => validatorFactory(s));
+        
             return stateflowsBuilder;
         }
     }

@@ -1,8 +1,10 @@
 ﻿using System;
+using System.Diagnostics;
 using System.Threading.Tasks;
-using Stateflows.Common.Extensions;
 using Stateflows.StateMachines.Context.Classes;
 using Stateflows.StateMachines.Context.Interfaces;
+using Stateflows.StateMachines.Registration.Builders;
+using Stateflows.StateMachines.Registration.Extensions;
 using Stateflows.StateMachines.Registration.Interfaces.Internal;
 
 namespace Stateflows.StateMachines.Registration.Interfaces.Base
@@ -10,24 +12,33 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
     public interface IBaseGuard<out TEvent, out TReturn>
     {
         TReturn AddGuard(Func<ITransitionContext<TEvent>, Task<bool>> guardAsync);
-
-        TReturn AddNegatedGuard(Func<ITransitionContext<TEvent>, Task<bool>> guardAsync)
-            => AddGuard(async c => !await guardAsync.Invoke(c));
-
+        
+        [DebuggerHidden]
+        public TReturn AddGuard(Func<ITransitionContext<TEvent>, bool> guard)
+            => AddGuard(guard
+                .AddStateMachineInvocationContext(((IEdgeBuilder)this).Edge.Graph)
+                .ToAsync()
+            );
+        
+        [DebuggerHidden]
         TReturn AddGuard<TGuard>()
             where TGuard : class, ITransitionGuard<TEvent>
-        {
-            (this as IInternal).Services.AddServiceType<TGuard>();
+            => AddGuard(c => ((BaseContext)c).Context.Executor.GetTransitionGuard<TGuard, TEvent>(c)?.GuardAsync(c.Event));
 
-            return AddGuard(c => (c as BaseContext).Context.Executor.GetTransitionGuard<TGuard, TEvent>(c)?.GuardAsync(c.Event));
-        }
+        [DebuggerHidden]
+        TReturn AddNegatedGuard(Func<ITransitionContext<TEvent>, Task<bool>> guardAsync)
+            => AddGuard(async c => !await guardAsync.Invoke(c));
         
+        [DebuggerHidden]
+        public TReturn AddNegatedGuard(Func<ITransitionContext<TEvent>, bool> guard)
+            => AddNegatedGuard(guard
+                .AddStateMachineInvocationContext(((IEdgeBuilder)this).Edge.Graph)
+                .ToAsync()
+            );
+        
+        [DebuggerHidden]
         TReturn AddNegatedGuard<TGuard>()
             where TGuard : class, ITransitionGuard<TEvent>
-        {
-            (this as IInternal).Services.AddServiceType<TGuard>();
-
-            return AddGuard(async c => !await (c as BaseContext).Context.Executor.GetTransitionGuard<TGuard, TEvent>(c)?.GuardAsync(c.Event));
-        }
+            => AddGuard(async c => !await ((BaseContext)c).Context.Executor.GetTransitionGuard<TGuard, TEvent>(c)?.GuardAsync(c.Event)!);
     }
 }

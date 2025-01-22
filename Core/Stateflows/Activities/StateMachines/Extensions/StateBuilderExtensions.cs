@@ -1,5 +1,4 @@
 ﻿using System.Diagnostics;
-using Stateflows.StateMachines.Sync;
 using Stateflows.Activities.Extensions;
 using Stateflows.StateMachines.Registration;
 using Stateflows.StateMachines.Registration.Interfaces;

@@ -1,5 +1,4 @@
-﻿using Stateflows.Common.Extensions;
-using Stateflows.Activities.Context.Classes;
+﻿using Stateflows.Activities.Context.Classes;
 
 namespace Stateflows.Activities.Registration.Interfaces
 {
@@ -11,11 +10,9 @@ namespace Stateflows.Activities.Registration.Interfaces
 
         IObjectFlowBuilder<TTransformedToken> AddTransformation<TTransformedToken, TTransformation>()
             where TTransformation : class, IFlowTransformation<TToken, TTransformedToken>
-        {
-            (this as IInternal).Services.AddServiceType<TTransformation>();
-
-            return AddTransformation(c => (c as BaseContext).Context.Executor.NodeScope.GetObjectFlow<TTransformation, TToken>(c)?.TransformAsync(c.Token));
-        }
+            => AddTransformation(c =>
+                ((BaseContext)c).Context.Executor.NodeScope.GetObjectFlow<TTransformation, TToken>(c)?.TransformAsync(c.Token)
+            );
     }
 
     public interface IObjectFlowBuilderWithWeight<TToken> :
@@ -25,11 +22,9 @@ namespace Stateflows.Activities.Registration.Interfaces
 
         IObjectFlowBuilderWithWeight<TTransformedToken> AddTransformation<TTransformedToken, TTransformation>()
             where TTransformation : class, IFlowTransformation<TToken, TTransformedToken>
-        {
-            (this as IInternal).Services.AddServiceType<TTransformation>();
-
-            return AddTransformation(c => (c as BaseContext).Context.Executor.NodeScope.GetObjectFlow<TTransformation, TToken>(c)?.TransformAsync(c.Token));
-        }
+            => AddTransformation(c
+                => ((BaseContext)c).Context.Executor.NodeScope.GetObjectFlow<TTransformation, TToken>(c)?.TransformAsync(c.Token)
+            );
     }
 
     public interface IElseObjectFlowBuilderWithWeight<TToken>
@@ -38,11 +33,9 @@ namespace Stateflows.Activities.Registration.Interfaces
 
         IElseObjectFlowBuilderWithWeight<TTransformedToken> AddTransformation<TTransformedToken, TTransformation>()
             where TTransformation : class, IFlowTransformation<TToken, TTransformedToken>
-        {
-            (this as IInternal).Services.AddServiceType<TTransformation>();
-
-            return AddTransformation(c => (c as BaseContext).Context.Executor.NodeScope.GetObjectFlow<TTransformation, TToken>(c)?.TransformAsync(c.Token));
-        }
+            => AddTransformation(c
+                => ((BaseContext)c).Context.Executor.NodeScope.GetObjectFlow<TTransformation, TToken>(c)?.TransformAsync(c.Token)
+            );
     }
 
     public interface IElseObjectFlowBuilder<TToken> :
@@ -52,11 +45,9 @@ namespace Stateflows.Activities.Registration.Interfaces
 
         IElseObjectFlowBuilder<TTransformedToken> AddTransformation<TTransformedToken, TTransformation>()
             where TTransformation : class, IFlowTransformation<TToken, TTransformedToken>
-        {
-            (this as IInternal).Services.AddServiceType<TTransformation>();
-
-            return AddTransformation(c => (c as BaseContext).Context.Executor.NodeScope.GetObjectFlow<TTransformation, TToken>(c)?.TransformAsync(c.Token));
-        }
+            => AddTransformation(c
+                => ((BaseContext)c).Context.Executor.NodeScope.GetObjectFlow<TTransformation, TToken>(c)?.TransformAsync(c.Token)
+            );
     }
 
     public interface IObjectFlowGuardBuilderBase<TToken, out TReturn>
@@ -65,11 +56,9 @@ namespace Stateflows.Activities.Registration.Interfaces
 
         TReturn AddGuard<TGuard>()
             where TGuard : class, IFlowGuard<TToken>
-        {
-            (this as IInternal).Services.AddServiceType<TGuard>();
-
-            return AddGuard(c => (c as BaseContext).Context.Executor.NodeScope.GetObjectFlow<TGuard, TToken>(c)?.GuardAsync(c.Token));
-        }
+            => AddGuard(c
+                => ((BaseContext)c).Context.Executor.NodeScope.GetObjectFlow<TGuard, TToken>(c)?.GuardAsync(c.Token)
+            );
 
         TReturn AddGuards<TGuard1, TGuard2>()
             where TGuard1 : class, IFlowGuard<TToken>
@@ -79,19 +68,14 @@ namespace Stateflows.Activities.Registration.Interfaces
         TReturn AddAndGuards<TGuard1, TGuard2>()
             where TGuard1 : class, IFlowGuard<TToken>
             where TGuard2 : class, IFlowGuard<TToken>
-        {
-            (this as IInternal).Services.AddServiceType<TGuard1>();
-            (this as IInternal).Services.AddServiceType<TGuard2>();
-
-            return AddGuard(async c =>
+            => AddGuard(async c =>
             {
-                var executor = (c as BaseContext).Context.Executor;
+                var executor = ((BaseContext)c).Context.Executor;
                 var guard1 = executor.NodeScope.GetObjectFlow<TGuard1, TToken>(c);
                 var guard2 = executor.NodeScope.GetObjectFlow<TGuard2, TToken>(c);
 
                 return await guard1.GuardAsync(c.Token) && await guard2.GuardAsync(c.Token);
             });
-        }
 
         TReturn AddGuards<TGuard1, TGuard2, TGuard3>()
             where TGuard1 : class, IFlowGuard<TToken>
@@ -103,21 +87,15 @@ namespace Stateflows.Activities.Registration.Interfaces
             where TGuard1 : class, IFlowGuard<TToken>
             where TGuard2 : class, IFlowGuard<TToken>
             where TGuard3 : class, IFlowGuard<TToken>
-        {
-            (this as IInternal).Services.AddServiceType<TGuard1>();
-            (this as IInternal).Services.AddServiceType<TGuard2>();
-            (this as IInternal).Services.AddServiceType<TGuard3>();
-
-            return AddGuard(async c =>
+            => AddGuard(async c =>
             {
-                var executor = (c as BaseContext).Context.Executor;
+                var executor = ((BaseContext)c).Context.Executor;
                 var guard1 = executor.NodeScope.GetObjectFlow<TGuard1, TToken>(c);
                 var guard2 = executor.NodeScope.GetObjectFlow<TGuard2, TToken>(c);
                 var guard3 = executor.NodeScope.GetObjectFlow<TGuard3, TToken>(c);
 
                 return await guard1.GuardAsync(c.Token) && await guard2.GuardAsync(c.Token) && await guard3.GuardAsync(c.Token);
             });
-        }
 
         TReturn AddGuards<TGuard1, TGuard2, TGuard3, TGuard4>()
             where TGuard1 : class, IFlowGuard<TToken>
@@ -131,15 +109,9 @@ namespace Stateflows.Activities.Registration.Interfaces
             where TGuard2 : class, IFlowGuard<TToken>
             where TGuard3 : class, IFlowGuard<TToken>
             where TGuard4 : class, IFlowGuard<TToken>
-        {
-            (this as IInternal).Services.AddServiceType<TGuard1>();
-            (this as IInternal).Services.AddServiceType<TGuard2>();
-            (this as IInternal).Services.AddServiceType<TGuard3>();
-            (this as IInternal).Services.AddServiceType<TGuard4>();
-
-            return AddGuard(async c =>
+            => AddGuard(async c =>
             {
-                var executor = (c as BaseContext).Context.Executor;
+                var executor = ((BaseContext)c).Context.Executor;
                 var guard1 = executor.NodeScope.GetObjectFlow<TGuard1, TToken>(c);
                 var guard2 = executor.NodeScope.GetObjectFlow<TGuard2, TToken>(c);
                 var guard3 = executor.NodeScope.GetObjectFlow<TGuard3, TToken>(c);
@@ -147,7 +119,6 @@ namespace Stateflows.Activities.Registration.Interfaces
 
                 return await guard1.GuardAsync(c.Token) && await guard2.GuardAsync(c.Token) && await guard3.GuardAsync(c.Token) && await guard4.GuardAsync(c.Token);
             });
-        }
 
         TReturn AddGuards<TGuard1, TGuard2, TGuard3, TGuard4, TGuard5>()
             where TGuard1 : class, IFlowGuard<TToken>
@@ -163,16 +134,9 @@ namespace Stateflows.Activities.Registration.Interfaces
             where TGuard3 : class, IFlowGuard<TToken>
             where TGuard4 : class, IFlowGuard<TToken>
             where TGuard5 : class, IFlowGuard<TToken>
-        {
-            (this as IInternal).Services.AddServiceType<TGuard1>();
-            (this as IInternal).Services.AddServiceType<TGuard2>();
-            (this as IInternal).Services.AddServiceType<TGuard3>();
-            (this as IInternal).Services.AddServiceType<TGuard4>();
-            (this as IInternal).Services.AddServiceType<TGuard5>();
-
-            return AddGuard(async c =>
+            => AddGuard(async c =>
             {
-                var executor = (c as BaseContext).Context.Executor;
+                var executor = ((BaseContext)c).Context.Executor;
                 var guard1 = executor.NodeScope.GetObjectFlow<TGuard1, TToken>(c);
                 var guard2 = executor.NodeScope.GetObjectFlow<TGuard2, TToken>(c);
                 var guard3 = executor.NodeScope.GetObjectFlow<TGuard3, TToken>(c);
@@ -181,59 +145,41 @@ namespace Stateflows.Activities.Registration.Interfaces
 
                 return await guard1.GuardAsync(c.Token) && await guard2.GuardAsync(c.Token) && await guard3.GuardAsync(c.Token) && await guard4.GuardAsync(c.Token) && await guard5.GuardAsync(c.Token);
             });
-        }
 
         TReturn AddOrGuards<TGuard1, TGuard2>()
             where TGuard1 : class, IFlowGuard<TToken>
             where TGuard2 : class, IFlowGuard<TToken>
-        {
-            (this as IInternal).Services.AddServiceType<TGuard1>();
-            (this as IInternal).Services.AddServiceType<TGuard2>();
-
-            return AddGuard(async c =>
+            => AddGuard(async c =>
             {
-                var executor = (c as BaseContext).Context.Executor;
+                var executor = ((BaseContext)c).Context.Executor;
                 var guard1 = executor.NodeScope.GetObjectFlow<TGuard1, TToken>(c);
                 var guard2 = executor.NodeScope.GetObjectFlow<TGuard2, TToken>(c);
 
                 return await guard1.GuardAsync(c.Token) || await guard2.GuardAsync(c.Token);
             });
-        }
 
         TReturn AddOrGuards<TGuard1, TGuard2, TGuard3>()
             where TGuard1 : class, IFlowGuard<TToken>
             where TGuard2 : class, IFlowGuard<TToken>
             where TGuard3 : class, IFlowGuard<TToken>
-        {
-            (this as IInternal).Services.AddServiceType<TGuard1>();
-            (this as IInternal).Services.AddServiceType<TGuard2>();
-            (this as IInternal).Services.AddServiceType<TGuard3>();
-
-            return AddGuard(async c =>
+            => AddGuard(async c =>
             {
-                var executor = (c as BaseContext).Context.Executor;
+                var executor = ((BaseContext)c).Context.Executor;
                 var guard1 = executor.NodeScope.GetObjectFlow<TGuard1, TToken>(c);
                 var guard2 = executor.NodeScope.GetObjectFlow<TGuard2, TToken>(c);
                 var guard3 = executor.NodeScope.GetObjectFlow<TGuard3, TToken>(c);
 
                 return await guard1.GuardAsync(c.Token) || await guard2.GuardAsync(c.Token) || await guard3.GuardAsync(c.Token);
             });
-        }
 
         TReturn AddOrGuards<TGuard1, TGuard2, TGuard3, TGuard4>()
             where TGuard1 : class, IFlowGuard<TToken>
             where TGuard2 : class, IFlowGuard<TToken>
             where TGuard3 : class, IFlowGuard<TToken>
             where TGuard4 : class, IFlowGuard<TToken>
-        {
-            (this as IInternal).Services.AddServiceType<TGuard1>();
-            (this as IInternal).Services.AddServiceType<TGuard2>();
-            (this as IInternal).Services.AddServiceType<TGuard3>();
-            (this as IInternal).Services.AddServiceType<TGuard4>();
-
-            return AddGuard(async c =>
+            => AddGuard(async c =>
             {
-                var executor = (c as BaseContext).Context.Executor;
+                var executor = ((BaseContext)c).Context.Executor;
                 var guard1 = executor.NodeScope.GetObjectFlow<TGuard1, TToken>(c);
                 var guard2 = executor.NodeScope.GetObjectFlow<TGuard2, TToken>(c);
                 var guard3 = executor.NodeScope.GetObjectFlow<TGuard3, TToken>(c);
@@ -241,7 +187,6 @@ namespace Stateflows.Activities.Registration.Interfaces
 
                 return await guard1.GuardAsync(c.Token) || await guard2.GuardAsync(c.Token) || await guard3.GuardAsync(c.Token) || await guard4.GuardAsync(c.Token);
             });
-        }
 
         TReturn AddOrGuards<TGuard1, TGuard2, TGuard3, TGuard4, TGuard5>()
             where TGuard1 : class, IFlowGuard<TToken>
@@ -249,16 +194,9 @@ namespace Stateflows.Activities.Registration.Interfaces
             where TGuard3 : class, IFlowGuard<TToken>
             where TGuard4 : class, IFlowGuard<TToken>
             where TGuard5 : class, IFlowGuard<TToken>
-        {
-            (this as IInternal).Services.AddServiceType<TGuard1>();
-            (this as IInternal).Services.AddServiceType<TGuard2>();
-            (this as IInternal).Services.AddServiceType<TGuard3>();
-            (this as IInternal).Services.AddServiceType<TGuard4>();
-            (this as IInternal).Services.AddServiceType<TGuard5>();
-
-            return AddGuard(async c =>
+            => AddGuard(async c =>
             {
-                var executor = (c as BaseContext).Context.Executor;
+                var executor = ((BaseContext)c).Context.Executor;
                 var guard1 = executor.NodeScope.GetObjectFlow<TGuard1, TToken>(c);
                 var guard2 = executor.NodeScope.GetObjectFlow<TGuard2, TToken>(c);
                 var guard3 = executor.NodeScope.GetObjectFlow<TGuard3, TToken>(c);
@@ -267,7 +205,6 @@ namespace Stateflows.Activities.Registration.Interfaces
 
                 return await guard1.GuardAsync(c.Token) || await guard2.GuardAsync(c.Token) || await guard3.GuardAsync(c.Token) || await guard4.GuardAsync(c.Token) || await guard5.GuardAsync(c.Token);
             });
-        }
     }
 
     public interface IControlFlowBuilderBase<out TReturn>
@@ -276,11 +213,7 @@ namespace Stateflows.Activities.Registration.Interfaces
 
         TReturn AddGuard<TGuard>()
             where TGuard : class, IControlFlowGuard
-        {
-            (this as IInternal).Services.AddServiceType<TGuard>();
-
-            return AddGuard(c => (c as BaseContext).Context.Executor.NodeScope.GetControlFlow<TGuard>(c)?.GuardAsync());
-        }
+            => AddGuard(c => ((BaseContext)c).Context.Executor.NodeScope.GetControlFlow<TGuard>(c)?.GuardAsync());
 
         TReturn AddGuards<TGuard1, TGuard2>()
             where TGuard1 : class, IControlFlowGuard
@@ -290,19 +223,14 @@ namespace Stateflows.Activities.Registration.Interfaces
         TReturn AddAndGuards<TGuard1, TGuard2>()
             where TGuard1 : class, IControlFlowGuard
             where TGuard2 : class, IControlFlowGuard
-        {
-            (this as IInternal).Services.AddServiceType<TGuard1>();
-            (this as IInternal).Services.AddServiceType<TGuard2>();
-
-            return AddGuard(async c =>
+            => AddGuard(async c =>
             {
-                var executor = (c as BaseContext).Context.Executor;
+                var executor = ((BaseContext)c).Context.Executor;
                 var guard1 = executor.NodeScope.GetControlFlow<TGuard1>(c);
                 var guard2 = executor.NodeScope.GetControlFlow<TGuard2>(c);
 
                 return await guard1.GuardAsync() && await guard2.GuardAsync();
             });
-        }
 
         TReturn AddGuards<TGuard1, TGuard2, TGuard3>()
             where TGuard1 : class, IControlFlowGuard
@@ -314,21 +242,15 @@ namespace Stateflows.Activities.Registration.Interfaces
             where TGuard1 : class, IControlFlowGuard
             where TGuard2 : class, IControlFlowGuard
             where TGuard3 : class, IControlFlowGuard
-        {
-            (this as IInternal).Services.AddServiceType<TGuard1>();
-            (this as IInternal).Services.AddServiceType<TGuard2>();
-            (this as IInternal).Services.AddServiceType<TGuard3>();
-
-            return AddGuard(async c =>
+            => AddGuard(async c =>
             {
-                var executor = (c as BaseContext).Context.Executor;
+                var executor = ((BaseContext)c).Context.Executor;
                 var guard1 = executor.NodeScope.GetControlFlow<TGuard1>(c);
                 var guard2 = executor.NodeScope.GetControlFlow<TGuard2>(c);
                 var guard3 = executor.NodeScope.GetControlFlow<TGuard3>(c);
 
                 return await guard1.GuardAsync() && await guard2.GuardAsync() && await guard3.GuardAsync();
             });
-        }
 
         TReturn AddGuards<TGuard1, TGuard2, TGuard3, TGuard4>()
             where TGuard1 : class, IControlFlowGuard
@@ -342,15 +264,9 @@ namespace Stateflows.Activities.Registration.Interfaces
             where TGuard2 : class, IControlFlowGuard
             where TGuard3 : class, IControlFlowGuard
             where TGuard4 : class, IControlFlowGuard
-        {
-            (this as IInternal).Services.AddServiceType<TGuard1>();
-            (this as IInternal).Services.AddServiceType<TGuard2>();
-            (this as IInternal).Services.AddServiceType<TGuard3>();
-            (this as IInternal).Services.AddServiceType<TGuard4>();
-
-            return AddGuard(async c =>
+            => AddGuard(async c =>
             {
-                var executor = (c as BaseContext).Context.Executor;
+                var executor = ((BaseContext)c).Context.Executor;
                 var guard1 = executor.NodeScope.GetControlFlow<TGuard1>(c);
                 var guard2 = executor.NodeScope.GetControlFlow<TGuard2>(c);
                 var guard3 = executor.NodeScope.GetControlFlow<TGuard3>(c);
@@ -358,7 +274,6 @@ namespace Stateflows.Activities.Registration.Interfaces
 
                 return await guard1.GuardAsync() && await guard2.GuardAsync() && await guard3.GuardAsync() && await guard4.GuardAsync();
             });
-        }
 
         TReturn AddGuards<TGuard1, TGuard2, TGuard3, TGuard4, TGuard5>()
             where TGuard1 : class, IControlFlowGuard
@@ -374,16 +289,9 @@ namespace Stateflows.Activities.Registration.Interfaces
             where TGuard3 : class, IControlFlowGuard
             where TGuard4 : class, IControlFlowGuard
             where TGuard5 : class, IControlFlowGuard
-        {
-            (this as IInternal).Services.AddServiceType<TGuard1>();
-            (this as IInternal).Services.AddServiceType<TGuard2>();
-            (this as IInternal).Services.AddServiceType<TGuard3>();
-            (this as IInternal).Services.AddServiceType<TGuard4>();
-            (this as IInternal).Services.AddServiceType<TGuard5>();
-
-            return AddGuard(async c =>
+            => AddGuard(async c =>
             {
-                var executor = (c as BaseContext).Context.Executor;
+                var executor = ((BaseContext)c).Context.Executor;
                 var guard1 = executor.NodeScope.GetControlFlow<TGuard1>(c);
                 var guard2 = executor.NodeScope.GetControlFlow<TGuard2>(c);
                 var guard3 = executor.NodeScope.GetControlFlow<TGuard3>(c);
@@ -392,59 +300,41 @@ namespace Stateflows.Activities.Registration.Interfaces
 
                 return await guard1.GuardAsync() && await guard2.GuardAsync() && await guard3.GuardAsync() && await guard4.GuardAsync() && await guard5.GuardAsync();
             });
-        }
 
         TReturn AddOrGuards<TGuard1, TGuard2>()
             where TGuard1 : class, IControlFlowGuard
             where TGuard2 : class, IControlFlowGuard
-        {
-            (this as IInternal).Services.AddServiceType<TGuard1>();
-            (this as IInternal).Services.AddServiceType<TGuard2>();
-
-            return AddGuard(async c =>
+            => AddGuard(async c =>
             {
-                var executor = (c as BaseContext).Context.Executor;
+                var executor = ((BaseContext)c).Context.Executor;
                 var guard1 = executor.NodeScope.GetControlFlow<TGuard1>(c);
                 var guard2 = executor.NodeScope.GetControlFlow<TGuard2>(c);
 
                 return await guard1.GuardAsync() || await guard2.GuardAsync();
             });
-        }
 
         TReturn AddOrGuards<TGuard1, TGuard2, TGuard3>()
             where TGuard1 : class, IControlFlowGuard
             where TGuard2 : class, IControlFlowGuard
             where TGuard3 : class, IControlFlowGuard
-        {
-            (this as IInternal).Services.AddServiceType<TGuard1>();
-            (this as IInternal).Services.AddServiceType<TGuard2>();
-            (this as IInternal).Services.AddServiceType<TGuard3>();
-
-            return AddGuard(async c =>
+            => AddGuard(async c =>
             {
-                var executor = (c as BaseContext).Context.Executor;
+                var executor = ((BaseContext)c).Context.Executor;
                 var guard1 = executor.NodeScope.GetControlFlow<TGuard1>(c);
                 var guard2 = executor.NodeScope.GetControlFlow<TGuard2>(c);
                 var guard3 = executor.NodeScope.GetControlFlow<TGuard3>(c);
 
                 return await guard1.GuardAsync() || await guard2.GuardAsync() || await guard3.GuardAsync();
             });
-        }
 
         TReturn AddOrGuards<TGuard1, TGuard2, TGuard3, TGuard4>()
             where TGuard1 : class, IControlFlowGuard
             where TGuard2 : class, IControlFlowGuard
             where TGuard3 : class, IControlFlowGuard
             where TGuard4 : class, IControlFlowGuard
-        {
-            (this as IInternal).Services.AddServiceType<TGuard1>();
-            (this as IInternal).Services.AddServiceType<TGuard2>();
-            (this as IInternal).Services.AddServiceType<TGuard3>();
-            (this as IInternal).Services.AddServiceType<TGuard4>();
-
-            return AddGuard(async c =>
+            => AddGuard(async c =>
             {
-                var executor = (c as BaseContext).Context.Executor;
+                var executor = ((BaseContext)c).Context.Executor;
                 var guard1 = executor.NodeScope.GetControlFlow<TGuard1>(c);
                 var guard2 = executor.NodeScope.GetControlFlow<TGuard2>(c);
                 var guard3 = executor.NodeScope.GetControlFlow<TGuard3>(c);
@@ -452,7 +342,6 @@ namespace Stateflows.Activities.Registration.Interfaces
 
                 return await guard1.GuardAsync() || await guard2.GuardAsync() || await guard3.GuardAsync() || await guard4.GuardAsync();
             });
-        }
 
         TReturn AddOrGuards<TGuard1, TGuard2, TGuard3, TGuard4, TGuard5>()
             where TGuard1 : class, IControlFlowGuard
@@ -460,16 +349,9 @@ namespace Stateflows.Activities.Registration.Interfaces
             where TGuard3 : class, IControlFlowGuard
             where TGuard4 : class, IControlFlowGuard
             where TGuard5 : class, IControlFlowGuard
-        {
-            (this as IInternal).Services.AddServiceType<TGuard1>();
-            (this as IInternal).Services.AddServiceType<TGuard2>();
-            (this as IInternal).Services.AddServiceType<TGuard3>();
-            (this as IInternal).Services.AddServiceType<TGuard4>();
-            (this as IInternal).Services.AddServiceType<TGuard5>();
-
-            return AddGuard(async c =>
+            => AddGuard(async c =>
             {
-                var executor = (c as BaseContext).Context.Executor;
+                var executor = ((BaseContext)c).Context.Executor;
                 var guard1 = executor.NodeScope.GetControlFlow<TGuard1>(c);
                 var guard2 = executor.NodeScope.GetControlFlow<TGuard2>(c);
                 var guard3 = executor.NodeScope.GetControlFlow<TGuard3>(c);
@@ -478,7 +360,6 @@ namespace Stateflows.Activities.Registration.Interfaces
 
                 return await guard1.GuardAsync() || await guard2.GuardAsync() || await guard3.GuardAsync() || await guard4.GuardAsync() || await guard5.GuardAsync();
             });
-        }
     }
 
     public interface IControlFlowBuilder :
@@ -490,8 +371,7 @@ namespace Stateflows.Activities.Registration.Interfaces
         IControlFlowBuilderBase<IControlFlowBuilderWithWeight>
     { }
 
-    public interface IElseControlFlowBuilder :
-        IFlowWeight
+    public interface IElseControlFlowBuilder : IFlowWeight
     { }
 
     public interface IElseControlFlowBuilderWithWeight

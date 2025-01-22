@@ -8,12 +8,12 @@ namespace StateMachine.IntegrationTests.Classes.States
 
         public static bool ExitFired = false;
 
-        private readonly IVertexContext vertexContext;
+        private readonly IStateContext stateContext;
         private readonly IStateMachineContext stateMachineContext;
         private readonly Stateflows.StateMachines.IExecutionContext executionContext;
-        public State1(IVertexContext vertexContext, IStateMachineContext stateMachineContext, Stateflows.StateMachines.IExecutionContext executionContext)
+        public State1(IStateContext stateContext, IStateMachineContext stateMachineContext, Stateflows.StateMachines.IExecutionContext executionContext)
         {
-            this.vertexContext = vertexContext;
+            this.stateContext = stateContext;
             this.stateMachineContext = stateMachineContext;
             this.executionContext = executionContext;
         }
@@ -26,13 +26,13 @@ namespace StateMachine.IntegrationTests.Classes.States
 
         public Task OnEntryAsync()
         {
-            EntryFired = vertexContext != null && stateMachineContext?.Id.Instance != null && executionContext != null;
+            EntryFired = stateContext != null && stateMachineContext?.Id.Instance != null && executionContext != null;
             return Task.CompletedTask;
         }
 
         public Task OnExitAsync()
         {
-            ExitFired = vertexContext != null && stateMachineContext?.Id.Instance != null && executionContext != null;
+            ExitFired = stateContext != null && stateMachineContext?.Id.Instance != null && executionContext != null;
             return Task.CompletedTask;
         }
     }

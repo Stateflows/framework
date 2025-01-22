@@ -1,4 +1,6 @@
-﻿namespace Stateflows.StateMachines.Registration.Interfaces.Base
+﻿using System.Diagnostics;
+
+namespace Stateflows.StateMachines.Registration.Interfaces.Base
 {
     public interface IStateTransitionsOverrides<TReturn>
     {
@@ -25,6 +27,11 @@
         /// <param name="targetStateName">Target state name</param>
         /// <param name="transitionBuildAction">Transition build action</param>
         TReturn UseTransition<TEvent>(string targetStateName, TransitionBuildAction<TEvent> transitionBuildAction);
+        
+        [DebuggerHidden]
+        public TReturn UseTransition<TEvent, TTargetState>(TransitionBuildAction<TEvent> transitionBuildAction)
+            where TTargetState : class, IVertex
+            => UseTransition(State<TTargetState>.Name, transitionBuildAction);
 
         /// <summary>
         /// Uses default transition coming from current state.<br/>
@@ -43,6 +50,11 @@
         /// <param name="targetStateName">Target state name</param>
         /// <param name="transitionBuildAction">Transition build action</param>
         TReturn UseDefaultTransition(string targetStateName, DefaultTransitionBuildAction transitionBuildAction);
+        
+        [DebuggerHidden]
+        public TReturn UseDefaultTransition<TTargetState>(DefaultTransitionBuildAction transitionBuildAction)
+            where TTargetState : class, IVertex
+            => UseDefaultTransition(State<TTargetState>.Name, transitionBuildAction);
 
         /// <summary>
         /// Uses internal transition triggered by <see cref="TEvent"/> coming from current state.<br/>
@@ -59,7 +71,6 @@
         /// </list>
         /// </summary>
         /// <typeparam name="TEvent">Event class</typeparam>
-        /// <param name="targetStateName">Target state name</param>
         /// <param name="transitionBuildAction">Transition build action</param>
         TReturn UseInternalTransition<TEvent>(InternalTransitionBuildAction<TEvent> transitionBuildAction);
         #endregion
@@ -73,6 +84,11 @@
         /// <param name="targetStateName">Target state name</param>
         /// <param name="transitionBuildAction">Transition build action</param>
         TReturn UseElseTransition<TEvent>(string targetStateName, ElseTransitionBuildAction<TEvent> transitionBuildAction);
+        
+        [DebuggerHidden]
+        public TReturn UseElseTransition<TEvent, TTargetState>(ElseTransitionBuildAction<TEvent> transitionBuildAction)
+            where TTargetState : class, IVertex
+            => UseElseTransition(State<TTargetState>.Name, transitionBuildAction);
 
         /// <summary>
         /// Uses else alternative for all default transitions coming from current state.<br/><br/>
@@ -81,6 +97,11 @@
         /// <param name="targetStateName">Target state name</param>
         /// <param name="transitionBuildAction">Transition build action</param>
         TReturn UseElseDefaultTransition(string targetStateName, ElseDefaultTransitionBuildAction transitionBuildAction);
+        
+        [DebuggerHidden]
+        public TReturn UseElseDefaultTransition<TTargetState>(ElseDefaultTransitionBuildAction transitionBuildAction)
+            where TTargetState : class, IVertex
+            => UseElseDefaultTransition(State<TTargetState>.Name, transitionBuildAction);
 
         /// <summary>
         /// Uses internal else alternative for all <see cref="TEvent"/>-triggered transitions coming from current state.<br/><br/>

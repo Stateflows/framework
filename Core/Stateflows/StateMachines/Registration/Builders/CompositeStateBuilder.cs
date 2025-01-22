@@ -21,9 +21,15 @@ namespace Stateflows.StateMachines.Registration.Builders
         IFinalizedOverridenCompositeStateBuilder,
         IInitializedCompositeStateBuilder,
         IInternal,
+        IVertexBuilder,
+        IGraphBuilder,
         IBehaviorBuilder
     {
         public Region Region { get; }
+
+        public Vertex Vertex => Region.ParentVertex;
+        
+        public Graph Graph => Vertex.Graph;
 
         public IServiceCollection Services { get; }
 
@@ -262,7 +268,6 @@ namespace Stateflows.StateMachines.Registration.Builders
 
         public IInitializedCompositeStateBuilder AddJoin(string joinName, JoinBuildAction joinBuildAction)
             => AddVertex(joinName, VertexType.Join, vertex => joinBuildAction?.Invoke(new StateBuilder(vertex, Services)));
-
         #endregion
 
         [DebuggerHidden]

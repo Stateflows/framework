@@ -1,8 +1,9 @@
 ﻿using System;
+using System.Diagnostics;
 using System.Threading.Tasks;
-using Stateflows.Common.Extensions;
 using Stateflows.StateMachines.Context.Classes;
 using Stateflows.StateMachines.Context.Interfaces;
+using Stateflows.StateMachines.Registration.Extensions;
 using Stateflows.StateMachines.Registration.Interfaces.Internal;
 
 namespace Stateflows.StateMachines.Registration.Interfaces.Base
@@ -10,14 +11,17 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
     public interface IEffect<out TEvent, out TReturn>
     {
         TReturn AddEffect(Func<ITransitionContext<TEvent>, Task> effectAsync);
+        
+        [DebuggerHidden]
+        public TReturn AddEffect(Action<ITransitionContext<TEvent>> effect)
+            => AddEffect(effect
+                .AddStateMachineInvocationContext(((IEdgeBuilder)this).Edge.Graph)
+                .ToAsync()
+            );
 
         TReturn AddEffect<TEffect>()
             where TEffect : class, ITransitionEffect<TEvent>
-        {
-            (this as IInternal).Services.AddServiceType<TEffect>();
-
-            return AddEffect(c => (c as BaseContext).Context.Executor.GetTransitionEffect<TEffect, TEvent>(c)?.EffectAsync(c.Event));
-        }
+            => AddEffect(c => ((BaseContext)c).Context.Executor.GetTransitionEffect<TEffect, TEvent>(c)?.EffectAsync(c.Event));
 
         TReturn AddEffects<TEffect1, TEffect2>()
             where TEffect1 : class, ITransitionEffect<TEvent>

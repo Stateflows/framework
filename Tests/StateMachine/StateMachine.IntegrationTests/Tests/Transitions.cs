@@ -26,7 +26,7 @@ namespace StateMachine.IntegrationTests.Tests
                         .AddInitialState("state1", b => b
                             .AddOnExit(c => StateExited = true)
                             .AddTransition<SomeEvent>("state2", b => b
-                                .AddEffect(c => TransitionHappened = true)
+                                .AddEffect(c => TransitionHappened = !c.StateMachine.CurrentState.HasValue)
                             )
                         )
                         .AddState("state2", b => b

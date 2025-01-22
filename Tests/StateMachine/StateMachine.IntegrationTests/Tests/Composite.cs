@@ -155,7 +155,7 @@ namespace StateMachine.IntegrationTests.Tests
 
             if (StateMachineLocator.TryLocateStateMachine(new StateMachineId("typed", "x"), out var sm))
             {
-                currentState = (await sm.GetCurrentStateAsync()).Response.StatesTree.Value;
+                currentState = (await sm.GetCurrentStateAsync()).Response?.StatesTree?.Value;
             }
             
             Assert.AreEqual(State<CompositeStateA>.Name, currentState);

@@ -1,13 +1,15 @@
 ﻿using System;
+using System.Diagnostics;
 using System.Threading.Tasks;
-using Stateflows.Common.Extensions;
 using Stateflows.StateMachines.Context.Classes;
 using Stateflows.StateMachines.Context.Interfaces;
+using Stateflows.StateMachines.Registration.Builders;
+using Stateflows.StateMachines.Registration.Extensions;
 using Stateflows.StateMachines.Registration.Interfaces.Internal;
 
 namespace Stateflows.StateMachines.Registration.Interfaces.Base
 {
-    public interface IStateEntry<TReturn>
+    public interface IStateEntry<out TReturn>
     {
         /// <summary>
         /// Adds entry handler to current state.<br/>
@@ -18,14 +20,25 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         /// </summary>
         /// <param name="actionAsync">Action handler</param>
         TReturn AddOnEntry(Func<IStateActionContext, Task> actionAsync);
+        
+        /// <summary>
+        /// Adds synchronous entry handler coming from current state.<br/>
+        /// Use the following pattern to implement handler:
+        /// <code>c => {
+        ///     // handler logic here; action context is available via c parameter
+        /// }</code>
+        /// </summary>
+        /// <param name="action">Synchronous action handler</param>
+        [DebuggerHidden]
+        public TReturn AddOnEntry(Action<IStateActionContext> action)
+            => AddOnEntry(action
+                .AddStateMachineInvocationContext(((IVertexBuilder)this).Vertex.Graph)
+                .ToAsync()
+            );
 
         TReturn AddOnEntry<TStateEntry>()
             where TStateEntry : class, IStateEntry
-        {
-            (this as IInternal).Services.AddServiceType<TStateEntry>();
-
-            return AddOnEntry(c => (c as BaseContext).Context.Executor.GetState<TStateEntry>(c)?.OnEntryAsync());
-        }
+            => AddOnEntry(c => ((BaseContext)c).Context.Executor.GetState<TStateEntry>(c)?.OnEntryAsync());
 
         TReturn AddOnEntries<TStateEntry1, TStateEntry2>()
             where TStateEntry1 : class, IStateEntry

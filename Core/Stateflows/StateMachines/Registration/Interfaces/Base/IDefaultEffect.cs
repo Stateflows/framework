@@ -1,9 +1,10 @@
 ﻿using System;
+using System.Diagnostics;
 using System.Threading.Tasks;
-using Stateflows.Common.Extensions;
 using Stateflows.StateMachines.Events;
 using Stateflows.StateMachines.Context.Classes;
 using Stateflows.StateMachines.Context.Interfaces;
+using Stateflows.StateMachines.Registration.Extensions;
 using Stateflows.StateMachines.Registration.Interfaces.Internal;
 
 namespace Stateflows.StateMachines.Registration.Interfaces.Base
@@ -11,14 +12,17 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
     public interface IDefaultEffect<out TReturn>
     {
         TReturn AddEffect(Func<ITransitionContext<Completion>, Task> effectAsync);
+        
+        [DebuggerHidden]
+        public TReturn AddEffect(Action<ITransitionContext<Completion>> effect)
+            => AddEffect(effect
+                .AddStateMachineInvocationContext(((IEdgeBuilder)this).Edge.Graph)
+                .ToAsync()
+            );
 
         TReturn AddEffect<TEffect>()
             where TEffect : class, IDefaultTransitionEffect
-        {
-            (this as IInternal).Services.AddServiceType<TEffect>();
-
-            return AddEffect(c => (c as BaseContext).Context.Executor.GetDefaultTransitionEffect<TEffect>(c)?.EffectAsync());
-        }
+            => AddEffect(c => ((BaseContext)c).Context.Executor.GetDefaultTransitionEffect<TEffect>(c)?.EffectAsync());
 
         TReturn AddEffects<TEffect1, TEffect2>()
             where TEffect1 : class, IDefaultTransitionEffect

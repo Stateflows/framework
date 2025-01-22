@@ -9,7 +9,7 @@ namespace Stateflows.StateMachines.Inspection.Interfaces
 
         IEnumerable<IStateInspection> States { get; }
 
-        IReadOnlyTree<IStateInspection> CurrentStatesTree { get; }
+        IReadOnlyTree<IStateInspection> CurrentState { get; }
 
         IActionInspection Initialize { get; }
 

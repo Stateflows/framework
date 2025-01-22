@@ -16,18 +16,9 @@ namespace Stateflows.StateMachines.Inspection.Classes
         {
             Executor = executor;
             Region = region;
+            States = Region.Vertices.Values.Select(subVertex => new StateInspection(Executor, subVertex)).ToArray();
         }
-
-        public IEnumerable<IStateInspection> states;
-
-        public IEnumerable<IStateInspection> States
-        {
-            get
-            {
-                states ??= Region.Vertices.Values.Select(subVertex => new StateInspection(Executor, subVertex)).ToArray();
-
-                return states;
-            }
-        }
+        
+        public IEnumerable<IStateInspection> States { get; }
     }
 }

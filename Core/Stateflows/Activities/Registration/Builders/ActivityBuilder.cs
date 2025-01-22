@@ -150,8 +150,7 @@ namespace Stateflows.Activities.Registration.Builders
         public IActivityBuilder AddExceptionHandler<TExceptionHandler>()
             where TExceptionHandler : class, IActivityExceptionHandler
         {
-            Services.AddServiceType<TExceptionHandler>();
-            AddExceptionHandler(serviceProvider => serviceProvider.GetRequiredService<TExceptionHandler>());
+            AddExceptionHandler(serviceProvider => ActivatorUtilities.CreateInstance<TExceptionHandler>(serviceProvider));
 
             return this;
         }
@@ -166,8 +165,7 @@ namespace Stateflows.Activities.Registration.Builders
         public IActivityBuilder AddInterceptor<TInterceptor>()
             where TInterceptor : class, IActivityInterceptor
         {
-            Services.AddServiceType<TInterceptor>();
-            AddInterceptor(serviceProvider => serviceProvider.GetRequiredService<TInterceptor>());
+            AddInterceptor(serviceProvider => ActivatorUtilities.CreateInstance<TInterceptor>(serviceProvider));
 
             return this;
         }
@@ -182,8 +180,7 @@ namespace Stateflows.Activities.Registration.Builders
         public IActivityBuilder AddObserver<TObserver>()
             where TObserver : class, IActivityObserver
         {
-            Services.AddServiceType<TObserver>();
-            AddObserver(serviceProvider => serviceProvider.GetRequiredService<TObserver>());
+            AddObserver(serviceProvider => ActivatorUtilities.CreateInstance<TObserver>(serviceProvider));
 
             return this;
         }

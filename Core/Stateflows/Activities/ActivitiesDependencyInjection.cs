@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using Microsoft.Extensions.DependencyInjection;
 using Stateflows.Common.Interfaces;
 using Stateflows.Common.Initializer;
+using Stateflows.Common.Registration.Builders;
 using Stateflows.Common.Registration.Interfaces;
 using Stateflows.Activities.Engine;
 using Stateflows.Activities.Context;
@@ -11,7 +12,6 @@ using Stateflows.Activities.Registration;
 using Stateflows.Activities.EventHandlers;
 using Stateflows.Activities.Registration.Builders;
 using Stateflows.Activities.Registration.Interfaces;
-using Stateflows.Common.Registration.Builders;
 
 namespace Stateflows.Activities
 {
@@ -20,9 +20,10 @@ namespace Stateflows.Activities
         private readonly static Dictionary<IStateflowsBuilder, ActivitiesRegister> Registers = new Dictionary<IStateflowsBuilder, ActivitiesRegister>();
 
         [DebuggerHidden]
-        public static IStateflowsBuilder AddActivities(this IStateflowsBuilder stateflowsBuilder, ActivitiesBuildAction buildAction)
+        public static IStateflowsBuilder AddActivities(this IStateflowsBuilder stateflowsBuilder, ActivitiesBuildAction buildAction = null)
         {
-            buildAction(new ActivitiesBuilder(stateflowsBuilder.EnsureActivitiesServices()));
+            var register = stateflowsBuilder.EnsureActivitiesServices();
+            buildAction?.Invoke(new ActivitiesBuilder(register));
 
             return stateflowsBuilder;
         }
@@ -47,6 +48,7 @@ namespace Stateflows.Activities
                         .AddScoped<AcceptEvents>()
                         .AddScoped<IActivityPlugin>(serviceProvider => serviceProvider.GetRequiredService<AcceptEvents>())
                         .AddSingleton(register)
+                        .AddSingleton<IActivitiesRegister>(register)
                         .AddScoped<IEventProcessor, Processor>()
                         .AddTransient<IBehaviorProvider, Provider>()
                         .AddSingleton<IActivityEventHandler, BehaviorStatusHandler>()

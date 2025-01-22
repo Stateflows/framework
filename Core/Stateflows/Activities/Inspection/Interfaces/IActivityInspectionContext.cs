@@ -1,6 +1,4 @@
-﻿using Stateflows.Activities.Context.Interfaces;
-
-namespace Stateflows.Activities.Inspection.Interfaces
+﻿namespace Stateflows.Activities.Inspection.Interfaces
 {
     public interface IActivityInspectionContext : IActivityContext
     {

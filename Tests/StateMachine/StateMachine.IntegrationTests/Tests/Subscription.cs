@@ -103,15 +103,13 @@ namespace StateMachine.IntegrationTests.Tests
 
             if (StateMachineLocator.TryLocateStateMachine(new StateMachineId("subscribee", "z"), out var subscribee))
             {
+                await subscribee.SendAsync(new Initialize());
+                
                 _ = subscribee.WatchCurrentStateAsync(n => currentState = n.StatesTree.Value);
 
                 _ = subscribee.WatchStatusAsync(n => currentStatus = n.BehaviorStatus);
-
-                await subscribee.SendAsync(new Initialize());
-
-                await Task.Delay(1000);
             }
-            await Task.Delay(1000);
+            
             Assert.AreEqual("state1", currentState);
             Assert.AreEqual(BehaviorStatus.Initialized, currentStatus);
         }

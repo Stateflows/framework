@@ -26,9 +26,9 @@ namespace Stateflows.Activities.StateMachines.Interfaces
             return this;
         }
 
-        public TransitionActivityBuilder<TEvent> AddSubscription<TNotificationEvent>()
+        public TransitionActivityBuilder<TEvent> AddSubscription<TNotification>()
         {
-            Notifications.Add(typeof(TNotificationEvent));
+            Notifications.Add(typeof(TNotification));
 
             return this;
         }

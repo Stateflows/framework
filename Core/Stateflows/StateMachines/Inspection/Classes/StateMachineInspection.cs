@@ -18,14 +18,14 @@ namespace Stateflows.StateMachines.Inspection.Classes
             Initialize = Executor.Inspector.InitializeInspection;
             Executor.Inspector.FinalizeInspection = new ActionInspection(Executor, nameof(Finalize));
             Finalize = Executor.Inspector.FinalizeInspection;
+            States = Executor.Graph.Vertices.Values.Select(v => new StateInspection(Executor, v)).ToArray();
         }
 
         public StateMachineId Id => Executor.Context.Id;
 
-        public IEnumerable<IStateInspection> States
-            => Executor.Graph.Vertices.Values.Select(v => new StateInspection(Executor, v));
+        public IEnumerable<IStateInspection> States { get; }
 
-        public IReadOnlyTree<IStateInspection> CurrentStatesTree
+        public IReadOnlyTree<IStateInspection> CurrentState
             => Executor.VerticesTree.Translate(vertex => States.First(s => s.Name == vertex.Name));
 
         public IActionInspection Initialize { get; set; }

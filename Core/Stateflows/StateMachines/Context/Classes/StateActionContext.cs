@@ -22,7 +22,7 @@ namespace Stateflows.StateMachines.Context.Classes
             ActionName = name;
         }
 
-        private IVertexContext currentVertex = null;
-        public IVertexContext CurrentState => currentVertex ??= new VertexContext(Vertex, Context);
+        private IStateContext currentState = null;
+        public IStateContext CurrentState => currentState ??= new StateContext(Vertex, Context);
     }
 }

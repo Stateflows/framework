@@ -1,7 +1,22 @@
-﻿namespace Stateflows.StateMachines.Registration.Interfaces.Base
+﻿using System.Diagnostics;
+using Stateflows.Activities;
+
+namespace Stateflows.StateMachines.Registration.Interfaces.Base
 {
     public interface IStateDoActivity<out TReturn>
     {
         TReturn AddDoActivity(string doActivityName, EmbeddedBehaviorBuildAction buildAction = null, StateActionInitializationBuilderAsync initializationBuilder = null);
+        
+        /// <summary>
+        /// Embeds Activity in current state.<br/><br/>
+        /// <b>Embedded Activity will be initialized on state entry and finalized on state exit. Events can be forwarded from State Machine to embedded Activity using <see cref="buildAction"/></b>
+        /// </summary>
+        /// <typeparam name="TActivity">Activity class; must implement <see cref="IActivity"/> interface</typeparam>
+        /// <param name="buildAction">Build action</param>
+        /// <param name="initializationBuilder">Initialization builder; generates initialization event for embedded State Machine</param>
+        [DebuggerHidden]
+        public TReturn AddDoActivity<TActivity>(EmbeddedBehaviorBuildAction buildAction = null, StateActionInitializationBuilderAsync initializationBuilder = null)
+            where TActivity : class, IActivity
+            => AddDoActivity(Activity<TActivity>.Name, buildAction, initializationBuilder);
     }
 }

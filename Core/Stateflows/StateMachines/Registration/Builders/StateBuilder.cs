@@ -35,6 +35,7 @@ namespace Stateflows.StateMachines.Registration.Builders
         IBehaviorOverridenStateBuilder,
         IBehaviorOverridenRegionalizedStateBuilder,
         IInternal,
+        IVertexBuilder,
         IBehaviorBuilder,
         IEmbeddedBehaviorBuilder
     {
@@ -546,9 +547,9 @@ namespace Stateflows.StateMachines.Registration.Builders
             }) as IEmbeddedBehaviorBuilder;
 
         [DebuggerHidden]
-        public IEmbeddedBehaviorBuilder AddSubscription<TNotificationEvent>()
+        public IEmbeddedBehaviorBuilder AddSubscription<TNotification>()
         {
-            Vertex.BehaviorSubscriptions.Add(typeof(TNotificationEvent));
+            Vertex.BehaviorSubscriptions.Add(typeof(TNotification));
             
             return this;
         }

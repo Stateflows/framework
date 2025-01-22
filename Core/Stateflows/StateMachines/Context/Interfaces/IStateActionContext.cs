@@ -4,6 +4,6 @@
     {
         string ActionName { get; }
 
-        IVertexContext CurrentState { get; }
+        IStateContext CurrentState { get; }
     }
 }

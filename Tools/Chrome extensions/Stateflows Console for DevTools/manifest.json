@@ -1,0 +1,13 @@
+{
+  "name": "Stateflows Console for DevTools",
+  "description": "",
+  "version": "1.0",
+  "manifest_version": 3,
+  "devtools_page": "devtools.html",
+  "icons": {
+    "16": "stateflows-logo-1024.png",
+    "32": "stateflows-logo-1024.png",
+    "48": "stateflows-logo-1024.png",
+    "128": "stateflows-logo-1024.png"
+  }
+}

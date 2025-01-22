@@ -22,10 +22,13 @@ namespace Stateflows.StateMachines.Registration.Builders
         IOrthogonalStateBuilder,
         IOverridenOrthogonalStateBuilder,
         IInternal,
+        IVertexBuilder,
+        IGraphBuilder,
         IBehaviorBuilder
-    {
-
+    {   
         public Vertex Vertex { get; }
+
+        public Graph Graph => Vertex.Graph;
 
         public IServiceCollection Services { get; }
 

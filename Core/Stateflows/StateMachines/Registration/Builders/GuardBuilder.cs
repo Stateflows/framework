@@ -13,7 +13,8 @@ namespace Stateflows.StateMachines.Registration.Builders
     internal class GuardBuilder<TEvent> :
         IGuardBuilder<TEvent>,
         IDefaultGuardBuilder,
-        IInternal
+        IInternal,
+        IEdgeBuilder
     {
         private readonly List<Func<ITransitionContext<TEvent>, Task<bool>>> Guards = new List<Func<ITransitionContext<TEvent>, Task<bool>>>();
 

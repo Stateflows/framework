@@ -87,7 +87,7 @@ namespace Stateflows.Activities.Engine
             ActivitiesContextHolder.ExecutionContext.Value = context;
             ActivitiesContextHolder.ExceptionContext.Value = null;
 
-            var initializer = ServiceProvider.GetService<TDefaultInitializer>();
+            var initializer = ActivatorUtilities.CreateInstance<TDefaultInitializer>(ServiceProvider);
 
             return initializer;
         }
@@ -106,7 +106,7 @@ namespace Stateflows.Activities.Engine
             ActivitiesContextHolder.ExecutionContext.Value = context;
             ActivitiesContextHolder.ExceptionContext.Value = null;
 
-            var initializer = ServiceProvider.GetService<TInitializer>();
+            var initializer = ActivatorUtilities.CreateInstance<TInitializer>(ServiceProvider);
 
             return initializer;
         }
@@ -125,7 +125,7 @@ namespace Stateflows.Activities.Engine
             ActivitiesContextHolder.ExecutionContext.Value = context;
             ActivitiesContextHolder.ExceptionContext.Value = null;
 
-            var initializer = ServiceProvider.GetService<TFinalizer>();
+            var initializer = ActivatorUtilities.CreateInstance<TFinalizer>(ServiceProvider);
 
             return initializer;
         }
@@ -144,7 +144,7 @@ namespace Stateflows.Activities.Engine
             ActivitiesContextHolder.ExecutionContext.Value = context;
             ActivitiesContextHolder.ExceptionContext.Value = null;
 
-            return ServiceProvider.GetService<TAction>();
+            return ActivatorUtilities.CreateInstance<TAction>(ServiceProvider);
         }
 
         public TAcceptEventAction GetAcceptEventAction<TEvent, TAcceptEventAction>(IAcceptEventActionContext<TEvent> context)
@@ -162,7 +162,7 @@ namespace Stateflows.Activities.Engine
             ActivitiesContextHolder.ExecutionContext.Value = context;
             ActivitiesContextHolder.ExceptionContext.Value = null;
 
-            return ServiceProvider.GetService<TAcceptEventAction>();
+            return ActivatorUtilities.CreateInstance<TAcceptEventAction>(ServiceProvider);
         }
 
         public TTimeEventAction GetTimeEventAction<TTimeEventAction>(IActionContext context)
@@ -179,7 +179,7 @@ namespace Stateflows.Activities.Engine
             ActivitiesContextHolder.ExecutionContext.Value = context;
             ActivitiesContextHolder.ExceptionContext.Value = null;
 
-            return ServiceProvider.GetService<TTimeEventAction>();
+            return ActivatorUtilities.CreateInstance<TTimeEventAction>(ServiceProvider);
         }
 
         public TSendEventAction GetSendEventAction<TEvent, TSendEventAction>(IActionContext context)
@@ -196,7 +196,7 @@ namespace Stateflows.Activities.Engine
             ActivitiesContextHolder.ExecutionContext.Value = context;
             ActivitiesContextHolder.ExceptionContext.Value = null;
 
-            return ServiceProvider.GetService<TSendEventAction>();
+            return ActivatorUtilities.CreateInstance<TSendEventAction>(ServiceProvider);
         }
 
         public TStructuredActivity GetStructuredActivity<TStructuredActivity>(IActionContext context)
@@ -213,7 +213,7 @@ namespace Stateflows.Activities.Engine
             ActivitiesContextHolder.ExecutionContext.Value = context;
             ActivitiesContextHolder.ExceptionContext.Value = null;
 
-            return ServiceProvider.GetService<TStructuredActivity>();
+            return ActivatorUtilities.CreateInstance<TStructuredActivity>(ServiceProvider);
         }
 
         public TExceptionHandler GetExceptionHandler<TException, TExceptionHandler>(IExceptionHandlerContext<TException> context)
@@ -231,7 +231,7 @@ namespace Stateflows.Activities.Engine
             ActivitiesContextHolder.ExecutionContext.Value = context;
             ActivitiesContextHolder.ExceptionContext.Value = context;
 
-            return ServiceProvider.GetService<TExceptionHandler>();
+            return ActivatorUtilities.CreateInstance<TExceptionHandler>(ServiceProvider);
         }
 
         public TFlow GetFlow<TFlow>(IActivityFlowContext context)
@@ -248,7 +248,7 @@ namespace Stateflows.Activities.Engine
             ActivitiesContextHolder.ExecutionContext.Value = context;
             ActivitiesContextHolder.ExceptionContext.Value = null;
 
-            return ServiceProvider.GetService<TFlow>();
+            return ActivatorUtilities.CreateInstance<TFlow>(ServiceProvider);
         }
 
         public TControlFlow GetControlFlow<TControlFlow>(IActivityFlowContext context)

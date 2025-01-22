@@ -1,13 +1,15 @@
 ﻿using System;
+using System.Diagnostics;
 using System.Threading.Tasks;
-using Stateflows.Common.Extensions;
 using Stateflows.StateMachines.Context.Classes;
 using Stateflows.StateMachines.Context.Interfaces;
+using Stateflows.StateMachines.Registration.Builders;
+using Stateflows.StateMachines.Registration.Extensions;
 using Stateflows.StateMachines.Registration.Interfaces.Internal;
 
 namespace Stateflows.StateMachines.Registration.Interfaces.Base
 {
-    public interface IStateExit<TReturn>
+    public interface IStateExit<out TReturn>
     {
         /// <summary>
         /// Adds exit handler to current state.<br/>
@@ -18,14 +20,25 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         /// </summary>
         /// <param name="actionAsync">Action handler</param>
         TReturn AddOnExit(Func<IStateActionContext, Task> actionAsync);
+        
+        /// <summary>
+        /// Adds synchronous exit handler coming from current state.<br/>
+        /// Use the following pattern to implement handler:
+        /// <code>c => {
+        ///     // handler logic here; action context is available via c parameter
+        /// }</code>
+        /// </summary>
+        /// <param name="action">Synchronous action handler</param>
+        [DebuggerHidden]
+        public TReturn AddOnExit(Action<IStateActionContext> action)
+            => AddOnExit(action
+                .AddStateMachineInvocationContext(((IVertexBuilder)this).Vertex.Graph)
+                .ToAsync()
+            );
 
         TReturn AddOnExit<TStateExit>()
             where TStateExit : class, IStateExit
-        {
-            (this as IInternal).Services.AddServiceType<TStateExit>();
-
-            return AddOnExit(c => (c as BaseContext).Context.Executor.GetState<TStateExit>(c)?.OnExitAsync());
-        }
+            => AddOnExit(c => ((BaseContext)c).Context.Executor.GetState<TStateExit>(c)?.OnExitAsync());
 
         TReturn AddOnExits<TStateExit1, TStateExit2>()
             where TStateExit1 : class, IStateExit

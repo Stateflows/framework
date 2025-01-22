@@ -1,4 +1,6 @@
-﻿namespace Stateflows.StateMachines.Registration.Interfaces.Base
+﻿using System.Diagnostics;
+
+namespace Stateflows.StateMachines.Registration.Interfaces.Base
 {
     public interface IStateMachineOverrides<out TReturn>
     {
@@ -9,6 +11,11 @@
         /// <param name="stateName">State name</param>
         /// <param name="stateBuildAction">State build action</param>
         TReturn UseState(string stateName, OverridenStateBuildAction stateBuildAction);
+        
+        [DebuggerHidden]
+        public TReturn UseState<TState>(OverridenStateBuildAction stateBuildAction = null)
+            where TState : class, IState
+            => UseState(State<TState>.Name, stateBuildAction);
 
         /// <summary>
         /// Uses a Composite State of overriden state machine.<br/>
@@ -18,6 +25,11 @@
         /// <param name="compositeStateBuildAction">Composite state build action</param>
         TReturn UseCompositeState(string compositeStateName, OverridenCompositeStateBuildAction compositeStateBuildAction);
 
+        [DebuggerHidden]
+        public TReturn UseCompositeState<TCompositeState>(OverridenCompositeStateBuildAction compositeStateBuildAction)
+            where TCompositeState : class, ICompositeState
+            => UseCompositeState(State<TCompositeState>.Name, compositeStateBuildAction);
+
         /// <summary>
         /// Uses a Orthogonal State of overriden state machine.<br/>
         /// <a href="https://github.com/Stateflows/framework/wiki/Orthogonal-State">Orthogonal state</a> represent a stable configuration of a <a href="https://github.com/Stateflows/framework/wiki/Behaviors">Behavior</a>, which is a parent for set of substates.
@@ -25,6 +37,11 @@
         /// <param name="orthogonalStateName">Orthogonal state name</param>
         /// <param name="orthogonalStateBuildAction">Orthogonal state build action</param>
         TReturn UseOrthogonalState(string orthogonalStateName, OverridenOrthogonalStateBuildAction orthogonalStateBuildAction);
+
+        [DebuggerHidden]
+        public TReturn UseOrthogonalState<TOrthogonalState>(OverridenOrthogonalStateBuildAction orthogonalStateBuildAction)
+            where TOrthogonalState : class, IOrthogonalState
+            => UseOrthogonalState(State<TOrthogonalState>.Name, orthogonalStateBuildAction);
 
         /// <summary>
         /// Uses a Junction pseudostate of overriden state machine.<br/>

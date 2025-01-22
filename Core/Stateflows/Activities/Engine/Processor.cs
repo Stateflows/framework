@@ -64,61 +64,59 @@ namespace Stateflows.Activities.Engine
                 return result;
             }
 
-            using (var executor = new Executor(Register, graph, serviceProvider))
+            using var executor = new Executor(Register, graph, serviceProvider);
+            var context = new RootContext(stateflowsContext);
+
+            await executor.HydrateAsync(context);
+
+            try
             {
-                var context = new RootContext(stateflowsContext);
-
-                await executor.HydrateAsync(context);
-
-                try
+                if (eventHolder is EventHolder<CompoundRequest> compoundRequestHolder)
                 {
-                    if (eventHolder is EventHolder<CompoundRequest> compoundRequestHolder)
+                    var compoundRequest = compoundRequestHolder.Payload;
+                    result = EventStatus.Consumed;
+                    var results = new List<RequestResult>();
+                    foreach (var ev in compoundRequest.Events)
                     {
-                        var compoundRequest = compoundRequestHolder.Payload;
-                        result = EventStatus.Consumed;
-                        var results = new List<RequestResult>();
-                        foreach (var ev in compoundRequest.Events)
-                        {
-                            ev.Headers.AddRange(eventHolder.Headers);
+                        ev.Headers.AddRange(eventHolder.Headers);
 
-                            var status = await ev.ExecuteBehaviorAsync(this, result, executor);
+                        var status = await ev.ExecuteBehaviorAsync(this, result, executor);
 
-                            results.Add(new RequestResult(
-                                ev,
-                                ev.GetResponseHolder(),
-                                status,
-                                new EventValidation(true, new List<ValidationResult>())
-                            ));
-                        }
-
-                        if (!compoundRequest.IsRespondedTo())
-                        {
-                            compoundRequest.Respond(new CompoundResponse()
-                            {
-                                Results = results
-                            });
-                        }
+                        results.Add(new RequestResult(
+                            ev,
+                            ev.GetResponseHolder(),
+                            status,
+                            new EventValidation(true, new List<ValidationResult>())
+                        ));
                     }
-                    else
+
+                    if (!compoundRequest.IsRespondedTo())
                     {
-                        result = await ExecuteBehaviorAsync(eventHolder, result, executor);
+                        compoundRequest.Respond(new CompoundResponse()
+                        {
+                            Results = results
+                        });
                     }
                 }
-                finally
+                else
                 {
-                    if (stateflowsContext.Status == BehaviorStatus.Initialized)
-                    {
-                        stateflowsContext.Version = graph.Version;
-                    }
-
-                    stateflowsContext.Status = executor.BehaviorStatus;
-
-                    stateflowsContext.LastExecutedAt = DateTime.Now;
-
-                    exceptions.AddRange(context.Exceptions);
-
-                    await storage.DehydrateAsync((await executor.DehydrateAsync()).Context);
+                    result = await ExecuteBehaviorAsync(eventHolder, result, executor);
                 }
+            }
+            finally
+            {
+                if (stateflowsContext.Status == BehaviorStatus.Initialized)
+                {
+                    stateflowsContext.Version = graph.Version;
+                }
+
+                stateflowsContext.Status = executor.BehaviorStatus;
+
+                stateflowsContext.LastExecutedAt = DateTime.Now;
+
+                exceptions.AddRange(context.Exceptions);
+
+                await storage.DehydrateAsync((await executor.DehydrateAsync()).Context);
             }
 
             return result;

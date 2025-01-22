@@ -2,6 +2,7 @@
 using System.Diagnostics;
 using System.Threading.Tasks;
 using System.Collections.Generic;
+using System.Linq;
 using Microsoft.Extensions.DependencyInjection;
 using Stateflows.Common.Utilities;
 using Stateflows.Common.Interfaces;
@@ -9,21 +10,21 @@ using Stateflows.Common.Subscription;
 
 namespace Stateflows.Common.Classes
 {
-    internal class Behavior : IBehavior, IUnwatcher, INotificationHandler
+    internal sealed class Behavior : IBehavior, IUnwatcher, INotificationHandler
     {
         public BehaviorId Id { get; }
 
         private readonly StateflowsEngine engine;
         private readonly IServiceProvider serviceProvider;
-        private readonly NotificationsHub subscriptionHub;
+        private readonly NotificationsHub notificationsHub;
         private readonly Dictionary<string, List<Action<EventHolder>>> handlers = new Dictionary<string, List<Action<EventHolder>>>();
 
         public Behavior(StateflowsEngine engine, IServiceProvider serviceProvider, BehaviorId id)
         {
             this.engine = engine;
             this.serviceProvider = serviceProvider;
-            subscriptionHub = serviceProvider.GetRequiredService<NotificationsHub>();
-            subscriptionHub.RegisterHandler(this);
+            notificationsHub = serviceProvider.GetRequiredService<NotificationsHub>();
+            notificationsHub.RegisterHandler(this);
             
             Id = id;
         }
@@ -63,7 +64,7 @@ namespace Stateflows.Common.Classes
         }
 
         [DebuggerHidden]
-        public async Task<RequestResult<TResponseEvent>> RequestAsync<TResponseEvent>(IRequest<TResponseEvent> request, IEnumerable<EventHeader> headers = null)
+        public async Task<RequestResult<TResponse>> RequestAsync<TResponse>(IRequest<TResponse> request, IEnumerable<EventHeader> headers = null)
         {
             var executionToken = engine.EnqueueEvent(Id, request.ToTypedEventHolder(headers), serviceProvider);
             await executionToken.Handled.WaitOneAsync().ConfigureAwait(false);
@@ -77,33 +78,56 @@ namespace Stateflows.Common.Classes
                 ResponseHolder.SetResponses(executionToken.Responses);
             }
 
-            var result = new RequestResult<TResponseEvent>(executionToken.EventHolder, executionToken.Status, executionToken.Validation);
+            var result = new RequestResult<TResponse>(executionToken.EventHolder, executionToken.Status, executionToken.Validation);
 
             return result;
         }
+        
+        private EventHolder[] GetPendingNotifications<TNotification>(Dictionary<BehaviorId, List<EventHolder>> notifications, DateTime lastNotificationCheck)
+        {
+            lock (notifications)
+            {
+                var result = notifications.TryGetValue(Id, out var behaviorNotifications)
+                    ? behaviorNotifications
+                        .Where(notification =>
+                            notification is EventHolder<TNotification> &&
+                            notification.SentAt.AddSeconds(notification.TimeToLive) >= lastNotificationCheck
+                        )
+                        .ToArray()
+                    : Array.Empty<EventHolder>();
 
-        public Task<IWatcher> WatchAsync<TNotificationEvent>(Action<TNotificationEvent> handler)
+                return result;
+            }
+        }
+
+        public Task<IWatcher> WatchAsync<TNotification>(Action<TNotification> handler)
         {
             lock (handlers)
             {
-                var notificationName = typeof(TNotificationEvent).GetEventName();
+                var notificationName = typeof(TNotification).GetEventName();
                 if (!handlers.TryGetValue(notificationName, out var notificationHandlers))
                 {
                     notificationHandlers = new List<Action<EventHolder>>();
                     handlers.Add(notificationName, notificationHandlers);
                 }
 
-                notificationHandlers.Add(eventHolder => handler((eventHolder as EventHolder<TNotificationEvent>).Payload));
+                notificationHandlers.Add(eventHolder => handler(((EventHolder<TNotification>)eventHolder).Payload));
             }
 
-            return Task.FromResult((IWatcher)new Watcher<TNotificationEvent>(this));
+            var pendingNotifications = GetPendingNotifications<TNotification>(notificationsHub.Notifications, DateTime.Now);
+            foreach (var pendingNotification in pendingNotifications)
+            {
+                handler(((EventHolder<TNotification>)pendingNotification).Payload);
+            }
+
+            return Task.FromResult<IWatcher>(new Watcher<TNotification>(this));
         }
 
-        public Task UnwatchAsync<TNotificationEvent>()
+        public Task UnwatchAsync<TNotification>()
         {
             lock (handlers)
             {
-                var notificationName = Event<TNotificationEvent>.Name;
+                var notificationName = Event<TNotification>.Name;
                 handlers.Remove(notificationName);
             }
 
@@ -116,10 +140,10 @@ namespace Stateflows.Common.Classes
             GC.SuppressFinalize(this);
         }
 
-        protected virtual void Dispose(bool disposing)
+        private void Dispose(bool disposing)
         {
             
-            subscriptionHub.UnregisterHandler(this);
+            notificationsHub.UnregisterHandler(this);
         }
 
         ~Behavior()

@@ -79,7 +79,7 @@ namespace Stateflows.StateMachines.Engine
 
         public Tree<Vertex> VerticesTree { get; private set; } = null;
 
-        public void RebuildVerticesTree()
+        private void RebuildVerticesTree()
         {
             VerticesTree = Context.StatesTree.Translate(
                 vertexName => Graph.AllVertices[vertexName],
@@ -408,6 +408,8 @@ namespace Stateflows.StateMachines.Engine
                             // complete join
                     
                             await DoJoinAsync(edges, edge.Target);
+                            
+                            result = EventStatus.Consumed;
                         }
                     }
                     else
@@ -429,9 +431,9 @@ namespace Stateflows.StateMachines.Engine
                             //     forkEdges.Count == edge.Source.Edges.Count
                             // )
                         );
+                        
+                        result = EventStatus.Consumed;
                     }
-
-                    result = EventStatus.Consumed;
                 }
 
                 if (result == EventStatus.Consumed)
@@ -681,7 +683,9 @@ namespace Stateflows.StateMachines.Engine
                     StateHasChanged = true;
                 }
             }
-
+            
+            RebuildVerticesTree();
+            
             await DoEffectAsync<TEvent>(edge);
 
             var regions = new List<Region>();
@@ -878,25 +882,6 @@ namespace Stateflows.StateMachines.Engine
                     StateHasChanged = true;
                 }
             }
-
-            // if (edge.Target != null && enteringVertices.Any())
-            // {
-            //     var topVertex = enteringVertices.Last();
-            //
-            //     await DoInitializeCascadeAsync(topVertex, true);
-            //
-            //     // if (topVertex.Type == VertexType.FinalState)
-            //     // {
-            //     //     if (topVertex.ParentRegion is null)
-            //     //     {
-            //     //         await DoFinalizeStateMachineAsync();
-            //     //     }
-            //     //     else
-            //     //     {
-            //     //         await DoFinalizeStateAsync(topVertex.ParentRegion.ParentVertex);
-            //     //     }
-            //     // }
-            // }
             
             await Task.WhenAll(regions
                 .Where(region => region.InitialVertex != null)
@@ -920,7 +905,7 @@ namespace Stateflows.StateMachines.Engine
 
         public IStateMachine GetStateMachine(Type stateMachineType)
         {
-            var stateMachine = ServiceProvider.GetService(stateMachineType) as IStateMachine;
+            var stateMachine = ActivatorUtilities.CreateInstance(ServiceProvider, stateMachineType) as IStateMachine;
 
             return stateMachine;
         }
@@ -938,7 +923,7 @@ namespace Stateflows.StateMachines.Engine
             StateMachinesContextHolder.StateMachineContext.Value = context.StateMachine;
             StateMachinesContextHolder.ExecutionContext.Value = context;
 
-            var initializer = ServiceProvider.GetService<TDefaultInitializer>();
+            var initializer = ActivatorUtilities.CreateInstance<TDefaultInitializer>(ServiceProvider);
 
             return initializer;
         }
@@ -956,7 +941,7 @@ namespace Stateflows.StateMachines.Engine
             StateMachinesContextHolder.StateMachineContext.Value = context.StateMachine;
             StateMachinesContextHolder.ExecutionContext.Value = context;
 
-            var initializer = ServiceProvider.GetService<TInitializer>();
+            var initializer = ActivatorUtilities.CreateInstance<TInitializer>(ServiceProvider);
 
             return initializer;
         }
@@ -974,7 +959,7 @@ namespace Stateflows.StateMachines.Engine
             StateMachinesContextHolder.StateMachineContext.Value = context.StateMachine;
             StateMachinesContextHolder.ExecutionContext.Value = context;
 
-            var initializer = ServiceProvider.GetService<TFinalizer>();
+            var initializer = ActivatorUtilities.CreateInstance<TFinalizer>(ServiceProvider);
 
             return initializer;
         }
@@ -992,14 +977,13 @@ namespace Stateflows.StateMachines.Engine
             StateMachinesContextHolder.StateMachineContext.Value = context.StateMachine;
             StateMachinesContextHolder.ExecutionContext.Value = context;
 
-            var state = ServiceProvider.GetService<TState>();
+            var state = ActivatorUtilities.CreateInstance<TState>(ServiceProvider);
 
             return state;
         }
 
         public TTransition GetTransition<TTransition, TEvent>(ITransitionContext<TEvent> context)
             where TTransition : class, ITransition<TEvent>
-
         {
             ContextValues.GlobalValuesHolder.Value = context.StateMachine.Values;
             ContextValues.StateValuesHolder.Value = null;
@@ -1011,7 +995,7 @@ namespace Stateflows.StateMachines.Engine
             StateMachinesContextHolder.StateMachineContext.Value = context.StateMachine;
             StateMachinesContextHolder.ExecutionContext.Value = context;
 
-            var transition = ServiceProvider.GetService<TTransition>();
+            var transition = ActivatorUtilities.CreateInstance<TTransition>(ServiceProvider);
 
             return transition;
         }
@@ -1030,9 +1014,9 @@ namespace Stateflows.StateMachines.Engine
             StateMachinesContextHolder.StateMachineContext.Value = context.StateMachine;
             StateMachinesContextHolder.ExecutionContext.Value = context;
 
-            var transition = ServiceProvider.GetService<TTransitionGuard>();
+            var transitionGuard = ActivatorUtilities.CreateInstance<TTransitionGuard>(ServiceProvider);
 
-            return transition;
+            return transitionGuard;
         }
 
         public TTransitionEffect GetTransitionEffect<TTransitionEffect, TEvent>(ITransitionContext<TEvent> context)
@@ -1049,9 +1033,9 @@ namespace Stateflows.StateMachines.Engine
             StateMachinesContextHolder.StateMachineContext.Value = context.StateMachine;
             StateMachinesContextHolder.ExecutionContext.Value = context;
 
-            var transition = ServiceProvider.GetService<TTransitionEffect>();
+            var transitionEffect = ActivatorUtilities.CreateInstance<TTransitionEffect>(ServiceProvider);
 
-            return transition;
+            return transitionEffect;
         }
 
         public TDefaultTransition GetDefaultTransition<TDefaultTransition>(ITransitionContext<Completion> context)
@@ -1067,9 +1051,9 @@ namespace Stateflows.StateMachines.Engine
             StateMachinesContextHolder.StateMachineContext.Value = context.StateMachine;
             StateMachinesContextHolder.ExecutionContext.Value = context;
 
-            var transition = ServiceProvider.GetService<TDefaultTransition>();
+            var defaultTransition = ActivatorUtilities.CreateInstance<TDefaultTransition>(ServiceProvider);
 
-            return transition;
+            return defaultTransition;
         }
 
         public TDefaultTransitionGuard GetDefaultTransitionGuard<TDefaultTransitionGuard>(ITransitionContext<Completion> context)
@@ -1085,9 +1069,9 @@ namespace Stateflows.StateMachines.Engine
             StateMachinesContextHolder.StateMachineContext.Value = context.StateMachine;
             StateMachinesContextHolder.ExecutionContext.Value = context;
 
-            var transition = ServiceProvider.GetService<TDefaultTransitionGuard>();
+            var defaultTransitionGuard = ActivatorUtilities.CreateInstance<TDefaultTransitionGuard>(ServiceProvider);
 
-            return transition;
+            return defaultTransitionGuard;
         }
 
         public TDefaultTransitionEffect GetDefaultTransitionEffect<TDefaultTransitionEffect>(ITransitionContext<Completion> context)
@@ -1103,9 +1087,9 @@ namespace Stateflows.StateMachines.Engine
             StateMachinesContextHolder.StateMachineContext.Value = context.StateMachine;
             StateMachinesContextHolder.ExecutionContext.Value = context;
 
-            var transition = ServiceProvider.GetService<TDefaultTransitionEffect>();
+            var defaultTransitionEffect = ActivatorUtilities.CreateInstance<TDefaultTransitionEffect>(ServiceProvider);
 
-            return transition;
+            return defaultTransitionEffect;
         }
     }
 }

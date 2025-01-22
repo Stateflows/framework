@@ -4,15 +4,15 @@ using System.Collections.Generic;
 using System.Runtime.Serialization;
 using Microsoft.Extensions.DependencyInjection;
 using Stateflows.Common.Extensions;
+using Stateflows.Common.Registration.Builders;
 using Stateflows.StateMachines.Models;
 using Stateflows.StateMachines.Exceptions;
 using Stateflows.StateMachines.Registration.Builders;
 using Stateflows.StateMachines.Registration.Interfaces;
-using Stateflows.Common.Registration.Builders;
 
 namespace Stateflows.StateMachines.Registration
 {
-    internal class StateMachinesRegister
+    internal class StateMachinesRegister : IStateMachinesRegister
     {
         private readonly StateflowsBuilder stateflowsBuilder;
 
@@ -66,15 +66,15 @@ namespace Stateflows.StateMachines.Registration
                 throw new StateMachineDefinitionException($"State machine '{stateMachineName}' with version '{version}' is already registered", new StateMachineClass(stateMachineName));
             }
 
-            var builder = new StateMachineBuilderBuilder(stateMachineName, version, stateflowsBuilder, Services);
+            var builder = new StateMachineBuilder(stateMachineName, version, stateflowsBuilder, Services);
             buildAction(builder);
-            builder.Result.Build();
+            builder.Graph.Build();
 
-            StateMachines.Add(key, builder.Result);
+            StateMachines.Add(key, builder.Graph);
 
             if (IsNewestVersion(stateMachineName, version))
             {
-                StateMachines[currentKey] = builder.Result;
+                StateMachines[currentKey] = builder.Graph;
             }
         }
 
@@ -89,71 +89,51 @@ namespace Stateflows.StateMachines.Registration
                 throw new StateMachineDefinitionException($"State machine '{stateMachineName}' with version '{version}' is already registered", new StateMachineClass(stateMachineName));
             }
 
-            Services.AddServiceType(stateMachineType);
-
             var sm = FormatterServices.GetUninitializedObject(stateMachineType) as IStateMachine;
 
-            var builder = new StateMachineBuilderBuilder(stateMachineName, version, stateflowsBuilder, Services);
-            builder.Result.StateMachineType = stateMachineType;
+            var builder = new StateMachineBuilder(stateMachineName, version, stateflowsBuilder, Services);
+            builder.Graph.StateMachineType = stateMachineType;
             sm.Build(builder);
-            builder.Result.Build();
+            builder.Graph.Build();
 
-            StateMachines.Add(key, builder.Result);
+            StateMachines.Add(key, builder.Graph);
 
             if (IsNewestVersion(stateMachineName, version))
             {
-                StateMachines[currentKey] = builder.Result;
+                StateMachines[currentKey] = builder.Graph;
             }
         }
 
         [DebuggerHidden]
-        public void AddStateMachine<TStateMachine>(string stateMachineName, int version = 1)
-            where TStateMachine : IStateMachine
-            => AddStateMachine(stateMachineName, version, typeof(TStateMachine));
+        public void AddStateMachine<TStateMachine>(string stateMachineName = null, int version = 1)
+            where TStateMachine : class, IStateMachine
+            => AddStateMachine(stateMachineName ?? StateMachine<TStateMachine>.Name, version, typeof(TStateMachine));
 
         [DebuggerHidden]
-        public void AddGlobalInterceptor(StateMachineInterceptorFactory interceptorFactory)
+        public void AddInterceptor(StateMachineInterceptorFactory interceptorFactory)
             => GlobalInterceptorFactories.Add(interceptorFactory);
 
         [DebuggerHidden]
-        public void AddGlobalInterceptor<TInterceptor>()
+        public void AddInterceptor<TInterceptor>()
             where TInterceptor : class, IStateMachineInterceptor
-        {
-            Services.AddServiceType<TInterceptor>();
-            AddGlobalInterceptor(serviceProvider => serviceProvider.GetRequiredService<TInterceptor>());
-        }
+            =>  AddInterceptor(serviceProvider => ActivatorUtilities.CreateInstance<TInterceptor>(serviceProvider));
 
         [DebuggerHidden]
-        public void AddGlobalExceptionHandler(StateMachineExceptionHandlerFactory exceptionHandlerFactory)
+        public void AddExceptionHandler(StateMachineExceptionHandlerFactory exceptionHandlerFactory)
             => GlobalExceptionHandlerFactories.Add(exceptionHandlerFactory);
 
         [DebuggerHidden]
-        public void AddGlobalExceptionHandler<TExceptionHandler>()
+        public void AddExceptionHandler<TExceptionHandler>()
             where TExceptionHandler : class, IStateMachineExceptionHandler
-        {
-            Services.AddServiceType<TExceptionHandler>();
-            AddGlobalExceptionHandler(serviceProvider => serviceProvider.GetRequiredService<TExceptionHandler>());
-        }
+            =>  AddExceptionHandler(serviceProvider => ActivatorUtilities.CreateInstance<TExceptionHandler>(serviceProvider));
 
         [DebuggerHidden]
-        public void AddGlobalObserver(StateMachineObserverFactory observerFactory)
+        public void AddObserver(StateMachineObserverFactory observerFactory)
             => GlobalObserverFactories.Add(observerFactory);
 
         [DebuggerHidden]
-        public void AddGlobalObserver<TObserver>()
+        public void AddObserver<TObserver>()
             where TObserver : class, IStateMachineObserver
-        {
-            Services.AddServiceType<TObserver>();
-            AddGlobalObserver(serviceProvider => serviceProvider.GetRequiredService<TObserver>());
-        }
-
-        [DebuggerHidden]
-        public void Validate(IEnumerable<BehaviorClass> behaviorClasses)
-        {
-            foreach (var stateMachine in StateMachines.Values)
-            {
-                stateMachine.Validate(behaviorClasses);
-            }
-        }
+            =>  AddObserver(serviceProvider => ActivatorUtilities.CreateInstance<TObserver>(serviceProvider));
     }
 }

@@ -20,7 +20,6 @@ namespace Stateflows.Extensions.PlantUml.Classes
             => Task.FromResult(HandleEvent(context.Event, () => context.Activity.Inspection.GetPlantUml()));
 
         private EventStatus HandleEvent<TEvent>(TEvent @event, Func<string> plantUmlGenerator)
-
         {
             if (@event is PlantUmlInfoRequest request)
             {

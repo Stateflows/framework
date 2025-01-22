@@ -2,6 +2,6 @@
 {
     public interface IStateSubscription<out TReturn>
     {
-        TReturn AddSubscription<TNotificationEvent>();
+        TReturn AddSubscription<TNotification>();
     }
 }

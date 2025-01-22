@@ -69,6 +69,38 @@ namespace StateMachine.IntegrationTests.Tests
                         .AddFinalState("final")
                     )
                         
+                    .AddStateMachine("not-joined", b => b
+                        .AddExecutionSequenceObserver()
+                        .AddInitialState("state1", b => b
+                            .AddTransition<SomeEvent, Fork>()
+                        )
+                        .AddFork(b => b
+                            .AddTransition("stateA")
+                            .AddTransition("stateB")
+                        )
+                        .AddOrthogonalState("orthogonal", b => b
+                            .AddRegion(b => b
+                                .AddState("stateA", b => b
+                                    .AddDefaultTransition<Join>()
+                                )
+                            )
+                            .AddRegion(b => b
+                                .AddState("stateB", b => b
+                                    .AddDefaultTransition<Join>()
+                                )
+                            )
+                            .AddRegion(b => b
+                                .AddState("stateC", b => b
+                                    .AddDefaultTransition<Join>()
+                                )
+                            )
+                        )
+                        .AddJoin(b => b
+                            .AddTransition("final")
+                        )
+                        .AddFinalState("final")
+                    )
+                        
                     .AddStateMachine("nonExitedRegion", b => b
                         .AddExecutionSequenceObserver()
                         .AddInitialState("state1", b => b
@@ -480,6 +512,39 @@ namespace StateMachine.IntegrationTests.Tests
 
             Assert.AreEqual(EventStatus.Consumed, status);
             Assert.AreEqual("final", currentState);
+        }
+
+        [TestMethod]
+        public async Task NotJoined()
+        {
+            var status = EventStatus.Rejected;
+            string currentState = "";
+
+            if (StateMachineLocator.TryLocateStateMachine(new StateMachineId("not-joined", "x"), out var sm))
+            {
+                status = (await sm.SendAsync(new SomeEvent())).Status;
+
+                var tree = (await sm.GetCurrentStateAsync()).Response.StatesTree;
+                currentState = tree.Value;
+            }
+            
+            ExecutionSequence.Verify(b => b
+                .StateMachineInitialize()
+                .StateEntry("state1")
+                .StateExit("state1")
+                .TransitionEffect(Event<SomeEvent>.Name, "state1", Fork.Name)
+                .StateEntry(Fork.Name)
+                .StateExit(Fork.Name)
+                .DefaultTransitionEffect(Fork.Name, "stateA")
+                .StateEntry("orthogonal")
+                .StateInitialize("orthogonal")
+                .StateEntry("stateA")
+                .DefaultTransitionEffect(Fork.Name, "stateB")
+                .StateEntry("stateB")
+            );
+
+            Assert.AreEqual(EventStatus.Consumed, status);
+            Assert.AreEqual("orthogonal", currentState);
         }
 
         [TestMethod]

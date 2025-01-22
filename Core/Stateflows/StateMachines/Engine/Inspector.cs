@@ -50,7 +50,6 @@ namespace Stateflows.StateMachines.Engine
 
         public IDictionary<Edge, TransitionInspection> InspectionTransitions { get; } = new Dictionary<Edge, TransitionInspection>();
 
-
         public IStateMachineInspection inspection;
 
         public IStateMachineInspection Inspection => inspection ??= new StateMachineInspection(Executor);

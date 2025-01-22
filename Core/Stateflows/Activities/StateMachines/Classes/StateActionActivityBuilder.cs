@@ -26,17 +26,17 @@ namespace Stateflows.Activities.StateMachines.Interfaces
             return this;
         }
 
-        public StateActionActivityBuilder AddSubscription<TNotificationEvent>()
+        public StateActionActivityBuilder AddSubscription<TNotification>()
         {
-            Notifications.Add(typeof(TNotificationEvent));
+            Notifications.Add(typeof(TNotification));
 
             return this;
         }
 
-        IStateActionActivityBuilder IStateSubscription<IStateActionActivityBuilder>.AddSubscription<TNotificationEvent>()
-            => AddSubscription<TNotificationEvent>();
+        IStateActionActivityBuilder IStateSubscription<IStateActionActivityBuilder>.AddSubscription<TNotification>()
+            => AddSubscription<TNotification>();
 
-        IInitializedStateActionActivityBuilder IStateSubscription<IInitializedStateActionActivityBuilder>.AddSubscription<TNotificationEvent>()
-            => AddSubscription<TNotificationEvent>();
+        IInitializedStateActionActivityBuilder IStateSubscription<IInitializedStateActionActivityBuilder>.AddSubscription<TNotification>()
+            => AddSubscription<TNotification>();
     }
 }

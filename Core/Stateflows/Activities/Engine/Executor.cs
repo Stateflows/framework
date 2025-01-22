@@ -12,12 +12,12 @@ using Stateflows.Common.Utilities;
 using Stateflows.Common.Interfaces;
 using Stateflows.Common.Exceptions;
 using Stateflows.Common.Subscription;
+using Stateflows.Activities.Enums;
 using Stateflows.Activities.Models;
 using Stateflows.Activities.Events;
 using Stateflows.Activities.Streams;
 using Stateflows.Activities.Registration;
 using Stateflows.Activities.Context.Classes;
-using Stateflows.Activities.Enums;
 
 namespace Stateflows.Activities.Engine
 {
@@ -47,7 +47,7 @@ namespace Stateflows.Activities.Engine
         public readonly NodeScope NodeScope;
         private readonly ILogger<Executor> Logger;
 
-        public readonly NodeType[] CancellableTypes = new NodeType[]
+        private static readonly NodeType[] CancellableTypes = new NodeType[]
         {
             NodeType.Action,
             NodeType.Decision,
@@ -71,14 +71,14 @@ namespace Stateflows.Activities.Engine
             NodeType.IterativeActivity
         };
 
-        public static readonly NodeType[] SystemTypes = new NodeType[]
+        private static readonly NodeType[] SystemTypes = new NodeType[]
         {
             NodeType.Initial,
             NodeType.Input,
             NodeType.Output
         };
 
-        public static readonly NodeType[] interactiveNodeTypes = new NodeType[]
+        private static readonly NodeType[] InteractiveNodeTypes = new NodeType[]
         {
             NodeType.AcceptEventAction,
             NodeType.TimeEventAction,
@@ -778,7 +778,7 @@ namespace Stateflows.Activities.Engine
             if (activated)
             {
                 if (
-                    interactiveNodeTypes.Contains(node.Type) &&
+                    InteractiveNodeTypes.Contains(node.Type) &&
                     (
                         Context.EventHolder == null ||
                         !node.ActualEventTypes.Contains(Context.EventHolder.PayloadType)
@@ -799,7 +799,7 @@ namespace Stateflows.Activities.Engine
 
                 await node.Action.WhenAll(actionContext);
 
-                if (interactiveNodeTypes.Contains(node.Type))
+                if (InteractiveNodeTypes.Contains(node.Type))
                 {
                     var @event = Context.EventHolder;
 
@@ -1045,7 +1045,7 @@ namespace Stateflows.Activities.Engine
 
         public IActivity GetActivity(Type activityType)
         {
-            var activity = NodeScope.ServiceProvider.GetService(activityType) as IActivity;
+            var activity = ActivatorUtilities.CreateInstance(NodeScope.ServiceProvider, activityType) as IActivity;
 
             return activity;
         }

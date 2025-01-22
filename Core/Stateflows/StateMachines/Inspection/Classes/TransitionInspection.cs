@@ -22,6 +22,8 @@ namespace Stateflows.StateMachines.Inspection.Classes
 
         public bool Active { get; set; }
 
+        public bool IsElse => Edge.IsElse;
+
         private IActionInspection guard;
 
         public IActionInspection Guard

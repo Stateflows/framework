@@ -8,23 +8,13 @@ namespace Stateflows.StateMachines
 {
     public interface IStateMachineBehavior : IBehavior
     {
-        Task<RequestResult<StateMachineInfo>> GetCurrentStateAsync()
+        public Task<RequestResult<StateMachineInfo>> GetCurrentStateAsync()
             => RequestAsync(new StateMachineInfoRequest());
 
-        async Task<IWatcher> WatchCurrentStateAsync(Action<StateMachineInfo> handler, bool immediateRequest = true)
-        {
-            var watcher = await WatchAsync(handler);
-
-            if (immediateRequest)
-            {
-                var result = await GetCurrentStateAsync();
-                if (result.Status == EventStatus.Consumed)
-                {
-                    _ = Task.Run(() => handler(result.Response));
-                }
-            }
-
-            return watcher;
-        }
+        public Task<IWatcher> WatchCurrentStateAsync(Action<StateMachineInfo> handler)
+            => WatchAsync(handler);
+        
+        public Task<IWatcher> RequestAndWatchCurrentStateAsync(Action<StateMachineInfo> handler)
+            => RequestAndWatchAsync(new StateMachineInfoRequest(), handler);
     }
 }

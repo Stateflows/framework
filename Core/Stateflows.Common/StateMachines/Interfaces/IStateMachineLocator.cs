@@ -2,6 +2,6 @@
 {
     public interface IStateMachineLocator
     {
-        bool TryLocateStateMachine(StateMachineId id, out IStateMachineBehavior stateMachine);
+        public bool TryLocateStateMachine(StateMachineId id, out IStateMachineBehavior stateMachine);
     }
 }

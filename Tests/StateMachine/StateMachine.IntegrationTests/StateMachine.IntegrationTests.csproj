@@ -9,6 +9,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="FluentValidation" Version="11.11.0" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.11.1" />
     <PackageReference Include="MSTest.TestAdapter" Version="3.6.0" />
     <PackageReference Include="MSTest.TestFramework" Version="3.6.0" />
@@ -23,6 +24,7 @@
     <ProjectReference Include="..\..\..\Core\Stateflows.Testing\Stateflows.Testing.csproj" />
     <ProjectReference Include="..\..\..\Core\Stateflows\Stateflows.csproj" />
     <ProjectReference Include="..\..\..\Examples\Examples.Common\Examples.Common.csproj" />
+    <ProjectReference Include="..\..\..\Extensions\Stateflows.Extensions.FluentValidation\Stateflows.Extensions.FluentValidation.csproj" />
     <ProjectReference Include="..\..\..\Extensions\Stateflows.Extensions.OneOf\Stateflows.Extensions.OneOf.csproj" />
     <ProjectReference Include="..\..\..\Extensions\Stateflows.Extensions.PlantUml\Stateflows.Extensions.PlantUml.csproj" />
   </ItemGroup>

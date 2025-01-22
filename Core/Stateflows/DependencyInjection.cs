@@ -110,5 +110,20 @@ namespace Stateflows
 
             return stateflowsBuilder;
         }
+
+        public static IStateflowsBuilder AddValidator<TValidator>(this IStateflowsBuilder stateflowsBuilder)
+            where TValidator : class, IStateflowsValidator
+        {
+            (stateflowsBuilder as IStateflowsClientBuilder).AddValidator<TValidator>();
+        
+            return stateflowsBuilder;
+        }
+        
+        public static IStateflowsBuilder AddValidator(this IStateflowsBuilder stateflowsBuilder, ValidatorFactory validatorFactory)
+        {
+            (stateflowsBuilder as IStateflowsClientBuilder).AddValidator(validatorFactory);
+        
+            return stateflowsBuilder;
+        }
     }
 }

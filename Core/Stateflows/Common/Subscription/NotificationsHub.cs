@@ -12,10 +12,7 @@ namespace Stateflows.Common.Subscription
     {
         private readonly CancellationTokenSource CancellationTokenSource = new CancellationTokenSource();
 
-        private readonly Dictionary<BehaviorId, List<EventHolder>> notifications = new Dictionary<BehaviorId, List<EventHolder>>();
-
-        public Dictionary<BehaviorId, List<EventHolder>> Notifications
-            => notifications;
+        public Dictionary<BehaviorId, List<EventHolder>> Notifications { get; } = new Dictionary<BehaviorId, List<EventHolder>>();
 
         private readonly List<INotificationHandler> Handlers = new List<INotificationHandler>();
 
@@ -35,8 +32,6 @@ namespace Stateflows.Common.Subscription
             {
                 await handler.HandleNotificationAsync(eventHolder);
             }
-            //var tasks = Handlers.Select(h => h.HandleNotificationAsync(eventHolder)).ToArray();
-            //return Task.WhenAll(tasks);
         }   
 
         public Task PublishAsync(EventHolder eventHolder)
@@ -44,7 +39,8 @@ namespace Stateflows.Common.Subscription
 
         public async Task PublishRangeAsync(IEnumerable<EventHolder> eventHolders)
         {
-            var holdersBySenderIds = eventHolders
+            var eventHoldersArray = eventHolders as EventHolder[] ?? eventHolders.ToArray();
+            var holdersBySenderIds = eventHoldersArray
                 .Where(h => h.SenderId != null)
                 .GroupBy(h => (BehaviorId)h.SenderId);
 
@@ -62,22 +58,20 @@ namespace Stateflows.Common.Subscription
                 }
             }
 
-            foreach (var eventHolder in eventHolders)
+            foreach (var eventHolder in eventHoldersArray)
             {
                 await RunHandlersAsync(eventHolder);
             }
-
-            //return Task.WhenAll(eventHolders.Select(h => RunHandlersAsync(h)).ToArray());
         }
 
         public Task StartAsync(CancellationToken cancellationToken)
         {
-            _ = Task.Run(() => TimingLoop(CancellationTokenSource.Token));
+            _ = Task.Run(() => TimingLoop(CancellationTokenSource.Token), cancellationToken);
 
             return Task.CompletedTask;
         }
 
-        private DateTime GetCurrentTick()
+        private static DateTime GetCurrentTick()
             => new DateTime(DateTime.Now.Year, DateTime.Now.Month, DateTime.Now.Day, DateTime.Now.Hour, DateTime.Now.Minute, 0);
 
         private async Task TimingLoop(CancellationToken cancellationToken)
@@ -97,7 +91,7 @@ namespace Stateflows.Common.Subscription
                         var date = DateTime.Now.AddMinutes(-1);
                         foreach (var behaviorNotifications in Notifications.Values)
                         {
-                            behaviorNotifications.RemoveAll(notification => notification.SentAt <= date);
+                            behaviorNotifications.RemoveAll(notification => notification.SentAt.AddSeconds(notification.TimeToLive) <= date);
                         }
 
                         var emptyIds = Notifications
@@ -112,7 +106,7 @@ namespace Stateflows.Common.Subscription
                     }
                 }
 
-                await Task.Delay(1000);
+                await Task.Delay(1000, cancellationToken);
             }
         }
 

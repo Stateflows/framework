@@ -31,12 +31,12 @@ namespace StateMachine.IntegrationTests.Classes.StateMachines
 
     internal class StateA : IStateEntry, IStateExit
     {
-        private readonly IVertexContext vertexContext;
+        private readonly IStateContext stateContext;
         private readonly IStateMachineContext stateMachineContext;
         private readonly Stateflows.StateMachines.IExecutionContext executionContext;
-        public StateA(IVertexContext vertexContext, IStateMachineContext stateMachineContext, Stateflows.StateMachines.IExecutionContext executionContext)
+        public StateA(IStateContext stateContext, IStateMachineContext stateMachineContext, Stateflows.StateMachines.IExecutionContext executionContext)
         {
-            this.vertexContext = vertexContext;
+            this.stateContext = stateContext;
             this.stateMachineContext = stateMachineContext;
             this.executionContext = executionContext;
         }

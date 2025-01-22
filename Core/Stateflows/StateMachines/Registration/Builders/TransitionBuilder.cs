@@ -28,9 +28,10 @@ namespace Stateflows.StateMachines.Registration.Builders
         IElseDefaultTransitionBuilder,
         IBehaviorBuilder,
         IForwardedEventBuilder<TEvent>,
-        IInternal
+        IInternal,
+        IEdgeBuilder
     {
-        public Edge Edge;
+        public Edge Edge { get; private set; }
 
         private readonly IEnumerable<VertexType> transitiveVertexTypes = new HashSet<VertexType>() {
             VertexType.Junction,
