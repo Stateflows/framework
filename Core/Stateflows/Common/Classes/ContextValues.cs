@@ -6,7 +6,8 @@ namespace Stateflows.Common.Classes
 {
     public static class ContextValues
     {
-        internal static readonly AsyncLocal<IContextValues> GlobalValuesHolder = new AsyncLocal<IContextValues>();
+        internal static AsyncLocal<IContextValues> GlobalValuesHolder { get; } = new AsyncLocal<IContextValues>();
+        
         public static IContextValues GlobalValues
             => GlobalValuesHolder.Value ??= new ContextValuesCollection(new Dictionary<string, string>());
 

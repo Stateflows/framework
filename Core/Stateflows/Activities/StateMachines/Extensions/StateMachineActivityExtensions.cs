@@ -5,7 +5,6 @@ using System.Threading.Tasks;
 using Stateflows.Common;
 using Stateflows.Common.Classes;
 using Stateflows.Common.Utilities;
-using Stateflows.Activities.Events;
 using Stateflows.Activities.Extensions;
 using Stateflows.Activities.StateMachines.Interfaces;
 using Stateflows.StateMachines.Exceptions;
@@ -32,7 +31,7 @@ namespace Stateflows.Activities
                     request.Events.AddRange(new EventHolder[]
                     {
                         integratedActivityBuilder.GetSubscribe(context.StateMachine.Id).ToEventHolder(),
-                        new SetGlobalValues() { Values = (context.StateMachine.Values as ContextValuesCollection).Values }.ToEventHolder(),
+                        new SetGlobalValues() { Values = ((ContextValuesCollection)context.StateMachine.Values).Values }.ToEventHolder(),
                         initializationEvent,
                         integratedActivityBuilder.GetUnsubscribe(context.StateMachine.Id).ToEventHolder()
                     });

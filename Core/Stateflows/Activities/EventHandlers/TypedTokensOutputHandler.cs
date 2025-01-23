@@ -1,12 +1,9 @@
 ﻿using System;
-using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
-using Stateflows.Activities.Events;
 using Stateflows.Common;
 using Stateflows.Activities.Extensions;
 using Stateflows.Activities.Inspection.Interfaces;
-using Stateflows.StateMachines;
 
 namespace Stateflows.Activities.EventHandlers
 {
@@ -17,7 +14,6 @@ namespace Stateflows.Activities.EventHandlers
         public Task<EventStatus> TryHandleEventAsync<TEvent>(IEventInspectionContext<TEvent> context)
         {
             var eventType = context.Event.GetType();
-            Debug.WriteLine("--------------> dupa");
             if (eventType.IsGenericType && eventType.GetGenericTypeDefinition() == typeof(TokensOutputRequest<>))
             {
                 var tokenType = eventType.GetGenericArguments().First();
@@ -29,10 +25,6 @@ namespace Stateflows.Activities.EventHandlers
                 var response = Activator.CreateInstance(responseType) as TokensOutputEvent;
                 response!.Tokens.AddRange(result);
                 ResponseHolder.Respond(context.Event, response.ToTypedEventHolder());
-                // typeof(IRequest<>)
-                //     .GetMethod("Respond")!
-                //     .MakeGenericMethod(responseType)
-                //     .Invoke(context.Event, new object[] { response });
                 
                 return Task.FromResult(EventStatus.Consumed);
             }

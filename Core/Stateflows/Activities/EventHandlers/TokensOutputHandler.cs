@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Threading.Tasks;
-using Stateflows.Activities.Events;
 using Stateflows.Common;
 using Stateflows.Activities.Extensions;
 using Stateflows.Activities.Inspection.Interfaces;

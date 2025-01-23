@@ -3,7 +3,6 @@ using System.Linq;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Stateflows.Activities;
-using Stateflows.Activities.Events;
 
 namespace Stateflows.Common.Activities.Classes
 {

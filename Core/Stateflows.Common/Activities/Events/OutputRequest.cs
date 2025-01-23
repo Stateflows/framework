@@ -1,6 +1,6 @@
 using Stateflows.Common;
 
-namespace Stateflows.Activities.Events
+namespace Stateflows.Activities
 {
     public class TokensOutputRequest : IRequest<TokensOutput>
     { }

@@ -7,7 +7,6 @@ using System.ComponentModel.DataAnnotations;
 using Microsoft.Extensions.DependencyInjection;
 using Stateflows.Common;
 using Stateflows.Common.Interfaces;
-using Stateflows.Activities.Events;
 using Stateflows.Activities.Registration;
 using Stateflows.Activities.Context.Classes;
 

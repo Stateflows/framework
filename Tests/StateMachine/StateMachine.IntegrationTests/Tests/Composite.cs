@@ -1,7 +1,7 @@
-﻿using Stateflows.Common;
+﻿using System.Diagnostics;
+using Stateflows.Common;
 using Stateflows.StateMachines.Events;
 using StateMachine.IntegrationTests.Utils;
-using System.Diagnostics;
 
 namespace StateMachine.IntegrationTests.Tests
 {
