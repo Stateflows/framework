@@ -6,7 +6,7 @@ namespace Stateflows.Common.Tenant
 {
     internal class DefaultTenantProvider : IStateflowsTenantProvider
     {
-        public readonly static string TenantId = "host";
+        public static readonly string TenantId = "host";
 
         public Task<string> GetCurrentTenantIdAsync()
             => Task.FromResult(TenantId);

@@ -2,7 +2,6 @@
 using System.Diagnostics;
 using System.Collections.Generic;
 using Microsoft.Extensions.DependencyInjection;
-using Stateflows.Common;
 using Stateflows.Common.Interfaces;
 using Stateflows.Common.Initializer;
 using Stateflows.Common.Registration.Builders;
@@ -18,7 +17,7 @@ namespace Stateflows.Activities
 {
     public static class ActivitiesDependencyInjection
     {
-        private readonly static Dictionary<IStateflowsBuilder, ActivitiesRegister> Registers = new Dictionary<IStateflowsBuilder, ActivitiesRegister>();
+        private static readonly Dictionary<IStateflowsBuilder, ActivitiesRegister> Registers = new Dictionary<IStateflowsBuilder, ActivitiesRegister>();
 
         [DebuggerHidden]
         public static IStateflowsBuilder AddActivities(this IStateflowsBuilder stateflowsBuilder, ActivitiesBuildAction buildAction = null)

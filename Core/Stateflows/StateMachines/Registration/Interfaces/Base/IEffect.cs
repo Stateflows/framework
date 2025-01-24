@@ -10,8 +10,24 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
 {
     public interface IEffect<out TEvent, out TReturn>
     {
+        /// <summary>
+        /// Adds an asynchronous effect function to the current transition.<br/>
+        /// Use the following pattern to implement function:
+        /// <code>async c => {
+        ///     // function logic here; transition context is available via c parameter
+        /// }</code>
+        /// </summary>
+        /// <param name="effectAsync">Asynchronous effect function</param>
         TReturn AddEffect(Func<ITransitionContext<TEvent>, Task> effectAsync);
-        
+
+        /// <summary>
+        /// Adds a synchronous effect function to the current transition.<br/>
+        /// Use the following pattern to implement function:
+        /// <code>c => {
+        ///     // function logic here; transition context is available via c parameter
+        /// }</code>
+        /// </summary>
+        /// <param name="effect">Synchronous effect function</param>
         [DebuggerHidden]
         public TReturn AddEffect(Action<ITransitionContext<TEvent>> effect)
             => AddEffect(effect
@@ -19,10 +35,19 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
                 .ToAsync()
             );
 
+        /// <summary>
+        /// Adds a typed effect handler to the current transition.
+        /// </summary>
+        /// <typeparam name="TEffect">The type of the effect handler.</typeparam>
         TReturn AddEffect<TEffect>()
             where TEffect : class, ITransitionEffect<TEvent>
             => AddEffect(c => ((BaseContext)c).Context.Executor.GetTransitionEffect<TEffect, TEvent>(c)?.EffectAsync(c.Event));
 
+        /// <summary>
+        /// Adds multiple typed effect handlers to the current transition.
+        /// </summary>
+        /// <typeparam name="TEffect1">The type of the first effect handler.</typeparam>
+        /// <typeparam name="TEffect2">The type of the second effect handler.</typeparam>
         TReturn AddEffects<TEffect1, TEffect2>()
             where TEffect1 : class, ITransitionEffect<TEvent>
             where TEffect2 : class, ITransitionEffect<TEvent>
@@ -31,6 +56,12 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
             return AddEffect<TEffect2>();
         }
 
+        /// <summary>
+        /// Adds multiple typed effect handlers to the current transition.
+        /// </summary>
+        /// <typeparam name="TEffect1">The type of the first effect handler.</typeparam>
+        /// <typeparam name="TEffect2">The type of the second effect handler.</typeparam>
+        /// <typeparam name="TEffect3">The type of the third effect handler.</typeparam>
         TReturn AddEffects<TEffect1, TEffect2, TEffect3>()
             where TEffect1 : class, ITransitionEffect<TEvent>
             where TEffect2 : class, ITransitionEffect<TEvent>
@@ -40,6 +71,13 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
             return AddEffect<TEffect3>();
         }
 
+        /// <summary>
+        /// Adds multiple typed effect handlers to the current transition.
+        /// </summary>
+        /// <typeparam name="TEffect1">The type of the first effect handler.</typeparam>
+        /// <typeparam name="TEffect2">The type of the second effect handler.</typeparam>
+        /// <typeparam name="TEffect3">The type of the third effect handler.</typeparam>
+        /// <typeparam name="TEffect4">The type of the fourth effect handler.</typeparam>
         TReturn AddEffects<TEffect1, TEffect2, TEffect3, TEffect4>()
             where TEffect1 : class, ITransitionEffect<TEvent>
             where TEffect2 : class, ITransitionEffect<TEvent>
@@ -50,6 +88,14 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
             return AddEffect<TEffect4>();
         }
 
+        /// <summary>
+        /// Adds multiple typed effect handlers to the current transition.
+        /// </summary>
+        /// <typeparam name="TEffect1">The type of the first effect handler.</typeparam>
+        /// <typeparam name="TEffect2">The type of the second effect handler.</typeparam>
+        /// <typeparam name="TEffect3">The type of the third effect handler.</typeparam>
+        /// <typeparam name="TEffect4">The type of the fourth effect handler.</typeparam>
+        /// <typeparam name="TEffect5">The type of the fifth effect handler.</typeparam>
         TReturn AddEffects<TEffect1, TEffect2, TEffect3, TEffect4, TEffect5>()
             where TEffect1 : class, ITransitionEffect<TEvent>
             where TEffect2 : class, ITransitionEffect<TEvent>

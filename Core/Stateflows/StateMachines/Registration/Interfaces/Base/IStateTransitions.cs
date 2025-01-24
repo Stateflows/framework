@@ -7,7 +7,7 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
     {
         #region AddTransition
         /// <summary>
-        /// Adds transition triggered by <see cref="TEvent"/> coming from current state.<br/>
+        /// Adds transition triggered by TEvent coming from current state.<br/>
         /// <a href="https://github.com/Stateflows/framework/wiki/Transition">Transitions</a> are triggered by events sent to State Machine and are changing its state.
         /// <list type="number">
         /// <item>
@@ -26,11 +26,16 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         /// </summary>
         /// <typeparam name="TEvent">Event class</typeparam>
         /// <param name="targetStateName">Target state name</param>
-        /// <param name="transitionBuildAction">Transition build action</param>
+        /// <param name="transitionBuildAction">Transition build action<br/>
+        /// Use the following pattern to implement build action:
+        /// <code>
+        /// b => b
+        ///     . // Use . to see available builder methods
+        /// </code></param>
         TReturn AddTransition<TEvent>(string targetStateName, TransitionBuildAction<TEvent> transitionBuildAction = null);
-        
+
         /// <summary>
-        /// Adds transition triggered by <see cref="TEvent"/> coming from current state.<br/>
+        /// Adds transition triggered by TEvent coming from current state.<br/>
         /// <a href="https://github.com/Stateflows/framework/wiki/Transition">Transitions</a> are triggered by events sent to State Machine and are changing its state.
         /// <list type="number">
         /// <item>
@@ -56,22 +61,35 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         /// </typeparam>
         /// <typeparam name="TTargetState">Target state class; must implement at least one of the following interfaces:
         /// <list type="bullet">
+        /// <item><see cref="IState"/></item>
         /// <item><see cref="IStateEntry"/></item>
         /// <item><see cref="IStateExit"/></item>
+        /// <item><see cref="ICompositeState"/></item>
         /// <item><see cref="ICompositeStateEntry"/></item>
         /// <item><see cref="ICompositeStateExit"/></item>
         /// <item><see cref="ICompositeStateInitialization"/></item>
         /// <item><see cref="ICompositeStateFinalization"/></item>
+        /// <item><see cref="IOrthogonalState"/></item>
+        /// <item><see cref="IOrthogonalStateEntry"/></item>
+        /// <item><see cref="IOrthogonalStateExit"/></item>
+        /// <item><see cref="IOrthogonalStateInitialization"/></item>
+        /// <item><see cref="IOrthogonalStateFinalization"/></item>
         /// </list>
         /// </typeparam>
+        /// <param name="transitionBuildAction">Transition build action<br/>
+        /// Use the following pattern to implement build action:
+        /// <code>
+        /// b => b
+        ///     . // Use . to see available builder methods
+        /// </code></param>
         [DebuggerHidden]
-        public TReturn AddTransition<TEvent, TTransition, TTargetState>()
+        public TReturn AddTransition<TEvent, TTransition, TTargetState>(TransitionBuildAction<TEvent> transitionBuildAction = null)
             where TTransition : class, ITransition<TEvent>
             where TTargetState : class, IVertex
-            => AddTransition<TEvent, TTransition>(State<TTargetState>.Name);
+            => AddTransition<TEvent, TTransition>(State<TTargetState>.Name, transitionBuildAction);
 
         /// <summary>
-        /// Adds transition triggered by <see cref="TEvent"/> coming from current state.<br/>
+        /// Adds transition triggered by TEvent coming from current state.<br/>
         /// <a href="https://github.com/Stateflows/framework/wiki/Transition">Transitions</a> are triggered by events sent to State Machine and are changing its state.
         /// <list type="number">
         /// <item>
@@ -96,16 +114,26 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         /// </list>
         /// </typeparam>
         /// <param name="targetStateName">Target state name</param>
+        /// <param name="transitionBuildAction">Transition build action<br/>
+        /// Use the following pattern to implement build action:
+        /// <code>
+        /// b => b
+        ///     . // Use . to see available builder methods
+        /// </code></param>
         [DebuggerHidden]
-        public TReturn AddTransition<TEvent, TTransition>(string targetStateName)
+        public TReturn AddTransition<TEvent, TTransition>(string targetStateName, TransitionBuildAction<TEvent> transitionBuildAction = null)
             where TTransition : class, ITransition<TEvent>
             => AddTransition<TEvent>(
                 targetStateName,
-                t => t.AddTransitionEvents<TTransition, TEvent>()
+                b =>
+                {
+                    b.AddTransitionEvents<TTransition, TEvent>();
+                    transitionBuildAction?.Invoke(b);
+                }
             );
 
         /// <summary>
-        /// Adds transition triggered by <see cref="TEvent"/> coming from current state.<br/>
+        /// Adds transition triggered by TEvent coming from current state.<br/>
         /// <a href="https://github.com/Stateflows/framework/wiki/Transition">Transitions</a> are triggered by events sent to State Machine and are changing its state.
         /// <list type="number">
         /// <item>
@@ -125,15 +153,27 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         /// <typeparam name="TEvent">Event class</typeparam>
         /// <typeparam name="TTargetState">Target state class; must implement at least one of the following interfaces:
         /// <list type="bullet">
+        /// <item><see cref="IState"/></item>
         /// <item><see cref="IStateEntry"/></item>
         /// <item><see cref="IStateExit"/></item>
+        /// <item><see cref="ICompositeState"/></item>
         /// <item><see cref="ICompositeStateEntry"/></item>
         /// <item><see cref="ICompositeStateExit"/></item>
         /// <item><see cref="ICompositeStateInitialization"/></item>
         /// <item><see cref="ICompositeStateFinalization"/></item>
+        /// <item><see cref="IOrthogonalState"/></item>
+        /// <item><see cref="IOrthogonalStateEntry"/></item>
+        /// <item><see cref="IOrthogonalStateExit"/></item>
+        /// <item><see cref="IOrthogonalStateInitialization"/></item>
+        /// <item><see cref="IOrthogonalStateFinalization"/></item>
         /// </list>
         /// </typeparam>
-        /// <param name="transitionBuildAction">Transition build action</param>
+        /// <param name="transitionBuildAction">Transition build action<br/>
+        /// Use the following pattern to implement build action:
+        /// <code>
+        /// b => b
+        ///     . // Use . to see available builder methods
+        /// </code></param>
         [DebuggerHidden]
         public TReturn AddTransition<TEvent, TTargetState>(TransitionBuildAction<TEvent> transitionBuildAction = null)
             where TTargetState : class, IVertex
@@ -156,7 +196,12 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         /// </list>
         /// </summary>
         /// <param name="targetStateName">Target state name</param>
-        /// <param name="transitionBuildAction">Transition build action</param>
+        /// <param name="transitionBuildAction">Transition build action<br/>
+        /// Use the following pattern to implement build action:
+        /// <code>
+        /// b => b
+        ///     . // Use . to see available builder methods
+        /// </code></param>
         TReturn AddDefaultTransition(string targetStateName, DefaultTransitionBuildAction transitionBuildAction = null);
 
         /// <summary>
@@ -181,19 +226,32 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         /// </typeparam>
         /// <typeparam name="TTargetState">Target state class; must implement at least one of the following interfaces:
         /// <list type="bullet">
+        /// <item><see cref="IState"/></item>
         /// <item><see cref="IStateEntry"/></item>
         /// <item><see cref="IStateExit"/></item>
+        /// <item><see cref="ICompositeState"/></item>
         /// <item><see cref="ICompositeStateEntry"/></item>
         /// <item><see cref="ICompositeStateExit"/></item>
         /// <item><see cref="ICompositeStateInitialization"/></item>
         /// <item><see cref="ICompositeStateFinalization"/></item>
+        /// <item><see cref="IOrthogonalState"/></item>
+        /// <item><see cref="IOrthogonalStateEntry"/></item>
+        /// <item><see cref="IOrthogonalStateExit"/></item>
+        /// <item><see cref="IOrthogonalStateInitialization"/></item>
+        /// <item><see cref="IOrthogonalStateFinalization"/></item>
         /// </list>
         /// </typeparam>
+        /// <param name="transitionBuildAction">Transition build action<br/>
+        /// Use the following pattern to implement build action:
+        /// <code>
+        /// b => b
+        ///     . // Use . to see available builder methods
+        /// </code></param>
         [DebuggerHidden]
-        public TReturn AddDefaultTransition<TTransition, TTargetState>()
+        public TReturn AddDefaultTransition<TTransition, TTargetState>(DefaultTransitionBuildAction transitionBuildAction = null)
             where TTransition : class, IDefaultTransition
             where TTargetState : class, IVertex
-            => AddDefaultTransition<TTransition>(State<TTargetState>.Name);
+            => AddDefaultTransition<TTransition>(State<TTargetState>.Name, transitionBuildAction);
 
         /// <summary>
         /// Adds default transition coming from current state.<br/>
@@ -216,12 +274,22 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         /// </list>
         /// </typeparam>
         /// <param name="targetStateName">Target state name</param>
+        /// <param name="transitionBuildAction">Transition build action<br/>
+        /// Use the following pattern to implement build action:
+        /// <code>
+        /// b => b
+        ///     . // Use . to see available builder methods
+        /// </code></param>
         [DebuggerHidden]
-        public TReturn AddDefaultTransition<TTransition>(string targetStateName)
+        public TReturn AddDefaultTransition<TTransition>(string targetStateName, DefaultTransitionBuildAction transitionBuildAction = null)
             where TTransition : class, IDefaultTransition
             => AddDefaultTransition(
                 targetStateName,
-                t => t.AddDefaultTransitionEvents<TTransition>()
+                b =>
+                {
+                    b.AddDefaultTransitionEvents<TTransition>();
+                    transitionBuildAction?.Invoke(b);
+                }
             );
 
         /// <summary>
@@ -240,15 +308,27 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         /// </summary>
         /// <typeparam name="TTargetState">Target state class; must implement at least one of the following interfaces:
         /// <list type="bullet">
+        /// <item><see cref="IState"/></item>
         /// <item><see cref="IStateEntry"/></item>
         /// <item><see cref="IStateExit"/></item>
+        /// <item><see cref="ICompositeState"/></item>
         /// <item><see cref="ICompositeStateEntry"/></item>
         /// <item><see cref="ICompositeStateExit"/></item>
         /// <item><see cref="ICompositeStateInitialization"/></item>
         /// <item><see cref="ICompositeStateFinalization"/></item>
+        /// <item><see cref="IOrthogonalState"/></item>
+        /// <item><see cref="IOrthogonalStateEntry"/></item>
+        /// <item><see cref="IOrthogonalStateExit"/></item>
+        /// <item><see cref="IOrthogonalStateInitialization"/></item>
+        /// <item><see cref="IOrthogonalStateFinalization"/></item>
         /// </list>
         /// </typeparam>
-        /// <param name="transitionBuildAction">Transition build action</param>
+        /// <param name="transitionBuildAction">Transition build action<br/>
+        /// Use the following pattern to implement build action:
+        /// <code>
+        /// b => b
+        ///     . // Use . to see available builder methods
+        /// </code></param>
         [DebuggerHidden]
         public TReturn AddDefaultTransition<TTargetState>(DefaultTransitionBuildAction transitionBuildAction = null)
             where TTargetState : class, IVertex
@@ -257,7 +337,7 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         
         #region AddInternalTransition
         /// <summary>
-        /// Adds internal transition triggered by <see cref="TEvent"/> coming from current state.<br/>
+        /// Adds internal transition triggered by TEvent coming from current state.<br/>
         /// <a href="https://github.com/Stateflows/framework/wiki/Internal-Transition">Internal transitions</a> are triggered by events sent to State Machine and are not changing its state.
         /// <list type="number">
         /// <item>
@@ -271,11 +351,16 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         /// </list>
         /// </summary>
         /// <typeparam name="TEvent">Event class</typeparam>
-        /// <param name="transitionBuildAction">Transition build action</param>
+        /// <param name="transitionBuildAction">Transition build action<br/>
+        /// Use the following pattern to implement build action:
+        /// <code>
+        /// b => b
+        ///     . // Use . to see available builder methods
+        /// </code></param>
         TReturn AddInternalTransition<TEvent>(InternalTransitionBuildAction<TEvent> transitionBuildAction);
-        
+
         /// <summary>
-        /// Adds internal transition triggered by <see cref="TEvent"/> coming from current state.<br/>
+        /// Adds internal transition triggered by TEvent coming from current state.<br/>
         /// <a href="https://github.com/Stateflows/framework/wiki/Internal-Transition">Internal transitions</a> are triggered by events sent to State Machine and are not changing its state.
         /// <list type="number">
         /// <item>
@@ -295,75 +380,121 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         /// <item><see cref="ITransitionEffect&lt;TEvent&gt;"/></item>
         /// </list>
         /// </typeparam>
+        /// <param name="transitionBuildAction">Transition build action<br/>
+        /// Use the following pattern to implement build action:
+        /// <code>
+        /// b => b
+        ///     . // Use . to see available builder methods
+        /// </code></param>
         [DebuggerHidden]
-        public TReturn AddInternalTransition<TEvent, TTransition>()
+        public TReturn AddInternalTransition<TEvent, TTransition>(InternalTransitionBuildAction<TEvent> transitionBuildAction = null)
             where TTransition : class, ITransition<TEvent>
-            => AddTransition<TEvent, TTransition>(Constants.DefaultTransitionTarget);
+            => AddTransition<TEvent, TTransition>(Constants.DefaultTransitionTarget, b => transitionBuildAction?.Invoke(b as IInternalTransitionBuilder<TEvent>));
         #endregion
 
         #region AddElseTransition
         /// <summary>
-        /// Adds else alternative for all <see cref="TEvent"/>-triggered transitions coming from current state.<br/><br/>
+        /// Adds else alternative for all TEven-typed eventt-triggered transitions coming from current state.<br/><br/>
         /// <a href="https://github.com/Stateflows/framework/wiki/Transition">Transitions</a> are triggered by events sent to State Machine and are changing its state.
         /// </summary>
         /// <typeparam name="TEvent">Event class</typeparam>
         /// <param name="targetStateName">Target state name</param>
-        /// <param name="transitionBuildAction">Transition build action</param>
+        /// <param name="transitionBuildAction">Transition build action<br/>
+        /// Use the following pattern to implement build action:
+        /// <code>
+        /// b => b
+        ///     . // Use . to see available builder methods
+        /// </code></param>
         TReturn AddElseTransition<TEvent>(string targetStateName, ElseTransitionBuildAction<TEvent> transitionBuildAction = null);
-        
+
         /// <summary>
-        /// Adds else alternative for all transitions triggered by <see cref="TEvent"/> coming from current state.<br/><br/>
+        /// Adds else alternative for all transitions triggered by TEvent coming from current state.<br/><br/>
         /// <a href="https://github.com/Stateflows/framework/wiki/Transition">Transitions</a> are triggered by events sent to State Machine and are changing its state.
         /// </summary>
         /// <typeparam name="TEvent">Event class</typeparam>
         /// <typeparam name="TElseTransition">Transition class; must implement <see cref="ITransitionEffect&lt;TEvent&gt;"/> interface</typeparam>
         /// <typeparam name="TTargetState">Target state class; must implement at least one of the following interfaces:
         /// <list type="bullet">
+        /// <item><see cref="IState"/></item>
         /// <item><see cref="IStateEntry"/></item>
         /// <item><see cref="IStateExit"/></item>
+        /// <item><see cref="ICompositeState"/></item>
         /// <item><see cref="ICompositeStateEntry"/></item>
         /// <item><see cref="ICompositeStateExit"/></item>
         /// <item><see cref="ICompositeStateInitialization"/></item>
         /// <item><see cref="ICompositeStateFinalization"/></item>
+        /// <item><see cref="IOrthogonalState"/></item>
+        /// <item><see cref="IOrthogonalStateEntry"/></item>
+        /// <item><see cref="IOrthogonalStateExit"/></item>
+        /// <item><see cref="IOrthogonalStateInitialization"/></item>
+        /// <item><see cref="IOrthogonalStateFinalization"/></item>
         /// </list>
         /// </typeparam>
+        /// <param name="transitionBuildAction">Transition build action<br/>
+        /// Use the following pattern to implement build action:
+        /// <code>
+        /// b => b
+        ///     . // Use . to see available builder methods
+        /// </code></param>
         [DebuggerHidden]
-        public TReturn AddElseTransition<TEvent, TElseTransition, TTargetState>()
+        public TReturn AddElseTransition<TEvent, TElseTransition, TTargetState>(ElseTransitionBuildAction<TEvent> transitionBuildAction = null)
             where TElseTransition : class, ITransitionEffect<TEvent>
             where TTargetState : class, IVertex
-            => AddElseTransition<TEvent, TElseTransition>(State<TTargetState>.Name);
+            => AddElseTransition<TEvent, TElseTransition>(State<TTargetState>.Name, transitionBuildAction);
 
         /// <summary>
-        /// Adds else alternative for all transitions triggered by <see cref="TEvent"/> coming from current state.<br/><br/>
+        /// Adds else alternative for all transitions triggered by TEvent coming from current state.<br/><br/>
         /// <a href="https://github.com/Stateflows/framework/wiki/Transition">Transitions</a> are triggered by events sent to State Machine and are changing its state.
         /// </summary>
         /// <typeparam name="TEvent">Event class</typeparam>
         /// <typeparam name="TElseTransition">Transition class; must implement <see cref="ITransitionEffect&lt;TEvent&gt;"/> interface</typeparam>
         /// <param name="targetStateName">Target state name</param>
+        /// <param name="transitionBuildAction">Transition build action<br/>
+        /// Use the following pattern to implement build action:
+        /// <code>
+        /// b => b
+        ///     . // Use . to see available builder methods
+        /// </code></param>
         [DebuggerHidden]
-        public TReturn AddElseTransition<TEvent, TElseTransition>(string targetStateName)
+        public TReturn AddElseTransition<TEvent, TElseTransition>(string targetStateName, ElseTransitionBuildAction<TEvent> transitionBuildAction = null)
             where TElseTransition : class, ITransitionEffect<TEvent>
             => AddElseTransition<TEvent>(
                 targetStateName,
-                t => t.AddElseTransitionEvents<TElseTransition, TEvent>()
+                b =>
+                {
+                    b.AddElseTransitionEvents<TElseTransition, TEvent>();
+                    transitionBuildAction?.Invoke(b);
+                }
             );
 
         /// <summary>
-        /// Adds else alternative for all transitions triggered by <see cref="TEvent"/> coming from current state.<br/><br/>
+        /// Adds else alternative for all transitions triggered by TEvent coming from current state.<br/><br/>
         /// <a href="https://github.com/Stateflows/framework/wiki/Transition">Transitions</a> are triggered by events sent to State Machine and are changing its state.
         /// </summary>
         /// <typeparam name="TEvent">Event class</typeparam>
         /// <typeparam name="TTargetState">Target state class; must implement at least one of the following interfaces:
         /// <list type="bullet">
+        /// <item><see cref="IState"/></item>
         /// <item><see cref="IStateEntry"/></item>
         /// <item><see cref="IStateExit"/></item>
+        /// <item><see cref="ICompositeState"/></item>
         /// <item><see cref="ICompositeStateEntry"/></item>
         /// <item><see cref="ICompositeStateExit"/></item>
         /// <item><see cref="ICompositeStateInitialization"/></item>
         /// <item><see cref="ICompositeStateFinalization"/></item>
+        /// <item><see cref="IOrthogonalState"/></item>
+        /// <item><see cref="IOrthogonalStateEntry"/></item>
+        /// <item><see cref="IOrthogonalStateExit"/></item>
+        /// <item><see cref="IOrthogonalStateInitialization"/></item>
+        /// <item><see cref="IOrthogonalStateFinalization"/></item>
         /// </list>
         /// </typeparam>
-        /// <param name="transitionBuildAction">Transition build action</param>
+        /// <param name="transitionBuildAction">Transition build action<br/>
+        /// Use the following pattern to implement build action:
+        /// <code>
+        /// b => b
+        ///     . // Use . to see available builder methods
+        /// </code></param>
         [DebuggerHidden]
         public TReturn AddElseTransition<TEvent, TTargetState>(ElseTransitionBuildAction<TEvent> transitionBuildAction = null)
             where TTargetState : class, IVertex
@@ -376,7 +507,12 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         /// <a href="https://github.com/Stateflows/framework/wiki/Default-Transition">Default transitions</a> are triggered automatically after every State Machine execution and are changing its state.
         /// </summary>
         /// <param name="targetStateName">Target state name</param>
-        /// <param name="transitionBuildAction">Transition build action</param>
+        /// <param name="transitionBuildAction">Transition build action<br/>
+        /// Use the following pattern to implement build action:
+        /// <code>
+        /// b => b
+        ///     . // Use . to see available builder methods
+        /// </code></param>
         TReturn AddElseDefaultTransition(string targetStateName, ElseDefaultTransitionBuildAction transitionBuildAction = null);
 
         /// <summary>
@@ -386,19 +522,32 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         /// <typeparam name="TElseTransition">Transition class; must implement <see cref="IDefaultTransitionEffect"/> interface</typeparam>
         /// <typeparam name="TTargetState">Target state class; must implement at least one of the following interfaces:
         /// <list type="bullet">
+        /// <item><see cref="IState"/></item>
         /// <item><see cref="IStateEntry"/></item>
         /// <item><see cref="IStateExit"/></item>
+        /// <item><see cref="ICompositeState"/></item>
         /// <item><see cref="ICompositeStateEntry"/></item>
         /// <item><see cref="ICompositeStateExit"/></item>
         /// <item><see cref="ICompositeStateInitialization"/></item>
         /// <item><see cref="ICompositeStateFinalization"/></item>
+        /// <item><see cref="IOrthogonalState"/></item>
+        /// <item><see cref="IOrthogonalStateEntry"/></item>
+        /// <item><see cref="IOrthogonalStateExit"/></item>
+        /// <item><see cref="IOrthogonalStateInitialization"/></item>
+        /// <item><see cref="IOrthogonalStateFinalization"/></item>
         /// </list>
         /// </typeparam>
+        /// <param name="transitionBuildAction">Transition build action<br/>
+        /// Use the following pattern to implement build action:
+        /// <code>
+        /// b => b
+        ///     . // Use . to see available builder methods
+        /// </code></param>
         [DebuggerHidden]
-        public TReturn AddElseDefaultTransition<TElseTransition, TTargetState>()
+        public TReturn AddElseDefaultTransition<TElseTransition, TTargetState>(ElseDefaultTransitionBuildAction transitionBuildAction = null)
             where TElseTransition : class, IDefaultTransitionEffect
             where TTargetState : class, IVertex
-            => AddElseDefaultTransition<TElseTransition>(State<TTargetState>.Name);
+            => AddElseDefaultTransition<TElseTransition>(State<TTargetState>.Name, transitionBuildAction);
 
         /// <summary>
         /// Adds else alternative for all default transitions coming from current state.<br/><br/>
@@ -406,12 +555,22 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         /// </summary>
         /// <typeparam name="TElseTransition">Transition class; must implement <see cref="IDefaultTransitionEffect"/> interface</typeparam>
         /// <param name="targetStateName">Target state name</param>
+        /// <param name="transitionBuildAction">Transition build action<br/>
+        /// Use the following pattern to implement build action:
+        /// <code>
+        /// b => b
+        ///     . // Use . to see available builder methods
+        /// </code></param>
         [DebuggerHidden]
-        public TReturn AddElseDefaultTransition<TElseTransition>(string targetStateName)
+        public TReturn AddElseDefaultTransition<TElseTransition>(string targetStateName, ElseDefaultTransitionBuildAction transitionBuildAction = null)
             where TElseTransition : class, IDefaultTransitionEffect
             => AddElseDefaultTransition(
             targetStateName,
-                t => t.AddElseDefaultTransitionEvents<TElseTransition>()
+                b =>
+                {
+                    b.AddElseDefaultTransitionEvents<TElseTransition>();
+                    transitionBuildAction?.Invoke(b);
+                }
             );
 
         /// <summary>
@@ -420,15 +579,27 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         /// </summary>
         /// <typeparam name="TTargetState">Target state class; must implement at least one of the following interfaces:
         /// <list type="bullet">
+        /// <item><see cref="IState"/></item>
         /// <item><see cref="IStateEntry"/></item>
         /// <item><see cref="IStateExit"/></item>
+        /// <item><see cref="ICompositeState"/></item>
         /// <item><see cref="ICompositeStateEntry"/></item>
         /// <item><see cref="ICompositeStateExit"/></item>
         /// <item><see cref="ICompositeStateInitialization"/></item>
         /// <item><see cref="ICompositeStateFinalization"/></item>
+        /// <item><see cref="IOrthogonalState"/></item>
+        /// <item><see cref="IOrthogonalStateEntry"/></item>
+        /// <item><see cref="IOrthogonalStateExit"/></item>
+        /// <item><see cref="IOrthogonalStateInitialization"/></item>
+        /// <item><see cref="IOrthogonalStateFinalization"/></item>
         /// </list>
         /// </typeparam>
-        /// <param name="transitionBuildAction">Transition build action</param>
+        /// <param name="transitionBuildAction">Transition build action<br/>
+        /// Use the following pattern to implement build action:
+        /// <code>
+        /// b => b
+        ///     . // Use . to see available builder methods
+        /// </code></param>
         [DebuggerHidden]
         public TReturn AddElseDefaultTransition<TTargetState>(ElseDefaultTransitionBuildAction transitionBuildAction = null)
             where TTargetState : class, IVertex
@@ -437,23 +608,34 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         
         #region AddElseInternalTransition
         /// <summary>
-        /// Adds internal else alternative for all <see cref="TEvent"/>-triggered transitions coming from current state.<br/><br/>
+        /// Adds internal else alternative for all TEven-typed eventt-triggered transitions coming from current state.<br/><br/>
         /// <a href="https://github.com/Stateflows/framework/wiki/Default-Transition">Default transitions</a> are triggered automatically after every State Machine execution and are changing its state.
         /// </summary>
         /// <typeparam name="TEvent">Event class</typeparam>
-        /// <param name="transitionBuildAction">Transition build action</param>
+        /// <param name="transitionBuildAction">Transition build action<br/>
+        /// Use the following pattern to implement build action:
+        /// <code>
+        /// b => b
+        ///     . // Use . to see available builder methods
+        /// </code></param>
         TReturn AddElseInternalTransition<TEvent>(ElseInternalTransitionBuildAction<TEvent> transitionBuildAction);
-        
+
         /// <summary>
-        /// Adds internal else alternative for all <see cref="TEvent"/>-triggered transitions coming from current state.<br/><br/>
-        /// <a href="https://www.stateflows.net/documentation/definition#transition">Default transitions</a> are triggered automatically after every State Machine execution and are changing its state.
+        /// Adds internal else alternative for all TEven-typed eventt-triggered transitions coming from current state.<br/><br/>
+        /// <a href="https://github.com/Stateflows/framework/wiki/Default-Transition">Default transitions</a> are triggered automatically after every State Machine execution and are changing its state.
         /// </summary>
         /// <typeparam name="TEvent">Event class</typeparam>
         /// <typeparam name="TElseTransition">Transition class; must implement <see cref="ITransitionEffect&lt;TEvent&gt;"/> interface</typeparam>
+        /// <param name="transitionBuildAction">Transition build action<br/>
+        /// Use the following pattern to implement build action:
+        /// <code>
+        /// b => b
+        ///     . // Use . to see available builder methods
+        /// </code></param>
         [DebuggerHidden]
-        public TReturn AddElseInternalTransition<TEvent, TElseTransition>()
+        public TReturn AddElseInternalTransition<TEvent, TElseTransition>(ElseInternalTransitionBuildAction<TEvent> transitionBuildAction = null)
             where TElseTransition : class, ITransitionEffect<TEvent>
-            => AddElseTransition<TEvent, TElseTransition>(Constants.DefaultTransitionTarget);
+            => AddElseTransition<TEvent, TElseTransition>(Constants.DefaultTransitionTarget, b => transitionBuildAction?.Invoke(b as IElseInternalTransitionBuilder<TEvent>));
         #endregion
     }
 }

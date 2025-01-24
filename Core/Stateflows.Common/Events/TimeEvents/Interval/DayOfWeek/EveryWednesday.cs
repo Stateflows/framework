@@ -4,6 +4,6 @@ namespace Stateflows.Common
 {
     public class EveryWednesday : EveryOneWeek
     {
-        protected override sealed DayOfWeek Day => DayOfWeek.Wednesday;
+        protected sealed override DayOfWeek Day => DayOfWeek.Wednesday;
     }
 }

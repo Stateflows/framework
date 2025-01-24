@@ -17,6 +17,12 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="StateMachines\Registration\Interfaces\Extensions\**" />
+    <EmbeddedResource Remove="StateMachines\Registration\Interfaces\Extensions\**" />
+    <None Remove="StateMachines\Registration\Interfaces\Extensions\**" />
+  </ItemGroup>
+
+  <ItemGroup>
     <None Include="..\..\LICENSE">
       <Pack>True</Pack>
       <PackagePath>\</PackagePath>
@@ -33,10 +39,6 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Stateflows.Common\Stateflows.Common.csproj" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Folder Include="StateMachines\Registration\Interfaces\Extensions\RegionBuilder\" />
   </ItemGroup>
 
 </Project>

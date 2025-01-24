@@ -6,24 +6,59 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
     public interface IStateMachineInitial<out TReturn>
     {
         #region AddInitialState
-        TReturn AddInitialState(string stateName, StateBuildAction stateBuildAction = null);
-        
         /// <summary>
-        /// Adds initial state to current composite state.
+        /// Adds an initial state to the state machine.<br/>
+        /// <a href="https://github.com/Stateflows/framework/wiki/State">States</a> represent a stable configuration of a <a href="https://github.com/Stateflows/framework/wiki/Behaviors">Behavior</a>.
         /// </summary>
-        /// <typeparam name="TState">State class; must implement at least one of following interfaces: <see cref="IStateEntry"/>, <see cref="IStateExit"/></typeparam>
-        /// <param name="stateBuildAction">State build action</param>
+        /// <param name="stateName">State name</param>
+        /// <param name="stateBuildAction">State build action<br/>
+        /// Use the following pattern to implement build action:
+        /// <code>
+        /// b => b
+        ///     . // Use . to see available builder methods
+        /// </code></param>
+        TReturn AddInitialState(string stateName, StateBuildAction stateBuildAction = null);
+
+        /// <summary>
+        /// Adds an initial state to the state machine.<br/>
+        /// <a href="https://github.com/Stateflows/framework/wiki/State">States</a> represent a stable configuration of a <a href="https://github.com/Stateflows/framework/wiki/Behaviors">Behavior</a>.
+        /// </summary>
+        /// <typeparam name="TState">State class; must implement at least one of the following interfaces:
+        /// <list type="bullet">
+        /// <item><see cref="IState"/></item>
+        /// <item><see cref="IStateEntry"/></item>
+        /// <item><see cref="IStateExit"/></item>
+        /// </list>
+        /// </typeparam>
+        /// <param name="stateBuildAction">State build action<br/>
+        /// Use the following pattern to implement build action:
+        /// <code>
+        /// b => b
+        ///     . // Use . to see available builder methods
+        /// </code></param>
         [DebuggerHidden]
         public TReturn AddInitialState<TState>(StateBuildAction stateBuildAction = null)
             where TState : class, IState
             => AddInitialState<TState>(State<TState>.Name, stateBuildAction);
 
         /// <summary>
-        /// Adds initial state to current composite state.
+        /// Adds an initial state to the state machine.<br/>
+        /// <a href="https://github.com/Stateflows/framework/wiki/State">States</a> represent a stable configuration of a <a href="https://github.com/Stateflows/framework/wiki/Behaviors">Behavior</a>.
         /// </summary>
-        /// <typeparam name="TState">State class; must implement at least one of following interfaces: <see cref="IStateEntry"/>, <see cref="IStateExit"/></typeparam>
+        /// <typeparam name="TState">State class; must implement at least one of the following interfaces:
+        /// <list type="bullet">
+        /// <item><see cref="IState"/></item>
+        /// <item><see cref="IStateEntry"/></item>
+        /// <item><see cref="IStateExit"/></item>
+        /// </list>
+        /// </typeparam>
         /// <param name="stateName">State name</param>
-        /// <param name="stateBuildAction">State build action</param>
+        /// <param name="stateBuildAction">State build action<br/>
+        /// Use the following pattern to implement build action:
+        /// <code>
+        /// b => b
+        ///     . // Use . to see available builder methods
+        /// </code></param>
         [DebuggerHidden]
         public TReturn AddInitialState<TState>(string stateName, StateBuildAction stateBuildAction = null)
             where TState : class, IState
@@ -39,24 +74,63 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         #endregion
 
         #region AddInitialCompositeState
+        /// <summary>
+        /// Adds an initial composite state to the state machine.<br/>
+        /// <a href="https://github.com/Stateflows/framework/wiki/Composite-State">Composite states</a> represent a stable configuration of a <a href="https://github.com/Stateflows/framework/wiki/Behaviors">Behavior</a>, which is a parent for a set of substates.
+        /// </summary>
+        /// <param name="compositeStateName">Composite state name</param>
+        /// <param name="compositeStateBuildAction">Composite state build action<br/>
+        /// Use the following pattern to implement build action:
+        /// <code>
+        /// b => b
+        ///     . // Use . to see available builder methods
+        /// </code></param>
         TReturn AddInitialCompositeState(string compositeStateName, CompositeStateBuildAction compositeStateBuildAction);
 
         /// <summary>
-        /// Adds initial composite state to current composite state.
+        /// Adds an initial composite state to the state machine.<br/>
+        /// <a href="https://github.com/Stateflows/framework/wiki/Composite-State">Composite states</a> represent a stable configuration of a <a href="https://github.com/Stateflows/framework/wiki/Behaviors">Behavior</a>, which is a parent for a set of substates.
         /// </summary>
-        /// <typeparam name="TCompositeState">Composite state class; must implement at least one of following interfaces: <see cref="ICompositeStateEntry"/>, <see cref="ICompositeStateExit"/>, <see cref="ICompositeStateInitialization"/>, <see cref="ICompositeStateFinalization"/></typeparam>
-        /// <param name="compositeStateBuildAction">Composite state build action</param>
+        /// <typeparam name="TCompositeState">Composite state class; must implement at least one of the following interfaces:
+        /// <list type="bullet">
+        /// <item><see cref="ICompositeState"/></item>
+        /// <item><see cref="ICompositeStateEntry"/></item>
+        /// <item><see cref="ICompositeStateExit"/></item>
+        /// <item><see cref="ICompositeStateInitialization"/></item>
+        /// <item><see cref="ICompositeStateFinalization"/></item>
+        /// </list>
+        /// </typeparam>
+        /// <param name="compositeStateBuildAction">Composite state build action<br/>
+        /// Use the following pattern to implement build action:
+        /// <code>
+        /// b => b
+        ///     . // Use . to see available builder methods
+        /// </code></param>
         [DebuggerHidden]
         public TReturn AddInitialCompositeState<TCompositeState>(CompositeStateBuildAction compositeStateBuildAction)
             where TCompositeState : class, ICompositeState
             => AddInitialCompositeState<TCompositeState>(State<TCompositeState>.Name, compositeStateBuildAction);
 
         /// <summary>
-        /// Adds initial composite state to current composite state.
+        /// Adds an initial composite state to the state machine.<br/>
+        /// <a href="https://github.com/Stateflows/framework/wiki/Composite-State">Composite states</a> represent a stable configuration of a <a href="https://github.com/Stateflows/framework/wiki/Behaviors">Behavior</a>, which is a parent for a set of substates.
         /// </summary>
-        /// <typeparam name="TCompositeState">Composite state class; must implement at least one of following interfaces: <see cref="ICompositeStateEntry"/>, <see cref="ICompositeStateExit"/>, <see cref="ICompositeStateInitialization"/>, <see cref="ICompositeStateFinalization"/></typeparam>
+        /// <typeparam name="TCompositeState">Composite state class; must implement at least one of the following interfaces:
+        /// <list type="bullet">
+        /// <item><see cref="ICompositeState"/></item>
+        /// <item><see cref="ICompositeStateEntry"/></item>
+        /// <item><see cref="ICompositeStateExit"/></item>
+        /// <item><see cref="ICompositeStateInitialization"/></item>
+        /// <item><see cref="ICompositeStateFinalization"/></item>
+        /// </list>
+        /// </typeparam>
         /// <param name="compositeStateName">Composite state name</param>
-        /// <param name="compositeStateBuildAction">Composite state build action</param>
+        /// <param name="compositeStateBuildAction">Composite state build action<br/>
+        /// Use the following pattern to implement build action:
+        /// <code>
+        /// b => b
+        ///     . // Use . to see available builder methods
+        /// </code></param>
         [DebuggerHidden]
         public TReturn AddInitialCompositeState<TCompositeState>(string compositeStateName, CompositeStateBuildAction compositeStateBuildAction)
             where TCompositeState : class, ICompositeState
@@ -71,25 +145,65 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
                 }
             );
         #endregion
-        
+
         #region AddInitialOrthogonalState
-        TReturn AddInitialOrthogonalState(string orthogonalStateName, OrthogonalStateBuildAction orthogonalStateBuildAction);
         /// <summary>
-        /// Adds initial orthogonal state to current orthogonal state.
+        /// Adds an initial orthogonal state to the state machine.<br/>
+        /// <a href="https://github.com/Stateflows/framework/wiki/Orthogonal-State">Orthogonal states</a> represent a stable configuration of a <a href="https://github.com/Stateflows/framework/wiki/Behaviors">Behavior</a>, which is a parent for a set of orthogonal (parallel) <a href="https://github.com/Stateflows/framework/wiki/Regions">regions</a>.
         /// </summary>
-        /// <typeparam name="TOrthogonalState">Orthogonal state class; must implement at least one of following interfaces: <see cref="IOrthogonalStateEntry"/>, <see cref="IOrthogonalStateExit"/>, <see cref="IOrthogonalStateInitialization"/>, <see cref="IOrthogonalStateFinalization"/></typeparam>
-        /// <param name="orthogonalStateBuildAction">Orthogonal state build action</param>
+        /// <param name="orthogonalStateName">Orthogonal state name</param>
+        /// <param name="orthogonalStateBuildAction">Orthogonal state build action<br/>
+        /// Use the following pattern to implement build action:
+        /// <code>
+        /// b => b
+        ///     . // Use . to see available builder methods
+        /// </code></param>
+        TReturn AddInitialOrthogonalState(string orthogonalStateName, OrthogonalStateBuildAction orthogonalStateBuildAction);
+
+        /// <summary>
+        /// Adds an initial orthogonal state to the state machine.<br/>
+        /// <a href="https://github.com/Stateflows/framework/wiki/Orthogonal-State">Orthogonal states</a> represent a stable configuration of a <a href="https://github.com/Stateflows/framework/wiki/Behaviors">Behavior</a>, which is a parent for a set of orthogonal (parallel) <a href="https://github.com/Stateflows/framework/wiki/Regions">regions</a>.
+        /// </summary>
+        /// <typeparam name="TOrthogonalState">Orthogonal state class; must implement at least one of the following interfaces:
+        /// <list type="bullet">
+        /// <item><see cref="IOrthogonalState"/></item>
+        /// <item><see cref="IOrthogonalStateEntry"/></item>
+        /// <item><see cref="IOrthogonalStateExit"/></item>
+        /// <item><see cref="IOrthogonalStateInitialization"/></item>
+        /// <item><see cref="IOrthogonalStateFinalization"/></item>
+        /// </list>
+        /// </typeparam>
+        /// <param name="orthogonalStateBuildAction">Orthogonal state build action<br/>
+        /// Use the following pattern to implement build action:
+        /// <code>
+        /// b => b
+        ///     . // Use . to see available builder methods
+        /// </code></param>
         [DebuggerHidden]
         public TReturn AddInitialOrthogonalState<TOrthogonalState>(OrthogonalStateBuildAction orthogonalStateBuildAction)
             where TOrthogonalState : class, IOrthogonalState
             => AddInitialOrthogonalState<TOrthogonalState>(State<TOrthogonalState>.Name, orthogonalStateBuildAction);
 
         /// <summary>
-        /// Adds initial orthogonal state to current orthogonal state.
+        /// Adds an initial orthogonal state to the state machine.<br/>
+        /// <a href="https://github.com/Stateflows/framework/wiki/Orthogonal-State">Orthogonal states</a> represent a stable configuration of a <a href="https://github.com/Stateflows/framework/wiki/Behaviors">Behavior</a>, which is a parent for a set of orthogonal (parallel) <a href="https://github.com/Stateflows/framework/wiki/Regions">regions</a>.
         /// </summary>
-        /// <typeparam name="TOrthogonalState">Orthogonal state class; must implement at least one of following interfaces: <see cref="IOrthogonalStateEntry"/>, <see cref="IOrthogonalStateExit"/>, <see cref="IOrthogonalStateInitialization"/>, <see cref="IOrthogonalStateFinalization"/></typeparam>
+        /// <typeparam name="TOrthogonalState">Orthogonal state class; must implement at least one of the following interfaces:
+        /// <list type="bullet">
+        /// <item><see cref="IOrthogonalState"/></item>
+        /// <item><see cref="IOrthogonalStateEntry"/></item>
+        /// <item><see cref="IOrthogonalStateExit"/></item>
+        /// <item><see cref="IOrthogonalStateInitialization"/></item>
+        /// <item><see cref="IOrthogonalStateFinalization"/></item>
+        /// </list>
+        /// </typeparam>
         /// <param name="orthogonalStateName">Orthogonal state name</param>
-        /// <param name="orthogonalStateBuildAction">Composite state build action</param>
+        /// <param name="orthogonalStateBuildAction">Orthogonal state build action<br/>
+        /// Use the following pattern to implement build action:
+        /// <code>
+        /// b => b
+        ///     . // Use . to see available builder methods
+        /// </code></param>
         [DebuggerHidden]
         public TReturn AddInitialOrthogonalState<TOrthogonalState>(string orthogonalStateName, OrthogonalStateBuildAction orthogonalStateBuildAction)
             where TOrthogonalState : class, IOrthogonalState

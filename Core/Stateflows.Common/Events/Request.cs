@@ -5,7 +5,7 @@ namespace Stateflows.Common
 {
     public static class ResponseHolder
     {
-        private readonly static AsyncLocal<Dictionary<object, EventHolder>> Responses =
+        private static readonly AsyncLocal<Dictionary<object, EventHolder>> Responses =
             new AsyncLocal<Dictionary<object, EventHolder>>();
 
         public static bool ResponsesAreSet()

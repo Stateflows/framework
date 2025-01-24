@@ -52,7 +52,7 @@ namespace Stateflows.Activities
         public static implicit operator ActivityId(BehaviorId behaviorId)
             => new ActivityId(behaviorId);
 
-        public override readonly bool Equals(object obj)
+        public readonly override bool Equals(object obj)
             =>
                 obj is ActivityId id &&
                 Name == id.Name &&

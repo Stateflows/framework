@@ -8,7 +8,7 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         
         /// <summary>
         /// Embeds State Machine in current state.<br/><br/>
-        /// <b>Embedded State Machine will be initialized on state entry and finalized on state exit. Events can be forwarded from State Machine to embedded State Machine using <see cref="buildAction"/></b>
+        /// Embedded State Machine will be initialized on state entry and finalized on state exit. Events can be forwarded from State Machine to embedded State Machine using <see cref="buildAction"/>
         /// </summary>
         /// <typeparam name="TStateMachine">State Machine class; must implement <see cref="IStateMachine"/> interface</typeparam>
         /// <param name="buildAction">Build action</param>
