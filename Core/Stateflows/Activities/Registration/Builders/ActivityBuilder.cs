@@ -12,6 +12,7 @@ using Stateflows.Activities.Context.Interfaces;
 using Stateflows.Activities.Registration.Extensions;
 using Stateflows.Activities.Registration.Interfaces;
 using Stateflows.Activities.Registration.Interfaces.Base;
+using Stateflows.Common.Classes;
 
 namespace Stateflows.Activities.Registration.Builders
 {
@@ -150,7 +151,7 @@ namespace Stateflows.Activities.Registration.Builders
         public IActivityBuilder AddExceptionHandler<TExceptionHandler>()
             where TExceptionHandler : class, IActivityExceptionHandler
         {
-            AddExceptionHandler(serviceProvider => ActivatorUtilities.CreateInstance<TExceptionHandler>(serviceProvider));
+            AddExceptionHandler(serviceProvider => StateflowsActivator.CreateInstance<TExceptionHandler>(serviceProvider));
 
             return this;
         }
@@ -165,7 +166,7 @@ namespace Stateflows.Activities.Registration.Builders
         public IActivityBuilder AddInterceptor<TInterceptor>()
             where TInterceptor : class, IActivityInterceptor
         {
-            AddInterceptor(serviceProvider => ActivatorUtilities.CreateInstance<TInterceptor>(serviceProvider));
+            AddInterceptor(serviceProvider => StateflowsActivator.CreateInstance<TInterceptor>(serviceProvider));
 
             return this;
         }
@@ -180,7 +181,7 @@ namespace Stateflows.Activities.Registration.Builders
         public IActivityBuilder AddObserver<TObserver>()
             where TObserver : class, IActivityObserver
         {
-            AddObserver(serviceProvider => ActivatorUtilities.CreateInstance<TObserver>(serviceProvider));
+            AddObserver(serviceProvider => StateflowsActivator.CreateInstance<TObserver>(serviceProvider));
 
             return this;
         }

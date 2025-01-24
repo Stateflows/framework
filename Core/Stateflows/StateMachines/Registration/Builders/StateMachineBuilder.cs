@@ -4,6 +4,7 @@ using System.Runtime.Serialization;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using Stateflows.Common;
+using Stateflows.Common.Classes;
 using Stateflows.Common.Models;
 using Stateflows.Common.Extensions;
 using Stateflows.Common.Registration;
@@ -266,7 +267,7 @@ namespace Stateflows.StateMachines.Registration.Builders
         {
             Services.AddScoped<TExceptionHandler>();
             
-            AddExceptionHandler(serviceProvider => ActivatorUtilities.CreateInstance<TExceptionHandler>(serviceProvider));
+            AddExceptionHandler(serviceProvider => StateflowsActivator.CreateInstance<TExceptionHandler>(serviceProvider));
 
             return this;
         }
@@ -305,7 +306,7 @@ namespace Stateflows.StateMachines.Registration.Builders
         {
             Services.AddScoped<TInterceptor>();
 
-            AddInterceptor(serviceProvider => ActivatorUtilities.CreateInstance<TInterceptor>(serviceProvider));
+            AddInterceptor(serviceProvider => StateflowsActivator.CreateInstance<TInterceptor>(serviceProvider));
 
             return this;
         }
@@ -322,7 +323,7 @@ namespace Stateflows.StateMachines.Registration.Builders
         {
             Services.AddScoped<TObserver>();
             
-            AddObserver(serviceProvider => ActivatorUtilities.CreateInstance<TObserver>(serviceProvider));
+            AddObserver(serviceProvider => StateflowsActivator.CreateInstance<TObserver>(serviceProvider));
 
             return this;
         }

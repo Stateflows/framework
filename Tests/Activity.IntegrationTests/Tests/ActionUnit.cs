@@ -44,14 +44,7 @@ namespace Activity.IntegrationTests.Tests
             => base.Cleanup();
 
         protected override void InitializeStateflows(IStateflowsBuilder builder)
-        {
-            // Registering activity also registers all of its node and flow classes,
-            // yet, tested classes can be registered manually
-            builder.ServiceCollection
-                .AddTransient<TestedAction>()
-                .AddTransient<TestedFlow>()
-            ;
-        }
+        { }
 
         [TestMethod]
         public async Task ActionUnitTest()
@@ -59,8 +52,8 @@ namespace Activity.IntegrationTests.Tests
             // Use InputTokens static class to add tokens to be used by tested action class
             InputTokens.Add(42);
 
-            // Use DI to obtain tested action class instance
-            var action = ServiceProvider.GetRequiredService<TestedAction>();
+            // Use StateflowsActivator to obtain tested action class instance
+            var action = StateflowsActivator.CreateInstance<TestedAction>(ServiceProvider);
 
             await action.ExecuteAsync(CancellationToken.None);
 
@@ -79,8 +72,8 @@ namespace Activity.IntegrationTests.Tests
         [TestMethod]
         public async Task FlowUnitTest()
         {
-            // Use DI to obtain tested flow class instance
-            var flow = ServiceProvider.GetRequiredService<TestedFlow>();
+            // Use StateflowsActivator to obtain tested flow class instance
+            var flow = StateflowsActivator.CreateInstance<TestedFlow>(ServiceProvider);
 
             var result = await flow.GuardAsync(42);
 

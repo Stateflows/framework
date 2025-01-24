@@ -18,11 +18,11 @@ namespace StateMachine.IntegrationTests.Utils
 {
     public abstract class StateflowsTestClass
     {
-        private IServiceCollection _serviceCollection;
-        protected IServiceCollection ServiceCollection => _serviceCollection ??= new ServiceCollection();
+        private IServiceCollection serviceCollection;
+        private IServiceCollection ServiceCollection => serviceCollection ??= new ServiceCollection();
 
-        private IServiceProvider _serviceProvider;
-        protected IServiceProvider ServiceProvider => _serviceProvider ??= new StateflowsServiceProvider(ServiceCollection.BuildServiceProvider());
+        private IServiceProvider serviceProvider;
+        protected IServiceProvider ServiceProvider => serviceProvider ??= ServiceCollection.BuildServiceProvider();
 
         protected IStateMachineLocator StateMachineLocator => ServiceProvider.GetRequiredService<IStateMachineLocator>();
 
@@ -62,8 +62,8 @@ namespace StateMachine.IntegrationTests.Utils
         {
             TestingHost.StopApplication();
 
-            _serviceCollection = null;
-            _serviceProvider = null;
+            serviceCollection = null;
+            serviceProvider = null;
         }
 
         protected abstract void InitializeStateflows(IStateflowsBuilder builder);

@@ -9,6 +9,7 @@ using Stateflows.Activities.Models;
 using Stateflows.Activities.Exceptions;
 using Stateflows.Activities.Registration.Builders;
 using Stateflows.Activities.Registration.Interfaces;
+using Stateflows.Common.Classes;
 
 namespace Stateflows.Activities.Registration
 {
@@ -119,7 +120,7 @@ namespace Stateflows.Activities.Registration
         [DebuggerHidden]
         public void AddInterceptor<TInterceptor>()
             where TInterceptor : class, IActivityInterceptor
-            => AddInterceptor(serviceProvider => ActivatorUtilities.CreateInstance<TInterceptor>(serviceProvider));
+            => AddInterceptor(serviceProvider => StateflowsActivator.CreateInstance<TInterceptor>(serviceProvider));
 
         [DebuggerHidden]
         public void AddExceptionHandler(ActivityExceptionHandlerFactory exceptionHandlerFactory)
@@ -128,7 +129,7 @@ namespace Stateflows.Activities.Registration
         [DebuggerHidden]
         public void AddExceptionHandler<TExceptionHandler>()
             where TExceptionHandler : class, IActivityExceptionHandler
-            => AddExceptionHandler(serviceProvider => ActivatorUtilities.CreateInstance<TExceptionHandler>(serviceProvider));
+            => AddExceptionHandler(serviceProvider => StateflowsActivator.CreateInstance<TExceptionHandler>(serviceProvider));
 
         [DebuggerHidden]
         public void AddObserver(ActivityObserverFactory observerFactory)
@@ -137,7 +138,7 @@ namespace Stateflows.Activities.Registration
         [DebuggerHidden]
         public void AddObserver<TObserver>()
             where TObserver : class, IActivityObserver
-            => AddObserver(serviceProvider => ActivatorUtilities.CreateInstance<TObserver>(serviceProvider));
+            => AddObserver(serviceProvider => StateflowsActivator.CreateInstance<TObserver>(serviceProvider));
         #endregion
     }
 }

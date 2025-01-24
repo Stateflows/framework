@@ -3,6 +3,7 @@ using System.Diagnostics;
 using System.Collections.Generic;
 using System.Runtime.Serialization;
 using Microsoft.Extensions.DependencyInjection;
+using Stateflows.Common.Classes;
 using Stateflows.Common.Extensions;
 using Stateflows.Common.Registration.Builders;
 using Stateflows.StateMachines.Models;
@@ -116,7 +117,7 @@ namespace Stateflows.StateMachines.Registration
         [DebuggerHidden]
         public void AddInterceptor<TInterceptor>()
             where TInterceptor : class, IStateMachineInterceptor
-            =>  AddInterceptor(serviceProvider => ActivatorUtilities.CreateInstance<TInterceptor>(serviceProvider));
+            =>  AddInterceptor(serviceProvider => StateflowsActivator.CreateInstance<TInterceptor>(serviceProvider));
 
         [DebuggerHidden]
         public void AddExceptionHandler(StateMachineExceptionHandlerFactory exceptionHandlerFactory)
@@ -125,7 +126,7 @@ namespace Stateflows.StateMachines.Registration
         [DebuggerHidden]
         public void AddExceptionHandler<TExceptionHandler>()
             where TExceptionHandler : class, IStateMachineExceptionHandler
-            =>  AddExceptionHandler(serviceProvider => ActivatorUtilities.CreateInstance<TExceptionHandler>(serviceProvider));
+            =>  AddExceptionHandler(serviceProvider => StateflowsActivator.CreateInstance<TExceptionHandler>(serviceProvider));
 
         [DebuggerHidden]
         public void AddObserver(StateMachineObserverFactory observerFactory)
@@ -134,6 +135,6 @@ namespace Stateflows.StateMachines.Registration
         [DebuggerHidden]
         public void AddObserver<TObserver>()
             where TObserver : class, IStateMachineObserver
-            =>  AddObserver(serviceProvider => ActivatorUtilities.CreateInstance<TObserver>(serviceProvider));
+            =>  AddObserver(serviceProvider => StateflowsActivator.CreateInstance<TObserver>(serviceProvider));
     }
 }

@@ -17,6 +17,7 @@ using Stateflows.Activities.Models;
 using Stateflows.Activities.Streams;
 using Stateflows.Activities.Registration;
 using Stateflows.Activities.Context.Classes;
+using Stateflows.Common.Classes;
 
 namespace Stateflows.Activities.Engine
 {
@@ -1044,7 +1045,7 @@ namespace Stateflows.Activities.Engine
 
         public IActivity GetActivity(Type activityType)
         {
-            var activity = ActivatorUtilities.CreateInstance(NodeScope.ServiceProvider, activityType) as IActivity;
+            var activity = StateflowsActivator.CreateInstance(NodeScope.ServiceProvider, activityType) as IActivity;
 
             return activity;
         }

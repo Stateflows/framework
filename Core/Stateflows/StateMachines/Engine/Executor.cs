@@ -28,7 +28,8 @@ namespace Stateflows.StateMachines.Engine
 
         public StateMachinesRegister Register { get; set; }
 
-        public IServiceProvider ServiceProvider => new StateflowsServiceProvider(ScopesStack.Peek().ServiceProvider);
+        // public IServiceProvider ServiceProvider => new StateflowsServiceProvider(ScopesStack.Peek().ServiceProvider);
+        public IServiceProvider ServiceProvider => ScopesStack.Peek().ServiceProvider;
 
         private readonly Stack<IServiceScope> ScopesStack = new Stack<IServiceScope>();
 
@@ -905,7 +906,7 @@ namespace Stateflows.StateMachines.Engine
 
         public IStateMachine GetStateMachine(Type stateMachineType)
         {
-            var stateMachine = ActivatorUtilities.CreateInstance(ServiceProvider, stateMachineType) as IStateMachine;
+            var stateMachine = StateflowsActivator.CreateInstance(ServiceProvider, stateMachineType) as IStateMachine;
 
             return stateMachine;
         }
@@ -923,7 +924,7 @@ namespace Stateflows.StateMachines.Engine
             StateMachinesContextHolder.StateMachineContext.Value = context.StateMachine;
             StateMachinesContextHolder.ExecutionContext.Value = context;
 
-            var initializer = ActivatorUtilities.CreateInstance<TDefaultInitializer>(ServiceProvider);
+            var initializer = StateflowsActivator.CreateInstance<TDefaultInitializer>(ServiceProvider);
 
             return initializer;
         }
@@ -941,7 +942,7 @@ namespace Stateflows.StateMachines.Engine
             StateMachinesContextHolder.StateMachineContext.Value = context.StateMachine;
             StateMachinesContextHolder.ExecutionContext.Value = context;
 
-            var initializer = ActivatorUtilities.CreateInstance<TInitializer>(ServiceProvider);
+            var initializer = StateflowsActivator.CreateInstance<TInitializer>(ServiceProvider);
 
             return initializer;
         }
@@ -959,7 +960,7 @@ namespace Stateflows.StateMachines.Engine
             StateMachinesContextHolder.StateMachineContext.Value = context.StateMachine;
             StateMachinesContextHolder.ExecutionContext.Value = context;
 
-            var initializer = ActivatorUtilities.CreateInstance<TFinalizer>(ServiceProvider);
+            var initializer = StateflowsActivator.CreateInstance<TFinalizer>(ServiceProvider);
 
             return initializer;
         }
@@ -977,7 +978,7 @@ namespace Stateflows.StateMachines.Engine
             StateMachinesContextHolder.StateMachineContext.Value = context.StateMachine;
             StateMachinesContextHolder.ExecutionContext.Value = context;
 
-            var state = ActivatorUtilities.CreateInstance<TState>(ServiceProvider);
+            var state = StateflowsActivator.CreateInstance<TState>(ServiceProvider);
 
             return state;
         }
@@ -995,7 +996,7 @@ namespace Stateflows.StateMachines.Engine
             StateMachinesContextHolder.StateMachineContext.Value = context.StateMachine;
             StateMachinesContextHolder.ExecutionContext.Value = context;
 
-            var transition = ActivatorUtilities.CreateInstance<TTransition>(ServiceProvider);
+            var transition = StateflowsActivator.CreateInstance<TTransition>(ServiceProvider);
 
             return transition;
         }
@@ -1014,7 +1015,7 @@ namespace Stateflows.StateMachines.Engine
             StateMachinesContextHolder.StateMachineContext.Value = context.StateMachine;
             StateMachinesContextHolder.ExecutionContext.Value = context;
 
-            var transitionGuard = ActivatorUtilities.CreateInstance<TTransitionGuard>(ServiceProvider);
+            var transitionGuard = StateflowsActivator.CreateInstance<TTransitionGuard>(ServiceProvider);
 
             return transitionGuard;
         }
@@ -1033,7 +1034,7 @@ namespace Stateflows.StateMachines.Engine
             StateMachinesContextHolder.StateMachineContext.Value = context.StateMachine;
             StateMachinesContextHolder.ExecutionContext.Value = context;
 
-            var transitionEffect = ActivatorUtilities.CreateInstance<TTransitionEffect>(ServiceProvider);
+            var transitionEffect = StateflowsActivator.CreateInstance<TTransitionEffect>(ServiceProvider);
 
             return transitionEffect;
         }
@@ -1051,7 +1052,7 @@ namespace Stateflows.StateMachines.Engine
             StateMachinesContextHolder.StateMachineContext.Value = context.StateMachine;
             StateMachinesContextHolder.ExecutionContext.Value = context;
 
-            var defaultTransition = ActivatorUtilities.CreateInstance<TDefaultTransition>(ServiceProvider);
+            var defaultTransition = StateflowsActivator.CreateInstance<TDefaultTransition>(ServiceProvider);
 
             return defaultTransition;
         }
@@ -1069,7 +1070,7 @@ namespace Stateflows.StateMachines.Engine
             StateMachinesContextHolder.StateMachineContext.Value = context.StateMachine;
             StateMachinesContextHolder.ExecutionContext.Value = context;
 
-            var defaultTransitionGuard = ActivatorUtilities.CreateInstance<TDefaultTransitionGuard>(ServiceProvider);
+            var defaultTransitionGuard = StateflowsActivator.CreateInstance<TDefaultTransitionGuard>(ServiceProvider);
 
             return defaultTransitionGuard;
         }
@@ -1087,7 +1088,7 @@ namespace Stateflows.StateMachines.Engine
             StateMachinesContextHolder.StateMachineContext.Value = context.StateMachine;
             StateMachinesContextHolder.ExecutionContext.Value = context;
 
-            var defaultTransitionEffect = ActivatorUtilities.CreateInstance<TDefaultTransitionEffect>(ServiceProvider);
+            var defaultTransitionEffect = StateflowsActivator.CreateInstance<TDefaultTransitionEffect>(ServiceProvider);
 
             return defaultTransitionEffect;
         }
