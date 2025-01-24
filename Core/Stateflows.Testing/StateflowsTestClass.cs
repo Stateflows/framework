@@ -22,7 +22,7 @@ namespace StateMachine.IntegrationTests.Utils
         protected IServiceCollection ServiceCollection => _serviceCollection ??= new ServiceCollection();
 
         private IServiceProvider _serviceProvider;
-        protected IServiceProvider ServiceProvider => _serviceProvider ??= ServiceCollection.BuildServiceProvider();
+        protected IServiceProvider ServiceProvider => _serviceProvider ??= new StateflowsServiceProvider(ServiceCollection.BuildServiceProvider());
 
         protected IStateMachineLocator StateMachineLocator => ServiceProvider.GetRequiredService<IStateMachineLocator>();
 
@@ -40,6 +40,12 @@ namespace StateMachine.IntegrationTests.Utils
             ServiceCollection.AddSingleton<TestingHost>();
             ServiceCollection.AddSingleton<IHostApplicationLifetime>(services => services.GetRequiredService<TestingHost>());
             ServiceCollection.AddLogging(builder => builder.AddConsole());
+            ServiceCollection
+                .AddTransient(typeof(Input<>))
+                .AddTransient(typeof(SingleInput<>))
+                .AddTransient(typeof(OptionalInput<>))
+                .AddTransient(typeof(OptionalSingleInput<>))
+                .AddTransient(typeof(Output<>));
 
             var hostedServices = ServiceProvider.GetRequiredService<IEnumerable<IHostedService>>();
             Task.WaitAll(hostedServices.Select(s => s.StartAsync(new CancellationToken())).ToArray());

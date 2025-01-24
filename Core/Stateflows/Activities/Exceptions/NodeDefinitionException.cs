@@ -5,7 +5,7 @@ namespace Stateflows.Activities.Exceptions
 #pragma warning disable S3925 // "ISerializable" should be implemented correctly
     public class NodeDefinitionException : ActivityDefinitionException
     {
-        public NodeDefinitionException(string nodeName, string message) : base(message)
+        public NodeDefinitionException(string nodeName, string message, ActivityClass activityClass) : base(message, activityClass)
         {
             NodeName = nodeName;
         }

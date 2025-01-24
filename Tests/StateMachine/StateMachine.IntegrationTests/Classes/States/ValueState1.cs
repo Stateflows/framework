@@ -1,12 +1,23 @@
-﻿using Stateflows.Common;
+﻿using Stateflows.Common.Attributes;
 
 namespace StateMachine.IntegrationTests.Classes.States
 {
     internal class ValueState1 : IStateEntry
     {
-        private readonly StateValue<int> counter = new("counter");
-        private readonly StateValue<int?> nullable = new("nullable");
-        private readonly StateValue<int?> nulled = new("nulled");
+        public ValueState1(
+            [ValueName("counter")] StateValue<int> counter,
+            [ValueName("nullable")] StateValue<int?> nullable,
+            [ValueName("nulled")] StateValue<int?> nulled
+        )
+        {
+            this.counter = counter;
+            this.nullable = nullable;
+            this.nulled = nulled;
+        }
+
+        private readonly StateValue<int> counter;
+        private readonly StateValue<int?> nullable;
+        private readonly StateValue<int?> nulled;
 
         public Task OnEntryAsync()
         {

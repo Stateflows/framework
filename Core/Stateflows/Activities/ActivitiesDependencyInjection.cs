@@ -2,6 +2,7 @@
 using System.Diagnostics;
 using System.Collections.Generic;
 using Microsoft.Extensions.DependencyInjection;
+using Stateflows.Common;
 using Stateflows.Common.Interfaces;
 using Stateflows.Common.Initializer;
 using Stateflows.Common.Registration.Builders;
@@ -77,6 +78,11 @@ namespace Stateflows.Activities
                             ActivitiesContextHolder.ExceptionContext.Value ??
                             throw new InvalidOperationException($"No service for type '{typeof(IExceptionContext).FullName}' is available in this context.")
                         )
+                        .AddTransient(typeof(Input<>))
+                        .AddTransient(typeof(SingleInput<>))
+                        .AddTransient(typeof(OptionalInput<>))
+                        .AddTransient(typeof(OptionalSingleInput<>))
+                        .AddTransient(typeof(Output<>))
                         ;
                 }
 

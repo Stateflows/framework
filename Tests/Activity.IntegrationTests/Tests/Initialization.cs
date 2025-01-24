@@ -13,7 +13,6 @@ namespace Activity.IntegrationTests.Tests
     {
         private bool Initialized = false;
         private bool Executed = false;
-        private bool Accepted = false;
         public static string Value = "boo";
 
         [TestInitialize]
@@ -39,20 +38,6 @@ namespace Activity.IntegrationTests.Tests
                             .AddControlFlow("action1")
                         )
                         .AddAction("action1", async c => Executed = true)
-                    )
-
-                    .AddActivity("auto", b => b
-                        .AddDefaultInitializer(async c =>
-                        {
-                            Initialized = true;
-
-                            return true;
-                        })
-                        .AddInitial(b => b
-                            .AddControlFlow("action1")
-                        )
-                        .AddAction("action1", async c => Executed = true)
-                        .AddAcceptEventAction<SomeEvent>(async c => Accepted = true)
                     )
 
                     .AddActivity("value", b => b

@@ -63,7 +63,7 @@ namespace Stateflows.Activities.Registration
 
             if (Activities.ContainsKey(key))
             {
-                throw new ActivityDefinitionException($"Activity '{activityName}' with version '{version}' is already registered");
+                throw new ActivityDefinitionException($"Activity '{activityName}' with version '{version}' is already registered", new ActivityClass(activityName));
             }
 
             var builder = new ActivityBuilder(activityName, version, null, stateflowsBuilder, Services);
@@ -86,7 +86,7 @@ namespace Stateflows.Activities.Registration
 
             if (Activities.ContainsKey(key))
             {
-                throw new ActivityDefinitionException($"Activity '{activityName}' with version '{version}' is already registered");
+                throw new ActivityDefinitionException($"Activity '{activityName}' with version '{version}' is already registered", new ActivityClass(activityName));
             }
 
             Services.AddServiceType(activityType);

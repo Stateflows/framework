@@ -1,6 +1,7 @@
 using Activity.IntegrationTests.Classes.Tokens;
 using Stateflows.Activities;
 using Stateflows.Common;
+using Stateflows.Common.Attributes;
 using StateMachine.IntegrationTests.Utils;
 
 namespace Activity.IntegrationTests.Tests
@@ -10,12 +11,12 @@ namespace Activity.IntegrationTests.Tests
 
     }
 
-    public class TypedAction : IActionNode
+    public class TypedAction(
+        Input<SomeToken> someTokens,
+        Input<string> strings,
+        [ValueName("global")] GlobalValue<string> value
+    ) : IActionNode
     {
-        public readonly Input<SomeToken> someTokens;
-        public readonly Input<string> strings;
-
-        public readonly GlobalValue<string> value = new("global");
 
         public Task ExecuteAsync(CancellationToken cancellationToken)
         {

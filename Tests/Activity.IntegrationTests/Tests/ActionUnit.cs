@@ -1,19 +1,17 @@
 using Microsoft.Extensions.DependencyInjection;
 using Stateflows.Common;
+using Stateflows.Common.Attributes;
 using Stateflows.Common.Classes;
 using StateMachine.IntegrationTests.Utils;
 
 namespace Activity.IntegrationTests.Tests
 {
-    public class TestedAction : IActionNode
+    public class TestedAction(SingleInput<int> input, [ValueName("foo")] GlobalValue<int> foo) : IActionNode
     {
-        private readonly GlobalValue<int> Foo = new("foo");
-        private readonly SingleInput<int> Input;
-
         public Task ExecuteAsync(CancellationToken cancellationToken)
         {
-            Foo.Set(Input.Token);
-            Input.PassOn();
+            foo.Set(input.Token);
+            input.PassOn();
 
             Unit.Executed = true;
 
@@ -47,7 +45,7 @@ namespace Activity.IntegrationTests.Tests
 
         protected override void InitializeStateflows(IStateflowsBuilder builder)
         {
-            // Registering activity also registers all of its node and flow classes;
+            // Registering activity also registers all of its node and flow classes,
             // yet, tested classes can be registered manually
             builder.ServiceCollection
                 .AddTransient<TestedAction>()

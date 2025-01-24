@@ -28,7 +28,7 @@ namespace Stateflows.StateMachines.Engine
 
         public StateMachinesRegister Register { get; set; }
 
-        public IServiceProvider ServiceProvider => ScopesStack.Peek().ServiceProvider;
+        public IServiceProvider ServiceProvider => new StateflowsServiceProvider(ScopesStack.Peek().ServiceProvider);
 
         private readonly Stack<IServiceScope> ScopesStack = new Stack<IServiceScope>();
 

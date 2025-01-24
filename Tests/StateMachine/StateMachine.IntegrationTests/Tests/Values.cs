@@ -31,7 +31,6 @@ namespace StateMachine.IntegrationTests.Tests
 
             if (StateMachineLocator.TryLocateStateMachine(new StateMachineId(StateMachine<ValuesStateMachine>.Name, "x"), out var sm))
             {
-                //await sm.InitializeAsync();
                 await sm.SendAsync(new SomeEvent());
 
                 currentState = (await sm.GetCurrentStateAsync()).Response?.StatesTree?.Value;

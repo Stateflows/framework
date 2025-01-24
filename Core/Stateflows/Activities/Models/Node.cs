@@ -8,6 +8,8 @@ using Stateflows.Common;
 using Stateflows.Common.Models;
 using Stateflows.Activities.Registration;
 using Stateflows.Activities.Context.Classes;
+using Microsoft.Extensions.DependencyInjection;
+using Stateflows.Activities.Exceptions;
 
 namespace Stateflows.Activities.Models
 {
@@ -59,35 +61,52 @@ namespace Stateflows.Activities.Models
         {
             DeclaredTypesSet = true;
 
-            var fields = nodeType.GetFields(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic).Where(field => field.FieldType.IsGenericType).ToArray();
+            var constructors = nodeType.GetConstructors();
 
-            InputTokenTypes = fields
-                .Where(field => field.FieldType.GetGenericTypeDefinition() == typeof(Input<>))
-                .Select(field => field.FieldType.GenericTypeArguments[0])
+            if (constructors.Length > 1)
+            {
+                throw new NodeDefinitionException(ActivityNode.GetName(nodeType), $"Node type {nodeType.Name} must have only one constructor.", Graph.Class);
+            }
+
+            if (!constructors.Any())
+            {
+                return;
+            }
+
+            var parameters = constructors.First().GetParameters().ToArray();
+
+            InputTokenTypes = parameters
+                .Where(p => p.ParameterType.IsGenericType)
+                .Where(p => p.ParameterType.GetGenericTypeDefinition() == typeof(Input<>))
+                .Select(p => p.ParameterType.GenericTypeArguments[0])
                 .ToList();
 
             InputTokenTypes.AddRange(
-                fields
-                    .Where(field => field.FieldType.GetGenericTypeDefinition() == typeof(SingleInput<>))
-                    .Select(field => field.FieldType.GenericTypeArguments[0])
+                parameters
+                    .Where(p => p.ParameterType.IsGenericType)
+                    .Where(p => p.ParameterType.GetGenericTypeDefinition() == typeof(SingleInput<>))
+                    .Select(p => p.ParameterType.GenericTypeArguments[0])
                     .ToList()
             );
 
-            OptionalInputTokenTypes = fields
-                .Where(field => field.FieldType.GetGenericTypeDefinition() == typeof(OptionalInput<>))
-                .Select(field => field.FieldType.GenericTypeArguments[0])
+            OptionalInputTokenTypes = parameters
+                .Where(p => p.ParameterType.IsGenericType)
+                .Where(p => p.ParameterType.GetGenericTypeDefinition() == typeof(OptionalInput<>))
+                .Select(p => p.ParameterType.GenericTypeArguments[0])
                 .ToList();
 
             OptionalInputTokenTypes.AddRange(
-                fields
-                    .Where(field => field.FieldType.GetGenericTypeDefinition() == typeof(OptionalSingleInput<>))
-                    .Select(field => field.FieldType.GenericTypeArguments[0])
+                parameters
+                    .Where(p => p.ParameterType.IsGenericType)
+                    .Where(p => p.ParameterType.GetGenericTypeDefinition() == typeof(OptionalSingleInput<>))
+                    .Select(p => p.ParameterType.GenericTypeArguments[0])
                     .ToList()
             );
 
-            OutputTokenTypes = fields
-                .Where(field => field.FieldType.GetGenericTypeDefinition() == typeof(Output<>))
-                .Select(field => field.FieldType.GenericTypeArguments[0])
+            OutputTokenTypes = parameters
+                .Where(p => p.ParameterType.IsGenericType)
+                .Where(p => p.ParameterType.GetGenericTypeDefinition() == typeof(Output<>))
+                .Select(p => p.ParameterType.GenericTypeArguments[0])
                 .ToList();
         }
 
