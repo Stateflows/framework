@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
+using System.Diagnostics;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
 using Stateflows.Common.Interfaces;
@@ -113,12 +114,15 @@ namespace Stateflows.Common
         public override int GetHashCode()
             => Id.GetHashCode();
 
+        [DebuggerHidden]
         public override Task<EventStatus> DoProcessAsync(IStateflowsExecutor executor)
             => executor.DoProcessAsync(this);
 
+        [DebuggerHidden]
         public override Task<EventStatus> ProcessEventAsync(IStateflowsEngine engine, BehaviorId id, List<Exception> exceptions, Dictionary<object, EventHolder> responses)
             => engine.ProcessEventAsync(id, this, exceptions, responses);
 
+        [DebuggerHidden]
         public override Task<EventStatus> ExecuteBehaviorAsync(IStateflowsProcessor processor, EventStatus result, IStateflowsExecutor stateflowsExecutor)
             => processor.ExecuteBehaviorAsync(this, result, stateflowsExecutor);
 

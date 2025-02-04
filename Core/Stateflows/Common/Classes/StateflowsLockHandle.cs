@@ -4,9 +4,9 @@ using Stateflows.Common.Interfaces;
 
 namespace Stateflows.Common.Classes
 {
-    public class LockHandle : IStateflowsLockHandle
+    public class StateflowsLockHandle : IStateflowsLockHandle
     {
-        public LockHandle(BehaviorId behaviorId, IAsyncDisposable handle)
+        public StateflowsLockHandle(BehaviorId behaviorId, IAsyncDisposable handle)
         {
             BehaviorId = behaviorId;
             Handle = handle;

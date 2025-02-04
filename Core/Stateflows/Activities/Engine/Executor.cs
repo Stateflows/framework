@@ -185,21 +185,11 @@ namespace Stateflows.Activities.Engine
 
                     await ExecuteGraphAsync(input);
 
-                    if (result == InitializationStatus.InitializedExplicitly)
-                    {
-                        return EventStatus.Initialized;
-                    }
-                    else
-                    {
-                        if (eventHolder.Payload is Initialize)
-                        {
-                            return EventStatus.Initialized;
-                        }
-                        else
-                        {
-                            return EventStatus.Consumed;
-                        }
-                    }
+                    return result == InitializationStatus.InitializedExplicitly
+                        ? EventStatus.Initialized
+                            : eventHolder.Payload is Initialize
+                                ? EventStatus.Initialized
+                                : EventStatus.Consumed;
                 }
                 else
                 {

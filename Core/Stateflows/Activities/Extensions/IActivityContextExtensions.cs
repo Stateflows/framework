@@ -11,7 +11,7 @@ namespace Stateflows.Activities.Extensions
         public static Executor GetExecutor(this IActivityContext context)
             => (context as ActivityContext).Context.Executor;
 
-        public static Node GetNode(this IActionContext context)
+        public static Node GetNode(this Context.Interfaces.IActionContext context)
             => (context as ActionContext).Node;
 
         public static RootContext GetContext(this IActivityContext context)

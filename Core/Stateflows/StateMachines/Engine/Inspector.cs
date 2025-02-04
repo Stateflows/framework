@@ -50,8 +50,7 @@ namespace Stateflows.StateMachines.Engine
 
         public IDictionary<Edge, TransitionInspection> InspectionTransitions { get; } = new Dictionary<Edge, TransitionInspection>();
 
-        public IStateMachineInspection inspection;
-
+        private IStateMachineInspection inspection;
         public IStateMachineInspection Inspection => inspection ??= new StateMachineInspection(Executor);
 
         private readonly List<StateMachineExceptionHandlerFactory> ExceptionHandlerFactories = new List<StateMachineExceptionHandlerFactory>();
@@ -72,12 +71,12 @@ namespace Stateflows.StateMachines.Engine
         private IEnumerable<IStateMachineExceptionHandler> ExceptionHandlers
             => exceptionHandlers ??= ExceptionHandlerFactories.Select(t => t(Executor.ServiceProvider));
 
-        public IEnumerable<IStateMachineInspector> inspectors;
-        public IEnumerable<IStateMachineInspector> Inspectors
+        private IEnumerable<IStateMachineInspector> inspectors;
+        private IEnumerable<IStateMachineInspector> Inspectors
             => inspectors ??= Executor.ServiceProvider.GetService<IEnumerable<IStateMachineInspector>>();
 
-        public IEnumerable<IStateMachinePlugin> plugins;
-        public IEnumerable<IStateMachinePlugin> Plugins
+        private IEnumerable<IStateMachinePlugin> plugins;
+        private IEnumerable<IStateMachinePlugin> Plugins
             => plugins ??= Executor.ServiceProvider.GetService<IEnumerable<IStateMachinePlugin>>();
 
         public async Task BeforeStateMachineInitializeAsync(StateMachineInitializationContext context)
@@ -229,7 +228,7 @@ namespace Stateflows.StateMachines.Engine
         {
             if (InspectionTransitions.TryGetValue(context.Edge, out var stateInspection))
             {
-                (stateInspection.Guard as ActionInspection).Active = true;
+                ((ActionInspection)stateInspection.Guard).Active = true;
             }
 
             await Plugins.RunSafe(o => o.BeforeTransitionGuardAsync(context), nameof(BeforeTransitionGuardAsync), Logger);
@@ -246,7 +245,7 @@ namespace Stateflows.StateMachines.Engine
 
             if (InspectionTransitions.TryGetValue(context.Edge, out var stateInspection))
             {
-                (stateInspection.Guard as ActionInspection).Active = false;
+                ((ActionInspection)stateInspection.Guard).Active = false;
             }
         }
 
@@ -255,7 +254,7 @@ namespace Stateflows.StateMachines.Engine
         {
             if (InspectionTransitions.TryGetValue(context.Edge, out var stateInspection))
             {
-                (stateInspection.Effect as ActionInspection).Active = true;
+                ((ActionInspection)stateInspection.Effect).Active = true;
             }
 
             await Plugins.RunSafe(o => o.BeforeTransitionEffectAsync(context), nameof(BeforeEffectAsync), Logger);
@@ -272,7 +271,7 @@ namespace Stateflows.StateMachines.Engine
 
             if (InspectionTransitions.TryGetValue(context.Edge, out var stateInspection))
             {
-                (stateInspection.Effect as ActionInspection).Active = false;
+                ((ActionInspection)stateInspection.Effect).Active = false;
             }
         }
 

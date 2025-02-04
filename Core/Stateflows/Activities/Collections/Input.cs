@@ -19,7 +19,31 @@ namespace Stateflows.Activities
             => Tokens.AddRange(tokens.Select(token => new TokenHolder<TToken>() { Payload = token }));
     }
 
-    public class Input<TToken> : IEnumerable<TToken>
+    internal class InputTokens<TToken> : IInputTokens<TToken>
+    {
+        private IEnumerable<TToken> Tokens
+            => InputTokens.Tokens.OfType<TokenHolder<TToken>>().Select(t => t.Payload);
+        
+        public IEnumerator<TToken> GetEnumerator()
+            => Tokens.GetEnumerator();
+        
+        IEnumerator IEnumerable.GetEnumerator()
+            => Tokens.GetEnumerator();
+        
+        public void PassAllOn()
+            => new OutputTokens<TToken>().AddRange(Tokens);
+    }
+
+    internal class InputToken<TToken> : IInputToken<TToken>
+    {
+        public TToken Token
+            => InputTokens.Tokens.OfType<TokenHolder<TToken>>().Select(t => t.Payload).First();
+
+        public void PassOn()
+            => new OutputTokens<TToken>().Add(Token);
+    }
+
+    internal class OptionalInputTokens<TToken> : IOptionalInputTokens<TToken>
     {
         private IEnumerable<TToken> Tokens
             => InputTokens.Tokens.OfType<TokenHolder<TToken>>().Select(t => t.Payload);
@@ -31,39 +55,18 @@ namespace Stateflows.Activities
             => Tokens.GetEnumerator();
 
         public void PassAllOn()
-            => new Output<TToken>().AddRange(Tokens);
+            => new OutputTokens<TToken>().AddRange(Tokens);
     }
 
-    public class SingleInput<TToken>
+    internal class OptionalInputToken<TToken> : IOptionalInputToken<TToken>
     {
-        public TToken Token
-            => InputTokens.Tokens.OfType<TokenHolder<TToken>>().Select(t => t.Payload).First();
+        public bool IsAvailable
+            => InputTokens.Tokens.OfType<TokenHolder<TToken>>().Any();
+        
+        public TToken TokenOrDefault
+            => InputTokens.Tokens.OfType<TokenHolder<TToken>>().Select(t => t.Payload).FirstOrDefault();
 
         public void PassOn()
-            => new Output<TToken>().Add(Token);
-    }
-
-    public class OptionalInput<TToken> : IEnumerable<TToken>
-    {
-        private IEnumerable<TToken> Tokens
-            => InputTokens.Tokens.OfType<TokenHolder<TToken>>().Select(t => t.Payload);
-
-        public IEnumerator<TToken> GetEnumerator()
-            => Tokens.GetEnumerator();
-
-        IEnumerator IEnumerable.GetEnumerator()
-            => Tokens.GetEnumerator();
-
-        public void PassAllOn()
-            => new Output<TToken>().AddRange(Tokens);
-    }
-
-    public class OptionalSingleInput<TToken>
-    {
-        public TToken Token
-            => InputTokens.Tokens.OfType<TokenHolder<TToken>>().Select(t => t.Payload).First();
-
-        public void PassOn()
-            => new Output<TToken>().Add(Token);
+            => new OutputTokens<TToken>().Add(TokenOrDefault);
     }
 }

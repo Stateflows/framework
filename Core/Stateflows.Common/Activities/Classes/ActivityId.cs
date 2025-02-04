@@ -3,7 +3,7 @@ using Newtonsoft.Json;
 using Stateflows.Common.Exceptions;
 using Stateflows.Common.Utilities;
 
-namespace Stateflows.Activities
+namespace Stateflows
 {
     public struct ActivityId
     {

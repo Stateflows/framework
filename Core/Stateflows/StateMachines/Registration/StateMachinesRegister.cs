@@ -4,7 +4,6 @@ using System.Collections.Generic;
 using System.Runtime.Serialization;
 using Microsoft.Extensions.DependencyInjection;
 using Stateflows.Common.Classes;
-using Stateflows.Common.Extensions;
 using Stateflows.Common.Registration.Builders;
 using Stateflows.StateMachines.Models;
 using Stateflows.StateMachines.Exceptions;
@@ -90,7 +89,7 @@ namespace Stateflows.StateMachines.Registration
                 throw new StateMachineDefinitionException($"State machine '{stateMachineName}' with version '{version}' is already registered", new StateMachineClass(stateMachineName));
             }
 
-            var sm = FormatterServices.GetUninitializedObject(stateMachineType) as IStateMachine;
+            var sm = StateflowsActivator.CreateUninitializedInstance(stateMachineType) as IStateMachine;
 
             var builder = new StateMachineBuilder(stateMachineName, version, stateflowsBuilder, Services);
             builder.Graph.StateMachineType = stateMachineType;

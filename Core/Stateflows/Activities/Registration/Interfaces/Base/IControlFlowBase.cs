@@ -13,7 +13,7 @@ namespace Stateflows.Activities.Registration.Interfaces.Base
         // {
         //     if (typeof(IEdge).GetProperty(nameof(IEdge.Weight)).IsImplementedIn<TFlow>())
         //     {
-        //         var objectFlow = (FormatterServices.GetUninitializedObject(typeof(TFlow)) as TFlow)!;
+        //         var objectFlow = (StateflowsActivator.CreateUninitializedInstance(typeof(TFlow)) as TFlow)!;
         //
         //         builder.SetWeight(objectFlow.Weight);
         //     }

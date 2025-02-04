@@ -1,7 +1,6 @@
 ﻿using System.Diagnostics;
-using System.Threading.Tasks;
-using Stateflows.Activities.Context.Classes;
 using Stateflows.Activities.Extensions;
+using Stateflows.Activities.Context.Classes;
 using Stateflows.Activities.Registration.Builders;
 
 namespace Stateflows.Activities.Registration.Interfaces.Base
@@ -16,29 +15,30 @@ namespace Stateflows.Activities.Registration.Interfaces.Base
         public TReturn AddAction<TAction>(TypedActionBuildAction buildAction = null)
             where TAction : class, IActionNode
             => AddAction<TAction>(ActivityNode<TAction>.Name, buildAction);
-
+        
         [DebuggerHidden]
         public TReturn AddAction<TAction>(string actionNodeName, TypedActionBuildAction buildAction = null)
             where TAction : class, IActionNode
             => AddAction(
                 actionNodeName,
-                (c =>
+                c =>
                 {
-                    var action = ((BaseContext)c).NodeScope.GetAction<TAction>(c);
-
+                    var context = (BaseContext)c;
+                    var action = context.NodeScope.GetAction<TAction>(c);
+                    
                     InputTokens.TokensHolder.Value = ((ActionContext)c).InputTokens;
                     OutputTokens.TokensHolder.Value = ((ActionContext)c).OutputTokens;
-
+                
                     ActivityNodeContextAccessor.Context.Value = c;
                     var result = action.ExecuteAsync(c.CancellationToken);
                     ActivityNodeContextAccessor.Context.Value = null;
-
+                
                     return result;
-                }),
+                },
                 b =>
                 {
                     ((NodeBuilder)b).Node.ScanForDeclaredTypes(typeof(TAction));
-                    buildAction?.Invoke(b as ITypedActionBuilder);
+                    buildAction?.Invoke((ITypedActionBuilder)b);
                 }
             );
         #endregion
@@ -85,7 +85,7 @@ namespace Stateflows.Activities.Registration.Interfaces.Base
                 structuredActivityName,
                 b =>
                 {
-                    var builder = b as StructuredActivityBuilder;
+                    var builder = (StructuredActivityBuilder)b;
                     builder.AddStructuredActivityEvents<TStructuredActivity>();
                     builder.Node.ScanForDeclaredTypes(typeof(TStructuredActivity));
                     buildAction?.Invoke(b);
@@ -113,7 +113,7 @@ namespace Stateflows.Activities.Registration.Interfaces.Base
                 structuredActivityName,
                 b =>
                 {
-                    var builder = b as StructuredActivityBuilder;
+                    var builder = (StructuredActivityBuilder)b;
                     builder.AddStructuredActivityEvents<TIterativeActivity>();
                     builder.Node.ScanForDeclaredTypes(typeof(TIterativeActivity));
                     buildAction?.Invoke(b);

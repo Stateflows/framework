@@ -1,7 +1,9 @@
 ﻿using System;
+using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
+using Stateflows.Actions;
 using Stateflows.Common;
 using Stateflows.Common.Exceptions;
 using Stateflows.Activities.Enums;
@@ -12,6 +14,7 @@ using Stateflows.Activities.Context.Classes;
 using Stateflows.Activities.Context.Interfaces;
 using Stateflows.Activities.Registration.Builders;
 using Stateflows.Activities.Registration.Interfaces;
+using IActionContext = Stateflows.Activities.Context.Interfaces.IActionContext;
 
 namespace Stateflows.Activities.Registration
 {
@@ -31,6 +34,7 @@ namespace Stateflows.Activities.Registration
             Node = parentNode;
         }
 
+        [DebuggerHidden]
         public BaseActivityBuilder AddNode(NodeType type, string nodeName, ActionDelegateAsync actionAsync, NodeBuildAction buildAction = null, Type exceptionOrEventType = null, int chunkSize = 1)
         {
             if (Node.Type != NodeType.Activity)
@@ -117,10 +121,10 @@ namespace Stateflows.Activities.Registration
             node.ChunkSize = chunkSize;
 
             buildAction?.Invoke(new NodeBuilder(node, this, Services));
-
+            
             node.Action.Actions.Add(async c =>
             {
-                var context = c as ActionContext;
+                var context = (ActionContext)c;
                 var faulty = false;
                 try
                 {
@@ -133,6 +137,7 @@ namespace Stateflows.Activities.Registration
                 {
                     if (e is StateflowsException)
                     {
+                        Debug.WriteLine("catched and rethrowed");
                         throw;
                     }
                     else

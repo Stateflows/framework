@@ -90,9 +90,7 @@ namespace Stateflows.Activities.Registration
                 throw new ActivityDefinitionException($"Activity '{activityName}' with version '{version}' is already registered", new ActivityClass(activityName));
             }
 
-            Services.AddServiceType(activityType);
-
-            var activity = FormatterServices.GetUninitializedObject(activityType) as IActivity;
+            var activity = StateflowsActivator.CreateUninitializedInstance(activityType) as IActivity;
 
             var builder = new ActivityBuilder(activityName, version, null, stateflowsBuilder, Services);
             builder.Result.ActivityType = activityType;

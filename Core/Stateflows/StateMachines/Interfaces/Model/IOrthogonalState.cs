@@ -1,4 +1,6 @@
-﻿namespace Stateflows.StateMachines
+﻿using Stateflows.StateMachines.Registration.Interfaces;
+
+namespace Stateflows.StateMachines
 {
     public interface IOrthogonalState : ICompositeState
     { }
@@ -14,4 +16,9 @@
 
     public interface IOrthogonalStateFinalization : ICompositeStateFinalization
     { }
+
+    public interface IOrthogonalStateDefinition : IOrthogonalState
+    {
+        void Build(IOrthogonalStateBuilder builder);
+    }
 }

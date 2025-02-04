@@ -14,14 +14,14 @@ namespace Stateflows.Common.Classes
     {
         public BehaviorId Id { get; }
 
-        private readonly StateflowsEngine engine;
+        private readonly StateflowsService service;
         private readonly IServiceProvider serviceProvider;
         private readonly NotificationsHub notificationsHub;
         private readonly Dictionary<string, List<Action<EventHolder>>> handlers = new Dictionary<string, List<Action<EventHolder>>>();
 
-        public Behavior(StateflowsEngine engine, IServiceProvider serviceProvider, BehaviorId id)
+        public Behavior(StateflowsService service, IServiceProvider serviceProvider, BehaviorId id)
         {
-            this.engine = engine;
+            this.service = service;
             this.serviceProvider = serviceProvider;
             notificationsHub = serviceProvider.GetRequiredService<NotificationsHub>();
             notificationsHub.RegisterHandler(this);
@@ -52,7 +52,7 @@ namespace Stateflows.Common.Classes
         public async Task<SendResult> SendAsync<TEvent>(TEvent @event, IEnumerable<EventHeader> headers = null)
         {
             var eventHolder = @event.ToTypedEventHolder(headers);
-            var executionToken = engine.EnqueueEvent(Id, eventHolder, serviceProvider);
+            var executionToken = service.EnqueueEvent(Id, eventHolder, serviceProvider);
             await executionToken.Handled.WaitOneAsync().ConfigureAwait(false);
 
             if (ResponseHolder.ResponsesAreSet())
@@ -66,7 +66,8 @@ namespace Stateflows.Common.Classes
         [DebuggerHidden]
         public async Task<RequestResult<TResponse>> RequestAsync<TResponse>(IRequest<TResponse> request, IEnumerable<EventHeader> headers = null)
         {
-            var executionToken = engine.EnqueueEvent(Id, request.ToTypedEventHolder(headers), serviceProvider);
+            var eventHolder = request.ToTypedEventHolder(headers);
+            var executionToken = service.EnqueueEvent(Id, eventHolder, serviceProvider);
             await executionToken.Handled.WaitOneAsync().ConfigureAwait(false);
 
             if (ResponseHolder.ResponsesAreSet())

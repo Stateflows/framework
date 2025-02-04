@@ -55,6 +55,7 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         /// <typeparam name="TEvent">Event class</typeparam>
         /// <typeparam name="TTransition">Transition class; must implement at least one of the following interfaces:
         /// <list type="bullet">
+        /// <item><see cref="ITransitionDefinition&lt;TEvent&gt;"/></item>
         /// <item><see cref="ITransitionGuard&lt;TEvent&gt;"/></item>
         /// <item><see cref="ITransitionEffect&lt;TEvent&gt;"/></item>
         /// </list>
@@ -62,14 +63,17 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         /// <typeparam name="TTargetState">Target state class; must implement at least one of the following interfaces:
         /// <list type="bullet">
         /// <item><see cref="IState"/></item>
+        /// <item><see cref="IStateDefinition"/></item>
         /// <item><see cref="IStateEntry"/></item>
         /// <item><see cref="IStateExit"/></item>
         /// <item><see cref="ICompositeState"/></item>
+        /// <item><see cref="ICompositeStateDefinition"/></item>
         /// <item><see cref="ICompositeStateEntry"/></item>
         /// <item><see cref="ICompositeStateExit"/></item>
         /// <item><see cref="ICompositeStateInitialization"/></item>
         /// <item><see cref="ICompositeStateFinalization"/></item>
         /// <item><see cref="IOrthogonalState"/></item>
+        /// <item><see cref="IOrthogonalStateDefinition"/></item>
         /// <item><see cref="IOrthogonalStateEntry"/></item>
         /// <item><see cref="IOrthogonalStateExit"/></item>
         /// <item><see cref="IOrthogonalStateInitialization"/></item>
@@ -109,6 +113,7 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         /// <typeparam name="TEvent">Event class</typeparam>
         /// <typeparam name="TTransition">Transition class; must implement at least one of the following interfaces:
         /// <list type="bullet">
+        /// <item><see cref="ITransitionDefinition&lt;TEvent&gt;"/></item>
         /// <item><see cref="ITransitionGuard&lt;TEvent&gt;"/></item>
         /// <item><see cref="ITransitionEffect&lt;TEvent&gt;"/></item>
         /// </list>
@@ -154,14 +159,17 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         /// <typeparam name="TTargetState">Target state class; must implement at least one of the following interfaces:
         /// <list type="bullet">
         /// <item><see cref="IState"/></item>
+        /// <item><see cref="IStateDefinition"/></item>
         /// <item><see cref="IStateEntry"/></item>
         /// <item><see cref="IStateExit"/></item>
         /// <item><see cref="ICompositeState"/></item>
+        /// <item><see cref="ICompositeStateDefinition"/></item>
         /// <item><see cref="ICompositeStateEntry"/></item>
         /// <item><see cref="ICompositeStateExit"/></item>
         /// <item><see cref="ICompositeStateInitialization"/></item>
         /// <item><see cref="ICompositeStateFinalization"/></item>
         /// <item><see cref="IOrthogonalState"/></item>
+        /// <item><see cref="IOrthogonalStateDefinition"/></item>
         /// <item><see cref="IOrthogonalStateEntry"/></item>
         /// <item><see cref="IOrthogonalStateExit"/></item>
         /// <item><see cref="IOrthogonalStateInitialization"/></item>
@@ -220,6 +228,7 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         /// </summary>
         /// <typeparam name="TTransition">Transition class; must implement at least one of the following interfaces:
         /// <list type="bullet">
+        /// <item><see cref="IDefaultTransitionDefinition"/></item>
         /// <item><see cref="IDefaultTransitionGuard"/></item>
         /// <item><see cref="IDefaultTransitionEffect"/></item>
         /// </list>
@@ -227,14 +236,17 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         /// <typeparam name="TTargetState">Target state class; must implement at least one of the following interfaces:
         /// <list type="bullet">
         /// <item><see cref="IState"/></item>
+        /// <item><see cref="IStateDefinition"/></item>
         /// <item><see cref="IStateEntry"/></item>
         /// <item><see cref="IStateExit"/></item>
         /// <item><see cref="ICompositeState"/></item>
+        /// <item><see cref="ICompositeStateDefinition"/></item>
         /// <item><see cref="ICompositeStateEntry"/></item>
         /// <item><see cref="ICompositeStateExit"/></item>
         /// <item><see cref="ICompositeStateInitialization"/></item>
         /// <item><see cref="ICompositeStateFinalization"/></item>
         /// <item><see cref="IOrthogonalState"/></item>
+        /// <item><see cref="IOrthogonalStateDefinition"/></item>
         /// <item><see cref="IOrthogonalStateEntry"/></item>
         /// <item><see cref="IOrthogonalStateExit"/></item>
         /// <item><see cref="IOrthogonalStateInitialization"/></item>
@@ -269,6 +281,7 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         /// </summary>
         /// <typeparam name="TTransition">Transition class; must implement at least one of the following interfaces:
         /// <list type="bullet">
+        /// <item><see cref="IDefaultTransitionDefinition"/></item>
         /// <item><see cref="IDefaultTransitionGuard"/></item>
         /// <item><see cref="IDefaultTransitionEffect"/></item>
         /// </list>
@@ -309,14 +322,17 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         /// <typeparam name="TTargetState">Target state class; must implement at least one of the following interfaces:
         /// <list type="bullet">
         /// <item><see cref="IState"/></item>
+        /// <item><see cref="IStateDefinition"/></item>
         /// <item><see cref="IStateEntry"/></item>
         /// <item><see cref="IStateExit"/></item>
         /// <item><see cref="ICompositeState"/></item>
+        /// <item><see cref="ICompositeStateDefinition"/></item>
         /// <item><see cref="ICompositeStateEntry"/></item>
         /// <item><see cref="ICompositeStateExit"/></item>
         /// <item><see cref="ICompositeStateInitialization"/></item>
         /// <item><see cref="ICompositeStateFinalization"/></item>
         /// <item><see cref="IOrthogonalState"/></item>
+        /// <item><see cref="IOrthogonalStateDefinition"/></item>
         /// <item><see cref="IOrthogonalStateEntry"/></item>
         /// <item><see cref="IOrthogonalStateExit"/></item>
         /// <item><see cref="IOrthogonalStateInitialization"/></item>
@@ -376,6 +392,7 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         /// <typeparam name="TEvent">Event class</typeparam>
         /// <typeparam name="TTransition">Transition class; must implement at least one of the following interfaces:
         /// <list type="bullet">
+        /// <item><see cref="ITransitionDefinition&lt;TEvent&gt;"/></item>
         /// <item><see cref="ITransitionGuard&lt;TEvent&gt;"/></item>
         /// <item><see cref="ITransitionEffect&lt;TEvent&gt;"/></item>
         /// </list>
@@ -416,14 +433,17 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         /// <typeparam name="TTargetState">Target state class; must implement at least one of the following interfaces:
         /// <list type="bullet">
         /// <item><see cref="IState"/></item>
+        /// <item><see cref="IStateDefinition"/></item>
         /// <item><see cref="IStateEntry"/></item>
         /// <item><see cref="IStateExit"/></item>
         /// <item><see cref="ICompositeState"/></item>
+        /// <item><see cref="ICompositeStateDefinition"/></item>
         /// <item><see cref="ICompositeStateEntry"/></item>
         /// <item><see cref="ICompositeStateExit"/></item>
         /// <item><see cref="ICompositeStateInitialization"/></item>
         /// <item><see cref="ICompositeStateFinalization"/></item>
         /// <item><see cref="IOrthogonalState"/></item>
+        /// <item><see cref="IOrthogonalStateDefinition"/></item>
         /// <item><see cref="IOrthogonalStateEntry"/></item>
         /// <item><see cref="IOrthogonalStateExit"/></item>
         /// <item><see cref="IOrthogonalStateInitialization"/></item>
@@ -475,14 +495,17 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         /// <typeparam name="TTargetState">Target state class; must implement at least one of the following interfaces:
         /// <list type="bullet">
         /// <item><see cref="IState"/></item>
+        /// <item><see cref="IStateDefinition"/></item>
         /// <item><see cref="IStateEntry"/></item>
         /// <item><see cref="IStateExit"/></item>
         /// <item><see cref="ICompositeState"/></item>
+        /// <item><see cref="ICompositeStateDefinition"/></item>
         /// <item><see cref="ICompositeStateEntry"/></item>
         /// <item><see cref="ICompositeStateExit"/></item>
         /// <item><see cref="ICompositeStateInitialization"/></item>
         /// <item><see cref="ICompositeStateFinalization"/></item>
         /// <item><see cref="IOrthogonalState"/></item>
+        /// <item><see cref="IOrthogonalStateDefinition"/></item>
         /// <item><see cref="IOrthogonalStateEntry"/></item>
         /// <item><see cref="IOrthogonalStateExit"/></item>
         /// <item><see cref="IOrthogonalStateInitialization"/></item>
@@ -523,14 +546,17 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         /// <typeparam name="TTargetState">Target state class; must implement at least one of the following interfaces:
         /// <list type="bullet">
         /// <item><see cref="IState"/></item>
+        /// <item><see cref="IStateDefinition"/></item>
         /// <item><see cref="IStateEntry"/></item>
         /// <item><see cref="IStateExit"/></item>
         /// <item><see cref="ICompositeState"/></item>
+        /// <item><see cref="ICompositeStateDefinition"/></item>
         /// <item><see cref="ICompositeStateEntry"/></item>
         /// <item><see cref="ICompositeStateExit"/></item>
         /// <item><see cref="ICompositeStateInitialization"/></item>
         /// <item><see cref="ICompositeStateFinalization"/></item>
         /// <item><see cref="IOrthogonalState"/></item>
+        /// <item><see cref="IOrthogonalStateDefinition"/></item>
         /// <item><see cref="IOrthogonalStateEntry"/></item>
         /// <item><see cref="IOrthogonalStateExit"/></item>
         /// <item><see cref="IOrthogonalStateInitialization"/></item>
@@ -580,14 +606,17 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         /// <typeparam name="TTargetState">Target state class; must implement at least one of the following interfaces:
         /// <list type="bullet">
         /// <item><see cref="IState"/></item>
+        /// <item><see cref="IStateDefinition"/></item>
         /// <item><see cref="IStateEntry"/></item>
         /// <item><see cref="IStateExit"/></item>
         /// <item><see cref="ICompositeState"/></item>
+        /// <item><see cref="ICompositeStateDefinition"/></item>
         /// <item><see cref="ICompositeStateEntry"/></item>
         /// <item><see cref="ICompositeStateExit"/></item>
         /// <item><see cref="ICompositeStateInitialization"/></item>
         /// <item><see cref="ICompositeStateFinalization"/></item>
         /// <item><see cref="IOrthogonalState"/></item>
+        /// <item><see cref="IOrthogonalStateDefinition"/></item>
         /// <item><see cref="IOrthogonalStateEntry"/></item>
         /// <item><see cref="IOrthogonalStateExit"/></item>
         /// <item><see cref="IOrthogonalStateInitialization"/></item>

@@ -26,7 +26,8 @@ namespace Stateflows
                 stateflowsBuilder
                     .ServiceCollection
                     .AddSingleton<StateflowsEngine>()
-                    .AddHostedService(provider => provider.GetService<StateflowsEngine>())
+                    .AddSingleton<StateflowsService>()
+                    .AddHostedService(provider => provider.GetService<StateflowsService>())
                     .AddSingleton<NotificationsHub>()
                     .AddHostedService(provider => provider.GetService<NotificationsHub>())
                     .AddSingleton<INotificationsHub>(provider => provider.GetService<NotificationsHub>())

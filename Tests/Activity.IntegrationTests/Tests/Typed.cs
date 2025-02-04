@@ -12,8 +12,8 @@ namespace Activity.IntegrationTests.Tests
     }
 
     public class TypedAction(
-        Input<SomeToken> someTokens,
-        Input<string> strings,
+        IInputTokens<SomeToken> someTokens,
+        IInputTokens<string> strings,
         [ValueName("global")] GlobalValue<string> value
     ) : IActionNode
     {

@@ -77,9 +77,9 @@ namespace Stateflows.StateMachines.Registration.Builders
 
         #region Events
         [DebuggerHidden]
-        public IInitializedCompositeStateBuilder AddOnEntry(Func<IStateActionContext, Task> actionAsync)
+        public IInitializedCompositeStateBuilder AddOnEntry(params Func<IStateActionContext, Task>[] actionsAsync)
         {
-            Builder.AddOnEntry(actionAsync);
+            Builder.AddOnEntry(actionsAsync);
             return this;
         }
 
@@ -115,9 +115,9 @@ namespace Stateflows.StateMachines.Registration.Builders
         
         [DebuggerHidden]
 
-        public IInitializedCompositeStateBuilder AddOnExit(Func<IStateActionContext, Task> actionAsync)
+        public IInitializedCompositeStateBuilder AddOnExit(params Func<IStateActionContext, Task>[] actionsAsync)
         {
-            Builder.AddOnExit(actionAsync);
+            Builder.AddOnExit(actionsAsync);
             return this;
         }
         #endregion
@@ -308,12 +308,12 @@ namespace Stateflows.StateMachines.Registration.Builders
         #endregion
 
         [DebuggerHidden]
-        ICompositeStateBuilder IStateEntry<ICompositeStateBuilder>.AddOnEntry(Func<IStateActionContext, Task> actionAsync)
-            => AddOnEntry(actionAsync) as ICompositeStateBuilder;
+        ICompositeStateBuilder IStateEntry<ICompositeStateBuilder>.AddOnEntry(params Func<IStateActionContext, Task>[] actionsAsync)
+            => AddOnEntry(actionsAsync) as ICompositeStateBuilder;
 
         [DebuggerHidden]
-        ICompositeStateBuilder IStateExit<ICompositeStateBuilder>.AddOnExit(Func<IStateActionContext, Task> actionAsync)
-            => AddOnExit(actionAsync) as ICompositeStateBuilder;
+        ICompositeStateBuilder IStateExit<ICompositeStateBuilder>.AddOnExit(params Func<IStateActionContext, Task>[] actionsAsync)
+            => AddOnExit(actionsAsync) as ICompositeStateBuilder;
 
         [DebuggerHidden]
         ICompositeStateBuilder ICompositeStateEvents<ICompositeStateBuilder>.AddOnInitialize(Func<IStateActionContext, Task> actionAsync)
@@ -360,12 +360,12 @@ namespace Stateflows.StateMachines.Registration.Builders
             => AddDeferredEvent<TEvent>() as ICompositeStateBuilder;
 
         [DebuggerHidden]
-        IFinalizedCompositeStateBuilder IStateEntry<IFinalizedCompositeStateBuilder>.AddOnEntry(Func<IStateActionContext, Task> actionAsync)
-            => AddOnEntry(actionAsync) as IFinalizedCompositeStateBuilder;
+        IFinalizedCompositeStateBuilder IStateEntry<IFinalizedCompositeStateBuilder>.AddOnEntry(params Func<IStateActionContext, Task>[] actionsAsync)
+            => AddOnEntry(actionsAsync) as IFinalizedCompositeStateBuilder;
 
         [DebuggerHidden]
-        IFinalizedCompositeStateBuilder IStateExit<IFinalizedCompositeStateBuilder>.AddOnExit(Func<IStateActionContext, Task> actionAsync)
-            => AddOnEntry(actionAsync) as IFinalizedCompositeStateBuilder;
+        IFinalizedCompositeStateBuilder IStateExit<IFinalizedCompositeStateBuilder>.AddOnExit(params Func<IStateActionContext, Task>[] actionsAsync)
+            => AddOnEntry(actionsAsync) as IFinalizedCompositeStateBuilder;
 
         [DebuggerHidden]
         IFinalizedCompositeStateBuilder IStateUtils<IFinalizedCompositeStateBuilder>.AddDeferredEvent<TEvent>()
@@ -413,12 +413,12 @@ namespace Stateflows.StateMachines.Registration.Builders
 
         [DebuggerHidden]
         IOverridenCompositeStateBuilder IStateEntry<IOverridenCompositeStateBuilder>.AddOnEntry(
-            Func<IStateActionContext, Task> actionAsync)
-            => AddOnEntry(actionAsync) as IOverridenCompositeStateBuilder;
+            params Func<IStateActionContext, Task>[] actionsAsync)
+            => AddOnEntry(actionsAsync) as IOverridenCompositeStateBuilder;
 
         [DebuggerHidden]
-        IOverridenCompositeStateBuilder IStateExit<IOverridenCompositeStateBuilder>.AddOnExit(Func<IStateActionContext, Task> actionAsync)
-            => AddOnExit(actionAsync) as IOverridenCompositeStateBuilder;
+        IOverridenCompositeStateBuilder IStateExit<IOverridenCompositeStateBuilder>.AddOnExit(params Func<IStateActionContext, Task>[] actionsAsync)
+            => AddOnExit(actionsAsync) as IOverridenCompositeStateBuilder;
 
         [DebuggerHidden]
         IOverridenCompositeStateBuilder IStateUtils<IOverridenCompositeStateBuilder>.AddDeferredEvent<TEvent>()
@@ -634,11 +634,11 @@ namespace Stateflows.StateMachines.Registration.Builders
         IFinalizedOverridenCompositeStateBuilder IStateMachineFinal<IFinalizedOverridenCompositeStateBuilder>.AddFinalState(string finalStateName)
             => AddFinalState(finalStateName) as IFinalizedOverridenCompositeStateBuilder;
 
-        IFinalizedOverridenCompositeStateBuilder IStateEntry<IFinalizedOverridenCompositeStateBuilder>.AddOnEntry(Func<IStateActionContext, Task> actionAsync)
-            => AddOnEntry(actionAsync) as IFinalizedOverridenCompositeStateBuilder;
+        IFinalizedOverridenCompositeStateBuilder IStateEntry<IFinalizedOverridenCompositeStateBuilder>.AddOnEntry(params Func<IStateActionContext, Task>[] actionsAsync)
+            => AddOnEntry(actionsAsync) as IFinalizedOverridenCompositeStateBuilder;
 
-        IFinalizedOverridenCompositeStateBuilder IStateExit<IFinalizedOverridenCompositeStateBuilder>.AddOnExit(Func<IStateActionContext, Task> actionAsync)
-            => AddOnExit(actionAsync) as IFinalizedOverridenCompositeStateBuilder;
+        IFinalizedOverridenCompositeStateBuilder IStateExit<IFinalizedOverridenCompositeStateBuilder>.AddOnExit(params Func<IStateActionContext, Task>[] actionsAsync)
+            => AddOnExit(actionsAsync) as IFinalizedOverridenCompositeStateBuilder;
 
         IFinalizedOverridenCompositeStateBuilder IStateUtils<IFinalizedOverridenCompositeStateBuilder>.AddDeferredEvent<TEvent>()
             => AddDeferredEvent<TEvent>() as IFinalizedOverridenCompositeStateBuilder;
@@ -661,11 +661,11 @@ namespace Stateflows.StateMachines.Registration.Builders
         IFinalizedOverridenRegionalizedCompositeStateBuilder IStateOrthogonalization<IFinalizedOverridenRegionalizedCompositeStateBuilder>.MakeOrthogonal(OrthogonalStateBuildAction orthogonalStateBuildAction)
             => MakeOrthogonal(orthogonalStateBuildAction) as IFinalizedOverridenRegionalizedCompositeStateBuilder;
 
-        IOverridenRegionalizedCompositeStateBuilder IStateEntry<IOverridenRegionalizedCompositeStateBuilder>.AddOnEntry(Func<IStateActionContext, Task> actionAsync)
-            => AddOnEntry(actionAsync) as IOverridenRegionalizedCompositeStateBuilder;
+        IOverridenRegionalizedCompositeStateBuilder IStateEntry<IOverridenRegionalizedCompositeStateBuilder>.AddOnEntry(params Func<IStateActionContext, Task>[] actionsAsync)
+            => AddOnEntry(actionsAsync) as IOverridenRegionalizedCompositeStateBuilder;
 
-        IOverridenRegionalizedCompositeStateBuilder IStateExit<IOverridenRegionalizedCompositeStateBuilder>.AddOnExit(Func<IStateActionContext, Task> actionAsync)
-            => AddOnExit(actionAsync) as IOverridenRegionalizedCompositeStateBuilder;
+        IOverridenRegionalizedCompositeStateBuilder IStateExit<IOverridenRegionalizedCompositeStateBuilder>.AddOnExit(params Func<IStateActionContext, Task>[] actionsAsync)
+            => AddOnExit(actionsAsync) as IOverridenRegionalizedCompositeStateBuilder;
 
         IOverridenRegionalizedCompositeStateBuilder IStateUtils<IOverridenRegionalizedCompositeStateBuilder>.AddDeferredEvent<TEvent>()
             => AddDeferredEvent<TEvent>() as IOverridenRegionalizedCompositeStateBuilder;

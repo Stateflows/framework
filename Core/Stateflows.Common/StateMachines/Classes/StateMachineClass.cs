@@ -1,6 +1,5 @@
 ﻿using Newtonsoft.Json;
 using Stateflows.Common.Utilities;
-using Stateflows.StateMachines;
 
 namespace Stateflows
 {

@@ -394,7 +394,7 @@ namespace Stateflows.StateMachines.Registration.Builders
             where TStateMachine : class, IStateMachine
         {
             Graph.BaseStateMachineName = StateMachine<TStateMachine>.Name;
-            var sm = FormatterServices.GetUninitializedObject(typeof(TStateMachine)) as IStateMachine;
+            var sm = StateflowsActivator.CreateUninitializedInstance(typeof(TStateMachine)) as IStateMachine;
             sm.Build(this);
             
             foreach (var vertex in Graph.AllVertices.Values)

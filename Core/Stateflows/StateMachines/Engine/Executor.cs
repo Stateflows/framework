@@ -26,9 +26,8 @@ namespace Stateflows.StateMachines.Engine
 
         public bool StateHasChanged;
 
-        public StateMachinesRegister Register { get; set; }
+        public readonly StateMachinesRegister Register;
 
-        // public IServiceProvider ServiceProvider => new StateflowsServiceProvider(ScopesStack.Peek().ServiceProvider);
         public IServiceProvider ServiceProvider => ScopesStack.Peek().ServiceProvider;
 
         private readonly Stack<IServiceScope> ScopesStack = new Stack<IServiceScope>();
@@ -75,7 +74,7 @@ namespace Stateflows.StateMachines.Engine
 
         public readonly Inspector Inspector;
 
-        public IEnumerable<string> GetDeferredEvents()
+        private string[] GetDeferredEvents()
             => VerticesTree.GetAllNodes_FromTheTop().SelectMany(vertex => vertex.Value.DeferredEvents).ToArray();
 
         public Tree<Vertex> VerticesTree { get; private set; } = null;
@@ -104,7 +103,7 @@ namespace Stateflows.StateMachines.Engine
         public bool Initialized
             => VerticesTree.HasValue;
 
-        public bool Finalized
+        private bool Finalized
             => VerticesTree.Value?.Type == VertexType.FinalState;
 
         public BehaviorStatus BehaviorStatus =>
@@ -116,6 +115,7 @@ namespace Stateflows.StateMachines.Engine
                 _ => BehaviorStatus.NotInitialized
             };
 
+        [DebuggerHidden]
         public async Task<EventStatus> InitializeAsync<TEvent>(EventHolder<TEvent> eventHolder)
         {
             Debug.Assert(Context != null, $"Context is unavailable. Is state machine '{Graph.Name}' hydrated?");
@@ -160,6 +160,7 @@ namespace Stateflows.StateMachines.Engine
             return EventStatus.NotInitialized;
         }
 
+        [DebuggerHidden]
         public async Task<bool> ExitAsync()
         {
             Debug.Assert(Context != null, $"Context is unavailable. Is state machine '{Graph.Name}' hydrated?");
@@ -180,6 +181,7 @@ namespace Stateflows.StateMachines.Engine
 
         }
 
+        [DebuggerHidden]
         public void Reset(ResetMode resetMode)
         {
             Debug.Assert(Context != null, $"Context is unavailable. Is state machine '{Graph.Name}' hydrated?");
@@ -200,6 +202,7 @@ namespace Stateflows.StateMachines.Engine
             }
         }
 
+        [DebuggerHidden]
         private async Task DoInitializeCascadeAsync(Vertex vertex, bool omitRoot = false)
         {
             if (!Context.StatesTree.Contains(vertex.Identifier))
@@ -250,7 +253,7 @@ namespace Stateflows.StateMachines.Engine
                 .Select(type => type.GetEventName())
                 .ToArray();
 
-        public IEnumerable<Type> GetExpectedEvents()
+        private IEnumerable<Type> GetExpectedEvents()
         {
             var currentStack = VerticesTree.GetAllNodes_FromTheTop().Select(node => node.Value).ToArray() ?? new Vertex[0];
 
@@ -266,6 +269,7 @@ namespace Stateflows.StateMachines.Engine
                     .ToArray();
         }
 
+        [DebuggerHidden]
         public async Task<EventStatus> ProcessAsync<TEvent>(EventHolder<TEvent> eventHolder)
         {
             StateHasChanged = false;
@@ -285,42 +289,45 @@ namespace Stateflows.StateMachines.Engine
             return result;
         }
 
+        [DebuggerHidden]
         private bool TryDeferEvent<TEvent>(EventHolder<TEvent> eventHolder)
         {
             var deferredEvents = GetDeferredEvents();
-            if (deferredEvents.Any() && deferredEvents.Contains(eventHolder.Name))
+            if (!deferredEvents.Any() || !deferredEvents.Contains(eventHolder.Name))
             {
-                Context.DeferredEvents.Add(eventHolder);
-                return true;
+                return false;
             }
-            return false;
+            
+            Context.DeferredEvents.Add(eventHolder);
+            
+            return true;
         }
 
+        [DebuggerHidden]
         private async Task DispatchNextDeferredEvent()
         {
             var deferredEvents = GetDeferredEvents();
-            foreach (var eventHolder in Context.DeferredEvents)
+            foreach (var eventHolder in Context.DeferredEvents.Where(eventHolder => !deferredEvents.Any() || !deferredEvents.Contains(eventHolder.Name)))
             {
-                if (!deferredEvents.Any() || !deferredEvents.Contains(eventHolder.Name))
-                {
-                    Context.DeferredEvents.Remove(eventHolder);
+                Context.DeferredEvents.Remove(eventHolder);
 
-                    Context.SetEvent(eventHolder);
+                Context.SetEvent(eventHolder);
 
-                    RebuildVerticesTree();
+                RebuildVerticesTree();
 
-                    await eventHolder.DoProcessAsync(this);
+                await eventHolder.DoProcessAsync(this);
 
-                    Context.ClearEvent();
+                Context.ClearEvent();
 
-                    break;
-                }
+                break;
             }
         }
 
+        [DebuggerHidden]
         Task<EventStatus> IStateflowsExecutor.DoProcessAsync<TEvent>(EventHolder<TEvent> eventHolder)
             => DoProcessAsync(eventHolder);
 
+        [DebuggerHidden]
         private async Task<EventStatus> DoProcessAsync<TEvent>(EventHolder<TEvent> eventHolder)
         {
             Debug.Assert(Context != null, $"Context is not available. Is state machine '{Graph.Name}' hydrated?");
@@ -353,19 +360,19 @@ namespace Stateflows.StateMachines.Engine
                     {
                         foreach (var edge in edges)
                         {
-                            if (
-                                eventHolder.Triggers(edge) &&
+                            if (!eventHolder.Triggers(edge) ||
                                 (
-                                    lastActivatedEdge == null ||
-                                    edge.Source.IsOrthogonalTo(lastActivatedEdge.Source)
-                                ) &&
-                                await DoGuardAsync<TEvent>(edge)
+                                    lastActivatedEdge != null &&
+                                    !edge.Source.IsOrthogonalTo(lastActivatedEdge.Source)
+                                ) ||
+                                !await DoGuardAsync<TEvent>(edge)
                             )
                             {
-                                activatedEdges.Add(edge);
-
-                                lastActivatedEdge = edge;
+                                continue;
                             }
+                            activatedEdges.Add(edge);
+
+                            lastActivatedEdge = edge;
                         }
                         
                     }
@@ -382,17 +389,6 @@ namespace Stateflows.StateMachines.Engine
                     {
                         continue;
                     }
-
-                    // if (edge.Source.Type == VertexType.Fork)
-                    // {
-                    //     if (!forks.TryGetValue(edge.Source, out var edges))
-                    //     {
-                    //         edges = new List<Edge>();
-                    //         forks[edge.Source] = edges;
-                    //     }
-                    //
-                    //     edges.Add(edge);
-                    // }
                     
                     if (edge.Target?.Type == VertexType.Join)
                     {
@@ -426,11 +422,6 @@ namespace Stateflows.StateMachines.Engine
                         await DoConsumeAsync<TEvent>(
                             edge,
                             true
-                            // edge.Source.Type != VertexType.Fork ||
-                            // (
-                            //     forks.TryGetValue(edge.Source, out var forkEdges) &&
-                            //     forkEdges.Count == edge.Source.Edges.Count
-                            // )
                         );
                         
                         result = EventStatus.Consumed;
@@ -453,10 +444,9 @@ namespace Stateflows.StateMachines.Engine
             await DispatchNextDeferredEvent();
 
             return result;
-
         }
 
-        [DebuggerStepThrough]
+        [DebuggerHidden]
         private async Task<bool> DoGuardAsync<TEvent>(Edge edge)
         {
             BeginScope();
@@ -473,6 +463,7 @@ namespace Stateflows.StateMachines.Engine
             return result;
         }
 
+        [DebuggerHidden]
         private async Task DoEffectAsync<TEvent>(Edge edge)
         {
             BeginScope();
@@ -488,14 +479,15 @@ namespace Stateflows.StateMachines.Engine
             EndScope();
         }
 
-        public async Task<InitializationStatus> DoInitializeStateMachineAsync(EventHolder @event)
+        [DebuggerHidden]
+        private async Task<InitializationStatus> DoInitializeStateMachineAsync(EventHolder @event)
         {
             BeginScope();
 
             InitializationStatus result;
 
-            var initializer = Graph.Initializers.ContainsKey(@event.Name)
-                ? Graph.Initializers[@event.Name]
+            var initializer = Graph.Initializers.TryGetValue(@event.Name, out var graphInitializer)
+                ? graphInitializer
                 : Graph.DefaultInitializer;
 
             var context = new StateMachineInitializationContext(Context);
@@ -541,7 +533,8 @@ namespace Stateflows.StateMachines.Engine
             return result;
         }
 
-        public async Task DoFinalizeStateMachineAsync()
+        [DebuggerHidden]
+        private async Task DoFinalizeStateMachineAsync()
         {
             BeginScope();
 
@@ -569,7 +562,8 @@ namespace Stateflows.StateMachines.Engine
             EndScope();
         }
 
-        public async Task DoInitializeStateAsync(Vertex vertex)
+        [DebuggerHidden]
+        private async Task DoInitializeStateAsync(Vertex vertex)
         {
             BeginScope();
 
@@ -583,7 +577,8 @@ namespace Stateflows.StateMachines.Engine
             EndScope();
         }
 
-        public async Task DoFinalizeStateAsync(Vertex vertex)
+        [DebuggerHidden]
+        private async Task DoFinalizeStateAsync(Vertex vertex)
         {
             BeginScope();
 
@@ -596,8 +591,9 @@ namespace Stateflows.StateMachines.Engine
 
             EndScope();
         }
-
-        public async Task DoEntryAsync(Vertex vertex)
+        
+        [DebuggerHidden]
+        private async Task DoEntryAsync(Vertex vertex)
         {
             BeginScope();
 
@@ -611,6 +607,7 @@ namespace Stateflows.StateMachines.Engine
             EndScope();
         }
 
+        [DebuggerHidden]
         private async Task DoExitAsync(Vertex vertex)
         {
             BeginScope();
@@ -625,6 +622,7 @@ namespace Stateflows.StateMachines.Engine
             EndScope();
         }
 
+        [DebuggerHidden]
         private async Task DoConsumeAsync<TEvent>(Edge edge, bool exitSource)
         {
             var exitingVertices = new List<Vertex>();
@@ -670,13 +668,8 @@ namespace Stateflows.StateMachines.Engine
                 // exit non-exited regions of exited orthogonal states
                 exitingVertices = exitingVertices.SelectMany(exitingVertex => exitingVertex.GetBranch().Reverse()).Distinct().ToList();
 
-                foreach (var exitingVertex in exitingVertices)
+                foreach (var exitingVertex in exitingVertices.Where(exitingVertex => Context.StatesTree.TryFind(exitingVertex.Identifier, out var _)))
                 {
-                    if (!Context.StatesTree.TryFind(exitingVertex.Identifier, out var _))
-                    {
-                        continue;
-                    }
-                    
                     await DoExitAsync(exitingVertex);
 
                     Context.StatesTree.Remove(exitingVertex.Identifier);
@@ -764,7 +757,8 @@ namespace Stateflows.StateMachines.Engine
                 .Select(region => DoInitializeCascadeAsync(region.InitialVertex))
             );
         }
-
+        
+        [DebuggerHidden]
         private async Task DoJoinAsync(IEnumerable<Edge> edges, Vertex join)
         {
             var enteringVertices = new List<Vertex>();
@@ -790,13 +784,6 @@ namespace Stateflows.StateMachines.Engine
                     exitingVertices.AddRange(node.GetAllNodes_FromTheBottom().Select(n => n.Value));
                 }
 
-                // vertex = edge.Target;
-                // while (vertex != null)
-                // {
-                //     enteringVertices.Insert(0, vertex);
-                //     vertex = vertex.ParentRegion?.ParentVertex;
-                // }
-
                 if (enteringVertices.Any() && exitingVertices.Any())
                 {
                     while (
@@ -811,9 +798,6 @@ namespace Stateflows.StateMachines.Engine
                     }
 
                     exitingVertices.Reverse();
-
-                    // exit non-exited regions of exited orthogonal states
-                    // exitingVertices = exitingVertices.SelectMany(exitingVertex => exitingVertex.GetBranch().Reverse()).Distinct().ToList();
 
                     foreach (var exitingVertex in exitingVertices)
                     {
@@ -890,6 +874,7 @@ namespace Stateflows.StateMachines.Engine
             );
         }
         
+        [DebuggerHidden]
         private async Task<bool> DoCompletionAsync()
         {
             var completionEventHolder = (new Completion()).ToEventHolder();

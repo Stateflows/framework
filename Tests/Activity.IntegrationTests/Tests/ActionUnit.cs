@@ -1,4 +1,3 @@
-using Microsoft.Extensions.DependencyInjection;
 using Stateflows.Common;
 using Stateflows.Common.Attributes;
 using Stateflows.Common.Classes;
@@ -6,7 +5,7 @@ using StateMachine.IntegrationTests.Utils;
 
 namespace Activity.IntegrationTests.Tests
 {
-    public class TestedAction(SingleInput<int> input, [ValueName("foo")] GlobalValue<int> foo) : IActionNode
+    public class TestedAction(IInputToken<int> input, [ValueName("foo")] GlobalValue<int> foo) : IActionNode
     {
         public Task ExecuteAsync(CancellationToken cancellationToken)
         {
@@ -44,7 +43,10 @@ namespace Activity.IntegrationTests.Tests
             => base.Cleanup();
 
         protected override void InitializeStateflows(IStateflowsBuilder builder)
-        { }
+        {
+            // Run AddActivities to register necessary services
+            builder.AddActivities();
+        }
 
         [TestMethod]
         public async Task ActionUnitTest()

@@ -138,7 +138,6 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
                 compositeStateName,
                 b =>
                 {
-                    b.AddStateEvents<TCompositeState, ICompositeStateBuilder>();
                     b.AddCompositeStateEvents<TCompositeState, ICompositeStateBuilder>();
 
                     compositeStateBuildAction?.Invoke(b);
@@ -211,8 +210,7 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
                 orthogonalStateName,
                 b =>
                 {
-                    b.AddStateEvents<TOrthogonalState, IOrthogonalStateBuilder>();
-                    b.AddCompositeStateEvents<TOrthogonalState, IOrthogonalStateBuilder>();
+                    b.AddOrthogonalStateEvents<TOrthogonalState, IOrthogonalStateBuilder>();
 
                     orthogonalStateBuildAction?.Invoke(b);
                 }

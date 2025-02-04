@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Threading.Tasks;
 using System.Collections.Generic;
+using System.Diagnostics;
 using Stateflows.StateMachines;
 
 namespace Stateflows.Common.StateMachines.Classes
@@ -16,9 +17,11 @@ namespace Stateflows.Common.StateMachines.Classes
             Behavior = consumer;
         }
 
+        [DebuggerHidden]
         public Task<SendResult> SendAsync<TEvent>(TEvent @event, IEnumerable<EventHeader> headers = null)
             => Behavior.SendAsync(@event);
 
+        [DebuggerHidden]
         public Task<RequestResult<TResponse>> RequestAsync<TResponse>(IRequest<TResponse> request, IEnumerable<EventHeader> headers = null)
             => Behavior.RequestAsync(request);
 

@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Newtonsoft.Json.Linq;
 using Stateflows.Common.Utilities;
@@ -220,6 +222,20 @@ namespace Stateflows.Common.Classes
             lock (Values)
             {
                 Values.Remove(key);
+            }
+
+            return Task.CompletedTask;
+        }
+
+        public Task RemoveMatchingAsync(Regex keyPattern)
+        {
+            lock (Values)
+            {
+                var matchingKeys = Values.Keys.Where(key => keyPattern.IsMatch(key));
+                foreach (var key in matchingKeys)
+                {
+                    Values.Remove(key);
+                }
             }
 
             return Task.CompletedTask;

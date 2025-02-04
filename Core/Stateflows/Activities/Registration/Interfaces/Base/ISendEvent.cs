@@ -11,7 +11,7 @@ namespace Stateflows.Activities.Registration.Interfaces.Base
         TReturn AddSendEventAction<TEvent>(string actionNodeName, SendEventActionDelegateAsync<TEvent> actionAsync, BehaviorIdSelectorAsync targetSelectorAsync, SendEventActionBuildAction buildAction = null);
         
         [DebuggerHidden]
-        private static async Task<TResult> GetSendEventAction<TEvent, TSendEventAction, TResult>(IActionContext context, Func<TSendEventAction, Task<TResult>> callback)
+        private static async Task<TResult> GetSendEventAction<TEvent, TSendEventAction, TResult>(Context.Interfaces.IActionContext context, Func<TSendEventAction, Task<TResult>> callback)
             where TSendEventAction : class, ISendEventActionNode<TEvent>
         {
             var action = ((BaseContext)context).NodeScope.GetSendEventAction<TEvent, TSendEventAction>(context);

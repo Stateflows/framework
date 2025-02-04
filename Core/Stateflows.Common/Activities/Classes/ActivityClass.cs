@@ -1,6 +1,5 @@
 ﻿using Newtonsoft.Json;
 using Stateflows.Common.Utilities;
-using Stateflows.StateMachines;
 
 namespace Stateflows
 {
@@ -24,17 +23,17 @@ namespace Stateflows
         public static bool operator !=(ActivityClass class1, ActivityClass class2)
             => !class1.Equals(class2);
 
-        public static bool operator ==(ActivityClass stateMachineClass, BehaviorClass behaviorClass)
-            => stateMachineClass.BehaviorClass.Equals(behaviorClass);
+        public static bool operator ==(ActivityClass activityClass, BehaviorClass behaviorClass)
+            => activityClass.BehaviorClass.Equals(behaviorClass);
 
-        public static bool operator !=(ActivityClass stateMachineClass, BehaviorClass behaviorClass)
-            => !stateMachineClass.BehaviorClass.Equals(behaviorClass);
+        public static bool operator !=(ActivityClass activityClass, BehaviorClass behaviorClass)
+            => !activityClass.BehaviorClass.Equals(behaviorClass);
 
-        public static bool operator ==(BehaviorClass behaviorClass, ActivityClass stateMachineClass)
-            => behaviorClass.Equals(stateMachineClass.BehaviorClass);
+        public static bool operator ==(BehaviorClass behaviorClass, ActivityClass activityClass)
+            => behaviorClass.Equals(activityClass.BehaviorClass);
 
-        public static bool operator !=(BehaviorClass behaviorClass, ActivityClass stateMachineClass)
-            => !behaviorClass.Equals(stateMachineClass.BehaviorClass);
+        public static bool operator !=(BehaviorClass behaviorClass, ActivityClass activityClass)
+            => !behaviorClass.Equals(activityClass.BehaviorClass);
 
         public static implicit operator BehaviorClass(ActivityClass activityClass)
             => activityClass.BehaviorClass;

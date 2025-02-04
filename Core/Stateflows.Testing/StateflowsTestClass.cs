@@ -7,6 +7,7 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.DependencyInjection;
 using Stateflows;
+using Stateflows.Actions;
 using Stateflows.Activities;
 using Stateflows.StateMachines;
 using Stateflows.Common.Registration.Interfaces;
@@ -27,6 +28,8 @@ namespace StateMachine.IntegrationTests.Utils
         protected IStateMachineLocator StateMachineLocator => ServiceProvider.GetRequiredService<IStateMachineLocator>();
 
         protected IActivityLocator ActivityLocator => ServiceProvider.GetRequiredService<IActivityLocator>();
+        
+        protected IActionLocator ActionLocator => ServiceProvider.GetRequiredService<IActionLocator>();
 
         protected ExecutionSequenceObserver ExecutionSequence => ServiceProvider.GetRequiredService<ExecutionSequenceObserver>();
 

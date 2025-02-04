@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Diagnostics;
+using System.Linq;
 using System.Threading.Tasks;
 using Stateflows.StateMachines.Events;
 using Stateflows.StateMachines.Context.Classes;
@@ -18,8 +19,8 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         ///     // function logic here; transition context is available via c parameter
         /// }</code>
         /// </summary>
-        /// <param name="guardAsync">The asynchronous guard function.</param>
-        TReturn AddGuard(Func<ITransitionContext<Completion>, Task<bool>> guardAsync);
+        /// <param name="guardsAsync">The asynchronous guard functions.</param>
+        TReturn AddGuard(params Func<ITransitionContext<Completion>, Task<bool>>[] guardsAsync);
 
         /// <summary>
         /// Adds a function-based guard to the current transition.<br/>
@@ -28,13 +29,17 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         ///     // function logic here; transition context is available via c parameter
         /// }</code>
         /// </summary>
-        /// <param name="guard">The guard function.</param>
+        /// <param name="guards">The guard functions.</param>
         [DebuggerHidden]
-        public TReturn AddGuard(Func<ITransitionContext<Completion>, bool> guard)
-            => AddGuard(guard
-                .AddStateMachineInvocationContext(((IEdgeBuilder)this).Edge.Graph)
-                .ToAsync()
+        public TReturn AddGuard(params Func<ITransitionContext<Completion>, bool>[] guards)
+            => AddGuard(
+                guards.Select(guard => guard
+                
+                    .AddStateMachineInvocationContext(((IEdgeBuilder)this).Edge.Graph)
+                    .ToAsync()
+                ).ToArray()
             );
+
 
         /// <summary>
         /// Adds a negated function-based guard to the current transition.<br/>
@@ -43,9 +48,9 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         ///     // function logic here; transition context is available via c parameter
         /// }</code>
         /// </summary>
-        /// <param name="guardAsync">The asynchronous guard function.</param>
-        TReturn AddNegatedGuard(Func<ITransitionContext<Completion>, Task<bool>> guardAsync)
-            => AddGuard(async c => !await guardAsync.Invoke(c));
+        /// <param name="guardsAsync">The asynchronous guard functions.</param>
+        TReturn AddNegatedGuard(params Func<ITransitionContext<Completion>, Task<bool>>[] guardsAsync)
+            => AddGuard(guardsAsync.Select<Func<ITransitionContext<Completion>, Task<bool>>, Func<ITransitionContext<Completion>, Task<bool>>>(guardAsync => async c => !await guardAsync.Invoke(c)).ToArray());
 
         /// <summary>
         /// Adds a negated function-based guard to the current transition.<br/>
@@ -54,12 +59,14 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         ///     // function logic here; transition context is available via c parameter
         /// }</code>
         /// </summary>
-        /// <param name="guard">The guard function.</param>
+        /// <param name="guards">The guard functions.</param>
         [DebuggerHidden]
-        public TReturn AddNegatedGuard(Func<ITransitionContext<Completion>, bool> guard)
-            => AddNegatedGuard(guard
-                .AddStateMachineInvocationContext(((IEdgeBuilder)this).Edge.Graph)
-                .ToAsync()
+        public TReturn AddNegatedGuard(params Func<ITransitionContext<Completion>, bool>[] guards)
+            => AddNegatedGuard(
+                guards.Select(guard => guard
+                    .AddStateMachineInvocationContext(((IEdgeBuilder)this).Edge.Graph)
+                    .ToAsync()
+                ).ToArray()
             );
 
         /// <summary>

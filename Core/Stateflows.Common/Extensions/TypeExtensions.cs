@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Linq;
 using System.Reflection;
-using System.Runtime.Serialization;
 
 namespace Stateflows.Common.Extensions
 {
@@ -56,9 +55,6 @@ namespace Stateflows.Common.Extensions
 
             return result;
         }
-
-        public static object GetUninitializedInstance(this Type type)
-            => FormatterServices.GetUninitializedObject(type);
 
         public static bool IsSubclassOfRawGeneric(this Type toCheck, Type generic)
         {

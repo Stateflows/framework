@@ -77,35 +77,45 @@ namespace Stateflows.Activities.Models
 
             InputTokenTypes = parameters
                 .Where(p => p.ParameterType.IsGenericType)
-                .Where(p => p.ParameterType.GetGenericTypeDefinition() == typeof(Input<>))
+                .Where(p => 
+                    p.ParameterType.GetGenericTypeDefinition() == typeof(Input<>) ||
+                    p.ParameterType.GetGenericTypeDefinition() == typeof(IInputTokens<>))
                 .Select(p => p.ParameterType.GenericTypeArguments[0])
                 .ToList();
 
             InputTokenTypes.AddRange(
                 parameters
                     .Where(p => p.ParameterType.IsGenericType)
-                    .Where(p => p.ParameterType.GetGenericTypeDefinition() == typeof(SingleInput<>))
+                    .Where(p => 
+                        p.ParameterType.GetGenericTypeDefinition() == typeof(SingleInput<>) ||
+                        p.ParameterType.GetGenericTypeDefinition() == typeof(IInputToken<>))
                     .Select(p => p.ParameterType.GenericTypeArguments[0])
                     .ToList()
             );
 
             OptionalInputTokenTypes = parameters
                 .Where(p => p.ParameterType.IsGenericType)
-                .Where(p => p.ParameterType.GetGenericTypeDefinition() == typeof(OptionalInput<>))
+                .Where(p =>
+                    p.ParameterType.GetGenericTypeDefinition() == typeof(OptionalInput<>) ||
+                    p.ParameterType.GetGenericTypeDefinition() == typeof(IOptionalInputTokens<>))
                 .Select(p => p.ParameterType.GenericTypeArguments[0])
                 .ToList();
 
             OptionalInputTokenTypes.AddRange(
                 parameters
                     .Where(p => p.ParameterType.IsGenericType)
-                    .Where(p => p.ParameterType.GetGenericTypeDefinition() == typeof(OptionalSingleInput<>))
+                    .Where(p =>
+                        p.ParameterType.GetGenericTypeDefinition() == typeof(OptionalSingleInput<>) ||
+                        p.ParameterType.GetGenericTypeDefinition() == typeof(IOptionalInputToken<>))
                     .Select(p => p.ParameterType.GenericTypeArguments[0])
                     .ToList()
             );
 
             OutputTokenTypes = parameters
                 .Where(p => p.ParameterType.IsGenericType)
-                .Where(p => p.ParameterType.GetGenericTypeDefinition() == typeof(Output<>))
+                .Where(p => 
+                    p.ParameterType.GetGenericTypeDefinition() == typeof(Output<>) ||
+                    p.ParameterType.GetGenericTypeDefinition() == typeof(IOutputTokens<>))
                 .Select(p => p.ParameterType.GenericTypeArguments[0])
                 .ToList();
         }

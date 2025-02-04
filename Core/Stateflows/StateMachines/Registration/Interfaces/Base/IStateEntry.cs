@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Diagnostics;
+using System.Linq;
 using System.Threading.Tasks;
 using Stateflows.StateMachines.Context.Classes;
 using Stateflows.StateMachines.Context.Interfaces;
@@ -17,8 +18,8 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         ///     // handler logic here; action context is available via c parameter
         /// }</code>
         /// </summary>
-        /// <param name="actionAsync">Action handler</param>
-        TReturn AddOnEntry(Func<IStateActionContext, Task> actionAsync);
+        /// <param name="actionsAsync">Action handlers</param>
+        TReturn AddOnEntry(params Func<IStateActionContext, Task>[] actionsAsync);
         
         /// <summary>
         /// Adds synchronous entry handler coming from current state.<br/>
@@ -27,18 +28,20 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         ///     // handler logic here; action context is available via c parameter
         /// }</code>
         /// </summary>
-        /// <param name="action">Synchronous action handler</param>
+        /// <param name="actions">Synchronous action handlers</param>
         [DebuggerHidden]
-        public TReturn AddOnEntry(Action<IStateActionContext> action)
-            => AddOnEntry(action
-                .AddStateMachineInvocationContext(((IVertexBuilder)this).Vertex.Graph)
-                .ToAsync()
+        public TReturn AddOnEntry(params Action<IStateActionContext>[] actions)
+            => AddOnEntry(
+                actions.Select(action => action
+                    .AddStateMachineInvocationContext(((IVertexBuilder)this).Vertex.Graph)
+                    .ToAsync()
+                ).ToArray()
             );
 
         /// <summary>
         /// Adds multiple typed entry handlers to the current state.
         /// </summary>
-        /// <typeparam name="TStateEntry1">The type of the first state entry handler.</typeparam>
+        /// <typeparam name="TStateEntry">The type of the first state entry handler.</typeparam>
         TReturn AddOnEntry<TStateEntry>()
             where TStateEntry : class, IStateEntry
             => AddOnEntry(c => ((BaseContext)c).Context.Executor.GetState<TStateEntry>(c)?.OnEntryAsync());

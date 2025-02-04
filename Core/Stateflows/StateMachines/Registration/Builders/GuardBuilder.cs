@@ -57,9 +57,9 @@ namespace Stateflows.StateMachines.Registration.Builders
                 return result;
             };
         
-        public IGuardBuilder<TEvent> AddGuard(Func<ITransitionContext<TEvent>, Task<bool>> guardAsync)
+        public IGuardBuilder<TEvent> AddGuard(params Func<ITransitionContext<TEvent>, Task<bool>>[] guardsAsync)
         {
-            Guards.Add(guardAsync);
+            Guards.AddRange(guardsAsync);
 
             return this;
         }
@@ -87,8 +87,8 @@ namespace Stateflows.StateMachines.Registration.Builders
         public IServiceCollection Services => InternalContext.Services;
 
         IDefaultGuardBuilder IBaseDefaultGuard<IDefaultGuardBuilder>.AddGuard(
-            Func<ITransitionContext<Completion>, Task<bool>> guardAsync)
-            => AddGuard(c => guardAsync.Invoke(c as ITransitionContext<Completion>)) as IDefaultGuardBuilder;
+            params Func<ITransitionContext<Completion>, Task<bool>>[] guardsAsync)
+            => (this as GuardBuilder<Completion>)!.AddGuard(guardsAsync) as IDefaultGuardBuilder;
 
         IDefaultGuardBuilder IDefaultGuardBuilder.AddAndExpression(Action<IDefaultGuardBuilder> guardExpression)
             => AddAndExpression(b => guardExpression.Invoke(b as IDefaultGuardBuilder)) as IDefaultGuardBuilder;

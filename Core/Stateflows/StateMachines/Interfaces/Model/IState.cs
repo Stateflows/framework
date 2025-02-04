@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Threading.Tasks;
+using Stateflows.StateMachines.Registration.Interfaces;
 
 namespace Stateflows.StateMachines
 {
@@ -17,6 +18,11 @@ namespace Stateflows.StateMachines
     public interface IStateExit : IState
     {
         Task OnExitAsync();
+    }
+
+    public interface IStateDefinition : IState
+    {
+        void Build(IStateBuilder builder);
     }
 
     public interface IFinalState : IVertex

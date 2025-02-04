@@ -8,6 +8,7 @@ using Stateflows.Common.Registration.Builders;
 using Stateflows.Common.Registration.Interfaces;
 using Stateflows.Activities.Engine;
 using Stateflows.Activities.Context;
+using Stateflows.Activities.Service;
 using Stateflows.Activities.Registration;
 using Stateflows.Activities.EventHandlers;
 using Stateflows.Activities.Registration.Builders;
@@ -77,11 +78,11 @@ namespace Stateflows.Activities
                             ActivitiesContextHolder.ExceptionContext.Value ??
                             throw new InvalidOperationException($"No service for type '{typeof(IExceptionContext).FullName}' is available in this context.")
                         )
-                        .AddTransient(typeof(Input<>))
-                        .AddTransient(typeof(SingleInput<>))
-                        .AddTransient(typeof(OptionalInput<>))
-                        .AddTransient(typeof(OptionalSingleInput<>))
-                        .AddTransient(typeof(Output<>))
+                        .AddTransient(typeof(IInputTokens<>), typeof(InputTokens<>))
+                        .AddTransient(typeof(IInputToken<>), typeof(InputToken<>))
+                        .AddTransient(typeof(IOptionalInputTokens<>), typeof(OptionalInputTokens<>))
+                        .AddTransient(typeof(IOptionalInputToken<>), typeof(OptionalInputToken<>))
+                        .AddTransient(typeof(IOutputTokens<>), typeof(OutputTokens<>))
                         ;
                 }
 

@@ -17,14 +17,14 @@ namespace Stateflows.Common.Activities.Classes
             Behavior = consumer;
         }
 
-        public Task<SendResult> SendInputAsync(Action<ITokensInput> tokensAction)
+        public Task<RequestResult<TokensOutput>> SendInputAsync(Action<ITokensInput> tokensAction)
         {
             var stream = new TokensInput();
             tokensAction(stream);
-            return SendAsync(stream);
+            return RequestAsync(stream);
         }
 
-        public Task<SendResult> SendInputAsync<TToken>(params TToken[] tokens)
+        public Task<RequestResult<TokensOutput>> SendInputAsync<TToken>(params TToken[] tokens)
         {
             var stream = new TokensInput<TToken>()
             {
@@ -33,7 +33,7 @@ namespace Stateflows.Common.Activities.Classes
                     .ToList()
             };
 
-            return SendAsync(stream);
+            return RequestAsync(stream);
         }
 
         public Task<SendResult> SendAsync<TEvent>(TEvent @event, IEnumerable<EventHeader> headers = null)

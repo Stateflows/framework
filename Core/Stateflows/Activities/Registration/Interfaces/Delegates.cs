@@ -13,25 +13,25 @@ namespace Stateflows.Activities.Registration.Interfaces
 
     public delegate Task<TTargetToken> TransformationDelegateAsync<in TSourceToken, TTargetToken>(ITransformationContext<TSourceToken> context);
 
-    public delegate Task ActionDelegateAsync(IActionContext context);
+    public delegate Task ActionDelegateAsync(Context.Interfaces.IActionContext context);
 
     public delegate Task ExceptionHandlerDelegateAsync<in TException>(IExceptionHandlerContext<TException> context)
         where TException : Exception;
 
-    public delegate Task<TEvent> SendEventActionDelegateAsync<TEvent>(IActionContext context)
+    public delegate Task<TEvent> SendEventActionDelegateAsync<TEvent>(Context.Interfaces.IActionContext context)
 ;
 
-    public delegate Task<TEvent> PublishEventActionDelegateAsync<TEvent>(IActionContext context)
+    public delegate Task<TEvent> PublishEventActionDelegateAsync<TEvent>(Context.Interfaces.IActionContext context)
 ;
 
-    public delegate Task<BehaviorId> BehaviorIdSelectorAsync(IActionContext context);
+    public delegate Task<BehaviorId> BehaviorIdSelectorAsync(Context.Interfaces.IActionContext context);
 
     public delegate Task AcceptEventActionDelegateAsync<in TEvent>(IAcceptEventActionContext<TEvent> context)
 ;
 
-    public delegate Task TimeEventActionDelegateAsync(IActionContext context);
+    public delegate Task TimeEventActionDelegateAsync(Context.Interfaces.IActionContext context);
 
-    public delegate bool DecisionDelegate(IActionContext context);
+    public delegate bool DecisionDelegate(Context.Interfaces.IActionContext context);
 
     public delegate void ObjectFlowBuildAction<TToken>(IObjectFlowBuilder<TToken> builder);
 

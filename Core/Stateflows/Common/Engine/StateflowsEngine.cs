@@ -1,10 +1,8 @@
 ﻿using System;
 using System.Linq;
-using System.Threading;
 using System.Diagnostics;
 using System.Threading.Tasks;
 using System.Collections.Generic;
-using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.DependencyInjection;
 using Stateflows.Common.Engine;
 using Stateflows.Common.Classes;
@@ -12,7 +10,7 @@ using Stateflows.Common.Interfaces;
 
 namespace Stateflows.Common
 {
-    internal class StateflowsEngine : IHostedService, IStateflowsEngine
+    internal class StateflowsEngine : IStateflowsEngine
     {
         private readonly IServiceScope Scope;
         private IServiceProvider ServiceProvider => Scope.ServiceProvider;
@@ -22,14 +20,9 @@ namespace Stateflows.Common
         private readonly ITenantAccessor TenantAccessor;
         private readonly IStateflowsValidator[] Validators;
         private Dictionary<string, IEventProcessor> processors;
-        private readonly CancellationTokenSource CancellationTokenSource = new CancellationTokenSource();
 
         private Dictionary<string, IEventProcessor> Processors
             => processors ??= ServiceProvider.GetRequiredService<IEnumerable<IEventProcessor>>().ToDictionary(p => p.BehaviorType, p => p);
-
-        private EventQueue<ExecutionToken> EventQueue { get; } = new EventQueue<ExecutionToken>(true);
-
-        private Task executionTask;
 
         public StateflowsEngine(IServiceProvider serviceProvider)
         {
@@ -41,77 +34,47 @@ namespace Stateflows.Common
             Validators = ServiceProvider.GetRequiredService<IEnumerable<IStateflowsValidator>>().ToArray();
         }
 
-        public ExecutionToken EnqueueEvent(BehaviorId id, EventHolder eventHolder, IServiceProvider serviceProvider)
+        // [DebuggerHidden]
+        public async Task HandleEventAsync(ExecutionToken token)
         {
-            var token = new ExecutionToken(id, eventHolder, serviceProvider);
+            ResponseHolder.SetResponses(token.Responses);
 
-            EventQueue.Enqueue(token);
+            token.Validation = await token.EventHolder.ValidateAsync(Validators);
 
-            return token;
-        }
+            ResponseHolder.ClearResponses();
 
-        [DebuggerHidden]
-        public Task StartAsync(CancellationToken cancellationToken)
-        {
-            executionTask = Task.Run(() =>
+            var status = EventStatus.Invalid;
+
+            try
             {
-                while (!CancellationTokenSource.Token.IsCancellationRequested && !cancellationToken.IsCancellationRequested)
+                if (token.Validation.IsValid)
                 {
-                    if (!EventQueue.WaitAsync(CancellationTokenSource.Token).GetAwaiter().GetResult())
-                    {
-                        continue;
-                    }
-
-                    var token = EventQueue.Dequeue();
-
-                    if (token != null)
-                    {
-                        _ = Task.Run(async () =>
-                        {
-                            ResponseHolder.SetResponses(token.Responses);
-
-                            token.Validation = await token.EventHolder.ValidateAsync(Validators);
-
-                            ResponseHolder.ClearResponses();
-
-                            var status = EventStatus.Invalid;
-
-                            try
-                            {
-                                if (token.Validation.IsValid)
-                                {
-                                    status = await token.EventHolder.ProcessEventAsync(this, token.TargetId, token.Exceptions, token.Responses);
-                                }
-
-                                token.Status = token.Validation.IsValid
-                                    ? status
-                                    : EventStatus.Invalid;
-
-                                token.Handled.Set();
-                            }
-                            catch (Exception)
-                            {
-                                try
-                                {
-                                    throw;
-                                }
-                                finally
-                                {
-                                    token.Status = EventStatus.Failed;
-
-                                    token.Handled.Set();
-                                }
-                            }
-                        }, cancellationToken);
-                    }
+                    status = await token.EventHolder.ProcessEventAsync(this, token.TargetId, token.Exceptions, token.Responses);
                 }
-            }, cancellationToken);
 
-            return Task.CompletedTask;
+                token.Status = token.Validation.IsValid
+                    ? status
+                    : EventStatus.Invalid;
+
+                token.Handled.Set();
+            }
+            catch (Exception)
+            {
+                try
+                {
+                    throw;
+                }
+                finally
+                {
+                    token.Status = EventStatus.Failed;
+
+                    token.Handled.Set();
+                }
+            }
         }
 
         [DebuggerHidden]
-        public async Task<EventStatus> ProcessEventAsync<TEvent>(BehaviorId id, EventHolder<TEvent> eventHolder, List<Exception> exceptions, Dictionary<object, EventHolder> responses)
+        async Task<EventStatus> IStateflowsEngine.ProcessEventAsync<TEvent>(BehaviorId id, EventHolder<TEvent> eventHolder, List<Exception> exceptions, Dictionary<object, EventHolder> responses)
         {
             var result = EventStatus.Undelivered;
 
@@ -120,9 +83,13 @@ namespace Stateflows.Common
                 return result;
             }
             
-            TenantAccessor.CurrentTenantId = await TenantProvider.GetCurrentTenantIdAsync().ConfigureAwait(false);
+            TenantAccessor.CurrentTenantId = await TenantProvider.GetCurrentTenantIdAsync();
 
-            await using var lockHandle = await Lock.AquireLockAsync(id).ConfigureAwait(false);
+            await using var lockHandle = await (
+                id.Type == BehaviorType.Action
+                    ? Lock.AquireNoLockAsync(id)
+                    : Lock.AquireLockAsync(id)
+            );
 
             try
             {
@@ -130,7 +97,7 @@ namespace Stateflows.Common
                 {
                     ResponseHolder.SetResponses(responses);
 
-                    result = await processor.ProcessEventAsync(id, eventHolder, exceptions).ConfigureAwait(false);
+                    result = await processor.ProcessEventAsync(id, eventHolder, exceptions);
                 }
                 finally
                 {
@@ -142,14 +109,13 @@ namespace Stateflows.Common
 
                         if (eventHolder is EventHolder<CompoundRequest> compoundRequest)
                         {
-                            foreach (var subEventHolder in compoundRequest.Payload.Events)
+                            foreach (var subResponseHolder in compoundRequest.Payload.Events
+                                         .Select(subEventHolder => subEventHolder.GetResponseHolder())
+                                         .Where(subResponseHolder => subResponseHolder != null)
+                            )
                             {
-                                var subResponseHolder = subEventHolder.GetResponseHolder();
-                                if (subResponseHolder != null)
-                                {
-                                    subResponseHolder.SenderId = id;
-                                    subResponseHolder.SentAt = DateTime.Now;
-                                }
+                                subResponseHolder.SenderId = id;
+                                subResponseHolder.SentAt = DateTime.Now;
                             }
                         }
                     }
@@ -161,15 +127,6 @@ namespace Stateflows.Common
             }
 
             return result;
-        }
-
-        public Task StopAsync(CancellationToken cancellationToken)
-        {
-            CancellationTokenSource.Cancel();
-
-            executionTask.Wait(cancellationToken);
-
-            return Task.CompletedTask;
         }
     }
 }

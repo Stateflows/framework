@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Linq;
 using System.Collections.Generic;
+using System.Diagnostics;
 using Stateflows.Activities;
 
 namespace Stateflows.Common
@@ -18,6 +19,7 @@ namespace Stateflows.Common
             }
         }
 
+        [DebuggerHidden]
         public static EventHolder<TEvent> ToEventHolder<TEvent>(this TEvent payload, BehaviorId? senderId = null)
            => new EventHolder<TEvent>()
            {
@@ -25,6 +27,7 @@ namespace Stateflows.Common
                SenderId = senderId,
            };
 
+        [DebuggerHidden]
         public static EventHolder<TEvent> ToEventHolder<TEvent>(this TEvent payload, IEnumerable<EventHeader> headers, BehaviorId? senderId = null)
            => new EventHolder<TEvent>()
            {
@@ -33,6 +36,7 @@ namespace Stateflows.Common
                SenderId = senderId,
            };
 
+        [DebuggerHidden]
         public static EventHolder ToTypedEventHolder<TEvent>(this TEvent payload, BehaviorId? senderId = null)
         {
             var eventType = payload.GetType();
@@ -44,6 +48,7 @@ namespace Stateflows.Common
             return holder;
         }
 
+        [DebuggerHidden]
         public static EventHolder ToTypedEventHolder<TEvent>(this TEvent payload, IEnumerable<EventHeader> headers, BehaviorId? senderId = null)
         {
             var holder = payload.ToTypedEventHolder(senderId);
@@ -52,9 +57,11 @@ namespace Stateflows.Common
             return holder;
         }
 
+        [DebuggerHidden]
         public static TokenHolder<TToken> ToTokenHolder<TToken>(this TToken payload)
            => new TokenHolder<TToken>() { Payload = payload };
 
+        [DebuggerHidden]
         public static TokenHolder ToTokenHolder<TToken>(this TToken payload, Type tokenType)
         {
             var holderType = typeof(TokenHolder<>).MakeGenericType(tokenType);

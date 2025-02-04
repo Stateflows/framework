@@ -1,4 +1,5 @@
 ﻿using System.Threading.Tasks;
+using Stateflows.StateMachines.Registration.Interfaces;
 
 namespace Stateflows.StateMachines
 {
@@ -19,5 +20,10 @@ namespace Stateflows.StateMachines
     public interface ICompositeStateFinalization : ICompositeState
     {
         Task OnFinalizeAsync();
+    }
+
+    public interface ICompositeStateDefinition : ICompositeState
+    {
+        void Build(ICompositeStateBuilder builder);
     }
 }

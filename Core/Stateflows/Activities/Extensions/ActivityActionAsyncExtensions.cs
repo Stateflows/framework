@@ -9,7 +9,7 @@ namespace Stateflows.Activities
 {
     internal static class ActivityActionAsyncExtensions
     {
-        public static Task WhenAll(this Logic<ActivityActionAsync> action, IActionContext context)
+        public static Task WhenAll(this Logic<ActivityActionAsync> action, Context.Interfaces.IActionContext context)
             => Task.WhenAll(action.Actions.Select(a => a(context)));
 
         public static Task WhenAll(this Logic<ActivityEventActionAsync> action, BaseContext context)

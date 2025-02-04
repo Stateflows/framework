@@ -131,77 +131,83 @@ namespace Stateflows.StateMachines.Registration.Builders
         }
 
         [DebuggerHidden]
-        public IStateBuilder AddOnEntry(Func<IStateActionContext, Task> actionAsync)
+        public IStateBuilder AddOnEntry(params Func<IStateActionContext, Task>[] actionsAsync)
         {
-            actionAsync.ThrowIfNull(nameof(actionAsync));
+            foreach (var actionAsync in actionsAsync)
+            {
+                actionAsync.ThrowIfNull(nameof(actionAsync));
 
-            actionAsync = actionAsync.AddStateMachineInvocationContext(Vertex.Graph);
+                var actionHandler = actionAsync.AddStateMachineInvocationContext(Vertex.Graph);
 
-            Vertex.Entry.Actions.Add(async c =>
-                {
-                    var context = new StateActionContext(c, Vertex, Constants.Entry);
-                    try
+                Vertex.Entry.Actions.Add(async c =>
                     {
-                        await actionAsync(context);
-                    }
-                    catch (Exception e)
-                    {
-                        if (e is StateflowsDefinitionException)
+                        var context = new StateActionContext(c, Vertex, Constants.Entry);
+                        try
                         {
-                            throw;
+                            await actionHandler(context);
                         }
-                        else
+                        catch (Exception e)
                         {
-                            if (!await c.Executor.Inspector.OnStateEntryExceptionAsync(context, e))
+                            if (e is StateflowsDefinitionException)
                             {
                                 throw;
                             }
                             else
                             {
-                                throw new BehaviorExecutionException(e);
+                                if (!await c.Executor.Inspector.OnStateEntryExceptionAsync(context, e))
+                                {
+                                    throw;
+                                }
+                                else
+                                {
+                                    throw new BehaviorExecutionException(e);
+                                }
                             }
                         }
                     }
-                }
-            );
+                );
+            }
 
             return this;
         }
 
         [DebuggerHidden]
-        public IStateBuilder AddOnExit(Func<IStateActionContext, Task> actionAsync)
+        public IStateBuilder AddOnExit(params Func<IStateActionContext, Task>[] actionsAsync)
         {
-            actionAsync.ThrowIfNull(nameof(actionAsync));
+            foreach (var actionAsync in actionsAsync)
+            {
+                actionAsync.ThrowIfNull(nameof(actionAsync));
 
-            actionAsync = actionAsync.AddStateMachineInvocationContext(Vertex.Graph);
+                var actionHandler = actionAsync.AddStateMachineInvocationContext(Vertex.Graph);
 
-            Vertex.Exit.Actions.Add(async c =>
-                {
-                    var context = new StateActionContext(c, Vertex, Constants.Exit);
-                    try
+                Vertex.Exit.Actions.Add(async c =>
                     {
-                        await actionAsync(context);
-                    }
-                    catch (Exception e)
-                    {
-                        if (e is StateflowsDefinitionException)
+                        var context = new StateActionContext(c, Vertex, Constants.Exit);
+                        try
                         {
-                            throw;
+                            await actionHandler(context);
                         }
-                        else
+                        catch (Exception e)
                         {
-                            if (!await c.Executor.Inspector.OnStateExitExceptionAsync(context, e))
+                            if (e is StateflowsDefinitionException)
                             {
                                 throw;
                             }
                             else
                             {
-                                throw new BehaviorExecutionException(e);
+                                if (!await c.Executor.Inspector.OnStateExitExceptionAsync(context, e))
+                                {
+                                    throw;
+                                }
+                                else
+                                {
+                                    throw new BehaviorExecutionException(e);
+                                }
                             }
                         }
                     }
-                }
-            );
+                );
+            }
 
             return this;
         }
@@ -452,12 +458,12 @@ namespace Stateflows.StateMachines.Registration.Builders
         #endregion
 
         [DebuggerHidden]
-        IBehaviorStateBuilder IStateEntry<IBehaviorStateBuilder>.AddOnEntry(Func<IStateActionContext, Task> actionAsync)
-            => AddOnEntry(actionAsync) as IBehaviorStateBuilder;
+        IBehaviorStateBuilder IStateEntry<IBehaviorStateBuilder>.AddOnEntry(params Func<IStateActionContext, Task>[] actionsAsync)
+            => AddOnEntry(actionsAsync) as IBehaviorStateBuilder;
 
         [DebuggerHidden]
-        IBehaviorStateBuilder IStateExit<IBehaviorStateBuilder>.AddOnExit(Func<IStateActionContext, Task> actionAsync)
-            => AddOnExit(actionAsync) as IBehaviorStateBuilder;
+        IBehaviorStateBuilder IStateExit<IBehaviorStateBuilder>.AddOnExit(params Func<IStateActionContext, Task>[] actionsAsync)
+            => AddOnExit(actionsAsync) as IBehaviorStateBuilder;
 
         [DebuggerHidden]
         IBehaviorStateBuilder IStateUtils<IBehaviorStateBuilder>.AddDeferredEvent<TEvent>()
@@ -555,12 +561,12 @@ namespace Stateflows.StateMachines.Registration.Builders
         }
 
         [DebuggerHidden]
-        IOverridenStateBuilder IStateEntry<IOverridenStateBuilder>.AddOnEntry(Func<IStateActionContext, Task> actionAsync)
-            => AddOnEntry(actionAsync) as IOverridenStateBuilder;
+        IOverridenStateBuilder IStateEntry<IOverridenStateBuilder>.AddOnEntry(params Func<IStateActionContext, Task>[] actionsAsync)
+            => AddOnEntry(actionsAsync) as IOverridenStateBuilder;
 
         [DebuggerHidden]
-        IOverridenStateBuilder IStateExit<IOverridenStateBuilder>.AddOnExit(Func<IStateActionContext, Task> actionAsync)
-            => AddOnExit(actionAsync) as IOverridenStateBuilder;
+        IOverridenStateBuilder IStateExit<IOverridenStateBuilder>.AddOnExit(params Func<IStateActionContext, Task>[] actionsAsync)
+            => AddOnExit(actionsAsync) as IOverridenStateBuilder;
 
         [DebuggerHidden]
         IOverridenStateBuilder IStateUtils<IOverridenStateBuilder>.AddDeferredEvent<TEvent>()
@@ -825,12 +831,12 @@ namespace Stateflows.StateMachines.Registration.Builders
             => UseElseDefaultTransition(targetStateName, transitionBuildAction);
 
         [DebuggerHidden]
-        IBehaviorOverridenStateBuilder IStateEntry<IBehaviorOverridenStateBuilder>.AddOnEntry(Func<IStateActionContext, Task> actionAsync)
-            => AddOnEntry(actionAsync) as IBehaviorOverridenStateBuilder;
+        IBehaviorOverridenStateBuilder IStateEntry<IBehaviorOverridenStateBuilder>.AddOnEntry(params Func<IStateActionContext, Task>[] actionsAsync)
+            => AddOnEntry(actionsAsync) as IBehaviorOverridenStateBuilder;
 
         [DebuggerHidden]
-        IBehaviorOverridenStateBuilder IStateExit<IBehaviorOverridenStateBuilder>.AddOnExit(Func<IStateActionContext, Task> actionAsync)
-            => AddOnExit(actionAsync) as IBehaviorOverridenStateBuilder;
+        IBehaviorOverridenStateBuilder IStateExit<IBehaviorOverridenStateBuilder>.AddOnExit(params Func<IStateActionContext, Task>[] actionsAsync)
+            => AddOnExit(actionsAsync) as IBehaviorOverridenStateBuilder;
 
         [DebuggerHidden]
         IBehaviorOverridenStateBuilder IStateUtils<IBehaviorOverridenStateBuilder>.AddDeferredEvent<TEvent>()
@@ -847,12 +853,12 @@ namespace Stateflows.StateMachines.Registration.Builders
             => MakeOrthogonal(orthogonalStateBuildAction) as IBehaviorOverridenRegionalizedStateBuilder;
 
         [DebuggerHidden]
-        IOverridenRegionalizedStateBuilder IStateEntry<IOverridenRegionalizedStateBuilder>.AddOnEntry(Func<IStateActionContext, Task> actionAsync)
-            => AddOnEntry(actionAsync) as IOverridenRegionalizedStateBuilder;
+        IOverridenRegionalizedStateBuilder IStateEntry<IOverridenRegionalizedStateBuilder>.AddOnEntry(params Func<IStateActionContext, Task>[] actionsAsync)
+            => AddOnEntry(actionsAsync) as IOverridenRegionalizedStateBuilder;
 
         [DebuggerHidden]
-        IOverridenRegionalizedStateBuilder IStateExit<IOverridenRegionalizedStateBuilder>.AddOnExit(Func<IStateActionContext, Task> actionAsync)
-            => AddOnExit(actionAsync) as IOverridenRegionalizedStateBuilder;
+        IOverridenRegionalizedStateBuilder IStateExit<IOverridenRegionalizedStateBuilder>.AddOnExit(params Func<IStateActionContext, Task>[] actionsAsync)
+            => AddOnExit(actionsAsync) as IOverridenRegionalizedStateBuilder;
 
         [DebuggerHidden]
         IOverridenRegionalizedStateBuilder IStateUtils<IOverridenRegionalizedStateBuilder>.AddDeferredEvent<TEvent>()
@@ -869,12 +875,12 @@ namespace Stateflows.StateMachines.Registration.Builders
             => AddDoActivity(doActivityName, buildAction, initializationBuilder) as IBehaviorOverridenRegionalizedStateBuilder;
 
         [DebuggerHidden]
-        IBehaviorOverridenRegionalizedStateBuilder IStateEntry<IBehaviorOverridenRegionalizedStateBuilder>.AddOnEntry(Func<IStateActionContext, Task> actionAsync)
-            => AddOnEntry(actionAsync) as IBehaviorOverridenRegionalizedStateBuilder;
+        IBehaviorOverridenRegionalizedStateBuilder IStateEntry<IBehaviorOverridenRegionalizedStateBuilder>.AddOnEntry(params Func<IStateActionContext, Task>[] actionsAsync)
+            => AddOnEntry(actionsAsync) as IBehaviorOverridenRegionalizedStateBuilder;
 
         [DebuggerHidden]
-        IBehaviorOverridenRegionalizedStateBuilder IStateExit<IBehaviorOverridenRegionalizedStateBuilder>.AddOnExit(Func<IStateActionContext, Task> actionAsync)
-            => AddOnExit(actionAsync) as IBehaviorOverridenRegionalizedStateBuilder;
+        IBehaviorOverridenRegionalizedStateBuilder IStateExit<IBehaviorOverridenRegionalizedStateBuilder>.AddOnExit(params Func<IStateActionContext, Task>[] actionsAsync)
+            => AddOnExit(actionsAsync) as IBehaviorOverridenRegionalizedStateBuilder;
 
         [DebuggerHidden]
         IBehaviorOverridenRegionalizedStateBuilder IStateUtils<IBehaviorOverridenRegionalizedStateBuilder>.AddDeferredEvent<TEvent>()

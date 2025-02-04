@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Diagnostics;
+using System.Linq;
 using System.Threading.Tasks;
 using Stateflows.StateMachines.Context.Classes;
 using Stateflows.StateMachines.Context.Interfaces;
@@ -17,8 +18,8 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         ///     // function logic here; transition context is available via c parameter
         /// }</code>
         /// </summary>
-        /// <param name="effectAsync">Asynchronous effect function</param>
-        TReturn AddEffect(Func<ITransitionContext<TEvent>, Task> effectAsync);
+        /// <param name="effectsAsync">Asynchronous effect functions</param>
+        TReturn AddEffect(params Func<ITransitionContext<TEvent>, Task>[] effectsAsync);
 
         /// <summary>
         /// Adds a synchronous effect function to the current transition.<br/>
@@ -27,12 +28,14 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         ///     // function logic here; transition context is available via c parameter
         /// }</code>
         /// </summary>
-        /// <param name="effect">Synchronous effect function</param>
+        /// <param name="effects">Synchronous effect functions</param>
         [DebuggerHidden]
-        public TReturn AddEffect(Action<ITransitionContext<TEvent>> effect)
-            => AddEffect(effect
-                .AddStateMachineInvocationContext(((IEdgeBuilder)this).Edge.Graph)
-                .ToAsync()
+        public TReturn AddEffect(params Action<ITransitionContext<TEvent>>[] effects)
+            => AddEffect(
+                effects.Select(effect => effect
+                    .AddStateMachineInvocationContext(((IEdgeBuilder)this).Edge.Graph)
+                    .ToAsync()
+                ).ToArray()
             );
 
         /// <summary>

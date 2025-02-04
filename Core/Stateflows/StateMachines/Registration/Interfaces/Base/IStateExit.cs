@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Diagnostics;
+using System.Linq;
 using System.Threading.Tasks;
 using Stateflows.StateMachines.Context.Classes;
 using Stateflows.StateMachines.Context.Interfaces;
@@ -17,8 +18,8 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         ///     // handler logic here; action context is available via c parameter
         /// }</code>
         /// </summary>
-        /// <param name="actionAsync">Action handler</param>
-        TReturn AddOnExit(Func<IStateActionContext, Task> actionAsync);
+        /// <param name="actionsAsync">Action handlers</param>
+        TReturn AddOnExit(params Func<IStateActionContext, Task>[] actionsAsync);
 
         /// <summary>
         /// Adds synchronous exit handler coming from current state.<br/>
@@ -27,12 +28,14 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         ///     // handler logic here; action context is available via c parameter
         /// }</code>
         /// </summary>
-        /// <param name="action">Synchronous action handler</param>
+        /// <param name="actions">Synchronous action handlers</param>
         [DebuggerHidden]
-        public TReturn AddOnExit(Action<IStateActionContext> action)
-            => AddOnExit(action
-                .AddStateMachineInvocationContext(((IVertexBuilder)this).Vertex.Graph)
-                .ToAsync()
+        public TReturn AddOnExit(params Action<IStateActionContext>[] actions)
+            => AddOnExit(
+                actions.Select(action => action
+                    .AddStateMachineInvocationContext(((IVertexBuilder)this).Vertex.Graph)
+                    .ToAsync()
+                ).ToArray()
             );
 
         /// <summary>

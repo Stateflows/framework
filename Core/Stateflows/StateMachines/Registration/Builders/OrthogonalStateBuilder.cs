@@ -120,77 +120,83 @@ namespace Stateflows.StateMachines.Registration.Builders
         }
 
         [DebuggerHidden]
-        public IOrthogonalStateBuilder AddOnEntry(Func<IStateActionContext, Task> actionAsync)
+        public IOrthogonalStateBuilder AddOnEntry(params Func<IStateActionContext, Task>[] actionsAsync)
         {
-            actionAsync.ThrowIfNull(nameof(actionAsync));
+            foreach (var actionAsync in actionsAsync)
+            {
+                actionAsync.ThrowIfNull(nameof(actionAsync));
 
-            actionAsync = actionAsync.AddStateMachineInvocationContext(Vertex.Graph);
+                var actionHandler = actionAsync.AddStateMachineInvocationContext(Vertex.Graph);
 
-            Vertex.Entry.Actions.Add(async c =>
-                {
-                    var context = new StateActionContext(c, Vertex, Constants.Entry);
-                    try
+                Vertex.Entry.Actions.Add(async c =>
                     {
-                        await actionAsync(context);
-                    }
-                    catch (Exception e)
-                    {
-                        if (e is StateflowsDefinitionException)
+                        var context = new StateActionContext(c, Vertex, Constants.Entry);
+                        try
                         {
-                            throw;
+                            await actionHandler(context);
                         }
-                        else
+                        catch (Exception e)
                         {
-                            if (!await c.Executor.Inspector.OnStateEntryExceptionAsync(context, e))
+                            if (e is StateflowsDefinitionException)
                             {
                                 throw;
                             }
                             else
                             {
-                                throw new BehaviorExecutionException(e);
+                                if (!await c.Executor.Inspector.OnStateEntryExceptionAsync(context, e))
+                                {
+                                    throw;
+                                }
+                                else
+                                {
+                                    throw new BehaviorExecutionException(e);
+                                }
                             }
                         }
                     }
-                }
-            );
+                );
+            }
 
             return this;
         }
 
         [DebuggerHidden]
-        public IOrthogonalStateBuilder AddOnExit(Func<IStateActionContext, Task> actionAsync)
+        public IOrthogonalStateBuilder AddOnExit(params Func<IStateActionContext, Task>[] actionsAsync)
         {
-            actionAsync.ThrowIfNull(nameof(actionAsync));
+            foreach (var actionAsync in actionsAsync)
+            {
+                actionAsync.ThrowIfNull(nameof(actionAsync));
 
-            actionAsync = actionAsync.AddStateMachineInvocationContext(Vertex.Graph);
+                var actionHandler = actionAsync.AddStateMachineInvocationContext(Vertex.Graph);
 
-            Vertex.Exit.Actions.Add(async c =>
-                {
-                    var context = new StateActionContext(c, Vertex, Constants.Exit);
-                    try
+                Vertex.Exit.Actions.Add(async c =>
                     {
-                        await actionAsync(context);
-                    }
-                    catch (Exception e)
-                    {
-                        if (e is StateflowsDefinitionException)
+                        var context = new StateActionContext(c, Vertex, Constants.Exit);
+                        try
                         {
-                            throw;
+                            await actionHandler(context);
                         }
-                        else
+                        catch (Exception e)
                         {
-                            if (!await c.Executor.Inspector.OnStateExitExceptionAsync(context, e))
+                            if (e is StateflowsDefinitionException)
                             {
                                 throw;
                             }
                             else
                             {
-                                throw new BehaviorExecutionException(e);
+                                if (!await c.Executor.Inspector.OnStateExitExceptionAsync(context, e))
+                                {
+                                    throw;
+                                }
+                                else
+                                {
+                                    throw new BehaviorExecutionException(e);
+                                }
                             }
                         }
                     }
-                }
-            );
+                );
+            }
 
             return this;
         }
@@ -449,12 +455,12 @@ namespace Stateflows.StateMachines.Registration.Builders
         }
 
         [DebuggerHidden]
-        IOverridenOrthogonalStateBuilder IStateEntry<IOverridenOrthogonalStateBuilder>.AddOnEntry(Func<IStateActionContext, Task> actionAsync)
-            => AddOnEntry(actionAsync) as IOverridenOrthogonalStateBuilder;
+        IOverridenOrthogonalStateBuilder IStateEntry<IOverridenOrthogonalStateBuilder>.AddOnEntry(params Func<IStateActionContext, Task>[] actionsAsync)
+            => AddOnEntry(actionsAsync) as IOverridenOrthogonalStateBuilder;
 
         [DebuggerHidden]
-        IOverridenOrthogonalStateBuilder IStateExit<IOverridenOrthogonalStateBuilder>.AddOnExit(Func<IStateActionContext, Task> actionAsync)
-            => AddOnExit(actionAsync) as IOverridenOrthogonalStateBuilder;
+        IOverridenOrthogonalStateBuilder IStateExit<IOverridenOrthogonalStateBuilder>.AddOnExit(params Func<IStateActionContext, Task>[] actionsAsync)
+            => AddOnExit(actionsAsync) as IOverridenOrthogonalStateBuilder;
 
         [DebuggerHidden]
         IOverridenOrthogonalStateBuilder ICompositeStateEvents<IOverridenOrthogonalStateBuilder>.AddOnInitialize(Func<IStateActionContext, Task> actionAsync)

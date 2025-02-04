@@ -1,10 +1,9 @@
 ﻿using System;
 using Newtonsoft.Json;
-using Stateflows.Activities;
 using Stateflows.Common.Exceptions;
 using Stateflows.Common.Utilities;
 
-namespace Stateflows.StateMachines
+namespace Stateflows
 {
     public struct StateMachineId
     {

@@ -7,22 +7,22 @@ using Stateflows.Common.Utilities;
 using Stateflows.Common.Interfaces;
 using Stateflows.Activities.Registration;
 
-namespace Stateflows.Activities.Engine
+namespace Stateflows.Activities.Service
 {
     internal class Provider : IBehaviorProvider
     {
-        public ActivitiesRegister Register { get; }
+        private readonly ActivitiesRegister Register;
 
-        public StateflowsEngine Engine { get; }
+        private readonly StateflowsService Service;
 
-        public IServiceProvider ServiceProvider { get; }
+        private readonly IServiceProvider ServiceProvider;
 
         public bool IsLocal => true;
 
-        public Provider(ActivitiesRegister register, StateflowsEngine engine, IServiceProvider serviceProvider)
+        public Provider(ActivitiesRegister register, StateflowsService service, IServiceProvider serviceProvider)
         {
             Register = register;
-            Engine = engine;
+            Service = service;
             ServiceProvider = serviceProvider;
         }
 
@@ -31,7 +31,7 @@ namespace Stateflows.Activities.Engine
         public bool TryProvideBehavior(BehaviorId id, out IBehavior behavior)
         {
             behavior = id.Type == BehaviorType.Activity && Register.Activities.ContainsKey($"{id.Name}.current")
-                ? new Behavior(Engine, ServiceProvider, id)
+                ? new Behavior(Service, ServiceProvider, id)
                 : null;
 
             return behavior != null;

@@ -4,6 +4,7 @@ using System.Reflection;
 using System.Threading.Tasks;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
+using System.Diagnostics;
 using Microsoft.Extensions.DependencyInjection;
 using Stateflows.Common;
 using Stateflows.Common.Interfaces;
@@ -16,9 +17,9 @@ namespace Stateflows.StateMachines.Engine
     {
         public string BehaviorType => Constants.StateMachine;
 
-        public readonly StateMachinesRegister Register;
-        public readonly IEnumerable<IStateMachineEventHandler> EventHandlers;
-        public readonly IServiceProvider ServiceProvider;
+        private readonly StateMachinesRegister Register;
+        private readonly IEnumerable<IStateMachineEventHandler> EventHandlers;
+        private readonly IServiceProvider ServiceProvider;
 
         public Processor(
             StateMachinesRegister register,
@@ -31,6 +32,7 @@ namespace Stateflows.StateMachines.Engine
             EventHandlers = eventHandlers;
         }
 
+        [DebuggerHidden]
         private Task<EventStatus> TryHandleEventAsync<TEvent>(EventContext<TEvent> context)
         {
             var eventHandler = EventHandlers.FirstOrDefault(h => h.EventType.IsInstanceOfType(context.Event));
@@ -39,7 +41,8 @@ namespace Stateflows.StateMachines.Engine
                 ? eventHandler.TryHandleEventAsync(context)
                 : Task.FromResult(EventStatus.NotConsumed);
         }
-
+        
+        [DebuggerHidden]
         public async Task<EventStatus> ProcessEventAsync<TEvent>(BehaviorId id, EventHolder<TEvent> eventHolder, List<Exception> exceptions)
         {
             var result = EventStatus.Undelivered;
@@ -145,6 +148,7 @@ namespace Stateflows.StateMachines.Engine
         Task<EventStatus> IStateflowsProcessor.ExecuteBehaviorAsync<TEvent>(EventHolder<TEvent> eventHolder, EventStatus result, IStateflowsExecutor stateflowsExecutor)
             => ExecuteBehaviorAsync(eventHolder, result, stateflowsExecutor as Executor);
 
+        [DebuggerHidden]
         private async Task<EventStatus> ExecuteBehaviorAsync<TEvent>(
             EventHolder<TEvent> eventHolder,
             EventStatus result,
@@ -157,7 +161,7 @@ namespace Stateflows.StateMachines.Engine
             {
                 try
                 {
-                    var attributes = eventHolder.GetType().GetCustomAttributes<NoImplicitInitializationAttribute>();
+                    var attributes = eventHolder.GetType().GetCustomAttributes<NoImplicitInitializationAttribute>().ToArray();
                     if (!executor.Initialized && !attributes.Any() && !typeof(Exception).IsAssignableFrom(eventHolder.PayloadType))
                     {
                         result = await executor.InitializeAsync(eventHolder);

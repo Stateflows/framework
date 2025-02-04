@@ -26,7 +26,7 @@ namespace Stateflows.Activities
             => Tokens.Contains(item.ToTokenHolder());
     }
 
-    public class Output<TToken> : ICollection<TToken>
+    internal class OutputTokens<TToken> : IOutputTokens<TToken>
     {
         private List<TToken> GetTokens()
             => OutputTokens.Tokens.OfType<TokenHolder<TToken>>().ToTokens().ToList();

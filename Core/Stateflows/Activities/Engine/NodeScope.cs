@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics;
 using System.Threading;
 using Microsoft.Extensions.DependencyInjection;
 using Stateflows.Common;
@@ -73,6 +74,7 @@ namespace Stateflows.Activities.Engine
         public NodeScope CreateChildScope(Node node = null, Guid? threadId = null)
             => ChildScope = new NodeScope(this, node ?? Node, threadId ?? ThreadId);
 
+        [DebuggerHidden]
         public TDefaultInitializer GetDefaultInitializer<TDefaultInitializer>(IActivityInitializationContext context)
             where TDefaultInitializer : class, IDefaultInitializer
         {
@@ -92,6 +94,7 @@ namespace Stateflows.Activities.Engine
             return initializer;
         }
 
+        [DebuggerHidden]
         public TInitializer GetInitializer<TInitializer, TInitializationEvent>(IActivityInitializationContext<TInitializationEvent> context)
             where TInitializer : class, IInitializer<TInitializationEvent>
         {
@@ -110,7 +113,8 @@ namespace Stateflows.Activities.Engine
 
             return initializer;
         }
-
+        
+        [DebuggerHidden]
         public TFinalizer GetFinalizer<TFinalizer>(IActivityActionContext context)
             where TFinalizer : class, IFinalizer
         {
@@ -129,8 +133,9 @@ namespace Stateflows.Activities.Engine
 
             return initializer;
         }
-
-        public TAction GetAction<TAction>(IActionContext context)
+        
+        [DebuggerHidden]
+        public TAction GetAction<TAction>(Context.Interfaces.IActionContext context)
             where TAction : class, IActionNode
         {
             ContextValues.GlobalValuesHolder.Value = context.Activity.Values;
@@ -147,6 +152,7 @@ namespace Stateflows.Activities.Engine
             return StateflowsActivator.CreateInstance<TAction>(ServiceProvider);
         }
 
+        [DebuggerHidden]
         public TAcceptEventAction GetAcceptEventAction<TEvent, TAcceptEventAction>(IAcceptEventActionContext<TEvent> context)
 
             where TAcceptEventAction : class, IAcceptEventActionNode<TEvent>
@@ -165,7 +171,8 @@ namespace Stateflows.Activities.Engine
             return StateflowsActivator.CreateInstance<TAcceptEventAction>(ServiceProvider);
         }
 
-        public TTimeEventAction GetTimeEventAction<TTimeEventAction>(IActionContext context)
+        [DebuggerHidden]
+        public TTimeEventAction GetTimeEventAction<TTimeEventAction>(Context.Interfaces.IActionContext context)
             where TTimeEventAction : class, ITimeEventActionNode
         {
             ContextValues.GlobalValuesHolder.Value = context.Activity.Values;
@@ -182,7 +189,8 @@ namespace Stateflows.Activities.Engine
             return StateflowsActivator.CreateInstance<TTimeEventAction>(ServiceProvider);
         }
 
-        public TSendEventAction GetSendEventAction<TEvent, TSendEventAction>(IActionContext context)
+        [DebuggerHidden]
+        public TSendEventAction GetSendEventAction<TEvent, TSendEventAction>(Context.Interfaces.IActionContext context)
             where TSendEventAction : class, ISendEventActionNode<TEvent>
         {
             ContextValues.GlobalValuesHolder.Value = context.Activity.Values;
@@ -199,7 +207,8 @@ namespace Stateflows.Activities.Engine
             return StateflowsActivator.CreateInstance<TSendEventAction>(ServiceProvider);
         }
 
-        public TStructuredActivity GetStructuredActivity<TStructuredActivity>(IActionContext context)
+        [DebuggerHidden]
+        public TStructuredActivity GetStructuredActivity<TStructuredActivity>(Context.Interfaces.IActionContext context)
             where TStructuredActivity : class, IStructuredActivityNode
         {
             ContextValues.GlobalValuesHolder.Value = context.Activity.Values;
@@ -216,6 +225,7 @@ namespace Stateflows.Activities.Engine
             return StateflowsActivator.CreateInstance<TStructuredActivity>(ServiceProvider);
         }
 
+        [DebuggerHidden]
         public TExceptionHandler GetExceptionHandler<TException, TExceptionHandler>(IExceptionHandlerContext<TException> context)
             where TException : Exception
             where TExceptionHandler : class, IExceptionHandlerNode<TException>
@@ -234,6 +244,7 @@ namespace Stateflows.Activities.Engine
             return StateflowsActivator.CreateInstance<TExceptionHandler>(ServiceProvider);
         }
 
+        [DebuggerHidden]
         public TFlow GetFlow<TFlow>(IActivityFlowContext context)
             where TFlow : IEdge
         {
@@ -251,18 +262,22 @@ namespace Stateflows.Activities.Engine
             return StateflowsActivator.CreateInstance<TFlow>(ServiceProvider);
         }
 
+        [DebuggerHidden]
         public TControlFlow GetControlFlow<TControlFlow>(IActivityFlowContext context)
             where TControlFlow : class, IControlFlow
             => GetFlow<TControlFlow>(context);
 
+        [DebuggerHidden]
         public TFlow GetObjectFlow<TFlow, TToken>(IActivityFlowContext<TToken> context)
             where TFlow : class, IFlow<TToken>
             => GetFlow<TFlow>(context);
 
+        [DebuggerHidden]
         public TTransformationFlow GetObjectTransformationFlow<TTransformationFlow, TToken, TTransformedToken>(IActivityFlowContext<TToken> context)
             where TTransformationFlow : class, IFlowTransformation<TToken, TTransformedToken>
             => GetFlow<TTransformationFlow>(context);
 
+        [DebuggerHidden]
         public TElseTransformationFlow GetElseObjectTransformationFlow<TElseTransformationFlow, TToken, TTransformedToken>(IActivityFlowContext<TToken> context)
             where TElseTransformationFlow : class, IFlowTransformation<TToken, TTransformedToken>
             => GetFlow<TElseTransformationFlow>(context);

@@ -88,7 +88,7 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         TReturn AddCompositeState(string compositeStateName, CompositeStateBuildAction compositeStateBuildAction);
 
         /// <summary>
-        /// Adds an composite state to the state machine.<br/>
+        /// Adds a composite state to the state machine.<br/>
         /// <a href="https://github.com/Stateflows/framework/wiki/Composite-State">Composite state</a> represent a stable configuration of a <a href="https://github.com/Stateflows/framework/wiki/Behaviors">Behavior</a>, which is a parent for a set of substates.
         /// </summary>
         /// <typeparam name="TCompositeState">Composite state class; must implement at least one of the following interfaces:
@@ -138,7 +138,6 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
                 compositeStateName,
                 b =>
                 {
-                    b.AddStateEvents<TCompositeState, ICompositeStateBuilder>();
                     b.AddCompositeStateEvents<TCompositeState, ICompositeStateBuilder>();
 
                     compositeStateBuildAction?.Invoke(b);
@@ -211,8 +210,7 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
                 orthogonalStateName,
                 b =>
                 {
-                    b.AddStateEvents<TOrthogonalState, IOrthogonalStateBuilder>();
-                    b.AddCompositeStateEvents<TOrthogonalState, IOrthogonalStateBuilder>();
+                    b.AddOrthogonalStateEvents<TOrthogonalState, IOrthogonalStateBuilder>();
 
                     orthogonalStateBuildAction?.Invoke(b);
                 }

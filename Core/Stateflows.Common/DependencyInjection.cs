@@ -1,8 +1,10 @@
 ﻿using System;
 using Microsoft.Extensions.DependencyInjection;
+using Stateflows.Actions;
 using Stateflows.Activities;
 using Stateflows.StateMachines;
 using Stateflows.Common;
+using Stateflows.Common.Actions.Classes;
 using Stateflows.Common.Engine;
 using Stateflows.Common.Locator;
 using Stateflows.Common.Validators;
@@ -33,6 +35,7 @@ namespace Stateflows
                 .AddScoped<IBehaviorLocator, BehaviorLocator>()
                 .AddScoped<IStateMachineLocator, StateMachineLocator>()
                 .AddScoped<IActivityLocator, ActivityLocator>()
+                .AddScoped<IActionLocator, ActionLocator>()
                 .AddSingleton<IBehaviorClassesProvider, BehaviorClassesProvider>()
                 ;
 
