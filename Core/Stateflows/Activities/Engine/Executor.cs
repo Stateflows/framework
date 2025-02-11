@@ -93,6 +93,9 @@ namespace Stateflows.Activities.Engine
             Logger = serviceProvider.GetService<ILogger<Executor>>();
         }
 
+        public Task BuildAsync()
+            => Inspector.BuildAsync();
+
         public RootContext Context { get; private set; }
 
         private Inspector inspector;
@@ -1033,11 +1036,7 @@ namespace Stateflows.Activities.Engine
             NodeScope.Dispose();
         }
 
-        public IActivity GetActivity(Type activityType)
-        {
-            var activity = StateflowsActivator.CreateInstance(NodeScope.ServiceProvider, activityType) as IActivity;
-
-            return activity;
-        }
+        public async Task<IActivity> GetActivity(Type activityType)
+            => await StateflowsActivator.CreateInstanceAsync(NodeScope.ServiceProvider, activityType) as IActivity;
     }
 }

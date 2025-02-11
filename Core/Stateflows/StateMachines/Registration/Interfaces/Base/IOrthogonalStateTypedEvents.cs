@@ -13,7 +13,7 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         [DebuggerHidden]
         TReturn AddOnInitialize<TOrthogonalStateInitialization>()
             where TOrthogonalStateInitialization : class, IOrthogonalStateInitialization
-            => AddOnInitialize(c => ((BaseContext)c).Context.Executor.GetState<TOrthogonalStateInitialization>(c)?.OnInitializeAsync());
+            => AddOnInitialize(async c => await (await ((BaseContext)c).Context.Executor.GetStateAsync<TOrthogonalStateInitialization>(c)).OnInitializeAsync());
 
         /// <summary>
         /// Adds multiple typed initialization handlers to the current orthogonal state.
@@ -92,7 +92,7 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         [DebuggerHidden]
         TReturn AddOnFinalize<TOrthogonalStateFinalization>()
             where TOrthogonalStateFinalization : class, IOrthogonalStateFinalization
-            => AddOnFinalize(c => ((BaseContext)c).Context.Executor.GetState<TOrthogonalStateFinalization>(c)?.OnFinalizeAsync());
+            => AddOnFinalize(async c => await (await ((BaseContext)c).Context.Executor.GetStateAsync<TOrthogonalStateFinalization>(c)).OnFinalizeAsync());
 
         /// <summary>
         /// Adds multiple typed finalization handlers to the current orthogonal state.

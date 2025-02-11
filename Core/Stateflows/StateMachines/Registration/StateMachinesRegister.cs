@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Diagnostics;
 using System.Collections.Generic;
-using System.Runtime.Serialization;
+using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using Stateflows.Common.Classes;
 using Stateflows.Common.Registration.Builders;
@@ -18,11 +18,11 @@ namespace Stateflows.StateMachines.Registration
 
         private IServiceCollection Services { get; }
 
-        public List<StateMachineExceptionHandlerFactory> GlobalExceptionHandlerFactories { get; set; } = new List<StateMachineExceptionHandlerFactory>();
+        public List<StateMachineExceptionHandlerFactoryAsync> GlobalExceptionHandlerFactories { get; set; } = new List<StateMachineExceptionHandlerFactoryAsync>();
 
-        public List<StateMachineInterceptorFactory> GlobalInterceptorFactories { get; set; } = new List<StateMachineInterceptorFactory>();
+        public List<StateMachineInterceptorFactoryAsync> GlobalInterceptorFactories { get; set; } = new List<StateMachineInterceptorFactoryAsync>();
 
-        public List<StateMachineObserverFactory> GlobalObserverFactories { get; set; } = new List<StateMachineObserverFactory>();
+        public List<StateMachineObserverFactoryAsync> GlobalObserverFactories { get; set; } = new List<StateMachineObserverFactoryAsync>();
 
         public StateMachinesRegister(StateflowsBuilder stateflowsBuilder, IServiceCollection services)
         {
@@ -111,29 +111,41 @@ namespace Stateflows.StateMachines.Registration
 
         [DebuggerHidden]
         public void AddInterceptor(StateMachineInterceptorFactory interceptorFactory)
-            => GlobalInterceptorFactories.Add(interceptorFactory);
+            => GlobalInterceptorFactories.Add(serviceProvider => Task.FromResult(interceptorFactory(serviceProvider)));
+        
+        [DebuggerHidden]
+        public void AddInterceptor(StateMachineInterceptorFactoryAsync interceptorFactoryAsync)
+            => GlobalInterceptorFactories.Add(interceptorFactoryAsync);
 
         [DebuggerHidden]
         public void AddInterceptor<TInterceptor>()
             where TInterceptor : class, IStateMachineInterceptor
-            =>  AddInterceptor(serviceProvider => StateflowsActivator.CreateInstance<TInterceptor>(serviceProvider));
+            =>  AddInterceptor(async serviceProvider => await StateflowsActivator.CreateInstanceAsync<TInterceptor>(serviceProvider));
 
         [DebuggerHidden]
         public void AddExceptionHandler(StateMachineExceptionHandlerFactory exceptionHandlerFactory)
-            => GlobalExceptionHandlerFactories.Add(exceptionHandlerFactory);
+            => GlobalExceptionHandlerFactories.Add(serviceProvider => Task.FromResult(exceptionHandlerFactory(serviceProvider)));
+        
+        [DebuggerHidden]
+        public void AddExceptionHandler(StateMachineExceptionHandlerFactoryAsync exceptionHandlerFactoryAsync)
+            => GlobalExceptionHandlerFactories.Add(exceptionHandlerFactoryAsync);
 
         [DebuggerHidden]
         public void AddExceptionHandler<TExceptionHandler>()
             where TExceptionHandler : class, IStateMachineExceptionHandler
-            =>  AddExceptionHandler(serviceProvider => StateflowsActivator.CreateInstance<TExceptionHandler>(serviceProvider));
+            =>  AddExceptionHandler(async serviceProvider => await StateflowsActivator.CreateInstanceAsync<TExceptionHandler>(serviceProvider));
 
         [DebuggerHidden]
         public void AddObserver(StateMachineObserverFactory observerFactory)
-            => GlobalObserverFactories.Add(observerFactory);
+            => GlobalObserverFactories.Add(serviceProvider => Task.FromResult(observerFactory(serviceProvider)));
+        
+        [DebuggerHidden]
+        public void AddObserver(StateMachineObserverFactoryAsync observerFactoryAsync)
+            => GlobalObserverFactories.Add(observerFactoryAsync);
 
         [DebuggerHidden]
         public void AddObserver<TObserver>()
             where TObserver : class, IStateMachineObserver
-            =>  AddObserver(serviceProvider => StateflowsActivator.CreateInstance<TObserver>(serviceProvider));
+            =>  AddObserver(async serviceProvider => await StateflowsActivator.CreateInstanceAsync<TObserver>(serviceProvider));
     }
 }

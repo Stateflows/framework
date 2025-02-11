@@ -22,7 +22,7 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         [DebuggerHidden]
         public TReturn AddDefaultInitializer<TDefaultInitializer>()
             where TDefaultInitializer : class, IDefaultInitializer
-            => AddDefaultInitializer(c => ((BaseContext)c).Context.Executor.GetDefaultInitializer<TDefaultInitializer>(c)?.OnInitializeAsync());
+            => AddDefaultInitializer(async c => await (await ((BaseContext)c).Context.Executor.GetDefaultInitializerAsync<TDefaultInitializer>(c)).OnInitializeAsync());
 
         /// <summary>
         /// Adds an initializer for a specific initialization event to the state machine.
@@ -39,7 +39,7 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         [DebuggerHidden]
         public TReturn AddInitializer<TInitializationEvent, TInitializer>()
             where TInitializer : class, IInitializer<TInitializationEvent>
-            => AddInitializer<TInitializationEvent>(c => ((BaseContext)c).Context.Executor.GetInitializer<TInitializer, TInitializationEvent>(c)?.OnInitializeAsync(c.InitializationEvent));
+            => AddInitializer<TInitializationEvent>(async c => await (await ((BaseContext)c).Context.Executor.GetInitializerAsync<TInitializer, TInitializationEvent>(c)).OnInitializeAsync(c.InitializationEvent));
 
         /// <summary>
         /// Adds a finalizer to the state machine.
@@ -54,6 +54,6 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         [DebuggerHidden]
         public TReturn AddFinalizer<TFinalizer>()
             where TFinalizer : class, IFinalizer
-            => AddFinalizer(c => ((BaseContext)c).Context.Executor.GetFinalizer<TFinalizer>(c)?.OnFinalizeAsync());
+            => AddFinalizer(async c => await (await ((BaseContext)c).Context.Executor.GetFinalizerAsync<TFinalizer>(c)).OnFinalizeAsync());
     }
 }

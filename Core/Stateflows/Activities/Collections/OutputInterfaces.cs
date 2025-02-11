@@ -1,13 +1,8 @@
-﻿using System.Linq;
-using System.Threading;
-using System.Collections;
-using System.Collections.Generic;
-using Stateflows.Utils;
-using Stateflows.Common;
+﻿using System.Collections.Generic;
 
 namespace Stateflows.Activities
 {
-    interface IOutputTokens<TToken> : ICollection<TToken>
+    public interface IOutputTokens<TToken> : ICollection<TToken>
     {
         void AddRange(IEnumerable<TToken> items);
     }

@@ -1,9 +1,9 @@
 ﻿using System;
 using System.Diagnostics;
 using System.Threading.Tasks;
+using Stateflows.Common;
 using Stateflows.Activities.Context.Classes;
 using Stateflows.Activities.Context.Interfaces;
-using Stateflows.Common;
 
 namespace Stateflows.Activities.Registration.Interfaces.Base
 {
@@ -14,8 +14,8 @@ namespace Stateflows.Activities.Registration.Interfaces.Base
         [DebuggerHidden]
         public TReturn AddDefaultInitializer<TInitializer>()
             where TInitializer : class, IDefaultInitializer
-            => AddDefaultInitializer(c
-                => ((BaseContext)c).NodeScope.GetDefaultInitializer<TInitializer>(c)?.OnInitializeAsync()
+            => AddDefaultInitializer(async c
+                => await (await ((BaseContext)c).NodeScope.GetDefaultInitializerAsync<TInitializer>(c)).OnInitializeAsync()
             );
 
         TReturn AddInitializer<TInitializationEvent>(Func<IActivityInitializationContext<TInitializationEvent>, Task<bool>> actionAsync);
@@ -23,8 +23,8 @@ namespace Stateflows.Activities.Registration.Interfaces.Base
         [DebuggerHidden]
         public TReturn AddInitializer<TInitializationEvent, TInitializer>()
             where TInitializer : class, IInitializer<TInitializationEvent>
-            => AddInitializer<TInitializationEvent>(c
-                => ((BaseContext)c).NodeScope.GetInitializer<TInitializer, TInitializationEvent>(c)?.OnInitializeAsync(c.InitializationEvent)
+            => AddInitializer<TInitializationEvent>(async c
+                => await (await ((BaseContext)c).NodeScope.GetInitializerAsync<TInitializer, TInitializationEvent>(c)).OnInitializeAsync(c.InitializationEvent)
             );
 
         TReturn AddFinalizer(Func<IActivityActionContext, Task> actionAsync);
@@ -32,8 +32,8 @@ namespace Stateflows.Activities.Registration.Interfaces.Base
         [DebuggerHidden]
         public TReturn AddFinalizer<TFinalizer>()
             where TFinalizer : class, IFinalizer
-            => AddFinalizer(c
-                => ((BaseContext)c).NodeScope.GetFinalizer<TFinalizer>(c)?.OnFinalizeAsync()
+            => AddFinalizer(async c
+                => await (await ((BaseContext)c).NodeScope.GetFinalizerAsync<TFinalizer>(c)).OnFinalizeAsync()
             );
     }
 }

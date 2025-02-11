@@ -39,9 +39,9 @@ namespace Stateflows.Activities.Models
         public readonly List<Type> InitializerTypes = new List<Type>();
         public Logic<ActivityPredicateAsync> DefaultInitializer;
 
-        public readonly List<ActivityExceptionHandlerFactory> ExceptionHandlerFactories = new List<ActivityExceptionHandlerFactory>();
-        public readonly List<ActivityInterceptorFactory> InterceptorFactories = new List<ActivityInterceptorFactory>();
-        public readonly List<ActivityObserverFactory> ObserverFactories = new List<ActivityObserverFactory>();
+        public readonly List<ActivityExceptionHandlerFactoryAsync> ExceptionHandlerFactories = new List<ActivityExceptionHandlerFactoryAsync>();
+        public readonly List<ActivityInterceptorFactoryAsync> InterceptorFactories = new List<ActivityInterceptorFactoryAsync>();
+        public readonly List<ActivityObserverFactoryAsync> ObserverFactories = new List<ActivityObserverFactoryAsync>();
 
         [DebuggerHidden]
         public void Build()

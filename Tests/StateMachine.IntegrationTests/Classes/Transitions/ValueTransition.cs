@@ -1,17 +1,29 @@
-﻿namespace StateMachine.IntegrationTests.Classes.Transitions
+﻿using Stateflows.StateMachines.Attributes;
+
+namespace StateMachine.IntegrationTests.Classes.Transitions
 {
     internal class ValueTransition : IDefaultTransitionGuard
     {
-        private readonly SourceStateValue<int> counter = new("counter");
-        private readonly SourceStateValue<int?> nullable = new("nullable");
-        private readonly SourceStateValue<int?> nulled = new("nulled");
+        private readonly int counter;
+        private readonly int? nullable;
+        private readonly int? nulled;
+        public ValueTransition(
+            [SourceStateValue] int counter,
+            [SourceStateValue] int? nullable,
+            [SourceStateValue] int? nulled
+        )
+        {
+            this.counter = counter;
+            this.nullable = nullable;
+            this.nulled = nulled;
+        }
 
         public Task<bool> GuardAsync()
         {
             var result =
-                counter.TryGet(out var c) && c == 1 &&
-                nullable.TryGet(out var n) && n == 3 &&
-                nulled.TryGet(out var u) && u is null;
+                counter == 1 &&
+                nullable == 3 &&
+                nulled is null;
             return Task.FromResult(result);
         }
     }

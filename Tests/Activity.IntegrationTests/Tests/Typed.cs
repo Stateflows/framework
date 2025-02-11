@@ -1,5 +1,6 @@
 using Activity.IntegrationTests.Classes.Tokens;
 using Stateflows.Activities;
+using Stateflows.Activities.Registration.Interfaces.Base;
 using Stateflows.Common;
 using Stateflows.Common.Attributes;
 using StateMachine.IntegrationTests.Utils;
@@ -14,6 +15,7 @@ namespace Activity.IntegrationTests.Tests
     public class TypedAction(
         IInputTokens<SomeToken> someTokens,
         IInputTokens<string> strings,
+        IOutputTokens<string> output,
         [ValueName("global")] GlobalValue<string> value
     ) : IActionNode
     {
@@ -67,7 +69,9 @@ namespace Activity.IntegrationTests.Tests
                             )
                             .AddAction<TypedAction>(b => b
                                 .AddControlFlow("final")
+                                .AddFlow<string>("string")
                             )
+                            .AddAction("string", async c => { })
                             .AddAction("final", async c => Executed = true)
                         )
                     )

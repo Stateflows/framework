@@ -62,10 +62,13 @@ namespace Stateflows.StateMachines.Registration.Interfaces
     public delegate void ForwardedEventBuildAction<TEvent>(IForwardedEventBuilder<TEvent> builder);
 
     public delegate IStateMachineObserver StateMachineObserverFactory(IServiceProvider serviceProvider);
+    public delegate Task<IStateMachineObserver> StateMachineObserverFactoryAsync(IServiceProvider serviceProvider);
 
     public delegate IStateMachineInterceptor StateMachineInterceptorFactory(IServiceProvider serviceProvider);
+    public delegate Task<IStateMachineInterceptor> StateMachineInterceptorFactoryAsync(IServiceProvider serviceProvider);
 
     public delegate IStateMachineExceptionHandler StateMachineExceptionHandlerFactory(IServiceProvider serviceProvider);
+    public delegate Task<IStateMachineExceptionHandler> StateMachineExceptionHandlerFactoryAsync(IServiceProvider serviceProvider);
 
     public delegate object StateActionInitializationBuilder(IStateActionContext context);
     

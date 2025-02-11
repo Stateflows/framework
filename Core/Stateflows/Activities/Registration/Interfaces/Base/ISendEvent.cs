@@ -2,7 +2,6 @@
 using System.Diagnostics;
 using System.Threading.Tasks;
 using Stateflows.Activities.Context.Classes;
-using Stateflows.Activities.Context.Interfaces;
 
 namespace Stateflows.Activities.Registration.Interfaces.Base
 {
@@ -14,7 +13,7 @@ namespace Stateflows.Activities.Registration.Interfaces.Base
         private static async Task<TResult> GetSendEventAction<TEvent, TSendEventAction, TResult>(Context.Interfaces.IActionContext context, Func<TSendEventAction, Task<TResult>> callback)
             where TSendEventAction : class, ISendEventActionNode<TEvent>
         {
-            var action = ((BaseContext)context).NodeScope.GetSendEventAction<TEvent, TSendEventAction>(context);
+            var action = await ((BaseContext)context).NodeScope.GetSendEventActionAsync<TEvent, TSendEventAction>(context);
 
             InputTokens.TokensHolder.Value = ((ActionContext)context).InputTokens;
             OutputTokens.TokensHolder.Value = ((ActionContext)context).OutputTokens;

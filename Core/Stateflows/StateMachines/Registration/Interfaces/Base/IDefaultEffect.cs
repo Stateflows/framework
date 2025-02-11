@@ -45,7 +45,7 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         /// <typeparam name="TEffect">The type of the effect handler.</typeparam>
         TReturn AddEffect<TEffect>()
             where TEffect : class, IDefaultTransitionEffect
-            => AddEffect(c => ((BaseContext)c).Context.Executor.GetDefaultTransitionEffect<TEffect>(c)?.EffectAsync());
+            => AddEffect(async c => await (await ((BaseContext)c).Context.Executor.GetDefaultTransitionEffectAsync<TEffect>(c)).EffectAsync());
 
         /// <summary>
         /// Adds multiple typed effects to the current transition.

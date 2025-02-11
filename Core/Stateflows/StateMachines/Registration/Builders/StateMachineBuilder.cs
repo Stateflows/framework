@@ -1,4 +1,5 @@
 ﻿using System;
+using System.ComponentModel;
 using System.Diagnostics;
 using System.Runtime.Serialization;
 using System.Threading.Tasks;
@@ -267,7 +268,7 @@ namespace Stateflows.StateMachines.Registration.Builders
         {
             Services.AddScoped<TExceptionHandler>();
             
-            AddExceptionHandler(serviceProvider => StateflowsActivator.CreateInstance<TExceptionHandler>(serviceProvider));
+            AddExceptionHandler(async serviceProvider => await StateflowsActivator.CreateInstanceAsync<TExceptionHandler>(serviceProvider));
 
             return this;
         }
@@ -280,8 +281,11 @@ namespace Stateflows.StateMachines.Registration.Builders
             => AddObserver<TObserver>() as IOverridenStateMachineBuilder;
 
         public IInitializedStateMachineBuilder AddExceptionHandler(StateMachineExceptionHandlerFactory exceptionHandlerFactory)
+            => AddExceptionHandler(serviceProvider => Task.FromResult(exceptionHandlerFactory(serviceProvider)));
+
+        public IInitializedStateMachineBuilder AddExceptionHandler(StateMachineExceptionHandlerFactoryAsync exceptionHandlerFactoryAsync)
         {
-            Graph.ExceptionHandlerFactories.Add(exceptionHandlerFactory);
+            Graph.ExceptionHandlerFactories.Add(exceptionHandlerFactoryAsync);
 
             return this;
         }
@@ -306,14 +310,17 @@ namespace Stateflows.StateMachines.Registration.Builders
         {
             Services.AddScoped<TInterceptor>();
 
-            AddInterceptor(serviceProvider => StateflowsActivator.CreateInstance<TInterceptor>(serviceProvider));
+            AddInterceptor(async serviceProvider => await StateflowsActivator.CreateInstanceAsync<TInterceptor>(serviceProvider));
 
             return this;
         }
 
         public IInitializedStateMachineBuilder AddInterceptor(StateMachineInterceptorFactory interceptorFactory)
+            => AddInterceptor(serviceProvider => Task.FromResult(interceptorFactory(serviceProvider)));
+        
+        public IInitializedStateMachineBuilder AddInterceptor(StateMachineInterceptorFactoryAsync interceptorFactoryAsync)
         {
-            Graph.InterceptorFactories.Add(interceptorFactory);
+            Graph.InterceptorFactories.Add(interceptorFactoryAsync);
 
             return this;
         }
@@ -323,14 +330,17 @@ namespace Stateflows.StateMachines.Registration.Builders
         {
             Services.AddScoped<TObserver>();
             
-            AddObserver(serviceProvider => StateflowsActivator.CreateInstance<TObserver>(serviceProvider));
+            AddObserver(async serviceProvider => await StateflowsActivator.CreateInstanceAsync<TObserver>(serviceProvider));
 
             return this;
         }
 
         public IInitializedStateMachineBuilder AddObserver(StateMachineObserverFactory observerFactory)
+            => AddObserver(serviceProvider => Task.FromResult(observerFactory(serviceProvider)));
+        
+        public IInitializedStateMachineBuilder AddObserver(StateMachineObserverFactoryAsync observerFactoryAsync)
         {
-            Graph.ObserverFactories.Add(observerFactory);
+            Graph.ObserverFactories.Add(observerFactoryAsync);
 
             return this;
         }

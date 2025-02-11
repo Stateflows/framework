@@ -55,11 +55,11 @@ namespace Stateflows.StateMachines.Models
         public Logic<StateMachineActionAsync> Finalize { get; } =
             new Logic<StateMachineActionAsync>(Constants.Finalize);
 
-        public readonly List<StateMachineExceptionHandlerFactory> ExceptionHandlerFactories = new List<StateMachineExceptionHandlerFactory>();
+        public readonly List<StateMachineExceptionHandlerFactoryAsync> ExceptionHandlerFactories = new List<StateMachineExceptionHandlerFactoryAsync>();
 
-        public readonly List<StateMachineInterceptorFactory> InterceptorFactories = new List<StateMachineInterceptorFactory>();
+        public readonly List<StateMachineInterceptorFactoryAsync> InterceptorFactories = new List<StateMachineInterceptorFactoryAsync>();
 
-        public readonly List<StateMachineObserverFactory> ObserverFactories = new List<StateMachineObserverFactory>();
+        public readonly List<StateMachineObserverFactoryAsync> ObserverFactories = new List<StateMachineObserverFactoryAsync>();
 
         public readonly List<BehaviorClass> RequiredBehaviors = new List<BehaviorClass>();
 

@@ -59,6 +59,8 @@ namespace StateMachine.IntegrationTests.Utils
             ContextValues.StateValues.Clear();
             ContextValues.SourceStateValues.Clear();
             ContextValues.TargetStateValues.Clear();
+            
+            _ = OutputTokens.GetAll();
         }
 
         public virtual void Cleanup()

@@ -13,7 +13,7 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         [DebuggerHidden]
         TReturn AddOnInitialize<TCompositeStateInitialization>()
             where TCompositeStateInitialization : class, ICompositeStateInitialization
-            => AddOnInitialize(c => ((BaseContext)c).Context.Executor.GetState<TCompositeStateInitialization>(c)?.OnInitializeAsync());
+            => AddOnInitialize(async c => await (await ((BaseContext)c).Context.Executor.GetStateAsync<TCompositeStateInitialization>(c)).OnInitializeAsync());
 
         /// <summary>
         /// Adds multiple typed initialization handlers to the current composite state.
@@ -92,7 +92,7 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         [DebuggerHidden]
         TReturn AddOnFinalize<TCompositeStateFinalization>()
             where TCompositeStateFinalization : class, ICompositeStateFinalization
-            => AddOnFinalize(c => ((BaseContext)c).Context.Executor.GetState<TCompositeStateFinalization>(c)?.OnFinalizeAsync());
+            => AddOnFinalize(async c => await (await ((BaseContext)c).Context.Executor.GetStateAsync<TCompositeStateFinalization>(c)).OnFinalizeAsync());
 
         /// <summary>
         /// Adds multiple typed finalization handlers to the current composite state.

@@ -1,13 +1,16 @@
-﻿using Stateflows.Common.Attributes;
+﻿using Stateflows.Common;
+using Stateflows.Common.Attributes;
+using Stateflows.StateMachines.Attributes;
 
 namespace StateMachine.IntegrationTests.Classes.States
 {
     internal class ValueState1 : IStateEntry
     {
         public ValueState1(
+            // [StateValue] IValue<int> counter,
             [ValueName("counter")] StateValue<int> counter,
-            [ValueName("nullable")] StateValue<int?> nullable,
-            [ValueName("nulled")] StateValue<int?> nulled
+            [StateValue] IValue<int?> nullable,
+            [StateValue] IValue<int?> nulled
         )
         {
             this.counter = counter;
@@ -15,24 +18,18 @@ namespace StateMachine.IntegrationTests.Classes.States
             this.nulled = nulled;
         }
 
+        // private readonly IValue<int> counter;
         private readonly StateValue<int> counter;
-        private readonly StateValue<int?> nullable;
-        private readonly StateValue<int?> nulled;
+        private readonly IValue<int?> nullable;
+        private readonly IValue<int?> nulled;
 
-        public Task OnEntryAsync()
+        public async Task OnEntryAsync()
         {
-            if (counter.TryGet(out var c))
-            {
-                c = 0;
-            }
+            var c = await counter.GetOrDefaultAsync(0);
 
-            counter.Set(c + 1);
+            await counter.SetAsync(c + 1);
             
-            // nullable.Set(3);
-            
-            nulled.Set(null);
-
-            return Task.CompletedTask;
+            await nulled.SetAsync(null);
         }
     }
 }

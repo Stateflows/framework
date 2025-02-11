@@ -2,6 +2,8 @@
 using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
+using Stateflows.Activities;
+using Stateflows.Activities.Extensions;
 using Stateflows.StateMachines.Context.Classes;
 using Stateflows.StateMachines.Context.Interfaces;
 using Stateflows.StateMachines.Registration.Extensions;
@@ -20,6 +22,25 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         /// </summary>
         /// <param name="actionsAsync">Action handlers</param>
         TReturn AddOnExit(params Func<IStateActionContext, Task>[] actionsAsync);
+
+        /// <summary>
+        /// Adds activity behavior that will be started when current state exits
+        /// </summary>
+        /// <param name="activityName">Name of activity behavior</param>
+        /// <param name="buildAction">Build action</param>
+        [DebuggerHidden]
+        public TReturn AddOnExitActivity(string activityName, StateActionActivityBuildAction buildAction = null)
+            => AddOnExit(c => StateMachineActivityExtensions.RunStateActivity(Constants.Exit, c, activityName, buildAction));
+
+        /// <summary>
+        /// Adds activity behavior that will be started when current state exits
+        /// </summary>
+        /// <param name="buildAction">Build action</param>
+        /// <typeparam name="TActivity">Activity behavior type</typeparam>
+        [DebuggerHidden]
+        public TReturn AddOnExitActivity<TActivity>(StateActionActivityBuildAction buildAction = null)
+            where TActivity : class, IActivity
+            => AddOnExitActivity(Activity<TActivity>.Name, buildAction);
 
         /// <summary>
         /// Adds synchronous exit handler coming from current state.<br/>
@@ -44,7 +65,7 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         /// <typeparam name="TStateExit">The type of the state exit handler.</typeparam>
         TReturn AddOnExit<TStateExit>()
             where TStateExit : class, IStateExit
-            => AddOnExit(c => ((BaseContext)c).Context.Executor.GetState<TStateExit>(c)?.OnExitAsync());
+            => AddOnExit(async c => await (await ((BaseContext)c).Context.Executor.GetStateAsync<TStateExit>(c)).OnExitAsync());
 
         /// <summary>
         /// Adds multiple typed exit handlers to the current state.

@@ -42,6 +42,13 @@ namespace Stateflows.StateMachines.Engine
             ObserverFactories.AddRange(Executor.Register.GlobalObserverFactories);
         }
 
+        public async Task BuildAsync()
+        {
+            Observers = await Task.WhenAll(ObserverFactories.Select(t => t(Executor.ServiceProvider)));
+            Interceptors = await Task.WhenAll(InterceptorFactories.Select(t => t(Executor.ServiceProvider)));
+            ExceptionHandlers = await Task.WhenAll(ExceptionHandlerFactories.Select(t => t(Executor.ServiceProvider)));
+        }
+
         public ActionInspection InitializeInspection;
 
         public ActionInspection FinalizeInspection;
@@ -53,23 +60,17 @@ namespace Stateflows.StateMachines.Engine
         private IStateMachineInspection inspection;
         public IStateMachineInspection Inspection => inspection ??= new StateMachineInspection(Executor);
 
-        private readonly List<StateMachineExceptionHandlerFactory> ExceptionHandlerFactories = new List<StateMachineExceptionHandlerFactory>();
+        private readonly List<StateMachineExceptionHandlerFactoryAsync> ExceptionHandlerFactories = new List<StateMachineExceptionHandlerFactoryAsync>();
 
-        private readonly List<StateMachineInterceptorFactory> InterceptorFactories = new List<StateMachineInterceptorFactory>();
+        private readonly List<StateMachineInterceptorFactoryAsync> InterceptorFactories = new List<StateMachineInterceptorFactoryAsync>();
 
-        private readonly List<StateMachineObserverFactory> ObserverFactories = new List<StateMachineObserverFactory>();
+        private readonly List<StateMachineObserverFactoryAsync> ObserverFactories = new List<StateMachineObserverFactoryAsync>();
 
-        private IEnumerable<IStateMachineObserver> observers;
-        private IEnumerable<IStateMachineObserver> Observers
-            => observers ??= ObserverFactories.Select(t => t(Executor.ServiceProvider));
+        private IEnumerable<IStateMachineObserver> Observers;
 
-        private IEnumerable<IStateMachineInterceptor> interceptors;
-        private IEnumerable<IStateMachineInterceptor> Interceptors
-            => interceptors ??= InterceptorFactories.Select(t => t(Executor.ServiceProvider));
+        private IEnumerable<IStateMachineInterceptor> Interceptors;
 
-        private IEnumerable<IStateMachineExceptionHandler> exceptionHandlers;
-        private IEnumerable<IStateMachineExceptionHandler> ExceptionHandlers
-            => exceptionHandlers ??= ExceptionHandlerFactories.Select(t => t(Executor.ServiceProvider));
+        private IEnumerable<IStateMachineExceptionHandler> ExceptionHandlers;
 
         private IEnumerable<IStateMachineInspector> inspectors;
         private IEnumerable<IStateMachineInspector> Inspectors

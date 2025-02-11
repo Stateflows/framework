@@ -5,27 +5,25 @@ using StateMachine.IntegrationTests.Utils;
 
 namespace Activity.IntegrationTests.Tests
 {
-    public class TestedAction(IInputToken<int> input, [ValueName("foo")] GlobalValue<int> foo) : IActionNode
+    public class TestedAction(IInputToken<int> input, [GlobalValue] IValue<int> foo) : IActionNode
     {
-        public Task ExecuteAsync(CancellationToken cancellationToken)
+        public async Task ExecuteAsync(CancellationToken cancellationToken)
         {
-            foo.Set(input.Token);
+            await foo.SetAsync(input.Token);
             input.PassOn();
 
             Unit.Executed = true;
-
-            return Task.CompletedTask;
         }
     }
 
-    public class TestedFlow : IFlowGuard<int>
+    public class TestedFlow([GlobalValue] IValue<int> foo) : IFlowGuard<int>
     {
-        private readonly GlobalValue<int> Foo = new("foo");
-
-        public Task<bool> GuardAsync(int token)
+        public async Task<bool> GuardAsync(int token)
         {
-            Foo.Set(token);
-            return Task.FromResult(Foo.TryGet(out var value) && value == 42);
+            await foo.SetAsync(token);
+            var (valueSet, value) = await foo.TryGetAsync();
+
+            return valueSet && value == 42;
         }
     }
 
@@ -55,8 +53,8 @@ namespace Activity.IntegrationTests.Tests
             InputTokens.Add(42);
 
             // Use StateflowsActivator to obtain tested action class instance
-            var action = StateflowsActivator.CreateInstance<TestedAction>(ServiceProvider);
-
+            var action = await StateflowsActivator.CreateInstanceAsync<TestedAction>(ServiceProvider);
+            
             await action.ExecuteAsync(CancellationToken.None);
 
             // Use ContextValues static class to manage context values before or after running tested code
@@ -75,7 +73,7 @@ namespace Activity.IntegrationTests.Tests
         public async Task FlowUnitTest()
         {
             // Use StateflowsActivator to obtain tested flow class instance
-            var flow = StateflowsActivator.CreateInstance<TestedFlow>(ServiceProvider);
+            var flow = await StateflowsActivator.CreateInstanceAsync<TestedFlow>(ServiceProvider);
 
             var result = await flow.GuardAsync(42);
 

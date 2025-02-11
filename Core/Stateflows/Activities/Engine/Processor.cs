@@ -64,6 +64,7 @@ namespace Stateflows.Activities.Engine
             }
 
             using var executor = new Executor(Register, graph, serviceProvider);
+            await executor.BuildAsync();
             var context = new RootContext(stateflowsContext);
 
             await executor.HydrateAsync(context);

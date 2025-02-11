@@ -80,7 +80,7 @@ namespace Stateflows.Actions.Registration
                 throw new ActionDefinitionException($"Action '{actionName}' with version '{version}' is already registered", new ActionClass(actionName));
             }
 
-            ActionDelegateAsync actionDelegate = (context) => ((IAction)StateflowsActivator.CreateInstance(null, actionType)).ExecuteAsync(default);
+            ActionDelegateAsync actionDelegate = async (context) => ((IAction)await StateflowsActivator.CreateInstanceAsync(null, actionType)).ExecuteAsync(default);
 
             Actions.Add(key, (actionName, version, reentrant, actionDelegate));
 

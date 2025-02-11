@@ -15,7 +15,7 @@ namespace Stateflows.Activities.Extensions
             {
                 builder.AddOnInitialize(async c =>
                 {
-                    var node = ((BaseContext)c).NodeScope.GetStructuredActivity<TStructuredActivity>(c as Context.Interfaces.IActionContext);
+                    var node = await ((BaseContext)c).NodeScope.GetStructuredActivityAsync<TStructuredActivity>(c as Context.Interfaces.IActionContext);
 
                     if (node != null)
                     {
@@ -30,7 +30,7 @@ namespace Stateflows.Activities.Extensions
             {
                 builder.AddOnFinalize(async c =>
                 {
-                    var node = ((BaseContext)c).NodeScope.GetStructuredActivity<TStructuredActivity>(c as Context.Interfaces.IActionContext);
+                    var node = await ((BaseContext)c).NodeScope.GetStructuredActivityAsync<TStructuredActivity>(c as Context.Interfaces.IActionContext);
 
                     if (node != null)
                     {
@@ -57,7 +57,7 @@ namespace Stateflows.Activities.Extensions
                 builder.AddGuard(async c =>
                 {
                     var result = false;
-                    var flow = ((BaseContext)c).NodeScope.GetFlow<TFlow>(c);
+                    var flow = await ((BaseContext)c).NodeScope.GetFlowAsync<TFlow>(c);
                     if (flow != null)
                     {
                         ActivityFlowContextAccessor.Context.Value = c;
@@ -85,7 +85,7 @@ namespace Stateflows.Activities.Extensions
                 builder.AddGuard(async c =>
                 {
                     var result = false;
-                    var flow = ((BaseContext)c).NodeScope.GetObjectTransformationFlow<TTransformationFlow, TToken, TTransformedToken>(c);
+                    var flow = await ((BaseContext)c).NodeScope.GetObjectTransformationFlowAsync<TTransformationFlow, TToken, TTransformedToken>(c);
                     if (flow != null)
                     {
                         ActivityFlowContextAccessor.Context.Value = c;
@@ -102,7 +102,7 @@ namespace Stateflows.Activities.Extensions
                 builder.AddTransformation(async c =>
                 {
                     TTransformedToken result = default;
-                    var flow = ((BaseContext)c).NodeScope.GetObjectTransformationFlow<TTransformationFlow, TToken, TTransformedToken>(c);
+                    var flow = await ((BaseContext)c).NodeScope.GetObjectTransformationFlowAsync<TTransformationFlow, TToken, TTransformedToken>(c);
                     if (flow != null)
                     {
                         ActivityFlowContextAccessor.Context.Value = c;
@@ -130,7 +130,7 @@ namespace Stateflows.Activities.Extensions
                 builder.AddTransformation(async c =>
                 {
                     TTransformedToken result = default;
-                    var flow = ((BaseContext)c).NodeScope.GetObjectTransformationFlow<TTransformationFlow, TToken, TTransformedToken>(c);
+                    var flow = await ((BaseContext)c).NodeScope.GetObjectTransformationFlowAsync<TTransformationFlow, TToken, TTransformedToken>(c);
                     if (flow != null)
                     {
                         ActivityFlowContextAccessor.Context.Value = c;
@@ -158,7 +158,7 @@ namespace Stateflows.Activities.Extensions
                 builder.AddGuard(async c =>
                 {
                     var result = false;
-                    var flow = ((BaseContext)c).NodeScope.GetFlow<TFlow>(c);
+                    var flow = await ((BaseContext)c).NodeScope.GetFlowAsync<TFlow>(c);
                     if (flow != null)
                     {
                         ActivityFlowContextAccessor.Context.Value = c;

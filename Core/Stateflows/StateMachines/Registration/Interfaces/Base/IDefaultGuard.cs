@@ -45,8 +45,8 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
             => AddGuard(async c =>
             {
                 var executor = ((BaseContext)c).Context.Executor;
-                var guard1 = executor.GetDefaultTransitionGuard<TGuard1>(c);
-                var guard2 = executor.GetDefaultTransitionGuard<TGuard2>(c);
+                var guard1 = await executor.GetDefaultTransitionGuardAsync<TGuard1>(c);
+                var guard2 = await executor.GetDefaultTransitionGuardAsync<TGuard2>(c);
 
                 return await guard1.GuardAsync() && await guard2.GuardAsync();
             });
@@ -81,9 +81,9 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
             => AddGuard(async c =>
             {
                 var executor = ((BaseContext)c).Context.Executor;
-                var guard1 = executor.GetDefaultTransitionGuard<TGuard1>(c);
-                var guard2 = executor.GetDefaultTransitionGuard<TGuard2>(c);
-                var guard3 = executor.GetDefaultTransitionGuard<TGuard3>(c);
+                var guard1 = await executor.GetDefaultTransitionGuardAsync<TGuard1>(c);
+                var guard2 = await executor.GetDefaultTransitionGuardAsync<TGuard2>(c);
+                var guard3 = await executor.GetDefaultTransitionGuardAsync<TGuard3>(c);
 
                 return await guard1.GuardAsync() && await guard2.GuardAsync() && await guard3.GuardAsync();
             });
@@ -123,10 +123,10 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
             => AddGuard(async c =>
             {
                 var executor = ((BaseContext)c).Context.Executor;
-                var guard1 = executor.GetDefaultTransitionGuard<TGuard1>(c);
-                var guard2 = executor.GetDefaultTransitionGuard<TGuard2>(c);
-                var guard3 = executor.GetDefaultTransitionGuard<TGuard3>(c);
-                var guard4 = executor.GetDefaultTransitionGuard<TGuard4>(c);
+                var guard1 = await executor.GetDefaultTransitionGuardAsync<TGuard1>(c);
+                var guard2 = await executor.GetDefaultTransitionGuardAsync<TGuard2>(c);
+                var guard3 = await executor.GetDefaultTransitionGuardAsync<TGuard3>(c);
+                var guard4 = await executor.GetDefaultTransitionGuardAsync<TGuard4>(c);
 
                 return await guard1.GuardAsync() && await guard2.GuardAsync() && await guard3.GuardAsync() && await guard4.GuardAsync();
             });
@@ -171,11 +171,11 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
             => AddGuard(async c =>
             {
                 var executor = ((BaseContext)c).Context.Executor;
-                var guard1 = executor.GetDefaultTransitionGuard<TGuard1>(c);
-                var guard2 = executor.GetDefaultTransitionGuard<TGuard2>(c);
-                var guard3 = executor.GetDefaultTransitionGuard<TGuard3>(c);
-                var guard4 = executor.GetDefaultTransitionGuard<TGuard4>(c);
-                var guard5 = executor.GetDefaultTransitionGuard<TGuard5>(c);
+                var guard1 = await executor.GetDefaultTransitionGuardAsync<TGuard1>(c);
+                var guard2 = await executor.GetDefaultTransitionGuardAsync<TGuard2>(c);
+                var guard3 = await executor.GetDefaultTransitionGuardAsync<TGuard3>(c);
+                var guard4 = await executor.GetDefaultTransitionGuardAsync<TGuard4>(c);
+                var guard5 = await executor.GetDefaultTransitionGuardAsync<TGuard5>(c);
 
                 return await guard1.GuardAsync() && await guard2.GuardAsync() && await guard3.GuardAsync() && await guard4.GuardAsync() && await guard5.GuardAsync();
             });
@@ -192,8 +192,8 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
             => AddGuard(async c =>
             {
                 var executor = ((BaseContext)c).Context.Executor;
-                var guard1 = executor.GetDefaultTransitionGuard<TGuard1>(c);
-                var guard2 = executor.GetDefaultTransitionGuard<TGuard2>(c);
+                var guard1 = await executor.GetDefaultTransitionGuardAsync<TGuard1>(c);
+                var guard2 = await executor.GetDefaultTransitionGuardAsync<TGuard2>(c);
 
                 return await guard1.GuardAsync() || await guard2.GuardAsync();
             });
@@ -212,9 +212,9 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
             => AddGuard(async c =>
             {
                 var executor = ((BaseContext)c).Context.Executor;
-                var guard1 = executor.GetDefaultTransitionGuard<TGuard1>(c);
-                var guard2 = executor.GetDefaultTransitionGuard<TGuard2>(c);
-                var guard3 = executor.GetDefaultTransitionGuard<TGuard3>(c);
+                var guard1 = await executor.GetDefaultTransitionGuardAsync<TGuard1>(c);
+                var guard2 = await executor.GetDefaultTransitionGuardAsync<TGuard2>(c);
+                var guard3 = await executor.GetDefaultTransitionGuardAsync<TGuard3>(c);
 
                 return await guard1.GuardAsync() || await guard2.GuardAsync() || await guard3.GuardAsync();
             });
@@ -235,10 +235,10 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
             => AddGuard(async c =>
             {
                 var executor = ((BaseContext)c).Context.Executor;
-                var guard1 = executor.GetDefaultTransitionGuard<TGuard1>(c);
-                var guard2 = executor.GetDefaultTransitionGuard<TGuard2>(c);
-                var guard3 = executor.GetDefaultTransitionGuard<TGuard3>(c);
-                var guard4 = executor.GetDefaultTransitionGuard<TGuard4>(c);
+                var guard1 = await executor.GetDefaultTransitionGuardAsync<TGuard1>(c);
+                var guard2 = await executor.GetDefaultTransitionGuardAsync<TGuard2>(c);
+                var guard3 = await executor.GetDefaultTransitionGuardAsync<TGuard3>(c);
+                var guard4 = await executor.GetDefaultTransitionGuardAsync<TGuard4>(c);
 
                 return await guard1.GuardAsync() || await guard2.GuardAsync() || await guard3.GuardAsync() || await guard4.GuardAsync();
             });
@@ -261,11 +261,11 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
             => AddGuard(async c =>
             {
                 var executor = ((BaseContext)c).Context.Executor;
-                var guard1 = executor.GetDefaultTransitionGuard<TGuard1>(c);
-                var guard2 = executor.GetDefaultTransitionGuard<TGuard2>(c);
-                var guard3 = executor.GetDefaultTransitionGuard<TGuard3>(c);
-                var guard4 = executor.GetDefaultTransitionGuard<TGuard4>(c);
-                var guard5 = executor.GetDefaultTransitionGuard<TGuard5>(c);
+                var guard1 = await executor.GetDefaultTransitionGuardAsync<TGuard1>(c);
+                var guard2 = await executor.GetDefaultTransitionGuardAsync<TGuard2>(c);
+                var guard3 = await executor.GetDefaultTransitionGuardAsync<TGuard3>(c);
+                var guard4 = await executor.GetDefaultTransitionGuardAsync<TGuard4>(c);
+                var guard5 = await executor.GetDefaultTransitionGuardAsync<TGuard5>(c);
 
                 return await guard1.GuardAsync() || await guard2.GuardAsync() || await guard3.GuardAsync() || await guard4.GuardAsync() || await guard5.GuardAsync();
             });

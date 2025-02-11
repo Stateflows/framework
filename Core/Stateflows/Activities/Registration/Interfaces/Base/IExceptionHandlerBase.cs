@@ -15,7 +15,7 @@ namespace Stateflows.Activities.Registration.Interfaces.Base
             where TExceptionHandler : class, IExceptionHandlerNode<TException>
             => AddExceptionHandler<TException>(async c =>
             {
-                var handler = ((BaseContext)c).NodeScope.GetExceptionHandler<TException, TExceptionHandler>(c);
+                var handler = await ((BaseContext)c).NodeScope.GetExceptionHandlerAsync<TException, TExceptionHandler>(c);
 
                 if (handler != null)
                 {

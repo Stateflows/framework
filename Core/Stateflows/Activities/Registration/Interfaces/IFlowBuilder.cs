@@ -10,8 +10,8 @@ namespace Stateflows.Activities.Registration.Interfaces
 
         IObjectFlowBuilder<TTransformedToken> AddTransformation<TTransformedToken, TTransformation>()
             where TTransformation : class, IFlowTransformation<TToken, TTransformedToken>
-            => AddTransformation(c =>
-                ((BaseContext)c).Context.Executor.NodeScope.GetObjectFlow<TTransformation, TToken>(c)?.TransformAsync(c.Token)
+            => AddTransformation(async c =>
+                await (await ((BaseContext)c).Context.Executor.NodeScope.GetObjectFlowAsync<TTransformation, TToken>(c)).TransformAsync(c.Token)
             );
     }
 
@@ -22,8 +22,8 @@ namespace Stateflows.Activities.Registration.Interfaces
 
         IObjectFlowBuilderWithWeight<TTransformedToken> AddTransformation<TTransformedToken, TTransformation>()
             where TTransformation : class, IFlowTransformation<TToken, TTransformedToken>
-            => AddTransformation(c
-                => ((BaseContext)c).Context.Executor.NodeScope.GetObjectFlow<TTransformation, TToken>(c)?.TransformAsync(c.Token)
+            => AddTransformation(async c
+                => await (await ((BaseContext)c).Context.Executor.NodeScope.GetObjectFlowAsync<TTransformation, TToken>(c)).TransformAsync(c.Token)
             );
     }
 
@@ -33,8 +33,8 @@ namespace Stateflows.Activities.Registration.Interfaces
 
         IElseObjectFlowBuilderWithWeight<TTransformedToken> AddTransformation<TTransformedToken, TTransformation>()
             where TTransformation : class, IFlowTransformation<TToken, TTransformedToken>
-            => AddTransformation(c
-                => ((BaseContext)c).Context.Executor.NodeScope.GetObjectFlow<TTransformation, TToken>(c)?.TransformAsync(c.Token)
+            => AddTransformation(async c
+                => await (await ((BaseContext)c).Context.Executor.NodeScope.GetObjectFlowAsync<TTransformation, TToken>(c)).TransformAsync(c.Token)
             );
     }
 
@@ -45,8 +45,8 @@ namespace Stateflows.Activities.Registration.Interfaces
 
         IElseObjectFlowBuilder<TTransformedToken> AddTransformation<TTransformedToken, TTransformation>()
             where TTransformation : class, IFlowTransformation<TToken, TTransformedToken>
-            => AddTransformation(c
-                => ((BaseContext)c).Context.Executor.NodeScope.GetObjectFlow<TTransformation, TToken>(c)?.TransformAsync(c.Token)
+            => AddTransformation(async c
+                => await (await ((BaseContext)c).Context.Executor.NodeScope.GetObjectFlowAsync<TTransformation, TToken>(c)).TransformAsync(c.Token)
             );
     }
 
@@ -56,8 +56,8 @@ namespace Stateflows.Activities.Registration.Interfaces
 
         TReturn AddGuard<TGuard>()
             where TGuard : class, IFlowGuard<TToken>
-            => AddGuard(c
-                => ((BaseContext)c).Context.Executor.NodeScope.GetObjectFlow<TGuard, TToken>(c)?.GuardAsync(c.Token)
+            => AddGuard(async c
+                => await (await ((BaseContext)c).Context.Executor.NodeScope.GetObjectFlowAsync<TGuard, TToken>(c)).GuardAsync(c.Token)
             );
 
         TReturn AddGuards<TGuard1, TGuard2>()
@@ -71,8 +71,8 @@ namespace Stateflows.Activities.Registration.Interfaces
             => AddGuard(async c =>
             {
                 var executor = ((BaseContext)c).Context.Executor;
-                var guard1 = executor.NodeScope.GetObjectFlow<TGuard1, TToken>(c);
-                var guard2 = executor.NodeScope.GetObjectFlow<TGuard2, TToken>(c);
+                var guard1 = await executor.NodeScope.GetObjectFlowAsync<TGuard1, TToken>(c);
+                var guard2 = await executor.NodeScope.GetObjectFlowAsync<TGuard2, TToken>(c);
 
                 return await guard1.GuardAsync(c.Token) && await guard2.GuardAsync(c.Token);
             });
@@ -90,9 +90,9 @@ namespace Stateflows.Activities.Registration.Interfaces
             => AddGuard(async c =>
             {
                 var executor = ((BaseContext)c).Context.Executor;
-                var guard1 = executor.NodeScope.GetObjectFlow<TGuard1, TToken>(c);
-                var guard2 = executor.NodeScope.GetObjectFlow<TGuard2, TToken>(c);
-                var guard3 = executor.NodeScope.GetObjectFlow<TGuard3, TToken>(c);
+                var guard1 = await executor.NodeScope.GetObjectFlowAsync<TGuard1, TToken>(c);
+                var guard2 = await executor.NodeScope.GetObjectFlowAsync<TGuard2, TToken>(c);
+                var guard3 = await executor.NodeScope.GetObjectFlowAsync<TGuard3, TToken>(c);
 
                 return await guard1.GuardAsync(c.Token) && await guard2.GuardAsync(c.Token) && await guard3.GuardAsync(c.Token);
             });
@@ -112,10 +112,10 @@ namespace Stateflows.Activities.Registration.Interfaces
             => AddGuard(async c =>
             {
                 var executor = ((BaseContext)c).Context.Executor;
-                var guard1 = executor.NodeScope.GetObjectFlow<TGuard1, TToken>(c);
-                var guard2 = executor.NodeScope.GetObjectFlow<TGuard2, TToken>(c);
-                var guard3 = executor.NodeScope.GetObjectFlow<TGuard3, TToken>(c);
-                var guard4 = executor.NodeScope.GetObjectFlow<TGuard4, TToken>(c);
+                var guard1 = await executor.NodeScope.GetObjectFlowAsync<TGuard1, TToken>(c);
+                var guard2 = await executor.NodeScope.GetObjectFlowAsync<TGuard2, TToken>(c);
+                var guard3 = await executor.NodeScope.GetObjectFlowAsync<TGuard3, TToken>(c);
+                var guard4 = await executor.NodeScope.GetObjectFlowAsync<TGuard4, TToken>(c);
 
                 return await guard1.GuardAsync(c.Token) && await guard2.GuardAsync(c.Token) && await guard3.GuardAsync(c.Token) && await guard4.GuardAsync(c.Token);
             });
@@ -137,11 +137,11 @@ namespace Stateflows.Activities.Registration.Interfaces
             => AddGuard(async c =>
             {
                 var executor = ((BaseContext)c).Context.Executor;
-                var guard1 = executor.NodeScope.GetObjectFlow<TGuard1, TToken>(c);
-                var guard2 = executor.NodeScope.GetObjectFlow<TGuard2, TToken>(c);
-                var guard3 = executor.NodeScope.GetObjectFlow<TGuard3, TToken>(c);
-                var guard4 = executor.NodeScope.GetObjectFlow<TGuard4, TToken>(c);
-                var guard5 = executor.NodeScope.GetObjectFlow<TGuard5, TToken>(c);
+                var guard1 = await executor.NodeScope.GetObjectFlowAsync<TGuard1, TToken>(c);
+                var guard2 = await executor.NodeScope.GetObjectFlowAsync<TGuard2, TToken>(c);
+                var guard3 = await executor.NodeScope.GetObjectFlowAsync<TGuard3, TToken>(c);
+                var guard4 = await executor.NodeScope.GetObjectFlowAsync<TGuard4, TToken>(c);
+                var guard5 = await executor.NodeScope.GetObjectFlowAsync<TGuard5, TToken>(c);
 
                 return await guard1.GuardAsync(c.Token) && await guard2.GuardAsync(c.Token) && await guard3.GuardAsync(c.Token) && await guard4.GuardAsync(c.Token) && await guard5.GuardAsync(c.Token);
             });
@@ -152,8 +152,8 @@ namespace Stateflows.Activities.Registration.Interfaces
             => AddGuard(async c =>
             {
                 var executor = ((BaseContext)c).Context.Executor;
-                var guard1 = executor.NodeScope.GetObjectFlow<TGuard1, TToken>(c);
-                var guard2 = executor.NodeScope.GetObjectFlow<TGuard2, TToken>(c);
+                var guard1 = await executor.NodeScope.GetObjectFlowAsync<TGuard1, TToken>(c);
+                var guard2 = await executor.NodeScope.GetObjectFlowAsync<TGuard2, TToken>(c);
 
                 return await guard1.GuardAsync(c.Token) || await guard2.GuardAsync(c.Token);
             });
@@ -165,9 +165,9 @@ namespace Stateflows.Activities.Registration.Interfaces
             => AddGuard(async c =>
             {
                 var executor = ((BaseContext)c).Context.Executor;
-                var guard1 = executor.NodeScope.GetObjectFlow<TGuard1, TToken>(c);
-                var guard2 = executor.NodeScope.GetObjectFlow<TGuard2, TToken>(c);
-                var guard3 = executor.NodeScope.GetObjectFlow<TGuard3, TToken>(c);
+                var guard1 = await executor.NodeScope.GetObjectFlowAsync<TGuard1, TToken>(c);
+                var guard2 = await executor.NodeScope.GetObjectFlowAsync<TGuard2, TToken>(c);
+                var guard3 = await executor.NodeScope.GetObjectFlowAsync<TGuard3, TToken>(c);
 
                 return await guard1.GuardAsync(c.Token) || await guard2.GuardAsync(c.Token) || await guard3.GuardAsync(c.Token);
             });
@@ -180,10 +180,10 @@ namespace Stateflows.Activities.Registration.Interfaces
             => AddGuard(async c =>
             {
                 var executor = ((BaseContext)c).Context.Executor;
-                var guard1 = executor.NodeScope.GetObjectFlow<TGuard1, TToken>(c);
-                var guard2 = executor.NodeScope.GetObjectFlow<TGuard2, TToken>(c);
-                var guard3 = executor.NodeScope.GetObjectFlow<TGuard3, TToken>(c);
-                var guard4 = executor.NodeScope.GetObjectFlow<TGuard4, TToken>(c);
+                var guard1 = await executor.NodeScope.GetObjectFlowAsync<TGuard1, TToken>(c);
+                var guard2 = await executor.NodeScope.GetObjectFlowAsync<TGuard2, TToken>(c);
+                var guard3 = await executor.NodeScope.GetObjectFlowAsync<TGuard3, TToken>(c);
+                var guard4 = await executor.NodeScope.GetObjectFlowAsync<TGuard4, TToken>(c);
 
                 return await guard1.GuardAsync(c.Token) || await guard2.GuardAsync(c.Token) || await guard3.GuardAsync(c.Token) || await guard4.GuardAsync(c.Token);
             });
@@ -197,11 +197,11 @@ namespace Stateflows.Activities.Registration.Interfaces
             => AddGuard(async c =>
             {
                 var executor = ((BaseContext)c).Context.Executor;
-                var guard1 = executor.NodeScope.GetObjectFlow<TGuard1, TToken>(c);
-                var guard2 = executor.NodeScope.GetObjectFlow<TGuard2, TToken>(c);
-                var guard3 = executor.NodeScope.GetObjectFlow<TGuard3, TToken>(c);
-                var guard4 = executor.NodeScope.GetObjectFlow<TGuard4, TToken>(c);
-                var guard5 = executor.NodeScope.GetObjectFlow<TGuard5, TToken>(c);
+                var guard1 = await executor.NodeScope.GetObjectFlowAsync<TGuard1, TToken>(c);
+                var guard2 = await executor.NodeScope.GetObjectFlowAsync<TGuard2, TToken>(c);
+                var guard3 = await executor.NodeScope.GetObjectFlowAsync<TGuard3, TToken>(c);
+                var guard4 = await executor.NodeScope.GetObjectFlowAsync<TGuard4, TToken>(c);
+                var guard5 = await executor.NodeScope.GetObjectFlowAsync<TGuard5, TToken>(c);
 
                 return await guard1.GuardAsync(c.Token) || await guard2.GuardAsync(c.Token) || await guard3.GuardAsync(c.Token) || await guard4.GuardAsync(c.Token) || await guard5.GuardAsync(c.Token);
             });
@@ -213,7 +213,7 @@ namespace Stateflows.Activities.Registration.Interfaces
 
         TReturn AddGuard<TGuard>()
             where TGuard : class, IControlFlowGuard
-            => AddGuard(c => ((BaseContext)c).Context.Executor.NodeScope.GetControlFlow<TGuard>(c)?.GuardAsync());
+            => AddGuard(async c => await (await ((BaseContext)c).Context.Executor.NodeScope.GetControlFlowAsync<TGuard>(c)).GuardAsync());
 
         TReturn AddGuards<TGuard1, TGuard2>()
             where TGuard1 : class, IControlFlowGuard
@@ -226,8 +226,8 @@ namespace Stateflows.Activities.Registration.Interfaces
             => AddGuard(async c =>
             {
                 var executor = ((BaseContext)c).Context.Executor;
-                var guard1 = executor.NodeScope.GetControlFlow<TGuard1>(c);
-                var guard2 = executor.NodeScope.GetControlFlow<TGuard2>(c);
+                var guard1 = await executor.NodeScope.GetControlFlowAsync<TGuard1>(c);
+                var guard2 = await executor.NodeScope.GetControlFlowAsync<TGuard2>(c);
 
                 return await guard1.GuardAsync() && await guard2.GuardAsync();
             });
@@ -245,9 +245,9 @@ namespace Stateflows.Activities.Registration.Interfaces
             => AddGuard(async c =>
             {
                 var executor = ((BaseContext)c).Context.Executor;
-                var guard1 = executor.NodeScope.GetControlFlow<TGuard1>(c);
-                var guard2 = executor.NodeScope.GetControlFlow<TGuard2>(c);
-                var guard3 = executor.NodeScope.GetControlFlow<TGuard3>(c);
+                var guard1 = await executor.NodeScope.GetControlFlowAsync<TGuard1>(c);
+                var guard2 = await executor.NodeScope.GetControlFlowAsync<TGuard2>(c);
+                var guard3 = await executor.NodeScope.GetControlFlowAsync<TGuard3>(c);
 
                 return await guard1.GuardAsync() && await guard2.GuardAsync() && await guard3.GuardAsync();
             });
@@ -267,10 +267,10 @@ namespace Stateflows.Activities.Registration.Interfaces
             => AddGuard(async c =>
             {
                 var executor = ((BaseContext)c).Context.Executor;
-                var guard1 = executor.NodeScope.GetControlFlow<TGuard1>(c);
-                var guard2 = executor.NodeScope.GetControlFlow<TGuard2>(c);
-                var guard3 = executor.NodeScope.GetControlFlow<TGuard3>(c);
-                var guard4 = executor.NodeScope.GetControlFlow<TGuard4>(c);
+                var guard1 = await executor.NodeScope.GetControlFlowAsync<TGuard1>(c);
+                var guard2 = await executor.NodeScope.GetControlFlowAsync<TGuard2>(c);
+                var guard3 = await executor.NodeScope.GetControlFlowAsync<TGuard3>(c);
+                var guard4 = await executor.NodeScope.GetControlFlowAsync<TGuard4>(c);
 
                 return await guard1.GuardAsync() && await guard2.GuardAsync() && await guard3.GuardAsync() && await guard4.GuardAsync();
             });
@@ -292,11 +292,11 @@ namespace Stateflows.Activities.Registration.Interfaces
             => AddGuard(async c =>
             {
                 var executor = ((BaseContext)c).Context.Executor;
-                var guard1 = executor.NodeScope.GetControlFlow<TGuard1>(c);
-                var guard2 = executor.NodeScope.GetControlFlow<TGuard2>(c);
-                var guard3 = executor.NodeScope.GetControlFlow<TGuard3>(c);
-                var guard4 = executor.NodeScope.GetControlFlow<TGuard4>(c);
-                var guard5 = executor.NodeScope.GetControlFlow<TGuard5>(c);
+                var guard1 = await executor.NodeScope.GetControlFlowAsync<TGuard1>(c);
+                var guard2 = await executor.NodeScope.GetControlFlowAsync<TGuard2>(c);
+                var guard3 = await executor.NodeScope.GetControlFlowAsync<TGuard3>(c);
+                var guard4 = await executor.NodeScope.GetControlFlowAsync<TGuard4>(c);
+                var guard5 = await executor.NodeScope.GetControlFlowAsync<TGuard5>(c);
 
                 return await guard1.GuardAsync() && await guard2.GuardAsync() && await guard3.GuardAsync() && await guard4.GuardAsync() && await guard5.GuardAsync();
             });
@@ -307,8 +307,8 @@ namespace Stateflows.Activities.Registration.Interfaces
             => AddGuard(async c =>
             {
                 var executor = ((BaseContext)c).Context.Executor;
-                var guard1 = executor.NodeScope.GetControlFlow<TGuard1>(c);
-                var guard2 = executor.NodeScope.GetControlFlow<TGuard2>(c);
+                var guard1 = await executor.NodeScope.GetControlFlowAsync<TGuard1>(c);
+                var guard2 = await executor.NodeScope.GetControlFlowAsync<TGuard2>(c);
 
                 return await guard1.GuardAsync() || await guard2.GuardAsync();
             });
@@ -320,9 +320,9 @@ namespace Stateflows.Activities.Registration.Interfaces
             => AddGuard(async c =>
             {
                 var executor = ((BaseContext)c).Context.Executor;
-                var guard1 = executor.NodeScope.GetControlFlow<TGuard1>(c);
-                var guard2 = executor.NodeScope.GetControlFlow<TGuard2>(c);
-                var guard3 = executor.NodeScope.GetControlFlow<TGuard3>(c);
+                var guard1 = await executor.NodeScope.GetControlFlowAsync<TGuard1>(c);
+                var guard2 = await executor.NodeScope.GetControlFlowAsync<TGuard2>(c);
+                var guard3 = await executor.NodeScope.GetControlFlowAsync<TGuard3>(c);
 
                 return await guard1.GuardAsync() || await guard2.GuardAsync() || await guard3.GuardAsync();
             });
@@ -335,10 +335,10 @@ namespace Stateflows.Activities.Registration.Interfaces
             => AddGuard(async c =>
             {
                 var executor = ((BaseContext)c).Context.Executor;
-                var guard1 = executor.NodeScope.GetControlFlow<TGuard1>(c);
-                var guard2 = executor.NodeScope.GetControlFlow<TGuard2>(c);
-                var guard3 = executor.NodeScope.GetControlFlow<TGuard3>(c);
-                var guard4 = executor.NodeScope.GetControlFlow<TGuard4>(c);
+                var guard1 = await executor.NodeScope.GetControlFlowAsync<TGuard1>(c);
+                var guard2 = await executor.NodeScope.GetControlFlowAsync<TGuard2>(c);
+                var guard3 = await executor.NodeScope.GetControlFlowAsync<TGuard3>(c);
+                var guard4 = await executor.NodeScope.GetControlFlowAsync<TGuard4>(c);
 
                 return await guard1.GuardAsync() || await guard2.GuardAsync() || await guard3.GuardAsync() || await guard4.GuardAsync();
             });
@@ -352,11 +352,11 @@ namespace Stateflows.Activities.Registration.Interfaces
             => AddGuard(async c =>
             {
                 var executor = ((BaseContext)c).Context.Executor;
-                var guard1 = executor.NodeScope.GetControlFlow<TGuard1>(c);
-                var guard2 = executor.NodeScope.GetControlFlow<TGuard2>(c);
-                var guard3 = executor.NodeScope.GetControlFlow<TGuard3>(c);
-                var guard4 = executor.NodeScope.GetControlFlow<TGuard4>(c);
-                var guard5 = executor.NodeScope.GetControlFlow<TGuard5>(c);
+                var guard1 = await executor.NodeScope.GetControlFlowAsync<TGuard1>(c);
+                var guard2 = await executor.NodeScope.GetControlFlowAsync<TGuard2>(c);
+                var guard3 = await executor.NodeScope.GetControlFlowAsync<TGuard3>(c);
+                var guard4 = await executor.NodeScope.GetControlFlowAsync<TGuard4>(c);
+                var guard5 = await executor.NodeScope.GetControlFlowAsync<TGuard5>(c);
 
                 return await guard1.GuardAsync() || await guard2.GuardAsync() || await guard3.GuardAsync() || await guard4.GuardAsync() || await guard5.GuardAsync();
             });

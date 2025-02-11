@@ -64,6 +64,7 @@ namespace Stateflows.StateMachines.Engine
 
             using (var executor = new Executor(Register, graph, serviceProvider, stateflowsContext, eventHolder))
             {
+                await executor.BuildAsync();
                 await executor.HydrateAsync();
 
                 try

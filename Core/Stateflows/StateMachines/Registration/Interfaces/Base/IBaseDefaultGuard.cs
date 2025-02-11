@@ -49,6 +49,7 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         /// }</code>
         /// </summary>
         /// <param name="guardsAsync">The asynchronous guard functions.</param>
+        [DebuggerHidden]
         TReturn AddNegatedGuard(params Func<ITransitionContext<Completion>, Task<bool>>[] guardsAsync)
             => AddGuard(guardsAsync.Select<Func<ITransitionContext<Completion>, Task<bool>>, Func<ITransitionContext<Completion>, Task<bool>>>(guardAsync => async c => !await guardAsync.Invoke(c)).ToArray());
 
@@ -73,16 +74,18 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         /// Adds a typed guard handler to the current transition.
         /// </summary>
         /// <typeparam name="TGuard">The type of the guard handler.</typeparam>
+        [DebuggerHidden]
         TReturn AddGuard<TGuard>()
             where TGuard : class, IDefaultTransitionGuard
-            => AddGuard(c => ((BaseContext)c).Context.Executor.GetDefaultTransitionGuard<TGuard>(c).GuardAsync());
+            => AddGuard(async c => await (await ((BaseContext)c).Context.Executor.GetDefaultTransitionGuardAsync<TGuard>(c)).GuardAsync());
 
         /// <summary>
         /// Adds a negated typed guard handler to the current transition.
         /// </summary>
         /// <typeparam name="TGuard">The type of the guard handler.</typeparam>
+        [DebuggerHidden]
         TReturn AddNegatedGuard<TGuard>()
             where TGuard : class, IDefaultTransitionGuard
-            => AddGuard(async c => !await ((BaseContext)c).Context.Executor.GetDefaultTransitionGuard<TGuard>(c).GuardAsync());
+            => AddGuard(async c => !await (await ((BaseContext)c).Context.Executor.GetDefaultTransitionGuardAsync<TGuard>(c)).GuardAsync());
     }
 }

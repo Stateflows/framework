@@ -3,7 +3,7 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using Stateflows.Common;
 using Stateflows.Common.Models;
-using Stateflows.Common.Extensions;
+using Stateflows.Common.Classes;
 using Stateflows.Common.Exceptions;
 using Stateflows.Common.Registration.Builders;
 using Stateflows.Activities.Models;
@@ -12,7 +12,6 @@ using Stateflows.Activities.Context.Interfaces;
 using Stateflows.Activities.Registration.Extensions;
 using Stateflows.Activities.Registration.Interfaces;
 using Stateflows.Activities.Registration.Interfaces.Base;
-using Stateflows.Common.Classes;
 
 namespace Stateflows.Activities.Registration.Builders
 {
@@ -151,14 +150,21 @@ namespace Stateflows.Activities.Registration.Builders
         public IActivityBuilder AddExceptionHandler<TExceptionHandler>()
             where TExceptionHandler : class, IActivityExceptionHandler
         {
-            AddExceptionHandler(serviceProvider => StateflowsActivator.CreateInstance<TExceptionHandler>(serviceProvider));
+            AddExceptionHandler(async serviceProvider => await StateflowsActivator.CreateInstanceAsync<TExceptionHandler>(serviceProvider));
 
             return this;
         }
 
         public IActivityBuilder AddExceptionHandler(ActivityExceptionHandlerFactory exceptionHandlerFactory)
         {
-            Result.ExceptionHandlerFactories.Add(exceptionHandlerFactory);
+            Result.ExceptionHandlerFactories.Add(serviceProvider => Task.FromResult(exceptionHandlerFactory(serviceProvider)));
+
+            return this;
+        }
+
+        public IActivityBuilder AddExceptionHandler(ActivityExceptionHandlerFactoryAsync exceptionHandlerFactoryAsync)
+        {
+            Result.ExceptionHandlerFactories.Add(exceptionHandlerFactoryAsync);
 
             return this;
         }
@@ -166,14 +172,21 @@ namespace Stateflows.Activities.Registration.Builders
         public IActivityBuilder AddInterceptor<TInterceptor>()
             where TInterceptor : class, IActivityInterceptor
         {
-            AddInterceptor(serviceProvider => StateflowsActivator.CreateInstance<TInterceptor>(serviceProvider));
+            AddInterceptor(async serviceProvider => await StateflowsActivator.CreateInstanceAsync<TInterceptor>(serviceProvider));
 
             return this;
         }
 
         public IActivityBuilder AddInterceptor(ActivityInterceptorFactory interceptorFactory)
         {
-            Result.InterceptorFactories.Add(interceptorFactory);
+            Result.InterceptorFactories.Add(serviceProvider => Task.FromResult(interceptorFactory(serviceProvider)));
+
+            return this;
+        }
+
+        public IActivityBuilder AddInterceptor(ActivityInterceptorFactoryAsync interceptorFactoryAsync)
+        {
+            Result.InterceptorFactories.Add(interceptorFactoryAsync);
 
             return this;
         }
@@ -181,14 +194,21 @@ namespace Stateflows.Activities.Registration.Builders
         public IActivityBuilder AddObserver<TObserver>()
             where TObserver : class, IActivityObserver
         {
-            AddObserver(serviceProvider => StateflowsActivator.CreateInstance<TObserver>(serviceProvider));
+            AddObserver(async serviceProvider => await StateflowsActivator.CreateInstanceAsync<TObserver>(serviceProvider));
 
             return this;
         }
 
         public IActivityBuilder AddObserver(ActivityObserverFactory observerFactory)
         {
-            Result.ObserverFactories.Add(observerFactory);
+            Result.ObserverFactories.Add(serviceProvider => Task.FromResult(observerFactory(serviceProvider)));
+
+            return this;
+        }
+
+        public IActivityBuilder AddObserver(ActivityObserverFactoryAsync observerFactoryAsync)
+        {
+            Result.ObserverFactories.Add(observerFactoryAsync);
 
             return this;
         }

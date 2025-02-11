@@ -31,18 +31,16 @@ namespace Stateflows.Activities.Registration.Interfaces.Base
             where TAcceptEventAction : class, IAcceptEventActionNode<TEvent>
             => AddAcceptEventAction<TEvent>(
                 actionNodeName,
-                c =>
+                async c =>
                 {
-                    var action = ((BaseContext)c).NodeScope.GetAcceptEventAction<TEvent, TAcceptEventAction>(c);
+                    var action = await ((BaseContext)c).NodeScope.GetAcceptEventActionAsync<TEvent, TAcceptEventAction>(c);
 
                     InputTokens.TokensHolder.Value = ((ActionContext)c).InputTokens;
                     OutputTokens.TokensHolder.Value = ((ActionContext)c).OutputTokens;
 
                     ActivityNodeContextAccessor.Context.Value = c;
-                    var result = action.ExecuteAsync(c.Event, c.CancellationToken);
+                    await action.ExecuteAsync(c.Event, c.CancellationToken);
                     ActivityNodeContextAccessor.Context.Value = null;
-
-                    return result;
                 },
                 buildAction
             );
@@ -79,18 +77,16 @@ namespace Stateflows.Activities.Registration.Interfaces.Base
             where TTimeEventAction : class, ITimeEventActionNode
             => AddTimeEventAction<TTimeEvent>(
                 actionNodeName,
-                c =>
+                async c =>
                 {
-                    var action = ((BaseContext)c).NodeScope.GetTimeEventAction<TTimeEventAction>(c);
+                    var action = await ((BaseContext)c).NodeScope.GetTimeEventActionAsync<TTimeEventAction>(c);
 
                     InputTokens.TokensHolder.Value = ((ActionContext)c).InputTokens;
                     OutputTokens.TokensHolder.Value = ((ActionContext)c).OutputTokens;
 
                     ActivityNodeContextAccessor.Context.Value = c;
-                    var result = action.ExecuteAsync(c.CancellationToken);
+                    await action.ExecuteAsync(c.CancellationToken);
                     ActivityNodeContextAccessor.Context.Value = null;
-
-                    return result;
                 },
                 buildAction
             );

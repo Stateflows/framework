@@ -2,6 +2,8 @@
 using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
+using Stateflows.Activities;
+using Stateflows.Activities.Extensions;
 using Stateflows.StateMachines.Context.Classes;
 using Stateflows.StateMachines.Context.Interfaces;
 using Stateflows.StateMachines.Registration.Extensions;
@@ -20,6 +22,25 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         /// </summary>
         /// <param name="actionsAsync">Action handlers</param>
         TReturn AddOnEntry(params Func<IStateActionContext, Task>[] actionsAsync);
+        
+        /// <summary>
+        /// Adds activity behavior that will be started when current state enters
+        /// </summary>
+        /// <param name="activityName">Activity behavior name</param>
+        /// <param name="buildAction">Build action</param>
+        [DebuggerHidden]
+        public TReturn AddOnEntryActivity(string activityName, StateActionActivityBuildAction buildAction = null)
+            => AddOnEntry(c => StateMachineActivityExtensions.RunStateActivity(Constants.Entry, c, activityName, buildAction));
+
+        /// <summary>
+        /// Adds activity behavior that will be started when current state enters
+        /// </summary>
+        /// <param name="buildAction">Build action</param>
+        /// <typeparam name="TActivity">Activity behavior type</typeparam>
+        [DebuggerHidden]
+        public TReturn AddOnEntryActivity<TActivity>(StateActionActivityBuildAction buildAction = null)
+            where TActivity : class, IActivity
+            => AddOnEntryActivity(Activity<TActivity>.Name, buildAction);
         
         /// <summary>
         /// Adds synchronous entry handler coming from current state.<br/>
@@ -44,7 +65,7 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         /// <typeparam name="TStateEntry">The type of the first state entry handler.</typeparam>
         TReturn AddOnEntry<TStateEntry>()
             where TStateEntry : class, IStateEntry
-            => AddOnEntry(c => ((BaseContext)c).Context.Executor.GetState<TStateEntry>(c)?.OnEntryAsync());
+            => AddOnEntry(async c => await (await ((BaseContext)c).Context.Executor.GetStateAsync<TStateEntry>(c)).OnEntryAsync());
 
         /// <summary>
         /// Adds multiple typed entry handlers to the current state.

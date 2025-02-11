@@ -46,7 +46,7 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         [DebuggerHidden]
         TReturn AddGuard<TGuard>()
             where TGuard : class, ITransitionGuard<TEvent>
-            => AddGuard(c => ((BaseContext)c).Context.Executor.GetTransitionGuard<TGuard, TEvent>(c)?.GuardAsync(c.Event));
+            => AddGuard(async c => await (await ((BaseContext)c).Context.Executor.GetTransitionGuardAsync<TGuard, TEvent>(c)).GuardAsync(c.Event));
 
         /// <summary>
         /// Adds a negated function-based guard to the current transition.
@@ -76,6 +76,6 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         [DebuggerHidden]
         TReturn AddNegatedGuard<TGuard>()
             where TGuard : class, ITransitionGuard<TEvent>
-            => AddGuard(async c => !await ((BaseContext)c).Context.Executor.GetTransitionGuard<TGuard, TEvent>(c)?.GuardAsync(c.Event)!);
+            => AddGuard(async c => !await (await ((BaseContext)c).Context.Executor.GetTransitionGuardAsync<TGuard, TEvent>(c)).GuardAsync(c.Event)!);
     }
 }

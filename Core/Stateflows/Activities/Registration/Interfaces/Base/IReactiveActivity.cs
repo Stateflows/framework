@@ -21,19 +21,17 @@ namespace Stateflows.Activities.Registration.Interfaces.Base
             where TAction : class, IActionNode
             => AddAction(
                 actionNodeName,
-                c =>
+                async c =>
                 {
                     var context = (BaseContext)c;
-                    var action = context.NodeScope.GetAction<TAction>(c);
+                    var action = await context.NodeScope.GetActionAsync<TAction>(c);
                     
                     InputTokens.TokensHolder.Value = ((ActionContext)c).InputTokens;
                     OutputTokens.TokensHolder.Value = ((ActionContext)c).OutputTokens;
                 
                     ActivityNodeContextAccessor.Context.Value = c;
-                    var result = action.ExecuteAsync(c.CancellationToken);
+                    await action.ExecuteAsync(c.CancellationToken);
                     ActivityNodeContextAccessor.Context.Value = null;
-                
-                    return result;
                 },
                 b =>
                 {

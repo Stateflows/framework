@@ -29,7 +29,7 @@ namespace Stateflows.StateMachines.Context.Classes
 
         public bool TryGetParent(out IStateContext parentStateContext)
         {
-            var parent = Context.Executor.Graph.AllVertices[Identifier].ParentRegion.ParentVertex;
+            var parent = Context.Executor.Graph.AllVertices[Identifier].ParentRegion?.ParentVertex;
 
             parentStateContext = parent != null
                 ? new StateContext(parent, Context)
