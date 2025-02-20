@@ -5,7 +5,7 @@ export class JsonUtils {
                 ? Object.keys(value)
                     .sort()
                     .reduce(
-                        (sorted, key) => {
+                        (sorted: any, key: any) => {
                             sorted[key] = value[key];
                             return sorted;
                         },

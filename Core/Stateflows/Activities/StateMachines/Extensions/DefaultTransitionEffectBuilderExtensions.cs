@@ -1,6 +1,6 @@
 using System.Diagnostics;
 using Stateflows.Activities.Extensions;
-using Stateflows.StateMachines.Events;
+using Stateflows.StateMachines;
 using Stateflows.StateMachines.Registration.Interfaces;
 
 namespace Stateflows.Activities

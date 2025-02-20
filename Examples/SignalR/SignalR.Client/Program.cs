@@ -4,7 +4,6 @@ using Stateflows;
 using Stateflows.Activities;
 using Stateflows.Common;
 using Stateflows.StateMachines;
-using Stateflows.StateMachines.Sync;
 using Stateflows.StateMachines;
 using Stateflows.Transport.Http;
 
@@ -84,7 +83,7 @@ app.UseHttpsRedirection();
 app.UseStaticFiles();
 app.UseRouting();
 
-app.MapStateflowsSignalRTransport();
+// app.MapStateflowsSignalRTransport();
 app.MapStateflowsHttpTransport();
 
 app.UseCors(builder => builder

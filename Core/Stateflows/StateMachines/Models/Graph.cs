@@ -5,7 +5,6 @@ using System.Collections.Generic;
 using Stateflows.Common;
 using Stateflows.Common.Models;
 using Stateflows.Common.Registration.Builders;
-using Stateflows.StateMachines.Events;
 using Stateflows.StateMachines.Exceptions;
 using Stateflows.StateMachines.Interfaces;
 using Stateflows.StateMachines.Registration;
@@ -123,21 +122,21 @@ namespace Stateflows.StateMachines.Models
                             throw new StateMachineDefinitionException($"Initial state '{region.InitialVertexName}' is not registered in {(vertex.Type == VertexType.CompositeState ? "composite" : "orthogonal")} state '{vertex.Name}' in state machine '{Name}'", Class);
                         }
                     }
+                }
+                
+                var vertexTriggers = vertex.Edges.Values
+                    .Where(edge => edge.ActualTriggers.All(trigger => !string.IsNullOrEmpty(trigger)))
+                    .SelectMany(edge => edge.ActualTriggers);
 
-                    var vertexTriggers = region.Edges.Values
-                        .Where(edge => edge.ActualTriggers.All(trigger => !string.IsNullOrEmpty(trigger)))
-                        .SelectMany(edge => edge.ActualTriggers);
+                var deferredEvents = vertex.DeferredEvents.Where(deferredEvent => vertexTriggers.Contains(deferredEvent));
+                if (deferredEvents.Any())
+                {
+                    throw new DeferralDefinitionException(deferredEvents.First(), $"Event '{deferredEvents.First()}' triggers a transition outgoing from state '{vertex.Name}' in state machine '{Name}' and cannot be deferred by that state in state machine '{Name}'", Class);
+                }
 
-                    var deferredEvents = vertex.DeferredEvents.Where(deferredEvent => vertexTriggers.Contains(deferredEvent));
-                    if (deferredEvents.Any())
-                    {
-                        throw new DeferralDefinitionException(deferredEvents.First(), $"Event '{deferredEvents.First()}' triggers a transition outgoing from state '{vertex.Name}' in state machine '{Name}' and cannot be deferred by that state in state machine '{Name}'", Class);
-                    }
-
-                    if (vertex.Type == VertexType.Choice && region.Edges.Values.Count(edge => edge.IsElse) != 1)
-                    {
-                        throw new StateMachineDefinitionException($"Choice pseudostate '{vertex.Name}' in state machine '{Name}' must have exactly one else transition in state machine '{Name}'", Class);
-                    }
+                if (vertex.Type == VertexType.Choice && vertex.Edges.Values.Count(edge => edge.IsElse) != 1)
+                {
+                    throw new StateMachineDefinitionException($"Choice pseudostate '{vertex.Name}' in state machine '{Name}' must have exactly one else transition in state machine '{Name}'", Class);
                 }
             }
 

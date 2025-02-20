@@ -268,7 +268,7 @@ namespace Stateflows.StateMachines.Registration.Builders
         {
             Services.AddScoped<TExceptionHandler>();
             
-            AddExceptionHandler(async serviceProvider => await StateflowsActivator.CreateInstanceAsync<TExceptionHandler>(serviceProvider));
+            AddExceptionHandler(async serviceProvider => await StateflowsActivator.CreateInstanceAsync<TExceptionHandler>(serviceProvider, "exception handler"));
 
             return this;
         }
@@ -310,7 +310,7 @@ namespace Stateflows.StateMachines.Registration.Builders
         {
             Services.AddScoped<TInterceptor>();
 
-            AddInterceptor(async serviceProvider => await StateflowsActivator.CreateInstanceAsync<TInterceptor>(serviceProvider));
+            AddInterceptor(async serviceProvider => await StateflowsActivator.CreateInstanceAsync<TInterceptor>(serviceProvider, "interceptor"));
 
             return this;
         }
@@ -330,7 +330,7 @@ namespace Stateflows.StateMachines.Registration.Builders
         {
             Services.AddScoped<TObserver>();
             
-            AddObserver(async serviceProvider => await StateflowsActivator.CreateInstanceAsync<TObserver>(serviceProvider));
+            AddObserver(async serviceProvider => await StateflowsActivator.CreateInstanceAsync<TObserver>(serviceProvider, "observer"));
 
             return this;
         }
@@ -367,7 +367,7 @@ namespace Stateflows.StateMachines.Registration.Builders
             => AddDefaultInitializer(actionAsync) as IStateMachineBuilder;
 
         IStateMachineBuilder IStateMachineEvents<IStateMachineBuilder>.AddInitializer<TInitializationEvent>(Func<IStateMachineInitializationContext<TInitializationEvent>, Task<bool>> actionAsync)
-            => AddInitializer<TInitializationEvent>(actionAsync) as IStateMachineBuilder;
+            => AddInitializer(actionAsync) as IStateMachineBuilder;
 
         IStateMachineBuilder IStateMachineEvents<IStateMachineBuilder>.AddFinalizer(Func<IStateMachineActionContext, Task> actionAsync)
             => AddFinalizer(actionAsync) as IStateMachineBuilder;

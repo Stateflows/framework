@@ -6,7 +6,6 @@ using Microsoft.Extensions.DependencyInjection;
 using Stateflows.Common;
 using Stateflows.Common.Exceptions;
 using Stateflows.Common.Registration;
-using Stateflows.StateMachines.Events;
 using Stateflows.StateMachines.Models;
 using Stateflows.StateMachines.Exceptions;
 using Stateflows.StateMachines.Context.Classes;
@@ -65,7 +64,9 @@ namespace Stateflows.StateMachines.Registration.Builders
                     }
                     else
                     {
-                        if (!await c.Executor.Inspector.OnStateInitializeExceptionAsync(context, e))
+                        var inspector = await c.Executor.GetInspectorAsync();
+                        
+                        if (!await inspector.OnStateInitializeExceptionAsync(context, e))
                         {
                             throw;
                         }
@@ -103,7 +104,9 @@ namespace Stateflows.StateMachines.Registration.Builders
                     }
                     else
                     {
-                        if (!await c.Executor.Inspector.OnStateFinalizeExceptionAsync(context, e))
+                        var inspector = await c.Executor.GetInspectorAsync();
+
+                        if (!await inspector.OnStateFinalizeExceptionAsync(context, e))
                         {
                             throw;
                         }
@@ -143,7 +146,9 @@ namespace Stateflows.StateMachines.Registration.Builders
                             }
                             else
                             {
-                                if (!await c.Executor.Inspector.OnStateEntryExceptionAsync(context, e))
+                                var inspector = await c.Executor.GetInspectorAsync();
+
+                                if (!await inspector.OnStateEntryExceptionAsync(context, e))
                                 {
                                     throw;
                                 }
@@ -184,7 +189,9 @@ namespace Stateflows.StateMachines.Registration.Builders
                             }
                             else
                             {
-                                if (!await c.Executor.Inspector.OnStateExitExceptionAsync(context, e))
+                                var inspector = await c.Executor.GetInspectorAsync();
+
+                                if (!await inspector.OnStateExitExceptionAsync(context, e))
                                 {
                                     throw;
                                 }

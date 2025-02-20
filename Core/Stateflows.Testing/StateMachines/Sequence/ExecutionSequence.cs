@@ -1,7 +1,7 @@
 ﻿using System.Collections.Generic;
 using Stateflows.Common;
 using Stateflows.Common.Exceptions;
-using Stateflows.StateMachines.Events;
+using Stateflows.StateMachines;
 #nullable enable
 
 namespace Stateflows.Testing.StateMachines.Sequence

@@ -7,7 +7,6 @@ using Stateflows.Common;
 using Stateflows.Common.Exceptions;
 using Stateflows.Common.Registration;
 using Stateflows.StateMachines.Models;
-using Stateflows.StateMachines.Events;
 using Stateflows.StateMachines.Context.Classes;
 using Stateflows.StateMachines.Context.Interfaces;
 using Stateflows.StateMachines.Exceptions;
@@ -87,7 +86,9 @@ namespace Stateflows.StateMachines.Registration.Builders
                             }
                             else
                             {
-                                if (!await c.Executor.Inspector.OnTransitionGuardExceptionAsync(context, e))
+                                var inspector = await c.Executor.GetInspectorAsync();
+
+                                if (!await inspector.OnTransitionGuardExceptionAsync(context, e))
                                 {
                                     throw;
                                 }
@@ -141,7 +142,9 @@ namespace Stateflows.StateMachines.Registration.Builders
                             }
                             else
                             {
-                                if (!await c.Executor.Inspector.OnTransitionEffectExceptionAsync(context, e))
+                                var inspector = await c.Executor.GetInspectorAsync();
+
+                                if (!await inspector.OnTransitionEffectExceptionAsync(context, e))
                                 {
                                     throw;
                                 }

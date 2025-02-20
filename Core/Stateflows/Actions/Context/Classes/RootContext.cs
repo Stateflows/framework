@@ -5,7 +5,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Stateflows.Common;
 using Stateflows.Common.Context;
 
-namespace Stateflows.Actions.Context
+namespace Stateflows.Actions.Context.Classes
 {
     public class RootContext
     {

@@ -1,6 +1,6 @@
 ﻿using Stateflows.Common;
 
-namespace Stateflows.StateMachines.Events
+namespace Stateflows.StateMachines
 {
     public sealed class StateMachineInfo : BehaviorInfo
     {

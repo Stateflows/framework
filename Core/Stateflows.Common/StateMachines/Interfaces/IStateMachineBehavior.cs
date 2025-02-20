@@ -1,8 +1,6 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Threading.Tasks;
 using Stateflows.Common;
-using Stateflows.StateMachines.Events;
 
 namespace Stateflows.StateMachines
 {

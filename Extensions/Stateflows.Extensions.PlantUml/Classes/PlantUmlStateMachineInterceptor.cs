@@ -13,20 +13,23 @@ namespace Stateflows.Extensions.PlantUml.Classes
         public override Task AfterHydrateAsync(IStateMachineActionContext context)
             => Task.CompletedTask;
 
-        public override Task AfterProcessEventAsync<TEvent>(IEventActionContext<TEvent> context)
+        public override async Task AfterProcessEventAsync<TEvent>(IEventActionContext<TEvent> context)
         {
             try
             {
-                if (context is IEventInspectionContext<TEvent> inspectionContext &&
-                    inspectionContext.StateMachine.Inspection.StateHasChanged
-                )
+                if (context is IEventInspectionContext<TEvent> inspectionContext)
                 {
-                    context.StateMachine.Publish(
-                        new PlantUmlInfo()
-                        {
-                            PlantUml = inspectionContext.StateMachine.Inspection.GetPlantUml()
-                        }
-                    );
+                    var inspection = await inspectionContext.StateMachine.GetInspectionAsync();
+
+                    if (inspection.StateHasChanged)
+                    {
+                        context.StateMachine.Publish(
+                            new PlantUmlInfo()
+                            {
+                                PlantUml = inspection.GetPlantUml()
+                            }
+                        );
+                    }
                 }
             }
             catch (Exception e)
@@ -37,8 +40,6 @@ namespace Stateflows.Extensions.PlantUml.Classes
                     Trace.WriteLine($"⦗→s⦘     {line}");
                 }
             }
-
-            return Task.CompletedTask;
         }
 
         public override Task BeforeDehydrateAsync(IStateMachineActionContext context)

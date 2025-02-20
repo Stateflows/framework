@@ -1,3 +1,9 @@
+import { EventHolder } from "../classes/event-holder";
+import { BehaviorId } from "../ids/behavior.id";
+
 export interface IWatcher {
-    unwatch(): Promise<void>;
+    id: BehaviorId;
+    notify(notification: EventHolder): void;
+    
+    // unwatch(): Promise<void>;
 }

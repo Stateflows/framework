@@ -12,5 +12,5 @@ export class CompoundRequest extends Request<CompoundResponse> {
         this.events = events.map(event => new EventHolder(event));
     }
 
-    public events: Array<EventHolder>;
+    public events: Array<EventHolder> = [];
 }

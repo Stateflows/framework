@@ -1,7 +1,9 @@
-﻿namespace Stateflows.StateMachines.Inspection.Interfaces
+﻿using System.Threading.Tasks;
+
+namespace Stateflows.StateMachines.Inspection.Interfaces
 {
     public interface IStateMachineInspectionContext : IStateMachineContext
     {
-        IStateMachineInspection Inspection { get; }
+        Task<IStateMachineInspection> GetInspectionAsync();
     }
 }

@@ -2,6 +2,7 @@
 using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
+using Stateflows.Actions;
 using Stateflows.Activities;
 using Stateflows.Activities.Extensions;
 using Stateflows.StateMachines.Context.Classes;
@@ -33,6 +34,25 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
             => AddOnExit(c => StateMachineActivityExtensions.RunStateActivity(Constants.Exit, c, activityName, buildAction));
 
         /// <summary>
+        /// Adds action behavior that will be started when current state exits
+        /// </summary>
+        /// <param name="buildAction">Build action</param>
+        /// <typeparam name="TAction">Action behavior type</typeparam>
+        [DebuggerHidden]
+        public TReturn AddOnExitAction<TAction>(StateActionActionBuildAction buildAction = null)
+            where TAction : class, IAction
+            => AddOnExitAction(Stateflows.Actions.Action<TAction>.Name, buildAction);
+
+        /// <summary>
+        /// Adds action behavior that will be started when current state exits
+        /// </summary>
+        /// <param name="actionName">Name of action behavior</param>
+        /// <param name="buildAction">Build action</param>
+        [DebuggerHidden]
+        public TReturn AddOnExitAction(string actionName, StateActionActionBuildAction buildAction = null)
+            => AddOnExit(c => StateMachineActionExtensions.RunStateAction(Constants.Exit, c, actionName, buildAction));
+
+        /// <summary>
         /// Adds activity behavior that will be started when current state exits
         /// </summary>
         /// <param name="buildAction">Build action</param>
@@ -51,7 +71,7 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         /// </summary>
         /// <param name="actions">Synchronous action handlers</param>
         [DebuggerHidden]
-        public TReturn AddOnExit(params Action<IStateActionContext>[] actions)
+        public TReturn AddOnExit(params System.Action<IStateActionContext>[] actions)
             => AddOnExit(
                 actions.Select(action => action
                     .AddStateMachineInvocationContext(((IVertexBuilder)this).Vertex.Graph)

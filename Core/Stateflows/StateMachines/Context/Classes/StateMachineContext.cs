@@ -25,7 +25,8 @@ namespace Stateflows.StateMachines.Context.Classes
             Values = new ContextValuesCollection(Context.GlobalValues);
         }
 
-        public IStateMachineInspection Inspection => Context.Executor.Inspector.Inspection;
+        public async Task<IStateMachineInspection> GetInspectionAsync()
+            => (await Context.Executor.GetInspectorAsync()).Inspection;
 
         public IContextValues Values { get; }
 

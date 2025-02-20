@@ -10,15 +10,15 @@ namespace Stateflows.StateMachines.Inspection.Classes
     {
         private Executor Executor { get; }
 
-        public StateMachineInspection(Executor executor)
+        public StateMachineInspection(Executor executor, Inspector inspector)
         {
             Executor = executor;
 
-            Executor.Inspector.InitializeInspection = new ActionInspection(Executor, nameof(Initialize));
-            Initialize = Executor.Inspector.InitializeInspection;
-            Executor.Inspector.FinalizeInspection = new ActionInspection(Executor, nameof(Finalize));
-            Finalize = Executor.Inspector.FinalizeInspection;
-            States = Executor.Graph.Vertices.Values.Select(v => new StateInspection(Executor, v)).ToArray();
+            inspector.InitializeInspection = new ActionInspection(Executor, nameof(Initialize));
+            Initialize = inspector.InitializeInspection;
+            inspector.FinalizeInspection = new ActionInspection(Executor, nameof(Finalize));
+            Finalize = inspector.FinalizeInspection;
+            States = Executor.Graph.Vertices.Values.Select(v => new StateInspection(Executor, inspector, v)).ToArray();
         }
 
         public StateMachineId Id => Executor.Context.Id;

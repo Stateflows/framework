@@ -1,7 +1,9 @@
-﻿namespace Stateflows.Activities.Inspection.Interfaces
+﻿using System.Threading.Tasks;
+
+namespace Stateflows.Activities.Inspection.Interfaces
 {
     public interface IActivityInspectionContext : IActivityContext
     {
-        IActivityInspection Inspection { get; }
+        Task<IActivityInspection> GetInspectionAsync();
     }
 }

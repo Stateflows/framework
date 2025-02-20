@@ -1,7 +1,7 @@
 using StateMachine.IntegrationTests.Utils;
 using Stateflows.Actions;
 
-namespace StateMachine.IntegrationTests.Tests
+namespace Action.IntegrationTests.Tests
 {
     [TestClass]
     public class Reentrant : StateflowsTestClass
@@ -45,7 +45,7 @@ namespace StateMachine.IntegrationTests.Tests
         }
 
         [TestMethod]
-        public async Task ActivityActions()
+        public async Task ReentrantAction()
         {
             if (ActionLocator.TryLocateAction(new ActionId("reentrant", "x"), out var a))
             {

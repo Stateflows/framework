@@ -1,5 +1,6 @@
-﻿using System.Collections.Generic;
-using System.Threading.Tasks;
+﻿using System.Threading.Tasks;
+using System.Collections.Generic;
+using Microsoft.Extensions.DependencyInjection;
 using Stateflows.Common;
 using Stateflows.Common.Classes;
 using Stateflows.Common.Interfaces;
@@ -7,7 +8,6 @@ using Stateflows.Common.Subscription;
 using Stateflows.Common.Context.Interfaces;
 using Stateflows.Activities.Engine;
 using Stateflows.Activities.Inspection.Interfaces;
-using Microsoft.Extensions.DependencyInjection;
 
 namespace Stateflows.Activities.Context.Classes
 {
@@ -29,7 +29,11 @@ namespace Stateflows.Activities.Context.Classes
             Values = new ContextValuesCollection(Context.GlobalValues);
         }
 
-        public IActivityInspection Inspection => Context.Executor.Inspector.Inspection;
+        public async Task<IActivityInspection> GetInspectionAsync()
+        {
+            var inspector = await Context.Executor.GetInspectorAsync();
+            return inspector.Inspection;
+        }
 
         public IContextValues Values { get; }
 

@@ -180,6 +180,7 @@ namespace Stateflows.Common
 
         internal readonly List<TreeNode<T>> NodesList = new List<TreeNode<T>>();
 
+        [JsonProperty(TypeNameHandling = TypeNameHandling.None)]
         public IEnumerable<TreeNode<T>> Nodes
             => NodesList;
         

@@ -116,14 +116,19 @@ namespace StateMachine.IntegrationTests.Tests
         {
             var status = EventStatus.Rejected;
             string currentState = "state1";
+            string[] expectedEvents = Array.Empty<string>();
 
             if (StateMachineLocator.TryLocateStateMachine(new StateMachineId("simple", "x"), out var sm))
             {
+                expectedEvents = (await sm.GetCurrentStateAsync()).Response.ExpectedEvents.ToArray();
+                
                 status = (await sm.SendAsync(new SomeEvent())).Status;
 
                 currentState = (await sm.GetCurrentStateAsync()).Response.StatesTree.Value;
             }
 
+            Assert.IsTrue(expectedEvents.Contains(Event<SomeEvent>.Name));
+            Assert.AreEqual(1, expectedEvents.Count());
             Assert.AreEqual(EventStatus.Consumed, status);
             Assert.IsTrue(StateExited);
             Assert.IsTrue(TransitionHappened);

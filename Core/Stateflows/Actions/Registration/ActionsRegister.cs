@@ -2,6 +2,7 @@
 using System.Diagnostics;
 using System.Collections.Generic;
 using Microsoft.Extensions.DependencyInjection;
+using Stateflows.Actions.Context.Classes;
 using Stateflows.Common.Classes;
 using Stateflows.Common.Registration.Builders;
 using Stateflows.Actions.Exceptions;
@@ -80,7 +81,7 @@ namespace Stateflows.Actions.Registration
                 throw new ActionDefinitionException($"Action '{actionName}' with version '{version}' is already registered", new ActionClass(actionName));
             }
 
-            ActionDelegateAsync actionDelegate = async (context) => ((IAction)await StateflowsActivator.CreateInstanceAsync(null, actionType)).ExecuteAsync(default);
+            ActionDelegateAsync actionDelegate = async (context) => await ((IAction)await StateflowsActivator.CreateInstanceAsync(((ActionDelegateContext)context).ServiceProvider, actionType, "action")).ExecuteAsync(default);
 
             Actions.Add(key, (actionName, version, reentrant, actionDelegate));
 

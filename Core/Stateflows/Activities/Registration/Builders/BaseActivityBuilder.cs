@@ -128,7 +128,7 @@ namespace Stateflows.Activities.Registration
                 var faulty = false;
                 try
                 {
-                    var inspector = c.Activity.GetExecutor().Inspector;
+                    var inspector = await c.Activity.GetExecutor().GetInspectorAsync();
                     await inspector.BeforeNodeExecuteAsync(context);
                     await actionAsync(c);
                     await inspector.AfterNodeExecuteAsync(context);
@@ -137,7 +137,7 @@ namespace Stateflows.Activities.Registration
                 {
                     if (e is StateflowsException)
                     {
-                        Debug.WriteLine("catched and rethrowed");
+                        // Debug.WriteLine("catched and rethrowed");
                         throw;
                     }
                     else
@@ -354,7 +354,9 @@ namespace Stateflows.Activities.Registration
                     }
                     else
                     {
-                        if (!await context.Context.Executor.Inspector.OnNodeFinalizationExceptionAsync(context, e))
+                        var inspector = await c.Context.Executor.GetInspectorAsync();
+
+                        if (!await inspector.OnNodeFinalizationExceptionAsync(context, e))
                         {
                             throw;
                         }
@@ -388,7 +390,9 @@ namespace Stateflows.Activities.Registration
                     }
                     else
                     {
-                        if (!await context.Context.Executor.Inspector.OnNodeInitializationExceptionAsync(context, e))
+                        var inspector = await c.Context.Executor.GetInspectorAsync();
+
+                        if (!await inspector.OnNodeInitializationExceptionAsync(context, e))
                         {
                             throw;
                         }

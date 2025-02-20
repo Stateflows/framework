@@ -8,14 +8,17 @@ namespace Stateflows.StateMachines.Inspection.Classes
     internal class TransitionInspection : ITransitionInspection
     {
         private Executor Executor { get; }
+        
+        private Inspector Inspector { get; }
 
         private Edge Edge { get; }
 
-        public TransitionInspection(Executor executor, Edge edge)
+        public TransitionInspection(Executor executor, Inspector inspector, Edge edge)
         {
             Executor = executor;
+            Inspector = inspector;
             Edge = edge;
-            Executor.Inspector.InspectionTransitions.Add(Edge, this);
+            Inspector.InspectionTransitions.Add(Edge, this);
         }
 
         public IEnumerable<string> Triggers => Edge.ActualTriggers;
@@ -42,7 +45,7 @@ namespace Stateflows.StateMachines.Inspection.Classes
             {
                 if (
                     source == null &&
-                    Executor.Inspector.InspectionStates.TryGetValue(Edge.Source.Identifier, out var s)
+                    Inspector.InspectionStates.TryGetValue(Edge.Source.Identifier, out var s)
                 )
                 {
                     source = s;
@@ -61,7 +64,7 @@ namespace Stateflows.StateMachines.Inspection.Classes
                 if (
                     target == null &&
                     Edge.Target != null &&
-                    Executor.Inspector.InspectionStates.TryGetValue(Edge.Target.Identifier, out var t)
+                    Inspector.InspectionStates.TryGetValue(Edge.Target.Identifier, out var t)
                 )
                 {
                     target = t;

@@ -2,6 +2,7 @@
 using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
+using Stateflows.Actions;
 using Stateflows.Activities;
 using Stateflows.Activities.Extensions;
 using Stateflows.StateMachines.Context.Classes;
@@ -43,6 +44,25 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
             => AddOnEntryActivity(Activity<TActivity>.Name, buildAction);
         
         /// <summary>
+        /// Adds action behavior that will be started when current state enters
+        /// </summary>
+        /// <param name="actionName">Action behavior name</param>
+        /// <param name="buildAction">Build action</param>
+        [DebuggerHidden]
+        public TReturn AddOnEntryAction(string actionName, StateActionActionBuildAction buildAction = null)
+            => AddOnEntry(c => StateMachineActionExtensions.RunStateAction(Constants.Entry, c, actionName, buildAction));
+
+        /// <summary>
+        /// Adds action behavior that will be started when current state enters
+        /// </summary>
+        /// <param name="buildAction">Build action</param>
+        /// <typeparam name="TAction">Action behavior type</typeparam>
+        [DebuggerHidden]
+        public TReturn AddOnEntryAction<TAction>(StateActionActionBuildAction buildAction = null)
+            where TAction : class, IAction
+            => AddOnEntryAction(Stateflows.Actions.Action<TAction>.Name, buildAction);
+        
+        /// <summary>
         /// Adds synchronous entry handler coming from current state.<br/>
         /// Use the following pattern to implement handler:
         /// <code>c => {
@@ -51,7 +71,7 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         /// </summary>
         /// <param name="actions">Synchronous action handlers</param>
         [DebuggerHidden]
-        public TReturn AddOnEntry(params Action<IStateActionContext>[] actions)
+        public TReturn AddOnEntry(params System.Action<IStateActionContext>[] actions)
             => AddOnEntry(
                 actions.Select(action => action
                     .AddStateMachineInvocationContext(((IVertexBuilder)this).Vertex.Graph)

@@ -2,8 +2,9 @@
 using System.Collections.Generic;
 using Microsoft.Extensions.DependencyInjection;
 using Stateflows.Actions.Engine;
-using Stateflows.Actions.Registration;
 using Stateflows.Actions.Service;
+using Stateflows.Actions.Registration;
+using Stateflows.Actions.Registration.Builders;
 using Stateflows.Activities;
 using Stateflows.Common.Interfaces;
 using Stateflows.Common.Initializer;
@@ -20,7 +21,7 @@ namespace Stateflows.Actions
         public static IStateflowsBuilder AddActions(this IStateflowsBuilder stateflowsBuilder, ActionsBuildAction buildAction = null)
         {
             var register = stateflowsBuilder.EnsureActivitiesServices();
-            buildAction?.Invoke(register);
+            buildAction?.Invoke(new ActionsBuilder(register));
 
             return stateflowsBuilder;
         }
@@ -46,11 +47,11 @@ namespace Stateflows.Actions
                         .AddSingleton<IActionsRegister>(register)
                         .AddScoped<IEventProcessor, Processor>()
                         .AddTransient<IBehaviorProvider, Provider>()
-                        .AddTransient(typeof(Input<>))
-                        .AddTransient(typeof(SingleInput<>))
-                        .AddTransient(typeof(OptionalInput<>))
-                        .AddTransient(typeof(OptionalSingleInput<>))
-                        .AddTransient(typeof(Output<>))
+                        .AddTransient(typeof(IInputTokens<>), typeof(InputTokens<>))
+                        .AddTransient(typeof(IInputToken<>), typeof(InputToken<>))
+                        .AddTransient(typeof(IOptionalInputTokens<>), typeof(OptionalInputTokens<>))
+                        .AddTransient(typeof(IOptionalInputToken<>), typeof(OptionalInputToken<>))
+                        .AddTransient(typeof(IOutputTokens<>), typeof(OutputTokens<>))
                         ;
                 }
 

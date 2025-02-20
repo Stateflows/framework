@@ -5,7 +5,7 @@ using Stateflows.Common;
 
 namespace Stateflows.Activities.StateMachines.Interfaces
 {
-    internal class BaseActivityBuilder
+    internal class BaseEmbeddedBehaviorBuilder
     {
         public List<Type> Notifications { get; } = new List<Type>();
 

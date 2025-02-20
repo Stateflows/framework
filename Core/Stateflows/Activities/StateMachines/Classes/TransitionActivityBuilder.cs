@@ -4,19 +4,19 @@ using Stateflows.Activities.Extensions;
 namespace Stateflows.Activities.StateMachines.Interfaces
 {
     internal class TransitionActivityBuilder<TEvent> :
-        BaseActivityBuilder,
+        BaseEmbeddedBehaviorBuilder,
         ITransitionActivityBuilder<TEvent>,
         IInitializedTransitionActivityBuilder<TEvent>
 
     {
-        public TransitionActivityInitializationBuilderAsync<TEvent, EventHolder> InitializationBuilder { get; private set; } = null;
+        public TransitionBehaviorInitializationBuilderAsync<TEvent, EventHolder> InitializationBuilder { get; private set; } = null;
 
         public TransitionActivityBuilder(TransitionActivityBuildAction<TEvent> buildAction)
         {
             buildAction?.Invoke(this);
         }
 
-        IInitializedTransitionActivityBuilder<TEvent> ITransitionInitialization<TEvent, IInitializedTransitionActivityBuilder<TEvent>>.InitializeWith<TInitializationEvent>(TransitionActivityInitializationBuilderAsync<TEvent, TInitializationEvent> builderAsync)
+        IInitializedTransitionActivityBuilder<TEvent> ITransitionInitialization<TEvent, IInitializedTransitionActivityBuilder<TEvent>>.InitializeWith<TInitializationEvent>(TransitionBehaviorInitializationBuilderAsync<TEvent, TInitializationEvent> builderAsync)
         {
             if (builderAsync != null)
             {

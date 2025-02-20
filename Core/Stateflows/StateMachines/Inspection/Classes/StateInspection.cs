@@ -9,16 +9,19 @@ namespace Stateflows.StateMachines.Inspection.Classes
 {
     internal class StateInspection : IStateInspection
     {
-        private Executor Executor { get; }
+        private readonly Executor Executor;
+        
+        private readonly Inspector Inspector;
 
         private Vertex Vertex { get; }
 
-        public StateInspection(Executor executor, Vertex vertex)
+        public StateInspection(Executor executor, Inspector inspector, Vertex vertex)
         {
             Executor = executor;
+            Inspector = inspector; 
             Vertex = vertex;
-            Executor.Inspector.InspectionStates.Add(Vertex.Identifier, this);
-            Regions = Vertex.Regions.Select(region => new RegionInspection(Executor, region)).ToArray();
+            inspector.InspectionStates.Add(Vertex.Identifier, this);
+            Regions = Vertex.Regions.Select(region => new RegionInspection(Executor, inspector, region)).ToArray();
         }
 
         public string Name => Vertex.Name;
@@ -38,7 +41,7 @@ namespace Stateflows.StateMachines.Inspection.Classes
         private IEnumerable<ITransitionInspection> transitions;
 
         public IEnumerable<ITransitionInspection> Transitions
-            => transitions ??= Vertex.Edges.Values.Select(e => new TransitionInspection(Executor, e)).ToArray();
+            => transitions ??= Vertex.Edges.Values.Select(e => new TransitionInspection(Executor, Inspector, e)).ToArray();
 
         private List<IActionInspection> actions;
 

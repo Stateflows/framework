@@ -23,8 +23,8 @@
   "license": "MIT",
   "homepage": "https://www.stateflows.net",
   "devDependencies": {
-    "tsup": "^8.2.4",
-    "typescript": "^5.5.4"
+    "tsup": "^8.3.6",
+    "typescript": "^5.7.3"
   },
   "dependencies": {
     "@stateflows/common": "file:../common"

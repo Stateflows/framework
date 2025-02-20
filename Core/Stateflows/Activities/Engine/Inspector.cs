@@ -52,9 +52,9 @@ namespace Stateflows.Activities.Engine
         public IDictionary<Edge, FlowInspection> InspectionFlows { get; } = new Dictionary<Edge, FlowInspection>();
 
 
-        public IActivityInspection inspection;
+        private IActivityInspection inspection;
 
-        public IActivityInspection Inspection => inspection ??= new ActivityInspection(Executor);
+        public IActivityInspection Inspection => inspection ??= new ActivityInspection(Executor, this);
 
         private readonly List<ActivityExceptionHandlerFactoryAsync> ExceptionHandlerFactories = new List<ActivityExceptionHandlerFactoryAsync>();
 

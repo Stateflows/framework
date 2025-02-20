@@ -1,6 +1,5 @@
 ﻿using System.Diagnostics;
 using Stateflows.Common;
-using Stateflows.StateMachines.Events;
 using StateMachine.IntegrationTests.Utils;
 
 namespace StateMachine.IntegrationTests.Tests
@@ -138,6 +137,16 @@ namespace StateMachine.IntegrationTests.Tests
                             .AddInitialState("state1")
                         )
                     )
+                
+                    .AddStateMachine("expectedEvents", b => b
+                        .AddInitialCompositeState("state1", b => b
+                            .AddTransition<SomeEvent, FinalState>()
+                            .AddInitialState("state2", b => b
+                                .AddTransition<OtherEvent, FinalState>()
+                            )
+                        )
+                        .AddFinalState()
+                    )
                 )
                 ;
         }
@@ -147,6 +156,21 @@ namespace StateMachine.IntegrationTests.Tests
 
 
 
+        [TestMethod]
+        public async Task ExpectedEventsInCompositeState()
+        {
+            string[] expectedEvents = Array.Empty<string>();
+
+            if (StateMachineLocator.TryLocateStateMachine(new StateMachineId("expectedEvents", "x"), out var sm))
+            {
+                expectedEvents = (await sm.GetCurrentStateAsync()).Response.ExpectedEvents.ToArray();
+            }
+            
+            Assert.IsTrue(expectedEvents.Contains(Event<SomeEvent>.Name));
+            Assert.IsTrue(expectedEvents.Contains(Event<OtherEvent>.Name));
+            Assert.AreEqual(2, expectedEvents.Length);
+        }
+        
         [TestMethod]
         public async Task TypedCompositeState()
         {

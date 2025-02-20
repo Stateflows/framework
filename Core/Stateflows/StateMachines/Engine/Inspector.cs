@@ -58,7 +58,7 @@ namespace Stateflows.StateMachines.Engine
         public IDictionary<Edge, TransitionInspection> InspectionTransitions { get; } = new Dictionary<Edge, TransitionInspection>();
 
         private IStateMachineInspection inspection;
-        public IStateMachineInspection Inspection => inspection ??= new StateMachineInspection(Executor);
+        public IStateMachineInspection Inspection => inspection ??= new StateMachineInspection(Executor, this);
 
         private readonly List<StateMachineExceptionHandlerFactoryAsync> ExceptionHandlerFactories = new List<StateMachineExceptionHandlerFactoryAsync>();
 

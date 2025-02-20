@@ -12,11 +12,11 @@ namespace Stateflows.StateMachines.Inspection.Classes
 
         private Region Region { get; }
 
-        public RegionInspection(Executor executor, Region region)
+        public RegionInspection(Executor executor, Inspector inspector, Region region)
         {
             Executor = executor;
             Region = region;
-            States = Region.Vertices.Values.Select(subVertex => new StateInspection(Executor, subVertex)).ToArray();
+            States = Region.Vertices.Values.Select(subVertex => new StateInspection(Executor, inspector, subVertex)).ToArray();
         }
         
         public IEnumerable<IStateInspection> States { get; }

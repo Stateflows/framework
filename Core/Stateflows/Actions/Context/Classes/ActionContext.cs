@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using Stateflows.Common;
 using Stateflows.Common.Classes;
@@ -7,14 +8,19 @@ using Stateflows.Common.Interfaces;
 using Stateflows.Common.Subscription;
 using Stateflows.Common.Context.Interfaces;
 using Microsoft.Extensions.DependencyInjection;
+using Stateflows.Activities;
 
-namespace Stateflows.Actions.Context
+namespace Stateflows.Actions.Context.Classes
 {
     public class ActionContext : IActionContext, IBehaviorLocator
     {
         BehaviorId IBehaviorContext.Id => Context.Id;
 
         private readonly RootContext Context;
+
+        public readonly List<TokenHolder> OutputTokens = new List<TokenHolder>();
+        
+        public readonly List<TokenHolder> InputTokens = new List<TokenHolder>();
 
         private readonly IServiceProvider ServiceProvider;
 
@@ -24,17 +30,20 @@ namespace Stateflows.Actions.Context
         private BehaviorSubscriber Subscriber
             => subscriber ??= new BehaviorSubscriber(Id, Context.Context, this, ServiceProvider.GetRequiredService<NotificationsHub>());
 
-        public ActionContext(RootContext context, IServiceProvider serviceProvider)
+        public ActionContext(RootContext context, IServiceProvider serviceProvider, IEnumerable<TokenHolder> tokens)
         {
             Context = context;
             ServiceProvider = serviceProvider;
             Values = new ContextValuesCollection(context.GlobalValues);
+            if (tokens != null)
+            {
+                InputTokens.AddRange(tokens);
+            }
         }
 
         public IContextValues Values { get; }
 
         public void Send<TEvent>(TEvent @event, IEnumerable<EventHeader> headers = null)
-
             => _ = Context.Send(@event, headers);
 
         public void Publish<TNotification>(TNotification notification, IEnumerable<EventHeader> headers = null, int timeToLiveInSeconds = 60)
@@ -54,18 +63,12 @@ namespace Stateflows.Actions.Context
             => BehaviorLocator.TryLocateBehavior(id, out behavior);
 
         public IEnumerable<TToken> GetTokensOfType<TToken>()
-        {
-            throw new NotImplementedException();
-        }
+            => InputTokens.OfType<TokenHolder<TToken>>().Select(tokenHolder => tokenHolder.Payload);
 
         public void Output<TToken>(TToken token)
-        {
-            throw new NotImplementedException();
-        }
+            => OutputTokens.Add(token.ToTokenHolder());
 
         public void OutputRange<TToken>(IEnumerable<TToken> tokens)
-        {
-            throw new NotImplementedException();
-        }
+            => OutputTokens.AddRange(tokens.Select(token => token.ToTokenHolder()));
     }
 }

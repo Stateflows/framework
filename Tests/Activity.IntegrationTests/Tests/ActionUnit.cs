@@ -1,3 +1,5 @@
+using System.Diagnostics;
+using Microsoft.Extensions.DependencyInjection;
 using Stateflows.Common;
 using Stateflows.Common.Attributes;
 using Stateflows.Common.Classes;
@@ -5,10 +7,24 @@ using StateMachine.IntegrationTests.Utils;
 
 namespace Activity.IntegrationTests.Tests
 {
-    public class TestedAction(IInputToken<int> input, [GlobalValue] IValue<int> foo) : IActionNode
+    public interface IServiceX
+    {
+        void DoSomething();
+    }
+
+    public class ServiceX : IServiceX
+    {
+        public void DoSomething()
+        {
+            Debug.WriteLine("DoSomething");
+        }
+    }
+    
+    public class TestedAction(IServiceX serviceX, IInputToken<int> input, [GlobalValue] IValue<int> foo) : IActionNode
     {
         public async Task ExecuteAsync(CancellationToken cancellationToken)
         {
+            serviceX.DoSomething();
             await foo.SetAsync(input.Token);
             input.PassOn();
 
@@ -42,6 +58,8 @@ namespace Activity.IntegrationTests.Tests
 
         protected override void InitializeStateflows(IStateflowsBuilder builder)
         {
+            builder.ServiceCollection.AddScoped<IServiceX, ServiceX>();
+
             // Run AddActivities to register necessary services
             builder.AddActivities();
         }

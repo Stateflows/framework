@@ -57,7 +57,6 @@ export class Behavior implements IBehavior, IWatcher {
         if (this.#notificationHandlers.has(notification.name))
         {
             notification.payload.eventName = notification.name;
-            notification.payload.$type = notification.$type;
             let handlers = this.#notificationHandlers.get(notification.name) as Array<NotificationHandler<any>>;
             handlers.forEach(handler => handler(notification.payload));
         }
@@ -76,6 +75,13 @@ export class Behavior implements IBehavior, IWatcher {
         this.#notificationHandlers.set(notificationName, handlers);
     }
 
+    async requestAndWatch<TRequest extends Request<TNotification>, TNotification extends Event>(request: TRequest, notificationName: string, handler: NotificationHandler<TNotification>): Promise<void> {
+        let promise = await this.watch(notificationName, handler);
+        let result = await this.request(request);
+        handler(result.response);
+        return promise;
+    }
+
     async unwatch(notificationName: string): Promise<void> {
         let transport = await this.#transportPromise;
         await transport.unwatch(this, notificationName);
@@ -89,6 +95,13 @@ export class Behavior implements IBehavior, IWatcher {
 
     watchStatus(handler: NotificationHandler<BehaviorInfo>): Promise<void> {
         return this.watch<BehaviorInfo>(BehaviorInfo.eventName, handler);
+    }
+
+    async requestAndWatchStatus(handler: NotificationHandler<BehaviorInfo>): Promise<void> {
+        let promise = this.watch<BehaviorInfo>(BehaviorInfo.eventName, handler);
+        let result = await this.getStatus();
+        handler(result.response);
+        return promise;
     }
 
     unwatchStatus(): Promise<void> {

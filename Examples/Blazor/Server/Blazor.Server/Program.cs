@@ -8,6 +8,7 @@ using Stateflows.Common;
 using Stateflows.StateMachines;
 using X;
 using Microsoft.AspNetCore.OpenApi;
+using Stateflows.Actions;
 using Stateflows.Transport.Http;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -27,6 +28,39 @@ builder.Services.AddStateflows(b => b
     .AddConsole()
 
     // .AddStorage()
+    
+    
+    .AddActions(b => b
+        .AddAction("action1", async c =>
+        {
+            await c.Action.Values.SetAsync<int>("TheAnswerToTheLifeWorldAndUniverse", 42);
+            
+            var answer = await c.Action.Values.GetOrDefaultAsync<int>("theAnswerToTheLifeWorldAndUniverse");
+        })
+    )
+    
+    .AddStateMachines(b => b
+    
+        .AddStateMachine("stateMachine1", b => b
+            .AddInitialState("State1", b => b
+                .AddTransition<SomeEvent>("State2")
+            )
+            .AddState("State2", b => b
+                .AddDefaultTransition(FinalState.Name)
+            )
+            .AddFinalState()
+        )
+    )
+    
+    
+    .AddActivities(b => b
+        .AddActivity("activity1", b => b
+            .AddAction("action1", async c => { })
+        )
+    )
+    
+    
+    
 
     .AddActivities(b => b
         .AddActivity("a", b => b

@@ -1,10 +1,11 @@
 ﻿using System.Threading.Tasks;
+using Stateflows.Actions.Context.Interfaces;
 
 namespace Stateflows.Actions.Registration
 {
-    public delegate Task ActionDelegateAsync(IActionContext context);
+    public delegate Task ActionDelegateAsync(IActionDelegateContext context);
 
-    public delegate void ActionsBuildAction(IActionsRegister register);
+    public delegate void ActionsBuildAction(IActionsBuilder register);
 
     // public delegate IActivityObserver ActivityObserverFactory(IServiceProvider serviceProvider);
     //

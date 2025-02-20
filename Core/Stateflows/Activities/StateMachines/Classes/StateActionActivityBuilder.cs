@@ -1,22 +1,21 @@
-﻿using Stateflows.Utils;
-using Stateflows.Common;
+﻿using Stateflows.Common;
 using Stateflows.Activities.Extensions;
 
 namespace Stateflows.Activities.StateMachines.Interfaces
 {
     internal class StateActionActivityBuilder :
-        BaseActivityBuilder,
+        BaseEmbeddedBehaviorBuilder,
         IStateActionActivityBuilder,
         IInitializedStateActionActivityBuilder
     {
-        public StateActionActivityInitializationBuilderAsync<EventHolder> InitializationBuilder { get; private set; } = null;
+        public StateActionBehaviorInitializationBuilderAsync<EventHolder> InitializationBuilder { get; private set; } = null;
 
         public StateActionActivityBuilder(StateActionActivityBuildAction buildAction)
         {
             buildAction?.Invoke(this);
         }
 
-        IInitializedStateActionActivityBuilder IStateActionInitialization<IInitializedStateActionActivityBuilder>.InitializeWith<TInitializationEvent>(StateActionActivityInitializationBuilderAsync<TInitializationEvent> builderAsync)
+        IInitializedStateActionActivityBuilder IStateActionInitialization<IInitializedStateActionActivityBuilder>.InitializeWith<TInitializationEvent>(StateActionBehaviorInitializationBuilderAsync<TInitializationEvent> builderAsync)
         {
             if (builderAsync != null)
             {

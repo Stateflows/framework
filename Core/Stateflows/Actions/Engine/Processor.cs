@@ -1,15 +1,19 @@
 ﻿using System;
 using System.Threading.Tasks;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
+using System.Linq;
 using Microsoft.Extensions.DependencyInjection;
+using Stateflows.Actions.Context.Classes;
 using Stateflows.Common;
 using Stateflows.Activities;
 using Stateflows.Common.Interfaces;
 using Stateflows.Actions.Registration;
+using Stateflows.Common.Context;
 
 namespace Stateflows.Actions.Engine
 {
-    internal class Processor : IEventProcessor
+    internal class Processor : IEventProcessor, IStateflowsProcessor
     {
         string IEventProcessor.BehaviorType => BehaviorType.Action;
 
@@ -37,7 +41,7 @@ namespace Stateflows.Actions.Engine
             var storage = serviceProvider.GetRequiredService<IStateflowsStorage>();
 
             var stateflowsContext = await storage.HydrateAsync(id);
-
+            
             var key = stateflowsContext.Version != 0
                 ? $"{id.Name}.{stateflowsContext.Version}"
                 : $"{id.Name}.current";
@@ -59,10 +63,39 @@ namespace Stateflows.Actions.Engine
                 {
                     stateflowsContext = await storage.HydrateAsync(id);
                 }
+
+                var executor = new Executor(stateflowsContext, serviceProvider, action);
                 
-                if (eventHolder is EventHolder<TokensInput> tokensInputHolder)
+                if (eventHolder is EventHolder<CompoundRequest> compoundRequestHolder)
                 {
-                    await action.Delegate.Invoke(null);
+                    var compoundRequest = compoundRequestHolder.Payload;
+                    result = EventStatus.Consumed;
+                    var results = new List<RequestResult>();
+                    foreach (var ev in compoundRequest.Events)
+                    {
+                        ev.Headers.AddRange(eventHolder.Headers);
+
+                        var status = await ev.ExecuteBehaviorAsync(this, result, executor);
+
+                        results.Add(new RequestResult(
+                            ev,
+                            ev.GetResponseHolder(),
+                            status,
+                            new EventValidation(true, new List<ValidationResult>())
+                        ));
+                    }
+
+                    if (!compoundRequest.IsRespondedTo())
+                    {
+                        compoundRequest.Respond(new CompoundResponse()
+                        {
+                            Results = results
+                        });
+                    }
+                }
+                else
+                {
+                    result = await ExecuteBehaviorAsync(eventHolder, result, executor);
                 }
             }
             finally
@@ -83,5 +116,9 @@ namespace Stateflows.Actions.Engine
 
             return result;
         }
+
+        public Task<EventStatus> ExecuteBehaviorAsync<TEvent>(EventHolder<TEvent> eventHolder,
+            EventStatus result, IStateflowsExecutor stateflowsExecutor)
+            => stateflowsExecutor.DoProcessAsync(eventHolder);
     }
 }

@@ -64,7 +64,7 @@ namespace Stateflows.Activities.Engine
             }
 
             using var executor = new Executor(Register, graph, serviceProvider);
-            await executor.BuildAsync();
+
             var context = new RootContext(stateflowsContext);
 
             await executor.HydrateAsync(context);
@@ -135,7 +135,9 @@ namespace Stateflows.Activities.Engine
 
             var eventContext = new EventContext<TEvent>(executor.Context, executor.NodeScope);
 
-            if (await executor.Inspector.BeforeProcessEventAsync(eventContext))
+            var inspector = await executor.GetInspectorAsync(); 
+
+            if (await inspector.BeforeProcessEventAsync(eventContext))
             {
                 var attributes = eventHolder.PayloadType.GetCustomAttributes<NoImplicitInitializationAttribute>();
                 if (!executor.Initialized && !attributes.Any())
@@ -177,7 +179,7 @@ namespace Stateflows.Activities.Engine
                     }
                 }
 
-                await executor.Inspector.AfterProcessEventAsync(eventContext);
+                await inspector.AfterProcessEventAsync(eventContext);
             }
             else
             {

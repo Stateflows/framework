@@ -1,5 +1,15 @@
 {
   "compilerOptions": {
+    "module": "es2015",
+    "target": "es2019",
+    "moduleResolution": "node",
+    "noImplicitAny": true,
+    "removeComments": true,
+    "preserveConstEnums": true,
+    "sourceMap": true,
+    "outDir": "dist",
+    "declaration": true,
     "lib": ["es2022", "esnext.disposable", "dom"]
-  }
+  },
+  "include": ["src/**/*"]
 }
