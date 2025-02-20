@@ -20,7 +20,7 @@ namespace Stateflows.Locks.DistributedLock.Classes
             var distributedLock = await DistributedLockFactory(id.ToString());
             var handle = distributedLock.Acquire(timeout);
 
-            return new LockHandle(id, handle);
+            return new StateflowsLockHandle(id, handle);
         }
     }
 }

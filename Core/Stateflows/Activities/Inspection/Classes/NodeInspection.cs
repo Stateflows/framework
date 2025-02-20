@@ -9,14 +9,17 @@ namespace Stateflows.Activities.Inspection.Classes
     internal class NodeInspection : INodeInspection
     {
         private Executor Executor { get; }
+        
+        private Inspector Inspector { get; } 
 
         private Node Node { get; }
 
-        public NodeInspection(Executor executor, Node node)
+        public NodeInspection(Executor executor, Inspector inspector, Node node)
         {
             Executor = executor;
+            Inspector = inspector;
             Node = node;
-            Executor.Inspector.InspectionNodes.Add(Node, this);
+            Inspector.InspectionNodes.Add(Node, this);
         }
 
         public string Name => Node.Name;
@@ -28,11 +31,11 @@ namespace Stateflows.Activities.Inspection.Classes
         private IEnumerable<IFlowInspection> flows;
 
         public IEnumerable<IFlowInspection> Flows
-            => flows ??= Node.Edges.Select(e => new FlowInspection(Executor, e)).ToArray();
+            => flows ??= Node.Edges.Select(e => new FlowInspection(Executor, Inspector, e)).ToArray();
 
-        public IEnumerable<INodeInspection> nodes;
+        private IEnumerable<INodeInspection> nodes;
 
         public IEnumerable<INodeInspection> Nodes
-            => nodes ??= Node.Nodes.Values.Select(subVertex => new NodeInspection(Executor, subVertex)).ToArray();
+            => nodes ??= Node.Nodes.Values.Select(subVertex => new NodeInspection(Executor, Inspector, subVertex)).ToArray();
     }
 }

@@ -7,6 +7,8 @@ namespace Stateflows.StateMachines.Inspection.Interfaces
         IEnumerable<string> Triggers { get; }
 
         bool Active { get; }
+        
+        bool IsElse { get; }
 
         IActionInspection Guard { get; }
 

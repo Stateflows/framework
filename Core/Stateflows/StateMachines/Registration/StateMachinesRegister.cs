@@ -1,28 +1,28 @@
 ﻿using System;
 using System.Diagnostics;
 using System.Collections.Generic;
-using System.Runtime.Serialization;
+using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
-using Stateflows.Common.Extensions;
+using Stateflows.Common.Classes;
+using Stateflows.Common.Registration.Builders;
 using Stateflows.StateMachines.Models;
 using Stateflows.StateMachines.Exceptions;
 using Stateflows.StateMachines.Registration.Builders;
 using Stateflows.StateMachines.Registration.Interfaces;
-using Stateflows.Common.Registration.Builders;
 
 namespace Stateflows.StateMachines.Registration
 {
-    internal class StateMachinesRegister
+    internal class StateMachinesRegister : IStateMachinesRegister
     {
         private readonly StateflowsBuilder stateflowsBuilder;
 
         private IServiceCollection Services { get; }
 
-        public List<StateMachineExceptionHandlerFactory> GlobalExceptionHandlerFactories { get; set; } = new List<StateMachineExceptionHandlerFactory>();
+        public List<StateMachineExceptionHandlerFactoryAsync> GlobalExceptionHandlerFactories { get; set; } = new List<StateMachineExceptionHandlerFactoryAsync>();
 
-        public List<StateMachineInterceptorFactory> GlobalInterceptorFactories { get; set; } = new List<StateMachineInterceptorFactory>();
+        public List<StateMachineInterceptorFactoryAsync> GlobalInterceptorFactories { get; set; } = new List<StateMachineInterceptorFactoryAsync>();
 
-        public List<StateMachineObserverFactory> GlobalObserverFactories { get; set; } = new List<StateMachineObserverFactory>();
+        public List<StateMachineObserverFactoryAsync> GlobalObserverFactories { get; set; } = new List<StateMachineObserverFactoryAsync>();
 
         public StateMachinesRegister(StateflowsBuilder stateflowsBuilder, IServiceCollection services)
         {
@@ -66,15 +66,15 @@ namespace Stateflows.StateMachines.Registration
                 throw new StateMachineDefinitionException($"State machine '{stateMachineName}' with version '{version}' is already registered", new StateMachineClass(stateMachineName));
             }
 
-            var builder = new StateMachineBuilderBuilder(stateMachineName, version, stateflowsBuilder, Services);
+            var builder = new StateMachineBuilder(stateMachineName, version, stateflowsBuilder, Services);
             buildAction(builder);
-            builder.Result.Build();
+            builder.Graph.Build();
 
-            StateMachines.Add(key, builder.Result);
+            StateMachines.Add(key, builder.Graph);
 
             if (IsNewestVersion(stateMachineName, version))
             {
-                StateMachines[currentKey] = builder.Result;
+                StateMachines[currentKey] = builder.Graph;
             }
         }
 
@@ -89,71 +89,63 @@ namespace Stateflows.StateMachines.Registration
                 throw new StateMachineDefinitionException($"State machine '{stateMachineName}' with version '{version}' is already registered", new StateMachineClass(stateMachineName));
             }
 
-            Services.AddServiceType(stateMachineType);
+            var sm = StateflowsActivator.CreateUninitializedInstance(stateMachineType) as IStateMachine;
 
-            var sm = FormatterServices.GetUninitializedObject(stateMachineType) as IStateMachine;
-
-            var builder = new StateMachineBuilderBuilder(stateMachineName, version, stateflowsBuilder, Services);
-            builder.Result.StateMachineType = stateMachineType;
+            var builder = new StateMachineBuilder(stateMachineName, version, stateflowsBuilder, Services);
+            builder.Graph.StateMachineType = stateMachineType;
             sm.Build(builder);
-            builder.Result.Build();
+            builder.Graph.Build();
 
-            StateMachines.Add(key, builder.Result);
+            StateMachines.Add(key, builder.Graph);
 
             if (IsNewestVersion(stateMachineName, version))
             {
-                StateMachines[currentKey] = builder.Result;
+                StateMachines[currentKey] = builder.Graph;
             }
         }
 
         [DebuggerHidden]
-        public void AddStateMachine<TStateMachine>(string stateMachineName, int version = 1)
-            where TStateMachine : IStateMachine
-            => AddStateMachine(stateMachineName, version, typeof(TStateMachine));
+        public void AddStateMachine<TStateMachine>(string stateMachineName = null, int version = 1)
+            where TStateMachine : class, IStateMachine
+            => AddStateMachine(stateMachineName ?? StateMachine<TStateMachine>.Name, version, typeof(TStateMachine));
 
         [DebuggerHidden]
-        public void AddGlobalInterceptor(StateMachineInterceptorFactory interceptorFactory)
-            => GlobalInterceptorFactories.Add(interceptorFactory);
+        public void AddInterceptor(StateMachineInterceptorFactory interceptorFactory)
+            => GlobalInterceptorFactories.Add(serviceProvider => Task.FromResult(interceptorFactory(serviceProvider)));
+        
+        [DebuggerHidden]
+        public void AddInterceptor(StateMachineInterceptorFactoryAsync interceptorFactoryAsync)
+            => GlobalInterceptorFactories.Add(interceptorFactoryAsync);
 
         [DebuggerHidden]
-        public void AddGlobalInterceptor<TInterceptor>()
+        public void AddInterceptor<TInterceptor>()
             where TInterceptor : class, IStateMachineInterceptor
-        {
-            Services.AddServiceType<TInterceptor>();
-            AddGlobalInterceptor(serviceProvider => serviceProvider.GetRequiredService<TInterceptor>());
-        }
+            =>  AddInterceptor(async serviceProvider => await StateflowsActivator.CreateInstanceAsync<TInterceptor>(serviceProvider, "interceptor"));
 
         [DebuggerHidden]
-        public void AddGlobalExceptionHandler(StateMachineExceptionHandlerFactory exceptionHandlerFactory)
-            => GlobalExceptionHandlerFactories.Add(exceptionHandlerFactory);
+        public void AddExceptionHandler(StateMachineExceptionHandlerFactory exceptionHandlerFactory)
+            => GlobalExceptionHandlerFactories.Add(serviceProvider => Task.FromResult(exceptionHandlerFactory(serviceProvider)));
+        
+        [DebuggerHidden]
+        public void AddExceptionHandler(StateMachineExceptionHandlerFactoryAsync exceptionHandlerFactoryAsync)
+            => GlobalExceptionHandlerFactories.Add(exceptionHandlerFactoryAsync);
 
         [DebuggerHidden]
-        public void AddGlobalExceptionHandler<TExceptionHandler>()
+        public void AddExceptionHandler<TExceptionHandler>()
             where TExceptionHandler : class, IStateMachineExceptionHandler
-        {
-            Services.AddServiceType<TExceptionHandler>();
-            AddGlobalExceptionHandler(serviceProvider => serviceProvider.GetRequiredService<TExceptionHandler>());
-        }
+            =>  AddExceptionHandler(async serviceProvider => await StateflowsActivator.CreateInstanceAsync<TExceptionHandler>(serviceProvider, "exception handler"));
 
         [DebuggerHidden]
-        public void AddGlobalObserver(StateMachineObserverFactory observerFactory)
-            => GlobalObserverFactories.Add(observerFactory);
+        public void AddObserver(StateMachineObserverFactory observerFactory)
+            => GlobalObserverFactories.Add(serviceProvider => Task.FromResult(observerFactory(serviceProvider)));
+        
+        [DebuggerHidden]
+        public void AddObserver(StateMachineObserverFactoryAsync observerFactoryAsync)
+            => GlobalObserverFactories.Add(observerFactoryAsync);
 
         [DebuggerHidden]
-        public void AddGlobalObserver<TObserver>()
+        public void AddObserver<TObserver>()
             where TObserver : class, IStateMachineObserver
-        {
-            Services.AddServiceType<TObserver>();
-            AddGlobalObserver(serviceProvider => serviceProvider.GetRequiredService<TObserver>());
-        }
-
-        [DebuggerHidden]
-        public void Validate(IEnumerable<BehaviorClass> behaviorClasses)
-        {
-            foreach (var stateMachine in StateMachines.Values)
-            {
-                stateMachine.Validate(behaviorClasses);
-            }
-        }
+            =>  AddObserver(async serviceProvider => await StateflowsActivator.CreateInstanceAsync<TObserver>(serviceProvider, "observer"));
     }
 }

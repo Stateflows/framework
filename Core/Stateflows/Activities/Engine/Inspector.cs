@@ -40,32 +40,33 @@ namespace Stateflows.Activities.Engine
             ObserverFactories.AddRange(Executor.Register.GlobalObserverFactories);
         }
 
+        public async Task BuildAsync()
+        {
+            Observers = await Task.WhenAll(ObserverFactories.Select(t => t(Executor.NodeScope.ServiceProvider)));
+            Interceptors = await Task.WhenAll(InterceptorFactories.Select(t => t(Executor.NodeScope.ServiceProvider)));
+            ExceptionHandlers = await Task.WhenAll(ExceptionHandlerFactories.Select(t => t(Executor.NodeScope.ServiceProvider)));
+        }
+
         public IDictionary<Node, NodeInspection> InspectionNodes { get; } = new Dictionary<Node, NodeInspection>();
 
         public IDictionary<Edge, FlowInspection> InspectionFlows { get; } = new Dictionary<Edge, FlowInspection>();
 
 
-        public IActivityInspection inspection;
+        private IActivityInspection inspection;
 
-        public IActivityInspection Inspection => inspection ??= new ActivityInspection(Executor);
+        public IActivityInspection Inspection => inspection ??= new ActivityInspection(Executor, this);
 
-        private readonly List<ActivityExceptionHandlerFactory> ExceptionHandlerFactories = new List<ActivityExceptionHandlerFactory>();
+        private readonly List<ActivityExceptionHandlerFactoryAsync> ExceptionHandlerFactories = new List<ActivityExceptionHandlerFactoryAsync>();
 
-        private readonly List<ActivityInterceptorFactory> InterceptorFactories = new List<ActivityInterceptorFactory>();
+        private readonly List<ActivityInterceptorFactoryAsync> InterceptorFactories = new List<ActivityInterceptorFactoryAsync>();
 
-        private readonly List<ActivityObserverFactory> ObserverFactories = new List<ActivityObserverFactory>();
+        private readonly List<ActivityObserverFactoryAsync> ObserverFactories = new List<ActivityObserverFactoryAsync>();
 
-        private IEnumerable<IActivityObserver> observers;
-        private IEnumerable<IActivityObserver> Observers
-            => observers ??= ObserverFactories.Select(t => t(Executor.NodeScope.ServiceProvider));
+        private IEnumerable<IActivityObserver> Observers;
 
-        private IEnumerable<IActivityInterceptor> interceptors;
-        private IEnumerable<IActivityInterceptor> Interceptors
-            => interceptors ??= InterceptorFactories.Select(t => t(Executor.NodeScope.ServiceProvider));
+        private IEnumerable<IActivityInterceptor> Interceptors;
 
-        private IEnumerable<IActivityExceptionHandler> exceptionHandlers;
-        private IEnumerable<IActivityExceptionHandler> ExceptionHandlers
-            => exceptionHandlers ??= ExceptionHandlerFactories.Select(t => t(Executor.NodeScope.ServiceProvider));
+        private IEnumerable<IActivityExceptionHandler> ExceptionHandlers;
 
         private IEnumerable<IActivityInspector> inspectors;
         public IEnumerable<IActivityInspector> Inspectors

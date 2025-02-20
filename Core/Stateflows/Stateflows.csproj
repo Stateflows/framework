@@ -14,7 +14,14 @@
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <PackageLicenseFile>LICENSE</PackageLicenseFile>
     <PackageOutputPath>..\..\NuGet</PackageOutputPath>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
   </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Remove="StateMachines\Registration\Interfaces\Extensions\**" />
+    <EmbeddedResource Remove="StateMachines\Registration\Interfaces\Extensions\**" />
+    <None Remove="StateMachines\Registration\Interfaces\Extensions\**" />
+  </ItemGroup>
 
   <ItemGroup>
     <None Include="..\..\LICENSE">

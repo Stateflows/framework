@@ -1,12 +1,20 @@
 ﻿using System;
 using System.Linq;
 using System.Reflection;
-using System.Runtime.Serialization;
 
 namespace Stateflows.Common.Extensions
 {
     public static class TypeExtensions
     {
+        public static bool IsPrimitiveOrNullablePrimitive(this Type type)
+            => type.IsPrimitive || (
+                type.IsNullable() &&
+                type.GenericTypeArguments.First().IsPrimitive
+            );
+        
+        public static bool IsNullable(this Type type)
+            => type.IsSubclassOfRawGeneric(typeof(Nullable<>));
+
         public static string GetReadableName(this Type type)
         {
             var attribute = type.GetCustomAttribute<EventAttribute>(true);
@@ -27,29 +35,26 @@ namespace Stateflows.Common.Extensions
                 result = $"{typeName}<{typeNames}>";
             }
 
-            var activitiesPrefix = "Stateflows.Activities.";
-            if (result.StartsWith(activitiesPrefix))
-            {
-                result = result[activitiesPrefix.Length..];
-            }
-
-            var stateMachinesPrefix = "Stateflows.StateMachines.";
-            if (result.StartsWith(stateMachinesPrefix))
-            {
-                result = result[stateMachinesPrefix.Length..];
-            }
-
-            var commonPrefix = "Stateflows.Common.";
-            if (result.StartsWith(commonPrefix))
-            {
-                result = result[commonPrefix.Length..];
-            }
+            // var activitiesPrefix = "Stateflows.Activities.";
+            // if (result.StartsWith(activitiesPrefix))
+            // {
+            //     result = result[activitiesPrefix.Length..];
+            // }
+            //
+            // var stateMachinesPrefix = "Stateflows.StateMachines.";
+            // if (result.StartsWith(stateMachinesPrefix))
+            // {
+            //     result = result[stateMachinesPrefix.Length..];
+            // }
+            //
+            // var commonPrefix = "Stateflows.Common.";
+            // if (result.StartsWith(commonPrefix))
+            // {
+            //     result = result[commonPrefix.Length..];
+            // }
 
             return result;
         }
-
-        public static object GetUninitializedInstance(this Type type)
-            => FormatterServices.GetUninitializedObject(type);
 
         public static bool IsSubclassOfRawGeneric(this Type toCheck, Type generic)
         {

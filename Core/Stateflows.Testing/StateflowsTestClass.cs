@@ -7,6 +7,7 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.DependencyInjection;
 using Stateflows;
+using Stateflows.Actions;
 using Stateflows.Activities;
 using Stateflows.StateMachines;
 using Stateflows.Common.Registration.Interfaces;
@@ -18,15 +19,17 @@ namespace StateMachine.IntegrationTests.Utils
 {
     public abstract class StateflowsTestClass
     {
-        private IServiceCollection _serviceCollection;
-        protected IServiceCollection ServiceCollection => _serviceCollection ??= new ServiceCollection();
+        private IServiceCollection serviceCollection;
+        private IServiceCollection ServiceCollection => serviceCollection ??= new ServiceCollection();
 
-        private IServiceProvider _serviceProvider;
-        protected IServiceProvider ServiceProvider => _serviceProvider ??= ServiceCollection.BuildServiceProvider();
+        private IServiceProvider serviceProvider;
+        protected IServiceProvider ServiceProvider => serviceProvider ??= ServiceCollection.BuildServiceProvider();
 
         protected IStateMachineLocator StateMachineLocator => ServiceProvider.GetRequiredService<IStateMachineLocator>();
 
         protected IActivityLocator ActivityLocator => ServiceProvider.GetRequiredService<IActivityLocator>();
+        
+        protected IActionLocator ActionLocator => ServiceProvider.GetRequiredService<IActionLocator>();
 
         protected ExecutionSequenceObserver ExecutionSequence => ServiceProvider.GetRequiredService<ExecutionSequenceObserver>();
 
@@ -40,6 +43,12 @@ namespace StateMachine.IntegrationTests.Utils
             ServiceCollection.AddSingleton<TestingHost>();
             ServiceCollection.AddSingleton<IHostApplicationLifetime>(services => services.GetRequiredService<TestingHost>());
             ServiceCollection.AddLogging(builder => builder.AddConsole());
+            ServiceCollection
+                .AddTransient(typeof(Input<>))
+                .AddTransient(typeof(SingleInput<>))
+                .AddTransient(typeof(OptionalInput<>))
+                .AddTransient(typeof(OptionalSingleInput<>))
+                .AddTransient(typeof(Output<>));
 
             var hostedServices = ServiceProvider.GetRequiredService<IEnumerable<IHostedService>>();
             Task.WaitAll(hostedServices.Select(s => s.StartAsync(new CancellationToken())).ToArray());
@@ -50,14 +59,16 @@ namespace StateMachine.IntegrationTests.Utils
             ContextValues.StateValues.Clear();
             ContextValues.SourceStateValues.Clear();
             ContextValues.TargetStateValues.Clear();
+            
+            _ = OutputTokens.GetAll();
         }
 
         public virtual void Cleanup()
         {
             TestingHost.StopApplication();
 
-            _serviceCollection = null;
-            _serviceProvider = null;
+            serviceCollection = null;
+            serviceProvider = null;
         }
 
         protected abstract void InitializeStateflows(IStateflowsBuilder builder);

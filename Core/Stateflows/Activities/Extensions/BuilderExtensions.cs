@@ -1,7 +1,6 @@
-﻿using System.Runtime.Serialization;
+﻿using Stateflows.Common.Classes;
 using Stateflows.Common.Extensions;
 using Stateflows.Activities.Context.Classes;
-using Stateflows.Activities.Context.Interfaces;
 using Stateflows.Activities.Registration.Builders;
 using Stateflows.Activities.Registration.Interfaces;
 
@@ -16,12 +15,12 @@ namespace Stateflows.Activities.Extensions
             {
                 builder.AddOnInitialize(async c =>
                 {
-                    var node = (c as BaseContext).NodeScope.GetStructuredActivity<TStructuredActivity>(c as IActionContext);
+                    var node = await ((BaseContext)c).NodeScope.GetStructuredActivityAsync<TStructuredActivity>(c as Context.Interfaces.IActionContext);
 
                     if (node != null)
                     {
                         ActivityNodeContextAccessor.Context.Value = c;
-                        await (node as IStructuredActivityNodeInitialization)?.OnInitializeAsync();
+                        await ((IStructuredActivityNodeInitialization)node).OnInitializeAsync();
                         ActivityNodeContextAccessor.Context.Value = null;
                     }
                 });
@@ -31,12 +30,12 @@ namespace Stateflows.Activities.Extensions
             {
                 builder.AddOnFinalize(async c =>
                 {
-                    var node = (c as BaseContext).NodeScope.GetStructuredActivity<TStructuredActivity>(c as IActionContext);
+                    var node = await ((BaseContext)c).NodeScope.GetStructuredActivityAsync<TStructuredActivity>(c as Context.Interfaces.IActionContext);
 
                     if (node != null)
                     {
                         ActivityNodeContextAccessor.Context.Value = c;
-                        await (node as IStructuredActivityNodeFinalization)?.OnFinalizeAsync();
+                        await ((IStructuredActivityNodeFinalization)node).OnFinalizeAsync();
                         ActivityNodeContextAccessor.Context.Value = null;
                     }
                 });
@@ -48,7 +47,7 @@ namespace Stateflows.Activities.Extensions
         {
             if (typeof(IEdge).GetProperty(nameof(IEdge.Weight)).IsImplementedIn<TFlow>())
             {
-                var objectFlow = FormatterServices.GetUninitializedObject(typeof(TFlow)) as TFlow;
+                var objectFlow = StateflowsActivator.CreateUninitializedInstance<TFlow>();
 
                 builder.SetWeight(objectFlow.Weight);
             }
@@ -58,11 +57,11 @@ namespace Stateflows.Activities.Extensions
                 builder.AddGuard(async c =>
                 {
                     var result = false;
-                    var flow = (c as BaseContext).NodeScope.GetFlow<TFlow>(c);
+                    var flow = await ((BaseContext)c).NodeScope.GetFlowAsync<TFlow>(c);
                     if (flow != null)
                     {
                         ActivityFlowContextAccessor.Context.Value = c;
-                        result = await (flow as IFlowGuard<TToken>)?.GuardAsync(c.Token);
+                        result = await ((IFlowGuard<TToken>)flow).GuardAsync(c.Token);
                         ActivityFlowContextAccessor.Context.Value = null;
                     }
 
@@ -76,7 +75,7 @@ namespace Stateflows.Activities.Extensions
         {
             if (typeof(IEdge).GetProperty(nameof(IEdge.Weight)).IsImplementedIn<TTransformationFlow>())
             {
-                var objectFlow = FormatterServices.GetUninitializedObject(typeof(TTransformationFlow)) as TTransformationFlow;
+                var objectFlow = StateflowsActivator.CreateUninitializedInstance<TTransformationFlow>();
 
                 builder.SetWeight(objectFlow.Weight);
             }
@@ -86,11 +85,11 @@ namespace Stateflows.Activities.Extensions
                 builder.AddGuard(async c =>
                 {
                     var result = false;
-                    var flow = (c as BaseContext).NodeScope.GetObjectTransformationFlow<TTransformationFlow, TToken, TTransformedToken>(c);
+                    var flow = await ((BaseContext)c).NodeScope.GetObjectTransformationFlowAsync<TTransformationFlow, TToken, TTransformedToken>(c);
                     if (flow != null)
                     {
                         ActivityFlowContextAccessor.Context.Value = c;
-                        result = await (flow as IFlowGuard<TToken>)?.GuardAsync(c.Token);
+                        result = await ((IFlowGuard<TToken>)flow).GuardAsync(c.Token);
                         ActivityFlowContextAccessor.Context.Value = null;
                     }
 
@@ -103,11 +102,11 @@ namespace Stateflows.Activities.Extensions
                 builder.AddTransformation(async c =>
                 {
                     TTransformedToken result = default;
-                    var flow = (c as BaseContext).NodeScope.GetObjectTransformationFlow<TTransformationFlow, TToken, TTransformedToken>(c);
+                    var flow = await ((BaseContext)c).NodeScope.GetObjectTransformationFlowAsync<TTransformationFlow, TToken, TTransformedToken>(c);
                     if (flow != null)
                     {
                         ActivityFlowContextAccessor.Context.Value = c;
-                        result = await (flow as IFlowTransformation<TToken, TTransformedToken>)?.TransformAsync(c.Token);
+                        result = await flow.TransformAsync(c.Token);
                         ActivityFlowContextAccessor.Context.Value = null;
                     }
 
@@ -121,7 +120,7 @@ namespace Stateflows.Activities.Extensions
         {
             if (typeof(IEdge).GetProperty(nameof(IEdge.Weight)).IsImplementedIn<TTransformationFlow>())
             {
-                var objectFlow = FormatterServices.GetUninitializedObject(typeof(TTransformationFlow)) as TTransformationFlow;
+                var objectFlow = StateflowsActivator.CreateUninitializedInstance<TTransformationFlow>();
 
                 builder.SetWeight(objectFlow.Weight);
             }
@@ -131,11 +130,11 @@ namespace Stateflows.Activities.Extensions
                 builder.AddTransformation(async c =>
                 {
                     TTransformedToken result = default;
-                    var flow = (c as BaseContext).NodeScope.GetObjectTransformationFlow<TTransformationFlow, TToken, TTransformedToken>(c);
+                    var flow = await ((BaseContext)c).NodeScope.GetObjectTransformationFlowAsync<TTransformationFlow, TToken, TTransformedToken>(c);
                     if (flow != null)
                     {
                         ActivityFlowContextAccessor.Context.Value = c;
-                        result = await (flow as IFlowTransformation<TToken, TTransformedToken>)?.TransformAsync(c.Token);
+                        result = await flow.TransformAsync(c.Token);
                         ActivityFlowContextAccessor.Context.Value = null;
                     }
 
@@ -149,7 +148,7 @@ namespace Stateflows.Activities.Extensions
         {
             if (typeof(IEdge).GetProperty(nameof(IEdge.Weight)).IsImplementedIn<TFlow>())
             {
-                var objectFlow = FormatterServices.GetUninitializedObject(typeof(TFlow)) as TFlow;
+                var objectFlow = StateflowsActivator.CreateUninitializedInstance<TFlow>();
 
                 builder.SetWeight(objectFlow.Weight);
             }
@@ -159,11 +158,11 @@ namespace Stateflows.Activities.Extensions
                 builder.AddGuard(async c =>
                 {
                     var result = false;
-                    var flow = (c as BaseContext).NodeScope.GetFlow<TFlow>(c);
+                    var flow = await ((BaseContext)c).NodeScope.GetFlowAsync<TFlow>(c);
                     if (flow != null)
                     {
                         ActivityFlowContextAccessor.Context.Value = c;
-                        result = await (flow as IControlFlowGuard)?.GuardAsync();
+                        result = await ((IControlFlowGuard)flow).GuardAsync();
                         ActivityFlowContextAccessor.Context.Value = null;
                     }
 

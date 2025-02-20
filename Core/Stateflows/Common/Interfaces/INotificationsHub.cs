@@ -7,8 +7,10 @@ namespace Stateflows.Common.Interfaces
     public interface INotificationsHub
     {
         Task PublishAsync(EventHolder eventHolder);
-        
-        event Action<EventHolder> OnPublish;
+
+        void RegisterHandler(INotificationHandler notificationHandler);
+
+        void UnregisterHandler(INotificationHandler notificationHandler);
 
         public Dictionary<BehaviorId, List<EventHolder>> Notifications { get; }
     }

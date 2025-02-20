@@ -23,7 +23,7 @@ namespace Stateflows.Common.Interfaces
                                     ) ||
                                     (
                                         watch.MilisecondsSinceLastNotificationCheck != null &&
-                                        notification.SentAt >= DateTime.Now.AddMilliseconds(- (int)watch.MilisecondsSinceLastNotificationCheck)
+                                        notification.SentAt.AddSeconds(notification.TimeToLive) >= DateTime.Now.AddMilliseconds(- (int)watch.MilisecondsSinceLastNotificationCheck)
                                     )
                                 )
                             ) ?? false

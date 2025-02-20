@@ -21,17 +21,18 @@ namespace Stateflows.Common.Subscription
             this.subscriptionHub = subscriptionHub;
         }
 
-        public async Task PublishAsync<TNotificationEvent>(BehaviorId behaviorId, TNotificationEvent notificationEvent, IEnumerable<EventHeader> headers = null)
+        public async Task PublishAsync<TNotification>(BehaviorId behaviorId, TNotification notificationEvent, IEnumerable<EventHeader> headers = null, int timeToLiveInSeconds = 60)
         {
-            var eventHolder = new EventHolder<TNotificationEvent>()
+            var eventHolder = new EventHolder<TNotification>()
             {
                 Payload = notificationEvent,
                 SenderId = behaviorId,
                 SentAt = DateTime.Now,
-                Headers = headers?.ToList() ?? new List<EventHeader>()
+                Headers = headers?.ToList() ?? new List<EventHeader>(),
+                TimeToLive = timeToLiveInSeconds
             };
 
-            if (context.Subscribers.TryGetValue(typeof(TNotificationEvent).GetEventName(), out var behaviorIds))
+            if (context.Subscribers.TryGetValue(Event<TNotification>.Name, out var behaviorIds))
             {
                 await Task.WhenAll(
                     behaviorIds.Select(
@@ -45,7 +46,7 @@ namespace Stateflows.Common.Subscription
             await subscriptionHub.PublishAsync(eventHolder);
         }
 
-        public Task<SendResult> SubscribeAsync<TNotificationEvent>(BehaviorId behaviorId)
+        public Task<SendResult> SubscribeAsync<TNotification>(BehaviorId behaviorId)
         {
             var request = new Subscribe() { BehaviorId = subscriberBehaviorId };
 
@@ -56,7 +57,7 @@ namespace Stateflows.Common.Subscription
                 SentAt = DateTime.Now,
             };
 
-            request.NotificationNames.Add(typeof(TNotificationEvent).GetEventName());
+            request.NotificationNames.Add(typeof(TNotification).GetEventName());
 
             return behaviorLocator.TryLocateBehavior(behaviorId, out var behavior)
                 ? behavior.SendAsync(request)
@@ -65,7 +66,7 @@ namespace Stateflows.Common.Subscription
                 );
         }
 
-        public Task<SendResult> UnsubscribeAsync<TNotificationEvent>(BehaviorId behaviorId)
+        public Task<SendResult> UnsubscribeAsync<TNotification>(BehaviorId behaviorId)
         {
             var request = new Unsubscribe() { BehaviorId = subscriberBehaviorId };
 
@@ -76,7 +77,7 @@ namespace Stateflows.Common.Subscription
                 SentAt = DateTime.Now,
             };
 
-            request.NotificationNames.Add(typeof(TNotificationEvent).GetEventName());
+            request.NotificationNames.Add(typeof(TNotification).GetEventName());
 
             return behaviorLocator.TryLocateBehavior(behaviorId, out var behavior)
                 ? behavior.SendAsync(request)

@@ -3,7 +3,6 @@ using System.Linq;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Stateflows.Activities;
-using Stateflows.Activities.Events;
 
 namespace Stateflows.Common.Activities.Classes
 {
@@ -18,14 +17,14 @@ namespace Stateflows.Common.Activities.Classes
             Behavior = consumer;
         }
 
-        public Task<SendResult> SendInputAsync(Action<ITokensInput> tokensAction)
+        public Task<RequestResult<TokensOutput>> SendInputAsync(Action<ITokensInput> tokensAction)
         {
             var stream = new TokensInput();
             tokensAction(stream);
-            return SendAsync(stream);
+            return RequestAsync(stream);
         }
 
-        public Task<SendResult> SendInputAsync<TToken>(params TToken[] tokens)
+        public Task<RequestResult<TokensOutput>> SendInputAsync<TToken>(params TToken[] tokens)
         {
             var stream = new TokensInput<TToken>()
             {
@@ -34,7 +33,7 @@ namespace Stateflows.Common.Activities.Classes
                     .ToList()
             };
 
-            return SendAsync(stream);
+            return RequestAsync(stream);
         }
 
         public Task<SendResult> SendAsync<TEvent>(TEvent @event, IEnumerable<EventHeader> headers = null)
@@ -43,7 +42,7 @@ namespace Stateflows.Common.Activities.Classes
         public Task<RequestResult<TResponse>> RequestAsync<TResponse>(IRequest<TResponse> request, IEnumerable<EventHeader> headers = null)
             => Behavior.RequestAsync(request, headers);
 
-        public Task<IWatcher> WatchAsync<TNotificationEvent>(Action<TNotificationEvent> handler)
+        public Task<IWatcher> WatchAsync<TNotification>(Action<TNotification> handler)
             => Behavior.WatchAsync(handler);
 
         public void Dispose()

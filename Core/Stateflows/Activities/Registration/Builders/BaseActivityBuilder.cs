@@ -1,9 +1,12 @@
 ﻿using System;
+using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
+using Stateflows.Actions;
 using Stateflows.Common;
 using Stateflows.Common.Exceptions;
+using Stateflows.Activities.Enums;
 using Stateflows.Activities.Models;
 using Stateflows.Activities.Extensions;
 using Stateflows.Activities.Exceptions;
@@ -11,8 +14,7 @@ using Stateflows.Activities.Context.Classes;
 using Stateflows.Activities.Context.Interfaces;
 using Stateflows.Activities.Registration.Builders;
 using Stateflows.Activities.Registration.Interfaces;
-using System.Threading;
-using Stateflows.Activities.Enums;
+using IActionContext = Stateflows.Activities.Context.Interfaces.IActionContext;
 
 namespace Stateflows.Activities.Registration
 {
@@ -32,6 +34,7 @@ namespace Stateflows.Activities.Registration
             Node = parentNode;
         }
 
+        [DebuggerHidden]
         public BaseActivityBuilder AddNode(NodeType type, string nodeName, ActionDelegateAsync actionAsync, NodeBuildAction buildAction = null, Type exceptionOrEventType = null, int chunkSize = 1)
         {
             if (Node.Type != NodeType.Activity)
@@ -67,12 +70,12 @@ namespace Stateflows.Activities.Registration
             {
                 if (string.IsNullOrEmpty(nodeName))
                 {
-                    throw new NodeDefinitionException(nodeName, $"Node name cannot be empty");
+                    throw new NodeDefinitionException(nodeName, $"Node name cannot be empty", Result.Class);
                 }
 
                 if (Result.AllNamedNodes.ContainsKey(nodeName))
                 {
-                    throw new NodeDefinitionException(nodeName, $"Node '{nodeName}' is already registered");
+                    throw new NodeDefinitionException(nodeName, $"Node '{nodeName}' is already registered", Result.Class);
                 }
             }
 
@@ -98,7 +101,7 @@ namespace Stateflows.Activities.Registration
             {
                 if (exceptionOrEventType is null)
                 {
-                    throw new ExceptionHandlerDefinitionException(nodeName, "Exception type not provided");
+                    throw new ExceptionHandlerDefinitionException(nodeName, "Exception type not provided", Result.Class);
                 }
 
                 node.ExceptionType = exceptionOrEventType;
@@ -108,7 +111,7 @@ namespace Stateflows.Activities.Registration
             {
                 if (exceptionOrEventType is null)
                 {
-                    throw new AcceptEventActionDefinitionException(nodeName, "Event type not provided");
+                    throw new AcceptEventActionDefinitionException(nodeName, "Event type not provided", Result.Class);
                 }
 
                 node.EventType = exceptionOrEventType;
@@ -118,14 +121,14 @@ namespace Stateflows.Activities.Registration
             node.ChunkSize = chunkSize;
 
             buildAction?.Invoke(new NodeBuilder(node, this, Services));
-
+            
             node.Action.Actions.Add(async c =>
             {
-                var context = c as ActionContext;
+                var context = (ActionContext)c;
                 var faulty = false;
                 try
                 {
-                    var inspector = c.Activity.GetExecutor().Inspector;
+                    var inspector = await c.Activity.GetExecutor().GetInspectorAsync();
                     await inspector.BeforeNodeExecuteAsync(context);
                     await actionAsync(c);
                     await inspector.AfterNodeExecuteAsync(context);
@@ -134,6 +137,7 @@ namespace Stateflows.Activities.Registration
                 {
                     if (e is StateflowsException)
                     {
+                        // Debug.WriteLine("catched and rethrowed");
                         throw;
                     }
                     else
@@ -350,7 +354,9 @@ namespace Stateflows.Activities.Registration
                     }
                     else
                     {
-                        if (!await context.Context.Executor.Inspector.OnNodeFinalizationExceptionAsync(context, e))
+                        var inspector = await c.Context.Executor.GetInspectorAsync();
+
+                        if (!await inspector.OnNodeFinalizationExceptionAsync(context, e))
                         {
                             throw;
                         }
@@ -384,7 +390,9 @@ namespace Stateflows.Activities.Registration
                     }
                     else
                     {
-                        if (!await context.Context.Executor.Inspector.OnNodeInitializationExceptionAsync(context, e))
+                        var inspector = await c.Context.Executor.GetInspectorAsync();
+
+                        if (!await inspector.OnNodeInitializationExceptionAsync(context, e))
                         {
                             throw;
                         }

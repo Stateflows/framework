@@ -16,36 +16,38 @@ namespace Stateflows.Common
         
         Task<RequestResult<TResponseEvent>> RequestAsync<TResponseEvent>(IRequest<TResponseEvent> request, IEnumerable<EventHeader> headers = null);
 
-        Task<RequestResult<CompoundResponse>> SendCompoundAsync(Action<ICompound> builderAction, IEnumerable<EventHeader> headers = null)
+        public Task<RequestResult<CompoundResponse>> SendCompoundAsync(Action<ICompound> builderAction, IEnumerable<EventHeader> headers = null)
         {
             var compound = new CompoundRequest();
             builderAction(compound);
             return RequestAsync(compound, headers);
         }
 
-        Task<SendResult> ResetAsync(ResetMode resetMode = ResetMode.Full)
-            => SendAsync(new Reset() { Mode = resetMode });
+        public Task<SendResult> ResetAsync(ResetMode resetMode = ResetMode.Full)
+            => SendAsync(new Reset { Mode = resetMode });
 
-        Task<SendResult> FinalizeAsync()
+        public Task<SendResult> FinalizeAsync()
             => SendAsync(new Finalize());
-
-        Task<RequestResult<BehaviorInfo>> GetStatusAsync()
-            => RequestAsync(new BehaviorInfoRequest());
-
-        async Task<IWatcher> WatchStatusAsync(Action<BehaviorInfo> handler, bool immediateRequest = true)
+        
+        public async Task<IWatcher> RequestAndWatchAsync<TRequest, TNotification>(TRequest request, Action<TNotification> handler, IEnumerable<EventHeader> headers = null)
+            where TRequest : IRequest<TNotification>
         {
             var watcher = await WatchAsync(handler);
-
-            if (immediateRequest)
+            var result = await RequestAsync(request, headers);
+            if (result.Status == EventStatus.Consumed)
             {
-                var result = await GetStatusAsync();
-                if (result.Status == EventStatus.Consumed)
-                {
-                    _ = Task.Run(() => handler(result.Response));
-                }
+                _ = Task.Run(() => handler(result.Response));
             }
-
             return watcher;
         }
+
+        public Task<RequestResult<BehaviorInfo>> GetStatusAsync()
+            => RequestAsync(new BehaviorInfoRequest());
+
+        public Task<IWatcher> WatchStatusAsync(Action<BehaviorInfo> handler)
+            => WatchAsync(handler);
+        
+        public Task<IWatcher> RequestAndWatchStatusAsync(Action<BehaviorInfo> handler)
+            => RequestAndWatchAsync(new BehaviorInfoRequest(), handler);
     }
 }

@@ -1,3 +1,5 @@
+using System.Diagnostics;
+using Stateflows.Actions;
 using StateMachine.IntegrationTests.Classes.StateMachines;
 using StateMachine.IntegrationTests.Classes.States;
 using StateMachine.IntegrationTests.Utils;
@@ -31,10 +33,9 @@ namespace StateMachine.IntegrationTests.Tests
 
             if (StateMachineLocator.TryLocateStateMachine(new StateMachineId(StateMachine<ValuesStateMachine>.Name, "x"), out var sm))
             {
-                //await sm.InitializeAsync();
                 await sm.SendAsync(new SomeEvent());
 
-                currentState = (await sm.GetCurrentStateAsync()).Response.StatesStack.First();
+                currentState = (await sm.GetCurrentStateAsync()).Response?.StatesTree?.Value;
             }
 
             Assert.AreEqual(State<FinalState>.Name, currentState);

@@ -15,15 +15,19 @@ namespace Stateflows.StateMachines.Models
         State,
         InitialCompositeState,
         CompositeState,
+        InitialOrthogonalState,
+        OrthogonalState,
         FinalState,
         Junction,
         Choice,
+        Join,
+        Fork,
     }
 
     internal class Vertex
     {
         public Graph Graph { get; set; }
-        public Vertex Parent { get; set; }
+        public Region ParentRegion { get; set; }
         public string Name { get; set; }
         public string OriginStateMachineName { get; set; } = null;
         public VertexType Type { get; set; }
@@ -43,10 +47,27 @@ namespace Stateflows.StateMachines.Models
 
         public Dictionary<string, Edge> Edges { get; set; } = new Dictionary<string, Edge>();
         public IEnumerable<Edge> OrderedEdges => Edges.Values.OrderBy(edge => edge.IsElse);
-        public string InitialVertexName { get; set; }
-        public Vertex InitialVertex { get; set; }
-        public Dictionary<string, Vertex> Vertices { get; set; } = new Dictionary<string, Vertex>();
+        public IEnumerable<Edge> IncomingEdges => Graph.AllEdges.Where(edge => edge.Target == this);
+
         public List<string> DeferredEvents { get; set; } = new List<string>();
+        public List<Region> Regions { get; set; } = new List<Region>();
+        public Region DefaultRegion
+        {
+            get
+            {
+                if (!Regions.Any())
+                {
+                    Regions.Add(new Region()
+                    {
+                        Graph = Graph,
+                        ParentVertex = this,
+                        OriginStateMachineName = OriginStateMachineName
+                    });
+                }
+
+                return Regions.First();
+            }
+        }
 
         public StateActionInitializationBuilderAsync BehaviorInitializationBuilder { get; set; }
         public string BehaviorName { get; set; }
@@ -73,5 +94,50 @@ namespace Stateflows.StateMachines.Models
 
         public BehaviorId GetBehaviorId(StateMachineId hostId)
             => new BehaviorId(BehaviorType, BehaviorName, $"__stateBehavior:{hostId.Name}:{hostId.Instance}:{Name}");
+
+        public bool IsOrthogonalTo(Vertex vertex)
+        {
+            if (this == vertex)
+            {
+                return false;
+            }
+
+            var stack = new List<Vertex>();
+            var currentVertex = this;
+            while (currentVertex != null)
+            {
+                stack.Add(currentVertex);
+
+                currentVertex = currentVertex?.ParentRegion?.ParentVertex;
+            }
+
+            currentVertex = vertex;
+            Vertex previousVertex = null;
+            while (currentVertex != null)
+            {
+                var index = stack.IndexOf(currentVertex);
+                if (index > 0 && previousVertex != null && stack[index - 1].ParentRegion != previousVertex.ParentRegion)
+                {
+                    return true;
+                }
+
+                previousVertex = currentVertex;
+                currentVertex = currentVertex?.ParentRegion?.ParentVertex;
+            }
+
+            return false;
+        }
+
+        public IEnumerable<Vertex> GetBranch()
+        {
+            var result = new List<Vertex> { this };
+            if (Regions.Any())
+            {
+                result.AddRange(Regions.SelectMany(region =>
+                    region.Vertices.Values.SelectMany(vertex => vertex.GetBranch())));
+            }
+
+            return result;
+        }
     }
 }

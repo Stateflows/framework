@@ -13,6 +13,6 @@ namespace Stateflows.Common
             return result.AddDays(Day - result.DayOfWeek);
         }
 
-        protected override sealed TimeSpan Interval => new TimeSpan(7, 0, 0, 0);
+        protected sealed override TimeSpan Interval => new TimeSpan(7, 0, 0, 0);
     }
 }

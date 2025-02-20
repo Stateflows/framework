@@ -1,34 +1,45 @@
+using System.Diagnostics;
 using Microsoft.Extensions.DependencyInjection;
 using Stateflows.Common;
+using Stateflows.Common.Attributes;
 using Stateflows.Common.Classes;
 using StateMachine.IntegrationTests.Utils;
 
 namespace Activity.IntegrationTests.Tests
 {
-    public class TestedAction : IActionNode
+    public interface IServiceX
     {
-        private readonly GlobalValue<int> Foo = new("foo");
-        private readonly SingleInput<int> Input;
+        void DoSomething();
+    }
 
-        public Task ExecuteAsync(CancellationToken cancellationToken)
+    public class ServiceX : IServiceX
+    {
+        public void DoSomething()
         {
-            Foo.Set(Input.Token);
-            Input.PassOn();
+            Debug.WriteLine("DoSomething");
+        }
+    }
+    
+    public class TestedAction(IServiceX serviceX, IInputToken<int> input, [GlobalValue] IValue<int> foo) : IActionNode
+    {
+        public async Task ExecuteAsync(CancellationToken cancellationToken)
+        {
+            serviceX.DoSomething();
+            await foo.SetAsync(input.Token);
+            input.PassOn();
 
             Unit.Executed = true;
-
-            return Task.CompletedTask;
         }
     }
 
-    public class TestedFlow : IFlowGuard<int>
+    public class TestedFlow([GlobalValue] IValue<int> foo) : IFlowGuard<int>
     {
-        private readonly GlobalValue<int> Foo = new("foo");
-
-        public Task<bool> GuardAsync(int token)
+        public async Task<bool> GuardAsync(int token)
         {
-            Foo.Set(token);
-            return Task.FromResult(Foo.TryGet(out var value) && value == 42);
+            await foo.SetAsync(token);
+            var (valueSet, value) = await foo.TryGetAsync();
+
+            return valueSet && value == 42;
         }
     }
 
@@ -47,12 +58,10 @@ namespace Activity.IntegrationTests.Tests
 
         protected override void InitializeStateflows(IStateflowsBuilder builder)
         {
-            // Registering activity also registers all of its node and flow classes;
-            // yet, tested classes can be registered manually
-            builder.ServiceCollection
-                .AddTransient<TestedAction>()
-                .AddTransient<TestedFlow>()
-            ;
+            builder.ServiceCollection.AddScoped<IServiceX, ServiceX>();
+
+            // Run AddActivities to register necessary services
+            builder.AddActivities();
         }
 
         [TestMethod]
@@ -61,9 +70,9 @@ namespace Activity.IntegrationTests.Tests
             // Use InputTokens static class to add tokens to be used by tested action class
             InputTokens.Add(42);
 
-            // Use DI to obtain tested action class instance
-            var action = ServiceProvider.GetRequiredService<TestedAction>();
-
+            // Use StateflowsActivator to obtain tested action class instance
+            var action = await StateflowsActivator.CreateInstanceAsync<TestedAction>(ServiceProvider);
+            
             await action.ExecuteAsync(CancellationToken.None);
 
             // Use ContextValues static class to manage context values before or after running tested code
@@ -81,8 +90,8 @@ namespace Activity.IntegrationTests.Tests
         [TestMethod]
         public async Task FlowUnitTest()
         {
-            // Use DI to obtain tested flow class instance
-            var flow = ServiceProvider.GetRequiredService<TestedFlow>();
+            // Use StateflowsActivator to obtain tested flow class instance
+            var flow = await StateflowsActivator.CreateInstanceAsync<TestedFlow>(ServiceProvider);
 
             var result = await flow.GuardAsync(42);
 

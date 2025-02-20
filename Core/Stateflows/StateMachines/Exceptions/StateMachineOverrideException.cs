@@ -4,7 +4,7 @@ namespace Stateflows.StateMachines.Exceptions
 {
     internal class StateMachineOverrideException : StateMachineDefinitionException
     {
-        new public StateMachineClass StateMachineClass { get; }
+        public new StateMachineClass StateMachineClass { get; }
 
         public StateMachineOverrideException(string message, StateMachineClass stateMachineClass) : base(message, stateMachineClass.BehaviorClass)
         {

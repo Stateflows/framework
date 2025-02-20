@@ -1,4 +1,6 @@
-﻿using System.Threading.Tasks;
+﻿using System;
+using System.Threading.Tasks;
+using Stateflows.StateMachines.Registration.Interfaces;
 
 namespace Stateflows.StateMachines
 {
@@ -18,6 +20,11 @@ namespace Stateflows.StateMachines
         Task OnExitAsync();
     }
 
+    public interface IStateDefinition : IState
+    {
+        void Build(IStateBuilder builder);
+    }
+
     public interface IFinalState : IVertex
     { }
 
@@ -25,5 +32,10 @@ namespace Stateflows.StateMachines
         where TState : class, IVertex
     {
         public static string Name => typeof(TState).FullName;
+    }
+
+    public static class State
+    {
+        public static string GetName(Type stateType) => stateType.FullName;
     }
 }

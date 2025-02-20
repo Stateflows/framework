@@ -5,6 +5,7 @@ namespace Stateflows.Activities
     public interface IActivityBuilder :
         IActivityUtils<IActivityBuilder>,
         IReactiveActivity<IActivityBuilder>,
+        IActivitySpecials<IActivityBuilder>,
         IActivityEvents<IActivityBuilder>,
         IInitial<IActivityBuilder>,
         IFinal<IActivityBuilder>,

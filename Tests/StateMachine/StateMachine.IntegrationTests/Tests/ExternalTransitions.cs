@@ -1,6 +1,5 @@
 using Stateflows.Common;
 using Stateflows.StateMachines.Events;
-using Stateflows.StateMachines.Sync;
 using StateMachine.IntegrationTests.Utils;
 
 namespace StateMachine.IntegrationTests.Tests
@@ -97,7 +96,7 @@ namespace StateMachine.IntegrationTests.Tests
             {
                 status = (await sm.SendAsync(new Initialize())).Status;
 
-                currentState = (await sm.GetCurrentStateAsync()).Response.StatesStack.First();
+                currentState = (await sm.GetCurrentStateAsync()).Response.StatesTree.Value;
             }
 
             ExecutionSequence.Verify(b => b
@@ -130,7 +129,7 @@ namespace StateMachine.IntegrationTests.Tests
             {
                 status = (await sm.SendAsync(new Initialize())).Status;
 
-                currentState = (await sm.GetCurrentStateAsync()).Response.StatesStack.Last();
+                currentState = (await sm.GetCurrentStateAsync()).Response.StatesTree.GetAllNodes_ChildrenFirst().First().Value;
             }
 
             ExecutionSequence.Verify(b => b
@@ -158,7 +157,7 @@ namespace StateMachine.IntegrationTests.Tests
             {
                 status = (await sm.SendAsync(new Initialize())).Status;
 
-                currentState = (await sm.GetCurrentStateAsync()).Response.StatesStack.Last();
+                currentState = (await sm.GetCurrentStateAsync()).Response.StatesTree.GetAllNodes_ChildrenFirst().First().Value;
             }
 
             ExecutionSequence.Verify(b => b
@@ -193,7 +192,7 @@ namespace StateMachine.IntegrationTests.Tests
             {
                 status = (await sm.SendAsync(new SomeEvent())).Status;
 
-                currentState = (await sm.GetCurrentStateAsync()).Response.StatesStack.Last();
+                currentState = (await sm.GetCurrentStateAsync()).Response.StatesTree.GetAllNodes_ChildrenFirst().First().Value;
             }
 
             ExecutionSequence.Verify(b => b

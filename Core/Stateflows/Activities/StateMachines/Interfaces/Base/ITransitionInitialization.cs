@@ -6,6 +6,6 @@ namespace Stateflows.Activities.StateMachines.Interfaces
     public interface ITransitionInitialization<TEvent, out TReturn>
 
     {
-        TReturn InitializeWith<TInitializationEvent>(TransitionActivityInitializationBuilderAsync<TEvent, TInitializationEvent> builderAsync);
+        TReturn InitializeWith<TInitializationEvent>(TransitionBehaviorInitializationBuilderAsync<TEvent, TInitializationEvent> builderAsync);
     }
 }

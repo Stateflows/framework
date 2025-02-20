@@ -6,8 +6,8 @@ using Stateflows.Common.Interfaces;
 using Stateflows.Common.Initializer;
 using Stateflows.Common.Registration.Builders;
 using Stateflows.Common.Registration.Interfaces;
-using Stateflows.StateMachines.Context;
 using Stateflows.StateMachines.Engine;
+using Stateflows.StateMachines.Context;
 using Stateflows.StateMachines.Registration;
 using Stateflows.StateMachines.EventHandlers;
 using Stateflows.StateMachines.Registration.Builders;
@@ -20,9 +20,10 @@ namespace Stateflows.StateMachines
         private static readonly Dictionary<IStateflowsBuilder, StateMachinesRegister> Registers = new Dictionary<IStateflowsBuilder, StateMachinesRegister>();
 
         [DebuggerHidden]
-        public static IStateflowsBuilder AddStateMachines(this IStateflowsBuilder stateflowsBuilder, StateMachinesBuildAction buildAction)
+        public static IStateflowsBuilder AddStateMachines(this IStateflowsBuilder stateflowsBuilder, StateMachinesBuildAction buildAction = null)
         {
-            buildAction(new StateMachinesBuilder(stateflowsBuilder.EnsureStateMachinesServices()));
+            var register = stateflowsBuilder.EnsureStateMachinesServices();
+            buildAction?.Invoke(new StateMachinesBuilder(register));
 
             return stateflowsBuilder;
         }
@@ -33,7 +34,7 @@ namespace Stateflows.StateMachines
             => stateflowsBuilder.AddDefaultInstance(new StateMachineClass(StateMachine<TStateMachine>.Name).BehaviorClass, initializationRequestFactoryAsync);
 
         [DebuggerHidden]
-        private static StateMachinesRegister EnsureStateMachinesServices(this IStateflowsBuilder stateflowsBuilder)
+        private static IStateMachinesRegister EnsureStateMachinesServices(this IStateflowsBuilder stateflowsBuilder)
         {
             lock (Registers)
             {
@@ -51,6 +52,7 @@ namespace Stateflows.StateMachines
                         .AddScoped<IStateMachinePlugin, Notifications>()
                         .AddScoped<IStateMachinePlugin, Engine.Exceptions>()
                         .AddSingleton(register)
+                        .AddSingleton<IStateMachinesRegister>(register)
                         .AddSingleton<IEventProcessor, Processor>()
                         .AddTransient<IBehaviorProvider, Provider>()
                         .AddSingleton<IStateMachineEventHandler, BehaviorStatusRequestHandler>()
@@ -63,21 +65,25 @@ namespace Stateflows.StateMachines
                         .AddSingleton<IStateMachineEventHandler, NotificationsHandler>()
                         .AddTransient(provider =>
                             StateMachinesContextHolder.StateMachineContext.Value ??
-                            throw new InvalidOperationException($"No service for type '{typeof(IStateMachineContext).FullName}' is available in this context.")
+                            throw new InvalidOperationException(
+                                $"No service for type '{typeof(IStateMachineContext).FullName}' is available in this context.")
                         )
                         .AddTransient(provider =>
                             StateMachinesContextHolder.StateContext.Value ??
-                            throw new InvalidOperationException($"No service for type '{typeof(IStateContext).FullName}' is available in this context.")
+                            throw new InvalidOperationException(
+                                $"No service for type '{typeof(IStateContext).FullName}' is available in this context.")
                         )
                         .AddTransient(provider =>
                             StateMachinesContextHolder.TransitionContext.Value ??
-                            throw new InvalidOperationException($"No service for type '{typeof(ITransitionContext).FullName}' is available in this context.")
+                            throw new InvalidOperationException(
+                                $"No service for type '{typeof(ITransitionContext).FullName}' is available in this context.")
                         )
                         .AddTransient(provider =>
                             StateMachinesContextHolder.ExecutionContext.Value ??
-                            throw new InvalidOperationException($"No service for type '{typeof(IExecutionContext).FullName}' is available in this context.")
+                            throw new InvalidOperationException(
+                                $"No service for type '{typeof(IExecutionContext).FullName}' is available in this context.")
                         )
-                    ;
+                        ;
                 }
 
                 return register;

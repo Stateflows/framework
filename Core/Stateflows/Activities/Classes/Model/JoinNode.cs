@@ -1,6 +1,6 @@
 ﻿namespace Stateflows.Activities
 {
-    public sealed class JoinNode : ActivityNode
+    public sealed class JoinNode : IActivityNode
     {
         public static string Name => ActivityNode<JoinNode>.Name;
     }

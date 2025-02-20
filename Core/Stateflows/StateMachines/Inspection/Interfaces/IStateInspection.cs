@@ -12,10 +12,18 @@ namespace Stateflows.StateMachines.Inspection.Interfaces
 
         bool IsFinal { get; }
 
+        bool IsChoice { get; }
+        
+        bool IsJunction { get; }
+        
+        bool IsFork { get; }
+        
+        bool IsJoin { get; }
+
         IEnumerable<ITransitionInspection> Transitions { get; }
 
         IEnumerable<IActionInspection> Actions { get; }
 
-        IEnumerable<IStateInspection> States { get; }
+        IEnumerable<IRegionInspection> Regions { get; }
     }
 }

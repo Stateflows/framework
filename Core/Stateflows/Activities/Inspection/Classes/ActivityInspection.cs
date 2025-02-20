@@ -8,12 +8,15 @@ namespace Stateflows.Activities.Inspection.Classes
     internal class ActivityInspection : IActivityInspection
     {
         private Executor Executor { get; }
+        
+        private Inspector Inspector { get; }
 
-        public ActivityInspection(Executor executor)
+        public ActivityInspection(Executor executor, Inspector inspector)
         {
             Executor = executor;
+            Inspector = inspector;
 
-            Nodes = Executor.Graph.Nodes.Values.Select(v => new NodeInspection(Executor, v)).ToArray();
+            Nodes = Executor.Graph.Nodes.Values.Select(v => new NodeInspection(Executor, Inspector, v)).ToArray();
         }
 
         public ActivityId Id => Executor.Context.Id;

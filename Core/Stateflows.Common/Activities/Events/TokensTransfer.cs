@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using Newtonsoft.Json;
 using Stateflows.Common;
 
-namespace Stateflows.Activities.Events
+namespace Stateflows.Activities
 {
     public interface ITokensInput
     {

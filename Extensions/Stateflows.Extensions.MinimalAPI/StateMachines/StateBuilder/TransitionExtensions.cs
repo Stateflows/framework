@@ -14,7 +14,6 @@ namespace Stateflows.StateMachines
 
         public static IStateBuilder AddHttpInternalTransition(this IStateBuilder builder, string pattern, InternalTransitionBuildAction<HttpRequest>? transitionbuildAction = null, Action<IEndpointConventionBuilder>? endpointbuildAction = null)
         {
-            builder.
             //DependencyInjection.Endpoints.Add(
             //    pattern,
             //    (IEndpointRouteBuilder applicationBuilder) =>

@@ -1,15 +1,15 @@
 ﻿using System;
 using System.Threading.Tasks;
 using System.Collections.Generic;
-using Stateflows.Activities.Events;
+using Stateflows.Activities;
 
 namespace Stateflows.Common.Interfaces
 {
     public interface IInputOutput : IWatches
     {
-        Task<SendResult> SendInputAsync(Action<ITokensInput> tokensAction);
+        Task<RequestResult<TokensOutput>> SendInputAsync(Action<ITokensInput> tokensAction);
 
-        Task<SendResult> SendInputAsync<TToken>(params TToken[] tokens);
+        Task<RequestResult<TokensOutput>> SendInputAsync<TToken>(params TToken[] tokens);
 
         Task<IWatcher> WatchOutputAsync(Action<ITokensOutput> handler)
             => WatchAsync<TokensOutput>(handler);

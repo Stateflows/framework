@@ -6,13 +6,18 @@ namespace Stateflows.Common.Classes
 {
     public static class ContextValues
     {
-        internal static readonly AsyncLocal<IContextValues> GlobalValuesHolder = new AsyncLocal<IContextValues>();
+        internal static AsyncLocal<IContextValues> GlobalValuesHolder { get; } = new AsyncLocal<IContextValues>();
+        
         public static IContextValues GlobalValues
             => GlobalValuesHolder.Value ??= new ContextValuesCollection(new Dictionary<string, string>());
 
-        internal static readonly AsyncLocal<IContextValues> StateValuesHolder = new AsyncLocal<IContextValues>();
+        internal static AsyncLocal<IContextValues> StateValuesHolder = new AsyncLocal<IContextValues>();
         public static IContextValues StateValues
             => StateValuesHolder.Value ??= new ContextValuesCollection(new Dictionary<string, string>());
+
+        internal static readonly AsyncLocal<IContextValues> ParentStateValuesHolder = new AsyncLocal<IContextValues>();
+        public static IContextValues ParentStateValues
+            => ParentStateValuesHolder.Value ??= new ContextValuesCollection(new Dictionary<string, string>());
 
         internal static readonly AsyncLocal<IContextValues> SourceStateValuesHolder = new AsyncLocal<IContextValues>();
         public static IContextValues SourceStateValues

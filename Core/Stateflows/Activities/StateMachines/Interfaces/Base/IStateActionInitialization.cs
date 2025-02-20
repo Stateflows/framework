@@ -1,10 +1,9 @@
-﻿using Stateflows.Common;
-using Stateflows.Activities.Extensions;
+﻿using Stateflows.Activities.Extensions;
 
 namespace Stateflows.Activities.StateMachines.Interfaces
 {
     public interface IStateActionInitialization<out TReturn>
     {
-        TReturn InitializeWith<TInitializationEvent>(StateActionActivityInitializationBuilderAsync<TInitializationEvent> builderAsync);
+        TReturn InitializeWith<TInitializationEvent>(StateActionBehaviorInitializationBuilderAsync<TInitializationEvent> builderAsync);
     }
 }

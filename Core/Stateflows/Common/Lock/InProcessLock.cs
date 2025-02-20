@@ -27,7 +27,7 @@ namespace Stateflows.Common.Lock
 
             @event.WaitOne((int)(timeout?.TotalMilliseconds ?? -1));
 
-            return Task.FromResult(new LockHandle(id, new AsyncDisposableHandle(@event)) as IStateflowsLockHandle);
+            return Task.FromResult(new StateflowsLockHandle(id, new AsyncDisposableHandle(@event)) as IStateflowsLockHandle);
         }
     }
 }

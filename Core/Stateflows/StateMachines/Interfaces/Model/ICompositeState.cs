@@ -1,19 +1,16 @@
 ﻿using System.Threading.Tasks;
+using Stateflows.StateMachines.Registration.Interfaces;
 
 namespace Stateflows.StateMachines
 {
     public interface ICompositeState : IState
     { }
 
-    public interface ICompositeStateEntry : ICompositeState
-    {
-        Task OnEntryAsync();
-    }
-
-    public interface ICompositeStateExit : ICompositeState
-    {
-        Task OnExitAsync();
-    }
+    public interface ICompositeStateEntry : ICompositeState, IStateEntry
+    { }
+    
+    public interface ICompositeStateExit : ICompositeState, IStateExit
+    { }
 
     public interface ICompositeStateInitialization : ICompositeState
     {
@@ -23,5 +20,10 @@ namespace Stateflows.StateMachines
     public interface ICompositeStateFinalization : ICompositeState
     {
         Task OnFinalizeAsync();
+    }
+
+    public interface ICompositeStateDefinition : ICompositeState
+    {
+        void Build(ICompositeStateBuilder builder);
     }
 }

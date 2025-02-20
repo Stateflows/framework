@@ -4,25 +4,27 @@ using System.Collections.Generic;
 using Microsoft.Extensions.DependencyInjection;
 using Stateflows.Common.Interfaces;
 using Stateflows.Common.Initializer;
+using Stateflows.Common.Registration.Builders;
 using Stateflows.Common.Registration.Interfaces;
 using Stateflows.Activities.Engine;
 using Stateflows.Activities.Context;
+using Stateflows.Activities.Service;
 using Stateflows.Activities.Registration;
 using Stateflows.Activities.EventHandlers;
 using Stateflows.Activities.Registration.Builders;
 using Stateflows.Activities.Registration.Interfaces;
-using Stateflows.Common.Registration.Builders;
 
 namespace Stateflows.Activities
 {
     public static class ActivitiesDependencyInjection
     {
-        private readonly static Dictionary<IStateflowsBuilder, ActivitiesRegister> Registers = new Dictionary<IStateflowsBuilder, ActivitiesRegister>();
+        private static readonly Dictionary<IStateflowsBuilder, ActivitiesRegister> Registers = new Dictionary<IStateflowsBuilder, ActivitiesRegister>();
 
         [DebuggerHidden]
-        public static IStateflowsBuilder AddActivities(this IStateflowsBuilder stateflowsBuilder, ActivitiesBuildAction buildAction)
+        public static IStateflowsBuilder AddActivities(this IStateflowsBuilder stateflowsBuilder, ActivitiesBuildAction buildAction = null)
         {
-            buildAction(new ActivitiesBuilder(stateflowsBuilder.EnsureActivitiesServices()));
+            var register = stateflowsBuilder.EnsureActivitiesServices();
+            buildAction?.Invoke(new ActivitiesBuilder(register));
 
             return stateflowsBuilder;
         }
@@ -47,6 +49,7 @@ namespace Stateflows.Activities
                         .AddScoped<AcceptEvents>()
                         .AddScoped<IActivityPlugin>(serviceProvider => serviceProvider.GetRequiredService<AcceptEvents>())
                         .AddSingleton(register)
+                        .AddSingleton<IActivitiesRegister>(register)
                         .AddScoped<IEventProcessor, Processor>()
                         .AddTransient<IBehaviorProvider, Provider>()
                         .AddSingleton<IActivityEventHandler, BehaviorStatusHandler>()
@@ -57,6 +60,8 @@ namespace Stateflows.Activities
                         .AddSingleton<IActivityEventHandler, UnsubscriptionHandler>()
                         .AddSingleton<IActivityEventHandler, NotificationsHandler>()
                         .AddSingleton<IActivityEventHandler, SetGlobalValuesHandler>()
+                        .AddSingleton<IActivityEventHandler, TokensOutputHandler>()
+                        .AddSingleton<IActivityEventHandler, TypedTokensOutputHandler>()
                         .AddTransient(provider =>
                             ActivitiesContextHolder.ActivityContext.Value ??
                             throw new InvalidOperationException($"No service for type '{typeof(IActivityContext).FullName}' is available in this context.")
@@ -73,6 +78,11 @@ namespace Stateflows.Activities
                             ActivitiesContextHolder.ExceptionContext.Value ??
                             throw new InvalidOperationException($"No service for type '{typeof(IExceptionContext).FullName}' is available in this context.")
                         )
+                        .AddTransient(typeof(IInputTokens<>), typeof(InputTokens<>))
+                        .AddTransient(typeof(IInputToken<>), typeof(InputToken<>))
+                        .AddTransient(typeof(IOptionalInputTokens<>), typeof(OptionalInputTokens<>))
+                        .AddTransient(typeof(IOptionalInputToken<>), typeof(OptionalInputToken<>))
+                        .AddTransient(typeof(IOutputTokens<>), typeof(OutputTokens<>))
                         ;
                 }
 

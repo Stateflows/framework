@@ -10,6 +10,13 @@ export class StateMachine extends Behavior implements IStateMachineBehavior {
         super(behavior, behavior.id);
     }
 
+    async requestAndWatchCurrentState(handler: NotificationHandler<StateMachineInfo>): Promise<void> {
+        let promise = await this.watch<StateMachineInfo>(StateMachineInfo.eventName, handler);
+        let result = await this.request(new StateMachineInfoRequest());
+        handler(result.response);
+        return promise;
+    }
+
     getCurrentState(): Promise<RequestResult<StateMachineInfo>> {
         return this.request(new StateMachineInfoRequest());
     }

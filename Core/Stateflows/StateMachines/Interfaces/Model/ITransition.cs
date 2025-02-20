@@ -1,4 +1,5 @@
 ﻿using System.Threading.Tasks;
+using Stateflows.StateMachines.Registration.Interfaces;
 
 namespace Stateflows.StateMachines
 {
@@ -14,6 +15,11 @@ namespace Stateflows.StateMachines
         Task<bool> GuardAsync();
     }
 
+    public interface IDefaultTransitionDefinition : IDefaultTransition
+    {
+        void Build(IDefaultTransitionBuilder builder);
+    }
+
     public interface ITransition<in TEvent> { }
 
     public interface ITransitionEffect<in TEvent> : ITransition<TEvent>
@@ -24,6 +30,11 @@ namespace Stateflows.StateMachines
     public interface ITransitionGuard<in TEvent> : ITransition<TEvent>
     {
         Task<bool> GuardAsync(TEvent @event);
+    }
+
+    public interface ITransitionDefinition<TEvent> : ITransition<TEvent>
+    {
+        void Build(ITransitionBuilder<TEvent> builder);
     }
 
     public interface ITransitionGuard : IDefaultTransitionGuard, ITransitionGuard<object>

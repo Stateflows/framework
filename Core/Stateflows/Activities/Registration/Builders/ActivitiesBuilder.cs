@@ -80,7 +80,7 @@ namespace Stateflows.Activities.Registration.Builders
         public IActivitiesBuilder AddInterceptor<TInterceptor>()
             where TInterceptor : class, IActivityInterceptor
         {
-            Register.AddGlobalInterceptor<TInterceptor>();
+            Register.AddInterceptor<TInterceptor>();
 
             return this;
         }
@@ -88,7 +88,7 @@ namespace Stateflows.Activities.Registration.Builders
         [DebuggerHidden]
         public IActivitiesBuilder AddInterceptor(ActivityInterceptorFactory interceptorFactory)
         {
-            Register.AddGlobalInterceptor(interceptorFactory);
+            Register.AddInterceptor(interceptorFactory);
 
             return this;
         }
@@ -97,7 +97,7 @@ namespace Stateflows.Activities.Registration.Builders
         public IActivitiesBuilder AddExceptionHandler<TExceptionHandler>()
             where TExceptionHandler : class, IActivityExceptionHandler
         {
-            Register.AddGlobalExceptionHandler<TExceptionHandler>();
+            Register.AddExceptionHandler<TExceptionHandler>();
 
             return this;
         }
@@ -105,7 +105,7 @@ namespace Stateflows.Activities.Registration.Builders
         [DebuggerHidden]
         public IActivitiesBuilder AddExceptionHandler(ActivityExceptionHandlerFactory exceptionHandlerFactory)
         {
-            Register.AddGlobalExceptionHandler(exceptionHandlerFactory);
+            Register.AddExceptionHandler(exceptionHandlerFactory);
 
             return this;
         }
@@ -114,7 +114,7 @@ namespace Stateflows.Activities.Registration.Builders
         public IActivitiesBuilder AddObserver<TObserver>()
             where TObserver : class, IActivityObserver
         {
-            Register.AddGlobalObserver<TObserver>();
+            Register.AddObserver<TObserver>();
 
             return this;
         }
@@ -122,7 +122,7 @@ namespace Stateflows.Activities.Registration.Builders
         [DebuggerHidden]
         public IActivitiesBuilder AddObserver(ActivityObserverFactory observerFactory)
         {
-            Register.AddGlobalObserver(observerFactory);
+            Register.AddObserver(observerFactory);
 
             return this;
         }

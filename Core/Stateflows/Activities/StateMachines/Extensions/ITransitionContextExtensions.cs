@@ -1,4 +1,5 @@
 ﻿using System;
+using Stateflows.Actions;
 using Stateflows.StateMachines.Registration;
 using Stateflows.StateMachines.Context.Interfaces;
 
@@ -6,16 +7,19 @@ namespace Stateflows.Activities
 {
     internal static class ITransitionContextExtensions
     {
-        public static string GetDoActivityInstance<TEvent>(this ITransitionContext<TEvent> context)
-            => $"{context.StateMachine.Id}.{context.SourceState.Name}.{Constants.Do}";
+        private static string GetDoActivityInstance<TEvent>(this ITransitionContext<TEvent> context)
+            => $"{context.StateMachine.Id}.{context.Source.Name}.{Constants.Do}";
 
         public static bool TryLocateDoActivity<TEvent>(this ITransitionContext<TEvent> context, string activityName, out IActivityBehavior activity)
             => context.TryLocateActivity(new ActivityId(activityName, context.GetDoActivityInstance()), out activity);
 
-        public static string GetActivityInstance<TEvent>(this ITransitionContext<TEvent> context, string action)
-            => $"{context.StateMachine.Id}.{context.SourceState.Name}.{action}.{new Random().Next()}";
+        private static string GetBehaviorInstance<TEvent>(this ITransitionContext<TEvent> context, string action)
+            => $"{context.StateMachine.Id}.{context.Source.Name}.{action}.{new Random().Next()}";
 
-        public static bool TryLocateActivity<TEvent>(this ITransitionContext<TEvent> context, string activityName, string action, out IActivityBehavior activity)
-            => context.TryLocateActivity(new ActivityId(activityName, context.GetActivityInstance(action)), out activity);
+        public static bool TryLocateActivity<TEvent>(this ITransitionContext<TEvent> context, string activityName, string stateAction, out IActivityBehavior activity)
+            => context.TryLocateActivity(new ActivityId(activityName, context.GetBehaviorInstance(stateAction)), out activity);
+
+        public static bool TryLocateAction<TEvent>(this ITransitionContext<TEvent> context, string actionName, string stateAction, out IActionBehavior action)
+            => context.TryLocateAction(new ActionId(actionName, context.GetBehaviorInstance(stateAction)), out action);
     }
 }

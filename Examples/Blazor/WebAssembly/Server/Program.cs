@@ -1,10 +1,12 @@
 using Examples.Common;
+using Examples.Storage;
 
 using Stateflows;
 using Stateflows.Common;
 using Stateflows.StateMachines;
 using Stateflows.StateMachines.Sync;
 using Stateflows.Transport.Http;
+using System.Diagnostics;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -12,6 +14,8 @@ builder.Services.AddSignalR();
 
 builder.Services.AddStateflows(b => b
     .AddPlantUml()
+
+    .AddStorage()
 
     .AddStateMachines(b => b
         .AddStateMachine("zemanowa-maszyna", b => b
@@ -63,18 +67,27 @@ builder.Services.AddStateflows(b => b
                 .AddInternalTransition<ExampleRequest>(b => b
                     .AddEffect(c =>
                     {
-                        var counter = c.SourceState.Values.GetOrDefault<int>("counter", 0);
-                        c.SourceState.Values.Set("counter", counter + 1);
+                        var counter = c.Source.Values.GetOrDefault<int>("counter", 0);
+                        c.Source.Values.Set("counter", counter + 1);
                     })
                 )
                 .AddTransition<AfterOneMinute>("state2")
                 .AddDefaultTransition("state2", b => b
                     .AddGuard(c =>
                     {
-                        var counter = c.SourceState.Values.GetOrDefault<int>("counter", 0);
+                        var counter = c.Source.Values.GetOrDefault<int>("counter", 0);
                         return counter > 2;
                     })
                 )
+            )
+        )
+
+        .AddStateMachine("startupInternal", b => b
+            .AddInitialState("state1", b => b
+                .AddTransition<EveryOneMinute>("state2")
+            )
+            .AddState("state2", b => b
+                .AddTransition<Startup>("state1")
             )
         )
     )

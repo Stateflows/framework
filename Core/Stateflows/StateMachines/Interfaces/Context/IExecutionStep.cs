@@ -2,9 +2,9 @@
 {
     public interface IExecutionStep
     {
-        string SourceStateName { get; }
+        string SourceName { get; }
 
-        string TargetStateName { get; }
+        string TargetName { get; }
 
         object TransitionTrigger { get; }
     }

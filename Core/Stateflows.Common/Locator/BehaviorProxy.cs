@@ -46,14 +46,14 @@ namespace Stateflows.Common.Locator
             return result;
         }
 
-        public async Task<RequestResult<TResponseEvent>> RequestAsync<TResponseEvent>(IRequest<TResponseEvent> request, IEnumerable<EventHeader> headers = null)
+        public async Task<RequestResult<TResponse>> RequestAsync<TResponse>(IRequest<TResponse> request, IEnumerable<EventHeader> headers = null)
         {
-            RequestResult<TResponseEvent> result = null;
+            RequestResult<TResponse> result = null;
             var eventHolder = request.ToTypedEventHolder(headers);
 
             if (await Interceptor.BeforeDispatchEventAsync(eventHolder))
             {
-                result = await Behavior.RequestAsync(eventHolder.BoxedPayload as IRequest<TResponseEvent>, eventHolder.Headers);
+                result = await Behavior.RequestAsync(eventHolder.BoxedPayload as IRequest<TResponse>, eventHolder.Headers);
 
                 await Interceptor.AfterDispatchEventAsync(eventHolder);
             }
@@ -62,12 +62,12 @@ namespace Stateflows.Common.Locator
                 Trace.WriteLine($"⦗→s⦘ Client interceptor prevented Request dispatch.");
             }
 
-            result ??= new RequestResult<TResponseEvent>(eventHolder, EventStatus.Undelivered);
+            result ??= new RequestResult<TResponse>(eventHolder, EventStatus.Undelivered);
 
             return result;
         }
 
-        public Task<IWatcher> WatchAsync<TNotificationEvent>(Action<TNotificationEvent> handler)
+        public Task<IWatcher> WatchAsync<TNotification>(Action<TNotification> handler)
             => Behavior.WatchAsync(handler);
 
         public void Dispose()

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace Stateflows.Common.Models
 {
@@ -12,6 +13,8 @@ namespace Stateflows.Common.Models
         }
 
         public List<TDelegate> Actions { get; set; } = new List<TDelegate>();
+
+        public bool Any => Actions.Any();
 
         public string Name { get; }
     }

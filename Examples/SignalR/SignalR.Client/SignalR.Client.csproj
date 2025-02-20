@@ -23,7 +23,6 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\..\Core\Stateflows\Stateflows.csproj" />
-    <ProjectReference Include="..\..\..\Extensions\Stateflows.Extensions.MinimalAPI\Stateflows.Extensions.MinimalApi.csproj" />
     <ProjectReference Include="..\..\..\Extensions\Stateflows.Extensions.PlantUml\Stateflows.Extensions.PlantUml.csproj" />
     <ProjectReference Include="..\..\..\Transport\Stateflows.Transport.AspNetCore.SignalR\Stateflows.Transport.AspNetCore.SignalR.csproj" />
     <ProjectReference Include="..\..\..\Transport\Stateflows.Transport.Http\Stateflows.Transport.Http.csproj" />

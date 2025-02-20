@@ -1,5 +1,7 @@
 ﻿using System;
+using System.Diagnostics;
 using System.Threading;
+using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using Stateflows.Common;
 using Stateflows.Common.Classes;
@@ -73,11 +75,13 @@ namespace Stateflows.Activities.Engine
         public NodeScope CreateChildScope(Node node = null, Guid? threadId = null)
             => ChildScope = new NodeScope(this, node ?? Node, threadId ?? ThreadId);
 
-        public TDefaultInitializer GetDefaultInitializer<TDefaultInitializer>(IActivityInitializationContext context)
+        [DebuggerHidden]
+        public Task<TDefaultInitializer> GetDefaultInitializerAsync<TDefaultInitializer>(IActivityInitializationContext context)
             where TDefaultInitializer : class, IDefaultInitializer
         {
             ContextValues.GlobalValuesHolder.Value = context.Activity.Values;
             ContextValues.StateValuesHolder.Value = null;
+            ContextValues.ParentStateValuesHolder.Value = null;
             ContextValues.SourceStateValuesHolder.Value = null;
             ContextValues.TargetStateValuesHolder.Value = null;
 
@@ -87,16 +91,16 @@ namespace Stateflows.Activities.Engine
             ActivitiesContextHolder.ExecutionContext.Value = context;
             ActivitiesContextHolder.ExceptionContext.Value = null;
 
-            var initializer = ServiceProvider.GetService<TDefaultInitializer>();
-
-            return initializer;
+            return StateflowsActivator.CreateInstanceAsync<TDefaultInitializer>(ServiceProvider, "default initializer");
         }
 
-        public TInitializer GetInitializer<TInitializer, TInitializationEvent>(IActivityInitializationContext<TInitializationEvent> context)
+        [DebuggerHidden]
+        public Task<TInitializer> GetInitializerAsync<TInitializer, TInitializationEvent>(IActivityInitializationContext<TInitializationEvent> context)
             where TInitializer : class, IInitializer<TInitializationEvent>
         {
             ContextValues.GlobalValuesHolder.Value = context.Activity.Values;
             ContextValues.StateValuesHolder.Value = null;
+            ContextValues.ParentStateValuesHolder.Value = null;
             ContextValues.SourceStateValuesHolder.Value = null;
             ContextValues.TargetStateValuesHolder.Value = null;
 
@@ -106,16 +110,16 @@ namespace Stateflows.Activities.Engine
             ActivitiesContextHolder.ExecutionContext.Value = context;
             ActivitiesContextHolder.ExceptionContext.Value = null;
 
-            var initializer = ServiceProvider.GetService<TInitializer>();
-
-            return initializer;
+            return StateflowsActivator.CreateInstanceAsync<TInitializer>(ServiceProvider, "initializer");
         }
-
-        public TFinalizer GetFinalizer<TFinalizer>(IActivityActionContext context)
+        
+        [DebuggerHidden]
+        public Task<TFinalizer> GetFinalizerAsync<TFinalizer>(IActivityActionContext context)
             where TFinalizer : class, IFinalizer
         {
             ContextValues.GlobalValuesHolder.Value = context.Activity.Values;
             ContextValues.StateValuesHolder.Value = null;
+            ContextValues.ParentStateValuesHolder.Value = null;
             ContextValues.SourceStateValuesHolder.Value = null;
             ContextValues.TargetStateValuesHolder.Value = null;
 
@@ -125,16 +129,16 @@ namespace Stateflows.Activities.Engine
             ActivitiesContextHolder.ExecutionContext.Value = context;
             ActivitiesContextHolder.ExceptionContext.Value = null;
 
-            var initializer = ServiceProvider.GetService<TFinalizer>();
-
-            return initializer;
+            return StateflowsActivator.CreateInstanceAsync<TFinalizer>(ServiceProvider, "finalizer");
         }
-
-        public TAction GetAction<TAction>(IActionContext context)
+        
+        [DebuggerHidden]
+        public Task<TAction> GetActionAsync<TAction>(IActionContext context)
             where TAction : class, IActionNode
         {
             ContextValues.GlobalValuesHolder.Value = context.Activity.Values;
             ContextValues.StateValuesHolder.Value = null;
+            ContextValues.ParentStateValuesHolder.Value = null;
             ContextValues.SourceStateValuesHolder.Value = null;
             ContextValues.TargetStateValuesHolder.Value = null;
 
@@ -144,15 +148,17 @@ namespace Stateflows.Activities.Engine
             ActivitiesContextHolder.ExecutionContext.Value = context;
             ActivitiesContextHolder.ExceptionContext.Value = null;
 
-            return ServiceProvider.GetService<TAction>();
+            return StateflowsActivator.CreateInstanceAsync<TAction>(ServiceProvider, "action");
         }
 
-        public TAcceptEventAction GetAcceptEventAction<TEvent, TAcceptEventAction>(IAcceptEventActionContext<TEvent> context)
+        [DebuggerHidden]
+        public Task<TAcceptEventAction> GetAcceptEventActionAsync<TEvent, TAcceptEventAction>(IAcceptEventActionContext<TEvent> context)
 
             where TAcceptEventAction : class, IAcceptEventActionNode<TEvent>
         {
             ContextValues.GlobalValuesHolder.Value = context.Activity.Values;
             ContextValues.StateValuesHolder.Value = null;
+            ContextValues.ParentStateValuesHolder.Value = null;
             ContextValues.SourceStateValuesHolder.Value = null;
             ContextValues.TargetStateValuesHolder.Value = null;
 
@@ -162,14 +168,16 @@ namespace Stateflows.Activities.Engine
             ActivitiesContextHolder.ExecutionContext.Value = context;
             ActivitiesContextHolder.ExceptionContext.Value = null;
 
-            return ServiceProvider.GetService<TAcceptEventAction>();
+            return StateflowsActivator.CreateInstanceAsync<TAcceptEventAction>(ServiceProvider, "accept event action");
         }
 
-        public TTimeEventAction GetTimeEventAction<TTimeEventAction>(IActionContext context)
+        [DebuggerHidden]
+        public Task<TTimeEventAction> GetTimeEventActionAsync<TTimeEventAction>(IActionContext context)
             where TTimeEventAction : class, ITimeEventActionNode
         {
             ContextValues.GlobalValuesHolder.Value = context.Activity.Values;
             ContextValues.StateValuesHolder.Value = null;
+            ContextValues.ParentStateValuesHolder.Value = null;
             ContextValues.SourceStateValuesHolder.Value = null;
             ContextValues.TargetStateValuesHolder.Value = null;
 
@@ -179,14 +187,16 @@ namespace Stateflows.Activities.Engine
             ActivitiesContextHolder.ExecutionContext.Value = context;
             ActivitiesContextHolder.ExceptionContext.Value = null;
 
-            return ServiceProvider.GetService<TTimeEventAction>();
+            return StateflowsActivator.CreateInstanceAsync<TTimeEventAction>(ServiceProvider, "time event action");
         }
 
-        public TSendEventAction GetSendEventAction<TEvent, TSendEventAction>(IActionContext context)
+        [DebuggerHidden]
+        public Task<TSendEventAction> GetSendEventActionAsync<TEvent, TSendEventAction>(IActionContext context)
             where TSendEventAction : class, ISendEventActionNode<TEvent>
         {
             ContextValues.GlobalValuesHolder.Value = context.Activity.Values;
             ContextValues.StateValuesHolder.Value = null;
+            ContextValues.ParentStateValuesHolder.Value = null;
             ContextValues.SourceStateValuesHolder.Value = null;
             ContextValues.TargetStateValuesHolder.Value = null;
 
@@ -196,14 +206,16 @@ namespace Stateflows.Activities.Engine
             ActivitiesContextHolder.ExecutionContext.Value = context;
             ActivitiesContextHolder.ExceptionContext.Value = null;
 
-            return ServiceProvider.GetService<TSendEventAction>();
+            return StateflowsActivator.CreateInstanceAsync<TSendEventAction>(ServiceProvider, "send event action");
         }
 
-        public TStructuredActivity GetStructuredActivity<TStructuredActivity>(IActionContext context)
+        [DebuggerHidden]
+        public Task<TStructuredActivity> GetStructuredActivityAsync<TStructuredActivity>(IActionContext context)
             where TStructuredActivity : class, IStructuredActivityNode
         {
             ContextValues.GlobalValuesHolder.Value = context.Activity.Values;
             ContextValues.StateValuesHolder.Value = null;
+            ContextValues.ParentStateValuesHolder.Value = null;
             ContextValues.SourceStateValuesHolder.Value = null;
             ContextValues.TargetStateValuesHolder.Value = null;
 
@@ -213,15 +225,17 @@ namespace Stateflows.Activities.Engine
             ActivitiesContextHolder.ExecutionContext.Value = context;
             ActivitiesContextHolder.ExceptionContext.Value = null;
 
-            return ServiceProvider.GetService<TStructuredActivity>();
+            return StateflowsActivator.CreateInstanceAsync<TStructuredActivity>(ServiceProvider, "structured activity");
         }
 
-        public TExceptionHandler GetExceptionHandler<TException, TExceptionHandler>(IExceptionHandlerContext<TException> context)
+        [DebuggerHidden]
+        public Task<TExceptionHandler> GetExceptionHandlerAsync<TException, TExceptionHandler>(IExceptionHandlerContext<TException> context)
             where TException : Exception
             where TExceptionHandler : class, IExceptionHandlerNode<TException>
         {
             ContextValues.GlobalValuesHolder.Value = context.Activity.Values;
             ContextValues.StateValuesHolder.Value = null;
+            ContextValues.ParentStateValuesHolder.Value = null;
             ContextValues.SourceStateValuesHolder.Value = null;
             ContextValues.TargetStateValuesHolder.Value = null;
 
@@ -231,14 +245,16 @@ namespace Stateflows.Activities.Engine
             ActivitiesContextHolder.ExecutionContext.Value = context;
             ActivitiesContextHolder.ExceptionContext.Value = context;
 
-            return ServiceProvider.GetService<TExceptionHandler>();
+            return StateflowsActivator.CreateInstanceAsync<TExceptionHandler>(ServiceProvider, "exception handler");
         }
-
-        public TFlow GetFlow<TFlow>(IActivityFlowContext context)
+        
+        [DebuggerHidden]
+        private Task<TFlow> GetFlowInternalAsync<TFlow>(IActivityFlowContext context, string serviceKind)
             where TFlow : IEdge
         {
             ContextValues.GlobalValuesHolder.Value = context.Activity.Values;
             ContextValues.StateValuesHolder.Value = null;
+            ContextValues.ParentStateValuesHolder.Value = null;
             ContextValues.SourceStateValuesHolder.Value = null;
             ContextValues.TargetStateValuesHolder.Value = null;
 
@@ -248,24 +264,33 @@ namespace Stateflows.Activities.Engine
             ActivitiesContextHolder.ExecutionContext.Value = context;
             ActivitiesContextHolder.ExceptionContext.Value = null;
 
-            return ServiceProvider.GetService<TFlow>();
+            return StateflowsActivator.CreateInstanceAsync<TFlow>(ServiceProvider, serviceKind);
         }
 
-        public TControlFlow GetControlFlow<TControlFlow>(IActivityFlowContext context)
+        [DebuggerHidden]
+        public Task<TFlow> GetFlowAsync<TFlow>(IActivityFlowContext context)
+            where TFlow : IEdge
+            => GetFlowInternalAsync<TFlow>(context, "flow");
+
+        [DebuggerHidden]
+        public Task<TControlFlow> GetControlFlowAsync<TControlFlow>(IActivityFlowContext context)
             where TControlFlow : class, IControlFlow
-            => GetFlow<TControlFlow>(context);
+            => GetFlowInternalAsync<TControlFlow>(context, "control flow");
 
-        public TFlow GetObjectFlow<TFlow, TToken>(IActivityFlowContext<TToken> context)
+        [DebuggerHidden]
+        public Task<TFlow> GetObjectFlowAsync<TFlow, TToken>(IActivityFlowContext<TToken> context)
             where TFlow : class, IFlow<TToken>
-            => GetFlow<TFlow>(context);
+            => GetFlowInternalAsync<TFlow>(context, "object flow");
 
-        public TTransformationFlow GetObjectTransformationFlow<TTransformationFlow, TToken, TTransformedToken>(IActivityFlowContext<TToken> context)
+        [DebuggerHidden]
+        public Task<TTransformationFlow> GetObjectTransformationFlowAsync<TTransformationFlow, TToken, TTransformedToken>(IActivityFlowContext<TToken> context)
             where TTransformationFlow : class, IFlowTransformation<TToken, TTransformedToken>
-            => GetFlow<TTransformationFlow>(context);
-
-        public TElseTransformationFlow GetElseObjectTransformationFlow<TElseTransformationFlow, TToken, TTransformedToken>(IActivityFlowContext<TToken> context)
-            where TElseTransformationFlow : class, IFlowTransformation<TToken, TTransformedToken>
-            => GetFlow<TElseTransformationFlow>(context);
+            => GetFlowInternalAsync<TTransformationFlow>(context, "object transformation flow");
+        
+        // [DebuggerHidden]
+        // public Task<TElseTransformationFlow> GetElseObjectTransformationFlowAsync<TElseTransformationFlow, TToken, TTransformedToken>(IActivityFlowContext<TToken> context)
+        //     where TElseTransformationFlow : class, IFlowTransformation<TToken, TTransformedToken>
+        //     => GetFlowInternalAsync<TElseTransformationFlow>(context, "else-object transformation flow");
 
         public void Dispose()
         {

@@ -19,51 +19,54 @@ namespace Stateflows.Activities
             => Tokens.AddRange(tokens.Select(token => new TokenHolder<TToken>() { Payload = token }));
     }
 
-    public struct Input<TToken> : IEnumerable<TToken>
+    internal class InputTokens<TToken> : IInputTokens<TToken>
     {
-        private readonly IEnumerable<TToken> Tokens
+        private IEnumerable<TToken> Tokens
             => InputTokens.Tokens.OfType<TokenHolder<TToken>>().Select(t => t.Payload);
-
-        public readonly IEnumerator<TToken> GetEnumerator()
+        
+        public IEnumerator<TToken> GetEnumerator()
             => Tokens.GetEnumerator();
-
-        readonly IEnumerator IEnumerable.GetEnumerator()
+        
+        IEnumerator IEnumerable.GetEnumerator()
             => Tokens.GetEnumerator();
-
-        public readonly void PassAllOn()
-            => new Output<TToken>().AddRange(Tokens);
+        
+        public void PassAllOn()
+            => new OutputTokens<TToken>().AddRange(Tokens);
     }
 
-    public struct SingleInput<TToken>
+    internal class InputToken<TToken> : IInputToken<TToken>
     {
-        public readonly TToken Token
+        public TToken Token
             => InputTokens.Tokens.OfType<TokenHolder<TToken>>().Select(t => t.Payload).First();
 
-        public readonly void PassOn()
-            => new Output<TToken>().Add(Token);
+        public void PassOn()
+            => new OutputTokens<TToken>().Add(Token);
     }
 
-    public struct OptionalInput<TToken> : IEnumerable<TToken>
+    internal class OptionalInputTokens<TToken> : IOptionalInputTokens<TToken>
     {
-        private readonly IEnumerable<TToken> Tokens
+        private IEnumerable<TToken> Tokens
             => InputTokens.Tokens.OfType<TokenHolder<TToken>>().Select(t => t.Payload);
 
-        public readonly IEnumerator<TToken> GetEnumerator()
+        public IEnumerator<TToken> GetEnumerator()
             => Tokens.GetEnumerator();
 
-        readonly IEnumerator IEnumerable.GetEnumerator()
+        IEnumerator IEnumerable.GetEnumerator()
             => Tokens.GetEnumerator();
 
-        public readonly void PassAllOn()
-            => new Output<TToken>().AddRange(Tokens);
+        public void PassAllOn()
+            => new OutputTokens<TToken>().AddRange(Tokens);
     }
 
-    public struct OptionalSingleInput<TToken>
+    internal class OptionalInputToken<TToken> : IOptionalInputToken<TToken>
     {
-        public readonly TToken Token
-            => InputTokens.Tokens.OfType<TokenHolder<TToken>>().Select(t => t.Payload).First();
+        public bool IsAvailable
+            => InputTokens.Tokens.OfType<TokenHolder<TToken>>().Any();
+        
+        public TToken TokenOrDefault
+            => InputTokens.Tokens.OfType<TokenHolder<TToken>>().Select(t => t.Payload).FirstOrDefault();
 
-        public readonly void PassOn()
-            => new Output<TToken>().Add(Token);
+        public void PassOn()
+            => new OutputTokens<TToken>().Add(TokenOrDefault);
     }
 }

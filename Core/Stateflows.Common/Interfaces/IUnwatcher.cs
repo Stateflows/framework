@@ -4,6 +4,6 @@ namespace Stateflows.Common
 {
     public interface IUnwatcher
     {
-        Task UnwatchAsync<TNotificationEvent>();
+        Task UnwatchAsync<TNotification>();
     }
 }

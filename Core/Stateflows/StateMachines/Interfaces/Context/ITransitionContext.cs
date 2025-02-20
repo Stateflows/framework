@@ -2,8 +2,8 @@
 {
     public interface ITransitionContext
     {
-        IStateContext SourceState { get; }
+        IStateContext Source { get; }
 
-        IStateContext TargetState { get; }
+        IStateContext Target { get; }
     }
 }

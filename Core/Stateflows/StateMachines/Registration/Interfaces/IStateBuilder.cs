@@ -21,18 +21,19 @@ namespace Stateflows.StateMachines.Registration.Interfaces
         IStateUtils<IOverridenStateBuilder>,
         IStateTransitions<IOverridenStateBuilder>,
         IStateTransitionsOverrides<IOverridenStateBuilder>,
-        IStateComposition<IOverridenCompositedStateBuilder>,
+        IStateComposition<IOverridenRegionalizedStateBuilder>,
+        IStateOrthogonalization<IOverridenRegionalizedStateBuilder>,
         IStateSubmachine<IBehaviorOverridenStateBuilder>,
         IStateDoActivity<IBehaviorOverridenStateBuilder>
     { }
     
-    public interface IOverridenCompositedStateBuilder :
-        IStateEvents<IOverridenCompositedStateBuilder>,
-        IStateUtils<IOverridenCompositedStateBuilder>,
-        IStateTransitions<IOverridenCompositedStateBuilder>,
-        IStateTransitionsOverrides<IOverridenCompositedStateBuilder>,
-        IStateSubmachine<IBehaviorOverridenCompositedStateBuilder>,
-        IStateDoActivity<IBehaviorOverridenCompositedStateBuilder>
+    public interface IOverridenRegionalizedStateBuilder :
+        IStateEvents<IOverridenRegionalizedStateBuilder>,
+        IStateUtils<IOverridenRegionalizedStateBuilder>,
+        IStateTransitions<IOverridenRegionalizedStateBuilder>,
+        IStateTransitionsOverrides<IOverridenRegionalizedStateBuilder>,
+        IStateSubmachine<IBehaviorOverridenRegionalizedStateBuilder>,
+        IStateDoActivity<IBehaviorOverridenRegionalizedStateBuilder>
     { }
 
     public interface IBehaviorOverridenStateBuilder :
@@ -40,13 +41,14 @@ namespace Stateflows.StateMachines.Registration.Interfaces
         IStateUtils<IBehaviorOverridenStateBuilder>,
         IStateTransitions<IBehaviorOverridenStateBuilder>,
         IStateTransitionsOverrides<IBehaviorOverridenStateBuilder>,
-        IStateComposition<IBehaviorOverridenCompositedStateBuilder>
+        IStateComposition<IBehaviorOverridenRegionalizedStateBuilder>,
+        IStateOrthogonalization<IBehaviorOverridenRegionalizedStateBuilder>
     { }
 
-    public interface IBehaviorOverridenCompositedStateBuilder :
-        IStateEvents<IBehaviorOverridenCompositedStateBuilder>,
-        IStateUtils<IBehaviorOverridenCompositedStateBuilder>,
-        IStateTransitions<IBehaviorOverridenCompositedStateBuilder>,
-        IStateTransitionsOverrides<IBehaviorOverridenCompositedStateBuilder>
+    public interface IBehaviorOverridenRegionalizedStateBuilder :
+        IStateEvents<IBehaviorOverridenRegionalizedStateBuilder>,
+        IStateUtils<IBehaviorOverridenRegionalizedStateBuilder>,
+        IStateTransitions<IBehaviorOverridenRegionalizedStateBuilder>,
+        IStateTransitionsOverrides<IBehaviorOverridenRegionalizedStateBuilder>
     { }
 }

@@ -5,6 +5,6 @@
         IEmbeddedBehaviorBuilder AddForwardedEvent<TEvent>(ForwardedEventBuildAction<TEvent> buildAction = null)
 ;
 
-        IEmbeddedBehaviorBuilder AddSubscription<TNotificationEvent>();
+        IEmbeddedBehaviorBuilder AddSubscription<TNotification>();
     }
 }

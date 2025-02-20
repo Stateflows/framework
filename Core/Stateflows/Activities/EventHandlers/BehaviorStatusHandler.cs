@@ -2,9 +2,9 @@
 using System.Linq;
 using System.Threading.Tasks;
 using Stateflows.Common;
+using Stateflows.StateMachines;
 using Stateflows.Activities.Extensions;
 using Stateflows.Activities.Inspection.Interfaces;
-using Stateflows.StateMachines.Events;
 
 namespace Stateflows.Activities.EventHandlers
 {

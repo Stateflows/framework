@@ -233,7 +233,7 @@ namespace Activity.IntegrationTests.Tests
                                 Executed2 = true;
                                 Value1 = c.NodeOfOrigin.NodeName;
                                 Value2 = c.ProtectedNode.NodeName;
-                                Value3 = c.Exception?.Message;
+                                Value3 = c.Exception?.Message ?? string.Empty;
                             })
                             .AddInitial(b => b
                                 .AddControlFlow("action1")
@@ -330,21 +330,6 @@ namespace Activity.IntegrationTests.Tests
                             ExceptionHandlerOutputCount = c.GetTokensOfType<string>().Count();
                         })
                     )
-                //.AddActivity("global", b => b
-                //    .AddExceptionHandler<Exception>(async c =>
-                //    {
-                //        Executed1 = true;
-                //        Value1 = c.NodeOfOrigin.NodeName;
-                //        Value2 = c.ProtectedNode.NodeName;
-                //    })
-                //    .AddInitial(b => b
-                //        .AddControlFlow("faulty")
-                //    )
-                //    .AddAction(
-                //        "faulty",
-                //        async c => throw new Exception()
-                //    )
-                //)
                 )
                 ;
         }
@@ -439,6 +424,7 @@ namespace Activity.IntegrationTests.Tests
             }
 
             Assert.IsTrue(Executed2);
+            Assert.IsFalse(Executed3);
         }
 
         [TestMethod]
@@ -497,17 +483,5 @@ namespace Activity.IntegrationTests.Tests
 
             Assert.AreEqual(2, ExceptionHandlerOutputCount);
         }
-
-        //[TestMethod]
-        //public async Task ExceptionHandledGlobally()
-        //{
-        //    if (ActivityLocator.TryLocateActivity(new ActivityId("global", "x"), out var a))
-        //    {
-        //        await a.SendAsync(new Initialize());
-        //    }
-
-        //    Assert.IsTrue(Executed1);
-        //    Assert.AreEqual("faulty", Value1);
-        //}
     }
 }

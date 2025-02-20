@@ -3,17 +3,15 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using Stateflows.Common;
 using Stateflows.Common.Models;
-using Stateflows.Common.Extensions;
+using Stateflows.Common.Classes;
+using Stateflows.Common.Exceptions;
+using Stateflows.Common.Registration.Builders;
 using Stateflows.Activities.Models;
 using Stateflows.Activities.Context.Classes;
 using Stateflows.Activities.Context.Interfaces;
-using Stateflows.Activities.Engine;
 using Stateflows.Activities.Registration.Extensions;
 using Stateflows.Activities.Registration.Interfaces;
 using Stateflows.Activities.Registration.Interfaces.Base;
-using Stateflows.Activities.Utils;
-using Stateflows.Common.Exceptions;
-using Stateflows.Common.Registration.Builders;
 
 namespace Stateflows.Activities.Registration.Builders
 {
@@ -21,7 +19,7 @@ namespace Stateflows.Activities.Registration.Builders
         BaseActivityBuilder,
         IActivityBuilder
     {
-        new public Graph Result
+        public new Graph Result
         {
             get => Node as Graph;
             set => Node = value;
@@ -33,7 +31,7 @@ namespace Stateflows.Activities.Registration.Builders
             Result = new Graph(name, version, stateflowsBuilder);
         }
 
-        public IActivityBuilder AddInitializer(Type initializerType, string initializerName, ActivityPredicateAsync initializerAction)
+        private IActivityBuilder AddInitializer(Type initializerType, string initializerName, ActivityPredicateAsync initializerAction)
         {
             if (!Result.Initializers.TryGetValue(initializerName, out var initializer))
             {
@@ -57,7 +55,7 @@ namespace Stateflows.Activities.Registration.Builders
                 var context = new ActivityInitializationContext(
                     c.Context,
                     c.NodeScope,
-                    (c as ActivityInitializationContext).InputTokens
+                    (c as ActivityInitializationContext)?.InputTokens
                 );
                 return actionAsync(context);
             });
@@ -80,7 +78,7 @@ namespace Stateflows.Activities.Registration.Builders
                     c.Context,
                     c.NodeScope,
                     c.Context.EventHolder as EventHolder<TInitializationEvent>,
-                    (c as ActivityInitializationContext).InputTokens
+                    (c as ActivityInitializationContext)?.InputTokens
                 );
 
                 try
@@ -95,7 +93,9 @@ namespace Stateflows.Activities.Registration.Builders
                     }
                     else
                     {
-                        if (!await c.Context.Executor.Inspector.OnActivityInitializationExceptionAsync(context, context.InitializationEventHolder, e))
+                        var inspector = await c.Context.Executor.GetInspectorAsync();
+                        
+                        if (!await inspector.OnActivityInitializationExceptionAsync(context, context.InitializationEventHolder, e))
                         {
                             throw;
                         }
@@ -152,15 +152,21 @@ namespace Stateflows.Activities.Registration.Builders
         public IActivityBuilder AddExceptionHandler<TExceptionHandler>()
             where TExceptionHandler : class, IActivityExceptionHandler
         {
-            Services.AddServiceType<TExceptionHandler>();
-            AddExceptionHandler(serviceProvider => serviceProvider.GetRequiredService<TExceptionHandler>());
+            AddExceptionHandler(async serviceProvider => await StateflowsActivator.CreateInstanceAsync<TExceptionHandler>(serviceProvider, "exception handler"));
 
             return this;
         }
 
         public IActivityBuilder AddExceptionHandler(ActivityExceptionHandlerFactory exceptionHandlerFactory)
         {
-            Result.ExceptionHandlerFactories.Add(exceptionHandlerFactory);
+            Result.ExceptionHandlerFactories.Add(serviceProvider => Task.FromResult(exceptionHandlerFactory(serviceProvider)));
+
+            return this;
+        }
+
+        public IActivityBuilder AddExceptionHandler(ActivityExceptionHandlerFactoryAsync exceptionHandlerFactoryAsync)
+        {
+            Result.ExceptionHandlerFactories.Add(exceptionHandlerFactoryAsync);
 
             return this;
         }
@@ -168,15 +174,21 @@ namespace Stateflows.Activities.Registration.Builders
         public IActivityBuilder AddInterceptor<TInterceptor>()
             where TInterceptor : class, IActivityInterceptor
         {
-            Services.AddServiceType<TInterceptor>();
-            AddInterceptor(serviceProvider => serviceProvider.GetRequiredService<TInterceptor>());
+            AddInterceptor(async serviceProvider => await StateflowsActivator.CreateInstanceAsync<TInterceptor>(serviceProvider, "interceptor"));
 
             return this;
         }
 
         public IActivityBuilder AddInterceptor(ActivityInterceptorFactory interceptorFactory)
         {
-            Result.InterceptorFactories.Add(interceptorFactory);
+            Result.InterceptorFactories.Add(serviceProvider => Task.FromResult(interceptorFactory(serviceProvider)));
+
+            return this;
+        }
+
+        public IActivityBuilder AddInterceptor(ActivityInterceptorFactoryAsync interceptorFactoryAsync)
+        {
+            Result.InterceptorFactories.Add(interceptorFactoryAsync);
 
             return this;
         }
@@ -184,15 +196,21 @@ namespace Stateflows.Activities.Registration.Builders
         public IActivityBuilder AddObserver<TObserver>()
             where TObserver : class, IActivityObserver
         {
-            Services.AddServiceType<TObserver>();
-            AddObserver(serviceProvider => serviceProvider.GetRequiredService<TObserver>());
+            AddObserver(async serviceProvider => await StateflowsActivator.CreateInstanceAsync<TObserver>(serviceProvider, "observer"));
 
             return this;
         }
 
         public IActivityBuilder AddObserver(ActivityObserverFactory observerFactory)
         {
-            Result.ObserverFactories.Add(observerFactory);
+            Result.ObserverFactories.Add(serviceProvider => Task.FromResult(observerFactory(serviceProvider)));
+
+            return this;
+        }
+
+        public IActivityBuilder AddObserver(ActivityObserverFactoryAsync observerFactoryAsync)
+        {
+            Result.ObserverFactories.Add(observerFactoryAsync);
 
             return this;
         }

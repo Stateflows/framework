@@ -21,11 +21,11 @@ namespace Stateflows.StateMachines.Context.Classes
         IStateMachineInspectionContext ITransitionInspectionContext<TEvent>.StateMachine => StateMachine;
 
         private IStateContext sourceState = null;
-        public IStateContext SourceState => sourceState ??= new StateContext(Edge.Source, Context);
+        public IStateContext Source => sourceState ??= new StateContext(Edge.Source, Context);
 
         private bool targetStateSet = false;
         private IStateContext targetState = null;
-        public IStateContext TargetState
+        public IStateContext Target
         {
             get
             {

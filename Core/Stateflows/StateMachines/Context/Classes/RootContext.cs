@@ -7,6 +7,8 @@ using Stateflows.Common;
 using Stateflows.Common.Context;
 using Stateflows.StateMachines.Engine;
 using Stateflows.StateMachines.Registration;
+using System.Net.Http.Headers;
+using Stateflows.Common.Utilities;
 
 namespace Stateflows.StateMachines.Context.Classes
 {
@@ -148,6 +150,44 @@ namespace Stateflows.StateMachines.Context.Classes
                 }
 
                 return statesStack;
+            }
+        }
+
+        private Tree<string> statesTree = null;
+        public Tree<string> StatesTree
+        {
+            get
+            {
+                if (statesTree == null)
+                {
+                    if (!stateflowsContext.Values.TryGetValue(Constants.StatesTree, out var statesTreeObj))
+                    {
+                        statesTree = new Tree<string>();
+
+                        // import historical, linear entries
+                        if (stateflowsContext.Values.TryGetValue(Constants.StatesStack, out var stackObj))
+                        {
+                            var stack = stackObj as List<string>;
+                            TreeNode<string> tree = null;
+                            foreach (var state in stack)
+                            {
+                                tree = tree == null
+                                    ? new TreeNode<string>(state)
+                                    : tree.Add(state);
+                            }
+                            statesTree.Root = tree;
+                            stateflowsContext.Values.Remove(Constants.StatesStack);
+                        }
+
+                        stateflowsContext.Values[Constants.StatesTree] = statesTree;
+                    }
+                    else
+                    {
+                        statesTree = statesTreeObj as Tree<string>;
+                    }
+                }
+
+                return statesTree;
             }
         }
 

@@ -8,6 +8,7 @@ using Stateflows.Common;
 using Stateflows.StateMachines;
 using X;
 using Microsoft.AspNetCore.OpenApi;
+using Stateflows.Actions;
 using Stateflows.Transport.Http;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -16,7 +17,7 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddRazorPages();
 builder.Services.AddServerSideBlazor();
 builder.Services.AddSingleton<WeatherForecastService>();
-
+builder.Services.AddCors();
 builder.Services.AddEndpointsApiExplorer();
 //builder.Services.AddSwaggerGen();
 
@@ -24,8 +25,42 @@ builder.Services.AddSignalR();
 
 builder.Services.AddStateflows(b => b
     .AddPlantUml()
+    .AddConsole()
 
-    //.AddStorage()
+    // .AddStorage()
+    
+    
+    .AddActions(b => b
+        .AddAction("action1", async c =>
+        {
+            await c.Action.Values.SetAsync<int>("TheAnswerToTheLifeWorldAndUniverse", 42);
+            
+            var answer = await c.Action.Values.GetOrDefaultAsync<int>("theAnswerToTheLifeWorldAndUniverse");
+        })
+    )
+    
+    .AddStateMachines(b => b
+    
+        .AddStateMachine("stateMachine1", b => b
+            .AddInitialState("State1", b => b
+                .AddTransition<SomeEvent>("State2")
+            )
+            .AddState("State2", b => b
+                .AddDefaultTransition(FinalState.Name)
+            )
+            .AddFinalState()
+        )
+    )
+    
+    
+    .AddActivities(b => b
+        .AddActivity("activity1", b => b
+            .AddAction("action1", async c => { })
+        )
+    )
+    
+    
+    
 
     .AddActivities(b => b
         .AddActivity("a", b => b
@@ -41,24 +76,38 @@ builder.Services.AddStateflows(b => b
 
     .AddStateMachines(b => b
         .AddStateMachine("stateMachine1", b => b
+            .AddInitialState("initial", b => b
+                .AddDefaultTransition<Choice>()
+            )
+            .AddChoice(b => b
+                .AddTransition("state1")
+                .AddElseTransition("state2")
+            )
+            .AddState("state1", b => b
+                .AddDefaultTransition<Junction>()
+            )
+            .AddState("state2")
+            .AddJunction(b => b
+                .AddTransition("state3")
+                .AddElseTransition("state4")
+            )
+            .AddState("state3")
+            .AddState("state4")
+        )
+        .AddStateMachine("stateMachine1_orth", b => b
             .AddInitialState("state1", b => b
                 .AddOnEntry(async c =>
                 {
                     Debug.WriteLine("x");
                 })
-                //.AddOnEntry<ActionX>()
-                //.AddTransition<SomeEvent>("state2", b => b
-                //    .AddGuard<X.Guard>()
-                //    .AddEffect<ActionX>()
-                //)
                 .AddTransition<Startup>("state3")
                 .AddInternalTransition<ExampleRequest>(b => b
                     .AddEffect(async c =>
                     {
                         c.Event.Respond(new ExampleResponse() { ResponseData = "Example response data" });
                     })
-                    .AddGuard(c => throw new Exception("test"))
                 )
+                .AddDefaultTransition<Fork>()
             )
             .AddState("state2", b => b
                 .AddOnEntry(async c =>
@@ -71,8 +120,43 @@ builder.Services.AddStateflows(b => b
             .AddState("state3", b => b
                 .AddTransition<SomeEvent>("state1")
                 .AddTransition<OtherEvent, FinalState>()
+                .AddDefaultTransition<Fork>()
+            )
+            .AddFork(b => b
+                .AddTransition("reg1")
+                .AddTransition("reg2")
+                .AddTransition("reg3")
+            )
+            .AddOrthogonalState("orthy", b => b
+                .AddRegion(b => b
+                    .AddInitialState("reg1", b => b
+                        .AddDefaultTransition<Join>()
+                    )
+                )
+                .AddRegion(b => b
+                    .AddState("reg2", b => b
+                        .AddDefaultTransition<Join>()
+                    )
+                )
+                .AddRegion(b => b
+                    .AddState("reg3", b => b
+                        .AddDefaultTransition("reg3_final")
+                    )
+                    .AddFinalState("reg3_final")
+                )
+            )
+            .AddJoin(b => b
+                .AddTransition<FinalState>()
             )
             .AddFinalState()
+        )
+
+        .AddStateMachine("startupInternal", b => b
+            .AddInitialState("state1", b => b
+                .AddInternalTransition<Startup>(b => b
+                    .AddEffect(async c => Console.WriteLine("startup!"))
+                )
+            )
         )
     )
     .SetEnvironment(
@@ -104,9 +188,9 @@ if (!app.Environment.IsDevelopment())
 app.UseHttpsRedirection();
 
 app.UseStaticFiles();
-
+app.UseStateflowsConsole();
 app.UseRouting();
-
+app.UseCors();
 app.MapBlazorHub();
 app.MapFallbackToPage("/_Host");
 

@@ -25,21 +25,25 @@ namespace Stateflows.StateMachines.Context.Classes
             Values = new ContextValuesCollection(Context.GlobalValues);
         }
 
-        public IStateMachineInspection Inspection => Context.Executor.Inspector.Inspection;
+        public async Task<IStateMachineInspection> GetInspectionAsync()
+            => (await Context.Executor.GetInspectorAsync()).Inspection;
 
         public IContextValues Values { get; }
 
-        public void Send<TEvent>(TEvent @event, IEnumerable<EventHeader> headers = null)
+        private IReadOnlyTree<IStateContext> currentState;
+        public IReadOnlyTree<IStateContext> CurrentState
+            => currentState ??= Context.Executor.VerticesTree.Translate<IStateContext>(vertex => new StateContext(Context.Executor.Graph.AllVertices.GetValueOrDefault(vertex.Identifier), Context));
 
+        public void Send<TEvent>(TEvent @event, IEnumerable<EventHeader> headers = null)
             => _ = Context.SendAsync(@event, headers);
 
-        public void Publish<TNotificationEvent>(TNotificationEvent notification, IEnumerable<EventHeader> headers = null)
-            => _ = Subscriber.PublishAsync(Id, notification, headers);
+        public void Publish<TNotification>(TNotification notification, IEnumerable<EventHeader> headers = null, int timeToLiveInSeconds = 60)
+            => _ = Subscriber.PublishAsync(Id, notification, headers, timeToLiveInSeconds);
 
-        public Task<SendResult> SubscribeAsync<TNotificationEvent>(BehaviorId behaviorId)
-            => Subscriber.SubscribeAsync<TNotificationEvent>(behaviorId);
+        public Task<SendResult> SubscribeAsync<TNotification>(BehaviorId behaviorId)
+            => Subscriber.SubscribeAsync<TNotification>(behaviorId);
 
-        public Task<SendResult> UnsubscribeAsync<TNotificationEvent>(BehaviorId behaviorId)
-            => Subscriber.UnsubscribeAsync<TNotificationEvent>(behaviorId);
+        public Task<SendResult> UnsubscribeAsync<TNotification>(BehaviorId behaviorId)
+            => Subscriber.UnsubscribeAsync<TNotification>(behaviorId);
     }
 }

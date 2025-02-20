@@ -11,18 +11,18 @@ namespace Stateflows.StateMachines.Engine
 {
     internal class Provider : IBehaviorProvider
     {
-        public StateMachinesRegister Register { get; private set; }
+        private readonly StateMachinesRegister Register;
 
-        public StateflowsEngine Engine { get; private set; }
+        private readonly StateflowsService Service;
 
-        public IServiceProvider ServiceProvider { get; private set; }
+        private readonly IServiceProvider ServiceProvider;
 
         public bool IsLocal => true;
 
-        public Provider(StateMachinesRegister register, StateflowsEngine engine, IServiceProvider serviceProvider)
+        public Provider(StateMachinesRegister register, StateflowsService service, IServiceProvider serviceProvider)
         {
             Register = register;
-            Engine = engine;
+            Service = service;
             ServiceProvider = serviceProvider;
         }
 
@@ -31,7 +31,7 @@ namespace Stateflows.StateMachines.Engine
         public bool TryProvideBehavior(BehaviorId id, out IBehavior behavior)
         {
             behavior = id.Type == Constants.StateMachine && Register.StateMachines.ContainsKey($"{id.Name}.current")
-                ? new Behavior(Engine, ServiceProvider, id)
+                ? new Behavior(Service, ServiceProvider, id)
                 : null;
 
             return behavior != null;

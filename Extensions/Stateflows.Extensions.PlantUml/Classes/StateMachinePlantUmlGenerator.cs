@@ -32,24 +32,64 @@ namespace Stateflows.Extensions.PlantUml.Classes
                 return;
             }
 
-            if (state.Active)
+            if (state.IsChoice)
             {
-                builder.AppendLine($"{indent}state {stateName} #line.bold {{");
-                builder.AppendLine($"{indent}  skinparam {stateName} {{");
-                builder.AppendLine($"{indent}    FontStyle bold");
-                builder.AppendLine($"{indent}  }}");
+                builder.AppendLine($"{indent}state {stateName} <<choice>>");
+            }
+            else
+            if (state.IsJunction)
+            {
+                builder.AppendLine($"{indent}state \" \" as {stateName}_invisibleState #white;line:white {{");
+                builder.AppendLine($"{indent}    state \" \" as {stateName} <<entryPoint>>");
+                builder.AppendLine($"{indent}}}");
+            }
+            else
+            if (state.IsFork)
+            {
+                builder.AppendLine($"{indent}state {stateName} <<fork>>");
+            }
+            else
+            if (state.IsJoin)
+            {
+                builder.AppendLine($"{indent}state {stateName} <<join>>");
             }
             else
             {
-                builder.AppendLine($"{indent}state {stateName} {{");
+                if (state.Active)
+                {
+                    builder.AppendLine($"{indent}state {stateName} #line.bold {{");
+                    builder.AppendLine($"{indent}  skinparam {stateName} {{");
+                    builder.AppendLine($"{indent}    FontStyle bold");
+                    builder.AppendLine($"{indent}  }}");
+                }
+                else
+                {
+                    builder.AppendLine($"{indent}state {stateName} {{");
+                }
             }
 
-            if (state.States.Any())
+            if (state.Regions.Count() == 1)
             {
-                GetPlantUml(indentCount + 2, state.States, builder);
+                GetPlantUml(indentCount + 2, state.Regions.First().States, builder);
             }
 
-            builder.AppendLine($"{indent}}}");
+            if (state.Regions.Count() > 1)
+            {
+                var i = 1;
+                foreach (var region in state.Regions)
+                {
+                    builder.AppendLine($"{indent}  state Region{i} #white ##[dashed]black {{");
+                    GetPlantUml(indentCount + 4, region.States, builder);
+                    builder.AppendLine($"{indent}  }}");
+
+                    i++;
+                }
+            }
+
+            if (!state.IsJoin && !state.IsFork && !state.IsChoice && !state.IsJunction)
+            {
+                builder.AppendLine($"{indent}}}");
+            }
 
             foreach (var action in state.Actions)
             {
@@ -85,11 +125,11 @@ namespace Stateflows.Extensions.PlantUml.Classes
 
                         if (trigger == Constants.CompletionEvent)
                         {
-                            builder.AppendLine($"{indent}{stateName} --> {target}");
+                            builder.AppendLine($"{indent}{stateName} --> {target} {(transition.IsElse ? ": [else]" : "")}");
                         }
                         else
                         {
-                            builder.AppendLine($"{indent}{stateName} --> {target} : {trigger}");
+                            builder.AppendLine($"{indent}{stateName} --> {target} : {trigger} {(transition.IsElse ? "[else]" : "")}");
                         }
                     }
                 }

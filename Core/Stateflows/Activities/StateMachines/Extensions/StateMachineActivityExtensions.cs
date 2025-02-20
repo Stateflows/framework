@@ -2,11 +2,9 @@
 using System.Linq;
 using System.Diagnostics;
 using System.Threading.Tasks;
-using Stateflows.Utils;
 using Stateflows.Common;
 using Stateflows.Common.Classes;
 using Stateflows.Common.Utilities;
-using Stateflows.Activities.Events;
 using Stateflows.Activities.Extensions;
 using Stateflows.Activities.StateMachines.Interfaces;
 using Stateflows.StateMachines.Exceptions;
@@ -22,7 +20,7 @@ namespace Stateflows.Activities
         {
             if (context.TryLocateActivity(activityName, $"{context.StateMachine.Id.Instance}.{context.CurrentState.Name}.{actionName}.{Guid.NewGuid()}", out var a))
             {
-                Task.Run(async () =>
+                _ = Task.Run(async () =>
                 {
                     var integratedActivityBuilder = new StateActionActivityBuilder(buildAction);
                     EventHolder initializationEvent = (integratedActivityBuilder.InitializationBuilder != null)
@@ -33,12 +31,12 @@ namespace Stateflows.Activities
                     request.Events.AddRange(new EventHolder[]
                     {
                         integratedActivityBuilder.GetSubscribe(context.StateMachine.Id).ToEventHolder(),
-                        new SetGlobalValues() { Values = (context.StateMachine.Values as ContextValuesCollection).Values }.ToEventHolder(),
+                        new SetGlobalValues() { Values = ((ContextValuesCollection)context.StateMachine.Values).Values }.ToEventHolder(),
                         initializationEvent,
                         integratedActivityBuilder.GetUnsubscribe(context.StateMachine.Id).ToEventHolder()
                     });
                         
-                    return a.SendAsync(request);
+                    _ = a.SendAsync(request);
                 });
             }
             else
@@ -51,7 +49,7 @@ namespace Stateflows.Activities
         internal static async Task<bool> RunGuardActivity<TEvent>(ITransitionContext<TEvent> context, string activityName, TransitionActivityBuildAction<TEvent> buildAction)
         {
             var result = false;
-            if (context.TryLocateActivity(activityName, $"{context.StateMachine.Id.Instance}.{context.SourceState.Name}.{Constants.Guard}.{context.EventId}", out var a))
+            if (context.TryLocateActivity(activityName, $"{context.StateMachine.Id.Instance}.{context.Source.Name}.{Constants.Guard}.{context.EventId}", out var a))
             {
                 var ev = StateflowsJsonConverter.Clone(context.Event);
                 await Task.Run(async () =>
@@ -71,12 +69,13 @@ namespace Stateflows.Activities
                         new SetGlobalValues() { Values = (context.StateMachine.Values as ContextValuesCollection).Values }.ToEventHolder(),
                         initializationEvent,
                         tokensInput.ToEventHolder(),
-                        integratedActivityBuilder.GetUnsubscribe(context.StateMachine.Id).ToEventHolder()
+                        integratedActivityBuilder.GetUnsubscribe(context.StateMachine.Id).ToEventHolder(),
+                        new TokensOutputRequest<bool>().ToEventHolder()
                     });
 
-                    await a.WatchOutputAsync<bool>(output => result = output.First());
-
-                    await a.RequestAsync(request);
+                    var requestResult = await a.RequestAsync(request);
+                    var responseHolder = requestResult.Response.Results.Last().Response as EventHolder<TokensOutput<bool>>;
+                    result = responseHolder?.Payload?.GetAll()?.FirstOrDefault() ?? false;
                 });
             }
             else
@@ -90,10 +89,10 @@ namespace Stateflows.Activities
         [DebuggerHidden]
         internal static Task RunEffectActivity<TEvent>(ITransitionContext<TEvent> context, string activityName, TransitionActivityBuildAction<TEvent> buildAction)
         {
-            if (context.TryLocateActivity(activityName, $"{context.StateMachine.Id.Instance}.{context.SourceState.Name}.{Event<TEvent>.Name}.{Constants.Effect}.{context.EventId}", out var a))
+            if (context.TryLocateActivity(activityName, $"{context.StateMachine.Id.Instance}.{context.Source.Name}.{Event<TEvent>.Name}.{Constants.Effect}.{context.EventId}", out var a))
             {
                 var ev = StateflowsJsonConverter.Clone(context.Event);
-                Task.Run(async () =>
+                _ = Task.Run(async () =>
                 {
                     var integratedActivityBuilder = new TransitionActivityBuilder<TEvent>(buildAction);
                     EventHolder initializationEvent = (integratedActivityBuilder.InitializationBuilder != null)
@@ -107,13 +106,13 @@ namespace Stateflows.Activities
                     request.Events.AddRange(new EventHolder[]
                     {
                         integratedActivityBuilder.GetSubscribe(context.StateMachine.Id).ToEventHolder(),
-                        new SetGlobalValues() { Values = (context.StateMachine.Values as ContextValuesCollection).Values }.ToEventHolder(),
+                        new SetGlobalValues() { Values = ((ContextValuesCollection)context.StateMachine.Values).Values }.ToEventHolder(),
                         initializationEvent,
                         tokensInput.ToEventHolder(),
                         integratedActivityBuilder.GetUnsubscribe(context.StateMachine.Id).ToEventHolder()
                     });
 
-                    return a.SendAsync(request);
+                    _ = a.SendAsync(request);
                 });
             }
             else

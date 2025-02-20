@@ -3,7 +3,6 @@ using System.Diagnostics;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using Stateflows.Common.Registration;
-using Stateflows.StateMachines.Events;
 using Stateflows.StateMachines.Models;
 using Stateflows.StateMachines.Exceptions;
 using Stateflows.StateMachines.Context.Interfaces;
@@ -16,29 +15,32 @@ namespace Stateflows.StateMachines.Registration.Builders
     internal class CompositeStateBuilder : 
         ICompositeStateBuilder,
         IOverridenCompositeStateBuilder,
+        IOverridenRegionalizedCompositeStateBuilder,
         IFinalizedCompositeStateBuilder,
         IFinalizedOverridenCompositeStateBuilder,
         IInitializedCompositeStateBuilder,
-        IJunctionBuilder,
-        IOverridenJunctionBuilder,
-        IChoiceBuilder,
-        IOverridenChoiceBuilder,
         IInternal,
+        IVertexBuilder,
+        IGraphBuilder,
         IBehaviorBuilder
     {
-        public Vertex Vertex { get; }
+        public Region Region { get; }
+
+        public Vertex Vertex => Region.ParentVertex;
+        
+        public Graph Graph => Vertex.Graph;
 
         public IServiceCollection Services { get; }
 
-        BehaviorClass IBehaviorBuilder.BehaviorClass => new BehaviorClass(Constants.StateMachine, Vertex.Graph.Name);
+        BehaviorClass IBehaviorBuilder.BehaviorClass => new BehaviorClass(Constants.StateMachine, Region.Graph.Name);
 
-        int IBehaviorBuilder.BehaviorVersion => Vertex.Graph.Version;
+        int IBehaviorBuilder.BehaviorVersion => Region.Graph.Version;
 
-        public CompositeStateBuilder(Vertex vertex, IServiceCollection services)
+        public CompositeStateBuilder(Region region, IServiceCollection services)
         {
-            Vertex = vertex;
+            Region = region;
             Services = services;
-            Builder = new StateBuilder(Vertex, Services);
+            Builder = new StateBuilder(Region.ParentVertex, Services);
         }
 
         private StateBuilder Builder { get; set; }
@@ -48,35 +50,35 @@ namespace Stateflows.StateMachines.Registration.Builders
         {
             if (string.IsNullOrEmpty(stateName))
             {
-                throw new StateDefinitionException(stateName, $"State name cannot be empty", Vertex.Graph.Class);
+                throw new StateDefinitionException(stateName, $"State name cannot be empty", Region.Graph.Class);
             }
 
-            if (Vertex.Vertices.ContainsKey(stateName))
+            if (Region.Vertices.ContainsKey(stateName))
             {
-                throw new StateDefinitionException(stateName, $"State '{stateName}' is already registered", Vertex.Graph.Class);
+                throw new StateDefinitionException(stateName, $"State '{stateName}' is already registered", Region.Graph.Class);
             }
 
             var vertex = new Vertex()
             {
                 Name = stateName,
                 Type = type,
-                Parent = Vertex,
-                Graph = Vertex.Graph,
+                ParentRegion = Region,
+                Graph = Region.Graph,
             };
 
             vertexBuildAction?.Invoke(vertex);
 
-            Vertex.Vertices.Add(vertex.Name, vertex);
-            Vertex.Graph.AllVertices.Add(vertex.Identifier, vertex);
+            Region.Vertices.Add(vertex.Name, vertex);
+            Region.Graph.AllVertices.Add(vertex.Identifier, vertex);
 
             return this;
         }
 
         #region Events
         [DebuggerHidden]
-        public IInitializedCompositeStateBuilder AddOnEntry(Func<IStateActionContext, Task> actionAsync)
+        public IInitializedCompositeStateBuilder AddOnEntry(params Func<IStateActionContext, Task>[] actionsAsync)
         {
-            Builder.AddOnEntry(actionAsync);
+            Builder.AddOnEntry(actionsAsync);
             return this;
         }
 
@@ -112,9 +114,9 @@ namespace Stateflows.StateMachines.Registration.Builders
         
         [DebuggerHidden]
 
-        public IInitializedCompositeStateBuilder AddOnExit(Func<IStateActionContext, Task> actionAsync)
+        public IInitializedCompositeStateBuilder AddOnExit(params Func<IStateActionContext, Task>[] actionsAsync)
         {
-            Builder.AddOnExit(actionAsync);
+            Builder.AddOnExit(actionsAsync);
             return this;
         }
         #endregion
@@ -232,6 +234,11 @@ namespace Stateflows.StateMachines.Registration.Builders
         IOverridenCompositeStateBuilder IStateMachine<IOverridenCompositeStateBuilder>.AddCompositeState(string compositeStateName,
             CompositeStateBuildAction compositeStateBuildAction)
             => AddCompositeState(compositeStateName, compositeStateBuildAction) as IOverridenCompositeStateBuilder;
+        [DebuggerHidden]
+
+        IOverridenCompositeStateBuilder IStateMachine<IOverridenCompositeStateBuilder>.AddOrthogonalState(string orthogonalStateName,
+            OrthogonalStateBuildAction orthogonalStateBuildAction)
+            => AddOrthogonalState(orthogonalStateName, orthogonalStateBuildAction) as IOverridenCompositeStateBuilder;
 
         [DebuggerHidden]
         IOverridenCompositeStateBuilder IStateMachine<IOverridenCompositeStateBuilder>.AddJunction(string junctionName, JunctionBuildAction junctionBuildAction)
@@ -241,17 +248,30 @@ namespace Stateflows.StateMachines.Registration.Builders
         IOverridenCompositeStateBuilder IStateMachine<IOverridenCompositeStateBuilder>.AddChoice(string choiceName, ChoiceBuildAction choiceBuildAction)
             => AddChoice(choiceName, choiceBuildAction) as IOverridenCompositeStateBuilder;
 
+        IOverridenRegionalizedCompositeStateBuilder IStateMachine<IOverridenRegionalizedCompositeStateBuilder>.AddFork(
+            string forkName, ForkBuildAction forkBuildAction)
+            => AddFork(forkName, forkBuildAction) as IOverridenRegionalizedCompositeStateBuilder;
+
+        IOverridenRegionalizedCompositeStateBuilder IStateMachine<IOverridenRegionalizedCompositeStateBuilder>.AddJoin(string joinName, JoinBuildAction joinBuildAction)
+            => AddJoin(joinName, joinBuildAction) as IOverridenRegionalizedCompositeStateBuilder;
+
+        IOverridenCompositeStateBuilder IStateMachine<IOverridenCompositeStateBuilder>.AddFork(string forkName,
+            ForkBuildAction forkBuildAction)
+            => AddFork(forkName, forkBuildAction) as IOverridenCompositeStateBuilder;
+
+        IOverridenCompositeStateBuilder IStateMachine<IOverridenCompositeStateBuilder>.AddJoin(string joinName, JoinBuildAction joinBuildAction)
+            => AddJoin(joinName, joinBuildAction) as IOverridenCompositeStateBuilder;
+
+        public IInitializedCompositeStateBuilder AddFork(string forkName, ForkBuildAction forkBuildAction)
+            => AddVertex(forkName, VertexType.Fork, vertex => forkBuildAction?.Invoke(new StateBuilder(vertex, Services)));
+
+        public IInitializedCompositeStateBuilder AddJoin(string joinName, JoinBuildAction joinBuildAction)
+            => AddVertex(joinName, VertexType.Join, vertex => joinBuildAction?.Invoke(new StateBuilder(vertex, Services)));
         #endregion
 
-        #region AddFinalState
         [DebuggerHidden]
         public IFinalizedCompositeStateBuilder AddFinalState(string finalStateName = FinalState.Name)
             => AddVertex(finalStateName, VertexType.FinalState) as IFinalizedCompositeStateBuilder;
-
-        [DebuggerHidden]
-        IFinalizedCompositeStateBuilder IStateMachineFinal<IFinalizedCompositeStateBuilder>.AddFinalState(string finalStateName)
-            => AddVertex(finalStateName, VertexType.FinalState) as IFinalizedCompositeStateBuilder;
-        #endregion
 
         #region AddCompositeState
         [DebuggerHidden]
@@ -260,30 +280,39 @@ namespace Stateflows.StateMachines.Registration.Builders
 
         [DebuggerHidden]
         public IInitializedCompositeStateBuilder AddCompositeState(string compositeStateName, CompositeStateBuildAction compositeStateBuildAction)
-            => AddVertex(compositeStateName, VertexType.CompositeState, vertex => compositeStateBuildAction?.Invoke(new CompositeStateBuilder(vertex, Services)));
+            => AddVertex(compositeStateName, VertexType.CompositeState, vertex => compositeStateBuildAction?.Invoke(new CompositeStateBuilder(vertex.DefaultRegion, Services)));
+
+        public IInitializedCompositeStateBuilder AddOrthogonalState(string orthogonalStateName, OrthogonalStateBuildAction orthogonalStateBuildAction)
+            => AddVertex(orthogonalStateName, VertexType.OrthogonalState, vertex => orthogonalStateBuildAction?.Invoke(new OrthogonalStateBuilder(vertex, Services)));
 
         [DebuggerHidden]
         public IInitializedCompositeStateBuilder AddInitialState(string stateName, StateBuildAction stateBuildAction = null)
         {
-            Vertex.InitialVertexName = stateName;
+            Region.InitialVertexName = stateName;
             return AddVertex(stateName, VertexType.InitialState, vertex => stateBuildAction?.Invoke(new StateBuilder(vertex, Services)));
         }
 
         [DebuggerHidden]
         public IInitializedCompositeStateBuilder AddInitialCompositeState(string stateName, CompositeStateBuildAction compositeStateBuildAction)
         {
-            Vertex.InitialVertexName = stateName;
-            return AddVertex(stateName, VertexType.InitialCompositeState, vertex => compositeStateBuildAction?.Invoke(new CompositeStateBuilder(vertex, Services)));
+            Region.InitialVertexName = stateName;
+            return AddVertex(stateName, VertexType.InitialCompositeState, vertex => compositeStateBuildAction?.Invoke(new CompositeStateBuilder(vertex.DefaultRegion, Services)));
+        }
+
+        public IInitializedCompositeStateBuilder AddInitialOrthogonalState(string orthogonalStateName, OrthogonalStateBuildAction orthogonalStateBuildAction)
+        {
+            Region.InitialVertexName = orthogonalStateName;
+            return AddVertex(orthogonalStateName, VertexType.InitialCompositeState, vertex => orthogonalStateBuildAction?.Invoke(new OrthogonalStateBuilder(vertex, Services)));
         }
         #endregion
 
         [DebuggerHidden]
-        ICompositeStateBuilder IStateEntry<ICompositeStateBuilder>.AddOnEntry(Func<IStateActionContext, Task> actionAsync)
-            => AddOnEntry(actionAsync) as ICompositeStateBuilder;
+        ICompositeStateBuilder IStateEntry<ICompositeStateBuilder>.AddOnEntry(params Func<IStateActionContext, Task>[] actionsAsync)
+            => AddOnEntry(actionsAsync) as ICompositeStateBuilder;
 
         [DebuggerHidden]
-        ICompositeStateBuilder IStateExit<ICompositeStateBuilder>.AddOnExit(Func<IStateActionContext, Task> actionAsync)
-            => AddOnExit(actionAsync) as ICompositeStateBuilder;
+        ICompositeStateBuilder IStateExit<ICompositeStateBuilder>.AddOnExit(params Func<IStateActionContext, Task>[] actionsAsync)
+            => AddOnExit(actionsAsync) as ICompositeStateBuilder;
 
         [DebuggerHidden]
         ICompositeStateBuilder ICompositeStateEvents<ICompositeStateBuilder>.AddOnInitialize(Func<IStateActionContext, Task> actionAsync)
@@ -330,12 +359,12 @@ namespace Stateflows.StateMachines.Registration.Builders
             => AddDeferredEvent<TEvent>() as ICompositeStateBuilder;
 
         [DebuggerHidden]
-        IFinalizedCompositeStateBuilder IStateEntry<IFinalizedCompositeStateBuilder>.AddOnEntry(Func<IStateActionContext, Task> actionAsync)
-            => AddOnEntry(actionAsync) as IFinalizedCompositeStateBuilder;
+        IFinalizedCompositeStateBuilder IStateEntry<IFinalizedCompositeStateBuilder>.AddOnEntry(params Func<IStateActionContext, Task>[] actionsAsync)
+            => AddOnEntry(actionsAsync) as IFinalizedCompositeStateBuilder;
 
         [DebuggerHidden]
-        IFinalizedCompositeStateBuilder IStateExit<IFinalizedCompositeStateBuilder>.AddOnExit(Func<IStateActionContext, Task> actionAsync)
-            => AddOnEntry(actionAsync) as IFinalizedCompositeStateBuilder;
+        IFinalizedCompositeStateBuilder IStateExit<IFinalizedCompositeStateBuilder>.AddOnExit(params Func<IStateActionContext, Task>[] actionsAsync)
+            => AddOnEntry(actionsAsync) as IFinalizedCompositeStateBuilder;
 
         [DebuggerHidden]
         IFinalizedCompositeStateBuilder IStateUtils<IFinalizedCompositeStateBuilder>.AddDeferredEvent<TEvent>()
@@ -382,48 +411,13 @@ namespace Stateflows.StateMachines.Registration.Builders
             => AddVertex(choiceName, VertexType.Choice, vertex => choiceBuildAction?.Invoke(new StateBuilder(vertex, Services)));
 
         [DebuggerHidden]
-        IJunctionBuilder IPseudostateTransitions<IJunctionBuilder>.AddTransition(string targetStateName, DefaultTransitionBuildAction transitionBuildAction)
-            => AddDefaultTransition(targetStateName, transitionBuildAction) as IJunctionBuilder;
-
-        [DebuggerHidden]
-        void IPseudostateTransitions<IOverridenChoiceBuilder>.AddElseTransition(string targetStateName,
-            ElseDefaultTransitionBuildAction transitionBuildAction)
-            => AddElseDefaultTransition(targetStateName, transitionBuildAction);
-
-        [DebuggerHidden]
-        IOverridenChoiceBuilder IPseudostateTransitions<IOverridenChoiceBuilder>.AddTransition(string targetStateName,
-            DefaultTransitionBuildAction transitionBuildAction)
-            => AddDefaultTransition(targetStateName, transitionBuildAction) as IOverridenChoiceBuilder;
-
-        [DebuggerHidden]
-        void IPseudostateTransitions<IOverridenJunctionBuilder>.AddElseTransition(string targetStateName, ElseDefaultTransitionBuildAction transitionBuildAction)
-            => AddElseDefaultTransition(targetStateName, transitionBuildAction);
-        
-        [DebuggerHidden]
-        IOverridenJunctionBuilder IPseudostateTransitions<IOverridenJunctionBuilder>.AddTransition(string targetStateName,
-            DefaultTransitionBuildAction transitionBuildAction)
-            => AddDefaultTransition(targetStateName, transitionBuildAction) as IOverridenJunctionBuilder;
-
-        [DebuggerHidden]
-        void IPseudostateTransitions<IJunctionBuilder>.AddElseTransition(string targetStateName, ElseDefaultTransitionBuildAction transitionBuildAction)
-            => AddElseDefaultTransition(targetStateName, transitionBuildAction);
-
-        [DebuggerHidden]
-        IChoiceBuilder IPseudostateTransitions<IChoiceBuilder>.AddTransition(string targetStateName, DefaultTransitionBuildAction transitionBuildAction)
-            => AddDefaultTransition(targetStateName, transitionBuildAction) as IChoiceBuilder;
-
-        [DebuggerHidden]
-        void IPseudostateTransitions<IChoiceBuilder>.AddElseTransition(string targetStateName, ElseDefaultTransitionBuildAction transitionBuildAction)
-            => AddElseDefaultTransition(targetStateName, transitionBuildAction);
-
-        [DebuggerHidden]
         IOverridenCompositeStateBuilder IStateEntry<IOverridenCompositeStateBuilder>.AddOnEntry(
-            Func<IStateActionContext, Task> actionAsync)
-            => AddOnEntry(actionAsync) as IOverridenCompositeStateBuilder;
+            params Func<IStateActionContext, Task>[] actionsAsync)
+            => AddOnEntry(actionsAsync) as IOverridenCompositeStateBuilder;
 
         [DebuggerHidden]
-        IOverridenCompositeStateBuilder IStateExit<IOverridenCompositeStateBuilder>.AddOnExit(Func<IStateActionContext, Task> actionAsync)
-            => AddOnExit(actionAsync) as IOverridenCompositeStateBuilder;
+        IOverridenCompositeStateBuilder IStateExit<IOverridenCompositeStateBuilder>.AddOnExit(params Func<IStateActionContext, Task>[] actionsAsync)
+            => AddOnExit(actionsAsync) as IOverridenCompositeStateBuilder;
 
         [DebuggerHidden]
         IOverridenCompositeStateBuilder IStateUtils<IOverridenCompositeStateBuilder>.AddDeferredEvent<TEvent>()
@@ -509,7 +503,7 @@ namespace Stateflows.StateMachines.Registration.Builders
         public IOverridenCompositeStateBuilder UseState(string stateName, OverridenStateBuildAction stateBuildAction)
         {
             if (
-                !Vertex.Vertices.TryGetValue(stateName, out var vertex) ||
+                !Region.Vertices.TryGetValue(stateName, out var vertex) ||
                 (
                     vertex.Type != VertexType.State && 
                     vertex.Type != VertexType.InitialState
@@ -517,7 +511,7 @@ namespace Stateflows.StateMachines.Registration.Builders
                 vertex.OriginStateMachineName == null
             )
             {
-                throw new StateMachineOverrideException($"State '{stateName}' not found in overriden composite state '{Vertex.Name}'", Vertex.Graph.Class);
+                throw new StateMachineOverrideException($"State '{stateName}' not found in overriden composite state '{Region.ParentVertex.Name}'", Region.Graph.Class);
             }
             
             stateBuildAction?.Invoke(new StateBuilder(vertex, Services));
@@ -529,7 +523,7 @@ namespace Stateflows.StateMachines.Registration.Builders
             OverridenCompositeStateBuildAction compositeStateBuildAction)
         {
             if (
-                !Vertex.Vertices.TryGetValue(compositeStateName, out var vertex) ||
+                !Region.Vertices.TryGetValue(compositeStateName, out var vertex) ||
                 (
                     vertex.Type != VertexType.CompositeState &&
                     vertex.Type != VertexType.InitialCompositeState
@@ -537,19 +531,39 @@ namespace Stateflows.StateMachines.Registration.Builders
                 vertex.OriginStateMachineName == null
             )
             {
-                throw new StateMachineOverrideException($"Composite state '{compositeStateName}' not found in overriden composite state '{Vertex.Name}'", Vertex.Graph.Class);
+                throw new StateMachineOverrideException($"Composite state '{compositeStateName}' not found in overriden composite state '{Region.ParentVertex.Name}'", Region.Graph.Class);
             }
-            
-            compositeStateBuildAction?.Invoke(new CompositeStateBuilder(vertex, Services));
+
+            compositeStateBuildAction?.Invoke(new CompositeStateBuilder(vertex.DefaultRegion, Services));
+
+            return this;
+        }
+
+        public IOverridenCompositeStateBuilder UseOrthogonalState(string orthogonalStateName,
+            OverridenOrthogonalStateBuildAction orthogonalStateBuildAction)
+        {
+            if (
+                !Region.Vertices.TryGetValue(orthogonalStateName, out var vertex) ||
+                (
+                    vertex.Type != VertexType.CompositeState &&
+                    vertex.Type != VertexType.InitialCompositeState
+                ) ||
+                vertex.OriginStateMachineName == null
+            )
+            {
+                throw new StateMachineOverrideException($"Orthogonal state '{orthogonalStateName}' not found in overriden composite state '{Region.ParentVertex.Name}'", Region.Graph.Class);
+            }
+
+            orthogonalStateBuildAction?.Invoke(new OrthogonalStateBuilder(vertex, Services));
 
             return this;
         }
 
         public IOverridenCompositeStateBuilder UseJunction(string junctionName, OverridenJunctionBuildAction junctionBuildAction)
         {
-            if (!Vertex.Vertices.TryGetValue(junctionName, out var vertex) || vertex.Type != VertexType.Junction || vertex.OriginStateMachineName == null)
+            if (!Region.Vertices.TryGetValue(junctionName, out var vertex) || vertex.Type != VertexType.Junction || vertex.OriginStateMachineName == null)
             {
-                throw new StateMachineOverrideException($"Junction '{junctionName}' not found in overriden composite state '{Vertex.Name}'", Vertex.Graph.Class);
+                throw new StateMachineOverrideException($"Junction '{junctionName}' not found in overriden composite state '{Region.ParentVertex.Name}'", Region.Graph.Class);
             }
             
             junctionBuildAction?.Invoke(new StateBuilder(vertex, Services));
@@ -559,9 +573,9 @@ namespace Stateflows.StateMachines.Registration.Builders
 
         public IOverridenCompositeStateBuilder UseChoice(string choiceName, OverridenChoiceBuildAction choiceBuildAction)
         {
-            if (!Vertex.Vertices.TryGetValue(choiceName, out var vertex) || vertex.Type != VertexType.Choice || vertex.OriginStateMachineName == null)
+            if (!Region.Vertices.TryGetValue(choiceName, out var vertex) || vertex.Type != VertexType.Choice || vertex.OriginStateMachineName == null)
             {
-                throw new StateMachineOverrideException($"Choice '{choiceName}' not found in overriden composite state '{Vertex.Name}'", Vertex.Graph.Class);
+                throw new StateMachineOverrideException($"Choice '{choiceName}' not found in overriden composite state '{Region.ParentVertex.Name}'", Region.Graph.Class);
             }
             
             choiceBuildAction?.Invoke(new StateBuilder(vertex, Services));
@@ -569,28 +583,165 @@ namespace Stateflows.StateMachines.Registration.Builders
             return this;
         }
 
+        IFinalizedOverridenCompositeStateBuilder IStateMachineOverrides<IFinalizedOverridenCompositeStateBuilder>.UseFork(string forkName, OverridenForkBuildAction forkBuildAction)
+            => UseFork(forkName, forkBuildAction) as IFinalizedOverridenCompositeStateBuilder;
+
+        IFinalizedOverridenCompositeStateBuilder IStateMachineOverrides<IFinalizedOverridenCompositeStateBuilder>.UseJoin(string joinName, OverridenJoinBuildAction joinBuildAction)
+            => UseJoin(joinName, joinBuildAction) as IFinalizedOverridenCompositeStateBuilder;
+
+        IOverridenRegionalizedCompositeStateBuilder IStateMachineOverrides<IOverridenRegionalizedCompositeStateBuilder>.UseFork(string forkName, OverridenForkBuildAction forkBuildAction)
+            => UseFork(forkName, forkBuildAction) as IOverridenRegionalizedCompositeStateBuilder;
+
+        IOverridenRegionalizedCompositeStateBuilder IStateMachineOverrides<IOverridenRegionalizedCompositeStateBuilder>.UseJoin(string joinName, OverridenJoinBuildAction joinBuildAction)
+            => UseJoin(joinName, joinBuildAction) as IOverridenRegionalizedCompositeStateBuilder;
+
+        public IOverridenCompositeStateBuilder UseFork(string forkName, OverridenForkBuildAction forkBuildAction)
+        {
+            if (!Region.Vertices.TryGetValue(forkName, out var vertex) || vertex.Type != VertexType.Choice || vertex.OriginStateMachineName == null)
+            {
+                throw new StateMachineOverrideException($"Fork '{forkName}' not found in overriden composite state '{Region.ParentVertex.Name}'", Region.Graph.Class);
+            }
+            
+            forkBuildAction?.Invoke(new StateBuilder(vertex, Services));
+
+            return this;
+        }
+
+        public IOverridenCompositeStateBuilder UseJoin(string joinName, OverridenJoinBuildAction joinBuildAction)
+        {
+            if (!Region.Vertices.TryGetValue(joinName, out var vertex) || vertex.Type != VertexType.Choice || vertex.OriginStateMachineName == null)
+            {
+                throw new StateMachineOverrideException($"Join '{joinName}' not found in overriden composite state '{Region.ParentVertex.Name}'", Region.Graph.Class);
+            }
+            
+            joinBuildAction?.Invoke(new StateBuilder(vertex, Services));
+
+            return this;
+        }
+
+        public IOverridenRegionalizedCompositeStateBuilder MakeOrthogonal(OrthogonalStateBuildAction orthogonalStateBuildAction)
+        {
+            Region.ParentVertex.Type = Region.ParentVertex.Type == VertexType.InitialCompositeState
+                ? VertexType.InitialOrthogonalState
+                : VertexType.OrthogonalState;
+
+            orthogonalStateBuildAction?.Invoke(new OrthogonalStateBuilder(Region.ParentVertex, Services));
+
+            return this;
+        }
+
         IFinalizedOverridenCompositeStateBuilder IStateMachineFinal<IFinalizedOverridenCompositeStateBuilder>.AddFinalState(string finalStateName)
             => AddFinalState(finalStateName) as IFinalizedOverridenCompositeStateBuilder;
 
-        IFinalizedOverridenCompositeStateBuilder IStateEntry<IFinalizedOverridenCompositeStateBuilder>.AddOnEntry(Func<IStateActionContext, Task> actionAsync)
-            => AddOnEntry(actionAsync) as IFinalizedOverridenCompositeStateBuilder;
+        IFinalizedOverridenCompositeStateBuilder IStateEntry<IFinalizedOverridenCompositeStateBuilder>.AddOnEntry(params Func<IStateActionContext, Task>[] actionsAsync)
+            => AddOnEntry(actionsAsync) as IFinalizedOverridenCompositeStateBuilder;
 
-        IFinalizedOverridenCompositeStateBuilder IStateExit<IFinalizedOverridenCompositeStateBuilder>.AddOnExit(Func<IStateActionContext, Task> actionAsync)
-            => AddOnExit(actionAsync) as IFinalizedOverridenCompositeStateBuilder;
+        IFinalizedOverridenCompositeStateBuilder IStateExit<IFinalizedOverridenCompositeStateBuilder>.AddOnExit(params Func<IStateActionContext, Task>[] actionsAsync)
+            => AddOnExit(actionsAsync) as IFinalizedOverridenCompositeStateBuilder;
 
         IFinalizedOverridenCompositeStateBuilder IStateUtils<IFinalizedOverridenCompositeStateBuilder>.AddDeferredEvent<TEvent>()
             => AddDeferredEvent<TEvent>() as IFinalizedOverridenCompositeStateBuilder;
 
-        IOverridenJunctionBuilder IPseudostateTransitionsOverrides<IOverridenJunctionBuilder>.UseTransition(string targetStateName, DefaultTransitionBuildAction transitionBuildAction)
-            => UseDefaultTransition(targetStateName, transitionBuildAction) as IOverridenJunctionBuilder;
+        IFinalizedOverridenCompositeStateBuilder IStateMachineOverrides<IFinalizedOverridenCompositeStateBuilder>.UseState(string stateName, OverridenStateBuildAction stateBuildAction)
+            => UseState(stateName, stateBuildAction) as IFinalizedOverridenCompositeStateBuilder;
 
-        void IPseudostateTransitionsOverrides<IOverridenChoiceBuilder>.UseElseTransition(string targetStateName, ElseDefaultTransitionBuildAction transitionBuildAction)
-            => UseElseDefaultTransition(targetStateName, transitionBuildAction);
+        IFinalizedOverridenCompositeStateBuilder IStateMachineOverrides<IFinalizedOverridenCompositeStateBuilder>.UseCompositeState(string compositeStateName, OverridenCompositeStateBuildAction compositeStateBuildAction)
+            => UseCompositeState(compositeStateName, compositeStateBuildAction) as IFinalizedOverridenCompositeStateBuilder;
 
-        IOverridenChoiceBuilder IPseudostateTransitionsOverrides<IOverridenChoiceBuilder>.UseTransition(string targetStateName, DefaultTransitionBuildAction transitionBuildAction)
-            => UseDefaultTransition(targetStateName, transitionBuildAction) as IOverridenChoiceBuilder;
+        IFinalizedOverridenCompositeStateBuilder IStateMachineOverrides<IFinalizedOverridenCompositeStateBuilder>.UseOrthogonalState(string orthogonalStateName, OverridenOrthogonalStateBuildAction orthogonalStateBuildAction)
+            => UseOrthogonalState(orthogonalStateName, orthogonalStateBuildAction) as IFinalizedOverridenCompositeStateBuilder;
 
-        void IPseudostateTransitionsOverrides<IOverridenJunctionBuilder>.UseElseTransition(string targetStateName, ElseDefaultTransitionBuildAction transitionBuildAction)
-            => UseElseDefaultTransition(targetStateName, transitionBuildAction);
+        IFinalizedOverridenCompositeStateBuilder IStateMachineOverrides<IFinalizedOverridenCompositeStateBuilder>.UseJunction(string junctionName, OverridenJunctionBuildAction junctionBuildAction)
+            => UseJunction(junctionName, junctionBuildAction) as IFinalizedOverridenCompositeStateBuilder;
+
+        IFinalizedOverridenCompositeStateBuilder IStateMachineOverrides<IFinalizedOverridenCompositeStateBuilder>.UseChoice(string choiceName, OverridenChoiceBuildAction choiceBuildAction)
+            => UseChoice(choiceName, choiceBuildAction) as IFinalizedOverridenCompositeStateBuilder;
+
+        IFinalizedOverridenRegionalizedCompositeStateBuilder IStateOrthogonalization<IFinalizedOverridenRegionalizedCompositeStateBuilder>.MakeOrthogonal(OrthogonalStateBuildAction orthogonalStateBuildAction)
+            => MakeOrthogonal(orthogonalStateBuildAction) as IFinalizedOverridenRegionalizedCompositeStateBuilder;
+
+        IOverridenRegionalizedCompositeStateBuilder IStateEntry<IOverridenRegionalizedCompositeStateBuilder>.AddOnEntry(params Func<IStateActionContext, Task>[] actionsAsync)
+            => AddOnEntry(actionsAsync) as IOverridenRegionalizedCompositeStateBuilder;
+
+        IOverridenRegionalizedCompositeStateBuilder IStateExit<IOverridenRegionalizedCompositeStateBuilder>.AddOnExit(params Func<IStateActionContext, Task>[] actionsAsync)
+            => AddOnExit(actionsAsync) as IOverridenRegionalizedCompositeStateBuilder;
+
+        IOverridenRegionalizedCompositeStateBuilder IStateUtils<IOverridenRegionalizedCompositeStateBuilder>.AddDeferredEvent<TEvent>()
+            => AddDeferredEvent<TEvent>() as IOverridenRegionalizedCompositeStateBuilder;
+
+        IOverridenRegionalizedCompositeStateBuilder ICompositeStateEvents<IOverridenRegionalizedCompositeStateBuilder>.AddOnInitialize(Func<IStateActionContext, Task> actionAsync)
+            => AddOnInitialize(actionAsync) as IOverridenRegionalizedCompositeStateBuilder;
+
+        IOverridenRegionalizedCompositeStateBuilder ICompositeStateEvents<IOverridenRegionalizedCompositeStateBuilder>.AddOnFinalize(Func<IStateActionContext, Task> actionAsync)
+            => AddOnFinalize(actionAsync) as IOverridenRegionalizedCompositeStateBuilder;
+
+        IOverridenRegionalizedCompositeStateBuilder IStateTransitions<IOverridenRegionalizedCompositeStateBuilder>.AddTransition<TEvent>(string targetStateName, TransitionBuildAction<TEvent> transitionBuildAction)
+            => AddTransition<TEvent>(targetStateName, transitionBuildAction) as IOverridenRegionalizedCompositeStateBuilder;
+
+        IOverridenRegionalizedCompositeStateBuilder IStateTransitions<IOverridenRegionalizedCompositeStateBuilder>.AddDefaultTransition(string targetStateName, DefaultTransitionBuildAction transitionBuildAction)
+            => AddDefaultTransition(targetStateName, transitionBuildAction) as IOverridenRegionalizedCompositeStateBuilder;
+
+        IOverridenRegionalizedCompositeStateBuilder IStateTransitions<IOverridenRegionalizedCompositeStateBuilder>.AddInternalTransition<TEvent>(InternalTransitionBuildAction<TEvent> transitionBuildAction)
+            => AddInternalTransition<TEvent>(transitionBuildAction) as IOverridenRegionalizedCompositeStateBuilder;
+
+        IOverridenRegionalizedCompositeStateBuilder IStateTransitions<IOverridenRegionalizedCompositeStateBuilder>.AddElseTransition<TEvent>(string targetStateName, ElseTransitionBuildAction<TEvent> transitionBuildAction)
+            => AddElseTransition<TEvent>(targetStateName, transitionBuildAction) as IOverridenRegionalizedCompositeStateBuilder;
+
+        IOverridenRegionalizedCompositeStateBuilder IStateTransitions<IOverridenRegionalizedCompositeStateBuilder>.AddElseDefaultTransition(string targetStateName, ElseDefaultTransitionBuildAction transitionBuildAction)
+            => AddElseDefaultTransition(targetStateName, transitionBuildAction) as IOverridenRegionalizedCompositeStateBuilder;
+
+        IOverridenRegionalizedCompositeStateBuilder IStateTransitions<IOverridenRegionalizedCompositeStateBuilder>.AddElseInternalTransition<TEvent>(ElseInternalTransitionBuildAction<TEvent> transitionBuildAction)
+            => AddElseInternalTransition<TEvent>(transitionBuildAction) as IOverridenRegionalizedCompositeStateBuilder;
+
+        IOverridenRegionalizedCompositeStateBuilder IStateTransitionsOverrides<IOverridenRegionalizedCompositeStateBuilder>.UseTransition<TEvent>(string targetStateName, TransitionBuildAction<TEvent> transitionBuildAction)
+            => UseTransition(targetStateName, transitionBuildAction) as IOverridenRegionalizedCompositeStateBuilder;
+
+        IOverridenRegionalizedCompositeStateBuilder IStateTransitionsOverrides<IOverridenRegionalizedCompositeStateBuilder>.UseDefaultTransition(string targetStateName, DefaultTransitionBuildAction transitionBuildAction)
+            => UseDefaultTransition(targetStateName, transitionBuildAction) as IOverridenRegionalizedCompositeStateBuilder;
+
+        IOverridenRegionalizedCompositeStateBuilder IStateTransitionsOverrides<IOverridenRegionalizedCompositeStateBuilder>.UseInternalTransition<TEvent>(InternalTransitionBuildAction<TEvent> transitionBuildAction)
+            => UseInternalTransition(transitionBuildAction) as IOverridenRegionalizedCompositeStateBuilder;
+
+        IOverridenRegionalizedCompositeStateBuilder IStateTransitionsOverrides<IOverridenRegionalizedCompositeStateBuilder>.UseElseTransition<TEvent>(string targetStateName, ElseTransitionBuildAction<TEvent> transitionBuildAction)
+            => UseElseTransition(targetStateName, transitionBuildAction) as IOverridenRegionalizedCompositeStateBuilder;
+
+        IOverridenRegionalizedCompositeStateBuilder IStateTransitionsOverrides<IOverridenRegionalizedCompositeStateBuilder>.UseElseDefaultTransition(string targetStateName, ElseDefaultTransitionBuildAction transitionBuildAction)
+            => UseElseDefaultTransition(targetStateName, transitionBuildAction) as IOverridenRegionalizedCompositeStateBuilder;
+
+        IOverridenRegionalizedCompositeStateBuilder IStateTransitionsOverrides<IOverridenRegionalizedCompositeStateBuilder>.UseElseInternalTransition<TEvent>(ElseInternalTransitionBuildAction<TEvent> transitionBuildAction)
+            => UseElseInternalTransition(transitionBuildAction) as IOverridenRegionalizedCompositeStateBuilder;
+
+        IOverridenRegionalizedCompositeStateBuilder IStateMachine<IOverridenRegionalizedCompositeStateBuilder>.AddState(string stateName, StateBuildAction stateBuildAction)
+            => AddState(stateName, stateBuildAction) as IOverridenRegionalizedCompositeStateBuilder;
+
+        IOverridenRegionalizedCompositeStateBuilder IStateMachine<IOverridenRegionalizedCompositeStateBuilder>.AddCompositeState(string compositeStateName, CompositeStateBuildAction compositeStateBuildAction)
+            => AddCompositeState(compositeStateName, compositeStateBuildAction) as IOverridenRegionalizedCompositeStateBuilder;
+
+        IOverridenRegionalizedCompositeStateBuilder IStateMachine<IOverridenRegionalizedCompositeStateBuilder>.AddOrthogonalState(string orthogonalStateName, OrthogonalStateBuildAction orthogonalStateBuildAction)
+            => AddOrthogonalState(orthogonalStateName, orthogonalStateBuildAction) as IOverridenRegionalizedCompositeStateBuilder;
+
+        IOverridenRegionalizedCompositeStateBuilder IStateMachine<IOverridenRegionalizedCompositeStateBuilder>.AddJunction(string junctionName, JunctionBuildAction junctionBuildAction)
+            => AddJunction(junctionName, junctionBuildAction) as IOverridenRegionalizedCompositeStateBuilder;
+
+        IOverridenRegionalizedCompositeStateBuilder IStateMachine<IOverridenRegionalizedCompositeStateBuilder>.AddChoice(string choiceName, ChoiceBuildAction choiceBuildAction)
+            => AddChoice(choiceName, choiceBuildAction) as IOverridenRegionalizedCompositeStateBuilder;
+
+        IOverridenRegionalizedCompositeStateBuilder IStateMachineOverrides<IOverridenRegionalizedCompositeStateBuilder>.UseState(string stateName, OverridenStateBuildAction stateBuildAction)
+            => UseState(stateName, stateBuildAction) as IOverridenRegionalizedCompositeStateBuilder;
+
+        IOverridenRegionalizedCompositeStateBuilder IStateMachineOverrides<IOverridenRegionalizedCompositeStateBuilder>.UseCompositeState(string compositeStateName, OverridenCompositeStateBuildAction compositeStateBuildAction)
+            => UseCompositeState(compositeStateName, compositeStateBuildAction) as IOverridenRegionalizedCompositeStateBuilder;
+
+        IOverridenRegionalizedCompositeStateBuilder IStateMachineOverrides<IOverridenRegionalizedCompositeStateBuilder>.UseOrthogonalState(string orthogonalStateName, OverridenOrthogonalStateBuildAction orthogonalStateBuildAction)
+            => UseOrthogonalState(orthogonalStateName, orthogonalStateBuildAction) as IOverridenRegionalizedCompositeStateBuilder;
+
+        IOverridenRegionalizedCompositeStateBuilder IStateMachineOverrides<IOverridenRegionalizedCompositeStateBuilder>.UseJunction(string junctionName, OverridenJunctionBuildAction junctionBuildAction)
+            => UseJunction(junctionName, junctionBuildAction) as IOverridenRegionalizedCompositeStateBuilder;
+
+        IOverridenRegionalizedCompositeStateBuilder IStateMachineOverrides<IOverridenRegionalizedCompositeStateBuilder>.UseChoice(string choiceName, OverridenChoiceBuildAction choiceBuildAction)
+            => UseChoice(choiceName, choiceBuildAction) as IOverridenRegionalizedCompositeStateBuilder;
+
+        IFinalizedOverridenRegionalizedCompositeStateBuilder IStateMachineFinal<IFinalizedOverridenRegionalizedCompositeStateBuilder>.AddFinalState(string finalStateName)
+            => AddFinalState(finalStateName) as IFinalizedOverridenRegionalizedCompositeStateBuilder;
     }
 }

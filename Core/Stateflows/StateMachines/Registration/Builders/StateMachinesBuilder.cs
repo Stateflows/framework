@@ -11,9 +11,9 @@ namespace Stateflows.StateMachines.Registration.Builders
 {
     internal class StateMachinesBuilder : IStateMachinesBuilder
     {
-        private readonly StateMachinesRegister Register;
+        private readonly IStateMachinesRegister Register;
 
-        public StateMachinesBuilder(StateMachinesRegister register)
+        public StateMachinesBuilder(IStateMachinesRegister register)
         {
             Register = register;
         }
@@ -84,7 +84,7 @@ namespace Stateflows.StateMachines.Registration.Builders
         public IStateMachinesBuilder AddInterceptor<TInterceptor>()
             where TInterceptor : class, IStateMachineInterceptor
         {
-            Register.AddGlobalInterceptor<TInterceptor>();
+            Register.AddInterceptor<TInterceptor>();
 
             return this;
         }
@@ -92,7 +92,7 @@ namespace Stateflows.StateMachines.Registration.Builders
         [DebuggerHidden]
         public IStateMachinesBuilder AddInterceptor(StateMachineInterceptorFactory interceptorFactory)
         {
-            Register.AddGlobalInterceptor(interceptorFactory);
+            Register.AddInterceptor(interceptorFactory);
 
             return this;
         }
@@ -101,7 +101,7 @@ namespace Stateflows.StateMachines.Registration.Builders
         public IStateMachinesBuilder AddExceptionHandler<TExceptionHandler>()
             where TExceptionHandler : class, IStateMachineExceptionHandler
         {
-            Register.AddGlobalExceptionHandler<TExceptionHandler>();
+            Register.AddExceptionHandler<TExceptionHandler>();
 
             return this;
         }
@@ -109,7 +109,7 @@ namespace Stateflows.StateMachines.Registration.Builders
         [DebuggerHidden]
         public IStateMachinesBuilder AddExceptionHandler(StateMachineExceptionHandlerFactory exceptionHandlerFactory)
         {
-            Register.AddGlobalExceptionHandler(exceptionHandlerFactory);
+            Register.AddExceptionHandler(exceptionHandlerFactory);
 
             return this;
         }
@@ -118,7 +118,7 @@ namespace Stateflows.StateMachines.Registration.Builders
         public IStateMachinesBuilder AddObserver<TObserver>()
             where TObserver : class, IStateMachineObserver
         {
-            Register.AddGlobalObserver<TObserver>();
+            Register.AddObserver<TObserver>();
 
             return this;
         }
@@ -126,7 +126,7 @@ namespace Stateflows.StateMachines.Registration.Builders
         [DebuggerHidden]
         public IStateMachinesBuilder AddObserver(StateMachineObserverFactory observerFactory)
         {
-            Register.AddGlobalObserver(observerFactory);
+            Register.AddObserver(observerFactory);
 
             return this;
         }

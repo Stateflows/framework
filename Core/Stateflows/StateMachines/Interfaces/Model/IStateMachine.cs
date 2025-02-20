@@ -9,7 +9,7 @@ namespace Stateflows.StateMachines
     }
 
     public static class StateMachine<TStateMachine>
-        where TStateMachine : class, IStateMachine
+        where TStateMachine : IStateMachine
     {
         public static string Name
         {

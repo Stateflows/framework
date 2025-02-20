@@ -1,220 +1,272 @@
 ﻿using System;
-using System.Threading.Tasks;
-using Stateflows.Common.Extensions;
 using Stateflows.StateMachines.Context.Classes;
-using Stateflows.StateMachines.Context.Interfaces;
+using Stateflows.StateMachines.Registration.Builders;
 using Stateflows.StateMachines.Registration.Interfaces.Internal;
 
 namespace Stateflows.StateMachines.Registration.Interfaces.Base
 {
-    public interface IGuard<TEvent, TReturn>
+    public interface IGuard<TEvent, out TReturn> : IBaseGuard<TEvent, TReturn>
     {
-        TReturn AddGuard(Func<ITransitionContext<TEvent>, Task<bool>> guardAsync);
-
-        TReturn AddGuard<TGuard>()
-            where TGuard : class, ITransitionGuard<TEvent>
+        /// <summary>
+        /// Adds a guard expression to the current transition.
+        /// </summary>
+        /// <param name="guardExpression">The guard expression to add.</param>
+        TReturn AddGuardExpression(Func<IGuardBuilder<TEvent>, IGuardBuilder<TEvent>> guardExpression)
         {
-            (this as IInternal).Services.AddServiceType<TGuard>();
+            var builder = new GuardBuilder<TEvent>(this as IInternal, ((IEdgeBuilder)this).Edge);
+            guardExpression.Invoke(builder);
 
-            return AddGuard(c => (c as BaseContext).Context.Executor.GetTransitionGuard<TGuard, TEvent>(c)?.GuardAsync(c.Event));
+            return AddGuard(builder.GetAndGuard());
         }
 
+        /// <summary>
+        /// Adds multiple typed guard handlers to the current transition.
+        /// </summary>
+        /// <typeparam name="TGuard1">The type of the first guard handler.</typeparam>
+        /// <typeparam name="TGuard2">The type of the second guard handler.</typeparam>
         TReturn AddGuards<TGuard1, TGuard2>()
             where TGuard1 : class, ITransitionGuard<TEvent>
             where TGuard2 : class, ITransitionGuard<TEvent>
-            => AddAndGuards<TGuard1, TGuard2>();
+            => AddGuardExpression(b => b
+                .AddGuard<TGuard1>()
+                .AddGuard<TGuard2>()
+            );
 
+        /// <summary>
+        /// Adds multiple typed guard handlers to the current transition using AND logic.
+        /// </summary>
+        /// <typeparam name="TGuard1">The type of the first guard handler.</typeparam>
+        /// <typeparam name="TGuard2">The type of the second guard handler.</typeparam>
+        [Obsolete("AddAndGuards method is obsolete. Use AddGuardExpression instead")]
         TReturn AddAndGuards<TGuard1, TGuard2>()
             where TGuard1 : class, ITransitionGuard<TEvent>
             where TGuard2 : class, ITransitionGuard<TEvent>
-        {
-            (this as IInternal).Services.AddServiceType<TGuard1>();
-            (this as IInternal).Services.AddServiceType<TGuard2>();
-
-            return AddGuard(async c =>
+            => AddGuard(async c =>
             {
-                var executor = (c as BaseContext).Context.Executor;
-                var guard1 = executor.GetTransitionGuard<TGuard1, TEvent>(c);
-                var guard2 = executor.GetTransitionGuard<TGuard2, TEvent>(c);
+                var executor = ((BaseContext)c).Context.Executor;
+                var guard1 = await executor.GetTransitionGuardAsync<TGuard1, TEvent>(c);
+                var guard2 = await executor.GetTransitionGuardAsync<TGuard2, TEvent>(c);
 
                 return await guard1.GuardAsync(c.Event) && await guard2.GuardAsync(c.Event);
             });
-        }
 
+        /// <summary>
+        /// Adds multiple typed guard handlers to the current transition.
+        /// </summary>
+        /// <typeparam name="TGuard1">The type of the first guard handler.</typeparam>
+        /// <typeparam name="TGuard2">The type of the second guard handler.</typeparam>
+        /// <typeparam name="TGuard3">The type of the third guard handler.</typeparam>
         TReturn AddGuards<TGuard1, TGuard2, TGuard3>()
             where TGuard1 : class, ITransitionGuard<TEvent>
             where TGuard2 : class, ITransitionGuard<TEvent>
             where TGuard3 : class, ITransitionGuard<TEvent>
-            => AddAndGuards<TGuard1, TGuard2, TGuard3>();
+            => AddGuardExpression(b => b
+                .AddGuard<TGuard1>()
+                .AddGuard<TGuard2>()
+                .AddGuard<TGuard3>()
+            );
 
+        /// <summary>
+        /// Adds multiple typed guard handlers to the current transition using AND logic.
+        /// </summary>
+        /// <typeparam name="TGuard1">The type of the first guard handler.</typeparam>
+        /// <typeparam name="TGuard2">The type of the second guard handler.</typeparam>
+        /// <typeparam name="TGuard3">The type of the third guard handler.</typeparam>
+        [Obsolete("AddAndGuards method is obsolete. Use AddGuardExpression instead")]
         TReturn AddAndGuards<TGuard1, TGuard2, TGuard3>()
             where TGuard1 : class, ITransitionGuard<TEvent>
             where TGuard2 : class, ITransitionGuard<TEvent>
             where TGuard3 : class, ITransitionGuard<TEvent>
-        {
-            (this as IInternal).Services.AddServiceType<TGuard1>();
-            (this as IInternal).Services.AddServiceType<TGuard2>();
-            (this as IInternal).Services.AddServiceType<TGuard3>();
-
-            return AddGuard(async c =>
+            => AddGuard(async c =>
             {
-                var executor = (c as BaseContext).Context.Executor;
-                var guard1 = executor.GetTransitionGuard<TGuard1, TEvent>(c);
-                var guard2 = executor.GetTransitionGuard<TGuard2, TEvent>(c);
-                var guard3 = executor.GetTransitionGuard<TGuard3, TEvent>(c);
+                var executor = ((BaseContext)c).Context.Executor;
+                var guard1 = await executor.GetTransitionGuardAsync<TGuard1, TEvent>(c);
+                var guard2 = await executor.GetTransitionGuardAsync<TGuard2, TEvent>(c);
+                var guard3 = await executor.GetTransitionGuardAsync<TGuard3, TEvent>(c);
 
                 return await guard1.GuardAsync(c.Event) && await guard2.GuardAsync(c.Event) && await guard3.GuardAsync(c.Event);
             });
-        }
 
+        /// <summary>
+        /// Adds multiple typed guard handlers to the current transition.
+        /// </summary>
+        /// <typeparam name="TGuard1">The type of the first guard handler.</typeparam>
+        /// <typeparam name="TGuard2">The type of the second guard handler.</typeparam>
+        /// <typeparam name="TGuard3">The type of the third guard handler.</typeparam>
+        /// <typeparam name="TGuard4">The type of the fourth guard handler.</typeparam>
         TReturn AddGuards<TGuard1, TGuard2, TGuard3, TGuard4>()
             where TGuard1 : class, ITransitionGuard<TEvent>
             where TGuard2 : class, ITransitionGuard<TEvent>
             where TGuard3 : class, ITransitionGuard<TEvent>
             where TGuard4 : class, ITransitionGuard<TEvent>
-            => AddAndGuards<TGuard1, TGuard2, TGuard3, TGuard4>();
+            => AddGuardExpression(b => b
+                .AddGuard<TGuard1>()
+                .AddGuard<TGuard2>()
+                .AddGuard<TGuard3>()
+                .AddGuard<TGuard4>()
+            );
 
+        /// <summary>
+        /// Adds multiple typed guard handlers to the current transition using AND logic.
+        /// </summary>
+        /// <typeparam name="TGuard1">The type of the first guard handler.</typeparam>
+        /// <typeparam name="TGuard2">The type of the second guard handler.</typeparam>
+        /// <typeparam name="TGuard3">The type of the third guard handler.</typeparam>
+        /// <typeparam name="TGuard4">The type of the fourth guard handler.</typeparam>
+        [Obsolete("AddAndGuards method is obsolete. Use AddGuardExpression instead")]
         TReturn AddAndGuards<TGuard1, TGuard2, TGuard3, TGuard4>()
             where TGuard1 : class, ITransitionGuard<TEvent>
             where TGuard2 : class, ITransitionGuard<TEvent>
             where TGuard3 : class, ITransitionGuard<TEvent>
             where TGuard4 : class, ITransitionGuard<TEvent>
-        {
-            (this as IInternal).Services.AddServiceType<TGuard1>();
-            (this as IInternal).Services.AddServiceType<TGuard2>();
-            (this as IInternal).Services.AddServiceType<TGuard3>();
-            (this as IInternal).Services.AddServiceType<TGuard4>();
-
-            return AddGuard(async c =>
+            => AddGuard(async c =>
             {
-                var executor = (c as BaseContext).Context.Executor;
-                var guard1 = executor.GetTransitionGuard<TGuard1, TEvent>(c);
-                var guard2 = executor.GetTransitionGuard<TGuard2, TEvent>(c);
-                var guard3 = executor.GetTransitionGuard<TGuard3, TEvent>(c);
-                var guard4 = executor.GetTransitionGuard<TGuard4, TEvent>(c);
+                var executor = ((BaseContext)c).Context.Executor;
+                var guard1 = await executor.GetTransitionGuardAsync<TGuard1, TEvent>(c);
+                var guard2 = await executor.GetTransitionGuardAsync<TGuard2, TEvent>(c);
+                var guard3 = await executor.GetTransitionGuardAsync<TGuard3, TEvent>(c);
+                var guard4 = await executor.GetTransitionGuardAsync<TGuard4, TEvent>(c);
 
                 return await guard1.GuardAsync(c.Event) && await guard2.GuardAsync(c.Event) && await guard3.GuardAsync(c.Event) && await guard4.GuardAsync(c.Event);
             });
-        }
 
+        /// <summary>
+        /// Adds multiple typed guard handlers to the current transition.
+        /// </summary>
+        /// <typeparam name="TGuard1">The type of the first guard handler.</typeparam>
+        /// <typeparam name="TGuard2">The type of the second guard handler.</typeparam>
+        /// <typeparam name="TGuard3">The type of the third guard handler.</typeparam>
+        /// <typeparam name="TGuard4">The type of the fourth guard handler.</typeparam>
+        /// <typeparam name="TGuard5">The type of the fifth guard handler.</typeparam>
         TReturn AddGuards<TGuard1, TGuard2, TGuard3, TGuard4, TGuard5>()
             where TGuard1 : class, ITransitionGuard<TEvent>
             where TGuard2 : class, ITransitionGuard<TEvent>
             where TGuard3 : class, ITransitionGuard<TEvent>
             where TGuard4 : class, ITransitionGuard<TEvent>
             where TGuard5 : class, ITransitionGuard<TEvent>
-            => AddAndGuards<TGuard1, TGuard2, TGuard3, TGuard4, TGuard5>();
+            => AddGuardExpression(b => b
+                .AddGuard<TGuard1>()
+                .AddGuard<TGuard2>()
+                .AddGuard<TGuard3>()
+                .AddGuard<TGuard4>()
+                .AddGuard<TGuard5>()
+            );
 
+        /// <summary>
+        /// Adds multiple typed guard handlers to the current transition using AND logic.
+        /// </summary>
+        /// <typeparam name="TGuard1">The type of the first guard handler.</typeparam>
+        /// <typeparam name="TGuard2">The type of the second guard handler.</typeparam>
+        /// <typeparam name="TGuard3">The type of the third guard handler.</typeparam>
+        /// <typeparam name="TGuard4">The type of the fourth guard handler.</typeparam>
+        /// <typeparam name="TGuard5">The type of the fifth guard handler.</typeparam>
+        [Obsolete("AddAndGuards method is obsolete. Use AddGuardExpression instead")]
         TReturn AddAndGuards<TGuard1, TGuard2, TGuard3, TGuard4, TGuard5>()
             where TGuard1 : class, ITransitionGuard<TEvent>
             where TGuard2 : class, ITransitionGuard<TEvent>
             where TGuard3 : class, ITransitionGuard<TEvent>
             where TGuard4 : class, ITransitionGuard<TEvent>
             where TGuard5 : class, ITransitionGuard<TEvent>
-        {
-            (this as IInternal).Services.AddServiceType<TGuard1>();
-            (this as IInternal).Services.AddServiceType<TGuard2>();
-            (this as IInternal).Services.AddServiceType<TGuard3>();
-            (this as IInternal).Services.AddServiceType<TGuard4>();
-            (this as IInternal).Services.AddServiceType<TGuard5>();
-
-            return AddGuard(async c =>
+            => AddGuard(async c =>
             {
-                var executor = (c as BaseContext).Context.Executor;
-                var guard1 = executor.GetTransitionGuard<TGuard1, TEvent>(c);
-                var guard2 = executor.GetTransitionGuard<TGuard2, TEvent>(c);
-                var guard3 = executor.GetTransitionGuard<TGuard3, TEvent>(c);
-                var guard4 = executor.GetTransitionGuard<TGuard4, TEvent>(c);
-                var guard5 = executor.GetTransitionGuard<TGuard5, TEvent>(c);
+                var executor = ((BaseContext)c).Context.Executor;
+                var guard1 = await executor.GetTransitionGuardAsync<TGuard1, TEvent>(c);
+                var guard2 = await executor.GetTransitionGuardAsync<TGuard2, TEvent>(c);
+                var guard3 = await executor.GetTransitionGuardAsync<TGuard3, TEvent>(c);
+                var guard4 = await executor.GetTransitionGuardAsync<TGuard4, TEvent>(c);
+                var guard5 = await executor.GetTransitionGuardAsync<TGuard5, TEvent>(c);
 
                 return await guard1.GuardAsync(c.Event) && await guard2.GuardAsync(c.Event) && await guard3.GuardAsync(c.Event) && await guard4.GuardAsync(c.Event) && await guard5.GuardAsync(c.Event);
             });
-        }
 
+        /// <summary>
+        /// Adds multiple typed guard handlers to the current transition using OR logic.
+        /// </summary>
+        /// <typeparam name="TGuard1">The type of the first guard handler.</typeparam>
+        /// <typeparam name="TGuard2">The type of the second guard handler.</typeparam>
+        [Obsolete("AddOrGuards method is obsolete. Use AddGuardExpression instead")]
         TReturn AddOrGuards<TGuard1, TGuard2>()
             where TGuard1 : class, ITransitionGuard<TEvent>
             where TGuard2 : class, ITransitionGuard<TEvent>
-        {
-            (this as IInternal).Services.AddServiceType<TGuard1>();
-            (this as IInternal).Services.AddServiceType<TGuard2>();
-
-            return AddGuard(async c =>
+            => AddGuard(async c =>
             {
-                var executor = (c as BaseContext).Context.Executor;
-                var guard1 = executor.GetTransitionGuard<TGuard1, TEvent>(c);
-                var guard2 = executor.GetTransitionGuard<TGuard2, TEvent>(c);
+                var executor = ((BaseContext)c).Context.Executor;
+                var guard1 = await executor.GetTransitionGuardAsync<TGuard1, TEvent>(c);
+                var guard2 = await executor.GetTransitionGuardAsync<TGuard2, TEvent>(c);
 
                 return await guard1.GuardAsync(c.Event) || await guard2.GuardAsync(c.Event);
             });
-        }
 
+        /// <summary>
+        /// Adds multiple typed guard handlers to the current transition using OR logic.
+        /// </summary>
+        /// <typeparam name="TGuard1">The type of the first guard handler.</typeparam>
+        /// <typeparam name="TGuard2">The type of the second guard handler.</typeparam>
+        /// <typeparam name="TGuard3">The type of the third guard handler.</typeparam>
+        [Obsolete("AddOrGuards method is obsolete. Use AddGuardExpression instead")]
         TReturn AddOrGuards<TGuard1, TGuard2, TGuard3>()
             where TGuard1 : class, ITransitionGuard<TEvent>
             where TGuard2 : class, ITransitionGuard<TEvent>
             where TGuard3 : class, ITransitionGuard<TEvent>
-        {
-            (this as IInternal).Services.AddServiceType<TGuard1>();
-            (this as IInternal).Services.AddServiceType<TGuard2>();
-            (this as IInternal).Services.AddServiceType<TGuard3>();
-
-            return AddGuard(async c =>
+            => AddGuard(async c =>
             {
-                var executor = (c as BaseContext).Context.Executor;
-                var guard1 = executor.GetTransitionGuard<TGuard1, TEvent>(c);
-                var guard2 = executor.GetTransitionGuard<TGuard2, TEvent>(c);
-                var guard3 = executor.GetTransitionGuard<TGuard3, TEvent>(c);
+                var executor = ((BaseContext)c).Context.Executor;
+                var guard1 = await executor.GetTransitionGuardAsync<TGuard1, TEvent>(c);
+                var guard2 = await executor.GetTransitionGuardAsync<TGuard2, TEvent>(c);
+                var guard3 = await executor.GetTransitionGuardAsync<TGuard3, TEvent>(c);
 
                 return await guard1.GuardAsync(c.Event) || await guard2.GuardAsync(c.Event) || await guard3.GuardAsync(c.Event);
             });
-        }
 
+        /// <summary>
+        /// Adds multiple typed guard handlers to the current transition using OR logic.
+        /// </summary>
+        /// <typeparam name="TGuard1">The type of the first guard handler.</typeparam>
+        /// <typeparam name="TGuard2">The type of the second guard handler.</typeparam>
+        /// <typeparam name="TGuard3">The type of the third guard handler.</typeparam>
+        /// <typeparam name="TGuard4">The type of the fourth guard handler.</typeparam>
+        [Obsolete("AddOrGuards method is obsolete. Use AddGuardExpression instead")]
         TReturn AddOrGuards<TGuard1, TGuard2, TGuard3, TGuard4>()
             where TGuard1 : class, ITransitionGuard<TEvent>
             where TGuard2 : class, ITransitionGuard<TEvent>
             where TGuard3 : class, ITransitionGuard<TEvent>
             where TGuard4 : class, ITransitionGuard<TEvent>
-        {
-            (this as IInternal).Services.AddServiceType<TGuard1>();
-            (this as IInternal).Services.AddServiceType<TGuard2>();
-            (this as IInternal).Services.AddServiceType<TGuard3>();
-            (this as IInternal).Services.AddServiceType<TGuard4>();
-
-            return AddGuard(async c =>
+            => AddGuard(async c =>
             {
-                var executor = (c as BaseContext).Context.Executor;
-                var guard1 = executor.GetTransitionGuard<TGuard1, TEvent>(c);
-                var guard2 = executor.GetTransitionGuard<TGuard2, TEvent>(c);
-                var guard3 = executor.GetTransitionGuard<TGuard3, TEvent>(c);
-                var guard4 = executor.GetTransitionGuard<TGuard4, TEvent>(c);
+                var executor = ((BaseContext)c).Context.Executor;
+                var guard1 = await executor.GetTransitionGuardAsync<TGuard1, TEvent>(c);
+                var guard2 = await executor.GetTransitionGuardAsync<TGuard2, TEvent>(c);
+                var guard3 = await executor.GetTransitionGuardAsync<TGuard3, TEvent>(c);
+                var guard4 = await executor.GetTransitionGuardAsync<TGuard4, TEvent>(c);
 
                 return await guard1.GuardAsync(c.Event) || await guard2.GuardAsync(c.Event) || await guard3.GuardAsync(c.Event) || await guard4.GuardAsync(c.Event);
             });
-        }
 
+        /// <summary>
+        /// Adds multiple typed guard handlers to the current transition using OR logic.
+        /// </summary>
+        /// <typeparam name="TGuard1">The type of the first guard handler.</typeparam>
+        /// <typeparam name="TGuard2">The type of the second guard handler.</typeparam>
+        /// <typeparam name="TGuard3">The type of the third guard handler.</typeparam>
+        /// <typeparam name="TGuard4">The type of the fourth guard handler.</typeparam>
+        /// <typeparam name="TGuard5">The type of the fifth guard handler.</typeparam>
+        [Obsolete("AddOrGuards method is obsolete. Use AddGuardExpression instead")]
         TReturn AddOrGuards<TGuard1, TGuard2, TGuard3, TGuard4, TGuard5>()
             where TGuard1 : class, ITransitionGuard<TEvent>
             where TGuard2 : class, ITransitionGuard<TEvent>
             where TGuard3 : class, ITransitionGuard<TEvent>
             where TGuard4 : class, ITransitionGuard<TEvent>
             where TGuard5 : class, ITransitionGuard<TEvent>
-        {
-            (this as IInternal).Services.AddServiceType<TGuard1>();
-            (this as IInternal).Services.AddServiceType<TGuard2>();
-            (this as IInternal).Services.AddServiceType<TGuard3>();
-            (this as IInternal).Services.AddServiceType<TGuard4>();
-            (this as IInternal).Services.AddServiceType<TGuard5>();
-
-            return AddGuard(async c =>
+            => AddGuard(async c =>
             {
-                var executor = (c as BaseContext).Context.Executor;
-                var guard1 = executor.GetTransitionGuard<TGuard1, TEvent>(c);
-                var guard2 = executor.GetTransitionGuard<TGuard2, TEvent>(c);
-                var guard3 = executor.GetTransitionGuard<TGuard3, TEvent>(c);
-                var guard4 = executor.GetTransitionGuard<TGuard4, TEvent>(c);
-                var guard5 = executor.GetTransitionGuard<TGuard5, TEvent>(c);
+                var executor = ((BaseContext)c).Context.Executor;
+                var guard1 = await executor.GetTransitionGuardAsync<TGuard1, TEvent>(c);
+                var guard2 = await executor.GetTransitionGuardAsync<TGuard2, TEvent>(c);
+                var guard3 = await executor.GetTransitionGuardAsync<TGuard3, TEvent>(c);
+                var guard4 = await executor.GetTransitionGuardAsync<TGuard4, TEvent>(c);
+                var guard5 = await executor.GetTransitionGuardAsync<TGuard5, TEvent>(c);
 
                 return await guard1.GuardAsync(c.Event) || await guard2.GuardAsync(c.Event) || await guard3.GuardAsync(c.Event) || await guard4.GuardAsync(c.Event) || await guard5.GuardAsync(c.Event);
             });
-        }
     }
 }

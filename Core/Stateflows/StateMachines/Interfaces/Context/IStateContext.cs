@@ -8,6 +8,6 @@ namespace Stateflows.StateMachines
 
         IContextValues Values { get; }
 
-        bool TryGetParentState(out IStateContext parentStateContext);
+        bool TryGetParent(out IStateContext parentStateContext);
     }
 }

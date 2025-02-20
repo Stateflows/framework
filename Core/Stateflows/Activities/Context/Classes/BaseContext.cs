@@ -24,7 +24,7 @@ namespace Stateflows.Activities.Context.Classes
 
         public IServiceProvider ServiceProvider
             => NodeScope.ServiceProvider;
-
+        
         public RootContext Context { get; }
 
         public NodeScope NodeScope { get; }

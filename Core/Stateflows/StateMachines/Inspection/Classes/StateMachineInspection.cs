@@ -1,5 +1,6 @@
 ﻿using System.Linq;
 using System.Collections.Generic;
+using Stateflows.Common;
 using Stateflows.StateMachines.Engine;
 using Stateflows.StateMachines.Inspection.Interfaces;
 
@@ -9,41 +10,23 @@ namespace Stateflows.StateMachines.Inspection.Classes
     {
         private Executor Executor { get; }
 
-        public StateMachineInspection(Executor executor)
+        public StateMachineInspection(Executor executor, Inspector inspector)
         {
             Executor = executor;
 
-            Executor.Inspector.InitializeInspection = new ActionInspection(Executor, nameof(Initialize));
-            Initialize = Executor.Inspector.InitializeInspection;
-            Executor.Inspector.FinalizeInspection = new ActionInspection(Executor, nameof(Finalize));
-            Finalize = Executor.Inspector.FinalizeInspection;
+            inspector.InitializeInspection = new ActionInspection(Executor, nameof(Initialize));
+            Initialize = inspector.InitializeInspection;
+            inspector.FinalizeInspection = new ActionInspection(Executor, nameof(Finalize));
+            Finalize = inspector.FinalizeInspection;
+            States = Executor.Graph.Vertices.Values.Select(v => new StateInspection(Executor, inspector, v)).ToArray();
         }
 
         public StateMachineId Id => Executor.Context.Id;
 
-        private IEnumerable<IStateInspection> states;
+        public IEnumerable<IStateInspection> States { get; }
 
-        public IEnumerable<IStateInspection> States
-            => states ??= Executor.Graph.Vertices.Values.Select(v => new StateInspection(Executor, v)).ToArray();
-
-        public IEnumerable<IStateInspection> CurrentStatesStack
-        {
-            get
-            {
-                var result = new List<IStateInspection>();
-                IEnumerable<IStateInspection> statesSet = States;
-                foreach (var vertex in Executor.VerticesStack)
-                {
-                    var state = statesSet.First(s => s.Name == vertex.Name);
-                    if (state != null)
-                    {
-                        result.Add(state);
-                        statesSet = state.States;
-                    }
-                }
-                return result;
-            }
-        }
+        public IReadOnlyTree<IStateInspection> CurrentState
+            => Executor.VerticesTree.Translate(vertex => States.First(s => s.Name == vertex.Name));
 
         public IActionInspection Initialize { get; set; }
 

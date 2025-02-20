@@ -18,8 +18,5 @@ namespace Stateflows.Activities.Registration.Interfaces.Base
 
         TReturn AddExceptionHandler<TExceptionHandler>()
             where TExceptionHandler : class, IActivityExceptionHandler;
-        
-        //TReturn AddExceptionHandler<TException>(ExceptionHandlerDelegateAsync<TException> exceptionHandler)
-        //    where TException : Exception;
     }
 }

@@ -1,22 +1,21 @@
-﻿using Stateflows.Utils;
-using Stateflows.Common;
+﻿using Stateflows.Common;
 using Stateflows.Activities.Extensions;
 
 namespace Stateflows.Activities.StateMachines.Interfaces
 {
     internal class StateActionActivityBuilder :
-        BaseActivityBuilder,
+        BaseEmbeddedBehaviorBuilder,
         IStateActionActivityBuilder,
         IInitializedStateActionActivityBuilder
     {
-        public StateActionActivityInitializationBuilderAsync<EventHolder> InitializationBuilder { get; private set; } = null;
+        public StateActionBehaviorInitializationBuilderAsync<EventHolder> InitializationBuilder { get; private set; } = null;
 
         public StateActionActivityBuilder(StateActionActivityBuildAction buildAction)
         {
             buildAction?.Invoke(this);
         }
 
-        IInitializedStateActionActivityBuilder IStateActionInitialization<IInitializedStateActionActivityBuilder>.InitializeWith<TInitializationEvent>(StateActionActivityInitializationBuilderAsync<TInitializationEvent> builderAsync)
+        IInitializedStateActionActivityBuilder IStateActionInitialization<IInitializedStateActionActivityBuilder>.InitializeWith<TInitializationEvent>(StateActionBehaviorInitializationBuilderAsync<TInitializationEvent> builderAsync)
         {
             if (builderAsync != null)
             {
@@ -26,17 +25,17 @@ namespace Stateflows.Activities.StateMachines.Interfaces
             return this;
         }
 
-        public StateActionActivityBuilder AddSubscription<TNotificationEvent>()
+        public StateActionActivityBuilder AddSubscription<TNotification>()
         {
-            Notifications.Add(typeof(TNotificationEvent));
+            Notifications.Add(typeof(TNotification));
 
             return this;
         }
 
-        IStateActionActivityBuilder IStateSubscription<IStateActionActivityBuilder>.AddSubscription<TNotificationEvent>()
-            => AddSubscription<TNotificationEvent>();
+        IStateActionActivityBuilder IStateSubscription<IStateActionActivityBuilder>.AddSubscription<TNotification>()
+            => AddSubscription<TNotification>();
 
-        IInitializedStateActionActivityBuilder IStateSubscription<IInitializedStateActionActivityBuilder>.AddSubscription<TNotificationEvent>()
-            => AddSubscription<TNotificationEvent>();
+        IInitializedStateActionActivityBuilder IStateSubscription<IInitializedStateActionActivityBuilder>.AddSubscription<TNotification>()
+            => AddSubscription<TNotification>();
     }
 }

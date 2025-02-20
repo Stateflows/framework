@@ -1,5 +1,4 @@
 using Stateflows.Common;
-using Stateflows.StateMachines.Sync;
 using Stateflows.StateMachines.Events;
 using StateMachine.IntegrationTests.Utils;
 
@@ -51,10 +50,10 @@ namespace StateMachine.IntegrationTests.Tests
             }
 
             Assert.AreEqual(BehaviorStatus.Initialized, currentState1?.BehaviorStatus);
-            Assert.AreEqual("state1", currentState1?.StatesStack.FirstOrDefault());
+            Assert.AreEqual("state1", currentState1?.StatesTree.Value);
             Assert.IsTrue(StateEntered);
             Assert.AreEqual(BehaviorStatus.NotInitialized, currentState2?.BehaviorStatus);
-            Assert.AreNotEqual("state1", currentState2?.StatesStack.FirstOrDefault());
+            Assert.AreNotEqual("state1", currentState2?.StatesTree.Value);
             Assert.AreEqual(EventStatus.Consumed, resetResponse);
         }
 
@@ -75,9 +74,9 @@ namespace StateMachine.IntegrationTests.Tests
             }
 
             Assert.AreEqual(BehaviorStatus.NotInitialized, currentState1?.BehaviorStatus);
-            Assert.AreNotEqual("state1", currentState1?.StatesStack.FirstOrDefault());
+            Assert.AreNotEqual("state1", currentState1?.StatesTree.Value);
             Assert.AreEqual(BehaviorStatus.NotInitialized, currentState2?.BehaviorStatus);
-            Assert.AreNotEqual("state1", currentState2?.StatesStack.FirstOrDefault());
+            Assert.AreNotEqual("state1", currentState2?.StatesTree.Value);
             Assert.AreEqual(EventStatus.Rejected, resetStatus);
         }
     }

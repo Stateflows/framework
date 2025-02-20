@@ -8,6 +8,7 @@ import { Request } from "../events/request";
 import { BehaviorInfo } from "../events/behavior-info";
 import { EventHeader } from "../classes/event-header";
 import { Event } from "../events/event";
+// import { IWatcher } from "./watcher";
 
 export interface IBehavior {
     id: BehaviorId;
@@ -20,9 +21,17 @@ export interface IBehavior {
     reset(resetMode?: ResetMode): Promise<SendResult>;
     
     watch<TNotification extends Event>(notificationName: string, handler: NotificationHandler<TNotification>): Promise<void>;
+    requestAndWatch<TRequest extends Request<TNotification>, TNotification extends Event>(request: TRequest, notificationName: string, handler: NotificationHandler<TNotification>): Promise<void>;
     unwatch(notificationName: string): Promise<void>;
+
+    // watch<TNotification extends Event>(notificationName: string, handler: NotificationHandler<TNotification>): Promise<IWatcher>;
+    // requestAndWatch<TRequest extends Request<TNotification>, TNotification extends Event>(request: TRequest, notificationName: string, handler: NotificationHandler<TNotification>): Promise<IWatcher>;
 
     getStatus(): Promise<RequestResult<BehaviorInfo>>;
     watchStatus(handler: NotificationHandler<BehaviorInfo>): Promise<void>;
+    requestAndWatchStatus(handler: NotificationHandler<BehaviorInfo>): Promise<void>;
     unwatchStatus(): Promise<void>;
+
+    // watchStatus(handler: NotificationHandler<BehaviorInfo>): Promise<IWatcher>;
+    // requestAndWatchStatus(handler: NotificationHandler<BehaviorInfo>): Promise<IWatcher>;
 }

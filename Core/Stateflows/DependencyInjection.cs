@@ -26,7 +26,8 @@ namespace Stateflows
                 stateflowsBuilder
                     .ServiceCollection
                     .AddSingleton<StateflowsEngine>()
-                    .AddHostedService(provider => provider.GetService<StateflowsEngine>())
+                    .AddSingleton<StateflowsService>()
+                    .AddHostedService(provider => provider.GetService<StateflowsService>())
                     .AddSingleton<NotificationsHub>()
                     .AddHostedService(provider => provider.GetService<NotificationsHub>())
                     .AddSingleton<INotificationsHub>(provider => provider.GetService<NotificationsHub>())
@@ -108,6 +109,21 @@ namespace Stateflows
         {
             stateflowsBuilder.ServiceCollection.AddScoped(s => clientInterceptorFactory(s));
 
+            return stateflowsBuilder;
+        }
+
+        public static IStateflowsBuilder AddValidator<TValidator>(this IStateflowsBuilder stateflowsBuilder)
+            where TValidator : class, IStateflowsValidator
+        {
+            (stateflowsBuilder as IStateflowsClientBuilder).AddValidator<TValidator>();
+        
+            return stateflowsBuilder;
+        }
+        
+        public static IStateflowsBuilder AddValidator(this IStateflowsBuilder stateflowsBuilder, ValidatorFactory validatorFactory)
+        {
+            (stateflowsBuilder as IStateflowsClientBuilder).AddValidator(validatorFactory);
+        
             return stateflowsBuilder;
         }
     }

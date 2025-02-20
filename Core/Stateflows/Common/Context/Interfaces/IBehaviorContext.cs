@@ -26,9 +26,10 @@ namespace Stateflows.Common.Context.Interfaces
         /// <summary>
         /// Publishes a notification to all subscribers and watchers of current behavior
         /// </summary>
-        /// <typeparam name="TNotificationEvent">Type of notification</typeparam>
+        /// <typeparam name="TNotification">Type of notification</typeparam>
         /// <param name="notification">Notification event instance</param>
         /// <param name="headers">Notification event headers</param>
-        void Publish<TNotificationEvent>(TNotificationEvent notification, IEnumerable<EventHeader> headers = null);
+        /// <param name="timeToLiveInSeconds">Notification time-to-live (in seconds)</param>
+        void Publish<TNotification>(TNotification notification, IEnumerable<EventHeader> headers = null, int timeToLiveInSeconds = 60);
     }
 }

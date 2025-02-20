@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Threading.Tasks;
 using Stateflows.Common;
-using Stateflows.StateMachines.Events;
 using Stateflows.StateMachines.Extensions;
 using Stateflows.StateMachines.Inspection.Interfaces;
 
@@ -19,7 +18,7 @@ namespace Stateflows.StateMachines.EventHandlers
 
                 var response = new StateMachineInfo()
                 {
-                    StatesStack = executor.GetStateStack(),
+                    StatesTree = executor.GetStateTree(),
                     ExpectedEvents = executor.GetExpectedEventNames(),
                     BehaviorStatus = executor.BehaviorStatus
                 };
