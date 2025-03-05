@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using System.Collections.Generic;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.DependencyInjection;
+using Stateflows.Common;
 using Stateflows.Common.Engine;
 using Stateflows.Common.Extensions;
 using Stateflows.Common.Context.Classes;
@@ -11,6 +12,7 @@ using Stateflows.StateMachines.Models;
 using Stateflows.StateMachines.Extensions;
 using Stateflows.StateMachines.Registration;
 using Stateflows.StateMachines.Context.Classes;
+using Stateflows.StateMachines.Context.Interfaces;
 using Stateflows.StateMachines.Inspection.Classes;
 using Stateflows.StateMachines.Inspection.Interfaces;
 using Stateflows.StateMachines.Registration.Interfaces;
@@ -290,22 +292,43 @@ namespace Stateflows.StateMachines.Engine
             await Plugins.RunSafe(i => i.BeforeDehydrateAsync(context), nameof(BeforeDehydrateAsync), Logger);
         }
 
-        public async Task<bool> BeforeProcessEventAsync<TEvent>(Context.Classes.EventContext<TEvent> context)
+        public async Task ProcessEventAsync<TEvent>(Context.Classes.EventContext<TEvent> context, Func<IEventActionContext<TEvent>, Task<EventStatus>> next)
         {
-            var plugin = await Plugins.RunSafe(i => i.BeforeProcessEventAsync(context), nameof(BeforeProcessEventAsync), Logger);
-            var global = await GlobalInterceptor.BeforeProcessEventAsync(
-                new Common.Context.Classes.EventContext<TEvent>(context.Context.Context, Executor.ServiceProvider, context.Event)
+            var eventContext = new Common.Context.Classes.EventContext<TEvent>(
+                context.Context.Context,
+                Executor.ServiceProvider,
+                context.Event
             );
-            var local = await Interceptors.RunSafe(i => i.BeforeProcessEventAsync(context), nameof(BeforeProcessEventAsync), Logger);
-
-            return global && local && plugin;
+            
+            await GlobalInterceptor.ProcessEventAsync(eventContext, c =>
+            {
+                var interceptors = Interceptors.ToList();
+                interceptors.AddRange(Plugins);
+                var stack = new InterceptorsStack(interceptors.ToArray());
+                return stack.ProcessEventAsync(context, next);
+            });
         }
 
-        public async Task AfterProcessEventAsync<TEvent>(Context.Classes.EventContext<TEvent> context)
+        [Obsolete]
+        public async Task<bool> BeforeProcessEventAsync<TEvent>(Context.Classes.EventContext<TEvent> context)
         {
-            await Interceptors.RunSafe(i => i.AfterProcessEventAsync(context), nameof(AfterProcessEventAsync), Logger);
-            await GlobalInterceptor.AfterProcessEventAsync(new Common.Context.Classes.EventContext<TEvent>(context.Context.Context, Executor.ServiceProvider, context.Event));
-            await Plugins.RunSafe(i => i.AfterProcessEventAsync(context), nameof(AfterProcessEventAsync), Logger);
+            // var plugin = await Plugins.RunSafe(i => i.BeforeProcessEventAsync(context), nameof(BeforeProcessEventAsync), Logger);
+            // var global = await GlobalInterceptor.BeforeProcessEventAsync(
+            //     new Common.Context.Classes.EventContext<TEvent>(context.Context.Context, Executor.ServiceProvider, context.Event)
+            // );
+            // var local = await Interceptors.RunSafe(i => i.BeforeProcessEventAsync(context), nameof(BeforeProcessEventAsync), Logger);
+            //
+            // return global && local && plugin;
+
+            return true;
+        }
+
+        [Obsolete]
+        public async Task AfterProcessEventAsync<TEvent>(Context.Classes.EventContext<TEvent> context, EventStatus eventStatus)
+        {
+            // await Interceptors.RunSafe(i => i.AfterProcessEventAsync(context, eventStatus), nameof(AfterProcessEventAsync), Logger);
+            // await GlobalInterceptor.AfterProcessEventAsync(new Common.Context.Classes.EventContext<TEvent>(context.Context.Context, Executor.ServiceProvider, context.Event));
+            // await Plugins.RunSafe(i => i.AfterProcessEventAsync(context, eventStatus), nameof(AfterProcessEventAsync), Logger);
         }
 
         private static bool ShouldPropagateException(Graph graph, bool handled)

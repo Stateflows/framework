@@ -36,9 +36,12 @@ namespace Stateflows.StateMachines.Registration.Builders
         IInternal,
         IVertexBuilder,
         IBehaviorBuilder,
-        IEmbeddedBehaviorBuilder
+        IEmbeddedBehaviorBuilder,
+        IGraphBuilder
     {
         public Vertex Vertex { get; }
+
+        public Graph Graph => Vertex.Graph;
 
         public IServiceCollection Services { get; }
 
@@ -76,7 +79,8 @@ namespace Stateflows.StateMachines.Registration.Builders
                     else
                     {
                         var inspector = await c.Executor.GetInspectorAsync();
-
+                        
+                        Trace.WriteLine($"⦗→s⦘ State Machine '{context.Context.Id.Name}:{context.Context.Id.Instance}': exception thrown '{e.Message}'");
                         if (!await inspector.OnStateInitializeExceptionAsync(context, e))
                         {
                             throw;
@@ -116,7 +120,8 @@ namespace Stateflows.StateMachines.Registration.Builders
                     else
                     {
                         var inspector = await c.Executor.GetInspectorAsync();
-
+                        
+                        Trace.WriteLine($"⦗→s⦘ State Machine '{context.Context.Id.Name}:{context.Context.Id.Instance}': exception thrown '{e.Message}'");
                         if (!await inspector.OnStateFinalizeExceptionAsync(context, e))
                         {
                             throw;
@@ -158,7 +163,8 @@ namespace Stateflows.StateMachines.Registration.Builders
                             else
                             {
                                 var inspector = await c.Executor.GetInspectorAsync();
-
+                        
+                                Trace.WriteLine($"⦗→s⦘ State Machine '{context.Context.Id.Name}:{context.Context.Id.Instance}': exception thrown '{e.Message}'");
                                 if (!await inspector.OnStateEntryExceptionAsync(context, e))
                                 {
                                     throw;
@@ -201,7 +207,8 @@ namespace Stateflows.StateMachines.Registration.Builders
                             else
                             {
                                 var inspector = await c.Executor.GetInspectorAsync();
-
+                        
+                                Trace.WriteLine($"⦗→s⦘ State Machine '{context.Context.Id.Name}:{context.Context.Id.Instance}': exception thrown '{e.Message}'");
                                 if (!await inspector.OnStateExitExceptionAsync(context, e))
                                 {
                                     throw;
@@ -283,6 +290,8 @@ namespace Stateflows.StateMachines.Registration.Builders
             Vertex.Graph.AllEdges.Add(edge);
 
             transitionBuildAction?.Invoke(new TransitionBuilder<TEvent>(edge, Services));
+            
+            Vertex.Graph.VisitingTasks.Add(visitor => visitor.TransitionAddedAsync<TEvent>(Vertex.Graph.Name, Vertex.Graph.Version, edge.SourceName, targetStateName == Constants.DefaultTransitionTarget ? edge.TargetName : null));
 
             return this;
         }
@@ -540,11 +549,11 @@ namespace Stateflows.StateMachines.Registration.Builders
             {
                 b.AddEffect(async c =>
                 {
-                    if (c.TryLocateBehavior(Vertex.GetBehaviorId(c.StateMachine.Id), out var behavior))
+                    if (c.TryLocateBehavior(Vertex.GetBehaviorId(c.Behavior.Id), out var behavior))
                     {
                         var result = await behavior.SendAsync(c.Event);
 
-                        c.StateMachine.GetExecutor().OverrideEventStatus(
+                        c.Behavior.GetExecutor().OverrideEventStatus(
                             result.Status == EventStatus.Consumed
                                 ? EventStatus.Forwarded
                                 : result.Status
@@ -552,7 +561,7 @@ namespace Stateflows.StateMachines.Registration.Builders
                     }
                     else
                     {
-                        throw new StateDefinitionException(c.Source.Name, $"DoActivity '{Vertex.BehaviorName}' not found", c.StateMachine.Id.StateMachineClass);
+                        throw new StateDefinitionException(c.Source.Name, $"DoActivity '{Vertex.BehaviorName}' not found", c.Behavior.Id.BehaviorClass);
                     }
                 });
 
@@ -899,6 +908,9 @@ namespace Stateflows.StateMachines.Registration.Builders
 
         [DebuggerHidden]
         IOverridenForkBuilder IForkTransitions<IOverridenForkBuilder>.AddTransition(string targetStateName, DefaultTransitionEffectBuildAction transitionBuildAction)
-            => AddDefaultTransition(targetStateName, b => transitionBuildAction?.Invoke(b as IDefaultTransitionEffectBuilder)) as IOverridenForkBuilder; 
+            => AddDefaultTransition(targetStateName, b => transitionBuildAction?.Invoke(b as IDefaultTransitionEffectBuilder)) as IOverridenForkBuilder;
+
+        public string Name => Vertex.Name;
+        public VertexType Type => Vertex.Type;
     }
 }

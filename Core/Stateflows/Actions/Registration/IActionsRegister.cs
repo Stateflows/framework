@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Threading.Tasks;
 using Stateflows.Actions.Registration;
 
 namespace Stateflows.Actions
@@ -18,22 +19,18 @@ namespace Stateflows.Actions
         void AddAction<TAction>(string actionName = null, int version = 1, bool reentrant = true)
             where TAction : class, IAction;
 
-        // #region Observability
-        // void AddInterceptor(ActionInterceptorFactory interceptorFactory);
-        //
-        // void AddInterceptor<TInterceptor>()
-        //     where TInterceptor : class, IActionInterceptor;
-        //
-        // void AddExceptionHandler(ActionExceptionHandlerFactory exceptionHandlerFactory);
-        //
-        // void AddExceptionHandler<TExceptionHandler>()
-        //     where TExceptionHandler : class, IActionExceptionHandler;
-        //
-        // void AddObserver(ActionObserverFactory observerFactory);
-        //
-        // void AddObserver<TObserver>()
-        //     where TObserver : class, IActionObserver;
-        //
-        // #endregion
+        Task VisitActionsAsync(IActionVisitor visitor);
+
+        #region Observability
+        void AddInterceptor(ActionInterceptorFactoryAsync interceptorFactoryAsync);
+        
+        void AddInterceptor<TInterceptor>()
+            where TInterceptor : class, IActionInterceptor;
+
+        void AddExceptionHandler(ActionExceptionHandlerFactoryAsync exceptionHandlerFactoryAsync);
+        
+        void AddExceptionHandler<TExceptionHandler>()
+            where TExceptionHandler : class, IActionExceptionHandler;
+        #endregion
     }
 }

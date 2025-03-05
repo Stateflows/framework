@@ -98,9 +98,11 @@ interface IBehavior {
     finalize(): Promise<SendResult>;
     reset(resetMode?: ResetMode): Promise<SendResult>;
     watch<TNotification extends Event>(notificationName: string, handler: NotificationHandler<TNotification>): Promise<void>;
+    requestAndWatch<TRequest extends Request<TNotification>, TNotification extends Event>(request: TRequest, notificationName: string, handler: NotificationHandler<TNotification>): Promise<void>;
     unwatch(notificationName: string): Promise<void>;
     getStatus(): Promise<RequestResult<BehaviorInfo>>;
     watchStatus(handler: NotificationHandler<BehaviorInfo>): Promise<void>;
+    requestAndWatchStatus(handler: NotificationHandler<BehaviorInfo>): Promise<void>;
     unwatchStatus(): Promise<void>;
 }
 
@@ -112,13 +114,22 @@ declare class StateMachineId extends BehaviorId {
     constructor(name: string, instance: string);
 }
 
+interface TreeNode<T> {
+    value: T;
+    nodes: Array<TreeNode<T>>;
+}
+interface Tree<T> {
+    value: T;
+    root: TreeNode<T>;
+}
 declare class StateMachineInfo extends BehaviorInfo {
-    statesStack: Array<string>;
+    statesTree: Tree<string>;
 }
 
 interface IStateMachineBehavior extends IBehavior {
     getCurrentState(): Promise<RequestResult<StateMachineInfo>>;
     watchCurrentState(handler: NotificationHandler<StateMachineInfo>): Promise<void>;
+    requestAndWatchCurrentState(handler: NotificationHandler<StateMachineInfo>): Promise<void>;
     unwatchCurrentState(): Promise<void>;
 }
 

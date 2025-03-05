@@ -1,13 +1,15 @@
 ﻿using System;
+using System.Diagnostics;
+using System.Linq;
+using System.Threading.Tasks;
 using Stateflows.Common.Models;
 using Stateflows.Activities.Models;
 using Stateflows.Activities.Context.Classes;
 using Stateflows.Activities.Context.Interfaces;
 using Stateflows.Activities.Registration.Interfaces;
-using Stateflows.Utils;
+using Stateflows.Common;
 using Stateflows.Common.Exceptions;
 using Microsoft.Extensions.DependencyInjection;
-using Stateflows.Common;
 
 namespace Stateflows.Activities.Registration.Builders
 {
@@ -23,7 +25,7 @@ namespace Stateflows.Activities.Registration.Builders
     {
         public Edge Edge { get; set; }
 
-        public Graph Result => Edge.Graph;
+        public Graph Graph => Edge.Graph;
 
         public IServiceCollection Services { get; private set; }
 
@@ -33,41 +35,46 @@ namespace Stateflows.Activities.Registration.Builders
             Services = services;
         }
 
-        public IObjectFlowBuilder<TToken> AddGuard(GuardDelegateAsync<TToken> guardAsync)
+        public IObjectFlowBuilder<TToken> AddGuard(params Func<IGuardContext<TToken>, Task<bool>>[]  guardsAsync)//GuardDelegateAsync<TToken> guardAsync)
         {
-            var logic = new Logic<TokenPipelineActionAsync>(Constants.Guard);
-
-            logic.Actions.Add(async context =>
+            foreach (var guardAsync in guardsAsync)
             {
-                try
+                var logic = new Logic<TokenPipelineActionAsync>(Constants.Guard);
+
+                logic.Actions.Add(async context =>
                 {
-                    return
-                        context.Token is TokenHolder<TToken> token &&
-                        await guardAsync(new TokenFlowContext<TToken>(context, token.Payload))
-                            ? token
-                            : default;
-                }
-                catch (Exception e)
-                {
-                    if (e is StateflowsDefinitionException)
+                    try
                     {
-                        throw;
+                        return
+                            context.Token is TokenHolder<TToken> token &&
+                            await guardAsync(new TokenFlowContext<TToken>(context, token.Payload))
+                                ? token
+                                : default;
                     }
-                    else
+                    catch (Exception e)
                     {
-                        if (!(Edge.Source != null && await Edge.Source.HandleExceptionAsync(e, context)))
+                        if (e is StateflowsDefinitionException)
                         {
                             throw;
                         }
                         else
                         {
-                            throw new BehaviorExecutionException(e);
+                            Trace.WriteLine(
+                                $"⦗→s⦘ Activity '{context.Context.Id.Name}:{context.Context.Id.Instance}': exception thrown '{e.Message}'");
+                            if (!(Edge.Source != null && await Edge.Source.HandleExceptionAsync(e, context)))
+                            {
+                                throw;
+                            }
+                            else
+                            {
+                                throw new BehaviorExecutionException(e);
+                            }
                         }
                     }
-                }
-            });
+                });
 
-            Edge.TokenPipeline.Actions.Add(logic);
+                Edge.TokenPipeline.Actions.Add(logic);
+            }
 
             return this;
         }
@@ -93,6 +100,7 @@ namespace Stateflows.Activities.Registration.Builders
                     }
                     else
                     {
+                        Trace.WriteLine($"⦗→s⦘ Activity '{context.Context.Id.Name}:{context.Context.Id.Instance}': exception thrown '{e.Message}'");
                         if (!(Edge.Source != null && await Edge.Source.HandleExceptionAsync(e, context)))
                         {
                             throw;
@@ -119,8 +127,14 @@ namespace Stateflows.Activities.Registration.Builders
             return this;
         }
 
-        IControlFlowBuilderWithWeight IControlFlowBuilderBase<IControlFlowBuilderWithWeight>.AddGuard(GuardDelegateAsync guardAsync)
-            => AddGuard(c => guardAsync(c as IGuardContext)) as IControlFlowBuilderWithWeight;
+        IControlFlowBuilderWithWeight IControlFlowBuilderBase<IControlFlowBuilderWithWeight>.AddGuard(params Func<IGuardContext, Task<bool>>[]  guardsAsync)//GuardDelegateAsync guardAsync)
+            => AddGuard(
+                guardsAsync
+                    .Select<Func<IGuardContext, Task<bool>>, Func<IGuardContext<TToken>, Task<bool>>>(
+                        guardAsync => c => guardAsync(c as IGuardContext)
+                    )
+                    .ToArray()
+            ) as IControlFlowBuilderWithWeight;
 
         IControlFlowBuilderWithWeight IFlowWeight<IControlFlowBuilderWithWeight>.SetWeight(int weight)
             => SetWeight(weight) as IControlFlowBuilderWithWeight;
@@ -128,8 +142,8 @@ namespace Stateflows.Activities.Registration.Builders
         IObjectFlowBuilder<TTransformedToken> IObjectFlowBuilder<TToken>.AddTransformation<TTransformedToken>(TransformationDelegateAsync<TToken, TTransformedToken> transformationAsync)
             => AddTransformation<TTransformedToken>(transformationAsync);
 
-        IObjectFlowBuilderWithWeight<TToken> IObjectFlowGuardBuilderBase<TToken, IObjectFlowBuilderWithWeight<TToken>>.AddGuard(GuardDelegateAsync<TToken> guardAsync)
-            => AddGuard(guardAsync) as IObjectFlowBuilderWithWeight<TToken>;
+        IObjectFlowBuilderWithWeight<TToken> IObjectFlowGuardBuilderBase<TToken, IObjectFlowBuilderWithWeight<TToken>>.AddGuard(params Func<IGuardContext<TToken>, Task<bool>>[]  guardsAsync)//GuardDelegateAsync<TToken> guardAsync)
+            => AddGuard(guardsAsync) as IObjectFlowBuilderWithWeight<TToken>;
 
         IObjectFlowBuilderWithWeight<TTransformedToken> IObjectFlowBuilderWithWeight<TToken>.AddTransformation<TTransformedToken>(TransformationDelegateAsync<TToken, TTransformedToken> transformationAsync)
             => AddTransformation<TTransformedToken>(transformationAsync) as IObjectFlowBuilderWithWeight<TTransformedToken>;

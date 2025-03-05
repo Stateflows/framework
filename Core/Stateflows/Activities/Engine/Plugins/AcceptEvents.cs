@@ -168,9 +168,9 @@ namespace Stateflows.Activities.Engine
 
         public override Task AfterProcessEventAsync<TEvent>(IEventContext<TEvent> context)
         {
-            Trace.WriteLine($"⦗→s⦘ Activity '{context.Activity.Id.Name}:{context.Activity.Id.Instance}': processed event '{Event.GetName(context.Event.GetType())}'");
+            Trace.WriteLine($"⦗→s⦘ Activity '{context.Behavior.Id.Name}:{context.Behavior.Id.Instance}': processed event '{Event.GetName(context.Event.GetType())}'");
 
-            Context = (context as BaseContext).Context;
+            Context = ((BaseContext)context).Context;
 
             if (Context.Context.PendingTimeEvents.Any())
             {
@@ -228,7 +228,7 @@ namespace Stateflows.Activities.Engine
 
             if (result)
             {
-                Trace.WriteLine($"⦗→s⦘ Activity '{context.Activity.Id.Name}:{context.Activity.Id.Instance}': received event '{Event.GetName(context.Event.GetType())}', trying to process it");
+                Trace.WriteLine($"⦗→s⦘ Activity '{context.Behavior.Id.Name}:{context.Behavior.Id.Instance}': received event '{Event.GetName(context.Event.GetType())}', trying to process it");
             }
 
             return Task.FromResult(result);

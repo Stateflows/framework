@@ -6,7 +6,7 @@ namespace Stateflows.Activities
     internal static class IStateActionContextExtensions
     {
         public static string GetBehaviorInstance(this IStateActionContext context, string action)
-            => $"{context.StateMachine.Id}.{context.CurrentState.Name}.{action}";
+            => $"{context.Behavior.Id}.{context.CurrentState.Name}.{action}";
 
         public static bool TryLocateActivity(this IStateActionContext context, string activityName, string action, out IActivityBehavior activity)
             => context.TryLocateActivity(new ActivityId(activityName, context.GetBehaviorInstance(action)), out activity);

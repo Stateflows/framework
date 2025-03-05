@@ -17,7 +17,7 @@ namespace Stateflows.StateMachines.Engine
 
             if (vertex.BehaviorName != null)
             {
-                var behaviorId = vertex.GetBehaviorId(context.StateMachine.Id);
+                var behaviorId = vertex.GetBehaviorId(context.Behavior.Id);
 
                 if (context.TryLocateBehavior(behaviorId, out var behavior))
                 {
@@ -25,7 +25,7 @@ namespace Stateflows.StateMachines.Engine
 
                     if (vertex.BehaviorSubscriptions.Any())
                     {                        
-                        _ = behavior.SendAsync(vertex.GetSubscriptionRequest(context.StateMachine.Id));
+                        _ = behavior.SendAsync(vertex.GetSubscriptionRequest(context.Behavior.Id));
                     }
 
                     var initializationRequest = vertex.BehaviorInitializationBuilder?.Invoke(context) != null
@@ -36,7 +36,7 @@ namespace Stateflows.StateMachines.Engine
                 }
                 else
                 {
-                    throw new StateDefinitionException(context.CurrentState.Name, $"DoActivity '{vertex.BehaviorName}' not found", context.StateMachine.Id.StateMachineClass);
+                    throw new StateDefinitionException(context.CurrentState.Name, $"DoActivity '{vertex.BehaviorName}' not found", context.Behavior.Id.BehaviorClass);
                 }
             }
         }
@@ -56,7 +56,7 @@ namespace Stateflows.StateMachines.Engine
                 {
                     if (vertex.BehaviorSubscriptions.Any())
                     {
-                        _ = behavior.SendAsync(vertex.GetUnsubscriptionRequest(context.StateMachine.Id));
+                        _ = behavior.SendAsync(vertex.GetUnsubscriptionRequest(context.Behavior.Id));
                     }
 
                     _ = behavior.SendAsync(new Finalize());

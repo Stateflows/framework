@@ -191,7 +191,6 @@ namespace Stateflows.StateMachines.Engine
             StateHasChanged = true;
 
             return true;
-
         }
 
         [DebuggerHidden]
@@ -522,6 +521,7 @@ namespace Stateflows.StateMachines.Engine
                 }
                 catch (Exception e)
                 {
+                    Trace.WriteLine($"⦗→s⦘ State Machine '{Context.Id.Name}:{Context.Id.Instance}': exception thrown '{e.Message}'");
                     if (!await inspector.OnStateMachineInitializationExceptionAsync(context, e))
                     {
                         throw;
@@ -566,6 +566,7 @@ namespace Stateflows.StateMachines.Engine
             }
             catch (Exception e)
             {
+                Trace.WriteLine($"⦗→s⦘ State Machine '{Context.Id.Name}:{Context.Id.Instance}': exception thrown '{e.Message}'");
                 if (!await inspector.OnStateMachineFinalizationExceptionAsync(context, e))
                 {
                     throw;
@@ -924,7 +925,7 @@ namespace Stateflows.StateMachines.Engine
         public Task<TDefaultInitializer> GetDefaultInitializerAsync<TDefaultInitializer>(IStateMachineInitializationContext context)
             where TDefaultInitializer : class, IDefaultInitializer
         {
-            ContextValues.GlobalValuesHolder.Value = context.StateMachine.Values;
+            ContextValues.GlobalValuesHolder.Value = context.Behavior.Values;
             ContextValues.StateValuesHolder.Value = null;
             ContextValues.ParentStateValuesHolder.Value = null;
             ContextValues.SourceStateValuesHolder.Value = null;
@@ -941,7 +942,7 @@ namespace Stateflows.StateMachines.Engine
         public Task<TInitializer> GetInitializerAsync<TInitializer, TInitializationEvent>(IStateMachineInitializationContext<TInitializationEvent> context)
             where TInitializer : class, IInitializer<TInitializationEvent>
         {
-            ContextValues.GlobalValuesHolder.Value = context.StateMachine.Values;
+            ContextValues.GlobalValuesHolder.Value = context.Behavior.Values;
             ContextValues.StateValuesHolder.Value = null;
             ContextValues.ParentStateValuesHolder.Value = null;
             ContextValues.SourceStateValuesHolder.Value = null;
@@ -958,7 +959,7 @@ namespace Stateflows.StateMachines.Engine
         public Task<TFinalizer> GetFinalizerAsync<TFinalizer>(IStateMachineActionContext context)
             where TFinalizer : class, IFinalizer
         {
-            ContextValues.GlobalValuesHolder.Value = context.StateMachine.Values;
+            ContextValues.GlobalValuesHolder.Value = context.Behavior.Values;
             ContextValues.StateValuesHolder.Value = null;
             ContextValues.ParentStateValuesHolder.Value = null;
             ContextValues.SourceStateValuesHolder.Value = null;
@@ -975,7 +976,7 @@ namespace Stateflows.StateMachines.Engine
         public Task<TState> GetStateAsync<TState>(IStateActionContext context)
             where TState : class, IState
         {
-            ContextValues.GlobalValuesHolder.Value = context.StateMachine.Values;
+            ContextValues.GlobalValuesHolder.Value = context.Behavior.Values;
             ContextValues.StateValuesHolder.Value = context.CurrentState.Values;
             ContextValues.ParentStateValuesHolder.Value = context.CurrentState.TryGetParent(out var parent) ? parent.Values : null;
             ContextValues.SourceStateValuesHolder.Value = null;
@@ -992,7 +993,7 @@ namespace Stateflows.StateMachines.Engine
         public Task<TTransition> GetTransitionAsync<TTransition, TEvent>(ITransitionContext<TEvent> context)
             where TTransition : class, ITransition<TEvent>
         {
-            ContextValues.GlobalValuesHolder.Value = context.StateMachine.Values;
+            ContextValues.GlobalValuesHolder.Value = context.Behavior.Values;
             ContextValues.StateValuesHolder.Value = null;
             ContextValues.ParentStateValuesHolder.Value = context.Source.TryGetParent(out var parent) ? parent.Values : null;
             ContextValues.SourceStateValuesHolder.Value = context.Source.Values;
@@ -1010,7 +1011,7 @@ namespace Stateflows.StateMachines.Engine
             where TTransitionGuard : class, ITransitionGuard<TEvent>
 
         {
-            ContextValues.GlobalValuesHolder.Value = context.StateMachine.Values;
+            ContextValues.GlobalValuesHolder.Value = context.Behavior.Values;
             ContextValues.StateValuesHolder.Value = null;
             ContextValues.ParentStateValuesHolder.Value = context.Source.TryGetParent(out var parent) ? parent.Values : null;
             ContextValues.SourceStateValuesHolder.Value = context.Source.Values;
@@ -1028,7 +1029,7 @@ namespace Stateflows.StateMachines.Engine
             where TTransitionEffect : class, ITransitionEffect<TEvent>
 
         {
-            ContextValues.GlobalValuesHolder.Value = context.StateMachine.Values;
+            ContextValues.GlobalValuesHolder.Value = context.Behavior.Values;
             ContextValues.StateValuesHolder.Value = null;
             ContextValues.ParentStateValuesHolder.Value = context.Source.TryGetParent(out var parent) ? parent.Values : null;
             ContextValues.SourceStateValuesHolder.Value = context.Source.Values;
@@ -1045,7 +1046,7 @@ namespace Stateflows.StateMachines.Engine
         public Task<TDefaultTransition> GetDefaultTransitionAsync<TDefaultTransition>(ITransitionContext<Completion> context)
             where TDefaultTransition : class, IDefaultTransition
         {
-            ContextValues.GlobalValuesHolder.Value = context.StateMachine.Values;
+            ContextValues.GlobalValuesHolder.Value = context.Behavior.Values;
             ContextValues.StateValuesHolder.Value = null;
             ContextValues.ParentStateValuesHolder.Value = context.Source.TryGetParent(out var parent) ? parent.Values : null;
             ContextValues.SourceStateValuesHolder.Value = context.Source.Values;
@@ -1062,7 +1063,7 @@ namespace Stateflows.StateMachines.Engine
         public Task<TDefaultTransitionGuard> GetDefaultTransitionGuardAsync<TDefaultTransitionGuard>(ITransitionContext<Completion> context)
             where TDefaultTransitionGuard : class, IDefaultTransitionGuard
         {
-            ContextValues.GlobalValuesHolder.Value = context.StateMachine.Values;
+            ContextValues.GlobalValuesHolder.Value = context.Behavior.Values;
             ContextValues.StateValuesHolder.Value = null;
             ContextValues.ParentStateValuesHolder.Value = context.Source.TryGetParent(out var parent) ? parent.Values : null;
             ContextValues.SourceStateValuesHolder.Value = context.Source.Values;
@@ -1079,7 +1080,7 @@ namespace Stateflows.StateMachines.Engine
         public Task<TDefaultTransitionEffect> GetDefaultTransitionEffectAsync<TDefaultTransitionEffect>(ITransitionContext<Completion> context)
             where TDefaultTransitionEffect : class, IDefaultTransitionEffect
         {
-            ContextValues.GlobalValuesHolder.Value = context.StateMachine.Values;
+            ContextValues.GlobalValuesHolder.Value = context.Behavior.Values;
             ContextValues.StateValuesHolder.Value = null;
             ContextValues.ParentStateValuesHolder.Value = context.Source.TryGetParent(out var parent) ? parent.Values : null;
             ContextValues.SourceStateValuesHolder.Value = context.Source.Values;

@@ -2,6 +2,7 @@
 using System.Linq;
 using System.Diagnostics;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using Stateflows.Common;
 using Stateflows.Common.Models;
 using Stateflows.Common.Registration.Builders;
@@ -12,6 +13,8 @@ namespace Stateflows.Activities.Models
 {
     internal class Graph : Node
     {
+        internal readonly List<Func<IActivityVisitor, Task>> VisitingTasks = new List<Func<IActivityVisitor, Task>>();
+        
         internal readonly StateflowsBuilder StateflowsBuilder = null;
 
         public Graph(string name, int version, StateflowsBuilder stateflowsBuilder)

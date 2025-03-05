@@ -400,6 +400,7 @@ namespace Stateflows.Activities.Engine
             }
             catch (Exception e)
             {
+                Trace.WriteLine($"⦗→s⦘ Activity '{Context.Id.Name}:{Context.Id.Instance}': exception thrown '{e.Message}'");
                 if (!await inspector.OnActivityFinalizationExceptionAsync(context, e))
                 {
                     throw;
@@ -627,6 +628,7 @@ namespace Stateflows.Activities.Engine
                     }
                     else
                     {
+                        Trace.WriteLine($"⦗→s⦘ Activity '{Context.Id.Name}:{Context.Id.Instance}': exception thrown '{e.Message}'");
                         if (!await inspector.OnActivityInitializationExceptionAsync(context, context.InitializationEventHolder, e))
                         {
                             throw;

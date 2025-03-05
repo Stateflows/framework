@@ -43,7 +43,7 @@ namespace Activity.IntegrationTests.Tests
                     .AddActivity("value", b => b
                         .AddInitializer<ValueInitializationRequest>(async c =>
                         {
-                            c.Activity.Values.Set<string>("foo", c.InitializationEvent.Value);
+                            c.Behavior.Values.Set<string>("foo", c.InitializationEvent.Value);
 
                             return true;
                         })
@@ -52,7 +52,7 @@ namespace Activity.IntegrationTests.Tests
                         )
                         .AddAction("action1", async c =>
                         {
-                            if (c.Activity.Values.TryGet<string>("foo", out var v))
+                            if (c.Behavior.Values.TryGet<string>("foo", out var v))
                             {
                                 Value = v;
                             }

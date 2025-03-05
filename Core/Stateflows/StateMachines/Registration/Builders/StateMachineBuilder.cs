@@ -45,21 +45,6 @@ namespace Stateflows.StateMachines.Registration.Builders
             Graph = new Graph(name, version, stateflowsBuilder);
         }
 
-        public IInitializedStateMachineBuilder AddInitializer(Type initializerType, string initializerName, StateMachinePredicateAsync initializerAction)
-        {
-            if (!Graph.Initializers.TryGetValue(initializerName, out var initializer))
-            {
-                initializer = new Logic<StateMachinePredicateAsync>(Constants.Initialize);
-
-                Graph.Initializers.Add(initializerName, initializer);
-                Graph.InitializerTypes.Add(initializerType);
-            }
-
-            initializer.Actions.Add(initializerAction);
-
-            return this;
-        }
-
         public IInitializedStateMachineBuilder AddDefaultInitializer(Func<IStateMachineInitializationContext, Task<bool>> actionAsync)
         {
             Graph.DefaultInitializer = new Logic<StateMachinePredicateAsync>(Constants.Initialize);
@@ -69,6 +54,8 @@ namespace Stateflows.StateMachines.Registration.Builders
                 var context = new StateMachineInitializationContext(c);
                 return actionAsync(context);
             });
+            
+            Graph.VisitingTasks.Add(v => v.DefaultInitializerAddedAsync(Graph.Name, Graph.Version));
 
             return this;
         }
@@ -98,8 +85,16 @@ namespace Stateflows.StateMachines.Registration.Builders
             actionAsync.ThrowIfNull(nameof(actionAsync));
             
             var initializerName = Event<TInitializationEvent>.Name;
+            
+            if (!Graph.Initializers.TryGetValue(initializerName, out var initializer))
+            {
+                initializer = new Logic<StateMachinePredicateAsync>(Constants.Initialize);
 
-            return AddInitializer(typeof(TInitializationEvent), initializerName, async c =>
+                Graph.Initializers.Add(initializerName, initializer);
+                Graph.InitializerTypes.Add(typeof(TInitializationEvent));
+            }
+
+            initializer.Actions.Add(async c =>
             {
                 var result = false;
                 var context = new StateMachineInitializationContext<TInitializationEvent>(c, c.EventHolder as EventHolder<TInitializationEvent>);
@@ -108,6 +103,10 @@ namespace Stateflows.StateMachines.Registration.Builders
 
                 return result;
             });
+            
+            Graph.VisitingTasks.Add(v => v.InitializerAddedAsync<TInitializationEvent>(Graph.Name, Graph.Version));
+
+            return this;
         }
 
         public IInitializedStateMachineBuilder AddFinalizer(Func<IStateMachineActionContext, Task> actionAsync)
@@ -120,6 +119,8 @@ namespace Stateflows.StateMachines.Registration.Builders
 
                 await actionAsync(context);
             });
+            
+            Graph.VisitingTasks.Add(v => v.FinalizerAddedAsync(Graph.Name, Graph.Version));
 
             return this;
         }
@@ -142,6 +143,8 @@ namespace Stateflows.StateMachines.Registration.Builders
 
             Graph.Vertices.Add(vertex.Name, vertex);
             Graph.AllVertices.Add(vertex.Identifier, vertex);
+            
+            Graph.VisitingTasks.Add(visitor => visitor.VertexAddedAsync(Graph.Name, Graph.Version, vertex.Name, vertex.Type));
 
             return this;
         }

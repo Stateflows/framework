@@ -2,14 +2,26 @@
 using Blazor.Server.Data;
 using Examples.Common;
 using Examples.Storage;
+using Microsoft.AspNetCore.Mvc;
 using Stateflows;
 using Stateflows.Activities;
 using Stateflows.Common;
 using Stateflows.StateMachines;
 using X;
 using Microsoft.AspNetCore.OpenApi;
+using OneOf;
+using OpenTelemetry;
+using OpenTelemetry.Logs;
+using OpenTelemetry.Trace;
+using Scalar.AspNetCore;
 using Stateflows.Actions;
+using Stateflows.Extensions.OpenTelemetry;
+using Stateflows.StateMachines.Attributes;
+using Stateflows.StateMachines.Registration.Interfaces;
 using Stateflows.Transport.Http;
+using Stateflows.Transport.REST;
+using DependencyInjection = Stateflows.Transport.REST.DependencyInjection;
+using Guards = Stateflows.StateMachines.Guards;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -19,65 +31,88 @@ builder.Services.AddServerSideBlazor();
 builder.Services.AddSingleton<WeatherForecastService>();
 builder.Services.AddCors();
 builder.Services.AddEndpointsApiExplorer();
-//builder.Services.AddSwaggerGen();
+
+builder.Services.AddSwaggerGen();
 
 builder.Services.AddSignalR();
+
+builder.Logging.AddOpenTelemetry(logging =>
+{
+    logging.IncludeFormattedMessage = true;
+    logging.IncludeScopes = true;
+});
+
+var otel = builder.Services.AddOpenTelemetry();
+otel.WithTracing(tracing =>
+{
+    tracing.AddAspNetCoreInstrumentation();
+    tracing.AddHttpClientInstrumentation();
+});
+
+var OtlpEndpoint = builder.Configuration["OTEL_EXPORTER_OTLP_ENDPOINT"];
+if (OtlpEndpoint != null)
+{
+    otel.UseOtlpExporter();
+}
 
 builder.Services.AddStateflows(b => b
     .AddPlantUml()
     .AddConsole()
+    
+    .AddOneOf()
+    
+    .AddOpenTelemetry()
 
     // .AddStorage()
     
-    
-    .AddActions(b => b
-        .AddAction("action1", async c =>
-        {
-            await c.Action.Values.SetAsync<int>("TheAnswerToTheLifeWorldAndUniverse", 42);
-            
-            var answer = await c.Action.Values.GetOrDefaultAsync<int>("theAnswerToTheLifeWorldAndUniverse");
-        })
-    )
-    
-    .AddStateMachines(b => b
-    
-        .AddStateMachine("stateMachine1", b => b
-            .AddInitialState("State1", b => b
-                .AddTransition<SomeEvent>("State2")
-            )
-            .AddState("State2", b => b
-                .AddDefaultTransition(FinalState.Name)
-            )
-            .AddFinalState()
-        )
-    )
-    
-    
-    .AddActivities(b => b
-        .AddActivity("activity1", b => b
-            .AddAction("action1", async c => { })
-        )
-    )
-    
-    
-    
-
     .AddActivities(b => b
         .AddActivity("a", b => b
             .AddInitial(b => b
+                .AddControlFlow("action")
+                .AddControlFlow("structured")
+            )
+            .AddAcceptEventAction<SomeEvent>(b => b
                 .AddControlFlow("action")
             )
             .AddAction("action", async c =>
             {
                 Debug.WriteLine("action");
             })
+            .AddStructuredActivity("structured", b => b
+                .AddInitial(b => b
+                    .AddControlFlow("inner")
+                )
+                .AddAction("inner", async c => Debug.WriteLine("inner"))
+                // .AddGet("/test", () => Results.Ok("test"))
+            )
         )
+    
+        .AddActivity<ActivityX>()
+    )
+    
+    .AddActions(b => b
+        .AddAction("actionBehavior", async c =>
+        {
+            var boolTokens = c.GetTokensOfType<bool>();
+            
+            c.Behavior.Publish(new BehaviorInfo() { BehaviorStatus = BehaviorStatus.Initialized });
+            
+            // logic
+        })
     )
 
     .AddStateMachines(b => b
-        .AddStateMachine("stateMachine1", b => b
+        .AddStateMachine<StateMachine1>()
+        .AddStateMachine("process", b => b
+            .AddEndpoints(b =>
+            {
+                b.AddPost("/postX", (SomeDTO dto) => Results.Ok(dto)).WithOpenApi();
+                // b.AddGet("/getX", (SomeDTO dto) => Results.Ok(dto)).WithOpenApi();
+            })
             .AddInitialState("initial", b => b
-                .AddDefaultTransition<Choice>()
+                .AddTransition<OneOf<SomeEvent, ExampleRequest>>("state1")
+                // .AddTransition<ExampleRequest>("state1")
+                // .AddElseTransition<ExampleRequest, Choice>()
             )
             .AddChoice(b => b
                 .AddTransition("state1")
@@ -86,77 +121,36 @@ builder.Services.AddStateflows(b => b
             .AddState("state1", b => b
                 .AddDefaultTransition<Junction>()
             )
-            .AddState("state2")
+            .AddState("state2", b => b
+                .AddEndpoints(b =>
+                {
+                    b.AddGet("/foo", () => Results.Ok(new OtherEvent()));
+                })
+            )
             .AddJunction(b => b
                 .AddTransition("state3")
                 .AddElseTransition("state4")
             )
-            .AddState("state3")
-            .AddState("state4")
-        )
-        .AddStateMachine("stateMachine1_orth", b => b
-            .AddInitialState("state1", b => b
-                .AddOnEntry(async c =>
-                {
-                    Debug.WriteLine("x");
-                })
-                .AddTransition<Startup>("state3")
-                .AddInternalTransition<ExampleRequest>(b => b
-                    .AddEffect(async c =>
-                    {
-                        c.Event.Respond(new ExampleResponse() { ResponseData = "Example response data" });
-                    })
-                )
-                .AddDefaultTransition<Fork>()
-            )
-            .AddState("state2", b => b
-                .AddOnEntry(async c =>
-                {
-                    c.StateMachine.Publish(new SomeNotification());
-                })
-                .AddTransition<SomeEvent>("state1")
-                .AddTransition<OtherEvent>("state3")
-            )
             .AddState("state3", b => b
-                .AddTransition<SomeEvent>("state1")
-                .AddTransition<OtherEvent, FinalState>()
-                .AddDefaultTransition<Fork>()
+                .AddEndpoints(b =>
+                {
+                    b.AddPost("/postRoute", (SomeDTO dto) => Results.Ok(dto));
+                })
             )
-            .AddFork(b => b
-                .AddTransition("reg1")
-                .AddTransition("reg2")
-                .AddTransition("reg3")
-            )
-            .AddOrthogonalState("orthy", b => b
-                .AddRegion(b => b
-                    .AddInitialState("reg1", b => b
-                        .AddDefaultTransition<Join>()
-                    )
-                )
-                .AddRegion(b => b
-                    .AddState("reg2", b => b
-                        .AddDefaultTransition<Join>()
-                    )
-                )
-                .AddRegion(b => b
-                    .AddState("reg3", b => b
-                        .AddDefaultTransition("reg3_final")
-                    )
-                    .AddFinalState("reg3_final")
-                )
-            )
-            .AddJoin(b => b
-                .AddTransition<FinalState>()
-            )
-            .AddFinalState()
-        )
+            .AddCompositeState("composite", b => b
+                .AddState("state4")
+                .AddEndpoints(b =>
+                {
+                    b.AddPost("/post", (SomeDTO dto) => Results.Ok(dto)).WithOpenApi(config =>
+                    {
+                        config.Deprecated = true;
 
-        .AddStateMachine("startupInternal", b => b
-            .AddInitialState("state1", b => b
-                .AddInternalTransition<Startup>(b => b
-                    .AddEffect(async c => Console.WriteLine("startup!"))
-                )
+                        return config;
+                    });
+                    // b.AddGet("/get", (SomeDTO dto) => Results.Ok(dto)).WithOpenApi();
+                })
             )
+            // .AddState<StateWithEndpoints>()
         )
     )
     .SetEnvironment(
@@ -168,14 +162,19 @@ builder.Services.AddStateflows(b => b
 
 var app = builder.Build();
 
-//if (app.Environment.IsDevelopment())
-//{
-//    app.UseSwagger();
-//    app.UseSwaggerUI();
-//}
+if (app.Environment.IsDevelopment())
+{
+    app.UseSwagger(options =>
+    {
+        options.RouteTemplate = "/openapi/{documentName}.json";
+    });
+    // app.UseSwaggerUI();
+    app.MapScalarApiReference();
+}
 
 //app.MapStateflowsSignalRTransport();
-app.MapStateflowsHttpTransport();
+// app.MapStateflowsHttpTransport();
+DependencyInjection.MapStateflowsHttpTransport(app);
 
 // Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())
@@ -202,21 +201,92 @@ app.Run();
 
 namespace X
 {
-    public class State1 : IState
+    public class ActivityX : IActivity, IActivityEndpoints
     {
-
-    }
-
-    public class ControlFlow : IControlFlow
-    {
-
-    }
-
-    public class Guard : ITransitionGuard
-    {
-        public Task<bool> GuardAsync()
+        public void Build(IActivityBuilder builder)
         {
-            throw new NotImplementedException();
+            builder
+                .AddInitial(b => b
+                    .AddControlFlow("entry")
+                )
+                .AddAction("entry", async c => { })
+                .AddAcceptEventAction<SomeEvent>(b => b
+                    .AddControlFlow("second")
+                )
+                .AddAction("second", async c => { })
+            ;
+        }
+
+        public void RegisterEndpoints(IEndpointsBuilder endpointsBuilder)
+        {
+            endpointsBuilder.AddGet("/foo", () => Results.Ok("Hello World!"));
+        }
+    }
+
+    public class SomeDTO
+    {
+        public string StringData { get; set; }
+        public required int IntData { get; set; }
+    }
+
+    public class StateWithEndpoints : IStateDefinition
+    {
+        public void Build(IStateBuilder builder)
+        {
+            builder
+                .AddEndpoints(b =>
+                {
+                    b.AddGet("/foo", () => Results.Ok(new OtherEvent()));
+                    b.AddPost("/postRoute", (SomeDTO dto) => Results.Ok(dto.StringData));
+                })
+                ;
+        }
+    }
+
+    public class State3 : IStateEntry
+    {
+        private readonly ILogger<StateMachine1> Logger;
+        public State3(ILogger<StateMachine1> logger)
+        {
+            Logger = logger;
+        }
+
+        public async Task OnEntryAsync()
+        {
+            Logger.LogWarning("warning for the deep");
+        }
+    }
+    
+    [StateMachineBehavior("stateMachine1")]
+    public class StateMachine1 : IStateMachine
+    {
+        public void Build(IStateMachineBuilder builder)
+        {
+            builder
+                .AddInitialState("initial", b => b
+                        .AddTransition<SomeEvent>("state1", b => b
+                            .AddGuard(Guards.Deny)
+                        )
+                        .AddTransition<SomeEvent>("state2")
+                    // .AddInternalTransition<ExampleRequest>(b => b
+                    //     .AddGuard(Guards.Deny)
+                    // )
+                    // .AddDeferredEvent<ExampleRequest>()
+                )
+                .AddState("state1")
+                .AddCompositeState("state2", b => b
+                    .AddInitialState("compositeInitial", b => b
+                        .AddDefaultTransition("state3")
+                    )
+                    .AddState<State3>("state3", b => b
+                        .AddTransition<ExampleRequest>("state4")
+                    )
+                    .AddTransition<Exception>("state5")
+                )
+                .AddState("state4", b => b
+                    .AddOnEntry(async c => throw new Exception("test"))
+                )
+                .AddState("state5");
         }
     }
 }

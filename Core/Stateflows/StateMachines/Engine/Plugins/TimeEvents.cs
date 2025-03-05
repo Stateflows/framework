@@ -62,8 +62,24 @@ namespace Stateflows.StateMachines.Engine
             return Task.FromResult(result);
         }
 
-        public override Task AfterProcessEventAsync<TEvent>(IEventActionContext<TEvent> context)
+        public override async Task<EventStatus> ProcessEventAsync<TEvent>(IEventActionContext<TEvent> context, Func<IEventActionContext<TEvent>, Task<EventStatus>> next)
         {
+            var skip = true;
+            
+            Context = (context as BaseContext).Context;
+
+            if (context.Event is Reset)
+            {
+                Context.Context.PendingTimeEvents.Clear();
+            }
+
+            if (context.Event is TimeEvent timeEvent)
+            {
+                result = Context.Context.PendingTimeEvents.ContainsKey(timeEvent.Id);
+            }
+            
+            var result = await next(context);
+            
             // fallback: removing time events removed from structure, but still scheduled
             if (ConsumedInTransition == null)
             {
@@ -131,7 +147,7 @@ namespace Stateflows.StateMachines.Engine
 
             Context.Context.TriggerOnStartup = Context.Context.PendingStartupEvents.Any();
 
-            return Task.CompletedTask;
+            return result;
         }
 
         public override Task BeforeTransitionGuardAsync<TEvent>(ITransitionContext<TEvent> context)

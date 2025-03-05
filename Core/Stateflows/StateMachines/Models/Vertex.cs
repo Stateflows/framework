@@ -9,7 +9,7 @@ using Stateflows.StateMachines.Registration.Interfaces;
 
 namespace Stateflows.StateMachines.Models
 {
-    internal enum VertexType
+    public enum VertexType
     {
         InitialState,
         State,

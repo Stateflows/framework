@@ -10,11 +10,12 @@ namespace Stateflows.Activities.EventHandlers
     {
         public Type EventType => typeof(Finalize);
 
-        public async Task<EventStatus> TryHandleEventAsync<TEvent>(IEventInspectionContext<TEvent> context)
+        public async Task<EventStatus> TryHandleEventAsync<TEvent>(IEventInspectionContext<TEvent> context)
+
         {
             if (context.Event is Finalize request)
             {
-                var finalized = await context.Activity.GetExecutor().CancelAsync();
+                var finalized = await context.Behavior.GetExecutor().CancelAsync();
 
                 return finalized
                     ? EventStatus.Consumed

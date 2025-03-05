@@ -2,6 +2,7 @@
 using System.Diagnostics;
 using System.Threading.Tasks;
 using Stateflows.Activities.Context.Classes;
+using Stateflows.Activities.Registration.Interfaces.Internal;
 
 namespace Stateflows.Activities.Registration.Interfaces.Base
 {
@@ -33,11 +34,18 @@ namespace Stateflows.Activities.Registration.Interfaces.Base
         [DebuggerHidden]
         public TReturn AddSendEventAction<TEvent, TSendEventAction>(string actionNodeName, SendEventActionBuildAction buildAction = null)
             where TSendEventAction : class, ISendEventActionNode<TEvent>
-            => AddSendEventAction<TEvent>(
+        {
+            var result = AddSendEventAction<TEvent>(
                 actionNodeName,
                 c => GetSendEventAction<TEvent, TSendEventAction, TEvent>(c, a => a.GenerateEventAsync()),
                 c => GetSendEventAction<TEvent, TSendEventAction, BehaviorId>(c, a => a.SelectTargetAsync()),
                 buildAction
             );
+
+            var graph = ((IGraphBuilder)this).Graph;
+            graph.VisitingTasks.Add(visitor => visitor.SendEventNodeTypeAddedAsync<TEvent, TSendEventAction>(graph.Name, graph.Version, actionNodeName));
+
+            return result;
+        }
     }
 }

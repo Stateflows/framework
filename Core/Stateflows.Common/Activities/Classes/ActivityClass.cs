@@ -14,6 +14,7 @@ namespace Stateflows
 
         public string Name { get; set; }
 
+        
         [JsonIgnore]
         public readonly BehaviorClass BehaviorClass => new BehaviorClass(Type, Name);
 

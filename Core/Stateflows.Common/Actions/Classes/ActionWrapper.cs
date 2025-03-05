@@ -18,11 +18,11 @@ namespace Stateflows.Common.Actions.Classes
             Behavior = consumer;
         }
 
-        public Task<RequestResult<TokensOutput>> SendInputAsync(Action<ITokensInput> tokensAction)
+        public Task<RequestResult<TokensOutput>> SendInputAsync(Action<ITokensInput> tokensAction, IEnumerable<EventHeader> headers = null)
         {
             var stream = new TokensInput();
             tokensAction(stream);
-            return RequestAsync(stream);
+            return RequestAsync(stream, headers);
         }
 
         public Task<RequestResult<TokensOutput>> SendInputAsync<TToken>(params TToken[] tokens)

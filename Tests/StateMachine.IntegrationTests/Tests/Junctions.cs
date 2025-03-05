@@ -39,12 +39,12 @@ namespace StateMachine.IntegrationTests.Tests
                     .AddStateMachine("dynamic", b => b
                         .AddInitialState("state1", b => b
                             .AddTransition<OtherEvent, Junction>(b => b
-                                .AddEffect(async c => c.StateMachine.Values.Set("answer", c.Event.AnswerToLifeUniverseAndEverything))
+                                .AddEffect(async c => c.Behavior.Values.Set("answer", c.Event.AnswerToLifeUniverseAndEverything))
                             )
                         )
                         .AddJunction(b => b
                             .AddTransition("state2", b => b
-                                .AddGuard(c => c.StateMachine.Values.GetOrDefault<int>("answer") == 42)
+                                .AddGuard(c => c.Behavior.Values.GetOrDefault<int>("answer") == 42)
                             )
                             .AddElseTransition("state3")
                         )

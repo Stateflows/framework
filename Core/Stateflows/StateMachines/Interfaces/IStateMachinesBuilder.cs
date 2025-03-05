@@ -20,11 +20,14 @@ namespace Stateflows.StateMachines
         IStateMachinesBuilder AddInterceptor<TInterceptor>()
             where TInterceptor : class, IStateMachineInterceptor;
         IStateMachinesBuilder AddInterceptor(StateMachineInterceptorFactory interceptorFactory);
+        IStateMachinesBuilder AddInterceptor(StateMachineInterceptorFactoryAsync interceptorFactoryAsync);
         IStateMachinesBuilder AddExceptionHandler<TExceptionHandler>()
             where TExceptionHandler : class, IStateMachineExceptionHandler;
         IStateMachinesBuilder AddExceptionHandler(StateMachineExceptionHandlerFactory exceptionHandlerFactory);
+        IStateMachinesBuilder AddExceptionHandler(StateMachineExceptionHandlerFactoryAsync exceptionHandlerFactoryAsync);
         IStateMachinesBuilder AddObserver<TObserver>()
             where TObserver : class, IStateMachineObserver;
         IStateMachinesBuilder AddObserver(StateMachineObserverFactory observerFactory);
+        IStateMachinesBuilder AddObserver(StateMachineObserverFactoryAsync observerFactoryAsync);
     }
 }

@@ -23,27 +23,27 @@ namespace Stateflows.StateMachines.Engine
         }
         
         public override Task<bool> OnStateMachineInitializationExceptionAsync(IStateMachineInitializationContext context, Exception exception)
-            => HandleExceptionAsync(context.StateMachine.Id, exception);
+            => HandleExceptionAsync(context.Behavior.Id, exception);
 
         public override Task<bool> OnStateMachineFinalizationExceptionAsync(IStateMachineActionContext context, Exception exception)
-            => HandleExceptionAsync(context.StateMachine.Id, exception);
+            => HandleExceptionAsync(context.Behavior.Id, exception);
 
         public override Task<bool> OnTransitionGuardExceptionAsync<TEvent>(ITransitionContext<TEvent> context, Exception exception)
-            => HandleExceptionAsync(context.StateMachine.Id, exception);
+            => HandleExceptionAsync(context.Behavior.Id, exception);
 
         public override Task<bool> OnTransitionEffectExceptionAsync<TEvent>(ITransitionContext<TEvent> context, Exception exception)
-            => HandleExceptionAsync(context.StateMachine.Id, exception);
+            => HandleExceptionAsync(context.Behavior.Id, exception);
 
         public override Task<bool> OnStateInitializationExceptionAsync(IStateActionContext context, Exception exception)
-            => HandleExceptionAsync(context.StateMachine.Id, exception);
+            => HandleExceptionAsync(context.Behavior.Id, exception);
 
         public override Task<bool> OnStateFinalizationExceptionAsync(IStateActionContext context, Exception exception)
-            => HandleExceptionAsync(context.StateMachine.Id, exception);
+            => HandleExceptionAsync(context.Behavior.Id, exception);
 
         public override Task<bool> OnStateEntryExceptionAsync(IStateActionContext context, Exception exception)
-            => HandleExceptionAsync(context.StateMachine.Id, exception);
+            => HandleExceptionAsync(context.Behavior.Id, exception);
 
         public override Task<bool> OnStateExitExceptionAsync(IStateActionContext context, Exception exception)
-            => HandleExceptionAsync(context.StateMachine.Id, exception);
+            => HandleExceptionAsync(context.Behavior.Id, exception);
     }
 }

@@ -18,9 +18,11 @@ namespace Stateflows
             Instance = instance;
         }
 
+        
         [JsonIgnore]
         public readonly string Type => BehaviorClass.Type;
 
+        
         [JsonIgnore]
         public readonly string Name => BehaviorClass.Name;
 

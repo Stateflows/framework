@@ -33,7 +33,7 @@ namespace StateMachine.IntegrationTests.Tests
                         .AddInitializer<BoolInit>(async c =>
                         {
                             Debug.WriteLine($"InitializationEvent.Value: {c.InitializationEvent.Value}");
-                            c.StateMachine.Values.Set("value", c.InitializationEvent.Value);
+                            c.Behavior.Values.Set("value", c.InitializationEvent.Value);
                             return true;
                         })
                         .AddInitialState("stateA", b => b
@@ -62,10 +62,10 @@ namespace StateMachine.IntegrationTests.Tests
                     .AddAction("guard", async c =>
                     {
                         GuardRun = true;
-                        if (c.Action.Values.TryGet<bool>("value", out var value))
+                        if (c.Behavior.Values.TryGet<bool>("value", out var value))
                         {
                             Debug.WriteLine($"value: {value}");
-                            c.Action.Output(value);
+                            c.Output(value);
                         }
                         else
                         {
@@ -75,7 +75,7 @@ namespace StateMachine.IntegrationTests.Tests
                     .AddAction("effect", async c => EffectRun = true)
                     .AddAction("entry", async c => EntryRun = true)
                     .AddAction("exit", async c => ExitRun = true)
-                    .AddAction("subscribe", async c => c.Action.Publish(new SomeEvent()))
+                    .AddAction("subscribe", async c => c.Behavior.Publish(new SomeEvent()))
                 )
                 ;
         }

@@ -5,7 +5,7 @@ namespace Stateflows.Activities.Registration.Interfaces
 {
     internal interface IInternal
     {
-        Graph Result { get; }
+        Graph Graph { get; }
 
         IServiceCollection Services { get; }
     }

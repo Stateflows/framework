@@ -26,7 +26,7 @@ namespace StateMachine.IntegrationTests.Tests
                         .AddInitialState("state1", b => b
                             .AddOnExit(c => StateExited = true)
                             .AddTransition<SomeEvent>("state2", b => b
-                                .AddEffect(c => TransitionHappened = !c.StateMachine.CurrentState.HasValue)
+                                .AddEffect(c => TransitionHappened = !c.CurrentState.HasValue)
                             )
                         )
                         .AddState("state2", b => b
@@ -38,6 +38,7 @@ namespace StateMachine.IntegrationTests.Tests
                         .AddInitialState("state1", b => b
                             .AddTransition<OtherEvent>("state2", b => b
                                 .AddGuard(c => c.Event.AnswerToLifeUniverseAndEverything == 42)
+                                .AddGuard(Guards.Source.Namespace("x").Value("x").IsSet)
                             )
                         )
                         .AddState("state2")

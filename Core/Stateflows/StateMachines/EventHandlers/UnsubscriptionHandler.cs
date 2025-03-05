@@ -15,7 +15,7 @@ namespace Stateflows.StateMachines.EventHandlers
         {
             if (context.Event is Unsubscribe request)
             {
-                var result = context.StateMachine.GetExecutor().Context.Context.RemoveSubscribers(request.BehaviorId, request.NotificationNames);
+                var result = context.Behavior.GetExecutor().Context.Context.RemoveSubscribers(request.BehaviorId, request.NotificationNames);
 
                 return Task.FromResult(EventStatus.Consumed);
             }

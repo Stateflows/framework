@@ -61,6 +61,8 @@ namespace Stateflows.StateMachines.Registration.Builders
 
             Region.Vertices.Add(vertex.Name, vertex);
             Region.Graph.AllVertices.Add(vertex.Identifier, vertex);
+            
+            Region.Graph.VisitingTasks.Add(visitor => visitor.VertexAddedAsync(Region.Graph.Name, Region.Graph.Version, vertex.Name, vertex.Type));
 
             return this;
         }

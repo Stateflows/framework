@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Diagnostics;
 using System.Collections.Generic;
+using System.Linq;
+using System.Reflection;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using Stateflows.Common.Classes;
@@ -23,7 +25,7 @@ namespace Stateflows.StateMachines.Registration
         public List<StateMachineInterceptorFactoryAsync> GlobalInterceptorFactories { get; set; } = new List<StateMachineInterceptorFactoryAsync>();
 
         public List<StateMachineObserverFactoryAsync> GlobalObserverFactories { get; set; } = new List<StateMachineObserverFactoryAsync>();
-
+        
         public StateMachinesRegister(StateflowsBuilder stateflowsBuilder, IServiceCollection services)
         {
             this.stateflowsBuilder = stateflowsBuilder;
@@ -33,6 +35,9 @@ namespace Stateflows.StateMachines.Registration
         public readonly Dictionary<string, Graph> StateMachines = new Dictionary<string, Graph>();
 
         public readonly Dictionary<string, int> CurrentVersions = new Dictionary<string, int>();
+
+        private readonly MethodInfo StateMachineTypeAddedAsyncMethod =
+            typeof(IStateMachineVisitor).GetMethod(nameof(IStateMachineVisitor.StateMachineTypeAddedAsync));
 
         private bool IsNewestVersion(string stateMachineName, int version)
         {
@@ -69,6 +74,8 @@ namespace Stateflows.StateMachines.Registration
             var builder = new StateMachineBuilder(stateMachineName, version, stateflowsBuilder, Services);
             buildAction(builder);
             builder.Graph.Build();
+            
+            builder.Graph.VisitingTasks.Add(v => v.StateMachineAddedAsync(stateMachineName, version));
 
             StateMachines.Add(key, builder.Graph);
 
@@ -91,11 +98,23 @@ namespace Stateflows.StateMachines.Registration
 
             var sm = StateflowsActivator.CreateUninitializedInstance(stateMachineType) as IStateMachine;
 
-            var builder = new StateMachineBuilder(stateMachineName, version, stateflowsBuilder, Services);
-            builder.Graph.StateMachineType = stateMachineType;
+            var builder = new StateMachineBuilder(stateMachineName, version, stateflowsBuilder, Services)
+                {
+                    Graph =
+                    {
+                        StateMachineType = stateMachineType
+                    }
+                };
             sm.Build(builder);
             builder.Graph.Build();
 
+            var method = StateMachineTypeAddedAsyncMethod.MakeGenericMethod(stateMachineType);
+
+            builder.Graph.VisitingTasks.AddRange(new Func<IStateMachineVisitor, Task>[] {
+                v => v.StateMachineAddedAsync(stateMachineName, version),
+                v => (Task)method.Invoke(v, new object[] { stateMachineName, version })
+            });
+            
             StateMachines.Add(key, builder.Graph);
 
             if (IsNewestVersion(stateMachineName, version))
@@ -120,7 +139,7 @@ namespace Stateflows.StateMachines.Registration
         [DebuggerHidden]
         public void AddInterceptor<TInterceptor>()
             where TInterceptor : class, IStateMachineInterceptor
-            =>  AddInterceptor(async serviceProvider => await StateflowsActivator.CreateInstanceAsync<TInterceptor>(serviceProvider, "interceptor"));
+            =>  GlobalInterceptorFactories.Add(async serviceProvider => await StateflowsActivator.CreateInstanceAsync<TInterceptor>(serviceProvider, "interceptor"));
 
         [DebuggerHidden]
         public void AddExceptionHandler(StateMachineExceptionHandlerFactory exceptionHandlerFactory)
@@ -133,7 +152,7 @@ namespace Stateflows.StateMachines.Registration
         [DebuggerHidden]
         public void AddExceptionHandler<TExceptionHandler>()
             where TExceptionHandler : class, IStateMachineExceptionHandler
-            =>  AddExceptionHandler(async serviceProvider => await StateflowsActivator.CreateInstanceAsync<TExceptionHandler>(serviceProvider, "exception handler"));
+            =>  GlobalExceptionHandlerFactories.Add(async serviceProvider => await StateflowsActivator.CreateInstanceAsync<TExceptionHandler>(serviceProvider, "exception handler"));
 
         [DebuggerHidden]
         public void AddObserver(StateMachineObserverFactory observerFactory)
@@ -146,6 +165,19 @@ namespace Stateflows.StateMachines.Registration
         [DebuggerHidden]
         public void AddObserver<TObserver>()
             where TObserver : class, IStateMachineObserver
-            =>  AddObserver(async serviceProvider => await StateflowsActivator.CreateInstanceAsync<TObserver>(serviceProvider, "observer"));
+            =>  GlobalObserverFactories.Add(async serviceProvider => await StateflowsActivator.CreateInstanceAsync<TObserver>(serviceProvider, "observer"));
+
+        public async Task VisitStateMachinesAsync(IStateMachineVisitor visitor)
+        {
+            var tasks = StateMachines
+                .Where((item, index) => !item.Key.EndsWith(".current"))
+                .Select(item => item.Value)
+                .SelectMany(graph => graph.VisitingTasks);
+            
+            foreach (var task in tasks)
+            {
+                await task(visitor);
+            }
+        }
     }
 }

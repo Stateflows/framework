@@ -79,7 +79,7 @@ namespace Stateflows.Activities.Engine
         public Task<TDefaultInitializer> GetDefaultInitializerAsync<TDefaultInitializer>(IActivityInitializationContext context)
             where TDefaultInitializer : class, IDefaultInitializer
         {
-            ContextValues.GlobalValuesHolder.Value = context.Activity.Values;
+            ContextValues.GlobalValuesHolder.Value = context.Behavior.Values;
             ContextValues.StateValuesHolder.Value = null;
             ContextValues.ParentStateValuesHolder.Value = null;
             ContextValues.SourceStateValuesHolder.Value = null;
@@ -98,7 +98,7 @@ namespace Stateflows.Activities.Engine
         public Task<TInitializer> GetInitializerAsync<TInitializer, TInitializationEvent>(IActivityInitializationContext<TInitializationEvent> context)
             where TInitializer : class, IInitializer<TInitializationEvent>
         {
-            ContextValues.GlobalValuesHolder.Value = context.Activity.Values;
+            ContextValues.GlobalValuesHolder.Value = context.Behavior.Values;
             ContextValues.StateValuesHolder.Value = null;
             ContextValues.ParentStateValuesHolder.Value = null;
             ContextValues.SourceStateValuesHolder.Value = null;
@@ -117,7 +117,7 @@ namespace Stateflows.Activities.Engine
         public Task<TFinalizer> GetFinalizerAsync<TFinalizer>(IActivityActionContext context)
             where TFinalizer : class, IFinalizer
         {
-            ContextValues.GlobalValuesHolder.Value = context.Activity.Values;
+            ContextValues.GlobalValuesHolder.Value = context.Behavior.Values;
             ContextValues.StateValuesHolder.Value = null;
             ContextValues.ParentStateValuesHolder.Value = null;
             ContextValues.SourceStateValuesHolder.Value = null;
@@ -136,7 +136,7 @@ namespace Stateflows.Activities.Engine
         public Task<TAction> GetActionAsync<TAction>(IActionContext context)
             where TAction : class, IActionNode
         {
-            ContextValues.GlobalValuesHolder.Value = context.Activity.Values;
+            ContextValues.GlobalValuesHolder.Value = context.Behavior.Values;
             ContextValues.StateValuesHolder.Value = null;
             ContextValues.ParentStateValuesHolder.Value = null;
             ContextValues.SourceStateValuesHolder.Value = null;
@@ -156,7 +156,7 @@ namespace Stateflows.Activities.Engine
 
             where TAcceptEventAction : class, IAcceptEventActionNode<TEvent>
         {
-            ContextValues.GlobalValuesHolder.Value = context.Activity.Values;
+            ContextValues.GlobalValuesHolder.Value = context.Behavior.Values;
             ContextValues.StateValuesHolder.Value = null;
             ContextValues.ParentStateValuesHolder.Value = null;
             ContextValues.SourceStateValuesHolder.Value = null;
@@ -175,7 +175,7 @@ namespace Stateflows.Activities.Engine
         public Task<TTimeEventAction> GetTimeEventActionAsync<TTimeEventAction>(IActionContext context)
             where TTimeEventAction : class, ITimeEventActionNode
         {
-            ContextValues.GlobalValuesHolder.Value = context.Activity.Values;
+            ContextValues.GlobalValuesHolder.Value = context.Behavior.Values;
             ContextValues.StateValuesHolder.Value = null;
             ContextValues.ParentStateValuesHolder.Value = null;
             ContextValues.SourceStateValuesHolder.Value = null;
@@ -194,7 +194,7 @@ namespace Stateflows.Activities.Engine
         public Task<TSendEventAction> GetSendEventActionAsync<TEvent, TSendEventAction>(IActionContext context)
             where TSendEventAction : class, ISendEventActionNode<TEvent>
         {
-            ContextValues.GlobalValuesHolder.Value = context.Activity.Values;
+            ContextValues.GlobalValuesHolder.Value = context.Behavior.Values;
             ContextValues.StateValuesHolder.Value = null;
             ContextValues.ParentStateValuesHolder.Value = null;
             ContextValues.SourceStateValuesHolder.Value = null;
@@ -213,7 +213,7 @@ namespace Stateflows.Activities.Engine
         public Task<TStructuredActivity> GetStructuredActivityAsync<TStructuredActivity>(IActionContext context)
             where TStructuredActivity : class, IStructuredActivityNode
         {
-            ContextValues.GlobalValuesHolder.Value = context.Activity.Values;
+            ContextValues.GlobalValuesHolder.Value = context.Behavior.Values;
             ContextValues.StateValuesHolder.Value = null;
             ContextValues.ParentStateValuesHolder.Value = null;
             ContextValues.SourceStateValuesHolder.Value = null;
@@ -233,7 +233,7 @@ namespace Stateflows.Activities.Engine
             where TException : Exception
             where TExceptionHandler : class, IExceptionHandlerNode<TException>
         {
-            ContextValues.GlobalValuesHolder.Value = context.Activity.Values;
+            ContextValues.GlobalValuesHolder.Value = context.Behavior.Values;
             ContextValues.StateValuesHolder.Value = null;
             ContextValues.ParentStateValuesHolder.Value = null;
             ContextValues.SourceStateValuesHolder.Value = null;
@@ -252,7 +252,7 @@ namespace Stateflows.Activities.Engine
         private Task<TFlow> GetFlowInternalAsync<TFlow>(IActivityFlowContext context, string serviceKind)
             where TFlow : IEdge
         {
-            ContextValues.GlobalValuesHolder.Value = context.Activity.Values;
+            ContextValues.GlobalValuesHolder.Value = context.Behavior.Values;
             ContextValues.StateValuesHolder.Value = null;
             ContextValues.ParentStateValuesHolder.Value = null;
             ContextValues.SourceStateValuesHolder.Value = null;

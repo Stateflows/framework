@@ -14,7 +14,7 @@ namespace Stateflows.Common
 
         public abstract string Name { get; }
 
-        [JsonProperty(TypeNameHandling = TypeNameHandling.None)]
+        [Newtonsoft.Json.JsonProperty(TypeNameHandling = Newtonsoft.Json.TypeNameHandling.None)]
         public List<EventHeader> Headers { get; set; } = new List<EventHeader>();
         
         public int TimeToLive { get; set; }

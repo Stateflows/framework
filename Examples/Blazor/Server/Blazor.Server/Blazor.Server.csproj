@@ -8,14 +8,19 @@
 
   <ItemGroup>
     <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="8.0.10" />
+    <PackageReference Include="Scalar.AspNetCore" Version="2.0.18" />
+    <PackageReference Include="Swashbuckle.AspNetCore" Version="7.2.0" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\..\..\..\Core\Stateflows\Stateflows.csproj" />
+    <ProjectReference Include="..\..\..\..\Extensions\Stateflows.Extensions.OneOf\Stateflows.Extensions.OneOf.csproj" />
+    <ProjectReference Include="..\..\..\..\Extensions\Stateflows.Extensions.OpenTelemetry\Stateflows.Extensions.OpenTelemetry.csproj" />
     <ProjectReference Include="..\..\..\..\Extensions\Stateflows.Extensions.PlantUml\Stateflows.Extensions.PlantUml.csproj" />
     <ProjectReference Include="..\..\..\..\Tools\Stateflows.Tools.Console\Stateflows.Tools.Console.csproj" />
     <ProjectReference Include="..\..\..\..\Transport\Stateflows.Transport.AspNetCore.SignalR\Stateflows.Transport.AspNetCore.SignalR.csproj" />
     <ProjectReference Include="..\..\..\..\Transport\Stateflows.Transport.Http\Stateflows.Transport.Http.csproj" />
+    <ProjectReference Include="..\..\..\..\Transport\Stateflows.Transport.REST\Stateflows.Transport.REST.csproj" />
     <ProjectReference Include="..\..\..\Examples.Common\Examples.Common.csproj" />
     <ProjectReference Include="..\..\..\Examples.Storage\Examples.Storage.csproj" />
   </ItemGroup>

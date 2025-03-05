@@ -2,6 +2,7 @@
 using System.Linq;
 using System.Diagnostics;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using Stateflows.Common;
 using Stateflows.Common.Models;
 using Stateflows.Common.Registration.Builders;
@@ -14,6 +15,8 @@ namespace Stateflows.StateMachines.Models
 {
     internal class Graph
     {
+        internal readonly List<Func<IStateMachineVisitor, Task>> VisitingTasks = new List<Func<IStateMachineVisitor, Task>>();
+        
         internal readonly StateflowsBuilder StateflowsBuilder;
 
         public Dictionary<string, int> InitCounter = new Dictionary<string, int>();
@@ -91,7 +94,7 @@ namespace Stateflows.StateMachines.Models
             {
                 if (edge.TriggerType != null)
                 {
-                    edge.ActualTriggerTypes = StateflowsBuilder.GetMappedTypes(edge.TriggerType).ToHashSet();
+                    edge.ActualTriggerTypes = StateflowsBuilder.TypeMapper.GetMappedTypes(edge.TriggerType).ToHashSet();
                     edge.TimeTriggerTypes = edge.ActualTriggerTypes.Where(type => type.IsSubclassOf(typeof(TimeEvent))).ToHashSet();
                     edge.RecurringTypes = edge.ActualTriggerTypes.Where(type => type.IsSubclassOf(typeof(RecurringEvent))).ToHashSet();
                     edge.ActualTriggers = edge.ActualTriggerTypes.Select(type => Event.GetName(type)).ToHashSet();

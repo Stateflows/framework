@@ -25,7 +25,7 @@ namespace Stateflows.StateMachines
         public Func<IStateMachineActionContext, Task> Set<T>(T value)
         {
             var self = this;
-            return c => c.StateMachine.Values.SetAsync(self.ValueName, value);
+            return c => c.Behavior.Values.SetAsync(self.ValueName, value);
         }
 
         /// <summary>
@@ -38,7 +38,7 @@ namespace Stateflows.StateMachines
         public Func<IStateMachineActionContext, Task> Update<T>(Func<T, T> valueUpdater, T defaultValue = default)
         {
             var self = this;
-            return c => c.StateMachine.Values.UpdateAsync(self.ValueName, valueUpdater, defaultValue);
+            return c => c.Behavior.Values.UpdateAsync(self.ValueName, valueUpdater, defaultValue);
         }
 
         /// <summary>
@@ -50,29 +50,29 @@ namespace Stateflows.StateMachines
             get
             {
                 var self = this;
-                return c => c.StateMachine.Values.RemoveAsync(self.ValueName);
+                return c => c.Behavior.Values.RemoveAsync(self.ValueName);
             }
         }
     }
 
-    public struct TransitionEffectGlobalValueSetExpression
+    public struct TransitionEffectGlobalNamespaceExpression
     {
-        private readonly string ValueSetName;
+        private readonly string NamespaceName;
 
-        public TransitionEffectGlobalValueSetExpression(string valueSetName)
+        public TransitionEffectGlobalNamespaceExpression(string namespaceName)
         {
-            ValueSetName = valueSetName;
+            NamespaceName = namespaceName;
         }
 
         /// <summary>
-        /// Provides declarative effects based on the global value set's value with the given name.
+        /// Provides declarative effects based on the global namespace's value with the given name.
         /// </summary>
-        /// <param name="valueName">Name of the global value set's value used in the effect.</param>
+        /// <param name="valueName">Name of the global namespace's value used in the effect.</param>
         /// <returns>Declarative effects.</returns>
         public TransitionEffectGlobalValueExpression Value(string valueName)
         {
             var self = this;
-            return new TransitionEffectGlobalValueExpression($"{self.ValueSetName}.{valueName}");
+            return new TransitionEffectGlobalValueExpression($"{self.NamespaceName}.{valueName}");
         }
 
         /// <summary>
@@ -85,8 +85,8 @@ namespace Stateflows.StateMachines
             {
                 var self = this;
                 return c =>
-                    ((ContextValuesCollection)c.StateMachine.Values).RemoveMatchingAsync(
-                        new Regex($"{self.ValueSetName}[.](.*)"));
+                    ((ContextValuesCollection)c.Behavior.Values).RemoveMatchingAsync(
+                        new Regex($"{self.NamespaceName}[.](.*)"));
             }
         }
     }
@@ -158,26 +158,26 @@ namespace Stateflows.StateMachines
         }
     }
 
-    public struct TransitionEffectStateValueSetExpression
+    public struct TransitionEffectStateNamespaceExpression
     {
-        private readonly string ValueSetName;
+        private readonly string NamespaceName;
         private readonly bool IsSource;
 
-        public TransitionEffectStateValueSetExpression(string valueSetName, bool isSource)
+        public TransitionEffectStateNamespaceExpression(string namespaceName, bool isSource)
         {
-            ValueSetName = valueSetName;
+            NamespaceName = namespaceName;
             IsSource = isSource;
         }
 
         /// <summary>
-        /// Provides declarative effects based on the state value set's value with the given name.
+        /// Provides declarative effects based on the state namespace's value with the given name.
         /// </summary>
-        /// <param name="valueName">Name of the state value set's value used in the effect.</param>
+        /// <param name="valueName">Name of the state namespace's value used in the effect.</param>
         /// <returns>Declarative effects.</returns>
         public TransitionEffectStateValueExpression Value(string valueName)
         {
             var self = this;
-            return new TransitionEffectStateValueExpression($"{self.ValueSetName}.{valueName}", self.IsSource);
+            return new TransitionEffectStateValueExpression($"{self.NamespaceName}.{valueName}", self.IsSource);
         }
 
         /// <summary>
@@ -196,7 +196,7 @@ namespace Stateflows.StateMachines
                         : c.Target?.Values;
 
                     return ((ContextValuesCollection)valueSet)!.RemoveMatchingAsync(
-                        new Regex($"{self.ValueSetName}[.](.*)"));
+                        new Regex($"{self.NamespaceName}[.](.*)"));
                 };
             }
         }
@@ -205,15 +205,15 @@ namespace Stateflows.StateMachines
     public struct TransitionEffectGlobalSelector
     {
         /// <summary>
-        /// Provides declarative effects. based on the global value set's value with given name.
+        /// Provides declarative effects. based on the global namespace's value with given name.
         /// </summary>
-        /// <param name="valueName">Name of the global value set's value used in guard.</param>
+        /// <param name="valueName">Name of the global namespace's value used in guard.</param>
         /// <returns>Declarative effects.</returns>
         public TransitionEffectGlobalValueExpression Value(string valueName)
             => new TransitionEffectGlobalValueExpression(valueName);
         
-        public TransitionEffectGlobalValueSetExpression ValueSet(string valueSetName)
-            => new TransitionEffectGlobalValueSetExpression(valueSetName);
+        public TransitionEffectGlobalNamespaceExpression Namespace(string namespaceName)
+            => new TransitionEffectGlobalNamespaceExpression(namespaceName);
     }
 
     public struct TransitionEffectStateSelector
@@ -226,9 +226,9 @@ namespace Stateflows.StateMachines
         }
 
         /// <summary>
-        /// Provides declarative effects. based on the state value set's value with given name.
+        /// Provides declarative effects. based on the state namespace's value with given name.
         /// </summary>
-        /// <param name="valueName">Name of the state value set's value used in guard.</param>
+        /// <param name="valueName">Name of the state namespace's value used in guard.</param>
         /// <returns>Declarative effects.</returns>
         public TransitionEffectStateValueExpression Value(string valueName)
         {
@@ -236,10 +236,10 @@ namespace Stateflows.StateMachines
             return new TransitionEffectStateValueExpression(valueName, self.IsSource);
         }
         
-        public TransitionEffectStateValueSetExpression ValueSet(string valueSetName)
+        public TransitionEffectStateNamespaceExpression Namespace(string namespaceName)
         {
             var self = this;
-            return new TransitionEffectStateValueSetExpression(valueSetName, self.IsSource);
+            return new TransitionEffectStateNamespaceExpression(namespaceName, self.IsSource);
         }
     }
     

@@ -1,5 +1,6 @@
 ﻿using System.Diagnostics;
 using Stateflows.StateMachines.Extensions;
+using Stateflows.StateMachines.Registration.Interfaces.Internal;
 
 namespace Stateflows.StateMachines.Registration.Interfaces.Base
 {
@@ -62,7 +63,8 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         [DebuggerHidden]
         public TReturn AddInitialState<TState>(string stateName, StateBuildAction stateBuildAction = null)
             where TState : class, IState
-            => AddInitialState(
+        {
+            var result = AddInitialState(
                 stateName,
                 b =>
                 {
@@ -71,6 +73,12 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
                     stateBuildAction?.Invoke(b);
                 }
             );
+
+            var graph = ((IGraphBuilder)this).Graph;
+            graph.VisitingTasks.Add(visitor => visitor.VertexTypeAddedAsync<TState>(graph.Name, graph.Version, stateName));
+            
+            return result;
+        }
         #endregion
 
         #region AddInitialCompositeState
@@ -134,7 +142,8 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         [DebuggerHidden]
         public TReturn AddInitialCompositeState<TCompositeState>(string compositeStateName, CompositeStateBuildAction compositeStateBuildAction)
             where TCompositeState : class, ICompositeState
-            => AddInitialCompositeState(
+        {
+            var result = AddInitialCompositeState(
                 compositeStateName,
                 b =>
                 {
@@ -143,6 +152,12 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
                     compositeStateBuildAction?.Invoke(b);
                 }
             );
+
+            var graph = ((IGraphBuilder)this).Graph;
+            graph.VisitingTasks.Add(visitor => visitor.VertexTypeAddedAsync<TCompositeState>(graph.Name, graph.Version, compositeStateName));
+            
+            return result;
+        }
         #endregion
 
         #region AddInitialOrthogonalState
@@ -206,7 +221,8 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         [DebuggerHidden]
         public TReturn AddInitialOrthogonalState<TOrthogonalState>(string orthogonalStateName, OrthogonalStateBuildAction orthogonalStateBuildAction)
             where TOrthogonalState : class, IOrthogonalState
-            => AddInitialOrthogonalState(
+        {
+            var result = AddInitialOrthogonalState(
                 orthogonalStateName,
                 b =>
                 {
@@ -215,6 +231,12 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
                     orthogonalStateBuildAction?.Invoke(b);
                 }
             );
+
+            var graph = ((IGraphBuilder)this).Graph;
+            graph.VisitingTasks.Add(visitor => visitor.VertexTypeAddedAsync<TOrthogonalState>(graph.Name, graph.Version, orthogonalStateName));
+            
+            return result;
+        }
         #endregion
     }
 }

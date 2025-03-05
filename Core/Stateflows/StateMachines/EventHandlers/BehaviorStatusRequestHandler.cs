@@ -15,7 +15,7 @@ namespace Stateflows.StateMachines.EventHandlers
         {
             if (context.Event is BehaviorInfoRequest request)
             {
-                var executor = context.StateMachine.GetExecutor();
+                var executor = context.Behavior.GetExecutor();
 
                 request.Respond(new BehaviorInfo()
                 {

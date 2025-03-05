@@ -70,6 +70,8 @@ namespace Stateflows.StateMachines.Registration.Builders
 
             Region.Vertices.Add(vertex.Name, vertex);
             Region.Graph.AllVertices.Add(vertex.Identifier, vertex);
+            
+            Graph.VisitingTasks.Add(visitor => visitor.VertexAddedAsync(Graph.Name, Graph.Version, vertex.Name, vertex.Type));
 
             return this;
         }
@@ -743,5 +745,8 @@ namespace Stateflows.StateMachines.Registration.Builders
 
         IFinalizedOverridenRegionalizedCompositeStateBuilder IStateMachineFinal<IFinalizedOverridenRegionalizedCompositeStateBuilder>.AddFinalState(string finalStateName)
             => AddFinalState(finalStateName) as IFinalizedOverridenRegionalizedCompositeStateBuilder;
+
+        public string Name => Vertex.Name;
+        public VertexType Type => Vertex.Type;
     }
 }

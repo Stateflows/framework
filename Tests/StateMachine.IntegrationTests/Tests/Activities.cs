@@ -35,7 +35,7 @@ namespace StateMachine.IntegrationTests.Tests
                         .AddInitializer<BoolInit>(async c =>
                         {
                             Debug.WriteLine($"InitializationEvent.Value: {c.InitializationEvent.Value}");
-                            c.StateMachine.Values.Set("value", c.InitializationEvent.Value);
+                            c.Behavior.Values.Set("value", c.InitializationEvent.Value);
                             return true;
                         })
                         .AddInitialState("stateA", b => b
@@ -60,7 +60,7 @@ namespace StateMachine.IntegrationTests.Tests
                             async c =>
                             {
                                 GuardRun = true;
-                                if (c.Activity.Values.TryGet<bool>("value", out var value))
+                                if (c.Behavior.Values.TryGet<bool>("value", out var value))
                                 {
                                     Debug.WriteLine($"value: {value}");
                                     c.Output(value);

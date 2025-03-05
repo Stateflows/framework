@@ -10,11 +10,12 @@ namespace Stateflows.StateMachines.EventHandlers
     {
         public Type EventType => typeof(Finalize);
 
-        public async Task<EventStatus> TryHandleEventAsync<TEvent>(IEventInspectionContext<TEvent> context)
+        public async Task<EventStatus> TryHandleEventAsync<TEvent>(IEventInspectionContext<TEvent> context)
+
         {
             if (context.Event is Finalize request)
             {
-                var finalized = await context.StateMachine.GetExecutor().ExitAsync();
+                var finalized = await context.Behavior.GetExecutor().ExitAsync();
 
                 return EventStatus.Consumed;
             }

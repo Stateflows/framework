@@ -2,6 +2,7 @@
 using System.Linq;
 using System.Threading.Tasks;
 using System.Collections.Generic;
+using System.Diagnostics;
 using Microsoft.Extensions.DependencyInjection;
 using Stateflows.Common;
 using Stateflows.Common.Exceptions;
@@ -88,6 +89,7 @@ namespace Stateflows.StateMachines.Registration.Builders
                             {
                                 var inspector = await c.Executor.GetInspectorAsync();
 
+                                Trace.WriteLine($"⦗→s⦘ Activity '{context.Context.Id.Name}:{context.Context.Id.Instance}': exception thrown '{e.Message}'");
                                 if (!await inspector.OnTransitionGuardExceptionAsync(context, e))
                                 {
                                     throw;
@@ -144,6 +146,7 @@ namespace Stateflows.StateMachines.Registration.Builders
                             {
                                 var inspector = await c.Executor.GetInspectorAsync();
 
+                                Trace.WriteLine($"⦗→s⦘ Activity '{context.Context.Id.Name}:{context.Context.Id.Instance}': exception thrown '{e.Message}'");
                                 if (!await inspector.OnTransitionEffectExceptionAsync(context, e))
                                 {
                                     throw;

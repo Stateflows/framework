@@ -104,6 +104,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "StateMachine.IntegrationTes
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Action.IntegrationTests", "Tests\Action.IntegrationTests\Action.IntegrationTests.csproj", "{89895983-AFE8-4C06-A98D-E344C4F7C8A2}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Stateflows.Extensions.OpenTelemetry", "Extensions\Stateflows.Extensions.OpenTelemetry\Stateflows.Extensions.OpenTelemetry.csproj", "{63C972C0-4A3B-4FF1-A2BC-D6ED9703D31B}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -246,6 +248,10 @@ Global
 		{89895983-AFE8-4C06-A98D-E344C4F7C8A2}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{89895983-AFE8-4C06-A98D-E344C4F7C8A2}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{89895983-AFE8-4C06-A98D-E344C4F7C8A2}.Release|Any CPU.Build.0 = Release|Any CPU
+		{63C972C0-4A3B-4FF1-A2BC-D6ED9703D31B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{63C972C0-4A3B-4FF1-A2BC-D6ED9703D31B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{63C972C0-4A3B-4FF1-A2BC-D6ED9703D31B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{63C972C0-4A3B-4FF1-A2BC-D6ED9703D31B}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -289,6 +295,7 @@ Global
 		{069F5029-5EFF-4AC5-ACEC-9BABE36C0EA4} = {580A6B03-79AD-430C-AEF6-80EC6A02FA61}
 		{C9D47BED-AD13-420B-BB2C-972C4D4B4D2C} = {76D44611-8D90-4E93-BA44-AAB939A742AE}
 		{89895983-AFE8-4C06-A98D-E344C4F7C8A2} = {76D44611-8D90-4E93-BA44-AAB939A742AE}
+		{63C972C0-4A3B-4FF1-A2BC-D6ED9703D31B} = {580A6B03-79AD-430C-AEF6-80EC6A02FA61}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {602A9FD6-5053-42E4-AEAE-2813DF169A3C}

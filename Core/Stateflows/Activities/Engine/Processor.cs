@@ -139,8 +139,11 @@ namespace Stateflows.Activities.Engine
 
             if (await inspector.BeforeProcessEventAsync(eventContext))
             {
-                var attributes = eventHolder.PayloadType.GetCustomAttributes<NoImplicitInitializationAttribute>();
-                if (!executor.Initialized && !attributes.Any())
+                var noImplicitInitialization =
+                    eventHolder.PayloadType.GetCustomAttributes<NoImplicitInitializationAttribute>().Any() ||
+                    eventHolder.Headers.Any(h => h is NoImplicitInitialization);
+
+                if (!executor.Initialized && !noImplicitInitialization)
                 {
                     result = await executor.InitializeAsync(
                         eventHolder,
@@ -149,7 +152,7 @@ namespace Stateflows.Activities.Engine
                             : null
                     );
                 }
-
+                
                 if (result != EventStatus.Initialized)
                 {
                     var handlingResult = await TryHandleEventAsync(eventContext);
@@ -173,7 +176,7 @@ namespace Stateflows.Activities.Engine
                     {
                         result = result == EventStatus.NotInitialized
                             ? EventStatus.NotInitialized
-                            : attributes.Any()
+                            : noImplicitInitialization
                                 ? handlingResult
                                 : EventStatus.Rejected;
                     }

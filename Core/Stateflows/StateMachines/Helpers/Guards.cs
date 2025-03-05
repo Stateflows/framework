@@ -1,7 +1,9 @@
 ﻿using System;
 using System.Linq;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Stateflows.Common;
+using Stateflows.Common.Classes;
 using Stateflows.Common.Interfaces;
 using Stateflows.StateMachines.Context.Interfaces;
 
@@ -24,7 +26,7 @@ namespace Stateflows.StateMachines
             get
             {
                 var self = this;
-                return c => c.StateMachine.Values.IsSetAsync(self.ValueName);
+                return c => c.Behavior.Values.IsSetAsync(self.ValueName);
             }
         }
 
@@ -36,7 +38,7 @@ namespace Stateflows.StateMachines
             get
             {
                 var self = this;
-                return async c => !await c.StateMachine.Values.IsSetAsync(self.ValueName);
+                return async c => !await c.Behavior.Values.IsSetAsync(self.ValueName);
             }
         }
 
@@ -50,7 +52,7 @@ namespace Stateflows.StateMachines
             var self = this;
             return async c =>
             {
-                var result = await c.StateMachine.Values.TryGetAsync<T>(self.ValueName);
+                var result = await c.Behavior.Values.TryGetAsync<T>(self.ValueName);
                 return result.Success && result.Value.Equals(value);
             };
         }
@@ -65,7 +67,7 @@ namespace Stateflows.StateMachines
             var self = this;
             return async c =>
             {
-                var result = await c.StateMachine.Values.TryGetAsync<T>(self.ValueName);
+                var result = await c.Behavior.Values.TryGetAsync<T>(self.ValueName);
                 return result.Success && !result.Value.Equals(value);
             };
         }
@@ -80,7 +82,7 @@ namespace Stateflows.StateMachines
             var self = this;
             return async c =>
             {
-                var result = await c.StateMachine.Values.TryGetAsync<T>(self.ValueName);
+                var result = await c.Behavior.Values.TryGetAsync<T>(self.ValueName);
                 return result.Success && values.Contains(result.Value);
             };
         }
@@ -95,7 +97,7 @@ namespace Stateflows.StateMachines
             var self = this;
             return async c =>
             {
-                var result = await c.StateMachine.Values.TryGetAsync<T>(self.ValueName);
+                var result = await c.Behavior.Values.TryGetAsync<T>(self.ValueName);
                 return result.Success && !values.Contains(result.Value);
             };
         }
@@ -224,47 +226,104 @@ namespace Stateflows.StateMachines
         }
     }
 
-    public struct TransitionGuardGlobalValueSetExpression
+    public struct TransitionGuardGlobalNamespaceExpression
     {
-        private readonly string ValueSetName;
+        private readonly string NamespaceName;
 
-        public TransitionGuardGlobalValueSetExpression(string valueSetName)
+        public TransitionGuardGlobalNamespaceExpression(string namespaceName)
         {
-            ValueSetName = valueSetName;
+            NamespaceName = namespaceName;
         }
 
         /// <summary>
-        /// Provides declarative guards based on the global value set's value with given name.
+        /// Provides declarative guards based on the global namespace's value with given name.
         /// </summary>
-        /// <param name="valueName">Name of the global value set's value used in guard.</param>
+        /// <param name="valueName">Name of the global namespace's value used in guard.</param>
         /// <returns>Declarative guards.</returns>
         public TransitionGuardGlobalValueExpression Value(string valueName)
         {
             var self = this;
-            return new TransitionGuardGlobalValueExpression($"{self.ValueSetName}.{valueName}");
+            return new TransitionGuardGlobalValueExpression($"{self.NamespaceName}.{valueName}");
+        }
+
+        /// <summary>
+        /// Provides declarative guards based on the global namespace's sub-namespace with given name.
+        /// </summary>
+        /// <param name="namespaceName">Name of the global namespace's sub-namespace used in guard.</param>
+        /// <returns>Declarative guards.</returns>
+        public TransitionGuardGlobalNamespaceExpression Namespace(string namespaceName)
+        {
+            var self = this;
+            return new TransitionGuardGlobalNamespaceExpression($"{self.NamespaceName}.{namespaceName}");
+        }
+        
+        /// <summary>
+        /// Provides guard that checks if specified namespace has any values. 
+        /// </summary>
+        public Func<IStateMachineActionContext, Task<bool>> HasAnyValues
+        {
+            get
+            {
+                var self = this;
+                return c => ((ContextValuesCollection)c.Behavior.Values)!.HasAnyMatchingAsync(new Regex($"{self.NamespaceName}[.](.*)"));
+            }
         }
     }
 
-    public struct TransitionGuardStateValueSetExpression
+    public struct TransitionGuardStateNamespaceExpression
     {
-        private readonly string ValueSetName;
+        private readonly string NamespaceName;
         private readonly bool IsSource;
 
-        public TransitionGuardStateValueSetExpression(string valueSetName, bool isSource)
+        public TransitionGuardStateNamespaceExpression(string namespaceName, bool isSource)
         {
-            ValueSetName = valueSetName;
+            NamespaceName = namespaceName;
             IsSource = isSource;
         }
 
         /// <summary>
-        /// Provides declarative guards based on the state value set's value with given name.
+        /// Provides declarative guards based on the state namespace's value with given name.
         /// </summary>
-        /// <param name="valueName">Name of the state value set's value used in guard.</param>
+        /// <param name="valueName">Name of the state namespace's value used in guard.</param>
         /// <returns>Declarative guards.</returns>
         public TransitionGuardStateValueExpression Value(string valueName)
         {
             var self = this;
-            return new TransitionGuardStateValueExpression($"{self.ValueSetName}.{valueName}", self.IsSource);
+            return new TransitionGuardStateValueExpression($"{self.NamespaceName}.{valueName}", self.IsSource);
+        }
+
+        /// <summary>
+        /// Provides declarative guards based on the state namespace's sub-namespace with given name.
+        /// </summary>
+        /// <param name="namespaceName">Name of the state namespace's sub-namespace used in guard.</param>
+        /// <returns>Declarative guards.</returns>
+        public TransitionGuardStateNamespaceExpression Namespace(string namespaceName)
+        {
+            var self = this;
+            return new TransitionGuardStateNamespaceExpression($"{self.NamespaceName}.{namespaceName}", IsSource);
+        }
+
+        private IContextValues GetValueSet(ITransitionContext transitionContext)
+            => IsSource
+                ? transitionContext.Source.Values
+                : transitionContext.Target?.Values;
+        
+        /// <summary>
+        /// Provides guard that checks if specified namespace has any values. 
+        /// </summary>
+        public Func<ITransitionContext, Task<bool>> HasAnyValues
+        {
+            get
+            {
+                var self = this;
+                return c =>
+                {
+                    var valueSet = self.GetValueSet(c);
+                    return valueSet != null
+                        ? ((ContextValuesCollection)valueSet)!.HasAnyMatchingAsync(new Regex($"{self.NamespaceName}[.](.*)"))
+                        : Task.FromResult(false);
+                };
+            }
         }
     }
 
@@ -279,12 +338,12 @@ namespace Stateflows.StateMachines
             => new TransitionGuardGlobalValueExpression(valueName);
         
         /// <summary>
-        /// Provides declarative guards based on the global value set with given name.
+        /// Provides declarative guards based on the global namespace with given name.
         /// </summary>
-        /// <param name="valueSetName">Name of the global value set used in guard.</param>
+        /// <param name="namespaceName">Name of the global namespace used in guard.</param>
         /// <returns>Declarative guards.</returns>
-        public TransitionGuardGlobalValueSetExpression ValueSet(string valueSetName)
-            => new TransitionGuardGlobalValueSetExpression(valueSetName);
+        public TransitionGuardGlobalNamespaceExpression Namespace(string namespaceName)
+            => new TransitionGuardGlobalNamespaceExpression(namespaceName);
     }
 
     public struct TransitionGuardStateSelector
@@ -308,14 +367,14 @@ namespace Stateflows.StateMachines
         }
         
         /// <summary>
-        /// Provides declarative guards based on the state's value set with given name.
+        /// Provides declarative guards based on the state's namespace with given name.
         /// </summary>
-        /// <param name="valueSetName">Name of the state's value set used in guard.</param>
+        /// <param name="namespaceName">Name of the state's namespace used in guard.</param>
         /// <returns>Declarative guards.</returns>
-        public TransitionGuardStateValueSetExpression ValueSet(string valueSetName)
+        public TransitionGuardStateNamespaceExpression Namespace(string namespaceName)
         {
             var self = this;
-            return new TransitionGuardStateValueSetExpression(valueSetName, self.IsSource);
+            return new TransitionGuardStateNamespaceExpression(namespaceName, self.IsSource);
         }
     }
     
@@ -348,14 +407,14 @@ namespace Stateflows.StateMachines
         /// <typeparam name="TState">State to be checked against.</typeparam>
         public static Task<bool> InState<TState>(IStateMachineActionContext context)
             where TState : class, IVertex
-            => Task.FromResult(context.StateMachine.CurrentState.GetAllNodes().Any(node => node.Value.Name == State<TState>.Name));
+            => Task.FromResult(context.CurrentState.GetAllNodes().Any(node => node.Value.Name == State<TState>.Name));
         
         /// <summary>
         /// Declares guard that checks if state machine is in given state.
         /// </summary>
         /// <param name="stateName">Name of the state to be checked against.</param>
         public static Func<IStateMachineActionContext, Task<bool>> InState(string stateName)
-            => c => Task.FromResult(c.StateMachine.CurrentState.GetAllNodes().Any(node => node.Value.Name == stateName));
+            => c => Task.FromResult(c.CurrentState.GetAllNodes().Any(node => node.Value.Name == stateName));
 
         /// <summary>
         /// Provides declarative guards based on global values.

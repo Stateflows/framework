@@ -19,6 +19,8 @@ namespace Stateflows.Common
         private EventHolder EventHolder { get; set; }
 
         public EventStatus Status { get; set; }
+        
+        public string StatusText => Enum.GetName(typeof(EventStatus), Status);
 
         public EventValidation Validation { get; set; }
     }

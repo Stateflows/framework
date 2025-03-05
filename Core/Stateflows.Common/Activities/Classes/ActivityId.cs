@@ -28,9 +28,11 @@ namespace Stateflows
 
         public string Instance { get; set; }
 
+        
         [JsonIgnore]
         public readonly ActivityClass ActivityClass => new ActivityClass(Name);
 
+        
         [JsonIgnore]
         public readonly BehaviorId BehaviorId => new BehaviorId(BehaviorType.Activity, Name, Instance);
 

@@ -15,10 +15,10 @@ namespace Stateflows.Activities
 
         public override Task AfterActivityFinalizeAsync(IActivityFinalizationContext context)
         {
-            var stateflowsContext = (context as IRootContext).Context.Context;
+            var stateflowsContext = ((IRootContext)context).Context.Context;
             if (stateflowsContext.Stored)
             {
-                context.Activity.Send(new Reset() { Mode = resetMode });
+                context.Behavior.Send(new Reset() { Mode = resetMode });
             }
             else
             {

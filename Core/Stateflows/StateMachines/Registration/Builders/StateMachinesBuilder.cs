@@ -96,6 +96,14 @@ namespace Stateflows.StateMachines.Registration.Builders
 
             return this;
         }
+        
+        [DebuggerHidden]
+        public IStateMachinesBuilder AddInterceptor(StateMachineInterceptorFactoryAsync interceptorFactoryAsync)
+        {
+            Register.AddInterceptor(interceptorFactoryAsync);
+
+            return this;
+        }
 
         [DebuggerHidden]
         public IStateMachinesBuilder AddExceptionHandler<TExceptionHandler>()
@@ -110,6 +118,14 @@ namespace Stateflows.StateMachines.Registration.Builders
         public IStateMachinesBuilder AddExceptionHandler(StateMachineExceptionHandlerFactory exceptionHandlerFactory)
         {
             Register.AddExceptionHandler(exceptionHandlerFactory);
+
+            return this;
+        }
+        
+        [DebuggerHidden]
+        public IStateMachinesBuilder AddExceptionHandler(StateMachineExceptionHandlerFactoryAsync exceptionHandlerFactoryAsync)
+        {
+            Register.AddExceptionHandler(exceptionHandlerFactoryAsync);
 
             return this;
         }
@@ -130,6 +146,39 @@ namespace Stateflows.StateMachines.Registration.Builders
 
             return this;
         }
+        
+        [DebuggerHidden]
+        public IStateMachinesBuilder AddObserver(StateMachineObserverFactoryAsync observerFactoryAsync)
+        {
+            Register.AddObserver(observerFactoryAsync);
+
+            return this;
+        }
+
+   //      [DebuggerHidden]
+   //      public IStateMachinesBuilder AddVisitor<TVisitor>()
+   //          where TVisitor : class, IStateMachineVisitor
+   //      {
+   //          Register.AddVisitor<TVisitor>();
+   //
+   //          return this;
+   //      }
+   //
+   //      [DebuggerHidden]
+   //      public IStateMachinesBuilder AddVisitor(StateMachineVisitorFactory visitorFactory)
+   // {
+   //          Register.AddVisitor(visitorFactory);
+   //
+   //          return this;
+   //      }
+   //      
+   //      [DebuggerHidden]
+   //      public IStateMachinesBuilder AddVisitor(StateMachineVisitorFactoryAsync visitorFactoryAsync)
+   //      {
+   //          Register.AddVisitor(visitorFactoryAsync);
+   //
+   //          return this;
+   //      }
         #endregion
     }
 }

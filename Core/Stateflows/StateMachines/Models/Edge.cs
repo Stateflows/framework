@@ -58,7 +58,7 @@ namespace Stateflows.StateMachines.Models
 
         private Edge MergeWith(Edge edge)
         {
-            var actualTriggerTypes = Graph.StateflowsBuilder.GetMappedTypes(TriggerType).ToHashSet();
+            var actualTriggerTypes = Graph.StateflowsBuilder.TypeMapper.GetMappedTypes(TriggerType).ToHashSet();
 
             var triggerDescriptor = edge.IsElse
                 ? $"{Trigger}|else"

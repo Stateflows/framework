@@ -42,7 +42,7 @@ namespace Activity.IntegrationTests.Tests
                         )
                         .AddAction("action2", async c =>
                         {
-                            Executed = c.Activity.Values.TryGet("x", out int globalCounter) && globalCounter == 42;
+                            Executed = c.Behavior.Values.TryGet("x", out int globalCounter) && globalCounter == 42;
                         })
                     )
                 )

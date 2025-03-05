@@ -22,7 +22,7 @@ builder.Services.AddStateflows(b => b
                 .AddTransition<AfterOneMinute>("state2")
             )
             .AddState("state2", b => b
-                .AddOnEntry(c => c.StateMachine.Publish(new SomeNotification()))
+                .AddOnEntry(c => c.Behavior.Publish(new SomeNotification()))
                 .AddTransition<OtherEvent>("state1")
                 .AddTransition<AfterOneMinute>("state1")
             )

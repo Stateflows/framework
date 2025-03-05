@@ -66,6 +66,7 @@ namespace Stateflows.StateMachines.Registration.Builders
                     {
                         var inspector = await c.Executor.GetInspectorAsync();
                         
+                        Trace.WriteLine($"⦗→s⦘ State Machine '{context.Context.Id.Name}:{context.Context.Id.Instance}': exception thrown '{e.Message}'");
                         if (!await inspector.OnStateInitializeExceptionAsync(context, e))
                         {
                             throw;
@@ -106,6 +107,7 @@ namespace Stateflows.StateMachines.Registration.Builders
                     {
                         var inspector = await c.Executor.GetInspectorAsync();
 
+                        Trace.WriteLine($"⦗→s⦘ State Machine '{context.Context.Id.Name}:{context.Context.Id.Instance}': exception thrown '{e.Message}'");
                         if (!await inspector.OnStateFinalizeExceptionAsync(context, e))
                         {
                             throw;
@@ -148,6 +150,7 @@ namespace Stateflows.StateMachines.Registration.Builders
                             {
                                 var inspector = await c.Executor.GetInspectorAsync();
 
+                                Trace.WriteLine($"⦗→s⦘ State Machine '{context.Context.Id.Name}:{context.Context.Id.Instance}': exception thrown '{e.Message}'");
                                 if (!await inspector.OnStateEntryExceptionAsync(context, e))
                                 {
                                     throw;
@@ -191,6 +194,7 @@ namespace Stateflows.StateMachines.Registration.Builders
                             {
                                 var inspector = await c.Executor.GetInspectorAsync();
 
+                                Trace.WriteLine($"⦗→s⦘ State Machine '{context.Context.Id.Name}:{context.Context.Id.Instance}': exception thrown '{e.Message}'");
                                 if (!await inspector.OnStateExitExceptionAsync(context, e))
                                 {
                                     throw;
@@ -495,5 +499,8 @@ namespace Stateflows.StateMachines.Registration.Builders
             buildAction?.Invoke(new RegionBuilder(Vertex.Regions[index], Services));
             return this;
         }
+
+        public string Name => Vertex.Name;
+        public VertexType Type => Vertex.Type;
     }
 }

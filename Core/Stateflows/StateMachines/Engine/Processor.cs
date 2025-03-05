@@ -164,62 +164,78 @@ namespace Stateflows.StateMachines.Engine
             Executor executor
         )
         {
-            var eventContext = new EventContext<TEvent>(executor.Context);
+            var context = new EventContext<TEvent>(executor.Context);
             
             var inspector = await executor.GetInspectorAsync();
 
-            if (await inspector.BeforeProcessEventAsync(eventContext))
+            await inspector.ProcessEventAsync(context, async eventContext =>
             {
-                try
+                if (await inspector.BeforeProcessEventAsync(context))
                 {
-                    var attributes = eventHolder.GetType().GetCustomAttributes<NoImplicitInitializationAttribute>().ToArray();
-                    if (!executor.Initialized && !attributes.Any() && !typeof(Exception).IsAssignableFrom(eventHolder.PayloadType))
+                    try
                     {
-                        result = await executor.InitializeAsync(eventHolder);
-                    }
+                        var noImplicitInitialization =
+                            eventHolder.PayloadType.GetCustomAttributes<NoImplicitInitializationAttribute>().Any() ||
+                            eventHolder.Headers.Any(h => h is NoImplicitInitialization);
 
-                    if (result != EventStatus.Initialized)
-                    {
-                        var handlingResult = await TryHandleEventAsync(eventContext);
-
-                        if (executor.Initialized)
+                        if (
+                            !executor.Initialized &&
+                            !noImplicitInitialization &&
+                            !typeof(Exception).IsAssignableFrom(eventHolder.PayloadType)
+                        )
                         {
-                            if (
-                                handlingResult != EventStatus.Consumed &&
-                                handlingResult != EventStatus.Rejected && 
-                                handlingResult != EventStatus.NotInitialized
-                            )
+                            result = await executor.InitializeAsync(eventHolder);
+                        }
+
+                        if (result != EventStatus.Initialized)
+                        {
+                            var handlingResult = await TryHandleEventAsync(context);
+
+                            if (executor.Initialized)
                             {
-                                result = await executor.ProcessAsync(eventHolder);
+                                if (
+                                    handlingResult != EventStatus.Consumed &&
+                                    handlingResult != EventStatus.Rejected &&
+                                    handlingResult != EventStatus.NotInitialized
+                                )
+                                {
+                                    result = await executor.ProcessAsync(eventHolder);
+                                }
+                                else
+                                {
+                                    result = handlingResult;
+                                }
                             }
                             else
                             {
-                                result = handlingResult;
+                                result = result == EventStatus.NotInitialized
+                                    ? EventStatus.NotInitialized
+                                    : noImplicitInitialization
+                                        ? handlingResult
+                                        : EventStatus.Rejected;
                             }
                         }
-                        else
+                    }
+                    finally
+                    {
+                        if (result == EventStatus.Undelivered)
                         {
-                            var noImplicitInitialization = attributes.Any();
-                            result = result == EventStatus.NotInitialized
-                                ? EventStatus.NotInitialized
-                                : noImplicitInitialization
-                                    ? handlingResult
-                                    : EventStatus.Rejected;
+                            result = EventStatus.Failed;
                         }
+
+                        await inspector.AfterProcessEventAsync(context, result);
                     }
                 }
-                finally
+                else
                 {
-                    await inspector.AfterProcessEventAsync(eventContext);
+                    if (executor.Context.ForceStatus != null)
+                    {
+                        result = (EventStatus)executor.Context.ForceStatus;
+                    }
                 }
-            }
-            else
-            {
-                if (executor.Context.ForceStatus != null)
-                {
-                    result = (EventStatus)executor.Context.ForceStatus;
-                }
-            }
+                
+                return result;
+            });
 
             return result;
         }

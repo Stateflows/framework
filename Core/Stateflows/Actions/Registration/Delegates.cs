@@ -1,4 +1,5 @@
-﻿using System.Threading.Tasks;
+﻿using System;
+using System.Threading.Tasks;
 using Stateflows.Actions.Context.Interfaces;
 
 namespace Stateflows.Actions.Registration
@@ -7,9 +8,7 @@ namespace Stateflows.Actions.Registration
 
     public delegate void ActionsBuildAction(IActionsBuilder register);
 
-    // public delegate IActivityObserver ActivityObserverFactory(IServiceProvider serviceProvider);
-    //
-    // public delegate IActivityInterceptor ActivityInterceptorFactory(IServiceProvider serviceProvider);
-    //
-    // public delegate IActivityExceptionHandler ActivityExceptionHandlerFactory(IServiceProvider serviceProvider);
+    public delegate Task<IActionInterceptor> ActionInterceptorFactoryAsync(IServiceProvider serviceProvider);
+    
+    public delegate Task<IActionExceptionHandler> ActionExceptionHandlerFactoryAsync(IServiceProvider serviceProvider);
 }

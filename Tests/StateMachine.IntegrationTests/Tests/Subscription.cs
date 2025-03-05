@@ -22,12 +22,12 @@ namespace StateMachine.IntegrationTests.Tests
                         .AddExecutionSequenceObserver()
                         .AddInitialState("state1", b => b
                             //.AddDeferredEvent<OtherEvent>()
-                            .AddOnEntry(c => c.StateMachine.SubscribeAsync<SomeNotification>(new StateMachineId("subscribee", c.StateMachine.Id.Instance)))
+                            .AddOnEntry(c => c.Behavior.SubscribeAsync<SomeNotification>(new StateMachineId("subscribee", c.Behavior.Id.Instance)))
                             .AddTransition<SomeNotification>("state2")
                         )
                         .AddState("state2", b => b
                             .AddInternalTransition<OtherEvent>(b => b
-                                .AddEffect(c => c.StateMachine.UnsubscribeAsync<SomeNotification>(new StateMachineId("subscribee", c.StateMachine.Id.Instance)))
+                                .AddEffect(c => c.Behavior.UnsubscribeAsync<SomeNotification>(new StateMachineId("subscribee", c.Behavior.Id.Instance)))
                             )
                             .AddTransition<SomeNotification>("state3")
                         )
@@ -37,7 +37,7 @@ namespace StateMachine.IntegrationTests.Tests
                     .AddStateMachine("subscribee", b => b
                         .AddInitialState("state1", b => b
                             .AddInternalTransition<OtherEvent>(b => b
-                                .AddEffect(c => c.StateMachine.Publish(new SomeNotification()))
+                                .AddEffect(c => c.Behavior.Publish(new SomeNotification()))
                             )
                         )
                     )

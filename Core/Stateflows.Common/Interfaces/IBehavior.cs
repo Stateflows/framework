@@ -41,13 +41,13 @@ namespace Stateflows.Common
             return watcher;
         }
 
-        public Task<RequestResult<BehaviorInfo>> GetStatusAsync()
-            => RequestAsync(new BehaviorInfoRequest());
+        public Task<RequestResult<BehaviorInfo>> GetStatusAsync(IEnumerable<EventHeader> headers = null)
+            => RequestAsync(new BehaviorInfoRequest(), headers);
 
         public Task<IWatcher> WatchStatusAsync(Action<BehaviorInfo> handler)
             => WatchAsync(handler);
         
-        public Task<IWatcher> RequestAndWatchStatusAsync(Action<BehaviorInfo> handler)
-            => RequestAndWatchAsync(new BehaviorInfoRequest(), handler);
+        public Task<IWatcher> RequestAndWatchStatusAsync(Action<BehaviorInfo> handler, IEnumerable<EventHeader> headers = null)
+            => RequestAndWatchAsync(new BehaviorInfoRequest(), handler, headers);
     }
 }

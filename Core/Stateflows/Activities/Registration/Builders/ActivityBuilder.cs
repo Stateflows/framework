@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using Stateflows.Common;
@@ -12,14 +13,16 @@ using Stateflows.Activities.Context.Interfaces;
 using Stateflows.Activities.Registration.Extensions;
 using Stateflows.Activities.Registration.Interfaces;
 using Stateflows.Activities.Registration.Interfaces.Base;
+using Stateflows.Activities.Registration.Interfaces.Internal;
 
 namespace Stateflows.Activities.Registration.Builders
 {
     internal class ActivityBuilder :
         BaseActivityBuilder,
-        IActivityBuilder
+        IActivityBuilder,
+        IGraphBuilder
     {
-        public new Graph Result
+        public new Graph Graph
         {
             get => Node as Graph;
             set => Node = value;
@@ -28,17 +31,17 @@ namespace Stateflows.Activities.Registration.Builders
         public ActivityBuilder(string name, int version, Node parentNode, StateflowsBuilder stateflowsBuilder, IServiceCollection services)
             : base(parentNode, services)
         {
-            Result = new Graph(name, version, stateflowsBuilder);
+            Graph = new Graph(name, version, stateflowsBuilder);
         }
 
         private IActivityBuilder AddInitializer(Type initializerType, string initializerName, ActivityPredicateAsync initializerAction)
         {
-            if (!Result.Initializers.TryGetValue(initializerName, out var initializer))
+            if (!Graph.Initializers.TryGetValue(initializerName, out var initializer))
             {
                 initializer = new Logic<ActivityPredicateAsync>(Constants.Initialize);
 
-                Result.Initializers.Add(initializerName, initializer);
-                Result.InitializerTypes.Add(initializerType);
+                Graph.Initializers.Add(initializerName, initializer);
+                Graph.InitializerTypes.Add(initializerType);
             }
 
             initializer.Actions.Add(initializerAction);
@@ -48,9 +51,9 @@ namespace Stateflows.Activities.Registration.Builders
 
         public IActivityBuilder AddDefaultInitializer(Func<IActivityInitializationContext, Task<bool>> actionAsync)
         {
-            Result.DefaultInitializer = new Logic<ActivityPredicateAsync>(Constants.Initialize);
+            Graph.DefaultInitializer = new Logic<ActivityPredicateAsync>(Constants.Initialize);
 
-            Result.DefaultInitializer.Actions.Add(c =>
+            Graph.DefaultInitializer.Actions.Add(c =>
             {
                 var context = new ActivityInitializationContext(
                     c.Context,
@@ -59,6 +62,8 @@ namespace Stateflows.Activities.Registration.Builders
                 );
                 return actionAsync(context);
             });
+            
+            Graph.VisitingTasks.Add(v => v.DefaultInitializerAddedAsync(Graph.Name, Graph.Version));
 
             return this;
         }
@@ -67,11 +72,19 @@ namespace Stateflows.Activities.Registration.Builders
         {
             actionAsync.ThrowIfNull(nameof(actionAsync));
 
-            actionAsync = actionAsync.AddActivityInvocationContext(Result);
+            actionAsync = actionAsync.AddActivityInvocationContext(Graph);
 
             var initializerName = typeof(TInitializationEvent).GetEventName();
+            
+            if (!Graph.Initializers.TryGetValue(initializerName, out var initializer))
+            {
+                initializer = new Logic<ActivityPredicateAsync>(Constants.Initialize);
 
-            return AddInitializer(typeof(TInitializationEvent), initializerName, async c =>
+                Graph.Initializers.Add(initializerName, initializer);
+                Graph.InitializerTypes.Add(typeof(TInitializationEvent));
+            }
+
+            initializer.Actions.Add(async c =>
             {
                 var result = false;
                 var context = new ActivityInitializationContext<TInitializationEvent>(
@@ -95,6 +108,7 @@ namespace Stateflows.Activities.Registration.Builders
                     {
                         var inspector = await c.Context.Executor.GetInspectorAsync();
                         
+                        Trace.WriteLine($"⦗→s⦘ Activity '{c.Context.Id.Name}:{c.Context.Id.Instance}': exception thrown '{e.Message}'");
                         if (!await inspector.OnActivityInitializationExceptionAsync(context, context.InitializationEventHolder, e))
                         {
                             throw;
@@ -108,17 +122,27 @@ namespace Stateflows.Activities.Registration.Builders
 
                 return result;
             });
+            
+            Graph.VisitingTasks.Add(v => v.InitializerAddedAsync<TInitializationEvent>(Graph.Name, Graph.Version));
+
+            return this;
         }
 
         #region IActivityBuilder
-        IActivityBuilder IReactiveActivity<IActivityBuilder>.AddAction(string actionNodeName, ActionDelegateAsync actionAsync, ActionBuildAction buildAction)
+        IActivityBuilder IReactiveActivity<IActivityBuilder>.AddAction(string actionNodeName, Func<IActionContext, Task> actionAsync, ActionBuildAction buildAction)
             => AddAction(actionNodeName, actionAsync, b => buildAction?.Invoke(b)) as IActivityBuilder;
 
         IActivityBuilder IReactiveActivity<IActivityBuilder>.AddStructuredActivity(string actionNodeName, ReactiveStructuredActivityBuildAction buildAction)
             => AddStructuredActivity(actionNodeName, buildAction) as IActivityBuilder;
 
         IActivityBuilder IActivityEvents<IActivityBuilder>.AddFinalizer(Func<IActivityActionContext, Task> actionAsync)
-            => AddOnFinalize(actionAsync) as IActivityBuilder;
+        {
+            var result = AddOnFinalize(actionAsync) as IActivityBuilder;
+            
+            Graph.VisitingTasks.Add(v => v.FinalizerAddedAsync(Graph.Name, Graph.Version));
+
+            return result;
+        }
 
         IActivityBuilder IInitial<IActivityBuilder>.AddInitial(InitialBuildAction buildAction)
             => AddInitial(buildAction) as IActivityBuilder;
@@ -159,14 +183,14 @@ namespace Stateflows.Activities.Registration.Builders
 
         public IActivityBuilder AddExceptionHandler(ActivityExceptionHandlerFactory exceptionHandlerFactory)
         {
-            Result.ExceptionHandlerFactories.Add(serviceProvider => Task.FromResult(exceptionHandlerFactory(serviceProvider)));
+            Graph.ExceptionHandlerFactories.Add(serviceProvider => Task.FromResult(exceptionHandlerFactory(serviceProvider)));
 
             return this;
         }
 
         public IActivityBuilder AddExceptionHandler(ActivityExceptionHandlerFactoryAsync exceptionHandlerFactoryAsync)
         {
-            Result.ExceptionHandlerFactories.Add(exceptionHandlerFactoryAsync);
+            Graph.ExceptionHandlerFactories.Add(exceptionHandlerFactoryAsync);
 
             return this;
         }
@@ -181,14 +205,14 @@ namespace Stateflows.Activities.Registration.Builders
 
         public IActivityBuilder AddInterceptor(ActivityInterceptorFactory interceptorFactory)
         {
-            Result.InterceptorFactories.Add(serviceProvider => Task.FromResult(interceptorFactory(serviceProvider)));
+            Graph.InterceptorFactories.Add(serviceProvider => Task.FromResult(interceptorFactory(serviceProvider)));
 
             return this;
         }
 
         public IActivityBuilder AddInterceptor(ActivityInterceptorFactoryAsync interceptorFactoryAsync)
         {
-            Result.InterceptorFactories.Add(interceptorFactoryAsync);
+            Graph.InterceptorFactories.Add(interceptorFactoryAsync);
 
             return this;
         }
@@ -203,14 +227,14 @@ namespace Stateflows.Activities.Registration.Builders
 
         public IActivityBuilder AddObserver(ActivityObserverFactory observerFactory)
         {
-            Result.ObserverFactories.Add(serviceProvider => Task.FromResult(observerFactory(serviceProvider)));
+            Graph.ObserverFactories.Add(serviceProvider => Task.FromResult(observerFactory(serviceProvider)));
 
             return this;
         }
 
         public IActivityBuilder AddObserver(ActivityObserverFactoryAsync observerFactoryAsync)
         {
-            Result.ObserverFactories.Add(observerFactoryAsync);
+            Graph.ObserverFactories.Add(observerFactoryAsync);
 
             return this;
         }

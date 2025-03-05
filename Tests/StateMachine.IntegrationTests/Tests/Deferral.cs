@@ -50,21 +50,21 @@ namespace StateMachine.IntegrationTests.Tests
                             .AddInternalTransition<OtherEvent>(b => b
                                 .AddEffect(c =>
                                 {
-                                    if (c.StateMachine.Values.TryGet<int>("c", out var counter))
+                                    if (c.Behavior.Values.TryGet<int>("c", out var counter))
                                     {
                                         if (counter == c.Event.AnswerToLifeUniverseAndEverything - 1)
                                         {
-                                            c.StateMachine.Values.Set<bool>("result", true);
+                                            c.Behavior.Values.Set<bool>("result", true);
                                         }
                                     }
                                     else
                                     {
-                                        c.StateMachine.Values.Set<int>("c", c.Event.AnswerToLifeUniverseAndEverything);
+                                        c.Behavior.Values.Set<int>("c", c.Event.AnswerToLifeUniverseAndEverything);
                                     }
                                 })
                             )
                             .AddDefaultTransition("state3", b => b
-                                .AddGuard(c => c.StateMachine.Values.TryGet<bool>("result", out var result) && result)
+                                .AddGuard(c => c.Behavior.Values.TryGet<bool>("result", out var result) && result)
                             )
                         )
                         .AddState("state3")

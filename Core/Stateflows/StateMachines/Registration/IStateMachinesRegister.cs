@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Threading.Tasks;
 using Stateflows.StateMachines.Registration.Interfaces;
 
 namespace Stateflows.StateMachines
@@ -19,18 +20,29 @@ namespace Stateflows.StateMachines
             where TStateMachine : class, IStateMachine;
 
         void AddInterceptor(StateMachineInterceptorFactory interceptorFactory);
+        void AddInterceptor(StateMachineInterceptorFactoryAsync interceptorFactoryAsync);
 
         void AddInterceptor<TInterceptor>()
             where TInterceptor : class, IStateMachineInterceptor;
 
         void AddExceptionHandler(StateMachineExceptionHandlerFactory exceptionHandlerFactory);
+        void AddExceptionHandler(StateMachineExceptionHandlerFactoryAsync exceptionHandlerFactoryAsync);
 
         void AddExceptionHandler<TExceptionHandler>()
             where TExceptionHandler : class, IStateMachineExceptionHandler;
 
         void AddObserver(StateMachineObserverFactory observerFactory);
+        void AddObserver(StateMachineObserverFactoryAsync observerFactoryAsync);
 
         void AddObserver<TObserver>()
             where TObserver : class, IStateMachineObserver;
+
+        Task VisitStateMachinesAsync(IStateMachineVisitor visitor);
+
+        // void AddVisitor(StateMachineVisitorFactory visitorFactory);
+        // void AddVisitor(StateMachineVisitorFactoryAsync visitorFactoryAsync);
+        //
+        // void AddVisitor<TVisitor>()
+        //     where TVisitor : class, IStateMachineVisitor;
     }
 }

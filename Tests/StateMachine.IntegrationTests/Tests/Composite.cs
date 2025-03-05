@@ -59,6 +59,38 @@ namespace StateMachine.IntegrationTests.Tests
                         )
                     )
                     
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    .AddStateMachine("nonUnique", b => b
+                        .AddInitialCompositeState("compo1", b => b
+                            .AddInitialState("initial1")
+                            .AddState("stateX", b => b
+                                .AddDefaultTransition("initial2")
+                            )
+                        )
+                        .AddCompositeState("compo2", b => b
+                            .AddInitialState("initial2")
+                        )
+                    )
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
                     .AddStateMachine("berlin", b => b
                         .AddDefaultInitializer(async c => true)
 

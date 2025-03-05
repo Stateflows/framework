@@ -241,6 +241,14 @@ namespace Stateflows.Common.Classes
             return Task.CompletedTask;
         }
 
+        public Task<bool> HasAnyMatchingAsync(Regex keyPattern)
+        {
+            lock (Values)
+            {
+                return Task.FromResult(Values.Keys.Any(keyPattern.IsMatch));
+            }
+        }
+
         public void Clear()
         {
             lock (Values)

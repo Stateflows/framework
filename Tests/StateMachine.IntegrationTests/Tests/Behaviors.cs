@@ -41,7 +41,7 @@ namespace StateMachine.IntegrationTests.Tests
                             .AddTransition<SomeEvent>("stateB")
                         )
                         .AddState("stateB", b => b
-                            .AddOnEntry(c => c.StateMachine.Publish(new SomeNotification()))
+                            .AddOnEntry(c => c.Behavior.Publish(new SomeNotification()))
                         )
                     )
 
@@ -86,7 +86,7 @@ namespace StateMachine.IntegrationTests.Tests
                         .AddAcceptEventAction<SomeEvent>(async c =>
                         {
                             eventConsumed = true;
-                            c.Activity.Publish(new SomeNotification());
+                            c.Behavior.Publish(new SomeNotification());
                         })
                     )
                     .AddActivity("integrated", b => b
@@ -98,7 +98,7 @@ namespace StateMachine.IntegrationTests.Tests
                             async c =>
                             {
                                 eventConsumed = true;
-                                c.Activity.Publish(new SomeNotification());
+                                c.Behavior.Publish(new SomeNotification());
                             }
                         )
                     )
@@ -196,7 +196,7 @@ namespace StateMachine.IntegrationTests.Tests
 
                 someStatus1 = (await sm.SendAsync(new SomeEvent())).Status;
 
-                await Task.Delay(200);
+                await Task.Delay(500);
 
                 currentState1 = (await sm.GetCurrentStateAsync()).Response.StatesTree.Value;
             }

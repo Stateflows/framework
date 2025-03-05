@@ -1,109 +1,220 @@
-﻿using Microsoft.AspNetCore.Routing;
+﻿using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Routing;
 using Microsoft.AspNetCore.Builder;
-using Stateflows.Common.Interfaces;
-using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
-using Stateflows.Common;
-using Stateflows.Common.Extensions;
-using Microsoft.AspNetCore.Mvc;
-using Stateflows.Common.Utilities;
-using System.Reflection;
+using Stateflows.Actions;
+using Stateflows.Common.Interfaces;
+using Stateflows.Common.Registration;
+using Stateflows.Activities;
+using Stateflows.Activities.Registration.Interfaces.Base;
 using Stateflows.StateMachines;
-using System.Threading.Tasks;
+using Stateflows.StateMachines.Registration.Interfaces;
+using Stateflows.StateMachines.Registration.Interfaces.Base;
 
-namespace Stateflows.Transport.REST
+namespace Stateflows.Transport.REST;
+   
+public static class DependencyInjection
 {
-    public static class DependencyInjection
+    private static readonly List<System.Action<StateMachineVisitor>> StateMachineEndpointBuilders = [];
+    
+    /// <summary>
+    /// Allows to define <a href="https://learn.microsoft.com/en-us/aspnet/core/fundamentals/minimal-apis/overview">Minimal API</a> endpoints in State Machine REST route group.
+    /// <remarks>All endpoints defined here are <a href="https://learn.microsoft.com/en-us/aspnet/core/fundamentals/minimal-apis/min-api-filters">filtered</a> to be available only when containing state is active.</remarks>
+    /// </summary>
+    /// <param name="endpointsBuilder">Endpoints builder</param>
+    public static TReturn AddEndpoints<TReturn>(this IStateEvents<TReturn> stateBuilder,
+        System.Action<IEndpointsBuilder> endpointsBuilder)
     {
-        public static IEndpointRouteBuilder AddStateflowsRESTTransport(this IEndpointRouteBuilder builder, Action<RouteHandlerBuilder>? routeHandlerBuilderAction = null)
+        var stateMachineClass = ((IBehaviorBuilder)stateBuilder).BehaviorClass;
+        var stateName = ((IVertexBuilder)stateBuilder).Name;
+        StateMachineEndpointBuilders.Add(visitor =>
         {
-            var root = builder.MapGroup("/stateflows");
+            var builder = new EndpointsBuilder(visitor, stateMachineClass, stateName);
+            endpointsBuilder(builder);
+        });
+        
+        return (TReturn)stateBuilder;
+    }
 
-            var behaviorClasses = root.MapGroup("/behaviorClasses");
+    /// <summary>
+    /// Allows to define <a href="https://learn.microsoft.com/en-us/aspnet/core/fundamentals/minimal-apis/overview">Minimal API</a> endpoints in State Machine REST route group.
+    /// </summary>
+    /// <param name="endpointsBuilder">Endpoints builder</param>
+    public static TReturn AddEndpoints<TReturn>(this IStateMachineEvents<TReturn> stateMachineBuilder,
+        System.Action<IEndpointsBuilder> endpointsBuilder)
+    {
+        var stateMachineClass = ((IBehaviorBuilder)stateMachineBuilder).BehaviorClass;
+        StateMachineEndpointBuilders.Add(visitor =>
+        {
+            var builder = new EndpointsBuilder(visitor, stateMachineClass);
+            endpointsBuilder(builder);
+        });
 
-            behaviorClasses.MapGet(
-                "/",
-                (IBehaviorClassesProvider provider) => Results.Ok(provider.AllBehaviorClasses)
+        return (TReturn)stateMachineBuilder;
+    }
+
+    /// <summary>
+    /// Allows to define <a href="https://learn.microsoft.com/en-us/aspnet/core/fundamentals/minimal-apis/overview">Minimal API</a> endpoints in Activity REST route group.
+    /// </summary>
+    /// <param name="endpointsBuilder">Endpoints builder</param>
+    public static TReturn AddEndpoints<TReturn>(this IActivityEvents<TReturn> activityBuilder,
+        System.Action<IEndpointsBuilder> endpointsBuilder)
+    {
+        var activityClass = ((IBehaviorBuilder)activityBuilder).BehaviorClass;
+        StateMachineEndpointBuilders.Add(visitor =>
+        {
+            var builder = new EndpointsBuilder(visitor, activityClass);
+            endpointsBuilder(builder);
+        });
+
+        return (TReturn)activityBuilder;
+    }
+
+    /// <summary>
+    /// Registers <a href="https://learn.microsoft.com/en-us/aspnet/core/fundamentals/minimal-apis/overview">Minimal API</a>-based REST interface for Stateflows behaviors
+    /// </summary>
+    /// <param name="routeHandlerBuilderAction"></param>
+    public static void MapStateflowsHttpTransport(this IEndpointRouteBuilder builder, System.Action<RouteHandlerBuilder>? routeHandlerBuilderAction = null)
+    {
+        routeHandlerBuilderAction ??= _ => { };
+        
+        var root = builder.MapGroup("/stateflows");
+
+        var behaviorClasses = root.MapGroup("/classes");
+        
+        behaviorClasses.MapGet(
+            "/",
+            (IBehaviorClassesProvider provider) => Results.Ok(provider.AllBehaviorClasses)
+        );
+
+        RegisterActionsApi(builder, routeHandlerBuilderAction, root, behaviorClasses);
+
+        RegisterActivitiesApi(builder, routeHandlerBuilderAction, root, behaviorClasses);
+
+        RegisterStateMachinesApi(builder, routeHandlerBuilderAction, root, behaviorClasses);
+    }
+
+    private static void RegisterActivitiesApi(IEndpointRouteBuilder builder, System.Action<RouteHandlerBuilder> routeHandlerBuilderAction,
+        RouteGroupBuilder root, RouteGroupBuilder behaviorClasses)
+    {
+        var activitiesRegister = builder.ServiceProvider.GetService<IActivitiesRegister>();
+        if (activitiesRegister != null)
+        {
+            var activities = root.MapGroup("/activities");
+
+            routeHandlerBuilderAction(
+                behaviorClasses.MapGet(
+                    "/activities",
+                    (IBehaviorClassesProvider provider) => Results.Ok(
+                        provider.AllBehaviorClasses.Where(behaviorClass => behaviorClass.Type == ActivityClass.Type)
+                    )
+                )
             );
 
-            behaviorClasses.MapGet(
-                "/stateMachines",
-                (IBehaviorClassesProvider provider) => Results.Ok(provider.AllBehaviorClasses.Where(behaviorClass => behaviorClass.Type == StateMachineClass.Type))
-            );
-
-            behaviorClasses.MapGet(
-                "/activities",
-                (IBehaviorClassesProvider provider) => Results.Ok(provider.AllBehaviorClasses.Where(behaviorClass => behaviorClass.Type == ActivityClass.Type))
-            );
-
-            var behaviors = root.MapGroup("/behaviors");
-
-            var provider = builder.ServiceProvider.GetService<IBehaviorClassesProvider>();
-
-            var inspector = builder.ServiceProvider.GetService<IBehaviorClassInspector>();
-
-            var locator = builder.ServiceProvider.GetService<IBehaviorLocator>();
-
-            MethodInfo SendAsyncMethod = typeof(IBehavior).GetMethod(nameof(IBehavior.SendAsync));
-
-            MethodInfo RequestAsyncMethod = typeof(IBehavior).GetMethod(nameof(IBehavior.RequestAsync));
-
-            var stateMachineClasses = provider.AllBehaviorClasses.Where(behaviorClass => behaviorClass.Type == StateMachineClass.Type);
-
-            var stateMachines = behaviors.MapGroup("/stateMachines");
-
-            foreach (var behaviorClass in stateMachineClasses)
-            {
-                var stateMachine = stateMachines.MapGroup($"/{behaviorClass.Name}");
-
-                stateMachine.MapGet("/{instance}/status", (string instance) =>
-                {
-                });
-
-                stateMachine.MapGet("/{instance}/currentState", async (string instance) =>
-                {
-                    if (locator.TryLocateStateMachine(new BehaviorId(behaviorClass, instance), out var behavior))
+            routeHandlerBuilderAction(
+                activities.MapGet(
+                    "/",
+                    async (IBehaviorClassesProvider provider, IStateflowsStorage storage) =>
                     {
-                        return Results.Ok(await behavior.GetStatusAsync());
+                        var stateMachineClasses = provider.AllBehaviorClasses
+                            .Where(c => c.Type == ActivityClass.Type)
+                            .ToArray();
+                        var contexts = await storage.GetAllContextsAsync(stateMachineClasses);
+                        return Results.Ok(contexts.Select(context => context.Id));
                     }
+                )
+            );
+            
+            var visitor = new ActivityVisitor(
+                activities,
+                routeHandlerBuilderAction,
+                builder.ServiceProvider.GetRequiredService<ITypeMapper>()
+            );
 
-                    return Results.NotFound();
-                });
+            activitiesRegister.VisitActivitiesAsync(visitor);
+            
+            visitor.RegisterRemainingEndpoints();
+        }
+    }
 
-                var inspection = inspector.Inspect(behaviorClass);
+    private static void RegisterActionsApi(IEndpointRouteBuilder builder, System.Action<RouteHandlerBuilder> routeHandlerBuilderAction,
+        RouteGroupBuilder root, RouteGroupBuilder behaviorClasses)
+    {
+        var actionsRegister = builder.ServiceProvider.GetService<IActionsRegister>();
+        if (actionsRegister != null)
+        {
+            var actions = root.MapGroup("/actions");
+            
+            routeHandlerBuilderAction(
+                behaviorClasses.MapGet(
+                    "/actions",
+                    (IBehaviorClassesProvider provider) => Results.Ok(
+                        provider.AllBehaviorClasses.Where(behaviorClass => behaviorClass.Type == ActionClass.Type)
+                    )
+                )
+            );
 
-                foreach (var type in inspection.InitializationEventTypes)
-                {
-                    var eventName = Event.GetName(type);
-
-                    stateMachine.MapPost("/{instance}/" + eventName, async (string instance, [FromBody] string body) =>
+            routeHandlerBuilderAction(
+                actions.MapGet(
+                    "/",
+                    async (IBehaviorClassesProvider provider, IStateflowsStorage storage) =>
                     {
-                        var @event = StateflowsJsonConverter.DeserializeObject(body, type);
+                        var stateMachineClasses = provider.AllBehaviorClasses
+                            .Where(c => c.Type == ActionClass.Type)
+                            .ToArray();
+                        var contexts = await storage.GetAllContextsAsync(stateMachineClasses);
+                        return Results.Ok(contexts.Select(context => context.Id));
+                    }
+                )
+            );
+            
+            var visitor = new ActionVisitor(actions, routeHandlerBuilderAction);
 
-                        if (locator.TryLocateBehavior(new BehaviorId(behaviorClass, instance), out var behavior))
-                        {
-                            if (type.IsRequest())
-                            {
-                                var task = (Task<SendResult>)SendAsyncMethod.Invoke(behavior, new object[] { @event, null });
-                                var result = await task;
+            actionsRegister.VisitActionsAsync(visitor);
+        }
+    }
 
-                                return Results.Ok(result);
-                            }
-                            else
-                            {
-                                //? RequestAsyncMethod.Invoke(behavior, new object[] { @event, null })
-                                //return Results.Ok(await task);
-                            }
-                        }
+    private static void RegisterStateMachinesApi(IEndpointRouteBuilder builder, System.Action<RouteHandlerBuilder> routeHandlerBuilderAction,
+        RouteGroupBuilder root, RouteGroupBuilder behaviorClasses)
+    {
+        var stateMachinesRegister = builder.ServiceProvider.GetService<IStateMachinesRegister>();
+        if (stateMachinesRegister != null)
+        {
+            var stateMachines = root.MapGroup("/stateMachines");
+            
+            routeHandlerBuilderAction(
+                behaviorClasses.MapGet(
+                    "/stateMachines",
+                    (IBehaviorClassesProvider provider) => Results.Ok(provider.AllBehaviorClasses.Where(behaviorClass => behaviorClass.Type == StateMachineClass.Type))
+                )
+            );
 
-                        return Results.NotFound();
-                    });
-                }
+            routeHandlerBuilderAction(
+                stateMachines.MapGet(
+                    "/",
+                    async (IBehaviorClassesProvider provider, IStateflowsStorage storage) =>
+                    {
+                        var stateMachineClasses = provider.AllBehaviorClasses
+                            .Where(c => c.Type == StateMachineClass.Type)
+                            .ToArray();
+                        var contexts = await storage.GetAllContextsAsync(stateMachineClasses);
+                        return Results.Ok(contexts.Select(context => context.Id));
+                    }
+                )
+            );
+            
+            var visitor = new StateMachineVisitor(
+                stateMachines,
+                routeHandlerBuilderAction,
+                builder.ServiceProvider.GetRequiredService<ITypeMapper>()
+            );
+            
+            stateMachinesRegister.VisitStateMachinesAsync(visitor);
+            
+            foreach (var action in StateMachineEndpointBuilders)
+            {
+                action(visitor);
             }
-
-            var activities = behaviors.MapGroup("/activities");
-
-            return builder;
         }
     }
 }

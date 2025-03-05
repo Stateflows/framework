@@ -2,8 +2,8 @@
 {
     public static class BehaviorType
     {
-        public static readonly string Action = nameof(Action);
-        public static readonly string Activity = nameof(Activity);
-        public static readonly string StateMachine = nameof(StateMachine);
+        public const string Action = nameof(Action);
+        public const string Activity = nameof(Activity);
+        public const string StateMachine = nameof(StateMachine);
     }
 }

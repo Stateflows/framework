@@ -5,9 +5,9 @@ using Stateflows.Common.Attributes;
 namespace Stateflows.StateMachines.Attributes
 {
     [AttributeUsage(AttributeTargets.Parameter, AllowMultiple = false)]
-    public sealed class TargetStateValueSetAttribute : ValueSetAttribute
+    public sealed class SourceStateNamespaceAttribute : ValueSetAttribute
     {
-        public TargetStateValueSetAttribute(string? name = null) : base(name)
+        public SourceStateNamespaceAttribute(string? name = null) : base(name)
         { }
     }
 }

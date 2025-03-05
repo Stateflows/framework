@@ -69,6 +69,9 @@ namespace Activity.IntegrationTests.Tests
         {
             // Use InputTokens static class to add tokens to be used by tested action class
             InputTokens.Add(42);
+            
+            // If tested class uses context values, you need to initialize proper values collection
+            ContextValues.InitializeGlobalValues();
 
             // Use StateflowsActivator to obtain tested action class instance
             var action = await StateflowsActivator.CreateInstanceAsync<TestedAction>(ServiceProvider);
@@ -90,6 +93,9 @@ namespace Activity.IntegrationTests.Tests
         [TestMethod]
         public async Task FlowUnitTest()
         {
+            // If tested class uses context values, you need to initialize proper values collection 
+            ContextValues.InitializeGlobalValues();
+            
             // Use StateflowsActivator to obtain tested flow class instance
             var flow = await StateflowsActivator.CreateInstanceAsync<TestedFlow>(ServiceProvider);
 

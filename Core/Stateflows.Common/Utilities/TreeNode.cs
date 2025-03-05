@@ -175,6 +175,7 @@ namespace Stateflows.Common
 
         public T Value { get; private set; }
 
+        
         [JsonIgnore]
         public TreeNode<T> Parent { get; private set; }
 

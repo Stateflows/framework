@@ -55,10 +55,7 @@ namespace StateMachine.IntegrationTests.Utils
 
             TestingHost.StartApplication();
 
-            ContextValues.GlobalValues.Clear();
-            ContextValues.StateValues.Clear();
-            ContextValues.SourceStateValues.Clear();
-            ContextValues.TargetStateValues.Clear();
+            ContextValues.Clear();
             
             _ = OutputTokens.GetAll();
         }

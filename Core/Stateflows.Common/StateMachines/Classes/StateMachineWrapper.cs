@@ -19,11 +19,11 @@ namespace Stateflows.Common.StateMachines.Classes
 
         [DebuggerHidden]
         public Task<SendResult> SendAsync<TEvent>(TEvent @event, IEnumerable<EventHeader> headers = null)
-            => Behavior.SendAsync(@event);
+            => Behavior.SendAsync(@event, headers);
 
         [DebuggerHidden]
         public Task<RequestResult<TResponse>> RequestAsync<TResponse>(IRequest<TResponse> request, IEnumerable<EventHeader> headers = null)
-            => Behavior.RequestAsync(request);
+            => Behavior.RequestAsync(request, headers);
 
         public Task<IWatcher> WatchAsync<TNotification>(Action<TNotification> handler)
             => Behavior.WatchAsync(handler);

@@ -34,7 +34,7 @@ namespace Stateflows.Common
             Validators = ServiceProvider.GetRequiredService<IEnumerable<IStateflowsValidator>>().ToArray();
         }
 
-        // [DebuggerHidden]
+        [DebuggerHidden]
         public async Task HandleEventAsync(ExecutionToken token)
         {
             ResponseHolder.SetResponses(token.Responses);

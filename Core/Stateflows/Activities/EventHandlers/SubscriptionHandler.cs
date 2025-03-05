@@ -10,7 +10,7 @@ namespace Stateflows.Activities.EventHandlers
     {
         public Type EventType => typeof(Subscribe);
 
-        public Task<EventStatus> TryHandleEventAsync<TEvent>(IEventInspectionContext<TEvent> context)
+        public Task<EventStatus> TryHandleEventAsync<TEvent>(IEventInspectionContext<TEvent> context)
         {
             if (context.Event is Subscribe request)
             {
