@@ -2,7 +2,7 @@ using System;
 
 namespace Stateflows.StateMachines.Registration.Interfaces.Base
 {
-    public interface IGuardBuilder<out TEvent> : IBaseGuard<TEvent, IGuardBuilder<TEvent>>
+    public interface IGuardBuilder<TEvent> : IBaseGuard<TEvent, IGuardBuilder<TEvent>>
     {
         /// <summary>
         /// Adds a <i>AND</i> guard expression to the current transition.<br/>

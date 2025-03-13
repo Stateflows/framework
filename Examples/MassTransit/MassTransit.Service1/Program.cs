@@ -3,6 +3,7 @@ using MassTransit;
 using Stateflows;
 using Stateflows.StateMachines;
 using Examples.Common;
+using Stateflows.Common;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -26,7 +27,7 @@ builder.Services
     );
 
 builder.Services.AddMassTransit(c => c
-    .AddStateflowsTransport(Assembly.GetEntryAssembly()?.GetName().Name)
+    // .AddStateflowsTransport(Assembly.GetEntryAssembly()?.GetName().Name)
     .UsingRabbitMq((context, config) =>
     {
         config.Host("localhost", "/", h =>
