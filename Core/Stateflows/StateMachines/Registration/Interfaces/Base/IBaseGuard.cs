@@ -2,6 +2,9 @@
 using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
+using Stateflows.Actions;
+using Stateflows.Activities;
+using Stateflows.Activities.Extensions;
 using Stateflows.StateMachines.Context.Classes;
 using Stateflows.StateMachines.Context.Interfaces;
 using Stateflows.StateMachines.Registration.Extensions;
@@ -9,7 +12,7 @@ using Stateflows.StateMachines.Registration.Interfaces.Internal;
 
 namespace Stateflows.StateMachines.Registration.Interfaces.Base
 {
-    public interface IBaseGuard<out TEvent, out TReturn>
+    public interface IBaseGuard<TEvent, out TReturn>
     {
         /// <summary>
         /// Adds a function-based guard to the current transition.<br/>
@@ -20,6 +23,44 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         /// </summary>
         /// <param name="guardsAsync">The asynchronous guard functions.</param>
         TReturn AddGuard(params Func<ITransitionContext<TEvent>, Task<bool>>[] guardsAsync);
+
+        /// <summary>
+        /// Adds activity behavior as guard
+        /// </summary>
+        /// <param name="activityName">Activity behavior name</param>
+        /// <param name="buildAction">Build action</param>
+        [DebuggerHidden]
+        public TReturn AddGuardActivity(string activityName, TransitionActivityBuildAction<TEvent> buildAction = null)
+            => AddGuard(c => StateMachineActivityExtensions.RunGuardActivity(c, activityName, buildAction));
+
+        /// <summary>
+        /// Adds activity behavior as guard
+        /// </summary>
+        /// <param name="buildAction">Build action</param>
+        /// <typeparam name="TActivity">Activity behavior type</typeparam>
+        [DebuggerHidden]
+        public TReturn AddGuardActivity<TActivity>(TransitionActivityBuildAction<TEvent> buildAction = null)
+            where TActivity : class, IActivity
+            => AddGuardActivity(Activity<TActivity>.Name, buildAction);
+        
+        /// <summary>
+        /// Adds action behavior as guard
+        /// </summary>
+        /// <param name="actionName">Action behavior name</param>
+        /// <param name="buildAction">Build action</param>
+        [DebuggerHidden]
+        public TReturn AddGuardAction(string actionName, TransitionActionBuildAction<TEvent> buildAction = null)
+            => AddGuard(c => StateMachineActionExtensions.RunGuardAction(c, actionName, buildAction));
+
+        /// <summary>
+        /// Adds action behavior as guard
+        /// </summary>
+        /// <param name="buildAction">Build action</param>
+        /// <typeparam name="TAction">Action behavior type</typeparam>
+        [DebuggerHidden]
+        public TReturn AddGuardAction<TAction>(TransitionActionBuildAction<TEvent> buildAction = null)
+            where TAction : class, IAction
+            => AddGuardAction(Stateflows.Actions.Action<TAction>.Name, buildAction);
 
         /// <summary>
         /// Adds a function-based guard to the current transition.<br/>

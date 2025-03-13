@@ -2,6 +2,9 @@
 using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
+using Stateflows.Actions;
+using Stateflows.Activities;
+using Stateflows.Activities.Extensions;
 using Stateflows.StateMachines.Context.Classes;
 using Stateflows.StateMachines.Context.Interfaces;
 using Stateflows.StateMachines.Registration.Extensions;
@@ -9,7 +12,7 @@ using Stateflows.StateMachines.Registration.Interfaces.Internal;
 
 namespace Stateflows.StateMachines.Registration.Interfaces.Base
 {
-    public interface IEffect<out TEvent, out TReturn>
+    public interface IEffect<TEvent, out TReturn>
     {
         /// <summary>
         /// Adds an asynchronous effect function to the current transition.<br/>
@@ -22,6 +25,44 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         TReturn AddEffect(params Func<ITransitionContext<TEvent>, Task>[] effectsAsync);
 
         /// <summary>
+        /// Adds activity behavior as effect
+        /// </summary>
+        /// <param name="activityName">Activity behavior name</param>
+        /// <param name="buildAction">Build action</param>
+        [DebuggerHidden]
+        public TReturn AddEffectActivity(string activityName, TransitionActivityBuildAction<TEvent> buildAction = null)
+            => AddEffect(c => StateMachineActivityExtensions.RunEffectActivity(c, activityName, buildAction));
+
+        /// <summary>
+        /// Adds activity behavior as effect
+        /// </summary>
+        /// <param name="buildAction">Build action</param>
+        /// <typeparam name="TActivity">Activity behavior type</typeparam>
+        [DebuggerHidden]
+        public TReturn AddEffectActivity<TActivity>(TransitionActivityBuildAction<TEvent> buildAction = null)
+            where TActivity : class, IActivity
+            => AddEffectActivity(Activity<TActivity>.Name, buildAction);
+        
+        /// <summary>
+        /// Adds action behavior as effect
+        /// </summary>
+        /// <param name="actionName">Action behavior name</param>
+        /// <param name="buildAction">Build action</param>
+        [DebuggerHidden]
+        public TReturn AddEffectAction(string actionName, TransitionActionBuildAction<TEvent> buildAction = null)
+            => AddEffect(c => StateMachineActionExtensions.RunEffectAction(c, actionName, buildAction));
+
+        /// <summary>
+        /// Adds action behavior as effect
+        /// </summary>
+        /// <param name="buildAction">Build action</param>
+        /// <typeparam name="TAction">Action behavior type</typeparam>
+        [DebuggerHidden]
+        public TReturn AddEffectAction<TAction>(TransitionActionBuildAction<TEvent> buildAction = null)
+            where TAction : class, IAction
+            => AddEffectAction(Stateflows.Actions.Action<TAction>.Name, buildAction);
+        
+        /// <summary>
         /// Adds a synchronous effect function to the current transition.<br/>
         /// Use the following pattern to implement function:
         /// <code>c => {
@@ -30,7 +71,7 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         /// </summary>
         /// <param name="effects">Synchronous effect functions</param>
         [DebuggerHidden]
-        public TReturn AddEffect(params Action<ITransitionContext<TEvent>>[] effects)
+        public TReturn AddEffect(params System.Action<ITransitionContext<TEvent>>[] effects)
             => AddEffect(
                 effects.Select(effect => effect
                     .AddStateMachineInvocationContext(((IEdgeBuilder)this).Edge.Graph)
