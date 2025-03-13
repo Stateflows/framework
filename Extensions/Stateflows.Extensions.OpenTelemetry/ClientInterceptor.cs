@@ -1,5 +1,4 @@
 using System.Diagnostics;
-using System.Threading.Tasks;
 using Stateflows.Common;
 using Stateflows.Extensions.OpenTelemetry.Headers;
 
@@ -7,7 +6,7 @@ namespace Stateflows.Extensions.OpenTelemetry
 {
     public class ClientInterceptor : IStateflowsClientInterceptor
     {
-        public async Task<bool> BeforeDispatchEventAsync(EventHolder eventHolder)
+        public bool BeforeDispatchEvent(EventHolder eventHolder)
         {
             if (Activity.Current != null)
             {
@@ -17,7 +16,7 @@ namespace Stateflows.Extensions.OpenTelemetry
             return true;
         }
 
-        public async Task AfterDispatchEventAsync(EventHolder eventHolder)
+        public void AfterDispatchEvent(EventHolder eventHolder)
         { }
     }
 }

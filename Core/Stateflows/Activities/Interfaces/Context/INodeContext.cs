@@ -8,7 +8,7 @@ namespace Stateflows.Activities
         /// <summary>
         /// Name of the node
         /// </summary>
-        string NodeName { get; }
+        string Name { get; }
 
         /// <summary>
         /// Type of the node

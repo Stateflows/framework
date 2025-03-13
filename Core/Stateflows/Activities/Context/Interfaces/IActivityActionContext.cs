@@ -4,7 +4,7 @@ using Stateflows.Common.Context.Interfaces;
 
 namespace Stateflows.Activities.Context.Interfaces
 {
-    public interface IActivityActionContext : IBehaviorLocator, IExecutionContext
+    public interface IActivityActionContext : IBehaviorActionContext
     {
         /// <summary>
         /// Information about activity behavior

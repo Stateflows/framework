@@ -11,7 +11,7 @@ using Stateflows.Activities.Inspection.Interfaces;
 
 namespace Stateflows.Activities.Context.Classes
 {
-    internal class ActivityContext : BaseContext, IActivityInspectionContext
+    internal class ActivityContext : BaseContext, IActivityContext
     {
         BehaviorId IBehaviorContext.Id => Context.Id;
 
@@ -27,12 +27,6 @@ namespace Stateflows.Activities.Context.Classes
             : base(context, nodeScope)
         {
             Values = new ContextValuesCollection(Context.GlobalValues);
-        }
-
-        public async Task<IActivityInspection> GetInspectionAsync()
-        {
-            var inspector = await Context.Executor.GetInspectorAsync();
-            return inspector.Inspection;
         }
 
         public IContextValues Values { get; }

@@ -134,55 +134,63 @@ namespace Stateflows.Activities.Engine
             executor.Context.SetEvent(eventHolder);
 
             var eventContext = new EventContext<TEvent>(executor.Context, executor.NodeScope);
-
-            var inspector = await executor.GetInspectorAsync(); 
-
-            if (await inspector.BeforeProcessEventAsync(eventContext))
+            
+            if (executor.Inspector.BeforeProcessEvent(eventContext))
             {
-                var noImplicitInitialization =
-                    eventHolder.PayloadType.GetCustomAttributes<NoImplicitInitializationAttribute>().Any() ||
-                    eventHolder.Headers.Any(h => h is NoImplicitInitialization);
-
-                if (!executor.Initialized && !noImplicitInitialization)
+                try
                 {
-                    result = await executor.InitializeAsync(
-                        eventHolder,
-                        eventHolder.Payload is TokensInputEvent tokensEvent
-                            ? tokensEvent.Tokens
-                            : null
-                    );
-                }
-                
-                if (result != EventStatus.Initialized)
-                {
-                    var handlingResult = await TryHandleEventAsync(eventContext);
+                    var noImplicitInitialization =
+                        eventHolder.PayloadType.GetCustomAttributes<NoImplicitInitializationAttribute>().Any() ||
+                        eventHolder.Headers.Any(h => h is NoImplicitInitialization);
 
-                    if (executor.Initialized)
+                    if (!executor.Initialized && !noImplicitInitialization)
                     {
-                        if (
-                            handlingResult != EventStatus.Consumed &&
-                            handlingResult != EventStatus.Rejected &&
-                            handlingResult != EventStatus.NotInitialized
-                        )
+                        result = await executor.InitializeAsync(
+                            eventHolder,
+                            eventHolder.Payload is TokensInputEvent tokensEvent
+                                ? tokensEvent.Tokens
+                                : null
+                        );
+                    }
+                    
+                    if (result != EventStatus.Initialized)
+                    {
+                        var handlingResult = await TryHandleEventAsync(eventContext);
+
+                        if (executor.Initialized)
                         {
-                            result = await executor.ProcessAsync(eventHolder);
+                            if (
+                                handlingResult != EventStatus.Consumed &&
+                                handlingResult != EventStatus.Rejected &&
+                                handlingResult != EventStatus.NotInitialized
+                            )
+                            {
+                                result = await executor.ProcessAsync(eventHolder);
+                            }
+                            else
+                            {
+                                result = handlingResult;
+                            }
                         }
                         else
                         {
-                            result = handlingResult;
+                            result = result == EventStatus.NotInitialized
+                                ? EventStatus.NotInitialized
+                                : noImplicitInitialization
+                                    ? handlingResult
+                                    : EventStatus.Rejected;
                         }
                     }
-                    else
-                    {
-                        result = result == EventStatus.NotInitialized
-                            ? EventStatus.NotInitialized
-                            : noImplicitInitialization
-                                ? handlingResult
-                                : EventStatus.Rejected;
-                    }
                 }
-
-                await inspector.AfterProcessEventAsync(eventContext);
+                finally
+                {
+                    if (result == EventStatus.Undelivered)
+                    {
+                        result = EventStatus.Failed;
+                    }
+                    
+                    executor.Inspector.AfterProcessEvent(eventContext, result);
+                }
             }
             else
             {

@@ -2,7 +2,7 @@
 using System.Threading.Tasks;
 using Stateflows.Common;
 using Stateflows.StateMachines.Extensions;
-using Stateflows.StateMachines.Inspection.Interfaces;
+using Stateflows.StateMachines.Context.Interfaces;
 
 namespace Stateflows.StateMachines.EventHandlers
 {
@@ -10,8 +10,7 @@ namespace Stateflows.StateMachines.EventHandlers
     {
         public Type EventType => typeof(BehaviorInfoRequest);
 
-        public Task<EventStatus> TryHandleEventAsync<TEvent>(IEventInspectionContext<TEvent> context)
-
+        public Task<EventStatus> TryHandleEventAsync<TEvent>(IEventContext<TEvent> context)
         {
             if (context.Event is BehaviorInfoRequest request)
             {

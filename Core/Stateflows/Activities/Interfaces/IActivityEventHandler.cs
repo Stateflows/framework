@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Threading.Tasks;
 using Stateflows.Common;
-using Stateflows.Activities.Inspection.Interfaces;
+using Stateflows.Activities.Context.Interfaces;
 
 namespace Stateflows.Activities
 {
@@ -9,6 +9,6 @@ namespace Stateflows.Activities
     {
         Type EventType { get; }
 
-        Task<EventStatus> TryHandleEventAsync<TEvent>(IEventInspectionContext<TEvent> context);
+        Task<EventStatus> TryHandleEventAsync<TEvent>(IEventContext<TEvent> context);
     }
 }

@@ -32,8 +32,9 @@ namespace Stateflows.Actions.Context.Classes
         public bool TryLocateBehavior(BehaviorId id, out IBehavior behavior)
             => BehaviorLocator.TryLocateBehavior(id, out behavior);
 
-        public object ExecutionTrigger
-            => RootContext.EventHolder.BoxedPayload;
+        public object ExecutionTrigger => RootContext.EventHolder.BoxedPayload;
+        public Guid ExecutionTriggerId => RootContext.EventHolder.Id;
+        public IEnumerable<EventHeader> Headers => RootContext.EventHolder.Headers;
 
         private ActionContext action;
         private ActionContext Action

@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Threading.Tasks;
 using Stateflows.Common;
 using Stateflows.StateMachines;
 using Stateflows.StateMachines.Context.Interfaces;
@@ -22,60 +21,44 @@ namespace Stateflows.Testing.StateMachines.Sequence
             builder.ValidateWith(SequenceBuilder);
         }
 
-        public override Task AfterStateEntryAsync(IStateActionContext context)
+        public override void AfterStateEntry(IStateActionContext context)
         {
             SequenceBuilder.StateEntry(context.CurrentState.Name);
-
-            return Task.CompletedTask;
         }
 
-        public override Task AfterStateExitAsync(IStateActionContext context)
+        public override void AfterStateExit(IStateActionContext context)
         {
             SequenceBuilder.StateExit(context.CurrentState.Name);
-
-            return Task.CompletedTask;
         }
 
-        public override Task AfterStateInitializeAsync(IStateActionContext context)
+        public override void AfterStateInitialize(IStateActionContext context)
         {
             SequenceBuilder.StateInitialize(context.CurrentState.Name);
-
-            return Task.CompletedTask;
         }
 
-        public override Task AfterStateFinalizeAsync(IStateActionContext context)
+        public override void AfterStateFinalize(IStateActionContext context)
         {
             SequenceBuilder.StateFinalize(context.CurrentState.Name);
-
-            return Task.CompletedTask;
         }
 
-        public override Task AfterStateMachineInitializeAsync(IStateMachineInitializationContext context, bool initialized)
+        public override void AfterStateMachineInitialize(IStateMachineInitializationContext context, bool initialized)
         {
             SequenceBuilder.StateMachineInitialize();
-
-            return Task.CompletedTask;
         }
 
-        public override Task AfterStateMachineFinalizeAsync(IStateMachineActionContext context)
+        public override void AfterStateMachineFinalize(IStateMachineActionContext context)
         {
             SequenceBuilder.StateMachineFinalize();
-
-            return Task.CompletedTask;
         }
 
-        public override Task AfterTransitionEffectAsync<TEvent>(ITransitionContext<TEvent> context)
+        public override void AfterTransitionEffect<TEvent>(ITransitionContext<TEvent> context)
         {
             SequenceBuilder.TransitionEffect(Event.GetName(context.Event.GetType()), context.Source.Name, context.Target?.Name);
-
-            return Task.CompletedTask;
         }
 
-        public override Task AfterTransitionGuardAsync<TEvent>(ITransitionContext<TEvent> context, bool guardResult)
+        public override void AfterTransitionGuard<TEvent>(ITransitionContext<TEvent> context, bool guardResult)
         {
             SequenceBuilder.TransitionGuard(Event.GetName(context.Event.GetType()), context.Source.Name, context.Target?.Name);
-
-            return Task.CompletedTask;
         }
     }
 }

@@ -26,7 +26,6 @@
     <ProjectReference Include="..\..\Examples\Examples.Common\Examples.Common.csproj" />
     <ProjectReference Include="..\..\Extensions\Stateflows.Extensions.FluentValidation\Stateflows.Extensions.FluentValidation.csproj" />
     <ProjectReference Include="..\..\Extensions\Stateflows.Extensions.OneOf\Stateflows.Extensions.OneOf.csproj" />
-    <ProjectReference Include="..\..\Extensions\Stateflows.Extensions.PlantUml\Stateflows.Extensions.PlantUml.csproj" />
   </ItemGroup>
 
   <ItemGroup>

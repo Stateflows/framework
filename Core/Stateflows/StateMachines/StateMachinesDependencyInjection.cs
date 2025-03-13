@@ -83,6 +83,11 @@ namespace Stateflows.StateMachines
                             throw new InvalidOperationException(
                                 $"No service for type '{typeof(IExecutionContext).FullName}' is available in this context.")
                         )
+                        .AddTransient(provider =>
+                            StateMachinesContextHolder.Inspection.Value ??
+                            throw new InvalidOperationException(
+                                $"No service for type '{typeof(IStateMachineInspection).FullName}' is available in this context.")
+                        )
                         ;
                 }
 

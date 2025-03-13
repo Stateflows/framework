@@ -1,5 +1,4 @@
 using System;
-using System.Threading.Tasks;
 using Stateflows.Common;
 using Stateflows.StateMachines.Context.Interfaces;
 
@@ -7,93 +6,88 @@ namespace Stateflows.StateMachines
 {
     internal abstract class StateMachinePlugin : IStateMachinePlugin
     {
-        public virtual Task AfterHydrateAsync(IStateMachineActionContext context)
-                => Task.CompletedTask;
+        public virtual void AfterHydrate(IStateMachineActionContext context)
+        { }
 
-        public virtual Task BeforeDehydrateAsync(IStateMachineActionContext context)
-            => Task.CompletedTask;
+        public virtual void BeforeDehydrate(IStateMachineActionContext context)
+        { }
 
-        [Obsolete]
-        public virtual Task<bool> BeforeProcessEventAsync<TEvent>(IEventActionContext<TEvent> context)
-            => Task.FromResult(true);
+        public virtual bool BeforeProcessEvent<TEvent>(IEventContext<TEvent> context)
+            => true;
 
-        [Obsolete]
-        public virtual Task AfterProcessEventAsync<TEvent>(IEventActionContext<TEvent> context, EventStatus eventStatus)
-            => Task.CompletedTask;
+        public virtual void AfterProcessEvent<TEvent>(IEventContext<TEvent> context, EventStatus eventStatus)
+        { }
 
-        public virtual Task<EventStatus> ProcessEventAsync<TEvent>(IEventActionContext<TEvent> context, Func<IEventActionContext<TEvent>, Task<EventStatus>> next)
-            => next(context);
+        public virtual void BeforeStateMachineInitialize(IStateMachineInitializationContext context, bool implicitInitialization)
+        { }
 
-        public virtual Task BeforeStateMachineInitializeAsync(IStateMachineInitializationContext context)
-            => Task.CompletedTask;
+        public virtual void AfterStateMachineInitialize(IStateMachineInitializationContext context, bool initialized)
+        { }
 
-        public virtual Task AfterStateMachineInitializeAsync(IStateMachineInitializationContext context, bool initialized)
-            => Task.CompletedTask;
+        public virtual void BeforeStateMachineFinalize(IStateMachineActionContext context)
+        { }
 
-        public virtual Task BeforeStateMachineFinalizeAsync(IStateMachineActionContext context)
-            => Task.CompletedTask;
+        public virtual void AfterStateMachineFinalize(IStateMachineActionContext context)
+        { }
 
-        public virtual Task AfterStateMachineFinalizeAsync(IStateMachineActionContext context)
-            => Task.CompletedTask;
+        public virtual void BeforeStateInitialize(IStateActionContext context)
+        { }
 
-        public virtual Task BeforeStateInitializeAsync(IStateActionContext context)
-            => Task.CompletedTask;
+        public virtual void AfterStateInitialize(IStateActionContext context)
+        { }
 
-        public virtual Task AfterStateInitializeAsync(IStateActionContext context)
-            => Task.CompletedTask;
+        public virtual void BeforeStateFinalize(IStateActionContext context)
+        { }
 
-        public virtual Task BeforeStateFinalizeAsync(IStateActionContext context)
-            => Task.CompletedTask;
+        public virtual void AfterStateFinalize(IStateActionContext context)
+        { }
 
-        public virtual Task AfterStateFinalizeAsync(IStateActionContext context)
-            => Task.CompletedTask;
+        public virtual void BeforeStateEntry(IStateActionContext context)
+        { }
 
-        public virtual Task BeforeStateEntryAsync(IStateActionContext context)
-            => Task.CompletedTask;
+        public virtual void AfterStateEntry(IStateActionContext context)
+        { }
 
-        public virtual Task AfterStateEntryAsync(IStateActionContext context)
-            => Task.CompletedTask;
+        public virtual void BeforeStateExit(IStateActionContext context)
+        { }
 
-        public virtual Task BeforeStateExitAsync(IStateActionContext context)
-            => Task.CompletedTask;
+        public virtual void AfterStateExit(IStateActionContext context)
+        { }
 
-        public virtual Task AfterStateExitAsync(IStateActionContext context)
-            => Task.CompletedTask;
+        public virtual void BeforeTransitionGuard<TEvent>(ITransitionContext<TEvent> context)
+        { }
 
-        public virtual Task BeforeTransitionGuardAsync<TEvent>(ITransitionContext<TEvent> context)
-            => Task.CompletedTask;
+        public virtual void AfterTransitionGuard<TEvent>(ITransitionContext<TEvent> context, bool guardResult)
+        { }
 
-        public virtual Task AfterTransitionGuardAsync<TEvent>(ITransitionContext<TEvent> context, bool guardResult)
-            => Task.CompletedTask;
+        public virtual void BeforeTransitionEffect<TEvent>(ITransitionContext<TEvent> context)
+        { }
 
-        public virtual Task BeforeTransitionEffectAsync<TEvent>(ITransitionContext<TEvent> context)
-            => Task.CompletedTask;
+        public virtual void AfterTransitionEffect<TEvent>(ITransitionContext<TEvent> context)
+        { }
 
-        public virtual Task AfterTransitionEffectAsync<TEvent>(ITransitionContext<TEvent> context)
-            => Task.CompletedTask;
+        public virtual bool OnStateMachineInitializationException(IStateMachineInitializationContext context, Exception exception)
+            => false;
 
-        public virtual Task<bool> OnStateMachineInitializationExceptionAsync(IStateMachineInitializationContext context, Exception exception)
-            => Task.FromResult(false);
+        public virtual bool OnStateMachineFinalizationException(IStateMachineActionContext context, Exception exception)
+            => false;
 
-        public virtual Task<bool> OnStateMachineFinalizationExceptionAsync(IStateMachineActionContext context, Exception exception)
-            => Task.FromResult(false);
+        public virtual bool OnTransitionGuardException<TEvent>(ITransitionContext<TEvent> context, Exception exception)
+            => false;
 
-        public virtual Task<bool> OnTransitionGuardExceptionAsync<TEvent>(ITransitionContext<TEvent> context, Exception exception)
-            => Task.FromResult(false);
+        public virtual bool OnTransitionEffectException<TEvent>(ITransitionContext<TEvent> context, Exception exception)
+            => false;
 
-        public virtual Task<bool> OnTransitionEffectExceptionAsync<TEvent>(ITransitionContext<TEvent> context, Exception exception)
-            => Task.FromResult(false);
+        public virtual bool OnStateInitializationException(IStateActionContext context, Exception exception)
+            => false;
 
-        public virtual Task<bool> OnStateInitializationExceptionAsync(IStateActionContext context, Exception exception)
-            => Task.FromResult(false);
+        public virtual bool OnStateFinalizationException(IStateActionContext context, Exception exception)
+            => false;
 
-        public virtual Task<bool> OnStateFinalizationExceptionAsync(IStateActionContext context, Exception exception)
-            => Task.FromResult(false);
+        public virtual bool OnStateEntryException(IStateActionContext context, Exception exception)
+            => false;
 
-        public virtual Task<bool> OnStateEntryExceptionAsync(IStateActionContext context, Exception exception)
-            => Task.FromResult(false);
-
-        public virtual Task<bool> OnStateExitExceptionAsync(IStateActionContext context, Exception exception)
-            => Task.FromResult(false);
+        public virtual bool OnStateExitException(IStateActionContext context, Exception exception)
+            => false;
     }
 }

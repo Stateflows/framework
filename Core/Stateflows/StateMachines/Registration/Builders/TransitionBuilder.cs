@@ -87,10 +87,8 @@ namespace Stateflows.StateMachines.Registration.Builders
                             }
                             else
                             {
-                                var inspector = await c.Executor.GetInspectorAsync();
-
                                 Trace.WriteLine($"⦗→s⦘ Activity '{context.Context.Id.Name}:{context.Context.Id.Instance}': exception thrown '{e.Message}'");
-                                if (!await inspector.OnTransitionGuardExceptionAsync(context, e))
+                                if (!c.Executor.Inspector.OnTransitionGuardException(context, e))
                                 {
                                     throw;
                                 }
@@ -144,10 +142,8 @@ namespace Stateflows.StateMachines.Registration.Builders
                             }
                             else
                             {
-                                var inspector = await c.Executor.GetInspectorAsync();
-
                                 Trace.WriteLine($"⦗→s⦘ Activity '{context.Context.Id.Name}:{context.Context.Id.Instance}': exception thrown '{e.Message}'");
-                                if (!await inspector.OnTransitionEffectExceptionAsync(context, e))
+                                if (!c.Executor.Inspector.OnTransitionEffectException(context, e))
                                 {
                                     throw;
                                 }

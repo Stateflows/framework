@@ -15,7 +15,7 @@ namespace Stateflows.Common
         private readonly IServiceScope Scope;
         private IServiceProvider ServiceProvider => Scope.ServiceProvider;
         private readonly IStateflowsLock Lock;
-        private readonly IStateflowsExecutionInterceptor Interceptor;
+        private readonly CommonInterceptor Interceptor;
         private readonly IStateflowsTenantProvider TenantProvider;
         private readonly ITenantAccessor TenantAccessor;
         private readonly IStateflowsValidator[] Validators;

@@ -1,4 +1,5 @@
-﻿using Stateflows.StateMachines.Models;
+﻿using Stateflows.Common.Context.Interfaces;
+using Stateflows.StateMachines.Models;
 using Stateflows.StateMachines.Context.Interfaces;
 using Stateflows.StateMachines.Inspection.Interfaces;
 
@@ -24,5 +25,6 @@ namespace Stateflows.StateMachines.Context.Classes
 
         private IStateContext currentState = null;
         public IStateContext CurrentState => currentState ??= new StateContext(Vertex, Context);
+        public IBehaviorContext Behavior => StateMachine;
     }
 }

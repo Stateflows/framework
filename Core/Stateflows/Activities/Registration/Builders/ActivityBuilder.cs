@@ -106,10 +106,8 @@ namespace Stateflows.Activities.Registration.Builders
                     }
                     else
                     {
-                        var inspector = await c.Context.Executor.GetInspectorAsync();
-                        
                         Trace.WriteLine($"⦗→s⦘ Activity '{c.Context.Id.Name}:{c.Context.Id.Instance}': exception thrown '{e.Message}'");
-                        if (!await inspector.OnActivityInitializationExceptionAsync(context, context.InitializationEventHolder, e))
+                        if (!c.Context.Executor.Inspector.OnActivityInitializationException(context, context.InitializationEventHolder, e))
                         {
                             throw;
                         }

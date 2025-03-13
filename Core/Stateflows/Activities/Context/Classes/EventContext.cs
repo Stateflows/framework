@@ -4,15 +4,15 @@ using Stateflows.Activities.Context.Interfaces;
 using Stateflows.Common;
 using Stateflows.Common.Utilities;
 using Stateflows.Common.Exceptions;
-using Stateflows.Activities.Inspection.Interfaces;
+using Stateflows.Common.Context.Interfaces;
 
 namespace Stateflows.Activities.Context.Classes
 {
-    internal class EventContext<TEvent> : BaseContext, IEventInspectionContext<TEvent>, IRootContext, IStateflowsEventContext<TEvent>
+    internal class EventContext<TEvent> : BaseContext, Interfaces.IEventContext<TEvent>, IRootContext, IStateflowsEventContext<TEvent>
     {
         IActivityContext IActivityActionContext.Activity => Activity;
-
-        IActivityInspectionContext IEventInspectionContext<TEvent>.Activity => Activity;
+        
+        IBehaviorContext IBehaviorActionContext.Behavior => Activity;
 
         public EventContext(RootContext context, NodeScope nodeScope)
             : base(context, nodeScope)

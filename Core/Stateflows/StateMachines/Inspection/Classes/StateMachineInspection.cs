@@ -8,7 +8,7 @@ namespace Stateflows.StateMachines.Inspection.Classes
 {
     internal class StateMachineInspection : IStateMachineInspection
     {
-        private Executor Executor { get; }
+        private readonly Executor Executor;
 
         public StateMachineInspection(Executor executor, Inspector inspector)
         {
@@ -23,7 +23,7 @@ namespace Stateflows.StateMachines.Inspection.Classes
 
         public StateMachineId Id => Executor.Context.Id;
 
-        public IEnumerable<IStateInspection> States { get; }
+        public IEnumerable<IStateInspection> States { get; set; }
 
         public IReadOnlyTree<IStateInspection> CurrentState
             => Executor.VerticesTree.Translate(vertex => States.First(s => s.Name == vertex.Name));

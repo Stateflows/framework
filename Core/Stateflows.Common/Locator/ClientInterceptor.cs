@@ -1,5 +1,4 @@
-﻿using System.Threading.Tasks;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using Stateflows.Common.Extensions;
 using Microsoft.Extensions.Logging;
 
@@ -19,10 +18,10 @@ namespace Stateflows.Common.Engine
             Logger = logger;
         }
 
-        public Task<bool> BeforeDispatchEventAsync(EventHolder eventHolder)
-            => ClientInterceptors.RunSafe(i => i.BeforeDispatchEventAsync(eventHolder), nameof(BeforeDispatchEventAsync), Logger);
+        public bool BeforeDispatchEvent(EventHolder eventHolder)
+            => ClientInterceptors.RunSafe(i => i.BeforeDispatchEvent(eventHolder), nameof(BeforeDispatchEvent), Logger);
 
-        public Task AfterDispatchEventAsync(EventHolder eventHolder)
-            => ClientInterceptors.RunSafe(i => i.AfterDispatchEventAsync(eventHolder), nameof(AfterDispatchEventAsync), Logger);
+        public void AfterDispatchEvent(EventHolder eventHolder)
+            => ClientInterceptors.RunSafe(i => i.AfterDispatchEvent(eventHolder), nameof(AfterDispatchEvent), Logger);
     }
 }

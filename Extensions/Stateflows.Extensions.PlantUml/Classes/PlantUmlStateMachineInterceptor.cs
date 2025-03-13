@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Diagnostics;
-using System.Threading.Tasks;
 using Stateflows.Common;
 using Stateflows.StateMachines;
 using Stateflows.StateMachines.Context.Interfaces;
@@ -11,25 +10,25 @@ namespace Stateflows.Extensions.PlantUml.Classes
 {
     internal class PlantUmlStateMachineInterceptor : StateMachineInterceptor
     {
-        // public override Task AfterHydrateAsync(IStateMachineActionContext context)
-        //     => Task.CompletedTask;
+        private readonly IStateMachineInspection Inspection;
 
-        public override async Task<EventStatus> ProcessEventAsync<TEvent>(IEventActionContext<TEvent> context, Func<IEventActionContext<TEvent>, Task<EventStatus>> next)
+        public PlantUmlStateMachineInterceptor(IStateMachineInspection inspection)
         {
-            var result = await next(context);
-            
+            Inspection = inspection;
+        }
+
+        public override void AfterProcessEvent<TEvent>(IEventContext<TEvent> context, EventStatus eventStatus)
+        {
             try
             {
                 if (context is IEventInspectionContext<TEvent> inspectionContext)
                 {
-                    var inspection = await inspectionContext.StateMachine.GetInspectionAsync();
-
-                    if (inspection.StateHasChanged)
+                    if (Inspection.StateHasChanged)
                     {
                         context.Behavior.Publish(
                             new PlantUmlInfo()
                             {
-                                PlantUml = inspection.GetPlantUml()
+                                PlantUml = Inspection.GetPlantUml()
                             }
                         );
                     }
@@ -43,43 +42,6 @@ namespace Stateflows.Extensions.PlantUml.Classes
                     Trace.WriteLine($"⦗→s⦘     {line}");
                 }
             }
-
-            return result;
         }
-
-        // public override async Task AfterProcessEventAsync<TEvent>(IEventActionContext<TEvent> context, EventStatus eventStatus)
-        // {
-        //     try
-        //     {
-        //         if (context is IEventInspectionContext<TEvent> inspectionContext)
-        //         {
-        //             var inspection = await inspectionContext.StateMachine.GetInspectionAsync();
-        //
-        //             if (inspection.StateHasChanged)
-        //             {
-        //                 context.Behavior.Publish(
-        //                     new PlantUmlInfo()
-        //                     {
-        //                         PlantUml = inspection.GetPlantUml()
-        //                     }
-        //                 );
-        //             }
-        //         }
-        //     }
-        //     catch (Exception e)
-        //     {
-        //         Trace.WriteLine($"⦗→s⦘ PlantUML exception '{e.GetType().Name}' thrown with message '{e.Message}'; stack trace:");
-        //         foreach (var line in e.StackTrace.Split('\n'))
-        //         {
-        //             Trace.WriteLine($"⦗→s⦘     {line}");
-        //         }
-        //     }
-        // }
-        //
-        // public override Task BeforeDehydrateAsync(IStateMachineActionContext context)
-        //     => Task.CompletedTask;
-        //
-        // public override Task<bool> BeforeProcessEventAsync<TEvent>(IEventActionContext<TEvent> context)
-        //     => Task.FromResult(true);
     }
 }

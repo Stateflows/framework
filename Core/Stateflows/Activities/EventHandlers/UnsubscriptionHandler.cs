@@ -2,7 +2,7 @@
 using System.Threading.Tasks;
 using Stateflows.Common;
 using Stateflows.Activities.Extensions;
-using Stateflows.Activities.Inspection.Interfaces;
+using Stateflows.Activities.Context.Interfaces;
 
 namespace Stateflows.Activities.EventHandlers
 {
@@ -10,11 +10,12 @@ namespace Stateflows.Activities.EventHandlers
     {
         public Type EventType => typeof(Unsubscribe);
 
-        public Task<EventStatus> TryHandleEventAsync<TEvent>(IEventInspectionContext<TEvent> context)
+        public Task<EventStatus> TryHandleEventAsync<TEvent>(IEventContext<TEvent> context)
+
         {
             if (context.Event is Unsubscribe request)
             {
-                var result = context.Activity.GetExecutor().Context.Context.RemoveSubscribers(request.BehaviorId, request.NotificationNames);
+                var result = context.Behavior.GetExecutor().Context.Context.RemoveSubscribers(request.BehaviorId, request.NotificationNames);
 
                 return Task.FromResult(
                     result

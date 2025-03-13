@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Threading.Tasks;
-using Stateflows.Common;
 using Stateflows.StateMachines.Context.Interfaces;
 
 namespace Stateflows.StateMachines.Registration.Interfaces
@@ -70,10 +69,5 @@ namespace Stateflows.StateMachines.Registration.Interfaces
     public delegate IStateMachineExceptionHandler StateMachineExceptionHandlerFactory(IServiceProvider serviceProvider);
     public delegate Task<IStateMachineExceptionHandler> StateMachineExceptionHandlerFactoryAsync(IServiceProvider serviceProvider);
     
-    public delegate IStateMachineVisitor StateMachineVisitorFactory(IServiceProvider serviceProvider);
-    public delegate Task<IStateMachineVisitor> StateMachineVisitorFactoryAsync(IServiceProvider serviceProvider);
-
     public delegate object StateActionInitializationBuilder(IStateActionContext context);
-    
-    public delegate Task<object> StateActionInitializationBuilderAsync(IStateActionContext context);
 }

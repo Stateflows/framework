@@ -64,10 +64,8 @@ namespace Stateflows.StateMachines.Registration.Builders
                     }
                     else
                     {
-                        var inspector = await c.Executor.GetInspectorAsync();
-                        
                         Trace.WriteLine($"⦗→s⦘ State Machine '{context.Context.Id.Name}:{context.Context.Id.Instance}': exception thrown '{e.Message}'");
-                        if (!await inspector.OnStateInitializeExceptionAsync(context, e))
+                        if (!c.Executor.Inspector.OnStateInitializeException(context, e))
                         {
                             throw;
                         }
@@ -105,10 +103,8 @@ namespace Stateflows.StateMachines.Registration.Builders
                     }
                     else
                     {
-                        var inspector = await c.Executor.GetInspectorAsync();
-
                         Trace.WriteLine($"⦗→s⦘ State Machine '{context.Context.Id.Name}:{context.Context.Id.Instance}': exception thrown '{e.Message}'");
-                        if (!await inspector.OnStateFinalizeExceptionAsync(context, e))
+                        if (!c.Executor.Inspector.OnStateFinalizeException(context, e))
                         {
                             throw;
                         }
@@ -148,10 +144,8 @@ namespace Stateflows.StateMachines.Registration.Builders
                             }
                             else
                             {
-                                var inspector = await c.Executor.GetInspectorAsync();
-
                                 Trace.WriteLine($"⦗→s⦘ State Machine '{context.Context.Id.Name}:{context.Context.Id.Instance}': exception thrown '{e.Message}'");
-                                if (!await inspector.OnStateEntryExceptionAsync(context, e))
+                                if (!c.Executor.Inspector.OnStateEntryException(context, e))
                                 {
                                     throw;
                                 }
@@ -192,10 +186,8 @@ namespace Stateflows.StateMachines.Registration.Builders
                             }
                             else
                             {
-                                var inspector = await c.Executor.GetInspectorAsync();
-
                                 Trace.WriteLine($"⦗→s⦘ State Machine '{context.Context.Id.Name}:{context.Context.Id.Instance}': exception thrown '{e.Message}'");
-                                if (!await inspector.OnStateExitExceptionAsync(context, e))
+                                if (!c.Executor.Inspector.OnStateExitException(context, e))
                                 {
                                     throw;
                                 }

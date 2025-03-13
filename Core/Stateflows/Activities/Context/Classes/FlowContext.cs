@@ -1,8 +1,9 @@
 ﻿using System;
+using Stateflows.Common.Context.Interfaces;
+using Stateflows.Activities.Engine;
 using Stateflows.Activities.Models;
 using Stateflows.Activities.Streams;
 using Stateflows.Activities.Context.Interfaces;
-using Stateflows.Activities.Engine;
 
 namespace Stateflows.Activities.Context.Classes
 {
@@ -12,6 +13,8 @@ namespace Stateflows.Activities.Context.Classes
         IRootContext
     {
         IActivityContext IActivityActionContext.Activity => Activity;
+        
+        IBehaviorContext IBehaviorActionContext.Behavior => Activity;
 
         protected readonly Edge edge;
 
@@ -25,17 +28,21 @@ namespace Stateflows.Activities.Context.Classes
         {
             this.context = context;
             edge = context.Edge;
+            SourceNode = this.context.SourceNode;
+            TargetNode = this.context.TargetNode;
         }
 
         public FlowContext(RootContext context, NodeScope nodeScope, Edge edge)
             : base(context, nodeScope)
         {
             this.edge = edge;
+            SourceNode = new SourceNodeContext(edge.Source, context, nodeScope);
+            TargetNode = new NodeContext(edge.Target, context, nodeScope);
         }
 
-        public ISourceNodeContext SourceNode => context.SourceNode;
+        public ISourceNodeContext SourceNode { get; private set; }
 
-        public INodeContext TargetNode => context.TargetNode;
+        public INodeContext TargetNode { get; private set; }
 
         public Type TokenType => edge.TokenType;
 

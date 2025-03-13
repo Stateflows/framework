@@ -7,6 +7,7 @@
         public const string Finalized = nameof(Finalized);
         public const string Action = nameof(Action);
         public const string Guard = nameof(Guard);
+        public const string Transformation = nameof(Transformation);
         public const string Initialize = nameof(Initialize);
         public const string Finalize = nameof(Finalize);
         public const string Streams = nameof(Streams);

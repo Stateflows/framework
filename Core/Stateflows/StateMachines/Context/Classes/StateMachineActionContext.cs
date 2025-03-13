@@ -1,4 +1,5 @@
-﻿using Stateflows.StateMachines.Context.Interfaces;
+﻿using Stateflows.Common.Context.Interfaces;
+using Stateflows.StateMachines.Context.Interfaces;
 using Stateflows.StateMachines.Inspection.Interfaces;
 
 namespace Stateflows.StateMachines.Context.Classes
@@ -12,5 +13,7 @@ namespace Stateflows.StateMachines.Context.Classes
         public StateMachineActionContext(RootContext context)
             : base(context)
         { }
+        
+        public IBehaviorContext Behavior => StateMachine;
     }
 }

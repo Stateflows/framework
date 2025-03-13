@@ -1,5 +1,4 @@
-﻿using System;
-using System.Threading.Tasks;
+﻿using System.Threading.Tasks;
 using Stateflows.Common.Context.Interfaces;
 
 namespace Stateflows.Common
@@ -8,9 +7,7 @@ namespace Stateflows.Common
     {
         Task AfterHydrateAsync(IBehaviorActionContext context);
         Task BeforeDehydrateAsync(IBehaviorActionContext context);
-        Task<bool> BeforeProcessEventAsync<TEvent>(IEventContext<TEvent> context);
-        Task AfterProcessEventAsync<TEvent>(IEventContext<TEvent> context);
-        
-        Task ProcessEventAsync<TEvent>(IEventContext<TEvent> context, Func<IEventContext<TEvent>, Task<EventStatus>> next);
+        bool BeforeProcessEvent<TEvent>(IEventContext<TEvent> context);
+        void AfterProcessEvent<TEvent>(IEventContext<TEvent> context, EventStatus eventStatus);
     }
 }

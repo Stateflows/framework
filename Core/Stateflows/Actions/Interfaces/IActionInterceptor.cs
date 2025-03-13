@@ -1,5 +1,6 @@
 ﻿using System.Threading.Tasks;
 using Stateflows.Actions.Context.Interfaces;
+using Stateflows.Common;
 
 namespace Stateflows.Actions
 {
@@ -11,7 +12,7 @@ namespace Stateflows.Actions
 
         Task<bool> BeforeProcessEventAsync<TEvent>(IEventContext<TEvent> context);
 
-        Task AfterProcessEventAsync<TEvent>(IEventContext<TEvent> context);
+        Task AfterProcessEventAsync<TEvent>(IEventContext<TEvent> context, EventStatus eventStatus);
 
     }
 }

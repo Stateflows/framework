@@ -11,6 +11,7 @@ using Stateflows.Activities.Context;
 using Stateflows.Activities.Service;
 using Stateflows.Activities.Registration;
 using Stateflows.Activities.EventHandlers;
+using Stateflows.Activities.Inspection.Interfaces;
 using Stateflows.Activities.Registration.Builders;
 using Stateflows.Activities.Registration.Interfaces;
 
@@ -77,6 +78,11 @@ namespace Stateflows.Activities
                         .AddTransient(provider =>
                             ActivitiesContextHolder.ExceptionContext.Value ??
                             throw new InvalidOperationException($"No service for type '{typeof(IExceptionContext).FullName}' is available in this context.")
+                        )
+                        .AddTransient(provider =>
+                            ActivitiesContextHolder.Inspection.Value ??
+                            throw new InvalidOperationException(
+                                $"No service for type '{typeof(IActivityInspection).FullName}' is available in this context.")
                         )
                         .AddTransient(typeof(IInputTokens<>), typeof(InputTokens<>))
                         .AddTransient(typeof(IInputToken<>), typeof(InputToken<>))

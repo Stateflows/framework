@@ -1,17 +1,17 @@
-﻿using System.Threading.Tasks;
+﻿using Stateflows.Common;
 using Stateflows.Activities.Context.Interfaces;
 
 namespace Stateflows.Activities
 {
     public interface IActivityInterceptor
     {
-        Task AfterHydrateAsync(IActivityActionContext context);
+        void AfterHydrate(IActivityActionContext context);
 
-        Task BeforeDehydrateAsync(IActivityActionContext context);
+        void BeforeDehydrate(IActivityActionContext context);
 
-        Task<bool> BeforeProcessEventAsync<TEvent>(IEventContext<TEvent> context);
+        bool BeforeProcessEvent<TEvent>(IEventContext<TEvent> context);
 
-        Task AfterProcessEventAsync<TEvent>(IEventContext<TEvent> context);
+        void AfterProcessEvent<TEvent>(IEventContext<TEvent> context, EventStatus eventStatus);
 
     }
 }

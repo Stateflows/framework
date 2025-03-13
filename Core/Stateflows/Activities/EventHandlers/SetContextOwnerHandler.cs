@@ -1,9 +1,8 @@
 ﻿using System;
 using System.Threading.Tasks;
-using Stateflows.Activities.Context.Classes;
 using Stateflows.Common;
-using Stateflows.Common.Classes;
-using Stateflows.Activities.Inspection.Interfaces;
+using Stateflows.Activities.Context.Classes;
+using Stateflows.Activities.Context.Interfaces;
 
 namespace Stateflows.Activities.EventHandlers
 {
@@ -11,7 +10,7 @@ namespace Stateflows.Activities.EventHandlers
     {
         public Type EventType => typeof(SetContextOwner);
 
-        public Task<EventStatus> TryHandleEventAsync<TEvent>(IEventInspectionContext<TEvent> context)
+        public Task<EventStatus> TryHandleEventAsync<TEvent>(IEventContext<TEvent> context)
         {
             if (context.Event is SetContextOwner @event)
             {

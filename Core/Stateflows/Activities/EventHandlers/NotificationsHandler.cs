@@ -2,8 +2,8 @@
 using System.Linq;
 using System.Threading.Tasks;
 using Stateflows.Common;
-using Stateflows.Activities.Inspection.Interfaces;
 using Stateflows.Common.Interfaces;
+using Stateflows.Activities.Context.Interfaces;
 
 namespace Stateflows.Activities.EventHandlers
 {
@@ -17,7 +17,7 @@ namespace Stateflows.Activities.EventHandlers
         
         public Type EventType => typeof(NotificationsRequest);
 
-        public Task<EventStatus> TryHandleEventAsync<TEvent>(IEventInspectionContext<TEvent> context)
+        public Task<EventStatus> TryHandleEventAsync<TEvent>(IEventContext<TEvent> context)
         {
             if (context.Event is NotificationsRequest request)
             {

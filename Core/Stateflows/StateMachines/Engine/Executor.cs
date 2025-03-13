@@ -16,6 +16,7 @@ using Stateflows.StateMachines.Extensions;
 using Stateflows.StateMachines.Registration;
 using Stateflows.StateMachines.Context.Classes;
 using Stateflows.StateMachines.Context.Interfaces;
+using Stateflows.StateMachines.Inspection.Classes;
 
 namespace Stateflows.StateMachines.Engine
 {
@@ -46,10 +47,11 @@ namespace Stateflows.StateMachines.Engine
             ScopesStack.Push(serviceProvider.CreateScope());
             Graph = graph;
             Context = new RootContext(stateflowsContext, this, @event);
+            
+            var logger = serviceProvider.GetRequiredService<ILogger<Executor>>();
+            Inspector = new Inspector(this, logger);
+            StateMachinesContextHolder.Inspection.Value = new StateMachineInspection(this, Inspector);
         }
-
-        // public Task BuildAsync()
-        //     => Inspector.BuildAsync();
 
         public void Dispose()
         {
@@ -72,20 +74,7 @@ namespace Stateflows.StateMachines.Engine
 
         public readonly RootContext Context;
 
-        private Inspector inspector;
-
-        public async Task<Inspector> GetInspectorAsync()
-        {
-            if (inspector == null)
-            {
-                var logger = ServiceProvider.GetService<ILogger<Executor>>();
-                inspector = new Inspector(this, logger);
-
-                await inspector.BuildAsync();
-            }
-            
-            return inspector;
-        }
+        public readonly Inspector Inspector;
 
         private string[] GetDeferredEvents()
             => VerticesTree.GetAllNodes_FromTheTop().SelectMany(vertex => vertex.Value.DeferredEvents).ToArray();
@@ -107,11 +96,13 @@ namespace Stateflows.StateMachines.Engine
         {
             RebuildVerticesTree();
 
-            await (await GetInspectorAsync()).AfterHydrateAsync(new StateMachineActionContext(Context));
+            await Inspector.BuildAsync();
+
+            Inspector.AfterHydrate(new StateMachineActionContext(Context));
         }
 
         public async Task DehydrateAsync()
-            => await (await GetInspectorAsync()).BeforeDehydrateAsync(new StateMachineActionContext(Context));
+            => Inspector.BeforeDehydrate(new StateMachineActionContext(Context));
 
         public bool Initialized
             => VerticesTree.HasValue;
@@ -129,13 +120,13 @@ namespace Stateflows.StateMachines.Engine
             };
 
         [DebuggerHidden]
-        public async Task<EventStatus> InitializeAsync<TEvent>(EventHolder<TEvent> eventHolder)
+        public async Task<EventStatus> InitializeAsync<TEvent>(EventHolder<TEvent> eventHolder, bool noImplicitInitialization)
         {
             Debug.Assert(Context != null, $"Context is unavailable. Is state machine '{Graph.Name}' hydrated?");
 
             if (!Initialized)
             {
-                var result = await DoInitializeStateMachineAsync(eventHolder);
+                var result = await DoInitializeStateMachineAsync(eventHolder, noImplicitInitialization);
 
                 if (
                     result == InitializationStatus.InitializedImplicitly ||
@@ -259,9 +250,8 @@ namespace Stateflows.StateMachines.Engine
 
         public IEnumerable<string> GetExpectedEventNames()
             => GetExpectedEvents()
-                .Where(type => !type.IsSubclassOf(typeof(TimeEvent)))
-                .Where(type => type != typeof(Startup))
-                .Where(type => type != typeof(Completion))
+                .Where(type => !typeof(SystemEvent).IsAssignableFrom(type))
+                .Where(type => !typeof(Exception).IsAssignableFrom(type))
                 .Select(type => type.GetEventName())
                 .ToArray();
 
@@ -341,7 +331,7 @@ namespace Stateflows.StateMachines.Engine
         private async Task<EventStatus> DoProcessAsync<TEvent>(EventHolder<TEvent> eventHolder)
         {
             Debug.Assert(Context != null, $"Context is not available. Is state machine '{Graph.Name}' hydrated?");
-
+            
             var currentStack = VerticesTree.GetAllNodes_FromTheTop().Select(node => node.Value).ToArray();
 
             var deferred = true;
@@ -463,13 +453,11 @@ namespace Stateflows.StateMachines.Engine
 
             var context = new GuardContext<TEvent>(Context, edge);
 
-            var inspector = await GetInspectorAsync();
-
-            await inspector.BeforeTransitionGuardAsync(context);
+            Inspector.BeforeTransitionGuard(context);
 
             var result = await edge.Guards.WhenAll(Context);
 
-            await inspector.AfterGuardAsync(context, result);
+            Inspector.AfterGuard(context, result);
 
 
             return result;
@@ -481,36 +469,34 @@ namespace Stateflows.StateMachines.Engine
             BeginScope();
 
             var context = new TransitionContext<TEvent>(Context, edge);
-
-            var inspector = await GetInspectorAsync();
             
-            await inspector.BeforeEffectAsync(context);
+            Inspector.BeforeEffect(context);
 
             await edge.Effects.WhenAll(Context);
 
-            await inspector.AfterEffectAsync(context);
+            Inspector.AfterEffect(context);
 
             EndScope();
         }
 
         [DebuggerHidden]
-        private async Task<InitializationStatus> DoInitializeStateMachineAsync(EventHolder @event)
+        private async Task<InitializationStatus> DoInitializeStateMachineAsync(EventHolder eventHolder, bool noImplicitInitialization)
         {
-            BeginScope();
+            InitializationStatus result = InitializationStatus.NotInitialized;
 
-            InitializationStatus result;
-
-            var initializer = Graph.Initializers.TryGetValue(@event.Name, out var graphInitializer)
+            var initializer = Graph.Initializers.TryGetValue(eventHolder.Name, out var graphInitializer)
                 ? graphInitializer
-                : Graph.DefaultInitializer;
+                : noImplicitInitialization
+                    ? null
+                    : Graph.DefaultInitializer;
             
-            var inspector = await GetInspectorAsync();
-
-            var context = new StateMachineInitializationContext(Context);
-            await inspector.BeforeStateMachineInitializeAsync(context);
-
             if (initializer != null)
             {
+                BeginScope();
+                
+                var context = new StateMachineInitializationContext(Context);
+                Inspector.BeforeStateMachineInitialize(context, initializer == Graph.DefaultInitializer);
+                
                 try
                 {
                     result = await initializer.WhenAll(Context)
@@ -522,7 +508,7 @@ namespace Stateflows.StateMachines.Engine
                 catch (Exception e)
                 {
                     Trace.WriteLine($"⦗→s⦘ State Machine '{Context.Id.Name}:{Context.Id.Instance}': exception thrown '{e.Message}'");
-                    if (!await inspector.OnStateMachineInitializationExceptionAsync(context, e))
+                    if (!Inspector.OnStateMachineInitializationException(context, e))
                     {
                         throw;
                     }
@@ -531,21 +517,30 @@ namespace Stateflows.StateMachines.Engine
                         throw new BehaviorExecutionException(e);
                     }
                 }
+
+                Inspector.AfterStateMachineInitialize(
+                    context,
+                    result == InitializationStatus.InitializedImplicitly ||
+                    result == InitializationStatus.InitializedExplicitly
+                );
+
+                EndScope();
             }
             else
             {
+                if (!noImplicitInitialization)
+                {
+                    var context = new StateMachineInitializationContext(Context);
+                    Inspector.BeforeStateMachineInitialize(context, eventHolder.Name != Event<Initialize>.Name);
+                    Inspector.AfterStateMachineInitialize(context, true);
+                }
+                
                 result = Graph.Initializers.Any()
                     ? InitializationStatus.NoSuitableInitializer
-                    : InitializationStatus.InitializedImplicitly;
+                    : noImplicitInitialization
+                        ? InitializationStatus.NotInitialized
+                        : InitializationStatus.InitializedImplicitly;
             }
-
-            await inspector.AfterStateMachineInitializeAsync(
-                context,
-                result == InitializationStatus.InitializedImplicitly ||
-                result == InitializationStatus.InitializedExplicitly
-            );
-
-            EndScope();
 
             return result;
         }
@@ -555,10 +550,8 @@ namespace Stateflows.StateMachines.Engine
         {
             BeginScope();
             
-            var inspector = await GetInspectorAsync();
-
             var context = new StateMachineActionContext(Context);
-            await inspector.BeforeStateMachineFinalizeAsync(context);
+            Inspector.BeforeStateMachineFinalize(context);
 
             try
             {
@@ -567,7 +560,7 @@ namespace Stateflows.StateMachines.Engine
             catch (Exception e)
             {
                 Trace.WriteLine($"⦗→s⦘ State Machine '{Context.Id.Name}:{Context.Id.Instance}': exception thrown '{e.Message}'");
-                if (!await inspector.OnStateMachineFinalizationExceptionAsync(context, e))
+                if (!Inspector.OnStateMachineFinalizationException(context, e))
                 {
                     throw;
                 }
@@ -577,7 +570,7 @@ namespace Stateflows.StateMachines.Engine
                 }
             }
 
-            await inspector.AfterStateMachineFinalizeAsync(context);
+            Inspector.AfterStateMachineFinalize(context);
 
             EndScope();
         }
@@ -587,14 +580,12 @@ namespace Stateflows.StateMachines.Engine
         {
             BeginScope();
             
-            var inspector = await GetInspectorAsync();
-
             var context = new StateActionContext(Context, vertex, Constants.Initialize);
-            await inspector.BeforeStateInitializeAsync(context);
+            Inspector.BeforeStateInitialize(context);
 
             await vertex.Initialize.WhenAll(Context);
 
-            await inspector.AfterStateInitializeAsync(context);
+            Inspector.AfterStateInitialize(context);
 
             EndScope();
         }
@@ -604,14 +595,12 @@ namespace Stateflows.StateMachines.Engine
         {
             BeginScope();
             
-            var inspector = await GetInspectorAsync();
-
             var context = new StateActionContext(Context, vertex, Constants.Finalize);
-            await inspector.BeforeStateFinalizeAsync(context);
+            Inspector.BeforeStateFinalize(context);
 
             await vertex.Finalize.WhenAll(Context);
 
-            await inspector.AfterStateFinalizeAsync(context);
+            Inspector.AfterStateFinalize(context);
 
             EndScope();
         }
@@ -621,14 +610,12 @@ namespace Stateflows.StateMachines.Engine
         {
             BeginScope();
             
-            var inspector = await GetInspectorAsync();
-
             var context = new StateActionContext(Context, vertex, Constants.Entry);
-            await inspector.BeforeStateEntryAsync(context);
+            Inspector.BeforeStateEntry(context);
 
             await vertex.Entry.WhenAll(Context);
 
-            await inspector.AfterStateEntryAsync(context);
+            Inspector.AfterStateEntry(context);
 
             EndScope();
         }
@@ -638,14 +625,12 @@ namespace Stateflows.StateMachines.Engine
         {
             BeginScope();
             
-            var inspector = await GetInspectorAsync();
-
             var context = new StateActionContext(Context, vertex, Constants.Exit);
-            await inspector.BeforeStateExitAsync(context);
+            Inspector.BeforeStateExit(context);
 
             await vertex.Exit.WhenAll(Context);
 
-            await inspector.AfterStateExitAsync(context);
+            Inspector.AfterStateExit(context);
 
             EndScope();
         }

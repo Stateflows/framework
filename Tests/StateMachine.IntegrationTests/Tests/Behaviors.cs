@@ -21,7 +21,6 @@ namespace StateMachine.IntegrationTests.Tests
         protected override void InitializeStateflows(IStateflowsBuilder builder)
         {
             builder
-                .AddPlantUml()
                 .AddStateMachines(b => b
                     .AddStateMachine("submachine", b => b
                         .AddExecutionSequenceObserver()

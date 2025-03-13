@@ -1,6 +1,7 @@
 ﻿using System.Linq;
 using System.Text;
 using System.Collections.Generic;
+using Stateflows.StateMachines;
 using Stateflows.StateMachines.Inspection.Interfaces;
 
 namespace Stateflows.Extensions.PlantUml.Classes

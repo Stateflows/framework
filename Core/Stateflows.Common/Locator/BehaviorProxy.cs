@@ -30,11 +30,11 @@ namespace Stateflows.Common.Locator
                 Headers = headers?.ToList() ?? new List<EventHeader>()
             };
 
-            if (await Interceptor.BeforeDispatchEventAsync(eventHolder))
+            if (Interceptor.BeforeDispatchEvent(eventHolder))
             {
                 result = await Behavior.SendAsync(eventHolder.Payload, eventHolder.Headers);
 
-                await Interceptor.AfterDispatchEventAsync(eventHolder);
+                Interceptor.AfterDispatchEvent(eventHolder);
             }
             else
             {
@@ -51,11 +51,11 @@ namespace Stateflows.Common.Locator
             RequestResult<TResponse> result = null;
             var eventHolder = request.ToTypedEventHolder(headers);
 
-            if (await Interceptor.BeforeDispatchEventAsync(eventHolder))
+            if (Interceptor.BeforeDispatchEvent(eventHolder))
             {
                 result = await Behavior.RequestAsync(eventHolder.BoxedPayload as IRequest<TResponse>, eventHolder.Headers);
 
-                await Interceptor.AfterDispatchEventAsync(eventHolder);
+                Interceptor.AfterDispatchEvent(eventHolder);
             }
             else
             {

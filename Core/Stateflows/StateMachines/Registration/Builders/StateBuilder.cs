@@ -78,10 +78,8 @@ namespace Stateflows.StateMachines.Registration.Builders
                     }
                     else
                     {
-                        var inspector = await c.Executor.GetInspectorAsync();
-                        
                         Trace.WriteLine($"⦗→s⦘ State Machine '{context.Context.Id.Name}:{context.Context.Id.Instance}': exception thrown '{e.Message}'");
-                        if (!await inspector.OnStateInitializeExceptionAsync(context, e))
+                        if (!c.Executor.Inspector.OnStateInitializeException(context, e))
                         {
                             throw;
                         }
@@ -119,10 +117,8 @@ namespace Stateflows.StateMachines.Registration.Builders
                     }
                     else
                     {
-                        var inspector = await c.Executor.GetInspectorAsync();
-                        
                         Trace.WriteLine($"⦗→s⦘ State Machine '{context.Context.Id.Name}:{context.Context.Id.Instance}': exception thrown '{e.Message}'");
-                        if (!await inspector.OnStateFinalizeExceptionAsync(context, e))
+                        if (!c.Executor.Inspector.OnStateFinalizeException(context, e))
                         {
                             throw;
                         }
@@ -162,10 +158,8 @@ namespace Stateflows.StateMachines.Registration.Builders
                             }
                             else
                             {
-                                var inspector = await c.Executor.GetInspectorAsync();
-                        
                                 Trace.WriteLine($"⦗→s⦘ State Machine '{context.Context.Id.Name}:{context.Context.Id.Instance}': exception thrown '{e.Message}'");
-                                if (!await inspector.OnStateEntryExceptionAsync(context, e))
+                                if (!c.Executor.Inspector.OnStateEntryException(context, e))
                                 {
                                     throw;
                                 }
@@ -206,10 +200,8 @@ namespace Stateflows.StateMachines.Registration.Builders
                             }
                             else
                             {
-                                var inspector = await c.Executor.GetInspectorAsync();
-                        
                                 Trace.WriteLine($"⦗→s⦘ State Machine '{context.Context.Id.Name}:{context.Context.Id.Instance}': exception thrown '{e.Message}'");
-                                if (!await inspector.OnStateExitExceptionAsync(context, e))
+                                if (!c.Executor.Inspector.OnStateExitException(context, e))
                                 {
                                     throw;
                                 }
@@ -447,7 +439,7 @@ namespace Stateflows.StateMachines.Registration.Builders
 
         #region Submachine
         [DebuggerHidden]
-        public IBehaviorStateBuilder AddSubmachine(string submachineName, EmbeddedBehaviorBuildAction buildAction, StateActionInitializationBuilderAsync initializationBuilder = null)
+        public IBehaviorStateBuilder AddSubmachine(string submachineName, EmbeddedBehaviorBuildAction buildAction, StateActionInitializationBuilder initializationBuilder = null)
         {
             Vertex.BehaviorType = BehaviorType.StateMachine;
             Vertex.BehaviorName = submachineName;
@@ -461,7 +453,7 @@ namespace Stateflows.StateMachines.Registration.Builders
 
         #region DoActivity
         [DebuggerHidden]
-        public IBehaviorStateBuilder AddDoActivity(string doActivityName, EmbeddedBehaviorBuildAction buildAction = null, StateActionInitializationBuilderAsync initializationBuilder = null)
+        public IBehaviorStateBuilder AddDoActivity(string doActivityName, EmbeddedBehaviorBuildAction buildAction = null, StateActionInitializationBuilder initializationBuilder = null)
         {
             Vertex.BehaviorType = BehaviorType.Activity;
             Vertex.BehaviorName = doActivityName;
@@ -822,12 +814,12 @@ namespace Stateflows.StateMachines.Registration.Builders
 
         [DebuggerHidden]
         IBehaviorOverridenStateBuilder IStateSubmachine<IBehaviorOverridenStateBuilder>.AddSubmachine(string submachineName, EmbeddedBehaviorBuildAction buildAction,
-            StateActionInitializationBuilderAsync initializationBuilder)
+            StateActionInitializationBuilder initializationBuilder)
             => AddSubmachine(submachineName, buildAction, initializationBuilder) as IBehaviorOverridenStateBuilder;
 
         [DebuggerHidden]
         IBehaviorOverridenStateBuilder IStateDoActivity<IBehaviorOverridenStateBuilder>.AddDoActivity(string doActivityName, EmbeddedBehaviorBuildAction buildAction,
-            StateActionInitializationBuilderAsync initializationBuilder)
+            StateActionInitializationBuilder initializationBuilder)
             => AddDoActivity(doActivityName, buildAction, initializationBuilder) as IBehaviorOverridenStateBuilder;
 
         [DebuggerHidden]
@@ -882,12 +874,12 @@ namespace Stateflows.StateMachines.Registration.Builders
 
         [DebuggerHidden]
         IBehaviorOverridenRegionalizedStateBuilder IStateSubmachine<IBehaviorOverridenRegionalizedStateBuilder>.AddSubmachine(string submachineName, EmbeddedBehaviorBuildAction buildAction,
-            StateActionInitializationBuilderAsync initializationBuilder)
+            StateActionInitializationBuilder initializationBuilder)
             => AddSubmachine(submachineName, buildAction, initializationBuilder) as IBehaviorOverridenRegionalizedStateBuilder;
 
         [DebuggerHidden]
         IBehaviorOverridenRegionalizedStateBuilder IStateDoActivity<IBehaviorOverridenRegionalizedStateBuilder>.AddDoActivity(string doActivityName,
-            EmbeddedBehaviorBuildAction buildAction, StateActionInitializationBuilderAsync initializationBuilder)
+            EmbeddedBehaviorBuildAction buildAction, StateActionInitializationBuilder initializationBuilder)
             => AddDoActivity(doActivityName, buildAction, initializationBuilder) as IBehaviorOverridenRegionalizedStateBuilder;
 
         [DebuggerHidden]

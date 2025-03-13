@@ -1,4 +1,5 @@
 ﻿using Stateflows.Common;
+using Stateflows.Common.Context.Interfaces;
 using Stateflows.StateMachines.Context.Interfaces;
 using Stateflows.StateMachines.Inspection.Interfaces;
 
@@ -30,5 +31,6 @@ namespace Stateflows.StateMachines.Context.Classes
         IStateMachineInspectionContext IStateMachineInitializationInspectionContext.StateMachine => StateMachine;
 
         IStateMachineContext IStateMachineActionContext.StateMachine => StateMachine;
+        public IBehaviorContext Behavior => StateMachine;
     }
 }

@@ -1,7 +1,8 @@
 ﻿using Stateflows.Common;
 using System.Collections.Generic;
+using Stateflows.StateMachines.Inspection.Interfaces;
 
-namespace Stateflows.StateMachines.Inspection.Interfaces
+namespace Stateflows.StateMachines
 {
     public interface IStateMachineInspection
     {
@@ -12,6 +13,8 @@ namespace Stateflows.StateMachines.Inspection.Interfaces
         IReadOnlyTree<IStateInspection> CurrentState { get; }
 
         IActionInspection Initialize { get; }
+
+        IActionInspection Finalize { get; }
 
         bool StateHasChanged { get; }
     }

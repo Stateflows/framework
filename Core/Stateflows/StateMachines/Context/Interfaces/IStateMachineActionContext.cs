@@ -4,7 +4,7 @@ using Stateflows.Common.Context.Interfaces;
 
 namespace Stateflows.StateMachines.Context.Interfaces
 {
-    public interface IStateMachineActionContext : IBehaviorLocator, IExecutionContext
+    public interface IStateMachineActionContext : IExecutionContext, IBehaviorActionContext
     {
         [Obsolete("StateMachine context property is obsolete, use Behavior or CurrentState properties instead.")]
         IStateMachineContext StateMachine { get; }

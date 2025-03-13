@@ -35,21 +35,29 @@ namespace Stateflows.Activities.Registration.Builders
             Services = services;
         }
 
-        public IObjectFlowBuilder<TToken> AddGuard(params Func<IGuardContext<TToken>, Task<bool>>[]  guardsAsync)//GuardDelegateAsync<TToken> guardAsync)
+        public IObjectFlowBuilder<TToken> AddGuard(params Func<IGuardContext<TToken>, Task<bool>>[]  guardsAsync)
         {
             foreach (var guardAsync in guardsAsync)
             {
                 var logic = new Logic<TokenPipelineActionAsync>(Constants.Guard);
 
-                logic.Actions.Add(async context =>
+                logic.Actions.Add(async (context, inspector) =>
                 {
                     try
                     {
-                        return
-                            context.Token is TokenHolder<TToken> token &&
-                            await guardAsync(new TokenFlowContext<TToken>(context, token.Payload))
-                                ? token
-                                : default;
+                        if (!(context.Token is TokenHolder<TToken> token)) return default;
+
+                        var flowContext = new TokenFlowContext<TToken>(context, token.Payload);
+                        
+                        inspector.BeforeFlowGuard(flowContext);
+
+                        var result = await guardAsync(new TokenFlowContext<TToken>(context, token.Payload))
+                            ? token
+                            : default;
+
+                        inspector.AfterFlowGuard(flowContext, result != default);
+                        
+                        return result;
                     }
                     catch (Exception e)
                     {
@@ -81,16 +89,22 @@ namespace Stateflows.Activities.Registration.Builders
 
         public IObjectFlowBuilder<TTransformedToken> AddTransformation<TTransformedToken>(TransformationDelegateAsync<TToken, TTransformedToken> transformationAsync)
         {
-            var logic = new Logic<TokenPipelineActionAsync>(Constants.Guard);
+            var logic = new Logic<TokenPipelineActionAsync>(Constants.Transformation);
 
-            logic.Actions.Add(async context =>
+            logic.Actions.Add(async (context, inspector) =>
             {
                 try
                 {
-                    return
-                        context.Token is TokenHolder<TToken> token
-                            ? (await transformationAsync(new TokenFlowContext<TToken>(context, token.Payload))).ToTokenHolder()
-                            : default;
+                    if (!(context.Token is TokenHolder<TToken> token)) return default;
+                        
+                    inspector.BeforeFlowTransform<TToken, TTransformedToken>(new TokenFlowContext<TToken>(context, token.Payload));
+                        
+                    var transformedToken = (await transformationAsync(new TokenFlowContext<TToken>(context, token.Payload)))
+                        .ToTokenHolder();
+                    
+                    inspector.AfterFlowTransform(new TokenFlowContext<TToken, TTransformedToken>(context, token.Payload, transformedToken.Payload));
+
+                    return transformedToken;
                 }
                 catch (Exception e)
                 {
@@ -111,7 +125,6 @@ namespace Stateflows.Activities.Registration.Builders
                         }
                     }
                 }
-
             });
 
             Edge.TokenPipeline.Actions.Add(logic);

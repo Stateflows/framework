@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using Stateflows.Common;
+using Stateflows.Common.Context.Interfaces;
 using Stateflows.Activities.Context.Interfaces;
 
 namespace Stateflows.Activities.Context.Classes
@@ -8,6 +9,8 @@ namespace Stateflows.Activities.Context.Classes
 
     {
         IActivityContext IActivityActionContext.Activity => Activity;
+        
+        IBehaviorContext IBehaviorActionContext.Behavior => Activity;
 
         internal readonly ActionContext ActionContext;
 

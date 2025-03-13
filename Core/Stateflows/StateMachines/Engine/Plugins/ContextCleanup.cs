@@ -1,5 +1,4 @@
 ﻿using System.Linq;
-using System.Threading.Tasks;
 using System.Collections.Generic;
 using Stateflows.StateMachines.Models;
 using Stateflows.StateMachines.Context.Classes;
@@ -11,19 +10,14 @@ namespace Stateflows.StateMachines.Engine
     {
         private readonly List<Vertex> ExitedStates = new List<Vertex>();
 
-        public override Task AfterStateEntryAsync(IStateActionContext context)
-            => Task.CompletedTask;
-
-        public override Task AfterStateExitAsync(IStateActionContext context)
+        public override void AfterStateExit(IStateActionContext context)
         {
             var vertex = (context as StateActionContext).Vertex;
 
             ExitedStates.Add(vertex);
-
-            return Task.CompletedTask;
         }
 
-        public override Task AfterTransitionEffectAsync<TEvent>(ITransitionContext<TEvent> context)
+        public override void AfterTransitionEffect<TEvent>(ITransitionContext<TEvent> context)
         {
             if (context.Target != null)
             {
@@ -37,8 +31,6 @@ namespace Stateflows.StateMachines.Engine
                 }
                 ExitedStates.Clear();
             }
-
-            return Task.CompletedTask;
         }
     }
 }

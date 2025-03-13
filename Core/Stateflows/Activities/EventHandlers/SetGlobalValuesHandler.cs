@@ -2,7 +2,7 @@
 using System.Threading.Tasks;
 using Stateflows.Common;
 using Stateflows.Common.Classes;
-using Stateflows.Activities.Inspection.Interfaces;
+using Stateflows.Activities.Context.Interfaces;
 
 namespace Stateflows.Activities.EventHandlers
 {
@@ -10,11 +10,12 @@ namespace Stateflows.Activities.EventHandlers
     {
         public Type EventType => typeof(SetGlobalValues);
 
-        public Task<EventStatus> TryHandleEventAsync<TEvent>(IEventInspectionContext<TEvent> context)
+        public Task<EventStatus> TryHandleEventAsync<TEvent>(IEventContext<TEvent> context)
+
         {
             if (context.Event is SetGlobalValues @event)
             {
-                var values = context.Activity.Values as ContextValuesCollection;
+                var values = context.Behavior.Values as ContextValuesCollection;
                 
                 values.Values.Clear();
                 foreach (var entry in @event.Values)

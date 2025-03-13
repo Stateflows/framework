@@ -2,8 +2,8 @@
 
 namespace Stateflows.Activities.Inspection.Interfaces
 {
-    public interface ITransformationInspectionContext : ITransformationContext<TokenHolder>
-    {
-        IActivityInspection Inspection { get; }
-    }
+    // public interface ITransformationInspectionContext : ITransformationContext<TokenHolder>
+    // {
+    //     IActivityInspection Inspection { get; }
+    // }
 }

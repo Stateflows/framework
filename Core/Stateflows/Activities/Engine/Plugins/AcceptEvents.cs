@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Linq;
 using System.Diagnostics;
-using System.Threading.Tasks;
 using System.Collections.Generic;
 using Stateflows.Common;
 using Stateflows.Activities.Models;
@@ -146,27 +145,17 @@ namespace Stateflows.Activities.Engine
             }
         }
 
-        public override Task AfterActivityInitializeAsync(IActivityInitializationContext context, bool initialized)
-            => Task.CompletedTask;
-
-        public override Task AfterActivityFinalizeAsync(IActivityFinalizationContext context)
+        public override void AfterActivityFinalize(IActivityFinalizationContext context)
         {
             UnregisterAcceptEventNodes((context as IRootContext).Context.Executor.Graph.DanglingTimeEventActionNodes);
-
-            return Task.CompletedTask;
         }
 
-        public override Task AfterNodeFinalizeAsync(IActivityNodeContext context)
+        public override void AfterNodeFinalize(IActivityNodeContext context)
         {
             UnregisterAcceptEventNodes((context as ActionContext).Node.DanglingTimeEventActionNodes);
-
-            return Task.CompletedTask;
         }
 
-        public override Task AfterNodeInitializeAsync(IActivityNodeContext context)
-            => Task.CompletedTask;
-
-        public override Task AfterProcessEventAsync<TEvent>(IEventContext<TEvent> context)
+        public override void AfterProcessEvent<TEvent>(IEventContext<TEvent> context, EventStatus eventStatus)
         {
             Trace.WriteLine($"⦗→s⦘ Activity '{context.Behavior.Id.Name}:{context.Behavior.Id.Instance}': processed event '{Event.GetName(context.Event.GetType())}'");
 
@@ -185,32 +174,23 @@ namespace Stateflows.Activities.Engine
             }
 
             Context.Context.TriggerOnStartup = Context.Context.PendingStartupEvents.Any();
-
-            return Task.CompletedTask;
         }
 
-        public override Task BeforeActivityInitializeAsync(IActivityInitializationContext context)
+        public override void BeforeActivityInitialize(IActivityInitializationContext context)
         {
             RegisterAcceptEventNodes(
                 (context as IRootContext).Context.Executor.Graph.AcceptEventActionNodes.Select(node => (node, Guid.NewGuid()))
             );
-
-            return Task.CompletedTask;
         }
 
-        public override Task BeforeNodeInitializeAsync(IActivityNodeContext context)
+        public override void BeforeNodeInitialize(IActivityNodeContext context)
         {
             RegisterAcceptEventNodes(
                 (context as ActionContext).Node.DanglingTimeEventActionNodes.Select(node => (node, Guid.NewGuid()))
             );
-
-            return Task.CompletedTask;
         }
 
-        public override Task BeforeNodeFinalizeAsync(IActivityNodeContext context)
-            => Task.CompletedTask;
-
-        public override Task<bool> BeforeProcessEventAsync<TEvent>(IEventContext<TEvent> context)
+        public override bool BeforeProcessEvent<TEvent>(IEventContext<TEvent> context)
         {
             var result = true;
 
@@ -231,7 +211,7 @@ namespace Stateflows.Activities.Engine
                 Trace.WriteLine($"⦗→s⦘ Activity '{context.Behavior.Id.Name}:{context.Behavior.Id.Instance}': received event '{Event.GetName(context.Event.GetType())}', trying to process it");
             }
 
-            return Task.FromResult(result);
+            return result;
         }
     }
 }

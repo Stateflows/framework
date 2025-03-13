@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Threading.Tasks;
 using Stateflows.Common;
-using Stateflows.StateMachines.Inspection.Interfaces;
+using Stateflows.StateMachines.Context.Interfaces;
 
 namespace Stateflows.StateMachines
 {
@@ -9,7 +9,7 @@ namespace Stateflows.StateMachines
     {
         Type EventType { get; }
 
-        Task<EventStatus> TryHandleEventAsync<TEvent>(IEventInspectionContext<TEvent> context)
+        Task<EventStatus> TryHandleEventAsync<TEvent>(IEventContext<TEvent> context)
 ;
     }
 }

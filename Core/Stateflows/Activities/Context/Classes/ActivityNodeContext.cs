@@ -2,14 +2,15 @@
 using Stateflows.Activities.Engine;
 using Stateflows.Activities.Context.Interfaces;
 using Stateflows.Activities.Inspection.Interfaces;
+using Stateflows.Common.Context.Interfaces;
 
 namespace Stateflows.Activities.Context.Classes
 {
-    internal class ActivityNodeContext : BaseContext, IActivityNodeInspectionContext
+    internal class ActivityNodeContext : BaseContext, IActivityNodeContext
     {
         IActivityContext IActivityActionContext.Activity => Activity;
-
-        IActivityInspectionContext IActivityNodeInspectionContext.Activity => Activity;
+        
+        IBehaviorContext IBehaviorActionContext.Behavior => Activity;
 
         internal readonly Node Node;
 

@@ -82,7 +82,10 @@ internal class StateMachineVisitor(
         var stateMachine = GetRouteGroup(stateMachineName);
 
         var eventType = typeof(TEvent);
-        if (typeof(SystemEvent).IsAssignableFrom(eventType))
+        if (
+            eventType.IsSubclassOf(typeof(SystemEvent)) ||
+            eventType.IsSubclassOf(typeof(Exception))
+        )
         {
             return;
         }

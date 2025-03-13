@@ -1,56 +1,55 @@
-using System.Threading.Tasks;
 using Stateflows.StateMachines.Context.Interfaces;
 
 namespace Stateflows.StateMachines
 {
     public abstract class StateMachineObserver : IStateMachineObserver
     {
-        public virtual Task BeforeStateMachineInitializeAsync(IStateMachineInitializationContext context)
-                => Task.CompletedTask;
+        public virtual void BeforeStateMachineInitialize(IStateMachineInitializationContext context, bool implicitInitialization)
+        { }
 
-        public virtual Task AfterStateMachineInitializeAsync(IStateMachineInitializationContext context, bool initialized)
-            => Task.CompletedTask;
+        public virtual void AfterStateMachineInitialize(IStateMachineInitializationContext context, bool initialized)
+        { }
 
-        public virtual Task BeforeStateMachineFinalizeAsync(IStateMachineActionContext context)
-            => Task.CompletedTask;
+        public virtual void BeforeStateMachineFinalize(IStateMachineActionContext context)
+        { }
 
-        public virtual Task AfterStateMachineFinalizeAsync(IStateMachineActionContext context)
-            => Task.CompletedTask;
+        public virtual void AfterStateMachineFinalize(IStateMachineActionContext context)
+        { }
 
-        public virtual Task BeforeStateInitializeAsync(IStateActionContext context)
-            => Task.CompletedTask;
+        public virtual void BeforeStateInitialize(IStateActionContext context)
+        { }
 
-        public virtual Task AfterStateInitializeAsync(IStateActionContext context)
-            => Task.CompletedTask;
+        public virtual void AfterStateInitialize(IStateActionContext context)
+        { }
 
-        public virtual Task BeforeStateFinalizeAsync(IStateActionContext context)
-            => Task.CompletedTask;
+        public virtual void BeforeStateFinalize(IStateActionContext context)
+        { }
 
-        public virtual Task AfterStateFinalizeAsync(IStateActionContext context)
-            => Task.CompletedTask;
+        public virtual void AfterStateFinalize(IStateActionContext context)
+        { }
 
-        public virtual Task BeforeStateEntryAsync(IStateActionContext context)
-            => Task.CompletedTask;
+        public virtual void BeforeStateEntry(IStateActionContext context)
+        { }
 
-        public virtual Task AfterStateEntryAsync(IStateActionContext context)
-            => Task.CompletedTask;
+        public virtual void AfterStateEntry(IStateActionContext context)
+        { }
 
-        public virtual Task BeforeStateExitAsync(IStateActionContext context)
-            => Task.CompletedTask;
+        public virtual void BeforeStateExit(IStateActionContext context)
+        { }
 
-        public virtual Task AfterStateExitAsync(IStateActionContext context)
-            => Task.CompletedTask;
+        public virtual void AfterStateExit(IStateActionContext context)
+        { }
 
-        public virtual Task BeforeTransitionGuardAsync<TEvent>(ITransitionContext<TEvent> context)
-            => Task.CompletedTask;
+        public virtual void BeforeTransitionGuard<TEvent>(ITransitionContext<TEvent> context)
+        { }
 
-        public virtual Task AfterTransitionGuardAsync<TEvent>(ITransitionContext<TEvent> context, bool guardResult)
-            => Task.CompletedTask;
+        public virtual void AfterTransitionGuard<TEvent>(ITransitionContext<TEvent> context, bool guardResult)
+        { }
 
-        public virtual Task BeforeTransitionEffectAsync<TEvent>(ITransitionContext<TEvent> context)
-            => Task.CompletedTask;
+        public virtual void BeforeTransitionEffect<TEvent>(ITransitionContext<TEvent> context)
+        { }
 
-        public virtual Task AfterTransitionEffectAsync<TEvent>(ITransitionContext<TEvent> context)
-            => Task.CompletedTask;
+        public virtual void AfterTransitionEffect<TEvent>(ITransitionContext<TEvent> context)
+        { }
     }
 }

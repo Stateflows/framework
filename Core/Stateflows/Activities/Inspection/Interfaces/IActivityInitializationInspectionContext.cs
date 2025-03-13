@@ -2,8 +2,8 @@
 
 namespace Stateflows.Activities.Inspection.Interfaces
 {
-    public interface IActivityInitializationInspectionContext : IActivityInitializationContext
-    {
-        new IActivityInspectionContext Activity { get; }
-    }
+    // public interface IActivityInitializationInspectionContext : IActivityInitializationContext
+    // {
+    //     new IActivityInspectionContext Activity { get; }
+    // }
 }

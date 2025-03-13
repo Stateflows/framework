@@ -97,7 +97,10 @@ internal class ActivityVisitor(
         var activity = GetRouteGroup(activityName);
 
         var eventType = typeof(TEvent);
-        if (typeof(SystemEvent).IsAssignableFrom(eventType))
+        if (
+            eventType.IsSubclassOf(typeof(SystemEvent)) ||
+            eventType.IsSubclassOf(typeof(Exception))
+        )
         {
             return;
         }

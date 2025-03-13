@@ -127,10 +127,10 @@ namespace Stateflows.Activities.Registration
                 var faulty = false;
                 try
                 {
-                    var inspector = await c.Behavior.GetExecutor().GetInspectorAsync();
-                    await inspector.BeforeNodeExecuteAsync(context);
+                    var inspector = c.Behavior.GetExecutor().Inspector;
+                    inspector.BeforeNodeExecute(context);
                     await actionAsync(c);
-                    await inspector.AfterNodeExecuteAsync(context);
+                    inspector.AfterNodeExecute(context);
                 }
                 catch (Exception e)
                 {
@@ -367,10 +367,10 @@ namespace Stateflows.Activities.Registration
                     }
                     else
                     {
-                        var inspector = await c.Context.Executor.GetInspectorAsync();
+                        var inspector = c.Context.Executor.Inspector;
 
                         Trace.WriteLine($"⦗→s⦘ Activity '{c.Context.Id.Name}:{c.Context.Id.Instance}': exception thrown '{e.Message}'");
-                        if (!await inspector.OnNodeFinalizationExceptionAsync(context, e))
+                        if (!inspector.OnNodeFinalizationException(context, e))
                         {
                             throw;
                         }
@@ -404,10 +404,10 @@ namespace Stateflows.Activities.Registration
                     }
                     else
                     {
-                        var inspector = await c.Context.Executor.GetInspectorAsync();
+                        var inspector = c.Context.Executor.Inspector;
 
                         Trace.WriteLine($"⦗→s⦘ Activity '{c.Context.Id.Name}:{c.Context.Id.Instance}': exception thrown '{e.Message}'");
-                        if (!await inspector.OnNodeInitializationExceptionAsync(context, e))
+                        if (!inspector.OnNodeInitializationException(context, e))
                         {
                             throw;
                         }

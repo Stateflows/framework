@@ -1,21 +1,19 @@
-using Stateflows.Activities.Context.Interfaces;
 using Stateflows.Common;
+using Stateflows.Activities.Context.Interfaces;
 using StateMachine.IntegrationTests.Utils;
 
 namespace Activity.IntegrationTests.Tests
 {
     public class FlowObserver : ActivityObserver
     {
-        public override Task BeforeNodeActivateAsync(IActivityNodeContext context, bool activated)
+        public override void BeforeNodeActivate(IActivityNodeContext context, bool activated)
         {
-            if (context.CurrentNode.NodeName.EndsWith("action3"))
+            if (context.CurrentNode.Name.EndsWith("action3"))
             {
                 Context.ActivationAttempted = true;
                 Context.Activated1 = context.CurrentNode.IncomingFlows.First().Activated;
                 Context.Activated2 = context.CurrentNode.IncomingFlows.Last().Activated;
             }
-
-            return Task.CompletedTask;
         }
     }
 

@@ -69,7 +69,7 @@ namespace Stateflows.StateMachines.Models
             }
         }
 
-        public StateActionInitializationBuilderAsync BehaviorInitializationBuilder { get; set; }
+        public StateActionInitializationBuilder BehaviorInitializationBuilder { get; set; }
         public string BehaviorName { get; set; }
         public string BehaviorType { get; set; }
         public List<Type> BehaviorSubscriptions { get; set; } = new List<Type>();

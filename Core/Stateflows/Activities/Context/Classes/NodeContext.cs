@@ -10,7 +10,7 @@ namespace Stateflows.Activities.Context.Classes
     {
         public readonly Node Node;
 
-        public string NodeName => Node.Name;
+        public string Name => Node.Name;
 
         public NodeType NodeType => Node.Type;
 

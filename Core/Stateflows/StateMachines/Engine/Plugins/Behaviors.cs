@@ -1,5 +1,4 @@
 ﻿using System.Linq;
-using System.Threading.Tasks;
 using Stateflows.Common;
 using Stateflows.StateMachines.Exceptions;
 using Stateflows.StateMachines.Context.Classes;
@@ -9,7 +8,7 @@ namespace Stateflows.StateMachines.Engine
 {
     internal class Behaviors : StateMachinePlugin
     {
-        public override async Task AfterStateEntryAsync(IStateActionContext context)
+        public override void AfterStateEntry(IStateActionContext context)
         {
             var vertex = (context as StateActionContext).Vertex;
 
@@ -28,10 +27,10 @@ namespace Stateflows.StateMachines.Engine
                         _ = behavior.SendAsync(vertex.GetSubscriptionRequest(context.Behavior.Id));
                     }
 
-                    var initializationRequest = vertex.BehaviorInitializationBuilder?.Invoke(context) != null
-                        ? await vertex.BehaviorInitializationBuilder(context) ?? new Initialize()
+                    var initializationRequest = vertex.BehaviorInitializationBuilder != null
+                        ? vertex.BehaviorInitializationBuilder(context)
                         : new Initialize();
-
+                    
                     _ = behavior.SendAsync(initializationRequest);
                 }
                 else
@@ -41,7 +40,7 @@ namespace Stateflows.StateMachines.Engine
             }
         }
 
-        public override Task BeforeStateExitAsync(IStateActionContext context)
+        public override void BeforeStateExit(IStateActionContext context)
         {
             var vertex = (context as StateActionContext).Vertex;
 
@@ -63,8 +62,6 @@ namespace Stateflows.StateMachines.Engine
                     stateValues.BehaviorId = null;
                 }
             }
-
-            return Task.CompletedTask;
         }
     }
 }
