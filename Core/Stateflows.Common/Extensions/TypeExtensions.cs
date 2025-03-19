@@ -35,24 +35,6 @@ namespace Stateflows.Common.Extensions
                 result = $"{typeName}<{typeNames}>";
             }
 
-            // var activitiesPrefix = "Stateflows.Activities.";
-            // if (result.StartsWith(activitiesPrefix))
-            // {
-            //     result = result[activitiesPrefix.Length..];
-            // }
-            //
-            // var stateMachinesPrefix = "Stateflows.StateMachines.";
-            // if (result.StartsWith(stateMachinesPrefix))
-            // {
-            //     result = result[stateMachinesPrefix.Length..];
-            // }
-            //
-            // var commonPrefix = "Stateflows.Common.";
-            // if (result.StartsWith(commonPrefix))
-            // {
-            //     result = result[commonPrefix.Length..];
-            // }
-
             return result;
         }
 

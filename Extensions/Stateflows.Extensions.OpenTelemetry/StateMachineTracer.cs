@@ -40,7 +40,7 @@ namespace Stateflows.Extensions.OpenTelemetry
                 if (header is ActivityHeader activityHeader)
                 {
                     EventProcessingActivity = Source.StartActivity(
-                        $"State Machine '{context.Behavior.Id.Name}:{context.Behavior.Id.Instance}' processing '{context.Event.GetType().GetShortEventName()}'",
+                        $"State Machine '{context.Behavior.Id.Name.GetShortName()}:{context.Behavior.Id.Instance}' processing '{context.Event.GetType().GetEventName().GetShortName()}'",
                         ActivityKind.Internal,
                         parentContext: activityHeader.Activity.Context
                     );
@@ -48,14 +48,14 @@ namespace Stateflows.Extensions.OpenTelemetry
                 else
                 {
                     EventProcessingActivity = Source.StartActivity(
-                        $"State Machine '{context.Behavior.Id.Name}:{context.Behavior.Id.Instance}' processing '{context.Event.GetType().GetShortEventName()}'"
+                        $"State Machine '{context.Behavior.Id.Name.GetShortName()}:{context.Behavior.Id.Instance}' processing '{context.Event.GetType().GetEventName().GetShortName()}'"
                     );
                 }
 
                 Logger.LogTrace(
                     message: "State Machine '{StateMachineId}' received event '{Event}', processing",
-                    $"{context.Behavior.Id.Name}:{context.Behavior.Id.Instance}",
-                    context.Event.GetType().GetShortEventName()
+                    $"{context.Behavior.Id.Name.GetShortName()}:{context.Behavior.Id.Instance}",
+                    context.Event.GetType().GetEventName().GetShortName()
                 );
             }
             
@@ -84,8 +84,8 @@ namespace Stateflows.Extensions.OpenTelemetry
         {
             if (Skip && !ImplicitInitialization) return;
 
-            var eventName = context.Event!.GetType().GetShortEventName();
-            if (eventName != Event<Completion>.ShortName)
+            var eventName = context.Event!.GetType().GetEventName().GetShortName();
+            if (eventName != Event<Completion>.Name.GetShortName())
             {
                 if (DefaultGuardActivity != null)
                 {
@@ -101,8 +101,8 @@ namespace Stateflows.Extensions.OpenTelemetry
 
                 GuardActivity = Source.StartActivity(
                     context.Target == null
-                        ? $"Internal transition ({context.Source.Name})/{eventName}"
-                        : $"Transition ({context.Source.Name}) –{eventName}🡢 ({context.Target?.Name})"
+                        ? $"Internal transition ({context.Source.Name.GetShortName()})/{eventName}"
+                        : $"Transition ({context.Source.Name.GetShortName()}) –{eventName}🡢 ({context.Target?.Name.GetShortName()})"
                 );
 
                 if (context.ExecutionTrigger != (object)context.Event && GuardActivity != null)
@@ -124,7 +124,7 @@ namespace Stateflows.Extensions.OpenTelemetry
                     GuardActivity = null;
                 }
                 
-                DefaultGuardActivity = Source.StartActivity($"Default transition ({context.Source.Name}) 🡢 ({context.Target?.Name})");
+                DefaultGuardActivity = Source.StartActivity($"Default transition ({context.Source.Name.GetShortName()}) 🡢 ({context.Target?.Name.GetShortName()})");
             }
         }
 
@@ -132,8 +132,8 @@ namespace Stateflows.Extensions.OpenTelemetry
         {
             if (Skip && !ImplicitInitialization) return;
 
-            var eventName = context.Event!.GetType().GetShortEventName();
-            if (eventName != Event<Completion>.ShortName)
+            var eventName = context.Event!.GetType().GetEventName().GetShortName();
+            if (eventName != Event<Completion>.Name.GetShortName())
             {
                 if (guardResult || GuardActivity == null) return;
                 
@@ -154,11 +154,11 @@ namespace Stateflows.Extensions.OpenTelemetry
         {
             if (Skip && !ImplicitInitialization) return;
 
-            var eventName = context.Event!.GetType().GetShortEventName();
+            var eventName = context.Event!.GetType().GetEventName().GetShortName();
             EffectActivity = Source.StartActivity(
                 context.Target == null
                     ? $"Internal transition effect"
-                    : eventName == Event<Completion>.ShortName
+                    : eventName == Event<Completion>.Name.GetShortName()
                         ? $"Default transition effect" 
                         : $"Transition effect",
                 ActivityKind.Internal,
@@ -187,7 +187,7 @@ namespace Stateflows.Extensions.OpenTelemetry
                 if (header is ActivityHeader activityHeader)
                 {
                     InitializerActivity = Source.StartActivity(
-                        $"State Machine '{context.Behavior.Id.Name}:{context.Behavior.Id.Instance}' initialized implicitly",
+                        $"State Machine '{context.Behavior.Id.Name.GetShortName()}:{context.Behavior.Id.Instance}' initialized implicitly",
                         ActivityKind.Internal,
                         parentContext: activityHeader.Activity.Context
                     );
@@ -195,7 +195,7 @@ namespace Stateflows.Extensions.OpenTelemetry
                 else
                 {
                     InitializerActivity = Source.StartActivity(
-                        $"State Machine '{context.Behavior.Id.Name}:{context.Behavior.Id.Instance}' initialized implicitly"
+                        $"State Machine '{context.Behavior.Id.Name.GetShortName()}:{context.Behavior.Id.Instance}' initialized implicitly"
                     );
                 }
                 
@@ -247,7 +247,7 @@ namespace Stateflows.Extensions.OpenTelemetry
             if (Skip && !ImplicitInitialization) return;
 
             StateEntryActivity = Source.StartActivity(
-                $"State ({context.CurrentState.Name})/entry",
+                $"State ({context.CurrentState.Name.GetShortName()})/entry",
                 ActivityKind.Internal,
                 parentContext: DefaultGuardActivity?.Context ?? GuardActivity?.Context ?? EventProcessingActivity.Context
             );
@@ -266,7 +266,7 @@ namespace Stateflows.Extensions.OpenTelemetry
             if (Skip && !ImplicitInitialization) return;
             
             StateExitActivity = Source.StartActivity(
-                $"State ({context.CurrentState.Name})/exit",
+                $"State ({context.CurrentState.Name.GetShortName()})/exit",
                 ActivityKind.Internal,
                 parentContext: DefaultGuardActivity?.Context ?? GuardActivity?.Context ?? EventProcessingActivity.Context
             );
@@ -401,8 +401,8 @@ namespace Stateflows.Extensions.OpenTelemetry
             {
                 Logger.LogTrace(
                     message: "State Machine '{StateMachineId}' processed event '{Event}' with result '{EventStatus}'",
-                    $"{context.Behavior.Id.Name}:{context.Behavior.Id.Instance}",
-                    context.ExecutionTrigger.GetType().GetShortEventName(),
+                    $"{context.Behavior.Id.Name.GetShortName()}:{context.Behavior.Id.Instance}",
+                    context.ExecutionTrigger.GetType().GetEventName().GetShortName(),
                     eventStatus
                 );
             }
@@ -413,8 +413,8 @@ namespace Stateflows.Extensions.OpenTelemetry
                     exception: exception,
                     args: new object[]
                     {
-                        $"{context.Behavior.Id.Name}:{context.Behavior.Id.Instance}",
-                        context.ExecutionTrigger.GetType().GetShortEventName()
+                        $"{context.Behavior.Id.Name.GetShortName()}:{context.Behavior.Id.Instance}",
+                        context.ExecutionTrigger.GetType().GetEventName().GetShortName()
                     }
                 );
 

@@ -11,7 +11,6 @@ namespace Stateflows.Activities
 
         protected string name;
         public virtual string Name => name ??= GetType().GetTokenName();
-
         
         [JsonIgnore]
         public object BoxedPayload { get; }

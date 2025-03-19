@@ -88,7 +88,7 @@ namespace Stateflows.Activities.Engine
         public Executor(ActivitiesRegister register, Graph graph, IServiceProvider serviceProvider)
         {
             Register = register;
-            NodeScope = new NodeScope(serviceProvider, graph, Guid.NewGuid());
+            NodeScope = new NodeScope(serviceProvider, graph, null, Guid.NewGuid());
             Graph = graph;
 
             var logger = serviceProvider.GetService<ILogger<Executor>>();
@@ -453,7 +453,7 @@ namespace Stateflows.Activities.Engine
             return result;
         }
 
-        public async Task<IEnumerable<TokenHolder>> DoExecuteParallelNodeAsync<TToken>(Node node, NodeScope nodeScope, IEnumerable<TokenHolder> input = null)
+        public async Task<IEnumerable<TokenHolder>> DoExecuteParallelNodeAsync<TToken>(Node node, Edge edge, NodeScope nodeScope, IEnumerable<TokenHolder> input = null)
         {
             var typedInput = input.OfType<TokenHolder<TToken>>().ToArray();
 
@@ -471,7 +471,7 @@ namespace Stateflows.Activities.Engine
 
                         await DoExecuteStructureAsync(
                             node,
-                            nodeScope.CreateChildScope(node, threadId),
+                            nodeScope.CreateChildScope(node, edge, threadId),
                             restOfInput.Concat(inputPartition).ToArray(),
                             inputPartition
                         );
@@ -533,7 +533,7 @@ namespace Stateflows.Activities.Engine
             {
                 await DoExecuteStructureAsync(
                     context.Node,
-                    context.NodeScope.CreateChildScope(context.Node, threadId),
+                    context.NodeScope.CreateChildScope(context.Node, context.Edge, threadId),
                     restOfInput.Concat(inputPartition),
                     inputPartition
                 );
@@ -581,7 +581,7 @@ namespace Stateflows.Activities.Engine
             }
 
             await Task.WhenAll(
-                nodes.Select(n => DoHandleNodeAsync(n, null, nodeScope, n == node.InputNode ? input : null, selectionTokens)).ToArray()
+                nodes.Select(n => DoHandleNodeAsync(n, nodeScope.Edge, nodeScope, n == node.InputNode ? input : null, selectionTokens)).ToArray()
             );
 
             var result = Context.IsNodeCompleted(node, nodeScope);
@@ -771,7 +771,7 @@ namespace Stateflows.Activities.Engine
                 }
             }
 
-            nodeScope = nodeScope.CreateChildScope(node);
+            nodeScope = nodeScope.CreateChildScope(node, upstreamEdge);
 
             var actionContext = new ActionContext(Context, nodeScope, node, inputTokens, selectionTokens);
 
@@ -793,6 +793,8 @@ namespace Stateflows.Activities.Engine
                     {
                         Trace.WriteLine($"⦗→s⦘ Activity '{node.Graph.Name}:{Context.Id.Instance}': AcceptEvent node '{node.Name}' registered and waiting for event");
                     }
+                    
+                    Inspector.AfterNodeActivate(actionContext);
 
                     return;
                 }
@@ -862,6 +864,7 @@ namespace Stateflows.Activities.Engine
                     )
                         .Where(x => x.Activated)
                         .Select(x => x.Edge)
+                        .Reverse()
                         .GroupBy(edge => edge.Target)
                         .ToArray();
 
@@ -979,11 +982,14 @@ namespace Stateflows.Activities.Engine
         private async Task<bool> DoHandleEdgeAsync(Edge edge, ActionContext context)
         {
             var flowContext = new FlowContext(context.Context, context.NodeScope, edge);
-            Inspector.BeforeFlowActivate(flowContext);
             
             var edgeTokenName = edge.TokenType.GetTokenName();
 
             IEnumerable<TokenHolder> originalTokens = context.OutputTokens.Where(t => t.Name == edgeTokenName).ToArray();
+
+            flowContext.TokenCount = originalTokens.Count();
+            
+            Inspector.BeforeFlowActivate(flowContext);
 
             var consumedTokens = new List<TokenHolder>();
             var processedTokens = new List<TokenHolder>();
@@ -1008,6 +1014,8 @@ namespace Stateflows.Activities.Engine
                 }
             }
 
+            flowContext.TargetTokenCount = processedTokens.Count;
+            
             if (processedTokens.Count >= edge.Weight)
             {
                 var stream = Context.GetStream(edge.Identifier, context.NodeScope.ThreadId);
@@ -1034,6 +1042,8 @@ namespace Stateflows.Activities.Engine
                 
                 return true;
             }
+            
+            flowContext.TargetTokenCount = processedTokens.Count;
             
             Inspector.AfterFlowActivate(flowContext, false);
 

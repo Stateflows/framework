@@ -174,7 +174,7 @@ if (app.Environment.IsDevelopment())
 
 //app.MapStateflowsSignalRTransport();
 // app.MapStateflowsHttpTransport();
-DependencyInjection.MapStateflowsHttpTransport(app);
+DependencyInjection.MapStateflowsHttpTransport(app, string.Empty);
 
 // Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())
@@ -208,12 +208,36 @@ namespace X
             builder
                 .AddInitial(b => b
                     .AddControlFlow("entry")
+                    // .AddControlFlow<AcceptEventActionNode<SomeEvent>>()
                 )
-                .AddAction("entry", async c => { })
+                .AddAction("entry", async c => { }, b => b
+                    .AddControlFlow("second")
+                )
                 .AddAcceptEventAction<SomeEvent>(b => b
                     .AddControlFlow("second")
                 )
-                .AddAction("second", async c => { })
+                .AddAction("second", async c =>
+                    {
+                        c.OutputRange(Enumerable.Range(0, 10));
+                        c.OutputRange(Enumerable.Range(0, 10).Select(i => $"string: {i.ToString()}"));
+                    }, b => b
+                    .AddFlow<int>("intProcessing")
+                    .AddFlow<int>("stringProcessing", b => b
+                        .AddGuard(async c => c.Token % 2 == 0)
+                        .AddTransformation(async c => c.ToString())
+                    )
+                    .AddFlow<string>("stringProcessing")
+                )
+                .AddAction("intProcessing", async c => { })
+                .AddStructuredActivity("stringProcessing", b => b
+                    .AddInput(b => b
+                        .AddFlow<string>("process")
+                    )
+                    .AddAction("process", async c =>
+                    {
+                        
+                    })
+                )
             ;
         }
 

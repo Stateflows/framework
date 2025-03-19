@@ -3,6 +3,7 @@
 namespace Stateflows.StateMachines.Registration.Interfaces
 {
     public interface IInitializedCompositeStateBuilder :
+        ICompositeStateExtension<IInitializedCompositeStateBuilder>,
         IStateEvents<IInitializedCompositeStateBuilder>,
         IStateUtils<IInitializedCompositeStateBuilder>,
         ICompositeStateTypedEvents<IInitializedCompositeStateBuilder>,
@@ -12,6 +13,7 @@ namespace Stateflows.StateMachines.Registration.Interfaces
     { }
 
     public interface IFinalizedCompositeStateBuilder :
+        ICompositeStateExtension<IFinalizedCompositeStateBuilder>,
         IStateEvents<IFinalizedCompositeStateBuilder>,
         IStateUtils<IFinalizedCompositeStateBuilder>,
         ICompositeStateTypedEvents<IFinalizedCompositeStateBuilder>,
@@ -19,6 +21,7 @@ namespace Stateflows.StateMachines.Registration.Interfaces
     { }
 
     public interface ICompositeStateBuilder :
+        ICompositeStateExtension<ICompositeStateBuilder>,
         IStateEvents<ICompositeStateBuilder>,
         IStateUtils<ICompositeStateBuilder>,
         ICompositeStateTypedEvents<ICompositeStateBuilder>,
@@ -28,6 +31,7 @@ namespace Stateflows.StateMachines.Registration.Interfaces
     { }
 
     public interface IFinalizedOverridenCompositeStateBuilder :
+        ICompositeStateExtension<IFinalizedOverridenCompositeStateBuilder>,
         IStateEvents<IFinalizedOverridenCompositeStateBuilder>,
         IStateUtils<IFinalizedOverridenCompositeStateBuilder>,
         ICompositeStateTypedEvents<IFinalizedOverridenCompositeStateBuilder>,
@@ -38,6 +42,7 @@ namespace Stateflows.StateMachines.Registration.Interfaces
     { }
 
     public interface IFinalizedOverridenRegionalizedCompositeStateBuilder :
+        ICompositeStateExtension<IFinalizedOverridenRegionalizedCompositeStateBuilder>,
         IStateEvents<IFinalizedOverridenRegionalizedCompositeStateBuilder>,
         IStateUtils<IFinalizedOverridenRegionalizedCompositeStateBuilder>,
         ICompositeStateTypedEvents<IFinalizedOverridenRegionalizedCompositeStateBuilder>,
@@ -47,6 +52,7 @@ namespace Stateflows.StateMachines.Registration.Interfaces
     { }
 
     public interface IOverridenCompositeStateBuilder :
+        ICompositeStateExtension<IOverridenCompositeStateBuilder>,
         IStateEvents<IOverridenCompositeStateBuilder>,
         IStateUtils<IOverridenCompositeStateBuilder>,
         ICompositeStateTypedEvents<IOverridenCompositeStateBuilder>,
@@ -59,6 +65,7 @@ namespace Stateflows.StateMachines.Registration.Interfaces
     { }
 
     public interface IOverridenRegionalizedCompositeStateBuilder :
+        ICompositeStateExtension<IOverridenRegionalizedCompositeStateBuilder>,
         IStateEvents<IOverridenRegionalizedCompositeStateBuilder>,
         IStateUtils<IOverridenRegionalizedCompositeStateBuilder>,
         ICompositeStateTypedEvents<IOverridenRegionalizedCompositeStateBuilder>,

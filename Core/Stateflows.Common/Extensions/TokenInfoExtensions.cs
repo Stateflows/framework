@@ -8,8 +8,5 @@ namespace Stateflows.Common
     {
         public static string GetTokenName(this Type @type)
             => @type.GetReadableName();
-
-        public static string GetShortTokenName(this Type @type)
-            => @type.GetTokenName().Split('.').Last();
     }
 }

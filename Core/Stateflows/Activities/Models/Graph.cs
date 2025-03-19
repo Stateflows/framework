@@ -8,6 +8,7 @@ using Stateflows.Common.Models;
 using Stateflows.Common.Registration.Builders;
 using Stateflows.Activities.Exceptions;
 using Stateflows.Activities.Registration.Interfaces;
+using Stateflows.Common.Extensions;
 
 namespace Stateflows.Activities.Models
 {

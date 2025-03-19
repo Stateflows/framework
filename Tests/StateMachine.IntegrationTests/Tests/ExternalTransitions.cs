@@ -6,6 +6,8 @@ namespace StateMachine.IntegrationTests.Tests
     [TestClass]
     public class ExternalTransitions : StateflowsTestClass
     {
+        private static int counter = 0;
+        
         [TestInitialize]
         public override void Initialize()
             => base.Initialize();
@@ -44,6 +46,50 @@ namespace StateMachine.IntegrationTests.Tests
                                 )
                                 .AddState("state2.1.2")
                             )
+                        )
+                    )
+
+                    .AddStateMachine("parent-to-nested-external", b => b
+                        .AddExecutionSequenceObserver()
+                        .AddInitialCompositeState("state1", b => b
+                            .AddState("state1.1")
+                            .AddTransition<SomeEvent>("state1.1", b => b
+                                .SetIsLocal(false)
+                            )
+                        )
+                    )
+
+                    .AddStateMachine("parent-to-nested-local", b => b
+                        .AddExecutionSequenceObserver()
+                        .AddInitialCompositeState("state1", b => b
+                            .AddState("state1.1")
+                            .AddTransition<SomeEvent>("state1.1", b => b
+                                .SetIsLocal(true)
+                            )
+                        )
+                    )
+
+                    .AddStateMachine("nested-to-parent-external", b => b
+                        .AddExecutionSequenceObserver()
+                        .AddInitialCompositeState("state1", b => b
+                            .AddState("state1.1", b => b
+                                .AddTransition<OtherEvent>("state1", b => b
+                                    .SetIsLocal(false)
+                                )
+                            )
+                            .AddTransition<SomeEvent>("state1.1")
+                        )
+                    )
+
+                    .AddStateMachine("nested-to-parent-local", b => b
+                        .AddExecutionSequenceObserver()
+                        .AddInitialCompositeState("state1", b => b
+                            .AddState("state1.1", b => b
+                                .AddTransition<OtherEvent>("state1", b => b
+                                    .SetIsLocal(true)
+                                )
+                            )
+                            .AddTransition<SomeEvent>("state1.1")
                         )
                     )
 
@@ -147,6 +193,123 @@ namespace StateMachine.IntegrationTests.Tests
         }
 
         [TestMethod]
+        public async Task ParentToNestedExternalTransition()
+        {
+            var status = EventStatus.Rejected;
+            string currentState = "state1";
+
+            if (StateMachineLocator.TryLocateStateMachine(new StateMachineId("parent-to-nested-external", "x"), out var sm))
+            {
+                await sm.SendAsync(new Initialize());
+                
+                status = (await sm.SendAsync(new SomeEvent())).Status;
+
+                currentState = (await sm.GetCurrentStateAsync()).Response.StatesTree.GetAllNodes_ChildrenFirst().First().Value;
+            }
+
+            ExecutionSequence.Verify(b => b
+                .StateMachineInitialize()
+                .StateEntry("state1")
+                .TransitionGuard(Event<SomeEvent>.Name, "state1", "state1.1")
+                .StateExit("state1")
+                .TransitionEffect(Event<SomeEvent>.Name, "state1", "state1.1")
+                .StateEntry("state1")
+                .StateEntry("state1.1")
+            );
+
+            Assert.AreEqual(EventStatus.Consumed, status);
+            Assert.AreEqual("state1.1", currentState);
+        }
+
+        [TestMethod]
+        public async Task ParentToNestedLocalTransition()
+        {
+            var status = EventStatus.Rejected;
+            string currentState = "state1";
+
+            if (StateMachineLocator.TryLocateStateMachine(new StateMachineId("parent-to-nested-local", "x"), out var sm))
+            {
+                await sm.SendAsync(new Initialize());
+                
+                status = (await sm.SendAsync(new SomeEvent())).Status;
+
+                currentState = (await sm.GetCurrentStateAsync()).Response.StatesTree.GetAllNodes_ChildrenFirst().First().Value;
+            }
+
+            ExecutionSequence.Verify(b => b
+                .StateMachineInitialize()
+                .StateEntry("state1")
+                .TransitionGuard(Event<SomeEvent>.Name, "state1", "state1.1")
+                .TransitionEffect(Event<SomeEvent>.Name, "state1", "state1.1")
+                .StateEntry("state1.1")
+            );
+
+            Assert.AreEqual(EventStatus.Consumed, status);
+            Assert.AreEqual("state1.1", currentState);
+        }
+
+        [TestMethod]
+        public async Task NestedToParentExternalTransition()
+        {
+            var status = EventStatus.Rejected;
+            string currentState = "state1";
+
+            if (StateMachineLocator.TryLocateStateMachine(new StateMachineId("nested-to-parent-external", "x"), out var sm))
+            {
+                await sm.SendAsync(new Initialize());
+                
+                await sm.SendAsync(new SomeEvent());
+                
+                status = (await sm.SendAsync(new OtherEvent())).Status;
+
+                currentState = (await sm.GetCurrentStateAsync()).Response.StatesTree.GetAllNodes_ChildrenFirst().First().Value;
+            }
+
+            ExecutionSequence.Verify(b => b
+                .StateMachineInitialize()
+                .StateEntry("state1")
+                .StateEntry("state1.1")
+                .TransitionGuard(Event<OtherEvent>.Name, "state1.1", "state1")
+                .StateExit("state1.1")
+                .StateExit("state1")
+                .TransitionEffect(Event<OtherEvent>.Name, "state1.1", "state1")
+                .StateEntry("state1")
+            );
+
+            Assert.AreEqual(EventStatus.Consumed, status);
+            Assert.AreEqual("state1", currentState);
+        }
+
+        [TestMethod]
+        public async Task NestedToParentLocalTransition()
+        {
+            var status = EventStatus.Rejected;
+            string currentState = "state1";
+
+            if (StateMachineLocator.TryLocateStateMachine(new StateMachineId("nested-to-parent-local", "x"), out var sm))
+            {
+                await sm.SendAsync(new Initialize());
+                
+                await sm.SendAsync(new SomeEvent());
+                
+                status = (await sm.SendAsync(new OtherEvent())).Status;
+
+                currentState = (await sm.GetCurrentStateAsync()).Response.StatesTree.GetAllNodes_ChildrenFirst().First().Value;
+            }
+
+            ExecutionSequence.Verify(b => b
+                .StateEntry("state1")
+                .StateEntry("state1.1")
+                .TransitionGuard(Event<OtherEvent>.Name, "state1.1", "state1")
+                .StateExit("state1.1")
+                .TransitionEffect(Event<OtherEvent>.Name, "state1.1", "state1")
+            );
+
+            Assert.AreEqual(EventStatus.Consumed, status);
+            Assert.AreEqual("state1", currentState);
+        }
+
+        [TestMethod]
         public async Task NestedToNestedTransition()
         {
             var status = EventStatus.Rejected;
@@ -207,10 +370,7 @@ namespace StateMachine.IntegrationTests.Tests
                 .StateEntry("state1.1.2")
                 .TransitionGuard(Event<Completion>.Name, "state1.1.2", "state1.1")
                 .StateExit("state1.1.2")
-                .StateExit("state1.1")
                 .TransitionEffect(Event<Completion>.Name, "state1.1.2", "state1.1")
-                .StateEntry("state1.1")
-                .StateInitialize("state1.1")
                 .StateEntry("state1.1.1")
             );
 

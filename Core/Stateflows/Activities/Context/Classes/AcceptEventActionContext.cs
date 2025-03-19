@@ -41,7 +41,7 @@ namespace Stateflows.Activities.Context.Classes
 
         public TEvent Event { get; private set; }
 
-        public INodeContext CurrentNode => ActionContext.CurrentNode;
+        public ICurrentNodeContext CurrentNode => ActionContext.CurrentNode;
 
         public IEnumerable<object> Input => ActionContext.InputTokens;
 

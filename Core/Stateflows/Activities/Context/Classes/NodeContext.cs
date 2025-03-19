@@ -6,9 +6,11 @@ using Stateflows.Activities.Engine;
 
 namespace Stateflows.Activities.Context.Classes
 {
-    internal class NodeContext : INodeContext
+    internal class NodeContext : ICurrentNodeContext
     {
         public readonly Node Node;
+        
+        public readonly Edge Edge;
 
         public string Name => Node.Name;
 
@@ -26,9 +28,10 @@ namespace Stateflows.Activities.Context.Classes
         public IEnumerable<IFlowContext> OutgoingFlows
             => outgoingFlows ??= Node.Edges.Select(edge => new FlowContext(Context, NodeScope, edge));
 
-        public NodeContext(Node node, RootContext context, NodeScope nodeScope)
+        public NodeContext(Node node, Edge edge, RootContext context, NodeScope nodeScope)
         {
             Node = node;
+            Edge = edge;
             Context = context;
             NodeScope = nodeScope;
         }
@@ -38,10 +41,19 @@ namespace Stateflows.Activities.Context.Classes
             var parent = Node.Parent;
 
             parentNodeContext = parent != null
-                ? new NodeContext(parent, Context, null)
+                ? new NodeContext(parent, null, Context, null)
                 : null;
 
             return parentNodeContext != null;
+        }
+
+        public bool TryGetCurrentFlow(out IIncomingFlowContext flowContext)
+        {
+            flowContext = Edge != null
+                ? new FlowContext(Context, NodeScope, Edge)
+                : null;
+
+            return flowContext != null;
         }
     }
 }

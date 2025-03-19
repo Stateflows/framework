@@ -3,6 +3,7 @@
 namespace Stateflows.StateMachines.Registration.Interfaces
 {
     public interface IElseInternalTransitionBuilder<TEvent> :
+        ITransitionUtils<IElseInternalTransitionBuilder<TEvent>>,
         IEffect<TEvent, IElseInternalTransitionBuilder<TEvent>>
     { }
 }

@@ -3,6 +3,7 @@
 namespace Stateflows.StateMachines.Registration.Interfaces
 {
     public interface ITransitionBuilder<TEvent> :
+        ITransitionUtils<ITransitionBuilder<TEvent>>,
         IEffect<TEvent, ITransitionBuilder<TEvent>>,
         IGuard<TEvent, ITransitionBuilder<TEvent>>
     { }

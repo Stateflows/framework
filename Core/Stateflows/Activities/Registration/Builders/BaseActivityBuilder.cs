@@ -322,7 +322,11 @@ namespace Stateflows.Activities.Registration
                     var node = c.GetNode();
 
                     await executor.DoInitializeNodeAsync(node, c as ActionContext);
-                    c.OutputRange(await executor.DoExecuteParallelNodeAsync<TToken>(node, c.Behavior.GetNodeScope(), (c as ActionContext).InputTokens));
+                    var edge = c.CurrentNode.TryGetCurrentFlow(out var currentFlow)
+                        ? ((FlowContext)currentFlow).Edge
+                        : null;
+                    
+                    c.OutputRange(await executor.DoExecuteParallelNodeAsync<TToken>(node, edge, c.Behavior.GetNodeScope(), ((ActionContext)c).InputTokens));
                     await executor.DoFinalizeNodeAsync(node, c as ActionContext);
                 },
                 b => buildAction?.Invoke(new StructuredActivityBuilder(b.Node, this, Services)),
@@ -354,7 +358,7 @@ namespace Stateflows.Activities.Registration
 
             Node.Finalize.Actions.Add(async c =>
             {
-                var context = new ActivityNodeContext(c, Node);
+                var context = new ActivityNodeContext(c, Node, c.NodeScope.Edge);
                 try
                 {
                     await actionAsync(context);
@@ -391,7 +395,7 @@ namespace Stateflows.Activities.Registration
 
             Node.Initialize.Actions.Add(async c =>
             {
-                var context = new ActivityNodeContext(c, Node);
+                var context = new ActivityNodeContext(c, Node, c.NodeScope.Edge);
                 try
                 {
                     await actionAsync(context);

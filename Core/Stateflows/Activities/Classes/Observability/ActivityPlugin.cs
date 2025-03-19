@@ -54,10 +54,10 @@ namespace Stateflows.Activities
         public virtual void AfterNodeExecute(IActivityNodeContext context)
         { }
 
-        public virtual void BeforeFlowActivate(IActivityFlowContext context)
+        public virtual void BeforeFlowActivate(IActivityBeforeFlowContext context)
         { }
 
-        public virtual void AfterFlowActivate(IActivityFlowContext context, bool activated)
+        public virtual void AfterFlowActivate(IActivityAfterFlowContext context, bool activated)
         { }
         
         public virtual void BeforeFlowTransform<TToken, TTransformedToken>(ITransformationContext<TToken> context)

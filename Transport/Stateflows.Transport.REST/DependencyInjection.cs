@@ -74,11 +74,13 @@ public static class DependencyInjection
     /// Registers <a href="https://learn.microsoft.com/en-us/aspnet/core/fundamentals/minimal-apis/overview">Minimal API</a>-based REST interface for Stateflows behaviors
     /// </summary>
     /// <param name="routeHandlerBuilderAction"></param>
-    public static void MapStateflowsHttpTransport(this IEndpointRouteBuilder builder, System.Action<RouteHandlerBuilder>? routeHandlerBuilderAction = null)
+    public static void MapStateflowsHttpTransport(this IEndpointRouteBuilder builder, string apiRoutePrefix = "stateflows", System.Action<RouteHandlerBuilder>? routeHandlerBuilderAction = null)
     {
         routeHandlerBuilderAction ??= _ => { };
         
-        var root = builder.MapGroup("/stateflows");
+        var root = string.IsNullOrEmpty(apiRoutePrefix)
+            ? builder
+            : builder.MapGroup("/stateflows");
 
         var behaviorClasses = root.MapGroup("/classes");
         
@@ -95,7 +97,7 @@ public static class DependencyInjection
     }
 
     private static void RegisterActivitiesApi(IEndpointRouteBuilder builder, System.Action<RouteHandlerBuilder> routeHandlerBuilderAction,
-        RouteGroupBuilder root, RouteGroupBuilder behaviorClasses)
+        IEndpointRouteBuilder root, IEndpointRouteBuilder behaviorClasses)
     {
         var activitiesRegister = builder.ServiceProvider.GetService<IActivitiesRegister>();
         if (activitiesRegister != null)
@@ -138,7 +140,7 @@ public static class DependencyInjection
     }
 
     private static void RegisterActionsApi(IEndpointRouteBuilder builder, System.Action<RouteHandlerBuilder> routeHandlerBuilderAction,
-        RouteGroupBuilder root, RouteGroupBuilder behaviorClasses)
+        IEndpointRouteBuilder root, IEndpointRouteBuilder behaviorClasses)
     {
         var actionsRegister = builder.ServiceProvider.GetService<IActionsRegister>();
         if (actionsRegister != null)
@@ -175,7 +177,7 @@ public static class DependencyInjection
     }
 
     private static void RegisterStateMachinesApi(IEndpointRouteBuilder builder, System.Action<RouteHandlerBuilder> routeHandlerBuilderAction,
-        RouteGroupBuilder root, RouteGroupBuilder behaviorClasses)
+        IEndpointRouteBuilder root, IEndpointRouteBuilder behaviorClasses)
     {
         var stateMachinesRegister = builder.ServiceProvider.GetService<IStateMachinesRegister>();
         if (stateMachinesRegister != null)

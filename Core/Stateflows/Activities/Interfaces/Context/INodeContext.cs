@@ -32,4 +32,9 @@ namespace Stateflows.Activities
         /// <returns>True when parent node is available, false otherwise</returns>
         bool TryGetParentNode(out INodeContext parentNodeContext);
     }
+
+    public interface ICurrentNodeContext : INodeContext
+    {
+        bool TryGetCurrentFlow(out IIncomingFlowContext flowContext);
+    }
 }

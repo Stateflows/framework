@@ -3,7 +3,6 @@ using System.Threading.Tasks;
 using Stateflows.Common.Models;
 using Stateflows.Activities.Models;
 using Stateflows.Activities.Context.Classes;
-using Stateflows.Activities.Context.Interfaces;
 
 namespace Stateflows.Activities
 {

@@ -193,5 +193,27 @@ namespace Stateflows.StateMachines.Registration.Builders
 
         IForwardedEventBuilder<TEvent> IBaseGuard<TEvent, IForwardedEventBuilder<TEvent>>.AddGuard(params Func<ITransitionContext<TEvent>, Task<bool>>[] guardsAsync)
             => AddGuard(guardsAsync) as IForwardedEventBuilder<TEvent>;
+
+        public ITransitionBuilder<TEvent> SetIsLocal(bool isLocal)
+        {
+            Edge.IsLocal = isLocal;
+
+            return this;
+        }
+
+        IElseTransitionBuilder<TEvent> ITransitionUtils<IElseTransitionBuilder<TEvent>>.SetIsLocal(bool isLocal)
+            => SetIsLocal(isLocal) as IElseTransitionBuilder<TEvent>;
+
+        IElseInternalTransitionBuilder<TEvent> ITransitionUtils<IElseInternalTransitionBuilder<TEvent>>.SetIsLocal(bool isLocal)
+            => SetIsLocal(isLocal) as IElseInternalTransitionBuilder<TEvent>;
+
+        IDefaultTransitionBuilder ITransitionUtils<IDefaultTransitionBuilder>.SetIsLocal(bool isLocal)
+            => SetIsLocal(isLocal) as IDefaultTransitionBuilder;
+
+        IDefaultTransitionEffectBuilder ITransitionUtils<IDefaultTransitionEffectBuilder>.SetIsLocal(bool isLocal)
+            => SetIsLocal(isLocal) as IDefaultTransitionEffectBuilder;
+
+        IElseDefaultTransitionBuilder ITransitionUtils<IElseDefaultTransitionBuilder>.SetIsLocal(bool isLocal)
+            => SetIsLocal(isLocal) as IElseDefaultTransitionBuilder;
     }
 }

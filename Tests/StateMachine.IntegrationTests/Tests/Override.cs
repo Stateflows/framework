@@ -84,7 +84,15 @@ namespace StateMachine.IntegrationTests.Tests
     public class OverrideState1 : IState { }
     public class OverrideState2 : IState { }
     public class OverrideState3 : IState { }
-    
+
+    public class ExtendingState : IStateEntry
+    {
+        public async Task OnEntryAsync()
+        {
+            Override.Extended = true;
+        }
+    }
+
     public class BaseTypedStateMachine : IStateMachine
     {
         public void Build(IStateMachineBuilder builder) => builder
@@ -112,6 +120,7 @@ namespace StateMachine.IntegrationTests.Tests
     public class Override : StateflowsTestClass
     {
         public bool Entered = false;
+        public static bool Extended = false;
         
         [TestInitialize]
         public override void Initialize()
@@ -132,6 +141,14 @@ namespace StateMachine.IntegrationTests.Tests
                                 .AddDefaultTransition("state2")
                             )
                             .AddState("state2")
+                        )
+                    )
+
+                    .AddStateMachine("extendedState", b => b
+                        .UseStateMachine<BaseStateMachine>(b => b
+                            .UseState("state1", b => b
+                                .ExtendWith<ExtendingState>()
+                            )
                         )
                     )
                     
@@ -219,6 +236,25 @@ namespace StateMachine.IntegrationTests.Tests
 
             Assert.AreEqual(EventStatus.Consumed, status);
             Assert.AreEqual("state2", currentState);
+        }
+
+        [TestMethod]
+        public async Task ExtensionState()
+        {
+            var status = EventStatus.Rejected;
+            string currentState = "";
+            Extended = false;
+
+            if (StateMachineLocator.TryLocateStateMachine(new StateMachineId("extendedState", "x"), out var sm))
+            {
+                status = (await sm.SendAsync(new SomeEvent())).Status;
+
+                currentState = (await sm.GetCurrentStateAsync()).Response.StatesTree.Value;
+            }
+
+            Assert.AreEqual(EventStatus.Consumed, status);
+            Assert.AreEqual("state1", currentState);
+            Assert.IsTrue(Extended);
         }
 
         [TestMethod]

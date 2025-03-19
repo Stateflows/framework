@@ -189,6 +189,7 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         #endregion
         
         #region AddDefaultTransition
+
         /// <summary>
         /// Adds default transition coming from current state.<br/>
         /// <a href="https://github.com/Stateflows/framework/wiki/Default-Transition">Default transitions</a> are triggered automatically after every State Machine execution and are changing its state.

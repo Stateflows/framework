@@ -3,6 +3,7 @@
 namespace Stateflows.StateMachines.Registration.Interfaces
 {
     public interface IElseDefaultTransitionBuilder :
+        ITransitionUtils<IElseDefaultTransitionBuilder>,
         IDefaultEffect<IElseDefaultTransitionBuilder>
     { }
 }

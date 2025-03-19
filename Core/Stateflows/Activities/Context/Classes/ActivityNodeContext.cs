@@ -13,21 +13,27 @@ namespace Stateflows.Activities.Context.Classes
         IBehaviorContext IBehaviorActionContext.Behavior => Activity;
 
         internal readonly Node Node;
+        internal readonly Edge Edge;
 
-        public ActivityNodeContext(BaseContext context, Node node)
+        public ActivityNodeContext(BaseContext context, Node node, Edge edge)
             : base(context.Context, context.NodeScope)
         {
             Node = node;
+            Edge = edge;
         }
 
         public ActivityNodeContext(RootContext context, NodeScope nodeScope, Node node)
             : base(context, nodeScope)
         {
             Node = node;
+            if (node.Type != NodeType.Input && node.Type != NodeType.Initial)
+            {
+                Edge = nodeScope.Edge;
+            }
         }
 
-        private INodeContext currentNode = null;
-        public INodeContext CurrentNode
-            => currentNode ??= new NodeContext(Node, Context, NodeScope);
+        private ICurrentNodeContext currentNode = null;
+        public ICurrentNodeContext CurrentNode
+            => currentNode ??= new NodeContext(Node, Edge, Context, NodeScope);
     }
 }

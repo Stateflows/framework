@@ -2,6 +2,8 @@
 using System.Diagnostics;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
+using Stateflows.Common;
+using Stateflows.Common.Extensions;
 using Stateflows.Common.Registration;
 using Stateflows.StateMachines.Models;
 using Stateflows.StateMachines.Exceptions;
@@ -57,7 +59,7 @@ namespace Stateflows.StateMachines.Registration.Builders
             {
                 throw new StateDefinitionException(stateName, $"State '{stateName}' is already registered", Region.Graph.Class);
             }
-
+            
             var vertex = new Vertex()
             {
                 Name = stateName,

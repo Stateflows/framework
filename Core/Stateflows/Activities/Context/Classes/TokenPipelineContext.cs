@@ -1,5 +1,4 @@
 ﻿using Stateflows.Activities.Models;
-using Stateflows.Activities.Engine;
 using Stateflows.Activities.Context.Interfaces;
 
 namespace Stateflows.Activities.Context.Classes
@@ -25,6 +24,6 @@ namespace Stateflows.Activities.Context.Classes
 
         public INodeContext targetNode = null;
         public INodeContext TargetNode
-            => targetNode ??= new NodeContext(Edge.Target, Context, NodeScope);
+            => targetNode ??= new NodeContext(Edge.Target, null, Context, NodeScope);
     }
 }

@@ -419,10 +419,7 @@ namespace Stateflows.StateMachines.Engine
                             eventHolder.Payload
                         );
 
-                        await DoConsumeAsync<TEvent>(
-                            edge,
-                            true
-                        );
+                        await DoConsumeAsync<TEvent>(edge);
                         
                         result = EventStatus.Consumed;
                     }
@@ -636,18 +633,25 @@ namespace Stateflows.StateMachines.Engine
         }
 
         [DebuggerHidden]
-        private async Task DoConsumeAsync<TEvent>(Edge edge, bool exitSource)
+        private async Task DoConsumeAsync<TEvent>(Edge edge)
         {
             var exitingVertices = new List<Vertex>();
             var enteringVertices = new List<Vertex>();
 
-            if (exitSource)
-            {
-                var exitingVertex = edge.Source?.ParentRegion?.ParentVertex;
-                while (exitingVertex != null)
+            { // collecting parent vertices
+                var currentExitingVertex = edge.IsLocal
+                    ? edge.Source?.ParentRegion?.ParentVertex
+                    : edge.Source;
+                
+                while (currentExitingVertex != null)
                 {
-                    exitingVertices.Insert(0, exitingVertex);
-                    exitingVertex = exitingVertex.ParentRegion?.ParentVertex;
+                    if (currentExitingVertex == edge.Target && edge.IsLocal)
+                    {
+                        break;
+                    }
+                    
+                    exitingVertices.Insert(0, currentExitingVertex);
+                    currentExitingVertex = currentExitingVertex.ParentRegion?.ParentVertex;
                 }
 
                 if (VerticesTree.TryFind(edge.Source, out var node))
@@ -669,7 +673,11 @@ namespace Stateflows.StateMachines.Engine
                     enteringVertices.Any() &&
                     exitingVertices.Any() &&
                     enteringVertices[0] == exitingVertices[0] &&
-                    enteringVertices[0] != edge.Target
+                    enteringVertices[0] != edge.Target &&
+                    !(
+                        !edge.IsLocal &&
+                        edge.Source == exitingVertices[0]
+                    )
                 )
                 {
                     enteringVertices.RemoveAt(0);

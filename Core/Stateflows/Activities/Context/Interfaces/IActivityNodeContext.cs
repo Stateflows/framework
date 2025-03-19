@@ -7,7 +7,7 @@ namespace Stateflows.Activities.Context.Interfaces
         /// <summary>
         /// Information about current node
         /// </summary>
-        INodeContext CurrentNode { get; }
+        ICurrentNodeContext CurrentNode { get; }
 
         /// <summary>
         /// Cancellation token handling activity execution interruptions, f.e. triggered by FinalNode

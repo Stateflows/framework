@@ -22,8 +22,8 @@ namespace Stateflows.Activities
         void BeforeNodeExecute(IActivityNodeContext context);
         void AfterNodeExecute(IActivityNodeContext context);
 
-        void BeforeFlowActivate(IActivityFlowContext context);
-        void AfterFlowActivate(IActivityFlowContext context, bool activated);
+        void BeforeFlowActivate(IActivityBeforeFlowContext context);
+        void AfterFlowActivate(IActivityAfterFlowContext context, bool activated);
 
         void BeforeFlowGuard<TToken>(IGuardContext<TToken> context);
         void AfterFlowGuard<TToken>(IGuardContext<TToken> context, bool guardResult);

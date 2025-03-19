@@ -3,6 +3,7 @@ using MassTransit;
 using Stateflows;
 using Stateflows.StateMachines;
 using Examples.Common;
+using Stateflows.Common;
 
 var builder = WebApplication.CreateBuilder(args);
 

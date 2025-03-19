@@ -40,6 +40,8 @@ namespace Stateflows.Activities.Engine
         public bool IsTerminated { get; private set; }
 
         public Node Node { get; private set; }
+        
+        public Edge Edge { get; private set; }
 
         public void Terminate()
         {
@@ -56,24 +58,26 @@ namespace Stateflows.Activities.Engine
             } while (currentScope != null);
         }
 
-        public NodeScope(IServiceProvider serviceProvider, Node node, Guid threadId)
+        public NodeScope(IServiceProvider serviceProvider, Node node, Edge edge, Guid threadId)
         {
             baseServiceProvider = serviceProvider;
             Node = node;
+            Edge = edge;
             ThreadId = threadId;
         }
 
-        private NodeScope(NodeScope nodeScope, Node node, Guid threadId)
+        private NodeScope(NodeScope nodeScope, Node node, Edge edge, Guid threadId)
         {
             BaseNodeScope = nodeScope;
             Node = node;
+            Edge = edge;
             ThreadId = threadId;
         }
 
         public NodeScope ChildScope { get; private set; }
 
-        public NodeScope CreateChildScope(Node node = null, Guid? threadId = null)
-            => ChildScope = new NodeScope(this, node ?? Node, threadId ?? ThreadId);
+        public NodeScope CreateChildScope(Node node = null, Edge edge = null, Guid? threadId = null)
+            => ChildScope = new NodeScope(this, node ?? Node, edge, threadId ?? ThreadId);
 
         [DebuggerHidden]
         public Task<TDefaultInitializer> GetDefaultInitializerAsync<TDefaultInitializer>(IActivityInitializationContext context)

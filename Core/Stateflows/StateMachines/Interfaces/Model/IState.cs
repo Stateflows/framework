@@ -32,12 +32,10 @@ namespace Stateflows.StateMachines
         where TState : class, IVertex
     {
         public static string Name => typeof(TState).FullName;
-        public static string ShortName => typeof(TState).Name;
     }
 
     public static class State
     {
         public static string GetName(Type stateType) => stateType.FullName;
-        public static string GetShortName(Type stateType) => stateType.Name;
     }
 }

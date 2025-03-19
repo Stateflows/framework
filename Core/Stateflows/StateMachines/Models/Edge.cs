@@ -40,7 +40,10 @@ namespace Stateflows.StateMachines.Models
         public IEnumerable<string> ActualTriggers { get; set; }
 
         public EdgeType Type { get; set; }
+        
         public bool IsElse { get; set; }
+
+        public bool IsLocal { get; set; } = true;
 
         public Logic<StateMachinePredicateAsync> Guards { get; } = new Logic<StateMachinePredicateAsync>(Constants.Guard);
 

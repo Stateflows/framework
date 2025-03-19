@@ -8,8 +8,5 @@ namespace Stateflows.Common
     {
         public static string GetEventName(this Type @type)
             => @type.GetReadableName();
-
-        public static string GetShortEventName(this Type @type)
-            => @type.GetEventName().Split('.').Last();
     }
 }
