@@ -1,11 +1,14 @@
-﻿using System.Diagnostics;
+﻿using System;
+using System.Diagnostics;
 using System.Collections.Generic;
 using Microsoft.Extensions.DependencyInjection;
+using Stateflows.Actions.Context;
 using Stateflows.Actions.Engine;
 using Stateflows.Actions.Service;
 using Stateflows.Actions.Registration;
 using Stateflows.Actions.Registration.Builders;
 using Stateflows.Activities;
+using Stateflows.Common;
 using Stateflows.Common.Interfaces;
 using Stateflows.Common.Initializer;
 using Stateflows.Common.Registration.Builders;
@@ -52,6 +55,14 @@ namespace Stateflows.Actions
                         .AddTransient(typeof(IOptionalInputTokens<>), typeof(OptionalInputTokens<>))
                         .AddTransient(typeof(IOptionalInputToken<>), typeof(OptionalInputToken<>))
                         .AddTransient(typeof(IOutputTokens<>), typeof(OutputTokens<>))
+                        .AddTransient(provider =>
+                            ActionsContextHolder.ActionContext.Value ??
+                            throw new InvalidOperationException($"No service for type '{typeof(IActionContext).FullName}' is available in this context.")
+                        )
+                        .AddTransient(provider =>
+                            ActionsContextHolder.ExecutionContext.Value ??
+                            throw new InvalidOperationException($"No service for type '{typeof(IExecutionContext).FullName}' is available in this context.")
+                        )
                         ;
                 }
 

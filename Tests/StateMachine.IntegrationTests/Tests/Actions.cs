@@ -3,10 +3,36 @@ using StateMachine.IntegrationTests.Utils;
 using System.Diagnostics;
 using Stateflows.Actions;
 using Stateflows.Common;
+using Stateflows.Common.Attributes;
 using Stateflows.Common.Utilities;
 
 namespace StateMachine.IntegrationTests.Tests
 {
+    public class TypedAction : IAction
+    {
+        private int ProcessId;
+        private IActionContext ActionContext;
+
+        public TypedAction(
+            IActionContext actionContext,
+            [GlobalValue] int processId
+        )
+        {
+            ActionContext = actionContext;
+            ProcessId = processId;
+        }
+        
+        public Task ExecuteAsync(CancellationToken cancellationToken)
+        {
+            if (ProcessId == 42)
+            {
+                ActionContext.Publish(new SomeEvent());
+            }
+            
+            return Task.CompletedTask;
+        }
+    }
+    
     [TestClass]
     public class Actions : StateflowsTestClass
     {
@@ -56,6 +82,19 @@ namespace StateMachine.IntegrationTests.Tests
                         )
                         .AddFinalState("final")
                     )
+                    .AddStateMachine("values", b => b
+                        .AddInitialState("initial", b => b
+                            .AddOnEntry(Stateflows.StateMachines.Actions.Global.Value("processId").Set(42))
+                            .AddDefaultTransition("second")
+                        )
+                        .AddState("second", b => b
+                            .AddOnEntryAction<TypedAction>(b => b
+                                .AddSubscription<SomeEvent>()
+                            )
+                            .AddTransition<SomeEvent>("third")
+                        )
+                        .AddState("third")
+                    )
                 )
                 .AddActions(b => b
                     .AddAction("guard", async c =>
@@ -75,6 +114,7 @@ namespace StateMachine.IntegrationTests.Tests
                     .AddAction("entry", async c => EntryRun = true)
                     .AddAction("exit", async c => ExitRun = true)
                     .AddAction("subscribe", async c => c.Behavior.Publish(new SomeEvent()))
+                    .AddAction<TypedAction>()
                 )
                 ;
         }
@@ -100,10 +140,6 @@ namespace StateMachine.IntegrationTests.Tests
                 .StateExit("stateA")
                 .StateEntry("stateB")
             );
-
-            // var x = StateflowsJsonConverter.DeserializeObject(
-            //     "{\"$type\":\"Stateflows.Common.Transport.Classes.StateflowsRequest, Stateflows.Common.Transport\",\"behaviorId\":{\"$type\":\"Stateflows.BehaviorId, Stateflows.Common\",\"behaviorClass\":{\"$type\":\"Stateflows.BehaviorClass, Stateflows.Common\",\"name\":\"ClearingProcess\",\"type\":\"StateMachine\"},\"instance\":\"4fccedab-e936-4a26-87db-7d3c9de9b121\"},\"event\":{\"$type\":\"Stateflows.Common.EventHolder`1[[Stateflows.StateMachines.StateMachineInfoRequest, Stateflows.Common]], Stateflows.Common\",\"headers\":[],\"payload\":{}},\"watches\":[]}");
-            //     // "{\"$type\": \"Stateflows.Common.EventHolder`1[[Stateflows.StateMachines.StateMachineInfoRequest, Stateflows.Common]], Stateflows.Common\"}");
 
             await Task.Delay(100);
 
@@ -164,6 +200,31 @@ namespace StateMachine.IntegrationTests.Tests
             );
 
             Assert.AreEqual("final", currentState1);
+        }
+
+        [TestMethod]
+        public async Task ActionValues()
+        {
+            string currentState1 = "";
+
+            if (StateMachineLocator.TryLocateStateMachine(new StateMachineId("values", "y"), out var sm))
+            {
+                await sm.SendAsync(new Initialize());
+
+                await Task.Delay(100);
+                
+                var currentState = (await sm.GetCurrentStateAsync()).Response;
+
+                currentState1 = currentState.StatesTree.Value;
+            }
+
+            // ExecutionSequence.Verify(b => b
+            //     .StateEntry("initial")
+            //     .StateExit("initial")
+            //     .StateEntry("final")
+            // );
+
+            Assert.AreEqual("third", currentState1);
         }
     }
 }

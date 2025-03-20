@@ -2,8 +2,10 @@
 using System.Diagnostics;
 using System.Collections.Generic;
 using System.Reflection;
+using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
+using Stateflows.Actions.Context;
 using Stateflows.Actions.Context.Classes;
 using Stateflows.Common.Classes;
 using Stateflows.Common.Registration.Builders;
@@ -96,7 +98,29 @@ namespace Stateflows.Actions.Registration
                 throw new ActionDefinitionException($"Action '{actionName}' with version '{version}' is already registered", new ActionClass(actionName));
             }
 
-            ActionDelegateAsync actionDelegate = async (context) => await ((IAction)await StateflowsActivator.CreateInstanceAsync(((ActionDelegateContext)context).ServiceProvider, actionType, "action")).ExecuteAsync(default);
+            ActionDelegateAsync actionDelegate = async context =>
+            {
+                ActionsContextHolder.ActionContext.Value = context.Action;
+                ActionsContextHolder.ExecutionContext.Value = context;
+                ContextValues.GlobalValuesHolder.Value = context.Action.Values;
+                
+                try
+                {
+                    var instance = (IAction)await StateflowsActivator.CreateInstanceAsync(
+                        ((ActionDelegateContext)context).ServiceProvider,
+                        actionType,
+                        "action"
+                    );
+                    
+                    await instance.ExecuteAsync(CancellationToken.None);
+                }
+                finally
+                {
+                    ActionsContextHolder.ActionContext.Value = null;
+                    ActionsContextHolder.ExecutionContext.Value = null;
+                    ContextValues.GlobalValuesHolder.Value = null;
+                }
+            };
 
             var method = ActionTypeAddedAsyncMethod.MakeGenericMethod(actionType);
             Func<IActionVisitor, Task> visitingAction = async v =>
