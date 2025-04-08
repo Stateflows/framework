@@ -91,7 +91,8 @@ namespace Stateflows.StateMachines.Engine
                                         ev.IsRequest()
                                             ? ev.GetResponseHolder()
                                             : null,
-                                        status,
+                                        status, 
+                                        null, // todo: get notifications
                                         new EventValidation(true, new List<ValidationResult>())
                                     ));
                                 }
@@ -137,7 +138,7 @@ namespace Stateflows.StateMachines.Engine
 
                         exceptions.AddRange(executor.Context.Exceptions);
 
-                        await executor.DehydrateAsync();
+                        executor.Dehydrate();
                     }
 
                     // out of try-finally to make sure that context won't be saved when execution fails

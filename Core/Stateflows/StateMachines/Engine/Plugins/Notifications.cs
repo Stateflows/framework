@@ -10,22 +10,22 @@ namespace Stateflows.StateMachines.Engine
     {
         public override void AfterStateEntry(IStateActionContext context)
         {
-            Trace.WriteLine($"⦗→s⦘ State Machine '{context.StateMachine.Id.Name}:{context.StateMachine.Id.Instance}': entered '{context.CurrentState.Name}'");
+            Trace.WriteLine($"⦗→s⦘ State Machine '{context.StateMachine.Id.Name}:{context.StateMachine.Id.Instance}': entered '{context.State.Name}'");
         }
 
         public override void AfterStateExit(IStateActionContext context)
         {
-            Trace.WriteLine($"⦗→s⦘ State Machine '{context.StateMachine.Id.Name}:{context.StateMachine.Id.Instance}': exited '{context.CurrentState.Name}'");
+            Trace.WriteLine($"⦗→s⦘ State Machine '{context.StateMachine.Id.Name}:{context.StateMachine.Id.Instance}': exited '{context.State.Name}'");
         }
 
         public override void AfterStateInitialize(IStateActionContext context)
         {
-            Trace.WriteLine($"⦗→s⦘ State Machine '{context.StateMachine.Id.Name}:{context.StateMachine.Id.Instance}': initialized '{context.CurrentState.Name}'");
+            Trace.WriteLine($"⦗→s⦘ State Machine '{context.StateMachine.Id.Name}:{context.StateMachine.Id.Instance}': initialized '{context.State.Name}'");
         }
 
         public override void AfterStateFinalize(IStateActionContext context)
         {
-            Trace.WriteLine($"⦗→s⦘ State Machine '{context.StateMachine.Id.Name}:{context.StateMachine.Id.Instance}': finalized '{context.CurrentState.Name}'");
+            Trace.WriteLine($"⦗→s⦘ State Machine '{context.StateMachine.Id.Name}:{context.StateMachine.Id.Instance}': finalized '{context.State.Name}'");
         }
 
         public override void AfterStateMachineInitialize(IStateMachineInitializationContext context, bool initialized)

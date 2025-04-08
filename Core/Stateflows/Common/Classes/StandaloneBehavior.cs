@@ -3,6 +3,7 @@ using System.Linq;
 using System.Diagnostics;
 using System.Threading.Tasks;
 using System.Collections.Generic;
+using Microsoft.Extensions.DependencyInjection;
 using Stateflows.Common.Interfaces;
 using Stateflows.Common.Subscription;
 
@@ -21,7 +22,7 @@ namespace Stateflows.Common.Classes
         {
             this.engine = engine;
             this.serviceProvider = serviceProvider;
-            notificationsHub = new NotificationsHub();
+            notificationsHub = new NotificationsHub(serviceProvider.GetRequiredService<IStateflowsCache>());
             notificationsHub.RegisterHandler(this);
             
             Id = id;
@@ -58,7 +59,12 @@ namespace Stateflows.Common.Classes
                 ResponseHolder.CopyResponses(executionToken.Responses);
             }
 
-            return new SendResult(executionToken.EventHolder, executionToken.Status, executionToken.Validation);
+            return new SendResult(
+                executionToken.EventHolder, 
+                executionToken.Status, 
+                null, // todo: get notifications
+                executionToken.Validation
+            );
         }
 
         [DebuggerHidden]
@@ -77,29 +83,17 @@ namespace Stateflows.Common.Classes
                 ResponseHolder.SetResponses(executionToken.Responses);
             }
 
-            var result = new RequestResult<TResponse>(executionToken.EventHolder, executionToken.Status, executionToken.Validation);
+            var result = new RequestResult<TResponse>(
+                executionToken.EventHolder, 
+                executionToken.Status,
+                null, // todo: get notifications 
+                executionToken.Validation
+            );
 
             return result;
         }
         
-        private EventHolder[] GetPendingNotifications<TNotification>(Dictionary<BehaviorId, List<EventHolder>> notifications, DateTime lastNotificationCheck)
-        {
-            lock (notifications)
-            {
-                var result = notifications.TryGetValue(Id, out var behaviorNotifications)
-                    ? behaviorNotifications
-                        .Where(notification =>
-                            notification is EventHolder<TNotification> &&
-                            notification.SentAt.AddSeconds(notification.TimeToLive) >= lastNotificationCheck
-                        )
-                        .ToArray()
-                    : Array.Empty<EventHolder>();
-
-                return result;
-            }
-        }
-
-        public Task<IWatcher> WatchAsync<TNotification>(Action<TNotification> handler)
+        public async Task<IWatcher> WatchAsync<TNotification>(Action<TNotification> handler)
         {
             lock (handlers)
             {
@@ -113,13 +107,19 @@ namespace Stateflows.Common.Classes
                 notificationHandlers.Add(eventHolder => handler(((EventHolder<TNotification>)eventHolder).Payload));
             }
 
-            var pendingNotifications = GetPendingNotifications<TNotification>(notificationsHub.Notifications, DateTime.Now);
+            var lastNotificationCheck = DateTime.Now;
+            var pendingNotifications = await notificationsHub.GetNotificationsAsync(
+                Id,
+                notification =>
+                    notification is EventHolder<TNotification> &&
+                    notification.SentAt.AddSeconds(notification.TimeToLive) >= lastNotificationCheck
+            );
             foreach (var pendingNotification in pendingNotifications)
             {
                 handler(((EventHolder<TNotification>)pendingNotification).Payload);
             }
 
-            return Task.FromResult<IWatcher>(new Watcher<TNotification>(this));
+            return new Watcher<TNotification>(this);
         }
 
         public Task UnwatchAsync<TNotification>()

@@ -34,7 +34,7 @@ internal class ActionVisitor(RouteGroupBuilder behaviorsBuilder, System.Action<R
     }
 
     private static string GetEventName<TEvent>()
-        => JsonNamingPolicy.CamelCase.ConvertName(Event<TEvent>.Name.Split('.').Last());
+        => JsonNamingPolicy.CamelCase.ConvertName(Event<TEvent>.Name.GetShortName());
 
     private void RegisterStandardEndpoints(string actionName, RouteGroupBuilder action)
     {

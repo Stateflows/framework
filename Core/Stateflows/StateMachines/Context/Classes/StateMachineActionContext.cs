@@ -1,18 +1,15 @@
-﻿using Stateflows.Common.Context.Interfaces;
+﻿using Stateflows.Common;
 using Stateflows.StateMachines.Context.Interfaces;
-using Stateflows.StateMachines.Inspection.Interfaces;
 
 namespace Stateflows.StateMachines.Context.Classes
 {
-    internal class StateMachineActionContext : BaseContext, IStateMachineActionInspectionContext, IRootContext
+    internal class StateMachineActionContext : BaseContext, IStateMachineActionContext, IRootContext
     {
-        IStateMachineContext IStateMachineActionContext.StateMachine => StateMachine;
-
-        IStateMachineInspectionContext IStateMachineActionInspectionContext.StateMachine => StateMachine;
-
         public StateMachineActionContext(RootContext context)
             : base(context)
         { }
+
+        IStateMachineContext IStateMachineActionContext.StateMachine => StateMachine;
         
         public IBehaviorContext Behavior => StateMachine;
     }

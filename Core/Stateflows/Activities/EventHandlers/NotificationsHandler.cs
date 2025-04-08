@@ -17,16 +17,16 @@ namespace Stateflows.Activities.EventHandlers
         
         public Type EventType => typeof(NotificationsRequest);
 
-        public Task<EventStatus> TryHandleEventAsync<TEvent>(IEventContext<TEvent> context)
+        public async Task<EventStatus> TryHandleEventAsync<TEvent>(IEventContext<TEvent> context)
         {
             if (context.Event is NotificationsRequest request)
             {
-                var pendingNotifications = Hub.Notifications.TryGetValue(context.Behavior.Id, out var notifications)
-                    ? notifications
-                        .Where(h => request.NotificationNames.Contains(h.Name))
-                        .Where(h => h.SentAt >= DateTime.Now - request.Period)
-                        .ToArray()
-                    : Array.Empty<EventHolder>();
+                var pendingNotifications = await Hub.GetNotificationsAsync(
+                    context.Behavior.Id,
+                    h =>
+                        request.NotificationNames.Contains(h.Name) &&
+                        h.SentAt >= DateTime.Now - request.Period
+                );
                 
                 request.Respond(
                     new NotificationsResponse
@@ -34,10 +34,10 @@ namespace Stateflows.Activities.EventHandlers
                         Notifications = pendingNotifications
                     });
                 
-                return Task.FromResult(EventStatus.Consumed);
+                return EventStatus.Consumed;
             }
             
-            return Task.FromResult(EventStatus.NotConsumed);
+            return EventStatus.NotConsumed;
         }
     }
 }

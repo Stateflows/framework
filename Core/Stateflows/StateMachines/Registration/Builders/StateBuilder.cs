@@ -269,7 +269,12 @@ namespace Stateflows.StateMachines.Registration.Builders
                 Name = $"{Vertex.Name}-{triggerDescriptor}->{targetStateName}",
             };
 
-            if (Vertex.Edges.ContainsKey(edge.Name))
+            if (typeof(Exception).IsAssignableFrom(edge.TriggerType))
+            {
+                edge.PolymorphicTriggers = true;
+            }
+
+            if (!Vertex.Edges.TryAdd(edge.Name, edge))
                 if (targetStateName == Constants.DefaultTransitionTarget)
                     throw new TransitionDefinitionException($"Internal transition in '{edge.SourceName}' triggered by '{edge.Trigger}' is already registered", Vertex.Graph.Class);
                 else
@@ -278,7 +283,6 @@ namespace Stateflows.StateMachines.Registration.Builders
                     else
                         throw new TransitionDefinitionException($"Transition from '{edge.SourceName}' to '{edge.TargetName}' triggered by '{edge.Trigger}' is already registered", Vertex.Graph.Class);
 
-            Vertex.Edges.Add(edge.Name, edge);
             Vertex.Graph.AllEdges.Add(edge);
 
             transitionBuildAction?.Invoke(new TransitionBuilder<TEvent>(edge, Services));
@@ -293,13 +297,21 @@ namespace Stateflows.StateMachines.Registration.Builders
             => AddTransitionInternal(targetStateName, false, transitionBuildAction);
         
         [DebuggerHidden]
-        void IPseudostateTransitionsEffects<IOverridenJoinBuilder>.AddTransition(string targetStateName,
-            DefaultTransitionEffectBuildAction transitionBuildAction)
-            => AddDefaultTransition(targetStateName, b => transitionBuildAction?.Invoke(b as IDefaultTransitionEffectBuilder));
-        
+        IJoinBuilder IPseudostateTransitions<IJoinBuilder>.AddTransition(string targetStateName, DefaultTransitionBuildAction transitionBuildAction)
+            => AddDefaultTransition(targetStateName, transitionBuildAction) as IJoinBuilder;
+
         [DebuggerHidden]
-        void IPseudostateTransitionsEffects<IJoinBuilder>.AddTransition(string targetStateName, DefaultTransitionEffectBuildAction transitionBuildAction)
-            => AddDefaultTransition(targetStateName, b => transitionBuildAction?.Invoke(b as IDefaultTransitionEffectBuilder));
+        void IPseudostateElseTransitions<IJoinBuilder>.AddElseTransition(string targetStateName, ElseDefaultTransitionBuildAction transitionBuildAction)
+            => AddElseDefaultTransition(targetStateName, transitionBuildAction);
+
+        [DebuggerHidden]
+        IOverridenJoinBuilder IPseudostateTransitions<IOverridenJoinBuilder>.AddTransition(string targetStateName, DefaultTransitionBuildAction transitionBuildAction)
+            => AddDefaultTransition(targetStateName, transitionBuildAction) as IOverridenJoinBuilder;
+
+        [DebuggerHidden]
+        void IPseudostateElseTransitions<IOverridenJoinBuilder>.AddElseTransition(string targetStateName,
+            ElseDefaultTransitionBuildAction transitionBuildAction)
+            => AddElseDefaultTransition(targetStateName, transitionBuildAction);
 
         [DebuggerHidden]
         IBehaviorOverridenRegionalizedStateBuilder IStateTransitions<IBehaviorOverridenRegionalizedStateBuilder>.AddDefaultTransition(string targetStateName,
@@ -581,99 +593,95 @@ namespace Stateflows.StateMachines.Registration.Builders
             => AddDeferredEvent<TEvent>() as IOverridenStateBuilder;
 
         [DebuggerHidden]
-        void IPseudostateTransitionsEffectsOverrides<IOverridenJoinBuilder>.UseTransition(string targetStateName, DefaultTransitionEffectBuildAction transitionBuildAction)
-            => UseDefaultTransition(targetStateName, b => transitionBuildAction?.Invoke(b as IDefaultTransitionEffectBuilder));
-
-        [DebuggerHidden]
         IBehaviorOverridenRegionalizedStateBuilder IStateTransitionsOverrides<IBehaviorOverridenRegionalizedStateBuilder>.
-            UseDefaultTransition(string targetStateName, DefaultTransitionBuildAction transitionBuildAction)
+            UseDefaultTransition(string targetStateName, OverridenDefaultTransitionBuildAction transitionBuildAction)
             => UseDefaultTransition(targetStateName, transitionBuildAction) as IBehaviorOverridenRegionalizedStateBuilder;
 
         [DebuggerHidden]
         IBehaviorOverridenRegionalizedStateBuilder IStateTransitionsOverrides<IBehaviorOverridenRegionalizedStateBuilder>.UseInternalTransition<TEvent>(
-            InternalTransitionBuildAction<TEvent> transitionBuildAction)
+            OverridenInternalTransitionBuildAction<TEvent> transitionBuildAction)
             => UseInternalTransition(transitionBuildAction) as IBehaviorOverridenRegionalizedStateBuilder;
 
         [DebuggerHidden]
         IBehaviorOverridenRegionalizedStateBuilder IStateTransitionsOverrides<IBehaviorOverridenRegionalizedStateBuilder>.UseElseTransition<TEvent>(string targetStateName,
-            ElseTransitionBuildAction<TEvent> transitionBuildAction)
+            OverridenElseTransitionBuildAction<TEvent> transitionBuildAction)
             => UseElseTransition(targetStateName, transitionBuildAction) as IBehaviorOverridenRegionalizedStateBuilder;
 
         [DebuggerHidden]
         IBehaviorOverridenRegionalizedStateBuilder IStateTransitionsOverrides<IBehaviorOverridenRegionalizedStateBuilder>.UseElseDefaultTransition(string targetStateName,
-            ElseDefaultTransitionBuildAction transitionBuildAction)
+            OverridenElseDefaultTransitionBuildAction transitionBuildAction)
             => UseElseDefaultTransition(targetStateName, transitionBuildAction) as IBehaviorOverridenRegionalizedStateBuilder;
 
         [DebuggerHidden]
         IBehaviorOverridenRegionalizedStateBuilder IStateTransitionsOverrides<IBehaviorOverridenRegionalizedStateBuilder>.UseElseInternalTransition<TEvent>(
-            ElseInternalTransitionBuildAction<TEvent> transitionBuildAction)
+            OverridenElseInternalTransitionBuildAction<TEvent> transitionBuildAction)
             => UseElseInternalTransition(transitionBuildAction) as IBehaviorOverridenRegionalizedStateBuilder;
 
         [DebuggerHidden]
         IBehaviorOverridenRegionalizedStateBuilder IStateTransitionsOverrides<IBehaviorOverridenRegionalizedStateBuilder>.UseTransition<TEvent>(string targetStateName,
-            TransitionBuildAction<TEvent> transitionBuildAction)
+            OverridenTransitionBuildAction<TEvent> transitionBuildAction)
             => UseTransition(targetStateName, transitionBuildAction) as IBehaviorOverridenRegionalizedStateBuilder;
 
         [DebuggerHidden]
         IOverridenRegionalizedStateBuilder IStateTransitionsOverrides<IOverridenRegionalizedStateBuilder>.UseDefaultTransition(string targetStateName,
-            DefaultTransitionBuildAction transitionBuildAction)
+            OverridenDefaultTransitionBuildAction transitionBuildAction)
             => UseDefaultTransition(targetStateName, transitionBuildAction) as IOverridenRegionalizedStateBuilder;
 
         [DebuggerHidden]
-        IOverridenRegionalizedStateBuilder IStateTransitionsOverrides<IOverridenRegionalizedStateBuilder>.UseInternalTransition<TEvent>(InternalTransitionBuildAction<TEvent> transitionBuildAction)
+        IOverridenRegionalizedStateBuilder IStateTransitionsOverrides<IOverridenRegionalizedStateBuilder>.UseInternalTransition<TEvent>(OverridenInternalTransitionBuildAction<TEvent> transitionBuildAction)
             => UseInternalTransition(transitionBuildAction) as IOverridenRegionalizedStateBuilder;
 
         [DebuggerHidden]
         IOverridenRegionalizedStateBuilder IStateTransitionsOverrides<IOverridenRegionalizedStateBuilder>.UseElseTransition<TEvent>(string targetStateName,
-            ElseTransitionBuildAction<TEvent> transitionBuildAction)
+            OverridenElseTransitionBuildAction<TEvent> transitionBuildAction)
             => UseElseTransition(targetStateName, transitionBuildAction) as IOverridenRegionalizedStateBuilder;
 
         [DebuggerHidden]
         IOverridenRegionalizedStateBuilder IStateTransitionsOverrides<IOverridenRegionalizedStateBuilder>.UseElseDefaultTransition(string targetStateName,
-            ElseDefaultTransitionBuildAction transitionBuildAction)
+            OverridenElseDefaultTransitionBuildAction transitionBuildAction)
             => UseElseDefaultTransition(targetStateName, transitionBuildAction) as IOverridenRegionalizedStateBuilder;
 
         [DebuggerHidden]
         IOverridenRegionalizedStateBuilder IStateTransitionsOverrides<IOverridenRegionalizedStateBuilder>.UseElseInternalTransition<TEvent>(
-            ElseInternalTransitionBuildAction<TEvent> transitionBuildAction)
+            OverridenElseInternalTransitionBuildAction<TEvent> transitionBuildAction)
             => UseElseInternalTransition(transitionBuildAction) as IOverridenRegionalizedStateBuilder;
 
         [DebuggerHidden]
         IOverridenRegionalizedStateBuilder IStateTransitionsOverrides<IOverridenRegionalizedStateBuilder>.UseTransition<TEvent>(string targetStateName,
-            TransitionBuildAction<TEvent> transitionBuildAction)
+            OverridenTransitionBuildAction<TEvent> transitionBuildAction)
             => UseTransition(targetStateName, transitionBuildAction) as IOverridenRegionalizedStateBuilder;
 
         [DebuggerHidden]
         IBehaviorOverridenStateBuilder IStateTransitionsOverrides<IBehaviorOverridenStateBuilder>.UseDefaultTransition(string targetStateName,
-            DefaultTransitionBuildAction transitionBuildAction)
+            OverridenDefaultTransitionBuildAction transitionBuildAction)
             => UseDefaultTransition(targetStateName, transitionBuildAction) as IBehaviorOverridenStateBuilder;
 
         [DebuggerHidden]
-        IBehaviorOverridenStateBuilder IStateTransitionsOverrides<IBehaviorOverridenStateBuilder>.UseInternalTransition<TEvent>(InternalTransitionBuildAction<TEvent> transitionBuildAction)
+        IBehaviorOverridenStateBuilder IStateTransitionsOverrides<IBehaviorOverridenStateBuilder>.UseInternalTransition<TEvent>(OverridenInternalTransitionBuildAction<TEvent> transitionBuildAction)
             => UseInternalTransition(transitionBuildAction) as IBehaviorOverridenStateBuilder;
 
         [DebuggerHidden]
         IBehaviorOverridenStateBuilder IStateTransitionsOverrides<IBehaviorOverridenStateBuilder>.UseElseTransition<TEvent>(string targetStateName,
-            ElseTransitionBuildAction<TEvent> transitionBuildAction)
+            OverridenElseTransitionBuildAction<TEvent> transitionBuildAction)
             => UseElseTransition(targetStateName, transitionBuildAction) as IBehaviorOverridenStateBuilder;
 
         [DebuggerHidden]
         IBehaviorOverridenStateBuilder IStateTransitionsOverrides<IBehaviorOverridenStateBuilder>.UseElseDefaultTransition(string targetStateName,
-            ElseDefaultTransitionBuildAction transitionBuildAction)
+            OverridenElseDefaultTransitionBuildAction transitionBuildAction)
             => UseElseDefaultTransition(targetStateName, transitionBuildAction) as IBehaviorOverridenStateBuilder;
 
         [DebuggerHidden]
         IBehaviorOverridenStateBuilder IStateTransitionsOverrides<IBehaviorOverridenStateBuilder>.UseElseInternalTransition<TEvent>(
-            ElseInternalTransitionBuildAction<TEvent> transitionBuildAction)
+            OverridenElseInternalTransitionBuildAction<TEvent> transitionBuildAction)
             => UseElseInternalTransition(transitionBuildAction) as IBehaviorOverridenStateBuilder;
 
         [DebuggerHidden]
         IBehaviorOverridenStateBuilder IStateTransitionsOverrides<IBehaviorOverridenStateBuilder>.UseTransition<TEvent>(string targetStateName,
-            TransitionBuildAction<TEvent> transitionBuildAction)
+            OverridenTransitionBuildAction<TEvent> transitionBuildAction)
             => UseTransition(targetStateName, transitionBuildAction) as IBehaviorOverridenStateBuilder;
 
         [DebuggerHidden]
-        public IOverridenStateBuilder UseTransition<TEvent>(string targetStateName, TransitionBuildAction<TEvent> transitionBuildAction)
+        public IOverridenStateBuilder UseTransition<TEvent>(string targetStateName, OverridenTransitionBuildAction<TEvent> transitionBuildAction)
         {
             var edge = Vertex.Edges.Values.FirstOrDefault(edge =>
                 edge.TriggerType == typeof(TEvent) &&
@@ -693,7 +701,7 @@ namespace Stateflows.StateMachines.Registration.Builders
         }
 
         [DebuggerHidden]
-        public IOverridenStateBuilder UseDefaultTransition(string targetStateName, DefaultTransitionBuildAction transitionBuildAction)
+        public IOverridenStateBuilder UseDefaultTransition(string targetStateName, OverridenDefaultTransitionBuildAction transitionBuildAction)
         {
             var edge = Vertex.Edges.Values.FirstOrDefault(edge =>
                 edge.TargetName == targetStateName &&
@@ -712,7 +720,7 @@ namespace Stateflows.StateMachines.Registration.Builders
         }
 
         [DebuggerHidden]
-        public IOverridenStateBuilder UseInternalTransition<TEvent>(InternalTransitionBuildAction<TEvent> transitionBuildAction)
+        public IOverridenStateBuilder UseInternalTransition<TEvent>(OverridenInternalTransitionBuildAction<TEvent> transitionBuildAction)
         {
             var edge = Vertex.Edges.Values.FirstOrDefault(edge =>
                 edge.TriggerType == typeof(TEvent) &&
@@ -731,7 +739,7 @@ namespace Stateflows.StateMachines.Registration.Builders
         }
 
         [DebuggerHidden]
-        public IOverridenStateBuilder UseElseTransition<TEvent>(string targetStateName, ElseTransitionBuildAction<TEvent> transitionBuildAction)
+        public IOverridenStateBuilder UseElseTransition<TEvent>(string targetStateName, OverridenElseTransitionBuildAction<TEvent> transitionBuildAction)
         {
             var edge = Vertex.Edges.Values.FirstOrDefault(edge =>
                 edge.TriggerType == typeof(TEvent) &&
@@ -751,7 +759,7 @@ namespace Stateflows.StateMachines.Registration.Builders
         }
 
         [DebuggerHidden]
-        public IOverridenStateBuilder UseElseDefaultTransition(string targetStateName, ElseDefaultTransitionBuildAction transitionBuildAction)
+        public IOverridenStateBuilder UseElseDefaultTransition(string targetStateName, OverridenElseDefaultTransitionBuildAction transitionBuildAction)
         {
             var edge = Vertex.Edges.Values.FirstOrDefault(edge =>
                 edge.TargetName == targetStateName &&
@@ -770,7 +778,7 @@ namespace Stateflows.StateMachines.Registration.Builders
         }
 
         [DebuggerHidden]
-        public IOverridenStateBuilder UseElseInternalTransition<TEvent>(ElseInternalTransitionBuildAction<TEvent> transitionBuildAction)
+        public IOverridenStateBuilder UseElseInternalTransition<TEvent>(OverridenElseInternalTransitionBuildAction<TEvent> transitionBuildAction)
         {
             var edge = Vertex.Edges.Values.FirstOrDefault(edge =>
                 edge.TriggerType == typeof(TEvent) &&
@@ -823,19 +831,19 @@ namespace Stateflows.StateMachines.Registration.Builders
             => AddDoActivity(doActivityName, buildAction, initializationBuilder) as IBehaviorOverridenStateBuilder;
 
         [DebuggerHidden]
-        IOverridenJunctionBuilder IPseudostateTransitionsOverrides<IOverridenJunctionBuilder>.UseTransition(string targetStateName, DefaultTransitionBuildAction transitionBuildAction)
+        IOverridenJunctionBuilder IPseudostateTransitionsOverrides<IOverridenJunctionBuilder>.UseTransition(string targetStateName, OverridenDefaultTransitionBuildAction transitionBuildAction)
             => UseDefaultTransition(targetStateName, transitionBuildAction) as IOverridenJunctionBuilder;
 
         [DebuggerHidden]
-        void IPseudostateElseTransitionsOverrides<IOverridenChoiceBuilder>.UseElseTransition(string targetStateName, ElseDefaultTransitionBuildAction transitionBuildAction)
+        void IPseudostateElseTransitionsOverrides<IOverridenChoiceBuilder>.UseElseTransition(string targetStateName, OverridenElseDefaultTransitionBuildAction transitionBuildAction)
             => UseElseDefaultTransition(targetStateName, transitionBuildAction);
 
         [DebuggerHidden]
-        IOverridenChoiceBuilder IPseudostateTransitionsOverrides<IOverridenChoiceBuilder>.UseTransition(string targetStateName, DefaultTransitionBuildAction transitionBuildAction)
+        IOverridenChoiceBuilder IPseudostateTransitionsOverrides<IOverridenChoiceBuilder>.UseTransition(string targetStateName, OverridenDefaultTransitionBuildAction transitionBuildAction)
             => UseDefaultTransition(targetStateName, transitionBuildAction) as IOverridenChoiceBuilder;
 
         [DebuggerHidden]
-        void IPseudostateElseTransitionsOverrides<IOverridenJunctionBuilder>.UseElseTransition(string targetStateName, ElseDefaultTransitionBuildAction transitionBuildAction)
+        void IPseudostateElseTransitionsOverrides<IOverridenJunctionBuilder>.UseElseTransition(string targetStateName, OverridenElseDefaultTransitionBuildAction transitionBuildAction)
             => UseElseDefaultTransition(targetStateName, transitionBuildAction);
 
         [DebuggerHidden]
@@ -904,5 +912,14 @@ namespace Stateflows.StateMachines.Registration.Builders
 
         public string Name => Vertex.Name;
         public VertexType Type => Vertex.Type;
+
+        IOverridenJoinBuilder IPseudostateTransitionsOverrides<IOverridenJoinBuilder>.UseTransition(
+            string targetStateName,
+            OverridenDefaultTransitionBuildAction transitionBuildAction)
+            => UseDefaultTransition(targetStateName, transitionBuildAction) as IOverridenJoinBuilder;
+
+        void IPseudostateElseTransitionsOverrides<IOverridenJoinBuilder>.UseElseTransition(string targetStateName,
+            OverridenElseDefaultTransitionBuildAction transitionBuildAction)
+            => UseElseDefaultTransition(targetStateName, transitionBuildAction);
     }
 }

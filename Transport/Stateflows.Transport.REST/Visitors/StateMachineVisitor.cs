@@ -83,8 +83,8 @@ internal class StateMachineVisitor(
 
         var eventType = typeof(TEvent);
         if (
-            eventType.IsSubclassOf(typeof(SystemEvent)) ||
-            eventType.IsSubclassOf(typeof(Exception))
+            eventType.IsAssignableTo(typeof(SystemEvent)) ||
+            eventType.IsAssignableTo(typeof(Exception))
         )
         {
             return;
@@ -138,7 +138,7 @@ internal class StateMachineVisitor(
     }
 
     private static string GetEventName<TEvent>()
-        => JsonNamingPolicy.CamelCase.ConvertName(Event<TEvent>.Name.Split('.').Last());
+        => JsonNamingPolicy.CamelCase.ConvertName(Event<TEvent>.Name.GetShortName());
 
     private void RegisterEventEndpoint<TEvent>(string stateMachineName, RouteGroupBuilder stateMachine)
     {

@@ -3,7 +3,6 @@ using System.Diagnostics;
 using Stateflows.Common;
 using Stateflows.StateMachines;
 using Stateflows.StateMachines.Context.Interfaces;
-using Stateflows.StateMachines.Inspection.Interfaces;
 using Stateflows.Extensions.PlantUml.Events;
 
 namespace Stateflows.Extensions.PlantUml.Classes
@@ -21,17 +20,14 @@ namespace Stateflows.Extensions.PlantUml.Classes
         {
             try
             {
-                if (context is IEventInspectionContext<TEvent> inspectionContext)
+                if (Inspection.StateHasChanged)
                 {
-                    if (Inspection.StateHasChanged)
-                    {
-                        context.Behavior.Publish(
-                            new PlantUmlInfo()
-                            {
-                                PlantUml = Inspection.GetPlantUml()
-                            }
-                        );
-                    }
+                    context.Behavior.Publish(
+                        new PlantUmlInfo()
+                        {
+                            PlantUml = Inspection.GetPlantUml()
+                        }
+                    );
                 }
             }
             catch (Exception e)

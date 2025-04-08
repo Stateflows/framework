@@ -2,11 +2,13 @@
 using System.Linq;
 using Microsoft.Extensions.DependencyInjection;
 using Stateflows.Common;
+using Stateflows.Common.Cache;
 using Stateflows.Common.Lock;
 using Stateflows.Common.Tenant;
 using Stateflows.Common.Engine;
 using Stateflows.Common.Storage;
 using Stateflows.Common.Context;
+using Stateflows.Common.Context.Interfaces;
 using Stateflows.Common.Scheduler;
 using Stateflows.Common.Extensions;
 using Stateflows.Common.Interfaces;
@@ -41,6 +43,10 @@ namespace Stateflows
                         CommonContextHolder.ExecutionContext.Value ??
                         throw new InvalidOperationException($"No service for type '{typeof(IExecutionContext).FullName}' is available in this context.")
                     )
+                    .AddTransient(provider =>
+                        CommonContextHolder.BehaviorContext.Value ??
+                        throw new InvalidOperationException($"No service for type '{typeof(IBehaviorContext).FullName}' is available in this context.")
+                    )
                     ;
             }
 
@@ -72,6 +78,11 @@ namespace Stateflows
             if (!services.IsServiceRegistered<IStateflowsTenantProvider>())
             {
                 services.AddSingleton<IStateflowsTenantProvider, DefaultTenantProvider>();
+            }
+            
+            if (!services.IsServiceRegistered<IStateflowsCache>())
+            {
+                services.AddTransient<IStateflowsCache, InMemoryCache>();
             }
 
             return services;

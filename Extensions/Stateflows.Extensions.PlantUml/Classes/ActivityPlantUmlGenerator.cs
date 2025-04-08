@@ -11,19 +11,7 @@ namespace Stateflows.Extensions.PlantUml.Classes
     {
         private static string GetNodeName(INodeInspection node, string parentName)
         {
-            var nodeName = node.Name.Split('.').Last();
-
-            if (node.Type == NodeType.AcceptEventAction || node.Type == NodeType.TimeEventAction)
-            {
-                var parts = node.Name.Split('<');
-                var eventPart = parts.Last().Split('.').Last();
-                nodeName = string.Join("<", parts.First(), eventPart);
-            }
-
-            if (nodeName == "ExceptionHandler")
-            {
-                nodeName = string.Join("<", node.Name.Split('.').Reverse().Take(2)) + ">";
-            }
+            var nodeName = node.Name.GetShortName();
 
             if (node.Type != NodeType.Final && node.Type != NodeType.Initial)
             {
@@ -57,7 +45,7 @@ namespace Stateflows.Extensions.PlantUml.Classes
 
             if (node.Nodes.Any())
             {
-                var nodeName = node.Name.Split('.').Last();
+                var nodeName = node.Name.GetShortName();
                 builder.AppendLine($"{indent}partition \"{node.Type} {nodeName}\" " + "{");
                 GetPlantUml(indentCount + 2, node.Nodes, builder, nodeName);
                 builder.AppendLine($"{indent}" + "}");
@@ -76,7 +64,7 @@ namespace Stateflows.Extensions.PlantUml.Classes
                     }
                     else
                     {
-                        builder.AppendLine($"{indent}{source} -->[{transition.TokenName}] {target}");
+                        builder.AppendLine($"{indent}{source} -->[{transition.TokenName.GetShortName()}] {target}");
                     }
                 }
             }

@@ -35,7 +35,7 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         /// b => b
         ///     . // Use . to see available builder methods
         /// </code></param>
-        TReturn UseTransition<TEvent>(string targetStateName, TransitionBuildAction<TEvent> transitionBuildAction);
+        TReturn UseTransition<TEvent>(string targetStateName, OverridenTransitionBuildAction<TEvent> transitionBuildAction);
 
         /// <summary>
         /// Uses transition triggered by TEvent coming from current state.<br/>
@@ -66,7 +66,7 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         ///     . // Use . to see available builder methods
         /// </code></param>
         [DebuggerHidden]
-        public TReturn UseTransition<TEvent, TTargetState>(TransitionBuildAction<TEvent> transitionBuildAction)
+        public TReturn UseTransition<TEvent, TTargetState>(OverridenTransitionBuildAction<TEvent> transitionBuildAction)
             where TTargetState : class, IVertex
             => UseTransition(State<TTargetState>.Name, transitionBuildAction);
 
@@ -91,7 +91,7 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         /// b => b
         ///     . // Use . to see available builder methods
         /// </code></param>
-        TReturn UseDefaultTransition(string targetStateName, DefaultTransitionBuildAction transitionBuildAction);
+        TReturn UseDefaultTransition(string targetStateName, OverridenDefaultTransitionBuildAction transitionBuildAction);
 
         /// <summary>
         /// Uses default transition coming from current state.<br/>
@@ -121,7 +121,7 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         ///     . // Use . to see available builder methods
         /// </code></param>
         [DebuggerHidden]
-        public TReturn UseDefaultTransition<TTargetState>(DefaultTransitionBuildAction transitionBuildAction)
+        public TReturn UseDefaultTransition<TTargetState>(OverridenDefaultTransitionBuildAction transitionBuildAction)
             where TTargetState : class, IVertex
             => UseDefaultTransition(State<TTargetState>.Name, transitionBuildAction);
 
@@ -146,7 +146,7 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         /// b => b
         ///     . // Use . to see available builder methods
         /// </code></param>
-        TReturn UseInternalTransition<TEvent>(InternalTransitionBuildAction<TEvent> transitionBuildAction);
+        TReturn UseInternalTransition<TEvent>(OverridenInternalTransitionBuildAction<TEvent> transitionBuildAction);
         #endregion
 
         #region ElseTransitions
@@ -162,7 +162,7 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         /// b => b
         ///     . // Use . to see available builder methods
         /// </code></param>
-        TReturn UseElseTransition<TEvent>(string targetStateName, ElseTransitionBuildAction<TEvent> transitionBuildAction);
+        TReturn UseElseTransition<TEvent>(string targetStateName, OverridenElseTransitionBuildAction<TEvent> transitionBuildAction);
 
         /// <summary>
         /// Uses else alternative for all transitions triggered by TEvent coming from current state.<br/><br/>
@@ -193,7 +193,7 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         ///     . // Use . to see available builder methods
         /// </code></param>
         [DebuggerHidden]
-        public TReturn UseElseTransition<TEvent, TTargetState>(ElseTransitionBuildAction<TEvent> transitionBuildAction)
+        public TReturn UseElseTransition<TEvent, TTargetState>(OverridenElseTransitionBuildAction<TEvent> transitionBuildAction)
             where TTargetState : class, IVertex
             => UseElseTransition(State<TTargetState>.Name, transitionBuildAction);
 
@@ -208,7 +208,7 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         /// b => b
         ///     . // Use . to see available builder methods
         /// </code></param>
-        TReturn UseElseDefaultTransition(string targetStateName, ElseDefaultTransitionBuildAction transitionBuildAction);
+        TReturn UseElseDefaultTransition(string targetStateName, OverridenElseDefaultTransitionBuildAction transitionBuildAction);
 
         /// <summary>
         /// Uses else alternative for all default transitions coming from current state.<br/><br/>
@@ -238,7 +238,7 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         ///     . // Use . to see available builder methods
         /// </code></param>
         [DebuggerHidden]
-        public TReturn UseElseDefaultTransition<TTargetState>(ElseDefaultTransitionBuildAction transitionBuildAction)
+        public TReturn UseElseDefaultTransition<TTargetState>(OverridenElseDefaultTransitionBuildAction transitionBuildAction)
             where TTargetState : class, IVertex
             => UseElseDefaultTransition(State<TTargetState>.Name, transitionBuildAction);
 
@@ -253,7 +253,7 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         /// b => b
         ///     . // Use . to see available builder methods
         /// </code></param>
-        TReturn UseElseInternalTransition<TEvent>(ElseInternalTransitionBuildAction<TEvent> transitionBuildAction);
+        TReturn UseElseInternalTransition<TEvent>(OverridenElseInternalTransitionBuildAction<TEvent> transitionBuildAction);
         #endregion
     }
 }

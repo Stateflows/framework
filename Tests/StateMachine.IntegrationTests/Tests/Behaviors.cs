@@ -1,6 +1,7 @@
 using Stateflows.Common;
 using Stateflows.Activities;
 using Stateflows.Activities;
+using StateMachine.IntegrationTests.Classes.Events;
 using StateMachine.IntegrationTests.Utils;
 
 namespace StateMachine.IntegrationTests.Tests

@@ -246,11 +246,19 @@ namespace Stateflows.Extensions.OpenTelemetry
         {
             if (Skip && !ImplicitInitialization) return;
 
-            StateEntryActivity = Source.StartActivity(
-                $"State ({context.CurrentState.Name.GetShortName()})/entry",
-                ActivityKind.Internal,
-                parentContext: DefaultGuardActivity?.Context ?? GuardActivity?.Context ?? EventProcessingActivity.Context
-            );
+            var parentContext = DefaultGuardActivity?.Context ?? GuardActivity?.Context ?? EventProcessingActivity?.Context;
+            if (parentContext != null)
+            {
+                StateEntryActivity = Source.StartActivity(
+                    $"State ({context.State.Name.GetShortName()})/entry",
+                    ActivityKind.Internal,
+                    (ActivityContext)parentContext
+                );
+            }
+            else
+            {
+                StateEntryActivity = Source.StartActivity($"State ({context.State.Name.GetShortName()})/entry");
+            }
         }
 
         public void AfterStateEntry(IStateActionContext context)
@@ -266,7 +274,7 @@ namespace Stateflows.Extensions.OpenTelemetry
             if (Skip && !ImplicitInitialization) return;
             
             StateExitActivity = Source.StartActivity(
-                $"State ({context.CurrentState.Name.GetShortName()})/exit",
+                $"State ({context.State.Name.GetShortName()})/exit",
                 ActivityKind.Internal,
                 parentContext: DefaultGuardActivity?.Context ?? GuardActivity?.Context ?? EventProcessingActivity.Context
             );

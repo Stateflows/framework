@@ -5,16 +5,62 @@ using System.Threading.Tasks;
 using System.Collections.Generic;
 using Microsoft.Extensions.Hosting;
 using Stateflows.Common.Interfaces;
+using Stateflows.Common.Utilities;
 
 namespace Stateflows.Common.Subscription
 {
     internal class NotificationsHub : IHostedService, INotificationsHub
     {
+        public NotificationsHub(IStateflowsCache cache)
+        {
+            Cache = cache;
+        }
+
+        private readonly IStateflowsCache Cache;
+        
         private readonly CancellationTokenSource CancellationTokenSource = new CancellationTokenSource();
 
-        public Dictionary<BehaviorId, List<EventHolder>> Notifications { get; } = new Dictionary<BehaviorId, List<EventHolder>>();
-
         private readonly List<INotificationHandler> Handlers = new List<INotificationHandler>();
+
+        private Task UpdateNotificationsAsync(BehaviorId behaviorId, Action<List<EventHolder>> updateHandler)
+            => Cache.UpdateAsync(
+                $"Stateflows.Notifications.{behaviorId.ToString()}",
+                value =>
+                {
+                    var notifications =
+                        StateflowsJsonConverter.DeserializeObject<List<EventHolder>>(value);
+
+                    if (notifications != null)
+                    {
+                        updateHandler(notifications);
+
+                        value = StateflowsJsonConverter.SerializePolymorphicObject(notifications);
+                    }
+
+                    return value;
+                },
+                StateflowsJsonConverter.SerializePolymorphicObject(new List<EventHolder>())
+            );
+        
+        public async Task<EventHolder[]> GetNotificationsAsync(BehaviorId behaviorId, Func<EventHolder, bool> filter = null)
+        {
+            List<EventHolder> notifications;
+
+            var (result, value) = await Cache.TryGetAsync($"Stateflows.Notifications.{behaviorId.ToString()}");
+
+            if (!result)
+            {
+                return Array.Empty<EventHolder>();
+            }
+            
+            notifications = StateflowsJsonConverter.DeserializeObject<List<EventHolder>>(value);
+
+            return (
+                filter == null
+                    ? notifications
+                    : notifications.Where(filter)
+            ).ToArray();
+        }
 
         public void RegisterHandler(INotificationHandler notificationHandler)
         {
@@ -43,19 +89,13 @@ namespace Stateflows.Common.Subscription
             var holdersBySenderIds = eventHoldersArray
                 .Where(h => h.SenderId != null)
                 .GroupBy(h => (BehaviorId)h.SenderId);
-
-            lock (Notifications)
+            
+            foreach (var group in holdersBySenderIds)
             {
-                foreach (var group in holdersBySenderIds)
-                {
-                    if (!Notifications.TryGetValue(group.Key, out var behaviorNotifications))
-                    {
-                        behaviorNotifications = new List<EventHolder>();
-                        Notifications.Add(group.Key, behaviorNotifications);
-                    }
-
-                    behaviorNotifications.AddRange(group);
-                }
+                await UpdateNotificationsAsync(
+                    group.Key,
+                    notifications => notifications.AddRange(group)
+                );
             }
 
             foreach (var eventHolder in eventHoldersArray)
@@ -86,24 +126,24 @@ namespace Stateflows.Common.Subscription
                 {
                     lastTick = GetCurrentTick();
 
-                    lock (Notifications)
-                    {
-                        var date = DateTime.Now.AddMinutes(-1);
-                        foreach (var behaviorNotifications in Notifications.Values)
-                        {
-                            behaviorNotifications.RemoveAll(notification => notification.SentAt.AddSeconds(notification.TimeToLive) <= date);
-                        }
-
-                        var emptyIds = Notifications
-                            .Where(x => !x.Value.Any())
-                            .Select(x => x.Key)
-                            .ToArray();
-
-                        foreach (var id in emptyIds)
-                        {
-                            Notifications.Remove(id);
-                        }
-                    }
+                    var date = DateTime.Now.AddMinutes(-1);
+                    // await UpdateNotificationsAsync(notifications =>
+                    // {
+                    //     foreach (var behaviorNotifications in notifications.Values)
+                    //     {
+                    //         behaviorNotifications.RemoveAll(notification => notification.SentAt.AddSeconds(notification.TimeToLive) <= date);
+                    //     }
+                    //     
+                    //     var emptyIds = notifications
+                    //         .Where(x => !x.Value.Any())
+                    //         .Select(x => x.Key)
+                    //         .ToArray();
+                    //     
+                    //     foreach (var id in emptyIds)
+                    //     {
+                    //         notifications.Remove(id);
+                    //     }
+                    // });
                 }
 
                 await Task.Delay(1000, cancellationToken);

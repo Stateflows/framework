@@ -18,7 +18,7 @@ namespace Stateflows.Activities
         [DebuggerHidden]
         internal static void RunStateAction(string stateActionName, IStateActionContext context, string actionName, StateActionActionBuildAction buildAction)
         {
-            if (context.TryLocateAction(actionName, $"{context.Behavior.Id.Instance}.{context.CurrentState.Name}.{stateActionName}.{Guid.NewGuid()}", out var a))
+            if (context.TryLocateAction(actionName, $"{context.Behavior.Id.Instance}.{context.State.Name}.{stateActionName}.{Guid.NewGuid()}", out var a))
             {
                 _ = Task.Run(async () =>
                 {

@@ -25,7 +25,7 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         /// b => b
         ///     . // Use . to see available builder methods
         /// </code></param>
-        TReturn UseTransition(string targetStateName, DefaultTransitionBuildAction transitionBuildAction = null);
+        TReturn UseTransition(string targetStateName, OverridenDefaultTransitionBuildAction transitionBuildAction = null);
 
         /// <summary>
         /// Uses default transition coming from current pseudostate.<br/>
@@ -65,7 +65,7 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         ///     . // Use . to see available builder methods
         /// </code></param>
         [DebuggerHidden]
-        public TReturn UseTransition<TTargetState>(DefaultTransitionBuildAction transitionBuildAction = null)
+        public TReturn UseTransition<TTargetState>(OverridenDefaultTransitionBuildAction transitionBuildAction = null)
             where TTargetState : class, IVertex
             => UseTransition(State<TTargetState>.Name, transitionBuildAction);
     }
@@ -83,7 +83,7 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         /// b => b
         ///     . // Use . to see available builder methods
         /// </code></param>
-        void UseElseTransition(string targetStateName, ElseDefaultTransitionBuildAction transitionBuildAction = null);
+        void UseElseTransition(string targetStateName, OverridenElseDefaultTransitionBuildAction transitionBuildAction = null);
 
         /// <summary>
         /// Uses else alternative for all default transitions coming from current pseudostate.<br/><br/>
@@ -113,7 +113,7 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         ///     . // Use . to see available builder methods
         /// </code></param>
         [DebuggerHidden]
-        public void UseElseTransition<TTargetState>(ElseDefaultTransitionBuildAction transitionBuildAction = null)
+        public void UseElseTransition<TTargetState>(OverridenElseDefaultTransitionBuildAction transitionBuildAction = null)
             where TTargetState : class, IVertex
             => UseElseTransition(State<TTargetState>.Name, transitionBuildAction);
     }

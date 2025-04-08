@@ -1,5 +1,6 @@
 ﻿using Stateflows.Common;
 using Stateflows.StateMachines.Attributes;
+using StateMachine.IntegrationTests.Classes.Events;
 using StateMachine.IntegrationTests.Classes.States;
 using StateMachine.IntegrationTests.Classes.Transitions;
 

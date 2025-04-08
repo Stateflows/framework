@@ -23,22 +23,22 @@ namespace Stateflows.Testing.StateMachines.Sequence
 
         public override void AfterStateEntry(IStateActionContext context)
         {
-            SequenceBuilder.StateEntry(context.CurrentState.Name);
+            SequenceBuilder.StateEntry(context.State.Name);
         }
 
         public override void AfterStateExit(IStateActionContext context)
         {
-            SequenceBuilder.StateExit(context.CurrentState.Name);
+            SequenceBuilder.StateExit(context.State.Name);
         }
 
         public override void AfterStateInitialize(IStateActionContext context)
         {
-            SequenceBuilder.StateInitialize(context.CurrentState.Name);
+            SequenceBuilder.StateInitialize(context.State.Name);
         }
 
         public override void AfterStateFinalize(IStateActionContext context)
         {
-            SequenceBuilder.StateFinalize(context.CurrentState.Name);
+            SequenceBuilder.StateFinalize(context.State.Name);
         }
 
         public override void AfterStateMachineInitialize(IStateMachineInitializationContext context, bool initialized)

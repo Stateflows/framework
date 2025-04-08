@@ -44,6 +44,7 @@ namespace Stateflows.StateMachines.Models
         public string Name { get; }
         public int Version { get; }
         public Type StateMachineType { get; set; }
+        public bool PolymorphicTriggers { get; set; }
         public string InitialVertexName { get; set; }
         public Vertex InitialVertex { get; set; }
         public readonly Dictionary<string, Vertex> Vertices = new Dictionary<string, Vertex>();

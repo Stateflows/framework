@@ -325,7 +325,7 @@ namespace Stateflows.StateMachines.Registration.Builders
         #endregion
 
         [DebuggerHidden]
-        public IOverridenOrthogonalStateBuilder UseTransition<TEvent>(string targetStateName, TransitionBuildAction<TEvent> transitionBuildAction)
+        public IOverridenOrthogonalStateBuilder UseTransition<TEvent>(string targetStateName, OverridenTransitionBuildAction<TEvent> transitionBuildAction)
         {
             var edge = Vertex.Edges.Values.FirstOrDefault(edge =>
                 edge.TriggerType == typeof(TEvent) &&
@@ -345,7 +345,7 @@ namespace Stateflows.StateMachines.Registration.Builders
         }
 
         [DebuggerHidden]
-        public IOverridenOrthogonalStateBuilder UseDefaultTransition(string targetStateName, DefaultTransitionBuildAction transitionBuildAction)
+        public IOverridenOrthogonalStateBuilder UseDefaultTransition(string targetStateName, OverridenDefaultTransitionBuildAction transitionBuildAction)
         {
             var edge = Vertex.Edges.Values.FirstOrDefault(edge =>
                 edge.TargetName == targetStateName &&
@@ -364,7 +364,7 @@ namespace Stateflows.StateMachines.Registration.Builders
         }
 
         [DebuggerHidden]
-        public IOverridenOrthogonalStateBuilder UseInternalTransition<TEvent>(InternalTransitionBuildAction<TEvent> transitionBuildAction)
+        public IOverridenOrthogonalStateBuilder UseInternalTransition<TEvent>(OverridenInternalTransitionBuildAction<TEvent> transitionBuildAction)
         {
             var edge = Vertex.Edges.Values.FirstOrDefault(edge =>
                 edge.TriggerType == typeof(TEvent) &&
@@ -383,7 +383,7 @@ namespace Stateflows.StateMachines.Registration.Builders
         }
 
         [DebuggerHidden]
-        public IOverridenOrthogonalStateBuilder UseElseTransition<TEvent>(string targetStateName, ElseTransitionBuildAction<TEvent> transitionBuildAction)
+        public IOverridenOrthogonalStateBuilder UseElseTransition<TEvent>(string targetStateName, OverridenElseTransitionBuildAction<TEvent> transitionBuildAction)
         {
             var edge = Vertex.Edges.Values.FirstOrDefault(edge =>
                 edge.TriggerType == typeof(TEvent) &&
@@ -403,7 +403,7 @@ namespace Stateflows.StateMachines.Registration.Builders
         }
 
         [DebuggerHidden]
-        public IOverridenOrthogonalStateBuilder UseElseDefaultTransition(string targetStateName, ElseDefaultTransitionBuildAction transitionBuildAction)
+        public IOverridenOrthogonalStateBuilder UseElseDefaultTransition(string targetStateName, OverridenElseDefaultTransitionBuildAction transitionBuildAction)
         {
             var edge = Vertex.Edges.Values.FirstOrDefault(edge =>
                 edge.TargetName == targetStateName &&
@@ -422,7 +422,7 @@ namespace Stateflows.StateMachines.Registration.Builders
         }
 
         [DebuggerHidden]
-        public IOverridenOrthogonalStateBuilder UseElseInternalTransition<TEvent>(ElseInternalTransitionBuildAction<TEvent> transitionBuildAction)
+        public IOverridenOrthogonalStateBuilder UseElseInternalTransition<TEvent>(OverridenElseInternalTransitionBuildAction<TEvent> transitionBuildAction)
         {
             var edge = Vertex.Edges.Values.FirstOrDefault(edge =>
                 edge.TriggerType == typeof(TEvent) &&

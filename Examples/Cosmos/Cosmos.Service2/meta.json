@@ -1,7 +1,0 @@
-{
-  "Common.Services.RabbitMQ.HostName": "localhost",
-  "Common.Services.RabbitMQ.UseTls": "false",
-  "Common.Services.RabbitMQ.VirtualHost.Welfare.Name": "/",
-  "Common.Services.RabbitMQ.VirtualHost.Welfare.UserName": "guest",
-  "Common.Services.RabbitMQ.VirtualHost.Welfare.Password": "guest"
-}

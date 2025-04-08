@@ -1,3 +1,4 @@
+using StateMachine.IntegrationTests.Classes.Events;
 using StateMachine.IntegrationTests.Classes.StateMachines;
 using StateMachine.IntegrationTests.Classes.States;
 using StateMachine.IntegrationTests.Utils;

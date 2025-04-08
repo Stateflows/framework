@@ -5,17 +5,16 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using Stateflows.Actions.Context;
-using Stateflows.Actions.Context.Classes;
-using Stateflows.Actions.Context.Interfaces;
-using Stateflows.Actions.Models;
-using Stateflows.Actions.Registration;
-using Stateflows.Activities;
 using Stateflows.Common;
 using Stateflows.Common.Classes;
 using Stateflows.Common.Context;
 using Stateflows.Common.Exceptions;
 using Stateflows.Common.Interfaces;
+using Stateflows.Actions.Context.Classes;
+using Stateflows.Actions.Context.Interfaces;
+using Stateflows.Actions.Models;
+using Stateflows.Actions.Registration;
+using Stateflows.Activities;
 
 namespace Stateflows.Actions.Engine
 {
@@ -92,7 +91,7 @@ namespace Stateflows.Actions.Engine
                     var context = new ActionDelegateContext(StateflowsContext, eventHolder, ServiceProvider, tokensInputHolder.Payload.Tokens);
                     InputTokens.TokensHolder.Value = context.InputTokens.ToList();
                     
-                    await ActionModel.Delegate.Invoke(context);
+                    await InvokeActionAsync(context);
 
                     InputTokens.TokensHolder.Value = null;
                     
@@ -108,16 +107,25 @@ namespace Stateflows.Actions.Engine
                     result = EventStatus.Consumed;
                 }
                 else
+                if (eventHolder is EventHolder<SetContextOwner> setContextOwnerHolder)
+                {
+                    eventContext.RootContext.Context.ContextOwner = setContextOwnerHolder.Payload.ContextOwner;
+                    
+                    result = EventStatus.Consumed;
+                }
+                else
                 if (eventHolder is EventHolder<SetGlobalValues> setGlobalValuesHolder)
                 {
                     IActionDelegateContext context = eventContext;
                     var values = (ContextValuesCollection)context.Behavior.Values;
                 
                     values.Values.Clear();
-                    foreach (var entry in @setGlobalValuesHolder.Payload.Values)
+                    foreach (var entry in setGlobalValuesHolder.Payload.Values)
                     {
                         values.Values[entry.Key] = entry.Value;
                     }
+                    
+                    result = EventStatus.Consumed;
                 }
                 else
                 if (eventHolder is EventHolder<Subscribe> subscribeHolder)
@@ -137,12 +145,12 @@ namespace Stateflows.Actions.Engine
                         result = EventStatus.Consumed;
                     }
                 }
-                else if (eventHolder is EventHolder<Initialize> initializeHolder)
+                else if (eventHolder is EventHolder<Initialize>)
                 {
                     var context = new ActionDelegateContext(StateflowsContext, eventHolder, ServiceProvider, new List<TokenHolder>() { eventHolder.Payload.ToTokenHolder() });
                     InputTokens.TokensHolder.Value = context.InputTokens.ToList();
                     
-                    await ActionModel.Delegate.Invoke(context);
+                    await InvokeActionAsync(context);
 
                     InputTokens.TokensHolder.Value = null;
                     
@@ -152,24 +160,24 @@ namespace Stateflows.Actions.Engine
                 }
                 else if (eventHolder is EventHolder<Reset> resetHolder)
                 {
-                    Reset(resetHolder.Payload.Mode);
+                    ResetBehavior(resetHolder.Payload.Mode);
                     
                     result = EventStatus.Consumed;
                 }
-                else if (eventHolder is EventHolder<Finalize> finalizeHolder)
+                else if (eventHolder is EventHolder<Finalize>)
                 {
-                    Finalize();
+                    FinalizeBehavior();
                     
                     result = EventStatus.Consumed;
                 }
                 else if (eventHolder is EventHolder<NotificationsRequest> notificationsRequestHolder)
                 {
-                    var pendingNotifications = Hub.Notifications.TryGetValue(StateflowsContext.Id, out var notifications)
-                        ? notifications
-                            .Where(h => notificationsRequestHolder.Payload.NotificationNames.Contains(h.Name))
-                            .Where(h => h.SentAt >= DateTime.Now - notificationsRequestHolder.Payload.Period)
-                            .ToArray()
-                        : Array.Empty<EventHolder>();
+                    var pendingNotifications = await Hub.GetNotificationsAsync(
+                        StateflowsContext.Id,
+                        h =>
+                            notificationsRequestHolder.Payload.NotificationNames.Contains(h.Name) &&
+                            h.SentAt >= DateTime.Now - notificationsRequestHolder.Payload.Period
+                    );
                 
                     notificationsRequestHolder.Payload.Respond(
                         new NotificationsResponse
@@ -184,22 +192,7 @@ namespace Stateflows.Actions.Engine
                     var context = new ActionDelegateContext(StateflowsContext, eventHolder, ServiceProvider, new List<TokenHolder>() { eventHolder.Payload.ToTokenHolder() });
                     InputTokens.TokensHolder.Value = context.InputTokens.ToList();
 
-                    try
-                    {
-                        await ActionModel.Delegate.Invoke(context);
-                    }
-                    catch (Exception e)
-                    {
-                        Trace.WriteLine($"⦗→s⦘ Action '{StateflowsContext.Id.Name}:{StateflowsContext.Id.Instance}': exception thrown '{e.Message}'");
-                        if (!inspector.OnActionException(context, e))
-                        {
-                            throw;
-                        }
-                        else
-                        {
-                            throw new BehaviorExecutionException(e);
-                        }
-                    }
+                    await InvokeActionAsync(context);
 
                     InputTokens.TokensHolder.Value = null;
                     
@@ -223,15 +216,36 @@ namespace Stateflows.Actions.Engine
             return result;
         }
 
+        [DebuggerHidden]
+        private async Task InvokeActionAsync(ActionDelegateContext context)
+        {
+            try
+            {
+                await ActionModel.Delegate.Invoke(context);
+            }
+            catch (Exception e)
+            {
+                Trace.WriteLine($"⦗→s⦘ Action '{StateflowsContext.Id.Name}:{StateflowsContext.Id.Instance}': exception thrown '{e.Message}'");
+                if (!inspector.OnActionException(context, e))
+                {
+                    throw;
+                }
+                else
+                {
+                    throw new BehaviorExecutionException(e);
+                }
+            }
+        }
+
 
         [DebuggerHidden]
-        public void Finalize()
+        private void FinalizeBehavior()
         {
             StateflowsContext.Status = BehaviorStatus.Finalized;
         }
 
         [DebuggerHidden]
-        public void Reset(ResetMode resetMode)
+        private void ResetBehavior(ResetMode resetMode)
         {
             StateflowsContext.Values.Clear();
 

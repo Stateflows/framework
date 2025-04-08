@@ -42,7 +42,7 @@ namespace Stateflows.Transport.SignalR.Client
 
             var result = StateflowsJsonConverter.DeserializeObject<RequestResult>(resultString);
 
-            return new SendResult(eventHolder, result.Status, result.Validation);
+            return new SendResult(eventHolder, result.Status, Array.Empty<EventHolder>(), result.Validation);
         }
 
         public async Task<RequestResult<TResponse>> RequestAsync<TResponse>(IRequest<TResponse> request, IEnumerable<EventHeader> headers = null)

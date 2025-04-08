@@ -87,18 +87,24 @@ namespace StateMachine.IntegrationTests.Tests
         {
             var initialized = false;
             string currentState = string.Empty;
+            BehaviorStatus status = BehaviorStatus.Unknown;
 
             if (StateMachineLocator.TryLocateStateMachine(new StateMachineId("cascade", "x"), out var sm))
             {
                 initialized = (await sm.SendAsync(new Initialize())).Status == EventStatus.Initialized;
 
-                currentState = (await sm.GetCurrentStateAsync()).Response.StatesTree.Root.Nodes.First().Value ?? string.Empty;
+                var result = await sm.GetCurrentStateAsync();
+
+                status = result.Response.BehaviorStatus;
+                
+                currentState = result.Response.StatesTree.Root.Nodes.First().Value ?? string.Empty;
             }
 
             ExecutionSequence.Verify(b => b
                 .StateFinalize("state1")
             );
             Assert.IsTrue(initialized);
+            Assert.AreEqual(BehaviorStatus.Initialized, status);
             Assert.AreEqual("state1-final", currentState);
         }
     }

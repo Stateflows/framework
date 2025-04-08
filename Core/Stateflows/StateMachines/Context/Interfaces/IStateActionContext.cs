@@ -4,6 +4,6 @@
     {
         string ActionName { get; }
 
-        IStateContext CurrentState { get; }
+        IStateContext State { get; }
     }
 }

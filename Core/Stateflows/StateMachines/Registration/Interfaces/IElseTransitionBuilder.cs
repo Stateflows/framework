@@ -6,4 +6,9 @@ namespace Stateflows.StateMachines.Registration.Interfaces
         ITransitionUtils<IElseTransitionBuilder<TEvent>>,
         IEffect<TEvent, IElseTransitionBuilder<TEvent>>
     { }
+    
+    public interface IOverridenElseTransitionBuilder<TEvent> :
+        ITransitionUtils<IOverridenElseTransitionBuilder<TEvent>>,
+        IEffect<TEvent, IOverridenElseTransitionBuilder<TEvent>>
+    { }
 }

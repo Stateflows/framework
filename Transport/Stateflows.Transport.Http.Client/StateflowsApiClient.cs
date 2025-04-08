@@ -78,7 +78,7 @@ namespace Stateflows.Transport.Http.Client
                         }
                     }
 
-                    return new SendResult(eventHolder, result.EventStatus, result.Validation);
+                    return new SendResult(eventHolder, result.EventStatus, Array.Empty<EventHolder>(), result.Validation);
                 }
             }
 

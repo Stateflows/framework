@@ -108,7 +108,7 @@ namespace Stateflows.StateMachines
         public Func<IStateActionContext, Task> Set<T>(T value)
         {
             var self = this;
-            return c => c.CurrentState.Values.SetAsync(self.ValueName, value);
+            return c => c.State.Values.SetAsync(self.ValueName, value);
         }
 
         /// <summary>
@@ -121,7 +121,7 @@ namespace Stateflows.StateMachines
         public Func<IStateActionContext, Task> Update<T>(Func<T, T> valueUpdater, T defaultValue = default)
         {
             var self = this;
-            return c => c.CurrentState.Values.UpdateAsync(self.ValueName, valueUpdater, defaultValue);
+            return c => c.State.Values.UpdateAsync(self.ValueName, valueUpdater, defaultValue);
         }
 
         /// <summary>
@@ -133,7 +133,7 @@ namespace Stateflows.StateMachines
             get
             {
                 var self = this;
-                return c => c.CurrentState.Values.RemoveAsync(self.ValueName);
+                return c => c.State.Values.RemoveAsync(self.ValueName);
             }
         }
     }
@@ -156,7 +156,7 @@ namespace Stateflows.StateMachines
         public Func<IStateActionContext, Task> Set<T>(string valueName, T value)
         {
             var self = this;
-            return c => c.CurrentState.Values.SetAsync($"{self.NamespaceName}.{valueName}", value);
+            return c => c.State.Values.SetAsync($"{self.NamespaceName}.{valueName}", value);
         }
 
         /// <summary>
@@ -169,7 +169,7 @@ namespace Stateflows.StateMachines
         public Func<IStateActionContext, Task> Update<T>(string valueName, Func<T, T> valueUpdater, T defaultValue = default)
         {
             var self = this;
-            return c => c.CurrentState.Values.UpdateAsync($"{self.NamespaceName}.{valueName}", valueUpdater, defaultValue);
+            return c => c.State.Values.UpdateAsync($"{self.NamespaceName}.{valueName}", valueUpdater, defaultValue);
         }
 
         /// <summary>
@@ -179,7 +179,7 @@ namespace Stateflows.StateMachines
         public Func<IStateActionContext, Task> Remove(string valueName)
         {
             var self = this;
-            return c => c.CurrentState.Values.RemoveAsync($"{self.NamespaceName}.{valueName}");
+            return c => c.State.Values.RemoveAsync($"{self.NamespaceName}.{valueName}");
         }
 
         /// <summary>
@@ -191,7 +191,7 @@ namespace Stateflows.StateMachines
             get
             {
                 var self = this;
-                return c => ((ContextValuesCollection)c.CurrentState.Values).RemoveMatchingAsync(
+                return c => ((ContextValuesCollection)c.State.Values).RemoveMatchingAsync(
                     new Regex($"{self.NamespaceName}[.](.*)")
                 );
             }

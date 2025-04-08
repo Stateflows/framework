@@ -70,7 +70,23 @@ namespace Stateflows.Transport.Http
                                     Validation = result.Validation,
                                     Response = response,
                                     Notifications = result.Status != EventStatus.Rejected
-                                        ? hub.Notifications.GetPendingNotifications(behaviorId, input.Watches)
+                                        ? hub.GetNotifications(
+                                            behaviorId,
+                                            notification =>
+                                                input.Watches?.Any(watch =>
+                                                    watch.NotificationName == notification.Name &&
+                                                    (
+                                                        (
+                                                            watch.LastNotificationCheck != null &&
+                                                            notification.SentAt >= watch.LastNotificationCheck
+                                                        ) ||
+                                                        (
+                                                            watch.MilisecondsSinceLastNotificationCheck != null &&
+                                                            notification.SentAt.AddSeconds(notification.TimeToLive) >= DateTime.Now.AddMilliseconds(- (int)watch.MilisecondsSinceLastNotificationCheck)
+                                                        )
+                                                    )
+                                                ) ?? false
+                                        )
                                         : Array.Empty<EventHolder>(),
                                     ResponseTime = responseTime,
                                 },

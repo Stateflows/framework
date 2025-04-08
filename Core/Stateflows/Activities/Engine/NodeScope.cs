@@ -92,6 +92,7 @@ namespace Stateflows.Activities.Engine
             ActivitiesContextHolder.NodeContext.Value = null;
             ActivitiesContextHolder.FlowContext.Value = null;
             ActivitiesContextHolder.ActivityContext.Value = context.Activity;
+            ActivitiesContextHolder.BehaviorContext.Value = context.Activity;
             ActivitiesContextHolder.ExecutionContext.Value = context;
             ActivitiesContextHolder.ExceptionContext.Value = null;
 
@@ -111,6 +112,7 @@ namespace Stateflows.Activities.Engine
             ActivitiesContextHolder.NodeContext.Value = null;
             ActivitiesContextHolder.FlowContext.Value = null;
             ActivitiesContextHolder.ActivityContext.Value = context.Activity;
+            ActivitiesContextHolder.BehaviorContext.Value = context.Activity;
             ActivitiesContextHolder.ExecutionContext.Value = context;
             ActivitiesContextHolder.ExceptionContext.Value = null;
 
@@ -130,6 +132,7 @@ namespace Stateflows.Activities.Engine
             ActivitiesContextHolder.NodeContext.Value = null;
             ActivitiesContextHolder.FlowContext.Value = null;
             ActivitiesContextHolder.ActivityContext.Value = context.Activity;
+            ActivitiesContextHolder.BehaviorContext.Value = context.Activity;
             ActivitiesContextHolder.ExecutionContext.Value = context;
             ActivitiesContextHolder.ExceptionContext.Value = null;
 
@@ -149,6 +152,7 @@ namespace Stateflows.Activities.Engine
             ActivitiesContextHolder.NodeContext.Value = context.CurrentNode;
             ActivitiesContextHolder.FlowContext.Value = null;
             ActivitiesContextHolder.ActivityContext.Value = context.Activity;
+            ActivitiesContextHolder.BehaviorContext.Value = context.Activity;
             ActivitiesContextHolder.ExecutionContext.Value = context;
             ActivitiesContextHolder.ExceptionContext.Value = null;
 
@@ -169,6 +173,7 @@ namespace Stateflows.Activities.Engine
             ActivitiesContextHolder.NodeContext.Value = context.CurrentNode;
             ActivitiesContextHolder.FlowContext.Value = null;
             ActivitiesContextHolder.ActivityContext.Value = context.Activity;
+            ActivitiesContextHolder.BehaviorContext.Value = context.Activity;
             ActivitiesContextHolder.ExecutionContext.Value = context;
             ActivitiesContextHolder.ExceptionContext.Value = null;
 
@@ -188,6 +193,7 @@ namespace Stateflows.Activities.Engine
             ActivitiesContextHolder.NodeContext.Value = context.CurrentNode;
             ActivitiesContextHolder.FlowContext.Value = null;
             ActivitiesContextHolder.ActivityContext.Value = context.Activity;
+            ActivitiesContextHolder.BehaviorContext.Value = context.Activity;
             ActivitiesContextHolder.ExecutionContext.Value = context;
             ActivitiesContextHolder.ExceptionContext.Value = null;
 
@@ -207,6 +213,7 @@ namespace Stateflows.Activities.Engine
             ActivitiesContextHolder.NodeContext.Value = context.CurrentNode;
             ActivitiesContextHolder.FlowContext.Value = null;
             ActivitiesContextHolder.ActivityContext.Value = context.Activity;
+            ActivitiesContextHolder.BehaviorContext.Value = context.Activity;
             ActivitiesContextHolder.ExecutionContext.Value = context;
             ActivitiesContextHolder.ExceptionContext.Value = null;
 
@@ -226,6 +233,7 @@ namespace Stateflows.Activities.Engine
             ActivitiesContextHolder.NodeContext.Value = context.CurrentNode;
             ActivitiesContextHolder.FlowContext.Value = null;
             ActivitiesContextHolder.ActivityContext.Value = context.Activity;
+            ActivitiesContextHolder.BehaviorContext.Value = context.Activity;
             ActivitiesContextHolder.ExecutionContext.Value = context;
             ActivitiesContextHolder.ExceptionContext.Value = null;
 
@@ -246,6 +254,7 @@ namespace Stateflows.Activities.Engine
             ActivitiesContextHolder.NodeContext.Value = context.CurrentNode;
             ActivitiesContextHolder.FlowContext.Value = null;
             ActivitiesContextHolder.ActivityContext.Value = context.Activity;
+            ActivitiesContextHolder.BehaviorContext.Value = context.Activity;
             ActivitiesContextHolder.ExecutionContext.Value = context;
             ActivitiesContextHolder.ExceptionContext.Value = context;
 
@@ -265,6 +274,7 @@ namespace Stateflows.Activities.Engine
             ActivitiesContextHolder.NodeContext.Value = null;
             ActivitiesContextHolder.FlowContext.Value = context;
             ActivitiesContextHolder.ActivityContext.Value = context.Activity;
+            ActivitiesContextHolder.BehaviorContext.Value = context.Activity;
             ActivitiesContextHolder.ExecutionContext.Value = context;
             ActivitiesContextHolder.ExceptionContext.Value = null;
 

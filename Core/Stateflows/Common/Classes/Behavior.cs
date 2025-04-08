@@ -17,6 +17,8 @@ namespace Stateflows.Common.Classes
         private readonly StateflowsService service;
         private readonly IServiceProvider serviceProvider;
         private readonly NotificationsHub notificationsHub;
+        private readonly IStateflowsTenantProvider tenantProvider;
+        private readonly ITenantAccessor tenantAccessor;
         private readonly Dictionary<string, List<Action<EventHolder>>> handlers = new Dictionary<string, List<Action<EventHolder>>>();
 
         public Behavior(StateflowsService service, IServiceProvider serviceProvider, BehaviorId id)
@@ -25,6 +27,9 @@ namespace Stateflows.Common.Classes
             this.serviceProvider = serviceProvider;
             notificationsHub = serviceProvider.GetRequiredService<NotificationsHub>();
             notificationsHub.RegisterHandler(this);
+
+            tenantAccessor = serviceProvider.GetRequiredService<ITenantAccessor>();
+            tenantProvider = serviceProvider.GetRequiredService<IStateflowsTenantProvider>();
             
             Id = id;
         }
@@ -60,7 +65,12 @@ namespace Stateflows.Common.Classes
                 ResponseHolder.CopyResponses(executionToken.Responses);
             }
 
-            return new SendResult(executionToken.EventHolder, executionToken.Status, executionToken.Validation);
+            return new SendResult(
+                executionToken.EventHolder, 
+                executionToken.Status,
+                null, // todo: get notifications 
+                executionToken.Validation
+            );
         }
 
         [DebuggerHidden]
@@ -79,29 +89,17 @@ namespace Stateflows.Common.Classes
                 ResponseHolder.SetResponses(executionToken.Responses);
             }
 
-            var result = new RequestResult<TResponse>(executionToken.EventHolder, executionToken.Status, executionToken.Validation);
+            var result = new RequestResult<TResponse>(
+                executionToken.EventHolder, 
+                executionToken.Status, 
+                null, // todo: get notifications
+                executionToken.Validation
+            );
 
             return result;
         }
         
-        private EventHolder[] GetPendingNotifications<TNotification>(Dictionary<BehaviorId, List<EventHolder>> notifications, DateTime lastNotificationCheck)
-        {
-            lock (notifications)
-            {
-                var result = notifications.TryGetValue(Id, out var behaviorNotifications)
-                    ? behaviorNotifications
-                        .Where(notification =>
-                            notification is EventHolder<TNotification> &&
-                            notification.SentAt.AddSeconds(notification.TimeToLive) >= lastNotificationCheck
-                        )
-                        .ToArray()
-                    : Array.Empty<EventHolder>();
-
-                return result;
-            }
-        }
-
-        public Task<IWatcher> WatchAsync<TNotification>(Action<TNotification> handler)
+        public async Task<IWatcher> WatchAsync<TNotification>(Action<TNotification> handler)
         {
             lock (handlers)
             {
@@ -115,13 +113,21 @@ namespace Stateflows.Common.Classes
                 notificationHandlers.Add(eventHolder => handler(((EventHolder<TNotification>)eventHolder).Payload));
             }
 
-            var pendingNotifications = GetPendingNotifications<TNotification>(notificationsHub.Notifications, DateTime.Now);
+            tenantAccessor.CurrentTenantId = await tenantProvider.GetCurrentTenantIdAsync();
+            var lastNotificationCheck = DateTime.Now;
+            var pendingNotifications = await notificationsHub.GetNotificationsAsync(
+                Id,
+                h =>
+                    h is EventHolder<TNotification> &&
+                    h.SentAt.AddSeconds(h.TimeToLive) >= lastNotificationCheck
+            );
+            
             foreach (var pendingNotification in pendingNotifications)
             {
                 handler(((EventHolder<TNotification>)pendingNotification).Payload);
             }
 
-            return Task.FromResult<IWatcher>(new Watcher<TNotification>(this));
+            return new Watcher<TNotification>(this);
         }
 
         public Task UnwatchAsync<TNotification>()
@@ -143,7 +149,6 @@ namespace Stateflows.Common.Classes
 
         private void Dispose(bool disposing)
         {
-            
             notificationsHub.UnregisterHandler(this);
         }
 

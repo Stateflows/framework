@@ -1,6 +1,7 @@
 ﻿using System.Linq;
 using System.Text;
 using System.Collections.Generic;
+using Stateflows.Common;
 using Stateflows.StateMachines;
 using Stateflows.StateMachines.Inspection.Interfaces;
 
@@ -14,7 +15,7 @@ namespace Stateflows.Extensions.PlantUml.Classes
 
             foreach (var state in states)
             {
-                var stateName = state.Name.Split('.').Last();
+                var stateName = state.Name.GetShortName();
 
                 if (state.IsInitial)
                 {
@@ -107,10 +108,7 @@ namespace Stateflows.Extensions.PlantUml.Classes
 
             foreach (var transition in state.Transitions)
             {
-                var triggers = transition.Triggers.Select(trigger => trigger.Contains('<')
-                    ? $"{trigger.Split('<').First().Split('.').Last()}<{trigger.Split('<').Last().Split('.').Last()}"
-                    : trigger.Split('.').Last()
-                );
+                var triggers = transition.Triggers.Select(trigger => trigger.GetShortName());
 
                 foreach (var trigger in triggers)
                 {
@@ -121,7 +119,7 @@ namespace Stateflows.Extensions.PlantUml.Classes
                     else
                     {
                         var target = !transition.Target.IsFinal
-                            ? transition.Target.Name.Split('.').Last()
+                            ? transition.Target.Name.GetShortName()
                             : "[*]";
 
                         if (trigger == Constants.CompletionEvent)

@@ -4,6 +4,7 @@ using StateMachine.IntegrationTests.Classes.States;
 using StateMachine.IntegrationTests.Classes.Transitions;
 using Stateflows.StateMachines.Extensions;
 using Stateflows.Common;
+using StateMachine.IntegrationTests.Classes.Events;
 
 namespace StateMachine.IntegrationTests.Classes.StateMachines
 {

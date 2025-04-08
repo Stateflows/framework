@@ -1,20 +1,14 @@
-﻿using Stateflows.Common.Context.Interfaces;
+﻿using Stateflows.Common;
 using Stateflows.StateMachines.Models;
 using Stateflows.StateMachines.Context.Interfaces;
-using Stateflows.StateMachines.Inspection.Interfaces;
 
 namespace Stateflows.StateMachines.Context.Classes
 {
-    internal class StateActionContext : BaseContext,
-        IStateActionInspectionContext,
-        IRootContext
+    internal class StateActionContext : BaseContext, IStateActionContext, IRootContext
     {
         public Vertex Vertex { get; set; }
 
         public string ActionName { get; }
-
-        IStateMachineContext IStateMachineActionContext.StateMachine => StateMachine;
-        IStateMachineInspectionContext IStateActionInspectionContext.StateMachine => StateMachine;
 
         public StateActionContext(RootContext context, Vertex vertex, string name)
             : base(context)
@@ -23,8 +17,9 @@ namespace Stateflows.StateMachines.Context.Classes
             ActionName = name;
         }
 
-        private IStateContext currentState = null;
-        public IStateContext CurrentState => currentState ??= new StateContext(Vertex, Context);
+        private IStateContext state = null;
+        IStateMachineContext IStateMachineActionContext.StateMachine => StateMachine;
+        public IStateContext State => state ??= new StateContext(Vertex, Context);
         public IBehaviorContext Behavior => StateMachine;
     }
 }

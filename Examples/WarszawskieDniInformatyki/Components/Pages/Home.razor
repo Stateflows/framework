@@ -1,0 +1,78 @@
+﻿@page "/"
+
+@inject IStateMachineLocator locator
+
+<PageTitle>Home</PageTitle>
+<h1>Hello, Warszawskie Dni Informatyki!</h1>
+
+<div class="site">
+    <button @onclick="Create"><h3>Create new</h3></button>
+    
+    @* <button @onclick="Review"><h3>Review</h3></button> *@
+    @* <button @onclick="Accept"><h3>Accept</h3></button> *@
+    @* <button @onclick="Pay"><h3>Pay</h3></button> *@
+    @* <button @onclick="Reject"><h3>Reject</h3></button> *@
+    
+    <button style="@(expectedEvents.Contains("Review") ? null : "hide")" @onclick="Review"><h3>Review</h3></button>
+    <button style="@(expectedEvents.Contains("Accept") ? null : "hide")" @onclick="Accept"><h3>Accept</h3></button>
+    <button style="@(expectedEvents.Contains("Pay") ? null : "hide")" @onclick="Pay"><h3>Pay</h3></button>
+    <button style="@(expectedEvents.Contains("Reject") ? null : "hide")" @onclick="Reject"><h3>Reject</h3></button>
+    
+    <br/>
+    <img src="@plantUmlUrl" />
+</div>
+
+@code
+{
+    private IStateMachineBehavior stateMachineBehavior;
+    
+    #region watchers
+    
+    private IWatcher? plantUmlWatcher;
+    private IWatcher? stateMachineInfoWatcher;
+    
+    #endregion
+    
+    private string plantUmlUrl = string.Empty;
+    private List<string> expectedEvents = [];
+    
+    private async Task CreateNewDocument()
+    {
+        if (
+            !locator.TryLocateStateMachine(
+                new StateMachineId(
+                    "Doc",
+                    Random.Shared.Next().ToString()
+                ),
+                out stateMachineBehavior
+            )
+        )
+        {
+            throw new ApplicationException("State Machine not found");
+        }
+
+        #region watchers
+        
+        plantUmlWatcher = await stateMachineBehavior.WatchPlantUmlAsync(
+            info => plantUmlUrl = info.GetUrl()
+        );
+        
+        stateMachineInfoWatcher = await stateMachineBehavior.WatchCurrentStateAsync(
+            info => expectedEvents = info.ExpectedEvents.Select(e => e.GetShortName()).ToList()
+        );
+        
+        #endregion
+        
+        await stateMachineBehavior.SendAsync(new Initialize());
+    }
+
+    private Task Create() => CreateNewDocument();
+
+    private Task Review() => stateMachineBehavior.SendAsync(new Review());
+
+    private Task Accept() => stateMachineBehavior.SendAsync(new Accept());
+
+    private Task Pay() => stateMachineBehavior.SendAsync(new Pay() { Amount = 500 });
+
+    private Task Reject() => stateMachineBehavior.SendAsync(new Reject());
+}

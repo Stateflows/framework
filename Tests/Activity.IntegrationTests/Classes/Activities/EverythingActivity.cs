@@ -1,4 +1,5 @@
 ﻿using Activity.IntegrationTests.Classes.Actions;
+using Activity.IntegrationTests.Classes.Events;
 using Activity.IntegrationTests.Classes.Flow;
 using Stateflows.Activities.Registration.Interfaces;
 using Stateflows.Activities;

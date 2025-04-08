@@ -1,4 +1,5 @@
-﻿using Newtonsoft.Json;
+﻿using System.Collections.Generic;
+using Newtonsoft.Json;
 
 namespace Stateflows.Common
 {
@@ -7,8 +8,8 @@ namespace Stateflows.Common
         [JsonConstructor]
         protected RequestResult() : base() { }
 
-        public RequestResult(EventHolder request, EventStatus status, EventValidation validation = null)
-            : base(request, status, validation)
+        public RequestResult(EventHolder request, EventStatus status, IEnumerable<EventHolder> notifications = null, EventValidation validation = null)
+            : base(request, status, notifications, validation)
         {
             var holder = request.GetResponseHolder();
             ResponseHolder = (EventHolder<TResponse>)holder;
@@ -23,8 +24,8 @@ namespace Stateflows.Common
 
     public class RequestResult : SendResult
     {
-        public RequestResult(EventHolder request, EventHolder response, EventStatus status, EventValidation validation = null)
-            : base(request, status, validation)
+        public RequestResult(EventHolder request, EventHolder response, EventStatus status, IEnumerable<EventHolder> notifications = null, EventValidation validation = null)
+            : base(request, status, notifications, validation)
         {
             Response = response;
         }

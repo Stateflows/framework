@@ -17,6 +17,6 @@ namespace Stateflows.StateMachines.Context.Interfaces
         /// <summary>
         /// Information about current behavior
         /// </summary>
-        IBehaviorContext Behavior => StateMachine;
+        new IBehaviorContext Behavior => StateMachine;
     }
 }

@@ -1,3 +1,4 @@
+using Activity.IntegrationTests.Classes.Events;
 using Stateflows.Common;
 using StateMachine.IntegrationTests.Utils;
 

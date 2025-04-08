@@ -1,7 +1,7 @@
 ﻿using System.Collections.Generic;
 using Stateflows.Common.Interfaces;
 
-namespace Stateflows.Common.Context.Interfaces
+namespace Stateflows.Common//.Context.Interfaces
 {
     public interface IBehaviorContext : ISubscriptions
     {

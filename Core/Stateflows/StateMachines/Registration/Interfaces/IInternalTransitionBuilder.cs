@@ -6,4 +6,9 @@ namespace Stateflows.StateMachines.Registration.Interfaces
         IEffect<TEvent, IInternalTransitionBuilder<TEvent>>,
         IGuard<TEvent, IInternalTransitionBuilder<TEvent>>
     { }
+    
+    public interface IOverridenInternalTransitionBuilder<TEvent> :
+        IEffect<TEvent, IOverridenInternalTransitionBuilder<TEvent>>,
+        IGuard<TEvent, IOverridenInternalTransitionBuilder<TEvent>>
+    { }
 }

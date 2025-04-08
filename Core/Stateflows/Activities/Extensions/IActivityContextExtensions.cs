@@ -1,9 +1,8 @@
-﻿using System;
-using Stateflows.Activities.Engine;
+﻿using Stateflows.Activities.Engine;
 using Stateflows.Activities.Models;
 using Stateflows.Activities.Context.Classes;
 using Stateflows.Activities.Context.Interfaces;
-using Stateflows.Common.Context.Interfaces;
+using Stateflows.Common;
 
 namespace Stateflows.Activities.Extensions
 {

@@ -1,5 +1,5 @@
 ﻿using Stateflows.Activities.Context.Interfaces;
-using Stateflows.Common.Context.Interfaces;
+using Stateflows.Common;
 
 namespace Stateflows.Actions
 {

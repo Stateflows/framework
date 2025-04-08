@@ -73,6 +73,7 @@ public static class DependencyInjection
     /// <summary>
     /// Registers <a href="https://learn.microsoft.com/en-us/aspnet/core/fundamentals/minimal-apis/overview">Minimal API</a>-based REST interface for Stateflows behaviors
     /// </summary>
+    /// <param name="apiRoutePrefix">Prefix for all Stateflows endpoints</param>
     /// <param name="routeHandlerBuilderAction"></param>
     public static void MapStateflowsHttpTransport(this IEndpointRouteBuilder builder, string apiRoutePrefix = "stateflows", System.Action<RouteHandlerBuilder>? routeHandlerBuilderAction = null)
     {
@@ -80,7 +81,7 @@ public static class DependencyInjection
         
         var root = string.IsNullOrEmpty(apiRoutePrefix)
             ? builder
-            : builder.MapGroup("/stateflows");
+            : builder.MapGroup($"/{apiRoutePrefix}");
 
         var behaviorClasses = root.MapGroup("/classes");
         

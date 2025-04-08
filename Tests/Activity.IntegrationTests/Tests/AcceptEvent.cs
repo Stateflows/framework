@@ -1,3 +1,4 @@
+using Activity.IntegrationTests.Classes.Events;
 using OneOf;
 using Stateflows.Common;
 using StateMachine.IntegrationTests.Utils;
@@ -83,6 +84,21 @@ namespace Activity.IntegrationTests.Tests
             {
                 await a.SendAsync(new SomeEvent());
                 result = await a.SendAsync(new SomeEvent());
+            }
+
+            Assert.IsTrue(Executed);
+            Assert.AreEqual(1, Counter1);
+            Assert.AreEqual(EventStatus.NotConsumed, result?.Status);
+        }
+
+        [TestMethod]
+        public async Task AcceptInheritedEvent()
+        {
+            SendResult result = null;
+            if (ActivityLocator.TryLocateActivity(new ActivityId("acceptSingleEvent", "x"), out var a))
+            {
+                await a.SendAsync(new SomeInheritedEvent());
+                result = await a.SendAsync(new SomeInheritedEvent());
             }
 
             Assert.IsTrue(Executed);

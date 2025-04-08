@@ -20,7 +20,6 @@ namespace Stateflows.Activities.Context.Interfaces
         /// <summary>
         /// Information about current behavior
         /// </summary>
-        IBehaviorContext Behavior => Activity;
-        
+        new IBehaviorContext Behavior => Activity;
     }
 }

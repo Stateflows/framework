@@ -8,7 +8,5 @@ namespace Stateflows.Common.Context.Interfaces
         TEvent Event { get; }
 
         Guid EventId { get; }
-
-        IEnumerable<EventHeader> Headers { get; }
     }
 }

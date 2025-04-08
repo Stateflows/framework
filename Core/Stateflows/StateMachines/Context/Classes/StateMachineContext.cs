@@ -10,7 +10,7 @@ using Stateflows.StateMachines.Inspection.Interfaces;
 
 namespace Stateflows.StateMachines.Context.Classes
 {
-    internal class StateMachineContext : BaseContext, IStateMachineInspectionContext
+    internal class StateMachineContext : BaseContext, IStateMachineContext
     {
         BehaviorId IBehaviorContext.Id => Context.Id;
 
@@ -25,8 +25,8 @@ namespace Stateflows.StateMachines.Context.Classes
             Values = new ContextValuesCollection(Context.GlobalValues);
         }
 
-        public async Task<IStateMachineInspection> GetInspectionAsync()
-            => Context.Executor.Inspector.Inspection;
+        public Task<IStateMachineInspection> GetInspectionAsync()
+            => Task.FromResult(Context.Executor.Inspector.Inspection);
 
         public IContextValues Values { get; }
 

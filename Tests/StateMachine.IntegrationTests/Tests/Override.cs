@@ -1,4 +1,5 @@
 using Stateflows.Common;
+using StateMachine.IntegrationTests.Classes.Events;
 using StateMachine.IntegrationTests.Utils;
 
 namespace StateMachine.IntegrationTests.Tests
@@ -170,7 +171,8 @@ namespace StateMachine.IntegrationTests.Tests
                         .UseStateMachine<BaseStateMachine>(b => b
                             .UseState("initial", b => b
                                 .UseTransition<SomeEvent>("state1", b => b
-                                    .AddGuard(async c => false)
+                                    .ChangeTrigger<SomeInheritedEvent>()
+                                    .AddGuard(async c => c.Event.AdditionalProperty > 0)
                                 )
                             )
                         )
@@ -282,7 +284,10 @@ namespace StateMachine.IntegrationTests.Tests
 
             if (StateMachineLocator.TryLocateStateMachine(new StateMachineId("transitionExtend", "x"), out var sm))
             {
-                status = (await sm.SendAsync(new SomeEvent())).Status;
+                status = (await sm.SendAsync(new SomeInheritedEvent()
+                {
+                    AdditionalProperty = 0
+                })).Status;
 
                 currentState = (await sm.GetCurrentStateAsync()).Response.StatesTree.Value;
             }

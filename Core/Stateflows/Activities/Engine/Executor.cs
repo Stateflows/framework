@@ -13,13 +13,13 @@ using Stateflows.Common.Classes;
 using Stateflows.Common.Utilities;
 using Stateflows.Common.Interfaces;
 using Stateflows.Common.Exceptions;
-using Stateflows.Common.Subscription;
 using Stateflows.Activities.Enums;
 using Stateflows.Activities.Models;
 using Stateflows.Activities.Streams;
 using Stateflows.Activities.Registration;
 using Stateflows.Activities.Context.Classes;
 using Stateflows.Activities.Inspection.Classes;
+using Stateflows.StateMachines.Extensions;
 
 namespace Stateflows.Activities.Engine
 {
@@ -294,14 +294,15 @@ namespace Stateflows.Activities.Engine
             {
                 var activeNodes = GetActiveNodes();
                 activeNode = activeNodes.FirstOrDefault(node =>
-                    node.ActualEventTypes.Contains(eventHolder.PayloadType) &&
-                    (
-                        !(eventHolder.Payload is TimeEvent timeEvent) ||
-                        (
-                            Context.NodeTimeEvents.TryGetValue(node.Identifier, out var timeEventId) &&
-                            timeEvent.Id == timeEventId
-                        )
-                    )
+                    eventHolder.IsAcceptedBy(node, Context.NodeTimeEvents)
+                    // node.ActualEventTypes.Contains(eventHolder.PayloadType) &&
+                    // (
+                    //     !(eventHolder.Payload is TimeEvent timeEvent) ||
+                    //     (
+                    //         Context.NodeTimeEvents.TryGetValue(node.Identifier, out var timeEventId) &&
+                    //         timeEvent.Id == timeEventId
+                    //     )
+                    // )
                 );
             }
 
@@ -365,7 +366,7 @@ namespace Stateflows.Activities.Engine
 
                 tokensOutputs.Add(tokensOutputHolder);
 
-                var notificationsHub = NodeScope.ServiceProvider.GetRequiredService<NotificationsHub>();
+                var notificationsHub = NodeScope.ServiceProvider.GetRequiredService<INotificationsHub>();
 
                 await notificationsHub.PublishRangeAsync(tokensOutputs);
             }
@@ -783,7 +784,8 @@ namespace Stateflows.Activities.Engine
                     InteractiveNodeTypes.Contains(node.Type) &&
                     (
                         Context.EventHolder == null ||
-                        !node.ActualEventTypes.Contains(Context.EventHolder.PayloadType)
+                        !Context.EventHolder.IsAcceptedBy(node)
+                        // !node.ActualEventTypes.Contains(Context.EventHolder.PayloadType)
                     )
                 )
                 {

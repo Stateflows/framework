@@ -1,4 +1,5 @@
 using Stateflows.Common;
+using StateMachine.IntegrationTests.Classes.Events;
 using StateMachine.IntegrationTests.Utils;
 
 namespace StateMachine.IntegrationTests.Tests
@@ -26,6 +27,19 @@ namespace StateMachine.IntegrationTests.Tests
                         .AddInitialState("state1", b => b
                             .AddOnExit(c => StateExited = true)
                             .AddTransition<SomeEvent>("state2", b => b
+                                .AddEffect(c => TransitionHappened = !c.CurrentState.HasValue)
+                            )
+                        )
+                        .AddState("state2", b => b
+                            .AddOnEntry(c => StateEntered = c.ExecutionSteps.LastOrDefault()?.SourceName == "state1")
+                        )
+                    )
+                    
+                    .AddStateMachine("polymorphic", b => b
+                        .AddInitialState("state1", b => b
+                            .AddOnExit(c => StateExited = true)
+                            .AddTransition<SomeEvent>("state2", b => b
+                                .SetPolymorphicTriggers(true)
                                 .AddEffect(c => TransitionHappened = !c.CurrentState.HasValue)
                             )
                         )
@@ -124,6 +138,31 @@ namespace StateMachine.IntegrationTests.Tests
                 expectedEvents = (await sm.GetCurrentStateAsync()).Response.ExpectedEvents.ToArray();
                 
                 status = (await sm.SendAsync(new SomeEvent())).Status;
+
+                currentState = (await sm.GetCurrentStateAsync()).Response.StatesTree.Value;
+            }
+
+            Assert.IsTrue(expectedEvents.Contains(Event<SomeEvent>.Name));
+            Assert.AreEqual(1, expectedEvents.Count());
+            Assert.AreEqual(EventStatus.Consumed, status);
+            Assert.IsTrue(StateExited);
+            Assert.IsTrue(TransitionHappened);
+            Assert.IsTrue(StateEntered);
+            Assert.AreEqual("state2", currentState);
+        }
+
+        [TestMethod]
+        public async Task InheritedTransition()
+        {
+            var status = EventStatus.Rejected;
+            string currentState = "state1";
+            string[] expectedEvents = Array.Empty<string>();
+
+            if (StateMachineLocator.TryLocateStateMachine(new StateMachineId("polymorphic", "x"), out var sm))
+            {
+                expectedEvents = (await sm.GetCurrentStateAsync()).Response.ExpectedEvents.ToArray();
+                
+                status = (await sm.SendAsync(new SomeInheritedEvent())).Status;
 
                 currentState = (await sm.GetCurrentStateAsync()).Response.StatesTree.Value;
             }

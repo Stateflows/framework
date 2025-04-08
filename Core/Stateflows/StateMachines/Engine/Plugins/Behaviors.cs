@@ -35,7 +35,7 @@ namespace Stateflows.StateMachines.Engine
                 }
                 else
                 {
-                    throw new StateDefinitionException(context.CurrentState.Name, $"DoActivity '{vertex.BehaviorName}' not found", context.Behavior.Id.BehaviorClass);
+                    throw new StateDefinitionException(context.State.Name, $"DoActivity '{vertex.BehaviorName}' not found", context.Behavior.Id.BehaviorClass);
                 }
             }
         }

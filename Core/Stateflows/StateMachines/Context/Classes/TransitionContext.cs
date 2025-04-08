@@ -5,20 +5,16 @@ using Stateflows.StateMachines.Inspection.Interfaces;
 
 namespace Stateflows.StateMachines.Context.Classes
 {
-    internal class TransitionContext<TEvent> : EventContext<TEvent>,
-        ITransitionInspectionContext<TEvent>,
-        IEdgeContext,
-        IRootContext
-
+    internal class TransitionContext<TEvent> : EventContext<TEvent>, ITransitionContext<TEvent>, IEdgeContext
     {
         public Edge Edge { get; }
+
+        IStateMachineContext IStateMachineActionContext.StateMachine => StateMachine;
 
         public TransitionContext(RootContext context, Edge edge) : base(context)
         {
             Edge = edge;
         }
-
-        IStateMachineInspectionContext ITransitionInspectionContext<TEvent>.StateMachine => StateMachine;
 
         private IStateContext sourceState = null;
         public IStateContext Source => sourceState ??= new StateContext(Edge.Source, Context);

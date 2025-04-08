@@ -1,4 +1,5 @@
-﻿using StateMachine.IntegrationTests.Classes.States;
+﻿using StateMachine.IntegrationTests.Classes.Events;
+using StateMachine.IntegrationTests.Classes.States;
 using StateMachine.IntegrationTests.Classes.Transitions;
 
 namespace StateMachine.IntegrationTests.Classes.StateMachines

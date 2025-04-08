@@ -101,7 +101,7 @@ namespace Stateflows.StateMachines.Engine
             Inspector.AfterHydrate(new StateMachineActionContext(Context));
         }
 
-        public async Task DehydrateAsync()
+        public void Dehydrate()
             => Inspector.BeforeDehydrate(new StateMachineActionContext(Context));
 
         public bool Initialized
@@ -927,6 +927,7 @@ namespace Stateflows.StateMachines.Engine
             StateMachinesContextHolder.StateContext.Value = null;
             StateMachinesContextHolder.TransitionContext.Value = null;
             StateMachinesContextHolder.StateMachineContext.Value = context.StateMachine;
+            StateMachinesContextHolder.BehaviorContext.Value = context.StateMachine;
             StateMachinesContextHolder.ExecutionContext.Value = context;
 
             return StateflowsActivator.CreateInstanceAsync<TDefaultInitializer>(ServiceProvider, "default initializer");
@@ -944,6 +945,7 @@ namespace Stateflows.StateMachines.Engine
             StateMachinesContextHolder.StateContext.Value = null;
             StateMachinesContextHolder.TransitionContext.Value = null;
             StateMachinesContextHolder.StateMachineContext.Value = context.StateMachine;
+            StateMachinesContextHolder.BehaviorContext.Value = context.StateMachine;
             StateMachinesContextHolder.ExecutionContext.Value = context;
 
             return StateflowsActivator.CreateInstanceAsync<TInitializer>(ServiceProvider, "initializer");
@@ -961,6 +963,7 @@ namespace Stateflows.StateMachines.Engine
             StateMachinesContextHolder.StateContext.Value = null;
             StateMachinesContextHolder.TransitionContext.Value = null;
             StateMachinesContextHolder.StateMachineContext.Value = context.StateMachine;
+            StateMachinesContextHolder.BehaviorContext.Value = context.StateMachine;
             StateMachinesContextHolder.ExecutionContext.Value = context;
 
             return StateflowsActivator.CreateInstanceAsync<TFinalizer>(ServiceProvider, "finalizer");
@@ -970,14 +973,15 @@ namespace Stateflows.StateMachines.Engine
             where TState : class, IState
         {
             ContextValues.GlobalValuesHolder.Value = context.Behavior.Values;
-            ContextValues.StateValuesHolder.Value = context.CurrentState.Values;
-            ContextValues.ParentStateValuesHolder.Value = context.CurrentState.TryGetParent(out var parent) ? parent.Values : null;
+            ContextValues.StateValuesHolder.Value = context.State.Values;
+            ContextValues.ParentStateValuesHolder.Value = context.State.TryGetParent(out var parent) ? parent.Values : null;
             ContextValues.SourceStateValuesHolder.Value = null;
             ContextValues.TargetStateValuesHolder.Value = null;
 
-            StateMachinesContextHolder.StateContext.Value = context.CurrentState;
+            StateMachinesContextHolder.StateContext.Value = context.State;
             StateMachinesContextHolder.TransitionContext.Value = null;
             StateMachinesContextHolder.StateMachineContext.Value = context.StateMachine;
+            StateMachinesContextHolder.BehaviorContext.Value = context.StateMachine;
             StateMachinesContextHolder.ExecutionContext.Value = context;
 
             return StateflowsActivator.CreateInstanceAsync<TState>(ServiceProvider, "state");
@@ -995,6 +999,7 @@ namespace Stateflows.StateMachines.Engine
             StateMachinesContextHolder.StateContext.Value = null;
             StateMachinesContextHolder.TransitionContext.Value = context;
             StateMachinesContextHolder.StateMachineContext.Value = context.StateMachine;
+            StateMachinesContextHolder.BehaviorContext.Value = context.StateMachine;
             StateMachinesContextHolder.ExecutionContext.Value = context;
 
             return StateflowsActivator.CreateInstanceAsync<TTransition>(ServiceProvider, "transition");
@@ -1013,6 +1018,7 @@ namespace Stateflows.StateMachines.Engine
             StateMachinesContextHolder.StateContext.Value = null;
             StateMachinesContextHolder.TransitionContext.Value = context;
             StateMachinesContextHolder.StateMachineContext.Value = context.StateMachine;
+            StateMachinesContextHolder.BehaviorContext.Value = context.StateMachine;
             StateMachinesContextHolder.ExecutionContext.Value = context;
 
             return StateflowsActivator.CreateInstanceAsync<TTransitionGuard>(ServiceProvider, "transition guard");
@@ -1031,6 +1037,7 @@ namespace Stateflows.StateMachines.Engine
             StateMachinesContextHolder.StateContext.Value = null;
             StateMachinesContextHolder.TransitionContext.Value = context;
             StateMachinesContextHolder.StateMachineContext.Value = context.StateMachine;
+            StateMachinesContextHolder.BehaviorContext.Value = context.StateMachine;
             StateMachinesContextHolder.ExecutionContext.Value = context;
 
             return StateflowsActivator.CreateInstanceAsync<TTransitionEffect>(ServiceProvider, "transition effect");
@@ -1048,6 +1055,7 @@ namespace Stateflows.StateMachines.Engine
             StateMachinesContextHolder.StateContext.Value = null;
             StateMachinesContextHolder.TransitionContext.Value = context;
             StateMachinesContextHolder.StateMachineContext.Value = context.StateMachine;
+            StateMachinesContextHolder.BehaviorContext.Value = context.StateMachine;
             StateMachinesContextHolder.ExecutionContext.Value = context;
 
             return StateflowsActivator.CreateInstanceAsync<TDefaultTransition>(ServiceProvider, "default transition");
@@ -1065,6 +1073,7 @@ namespace Stateflows.StateMachines.Engine
             StateMachinesContextHolder.StateContext.Value = null;
             StateMachinesContextHolder.TransitionContext.Value = context;
             StateMachinesContextHolder.StateMachineContext.Value = context.StateMachine;
+            StateMachinesContextHolder.BehaviorContext.Value = context.StateMachine;
             StateMachinesContextHolder.ExecutionContext.Value = context;
 
             return StateflowsActivator.CreateInstanceAsync<TDefaultTransitionGuard>(ServiceProvider, "default transition guard");
@@ -1082,6 +1091,7 @@ namespace Stateflows.StateMachines.Engine
             StateMachinesContextHolder.StateContext.Value = null;
             StateMachinesContextHolder.TransitionContext.Value = context;
             StateMachinesContextHolder.StateMachineContext.Value = context.StateMachine;
+            StateMachinesContextHolder.BehaviorContext.Value = context.StateMachine;
             StateMachinesContextHolder.ExecutionContext.Value = context;
 
             return StateflowsActivator.CreateInstanceAsync<TDefaultTransitionEffect>(ServiceProvider, "default transition effect");

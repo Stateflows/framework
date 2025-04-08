@@ -12,4 +12,15 @@ namespace Stateflows.StateMachines.Registration.Interfaces
         IDefaultEffect<IDefaultTransitionBuilder>,
         IDefaultGuard<IDefaultTransitionBuilder>
     { }
+    
+    public interface IOverridenDefaultTransitionEffectBuilder :
+        ITransitionUtils<IOverridenDefaultTransitionEffectBuilder>,
+        IDefaultEffect<IOverridenDefaultTransitionEffectBuilder>
+    { }
+    
+    public interface IOverridenDefaultTransitionBuilder :
+        ITransitionUtils<IOverridenDefaultTransitionBuilder>,
+        IDefaultEffect<IOverridenDefaultTransitionBuilder>,
+        IDefaultGuard<IOverridenDefaultTransitionBuilder>
+    { }
 }

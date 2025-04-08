@@ -101,6 +101,7 @@ namespace Stateflows.Actions.Registration
             ActionDelegateAsync actionDelegate = async context =>
             {
                 ActionsContextHolder.ActionContext.Value = context.Action;
+                ActionsContextHolder.BehaviorContext.Value = context.Action;
                 ActionsContextHolder.ExecutionContext.Value = context;
                 ContextValues.GlobalValuesHolder.Value = context.Action.Values;
                 
@@ -151,12 +152,14 @@ namespace Stateflows.Actions.Registration
             where TAction : class, IAction
             => AddAction(actionName ?? Action<TAction>.Name, version, typeof(TAction), reentrant);
 
-        public async Task VisitActionsAsync(IActionVisitor visitor)
+        public Task VisitActionsAsync(IActionVisitor visitor)
         {
             foreach (var action in Actions.Values)
             {
                 action.VisitingAction(visitor);
             }
+            
+            return Task.CompletedTask;
         }
 
         #region Observability

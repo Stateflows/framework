@@ -6,4 +6,9 @@ namespace Stateflows.StateMachines.Registration.Interfaces
         ITransitionUtils<IElseDefaultTransitionBuilder>,
         IDefaultEffect<IElseDefaultTransitionBuilder>
     { }
+    
+    public interface IOverridenElseDefaultTransitionBuilder :
+        ITransitionUtils<IOverridenElseDefaultTransitionBuilder>,
+        IDefaultEffect<IOverridenElseDefaultTransitionBuilder>
+    { }
 }
