@@ -38,7 +38,7 @@ namespace Stateflows.StateMachines.Engine
             var eventHandler = EventHandlers.FirstOrDefault(h => h.EventType.IsInstanceOfType(context.Event));
 
             return eventHandler != null
-                ? eventHandler.TryHandleEventAsync(context)
+                ? eventHandler.TryHandleEventAsync<TEvent>(context)
                 : Task.FromResult(EventStatus.NotConsumed);
         }
         
@@ -87,12 +87,10 @@ namespace Stateflows.StateMachines.Engine
                                     var status = await ev.ExecuteBehaviorAsync(this, result, executor);
 
                                     results.Add(new RequestResult(
-                                        ev,
                                         ev.IsRequest()
                                             ? ev.GetResponseHolder()
                                             : null,
-                                        status, 
-                                        null, // todo: get notifications
+                                        status,
                                         new EventValidation(true, new List<ValidationResult>())
                                     ));
                                 }
@@ -149,7 +147,7 @@ namespace Stateflows.StateMachines.Engine
             }
             catch (Exception e)
             {
-                Debug.WriteLine($"Exception thrown: '{e.GetType().FullName}' with message '{e.Message}'");
+                // Trace.WriteLine($"⦗→s⦘ State Machine '{id.Name}:{id.Instance}': exception '{e.GetType().FullName}' thrown with message '{e.Message}'");
 
                 return EventStatus.Failed;
             }

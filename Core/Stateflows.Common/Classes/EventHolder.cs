@@ -65,10 +65,8 @@ namespace Stateflows.Common
                     }
 
                     results.Add(new RequestResult(
-                        ev,
                         null,
                         status,
-                        null,
                         validation
                     ));
                 }

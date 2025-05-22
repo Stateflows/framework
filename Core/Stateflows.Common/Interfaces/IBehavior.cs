@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Threading.Tasks;
 using System.Collections.Generic;
+using System.Linq;
 using Stateflows.Common.Interfaces;
 
 namespace Stateflows.Common
@@ -23,11 +24,11 @@ namespace Stateflows.Common
             return RequestAsync(compound, headers);
         }
 
-        public Task<SendResult> ResetAsync(ResetMode resetMode = ResetMode.Full)
-            => SendAsync(new Reset { Mode = resetMode });
+        public Task<SendResult> ResetAsync(ResetMode resetMode = ResetMode.Full, IEnumerable<EventHeader> headers = null)
+            => SendAsync(new Reset { Mode = resetMode }, headers);
 
-        public Task<SendResult> FinalizeAsync()
-            => SendAsync(new Finalize());
+        public Task<SendResult> FinalizeAsync(IEnumerable<EventHeader> headers = null)
+            => SendAsync(new Finalize(), headers);
         
         public async Task<IWatcher> RequestAndWatchAsync<TRequest, TNotification>(TRequest request, Action<TNotification> handler, IEnumerable<EventHeader> headers = null)
             where TRequest : IRequest<TNotification>
@@ -49,5 +50,19 @@ namespace Stateflows.Common
         
         public Task<IWatcher> RequestAndWatchStatusAsync(Action<BehaviorInfo> handler, IEnumerable<EventHeader> headers = null)
             => RequestAndWatchAsync(new BehaviorInfoRequest(), handler, headers);
+        
+        public Task<RequestResult<NotificationsResponse>> GetNotificationsAsync<TNotification>(TimeSpan? period = null, IEnumerable<EventHeader> headers = null)
+            => RequestAsync(new NotificationsRequest()
+            {
+                Period = period ?? TimeSpan.FromSeconds(60),
+                NotificationNames = new List<string>() { Event<TNotification>.Name }
+            }, headers);
+        
+        public Task<RequestResult<NotificationsResponse>> GetNotificationsAsync(string[] notificationNames, TimeSpan? period = null, IEnumerable<EventHeader> headers = null)
+            => RequestAsync(new NotificationsRequest()
+            {
+                Period = period ?? TimeSpan.FromSeconds(60),
+                NotificationNames = notificationNames.ToList()
+            }, headers);
     }
 }

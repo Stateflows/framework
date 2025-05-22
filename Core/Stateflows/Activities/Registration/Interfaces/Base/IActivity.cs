@@ -11,7 +11,6 @@ namespace Stateflows.Activities.Registration.Interfaces.Base
     public interface IActivity<out TReturn>
     {
         #region AddAction
-        // TReturn AddAction(string actionNodeName, ActionDelegateAsync actionAsync, ActionBuildAction buildAction = null);
         TReturn AddAction(string actionNodeName, Func<IActionContext, Task> actionAsync, ActionBuildAction buildAction = null);
         
         [DebuggerHidden]

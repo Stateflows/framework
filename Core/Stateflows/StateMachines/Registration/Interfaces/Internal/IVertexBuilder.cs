@@ -1,6 +1,4 @@
-﻿using Stateflows.StateMachines.Models;
-
-namespace Stateflows.StateMachines.Registration.Interfaces
+﻿namespace Stateflows.StateMachines.Registration.Interfaces
 {
     public interface IVertexBuilder
     {

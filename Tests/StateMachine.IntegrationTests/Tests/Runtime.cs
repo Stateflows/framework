@@ -49,7 +49,7 @@ namespace StateMachine.IntegrationTests.Tests
             {
                 await sm.SendAsync(new SomeEvent());
 
-                currentState = (await sm.GetCurrentStateAsync()).Response?.StatesTree?.Value;
+                currentState = (await sm.GetStatusAsync()).Response?.CurrentStates?.Value;
             }
 
             Assert.AreEqual("final", currentState);

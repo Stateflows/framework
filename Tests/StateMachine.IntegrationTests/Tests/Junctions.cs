@@ -40,12 +40,12 @@ namespace StateMachine.IntegrationTests.Tests
                     .AddStateMachine("dynamic", b => b
                         .AddInitialState("state1", b => b
                             .AddTransition<OtherEvent, Junction>(b => b
-                                .AddEffect(async c => c.Behavior.Values.Set("answer", c.Event.AnswerToLifeUniverseAndEverything))
+                                .AddEffect(async c => c.Behavior.Values.SetAsync("answer", c.Event.AnswerToLifeUniverseAndEverything))
                             )
                         )
                         .AddJunction(b => b
                             .AddTransition("state2", b => b
-                                .AddGuard(c => c.Behavior.Values.GetOrDefault<int>("answer") == 42)
+                                .AddGuard(async c => await c.Behavior.Values.GetOrDefaultAsync<int>("answer") == 42)
                             )
                             .AddElseTransition("state3")
                         )
@@ -66,7 +66,7 @@ namespace StateMachine.IntegrationTests.Tests
             {
                 status = (await sm.SendAsync(new OtherEvent() { AnswerToLifeUniverseAndEverything = 43 })).Status;
 
-                currentState = (await sm.GetCurrentStateAsync()).Response.StatesTree.Value;
+                currentState = (await sm.GetStatusAsync()).Response.CurrentStates.Value;
             }
 
             Assert.AreEqual(EventStatus.Consumed, status);
@@ -83,7 +83,7 @@ namespace StateMachine.IntegrationTests.Tests
             {
                 status = (await sm.SendAsync(new OtherEvent() { AnswerToLifeUniverseAndEverything = 42 })).Status;
 
-                currentState = (await sm.GetCurrentStateAsync()).Response.StatesTree.Value;
+                currentState = (await sm.GetStatusAsync()).Response.CurrentStates.Value;
             }
 
             Assert.AreEqual(EventStatus.Consumed, status);

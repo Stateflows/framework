@@ -7,7 +7,7 @@ using Stateflows.Activities.Context.Interfaces;
 
 namespace Stateflows.Activities.Context.Classes
 {
-    internal class ActionContext : ActivityNodeContext, IActionContext<object>
+    internal class ActionContext : ActivityNodeContext, IActionContext<object>, IRootContext
     {
         public ActionContext(RootContext context, NodeScope nodeScope, Node node, IEnumerable<TokenHolder> inputTokens, IEnumerable<TokenHolder> selectionTokens = null)
             : base(context, nodeScope, node)

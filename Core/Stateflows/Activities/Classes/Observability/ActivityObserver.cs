@@ -5,9 +5,9 @@ namespace Stateflows.Activities
 {
     public abstract class ActivityObserver : IActivityObserver
     {
-        public virtual void BeforeActivityInitialize(IActivityInitializationContext context)
+        public virtual void BeforeActivityInitialize(IActivityInitializationContext context, bool implicitInitialization)
         { }
-        public virtual void AfterActivityInitialize(IActivityInitializationContext context, bool initialized)
+        public virtual void AfterActivityInitialize(IActivityInitializationContext context, bool implicitInitialization, bool initialized)
         { }
 
         public virtual void BeforeActivityFinalize(IActivityFinalizationContext context)

@@ -15,7 +15,7 @@ namespace Stateflows.Extensions.PlantUml.Classes
 
             foreach (var state in states)
             {
-                var stateName = state.Name.GetShortName();
+                var stateName = state.Name.ToShortName();
 
                 if (state.IsInitial)
                 {
@@ -108,7 +108,7 @@ namespace Stateflows.Extensions.PlantUml.Classes
 
             foreach (var transition in state.Transitions)
             {
-                var triggers = transition.Triggers.Select(trigger => trigger.GetShortName());
+                var triggers = transition.Triggers.Select(trigger => trigger.ToShortName());
 
                 foreach (var trigger in triggers)
                 {
@@ -119,7 +119,7 @@ namespace Stateflows.Extensions.PlantUml.Classes
                     else
                     {
                         var target = !transition.Target.IsFinal
-                            ? transition.Target.Name.GetShortName()
+                            ? transition.Target.Name.ToShortName()
                             : "[*]";
 
                         if (trigger == Constants.CompletionEvent)

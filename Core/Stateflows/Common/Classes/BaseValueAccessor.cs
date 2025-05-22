@@ -15,30 +15,6 @@ namespace Stateflows.Common.Classes
             this.valueName = valueName;
             this.valueSet = valueSetSelector?.Invoke() ?? throw new StateflowsDefinitionException($"{collectionName} set is not available in current context");
         }
-
-        [Obsolete("Method Set() is deprecated and will be removed soon. Use SetAsync() instead")]
-        public void Set(T value)
-            => valueSet.Set(valueName, value);
-
-        [Obsolete("Method IsSet() is deprecated and will be removed soon. Use IsSetAsync() instead")]
-        public bool IsSet
-            => valueSet.IsSet(valueName);
-
-        [Obsolete("Method TryGet() is deprecated and will be removed soon. Use TryGetAsync() instead")]
-        public bool TryGet(out T value)
-            => valueSet.TryGet(valueName, out value);
-
-        [Obsolete("Method GetOrDefault() is deprecated and will be removed soon. Use GetOrDefaultAsync() instead")]
-        public T GetOrDefault(T defaultValue = default)
-            => valueSet.GetOrDefault(valueName, defaultValue);
-
-        [Obsolete("Method Update() is deprecated and will be removed soon. Use UpdateAsync() instead")]
-        public void Update(Func<T, T> valueUpdater, T defaultValue = default)
-            => valueSet.Update(valueName, valueUpdater, defaultValue);
-
-        [Obsolete("Method Remove() is deprecated and will be removed soon. Use RemoveAsync() instead")]
-        public void Remove()
-            => valueSet.Remove(valueName);
         
         public Task SetAsync(T value)
             => valueSet.SetAsync(valueName, value);

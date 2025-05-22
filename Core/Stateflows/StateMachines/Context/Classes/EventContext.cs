@@ -3,12 +3,11 @@ using System.Collections.Generic;
 using Stateflows.Common;
 using Stateflows.Common.Utilities;
 using Stateflows.Common.Exceptions;
-using Stateflows.Common.Context.Interfaces;
 using Stateflows.StateMachines.Context.Interfaces;
 
 namespace Stateflows.StateMachines.Context.Classes
 {
-    internal class EventContext<TEvent> : BaseContext, Interfaces.IEventContext<TEvent>, IRootContext
+    internal class EventContext<TEvent> : BaseContext, IEventContext<TEvent>, IRootContext
     {
         public EventContext(RootContext context) : base(context)
         {

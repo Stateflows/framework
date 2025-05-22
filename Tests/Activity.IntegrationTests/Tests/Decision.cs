@@ -103,12 +103,12 @@ namespace Activity.IntegrationTests.Tests
                         )
                         .AddAction(
                             "setup",
-                            async c => c.Behavior.Values.Set("value", true),
+                            async c => await c.Behavior.Values.SetAsync("value", true),
                             b => b.AddControlFlow<ControlDecisionNode>()
                         )
                         .AddControlDecision(b => b
                             .AddFlow("final1", b => b
-                                .AddGuard(async c => c.Behavior.Values.TryGet<bool>("value", out var value) && value)
+                                .AddGuard(async c => await c.Behavior.Values.GetOrDefaultAsync("value", false))
                             )
                             .AddElseFlow("final2")
                         )

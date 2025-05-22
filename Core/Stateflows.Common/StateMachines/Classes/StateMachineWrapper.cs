@@ -2,13 +2,16 @@
 using System.Threading.Tasks;
 using System.Collections.Generic;
 using System.Diagnostics;
+using Stateflows.Common.Interfaces;
 using Stateflows.StateMachines;
 
 namespace Stateflows.Common.StateMachines.Classes
 {
-    internal class StateMachineWrapper : IStateMachineBehavior
+    internal class StateMachineWrapper : IStateMachineBehavior, IInjectionScope
     {
-        public BehaviorId Id => Behavior.Id;
+        BehaviorId IBehavior.Id => Behavior.Id;
+
+        public IServiceProvider ServiceProvider => (Behavior as IInjectionScope)?.ServiceProvider;
 
         private IBehavior Behavior { get; }
 
@@ -27,6 +30,9 @@ namespace Stateflows.Common.StateMachines.Classes
 
         public Task<IWatcher> WatchAsync<TNotification>(Action<TNotification> handler)
             => Behavior.WatchAsync(handler);
+
+        public Task<IWatcher> WatchAsync(string[] notificationNames, Action<EventHolder> handler)
+            => Behavior.WatchAsync(notificationNames, handler);
 
         public void Dispose()
         {

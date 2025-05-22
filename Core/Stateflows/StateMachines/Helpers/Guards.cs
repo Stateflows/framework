@@ -101,6 +101,21 @@ namespace Stateflows.StateMachines
                 return result.Success && !values.Contains(result.Value);
             };
         }
+        
+        /// <summary>
+        /// Provides guard that checks if specified global value matches given condition.
+        /// </summary>
+        /// <param name="condition">Condition to check global value against.</param>
+        /// <typeparam name="T">Type of value.</typeparam>
+        public Func<IStateMachineActionContext, Task<bool>> Matches<T>(Func<T, bool> condition)
+        {
+            var self = this;
+            return async c =>
+            {
+                var result = await c.StateMachine.Values.TryGetAsync<T>(self.ValueName);
+                return result.Success && condition(result.Value);
+            };
+        }
     }
 
     public struct TransitionGuardStateValueExpression
@@ -222,6 +237,24 @@ namespace Stateflows.StateMachines
                     ? await valueSet.TryGetAsync<T>(self.ValueName)
                     : (Success: false, Value: default);
                 return result.Success && !values.Contains(result.Value);
+            };
+        }
+        
+        /// <summary>
+        /// Provides guard that checks if specified global value matches given condition.
+        /// </summary>
+        /// <param name="condition">Condition to check global value against.</param>
+        /// <typeparam name="T">Type of value.</typeparam>
+        public Func<ITransitionContext, Task<bool>> Matches<T>(Func<T, bool> condition)
+        {
+            var self = this;
+            return async c =>
+            {
+                var valueSet = self.GetValueSet(c);
+                var result = valueSet != null
+                    ? await valueSet.TryGetAsync<T>(self.ValueName)
+                    : (Success: false, Value: default);
+                return result.Success && condition(result.Value);
             };
         }
     }
@@ -407,14 +440,14 @@ namespace Stateflows.StateMachines
         /// <typeparam name="TState">State to be checked against.</typeparam>
         public static Task<bool> InState<TState>(IStateMachineActionContext context)
             where TState : class, IVertex
-            => Task.FromResult(context.CurrentState.GetAllNodes().Any(node => node.Value.Name == State<TState>.Name));
+            => Task.FromResult(context.CurrentStates.GetAllNodes().Any(node => node.Value.Name == State<TState>.Name));
         
         /// <summary>
         /// Declares guard that checks if state machine is in given state.
         /// </summary>
         /// <param name="stateName">Name of the state to be checked against.</param>
         public static Func<IStateMachineActionContext, Task<bool>> InState(string stateName)
-            => c => Task.FromResult(c.CurrentState.GetAllNodes().Any(node => node.Value.Name == stateName));
+            => c => Task.FromResult(c.CurrentStates.GetAllNodes().Any(node => node.Value.Name == stateName));
 
         /// <summary>
         /// Provides declarative guards based on global values.

@@ -18,6 +18,7 @@ namespace Stateflows.StateMachines.EventHandlers
 
                 request.Respond(new BehaviorInfo()
                 {
+                    Id = executor.Context.Id,
                     BehaviorStatus = executor.BehaviorStatus,
                     ExpectedEvents = executor.GetExpectedEventNames(),
                 });

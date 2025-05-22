@@ -1,8 +1,7 @@
 ﻿using System;
 using Stateflows.Common;
-using Stateflows.Common.Context.Interfaces;
 
-namespace Stateflows.StateMachines.Context.Interfaces
+namespace Stateflows.StateMachines
 {
     public interface IStateMachineActionContext : IExecutionContext, IBehaviorActionContext
     {
@@ -12,7 +11,7 @@ namespace Stateflows.StateMachines.Context.Interfaces
         /// <summary>
         /// Information about current state of a State Machine
         /// </summary>
-        IReadOnlyTree<IStateContext> CurrentState => StateMachine.CurrentState;
+        IReadOnlyTree<IStateContext> CurrentStates => StateMachine.CurrentStates;
 
         /// <summary>
         /// Information about current behavior

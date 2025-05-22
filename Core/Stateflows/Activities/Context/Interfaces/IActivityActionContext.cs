@@ -1,15 +1,14 @@
 ﻿using System;
 using Stateflows.Common;
-using Stateflows.Common.Context.Interfaces;
 
-namespace Stateflows.Activities.Context.Interfaces
+namespace Stateflows.Activities
 {
     public interface IActivityActionContext : IBehaviorActionContext
     {
         /// <summary>
         /// Information about activity behavior
         /// </summary>
-        [Obsolete("Activity context property is obsolete, use Behavior or LockHandle properties instead.")]
+        [Obsolete("Activity context property is obsolete, use Behavior, ActiveNodes, or LockHandle properties instead.")]
         IActivityContext Activity { get; }
         
         /// <summary>
@@ -21,5 +20,10 @@ namespace Stateflows.Activities.Context.Interfaces
         /// Information about current behavior
         /// </summary>
         new IBehaviorContext Behavior => Activity;
+
+        /// <summary>
+        /// Tree of Nodes that represents current configuration of Activity behavior instance
+        /// </summary>
+        IReadOnlyTree<INodeContext> ActiveNodes => Activity.ActiveNodes;
     }
 }

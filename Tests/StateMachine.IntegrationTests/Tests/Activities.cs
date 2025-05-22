@@ -35,7 +35,7 @@ namespace StateMachine.IntegrationTests.Tests
                         .AddInitializer<BoolInit>(async c =>
                         {
                             Debug.WriteLine($"InitializationEvent.Value: {c.InitializationEvent.Value}");
-                            c.Behavior.Values.Set("value", c.InitializationEvent.Value);
+                            await c.Behavior.Values.SetAsync("value", c.InitializationEvent.Value);
                             return true;
                         })
                         .AddInitialState("stateA", b => b
@@ -60,7 +60,8 @@ namespace StateMachine.IntegrationTests.Tests
                             async c =>
                             {
                                 GuardRun = true;
-                                if (c.Behavior.Values.TryGet<bool>("value", out var value))
+                                var (success, value) = await c.Behavior.Values.TryGetAsync<bool>("value");
+                                if (success)
                                 {
                                     Debug.WriteLine($"value: {value}");
                                     c.Output(value);
@@ -116,9 +117,9 @@ namespace StateMachine.IntegrationTests.Tests
 
                 await sm.SendAsync(new SomeEvent());
 
-                var currentState = (await sm.GetCurrentStateAsync()).Response;
+                var currentState = (await sm.GetStatusAsync()).Response;
 
-                currentState1 = currentState.StatesTree.Value;
+                currentState1 = currentState.CurrentStates.Value;
             }
 
             ExecutionSequence.Verify(b => b
@@ -147,9 +148,9 @@ namespace StateMachine.IntegrationTests.Tests
 
                 await sm.SendAsync(new SomeEvent());
 
-                var currentState = (await sm.GetCurrentStateAsync()).Response;
+                var currentState = (await sm.GetStatusAsync()).Response;
 
-                currentState1 = currentState.StatesTree.Value;
+                currentState1 = currentState.CurrentStates.Value;
             }
 
             ExecutionSequence.Verify(b => b

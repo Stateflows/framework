@@ -88,10 +88,10 @@ namespace Stateflows.StateMachines.Engine
             Observers.RunSafe(o => o.BeforeStateMachineInitialize(context, implicitInitialization), nameof(BeforeStateMachineInitialize), Logger);
         }
 
-        public void AfterStateMachineInitialize(StateMachineInitializationContext context, bool initialized)
+        public void AfterStateMachineInitialize(StateMachineInitializationContext context, bool implicitInitialization, bool initialized)
         {
-            Observers.RunSafe(o => o.AfterStateMachineInitialize(context, initialized), nameof(AfterStateMachineInitialize), Logger);
-            Plugins.RunSafe(o => o.AfterStateMachineInitialize(context, initialized), nameof(AfterStateMachineInitialize), Logger);
+            Observers.RunSafe(o => o.AfterStateMachineInitialize(context, implicitInitialization, initialized), nameof(AfterStateMachineInitialize), Logger);
+            Plugins.RunSafe(o => o.AfterStateMachineInitialize(context, implicitInitialization, initialized), nameof(AfterStateMachineInitialize), Logger);
 
             if (InitializeInspection != null)
             {

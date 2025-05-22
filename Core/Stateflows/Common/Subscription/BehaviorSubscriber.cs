@@ -62,12 +62,7 @@ namespace Stateflows.Common.Subscription
             return behaviorLocator.TryLocateBehavior(behaviorId, out var behavior)
                 ? behavior.SendAsync(request)
                 : Task.FromResult(
-                    new SendResult(
-                        eventHolder,
-                        EventStatus.Undelivered,
-                        null, // todo: get notifications
-                        new EventValidation(true, Array.Empty<ValidationResult>())
-                    )
+                    new SendResult(EventStatus.Undelivered)
                 );
         }
 
@@ -87,12 +82,7 @@ namespace Stateflows.Common.Subscription
             return behaviorLocator.TryLocateBehavior(behaviorId, out var behavior)
                 ? behavior.SendAsync(request)
                 : Task.FromResult(
-                    new SendResult(
-                        eventHolder,
-                        EventStatus.Undelivered,
-                        null,
-                        new EventValidation(true, Array.Empty<ValidationResult>())
-                    )
+                    new SendResult(EventStatus.Undelivered)
                 );
         }
     }

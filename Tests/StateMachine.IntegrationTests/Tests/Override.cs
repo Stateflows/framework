@@ -233,7 +233,7 @@ namespace StateMachine.IntegrationTests.Tests
             {
                 status = (await sm.SendAsync(new SomeEvent())).Status;
 
-                currentState = (await sm.GetCurrentStateAsync()).Response.StatesTree.Value;
+                currentState = (await sm.GetStatusAsync()).Response.CurrentStates.Value;
             }
 
             Assert.AreEqual(EventStatus.Consumed, status);
@@ -251,7 +251,7 @@ namespace StateMachine.IntegrationTests.Tests
             {
                 status = (await sm.SendAsync(new SomeEvent())).Status;
 
-                currentState = (await sm.GetCurrentStateAsync()).Response.StatesTree.Value;
+                currentState = (await sm.GetStatusAsync()).Response.CurrentStates.Value;
             }
 
             Assert.AreEqual(EventStatus.Consumed, status);
@@ -269,7 +269,7 @@ namespace StateMachine.IntegrationTests.Tests
             {
                 status = (await sm.SendAsync(new SomeEvent())).Status;
 
-                currentState = (await sm.GetCurrentStateAsync()).Response.StatesTree.Value;
+                currentState = (await sm.GetStatusAsync()).Response.CurrentStates.Value;
             }
 
             Assert.AreEqual(EventStatus.Consumed, status);
@@ -289,7 +289,7 @@ namespace StateMachine.IntegrationTests.Tests
                     AdditionalProperty = 0
                 })).Status;
 
-                currentState = (await sm.GetCurrentStateAsync()).Response.StatesTree.Value;
+                currentState = (await sm.GetStatusAsync()).Response.CurrentStates.Value;
             }
 
             Assert.AreEqual(EventStatus.NotConsumed, status);
@@ -307,7 +307,7 @@ namespace StateMachine.IntegrationTests.Tests
             {
                 status = (await sm.SendAsync(new SomeEvent())).Status;
 
-                currentState = (await sm.GetCurrentStateAsync()).Response.StatesTree.Value;
+                currentState = (await sm.GetStatusAsync()).Response.CurrentStates.Value;
             }
 
             Assert.IsTrue(Entered);
@@ -325,7 +325,7 @@ namespace StateMachine.IntegrationTests.Tests
             {
                 status = (await sm.SendAsync(new SomeEvent())).Status;
 
-                currentState = (await sm.GetCurrentStateAsync()).Response.StatesTree.GetAllNodes_ChildrenFirst().First().Value;
+                currentState = (await sm.GetStatusAsync()).Response.CurrentStates.GetAllNodes_ChildrenFirst().First().Value;
             }
 
             Assert.AreEqual(EventStatus.Consumed, status);
@@ -342,7 +342,7 @@ namespace StateMachine.IntegrationTests.Tests
             {
                 status = (await sm.SendAsync(new SomeEvent())).Status;
 
-                currentState = (await sm.GetCurrentStateAsync()).Response.StatesTree.GetAllNodes_ChildrenFirst().First().Value;
+                currentState = (await sm.GetStatusAsync()).Response.CurrentStates.GetAllNodes_ChildrenFirst().First().Value;
             }
 
             Assert.AreEqual(EventStatus.Consumed, status);
@@ -359,7 +359,7 @@ namespace StateMachine.IntegrationTests.Tests
             {
                 status = (await sm.SendAsync(new SomeEvent())).Status;
 
-                currentState = (await sm.GetCurrentStateAsync()).Response.StatesTree.GetAllNodes_ChildrenFirst().First().Value;
+                currentState = (await sm.GetStatusAsync()).Response.CurrentStates.GetAllNodes_ChildrenFirst().First().Value;
             }
 
             Assert.AreEqual(EventStatus.Consumed, status);
@@ -378,7 +378,7 @@ namespace StateMachine.IntegrationTests.Tests
             {
                 status = (await sm.SendAsync(new SomeEvent())).Status;
 
-                var tree = (await sm.GetCurrentStateAsync()).Response.StatesTree;
+                var tree = (await sm.GetStatusAsync()).Response.CurrentStates;
                 currentState = tree.Value;
                 currentSubstate1 = tree.Root.Nodes.First().Value;
                 currentSubstate2 = tree.Root.Nodes.Last().Value;
@@ -402,7 +402,7 @@ namespace StateMachine.IntegrationTests.Tests
             {
                 status = (await sm.SendAsync(new SomeEvent())).Status;
 
-                var tree = (await sm.GetCurrentStateAsync()).Response.StatesTree;
+                var tree = (await sm.GetStatusAsync()).Response.CurrentStates;
                 currentState = tree.Value;
                 currentSubstate1 = tree.Root.Nodes.First().Value;
                 currentSubstate2 = tree.Root.Nodes.Last().Value;

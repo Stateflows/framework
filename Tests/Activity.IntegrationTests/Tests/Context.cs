@@ -9,11 +9,11 @@ namespace Activity.IntegrationTests.Tests
     {
         public override void BeforeNodeActivate(IActivityNodeContext context, bool activated)
         {
-            if (context.CurrentNode.Name.EndsWith("action3"))
+            if (context.Node.Name.EndsWith("action3"))
             {
                 Context.ActivationAttempted = true;
-                Context.Activated1 = context.CurrentNode.IncomingFlows.First().Activated;
-                Context.Activated2 = context.CurrentNode.IncomingFlows.Last().Activated;
+                Context.Activated1 = context.Node.IncomingFlows.First().Activated;
+                Context.Activated2 = context.Node.IncomingFlows.Last().Activated;
             }
         }
     }

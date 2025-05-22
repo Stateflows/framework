@@ -83,10 +83,8 @@ namespace Stateflows.Activities.Engine
                         var status = await ev.ExecuteBehaviorAsync(this, result, executor);
 
                         results.Add(new RequestResult(
-                            ev,
                             ev.GetResponseHolder(),
                             status,
-                            null, // todo: get notifications
                             new EventValidation(true, new List<ValidationResult>())
                         ));
                     }
@@ -117,7 +115,7 @@ namespace Stateflows.Activities.Engine
 
                 exceptions.AddRange(context.Exceptions);
 
-                await storage.DehydrateAsync((await executor.DehydrateAsync()).Context);
+                await storage.DehydrateAsync(executor.Dehydrate().Context);
             }
 
             return result;

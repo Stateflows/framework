@@ -1,6 +1,5 @@
 ﻿using Stateflows.Common.Classes;
 using Stateflows.Common.Interfaces;
-using Stateflows.StateMachines.Context.Interfaces;
 using Stateflows.StateMachines.Models;
 
 namespace Stateflows.StateMachines.Context.Classes
@@ -16,7 +15,7 @@ namespace Stateflows.StateMachines.Context.Classes
         private RootContext Context { get; }
 
         private StateValues StateValues { get; }
-
+        
         public StateContext(Vertex vertex, RootContext context)
         {
             Vertex = vertex;

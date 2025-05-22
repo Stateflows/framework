@@ -70,7 +70,7 @@ namespace Stateflows.Transport.Http
                                     Validation = result.Validation,
                                     Response = response,
                                     Notifications = result.Status != EventStatus.Rejected
-                                        ? hub.GetNotifications(
+                                        ? await hub.GetNotificationsAsync(
                                             behaviorId,
                                             notification =>
                                                 input.Watches?.Any(watch =>

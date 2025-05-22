@@ -11,7 +11,7 @@ namespace Stateflows.Extensions.PlantUml.Classes
     {
         private static string GetNodeName(INodeInspection node, string parentName)
         {
-            var nodeName = node.Name.GetShortName();
+            var nodeName = node.Name.ToShortName();
 
             if (node.Type != NodeType.Final && node.Type != NodeType.Initial)
             {
@@ -45,7 +45,7 @@ namespace Stateflows.Extensions.PlantUml.Classes
 
             if (node.Nodes.Any())
             {
-                var nodeName = node.Name.GetShortName();
+                var nodeName = node.Name.ToShortName();
                 builder.AppendLine($"{indent}partition \"{node.Type} {nodeName}\" " + "{");
                 GetPlantUml(indentCount + 2, node.Nodes, builder, nodeName);
                 builder.AppendLine($"{indent}" + "}");
@@ -64,7 +64,7 @@ namespace Stateflows.Extensions.PlantUml.Classes
                     }
                     else
                     {
-                        builder.AppendLine($"{indent}{source} -->[{transition.TokenName.GetShortName()}] {target}");
+                        builder.AppendLine($"{indent}{source} -->[{transition.TokenName.ToShortName()}] {target}");
                     }
                 }
             }

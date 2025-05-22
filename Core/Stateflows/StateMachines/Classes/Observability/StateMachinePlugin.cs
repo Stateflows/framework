@@ -21,7 +21,7 @@ namespace Stateflows.StateMachines
         public virtual void BeforeStateMachineInitialize(IStateMachineInitializationContext context, bool implicitInitialization)
         { }
 
-        public virtual void AfterStateMachineInitialize(IStateMachineInitializationContext context, bool initialized)
+        public virtual void AfterStateMachineInitialize(IStateMachineInitializationContext context, bool implicitInitialization, bool initialized)
         { }
 
         public virtual void BeforeStateMachineFinalize(IStateMachineActionContext context)

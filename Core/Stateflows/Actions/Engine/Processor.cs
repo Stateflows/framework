@@ -76,10 +76,8 @@ namespace Stateflows.Actions.Engine
                         var status = await ev.ExecuteBehaviorAsync(this, result, executor);
 
                         results.Add(new RequestResult(
-                            ev,
                             ev.GetResponseHolder(),
                             status,
-                            null, // todo: get notifications
                             new EventValidation(true, new List<ValidationResult>())
                         ));
                     }

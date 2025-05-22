@@ -1,12 +1,17 @@
 ﻿using Stateflows.Common;
-using Stateflows.Common.Context.Interfaces;
 
 namespace Stateflows.StateMachines
 {
     public interface IStateMachineContext : IBehaviorContext
     {
+        /// <summary>
+        /// Identifier of current State Machine behavior instance
+        /// </summary>
         new StateMachineId Id { get; }
         
-        IReadOnlyTree<IStateContext> CurrentState { get; }
+        /// <summary>
+        /// Tree of States that represents current configuration of State Machine behavior instance
+        /// </summary>
+        IReadOnlyTree<IStateContext> CurrentStates { get; }
     }
 }

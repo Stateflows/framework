@@ -1,12 +1,10 @@
-﻿using Stateflows.StateMachines.Context.Interfaces;
-
-namespace Stateflows.StateMachines
+﻿namespace Stateflows.StateMachines
 {
     public interface IStateMachineObserver
     {
         void BeforeStateMachineInitialize(IStateMachineInitializationContext context, bool implicitInitialization);
 
-        void AfterStateMachineInitialize(IStateMachineInitializationContext context, bool initialized);
+        void AfterStateMachineInitialize(IStateMachineInitializationContext context, bool implicitInitialization, bool initialized);
 
         void BeforeStateMachineFinalize(IStateMachineActionContext context);
 

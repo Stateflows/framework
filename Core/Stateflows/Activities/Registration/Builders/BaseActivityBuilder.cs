@@ -36,6 +36,7 @@ namespace Stateflows.Activities.Registration
         [DebuggerHidden]
         public BaseActivityBuilder AddNode(NodeType type, string nodeName, Func<IActionContext, Task> actionAsync, NodeBuildAction buildAction = null, Type exceptionOrEventType = null, int chunkSize = 1)
         {
+            var ownName = nodeName;
             if (Node.Type != NodeType.Activity)
             {
                 nodeName = $"{Node.Name}.{nodeName}";
@@ -86,6 +87,7 @@ namespace Stateflows.Activities.Registration
             var node = new Node()
             {
                 Type = type,
+                OwnName = ownName,
                 Name = nodeName,
                 Parent = Node,
                 Graph = Graph,
@@ -322,7 +324,7 @@ namespace Stateflows.Activities.Registration
                     var node = c.GetNode();
 
                     await executor.DoInitializeNodeAsync(node, c as ActionContext);
-                    var edge = c.CurrentNode.TryGetCurrentFlow(out var currentFlow)
+                    var edge = c.Node.TryGetCurrentFlow(out var currentFlow)
                         ? ((FlowContext)currentFlow).Edge
                         : null;
                     
@@ -365,7 +367,7 @@ namespace Stateflows.Activities.Registration
                 }
                 catch (Exception e)
                 {
-                    if (e is StateflowsException)
+                    if (e is StateflowsDefinitionException)
                     {
                         throw;
                     }
@@ -373,7 +375,7 @@ namespace Stateflows.Activities.Registration
                     {
                         var inspector = c.Context.Executor.Inspector;
 
-                        Trace.WriteLine($"⦗→s⦘ Activity '{c.Context.Id.Name}:{c.Context.Id.Instance}': exception thrown '{e.Message}'");
+                        Trace.WriteLine($"⦗→s⦘ Activity '{c.Context.Id.Name}:{c.Context.Id.Instance}': exception '{e.GetType().FullName}' thrown with message '{e.Message}'");
                         if (!inspector.OnNodeFinalizationException(context, e))
                         {
                             throw;
@@ -402,7 +404,7 @@ namespace Stateflows.Activities.Registration
                 }
                 catch (Exception e)
                 {
-                    if (e is StateflowsException)
+                    if (e is StateflowsDefinitionException)
                     {
                         throw;
                     }
@@ -410,7 +412,7 @@ namespace Stateflows.Activities.Registration
                     {
                         var inspector = c.Context.Executor.Inspector;
 
-                        Trace.WriteLine($"⦗→s⦘ Activity '{c.Context.Id.Name}:{c.Context.Id.Instance}': exception thrown '{e.Message}'");
+                        Trace.WriteLine($"⦗→s⦘ Activity '{c.Context.Id.Name}:{c.Context.Id.Instance}': exception '{e.GetType().FullName}' thrown with message '{e.Message}'");
                         if (!inspector.OnNodeInitializationException(context, e))
                         {
                             throw;

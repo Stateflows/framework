@@ -69,31 +69,31 @@ namespace Stateflows.Activities.Engine
             }
         }
 
-        public void RegisterAcceptEventNodes(IEnumerable<(Node Node, Guid ThreadId)> nodes)
-        {
-            lock (Context)
-            {
-                foreach ((var node, var threadId) in nodes)
-                {
-                    if (Context.ActiveNodes.Keys.Contains(node.Identifier))
-                    {
-                        continue;
-                    }
-
-                    Context.ActiveNodes.Add(node.Identifier, threadId);
-
-                    if (node.ActualEventTypes.Any(type => type.IsSubclassOf(typeof(TimeEvent))))
-                    {
-                        RegisterTimeEvent(node);
-                    }
-
-                    if (node.ActualEventTypes.Any(type => type == typeof(TimeEvent)))
-                    {
-                        RegisterStartupEvent(node);
-                    }
-                }
-            }
-        }
+        // public void RegisterAcceptEventNodes(IEnumerable<(Node Node, Guid ThreadId)> nodes)
+        // {
+        //     lock (Context)
+        //     {
+        //         foreach ((var node, var threadId) in nodes)
+        //         {
+        //             if (Context.ActiveNodes.Keys.Contains(node.Identifier))
+        //             {
+        //                 continue;
+        //             }
+        //
+        //             Context.ActiveNodes.Add(node.Identifier, threadId);
+        //
+        //             if (node.ActualEventTypes.Any(type => type.IsSubclassOf(typeof(TimeEvent))))
+        //             {
+        //                 RegisterTimeEvent(node);
+        //             }
+        //
+        //             if (node.ActualEventTypes.Any(type => type == typeof(TimeEvent)))
+        //             {
+        //                 RegisterStartupEvent(node);
+        //             }
+        //         }
+        //     }
+        // }
 
         public void RegisterAcceptEventNode(Node node, Guid threadId)
         {
@@ -118,7 +118,7 @@ namespace Stateflows.Activities.Engine
             }
         }
 
-        public void UnregisterAcceptEventNodes(IEnumerable<Node> nodes)
+        private void UnregisterAcceptEventNodes(IEnumerable<Node> nodes)
         {
             lock (Context)
             {
@@ -147,12 +147,12 @@ namespace Stateflows.Activities.Engine
 
         public override void AfterActivityFinalize(IActivityFinalizationContext context)
         {
-            UnregisterAcceptEventNodes((context as IRootContext).Context.Executor.Graph.DanglingTimeEventActionNodes);
+            UnregisterAcceptEventNodes(((IRootContext)context).Context.Executor.Graph.DanglingTimeEventActionNodes);
         }
 
         public override void AfterNodeFinalize(IActivityNodeContext context)
         {
-            UnregisterAcceptEventNodes((context as ActionContext).Node.DanglingTimeEventActionNodes);
+            UnregisterAcceptEventNodes(((ActionContext)context).Node.DanglingTimeEventActionNodes);
         }
 
         public override void AfterProcessEvent<TEvent>(IEventContext<TEvent> context, EventStatus eventStatus)
@@ -176,25 +176,46 @@ namespace Stateflows.Activities.Engine
             Context.Context.TriggerOnStartup = Context.Context.PendingStartupEvents.Any();
         }
 
-        public override void BeforeActivityInitialize(IActivityInitializationContext context)
+        public override void AfterActivityInitialize(IActivityInitializationContext context, bool implicitInitialization, bool initialized)
         {
-            RegisterAcceptEventNodes(
-                (context as IRootContext).Context.Executor.Graph.AcceptEventActionNodes.Select(node => (node, Guid.NewGuid()))
-            );
+            if (initialized)
+            {
+                var rootContext = ((IRootContext)context);
+                
+                var currentNode = rootContext.Context.Executor.Graph;
+                foreach (var node in currentNode.DanglingAcceptEventActionNodes)
+                {
+                    var actionContext = new ActionContext(rootContext.Context, rootContext.NodeScope, node, Array.Empty<TokenHolder>());
+                    Context.Executor.Inspector.BeforeNodeActivate(actionContext, true);
+                
+                    RegisterAcceptEventNode(node, Guid.NewGuid());
+                    
+                    Context.Executor.Inspector.AfterNodeActivate(actionContext);
+                }
+            }
         }
 
-        public override void BeforeNodeInitialize(IActivityNodeContext context)
+        public override void AfterNodeInitialize(IActivityNodeContext context)
         {
-            RegisterAcceptEventNodes(
-                (context as ActionContext).Node.DanglingTimeEventActionNodes.Select(node => (node, Guid.NewGuid()))
-            );
+            var currentNode = ((ActionContext)context).Node;
+            var rootContext = (IRootContext)context;
+            
+            foreach (var node in currentNode.DanglingAcceptEventActionNodes)
+            {
+                var actionContext = new ActionContext(rootContext.Context, rootContext.NodeScope, node, Array.Empty<TokenHolder>());
+                Context.Executor.Inspector.BeforeNodeActivate(actionContext, true);
+                
+                RegisterAcceptEventNode(node, Guid.NewGuid());
+                
+                Context.Executor.Inspector.AfterNodeActivate(actionContext);
+            }
         }
 
         public override bool BeforeProcessEvent<TEvent>(IEventContext<TEvent> context)
         {
             var result = true;
 
-            Context = (context as BaseContext).Context;
+            Context = ((IRootContext)context).Context;
 
             if (context.Event is TimeEvent timeEvent)
             {

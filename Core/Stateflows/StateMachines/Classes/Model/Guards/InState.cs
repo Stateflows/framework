@@ -14,6 +14,6 @@ namespace Stateflows.StateMachines
         }
 
         public Task<bool> GuardAsync()
-            => Task.FromResult(stateMachineContext.CurrentState.GetAllNodes().Any(node => node.Value.Name == State<TState>.Name));
+            => Task.FromResult(stateMachineContext.CurrentStates.GetAllNodes().Any(node => node.Value.Name == State<TState>.Name));
     }
 }

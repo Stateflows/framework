@@ -1,7 +1,6 @@
 ﻿using System;
 using Stateflows.Common;
 using Stateflows.StateMachines;
-using Stateflows.StateMachines.Context.Interfaces;
 
 namespace Stateflows.Testing.StateMachines.Sequence
 {
@@ -41,7 +40,7 @@ namespace Stateflows.Testing.StateMachines.Sequence
             SequenceBuilder.StateFinalize(context.State.Name);
         }
 
-        public override void AfterStateMachineInitialize(IStateMachineInitializationContext context, bool initialized)
+        public override void AfterStateMachineInitialize(IStateMachineInitializationContext context, bool implicitInitialization, bool initialized)
         {
             SequenceBuilder.StateMachineInitialize();
         }

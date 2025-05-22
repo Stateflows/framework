@@ -8,15 +8,10 @@
 <div class="site">
     <button @onclick="Create"><h3>Create new</h3></button>
     
-    @* <button @onclick="Review"><h3>Review</h3></button> *@
-    @* <button @onclick="Accept"><h3>Accept</h3></button> *@
-    @* <button @onclick="Pay"><h3>Pay</h3></button> *@
-    @* <button @onclick="Reject"><h3>Reject</h3></button> *@
-    
-    <button style="@(expectedEvents.Contains("Review") ? null : "hide")" @onclick="Review"><h3>Review</h3></button>
-    <button style="@(expectedEvents.Contains("Accept") ? null : "hide")" @onclick="Accept"><h3>Accept</h3></button>
-    <button style="@(expectedEvents.Contains("Pay") ? null : "hide")" @onclick="Pay"><h3>Pay</h3></button>
-    <button style="@(expectedEvents.Contains("Reject") ? null : "hide")" @onclick="Reject"><h3>Reject</h3></button>
+    <button class="@(expectedEvents.Contains("Review") ? null : "hide")" @onclick="Review"><h3>Review</h3></button>
+    <button class="@(expectedEvents.Contains("Accept") ? null : "hide")" @onclick="Accept"><h3>Accept</h3></button>
+    <button class="@(expectedEvents.Contains("Pay") ? null : "hide")" @onclick="Pay"><h3>Pay</h3></button>
+    <button class="@(expectedEvents.Contains("Reject") ? null : "hide")" @onclick="Reject"><h3>Reject</h3></button>
     
     <br/>
     <img src="@plantUmlUrl" />
@@ -50,16 +45,22 @@
         {
             throw new ApplicationException("State Machine not found");
         }
-
+            
         #region watchers
         
         plantUmlWatcher = await stateMachineBehavior.WatchPlantUmlAsync(
-            info => plantUmlUrl = info.GetUrl()
-        );
+            info =>
+            {
+                plantUmlUrl = info.GetUrl();
+                _ = InvokeAsync(StateHasChanged);
+            });
         
-        stateMachineInfoWatcher = await stateMachineBehavior.WatchCurrentStateAsync(
-            info => expectedEvents = info.ExpectedEvents.Select(e => e.GetShortName()).ToList()
-        );
+        stateMachineInfoWatcher = await stateMachineBehavior.WatchStatusAsync(
+            info =>
+            {
+                expectedEvents = info.ExpectedEvents.Select(e => e.ToShortName()).ToList();
+                _ = InvokeAsync(StateHasChanged);
+            });
         
         #endregion
         

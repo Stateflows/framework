@@ -3,12 +3,14 @@
 namespace Stateflows.StateMachines.Registration.Interfaces
 {
     public interface IElseDefaultTransitionBuilder :
-        ITransitionUtils<IElseDefaultTransitionBuilder>,
+        ITriggeredTransitionUtils<IElseDefaultTransitionBuilder>,
+        ITargetedTransitionUtils<IElseDefaultTransitionBuilder>,
         IDefaultEffect<IElseDefaultTransitionBuilder>
     { }
     
     public interface IOverridenElseDefaultTransitionBuilder :
-        ITransitionUtils<IOverridenElseDefaultTransitionBuilder>,
+        ITriggeredTransitionUtils<IOverridenElseDefaultTransitionBuilder>,
+        ITargetedTransitionUtils<IOverridenElseDefaultTransitionBuilder>,
         IDefaultEffect<IOverridenElseDefaultTransitionBuilder>
     { }
 }

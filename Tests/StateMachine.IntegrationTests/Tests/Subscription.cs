@@ -64,7 +64,7 @@ namespace StateMachine.IntegrationTests.Tests
 
                 await Task.Delay(100);
 
-                currentState = (await subscriber.GetCurrentStateAsync()).Response?.StatesTree.Value;
+                currentState = (await subscriber.GetStatusAsync()).Response?.CurrentStates.Value;
             }
 
             Assert.AreEqual("state2", currentState);
@@ -87,7 +87,7 @@ namespace StateMachine.IntegrationTests.Tests
 
                 await subscribee.SendAsync(new OtherEvent());
 
-                await subscribee.GetCurrentStateAsync();
+                await subscribee.GetStatusAsync();
             }
 
             lock (StateMachineLocator)
@@ -106,7 +106,7 @@ namespace StateMachine.IntegrationTests.Tests
             {
                 await subscribee.SendAsync(new Initialize());
                 
-                _ = subscribee.WatchCurrentStateAsync(n => currentState = n.StatesTree.Value);
+                _ = subscribee.WatchStatusAsync(n => currentState = n.CurrentStates.Value);
 
                 _ = subscribee.WatchStatusAsync(n => currentStatus = n.BehaviorStatus);
             }

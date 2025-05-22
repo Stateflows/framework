@@ -29,7 +29,7 @@ namespace Stateflows.StateMachines.Engine
         public readonly StateMachinesRegister Register;
 
         public IServiceProvider ServiceProvider => ScopesStack.Peek().ServiceProvider;
-
+        
         private readonly Stack<IServiceScope> ScopesStack = new Stack<IServiceScope>();
 
         private EventStatus EventStatus;
@@ -89,7 +89,7 @@ namespace Stateflows.StateMachines.Engine
             );
         }
 
-        public IReadOnlyTree<string> GetStateTree()
+        public IReadOnlyTree<string> GetStatesTree()
             => VerticesTree.Translate(vertex => vertex.Name);
 
         public async Task HydrateAsync()
@@ -265,8 +265,11 @@ namespace Stateflows.StateMachines.Engine
                     .SelectMany(edge => edge.ActualTriggerTypes)
                     .Distinct()
                     .ToArray()
-                : Graph.InitializerTypes
-                    .ToArray();
+                : BehaviorStatus == BehaviorStatus.NotInitialized
+                    ? Graph.InitializerTypes.Any()
+                        ? Graph.InitializerTypes.ToArray()
+                        : new[] { typeof(Initialize) }
+                    : Array.Empty<Type>();
         }
 
         [DebuggerHidden]
@@ -361,6 +364,10 @@ namespace Stateflows.StateMachines.Engine
                         foreach (var edge in edges)
                         {
                             if (!eventHolder.Triggers(edge) ||
+                                // (
+                                //     eventHolder.PayloadType == typeof(Completion) &&
+                                //     currentStack.Contains(edge.Target)
+                                // ) ||
                                 (
                                     lastActivatedEdge != null &&
                                     !edge.Source.IsOrthogonalTo(lastActivatedEdge.Source)
@@ -492,7 +499,7 @@ namespace Stateflows.StateMachines.Engine
                 BeginScope();
                 
                 var context = new StateMachineInitializationContext(Context);
-                Inspector.BeforeStateMachineInitialize(context, initializer == Graph.DefaultInitializer);
+                Inspector.BeforeStateMachineInitialize(context, initializer == Graph.DefaultInitializer && eventHolder.Name != Event<Initialize>.Name);
                 
                 try
                 {
@@ -504,7 +511,7 @@ namespace Stateflows.StateMachines.Engine
                 }
                 catch (Exception e)
                 {
-                    Trace.WriteLine($"⦗→s⦘ State Machine '{Context.Id.Name}:{Context.Id.Instance}': exception thrown '{e.Message}'");
+                    Trace.WriteLine($"⦗→s⦘ State Machine '{Context.Id.Name}:{Context.Id.Instance}': exception '{e.GetType().FullName}' thrown with message '{e.Message}'");
                     if (!Inspector.OnStateMachineInitializationException(context, e))
                     {
                         throw;
@@ -517,6 +524,7 @@ namespace Stateflows.StateMachines.Engine
 
                 Inspector.AfterStateMachineInitialize(
                     context,
+                    result == InitializationStatus.InitializedImplicitly,
                     result == InitializationStatus.InitializedImplicitly ||
                     result == InitializationStatus.InitializedExplicitly
                 );
@@ -528,8 +536,9 @@ namespace Stateflows.StateMachines.Engine
                 if (!noImplicitInitialization)
                 {
                     var context = new StateMachineInitializationContext(Context);
-                    Inspector.BeforeStateMachineInitialize(context, eventHolder.Name != Event<Initialize>.Name);
-                    Inspector.AfterStateMachineInitialize(context, true);
+                    var implicitInitialization = eventHolder.Name != Event<Initialize>.Name;
+                    Inspector.BeforeStateMachineInitialize(context, implicitInitialization);
+                    Inspector.AfterStateMachineInitialize(context, implicitInitialization, true);
                 }
                 
                 result = Graph.Initializers.Any()
@@ -556,7 +565,7 @@ namespace Stateflows.StateMachines.Engine
             }
             catch (Exception e)
             {
-                Trace.WriteLine($"⦗→s⦘ State Machine '{Context.Id.Name}:{Context.Id.Instance}': exception thrown '{e.Message}'");
+                Trace.WriteLine($"⦗→s⦘ State Machine '{Context.Id.Name}:{Context.Id.Instance}': exception '{e.GetType().FullName}' thrown with message '{e.Message}'");
                 if (!Inspector.OnStateMachineFinalizationException(context, e))
                 {
                     throw;
@@ -898,7 +907,7 @@ namespace Stateflows.StateMachines.Engine
         [DebuggerHidden]
         private async Task<bool> DoCompletionAsync()
         {
-            var completionEventHolder = (new Completion()).ToEventHolder();
+            var completionEventHolder = new Completion().ToEventHolder();
             Context.SetEvent(completionEventHolder);
 
             RebuildVerticesTree();

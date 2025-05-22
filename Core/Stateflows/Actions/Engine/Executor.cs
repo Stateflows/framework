@@ -225,7 +225,7 @@ namespace Stateflows.Actions.Engine
             }
             catch (Exception e)
             {
-                Trace.WriteLine($"⦗→s⦘ Action '{StateflowsContext.Id.Name}:{StateflowsContext.Id.Instance}': exception thrown '{e.Message}'");
+                Trace.WriteLine($"⦗→s⦘ Action '{StateflowsContext.Id.Name}:{StateflowsContext.Id.Instance}': exception '{e.GetType().FullName}' thrown with message '{e.Message}'");
                 if (!inspector.OnActionException(context, e))
                 {
                     throw;

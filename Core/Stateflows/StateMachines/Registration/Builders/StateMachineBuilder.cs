@@ -290,24 +290,24 @@ namespace Stateflows.StateMachines.Registration.Builders
             return this;
         }
 
-        IInitializedStateMachineBuilder IStateMachineUtils<IInitializedStateMachineBuilder>.SetPolymorphicTriggers(bool polymorphicTriggers)
-            => SetPolymorphicTriggers(polymorphicTriggers) as IInitializedStateMachineBuilder;
-
-        IFinalizedStateMachineBuilder IStateMachineUtils<IFinalizedStateMachineBuilder>.SetPolymorphicTriggers(bool polymorphicTriggers)
-            => SetPolymorphicTriggers(polymorphicTriggers) as IFinalizedStateMachineBuilder;
-
-        public IStateMachineBuilder SetPolymorphicTriggers(bool polymorphicTriggers)
-        {
-            Graph.PolymorphicTriggers = polymorphicTriggers;
-
-            return this;
-        }
-
-        IFinalizedOverridenStateMachineBuilder IStateMachineUtils<IFinalizedOverridenStateMachineBuilder>.SetPolymorphicTriggers(bool polymorphicTriggers)
-            => SetPolymorphicTriggers(polymorphicTriggers) as IFinalizedOverridenStateMachineBuilder;
-
-        IOverridenStateMachineBuilder IStateMachineUtils<IOverridenStateMachineBuilder>.SetPolymorphicTriggers(bool polymorphicTriggers)
-            => SetPolymorphicTriggers(polymorphicTriggers) as IOverridenStateMachineBuilder;
+        // IInitializedStateMachineBuilder IStateMachineUtils<IInitializedStateMachineBuilder>.SetPolymorphicTriggers(bool polymorphicTriggers)
+        //     => SetPolymorphicTriggers(polymorphicTriggers) as IInitializedStateMachineBuilder;
+        //
+        // IFinalizedStateMachineBuilder IStateMachineUtils<IFinalizedStateMachineBuilder>.SetPolymorphicTriggers(bool polymorphicTriggers)
+        //     => SetPolymorphicTriggers(polymorphicTriggers) as IFinalizedStateMachineBuilder;
+        //
+        // public IStateMachineBuilder SetPolymorphicTriggers(bool polymorphicTriggers)
+        // {
+        //     Graph.PolymorphicTriggers = polymorphicTriggers;
+        //
+        //     return this;
+        // }
+        //
+        // IFinalizedOverridenStateMachineBuilder IStateMachineUtils<IFinalizedOverridenStateMachineBuilder>.SetPolymorphicTriggers(bool polymorphicTriggers)
+        //     => SetPolymorphicTriggers(polymorphicTriggers) as IFinalizedOverridenStateMachineBuilder;
+        //
+        // IOverridenStateMachineBuilder IStateMachineUtils<IOverridenStateMachineBuilder>.SetPolymorphicTriggers(bool polymorphicTriggers)
+        //     => SetPolymorphicTriggers(polymorphicTriggers) as IOverridenStateMachineBuilder;
 
         IOverridenStateMachineBuilder IStateMachineUtils<IOverridenStateMachineBuilder>.AddInterceptor(StateMachineInterceptorFactory interceptorFactory)
             => AddInterceptor(interceptorFactory) as IOverridenStateMachineBuilder;

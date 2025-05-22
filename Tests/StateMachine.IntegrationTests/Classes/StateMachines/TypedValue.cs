@@ -8,14 +8,15 @@ namespace StateMachine.IntegrationTests.Classes.StateMachines
             => builder
                 .AddInitializer<ValueInitializationRequest>(async c =>
                 {
-                    c.Behavior.Values.Set<string>("foo", c.InitializationEvent.Value);
+                    await c.Behavior.Values.SetAsync<string>("foo", c.InitializationEvent.Value);
 
                     return true;
                 })
                 .AddInitialState("state1", b => b
-                    .AddOnEntry(c =>
+                    .AddOnEntry(async c =>
                     {
-                        if (c.Behavior.Values.TryGet<string>("foo", out var v))
+                        var (success, v) = await c.Behavior.Values.TryGetAsync<string>("foo");
+                        if (success)
                         {
                             Initialization.Value = v;
                         }

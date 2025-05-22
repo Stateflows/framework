@@ -69,14 +69,14 @@ namespace StateMachine.IntegrationTests.Tests
             {
                 status1 = (await sm1.SendAsync(new OtherEvent())).Status;
 
-                currentState1 = (await sm1.GetCurrentStateAsync()).Response.StatesTree.Value;
+                currentState1 = (await sm1.GetStatusAsync()).Response.CurrentStates.Value;
             }
 
             if (StateMachineLocator.TryLocateStateMachine(new StateMachineId("simple", "2"), out var sm2))
             {
                 status2 = (await sm2.SendAsync(new SomeEvent())).Status;
 
-                currentState2 = (await sm2.GetCurrentStateAsync()).Response.StatesTree.Value;
+                currentState2 = (await sm2.GetStatusAsync()).Response.CurrentStates.Value;
             }
 
             Assert.AreEqual(EventStatus.Consumed, status1);
@@ -97,14 +97,14 @@ namespace StateMachine.IntegrationTests.Tests
             {
                 status1 = (await sm1.SendAsync(new OtherEvent())).Status;
 
-                currentState1 = (await sm1.GetCurrentStateAsync()).Response.StatesTree.Value;
+                currentState1 = (await sm1.GetStatusAsync()).Response.CurrentStates.Value;
             }
 
             if (StateMachineLocator.TryLocateStateMachine(new StateMachineId("junction", "2"), out var sm2))
             {
                 status2 = (await sm2.SendAsync(new SomeEvent())).Status;
 
-                currentState2 = (await sm2.GetCurrentStateAsync()).Response.StatesTree.Value;
+                currentState2 = (await sm2.GetStatusAsync()).Response.CurrentStates.Value;
             }
 
             Assert.AreEqual(EventStatus.Consumed, status1);

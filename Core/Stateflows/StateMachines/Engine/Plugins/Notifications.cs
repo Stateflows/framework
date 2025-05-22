@@ -28,13 +28,14 @@ namespace Stateflows.StateMachines.Engine
             Trace.WriteLine($"⦗→s⦘ State Machine '{context.StateMachine.Id.Name}:{context.StateMachine.Id.Instance}': finalized '{context.State.Name}'");
         }
 
-        public override void AfterStateMachineInitialize(IStateMachineInitializationContext context, bool initialized)
+        public override void AfterStateMachineInitialize(IStateMachineInitializationContext context, bool implicitInitialization, bool initialized)
         {
             Trace.WriteLine($"⦗→s⦘ State Machine '{context.StateMachine.Id.Name}:{context.StateMachine.Id.Instance}': {(initialized ? "" : "not ")}initialized");
 
             var executor = context.StateMachine.GetExecutor();
             var notification = new BehaviorInfo()
             {
+                Id = executor.Context.Id,
                 BehaviorStatus = BehaviorStatus.Initialized,
                 ExpectedEvents = executor.GetExpectedEventNames()
             };
@@ -46,7 +47,11 @@ namespace Stateflows.StateMachines.Engine
         {
             Trace.WriteLine($"⦗→s⦘ State Machine '{context.StateMachine.Id.Name}:{context.StateMachine.Id.Instance}': finalized");
 
-            var notification = new BehaviorInfo() { BehaviorStatus = BehaviorStatus.Finalized };
+            var notification = new BehaviorInfo()
+            {
+                Id = context.StateMachine.Id,
+                BehaviorStatus = BehaviorStatus.Finalized
+            };
 
             context.StateMachine.Publish(notification);
         }
@@ -99,8 +104,9 @@ namespace Stateflows.StateMachines.Engine
             if (!executor.StateHasChanged) return;
             var notification = new StateMachineInfo()
             {
+                Id = executor.Context.Id,
                 BehaviorStatus = executor.BehaviorStatus,
-                StatesTree = executor.GetStateTree(),
+                CurrentStates = executor.GetStatesTree(),
                 ExpectedEvents = executor.GetExpectedEventNames(),
             };
 
@@ -109,56 +115,56 @@ namespace Stateflows.StateMachines.Engine
 
         public override bool OnStateMachineInitializationException(IStateMachineInitializationContext context, Exception exception)
         {
-            Trace.WriteLine($"⦗→s⦘ State Machine '{context.StateMachine.Id.Name}:{context.StateMachine.Id.Instance}': unhandled exception '{exception.GetType().Name}' with message '{exception.Message}' on State Machine initialization");
+            Trace.WriteLine($"⦗→s⦘ State Machine '{context.StateMachine.Id.Name}:{context.StateMachine.Id.Instance}': unhandled exception '{exception.GetType().Name}' thrown with message '{exception.Message}' on State Machine initialization");
 
             return false;
         }
 
         public override bool OnStateMachineFinalizationException(IStateMachineActionContext context, Exception exception)
         {
-            Trace.WriteLine($"⦗→s⦘ State Machine '{context.StateMachine.Id.Name}:{context.StateMachine.Id.Instance}': unhandled exception '{exception.GetType().Name}' with message '{exception.Message}' on State Machine finalization");
+            Trace.WriteLine($"⦗→s⦘ State Machine '{context.StateMachine.Id.Name}:{context.StateMachine.Id.Instance}': unhandled exception '{exception.GetType().Name}' thrown with message '{exception.Message}' on State Machine finalization");
 
             return false;
         }
 
         public override bool OnTransitionGuardException<TEvent>(ITransitionContext<TEvent> context, Exception exception)
         {
-            Trace.WriteLine($"⦗→s⦘ State Machine '{context.StateMachine.Id.Name}:{context.StateMachine.Id.Instance}': unhandled exception '{exception.GetType().Name}' with message '{exception.Message}' on transition guard");
+            Trace.WriteLine($"⦗→s⦘ State Machine '{context.StateMachine.Id.Name}:{context.StateMachine.Id.Instance}': unhandled exception '{exception.GetType().Name}' thrown with message '{exception.Message}' on guard of transition from state '{context.Source.Name}'");
 
             return false;
         }
 
         public override bool OnTransitionEffectException<TEvent>(ITransitionContext<TEvent> context, Exception exception)
         {
-            Trace.WriteLine($"⦗→s⦘ State Machine '{context.StateMachine.Id.Name}:{context.StateMachine.Id.Instance}': unhandled exception '{exception.GetType().Name}' with message '{exception.Message}' on transition effect");
+            Trace.WriteLine($"⦗→s⦘ State Machine '{context.StateMachine.Id.Name}:{context.StateMachine.Id.Instance}': unhandled exception '{exception.GetType().Name}' thrown with message '{exception.Message}' on effect of transition from state '{context.Source.Name}'");
 
             return false;
         }
 
         public override bool OnStateInitializationException(IStateActionContext context, Exception exception)
         {
-            Trace.WriteLine($"⦗→s⦘ State Machine '{context.StateMachine.Id.Name}:{context.StateMachine.Id.Instance}': unhandled exception '{exception.GetType().Name}' with message '{exception.Message}' on initialization");
+            Trace.WriteLine($"⦗→s⦘ State Machine '{context.StateMachine.Id.Name}:{context.StateMachine.Id.Instance}': unhandled exception '{exception.GetType().Name}' thrown with message '{exception.Message}' on state '{context.State.Name}' initialization");
 
             return false;
         }
 
         public override bool OnStateFinalizationException(IStateActionContext context, Exception exception)
         {
-            Trace.WriteLine($"⦗→s⦘ State Machine '{context.StateMachine.Id.Name}:{context.StateMachine.Id.Instance}': unhandled exception '{exception.GetType().Name}' with message '{exception.Message}' on finalization");
+            Trace.WriteLine($"⦗→s⦘ State Machine '{context.StateMachine.Id.Name}:{context.StateMachine.Id.Instance}': unhandled exception '{exception.GetType().Name}' thrown with message '{exception.Message}' on state '{context.State.Name}' finalization");
 
             return false;
         }
 
         public override bool OnStateEntryException(IStateActionContext context, Exception exception)
         {
-            Trace.WriteLine($"⦗→s⦘ State Machine '{context.StateMachine.Id.Name}:{context.StateMachine.Id.Instance}': unhandled exception '{exception.GetType().Name}' with message '{exception.Message}' on entry");
+            Trace.WriteLine($"⦗→s⦘ State Machine '{context.StateMachine.Id.Name}:{context.StateMachine.Id.Instance}': unhandled exception '{exception.GetType().Name}' thrown with message '{exception.Message}' on entry to state '{context.State.Name}'");
 
             return false;
         }
 
         public override bool OnStateExitException(IStateActionContext context, Exception exception)
         {
-            Trace.WriteLine($"⦗→s⦘ State Machine '{context.StateMachine.Id.Name}:{context.StateMachine.Id.Instance}': unhandled exception '{exception.GetType().Name}' with message '{exception.Message}' on exit");
+            Trace.WriteLine($"⦗→s⦘ State Machine '{context.StateMachine.Id.Name}:{context.StateMachine.Id.Instance}': unhandled exception '{exception.GetType().Name}' thrown with message '{exception.Message}' on exit from state '{context.State.Name}'");
 
             return false;
         }

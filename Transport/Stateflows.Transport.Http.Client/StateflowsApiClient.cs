@@ -29,6 +29,7 @@ namespace Stateflows.Transport.Http.Client
 
         private async Task CheckForNotificationsAsync()
         {
+            ResponseHolder.SetResponses(new Dictionary<object, EventHolder>());
             IEnumerable<INotificationTarget> targets;
             lock (this)
             {
@@ -78,11 +79,11 @@ namespace Stateflows.Transport.Http.Client
                         }
                     }
 
-                    return new SendResult(eventHolder, result.EventStatus, Array.Empty<EventHolder>(), result.Validation);
+                    return new SendResult(result.EventStatus, result.Validation);
                 }
             }
 
-            return new SendResult(eventHolder, EventStatus.Rejected);
+            return new SendResult(EventStatus.Rejected);
         }
 
         [DebuggerHidden]

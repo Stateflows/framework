@@ -4,9 +4,12 @@ namespace Stateflows.Common
 {
     public static class StringExtensions
     {
-        public static string GetShortName(this string name)
-            => name.Contains('<')
-                ? $"{name.Split('<').First().Split('.').Last()}<{name.Split('<').Last().Split('.').Last()}"
-                : name.Split('.').Last();
+        public static string ToShortName(this string value)
+            => value.Contains('<')
+                ? $"{value.Split('<').First().Split('.').Last()}<{value.Split('<').Last().Split('.').Last()}"
+                : value.Split('.').Last();
+
+        public static string ToCamelCase(this string value)
+            => System.Text.Json.JsonNamingPolicy.CamelCase.ConvertName(value);
     }
 }

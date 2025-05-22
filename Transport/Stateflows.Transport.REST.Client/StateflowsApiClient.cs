@@ -20,7 +20,7 @@ internal class StateflowsApiClient : IDisposable
 
     public List<INotificationTarget> NotificationTargets { get; } = new();
 
-    public StateflowsApiClient(HttpClient httpClient, StateflowsApiClientConfig config)
+    public StateflowsApiClient(HttpClient httpClient, StateflowsApiClientConfig config, IServiceProvider serviceProvider)
     {
         _httpClient = httpClient;
 
@@ -43,7 +43,7 @@ internal class StateflowsApiClient : IDisposable
     {
         if (eventHolder is EventHolder<Initialize>)
         {
-            var requestResult = await _httpClient.PostAsync(
+            _ = await _httpClient.PostAsync(
                 $"/stateflows/{behaviorId.Type}/{behaviorId.Name}/{behaviorId.Instance}/initialize",
                 new StringContent(
                     StateflowsJsonConverter.SerializePolymorphicObject(
@@ -98,7 +98,8 @@ internal class StateflowsApiClient : IDisposable
                     }
                 }
 
-                return new SendResult(eventHolder, result.EventStatus, result.Validation);
+                // todo: get notifications
+                return new SendResult(eventHolder, result.EventStatus, null, result.Validation);
             }
         }
 

@@ -3,6 +3,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Reflection;
 using Microsoft.Extensions.DependencyInjection;
 using Stateflows.Common;
 using Stateflows.Common.Exceptions;
@@ -94,7 +95,7 @@ namespace Stateflows.StateMachines.Registration.Builders
                             }
                             else
                             {
-                                Trace.WriteLine($"⦗→s⦘ Activity '{context.Context.Id.Name}:{context.Context.Id.Instance}': exception thrown '{e.Message}'");
+                                // Trace.WriteLine($"⦗→s⦘ Activity '{context.Context.Id.Name}:{context.Context.Id.Instance}': exception '{e.GetType().FullName}' thrown with message '{e.Message}'");
                                 if (!c.Executor.Inspector.OnTransitionGuardException(context, e))
                                 {
                                     throw;
@@ -149,7 +150,7 @@ namespace Stateflows.StateMachines.Registration.Builders
                             }
                             else
                             {
-                                Trace.WriteLine($"⦗→s⦘ Activity '{context.Context.Id.Name}:{context.Context.Id.Instance}': exception thrown '{e.Message}'");
+                                // Trace.WriteLine($"⦗→s⦘ Activity '{context.Context.Id.Name}:{context.Context.Id.Instance}': exception '{e.GetType().FullName}' thrown with message '{e.Message}'");
                                 if (!c.Executor.Inspector.OnTransitionEffectException(context, e))
                                 {
                                     throw;
@@ -201,44 +202,32 @@ namespace Stateflows.StateMachines.Registration.Builders
         IForwardedEventBuilder<TEvent> IBaseGuard<TEvent, IForwardedEventBuilder<TEvent>>.AddGuard(params Func<ITransitionContext<TEvent>, Task<bool>>[] guardsAsync)
             => AddGuard(guardsAsync) as IForwardedEventBuilder<TEvent>;
 
-        public ITransitionBuilder<TEvent> SetPolymorphicTriggers(bool polymorphicTriggers)
-        {
-            Edge.PolymorphicTriggers = polymorphicTriggers;
-            return this;
-        }
-
-        IElseTransitionBuilder<TEvent> ITransitionUtils<IElseTransitionBuilder<TEvent>>.SetPolymorphicTriggers(bool polymorphicTriggers)
-            => SetPolymorphicTriggers(polymorphicTriggers) as IElseTransitionBuilder<TEvent>;
-
-        IElseInternalTransitionBuilder<TEvent> ITransitionUtils<IElseInternalTransitionBuilder<TEvent>>.SetPolymorphicTriggers(bool polymorphicTriggers)
-            => SetPolymorphicTriggers(polymorphicTriggers) as IElseInternalTransitionBuilder<TEvent>;
-
-        IDefaultTransitionBuilder ITransitionUtils<IDefaultTransitionBuilder>.SetPolymorphicTriggers(bool polymorphicTriggers)
-            => SetPolymorphicTriggers(polymorphicTriggers) as IDefaultTransitionBuilder;
-
-        IDefaultTransitionEffectBuilder ITransitionUtils<IDefaultTransitionEffectBuilder>.SetPolymorphicTriggers(bool polymorphicTriggers)
-            => SetPolymorphicTriggers(polymorphicTriggers) as IDefaultTransitionEffectBuilder;
-
-        IElseDefaultTransitionBuilder ITransitionUtils<IElseDefaultTransitionBuilder>.SetPolymorphicTriggers(bool polymorphicTriggers)
-            => SetPolymorphicTriggers(polymorphicTriggers) as IElseDefaultTransitionBuilder;
-
-        IOverridenTransitionBuilder<TEvent> ITransitionUtils<IOverridenTransitionBuilder<TEvent>>.SetPolymorphicTriggers(bool polymorphicTriggers)
-            => SetPolymorphicTriggers(polymorphicTriggers) as IOverridenTransitionBuilder<TEvent>;
-
-        IOverridenElseTransitionBuilder<TEvent> ITransitionUtils<IOverridenElseTransitionBuilder<TEvent>>.SetPolymorphicTriggers(bool polymorphicTriggers)
-            => SetPolymorphicTriggers(polymorphicTriggers) as IOverridenElseTransitionBuilder<TEvent>;
-
-        IOverridenElseInternalTransitionBuilder<TEvent> ITransitionUtils<IOverridenElseInternalTransitionBuilder<TEvent>>.SetPolymorphicTriggers(bool polymorphicTriggers)
-            => SetPolymorphicTriggers(polymorphicTriggers) as IOverridenElseInternalTransitionBuilder<TEvent>;
-
-        IOverridenDefaultTransitionBuilder ITransitionUtils<IOverridenDefaultTransitionBuilder>.SetPolymorphicTriggers(bool polymorphicTriggers)
-            => SetPolymorphicTriggers(polymorphicTriggers) as IOverridenDefaultTransitionBuilder;
-
-        IOverridenDefaultTransitionEffectBuilder ITransitionUtils<IOverridenDefaultTransitionEffectBuilder>.SetPolymorphicTriggers(bool polymorphicTriggers)
-            => SetPolymorphicTriggers(polymorphicTriggers) as IOverridenDefaultTransitionEffectBuilder;
-
-        IOverridenElseDefaultTransitionBuilder ITransitionUtils<IOverridenElseDefaultTransitionBuilder>.SetPolymorphicTriggers(bool polymorphicTriggers)
-            => SetPolymorphicTriggers(polymorphicTriggers) as IOverridenElseDefaultTransitionBuilder;
+        // public ITransitionBuilder<TEvent> SetPolymorphicTriggers(bool polymorphicTriggers)
+        // {
+        //     Edge.PolymorphicTriggers = polymorphicTriggers;
+        //     return this;
+        // }
+        //
+        // IElseTransitionBuilder<TEvent> ITriggeredTransitionUtils<IElseTransitionBuilder<TEvent>>.SetPolymorphicTriggers(bool polymorphicTriggers)
+        //     => SetPolymorphicTriggers(polymorphicTriggers) as IElseTransitionBuilder<TEvent>;
+        //
+        // IElseInternalTransitionBuilder<TEvent> ITriggeredTransitionUtils<IElseInternalTransitionBuilder<TEvent>>.SetPolymorphicTriggers(bool polymorphicTriggers)
+        //     => SetPolymorphicTriggers(polymorphicTriggers) as IElseInternalTransitionBuilder<TEvent>;
+        //
+        // IElseDefaultTransitionBuilder ITriggeredTransitionUtils<IElseDefaultTransitionBuilder>.SetPolymorphicTriggers(bool polymorphicTriggers)
+        //     => SetPolymorphicTriggers(polymorphicTriggers) as IElseDefaultTransitionBuilder;
+        //
+        // IOverridenTransitionBuilder<TEvent> ITriggeredTransitionUtils<IOverridenTransitionBuilder<TEvent>>.SetPolymorphicTriggers(bool polymorphicTriggers)
+        //     => SetPolymorphicTriggers(polymorphicTriggers) as IOverridenTransitionBuilder<TEvent>;
+        //
+        // IOverridenElseTransitionBuilder<TEvent> ITriggeredTransitionUtils<IOverridenElseTransitionBuilder<TEvent>>.SetPolymorphicTriggers(bool polymorphicTriggers)
+        //     => SetPolymorphicTriggers(polymorphicTriggers) as IOverridenElseTransitionBuilder<TEvent>;
+        //
+        // IOverridenElseInternalTransitionBuilder<TEvent> ITriggeredTransitionUtils<IOverridenElseInternalTransitionBuilder<TEvent>>.SetPolymorphicTriggers(bool polymorphicTriggers)
+        //     => SetPolymorphicTriggers(polymorphicTriggers) as IOverridenElseInternalTransitionBuilder<TEvent>;
+        //
+        // IOverridenElseDefaultTransitionBuilder ITriggeredTransitionUtils<IOverridenElseDefaultTransitionBuilder>.SetPolymorphicTriggers(bool polymorphicTriggers)
+        //     => SetPolymorphicTriggers(polymorphicTriggers) as IOverridenElseDefaultTransitionBuilder;
 
         public ITransitionBuilder<TEvent> SetIsLocal(bool isLocal)
         {
@@ -247,22 +236,22 @@ namespace Stateflows.StateMachines.Registration.Builders
             return this;
         }
 
-        IElseTransitionBuilder<TEvent> ITransitionUtils<IElseTransitionBuilder<TEvent>>.SetIsLocal(bool isLocal)
+        IElseTransitionBuilder<TEvent> ITargetedTransitionUtils<IElseTransitionBuilder<TEvent>>.SetIsLocal(bool isLocal)
             => SetIsLocal(isLocal) as IElseTransitionBuilder<TEvent>;
 
-        IElseInternalTransitionBuilder<TEvent> ITransitionUtils<IElseInternalTransitionBuilder<TEvent>>.SetIsLocal(bool isLocal)
+        IElseInternalTransitionBuilder<TEvent> ITargetedTransitionUtils<IElseInternalTransitionBuilder<TEvent>>.SetIsLocal(bool isLocal)
             => SetIsLocal(isLocal) as IElseInternalTransitionBuilder<TEvent>;
 
-        IDefaultTransitionBuilder ITransitionUtils<IDefaultTransitionBuilder>.SetIsLocal(bool isLocal)
+        IDefaultTransitionBuilder ITargetedTransitionUtils<IDefaultTransitionBuilder>.SetIsLocal(bool isLocal)
             => SetIsLocal(isLocal) as IDefaultTransitionBuilder;
 
-        IDefaultTransitionEffectBuilder ITransitionUtils<IDefaultTransitionEffectBuilder>.SetIsLocal(bool isLocal)
+        IDefaultTransitionEffectBuilder ITargetedTransitionUtils<IDefaultTransitionEffectBuilder>.SetIsLocal(bool isLocal)
             => SetIsLocal(isLocal) as IDefaultTransitionEffectBuilder;
 
-        IElseDefaultTransitionBuilder ITransitionUtils<IElseDefaultTransitionBuilder>.SetIsLocal(bool isLocal)
+        IElseDefaultTransitionBuilder ITargetedTransitionUtils<IElseDefaultTransitionBuilder>.SetIsLocal(bool isLocal)
             => SetIsLocal(isLocal) as IElseDefaultTransitionBuilder;
 
-        IOverridenTransitionBuilder<TEvent> ITransitionUtils<IOverridenTransitionBuilder<TEvent>>.SetIsLocal(
+        IOverridenTransitionBuilder<TEvent> ITargetedTransitionUtils<IOverridenTransitionBuilder<TEvent>>.SetIsLocal(
             bool isLocal)
             => SetIsLocal(isLocal) as IOverridenTransitionBuilder<TEvent>;
 
@@ -274,7 +263,7 @@ namespace Stateflows.StateMachines.Registration.Builders
             params Func<ITransitionContext<TEvent>, Task<bool>>[] guardsAsync)
             => AddGuard(guardsAsync) as IOverridenTransitionBuilder<TEvent>;
 
-        IOverridenElseTransitionBuilder<TEvent> ITransitionUtils<IOverridenElseTransitionBuilder<TEvent>>.SetIsLocal(
+        IOverridenElseTransitionBuilder<TEvent> ITargetedTransitionUtils<IOverridenElseTransitionBuilder<TEvent>>.SetIsLocal(
             bool isLocal)
             => SetIsLocal(isLocal) as IOverridenElseTransitionBuilder<TEvent>;
 
@@ -291,13 +280,13 @@ namespace Stateflows.StateMachines.Registration.Builders
             => AddGuard(guardsAsync) as IOverridenInternalTransitionBuilder<TEvent>;
 
         IOverridenElseInternalTransitionBuilder<TEvent>
-            ITransitionUtils<IOverridenElseInternalTransitionBuilder<TEvent>>.SetIsLocal(bool isLocal)
+            ITargetedTransitionUtils<IOverridenElseInternalTransitionBuilder<TEvent>>.SetIsLocal(bool isLocal)
             => SetIsLocal(isLocal) as IOverridenElseInternalTransitionBuilder<TEvent>;
 
         IOverridenElseInternalTransitionBuilder<TEvent> IEffect<TEvent, IOverridenElseInternalTransitionBuilder<TEvent>>.AddEffect(params Func<ITransitionContext<TEvent>, Task>[] effectsAsync)
             => AddEffect(effectsAsync) as IOverridenElseInternalTransitionBuilder<TEvent>;
 
-        IOverridenDefaultTransitionBuilder ITransitionUtils<IOverridenDefaultTransitionBuilder>.SetIsLocal(bool isLocal)
+        IOverridenDefaultTransitionBuilder ITargetedTransitionUtils<IOverridenDefaultTransitionBuilder>.SetIsLocal(bool isLocal)
             => SetIsLocal(isLocal) as IOverridenDefaultTransitionBuilder;
 
         IOverridenDefaultTransitionBuilder IDefaultEffect<IOverridenDefaultTransitionBuilder>.AddEffect(params Func<ITransitionContext<Completion>, Task>[] effectsAsync)
@@ -306,18 +295,24 @@ namespace Stateflows.StateMachines.Registration.Builders
         IOverridenDefaultTransitionBuilder IBaseDefaultGuard<IOverridenDefaultTransitionBuilder>.AddGuard(params Func<ITransitionContext<Completion>, Task<bool>>[] guardsAsync)
             => (this as TransitionBuilder<Completion>)!.AddGuard(guardsAsync) as IOverridenDefaultTransitionBuilder;
 
-        IOverridenDefaultTransitionEffectBuilder ITransitionUtils<IOverridenDefaultTransitionEffectBuilder>.SetIsLocal(
+        IOverridenDefaultTransitionEffectBuilder ITargetedTransitionUtils<IOverridenDefaultTransitionEffectBuilder>.SetIsLocal(
             bool isLocal)
             => SetIsLocal(isLocal) as IOverridenDefaultTransitionEffectBuilder;
 
         IOverridenDefaultTransitionEffectBuilder IDefaultEffect<IOverridenDefaultTransitionEffectBuilder>.AddEffect(params Func<ITransitionContext<Completion>, Task>[] effectsAsync)
             => (this as TransitionBuilder<Completion>)!.AddEffect(effectsAsync) as IOverridenDefaultTransitionEffectBuilder;
 
-        IOverridenElseDefaultTransitionBuilder ITransitionUtils<IOverridenElseDefaultTransitionBuilder>.SetIsLocal(
+        IOverridenElseDefaultTransitionBuilder ITargetedTransitionUtils<IOverridenElseDefaultTransitionBuilder>.SetIsLocal(
             bool isLocal)
             => SetIsLocal(isLocal) as IOverridenElseDefaultTransitionBuilder;
 
         IOverridenElseDefaultTransitionBuilder IDefaultEffect<IOverridenElseDefaultTransitionBuilder>.AddEffect(params Func<ITransitionContext<Completion>, Task>[] effectsAsync)
             => (this as TransitionBuilder<Completion>)!.AddEffect(effectsAsync) as IOverridenElseDefaultTransitionBuilder;
+
+        // IInternalTransitionBuilder<TEvent> ITriggeredTransitionUtils<IInternalTransitionBuilder<TEvent>>.SetPolymorphicTriggers(bool polymorphicTriggers)
+        //     => SetPolymorphicTriggers(polymorphicTriggers) as IInternalTransitionBuilder<TEvent>;
+        //
+        // IOverridenInternalTransitionBuilder<TEvent> ITriggeredTransitionUtils<IOverridenInternalTransitionBuilder<TEvent>>.SetPolymorphicTriggers(bool polymorphicTriggers)
+        //     => SetPolymorphicTriggers(polymorphicTriggers) as IOverridenInternalTransitionBuilder<TEvent>;
     }
 }

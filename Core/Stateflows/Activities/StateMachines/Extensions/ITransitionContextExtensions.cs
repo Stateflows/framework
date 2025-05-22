@@ -1,7 +1,7 @@
 ﻿using System;
 using Stateflows.Actions;
+using Stateflows.StateMachines;
 using Stateflows.StateMachines.Registration;
-using Stateflows.StateMachines.Context.Interfaces;
 
 namespace Stateflows.Activities
 {

@@ -1,20 +1,22 @@
 ﻿using Stateflows.Common;
 using Stateflows.Common.Classes;
+using Stateflows.Common.Interfaces;
 using Stateflows.Common.Transport.Classes;
 using Stateflows.Common.Transport.Interfaces;
 
 namespace Stateflows.Transport.REST.Client;
 
-internal class Behavior : IBehavior, IUnwatcher, INotificationTarget
+internal class Behavior : IBehavior, IUnwatcher, INotificationTarget, IInjectionScope
 {
     private readonly StateflowsApiClient apiClient;
     private readonly List<Watch> watches = new();
+    public IServiceProvider ServiceProvider { get; } 
     public IEnumerable<Watch> Watches
         => watches;
 
     public BehaviorId Id { get; }
 
-    public Behavior(StateflowsApiClient apiClient, BehaviorId id)
+    public Behavior(StateflowsApiClient apiClient, BehaviorId id, IServiceProvider serviceProvider)
     {
         this.apiClient = apiClient;
         lock (apiClient)
@@ -24,6 +26,7 @@ internal class Behavior : IBehavior, IUnwatcher, INotificationTarget
         }
 
         Id = id;
+        ServiceProvider = serviceProvider;
     }
 
     private void ApiClient_OnNotify(EventHolder notificationHolder, DateTime responseTime)
@@ -66,7 +69,8 @@ internal class Behavior : IBehavior, IUnwatcher, INotificationTarget
         var eventHolder = request.ToTypedEventHolder(headers);
 
         var result = await SendAsync(request);
-        return new RequestResult<TResponse>(eventHolder, result.Status, result.Validation);
+        // todo: get notifications
+        return new RequestResult<TResponse>(eventHolder, result.Status, null, result.Validation);
     }
 
     public Task<IWatcher> WatchAsync<TNotification>(Action<TNotification> handler)

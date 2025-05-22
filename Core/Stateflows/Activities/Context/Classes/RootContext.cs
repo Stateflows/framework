@@ -2,7 +2,6 @@
 using System.Linq;
 using System.Threading.Tasks;
 using System.Collections.Generic;
-using System.Net;
 using Microsoft.Extensions.DependencyInjection;
 using Newtonsoft.Json;
 using Stateflows.Common;
@@ -399,7 +398,7 @@ namespace Stateflows.Activities.Context.Classes
                     ) &&
                     
                     // active event accepting nodes
-                    !ActiveNodes.Any() &&
+                    !node.Nodes.Values.Any(node => ActiveNodes.Keys.Contains(node.Identifier)) &&
                     
                     // input node on topmost level
                     (

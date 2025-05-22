@@ -44,13 +44,13 @@ namespace Stateflows.Activities.Utils
             => HandleException((context as IRootContext).Context, node, exception as TException);
 
         public bool OnNodeInitializationException(IActivityNodeContext context, Exception exception)
-            => HandleException((context as IRootContext).Context, (context.CurrentNode as NodeContext).Node, exception as TException);
+            => HandleException((context as IRootContext).Context, (context.Node as NodeContext).Node, exception as TException);
 
         public bool OnNodeFinalizationException(IActivityNodeContext context, Exception exception)
-            => HandleException((context as IRootContext).Context, (context.CurrentNode as NodeContext).Node, exception as TException);
+            => HandleException((context as IRootContext).Context, (context.Node as NodeContext).Node, exception as TException);
 
         public bool OnNodeExecutionException(IActivityNodeContext context, Exception exception)
-            => HandleException((context as IRootContext).Context, (context.CurrentNode as NodeContext).Node, exception as TException);
+            => HandleException((context as IRootContext).Context, (context.Node as NodeContext).Node, exception as TException);
 
         public bool OnFlowGuardException<TToken>(IGuardContext<TToken> context, Exception exception)
             => HandleException((context as IRootContext).Context, (context.SourceNode as NodeContext).Node, exception as TException);

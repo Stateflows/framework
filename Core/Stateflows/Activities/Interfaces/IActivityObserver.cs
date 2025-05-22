@@ -4,8 +4,8 @@ namespace Stateflows.Activities
 {
     public interface IActivityObserver
     {
-        void BeforeActivityInitialize(IActivityInitializationContext context);
-        void AfterActivityInitialize(IActivityInitializationContext context, bool initialized);
+        void BeforeActivityInitialize(IActivityInitializationContext context, bool implicitInitialization);
+        void AfterActivityInitialize(IActivityInitializationContext context, bool implicitInitialization, bool initialized);
 
         void BeforeActivityFinalize(IActivityFinalizationContext context);
         void AfterActivityFinalize(IActivityFinalizationContext context);

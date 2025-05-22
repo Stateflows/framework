@@ -79,13 +79,13 @@ namespace Activity.IntegrationTests.Tests
             await action.ExecuteAsync(CancellationToken.None);
 
             // Use ContextValues static class to manage context values before or after running tested code
-            var isSet = ContextValues.GlobalValues.TryGet<int>("foo", out var value);
+            var (isFooSet, fooValue) = await ContextValues.GlobalValues.TryGetAsync<int>("foo");
 
             // Use OutputTokens static class to get tokens that are produced by tested action class
             var output = OutputTokens.GetAllOfType<int>().FirstOrDefault();
 
-            Assert.IsTrue(isSet);
-            Assert.AreEqual(42, value);
+            Assert.IsTrue(isFooSet);
+            Assert.AreEqual(42, fooValue);
             Assert.AreEqual(42, output);
             Assert.IsTrue(Executed);
         }
@@ -102,7 +102,7 @@ namespace Activity.IntegrationTests.Tests
             var result = await flow.GuardAsync(42);
 
             // Use ContextValues static class to manage context values before or after running tested code
-            var isSet = ContextValues.GlobalValues.TryGet<int>("foo", out var value);
+            var (isSet, value) = await ContextValues.GlobalValues.TryGetAsync<int>("foo");
 
             Assert.IsTrue(isSet);
             Assert.AreEqual(42, value);

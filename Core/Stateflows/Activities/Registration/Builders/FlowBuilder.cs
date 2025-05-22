@@ -10,6 +10,7 @@ using Stateflows.Activities.Registration.Interfaces;
 using Stateflows.Common;
 using Stateflows.Common.Exceptions;
 using Microsoft.Extensions.DependencyInjection;
+using Stateflows.Actions.Engine;
 
 namespace Stateflows.Activities.Registration.Builders
 {
@@ -43,15 +44,15 @@ namespace Stateflows.Activities.Registration.Builders
 
                 logic.Actions.Add(async (context, inspector) =>
                 {
+                    if (!(context.Token is TokenHolder<TToken> token)) return default;
+
+                    var flowContext = new TokenFlowContext<TToken>(context, token.Payload);
+                    
                     try
                     {
-                        if (!(context.Token is TokenHolder<TToken> token)) return default;
-
-                        var flowContext = new TokenFlowContext<TToken>(context, token.Payload);
-                        
                         inspector.BeforeFlowGuard(flowContext);
 
-                        var result = await guardAsync(new TokenFlowContext<TToken>(context, token.Payload))
+                        var result = await guardAsync(flowContext)
                             ? token
                             : default;
 
@@ -67,10 +68,10 @@ namespace Stateflows.Activities.Registration.Builders
                         }
                         else
                         {
-                            Trace.WriteLine(
-                                $"⦗→s⦘ Activity '{context.Context.Id.Name}:{context.Context.Id.Instance}': exception thrown '{e.Message}'");
+                            Trace.WriteLine($"⦗→s⦘ Activity '{context.Context.Id.Name}:{context.Context.Id.Instance}': exception '{e.GetType().FullName}' thrown with message '{e.Message}'");
                             if (!(Edge.Source != null && await Edge.Source.HandleExceptionAsync(e, context)))
                             {
+                                inspector.OnFlowGuardException(flowContext, e);
                                 throw;
                             }
                             else
@@ -93,13 +94,15 @@ namespace Stateflows.Activities.Registration.Builders
 
             logic.Actions.Add(async (context, inspector) =>
             {
+                if (!(context.Token is TokenHolder<TToken> token)) return default;
+
+                var flowContext = new TokenFlowContext<TToken>(context, token.Payload);
+                
                 try
                 {
-                    if (!(context.Token is TokenHolder<TToken> token)) return default;
+                    inspector.BeforeFlowTransform<TToken, TTransformedToken>(flowContext);
                         
-                    inspector.BeforeFlowTransform<TToken, TTransformedToken>(new TokenFlowContext<TToken>(context, token.Payload));
-                        
-                    var transformedToken = (await transformationAsync(new TokenFlowContext<TToken>(context, token.Payload)))
+                    var transformedToken = (await transformationAsync(flowContext))
                         .ToTokenHolder();
                     
                     inspector.AfterFlowTransform(new TokenFlowContext<TToken, TTransformedToken>(context, token.Payload, transformedToken.Payload));
@@ -114,9 +117,10 @@ namespace Stateflows.Activities.Registration.Builders
                     }
                     else
                     {
-                        Trace.WriteLine($"⦗→s⦘ Activity '{context.Context.Id.Name}:{context.Context.Id.Instance}': exception thrown '{e.Message}'");
+                        Trace.WriteLine($"⦗→s⦘ Activity '{context.Context.Id.Name}:{context.Context.Id.Instance}': exception '{e.GetType().FullName}' thrown with message '{e.Message}'");
                         if (!(Edge.Source != null && await Edge.Source.HandleExceptionAsync(e, context)))
                         {
+                            inspector.OnFlowTransformationException<TToken, TTransformedToken>(flowContext, e);
                             throw;
                         }
                         else

@@ -13,8 +13,6 @@ namespace Stateflows.Common.Interfaces
 
         void UnregisterHandler(INotificationHandler notificationHandler);
 
-        // object LockObject { get; }
-        // Dictionary<BehaviorId, List<EventHolder>> GetNotifications();
         Task<EventHolder[]> GetNotificationsAsync(BehaviorId behaviorId, Func<EventHolder, bool> filter = null);
     }
 }

@@ -149,7 +149,7 @@ namespace Stateflows.Activities.Engine
             ContextValues.SourceStateValuesHolder.Value = null;
             ContextValues.TargetStateValuesHolder.Value = null;
 
-            ActivitiesContextHolder.NodeContext.Value = context.CurrentNode;
+            ActivitiesContextHolder.NodeContext.Value = context.Node;
             ActivitiesContextHolder.FlowContext.Value = null;
             ActivitiesContextHolder.ActivityContext.Value = context.Activity;
             ActivitiesContextHolder.BehaviorContext.Value = context.Activity;
@@ -170,7 +170,7 @@ namespace Stateflows.Activities.Engine
             ContextValues.SourceStateValuesHolder.Value = null;
             ContextValues.TargetStateValuesHolder.Value = null;
 
-            ActivitiesContextHolder.NodeContext.Value = context.CurrentNode;
+            ActivitiesContextHolder.NodeContext.Value = context.Node;
             ActivitiesContextHolder.FlowContext.Value = null;
             ActivitiesContextHolder.ActivityContext.Value = context.Activity;
             ActivitiesContextHolder.BehaviorContext.Value = context.Activity;
@@ -190,7 +190,7 @@ namespace Stateflows.Activities.Engine
             ContextValues.SourceStateValuesHolder.Value = null;
             ContextValues.TargetStateValuesHolder.Value = null;
 
-            ActivitiesContextHolder.NodeContext.Value = context.CurrentNode;
+            ActivitiesContextHolder.NodeContext.Value = context.Node;
             ActivitiesContextHolder.FlowContext.Value = null;
             ActivitiesContextHolder.ActivityContext.Value = context.Activity;
             ActivitiesContextHolder.BehaviorContext.Value = context.Activity;
@@ -210,7 +210,7 @@ namespace Stateflows.Activities.Engine
             ContextValues.SourceStateValuesHolder.Value = null;
             ContextValues.TargetStateValuesHolder.Value = null;
 
-            ActivitiesContextHolder.NodeContext.Value = context.CurrentNode;
+            ActivitiesContextHolder.NodeContext.Value = context.Node;
             ActivitiesContextHolder.FlowContext.Value = null;
             ActivitiesContextHolder.ActivityContext.Value = context.Activity;
             ActivitiesContextHolder.BehaviorContext.Value = context.Activity;
@@ -230,7 +230,7 @@ namespace Stateflows.Activities.Engine
             ContextValues.SourceStateValuesHolder.Value = null;
             ContextValues.TargetStateValuesHolder.Value = null;
 
-            ActivitiesContextHolder.NodeContext.Value = context.CurrentNode;
+            ActivitiesContextHolder.NodeContext.Value = context.Node;
             ActivitiesContextHolder.FlowContext.Value = null;
             ActivitiesContextHolder.ActivityContext.Value = context.Activity;
             ActivitiesContextHolder.BehaviorContext.Value = context.Activity;
@@ -251,7 +251,7 @@ namespace Stateflows.Activities.Engine
             ContextValues.SourceStateValuesHolder.Value = null;
             ContextValues.TargetStateValuesHolder.Value = null;
 
-            ActivitiesContextHolder.NodeContext.Value = context.CurrentNode;
+            ActivitiesContextHolder.NodeContext.Value = context.Node;
             ActivitiesContextHolder.FlowContext.Value = null;
             ActivitiesContextHolder.ActivityContext.Value = context.Activity;
             ActivitiesContextHolder.BehaviorContext.Value = context.Activity;

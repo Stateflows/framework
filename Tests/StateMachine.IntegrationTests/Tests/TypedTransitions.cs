@@ -156,7 +156,7 @@ namespace StateMachine.IntegrationTests.Tests
             {
                 status = (await sm.SendAsync(new SomeEvent() { InitializationSuccessful = false })).Status;
 
-                currentState = (await sm.GetCurrentStateAsync()).Response.StatesTree.Value;
+                currentState = (await sm.GetStatusAsync()).Response.CurrentStates.Value;
             }
 
             Assert.AreEqual(EventStatus.Consumed, status);
@@ -176,7 +176,7 @@ namespace StateMachine.IntegrationTests.Tests
             {
                 status = (await sm.SendAsync(new SomeEvent() { InitializationSuccessful = false })).Status;
 
-                currentState = (await sm.GetCurrentStateAsync()).Response.StatesTree.Value;
+                currentState = (await sm.GetStatusAsync()).Response.CurrentStates.Value;
             }
 
             Assert.AreEqual(EventStatus.Consumed, status);
@@ -196,7 +196,7 @@ namespace StateMachine.IntegrationTests.Tests
             {
                 status = (await sm.SendAsync(new SomeEvent() { InitializationSuccessful = false })).Status;
 
-                currentState = (await sm.GetCurrentStateAsync()).Response.StatesTree.Value;
+                currentState = (await sm.GetStatusAsync()).Response.CurrentStates.Value;
             }
 
             Assert.AreEqual(EventStatus.Consumed, status);
@@ -215,7 +215,7 @@ namespace StateMachine.IntegrationTests.Tests
             {
                 status = (await sm.SendAsync(new SomeEvent() { InitializationSuccessful = false })).Status;
 
-                currentState = (await sm.GetCurrentStateAsync()).Response.StatesTree.Value;
+                currentState = (await sm.GetStatusAsync()).Response.CurrentStates.Value;
             }
 
             Assert.AreEqual(EventStatus.Consumed, status);

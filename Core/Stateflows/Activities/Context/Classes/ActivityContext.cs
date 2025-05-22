@@ -5,9 +5,7 @@ using Stateflows.Common;
 using Stateflows.Common.Classes;
 using Stateflows.Common.Interfaces;
 using Stateflows.Common.Subscription;
-using Stateflows.Common.Context.Interfaces;
 using Stateflows.Activities.Engine;
-using Stateflows.Activities.Inspection.Interfaces;
 
 namespace Stateflows.Activities.Context.Classes
 {
@@ -19,6 +17,10 @@ namespace Stateflows.Activities.Context.Classes
 
         public ActivityId Id => Context.Id;
 
+        private IReadOnlyTree<INodeContext> activeNodes;
+        public IReadOnlyTree<INodeContext> ActiveNodes
+            => activeNodes ??= Context.Executor.NodesTree.Translate<INodeContext>(node => new NodeContext(node, null, Context, null));
+
         private BehaviorSubscriber subscriber;
         private BehaviorSubscriber Subscriber
             => subscriber ??= new BehaviorSubscriber(Id, Context.Context, this, ServiceProvider.GetRequiredService<NotificationsHub>());
@@ -26,13 +28,12 @@ namespace Stateflows.Activities.Context.Classes
         public ActivityContext(RootContext context, NodeScope nodeScope)
             : base(context, nodeScope)
         {
-            Values = new ContextValuesCollection(Context.GlobalValues);
+            Values = new ContextValuesCollection(context.GlobalValues);
         }
 
         public IContextValues Values { get; }
 
         public void Send<TEvent>(TEvent @event, IEnumerable<EventHeader> headers = null)
-
             => _ = Context.Send(@event, headers);
 
         public void Publish<TNotification>(TNotification notification, IEnumerable<EventHeader> headers = null, int timeToLiveInSeconds = 60)

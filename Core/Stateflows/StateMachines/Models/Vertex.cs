@@ -9,21 +9,6 @@ using Stateflows.StateMachines.Registration.Interfaces;
 
 namespace Stateflows.StateMachines.Models
 {
-    public enum VertexType
-    {
-        InitialState,
-        State,
-        InitialCompositeState,
-        CompositeState,
-        InitialOrthogonalState,
-        OrthogonalState,
-        FinalState,
-        Junction,
-        Choice,
-        Join,
-        Fork,
-    }
-
     internal class Vertex
     {
         public Graph Graph { get; set; }

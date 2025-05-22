@@ -5,7 +5,7 @@ namespace Stateflows.Common
 {
     public interface IWatcher : IDisposable
     {
-        Task UnwatchAsync()
+        public Task UnwatchAsync()
         {
             Dispose();
 

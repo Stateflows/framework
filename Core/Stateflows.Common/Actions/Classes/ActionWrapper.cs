@@ -4,12 +4,15 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using Stateflows.Actions;
 using Stateflows.Activities;
+using Stateflows.Common.Interfaces;
 
 namespace Stateflows.Common.Actions.Classes
 {
-    internal class ActionWrapper : IActionBehavior
+    internal class ActionWrapper : IActionBehavior, IInjectionScope
     {
         BehaviorId IBehavior.Id => Behavior.Id;
+
+        public IServiceProvider ServiceProvider => (Behavior as IInjectionScope)?.ServiceProvider;
 
         private IBehavior Behavior { get; }
 
@@ -45,6 +48,9 @@ namespace Stateflows.Common.Actions.Classes
 
         public Task<IWatcher> WatchAsync<TNotification>(Action<TNotification> handler)
             => Behavior.WatchAsync(handler);
+
+        public Task<IWatcher> WatchAsync(string[] notificationNames, Action<EventHolder> handler)
+            => Behavior.WatchAsync(notificationNames, handler);
 
         public void Dispose()
         {

@@ -1,9 +1,9 @@
 ﻿using System.Collections.Generic;
 using Stateflows.Common.Interfaces;
 
-namespace Stateflows.Common//.Context.Interfaces
+namespace Stateflows.Common
 {
-    public interface IBehaviorContext : ISubscriptions
+    public interface IBehaviorContext : ISubscriptions, IInjectionScope
     {
         /// <summary>
         /// Represents identifier of current behavior

@@ -4,21 +4,25 @@ using System.Diagnostics;
 using System.Threading.Tasks;
 using System.Collections.Generic;
 using Stateflows.Common.Engine;
+using Stateflows.Common.Interfaces;
 
 namespace Stateflows.Common.Locator
 {
-    internal class BehaviorProxy : IBehavior
+    internal class BehaviorProxy : IBehavior, IInjectionScope
     {
         private IBehavior Behavior { get; }
 
         private ClientInterceptor Interceptor { get; }
 
+        public IServiceProvider ServiceProvider { get; private set; }
+
         public BehaviorId Id => Behavior.Id;
 
-        public BehaviorProxy(IBehavior behavior, ClientInterceptor interceptor)
+        public BehaviorProxy(IBehavior behavior, ClientInterceptor interceptor, IServiceProvider serviceProvider)
         {
             Behavior = behavior;
             Interceptor = interceptor;
+            ServiceProvider = serviceProvider;
         }
 
         public async Task<SendResult> SendAsync<TEvent>(TEvent @event, IEnumerable<EventHeader> headers = null)
@@ -41,7 +45,7 @@ namespace Stateflows.Common.Locator
                 Trace.WriteLine($"⦗→s⦘ Client interceptor prevented Event dispatch.");
             }
 
-            result ??= new SendResult(eventHolder, EventStatus.Undelivered);
+            result ??= new SendResult(EventStatus.Undelivered);
 
             return result;
         }
@@ -69,6 +73,9 @@ namespace Stateflows.Common.Locator
 
         public Task<IWatcher> WatchAsync<TNotification>(Action<TNotification> handler)
             => Behavior.WatchAsync(handler);
+
+        public Task<IWatcher> WatchAsync(string[] notificationNames, Action<EventHolder> handler)
+            => Behavior.WatchAsync(notificationNames, handler);
 
         public void Dispose()
         {

@@ -14,13 +14,15 @@ using Stateflows.Activities.Registration.Extensions;
 using Stateflows.Activities.Registration.Interfaces;
 using Stateflows.Activities.Registration.Interfaces.Base;
 using Stateflows.Activities.Registration.Interfaces.Internal;
+using Stateflows.Common.Registration;
 
 namespace Stateflows.Activities.Registration.Builders
 {
     internal class ActivityBuilder :
         BaseActivityBuilder,
         IActivityBuilder,
-        IGraphBuilder
+        IGraphBuilder,
+        IBehaviorBuilder
     {
         public new Graph Graph
         {
@@ -106,7 +108,7 @@ namespace Stateflows.Activities.Registration.Builders
                     }
                     else
                     {
-                        Trace.WriteLine($"⦗→s⦘ Activity '{c.Context.Id.Name}:{c.Context.Id.Instance}': exception thrown '{e.Message}'");
+                        Trace.WriteLine($"⦗→s⦘ Activity '{c.Context.Id.Name}:{c.Context.Id.Instance}': exception '{e.GetType().FullName}' thrown with message '{e.Message}'");
                         if (!c.Context.Executor.Inspector.OnActivityInitializationException(context, context.InitializationEventHolder, e))
                         {
                             throw;
@@ -237,5 +239,8 @@ namespace Stateflows.Activities.Registration.Builders
             return this;
         }
         #endregion
+
+        public BehaviorClass BehaviorClass => Graph.Class;
+        public int BehaviorVersion => Graph.Version;
     }
 }

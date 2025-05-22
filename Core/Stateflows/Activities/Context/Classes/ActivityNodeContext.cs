@@ -12,8 +12,8 @@ namespace Stateflows.Activities.Context.Classes
         
         IBehaviorContext IBehaviorActionContext.Behavior => Activity;
 
-        internal readonly Node Node;
-        internal readonly Edge Edge;
+        internal Node Node { get; }
+        internal Edge Edge { get; }
 
         public ActivityNodeContext(BaseContext context, Node node, Edge edge)
             : base(context.Context, context.NodeScope)
@@ -33,7 +33,7 @@ namespace Stateflows.Activities.Context.Classes
         }
 
         private ICurrentNodeContext currentNode = null;
-        public ICurrentNodeContext CurrentNode
+        ICurrentNodeContext IActivityNodeContext.Node
             => currentNode ??= new NodeContext(Node, Edge, Context, NodeScope);
     }
 }

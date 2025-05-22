@@ -3,23 +3,23 @@
 namespace Stateflows.StateMachines.Registration.Interfaces
 {
     public interface IDefaultTransitionEffectBuilder :
-        ITransitionUtils<IDefaultTransitionEffectBuilder>,
+        ITargetedTransitionUtils<IDefaultTransitionEffectBuilder>,
         IDefaultEffect<IDefaultTransitionEffectBuilder>
     { }
     
     public interface IDefaultTransitionBuilder :
-        ITransitionUtils<IDefaultTransitionBuilder>,
+        ITargetedTransitionUtils<IDefaultTransitionBuilder>,
         IDefaultEffect<IDefaultTransitionBuilder>,
         IDefaultGuard<IDefaultTransitionBuilder>
     { }
     
     public interface IOverridenDefaultTransitionEffectBuilder :
-        ITransitionUtils<IOverridenDefaultTransitionEffectBuilder>,
+        ITargetedTransitionUtils<IOverridenDefaultTransitionEffectBuilder>,
         IDefaultEffect<IOverridenDefaultTransitionEffectBuilder>
     { }
     
     public interface IOverridenDefaultTransitionBuilder :
-        ITransitionUtils<IOverridenDefaultTransitionBuilder>,
+        ITargetedTransitionUtils<IOverridenDefaultTransitionBuilder>,
         IDefaultEffect<IOverridenDefaultTransitionBuilder>,
         IDefaultGuard<IOverridenDefaultTransitionBuilder>
     { }

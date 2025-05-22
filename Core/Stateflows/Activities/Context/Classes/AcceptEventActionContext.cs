@@ -6,13 +6,12 @@ using Stateflows.Activities.Context.Interfaces;
 namespace Stateflows.Activities.Context.Classes
 {
     internal class AcceptEventActionContext<TEvent> : BaseContext, IAcceptEventActionContext<TEvent>
-
     {
         IActivityContext IActivityActionContext.Activity => Activity;
         
         IBehaviorContext IBehaviorActionContext.Behavior => Activity;
 
-        internal readonly ActionContext ActionContext;
+        private readonly ActionContext ActionContext;
 
         public AcceptEventActionContext(ActionContext actionContext)
             : base(actionContext)
@@ -41,7 +40,7 @@ namespace Stateflows.Activities.Context.Classes
 
         public TEvent Event { get; private set; }
 
-        public ICurrentNodeContext CurrentNode => ActionContext.CurrentNode;
+        ICurrentNodeContext IActivityNodeContext.Node => ((IActivityNodeContext)ActionContext).Node;
 
         public IEnumerable<object> Input => ActionContext.InputTokens;
 

@@ -5,7 +5,6 @@ using Microsoft.Extensions.DependencyInjection;
 using Stateflows.Common.Classes;
 using Stateflows.Common.Interfaces;
 using Stateflows.Common.Subscription;
-using Stateflows.Common.Context.Interfaces;
 
 namespace Stateflows.Common.Context.Classes
 {
@@ -20,7 +19,7 @@ namespace Stateflows.Common.Context.Classes
         public BehaviorContext(StateflowsContext context, IServiceProvider serviceProvider)
             : base(context, serviceProvider)
         {
-            Values = new ContextValuesCollection(Context.GlobalValues);
+            Values = new ContextValuesCollection(context.GlobalValues);
         }
 
         public IContextValues Values { get; }

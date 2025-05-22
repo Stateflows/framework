@@ -64,7 +64,7 @@ namespace Stateflows.StateMachines.Registration.Builders
                     }
                     else
                     {
-                        Trace.WriteLine($"⦗→s⦘ State Machine '{context.Context.Id.Name}:{context.Context.Id.Instance}': exception thrown '{e.Message}'");
+                        // Trace.WriteLine($"⦗→s⦘ State Machine '{context.Context.Id.Name}:{context.Context.Id.Instance}': exception '{e.GetType().FullName}' thrown with message '{e.Message}'");
                         if (!c.Executor.Inspector.OnStateInitializeException(context, e))
                         {
                             throw;
@@ -103,7 +103,7 @@ namespace Stateflows.StateMachines.Registration.Builders
                     }
                     else
                     {
-                        Trace.WriteLine($"⦗→s⦘ State Machine '{context.Context.Id.Name}:{context.Context.Id.Instance}': exception thrown '{e.Message}'");
+                        // Trace.WriteLine($"⦗→s⦘ State Machine '{context.Context.Id.Name}:{context.Context.Id.Instance}': exception '{e.GetType().FullName}' thrown with message '{e.Message}'");
                         if (!c.Executor.Inspector.OnStateFinalizeException(context, e))
                         {
                             throw;
@@ -144,7 +144,7 @@ namespace Stateflows.StateMachines.Registration.Builders
                             }
                             else
                             {
-                                Trace.WriteLine($"⦗→s⦘ State Machine '{context.Context.Id.Name}:{context.Context.Id.Instance}': exception thrown '{e.Message}'");
+                                Trace.WriteLine($"⦗→s⦘ State Machine '{context.Context.Id.Name}:{context.Context.Id.Instance}': exception '{e.GetType().FullName}' thrown with message '{e.Message}'");
                                 if (!c.Executor.Inspector.OnStateEntryException(context, e))
                                 {
                                     throw;
@@ -186,7 +186,7 @@ namespace Stateflows.StateMachines.Registration.Builders
                             }
                             else
                             {
-                                Trace.WriteLine($"⦗→s⦘ State Machine '{context.Context.Id.Name}:{context.Context.Id.Instance}': exception thrown '{e.Message}'");
+                                Trace.WriteLine($"⦗→s⦘ State Machine '{context.Context.Id.Name}:{context.Context.Id.Instance}': exception '{e.GetType().FullName}' thrown with message '{e.Message}'");
                                 if (!c.Executor.Inspector.OnStateExitException(context, e))
                                 {
                                     throw;

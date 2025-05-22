@@ -4,7 +4,7 @@ using Newtonsoft.Json;
 
 namespace Stateflows.Common
 {
-    [NoImplicitInitialization]
+    [NoImplicitInitialization, NoTracing]
     public sealed class NotificationsRequest : IRequest<NotificationsResponse>
     {
         public TimeSpan Period { get; set; }

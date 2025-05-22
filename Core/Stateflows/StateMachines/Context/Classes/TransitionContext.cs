@@ -1,4 +1,5 @@
-﻿using Stateflows.Common;
+﻿using System;
+using Stateflows.Common;
 using Stateflows.StateMachines.Models;
 using Stateflows.StateMachines.Context.Interfaces;
 using Stateflows.StateMachines.Inspection.Interfaces;
@@ -38,5 +39,7 @@ namespace Stateflows.StateMachines.Context.Classes
                 return targetState;
             }
         }
+
+        public Type TriggerType => Edge.TriggerType;
     }
 }

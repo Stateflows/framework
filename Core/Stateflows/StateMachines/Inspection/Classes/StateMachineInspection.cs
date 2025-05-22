@@ -25,7 +25,7 @@ namespace Stateflows.StateMachines.Inspection.Classes
 
         public IEnumerable<IStateInspection> States { get; set; }
 
-        public IReadOnlyTree<IStateInspection> CurrentState
+        public IReadOnlyTree<IStateInspection> CurrentStates
             => Executor.VerticesTree.Translate(vertex => States.First(s => s.Name == vertex.Name));
 
         public IActionInspection Initialize { get; set; }

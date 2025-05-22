@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Linq;
 using System.Collections.Generic;
+using System.Text.Json.Serialization;
 using Newtonsoft.Json;
 
 namespace Stateflows.Common
@@ -176,7 +177,8 @@ namespace Stateflows.Common
         public T Value { get; private set; }
 
         
-        [JsonIgnore]
+        [Newtonsoft.Json.JsonIgnore]
+        [System.Text.Json.Serialization.JsonIgnore]
         public TreeNode<T> Parent { get; private set; }
 
         internal readonly List<TreeNode<T>> NodesList = new List<TreeNode<T>>();
@@ -246,47 +248,6 @@ namespace Stateflows.Common
                         .Where(item => item != null)
                         .ToList()
                 );
-
-
-        #region ITree
-        // T ITreeNode<T>.Value
-        //     => Value;
-        // IEnumerable<ITreeNode<T>> ITreeNode<T>.Nodes
-        //     => Nodes;
-        // ITreeNode<T> ITreeNode<T>.Add(T value)
-        //     => Add(value);
-        // ITreeNode<T> ITreeNode<T>.AddTo(T value, T parent)
-        //     => AddTo(value, parent);
-        // void ITreeNode<T>.Clear()
-        //     => Clear();
-        // bool ITreeNode<T>.Contains(T value)
-        //     => Contains(value);
-        // void ITreeNode<T>.Remove(T value)
-        //     => Remove(value);
-        // ITreeNode<Target> ITreeNode<T>.Translate<Target>(Func<T, Target> selector, Func<T, bool> guard)
-        //     => Translate(selector, guard);
-        #endregion
-
-        #region IReadOnlyTree
-        // T IReadOnlyTreeNode<T>.Value
-        //     => Value;
-        // IEnumerable<IReadOnlyTreeNode<T>> IReadOnlyTreeNode<T>.Nodes
-        //     => Nodes;
-        // bool IReadOnlyTreeNode<T>.Contains(T value)
-        //     => Contains(value);
-        // ITreeNode<Target> IReadOnlyTreeNode<T>.Translate<Target>(Func<T, Target> selector, Func<T, bool> guard)
-        //     => Translate(selector, guard);
-        //
-        // bool ITreeNode<T>.TryFind(T value, out ITreeNode<T> node)
-        //     => (TryFind(value, out var nodeObj)
-        //         ? node = nodeObj
-        //         : node = null) != null;
-        //
-        // bool IReadOnlyTreeNode<T>.TryFind(T value, out IReadOnlyTreeNode<T> node)
-        //     => (TryFind(value, out var nodeObj)
-        //         ? node = nodeObj
-        //         : node = null) != null;
-        #endregion
     }
 
     public interface ITree<T>
@@ -325,9 +286,13 @@ namespace Stateflows.Common
         IReadOnlyTreeNode<T> IReadOnlyTree<T>.Root
             => Root;
 
+        [Newtonsoft.Json.JsonIgnore]
+        [System.Text.Json.Serialization.JsonIgnore]
         public bool HasValue
             => Root != null;
-
+        
+        [Newtonsoft.Json.JsonIgnore]
+        [System.Text.Json.Serialization.JsonIgnore]
         public T Value => HasValue
             ? Root.Value
             : default;
@@ -393,6 +358,5 @@ namespace Stateflows.Common
 
         ITree<Target> IReadOnlyTree<T>.Translate<Target>(Func<T, Target> selector, Func<T, bool> guard)
             => Translate(selector, guard);
-
     }
 }

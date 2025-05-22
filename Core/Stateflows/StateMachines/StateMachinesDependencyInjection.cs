@@ -1,11 +1,13 @@
 ﻿using System;
 using System.Diagnostics;
 using System.Collections.Generic;
+using System.Linq;
 using Microsoft.Extensions.DependencyInjection;
 using Stateflows.Common.Interfaces;
 using Stateflows.Common.Initializer;
 using Stateflows.Common.Registration.Builders;
 using Stateflows.Common.Registration.Interfaces;
+using Stateflows.StateMachines.Classes;
 using Stateflows.StateMachines.Engine;
 using Stateflows.StateMachines.Context;
 using Stateflows.StateMachines.Registration;
@@ -15,9 +17,21 @@ using Stateflows.StateMachines.Registration.Interfaces;
 
 namespace Stateflows.StateMachines
 {
-    public static class SystemDependencyInjection
+    public static class StateMachinesDependencyInjection
     {
         private static readonly Dictionary<IStateflowsBuilder, StateMachinesRegister> Registers = new Dictionary<IStateflowsBuilder, StateMachinesRegister>();
+
+        internal static void Cleanup(IStateflowsBuilder builder)
+        {
+            lock (Registers)
+            {
+                if (Registers.TryGetValue(builder, out var register) && !register.StateMachines.Any())
+                {
+                    var serviceDescriptor = builder.ServiceCollection.FirstOrDefault(descriptor => descriptor.ServiceType == typeof(IStateMachinesRegister));
+                    builder.ServiceCollection.Remove(serviceDescriptor);
+                }
+            }
+        }
 
         [DebuggerHidden]
         public static IStateflowsBuilder AddStateMachines(this IStateflowsBuilder stateflowsBuilder, StateMachinesBuildAction buildAction = null)
@@ -53,16 +67,18 @@ namespace Stateflows.StateMachines
                         .AddScoped<IStateMachinePlugin, Engine.Exceptions>()
                         .AddSingleton(register)
                         .AddSingleton<IStateMachinesRegister>(register)
+                        .AddSingleton<IStateMachineContextProvider, StateMachineContextProvider>()
                         .AddSingleton<IEventProcessor, Processor>()
                         .AddTransient<IBehaviorProvider, Provider>()
                         .AddSingleton<IStateMachineEventHandler, BehaviorStatusRequestHandler>()
-                        .AddSingleton<IStateMachineEventHandler, CurrentStateRequestHandler>()
+                        .AddSingleton<IStateMachineEventHandler, StateMachineInfoRequestHandler>()
                         .AddSingleton<IStateMachineEventHandler, InitializeHandler>()
                         .AddSingleton<IStateMachineEventHandler, FinalizationHandler>()
                         .AddSingleton<IStateMachineEventHandler, ResetHandler>()
                         .AddSingleton<IStateMachineEventHandler, SubscriptionHandler>()
                         .AddSingleton<IStateMachineEventHandler, UnsubscriptionHandler>()
                         .AddSingleton<IStateMachineEventHandler, NotificationsHandler>()
+                        .AddSingleton<IStateMachineEventHandler, ContextValuesRequestHandler>()
                         .AddTransient(provider =>
                             StateMachinesContextHolder.StateMachineContext.Value ??
                             throw new InvalidOperationException(

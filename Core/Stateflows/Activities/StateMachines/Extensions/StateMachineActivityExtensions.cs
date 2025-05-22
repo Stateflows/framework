@@ -7,9 +7,9 @@ using Stateflows.Common.Classes;
 using Stateflows.Common.Utilities;
 using Stateflows.Activities.Extensions;
 using Stateflows.Activities.StateMachines.Interfaces;
+using Stateflows.StateMachines;
 using Stateflows.StateMachines.Exceptions;
 using Stateflows.StateMachines.Registration;
-using Stateflows.StateMachines.Context.Interfaces;
 
 namespace Stateflows.Activities
 {

@@ -2,12 +2,12 @@
 {
     public interface IStateMachineUtils<out TReturn>
     {
-        /// <summary>
-        /// Sets default flag value for polymorphic triggers in State Machine's Transitions.<br/>
-        /// Default value of the flag is false unless Transition is triggered by an Exception descendant.
-        /// </summary>
-        /// <param name="polymorphicTriggers">Value of the polymorphic triggers flag.</param>
-        TReturn SetPolymorphicTriggers(bool polymorphicTriggers);
+        // /// <summary>
+        // /// Sets default flag value for polymorphic triggers in State Machine's Transitions.<br/>
+        // /// Default value of the flag is false unless Transition is triggered by an Exception descendant.
+        // /// </summary>
+        // /// <param name="polymorphicTriggers">Value of the polymorphic triggers flag.</param>
+        // TReturn SetPolymorphicTriggers(bool polymorphicTriggers);
         
         /// <summary>
         /// Adds an interceptor to the state machine.

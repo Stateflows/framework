@@ -1,5 +1,5 @@
 ﻿using System;
-using Stateflows.StateMachines.Context.Interfaces;
+using Stateflows.StateMachines;
 
 namespace Stateflows.StateMachines
 {

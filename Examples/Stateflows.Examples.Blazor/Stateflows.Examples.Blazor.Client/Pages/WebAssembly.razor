@@ -1,0 +1,87 @@
+﻿@page "/web-assembly"
+@rendermode InteractiveWebAssembly
+@inject IStateMachineLocator locator
+
+<PageTitle>Blazor WebAssembly</PageTitle>
+
+<h3>Hello, Adventurer!</h3>
+<h5>Here you can manage document's state.</h5>
+
+<blockquote>
+    <p>This page is running on Blazor Server.</p>
+    <p>Interaction with <a href="https://github.com/Stateflows/framework/wiki/behaviors" target="_blank">Stateflows behaviors</a> is provided using HTTP transport - just obtain <strong>IBehavior</strong> instance <a href="https://github.com/Stateflows/framework/wiki/behaviors#interacting-with-behavior" target="_blank">using proper locator</a>.</p>
+    <p>Look into <strong>Program.cs</strong> files in both <strong>Stateflows.Examples.Blazor</strong> and <strong>Stateflows.Examples.Blazor.Client</strong> projects for information on how to configure Stateflows transport layer.</p>
+</blockquote>
+
+<div class="site">
+    <button class="btn btn-success" @onclick="Create">Create new</button>
+    
+    <button class="btn btn-primary @(expectedEvents.Contains("Review") ? null : "hide")" @onclick="Review">Review</button>
+    <button class="btn btn-primary @(expectedEvents.Contains("Accept") ? null : "hide")" @onclick="Accept">Accept</button>
+    <button class="btn btn-primary @(expectedEvents.Contains("Pay") ? null : "hide")" @onclick="Pay">Pay</button>
+    <button class="btn btn-primary @(expectedEvents.Contains("Reject") ? null : "hide")" @onclick="Reject">Reject</button>
+    
+    <br/>
+    <img src="@plantUmlUrl" />
+</div>
+
+@code
+{
+    private IStateMachineBehavior stateMachineBehavior;
+    
+    #region watchers
+    
+    private IWatcher? plantUmlWatcher;
+    private IWatcher? stateMachineInfoWatcher;
+    
+    #endregion
+    
+    private string plantUmlUrl = string.Empty;
+    private List<string> expectedEvents = [];
+    
+    private async Task CreateNewDocument()
+    {
+        if (
+            !locator.TryLocateStateMachine(
+                new StateMachineId(
+                    "Doc",
+                    Random.Shared.Next().ToString()
+                ),
+                out stateMachineBehavior
+            )
+        )
+        {
+            throw new ApplicationException("State Machine not found");
+        }
+
+        #region watchers
+        
+        plantUmlWatcher = await stateMachineBehavior.WatchPlantUmlAsync(
+            info =>
+            {
+                plantUmlUrl = info.GetUrl();
+                _ = InvokeAsync(StateHasChanged);
+            });
+        
+        stateMachineInfoWatcher = await stateMachineBehavior.WatchStatusAsync(
+            info =>
+            {
+                expectedEvents = info.ExpectedEvents.Select(e => e.ToShortName()).ToList();
+                _ = InvokeAsync(StateHasChanged);
+            });
+        
+        #endregion
+        
+        await stateMachineBehavior.SendAsync(new Initialize());
+    }
+
+    private Task Create() => CreateNewDocument();
+
+    private Task Review() => stateMachineBehavior.SendAsync(new Review());
+
+    private Task Accept() => stateMachineBehavior.SendAsync(new Accept());
+
+    private Task Pay() => stateMachineBehavior.SendAsync(new Pay() { Amount = 500 });
+
+    private Task Reject() => stateMachineBehavior.SendAsync(new Reject());
+}

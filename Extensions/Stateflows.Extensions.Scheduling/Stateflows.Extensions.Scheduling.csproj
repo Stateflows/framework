@@ -1,0 +1,45 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>netstandard2.1</TargetFramework>
+        <Nullable>enable</Nullable>
+        <Title>Dynamic scheduler extension for Stateflows framework (includes cron scheduling support using NCrontab)</Title>
+        <Version>$(STATEFLOWS_VERSION)</Version>
+        <Authors>Stateflows</Authors>
+        <PackageProjectUrl>https://www.stateflows.net</PackageProjectUrl>
+        <PackageIcon>stateflows-logo-1024.png</PackageIcon>
+        <RepositoryUrl>https://github.com/Stateflows/framework</RepositoryUrl>
+        <RepositoryType>git</RepositoryType>
+        <PackageTags>Stateflows;state-machine;activity;workflow;scheduling;scheduler;cron;NCrontab</PackageTags>
+        <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
+        <PackageReadmeFile>README.md</PackageReadmeFile>
+        <PackageLicenseFile>LICENSE</PackageLicenseFile>
+        <PackageOutputPath>..\..\NuGet</PackageOutputPath>
+        <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <None Include="..\..\LICENSE">
+            <Pack>True</Pack>
+            <PackagePath>\</PackagePath>
+        </None>
+        <None Include="..\..\README.md">
+            <Pack>True</Pack>
+            <PackagePath>\</PackagePath>
+        </None>
+        <None Include="..\..\stateflows-logo-1024.png">
+            <Pack>True</Pack>
+            <PackagePath>\</PackagePath>
+        </None>
+    </ItemGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\..\Core\Stateflows\Stateflows.csproj" />
+      <ProjectReference Include="..\Stateflows.Extensions.OneOf\Stateflows.Extensions.OneOf.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <PackageReference Include="NCrontab" Version="3.3.3" />
+    </ItemGroup>
+
+</Project>

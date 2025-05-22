@@ -20,6 +20,7 @@ namespace Stateflows.Activities.Models
 
         public Graph(string name, int version, StateflowsBuilder stateflowsBuilder)
         {
+            OwnName = name;
             Name = name;
             Type = NodeType.Activity;
             Version = version;

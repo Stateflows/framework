@@ -5,6 +5,7 @@ using Stateflows.Activities.Models;
 using Stateflows.Activities.Context.Interfaces;
 using Stateflows.Activities.Registration.Interfaces;
 using Stateflows.Activities.Registration.Interfaces.Base;
+using Stateflows.Common.Registration;
 
 namespace Stateflows.Activities.Registration.Builders
 {
@@ -16,7 +17,9 @@ namespace Stateflows.Activities.Registration.Builders
         IReactiveStructuredActivityBuilder,
         IReactiveStructuredActivityBuilderWithOptions,
         IStructuredActivityBuilder,
-        IStructuredActivityBuilderWithOptions
+        IStructuredActivityBuilderWithOptions,
+        IBehaviorBuilder,
+        INodeBuilder
     {
         public NodeBuilder NodeBuilder { get; set; }
 
@@ -288,5 +291,10 @@ namespace Stateflows.Activities.Registration.Builders
         ITypedActionBuilder IExceptionHandlerBase<ITypedActionBuilder>.AddExceptionHandler<TException>(ExceptionHandlerDelegateAsync<TException> exceptionHandler)
             => AddExceptionHandler(exceptionHandler) as ITypedActionBuilder;
         #endregion
+
+        public BehaviorClass BehaviorClass => Graph.Class;
+        public int BehaviorVersion => Graph.Version;
+        public string Name => Node.Name;
+        public NodeType Type => Node.Type;
     }
 }

@@ -18,10 +18,10 @@ namespace Stateflows.Activities
         public virtual void AfterProcessEvent<TEvent>(IEventContext<TEvent> context, EventStatus eventStatus)
         { }
 
-        public virtual void BeforeActivityInitialize(IActivityInitializationContext context)
+        public virtual void BeforeActivityInitialize(IActivityInitializationContext context, bool implicitInitialization)
         { }
 
-        public virtual void AfterActivityInitialize(IActivityInitializationContext context, bool initialized)
+        public virtual void AfterActivityInitialize(IActivityInitializationContext context, bool implicitInitialization, bool initialized)
         { }
 
         public virtual void BeforeActivityFinalize(IActivityFinalizationContext context)
@@ -90,7 +90,7 @@ namespace Stateflows.Activities
         public virtual bool OnFlowGuardException<TToken>(IGuardContext<TToken> context, Exception exception)
             => false;
 
-        public bool OnFlowTransformationException<TToken, TTransformedToken>(ITransformationContext<TToken> context, Exception exception)
+        public virtual bool OnFlowTransformationException<TToken, TTransformedToken>(ITransformationContext<TToken> context, Exception exception)
             => false;
     }
 }

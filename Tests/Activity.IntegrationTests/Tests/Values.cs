@@ -1,18 +1,15 @@
 using Stateflows.Activities;
 using Stateflows.Common;
+using Stateflows.Common.Attributes;
 using StateMachine.IntegrationTests.Utils;
 
 namespace Activity.IntegrationTests.Tests
 {
-    public class ValueAction : IActionNode
+    public class ValueAction([GlobalValue] IValue<int> x) : IActionNode
     {
-        internal readonly GlobalValue<int> globalCounter = new("x");
-
-        public Task ExecuteAsync(CancellationToken cancellationToken)
+        public async Task ExecuteAsync(CancellationToken cancellationToken)
         {
-            globalCounter.Set(42);
-
-            return Task.CompletedTask;
+            await x.SetAsync(42);
         }
     }
 
@@ -42,7 +39,8 @@ namespace Activity.IntegrationTests.Tests
                         )
                         .AddAction("action2", async c =>
                         {
-                            Executed = c.Behavior.Values.TryGet("x", out int globalCounter) && globalCounter == 42;
+                            var (success, globalCounter) = await c.Behavior.Values.TryGetAsync<int>("x");
+                            Executed = success && globalCounter == 42;
                         })
                     )
                 )

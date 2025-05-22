@@ -10,7 +10,7 @@ namespace Stateflows.Activities.Context.Classes
     {
         public readonly Node Node;
         
-        public readonly Edge Edge;
+        private readonly Edge Edge;
 
         public string Name => Node.Name;
 

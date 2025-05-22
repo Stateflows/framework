@@ -14,7 +14,7 @@ public static class DependencyInjection
 
 
         var clientBuilder = builder.ServiceCollection
-                .AddSingleton<IBehaviorProvider>(provider => new BehaviorProvider(provider.GetRequiredService<StateflowsApiClient>()))
+                .AddSingleton<IBehaviorProvider>(provider => new BehaviorProvider(provider.GetRequiredService<StateflowsApiClient>(), provider))
                 .AddSingleton<StateflowsApiClientConfig>(provider => new StateflowsApiClientConfig() { NotificationsCheckSecondsInverval = notificationsCheckSecondsInverval })
                 .AddHttpClient<StateflowsApiClient>((provider, client) => client.BaseAddress = baseUriProvider(provider))
             ;

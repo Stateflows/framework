@@ -54,6 +54,25 @@ namespace Activity.IntegrationTests.Tests
                             Executed = true;
                         })
                     )
+                    .AddActivity("structuredAcceptMultipleEvents", b => b
+                        .AddInitial(b => b
+                            .AddControlFlow("structured")
+                        )
+                        .AddStructuredActivity("structured", b => b
+                            .AddInitial(b => b
+                                .AddControlFlow("final")
+                            )
+                            .AddAcceptEventAction<SomeEvent>(
+                                "accept",
+                                async c => Counter1++,
+                                b => b.AddControlFlow("final")
+                            )
+                            .AddAction("final", async c =>
+                            {
+                                Executed = true;
+                            })
+                        )
+                    )
                     .AddActivity("acceptOneOfEvents", b => b
                         .AddInitial(b => b
                             .AddControlFlow("final")
@@ -113,6 +132,21 @@ namespace Activity.IntegrationTests.Tests
             {
                 await a.SendAsync(new SomeEvent());
                 await a.SendAsync(new SomeEvent());
+            }
+
+            Assert.IsTrue(Executed);
+            Assert.AreEqual(2, Counter1);
+        }
+
+        [TestMethod]
+        public async Task StructuredAcceptMultipleEvents()
+        {
+            if (ActivityLocator.TryLocateActivity(new ActivityId("structuredAcceptMultipleEvents", "x"), out var a))
+            {
+                await a.SendAsync(new SomeEvent());
+                await a.SendAsync(new SomeEvent());
+                var activityInfo = (await a.GetStatusAsync()).Response;
+                Assert.IsTrue(activityInfo.ActiveNodes.Contains("accept"));
             }
 
             Assert.IsTrue(Executed);

@@ -7,16 +7,9 @@ namespace StateMachine.IntegrationTests.Classes.Transitions
     {
         private readonly GlobalValue<int> counter = new("counter");
 
-        public Task EffectAsync(SomeEvent @event)
+        public async Task EffectAsync(SomeEvent @event)
         {
-            if (!counter.TryGet(out var c))
-            {
-                c = 0;
-            }
-
-            counter.Set(c + 1);
-
-            return Task.CompletedTask;
+            await counter.UpdateAsync(i => i + 1, 0);
         }
     }
 }

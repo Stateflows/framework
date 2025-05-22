@@ -43,9 +43,9 @@ namespace StateMachine.IntegrationTests.Tests
             {
                 status1 = (await sm.SendAsync(new SomeEvent())).Status;
 
-                var x = await sm.GetCurrentStateAsync();
+                var x = await sm.GetStatusAsync();
 
-                currentState = (x).Response.StatesTree?.Value;
+                currentState = (x).Response.CurrentStates?.Value;
 
                 status2 = (await sm.SendAsync(new SomeEvent())).Status;
             }

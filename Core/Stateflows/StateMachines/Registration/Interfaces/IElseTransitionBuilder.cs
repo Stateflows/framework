@@ -3,12 +3,14 @@
 namespace Stateflows.StateMachines.Registration.Interfaces
 {
     public interface IElseTransitionBuilder<TEvent> :
-        ITransitionUtils<IElseTransitionBuilder<TEvent>>,
+        ITargetedTransitionUtils<IElseTransitionBuilder<TEvent>>,
+        ITriggeredTransitionUtils<IElseTransitionBuilder<TEvent>>,
         IEffect<TEvent, IElseTransitionBuilder<TEvent>>
     { }
     
     public interface IOverridenElseTransitionBuilder<TEvent> :
-        ITransitionUtils<IOverridenElseTransitionBuilder<TEvent>>,
+        ITargetedTransitionUtils<IOverridenElseTransitionBuilder<TEvent>>,
+        ITriggeredTransitionUtils<IOverridenElseTransitionBuilder<TEvent>>,
         IEffect<TEvent, IOverridenElseTransitionBuilder<TEvent>>
     { }
 }

@@ -1,13 +1,13 @@
 ﻿using System.Threading;
 
-namespace Stateflows.Activities.Context.Interfaces
+namespace Stateflows.Activities
 {
     public interface IActivityNodeContext : IActivityActionContext
     {
         /// <summary>
         /// Information about current node
         /// </summary>
-        ICurrentNodeContext CurrentNode { get; }
+        ICurrentNodeContext Node { get; }
 
         /// <summary>
         /// Cancellation token handling activity execution interruptions, f.e. triggered by FinalNode

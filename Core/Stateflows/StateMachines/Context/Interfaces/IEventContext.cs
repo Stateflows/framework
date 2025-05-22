@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace Stateflows.StateMachines.Context.Interfaces
+namespace Stateflows.StateMachines
 {
     public interface IEventContext<out TEvent> : IStateMachineActionContext
     {
