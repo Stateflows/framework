@@ -85,7 +85,7 @@ namespace Stateflows.Activities
                 var self = this;
                 return c =>
                     ((ContextValuesCollection)c.Behavior.Values).RemoveMatchingAsync(
-                        new Regex($"{self.ValueSetName}[.](.*)"));
+                        new Regex($"{self.ValueSetName}[.](.*)", RegexOptions.None, TimeSpan.FromSeconds(1)));
             }
         }
     }

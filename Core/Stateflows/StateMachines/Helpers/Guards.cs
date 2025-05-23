@@ -298,7 +298,7 @@ namespace Stateflows.StateMachines
             get
             {
                 var self = this;
-                return c => ((ContextValuesCollection)c.Behavior.Values)!.HasAnyMatchingAsync(new Regex($"{self.NamespaceName}[.](.*)"));
+                return c => ((ContextValuesCollection)c.Behavior.Values)!.HasAnyMatchingAsync(new Regex($"{self.NamespaceName}[.](.*)", RegexOptions.None, TimeSpan.FromSeconds(1)));
             }
         }
     }
@@ -353,7 +353,7 @@ namespace Stateflows.StateMachines
                 {
                     var valueSet = self.GetValueSet(c);
                     return valueSet != null
-                        ? ((ContextValuesCollection)valueSet)!.HasAnyMatchingAsync(new Regex($"{self.NamespaceName}[.](.*)"))
+                        ? ((ContextValuesCollection)valueSet)!.HasAnyMatchingAsync(new Regex($"{self.NamespaceName}[.](.*)", RegexOptions.None, TimeSpan.FromSeconds(1)))
                         : Task.FromResult(false);
                 };
             }

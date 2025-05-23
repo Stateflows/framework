@@ -46,6 +46,6 @@ namespace Stateflows.Common.Classes
             => new BaseNamespaceAccessor($"{this.namespaceName}.{namespaceName}", namespaceSelector, collectionName);
 
         public Task ClearAsync()
-            => ((ContextValuesCollection)parentValueSet).RemoveMatchingAsync(new Regex($"{namespaceName}[.](.*)"));
+            => ((ContextValuesCollection)parentValueSet).RemoveMatchingAsync(new Regex($"{namespaceName}[.](.*)", RegexOptions.None, TimeSpan.FromSeconds(1)));
     }
 }

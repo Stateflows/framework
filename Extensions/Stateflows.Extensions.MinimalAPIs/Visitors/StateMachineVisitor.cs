@@ -1,4 +1,5 @@
 ﻿using System.ComponentModel.DataAnnotations;
+using System.IO.Pipes;
 using System.Reflection;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
@@ -66,8 +67,6 @@ internal class StateMachineVisitor(
         CurrentStateMachineName = stateMachineName;
         typeMapper.VisitMappedTypes<TInitializationEvent>(this);
         CurrentStateMachineName = string.Empty;
-        
-        // RegisterEventEndpoint<TInitializationEvent>(stateMachineName);
 
         return Task.CompletedTask;
     }
@@ -78,8 +77,6 @@ internal class StateMachineVisitor(
         CurrentStateMachineName = stateMachineName;
         typeMapper.VisitMappedTypes<TEvent>(this);
         CurrentStateMachineName = string.Empty;
-        
-        // RegisterEventEndpoint<TEvent>(stateMachineName);
 
         return Task.CompletedTask;
     }
@@ -153,164 +150,13 @@ internal class StateMachineVisitor(
     }
 
     private void RegisterEventEndpoint<TEvent>(string stateMachineName, RouteGroupBuilder stateMachine)
-    {
-        var eventType = typeof(TEvent);
-        if (Utils.IsEventEmpty(eventType))
-        {
-            routeHandlerBuilderAction(
-                stateMachine.MapPost("/{instance}/" + Utils.GetEventName<TEvent>(),
-                    async (
-                        HttpContext context,
-                        IServiceProvider serviceProvider,
-                        string instance,
-                        IStateMachineLocator locator,
-                        RequestBody payload,
-                        [FromQuery] bool implicitInitialization = true
-                    ) =>
-                    {
-                        var (success, authorizationResult) = await Utils.AuthorizeEventAsync(eventType, serviceProvider, context);
-                        if (!success)
-                        {
-                            return authorizationResult;
-                        }
-
-                        if (locator.TryLocateStateMachine(new StateMachineId(stateMachineName, instance), out var behavior))
-                        {
-                            var result = await behavior.SendAsync(StateflowsActivator.CreateUninitializedInstance(eventType), implicitInitialization ? [] : [new NoImplicitInitialization()]);
-                        
-                            var notifications = (await behavior.GetNotificationsAsync(payload.RequestedNotifications)).Response.Notifications.ToArray();
-                            var behaviorInfo = (await behavior.GetStatusAsync([new NoImplicitInitialization()])).Response;
-
-                            return result.ToResult(notifications, behaviorInfo, CustomHateoasLinks);
-                        }
-                    
-                        return Results.NotFound();
-                    }
-                )
-            );
-        }
-        else
-        {
-            routeHandlerBuilderAction(
-                stateMachine.MapPost("/{instance}/" + Utils.GetEventName<TEvent>(),
-                    async (
-                        HttpContext context,
-                        IServiceProvider serviceProvider,
-                        string instance,
-                        IStateMachineLocator locator,
-                        RequestBody<TEvent> payload,
-                        [FromQuery] bool implicitInitialization = true
-                    ) =>
-                    {
-                        var (success, authorizationResult) = await Utils.AuthorizeEventAsync(eventType, serviceProvider, context);
-                        if (!success)
-                        {
-                            return authorizationResult;
-                        }
-
-                        if (locator.TryLocateStateMachine(new StateMachineId(stateMachineName, instance), out var behavior))
-                        {
-                            var result = EqualityComparer<TEvent>.Default.Equals(payload.Event, default)
-                                ? new SendResult(
-                                    EventStatus.Invalid,
-                                    new EventValidation(false, [ new ValidationResult("Event not provided") ])
-                                )
-                                : await behavior.SendAsync(payload.Event, implicitInitialization ? [] : [new NoImplicitInitialization()]);
-                        
-                            var notifications = (await behavior.GetNotificationsAsync(payload.RequestedNotifications)).Response.Notifications.ToArray();
-                            var behaviorInfo = (await behavior.GetStatusAsync([new NoImplicitInitialization()])).Response;
-
-                            return result.ToResult(notifications, behaviorInfo, CustomHateoasLinks);
-                        }
-                    
-                        return Results.NotFound();
-                    }
-                )
-            );
-        }
-    }
+        => stateMachine.RegisterEventEndpoint<TEvent>(routeHandlerBuilderAction,
+            BehaviorType.StateMachine, stateMachineName, CustomHateoasLinks);
 
     private void RegisterRequestEndpoint<TRequest, TResponse>(string stateMachineName, RouteGroupBuilder stateMachine)
         where TRequest : IRequest<TResponse>
-    {
-        var eventType = typeof(TRequest);
-        if (Utils.IsEventEmpty(eventType))
-        {
-            routeHandlerBuilderAction(
-                stateMachine.MapPost("/{instance}/" + Utils.GetEventName<TRequest>(),
-                    async (
-                        HttpContext context,
-                        IServiceProvider serviceProvider,
-                        string instance,
-                        IStateMachineLocator locator,
-                        RequestBody payload,
-                        [FromQuery] bool implicitInitialization = true
-                    ) =>
-                    {
-                        var (success, authorizationResult) =
-                            await Utils.AuthorizeEventAsync(eventType, serviceProvider, context);
-                        if (!success)
-                        {
-                            return authorizationResult;
-                        }
-
-                        if (locator.TryLocateStateMachine(new StateMachineId(stateMachineName, instance),
-                                out var behavior))
-                        {
-                            var result = await behavior.RequestAsync((TRequest)StateflowsActivator.CreateUninitializedInstance(eventType),
-                                    implicitInitialization ? [] : [new NoImplicitInitialization()]);
-
-                            var notifications = (await behavior.GetNotificationsAsync(payload.RequestedNotifications))
-                                .Response.Notifications.ToArray();
-                            var behaviorInfo = (await behavior.GetStatusAsync([new NoImplicitInitialization()]))
-                                .Response;
-                            return result.ToResult(notifications, behaviorInfo, CustomHateoasLinks);
-                        }
-
-                        return Results.NotFound();
-                    }
-                )
-            );
-        }
-        else
-        {
-            routeHandlerBuilderAction(
-                stateMachine.MapPost("/{instance}/" + Utils.GetEventName<TRequest>(),
-                    async (
-                        HttpContext context,
-                        IServiceProvider serviceProvider,
-                        string instance,
-                        IStateMachineLocator locator,
-                        RequestBody<TRequest> payload,
-                        [FromQuery] bool implicitInitialization = true
-                    ) =>
-                    {
-                        var (success, authorizationResult) = await Utils.AuthorizeEventAsync(eventType, serviceProvider, context);
-                        if (!success)
-                        {
-                            return authorizationResult;
-                        }
-                        
-                        if (locator.TryLocateStateMachine(new StateMachineId(stateMachineName, instance), out var behavior))
-                        {
-                            var result = EqualityComparer<TRequest>.Default.Equals(payload.Event, default)
-                                ? new SendResult(
-                                    EventStatus.Invalid,
-                                    new EventValidation(false, [ new ValidationResult("Event not provided") ])
-                                )
-                                : await behavior.RequestAsync(payload.Event, implicitInitialization ? [] : [new NoImplicitInitialization()]);
-                            
-                            var notifications = (await behavior.GetNotificationsAsync(payload.RequestedNotifications)).Response.Notifications.ToArray();
-                            var behaviorInfo = (await behavior.GetStatusAsync([new NoImplicitInitialization()])).Response;
-                            return result.ToResult(notifications, behaviorInfo, CustomHateoasLinks);
-                        }
-                        
-                        return Results.NotFound();
-                    }
-                )
-            );
-        }
-    }
+        => stateMachine.RegisterRequestEndpoint<TRequest, TResponse>(routeHandlerBuilderAction,
+            BehaviorType.StateMachine, stateMachineName, CustomHateoasLinks);
 
     private void RegisterStandardEndpoints(string stateMachineName, RouteGroupBuilder stateMachine)
     {

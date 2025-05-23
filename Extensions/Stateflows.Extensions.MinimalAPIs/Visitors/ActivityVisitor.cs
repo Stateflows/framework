@@ -102,82 +102,13 @@ internal class ActivityVisitor(
     }
 
     private void RegisterEventEndpoint<TEvent>(string activityName, RouteGroupBuilder activity)
-    {
-        var eventType = typeof(TEvent);
-        if (Utils.IsEventEmpty(eventType))
-        {
-            routeHandlerBuilderAction(
-                activity.MapPost("/{instance}/" + Utils.GetEventName<TEvent>(),
-                    async (
-                        HttpContext context,
-                        IServiceProvider serviceProvider,
-                        string instance,
-                        IActivityLocator locator,
-                        RequestBody payload,
-                        [FromQuery] bool implicitInitialization = true
-                    ) =>
-                    {
-                        var (success, authorizationResult) = await Utils.AuthorizeEventAsync(eventType, serviceProvider, context);
-                        if (!success)
-                        {
-                            return authorizationResult;
-                        }
+        => activity.RegisterEventEndpoint<TEvent>(routeHandlerBuilderAction,
+            BehaviorType.Activity, activityName, CustomHateoasLinks);
 
-                        if (locator.TryLocateActivity(new ActivityId(activityName, instance), out var behavior))
-                        {
-                            var result = await behavior.SendAsync(StateflowsActivator.CreateUninitializedInstance(eventType), implicitInitialization ? [] : [new NoImplicitInitialization()]);
-                        
-                            var notifications = (await behavior.GetNotificationsAsync(payload.RequestedNotifications)).Response.Notifications.ToArray();
-                            var behaviorInfo = (await behavior.GetStatusAsync([new NoImplicitInitialization()])).Response;
-
-                            return result.ToResult(notifications, behaviorInfo, CustomHateoasLinks);
-                        }
-                    
-                        return Results.NotFound();
-                    }
-                )
-            );
-        }
-        else
-        {
-            routeHandlerBuilderAction(
-                activity.MapPost("/{instance}/" + Utils.GetEventName<TEvent>(),
-                    async (
-                        HttpContext context,
-                        IServiceProvider serviceProvider,
-                        string instance,
-                        IActivityLocator locator,
-                        RequestBody<TEvent> payload,
-                        [FromQuery] bool implicitInitialization = true
-                    ) =>
-                    {
-                        var (success, authorizationResult) = await Utils.AuthorizeEventAsync(eventType, serviceProvider, context);
-                        if (!success)
-                        {
-                            return authorizationResult;
-                        }
-
-                        if (locator.TryLocateActivity(new ActivityId(activityName, instance), out var behavior))
-                        {
-                            var result = EqualityComparer<TEvent>.Default.Equals(payload.Event, default)
-                                ? new SendResult(
-                                    EventStatus.Invalid,
-                                    new EventValidation(false, [ new ValidationResult("Event not provided") ])
-                                )
-                                : await behavior.SendAsync(payload.Event, implicitInitialization ? [] : [new NoImplicitInitialization()]);
-                        
-                            var notifications = (await behavior.GetNotificationsAsync(payload.RequestedNotifications)).Response.Notifications.ToArray();
-                            var behaviorInfo = (await behavior.GetStatusAsync([new NoImplicitInitialization()])).Response;
-
-                            return result.ToResult(notifications, behaviorInfo, CustomHateoasLinks);
-                        }
-                    
-                        return Results.NotFound();
-                    }
-                )
-            );
-        }
-    }
+    private void RegisterRequestEndpoint<TRequest, TResponse>(string activityName, RouteGroupBuilder activity)
+        where TRequest : IRequest<TResponse>
+        => activity.RegisterRequestEndpoint<TRequest, TResponse>(routeHandlerBuilderAction,
+            BehaviorType.Activity, activityName, CustomHateoasLinks);
 
     private void RegisterEventEndpoint<TEvent>(string activityName)
     {
@@ -242,38 +173,6 @@ internal class ActivityVisitor(
 
     private static string GetEventName<TEvent>()
         => JsonNamingPolicy.CamelCase.ConvertName(Event<TEvent>.Name.ToShortName());
-
-    private void RegisterRequestEndpoint<TRequest, TResponse>(string activityName, RouteGroupBuilder activity)
-        where TRequest : IRequest<TResponse>
-    {
-        routeHandlerBuilderAction(
-            activity.MapPost("/{instance}/" + GetEventName<TRequest>(),
-                async (
-                    string instance,
-                    IActivityLocator locator,
-                    RequestBody<TRequest> payload,
-                    [FromQuery] bool implicitInitialization = true
-                ) =>
-                {
-                    if (locator.TryLocateActivity(new ActivityId(activityName, instance), out var behavior))
-                    {
-                        var result = EqualityComparer<TRequest>.Default.Equals(payload.Event, default)
-                            ? new SendResult(
-                                EventStatus.Invalid,
-                                new EventValidation(false, [ new ValidationResult("Event not provided") ])
-                            )
-                            : await behavior.RequestAsync(payload.Event, implicitInitialization ? [] : [new NoImplicitInitialization()]);
-                        var notifications = (await behavior.GetNotificationsAsync(payload.RequestedNotifications)).Response.Notifications.ToArray();
-                        var behaviorInfo = (await behavior.GetStatusAsync([new NoImplicitInitialization()])).Response;
-
-                        return result.ToResult(notifications, behaviorInfo, CustomHateoasLinks);
-                    }
-                    
-                    return Results.NotFound();
-                }
-            )
-        );
-    }
 
     private void RegisterStandardEndpoints(string activityName, RouteGroupBuilder activity)
     {
