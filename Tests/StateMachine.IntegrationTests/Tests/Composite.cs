@@ -118,7 +118,6 @@ namespace StateMachine.IntegrationTests.Tests
                         .AddExecutionSequenceObserver()
                         .AddInitialState("state1", b => b
                             .AddTransition<OtherEvent>("state2")
-                            .AddTransition<SomeEvent>("historyPseudostate")
                         )
                         .AddCompositeState("state2", b => b
                             .AddInitialState("state3", b => b
