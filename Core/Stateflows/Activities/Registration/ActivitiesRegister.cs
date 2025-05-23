@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Diagnostics;
 using System.Collections.Generic;
+using System.Linq;
+using System.Reflection;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using Stateflows.Common.Classes;
@@ -33,6 +35,9 @@ namespace Stateflows.Activities.Registration
         public readonly Dictionary<string, Graph> Activities = new Dictionary<string, Graph>();
 
         public readonly Dictionary<string, int> CurrentVersions = new Dictionary<string, int>();
+
+        private readonly MethodInfo ActivityTypeAddedAsyncMethod =
+            typeof(IActivityVisitor).GetMethod(nameof(IActivityVisitor.ActivityTypeAddedAsync));
 
         private bool IsNewestVersion(string activityName, int version)
         {
@@ -68,13 +73,15 @@ namespace Stateflows.Activities.Registration
 
             var builder = new ActivityBuilder(activityName, version, null, stateflowsBuilder, Services);
             buildAction(builder);
-            builder.Result.Build();
+            builder.Graph.Build();
 
-            Activities.Add(key, builder.Result);
+            builder.Graph.VisitingTasks.Add(v => v.ActivityAddedAsync(activityName, version));
+
+            Activities.Add(key, builder.Graph);
 
             if (IsNewestVersion(activityName, version))
             {
-                Activities[currentKey] = builder.Result;
+                Activities[currentKey] = builder.Graph;
             }
         }
 
@@ -92,15 +99,23 @@ namespace Stateflows.Activities.Registration
             var activity = StateflowsActivator.CreateUninitializedInstance(activityType) as IActivity;
 
             var builder = new ActivityBuilder(activityName, version, null, stateflowsBuilder, Services);
-            builder.Result.ActivityType = activityType;
+            builder.Graph.ActivityType = activityType;
             activity.Build(builder);
-            builder.Result.Build();
+            builder.Graph.Build();
 
-            Activities.Add(key, builder.Result);
+            var method = ActivityTypeAddedAsyncMethod.MakeGenericMethod(activityType);
+            
+            builder.Graph.VisitingTasks.AddRange(new Func<IActivityVisitor, Task>[]
+            {
+                v => v.ActivityAddedAsync(activityName, version),
+                v => (Task)method.Invoke(v, new object[] { activityName, version })
+            });
+
+            Activities.Add(key, builder.Graph);
 
             if (IsNewestVersion(activityName, version))
             {
-                Activities[currentKey] = builder.Result;
+                Activities[currentKey] = builder.Graph;
             }
         }
 
@@ -108,6 +123,19 @@ namespace Stateflows.Activities.Registration
         public void AddActivity<TActivity>(string activityName = null, int version = 1)
             where TActivity : class, IActivity
             => AddActivity(activityName ?? Activity<TActivity>.Name, version, typeof(TActivity));
+
+        public async Task VisitActivitiesAsync(IActivityVisitor visitor)
+        {
+            var tasks = Activities
+                .Where((item, index) => !item.Key.EndsWith(".current"))
+                .Select(item => item.Value)
+                .SelectMany(graph => graph.VisitingTasks);
+            
+            foreach (var task in tasks)
+            {
+                await task(visitor);
+            }
+        }
 
         #region Observability
         [DebuggerHidden]

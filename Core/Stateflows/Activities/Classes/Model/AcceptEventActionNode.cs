@@ -3,7 +3,8 @@ using System.Threading.Tasks;
 
 namespace Stateflows.Activities
 {
-    public sealed class AcceptEventActionNode<TEvent> : IAcceptEventActionNode<TEvent>
+    public sealed class AcceptEventActionNode<TEvent> : IAcceptEventActionNode<TEvent>
+
     {
         public Task ExecuteAsync(TEvent @event, CancellationToken cancellationToken)
             => Task.CompletedTask;

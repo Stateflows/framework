@@ -64,9 +64,8 @@ namespace Stateflows.StateMachines.Registration.Builders
                     }
                     else
                     {
-                        var inspector = await c.Executor.GetInspectorAsync();
-                        
-                        if (!await inspector.OnStateInitializeExceptionAsync(context, e))
+                        // Trace.WriteLine($"⦗→s⦘ State Machine '{context.Context.Id.Name}:{context.Context.Id.Instance}': exception '{e.GetType().FullName}' thrown with message '{e.Message}'");
+                        if (!c.Executor.Inspector.OnStateInitializeException(context, e))
                         {
                             throw;
                         }
@@ -104,9 +103,8 @@ namespace Stateflows.StateMachines.Registration.Builders
                     }
                     else
                     {
-                        var inspector = await c.Executor.GetInspectorAsync();
-
-                        if (!await inspector.OnStateFinalizeExceptionAsync(context, e))
+                        // Trace.WriteLine($"⦗→s⦘ State Machine '{context.Context.Id.Name}:{context.Context.Id.Instance}': exception '{e.GetType().FullName}' thrown with message '{e.Message}'");
+                        if (!c.Executor.Inspector.OnStateFinalizeException(context, e))
                         {
                             throw;
                         }
@@ -146,9 +144,8 @@ namespace Stateflows.StateMachines.Registration.Builders
                             }
                             else
                             {
-                                var inspector = await c.Executor.GetInspectorAsync();
-
-                                if (!await inspector.OnStateEntryExceptionAsync(context, e))
+                                Trace.WriteLine($"⦗→s⦘ State Machine '{context.Context.Id.Name}:{context.Context.Id.Instance}': exception '{e.GetType().FullName}' thrown with message '{e.Message}'");
+                                if (!c.Executor.Inspector.OnStateEntryException(context, e))
                                 {
                                     throw;
                                 }
@@ -189,9 +186,8 @@ namespace Stateflows.StateMachines.Registration.Builders
                             }
                             else
                             {
-                                var inspector = await c.Executor.GetInspectorAsync();
-
-                                if (!await inspector.OnStateExitExceptionAsync(context, e))
+                                Trace.WriteLine($"⦗→s⦘ State Machine '{context.Context.Id.Name}:{context.Context.Id.Instance}': exception '{e.GetType().FullName}' thrown with message '{e.Message}'");
+                                if (!c.Executor.Inspector.OnStateExitException(context, e))
                                 {
                                     throw;
                                 }
@@ -329,7 +325,7 @@ namespace Stateflows.StateMachines.Registration.Builders
         #endregion
 
         [DebuggerHidden]
-        public IOverridenOrthogonalStateBuilder UseTransition<TEvent>(string targetStateName, TransitionBuildAction<TEvent> transitionBuildAction)
+        public IOverridenOrthogonalStateBuilder UseTransition<TEvent>(string targetStateName, OverridenTransitionBuildAction<TEvent> transitionBuildAction)
         {
             var edge = Vertex.Edges.Values.FirstOrDefault(edge =>
                 edge.TriggerType == typeof(TEvent) &&
@@ -349,7 +345,7 @@ namespace Stateflows.StateMachines.Registration.Builders
         }
 
         [DebuggerHidden]
-        public IOverridenOrthogonalStateBuilder UseDefaultTransition(string targetStateName, DefaultTransitionBuildAction transitionBuildAction)
+        public IOverridenOrthogonalStateBuilder UseDefaultTransition(string targetStateName, OverridenDefaultTransitionBuildAction transitionBuildAction)
         {
             var edge = Vertex.Edges.Values.FirstOrDefault(edge =>
                 edge.TargetName == targetStateName &&
@@ -368,7 +364,7 @@ namespace Stateflows.StateMachines.Registration.Builders
         }
 
         [DebuggerHidden]
-        public IOverridenOrthogonalStateBuilder UseInternalTransition<TEvent>(InternalTransitionBuildAction<TEvent> transitionBuildAction)
+        public IOverridenOrthogonalStateBuilder UseInternalTransition<TEvent>(OverridenInternalTransitionBuildAction<TEvent> transitionBuildAction)
         {
             var edge = Vertex.Edges.Values.FirstOrDefault(edge =>
                 edge.TriggerType == typeof(TEvent) &&
@@ -387,7 +383,7 @@ namespace Stateflows.StateMachines.Registration.Builders
         }
 
         [DebuggerHidden]
-        public IOverridenOrthogonalStateBuilder UseElseTransition<TEvent>(string targetStateName, ElseTransitionBuildAction<TEvent> transitionBuildAction)
+        public IOverridenOrthogonalStateBuilder UseElseTransition<TEvent>(string targetStateName, OverridenElseTransitionBuildAction<TEvent> transitionBuildAction)
         {
             var edge = Vertex.Edges.Values.FirstOrDefault(edge =>
                 edge.TriggerType == typeof(TEvent) &&
@@ -407,7 +403,7 @@ namespace Stateflows.StateMachines.Registration.Builders
         }
 
         [DebuggerHidden]
-        public IOverridenOrthogonalStateBuilder UseElseDefaultTransition(string targetStateName, ElseDefaultTransitionBuildAction transitionBuildAction)
+        public IOverridenOrthogonalStateBuilder UseElseDefaultTransition(string targetStateName, OverridenElseDefaultTransitionBuildAction transitionBuildAction)
         {
             var edge = Vertex.Edges.Values.FirstOrDefault(edge =>
                 edge.TargetName == targetStateName &&
@@ -426,7 +422,7 @@ namespace Stateflows.StateMachines.Registration.Builders
         }
 
         [DebuggerHidden]
-        public IOverridenOrthogonalStateBuilder UseElseInternalTransition<TEvent>(ElseInternalTransitionBuildAction<TEvent> transitionBuildAction)
+        public IOverridenOrthogonalStateBuilder UseElseInternalTransition<TEvent>(OverridenElseInternalTransitionBuildAction<TEvent> transitionBuildAction)
         {
             var edge = Vertex.Edges.Values.FirstOrDefault(edge =>
                 edge.TriggerType == typeof(TEvent) &&
@@ -495,5 +491,8 @@ namespace Stateflows.StateMachines.Registration.Builders
             buildAction?.Invoke(new RegionBuilder(Vertex.Regions[index], Services));
             return this;
         }
+
+        public string Name => Vertex.Name;
+        public VertexType Type => Vertex.Type;
     }
 }

@@ -2,7 +2,7 @@
 using System.Threading.Tasks;
 using Stateflows.Common;
 using Stateflows.StateMachines.Extensions;
-using Stateflows.StateMachines.Inspection.Interfaces;
+using Stateflows.StateMachines.Context.Interfaces;
 
 namespace Stateflows.StateMachines.EventHandlers
 {
@@ -10,14 +10,19 @@ namespace Stateflows.StateMachines.EventHandlers
     {
         public Type EventType => typeof(Reset);
 
-        public Task<EventStatus> TryHandleEventAsync<TEvent>(IEventInspectionContext<TEvent> context)
-
+        public Task<EventStatus> TryHandleEventAsync<TEvent>(IEventContext<TEvent> context)
         {
             if (context.Event is Reset request)
             {
-                context.StateMachine.GetExecutor().Reset(request.Mode);
+                var executor = context.Behavior.GetExecutor();
+                if (executor.Initialized)
+                {
+                    executor.Reset(request.Mode);
+                    
+                    return Task.FromResult(EventStatus.Consumed);
+                }
 
-                return Task.FromResult(EventStatus.Consumed);
+                return Task.FromResult(EventStatus.Rejected);
             }
 
             return Task.FromResult(EventStatus.NotConsumed);

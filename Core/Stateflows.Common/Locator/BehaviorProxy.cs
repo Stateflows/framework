@@ -4,21 +4,25 @@ using System.Diagnostics;
 using System.Threading.Tasks;
 using System.Collections.Generic;
 using Stateflows.Common.Engine;
+using Stateflows.Common.Interfaces;
 
 namespace Stateflows.Common.Locator
 {
-    internal class BehaviorProxy : IBehavior
+    internal class BehaviorProxy : IBehavior, IInjectionScope
     {
         private IBehavior Behavior { get; }
 
         private ClientInterceptor Interceptor { get; }
 
+        public IServiceProvider ServiceProvider { get; private set; }
+
         public BehaviorId Id => Behavior.Id;
 
-        public BehaviorProxy(IBehavior behavior, ClientInterceptor interceptor)
+        public BehaviorProxy(IBehavior behavior, ClientInterceptor interceptor, IServiceProvider serviceProvider)
         {
             Behavior = behavior;
             Interceptor = interceptor;
+            ServiceProvider = serviceProvider;
         }
 
         public async Task<SendResult> SendAsync<TEvent>(TEvent @event, IEnumerable<EventHeader> headers = null)
@@ -30,18 +34,18 @@ namespace Stateflows.Common.Locator
                 Headers = headers?.ToList() ?? new List<EventHeader>()
             };
 
-            if (await Interceptor.BeforeDispatchEventAsync(eventHolder))
+            if (Interceptor.BeforeDispatchEvent(eventHolder))
             {
                 result = await Behavior.SendAsync(eventHolder.Payload, eventHolder.Headers);
 
-                await Interceptor.AfterDispatchEventAsync(eventHolder);
+                Interceptor.AfterDispatchEvent(eventHolder);
             }
             else
             {
                 Trace.WriteLine($"⦗→s⦘ Client interceptor prevented Event dispatch.");
             }
 
-            result ??= new SendResult(eventHolder, EventStatus.Undelivered);
+            result ??= new SendResult(EventStatus.Undelivered);
 
             return result;
         }
@@ -51,11 +55,11 @@ namespace Stateflows.Common.Locator
             RequestResult<TResponse> result = null;
             var eventHolder = request.ToTypedEventHolder(headers);
 
-            if (await Interceptor.BeforeDispatchEventAsync(eventHolder))
+            if (Interceptor.BeforeDispatchEvent(eventHolder))
             {
                 result = await Behavior.RequestAsync(eventHolder.BoxedPayload as IRequest<TResponse>, eventHolder.Headers);
 
-                await Interceptor.AfterDispatchEventAsync(eventHolder);
+                Interceptor.AfterDispatchEvent(eventHolder);
             }
             else
             {
@@ -69,6 +73,9 @@ namespace Stateflows.Common.Locator
 
         public Task<IWatcher> WatchAsync<TNotification>(Action<TNotification> handler)
             => Behavior.WatchAsync(handler);
+
+        public Task<IWatcher> WatchAsync(string[] notificationNames, Action<EventHolder> handler)
+            => Behavior.WatchAsync(notificationNames, handler);
 
         public void Dispose()
         {

@@ -1,4 +1,7 @@
-﻿using Stateflows.Activities.Context.Classes;
+﻿using System;
+using System.Threading.Tasks;
+using Stateflows.Activities.Context.Classes;
+using Stateflows.Activities.Context.Interfaces;
 
 namespace Stateflows.Activities.Registration.Interfaces
 {
@@ -52,8 +55,8 @@ namespace Stateflows.Activities.Registration.Interfaces
 
     public interface IObjectFlowGuardBuilderBase<TToken, out TReturn>
     {
-        TReturn AddGuard(GuardDelegateAsync<TToken> guardAsync);
-
+        TReturn AddGuard(params Func<IGuardContext<TToken>, Task<bool>>[]  guardAsync);
+        
         TReturn AddGuard<TGuard>()
             where TGuard : class, IFlowGuard<TToken>
             => AddGuard(async c
@@ -209,7 +212,7 @@ namespace Stateflows.Activities.Registration.Interfaces
 
     public interface IControlFlowBuilderBase<out TReturn>
     {
-        TReturn AddGuard(GuardDelegateAsync guardAsync);
+        TReturn AddGuard(params Func<IGuardContext, Task<bool>>[]  guardsAsync);
 
         TReturn AddGuard<TGuard>()
             where TGuard : class, IControlFlowGuard

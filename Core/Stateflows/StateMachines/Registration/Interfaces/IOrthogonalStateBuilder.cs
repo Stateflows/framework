@@ -3,6 +3,7 @@
 namespace Stateflows.StateMachines.Registration.Interfaces
 {
     public interface IOrthogonalStateBuilder :
+        IOrthogonalStateExtension<IOrthogonalStateBuilder>,
         IStateEvents<IOrthogonalStateBuilder>,
         IOrthogonalStateTypedEvents<IOrthogonalStateBuilder>,
         IStateUtils<IOrthogonalStateBuilder>,
@@ -11,6 +12,7 @@ namespace Stateflows.StateMachines.Registration.Interfaces
     { }
 
     public interface IOverridenOrthogonalStateBuilder :
+        IOrthogonalStateExtension<IOverridenOrthogonalStateBuilder>,
         IStateEvents<IOverridenOrthogonalStateBuilder>,
         IOrthogonalStateTypedEvents<IOverridenOrthogonalStateBuilder>,
         IStateUtils<IOverridenOrthogonalStateBuilder>,

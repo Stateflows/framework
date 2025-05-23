@@ -1,6 +1,7 @@
 using Stateflows.Common;
 using Stateflows.Activities;
 using Stateflows.Activities;
+using StateMachine.IntegrationTests.Classes.Events;
 using StateMachine.IntegrationTests.Utils;
 
 namespace StateMachine.IntegrationTests.Tests
@@ -21,7 +22,6 @@ namespace StateMachine.IntegrationTests.Tests
         protected override void InitializeStateflows(IStateflowsBuilder builder)
         {
             builder
-                .AddPlantUml()
                 .AddStateMachines(b => b
                     .AddStateMachine("submachine", b => b
                         .AddExecutionSequenceObserver()
@@ -41,7 +41,7 @@ namespace StateMachine.IntegrationTests.Tests
                             .AddTransition<SomeEvent>("stateB")
                         )
                         .AddState("stateB", b => b
-                            .AddOnEntry(c => c.StateMachine.Publish(new SomeNotification()))
+                            .AddOnEntry(c => c.Behavior.Publish(new SomeNotification()))
                         )
                     )
 
@@ -86,7 +86,7 @@ namespace StateMachine.IntegrationTests.Tests
                         .AddAcceptEventAction<SomeEvent>(async c =>
                         {
                             eventConsumed = true;
-                            c.Activity.Publish(new SomeNotification());
+                            c.Behavior.Publish(new SomeNotification());
                         })
                     )
                     .AddActivity("integrated", b => b
@@ -98,7 +98,7 @@ namespace StateMachine.IntegrationTests.Tests
                             async c =>
                             {
                                 eventConsumed = true;
-                                c.Activity.Publish(new SomeNotification());
+                                c.Behavior.Publish(new SomeNotification());
                             }
                         )
                     )
@@ -136,9 +136,9 @@ namespace StateMachine.IntegrationTests.Tests
 
                 await Task.Delay(100);
 
-                var currentState = (await sm.GetCurrentStateAsync()).Response;
+                var currentState = (await sm.GetStatusAsync()).Response;
 
-                currentState1 = currentState.StatesTree.Value;
+                currentState1 = currentState.CurrentStates.Value;
             }
 
             ExecutionSequence.Verify(b => b
@@ -170,7 +170,7 @@ namespace StateMachine.IntegrationTests.Tests
 
                 await Task.Delay(200);
 
-                currentState1 = (await sm.GetCurrentStateAsync()).Response.StatesTree.Value;
+                currentState1 = (await sm.GetStatusAsync()).Response.CurrentStates.Value;
             }
 
             ExecutionSequence.Verify(b => b
@@ -196,9 +196,9 @@ namespace StateMachine.IntegrationTests.Tests
 
                 someStatus1 = (await sm.SendAsync(new SomeEvent())).Status;
 
-                await Task.Delay(200);
+                await Task.Delay(500);
 
-                currentState1 = (await sm.GetCurrentStateAsync()).Response.StatesTree.Value;
+                currentState1 = (await sm.GetStatusAsync()).Response.CurrentStates.Value;
             }
 
             ExecutionSequence.Verify(b => b
@@ -226,7 +226,7 @@ namespace StateMachine.IntegrationTests.Tests
 
                 await Task.Delay(200);
 
-                currentState1 = (await sm.GetCurrentStateAsync()).Response.StatesTree.Value;
+                currentState1 = (await sm.GetStatusAsync()).Response.CurrentStates.Value;
             }
 
             ExecutionSequence.Verify(b => b

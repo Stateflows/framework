@@ -1,4 +1,5 @@
 using Stateflows.Common;
+using StateMachine.IntegrationTests.Classes.Events;
 using StateMachine.IntegrationTests.Utils;
 
 namespace StateMachine.IntegrationTests.Tests
@@ -48,23 +49,24 @@ namespace StateMachine.IntegrationTests.Tests
                         )
                         .AddState("state2", b => b
                             .AddInternalTransition<OtherEvent>(b => b
-                                .AddEffect(c =>
+                                .AddEffect(async c =>
                                 {
-                                    if (c.StateMachine.Values.TryGet<int>("c", out var counter))
+                                    var (success, counter) = await c.Behavior.Values.TryGetAsync<int>("c");
+                                    if (success)
                                     {
                                         if (counter == c.Event.AnswerToLifeUniverseAndEverything - 1)
                                         {
-                                            c.StateMachine.Values.Set<bool>("result", true);
+                                            await c.Behavior.Values.SetAsync("result", true);
                                         }
                                     }
                                     else
                                     {
-                                        c.StateMachine.Values.Set<int>("c", c.Event.AnswerToLifeUniverseAndEverything);
+                                        await c.Behavior.Values.SetAsync("c", c.Event.AnswerToLifeUniverseAndEverything);
                                     }
                                 })
                             )
                             .AddDefaultTransition("state3", b => b
-                                .AddGuard(c => c.StateMachine.Values.TryGet<bool>("result", out var result) && result)
+                                .AddGuard(c => c.Behavior.Values.GetOrDefaultAsync("result", false))
                             )
                         )
                         .AddState("state3")
@@ -90,7 +92,7 @@ namespace StateMachine.IntegrationTests.Tests
 
                 someStatus = (await sm.SendAsync(new SomeEvent())).Status;
 
-                currentState = (await sm.GetCurrentStateAsync()).Response.StatesTree.Value;
+                currentState = (await sm.GetStatusAsync()).Response.CurrentStates.Value;
             }
 
             Assert.IsTrue(initialized);
@@ -118,7 +120,7 @@ namespace StateMachine.IntegrationTests.Tests
 
                 someStatus = (await sm.SendAsync(new SomeEvent())).Status;
 
-                currentState = (await sm.GetCurrentStateAsync()).Response.StatesTree.Value;
+                currentState = (await sm.GetStatusAsync()).Response.CurrentStates.Value;
             }
 
             Assert.IsTrue(initialized);
@@ -147,7 +149,7 @@ namespace StateMachine.IntegrationTests.Tests
 
                 otherStatus2 = (await sm.SendAsync(new OtherEvent())).Status;
 
-                currentState = (await sm.GetCurrentStateAsync()).Response.StatesTree.Value;
+                currentState = (await sm.GetStatusAsync()).Response.CurrentStates.Value;
             }
 
             Assert.IsTrue(initialized);

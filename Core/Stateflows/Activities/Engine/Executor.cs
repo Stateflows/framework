@@ -6,18 +6,21 @@ using System.Threading.Tasks;
 using System.Collections.Generic;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.DependencyInjection;
+using Stateflows.Activities.Context;
 using Stateflows.Utils;
 using Stateflows.Common;
 using Stateflows.Common.Classes;
 using Stateflows.Common.Utilities;
 using Stateflows.Common.Interfaces;
 using Stateflows.Common.Exceptions;
-using Stateflows.Common.Subscription;
 using Stateflows.Activities.Enums;
 using Stateflows.Activities.Models;
 using Stateflows.Activities.Streams;
 using Stateflows.Activities.Registration;
 using Stateflows.Activities.Context.Classes;
+using Stateflows.Activities.Context.Interfaces;
+using Stateflows.Activities.Inspection.Classes;
+using Stateflows.StateMachines.Extensions;
 
 namespace Stateflows.Activities.Engine
 {
@@ -45,7 +48,6 @@ namespace Stateflows.Activities.Engine
         public readonly Graph Graph;
         public readonly ActivitiesRegister Register;
         public readonly NodeScope NodeScope;
-        private readonly ILogger<Executor> Logger;
 
         private static readonly NodeType[] CancellableTypes = new NodeType[]
         {
@@ -87,26 +89,17 @@ namespace Stateflows.Activities.Engine
         public Executor(ActivitiesRegister register, Graph graph, IServiceProvider serviceProvider)
         {
             Register = register;
-            NodeScope = new NodeScope(serviceProvider, graph, Guid.NewGuid());
+            NodeScope = new NodeScope(serviceProvider, graph, null, Guid.NewGuid());
             Graph = graph;
 
-            Logger = serviceProvider.GetService<ILogger<Executor>>();
+            var logger = serviceProvider.GetService<ILogger<Executor>>();
+            Inspector = new Inspector(this, logger);
+            ActivitiesContextHolder.Inspection.Value = new ActivityInspection(this, Inspector);
         }
 
         public RootContext Context { get; private set; }
 
-        private Inspector inspector;
-
-        public async Task<Inspector> GetInspectorAsync()
-        {
-            if (inspector == null)
-            {
-                inspector = new Inspector(this, Logger);
-                await inspector.BuildAsync();
-            }
-
-            return inspector;
-        }
+        public readonly Inspector Inspector;
         
         private EventWaitHandle FinalizationEvent { get; } = new EventWaitHandle(false, EventResetMode.AutoReset);
 
@@ -125,11 +118,54 @@ namespace Stateflows.Activities.Engine
                 .Select(nodeId => Graph.AllNodes[nodeId])
                 .OrderByDescending(node => node.Level)
                 .ToArray();
+        
+        public Tree<Node> NodesTree { get; private set; } = null;
 
-        public IEnumerable<Type> GetExpectedEvents()
-            => GetActiveNodes()
-                .SelectMany(node => node.ActualEventTypes)
-                .Distinct()
+        private void RebuildNodesTree()
+        {
+            NodesTree = new Tree<Node>();
+            
+            if (Context.ActiveNodes.Any())
+            {
+                NodesTree.Root = new TreeNode<Node>(Graph);
+            }
+
+            foreach (var node in Context.ActiveNodes.Keys.Select(nodeId => Graph.AllNodes[nodeId]))
+            {
+                AddActiveBranch(node);
+            }
+        }
+
+        private void AddActiveBranch(Node node)
+        {
+            if (node.Parent != null && !NodesTree.Contains(node.Parent))
+            {
+                AddActiveBranch(node.Parent);
+            }
+            
+            NodesTree.AddTo(node, node.Parent);
+        }
+
+        public IReadOnlyTree<string> GetNodesTree()
+            => NodesTree.Translate(node => node.OwnName);
+
+        public Type[] GetExpectedEvents()
+            => BehaviorStatus == BehaviorStatus.Initialized
+                ? GetActiveNodes()
+                    .SelectMany(node => node.ActualEventTypes)
+                    .Distinct()
+                    .ToArray()
+                : BehaviorStatus == BehaviorStatus.NotInitialized
+                    ? Graph.InitializerTypes.Any()
+                        ? Graph.InitializerTypes.ToArray()
+                        : new[] { typeof(Initialize) }
+                    : Array.Empty<Type>();
+
+        public IEnumerable<string> GetExpectedEventNames()
+            => GetExpectedEvents()
+                .Where(type => !typeof(SystemEvent).IsAssignableFrom(type))
+                .Where(type => !typeof(Exception).IsAssignableFrom(type))
+                .Select(type => type.GetEventName())
                 .ToArray();
 
         public async Task HydrateAsync(RootContext context)
@@ -137,18 +173,18 @@ namespace Stateflows.Activities.Engine
             Context = context;
             Context.Executor = this;
 
-            var inspector = await GetInspectorAsync(); 
+            RebuildNodesTree();
+
+            await Inspector.BuildAsync();
             
-            await inspector.AfterHydrateAsync(new ActivityActionContext(Context, NodeScope.CreateChildScope()));
+            Inspector.AfterHydrate(new ActivityActionContext(Context, NodeScope.CreateChildScope()));
         }
 
-        public async Task<RootContext> DehydrateAsync()
+        public RootContext Dehydrate()
         {
             Debug.Assert(Context != null, $"Context is unavailable. Is activity '{Graph.Name}' already dehydrated?");
 
-            var inspector = await GetInspectorAsync(); 
-
-            await inspector.BeforeDehydrateAsync(new ActivityActionContext(Context, NodeScope.CreateChildScope()));
+            Inspector.BeforeDehydrate(new ActivityActionContext(Context, NodeScope.CreateChildScope()));
 
             NodeScope.Dispose();
 
@@ -196,7 +232,19 @@ namespace Stateflows.Activities.Engine
 
                     input = input?.Concat(context.InputTokens).ToArray() ?? context.InputTokens.ToArray();
 
+                    if (result == InitializationStatus.InitializedImplicitly)
+                    {
+                        Context.SetEvent(new Initialize().ToEventHolder());
+                    }
+
                     await ExecuteGraphAsync(input);
+
+                    if (result == InitializationStatus.InitializedImplicitly)
+                    {
+                        Context.ClearEvent();
+                    }
+
+                    RebuildNodesTree();
 
                     return result == InitializationStatus.InitializedExplicitly
                         ? EventStatus.Initialized
@@ -232,6 +280,8 @@ namespace Stateflows.Activities.Engine
                 Context.Context.TriggerTime = null;
 
                 await DoFinalizeAsync();
+
+                RebuildNodesTree();
 
                 return true;
             }
@@ -297,14 +347,15 @@ namespace Stateflows.Activities.Engine
             {
                 var activeNodes = GetActiveNodes();
                 activeNode = activeNodes.FirstOrDefault(node =>
-                    node.ActualEventTypes.Contains(eventHolder.PayloadType) &&
-                    (
-                        !(eventHolder.Payload is TimeEvent timeEvent) ||
-                        (
-                            Context.NodeTimeEvents.TryGetValue(node.Identifier, out var timeEventId) &&
-                            timeEvent.Id == timeEventId
-                        )
-                    )
+                    eventHolder.IsAcceptedBy(node, Context.NodeTimeEvents)
+                    // node.ActualEventTypes.Contains(eventHolder.PayloadType) &&
+                    // (
+                    //     !(eventHolder.Payload is TimeEvent timeEvent) ||
+                    //     (
+                    //         Context.NodeTimeEvents.TryGetValue(node.Identifier, out var timeEventId) &&
+                    //         timeEvent.Id == timeEventId
+                    //     )
+                    // )
                 );
             }
 
@@ -368,7 +419,7 @@ namespace Stateflows.Activities.Engine
 
                 tokensOutputs.Add(tokensOutputHolder);
 
-                var notificationsHub = NodeScope.ServiceProvider.GetRequiredService<NotificationsHub>();
+                var notificationsHub = NodeScope.ServiceProvider.GetRequiredService<INotificationsHub>();
 
                 await notificationsHub.PublishRangeAsync(tokensOutputs);
             }
@@ -389,9 +440,7 @@ namespace Stateflows.Activities.Engine
 
             var context = new ActivityActionContext(Context, NodeScope);
 
-            var inspector = await GetInspectorAsync(); 
-
-            await inspector.BeforeActivityFinalizationAsync(context);
+            Inspector.BeforeActivityFinalize(context);
 
             await Graph.Finalize.WhenAll(context);
             try
@@ -400,7 +449,8 @@ namespace Stateflows.Activities.Engine
             }
             catch (Exception e)
             {
-                if (!await inspector.OnActivityFinalizationExceptionAsync(context, e))
+                Trace.WriteLine($"⦗→s⦘ Activity '{Context.Id.Name}:{Context.Id.Instance}': exception '{e.GetType().FullName}' thrown with message '{e.Message}'");
+                if (!Inspector.OnActivityFinalizationException(context, e))
                 {
                     throw;
                 }
@@ -410,7 +460,9 @@ namespace Stateflows.Activities.Engine
                 }
             }
 
-            await inspector.AfterActivityFinalizationAsync(context);
+            Inspector.AfterActivityFinalize(context);
+            
+            RebuildNodesTree();
 
             FinalizationEvent.Set();
         }
@@ -457,7 +509,7 @@ namespace Stateflows.Activities.Engine
             return result;
         }
 
-        public async Task<IEnumerable<TokenHolder>> DoExecuteParallelNodeAsync<TToken>(Node node, NodeScope nodeScope, IEnumerable<TokenHolder> input = null)
+        public async Task<IEnumerable<TokenHolder>> DoExecuteParallelNodeAsync<TToken>(Node node, Edge edge, NodeScope nodeScope, IEnumerable<TokenHolder> input = null)
         {
             var typedInput = input.OfType<TokenHolder<TToken>>().ToArray();
 
@@ -475,7 +527,7 @@ namespace Stateflows.Activities.Engine
 
                         await DoExecuteStructureAsync(
                             node,
-                            nodeScope.CreateChildScope(node, threadId),
+                            nodeScope.CreateChildScope(node, edge, threadId),
                             restOfInput.Concat(inputPartition).ToArray(),
                             inputPartition
                         );
@@ -505,24 +557,20 @@ namespace Stateflows.Activities.Engine
 
         public async Task DoInitializeNodeAsync(Node node, ActionContext context)
         {
-            var inspector = await GetInspectorAsync(); 
-
-            await inspector.BeforeNodeInitializationAsync(context);
+            Inspector.BeforeNodeInitialize(context);
 
             await node.Initialize.WhenAll(context);
 
-            await inspector.AfterNodeInitializationAsync(context);
+            Inspector.AfterNodeInitialize(context);
         }
 
         public async Task DoFinalizeNodeAsync(Node node, ActionContext context)
         {
-            var inspector = await GetInspectorAsync(); 
-
-            await inspector.BeforeNodeFinalizationAsync(context);
+            Inspector.BeforeNodeFinalize(context);
 
             await node.Finalize.WhenAll(context);
 
-            await inspector.AfterNodeFinalizationAsync(context);
+            Inspector.AfterNodeFinalize(context);
         }
 
         public async Task<IEnumerable<TokenHolder>> DoExecuteIterativeNodeAsync<TToken>(ActionContext context)
@@ -541,7 +589,7 @@ namespace Stateflows.Activities.Engine
             {
                 await DoExecuteStructureAsync(
                     context.Node,
-                    context.NodeScope.CreateChildScope(context.Node, threadId),
+                    context.NodeScope.CreateChildScope(context.Node, context.Edge, threadId),
                     restOfInput.Concat(inputPartition),
                     inputPartition
                 );
@@ -589,10 +637,12 @@ namespace Stateflows.Activities.Engine
             }
 
             await Task.WhenAll(
-                nodes.Select(n => DoHandleNodeAsync(n, null, nodeScope, n == node.InputNode ? input : null, selectionTokens)).ToArray()
+                nodes.Select(n => DoHandleNodeAsync(n, nodeScope.Edge, nodeScope, n == node.InputNode ? input : null, selectionTokens)).ToArray()
             );
 
             var result = Context.IsNodeCompleted(node, nodeScope);
+            
+            RebuildNodesTree();
 
             return result;
         }
@@ -601,13 +651,13 @@ namespace Stateflows.Activities.Engine
         {
             InitializationStatus result;
 
-            var inspector = await GetInspectorAsync(); 
-
             var initializer = Graph.Initializers.ContainsKey(context.InitializationEvent.GetType().GetEventName())
                 ? Graph.Initializers[context.InitializationEvent.GetType().GetEventName()]
                 : Graph.DefaultInitializer;
 
-            await inspector.BeforeActivityInitializationAsync(context);
+            var implicitInitialization = (initializer == null || initializer == Graph.DefaultInitializer) && !(context.InitializationEvent is Initialize);
+            
+            Inspector.BeforeActivityInitialize(context, implicitInitialization);
 
             if (initializer != null)
             {
@@ -627,7 +677,8 @@ namespace Stateflows.Activities.Engine
                     }
                     else
                     {
-                        if (!await inspector.OnActivityInitializationExceptionAsync(context, context.InitializationEventHolder, e))
+                        Trace.WriteLine($"⦗→s⦘ Activity '{Context.Id.Name}:{Context.Id.Instance}': exception '{e.GetType().FullName}' thrown with message '{e.Message}'");
+                        if (!Inspector.OnActivityInitializationException(context, context.InitializationEventHolder, e))
                         {
                             throw;
                         }
@@ -650,7 +701,14 @@ namespace Stateflows.Activities.Engine
                 }
             }
 
-            await inspector.AfterActivityInitializationAsync(context, Initialized);
+            Inspector.AfterActivityInitialize(
+                context,
+                implicitInitialization,
+                result == InitializationStatus.InitializedImplicitly ||
+                result == InitializationStatus.InitializedExplicitly
+            );
+            
+            RebuildNodesTree();
 
             return result;
         }
@@ -658,6 +716,7 @@ namespace Stateflows.Activities.Engine
         public async Task<ExceptionHandlingResult> HandleExceptionAsync(Node node, Exception exception, ActionContext context)
         {
             Node handler = null;
+            Node handlerOwner = null;
             var currentNode = node;
             while (currentNode != null)
             {
@@ -668,6 +727,7 @@ namespace Stateflows.Activities.Engine
 
                 if (handler != null)
                 {
+                    handlerOwner = currentNode;
                     break;
                 }
 
@@ -684,11 +744,12 @@ namespace Stateflows.Activities.Engine
 
                 currentScope = currentScope.BaseNodeScope;
             }
+            
+            var exceptionName = exception.GetType().FullName;
 
             if (handler != null)
             {
-                var exceptionName = exception.GetType().Name;
-                Trace.WriteLine($"⦗→s⦘ Activity '{node.Graph.Name}:{context.Activity.Id.Instance}': handling '{exceptionName}'");
+                // Trace.WriteLine($"⦗→s⦘ Activity '{node.Graph.Name}:{context.Activity.Id.Instance}': handling '{exceptionName}'");
 
                 var exceptionContext = new ActionContext(
                     context.Context,
@@ -712,12 +773,14 @@ namespace Stateflows.Activities.Engine
                     DoHandleOutput(exceptionContext);
                 }
 
-                ReportExceptionHandled(node, exceptionName, exceptionContext.OutputTokens.Where(t => t is TokenHolder<ControlToken>).ToArray(), Context);
+                ReportExceptionHandled(handlerOwner, exceptionName, exceptionContext.OutputTokens.Where(t => !(t is TokenHolder<ControlToken>)).ToArray(), Context);
 
                 return node.ExceptionHandlers.Contains(handler)
                     ? ExceptionHandlingResult.HandledDirectly
                     : ExceptionHandlingResult.HandledIndirectly;
             }
+            
+            Trace.WriteLine($"⦗→s⦘ Activity '{node.Graph.Name}:{context.Activity.Id.Instance}': exception '{exceptionName}' is not handled within Activity");
 
             return ExceptionHandlingResult.NotHandled;
         }
@@ -780,13 +843,15 @@ namespace Stateflows.Activities.Engine
                 }
             }
 
-            nodeScope = nodeScope.CreateChildScope(node);
-
-            var inspector = await GetInspectorAsync(); 
+            nodeScope = nodeScope.CreateChildScope(node, upstreamEdge);
 
             var actionContext = new ActionContext(Context, nodeScope, node, inputTokens, selectionTokens);
 
-            await inspector.BeforeNodeActivateAsync(actionContext, activated);
+            var actuallyActivated = !Context.ActiveNodes.Keys.Contains(node.Identifier);
+            if (actuallyActivated)
+            {
+                Inspector.BeforeNodeActivate(actionContext, activated);
+            }
 
             if (activated)
             {
@@ -794,15 +859,21 @@ namespace Stateflows.Activities.Engine
                     InteractiveNodeTypes.Contains(node.Type) &&
                     (
                         Context.EventHolder == null ||
-                        !node.ActualEventTypes.Contains(Context.EventHolder.PayloadType)
+                        !Context.EventHolder.IsAcceptedBy(node)
+                        // !node.ActualEventTypes.Contains(Context.EventHolder.PayloadType)
                     )
                 )
                 {
-                    inspector.AcceptEventsPlugin.RegisterAcceptEventNode(node, nodeScope.ThreadId);
+                    Inspector.AcceptEventsPlugin.RegisterAcceptEventNode(node, nodeScope.ThreadId);
 
-                    if (Debugger.IsAttached)
+                    // if (Debugger.IsAttached)
                     {
                         Trace.WriteLine($"⦗→s⦘ Activity '{node.Graph.Name}:{Context.Id.Instance}': AcceptEvent node '{node.Name}' registered and waiting for event");
+                    }
+
+                    if (actuallyActivated)
+                    {
+                        Inspector.AfterNodeActivate(actionContext);
                     }
 
                     return;
@@ -810,7 +881,15 @@ namespace Stateflows.Activities.Engine
 
                 ReportNodeExecuting(node, upstreamEdge, inputTokens, Context);
 
-                await node.Action.WhenAll(actionContext);
+                try
+                {
+                    await node.Action.WhenAll(actionContext);
+                }
+                catch (Exception e)
+                {
+                    Inspector.OnNodeExecutionException(actionContext, e);
+                    throw;
+                }
 
                 if (InteractiveNodeTypes.Contains(node.Type))
                 {
@@ -818,18 +897,18 @@ namespace Stateflows.Activities.Engine
 
                     if (@event.BoxedPayload is TimeEvent)
                     {
-                        inspector.AcceptEventsPlugin.UnregisterAcceptEventNode(node);
+                        Inspector.AcceptEventsPlugin.UnregisterAcceptEventNode(node);
 
                         if (@event.BoxedPayload is RecurringEvent && !node.IncomingEdges.Any() && Context.NodesToExecute.Contains(node))
                         {
-                            inspector.AcceptEventsPlugin.RegisterAcceptEventNode(node, nodeScope.ThreadId);
+                            Inspector.AcceptEventsPlugin.RegisterAcceptEventNode(node, nodeScope.ThreadId);
                         }
                     }
                     else
                     {
                         if (node.IncomingEdges.Any())
                         {
-                            inspector.AcceptEventsPlugin.UnregisterAcceptEventNode(node);
+                            Inspector.AcceptEventsPlugin.UnregisterAcceptEventNode(node);
                         }
                     }
                 }
@@ -873,6 +952,7 @@ namespace Stateflows.Activities.Engine
                     )
                         .Where(x => x.Activated)
                         .Select(x => x.Edge)
+                        .Reverse()
                         .GroupBy(edge => edge.Target)
                         .ToArray();
 
@@ -880,12 +960,12 @@ namespace Stateflows.Activities.Engine
                 }
             }
 
-            await inspector.AfterNodeActivateAsync(null);
+            Inspector.AfterNodeActivate(actionContext);
         }
 
         private static void ReportNodeExecuting(Node node, Edge upstreamEdge, IEnumerable<TokenHolder> inputTokens, RootContext context)
         {
-            if (Debugger.IsAttached && !SystemTypes.Contains(node.Type))
+            if (/*Debugger.IsAttached && */!SystemTypes.Contains(node.Type))
             {
                 lock (lockHandle)
                 {
@@ -901,7 +981,7 @@ namespace Stateflows.Activities.Engine
 
         private static void ReportNodeExecuted(Node node, IEnumerable<TokenHolder> outputTokens, RootContext context)
         {
-            if (Debugger.IsAttached && !SystemTypes.Contains(node.Type))
+            if (/*Debugger.IsAttached && */!SystemTypes.Contains(node.Type))
             {
                 lock (lockHandle)
                 {
@@ -913,11 +993,11 @@ namespace Stateflows.Activities.Engine
 
         private static void ReportExceptionHandled(Node node, string exceptionName, IEnumerable<TokenHolder> outputTokens, RootContext context)
         {
-            if (Debugger.IsAttached)
+            // if (Debugger.IsAttached)
             {
                 lock (lockHandle)
                 {
-                    Trace.WriteLine($"⦗→s⦘ Activity '{node.Graph.Name}:{context.Id.Instance}': '{exceptionName}' handled{(!outputTokens.Any() ? ", no output" : "")}");
+                    Trace.WriteLine($"⦗→s⦘ Activity '{node.Graph.Name}:{context.Id.Instance}': exception '{exceptionName}' handled by exception handler of node '{node.Name}'{(!outputTokens.Any() ? ", no output" : "")}");
                     ReportTokens(outputTokens, false);
                 }
             }
@@ -925,7 +1005,7 @@ namespace Stateflows.Activities.Engine
 
         private static void ReportNodeAttemptedExecution(Node node, Edge upstreamEdge, IEnumerable<Stream> streams, RootContext context)
         {
-            if (Debugger.IsAttached && !SystemTypes.Contains(node.Type))
+            if (/*Debugger.IsAttached && */!SystemTypes.Contains(node.Type))
             {
                 lock (lockHandle)
                 {
@@ -956,7 +1036,7 @@ namespace Stateflows.Activities.Engine
 
             if (inputDigest.Any())
             {
-                Trace.WriteLine($"    {(input ? "Input" : "Output")} (with count):");
+                Trace.WriteLine($"    {(input ? "Input" : "Output")} token types (with count):");
                 foreach (var digest in inputDigest)
                 {
                     Trace.WriteLine($"    - '{digest.Name}' ({digest.Count})");
@@ -989,9 +1069,15 @@ namespace Stateflows.Activities.Engine
 
         private async Task<bool> DoHandleEdgeAsync(Edge edge, ActionContext context)
         {
+            var flowContext = new FlowContext(context.Context, context.NodeScope, edge);
+            
             var edgeTokenName = edge.TokenType.GetTokenName();
 
             IEnumerable<TokenHolder> originalTokens = context.OutputTokens.Where(t => t.Name == edgeTokenName).ToArray();
+
+            flowContext.TokenCount = originalTokens.Count();
+            
+            Inspector.BeforeFlowActivate(flowContext);
 
             var consumedTokens = new List<TokenHolder>();
             var processedTokens = new List<TokenHolder>();
@@ -1004,8 +1090,7 @@ namespace Stateflows.Activities.Engine
                     foreach (var action in logic.Actions)
                     {
                         var pipelineContext = new TokenPipelineContext(context, edge, processedToken);
-                        processedToken = await action.Invoke(pipelineContext);
-
+                        processedToken = await action.Invoke(pipelineContext, Inspector);
                     }
                 }
 
@@ -1017,6 +1102,8 @@ namespace Stateflows.Activities.Engine
                 }
             }
 
+            flowContext.TargetTokenCount = processedTokens.Count;
+            
             if (processedTokens.Count >= edge.Weight)
             {
                 var stream = Context.GetStream(edge.Identifier, context.NodeScope.ThreadId);
@@ -1037,10 +1124,16 @@ namespace Stateflows.Activities.Engine
                 lock (edge.Target)
                 {
                     stream.Consume(processedTokens, edge.Source.Type == NodeType.DataStore);
-
-                    return true;
                 }
+                
+                Inspector.AfterFlowActivate(flowContext, true);
+                
+                return true;
             }
+            
+            flowContext.TargetTokenCount = processedTokens.Count;
+            
+            Inspector.AfterFlowActivate(flowContext, false);
 
             return false;
         }

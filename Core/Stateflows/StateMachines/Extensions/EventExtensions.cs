@@ -1,19 +1,43 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
+using Stateflows.Activities.Models;
 using Stateflows.Common;
-using Stateflows.StateMachines.Models;
+using Edge = Stateflows.StateMachines.Models.Edge;
 
 namespace Stateflows.StateMachines.Extensions
 {
     internal static class EventExtensions
     {
+        // public static bool Triggers(this EventHolder eventHolder, Edge edge)
+        //     => typeof(Exception).IsAssignableFrom(eventHolder.PayloadType)
+        //         ? edge.ActualTriggerTypes.Any(type => type.IsAssignableFrom(eventHolder.PayloadType))
+        //         : edge.ActualTriggers.Contains(eventHolder.Name) &&
+        //           (
+        //               !(eventHolder.BoxedPayload is TimeEvent timeEvent) || 
+        //               timeEvent.ConsumerSignature == edge.Signature
+        //           );
+        
         public static bool Triggers(this EventHolder eventHolder, Edge edge)
-            => eventHolder.PayloadType.IsSubclassOf(typeof(Exception))
-                ? edge.ActualTriggerTypes.Any(type => eventHolder.PayloadType.IsSubclassOf(type))
-                : edge.ActualTriggers.Contains(eventHolder.Name) &&
-                    (
-                        !(eventHolder.BoxedPayload is TimeEvent timeEvent) || 
-                        timeEvent.ConsumerSignature == edge.Signature
-                    );
+            => edge.PolymorphicTriggers
+                ? eventHolder.BoxedPayload is TimeEvent timeEvent1
+                    ? timeEvent1.ConsumerSignature == edge.Signature
+                    : edge.ActualTriggerTypes.Any(type => type.IsAssignableFrom(eventHolder.PayloadType))
+                : edge.ActualTriggerTypes.Contains(eventHolder.PayloadType) &&
+                  (
+                      !(eventHolder.BoxedPayload is TimeEvent timeEvent2) || 
+                      timeEvent2.ConsumerSignature == edge.Signature
+                  );
+        
+        public static bool IsAcceptedBy(this EventHolder eventHolder, Node node)
+            => node.ActualEventTypes.Any(type => type.IsAssignableFrom(eventHolder.PayloadType));
+        
+        public static bool IsAcceptedBy(this EventHolder eventHolder, Node node, Dictionary<string, Guid> nodeTimeEvents)
+            => eventHolder.BoxedPayload is TimeEvent timeEvent
+                ? (
+                    nodeTimeEvents.TryGetValue(node.Identifier, out var timeEventId) &&
+                    timeEvent.Id == timeEventId
+                )
+                : node.ActualEventTypes.Any(type => type.IsAssignableFrom(eventHolder.PayloadType));
     }
 }

@@ -31,21 +31,14 @@ namespace StateMachine.IntegrationTests.Tests
                 .AddStateMachines(b => b
                     .AddStateMachine("context", b => b
                         .AddInitialState("state1", b => b
-                            .AddOnEntry(async c => c.StateMachine.Values.Set(nameof(Foo), Foo.Last))
+                            .AddOnEntry(c => c.Behavior.Values.SetAsync(nameof(Foo), Foo.Last))
                             .AddDefaultTransition("state2")
                         )
                         .AddState("state2", b => b
                             .AddOnEntry(async c =>
                             {
-                                if (c.StateMachine.Values.TryGet<Foo>(nameof(Foo), out EnumValue))
-                                {
-                                    EnumGet = true;
-                                }
-
-                                if (c.StateMachine.Values.TryGet<int>(nameof(Foo), out IntValue))
-                                {
-                                    IntGet = true;
-                                }
+                                (EnumGet, EnumValue) = await c.Behavior.Values.TryGetAsync<Foo>(nameof(Foo));
+                                (IntGet, IntValue) = await c.Behavior.Values.TryGetAsync<int>(nameof(Foo));
                             })
                         )
                     )

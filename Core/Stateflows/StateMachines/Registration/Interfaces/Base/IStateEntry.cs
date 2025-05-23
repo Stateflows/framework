@@ -74,7 +74,7 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         public TReturn AddOnEntry(params System.Action<IStateActionContext>[] actions)
             => AddOnEntry(
                 actions.Select(action => action
-                    .AddStateMachineInvocationContext(((IVertexBuilder)this).Vertex.Graph)
+                    .AddStateMachineInvocationContext(((IGraphBuilder)this).Graph)
                     .ToAsync()
                 ).ToArray()
             );

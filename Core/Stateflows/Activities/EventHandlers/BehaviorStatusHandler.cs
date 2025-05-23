@@ -1,10 +1,8 @@
 ﻿using System;
-using System.Linq;
 using System.Threading.Tasks;
 using Stateflows.Common;
-using Stateflows.StateMachines;
 using Stateflows.Activities.Extensions;
-using Stateflows.Activities.Inspection.Interfaces;
+using Stateflows.Activities.Context.Interfaces;
 
 namespace Stateflows.Activities.EventHandlers
 {
@@ -12,21 +10,18 @@ namespace Stateflows.Activities.EventHandlers
     {
         public Type EventType => typeof(BehaviorInfoRequest);
 
-        public Task<EventStatus> TryHandleEventAsync<TEvent>(IEventInspectionContext<TEvent> context)
+        public Task<EventStatus> TryHandleEventAsync<TEvent>(IEventContext<TEvent> context)
 
         {
             if (context.Event is BehaviorInfoRequest request)
             {
-                var executor = context.Activity.GetExecutor();
+                var executor = context.Behavior.GetExecutor();
 
                 request.Respond(new BehaviorInfo()
                 {
+                    Id = executor.Context.Id,
                     BehaviorStatus = executor.BehaviorStatus,
-                    ExpectedEvents = executor.GetExpectedEvents()
-                        .Where(type => !type.IsSubclassOf(typeof(TimeEvent)))
-                        .Where(type => type != typeof(Completion))
-                        .Select(type => type.GetEventName())
-                        .ToArray(),
+                    ExpectedEvents = executor.GetExpectedEventNames(),
                 });
 
                 return Task.FromResult(EventStatus.Consumed);

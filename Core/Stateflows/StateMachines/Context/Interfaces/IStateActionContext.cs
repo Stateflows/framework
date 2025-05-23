@@ -1,9 +1,9 @@
-﻿namespace Stateflows.StateMachines.Context.Interfaces
+﻿namespace Stateflows.StateMachines
 {
     public interface IStateActionContext : IStateMachineActionContext
     {
         string ActionName { get; }
 
-        IStateContext CurrentState { get; }
+        IStateContext State { get; }
     }
 }

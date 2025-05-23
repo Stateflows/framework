@@ -1,5 +1,4 @@
-﻿using System.Threading.Tasks;
-using Stateflows.Common;
+﻿using Stateflows.Common;
 using Stateflows.Activities.Context.Interfaces;
 
 namespace Stateflows.Activities
@@ -13,19 +12,17 @@ namespace Stateflows.Activities
             this.resetMode = resetMode;
         }
 
-        public override Task AfterActivityFinalizeAsync(IActivityFinalizationContext context)
+        public override void AfterActivityFinalize(IActivityFinalizationContext context)
         {
-            var stateflowsContext = (context as IRootContext).Context.Context;
+            var stateflowsContext = ((IRootContext)context).Context.Context;
             if (stateflowsContext.Stored)
             {
-                context.Activity.Send(new Reset() { Mode = resetMode });
+                context.Behavior.Send(new Reset() { Mode = resetMode });
             }
             else
             {
                 stateflowsContext.Deleted = true;
             }
-
-            return Task.CompletedTask;
         }
     }
 

@@ -1,4 +1,5 @@
 using Stateflows.Common;
+using StateMachine.IntegrationTests.Classes.Events;
 using StateMachine.IntegrationTests.Utils;
 using StateMachine.IntegrationTests.Classes.StateMachines;
 
@@ -101,7 +102,7 @@ namespace StateMachine.IntegrationTests.Tests
 
             if (StateMachineLocator.TryLocateStateMachine(new StateMachineId("implicit", "x"), out var sm))
             {
-                currentState = (await sm.GetCurrentStateAsync()).Response.StatesTree.Value ?? string.Empty;
+                currentState = (await sm.GetStatusAsync()).Response.CurrentStates.Value ?? string.Empty;
             }
 
             Assert.IsTrue(StateEntered);
@@ -145,7 +146,7 @@ namespace StateMachine.IntegrationTests.Tests
             if (StateMachineLocator.TryLocateStateMachine(new StateMachineId("explicit", "x"), out var sm))
             {
                 status = (await sm.SendAsync(new SomeEvent() { InitializationSuccessful = true })).Status;
-                currentState = (await sm.GetCurrentStateAsync()).Response.StatesTree.Value ?? string.Empty;
+                currentState = (await sm.GetStatusAsync()).Response.CurrentStates.Value ?? string.Empty;
             }
 
             Assert.IsTrue(InitializerCalled);
@@ -163,7 +164,7 @@ namespace StateMachine.IntegrationTests.Tests
             if (StateMachineLocator.TryLocateStateMachine(new StateMachineId("explicit", "x"), out var sm))
             {
                 status = (await sm.SendAsync(new SomeEvent() { InitializationSuccessful = false })).Status;
-                currentState = (await sm.GetCurrentStateAsync()).Response.StatesTree.Value ?? string.Empty;
+                currentState = (await sm.GetStatusAsync()).Response.CurrentStates.Value ?? string.Empty;
             }
 
             Assert.IsTrue(InitializerCalled);
@@ -180,7 +181,7 @@ namespace StateMachine.IntegrationTests.Tests
             if (StateMachineLocator.TryLocateStateMachine(new StateMachineId("consumption", "x"), out var sm))
             {
                 status = (await sm.SendAsync(new SomeEvent() { InitializationSuccessful = true })).Status;
-                currentState = (await sm.GetCurrentStateAsync()).Response.StatesTree.Value ?? string.Empty;
+                currentState = (await sm.GetStatusAsync()).Response.CurrentStates.Value ?? string.Empty;
             }
 
             Assert.AreEqual(EventStatus.Initialized, status);
@@ -198,7 +199,7 @@ namespace StateMachine.IntegrationTests.Tests
             {
                 status1 = (await sm.SendAsync(new SomeEvent() { InitializationSuccessful = true })).Status;
                 status2 = (await sm.SendAsync(new SomeEvent() { InitializationSuccessful = true })).Status;
-                currentState = (await sm.GetCurrentStateAsync()).Response.StatesTree.Value ?? string.Empty;
+                currentState = (await sm.GetStatusAsync()).Response.CurrentStates.Value ?? string.Empty;
             }
 
             Assert.AreEqual(EventStatus.Initialized, status1);
@@ -215,7 +216,7 @@ namespace StateMachine.IntegrationTests.Tests
             if (StateMachineLocator.TryLocateStateMachine(new StateMachineId("initialize-consumption", "x"), out var sm))
             {
                 status = (await sm.SendAsync(new Initialize())).Status;
-                currentState = (await sm.GetCurrentStateAsync()).Response.StatesTree.Value ?? string.Empty;
+                currentState = (await sm.GetStatusAsync()).Response.CurrentStates.Value ?? string.Empty;
             }
 
             Assert.AreEqual(EventStatus.Initialized, status);
@@ -233,7 +234,7 @@ namespace StateMachine.IntegrationTests.Tests
             {
                 status1 = (await sm.SendAsync(new Initialize())).Status;
                 status2 = (await sm.SendAsync(new Initialize())).Status;
-                currentState = (await sm.GetCurrentStateAsync()).Response.StatesTree.Value ?? string.Empty;
+                currentState = (await sm.GetStatusAsync()).Response.CurrentStates.Value ?? string.Empty;
             }
 
             Assert.AreEqual(EventStatus.Initialized, status1);
@@ -248,8 +249,8 @@ namespace StateMachine.IntegrationTests.Tests
 
             if (StateMachineLocator.TryLocateStateMachine(new StateMachineId("default", "x"), out var sm))
             {
-                var result = await sm.GetCurrentStateAsync();
-                currentState = (result).Response.StatesTree.Value ?? string.Empty;
+                var result = await sm.GetStatusAsync();
+                currentState = (result).Response.CurrentStates.Value ?? string.Empty;
             }
 
             Assert.IsTrue(InitializerCalled);
@@ -265,8 +266,8 @@ namespace StateMachine.IntegrationTests.Tests
 
             if (StateMachineLocator.TryLocateStateMachine(new StateMachineId("default", "x"), out var sm))
             {
-                var result = await sm.GetCurrentStateAsync();
-                currentState = (result).Response.StatesTree.Value ?? string.Empty;
+                var result = await sm.GetStatusAsync();
+                currentState = (result).Response.CurrentStates.Value ?? string.Empty;
             }
 
             Assert.IsTrue(InitializerCalled);
@@ -283,7 +284,7 @@ namespace StateMachine.IntegrationTests.Tests
             {
                 initialized = (await sm.SendAsync(new Initialize())).Status == EventStatus.Initialized;
 
-                currentState = (await sm.GetCurrentStateAsync()).Response.StatesTree.Value ?? string.Empty;
+                currentState = (await sm.GetStatusAsync()).Response.CurrentStates.Value ?? string.Empty;
             }
 
             Assert.IsTrue(initialized);
@@ -300,7 +301,7 @@ namespace StateMachine.IntegrationTests.Tests
             {
                 initialized = (await sm.SendAsync(new Initialize())).Status == EventStatus.Initialized;
 
-                currentState = (await sm.GetCurrentStateAsync()).Response.StatesTree.Root.Nodes.First().Value ?? string.Empty;
+                currentState = (await sm.GetStatusAsync()).Response.CurrentStates.Root.Nodes.First().Value ?? string.Empty;
             }
 
             Assert.IsTrue(initialized);

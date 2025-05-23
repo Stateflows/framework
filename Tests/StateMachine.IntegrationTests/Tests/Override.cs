@@ -1,4 +1,5 @@
 using Stateflows.Common;
+using StateMachine.IntegrationTests.Classes.Events;
 using StateMachine.IntegrationTests.Utils;
 
 namespace StateMachine.IntegrationTests.Tests
@@ -84,7 +85,15 @@ namespace StateMachine.IntegrationTests.Tests
     public class OverrideState1 : IState { }
     public class OverrideState2 : IState { }
     public class OverrideState3 : IState { }
-    
+
+    public class ExtendingState : IStateEntry
+    {
+        public async Task OnEntryAsync()
+        {
+            Override.Extended = true;
+        }
+    }
+
     public class BaseTypedStateMachine : IStateMachine
     {
         public void Build(IStateMachineBuilder builder) => builder
@@ -112,6 +121,7 @@ namespace StateMachine.IntegrationTests.Tests
     public class Override : StateflowsTestClass
     {
         public bool Entered = false;
+        public static bool Extended = false;
         
         [TestInitialize]
         public override void Initialize()
@@ -134,6 +144,14 @@ namespace StateMachine.IntegrationTests.Tests
                             .AddState("state2")
                         )
                     )
+
+                    .AddStateMachine("extendedState", b => b
+                        .UseStateMachine<BaseStateMachine>(b => b
+                            .UseState("state1", b => b
+                                .ExtendWith<ExtendingState>()
+                            )
+                        )
+                    )
                     
                     .AddStateMachine("cascade", b => b
                         .UseStateMachine<InheritedStateMachine>(b => b
@@ -153,7 +171,8 @@ namespace StateMachine.IntegrationTests.Tests
                         .UseStateMachine<BaseStateMachine>(b => b
                             .UseState("initial", b => b
                                 .UseTransition<SomeEvent>("state1", b => b
-                                    .AddGuard(async c => false)
+                                    .ChangeTrigger<SomeInheritedEvent>()
+                                    .AddGuard(async c => c.Event.AdditionalProperty > 0)
                                 )
                             )
                         )
@@ -214,11 +233,30 @@ namespace StateMachine.IntegrationTests.Tests
             {
                 status = (await sm.SendAsync(new SomeEvent())).Status;
 
-                currentState = (await sm.GetCurrentStateAsync()).Response.StatesTree.Value;
+                currentState = (await sm.GetStatusAsync()).Response.CurrentStates.Value;
             }
 
             Assert.AreEqual(EventStatus.Consumed, status);
             Assert.AreEqual("state2", currentState);
+        }
+
+        [TestMethod]
+        public async Task ExtensionState()
+        {
+            var status = EventStatus.Rejected;
+            string currentState = "";
+            Extended = false;
+
+            if (StateMachineLocator.TryLocateStateMachine(new StateMachineId("extendedState", "x"), out var sm))
+            {
+                status = (await sm.SendAsync(new SomeEvent())).Status;
+
+                currentState = (await sm.GetStatusAsync()).Response.CurrentStates.Value;
+            }
+
+            Assert.AreEqual(EventStatus.Consumed, status);
+            Assert.AreEqual("state1", currentState);
+            Assert.IsTrue(Extended);
         }
 
         [TestMethod]
@@ -231,7 +269,7 @@ namespace StateMachine.IntegrationTests.Tests
             {
                 status = (await sm.SendAsync(new SomeEvent())).Status;
 
-                currentState = (await sm.GetCurrentStateAsync()).Response.StatesTree.Value;
+                currentState = (await sm.GetStatusAsync()).Response.CurrentStates.Value;
             }
 
             Assert.AreEqual(EventStatus.Consumed, status);
@@ -246,9 +284,12 @@ namespace StateMachine.IntegrationTests.Tests
 
             if (StateMachineLocator.TryLocateStateMachine(new StateMachineId("transitionExtend", "x"), out var sm))
             {
-                status = (await sm.SendAsync(new SomeEvent())).Status;
+                status = (await sm.SendAsync(new SomeInheritedEvent()
+                {
+                    AdditionalProperty = 0
+                })).Status;
 
-                currentState = (await sm.GetCurrentStateAsync()).Response.StatesTree.Value;
+                currentState = (await sm.GetStatusAsync()).Response.CurrentStates.Value;
             }
 
             Assert.AreEqual(EventStatus.NotConsumed, status);
@@ -266,7 +307,7 @@ namespace StateMachine.IntegrationTests.Tests
             {
                 status = (await sm.SendAsync(new SomeEvent())).Status;
 
-                currentState = (await sm.GetCurrentStateAsync()).Response.StatesTree.Value;
+                currentState = (await sm.GetStatusAsync()).Response.CurrentStates.Value;
             }
 
             Assert.IsTrue(Entered);
@@ -284,7 +325,7 @@ namespace StateMachine.IntegrationTests.Tests
             {
                 status = (await sm.SendAsync(new SomeEvent())).Status;
 
-                currentState = (await sm.GetCurrentStateAsync()).Response.StatesTree.GetAllNodes_ChildrenFirst().First().Value;
+                currentState = (await sm.GetStatusAsync()).Response.CurrentStates.GetAllNodes_ChildrenFirst().First().Value;
             }
 
             Assert.AreEqual(EventStatus.Consumed, status);
@@ -301,7 +342,7 @@ namespace StateMachine.IntegrationTests.Tests
             {
                 status = (await sm.SendAsync(new SomeEvent())).Status;
 
-                currentState = (await sm.GetCurrentStateAsync()).Response.StatesTree.GetAllNodes_ChildrenFirst().First().Value;
+                currentState = (await sm.GetStatusAsync()).Response.CurrentStates.GetAllNodes_ChildrenFirst().First().Value;
             }
 
             Assert.AreEqual(EventStatus.Consumed, status);
@@ -318,7 +359,7 @@ namespace StateMachine.IntegrationTests.Tests
             {
                 status = (await sm.SendAsync(new SomeEvent())).Status;
 
-                currentState = (await sm.GetCurrentStateAsync()).Response.StatesTree.GetAllNodes_ChildrenFirst().First().Value;
+                currentState = (await sm.GetStatusAsync()).Response.CurrentStates.GetAllNodes_ChildrenFirst().First().Value;
             }
 
             Assert.AreEqual(EventStatus.Consumed, status);
@@ -337,7 +378,7 @@ namespace StateMachine.IntegrationTests.Tests
             {
                 status = (await sm.SendAsync(new SomeEvent())).Status;
 
-                var tree = (await sm.GetCurrentStateAsync()).Response.StatesTree;
+                var tree = (await sm.GetStatusAsync()).Response.CurrentStates;
                 currentState = tree.Value;
                 currentSubstate1 = tree.Root.Nodes.First().Value;
                 currentSubstate2 = tree.Root.Nodes.Last().Value;
@@ -361,7 +402,7 @@ namespace StateMachine.IntegrationTests.Tests
             {
                 status = (await sm.SendAsync(new SomeEvent())).Status;
 
-                var tree = (await sm.GetCurrentStateAsync()).Response.StatesTree;
+                var tree = (await sm.GetStatusAsync()).Response.CurrentStates;
                 currentState = tree.Value;
                 currentSubstate1 = tree.Root.Nodes.First().Value;
                 currentSubstate2 = tree.Root.Nodes.Last().Value;

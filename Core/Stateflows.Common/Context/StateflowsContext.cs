@@ -127,5 +127,7 @@ namespace Stateflows.Common.Context
             => GlobalValues.Any();
 
         public Dictionary<string, string> GlobalValues { get; } = new Dictionary<string, string>();
+        
+        public BehaviorId ContextOwner { get; set; }
     }
 }

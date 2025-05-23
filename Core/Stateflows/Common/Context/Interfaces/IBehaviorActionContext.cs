@@ -1,6 +1,6 @@
-﻿namespace Stateflows.Common.Context.Interfaces
+﻿namespace Stateflows.Common
 {
-    public interface IBehaviorActionContext : IBehaviorLocator
+    public interface IBehaviorActionContext : IBehaviorLocator, IExecutionContext
     {
         IBehaviorContext Behavior { get; }
     }

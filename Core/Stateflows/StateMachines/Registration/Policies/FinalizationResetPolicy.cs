@@ -13,19 +13,17 @@ namespace Stateflows.StateMachines
             this.resetMode = resetMode;
         }
 
-        public override Task AfterStateMachineFinalizeAsync(IStateMachineActionContext context)
+        public override void AfterStateMachineFinalize(IStateMachineActionContext context)
         {
             var stateflowsContext = (context as IRootContext).Context.Context;
             if (stateflowsContext.Stored)
             {
-                context.StateMachine.Send(new Reset() { Mode = resetMode });
+                context.Behavior.Send(new Reset() { Mode = resetMode });
             }
             else
             {
                 stateflowsContext.Deleted = true;
             }
-
-            return Task.CompletedTask;
         }
     }
 

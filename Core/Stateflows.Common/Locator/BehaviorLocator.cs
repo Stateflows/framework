@@ -1,4 +1,5 @@
-﻿using System.Threading.Tasks;
+﻿using System;
+using System.Threading.Tasks;
 using System.Collections.Generic;
 using Stateflows.Common.Engine;
 using Stateflows.Common.Interfaces;
@@ -11,12 +12,15 @@ namespace Stateflows.Common.Locator
 
         public ClientInterceptor Interceptor { get; }
 
+        public IServiceProvider ServiceProvider { get; }
+
         private IDictionary<BehaviorClass, IBehaviorProvider> ProvidersByClasses { get; } = new Dictionary<BehaviorClass, IBehaviorProvider>();
 
-        public BehaviorLocator(IEnumerable<IBehaviorProvider> providers, ClientInterceptor interceptor)
+        public BehaviorLocator(IEnumerable<IBehaviorProvider> providers, ClientInterceptor interceptor, IServiceProvider serviceProvider)
         {
             Providers = providers;
             Interceptor = interceptor;
+            ServiceProvider = serviceProvider;
 
             foreach (var provider in Providers)
             {
@@ -47,7 +51,7 @@ namespace Stateflows.Common.Locator
 
             if (ProvidersByClasses.TryGetValue(id.BehaviorClass, out var provider) && provider.TryProvideBehavior(id, out behavior))
             {
-                behavior = new BehaviorProxy(behavior, Interceptor);
+                behavior = new BehaviorProxy(behavior, Interceptor, ServiceProvider);
 
                 result = true;
             }

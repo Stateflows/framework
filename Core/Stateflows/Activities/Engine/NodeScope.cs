@@ -40,6 +40,8 @@ namespace Stateflows.Activities.Engine
         public bool IsTerminated { get; private set; }
 
         public Node Node { get; private set; }
+        
+        public Edge Edge { get; private set; }
 
         public void Terminate()
         {
@@ -56,30 +58,32 @@ namespace Stateflows.Activities.Engine
             } while (currentScope != null);
         }
 
-        public NodeScope(IServiceProvider serviceProvider, Node node, Guid threadId)
+        public NodeScope(IServiceProvider serviceProvider, Node node, Edge edge, Guid threadId)
         {
             baseServiceProvider = serviceProvider;
             Node = node;
+            Edge = edge;
             ThreadId = threadId;
         }
 
-        private NodeScope(NodeScope nodeScope, Node node, Guid threadId)
+        private NodeScope(NodeScope nodeScope, Node node, Edge edge, Guid threadId)
         {
             BaseNodeScope = nodeScope;
             Node = node;
+            Edge = edge;
             ThreadId = threadId;
         }
 
         public NodeScope ChildScope { get; private set; }
 
-        public NodeScope CreateChildScope(Node node = null, Guid? threadId = null)
-            => ChildScope = new NodeScope(this, node ?? Node, threadId ?? ThreadId);
+        public NodeScope CreateChildScope(Node node = null, Edge edge = null, Guid? threadId = null)
+            => ChildScope = new NodeScope(this, node ?? Node, edge, threadId ?? ThreadId);
 
         [DebuggerHidden]
         public Task<TDefaultInitializer> GetDefaultInitializerAsync<TDefaultInitializer>(IActivityInitializationContext context)
             where TDefaultInitializer : class, IDefaultInitializer
         {
-            ContextValues.GlobalValuesHolder.Value = context.Activity.Values;
+            ContextValues.GlobalValuesHolder.Value = context.Behavior.Values;
             ContextValues.StateValuesHolder.Value = null;
             ContextValues.ParentStateValuesHolder.Value = null;
             ContextValues.SourceStateValuesHolder.Value = null;
@@ -88,6 +92,7 @@ namespace Stateflows.Activities.Engine
             ActivitiesContextHolder.NodeContext.Value = null;
             ActivitiesContextHolder.FlowContext.Value = null;
             ActivitiesContextHolder.ActivityContext.Value = context.Activity;
+            ActivitiesContextHolder.BehaviorContext.Value = context.Activity;
             ActivitiesContextHolder.ExecutionContext.Value = context;
             ActivitiesContextHolder.ExceptionContext.Value = null;
 
@@ -98,7 +103,7 @@ namespace Stateflows.Activities.Engine
         public Task<TInitializer> GetInitializerAsync<TInitializer, TInitializationEvent>(IActivityInitializationContext<TInitializationEvent> context)
             where TInitializer : class, IInitializer<TInitializationEvent>
         {
-            ContextValues.GlobalValuesHolder.Value = context.Activity.Values;
+            ContextValues.GlobalValuesHolder.Value = context.Behavior.Values;
             ContextValues.StateValuesHolder.Value = null;
             ContextValues.ParentStateValuesHolder.Value = null;
             ContextValues.SourceStateValuesHolder.Value = null;
@@ -107,6 +112,7 @@ namespace Stateflows.Activities.Engine
             ActivitiesContextHolder.NodeContext.Value = null;
             ActivitiesContextHolder.FlowContext.Value = null;
             ActivitiesContextHolder.ActivityContext.Value = context.Activity;
+            ActivitiesContextHolder.BehaviorContext.Value = context.Activity;
             ActivitiesContextHolder.ExecutionContext.Value = context;
             ActivitiesContextHolder.ExceptionContext.Value = null;
 
@@ -117,7 +123,7 @@ namespace Stateflows.Activities.Engine
         public Task<TFinalizer> GetFinalizerAsync<TFinalizer>(IActivityActionContext context)
             where TFinalizer : class, IFinalizer
         {
-            ContextValues.GlobalValuesHolder.Value = context.Activity.Values;
+            ContextValues.GlobalValuesHolder.Value = context.Behavior.Values;
             ContextValues.StateValuesHolder.Value = null;
             ContextValues.ParentStateValuesHolder.Value = null;
             ContextValues.SourceStateValuesHolder.Value = null;
@@ -126,6 +132,7 @@ namespace Stateflows.Activities.Engine
             ActivitiesContextHolder.NodeContext.Value = null;
             ActivitiesContextHolder.FlowContext.Value = null;
             ActivitiesContextHolder.ActivityContext.Value = context.Activity;
+            ActivitiesContextHolder.BehaviorContext.Value = context.Activity;
             ActivitiesContextHolder.ExecutionContext.Value = context;
             ActivitiesContextHolder.ExceptionContext.Value = null;
 
@@ -136,15 +143,16 @@ namespace Stateflows.Activities.Engine
         public Task<TAction> GetActionAsync<TAction>(IActionContext context)
             where TAction : class, IActionNode
         {
-            ContextValues.GlobalValuesHolder.Value = context.Activity.Values;
+            ContextValues.GlobalValuesHolder.Value = context.Behavior.Values;
             ContextValues.StateValuesHolder.Value = null;
             ContextValues.ParentStateValuesHolder.Value = null;
             ContextValues.SourceStateValuesHolder.Value = null;
             ContextValues.TargetStateValuesHolder.Value = null;
 
-            ActivitiesContextHolder.NodeContext.Value = context.CurrentNode;
+            ActivitiesContextHolder.NodeContext.Value = context.Node;
             ActivitiesContextHolder.FlowContext.Value = null;
             ActivitiesContextHolder.ActivityContext.Value = context.Activity;
+            ActivitiesContextHolder.BehaviorContext.Value = context.Activity;
             ActivitiesContextHolder.ExecutionContext.Value = context;
             ActivitiesContextHolder.ExceptionContext.Value = null;
 
@@ -156,15 +164,16 @@ namespace Stateflows.Activities.Engine
 
             where TAcceptEventAction : class, IAcceptEventActionNode<TEvent>
         {
-            ContextValues.GlobalValuesHolder.Value = context.Activity.Values;
+            ContextValues.GlobalValuesHolder.Value = context.Behavior.Values;
             ContextValues.StateValuesHolder.Value = null;
             ContextValues.ParentStateValuesHolder.Value = null;
             ContextValues.SourceStateValuesHolder.Value = null;
             ContextValues.TargetStateValuesHolder.Value = null;
 
-            ActivitiesContextHolder.NodeContext.Value = context.CurrentNode;
+            ActivitiesContextHolder.NodeContext.Value = context.Node;
             ActivitiesContextHolder.FlowContext.Value = null;
             ActivitiesContextHolder.ActivityContext.Value = context.Activity;
+            ActivitiesContextHolder.BehaviorContext.Value = context.Activity;
             ActivitiesContextHolder.ExecutionContext.Value = context;
             ActivitiesContextHolder.ExceptionContext.Value = null;
 
@@ -175,15 +184,16 @@ namespace Stateflows.Activities.Engine
         public Task<TTimeEventAction> GetTimeEventActionAsync<TTimeEventAction>(IActionContext context)
             where TTimeEventAction : class, ITimeEventActionNode
         {
-            ContextValues.GlobalValuesHolder.Value = context.Activity.Values;
+            ContextValues.GlobalValuesHolder.Value = context.Behavior.Values;
             ContextValues.StateValuesHolder.Value = null;
             ContextValues.ParentStateValuesHolder.Value = null;
             ContextValues.SourceStateValuesHolder.Value = null;
             ContextValues.TargetStateValuesHolder.Value = null;
 
-            ActivitiesContextHolder.NodeContext.Value = context.CurrentNode;
+            ActivitiesContextHolder.NodeContext.Value = context.Node;
             ActivitiesContextHolder.FlowContext.Value = null;
             ActivitiesContextHolder.ActivityContext.Value = context.Activity;
+            ActivitiesContextHolder.BehaviorContext.Value = context.Activity;
             ActivitiesContextHolder.ExecutionContext.Value = context;
             ActivitiesContextHolder.ExceptionContext.Value = null;
 
@@ -194,15 +204,16 @@ namespace Stateflows.Activities.Engine
         public Task<TSendEventAction> GetSendEventActionAsync<TEvent, TSendEventAction>(IActionContext context)
             where TSendEventAction : class, ISendEventActionNode<TEvent>
         {
-            ContextValues.GlobalValuesHolder.Value = context.Activity.Values;
+            ContextValues.GlobalValuesHolder.Value = context.Behavior.Values;
             ContextValues.StateValuesHolder.Value = null;
             ContextValues.ParentStateValuesHolder.Value = null;
             ContextValues.SourceStateValuesHolder.Value = null;
             ContextValues.TargetStateValuesHolder.Value = null;
 
-            ActivitiesContextHolder.NodeContext.Value = context.CurrentNode;
+            ActivitiesContextHolder.NodeContext.Value = context.Node;
             ActivitiesContextHolder.FlowContext.Value = null;
             ActivitiesContextHolder.ActivityContext.Value = context.Activity;
+            ActivitiesContextHolder.BehaviorContext.Value = context.Activity;
             ActivitiesContextHolder.ExecutionContext.Value = context;
             ActivitiesContextHolder.ExceptionContext.Value = null;
 
@@ -213,15 +224,16 @@ namespace Stateflows.Activities.Engine
         public Task<TStructuredActivity> GetStructuredActivityAsync<TStructuredActivity>(IActionContext context)
             where TStructuredActivity : class, IStructuredActivityNode
         {
-            ContextValues.GlobalValuesHolder.Value = context.Activity.Values;
+            ContextValues.GlobalValuesHolder.Value = context.Behavior.Values;
             ContextValues.StateValuesHolder.Value = null;
             ContextValues.ParentStateValuesHolder.Value = null;
             ContextValues.SourceStateValuesHolder.Value = null;
             ContextValues.TargetStateValuesHolder.Value = null;
 
-            ActivitiesContextHolder.NodeContext.Value = context.CurrentNode;
+            ActivitiesContextHolder.NodeContext.Value = context.Node;
             ActivitiesContextHolder.FlowContext.Value = null;
             ActivitiesContextHolder.ActivityContext.Value = context.Activity;
+            ActivitiesContextHolder.BehaviorContext.Value = context.Activity;
             ActivitiesContextHolder.ExecutionContext.Value = context;
             ActivitiesContextHolder.ExceptionContext.Value = null;
 
@@ -233,15 +245,16 @@ namespace Stateflows.Activities.Engine
             where TException : Exception
             where TExceptionHandler : class, IExceptionHandlerNode<TException>
         {
-            ContextValues.GlobalValuesHolder.Value = context.Activity.Values;
+            ContextValues.GlobalValuesHolder.Value = context.Behavior.Values;
             ContextValues.StateValuesHolder.Value = null;
             ContextValues.ParentStateValuesHolder.Value = null;
             ContextValues.SourceStateValuesHolder.Value = null;
             ContextValues.TargetStateValuesHolder.Value = null;
 
-            ActivitiesContextHolder.NodeContext.Value = context.CurrentNode;
+            ActivitiesContextHolder.NodeContext.Value = context.Node;
             ActivitiesContextHolder.FlowContext.Value = null;
             ActivitiesContextHolder.ActivityContext.Value = context.Activity;
+            ActivitiesContextHolder.BehaviorContext.Value = context.Activity;
             ActivitiesContextHolder.ExecutionContext.Value = context;
             ActivitiesContextHolder.ExceptionContext.Value = context;
 
@@ -252,7 +265,7 @@ namespace Stateflows.Activities.Engine
         private Task<TFlow> GetFlowInternalAsync<TFlow>(IActivityFlowContext context, string serviceKind)
             where TFlow : IEdge
         {
-            ContextValues.GlobalValuesHolder.Value = context.Activity.Values;
+            ContextValues.GlobalValuesHolder.Value = context.Behavior.Values;
             ContextValues.StateValuesHolder.Value = null;
             ContextValues.ParentStateValuesHolder.Value = null;
             ContextValues.SourceStateValuesHolder.Value = null;
@@ -261,6 +274,7 @@ namespace Stateflows.Activities.Engine
             ActivitiesContextHolder.NodeContext.Value = null;
             ActivitiesContextHolder.FlowContext.Value = context;
             ActivitiesContextHolder.ActivityContext.Value = context.Activity;
+            ActivitiesContextHolder.BehaviorContext.Value = context.Activity;
             ActivitiesContextHolder.ExecutionContext.Value = context;
             ActivitiesContextHolder.ExceptionContext.Value = null;
 

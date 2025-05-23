@@ -2,14 +2,15 @@
 
 namespace Stateflows.Common.Classes
 {
-    public sealed class Watcher<TNotification> : IWatcher
+    public sealed class Watcher : IWatcher
     {
         private readonly IUnwatcher unwatcher;
 
         public Watcher(IUnwatcher unwatcher)
         {
-             this.unwatcher = unwatcher;
+            this.unwatcher = unwatcher;
         }
+        
         public void Dispose()
         {
             Dispose(true);
@@ -18,7 +19,7 @@ namespace Stateflows.Common.Classes
 
         private void Dispose(bool disposing)
         {
-            unwatcher.UnwatchAsync<TNotification>().GetAwaiter().GetResult();
+            unwatcher.UnwatchAsync(this).GetAwaiter().GetResult();
         }
 
         ~Watcher()

@@ -3,7 +3,6 @@ using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
-using Stateflows.Actions;
 using Stateflows.Common;
 using Stateflows.Common.Exceptions;
 using Stateflows.Activities.Enums;
@@ -14,15 +13,15 @@ using Stateflows.Activities.Context.Classes;
 using Stateflows.Activities.Context.Interfaces;
 using Stateflows.Activities.Registration.Builders;
 using Stateflows.Activities.Registration.Interfaces;
-using IActionContext = Stateflows.Activities.Context.Interfaces.IActionContext;
+using Stateflows.Activities.Registration.Interfaces.Internal;
 
 namespace Stateflows.Activities.Registration
 {
-    internal class BaseActivityBuilder : IInternal
+    internal class BaseActivityBuilder :
+        IInternal,
+        IGraphBuilder
     {
-        public Graph Result => Node is Graph
-            ? Node as Graph
-            : Node.Graph;
+        public Graph Graph => Node as Graph ?? Node.Graph;
 
         public Node Node { get; set; }
 
@@ -35,8 +34,9 @@ namespace Stateflows.Activities.Registration
         }
 
         [DebuggerHidden]
-        public BaseActivityBuilder AddNode(NodeType type, string nodeName, ActionDelegateAsync actionAsync, NodeBuildAction buildAction = null, Type exceptionOrEventType = null, int chunkSize = 1)
+        public BaseActivityBuilder AddNode(NodeType type, string nodeName, Func<IActionContext, Task> actionAsync, NodeBuildAction buildAction = null, Type exceptionOrEventType = null, int chunkSize = 1)
         {
+            var ownName = nodeName;
             if (Node.Type != NodeType.Activity)
             {
                 nodeName = $"{Node.Name}.{nodeName}";
@@ -70,26 +70,27 @@ namespace Stateflows.Activities.Registration
             {
                 if (string.IsNullOrEmpty(nodeName))
                 {
-                    throw new NodeDefinitionException(nodeName, $"Node name cannot be empty", Result.Class);
+                    throw new NodeDefinitionException(nodeName, $"Node name cannot be empty", Graph.Class);
                 }
 
-                if (Result.AllNamedNodes.ContainsKey(nodeName))
+                if (Graph.AllNamedNodes.ContainsKey(nodeName))
                 {
-                    throw new NodeDefinitionException(nodeName, $"Node '{nodeName}' is already registered", Result.Class);
+                    throw new NodeDefinitionException(nodeName, $"Node '{nodeName}' is already registered", Graph.Class);
                 }
             }
 
             if (interactiveNodeTypes.Contains(type))
             {
-                Result.Interactive = true;
+                Graph.Interactive = true;
             }
 
             var node = new Node()
             {
                 Type = type,
+                OwnName = ownName,
                 Name = nodeName,
                 Parent = Node,
-                Graph = Result,
+                Graph = Graph,
                 Level = Node.Level + 1,
                 Anchored = type != NodeType.ParallelActivity && Node.Anchored,
                 Identifier = !(Node is null)
@@ -101,7 +102,7 @@ namespace Stateflows.Activities.Registration
             {
                 if (exceptionOrEventType is null)
                 {
-                    throw new ExceptionHandlerDefinitionException(nodeName, "Exception type not provided", Result.Class);
+                    throw new ExceptionHandlerDefinitionException(nodeName, "Exception type not provided", Graph.Class);
                 }
 
                 node.ExceptionType = exceptionOrEventType;
@@ -111,11 +112,11 @@ namespace Stateflows.Activities.Registration
             {
                 if (exceptionOrEventType is null)
                 {
-                    throw new AcceptEventActionDefinitionException(nodeName, "Event type not provided", Result.Class);
+                    throw new AcceptEventActionDefinitionException(nodeName, "Event type not provided", Graph.Class);
                 }
 
                 node.EventType = exceptionOrEventType;
-                node.ActualEventTypes = Result.StateflowsBuilder.GetMappedTypes(exceptionOrEventType).ToHashSet();
+                node.ActualEventTypes = Graph.StateflowsBuilder.TypeMapper.GetMappedTypes(exceptionOrEventType).ToHashSet();
             }
 
             node.ChunkSize = chunkSize;
@@ -128,10 +129,10 @@ namespace Stateflows.Activities.Registration
                 var faulty = false;
                 try
                 {
-                    var inspector = await c.Activity.GetExecutor().GetInspectorAsync();
-                    await inspector.BeforeNodeExecuteAsync(context);
+                    var inspector = c.Behavior.GetExecutor().Inspector;
+                    inspector.BeforeNodeExecute(context);
                     await actionAsync(c);
-                    await inspector.AfterNodeExecuteAsync(context);
+                    inspector.AfterNodeExecute(context);
                 }
                 catch (Exception e)
                 {
@@ -165,18 +166,20 @@ namespace Stateflows.Activities.Registration
             });
 
             Node.Nodes.Add(node.Identifier, node);
-            Result.AllNodes.Add(node.Identifier, node);
+            Graph.AllNodes.Add(node.Identifier, node);
 
             if (namedNodeTypes.Contains(type))
             {
                 Node.NamedNodes.Add(node.Name, node);
-                Result.AllNamedNodes.Add(node.Name, node);
+                Graph.AllNamedNodes.Add(node.Name, node);
             }
+            
+            Graph.VisitingTasks.Add(visitor => visitor.NodeAddedAsync(Graph.Name, Graph.Version, node.Name, node.Type));
 
             return this;
         }
 
-        public BaseActivityBuilder AddAction(string actionNodeName, ActionDelegateAsync actionAsync, NodeBuildAction buildAction = null)
+        public BaseActivityBuilder AddAction(string actionNodeName, Func<IActionContext, Task> actionAsync, NodeBuildAction buildAction = null)
             => AddNode(NodeType.Action, actionNodeName, actionAsync, buildAction);
 
         public BaseActivityBuilder AddSendEventAction<TEvent>(
@@ -185,8 +188,8 @@ namespace Stateflows.Activities.Registration
             BehaviorIdSelectorAsync targetSelectorAsync,
             SendEventActionBuildAction buildAction = null
         )
-
-            => AddAction(
+        {
+            var result = AddAction(
                 actionNodeName,
                 async c =>
                 {
@@ -197,22 +200,34 @@ namespace Stateflows.Activities.Registration
                         await behavior.SendAsync(@event);
                     }
                 },
-                b => buildAction?.Invoke(b as ISendEventActionBuilder)
+                b => buildAction?.Invoke(b)
             );
+
+            var graph = ((IGraphBuilder)this).Graph;
+            graph.VisitingTasks.Add(visitor => visitor.SendEventNodeAddedAsync<TEvent>(graph.Name, graph.Version, actionNodeName));
+
+            return result;
+        }
 
         public BaseActivityBuilder AddAcceptEventAction<TEvent>(
             string actionNodeName,
             AcceptEventActionDelegateAsync<TEvent> actionAsync,
             AcceptEventActionBuildAction buildAction = null
         )
-
-            => AddNode(
+        {
+            var result = AddNode(
                 NodeType.AcceptEventAction,
                 actionNodeName,
                 c => actionAsync(new AcceptEventActionContext<TEvent>(c as ActionContext)),
                 b => buildAction?.Invoke(b),
                 typeof(TEvent)
             );
+
+            var graph = ((IGraphBuilder)this).Graph;
+            graph.VisitingTasks.Add(visitor => visitor.AcceptEventNodeAddedAsync<TEvent>(graph.Name, graph.Version, actionNodeName));
+
+            return result;
+        }
 
         public BaseActivityBuilder AddTimeEventAction<TTimeEvent>(
             string actionNodeName,
@@ -278,7 +293,7 @@ namespace Stateflows.Activities.Registration
                 structuredActivityNodeName,
                 async c =>
                 {
-                    var executor = c.Activity.GetContext().Executor;
+                    var executor = c.Behavior.GetContext().Executor;
                     var node = c.GetNode();
                     var contextObj = c as ActionContext;
 
@@ -287,7 +302,7 @@ namespace Stateflows.Activities.Registration
                         await executor.DoInitializeNodeAsync(node, c as ActionContext);
                     }
 
-                    (var output, var finalized) = await executor.DoExecuteStructuredNodeAsync(node, c.Activity.GetNodeScope(), contextObj.InputTokens);
+                    (var output, var finalized) = await executor.DoExecuteStructuredNodeAsync(node, c.Behavior.GetNodeScope(), contextObj.InputTokens);
 
                     contextObj.OutputTokens.AddRange(output);
 
@@ -305,11 +320,15 @@ namespace Stateflows.Activities.Registration
                 parallelActivityNodeName,
                 async c =>
                 {
-                    var executor = c.Activity.GetContext().Executor;
+                    var executor = c.Behavior.GetContext().Executor;
                     var node = c.GetNode();
 
                     await executor.DoInitializeNodeAsync(node, c as ActionContext);
-                    c.OutputRange(await executor.DoExecuteParallelNodeAsync<TToken>(node, c.Activity.GetNodeScope(), (c as ActionContext).InputTokens));
+                    var edge = c.Node.TryGetCurrentFlow(out var currentFlow)
+                        ? ((FlowContext)currentFlow).Edge
+                        : null;
+                    
+                    c.OutputRange(await executor.DoExecuteParallelNodeAsync<TToken>(node, edge, c.Behavior.GetNodeScope(), ((ActionContext)c).InputTokens));
                     await executor.DoFinalizeNodeAsync(node, c as ActionContext);
                 },
                 b => buildAction?.Invoke(new StructuredActivityBuilder(b.Node, this, Services)),
@@ -323,7 +342,7 @@ namespace Stateflows.Activities.Registration
                 parallelActivityNodeName,
                 async c =>
                 {
-                    var executor = c.Activity.GetContext().Executor;
+                    var executor = c.Behavior.GetContext().Executor;
                     var node = c.GetNode();
 
                     await executor.DoInitializeNodeAsync(node, c as ActionContext);
@@ -341,22 +360,23 @@ namespace Stateflows.Activities.Registration
 
             Node.Finalize.Actions.Add(async c =>
             {
-                var context = new ActivityNodeContext(c, Node);
+                var context = new ActivityNodeContext(c, Node, c.NodeScope.Edge);
                 try
                 {
                     await actionAsync(context);
                 }
                 catch (Exception e)
                 {
-                    if (e is StateflowsException)
+                    if (e is StateflowsDefinitionException)
                     {
                         throw;
                     }
                     else
                     {
-                        var inspector = await c.Context.Executor.GetInspectorAsync();
+                        var inspector = c.Context.Executor.Inspector;
 
-                        if (!await inspector.OnNodeFinalizationExceptionAsync(context, e))
+                        Trace.WriteLine($"⦗→s⦘ Activity '{c.Context.Id.Name}:{c.Context.Id.Instance}': exception '{e.GetType().FullName}' thrown with message '{e.Message}'");
+                        if (!inspector.OnNodeFinalizationException(context, e))
                         {
                             throw;
                         }
@@ -377,22 +397,23 @@ namespace Stateflows.Activities.Registration
 
             Node.Initialize.Actions.Add(async c =>
             {
-                var context = new ActivityNodeContext(c, Node);
+                var context = new ActivityNodeContext(c, Node, c.NodeScope.Edge);
                 try
                 {
                     await actionAsync(context);
                 }
                 catch (Exception e)
                 {
-                    if (e is StateflowsException)
+                    if (e is StateflowsDefinitionException)
                     {
                         throw;
                     }
                     else
                     {
-                        var inspector = await c.Context.Executor.GetInspectorAsync();
+                        var inspector = c.Context.Executor.Inspector;
 
-                        if (!await inspector.OnNodeInitializationExceptionAsync(context, e))
+                        Trace.WriteLine($"⦗→s⦘ Activity '{c.Context.Id.Name}:{c.Context.Id.Instance}': exception '{e.GetType().FullName}' thrown with message '{e.Message}'");
+                        if (!inspector.OnNodeInitializationException(context, e))
                         {
                             throw;
                         }

@@ -4,8 +4,8 @@ namespace Stateflows.Activities.Context.Classes
 {
     internal class TokenFlowContext<TToken> : FlowContext,
         IGuardContext,
-        ITransformationContext<TToken>,
-        IRootContext
+        IGuardContext<TToken>,
+        ITransformationContext<TToken>
     {
         IActivityContext IActivityActionContext.Activity => Activity;
 
@@ -16,5 +16,16 @@ namespace Stateflows.Activities.Context.Classes
         }
 
         public TToken Token { get; private set; }
+    }
+
+    internal class TokenFlowContext<TToken, TTransformedToken> : TokenFlowContext<TToken>,
+        ITransformationContext<TToken, TTransformedToken>
+    {
+        public TokenFlowContext(TokenPipelineContext context, TToken token, TTransformedToken transformedToken) : base(context, token)
+        {
+            TransformedToken = transformedToken;
+        }
+
+        public TTransformedToken TransformedToken { get; private set; }
     }
 }

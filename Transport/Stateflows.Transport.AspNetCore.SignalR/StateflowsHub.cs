@@ -2,8 +2,8 @@
 using Stateflows.Common;
 using Stateflows.Common.Utilities;
 using Stateflows.Common.Interfaces;
-using Stateflows.Common.Extensions;
 using Stateflows.Common.Exceptions;
+using Exception = System.Exception;
 
 namespace Stateflows.Transport.AspNetCore.SignalR
 {
@@ -13,14 +13,17 @@ namespace Stateflows.Transport.AspNetCore.SignalR
 
         private readonly IEnumerable<IBehaviorProvider> _providers;
 
+        private readonly INotificationsHub _hub;
+
         private readonly Dictionary<string, Guid> _clients = new();
 
         private readonly Dictionary<Guid, Dictionary<BehaviorId, IBehavior>> _behaviors = new();
 
-        public StateflowsHub(IBehaviorLocator locator, IEnumerable<IBehaviorProvider> providers)
+        public StateflowsHub(IBehaviorLocator locator, IEnumerable<IBehaviorProvider> providers, INotificationsHub hub)
         {
             _locator = locator;
             _providers = providers;
+            _hub = hub;
         }
 
         public override Task OnDisconnectedAsync(Exception? exception)
@@ -76,38 +79,50 @@ namespace Stateflows.Transport.AspNetCore.SignalR
 
             var result = await behavior.SendAsync(@event);
 
-            result = new RequestResult(@event, @event.GetResponseHolder(), result.Status, result.Validation);
+            result = new RequestResult(
+                // @event,
+                @event.GetResponseHolder(),
+                result.Status,
+                await _hub.GetNotificationsAsync(behaviorId),
+                result.Validation
+            );
 
             return StateflowsJsonConverter.SerializePolymorphicObject(result, true);
         }
 
         public async Task<string> Request(BehaviorId behaviorId, string requestData)
         {
-            EventHolder? @event;
+            EventHolder? eventHolder;
             try
             {
-                @event = StateflowsJsonConverter.DeserializeObject<EventHolder>(requestData);
+                eventHolder = StateflowsJsonConverter.DeserializeObject<EventHolder>(requestData);
             }
             catch (Exception e)
             {
                 throw new SerializationException("Unable to parse request data", e);
             }
 
-            if (@event == null)
+            if (eventHolder == null)
             {
                 throw new SerializationException("Unable to parse request data");
             }
 
-            if (!@event.IsRequest())
+            if (!eventHolder.IsRequest())
             {
                 throw new SerializationException("Request data is invalid");
             }
 
             if (_locator.TryLocateBehavior(behaviorId, out var behavior))
             {
-                var result = await behavior.SendAsync(@event);
+                var result = await behavior.SendAsync(eventHolder);
 
-                result = new RequestResult(@event, @event.GetResponseHolder(), result.Status, result.Validation);
+                result = new RequestResult(
+                    // eventHolder,
+                    eventHolder.GetResponseHolder(),
+                    result.Status,
+                    await _hub.GetNotificationsAsync(behaviorId),
+                    result.Validation
+                );
 
                 return StateflowsJsonConverter.SerializePolymorphicObject(result, true);
             }

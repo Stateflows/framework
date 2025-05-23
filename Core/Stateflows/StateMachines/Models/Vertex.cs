@@ -9,21 +9,6 @@ using Stateflows.StateMachines.Registration.Interfaces;
 
 namespace Stateflows.StateMachines.Models
 {
-    internal enum VertexType
-    {
-        InitialState,
-        State,
-        InitialCompositeState,
-        CompositeState,
-        InitialOrthogonalState,
-        OrthogonalState,
-        FinalState,
-        Junction,
-        Choice,
-        Join,
-        Fork,
-    }
-
     internal class Vertex
     {
         public Graph Graph { get; set; }
@@ -69,7 +54,7 @@ namespace Stateflows.StateMachines.Models
             }
         }
 
-        public StateActionInitializationBuilderAsync BehaviorInitializationBuilder { get; set; }
+        public StateActionInitializationBuilder BehaviorInitializationBuilder { get; set; }
         public string BehaviorName { get; set; }
         public string BehaviorType { get; set; }
         public List<Type> BehaviorSubscriptions { get; set; } = new List<Type>();

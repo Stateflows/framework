@@ -8,7 +8,7 @@ namespace Stateflows.Activities
         /// <summary>
         /// Name of the node
         /// </summary>
-        string NodeName { get; }
+        string Name { get; }
 
         /// <summary>
         /// Type of the node
@@ -31,5 +31,10 @@ namespace Stateflows.Activities
         /// <param name="parentNodeContext">out parameter with reference to parent node information</param>
         /// <returns>True when parent node is available, false otherwise</returns>
         bool TryGetParentNode(out INodeContext parentNodeContext);
+    }
+
+    public interface ICurrentNodeContext : INodeContext
+    {
+        bool TryGetCurrentFlow(out IIncomingFlowContext flowContext);
     }
 }

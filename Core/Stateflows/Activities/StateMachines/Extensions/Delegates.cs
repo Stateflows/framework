@@ -1,7 +1,7 @@
 ﻿using Stateflows.Common;
-using Stateflows.StateMachines.Context.Interfaces;
 using Stateflows.Activities.StateMachines.Interfaces;
 using System.Threading.Tasks;
+using Stateflows.StateMachines;
 
 namespace Stateflows.Activities.Extensions
 {

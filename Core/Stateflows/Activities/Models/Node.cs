@@ -19,6 +19,7 @@ namespace Stateflows.Activities.Models
         public int Level { get; set; }
         public Graph Graph { get; set; }
         public Node Parent { get; set; }
+        public string OwnName { get; set; }
         public string Name { get; set; }
         public NodeType Type { get; set; }
         public NodeOptions Options { get; set; } = NodeOptions.ActionDefault;
@@ -168,10 +169,15 @@ namespace Stateflows.Activities.Models
             => acceptEventActionNodes ??= Nodes.Values
                 .Where(n => n.Type == NodeType.AcceptEventAction || n.Type == NodeType.TimeEventAction);
 
+        private IEnumerable<Node> danglingAcceptEventActionNodes;
+        public IEnumerable<Node> DanglingAcceptEventActionNodes
+            => danglingAcceptEventActionNodes ??= AcceptEventActionNodes
+                .Where(n => !n.IncomingEdges.Any());
+
         private IEnumerable<Node> danglingTimeEventActionNodes;
         public IEnumerable<Node> DanglingTimeEventActionNodes
-            => danglingTimeEventActionNodes ??= AcceptEventActionNodes
-                .Where(n => !n.IncomingEdges.Any() && n.ActualEventTypes.Any(type => type.IsSubclassOf(typeof(TimeEvent))));
+            => danglingTimeEventActionNodes ??= DanglingAcceptEventActionNodes
+                .Where(n => n.ActualEventTypes.Any(type => type.IsSubclassOf(typeof(TimeEvent))));
 
         private IEnumerable<Node> exceptionHandlers;
         public IEnumerable<Node> ExceptionHandlers

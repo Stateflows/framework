@@ -7,11 +7,12 @@ namespace Stateflows.Common.Interfaces
     public interface INotificationsHub
     {
         Task PublishAsync(EventHolder eventHolder);
+        Task PublishRangeAsync(IEnumerable<EventHolder> eventHolders);
 
         void RegisterHandler(INotificationHandler notificationHandler);
 
         void UnregisterHandler(INotificationHandler notificationHandler);
 
-        public Dictionary<BehaviorId, List<EventHolder>> Notifications { get; }
+        Task<EventHolder[]> GetNotificationsAsync(BehaviorId behaviorId, Func<EventHolder, bool> filter = null);
     }
 }

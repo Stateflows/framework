@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using Stateflows.Common.Context.Interfaces;
 
 namespace Stateflows.Common.Context.Classes
@@ -10,5 +11,10 @@ namespace Stateflows.Common.Context.Classes
         public BehaviorActionContext(StateflowsContext context, IServiceProvider serviceProvider)
             : base(context, serviceProvider)
         { }
+
+        // todo
+        public object ExecutionTrigger { get; }
+        public Guid ExecutionTriggerId { get; }
+        public IEnumerable<EventHeader> Headers { get; }
     }
 }

@@ -19,6 +19,7 @@ namespace Stateflows
             return this;
         }
 
+        [Obsolete]
         public string Environment { get; set; }
 
         public string Type { get; set; }

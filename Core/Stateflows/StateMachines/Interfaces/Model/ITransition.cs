@@ -48,4 +48,10 @@ namespace Stateflows.StateMachines
         Task ITransitionEffect<object>.EffectAsync(object @event)
             => EffectAsync();
     }
+
+    public interface ITransitionDefinition : IDefaultTransitionDefinition, ITransitionDefinition<object>
+    {
+        void ITransitionDefinition<object>.Build(ITransitionBuilder<object> builder)
+            => Build(builder);
+    }
 }

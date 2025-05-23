@@ -1,20 +1,20 @@
 ﻿using System;
 using Stateflows.Actions;
+using Stateflows.StateMachines;
 using Stateflows.StateMachines.Registration;
-using Stateflows.StateMachines.Context.Interfaces;
 
 namespace Stateflows.Activities
 {
     internal static class ITransitionContextExtensions
     {
         private static string GetDoActivityInstance<TEvent>(this ITransitionContext<TEvent> context)
-            => $"{context.StateMachine.Id}.{context.Source.Name}.{Constants.Do}";
+            => $"{context.Behavior.Id}.{context.Source.Name}.{Constants.Do}";
 
         public static bool TryLocateDoActivity<TEvent>(this ITransitionContext<TEvent> context, string activityName, out IActivityBehavior activity)
             => context.TryLocateActivity(new ActivityId(activityName, context.GetDoActivityInstance()), out activity);
 
         private static string GetBehaviorInstance<TEvent>(this ITransitionContext<TEvent> context, string action)
-            => $"{context.StateMachine.Id}.{context.Source.Name}.{action}.{new Random().Next()}";
+            => $"{context.Behavior.Id}.{context.Source.Name}.{action}.{new Random().Next()}";
 
         public static bool TryLocateActivity<TEvent>(this ITransitionContext<TEvent> context, string activityName, string stateAction, out IActivityBehavior activity)
             => context.TryLocateActivity(new ActivityId(activityName, context.GetBehaviorInstance(stateAction)), out activity);

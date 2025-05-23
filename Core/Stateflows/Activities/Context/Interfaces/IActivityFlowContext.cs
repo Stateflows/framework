@@ -1,11 +1,7 @@
 ﻿namespace Stateflows.Activities.Context.Interfaces
 {
-    public interface IIncomingFlowContext : IFlowContext
-    {
-        bool Activated { get; }
-
-        int TokenCount { get; }
-    }
+    public interface IIncomingFlowContext : IAfterFlowContext
+    { }
 
     public interface IFlowTokenContext<out TToken>
     {
@@ -13,6 +9,12 @@
     }
 
     public interface IActivityFlowContext : IActivityActionContext, IFlowContext
+    { }
+    
+    public interface IActivityBeforeFlowContext : IActivityActionContext, IBeforeFlowContext
+    { }
+    
+    public interface IActivityAfterFlowContext : IActivityActionContext, IAfterFlowContext
     { }
 
     public interface IActivityFlowContext<out TToken> : IActivityFlowContext, IFlowTokenContext<TToken>

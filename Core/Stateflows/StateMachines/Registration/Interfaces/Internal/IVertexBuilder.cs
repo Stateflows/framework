@@ -1,10 +1,8 @@
-﻿using Microsoft.Extensions.DependencyInjection;
-using Stateflows.StateMachines.Models;
-
-namespace Stateflows.StateMachines.Registration.Interfaces.Internal
+﻿namespace Stateflows.StateMachines.Registration.Interfaces
 {
-    internal interface IVertexBuilder
+    public interface IVertexBuilder
     {
-        Vertex Vertex { get; }
+        string Name { get; }
+        VertexType Type { get; }
     }
 }

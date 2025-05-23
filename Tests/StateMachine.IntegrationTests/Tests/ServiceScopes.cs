@@ -4,6 +4,7 @@ using StateMachine.IntegrationTests.Utils;
 using Stateflows.StateMachines;
 using Stateflows.Common;
 using Microsoft.Extensions.DependencyInjection;
+using StateMachine.IntegrationTests.Classes.Events;
 
 namespace StateMachine.IntegrationTests.Tests
 {

@@ -69,6 +69,9 @@ namespace Activity.IntegrationTests.Tests
         {
             // Use InputTokens static class to add tokens to be used by tested action class
             InputTokens.Add(42);
+            
+            // If tested class uses context values, you need to initialize proper values collection
+            ContextValues.InitializeGlobalValues();
 
             // Use StateflowsActivator to obtain tested action class instance
             var action = await StateflowsActivator.CreateInstanceAsync<TestedAction>(ServiceProvider);
@@ -76,13 +79,13 @@ namespace Activity.IntegrationTests.Tests
             await action.ExecuteAsync(CancellationToken.None);
 
             // Use ContextValues static class to manage context values before or after running tested code
-            var isSet = ContextValues.GlobalValues.TryGet<int>("foo", out var value);
+            var (isFooSet, fooValue) = await ContextValues.GlobalValues.TryGetAsync<int>("foo");
 
             // Use OutputTokens static class to get tokens that are produced by tested action class
             var output = OutputTokens.GetAllOfType<int>().FirstOrDefault();
 
-            Assert.IsTrue(isSet);
-            Assert.AreEqual(42, value);
+            Assert.IsTrue(isFooSet);
+            Assert.AreEqual(42, fooValue);
             Assert.AreEqual(42, output);
             Assert.IsTrue(Executed);
         }
@@ -90,13 +93,16 @@ namespace Activity.IntegrationTests.Tests
         [TestMethod]
         public async Task FlowUnitTest()
         {
+            // If tested class uses context values, you need to initialize proper values collection 
+            ContextValues.InitializeGlobalValues();
+            
             // Use StateflowsActivator to obtain tested flow class instance
             var flow = await StateflowsActivator.CreateInstanceAsync<TestedFlow>(ServiceProvider);
 
             var result = await flow.GuardAsync(42);
 
             // Use ContextValues static class to manage context values before or after running tested code
-            var isSet = ContextValues.GlobalValues.TryGet<int>("foo", out var value);
+            var (isSet, value) = await ContextValues.GlobalValues.TryGetAsync<int>("foo");
 
             Assert.IsTrue(isSet);
             Assert.AreEqual(42, value);

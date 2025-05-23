@@ -4,6 +4,18 @@ namespace Stateflows.StateMachines
 {
     public sealed class StateMachineInfo : BehaviorInfo
     {
-        public IReadOnlyTree<string> StatesTree { get; set; }
+        private StateMachineId id;
+
+        public new StateMachineId Id
+        {
+            get => id;
+            set
+            {
+                id = value;
+                base.Id = value;
+            }
+        }
+        
+        public IReadOnlyTree<string> CurrentStates { get; set; }
     }
 }

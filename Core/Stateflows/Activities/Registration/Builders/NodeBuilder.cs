@@ -4,11 +4,10 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using Stateflows.Activities.Models;
 using Stateflows.Activities.Context.Classes;
+using Stateflows.Activities.Context.Interfaces;
 using Stateflows.Activities.Registration.Builders;
 using Stateflows.Activities.Registration.Interfaces;
 using Stateflows.Activities.Registration.Interfaces.Base;
-using Stateflows.Common;
-using Newtonsoft.Json.Linq;
 
 namespace Stateflows.Activities.Registration
 {
@@ -31,7 +30,7 @@ namespace Stateflows.Activities.Registration
 
         public IServiceCollection Services { get; }
 
-        public Graph Result => Node.Graph;
+        public Graph Graph => Node.Graph;
 
         public BaseActivityBuilder ActivityBuilder { get; }
 
@@ -43,16 +42,42 @@ namespace Stateflows.Activities.Registration
         }
 
         public IActionBuilder AddControlFlow(string targetNodeName, ControlFlowBuildAction buildAction = null)
-            => AddFlowInternal<ControlToken>(targetNodeName, false, b => buildAction?.Invoke(b as IControlFlowBuilder));
+        {
+            var result = AddFlowInternal<ControlToken>(targetNodeName, false, b => buildAction?.Invoke(b as IControlFlowBuilder));
+            
+            Graph.VisitingTasks.Add(v => v.ControlFlowAddedAsync(Graph.Name, Graph.Version, Node.Name, targetNodeName, false));
+            
+            return result;
+        }
 
         public IActionBuilder AddElseControlFlow(string targetNodeName, ElseControlFlowBuildAction buildAction = null)
-            => AddFlowInternal<ControlToken>(targetNodeName, true, b => buildAction?.Invoke(b as IElseControlFlowBuilder));
+        {
+            var result = AddFlowInternal<ControlToken>(targetNodeName, true, b => buildAction?.Invoke(b as IElseControlFlowBuilder));
+            
+            Graph.VisitingTasks.Add(v => v.ControlFlowAddedAsync(Graph.Name, Graph.Version, Node.Name, targetNodeName, true));
+            
+            return result;
+        }
 
         public IActionBuilder AddFlow<TToken>(string targetNodeName, ObjectFlowBuildAction<TToken> buildAction = null)
-            => AddFlowInternal<TToken>(targetNodeName, false, buildAction);
+        {
+            var result = AddFlowInternal<TToken>(targetNodeName, false, buildAction);
+            
+            Graph.VisitingTasks.Add(v => v.FinalizerAddedAsync(Graph.Name, Graph.Version));
+            
+            Graph.VisitingTasks.Add(v => v.FlowAddedAsync<TToken>(Graph.Name, Graph.Version, Node.Name, targetNodeName, false));
+            
+            return result;
+        }
 
         public IActionBuilder AddElseFlow<TToken>(string targetNodeName, ElseObjectFlowBuildAction<TToken> buildAction = null)
-            => AddFlowInternal<TToken>(targetNodeName, true, b => buildAction?.Invoke(b as IElseObjectFlowBuilder<TToken>));
+        {
+            var result = AddFlowInternal<TToken>(targetNodeName, true, b => buildAction?.Invoke(b as IElseObjectFlowBuilder<TToken>));
+            
+            Graph.VisitingTasks.Add(v => v.FlowAddedAsync<TToken>(Graph.Name, Graph.Version, Node.Name, targetNodeName, true));
+            
+            return result;
+        }
 
         public IActionBuilder AddFlowInternal<TToken>(string targetNodeName, bool isElse, ObjectFlowBuildAction<TToken> buildAction = null)
         {
@@ -113,7 +138,7 @@ namespace Stateflows.Activities.Registration
             ActivityBuilder.AddNode(
                 NodeType.ExceptionHandler,
                 targetNodeName,
-                (ActionDelegateAsync)(c =>
+                c =>
                 {
                     var contextObj = c as ActionContext;
                     var nodeOfOrigin = contextObj.InputTokens.OfType<TokenHolder<NodeReferenceToken>>().FirstOrDefault()?.Payload?.Node;
@@ -124,7 +149,7 @@ namespace Stateflows.Activities.Registration
                     contextObj.OutputTokens.AddRange(context.OutputTokens);
 
                     return Task.CompletedTask;
-                }),
+                },
                 null,
                 typeof(TException)
             );

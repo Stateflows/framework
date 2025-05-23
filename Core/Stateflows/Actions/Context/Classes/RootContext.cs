@@ -15,9 +15,10 @@ namespace Stateflows.Actions.Context.Classes
 
         internal IServiceProvider ServiceProvider { get; set; }
 
-        public RootContext(StateflowsContext context)
+        public RootContext(StateflowsContext context, EventHolder eventHolder)
         {
             Context = context;
+            EventHolder = eventHolder;
             Id = new ActionId(Context.Id);
         }
 

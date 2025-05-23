@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Threading;
 using Microsoft.Extensions.DependencyInjection;
 using Stateflows.Common;
@@ -30,6 +31,8 @@ namespace Stateflows.Activities.Context.Classes
         public NodeScope NodeScope { get; }
 
         public object ExecutionTrigger => Context.ExecutionTriggerHolder.BoxedPayload;
+        public Guid ExecutionTriggerId => Context.ExecutionTriggerHolder.Id;
+        public IEnumerable<EventHeader> Headers => Context.ExecutionTriggerHolder.Headers;
 
         public CancellationToken CancellationToken => NodeScope.CancellationToken;
 

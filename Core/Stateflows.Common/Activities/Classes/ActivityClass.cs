@@ -1,4 +1,5 @@
 ﻿using Newtonsoft.Json;
+using Stateflows.Common;
 using Stateflows.Common.Utilities;
 
 namespace Stateflows
@@ -14,6 +15,7 @@ namespace Stateflows
 
         public string Name { get; set; }
 
+        
         [JsonIgnore]
         public readonly BehaviorClass BehaviorClass => new BehaviorClass(Type, Name);
 

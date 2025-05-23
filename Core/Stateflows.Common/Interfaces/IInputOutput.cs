@@ -7,7 +7,7 @@ namespace Stateflows.Common.Interfaces
 {
     public interface IInputOutput : IWatches
     {
-        Task<RequestResult<TokensOutput>> SendInputAsync(Action<ITokensInput> tokensAction);
+        Task<RequestResult<TokensOutput>> SendInputAsync(Action<ITokensInput> tokensAction, IEnumerable<EventHeader> headers = null);
 
         Task<RequestResult<TokensOutput>> SendInputAsync<TToken>(params TToken[] tokens);
 

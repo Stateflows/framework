@@ -6,7 +6,7 @@ namespace Stateflows.StateMachines.Extensions
 {
     internal static class BuilderExtensions
     {
-        public static void AddStateEvents<TState, TReturn>(this IStateBuilder builder)
+        public static TReturn AddStateEvents<TState, TReturn>(this IStateBuilder builder)
             where TState : class, IState
         {
             if (typeof(IStateEntry).IsAssignableFrom(typeof(TState)))
@@ -23,9 +23,11 @@ namespace Stateflows.StateMachines.Extensions
             {
                 ((IStateDefinition)StateflowsActivator.CreateUninitializedInstance<TState>()).Build(builder);
             }
+
+            return (TReturn)builder;
         }
 
-        public static void AddCompositeStateEvents<TCompositeState, TReturn>(this ICompositeStateBuilder builder)
+        public static TReturn AddCompositeStateEvents<TCompositeState, TReturn>(this ICompositeStateBuilder builder)
             where TCompositeState : class, ICompositeState
         {
             if (typeof(IStateEntry).IsAssignableFrom(typeof(TCompositeState)))
@@ -52,9 +54,11 @@ namespace Stateflows.StateMachines.Extensions
             {
                 ((ICompositeStateDefinition)StateflowsActivator.CreateUninitializedInstance<TCompositeState>()).Build(builder);
             }
+
+            return (TReturn)builder;
         }
 
-        public static void AddOrthogonalStateEvents<TOrthogonalState, TReturn>(this IOrthogonalStateBuilder builder)
+        public static TReturn AddOrthogonalStateEvents<TOrthogonalState, TReturn>(this IOrthogonalStateBuilder builder)
             where TOrthogonalState : class, IOrthogonalState
         {
             if (typeof(IStateEntry).IsAssignableFrom(typeof(TOrthogonalState)))
@@ -81,6 +85,8 @@ namespace Stateflows.StateMachines.Extensions
             {
                 ((IOrthogonalStateDefinition)StateflowsActivator.CreateUninitializedInstance<TOrthogonalState>()).Build(builder);
             }
+
+            return (TReturn)builder;
         }
 
         public static void AddElseTransitionEvents<TElseTransition, TEvent>(this IElseTransitionBuilder<TEvent> builder)

@@ -1,5 +1,6 @@
 ﻿using System;
-using System.Threading.Tasks;
+using System.Collections.Generic;
+using Stateflows.Common;
 using Stateflows.StateMachines.Context.Interfaces;
 
 namespace Stateflows.StateMachines.Engine
@@ -12,38 +13,38 @@ namespace Stateflows.StateMachines.Engine
             this.locator = locator;
         }
         
-        private Task<bool> HandleExceptionAsync(StateMachineId stateMachineId, Exception exception)
+        private bool HandleException(StateMachineId stateMachineId, Exception exception, IEnumerable<EventHeader> headers)
         {
             if (locator.TryLocateStateMachine(stateMachineId, out var stateMachine))
             {
-                stateMachine.SendAsync(exception);
+                _ = stateMachine.SendAsync(exception, headers);
             }
 
-            return Task.FromResult(true);
+            return true;
         }
         
-        public override Task<bool> OnStateMachineInitializationExceptionAsync(IStateMachineInitializationContext context, Exception exception)
-            => HandleExceptionAsync(context.StateMachine.Id, exception);
+        public override bool OnStateMachineInitializationException(IStateMachineInitializationContext context, Exception exception)
+            => HandleException(context.Behavior.Id, exception, context.Headers);
 
-        public override Task<bool> OnStateMachineFinalizationExceptionAsync(IStateMachineActionContext context, Exception exception)
-            => HandleExceptionAsync(context.StateMachine.Id, exception);
+        public override bool OnStateMachineFinalizationException(IStateMachineActionContext context, Exception exception)
+            => HandleException(context.Behavior.Id, exception, context.Headers);
 
-        public override Task<bool> OnTransitionGuardExceptionAsync<TEvent>(ITransitionContext<TEvent> context, Exception exception)
-            => HandleExceptionAsync(context.StateMachine.Id, exception);
+        public override bool OnTransitionGuardException<TEvent>(ITransitionContext<TEvent> context, Exception exception)
+            => HandleException(context.Behavior.Id, exception, context.Headers);
 
-        public override Task<bool> OnTransitionEffectExceptionAsync<TEvent>(ITransitionContext<TEvent> context, Exception exception)
-            => HandleExceptionAsync(context.StateMachine.Id, exception);
+        public override bool OnTransitionEffectException<TEvent>(ITransitionContext<TEvent> context, Exception exception)
+            => HandleException(context.Behavior.Id, exception, context.Headers);
 
-        public override Task<bool> OnStateInitializationExceptionAsync(IStateActionContext context, Exception exception)
-            => HandleExceptionAsync(context.StateMachine.Id, exception);
+        public override bool OnStateInitializationException(IStateActionContext context, Exception exception)
+            => HandleException(context.Behavior.Id, exception, context.Headers);
 
-        public override Task<bool> OnStateFinalizationExceptionAsync(IStateActionContext context, Exception exception)
-            => HandleExceptionAsync(context.StateMachine.Id, exception);
+        public override bool OnStateFinalizationException(IStateActionContext context, Exception exception)
+            => HandleException(context.Behavior.Id, exception, context.Headers);
 
-        public override Task<bool> OnStateEntryExceptionAsync(IStateActionContext context, Exception exception)
-            => HandleExceptionAsync(context.StateMachine.Id, exception);
+        public override bool OnStateEntryException(IStateActionContext context, Exception exception)
+            => HandleException(context.Behavior.Id, exception, context.Headers);
 
-        public override Task<bool> OnStateExitExceptionAsync(IStateActionContext context, Exception exception)
-            => HandleExceptionAsync(context.StateMachine.Id, exception);
+        public override bool OnStateExitException(IStateActionContext context, Exception exception)
+            => HandleException(context.Behavior.Id, exception, context.Headers);
     }
 }

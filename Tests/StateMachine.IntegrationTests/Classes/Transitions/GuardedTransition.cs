@@ -6,10 +6,11 @@ namespace StateMachine.IntegrationTests.Classes.Transitions
     {
         private readonly GlobalValue<int> counter = new("counter");
 
-        public Task<bool> GuardAsync()
+        public async Task<bool> GuardAsync()
         {
-            var result = counter.TryGet(out var c) && c == 1;
-            return Task.FromResult(result);
+            var (success, c) = await counter.TryGetAsync();
+            var result = success && c == 1;
+            return result;
         }
     }
 

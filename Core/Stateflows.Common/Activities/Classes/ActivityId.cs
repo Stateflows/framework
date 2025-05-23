@@ -1,5 +1,6 @@
 ﻿using System;
-using Newtonsoft.Json;
+using System.Text.Json.Serialization;
+using Stateflows.Common;
 using Stateflows.Common.Exceptions;
 using Stateflows.Common.Utilities;
 
@@ -28,9 +29,17 @@ namespace Stateflows
 
         public string Instance { get; set; }
 
+        [Newtonsoft.Json.JsonIgnore]
+        [JsonIgnore]
+        public string InstanceText => string.IsNullOrEmpty(Instance)
+            ? "<default>"
+            : Instance;
+        
+        [Newtonsoft.Json.JsonIgnore]
         [JsonIgnore]
         public readonly ActivityClass ActivityClass => new ActivityClass(Name);
-
+        
+        [Newtonsoft.Json.JsonIgnore]
         [JsonIgnore]
         public readonly BehaviorId BehaviorId => new BehaviorId(BehaviorType.Activity, Name, Instance);
 

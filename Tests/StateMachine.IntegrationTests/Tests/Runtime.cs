@@ -2,6 +2,7 @@ using System.Diagnostics;
 using Microsoft.Extensions.DependencyInjection;
 using Stateflows.Actions;
 using Stateflows.Common;
+using StateMachine.IntegrationTests.Classes.Events;
 using StateMachine.IntegrationTests.Utils;
 using StateMachine.IntegrationTests.Classes.States;
 
@@ -48,7 +49,7 @@ namespace StateMachine.IntegrationTests.Tests
             {
                 await sm.SendAsync(new SomeEvent());
 
-                currentState = (await sm.GetCurrentStateAsync()).Response?.StatesTree?.Value;
+                currentState = (await sm.GetStatusAsync()).Response?.CurrentStates?.Value;
             }
 
             Assert.AreEqual("final", currentState);

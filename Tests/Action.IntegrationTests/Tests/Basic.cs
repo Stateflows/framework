@@ -25,12 +25,12 @@ namespace Action.IntegrationTests.Tests
             builder
                 .AddActions(b => b
                     .AddAction("basic", async c => BasicActionExecuted = true)
-                    .AddAction("input", async c => InputActionExecuted = c.Action.GetTokensOfType<bool>().FirstOrDefault())
-                    .AddAction("multipleInput", async c => MultipleInputActionExecuted = c.Action.GetTokensOfType<bool>().Count() == 3)
+                    .AddAction("input", async c => InputActionExecuted = c.GetTokensOfType<bool>().FirstOrDefault())
+                    .AddAction("multipleInput", async c => MultipleInputActionExecuted = c.GetTokensOfType<bool>().Count() == 3)
                     .AddAction("output", async c =>
                     {
                         OutputActionExecuted = true;
-                        c.Action.Output(true);
+                        c.Output(true);
                     })
                 )
                 ;
@@ -53,6 +53,17 @@ namespace Action.IntegrationTests.Tests
             if (ActionLocator.TryLocateAction(new ActionId("input", "x"), out var a))
             {
                 await a.SendInputAsync(b => b.Add(true));
+            }
+            
+            Assert.IsTrue(InputActionExecuted);
+        }
+
+        [TestMethod]
+        public async Task EventInputOK()
+        {
+            if (ActionLocator.TryLocateAction(new ActionId("input", "x"), out var a))
+            {
+                await a.SendAsync(true);
             }
             
             Assert.IsTrue(InputActionExecuted);

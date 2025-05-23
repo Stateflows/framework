@@ -1,5 +1,5 @@
 ﻿using System;
-using Newtonsoft.Json;
+using System.Text.Json.Serialization;
 using Stateflows.Common.Utilities;
 
 namespace Stateflows
@@ -18,13 +18,23 @@ namespace Stateflows
             Instance = instance;
         }
 
+        
+        [Newtonsoft.Json.JsonIgnore]
         [JsonIgnore]
         public readonly string Type => BehaviorClass.Type;
 
+        
+        [Newtonsoft.Json.JsonIgnore]
         [JsonIgnore]
         public readonly string Name => BehaviorClass.Name;
 
         public string Instance { get; set; }
+
+        [Newtonsoft.Json.JsonIgnore]
+        [JsonIgnore]
+        public string InstanceText => string.IsNullOrEmpty(Instance)
+            ? "<default>"
+            : Instance;
 
         public BehaviorClass BehaviorClass { get; set; }
 

@@ -5,7 +5,6 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Routing.Patterns;
 using Stateflows.Common;
 using Stateflows.Common.Utilities;
 using Stateflows.Common.Interfaces;
@@ -71,7 +70,23 @@ namespace Stateflows.Transport.Http
                                     Validation = result.Validation,
                                     Response = response,
                                     Notifications = result.Status != EventStatus.Rejected
-                                        ? hub.Notifications.GetPendingNotifications(behaviorId, input.Watches)
+                                        ? await hub.GetNotificationsAsync(
+                                            behaviorId,
+                                            notification =>
+                                                input.Watches?.Any(watch =>
+                                                    watch.NotificationName == notification.Name &&
+                                                    (
+                                                        (
+                                                            watch.LastNotificationCheck != null &&
+                                                            notification.SentAt >= watch.LastNotificationCheck
+                                                        ) ||
+                                                        (
+                                                            watch.MilisecondsSinceLastNotificationCheck != null &&
+                                                            notification.SentAt.AddSeconds(notification.TimeToLive) >= DateTime.Now.AddMilliseconds(- (int)watch.MilisecondsSinceLastNotificationCheck)
+                                                        )
+                                                    )
+                                                ) ?? false
+                                        )
                                         : Array.Empty<EventHolder>(),
                                     ResponseTime = responseTime,
                                 },

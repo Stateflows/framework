@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Threading.Tasks;
 using Stateflows.Activities.Registration.Interfaces;
 
 namespace Stateflows.Activities
@@ -17,6 +18,8 @@ namespace Stateflows.Activities
         
         void AddActivity<TActivity>(string activityName = null, int version = 1)
             where TActivity : class, IActivity;
+        
+        Task VisitActivitiesAsync(IActivityVisitor visitor);
 
         #region Observability
         void AddInterceptor(ActivityInterceptorFactory interceptorFactory);

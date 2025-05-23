@@ -58,7 +58,7 @@ namespace Stateflows.Common.Classes
         /// <returns>Instance of given class</returns>
         /// <exception cref="StateflowsDefinitionException">Thrown in case of missing parameter attributes</exception>
         /// <exception cref="StateflowsRuntimeException">Thrown in case of missing required context values</exception>
-        [DebuggerHidden]
+        // [DebuggerHidden]
         public static async Task<object> CreateInstanceAsync(IServiceProvider serviceProvider, Type serviceType, string serviceKind = null)
         {
             serviceKind ??= "service";
@@ -91,7 +91,7 @@ namespace Stateflows.Common.Classes
                     continue;
                 }
 
-                if (parameter.ParameterType.IsSubclassOf(typeof(BaseValueSetAccessor)))
+                if (parameter.ParameterType.IsSubclassOf(typeof(BaseNamespaceAccessor)))
                 {
                     var customAttribute = parameter.GetCustomAttribute<ValueSetNameAttribute>();
 
@@ -108,39 +108,145 @@ namespace Stateflows.Common.Classes
                     
                     continue;
                 }
+
+                if (parameter.ParameterType == typeof(INamespace))
+                {
+                    var globalNamespaceAttribute = parameter.GetCustomAttribute<GlobalNamespaceAttribute>();
+                    if (globalNamespaceAttribute != null)
+                    {
+                        var namespaceName = globalNamespaceAttribute.Name ?? parameter.Name;
+                        parameterValues[i] = new Namespace(
+                            namespaceName,
+                            () => ContextValues.AreGlobalValuesAvailable
+                                ? ContextValues.GlobalValues
+                                : null,
+                            nameof(ContextValues.GlobalValues)
+                        );
+                        continue;
+                    }
+                    
+                    var stateNamespaceAttribute = parameter.GetCustomAttribute<StateNamespaceAttribute>();
+                    if (stateNamespaceAttribute != null)
+                    {
+                        var namespaceName = stateNamespaceAttribute.Name ?? parameter.Name;
+                        parameterValues[i] = new Namespace(
+                            namespaceName,
+                            () => ContextValues.AreStateValuesAvailable
+                                ? ContextValues.StateValues
+                                : null,
+                            nameof(ContextValues.StateValues)
+                        );
+                        continue;
+                    }
+                    
+                    var sourceStateNamespaceAttribute = parameter.GetCustomAttribute<SourceStateNamespaceAttribute>();
+                    if (sourceStateNamespaceAttribute != null)
+                    {
+                        var namespaceName = sourceStateNamespaceAttribute.Name ?? parameter.Name;
+                        parameterValues[i] = new Namespace(
+                            namespaceName,
+                            () => ContextValues.AreSourceStateValuesAvailable
+                                ? ContextValues.SourceStateValues
+                                : null,
+                            nameof(ContextValues.SourceStateValues)
+                        );
+                        continue;
+                    }
+                    
+                    var targetStateNamespaceAttribute = parameter.GetCustomAttribute<TargetStateNamespaceAttribute>();
+                    if (targetStateNamespaceAttribute != null)
+                    {
+                        var namespaceName = targetStateNamespaceAttribute.Name ?? parameter.Name;
+                        parameterValues[i] = new Namespace(
+                            namespaceName,
+                            () => ContextValues.AreTargetStateValuesAvailable
+                                ? ContextValues.TargetStateValues
+                                : null,
+                            nameof(ContextValues.TargetStateValues)
+                        );
+                        continue;
+                    }
+                    
+                    continue;
+                }
                 
                 var globalAttribute = parameter.GetCustomAttribute<GlobalValueAttribute>();
                 if (globalAttribute != null)
                 {
-                    parameterValues[i] = await BuildParameterValueAsync(parameter, globalAttribute, () => ContextValues.GlobalValues, nameof(ContextValues.GlobalValues), serviceType, serviceKind);
+                    parameterValues[i] = await BuildParameterValueAsync(
+                        parameter,
+                        globalAttribute,
+                        () => ContextValues.AreGlobalValuesAvailable
+                            ? ContextValues.GlobalValues
+                            : null,
+                        nameof(ContextValues.GlobalValues),
+                        serviceType,
+                        serviceKind
+                    );
                     continue;
                 }
                 
                 var stateAttribute = parameter.GetCustomAttribute<StateValueAttribute>();
                 if (stateAttribute != null)
                 {
-                    parameterValues[i] = await BuildParameterValueAsync(parameter, stateAttribute, () => ContextValues.StateValues, nameof(ContextValues.StateValues), serviceType, serviceKind);
+                    parameterValues[i] = await BuildParameterValueAsync(
+                        parameter,
+                        stateAttribute,
+                        () => ContextValues.AreStateValuesAvailable
+                            ? ContextValues.StateValues
+                            : null,
+                        nameof(ContextValues.StateValues),
+                        serviceType,
+                        serviceKind
+                    );
                     continue;
                 }
                 
                 var parentStateAttribute = parameter.GetCustomAttribute<ParentStateValueAttribute>();
                 if (parentStateAttribute != null)
                 {
-                    parameterValues[i] = await BuildParameterValueAsync(parameter, parentStateAttribute, () => ContextValues.ParentStateValues, nameof(ContextValues.ParentStateValues), serviceType, serviceKind);
+                    parameterValues[i] = await BuildParameterValueAsync(
+                        parameter,
+                        parentStateAttribute,
+                        () => ContextValues.AreParentStateValuesAvailable
+                            ? ContextValues.ParentStateValues
+                            : null,
+                        nameof(ContextValues.ParentStateValues),
+                        serviceType,
+                        serviceKind
+                    );
                     continue;
                 }
                 
                 var sourceStateAttribute = parameter.GetCustomAttribute<SourceStateValueAttribute>();
                 if (sourceStateAttribute != null)
                 {
-                    parameterValues[i] = await BuildParameterValueAsync(parameter, sourceStateAttribute, () => ContextValues.SourceStateValues, nameof(ContextValues.SourceStateValues), serviceType, serviceKind);
+                    parameterValues[i] = await BuildParameterValueAsync(
+                        parameter,
+                        sourceStateAttribute,
+                        () => ContextValues.AreSourceStateValuesAvailable
+                            ? ContextValues.SourceStateValues
+                            : null,
+                        nameof(ContextValues.SourceStateValues),
+                        serviceType,
+                        serviceKind
+                    );
                     continue;
                 }
                 
                 var targetStateAttribute = parameter.GetCustomAttribute<TargetStateValueAttribute>();
                 if (targetStateAttribute != null)
                 {
-                    parameterValues[i] = await BuildParameterValueAsync(parameter, targetStateAttribute, () => ContextValues.TargetStateValues, nameof(ContextValues.TargetStateValues), serviceType, serviceKind);
+                    parameterValues[i] = await BuildParameterValueAsync(
+                        parameter,
+                        targetStateAttribute,
+                        () => ContextValues.AreTargetStateValuesAvailable
+                            ? ContextValues.TargetStateValues
+                            : null,
+                        nameof(ContextValues.TargetStateValues),
+                        serviceType,
+                        serviceKind
+                    );
                     continue;
                 }
                 

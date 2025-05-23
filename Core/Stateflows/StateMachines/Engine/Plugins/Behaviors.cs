@@ -1,5 +1,4 @@
 ﻿using System.Linq;
-using System.Threading.Tasks;
 using Stateflows.Common;
 using Stateflows.StateMachines.Exceptions;
 using Stateflows.StateMachines.Context.Classes;
@@ -9,7 +8,7 @@ namespace Stateflows.StateMachines.Engine
 {
     internal class Behaviors : StateMachinePlugin
     {
-        public override async Task AfterStateEntryAsync(IStateActionContext context)
+        public override void AfterStateEntry(IStateActionContext context)
         {
             var vertex = (context as StateActionContext).Vertex;
 
@@ -17,7 +16,7 @@ namespace Stateflows.StateMachines.Engine
 
             if (vertex.BehaviorName != null)
             {
-                var behaviorId = vertex.GetBehaviorId(context.StateMachine.Id);
+                var behaviorId = vertex.GetBehaviorId(context.Behavior.Id);
 
                 if (context.TryLocateBehavior(behaviorId, out var behavior))
                 {
@@ -25,23 +24,23 @@ namespace Stateflows.StateMachines.Engine
 
                     if (vertex.BehaviorSubscriptions.Any())
                     {                        
-                        _ = behavior.SendAsync(vertex.GetSubscriptionRequest(context.StateMachine.Id));
+                        _ = behavior.SendAsync(vertex.GetSubscriptionRequest(context.Behavior.Id));
                     }
 
-                    var initializationRequest = vertex.BehaviorInitializationBuilder?.Invoke(context) != null
-                        ? await vertex.BehaviorInitializationBuilder(context) ?? new Initialize()
+                    var initializationRequest = vertex.BehaviorInitializationBuilder != null
+                        ? vertex.BehaviorInitializationBuilder(context)
                         : new Initialize();
-
+                    
                     _ = behavior.SendAsync(initializationRequest);
                 }
                 else
                 {
-                    throw new StateDefinitionException(context.CurrentState.Name, $"DoActivity '{vertex.BehaviorName}' not found", context.StateMachine.Id.StateMachineClass);
+                    throw new StateDefinitionException(context.State.Name, $"DoActivity '{vertex.BehaviorName}' not found", context.Behavior.Id.BehaviorClass);
                 }
             }
         }
 
-        public override Task BeforeStateExitAsync(IStateActionContext context)
+        public override void BeforeStateExit(IStateActionContext context)
         {
             var vertex = (context as StateActionContext).Vertex;
 
@@ -56,15 +55,13 @@ namespace Stateflows.StateMachines.Engine
                 {
                     if (vertex.BehaviorSubscriptions.Any())
                     {
-                        _ = behavior.SendAsync(vertex.GetUnsubscriptionRequest(context.StateMachine.Id));
+                        _ = behavior.SendAsync(vertex.GetUnsubscriptionRequest(context.Behavior.Id));
                     }
 
                     _ = behavior.SendAsync(new Finalize());
                     stateValues.BehaviorId = null;
                 }
             }
-
-            return Task.CompletedTask;
         }
     }
 }

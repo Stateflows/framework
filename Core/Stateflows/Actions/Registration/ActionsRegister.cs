@@ -1,12 +1,15 @@
 ﻿using System;
 using System.Diagnostics;
 using System.Collections.Generic;
+using System.Reflection;
 using System.Threading;
+using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using Stateflows.Actions.Context;
 using Stateflows.Actions.Context.Classes;
 using Stateflows.Common.Classes;
 using Stateflows.Common.Registration.Builders;
+using Stateflows.Actions.Models;
 using Stateflows.Actions.Exceptions;
 
 namespace Stateflows.Actions.Registration
@@ -15,11 +18,12 @@ namespace Stateflows.Actions.Registration
     {
         private IServiceCollection Services { get; }
 
-        // public List<ActionExceptionHandlerFactory> GlobalExceptionHandlerFactories { get; set; } = new List<ActionExceptionHandlerFactory>();
-        //
-        // public List<ActionInterceptorFactory> GlobalInterceptorFactories { get; set; } = new List<ActionInterceptorFactory>();
-        //
-        // public List<ActionObserverFactory> GlobalObserverFactories { get; set; } = new List<ActionObserverFactory>();
+        public List<ActionExceptionHandlerFactoryAsync> GlobalExceptionHandlerFactories { get; set; } = new List<ActionExceptionHandlerFactoryAsync>();
+        
+        public List<ActionInterceptorFactoryAsync> GlobalInterceptorFactories { get; set; } = new List<ActionInterceptorFactoryAsync>();
+
+        private readonly MethodInfo ActionTypeAddedAsyncMethod =
+            typeof(IActionVisitor).GetMethod(nameof(IActionVisitor.ActionTypeAddedAsync));
 
         private readonly StateflowsBuilder stateflowsBuilder = null;
 
@@ -29,8 +33,8 @@ namespace Stateflows.Actions.Registration
             Services = services;
         }
 
-        public readonly Dictionary<string, (string Name, int Version, bool Reentrant, ActionDelegateAsync Delegate)> Actions 
-            = new Dictionary<string, (string Name, int Version, bool Reentrant, ActionDelegateAsync Delegate)>();
+        public readonly Dictionary<string, ActionModel> Actions 
+            = new Dictionary<string, ActionModel>();
 
         public readonly Dictionary<string, int> CurrentVersions = new Dictionary<string, int>();
 
@@ -61,14 +65,25 @@ namespace Stateflows.Actions.Registration
             var key = $"{actionName}.{version}";
             var currentKey = $"{actionName}.current";
 
-            if (!Actions.TryAdd(key, (actionName, version, reentrant, actionDelegate)))
+            Func<IActionVisitor, Task> visitingAction = v => v.ActionAddedAsync(actionName, version);
+
+            var actionModel = new ActionModel()
+            {
+                Name = actionName,
+                Version = version,
+                Reentrant = reentrant,
+                Delegate = actionDelegate,
+                VisitingAction = visitingAction
+            };
+            
+            if (!Actions.TryAdd(key, actionModel))
             {
                 throw new ActionDefinitionException($"Action '{actionName}' with version '{version}' is already registered", new ActionClass(actionName));
             }
 
             if (IsNewestVersion(actionName, version))
             {
-                Actions[currentKey] = (actionName, version, reentrant, actionDelegate);
+                Actions[currentKey] = actionModel;
             }
         }
 
@@ -86,6 +101,7 @@ namespace Stateflows.Actions.Registration
             ActionDelegateAsync actionDelegate = async context =>
             {
                 ActionsContextHolder.ActionContext.Value = context.Action;
+                ActionsContextHolder.BehaviorContext.Value = context.Action;
                 ActionsContextHolder.ExecutionContext.Value = context;
                 ContextValues.GlobalValuesHolder.Value = context.Action.Values;
                 
@@ -107,11 +123,27 @@ namespace Stateflows.Actions.Registration
                 }
             };
 
-            Actions.Add(key, (actionName, version, reentrant, actionDelegate));
+            var method = ActionTypeAddedAsyncMethod.MakeGenericMethod(actionType);
+            Func<IActionVisitor, Task> visitingAction = async v =>
+            {
+                await v.ActionAddedAsync(actionName, version);
+                await (Task)method.Invoke(v, new object[] { actionName, version });
+            };
+            
+            var actionModel = new ActionModel()
+            {
+                Name = actionName,
+                Version = version,
+                Reentrant = reentrant,
+                Delegate = actionDelegate,
+                VisitingAction = visitingAction
+            };
+
+            Actions.Add(key, actionModel);
 
             if (IsNewestVersion(actionName, version))
             {
-                Actions[currentKey] = (actionName, version, reentrant, actionDelegate);
+                Actions[currentKey] = actionModel;
             }
         }
 
@@ -120,33 +152,34 @@ namespace Stateflows.Actions.Registration
             where TAction : class, IAction
             => AddAction(actionName ?? Action<TAction>.Name, version, typeof(TAction), reentrant);
 
-        // #region Observability
-        // [DebuggerHidden]
-        // public void AddInterceptor(ActionInterceptorFactory interceptorFactory)
-        //     => GlobalInterceptorFactories.Add(interceptorFactory);
-        //
-        // [DebuggerHidden]
-        // public void AddInterceptor<TInterceptor>()
-        //     where TInterceptor : class, IActionInterceptor
-        //     => AddInterceptor(serviceProvider => StateflowsActivator.CreateInstance<TInterceptor>(serviceProvider));
-        //
-        // [DebuggerHidden]
-        // public void AddExceptionHandler(ActionExceptionHandlerFactory exceptionHandlerFactory)
-        //     => GlobalExceptionHandlerFactories.Add(exceptionHandlerFactory);
-        //
-        // [DebuggerHidden]
-        // public void AddExceptionHandler<TExceptionHandler>()
-        //     where TExceptionHandler : class, IActionExceptionHandler
-        //     => AddExceptionHandler(serviceProvider => StateflowsActivator.CreateInstance<TExceptionHandler>(serviceProvider));
-        //
-        // [DebuggerHidden]
-        // public void AddObserver(ActionObserverFactory observerFactory)
-        //     => GlobalObserverFactories.Add(observerFactory);
-        //
-        // [DebuggerHidden]
-        // public void AddObserver<TObserver>()
-        //     where TObserver : class, IActionObserver
-        //     => AddObserver(serviceProvider => StateflowsActivator.CreateInstance<TObserver>(serviceProvider));
-        // #endregion
+        public Task VisitActionsAsync(IActionVisitor visitor)
+        {
+            foreach (var action in Actions.Values)
+            {
+                action.VisitingAction(visitor);
+            }
+            
+            return Task.CompletedTask;
+        }
+
+        #region Observability
+        [DebuggerHidden]
+        public void AddInterceptor(ActionInterceptorFactoryAsync interceptorFactoryAsync)
+            => GlobalInterceptorFactories.Add(interceptorFactoryAsync);
+        
+        [DebuggerHidden]
+        public void AddInterceptor<TInterceptor>()
+            where TInterceptor : class, IActionInterceptor
+            => AddInterceptor(async serviceProvider => await StateflowsActivator.CreateInstanceAsync<TInterceptor>(serviceProvider));
+        
+        [DebuggerHidden]
+        public void AddExceptionHandler(ActionExceptionHandlerFactoryAsync exceptionHandlerFactoryAsync)
+            => GlobalExceptionHandlerFactories.Add(exceptionHandlerFactoryAsync);
+        
+        [DebuggerHidden]
+        public void AddExceptionHandler<TExceptionHandler>()
+            where TExceptionHandler : class, IActionExceptionHandler
+            => AddExceptionHandler(async serviceProvider => await StateflowsActivator.CreateInstanceAsync<TExceptionHandler>(serviceProvider));
+        #endregion
     }
 }

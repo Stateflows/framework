@@ -57,7 +57,7 @@ namespace StateMachine.IntegrationTests.Tests
             {
                 result = await sm.SendAsync(new FluentEvent() { Email = "user#example.com" });
 
-                currentState = (await sm.GetCurrentStateAsync()).Response?.StatesTree?.Value;
+                currentState = (await sm.GetStatusAsync()).Response?.CurrentStates?.Value;
             }
 
             Assert.AreEqual(EventStatus.Invalid, result?.Status);

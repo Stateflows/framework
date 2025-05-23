@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Linq;
-using System.Threading.Tasks;
 using System.Collections.Generic;
 using Stateflows.Common;
 using Stateflows.StateMachines.Models;
@@ -21,15 +20,13 @@ namespace Stateflows.StateMachines.Engine
 
         private RootContext Context { get; set; }
 
-        public override Task AfterStateEntryAsync(IStateActionContext context)
+        public override void AfterStateEntry(IStateActionContext context)
         {
             var vertex = (context as StateActionContext).Vertex;
             EnteredStates.Add(vertex);
-
-            return Task.CompletedTask;
         }
 
-        public override Task AfterStateExitAsync(IStateActionContext context)
+        public override void AfterStateExit(IStateActionContext context)
         {
             var vertex = (context as StateActionContext).Vertex;
             var stateValues = Context.GetStateValues(vertex.Name);
@@ -39,11 +36,9 @@ namespace Stateflows.StateMachines.Engine
 
             var startupEventIds = stateValues.StartupEventIds.Values.ToArray();
             StartupEventIdsToClear.AddRange(startupEventIds);
-
-            return Task.CompletedTask;
         }
 
-        public override Task<bool> BeforeProcessEventAsync<TEvent>(IEventActionContext<TEvent> context)
+        public override bool BeforeProcessEvent<TEvent>(IEventContext<TEvent> context)
         {
             var result = true;
 
@@ -59,10 +54,10 @@ namespace Stateflows.StateMachines.Engine
                 result = Context.Context.PendingTimeEvents.ContainsKey(timeEvent.Id);
             }
 
-            return Task.FromResult(result);
+            return result;
         }
 
-        public override Task AfterProcessEventAsync<TEvent>(IEventActionContext<TEvent> context)
+        public override void AfterProcessEvent<TEvent>(IEventContext<TEvent> context, EventStatus eventStatus)
         {
             // fallback: removing time events removed from structure, but still scheduled
             if (ConsumedInTransition == null)
@@ -92,7 +87,7 @@ namespace Stateflows.StateMachines.Engine
                 stateValues.TimeEventIds.Remove(ConsumedInTransition.Identifier);
             }
 
-            var currentStack = (context as BaseContext).Context.Executor.VerticesTree.GetAllNodes().Select(node => node.Value).ToArray();
+            var currentStack = ((BaseContext)context).Context.Executor.VerticesTree.GetAllNodes().Select(node => node.Value).ToArray();
 
             var enteredStack = currentStack
                 .Where(vertex => EnteredStates.Contains(vertex))
@@ -130,11 +125,9 @@ namespace Stateflows.StateMachines.Engine
             }
 
             Context.Context.TriggerOnStartup = Context.Context.PendingStartupEvents.Any();
-
-            return Task.CompletedTask;
         }
 
-        public override Task BeforeTransitionGuardAsync<TEvent>(ITransitionContext<TEvent> context)
+        public override void BeforeTransitionGuard<TEvent>(ITransitionContext<TEvent> context)
         {
             if (
                 ConsumedInTransition == null &&
@@ -143,15 +136,7 @@ namespace Stateflows.StateMachines.Engine
             {
                 ConsumedInTransition = (context as IEdgeContext).Edge;
             }
-
-            return Task.CompletedTask;
         }
-
-        public override Task AfterHydrateAsync(IStateMachineActionContext context)
-            => Task.CompletedTask;
-
-        public override Task BeforeDehydrateAsync(IStateMachineActionContext context)
-            => Task.CompletedTask;
 
         private void RegisterStartupEvent(Edge edge)
         {

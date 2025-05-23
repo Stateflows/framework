@@ -9,17 +9,16 @@ namespace Stateflows.Common
         [JsonConstructor]
         protected SendResult() { }
 
-        public SendResult(EventHolder eventHolder, EventStatus status, EventValidation validation = null)
+        public SendResult(EventStatus status, EventValidation validation = null)
         {
-            EventHolder = eventHolder;
             Status = status;
-            Validation = validation ?? new EventValidation(true, Array.Empty<ValidationResult>());
+            Validation = validation ?? new EventValidation(true);
         }
 
-        private EventHolder EventHolder { get; set; }
-
         public EventStatus Status { get; set; }
-
+        
+        public string StatusText => Enum.GetName(typeof(EventStatus), Status);
+        
         public EventValidation Validation { get; set; }
     }
 }

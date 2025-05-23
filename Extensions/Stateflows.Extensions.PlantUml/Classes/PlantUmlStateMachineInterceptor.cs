@@ -1,35 +1,33 @@
 ﻿using System;
 using System.Diagnostics;
-using System.Threading.Tasks;
+using Stateflows.Common;
 using Stateflows.StateMachines;
 using Stateflows.StateMachines.Context.Interfaces;
-using Stateflows.StateMachines.Inspection.Interfaces;
 using Stateflows.Extensions.PlantUml.Events;
 
 namespace Stateflows.Extensions.PlantUml.Classes
 {
     internal class PlantUmlStateMachineInterceptor : StateMachineInterceptor
     {
-        public override Task AfterHydrateAsync(IStateMachineActionContext context)
-            => Task.CompletedTask;
+        private readonly IStateMachineInspection Inspection;
 
-        public override async Task AfterProcessEventAsync<TEvent>(IEventActionContext<TEvent> context)
+        public PlantUmlStateMachineInterceptor(IStateMachineInspection inspection)
+        {
+            Inspection = inspection;
+        }
+
+        public override void AfterProcessEvent<TEvent>(IEventContext<TEvent> context, EventStatus eventStatus)
         {
             try
             {
-                if (context is IEventInspectionContext<TEvent> inspectionContext)
+                if (Inspection.StateHasChanged)
                 {
-                    var inspection = await inspectionContext.StateMachine.GetInspectionAsync();
-
-                    if (inspection.StateHasChanged)
-                    {
-                        context.StateMachine.Publish(
-                            new PlantUmlInfo()
-                            {
-                                PlantUml = inspection.GetPlantUml()
-                            }
-                        );
-                    }
+                    context.Behavior.Publish(
+                        new PlantUmlInfo()
+                        {
+                            PlantUml = Inspection.GetPlantUml()
+                        }
+                    );
                 }
             }
             catch (Exception e)
@@ -41,11 +39,5 @@ namespace Stateflows.Extensions.PlantUml.Classes
                 }
             }
         }
-
-        public override Task BeforeDehydrateAsync(IStateMachineActionContext context)
-            => Task.CompletedTask;
-
-        public override Task<bool> BeforeProcessEventAsync<TEvent>(IEventActionContext<TEvent> context)
-            => Task.FromResult(true);
     }
 }

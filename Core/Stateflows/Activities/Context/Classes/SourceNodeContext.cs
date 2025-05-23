@@ -13,7 +13,7 @@ namespace Stateflows.Activities.Context.Classes
         internal readonly Guid ThreadId;
 
         public SourceNodeContext(Node node, RootContext context, NodeScope nodeScope)
-            : base(node, context, nodeScope)
+            : base(node, null, context, nodeScope)
         {
             ThreadId = nodeScope.ThreadId;
         }

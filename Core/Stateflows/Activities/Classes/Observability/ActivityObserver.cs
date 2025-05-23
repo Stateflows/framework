@@ -5,49 +5,51 @@ namespace Stateflows.Activities
 {
     public abstract class ActivityObserver : IActivityObserver
     {
-        public virtual Task BeforeActivityInitializeAsync(IActivityInitializationContext context)
-            => Task.CompletedTask;
-        public virtual Task AfterActivityInitializeAsync(IActivityInitializationContext context, bool initialized)
-            => Task.CompletedTask;
+        public virtual void BeforeActivityInitialize(IActivityInitializationContext context, bool implicitInitialization)
+        { }
+        public virtual void AfterActivityInitialize(IActivityInitializationContext context, bool implicitInitialization, bool initialized)
+        { }
 
-        public virtual Task BeforeActivityFinalizeAsync(IActivityFinalizationContext context)
-            => Task.CompletedTask;
-        public virtual Task AfterActivityFinalizeAsync(IActivityFinalizationContext context)
-            => Task.CompletedTask;
+        public virtual void BeforeActivityFinalize(IActivityFinalizationContext context)
+        { }
+        public virtual void AfterActivityFinalize(IActivityFinalizationContext context)
+        { }
 
-        public virtual Task BeforeNodeInitializeAsync(IActivityNodeContext context)
-            => Task.CompletedTask;
-        public virtual Task AfterNodeInitializeAsync(IActivityNodeContext context)
-            => Task.CompletedTask;
+        public virtual void BeforeNodeInitialize(IActivityNodeContext context)
+        { }
+        public virtual void AfterNodeInitialize(IActivityNodeContext context)
+        { }
 
-        public virtual Task BeforeNodeFinalizeAsync(IActivityNodeContext context)
-            => Task.CompletedTask;
-        public virtual Task AfterNodeFinalizeAsync(IActivityNodeContext context)
-            => Task.CompletedTask;
+        public virtual void BeforeNodeFinalize(IActivityNodeContext context)
+        { }
+        public virtual void AfterNodeFinalize(IActivityNodeContext context)
+        { }
 
-        public virtual Task BeforeNodeActivateAsync(IActivityNodeContext context, bool activated)
-            => Task.CompletedTask;
-        public virtual Task AfterNodeActivateAsync(IActivityNodeContext context)
-            => Task.CompletedTask;
+        public virtual void BeforeNodeActivate(IActivityNodeContext context, bool activated)
+        { }
+        public virtual void AfterNodeActivate(IActivityNodeContext context)
+        { }
 
-        public virtual Task BeforeNodeExecuteAsync(IActivityNodeContext context)
-            => Task.CompletedTask;
-        public virtual Task AfterNodeExecuteAsync(IActivityNodeContext context)
-            => Task.CompletedTask;
+        public virtual void BeforeNodeExecute(IActivityNodeContext context)
+        { }
+        public virtual void AfterNodeExecute(IActivityNodeContext context)
+        { }
 
-        public virtual Task BeforeFlowActivateAsync(IActivityFlowContext context, bool activated)
-            => Task.CompletedTask;
-        public virtual Task AfterFlowActivateAsync(IActivityFlowContext context)
-            => Task.CompletedTask;
+        public virtual void BeforeFlowActivate(IActivityBeforeFlowContext context)
+        { }
+        public virtual void AfterFlowActivate(IActivityAfterFlowContext context, bool activated)
+        { }
 
-        public virtual Task BeforeFlowGuardAsync<TToken>(IGuardContext<TToken> context)
-            => Task.CompletedTask;
-        public virtual Task AfterFlowGuardAsync<TToken>(IGuardContext<TToken> context, bool guardResult)
-            => Task.CompletedTask;
+        public virtual void BeforeFlowGuard<TToken>(IGuardContext<TToken> context)
+        { }
 
-        public virtual Task BeforeFlowTransformAsync<TToken>(ITransformationContext<TToken> context)
-            => Task.CompletedTask;
-        public virtual Task AfterFlowTransformAsync<TToken>(ITransformationContext<TToken> context)
-            => Task.CompletedTask;
+        public virtual void AfterFlowGuard<TToken>(IGuardContext<TToken> context, bool guardResult)
+        { }
+
+        public virtual void BeforeFlowTransform<TToken, TTransformedToken>(ITransformationContext<TToken> context)
+        { }
+        
+        public virtual void AfterFlowTransform<TToken, TTransformedToken>(ITransformationContext<TToken, TTransformedToken> context)
+        { }
     }
 }

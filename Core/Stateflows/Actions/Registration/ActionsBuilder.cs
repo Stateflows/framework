@@ -49,82 +49,70 @@ namespace Stateflows.Actions.Registration.Builders
             => AddFromAssemblies(AppDomain.CurrentDomain.GetAssemblies());
 
         [DebuggerHidden]
-        public IActionsBuilder AddAction(string activityName, ActionDelegateAsync actionDelegate)
-            => AddAction(activityName, 1, actionDelegate);
+        public IActionsBuilder AddAction(string actionName, ActionDelegateAsync actionDelegate, bool reentrant = true)
+            => AddAction(actionName, 1, actionDelegate, reentrant);
 
         [DebuggerHidden]
-        public IActionsBuilder AddAction(string activityName, int version, ActionDelegateAsync actionDelegate)
+        public IActionsBuilder AddAction(string actionName, int version, ActionDelegateAsync actionDelegate, bool reentrant = true)
         {
-            Register.AddAction(activityName, version, actionDelegate);
+            Register.AddAction(actionName, version, actionDelegate, reentrant);
 
             return this;
         }
 
         [DebuggerHidden]
-        public IActionsBuilder AddAction<TAction>(string activityName = null, int version = 1)
+        public IActionsBuilder AddAction<TAction>(string actionName = null, int version = 1, bool reentrant = true)
             where TAction : class, IAction
         {
-            Register.AddAction<TAction>(activityName ?? Action<TAction>.Name, version);
+            Register.AddAction<TAction>(actionName ?? Action<TAction>.Name, version, reentrant);
 
             return this;
         }
 
         [DebuggerHidden]
-        public IActionsBuilder AddAction<TAction>(int version)
+        public IActionsBuilder AddAction<TAction>(int version, bool reentrant = true)
             where TAction : class, IAction
-            => AddAction<TAction>(null, version);
+            => AddAction<TAction>(null, version, reentrant);
 
-        // #region Observability
-        // [DebuggerHidden]
-        // public IActionsBuilder AddInterceptor<TInterceptor>()
-        //     where TInterceptor : class, IActionInterceptor
-        // {
-        //     Register.AddInterceptor<TInterceptor>();
-        //
-        //     return this;
-        // }
-        //
-        // [DebuggerHidden]
-        // public IActionsBuilder AddInterceptor(ActionInterceptorFactory interceptorFactory)
-        // {
-        //     Register.AddInterceptor(interceptorFactory);
-        //
-        //     return this;
-        // }
-        //
-        // [DebuggerHidden]
-        // public IActionsBuilder AddExceptionHandler<TExceptionHandler>()
-        //     where TExceptionHandler : class, IActionExceptionHandler
-        // {
-        //     Register.AddExceptionHandler<TExceptionHandler>();
-        //
-        //     return this;
-        // }
-        //
-        // [DebuggerHidden]
-        // public IActionsBuilder AddExceptionHandler(ActionExceptionHandlerFactory exceptionHandlerFactory)
-        // {
-        //     Register.AddExceptionHandler(exceptionHandlerFactory);
-        //
-        //     return this;
-        // }
-        //
-        // [DebuggerHidden]
-        // public IActionsBuilder AddObserver<TObserver>()
-        //     where TObserver : class, IActionObserver
-        // {
-        //     Register.AddObserver<TObserver>();
-        //
-        //     return this;
-        // }
-        //
-        // [DebuggerHidden]
-        // public IActionsBuilder AddObserver(ActionObserverFactory observerFactory)
-        // {
-        //     Register.AddObserver(observerFactory);
-        //
-        //     return this;
-        // }
-        // #endregion
+        [DebuggerHidden]
+        public IActionsBuilder AddAction<TAction>(bool reentrant = true)
+            where TAction : class, IAction
+            => AddAction<TAction>(null, 1, reentrant);
+
+        #region Observability
+        [DebuggerHidden]
+        public IActionsBuilder AddInterceptor<TInterceptor>()
+            where TInterceptor : class, IActionInterceptor
+        {
+            Register.AddInterceptor<TInterceptor>();
+        
+            return this;
+        }
+        
+        [DebuggerHidden]
+        public IActionsBuilder AddInterceptor(ActionInterceptorFactoryAsync interceptorFactoryAsync)
+        {
+            Register.AddInterceptor(interceptorFactoryAsync);
+        
+            return this;
+        }
+        
+        [DebuggerHidden]
+        public IActionsBuilder AddExceptionHandler<TExceptionHandler>()
+            where TExceptionHandler : class, IActionExceptionHandler
+        {
+            Register.AddExceptionHandler<TExceptionHandler>();
+        
+            return this;
+        }
+        
+        [DebuggerHidden]
+        public IActionsBuilder AddExceptionHandler(ActionExceptionHandlerFactoryAsync exceptionHandlerFactoryAsync)
+        {
+            Register.AddExceptionHandler(exceptionHandlerFactoryAsync);
+        
+            return this;
+        }
+        #endregion
     }
 }

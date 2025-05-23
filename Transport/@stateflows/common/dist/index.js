@@ -22,7 +22,10 @@ var __copyProps = (to, from, except, desc) => {
   return to;
 };
 var __toCommonJS = (mod) => __copyProps(__defProp({}, "__esModule", { value: true }), mod);
-var __decoratorStart = (base) => [, , , __create((base == null ? void 0 : base[__knownSymbol("metadata")]) ?? null)];
+var __decoratorStart = (base) => {
+  var _a13;
+  return [, , , __create((_a13 = base == null ? void 0 : base[__knownSymbol("metadata")]) != null ? _a13 : null)];
+};
 var __decoratorStrings = ["class", "method", "getter", "setter", "accessor", "field", "value", "get", "set"];
 var __expectFn = (fn) => fn !== void 0 && typeof fn !== "function" ? __typeError("Function expected") : fn;
 var __decoratorContext = (kind, name, done, metadata, fns) => ({ kind: __decoratorStrings[kind], name, metadata, addInitializer: (fn) => done._ ? __typeError("Already initialized") : fns.push(__expectFn(fn || null)) });
@@ -58,12 +61,13 @@ var __decorateElement = (array, flags, name, decorators, target, extra) => {
 var __accessCheck = (obj, member, msg) => member.has(obj) || __typeError("Cannot " + msg);
 var __privateIn = (member, obj) => Object(obj) !== obj ? __typeError('Cannot use the "in" operator on this value') : member.has(obj);
 var __privateGet = (obj, member, getter) => (__accessCheck(obj, member, "read from private field"), getter ? getter.call(obj) : member.get(obj));
+var __privateAdd = (obj, member, value) => member.has(obj) ? __typeError("Cannot add the same private member more than once") : member instanceof WeakSet ? member.add(obj) : member.set(obj, value);
 var __privateSet = (obj, member, value, setter) => (__accessCheck(obj, member, "write to private field"), setter ? setter.call(obj, value) : member.set(obj, value), value);
 var __privateMethod = (obj, member, method) => (__accessCheck(obj, member, "access private method"), method);
 
 // src/index.ts
-var src_exports = {};
-__export(src_exports, {
+var index_exports = {};
+__export(index_exports, {
   ActivityId: () => ActivityId,
   BehaviorClass: () => BehaviorClass,
   BehaviorId: () => BehaviorId,
@@ -93,7 +97,7 @@ __export(src_exports, {
   StateflowsClient: () => StateflowsClient,
   StateflowsEvent: () => StateflowsEvent
 });
-module.exports = __toCommonJS(src_exports);
+module.exports = __toCommonJS(index_exports);
 
 // src/classes/send-result.ts
 var SendResult = class {
@@ -123,8 +127,6 @@ function StateflowsEvent(typeName, eventName = null) {
 
 // src/events/event.ts
 var Event = class {
-  static $type;
-  static eventName;
   get $type() {
     return this.constructor.$type;
   }
@@ -137,8 +139,11 @@ var Event = class {
 var _BehaviorInfo_decorators, _init, _a;
 _BehaviorInfo_decorators = [StateflowsEvent("Stateflows.Common.Events.BehaviorInfo, Stateflows.Common")];
 var BehaviorInfo = class extends (_a = Event) {
-  behaviorStatus;
-  expectedEvents;
+  constructor() {
+    this.behaviorStatus = void 0;
+    this.expectedEvents = void 0;
+    super(...arguments);
+  }
 };
 _init = __decoratorStart(_a);
 BehaviorInfo = __decorateElement(_init, 0, "BehaviorInfo", _BehaviorInfo_decorators, BehaviorInfo);
@@ -146,7 +151,6 @@ __runInitializers(_init, 1, BehaviorInfo);
 
 // src/events/request.ts
 var Request = class extends Event {
-  response;
 };
 
 // src/classes/event-holder.ts
@@ -154,13 +158,9 @@ var EventHolder = class {
   constructor(payload, headers = []) {
     this.payload = payload;
     this.headers = headers;
+    this.$type = "Stateflows.Common.EventHolder<>, Stateflows.Common";
     this.$type = this.$type.replace("<>", "`1[[" + payload.$type + "]]");
   }
-  $type = "Stateflows.Common.EventHolder<>, Stateflows.Common";
-  id;
-  name;
-  sentAt;
-  senderId;
 };
 
 // src/events/compound.request.ts
@@ -169,9 +169,9 @@ _CompoundRequest_decorators = [StateflowsEvent("Stateflows.Common.CompoundReques
 var CompoundRequest = class extends (_a2 = Request) {
   constructor(events) {
     super();
+    this.events = [];
     this.events = events.map((event) => new EventHolder(event));
   }
-  events;
 };
 _init2 = __decoratorStart(_a2);
 CompoundRequest = __decorateElement(_init2, 0, "CompoundRequest", _CompoundRequest_decorators, CompoundRequest);
@@ -209,15 +209,16 @@ Reset = __decorateElement(_init5, 0, "Reset", _Reset_decorators, Reset);
 __runInitializers(_init5, 1, Reset);
 
 // src/behaviors/behavior.ts
-var Behavior = class _Behavior {
+var _transportPromise, _notificationHandlers;
+var _Behavior = class _Behavior {
   constructor(transportPromiseOrBehavior, id) {
     this.id = id;
-    this.#transportPromise = transportPromiseOrBehavior instanceof _Behavior ? transportPromiseOrBehavior.#transportPromise : this.#transportPromise = transportPromiseOrBehavior;
+    __privateAdd(this, _transportPromise);
+    __privateAdd(this, _notificationHandlers, /* @__PURE__ */ new Map());
+    __privateSet(this, _transportPromise, transportPromiseOrBehavior instanceof _Behavior ? __privateGet(transportPromiseOrBehavior, _transportPromise) : __privateSet(this, _transportPromise, transportPromiseOrBehavior));
   }
-  #transportPromise;
-  #notificationHandlers = /* @__PURE__ */ new Map();
   async send(event, headers = []) {
-    let transport = await this.#transportPromise;
+    let transport = await __privateGet(this, _transportPromise);
     let result = await transport.send(this.id, new EventHolder(event, headers));
     result.event = result.event.payload;
     return result;
@@ -235,27 +236,32 @@ var Behavior = class _Behavior {
     return this.send(new Finalize());
   }
   reset(resetMode) {
-    return this.send(new Reset(resetMode ?? 2 /* Full */));
+    return this.send(new Reset(resetMode != null ? resetMode : 2 /* Full */));
   }
   notify(notification) {
-    if (this.#notificationHandlers.has(notification.name)) {
+    if (__privateGet(this, _notificationHandlers).has(notification.name)) {
       notification.payload.eventName = notification.name;
-      notification.payload.$type = notification.$type;
-      let handlers = this.#notificationHandlers.get(notification.name);
+      let handlers = __privateGet(this, _notificationHandlers).get(notification.name);
       handlers.forEach((handler) => handler(notification.payload));
     }
   }
   async watch(notificationName, handler) {
-    let transport = await this.#transportPromise;
+    let transport = await __privateGet(this, _transportPromise);
     await transport.watch(this, notificationName);
-    let handlers = this.#notificationHandlers.has(notificationName) ? this.#notificationHandlers.get(notificationName) : [];
+    let handlers = __privateGet(this, _notificationHandlers).has(notificationName) ? __privateGet(this, _notificationHandlers).get(notificationName) : [];
     handlers.push((n) => handler(n));
-    this.#notificationHandlers.set(notificationName, handlers);
+    __privateGet(this, _notificationHandlers).set(notificationName, handlers);
+  }
+  async requestAndWatch(request, notificationName, handler) {
+    let promise = await this.watch(notificationName, handler);
+    let result = await this.request(request);
+    handler(result.response);
+    return promise;
   }
   async unwatch(notificationName) {
-    let transport = await this.#transportPromise;
+    let transport = await __privateGet(this, _transportPromise);
     await transport.unwatch(this, notificationName);
-    this.#notificationHandlers.delete(notificationName);
+    __privateGet(this, _notificationHandlers).delete(notificationName);
   }
   getStatus() {
     return this.request(new BehaviorInfoRequest());
@@ -263,16 +269,24 @@ var Behavior = class _Behavior {
   watchStatus(handler) {
     return this.watch(BehaviorInfo.eventName, handler);
   }
+  async requestAndWatchStatus(handler) {
+    let promise = this.watch(BehaviorInfo.eventName, handler);
+    let result = await this.getStatus();
+    handler(result.response);
+    return promise;
+  }
   unwatchStatus() {
     return this.unwatch(BehaviorInfo.eventName);
   }
 };
+_transportPromise = new WeakMap();
+_notificationHandlers = new WeakMap();
+var Behavior = _Behavior;
 
 // src/locators/behavior.locator.ts
 var BehaviorLocator = class {
-  behaviorClasses = [];
-  transportPromise;
   constructor(transportPromise) {
+    this.behaviorClasses = [];
     this.transportPromise = new Promise((resolve, reject) => {
       transportPromise.then((transport) => {
         transport.getAvailableClasses().then((result) => {
@@ -300,9 +314,12 @@ var BehaviorLocator = class {
 
 // src/events/state-machine-info.ts
 var _StateMachineInfo_decorators, _init6, _a6;
-_StateMachineInfo_decorators = [StateflowsEvent("Stateflows.StateMachines.Events.StateMachineInfo, Stateflows.Common")];
+_StateMachineInfo_decorators = [StateflowsEvent("Stateflows.StateMachines.StateMachineInfo, Stateflows.Common")];
 var StateMachineInfo = class extends (_a6 = BehaviorInfo) {
-  statesStack;
+  constructor() {
+    this.statesTree = void 0;
+    super(...arguments);
+  }
 };
 _init6 = __decoratorStart(_a6);
 StateMachineInfo = __decorateElement(_init6, 0, "StateMachineInfo", _StateMachineInfo_decorators, StateMachineInfo);
@@ -310,7 +327,7 @@ __runInitializers(_init6, 1, StateMachineInfo);
 
 // src/events/state-machine-info.request.ts
 var _StateMachineInfoRequest_decorators, _init7, _a7;
-_StateMachineInfoRequest_decorators = [StateflowsEvent("Stateflows.StateMachines.Events.StateMachineInfoRequest, Stateflows.Common")];
+_StateMachineInfoRequest_decorators = [StateflowsEvent("Stateflows.StateMachines.StateMachineInfoRequest, Stateflows.Common")];
 var StateMachineInfoRequest = class extends (_a7 = Request) {
 };
 _init7 = __decoratorStart(_a7);
@@ -321,6 +338,12 @@ __runInitializers(_init7, 1, StateMachineInfoRequest);
 var StateMachine = class extends Behavior {
   constructor(behavior) {
     super(behavior, behavior.id);
+  }
+  async requestAndWatchCurrentState(handler) {
+    let promise = await this.watch(StateMachineInfo.eventName, handler);
+    let result = await this.request(new StateMachineInfoRequest());
+    handler(result.response);
+    return promise;
   }
   getCurrentState() {
     return this.request(new StateMachineInfoRequest());
@@ -365,23 +388,30 @@ var ActivityLocator = class {
 };
 
 // src/classes/stateflows-client.ts
+var _behaviorLocator, _stateMachineLocator, _activityLocator;
 var StateflowsClient = class {
   constructor(transportFactory) {
     this.transportFactory = transportFactory;
+    __privateAdd(this, _behaviorLocator, null);
+    __privateAdd(this, _stateMachineLocator, null);
+    __privateAdd(this, _activityLocator, null);
   }
-  #behaviorLocator = null;
   get behaviorLocator() {
-    return this.#behaviorLocator ??= new BehaviorLocator(this.transportFactory.getTransport());
+    var _a13;
+    return (_a13 = __privateGet(this, _behaviorLocator)) != null ? _a13 : __privateSet(this, _behaviorLocator, new BehaviorLocator(this.transportFactory.getTransport()));
   }
-  #stateMachineLocator = null;
   get stateMachineLocator() {
-    return this.#stateMachineLocator ??= new StateMachineLocator(this.behaviorLocator);
+    var _a13;
+    return (_a13 = __privateGet(this, _stateMachineLocator)) != null ? _a13 : __privateSet(this, _stateMachineLocator, new StateMachineLocator(this.behaviorLocator));
   }
-  #activityLocator = null;
   get activityLocator() {
-    return this.#activityLocator ??= new ActivityLocator(this.behaviorLocator);
+    var _a13;
+    return (_a13 = __privateGet(this, _activityLocator)) != null ? _a13 : __privateSet(this, _activityLocator, new ActivityLocator(this.behaviorLocator));
   }
 };
+_behaviorLocator = new WeakMap();
+_stateMachineLocator = new WeakMap();
+_activityLocator = new WeakMap();
 
 // src/classes/event-header.ts
 var EventHeader = class {
@@ -392,8 +422,8 @@ var BehaviorClass = class {
   constructor(type, name) {
     this.type = type;
     this.name = name;
+    this.$type = "Stateflows.BehaviorClass, Stateflows.Common";
   }
-  $type = "Stateflows.BehaviorClass, Stateflows.Common";
 };
 
 // src/utils/json.utils.ts
@@ -421,8 +451,8 @@ var BehaviorId = class {
   constructor(behaviorClass, instance) {
     this.behaviorClass = behaviorClass;
     this.instance = instance;
+    this.$type = "Stateflows.BehaviorId, Stateflows.Common";
   }
-  $type = "Stateflows.BehaviorId, Stateflows.Common";
   toString() {
     return JsonUtils.stringify(this);
   }
@@ -471,7 +501,10 @@ __runInitializers(_init9, 1, PlantUmlInfoRequest);
 var _PlantUmlInfo_decorators, _init10, _a10;
 _PlantUmlInfo_decorators = [StateflowsEvent("Stateflows.Extensions.PlantUml.Events.PlantUmlInfo, Stateflows.Extensions.PlantUml")];
 var PlantUmlInfo = class extends (_a10 = Event) {
-  plantUml;
+  constructor() {
+    this.plantUml = void 0;
+    super(...arguments);
+  }
 };
 _init10 = __decoratorStart(_a10);
 PlantUmlInfo = __decorateElement(_init10, 0, "PlantUmlInfo", _PlantUmlInfo_decorators, PlantUmlInfo);

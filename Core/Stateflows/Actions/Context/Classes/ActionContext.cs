@@ -6,7 +6,6 @@ using Stateflows.Common;
 using Stateflows.Common.Classes;
 using Stateflows.Common.Interfaces;
 using Stateflows.Common.Subscription;
-using Stateflows.Common.Context.Interfaces;
 using Microsoft.Extensions.DependencyInjection;
 using Stateflows.Activities;
 
@@ -22,7 +21,7 @@ namespace Stateflows.Actions.Context.Classes
         
         public readonly List<TokenHolder> InputTokens = new List<TokenHolder>();
 
-        private readonly IServiceProvider ServiceProvider;
+        public IServiceProvider ServiceProvider { get; }
 
         public ActionId Id => Context.Id;
 

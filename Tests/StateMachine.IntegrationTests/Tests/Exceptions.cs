@@ -1,4 +1,5 @@
 using Stateflows.Common;
+using StateMachine.IntegrationTests.Classes.Events;
 using StateMachine.IntegrationTests.Utils;
 
 namespace StateMachine.IntegrationTests.Tests
@@ -19,7 +20,6 @@ namespace StateMachine.IntegrationTests.Tests
         protected override void InitializeStateflows(IStateflowsBuilder builder)
         {
             builder
-                .AddPlantUml()
                 .AddStateMachines(b => b
                     .AddStateMachine("uncatched", b => b
                         .AddInitialState("state1", b => b
@@ -83,10 +83,10 @@ namespace StateMachine.IntegrationTests.Tests
             if (StateMachineLocator.TryLocateStateMachine(new StateMachineId("reset", "x"), out var sm))
             {
                 await sm.SendAsync(new Initialize());
-                state1 = (await sm.GetCurrentStateAsync()).Response.StatesTree.Value;
+                state1 = (await sm.GetStatusAsync()).Response.CurrentStates.Value;
                 await sm.SendAsync(new SomeEvent());
                 await Task.Delay(100);
-                state2 = (await sm.GetCurrentStateAsync()).Response.StatesTree.Value;
+                state2 = (await sm.GetStatusAsync()).Response.CurrentStates.Value;
             }
 
             Assert.AreEqual(state1, state2);
@@ -101,11 +101,11 @@ namespace StateMachine.IntegrationTests.Tests
             if (StateMachineLocator.TryLocateStateMachine(new StateMachineId("transition", "x"), out var sm))
             {
                 await sm.SendAsync(new Initialize());
-                state1 = (await sm.GetCurrentStateAsync()).Response.StatesTree.Value;
+                state1 = (await sm.GetStatusAsync()).Response.CurrentStates.Value;
                 
                 await sm.SendAsync(new SomeEvent());
                 await Task.Delay(100);
-                state2 = (await sm.GetCurrentStateAsync()).Response.StatesTree.Value;
+                state2 = (await sm.GetStatusAsync()).Response.CurrentStates.Value;
             }
 
             Assert.AreEqual("state1", state1);
@@ -121,10 +121,10 @@ namespace StateMachine.IntegrationTests.Tests
             if (StateMachineLocator.TryLocateStateMachine(new StateMachineId("generalTransition", "x"), out var sm))
             {
                 await sm.SendAsync(new Initialize());
-                state1 = (await sm.GetCurrentStateAsync()).Response.StatesTree.Value;
+                state1 = (await sm.GetStatusAsync()).Response.CurrentStates.Value;
                 await sm.SendAsync(new SomeEvent());
                 await Task.Delay(100);
-                state2 = (await sm.GetCurrentStateAsync()).Response.StatesTree.Value;
+                state2 = (await sm.GetStatusAsync()).Response.CurrentStates.Value;
             }
 
             Assert.AreEqual("state1", state1);

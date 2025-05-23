@@ -31,8 +31,8 @@ namespace Stateflows.Activities.Context.Classes
         public ExceptionHandlerContext(ActionContext context, Node protectedNode, Node nodeOfOrigin, NodeScope nodeScope)
             : base(context.Context, context.NodeScope, context.Node, context.InputTokens)
         {
-            ProtectedNode = new NodeContext(protectedNode, context.Context, nodeScope);
-            NodeOfOrigin = new NodeContext(nodeOfOrigin, context.Context, nodeScope);
+            ProtectedNode = new NodeContext(protectedNode, null, context.Context, nodeScope);
+            NodeOfOrigin = new NodeContext(nodeOfOrigin, null, context.Context, nodeScope);
         }
     }
 }

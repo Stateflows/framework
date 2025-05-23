@@ -10,8 +10,8 @@ namespace Stateflows.StateMachines
         { }
     }
 
-    [Obsolete("StateValueSet is obsolete, use IValueSet with StateValueSetAttribute.")]
-    public class StateValueSet : BaseValueSetAccessor
+    [Obsolete("StateValueSet is obsolete, use INamespace with StateValueSetAttribute.")]
+    public class StateValueSet : BaseNamespaceAccessor
     {
         public StateValueSet(string valueSetName) : base(valueSetName, () => ContextValues.StateValuesHolder.Value, nameof(ContextValues.StateValuesHolder))
         { }
@@ -24,8 +24,8 @@ namespace Stateflows.StateMachines
         { }
     }
 
-    [Obsolete("SourceStateValueSet is obsolete, use IValueSet with SourceStateValueSetAttribute.")]
-    public class SourceStateValueSet : BaseValueSetAccessor
+    [Obsolete("SourceStateValueSet is obsolete, use INamespace with SourceStateNamespaceAttribute.")]
+    public class SourceStateValueSet : BaseNamespaceAccessor
     {
         public SourceStateValueSet(string valueSetName) : base(valueSetName, () => ContextValues.SourceStateValuesHolder.Value, nameof(ContextValues.SourceStateValuesHolder))
         { }
@@ -38,8 +38,8 @@ namespace Stateflows.StateMachines
         { }
     }
 
-    [Obsolete("TargetStateValueSet is obsolete, use IValueSet with TargetStateValueSetAttribute.")]
-    public class TargetStateValueSet : BaseValueSetAccessor
+    [Obsolete("TargetStateValueSet is obsolete, use INamespace with TargetStateNamespaceAttribute.")]
+    public class TargetStateValueSet : BaseNamespaceAccessor
     {
         public TargetStateValueSet(string valueSetName) : base(valueSetName, () => ContextValues.TargetStateValuesHolder.Value, nameof(ContextValues.TargetStateValuesHolder))
         { }

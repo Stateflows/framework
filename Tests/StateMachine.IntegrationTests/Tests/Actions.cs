@@ -5,6 +5,7 @@ using Stateflows.Actions;
 using Stateflows.Common;
 using Stateflows.Common.Attributes;
 using Stateflows.Common.Utilities;
+using StateMachine.IntegrationTests.Classes.Events;
 
 namespace StateMachine.IntegrationTests.Tests
 {
@@ -52,14 +53,13 @@ namespace StateMachine.IntegrationTests.Tests
         protected override void InitializeStateflows(IStateflowsBuilder builder)
         {
             builder
-                .AddPlantUml()
                 .AddStateMachines(b => b
                     .AddStateMachine("extended", b => b
                         .AddExecutionSequenceObserver()
                         .AddInitializer<BoolInit>(async c =>
                         {
                             Debug.WriteLine($"InitializationEvent.Value: {c.InitializationEvent.Value}");
-                            c.StateMachine.Values.Set("value", c.InitializationEvent.Value);
+                            await c.Behavior.Values.SetAsync("value", c.InitializationEvent.Value);
                             return true;
                         })
                         .AddInitialState("stateA", b => b
@@ -101,10 +101,11 @@ namespace StateMachine.IntegrationTests.Tests
                     .AddAction("guard", async c =>
                     {
                         GuardRun = true;
-                        if (c.Action.Values.TryGet<bool>("value", out var value))
+                        var (success, value) = await c.Behavior.Values.TryGetAsync<bool>("value");
+                        if (success)
                         {
                             Debug.WriteLine($"value: {value}");
-                            c.Action.Output(value);
+                            c.Output(value);
                         }
                         else
                         {
@@ -114,7 +115,7 @@ namespace StateMachine.IntegrationTests.Tests
                     .AddAction("effect", async c => EffectRun = true)
                     .AddAction("entry", async c => EntryRun = true)
                     .AddAction("exit", async c => ExitRun = true)
-                    .AddAction("subscribe", async c => c.Action.Publish(new SomeEvent()))
+                    .AddAction("subscribe", async c => c.Behavior.Publish(new SomeEvent()))
                     .AddAction<TypedAction>()
                 )
                 ;
@@ -131,9 +132,9 @@ namespace StateMachine.IntegrationTests.Tests
 
                 await sm.SendAsync(new SomeEvent());
 
-                var currentState = (await sm.GetCurrentStateAsync()).Response;
+                var currentState = (await sm.GetStatusAsync()).Response;
 
-                currentState1 = currentState.StatesTree.Value;
+                currentState1 = currentState.CurrentStates.Value;
             }
 
             ExecutionSequence.Verify(b => b
@@ -162,9 +163,9 @@ namespace StateMachine.IntegrationTests.Tests
 
                 await sm.SendAsync(new SomeEvent());
 
-                var currentState = (await sm.GetCurrentStateAsync()).Response;
+                var currentState = (await sm.GetStatusAsync()).Response;
 
-                currentState1 = currentState.StatesTree.Value;
+                currentState1 = currentState.CurrentStates.Value;
             }
 
             ExecutionSequence.Verify(b => b
@@ -189,9 +190,9 @@ namespace StateMachine.IntegrationTests.Tests
 
                 await Task.Delay(100);
                 
-                var currentState = (await sm.GetCurrentStateAsync()).Response;
+                var currentState = (await sm.GetStatusAsync()).Response;
 
-                currentState1 = currentState.StatesTree.Value;
+                currentState1 = currentState.CurrentStates.Value;
             }
 
             ExecutionSequence.Verify(b => b
@@ -214,9 +215,9 @@ namespace StateMachine.IntegrationTests.Tests
 
                 await Task.Delay(100);
                 
-                var currentState = (await sm.GetCurrentStateAsync()).Response;
+                var currentState = (await sm.GetStatusAsync()).Response;
 
-                currentState1 = currentState.StatesTree.Value;
+                currentState1 = currentState.CurrentStates.Value;
             }
 
             // ExecutionSequence.Verify(b => b

@@ -1,35 +1,34 @@
-﻿using System.Threading.Tasks;
-using Stateflows.Activities.Context.Interfaces;
+﻿using Stateflows.Activities.Context.Interfaces;
 
 namespace Stateflows.Activities
 {
     public interface IActivityObserver
     {
-        Task BeforeActivityInitializeAsync(IActivityInitializationContext context);
-        Task AfterActivityInitializeAsync(IActivityInitializationContext context, bool initialized);
+        void BeforeActivityInitialize(IActivityInitializationContext context, bool implicitInitialization);
+        void AfterActivityInitialize(IActivityInitializationContext context, bool implicitInitialization, bool initialized);
 
-        Task BeforeActivityFinalizeAsync(IActivityFinalizationContext context);
-        Task AfterActivityFinalizeAsync(IActivityFinalizationContext context);
+        void BeforeActivityFinalize(IActivityFinalizationContext context);
+        void AfterActivityFinalize(IActivityFinalizationContext context);
 
-        Task BeforeNodeInitializeAsync(IActivityNodeContext context);
-        Task AfterNodeInitializeAsync(IActivityNodeContext context);
+        void BeforeNodeInitialize(IActivityNodeContext context);
+        void AfterNodeInitialize(IActivityNodeContext context);
 
-        Task BeforeNodeFinalizeAsync(IActivityNodeContext context);
-        Task AfterNodeFinalizeAsync(IActivityNodeContext context);
+        void BeforeNodeFinalize(IActivityNodeContext context);
+        void AfterNodeFinalize(IActivityNodeContext context);
 
-        Task BeforeNodeActivateAsync(IActivityNodeContext context, bool activated);
-        Task AfterNodeActivateAsync(IActivityNodeContext context);
+        void BeforeNodeActivate(IActivityNodeContext context, bool activated);
+        void AfterNodeActivate(IActivityNodeContext context);
 
-        Task BeforeNodeExecuteAsync(IActivityNodeContext context);
-        Task AfterNodeExecuteAsync(IActivityNodeContext context);
+        void BeforeNodeExecute(IActivityNodeContext context);
+        void AfterNodeExecute(IActivityNodeContext context);
 
-        Task BeforeFlowActivateAsync(IActivityFlowContext context, bool activated);
-        Task AfterFlowActivateAsync(IActivityFlowContext context);
+        void BeforeFlowActivate(IActivityBeforeFlowContext context);
+        void AfterFlowActivate(IActivityAfterFlowContext context, bool activated);
 
-        Task BeforeFlowGuardAsync<TToken>(IGuardContext<TToken> context);
-        Task AfterFlowGuardAsync<TToken>(IGuardContext<TToken> context, bool guardResult);
+        void BeforeFlowGuard<TToken>(IGuardContext<TToken> context);
+        void AfterFlowGuard<TToken>(IGuardContext<TToken> context, bool guardResult);
 
-        Task BeforeFlowTransformAsync<TToken>(ITransformationContext<TToken> context);
-        Task AfterFlowTransformAsync<TToken>(ITransformationContext<TToken> context);
+        void BeforeFlowTransform<TToken, TTransformedToken>(ITransformationContext<TToken> context);
+        void AfterFlowTransform<TToken, TTransformedToken>(ITransformationContext<TToken, TTransformedToken> context);
     }
 }

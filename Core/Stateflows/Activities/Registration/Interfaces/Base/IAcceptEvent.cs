@@ -2,6 +2,7 @@
 using System.Threading.Tasks;
 using Stateflows.Common;
 using Stateflows.Activities.Context.Classes;
+using Stateflows.Activities.Registration.Interfaces.Internal;
 
 namespace Stateflows.Activities.Registration.Interfaces.Base
 {
@@ -29,7 +30,8 @@ namespace Stateflows.Activities.Registration.Interfaces.Base
         [DebuggerHidden]
         public TReturn AddAcceptEventAction<TEvent, TAcceptEventAction>(string actionNodeName, AcceptEventActionBuildAction buildAction = null)
             where TAcceptEventAction : class, IAcceptEventActionNode<TEvent>
-            => AddAcceptEventAction<TEvent>(
+        {
+            var result = AddAcceptEventAction<TEvent>(
                 actionNodeName,
                 async c =>
                 {
@@ -44,6 +46,12 @@ namespace Stateflows.Activities.Registration.Interfaces.Base
                 },
                 buildAction
             );
+
+            var graph = ((IGraphBuilder)this).Graph;
+            graph.VisitingTasks.Add(visitor => visitor.AcceptEventNodeTypeAddedAsync<TEvent, TAcceptEventAction>(graph.Name, graph.Version, actionNodeName));
+
+            return result;
+        }
         #endregion
         
         #region AddTimeEventAction

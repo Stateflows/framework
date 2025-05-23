@@ -3,14 +3,13 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Collections.Generic;
 using Stateflows.Common.Classes;
-using Stateflows.Common.Utilities;
 using Stateflows.Common.Interfaces;
 
 namespace Stateflows.Common.Lock
 {
     internal class InProcessLock : IStateflowsLock
     {
-        public Dictionary<BehaviorId, EventWaitHandle> Events { get; } = new Dictionary<BehaviorId, EventWaitHandle>();
+        private Dictionary<BehaviorId, EventWaitHandle> Events { get; } = new Dictionary<BehaviorId, EventWaitHandle>();
 
         public Task<IStateflowsLockHandle> AquireLockAsync(BehaviorId id, TimeSpan? timeout = null)
         {

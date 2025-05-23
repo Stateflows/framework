@@ -2,14 +2,10 @@
 using System.Threading.Tasks;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
-using System.Linq;
 using Microsoft.Extensions.DependencyInjection;
-using Stateflows.Actions.Context.Classes;
 using Stateflows.Common;
-using Stateflows.Activities;
 using Stateflows.Common.Interfaces;
 using Stateflows.Actions.Registration;
-using Stateflows.Common.Context;
 
 namespace Stateflows.Actions.Engine
 {
@@ -64,7 +60,9 @@ namespace Stateflows.Actions.Engine
                     stateflowsContext = await storage.HydrateAsync(id);
                 }
 
-                var executor = new Executor(stateflowsContext, serviceProvider, action);
+                var executor = new Executor(Register, stateflowsContext, serviceProvider, action);
+                
+                await executor.HydrateAsync(eventHolder);
                 
                 if (eventHolder is EventHolder<CompoundRequest> compoundRequestHolder)
                 {
@@ -78,7 +76,6 @@ namespace Stateflows.Actions.Engine
                         var status = await ev.ExecuteBehaviorAsync(this, result, executor);
 
                         results.Add(new RequestResult(
-                            ev,
                             ev.GetResponseHolder(),
                             status,
                             new EventValidation(true, new List<ValidationResult>())
@@ -97,6 +94,8 @@ namespace Stateflows.Actions.Engine
                 {
                     result = await ExecuteBehaviorAsync(eventHolder, result, executor);
                 }
+                
+                await executor.DehydrateAsync(eventHolder);
             }
             finally
             {

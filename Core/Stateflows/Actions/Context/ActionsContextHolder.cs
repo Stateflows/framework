@@ -8,5 +8,6 @@ namespace Stateflows.Actions.Context
     {
         public static readonly AsyncLocal<IActionContext> ActionContext = new AsyncLocal<IActionContext>();
         public static AsyncLocal<IExecutionContext> ExecutionContext => CommonContextHolder.ExecutionContext;
+        public static AsyncLocal<IBehaviorContext> BehaviorContext => CommonContextHolder.BehaviorContext;
     }
 }

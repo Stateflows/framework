@@ -7,9 +7,9 @@ using Stateflows.Common.Classes;
 using Stateflows.Common.Utilities;
 using Stateflows.Activities.Extensions;
 using Stateflows.Activities.StateMachines.Interfaces;
+using Stateflows.StateMachines;
 using Stateflows.StateMachines.Exceptions;
 using Stateflows.StateMachines.Registration;
-using Stateflows.StateMachines.Context.Interfaces;
 
 namespace Stateflows.Activities
 {
@@ -18,7 +18,7 @@ namespace Stateflows.Activities
         [DebuggerHidden]
         internal static void RunStateActivity(string actionName, IStateActionContext context, string activityName, StateActionActivityBuildAction buildAction)
         {
-            if (context.TryLocateActivity(activityName, $"{context.StateMachine.Id.Instance}.{context.CurrentState.Name}.{actionName}.{Guid.NewGuid()}", out var a))
+            if (context.TryLocateActivity(activityName, $"{context.Behavior.Id.Instance}.{context.State.Name}.{actionName}.{Guid.NewGuid()}", out var a))
             {
                 _ = Task.Run(async () =>
                 {
@@ -30,10 +30,10 @@ namespace Stateflows.Activities
                     var request = new CompoundRequest();
                     request.Events.AddRange(new EventHolder[]
                     {
-                        integratedActivityBuilder.GetSubscribe(context.StateMachine.Id).ToEventHolder(),
-                        new SetGlobalValues() { Values = ((ContextValuesCollection)context.StateMachine.Values).Values }.ToEventHolder(),
+                        integratedActivityBuilder.GetSubscribe(context.Behavior.Id).ToEventHolder(),
+                        new SetGlobalValues() { Values = ((ContextValuesCollection)context.Behavior.Values).Values }.ToEventHolder(),
                         initializationEvent,
-                        integratedActivityBuilder.GetUnsubscribe(context.StateMachine.Id).ToEventHolder()
+                        integratedActivityBuilder.GetUnsubscribe(context.Behavior.Id).ToEventHolder()
                     });
                         
                     _ = a.SendAsync(request);
@@ -41,7 +41,7 @@ namespace Stateflows.Activities
             }
             else
             {
-                throw new StateMachineRuntimeException($"On{actionName}Activity '{activityName}' not found", context.StateMachine.Id.StateMachineClass);
+                throw new StateMachineRuntimeException($"On{actionName}Activity '{activityName}' not found", context.Behavior.Id.BehaviorClass);
             }
         }
 
@@ -49,7 +49,7 @@ namespace Stateflows.Activities
         internal static async Task<bool> RunGuardActivity<TEvent>(ITransitionContext<TEvent> context, string activityName, TransitionActivityBuildAction<TEvent> buildAction)
         {
             var result = false;
-            if (context.TryLocateActivity(activityName, $"{context.StateMachine.Id.Instance}.{context.Source.Name}.{Constants.Guard}.{context.EventId}", out var a))
+            if (context.TryLocateActivity(activityName, $"{context.Behavior.Id.Instance}.{context.Source.Name}.{Constants.Guard}.{context.EventId}", out var a))
             {
                 var ev = StateflowsJsonConverter.Clone(context.Event);
                 await Task.Run(async () =>
@@ -65,11 +65,11 @@ namespace Stateflows.Activities
                     var request = new CompoundRequest();
                     request.Events.AddRange(new EventHolder[]
                     {
-                        integratedActivityBuilder.GetSubscribe(context.StateMachine.Id).ToEventHolder(),
-                        new SetGlobalValues() { Values = (context.StateMachine.Values as ContextValuesCollection).Values }.ToEventHolder(),
+                        integratedActivityBuilder.GetSubscribe(context.Behavior.Id).ToEventHolder(),
+                        new SetGlobalValues() { Values = ((ContextValuesCollection)context.Behavior.Values).Values }.ToEventHolder(),
                         initializationEvent,
                         tokensInput.ToEventHolder(),
-                        integratedActivityBuilder.GetUnsubscribe(context.StateMachine.Id).ToEventHolder(),
+                        integratedActivityBuilder.GetUnsubscribe(context.Behavior.Id).ToEventHolder(),
                         new TokensOutputRequest<bool>().ToEventHolder()
                     });
 
@@ -80,7 +80,7 @@ namespace Stateflows.Activities
             }
             else
             {
-                throw new StateMachineRuntimeException($"GuardActivity '{activityName}' not found", context.StateMachine.Id.StateMachineClass);
+                throw new StateMachineRuntimeException($"GuardActivity '{activityName}' not found", context.Behavior.Id.BehaviorClass);
             }
 
             return result;
@@ -89,7 +89,7 @@ namespace Stateflows.Activities
         [DebuggerHidden]
         internal static Task RunEffectActivity<TEvent>(ITransitionContext<TEvent> context, string activityName, TransitionActivityBuildAction<TEvent> buildAction)
         {
-            if (context.TryLocateActivity(activityName, $"{context.StateMachine.Id.Instance}.{context.Source.Name}.{Event<TEvent>.Name}.{Constants.Effect}.{context.EventId}", out var a))
+            if (context.TryLocateActivity(activityName, $"{context.Behavior.Id.Instance}.{context.Source.Name}.{Event<TEvent>.Name}.{Constants.Effect}.{context.EventId}", out var a))
             {
                 var ev = StateflowsJsonConverter.Clone(context.Event);
                 _ = Task.Run(async () =>
@@ -105,11 +105,11 @@ namespace Stateflows.Activities
                     var request = new CompoundRequest();
                     request.Events.AddRange(new EventHolder[]
                     {
-                        integratedActivityBuilder.GetSubscribe(context.StateMachine.Id).ToEventHolder(),
-                        new SetGlobalValues() { Values = ((ContextValuesCollection)context.StateMachine.Values).Values }.ToEventHolder(),
+                        integratedActivityBuilder.GetSubscribe(context.Behavior.Id).ToEventHolder(),
+                        new SetGlobalValues() { Values = ((ContextValuesCollection)context.Behavior.Values).Values }.ToEventHolder(),
                         initializationEvent,
                         tokensInput.ToEventHolder(),
-                        integratedActivityBuilder.GetUnsubscribe(context.StateMachine.Id).ToEventHolder()
+                        integratedActivityBuilder.GetUnsubscribe(context.Behavior.Id).ToEventHolder()
                     });
 
                     _ = a.SendAsync(request);
@@ -117,7 +117,7 @@ namespace Stateflows.Activities
             }
             else
             {
-                throw new StateMachineRuntimeException($"EffectActivity '{activityName}' not found", context.StateMachine.Id.StateMachineClass);
+                throw new StateMachineRuntimeException($"EffectActivity '{activityName}' not found", context.Behavior.Id.BehaviorClass);
             }
 
             return Task.CompletedTask;

@@ -126,8 +126,8 @@ namespace Activity.IntegrationTests.Tests
                             .AddExceptionHandler<Exception>(async c =>
                             {
                                 Executed2 = true;
-                                Value1 = c.NodeOfOrigin.NodeName;
-                                Value2 = c.ProtectedNode.NodeName;
+                                Value1 = c.NodeOfOrigin.Name;
+                                Value2 = c.ProtectedNode.Name;
                             })
                             .AddInitial(b => b
                                 .AddControlFlow("faulty")
@@ -147,8 +147,8 @@ namespace Activity.IntegrationTests.Tests
                             .AddExceptionHandler<Exception>(async c =>
                             {
                                 Executed2 = true;
-                                Value1 = c.NodeOfOrigin.NodeName;
-                                Value2 = c.ProtectedNode.NodeName;
+                                Value1 = c.NodeOfOrigin.Name;
+                                Value2 = c.ProtectedNode.Name;
                             })
                             .AddInitial(b => b
                                 .AddControlFlow("faulty")
@@ -171,8 +171,8 @@ namespace Activity.IntegrationTests.Tests
                                 .AddExceptionHandler<Exception>(async c =>
                                 {
                                     Executed2 = true;
-                                    Value1 = c.NodeOfOrigin.NodeName;
-                                    Value2 = c.ProtectedNode.NodeName;
+                                    Value1 = c.NodeOfOrigin.Name;
+                                    Value2 = c.ProtectedNode.Name;
                                 })
                                 .AddControlFlow<FinalNode>(b => b
                                     .AddGuard(async c =>
@@ -195,8 +195,8 @@ namespace Activity.IntegrationTests.Tests
                                 .AddExceptionHandler<Exception>(async c =>
                                 {
                                     Executed1 = true;
-                                    Value1 = c.NodeOfOrigin.NodeName;
-                                    Value2 = c.ProtectedNode.NodeName;
+                                    Value1 = c.NodeOfOrigin.Name;
+                                    Value2 = c.ProtectedNode.Name;
                                 })
                         )
                     )
@@ -231,8 +231,8 @@ namespace Activity.IntegrationTests.Tests
                             .AddExceptionHandler<Exception>(async c =>
                             {
                                 Executed2 = true;
-                                Value1 = c.NodeOfOrigin.NodeName;
-                                Value2 = c.ProtectedNode.NodeName;
+                                Value1 = c.NodeOfOrigin.Name;
+                                Value2 = c.ProtectedNode.Name;
                                 Value3 = c.Exception?.Message ?? string.Empty;
                             })
                             .AddInitial(b => b

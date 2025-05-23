@@ -11,12 +11,13 @@ namespace Stateflows.Activities
 
         protected string name;
         public virtual string Name => name ??= GetType().GetTokenName();
-
+        
         [JsonIgnore]
         public object BoxedPayload { get; }
 
         protected abstract object GetBoxedPayload();
 
+        
         [JsonIgnore]
         public Type PayloadType => GetPayloadType();
 

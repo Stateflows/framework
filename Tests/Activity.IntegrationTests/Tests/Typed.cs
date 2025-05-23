@@ -20,13 +20,11 @@ namespace Activity.IntegrationTests.Tests
     ) : IActionNode
     {
 
-        public Task ExecuteAsync(CancellationToken cancellationToken)
+        public async Task ExecuteAsync(CancellationToken cancellationToken)
         {
             Typed.TokenValue = someTokens.First().Foo;
 
-            value.Set("foo");
-            
-            return Task.CompletedTask;
+            await value.SetAsync("foo");
         }
     }
 

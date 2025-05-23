@@ -1,5 +1,8 @@
-﻿namespace Stateflows
+﻿using System;
+
+namespace Stateflows
 {
+    [Obsolete]
     public static class StateflowsEnvironments
     {
         public static readonly string Production = nameof(Production);

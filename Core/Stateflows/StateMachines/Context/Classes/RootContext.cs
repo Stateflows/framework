@@ -20,7 +20,7 @@ namespace Stateflows.StateMachines.Context.Classes
 
         internal StateflowsContext Context => stateflowsContext;
 
-        internal readonly Executor Executor;
+        internal Executor Executor { get; set; }
 
         public RootContext(StateflowsContext context, Executor executor, EventHolder @event)
         {
@@ -36,7 +36,7 @@ namespace Stateflows.StateMachines.Context.Classes
             deferredEvents = null;
             embeddedBehaviorStatuses = null;
             stateValues = null;
-            statesStack = null;
+            // statesStack = null;
         }
 
         public Dictionary<string, string> GlobalValues => stateflowsContext.GlobalValues;
@@ -131,27 +131,27 @@ namespace Stateflows.StateMachines.Context.Classes
             return values;
         }
 
-        private List<string> statesStack = null;
-        public List<string> StatesStack
-        {
-            get
-            {
-                if (statesStack == null)
-                {
-                    if (!stateflowsContext.Values.TryGetValue(Constants.StatesStack, out var statesStackObj))
-                    {
-                        statesStack = new List<string>();
-                        stateflowsContext.Values[Constants.StatesStack] = statesStack;
-                    }
-                    else
-                    {
-                        statesStack = statesStackObj as List<string>;
-                    }
-                }
-
-                return statesStack;
-            }
-        }
+        // private List<string> statesStack = null;
+        // public List<string> StatesStack
+        // {
+        //     get
+        //     {
+        //         if (statesStack == null)
+        //         {
+        //             if (!stateflowsContext.Values.TryGetValue(Constants.StatesStack, out var statesStackObj))
+        //             {
+        //                 statesStack = new List<string>();
+        //                 stateflowsContext.Values[Constants.StatesStack] = statesStack;
+        //             }
+        //             else
+        //             {
+        //                 statesStack = statesStackObj as List<string>;
+        //             }
+        //         }
+        //
+        //         return statesStack;
+        //     }
+        // }
 
         private Tree<string> statesTree = null;
         public Tree<string> StatesTree

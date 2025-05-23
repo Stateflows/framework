@@ -58,12 +58,16 @@ namespace Stateflows.Common.Storage
         }
 
         public async Task<IEnumerable<StateflowsContext>> GetTimeTriggeredContextsAsync(IEnumerable<BehaviorClass> behaviorClasses)
-            => (await GetAllContextsAsync(behaviorClasses)).Where(context =>
-                context.TriggerTime != null &&
-                context.TriggerTime < DateTime.Now
-            );
+            => (await GetAllContextsAsync(behaviorClasses))
+                .Where(context =>
+                    context.TriggerTime != null &&
+                    context.TriggerTime < DateTime.Now
+                )
+                .ToArray();
 
         public async Task<IEnumerable<StateflowsContext>> GetStartupTriggeredContextsAsync(IEnumerable<BehaviorClass> behaviorClasses)
-            => (await GetAllContextsAsync(behaviorClasses)).Where(context => context.TriggerOnStartup);
+            => (await GetAllContextsAsync(behaviorClasses))
+                .Where(context => context.TriggerOnStartup)
+                .ToArray();
     }
 }

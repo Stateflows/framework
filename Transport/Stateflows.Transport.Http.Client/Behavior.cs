@@ -1,5 +1,7 @@
-﻿using Stateflows.Common;
+﻿using Microsoft.Extensions.DependencyInjection;
+using Stateflows.Common;
 using Stateflows.Common.Classes;
+using Stateflows.Common.Interfaces;
 using Stateflows.Common.Transport.Classes;
 using Stateflows.Common.Transport.Interfaces;
 
@@ -66,7 +68,7 @@ namespace Stateflows.Transport.Http.Client
             var eventHolder = request.ToTypedEventHolder(headers);
 
             var result = await SendAsync(request);
-            return new RequestResult<TResponse>(eventHolder, result.Status, result.Validation);
+            return new RequestResult<TResponse>(eventHolder, result.Status, result.Notifications, result.Validation);
         }
 
         public Task<IWatcher> WatchAsync<TNotification>(Action<TNotification> handler)

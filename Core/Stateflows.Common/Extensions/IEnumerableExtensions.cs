@@ -10,14 +10,14 @@ namespace Stateflows.Common.Extensions
     public static class IEnumerableExtensions
     {
         [DebuggerHidden]
-        public static async Task RunProtected<T>(this IEnumerable<T> enumerable, ActionAsync<T> action, Action<Exception> exceptionHandler)
+        public static void RunProtected<T>(this IEnumerable<T> enumerable, Action<T> action, Action<Exception> exceptionHandler)
             where T : class
         {
             foreach (var item in enumerable)
             {
                 try
                 {
-                    await action(item);
+                    action(item);
                 }
                 catch (Exception e)
                 {
@@ -27,7 +27,7 @@ namespace Stateflows.Common.Extensions
         }
 
         [DebuggerHidden]
-        public static async Task<bool> RunProtected<T>(this IEnumerable<T> enumerable, PredicateAsync<T> action, Action<Exception> exceptionHandler, bool defaultResult = true)
+        public static bool RunProtected<T>(this IEnumerable<T> enumerable, Predicate<T> action, Action<Exception> exceptionHandler, bool defaultResult = true)
             where T : class
         {
             var result = defaultResult;
@@ -35,7 +35,7 @@ namespace Stateflows.Common.Extensions
             {
                 try
                 {
-                    if (!await action(item))
+                    if (!action(item))
                     {
                         result = false;
                     }
@@ -50,7 +50,7 @@ namespace Stateflows.Common.Extensions
         }
 
         [DebuggerHidden]
-        public static Task RunSafe<T>(this IEnumerable<T> enumerable, ActionAsync<T> action, string methodName, ILogger logger)
+        public static void RunSafe<T>(this IEnumerable<T> enumerable, Action<T> action, string methodName, ILogger logger)
             where T : class
             => enumerable.RunProtected<T>(
                 action,
@@ -58,7 +58,7 @@ namespace Stateflows.Common.Extensions
             );
 
         [DebuggerHidden]
-        public static Task<bool> RunSafe<T>(this IEnumerable<T> enumerable, PredicateAsync<T> action, string methodName, ILogger logger, bool defaultResult = true)
+        public static bool RunSafe<T>(this IEnumerable<T> enumerable, Predicate<T> action, string methodName, ILogger logger, bool defaultResult = true)
             where T : class
             => enumerable.RunProtected<T>(
                 action,

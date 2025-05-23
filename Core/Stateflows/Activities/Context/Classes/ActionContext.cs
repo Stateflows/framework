@@ -1,15 +1,13 @@
 ﻿using System.Linq;
 using System.Collections.Generic;
-using Stateflows.Common;
 using Stateflows.Utils;
 using Stateflows.Activities.Models;
 using Stateflows.Activities.Engine;
 using Stateflows.Activities.Context.Interfaces;
-using Stateflows.Activities.Inspection.Interfaces;
 
 namespace Stateflows.Activities.Context.Classes
 {
-    internal class ActionContext : ActivityNodeContext, IActionContext<object>, IActivityNodeInspectionContext
+    internal class ActionContext : ActivityNodeContext, IActionContext<object>, IRootContext
     {
         public ActionContext(RootContext context, NodeScope nodeScope, Node node, IEnumerable<TokenHolder> inputTokens, IEnumerable<TokenHolder> selectionTokens = null)
             : base(context, nodeScope, node)

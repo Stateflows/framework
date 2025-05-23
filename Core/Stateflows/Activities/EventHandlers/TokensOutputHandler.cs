@@ -2,7 +2,7 @@
 using System.Threading.Tasks;
 using Stateflows.Common;
 using Stateflows.Activities.Extensions;
-using Stateflows.Activities.Inspection.Interfaces;
+using Stateflows.Activities.Context.Interfaces;
 
 namespace Stateflows.Activities.EventHandlers
 {
@@ -10,11 +10,11 @@ namespace Stateflows.Activities.EventHandlers
     {
         public Type EventType => typeof(TokensOutputRequest);
 
-        public Task<EventStatus> TryHandleEventAsync<TEvent>(IEventInspectionContext<TEvent> context)
+        public Task<EventStatus> TryHandleEventAsync<TEvent>(IEventContext<TEvent> context)
         {
             if (context.Event is TokensOutputRequest request)
             {
-                var result = context.Activity.GetExecutor().Context.ActivityOutputTokens;
+                var result = context.Behavior.GetExecutor().Context.ActivityOutputTokens;
 
                 request.Respond(new TokensOutput() { Tokens = result });
                 

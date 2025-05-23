@@ -51,7 +51,7 @@ namespace StateMachine.IntegrationTests.Tests
         //    {
         //        status = (await sm.SendAsync(new SomeEvent())).Status;
 
-        //        currentState = (await sm.GetCurrentStateAsync()).Response?.StatesTree.Value;
+        //        currentState = (await sm.GetStatusAsync()).Response?.StatesTree.Value;
         //    }
 
         //    Assert.AreEqual(EventStatus.NotConsumed, status);
@@ -69,7 +69,7 @@ namespace StateMachine.IntegrationTests.Tests
             {
                 initialized = (await sm.SendAsync(new Initialize())).Status == EventStatus.Initialized;
 
-                currentState = (await sm.GetCurrentStateAsync()).Response.StatesTree.Value;
+                currentState = (await sm.GetStatusAsync()).Response.CurrentStates.Value;
 
                 finalized = (await sm.GetStatusAsync())?.Response.BehaviorStatus == BehaviorStatus.Finalized;
             }
@@ -87,18 +87,24 @@ namespace StateMachine.IntegrationTests.Tests
         {
             var initialized = false;
             string currentState = string.Empty;
+            BehaviorStatus status = BehaviorStatus.Unknown;
 
             if (StateMachineLocator.TryLocateStateMachine(new StateMachineId("cascade", "x"), out var sm))
             {
                 initialized = (await sm.SendAsync(new Initialize())).Status == EventStatus.Initialized;
 
-                currentState = (await sm.GetCurrentStateAsync()).Response.StatesTree.Root.Nodes.First().Value ?? string.Empty;
+                var result = await sm.GetStatusAsync();
+
+                status = result.Response.BehaviorStatus;
+                
+                currentState = result.Response.CurrentStates.Root.Nodes.First().Value ?? string.Empty;
             }
 
             ExecutionSequence.Verify(b => b
                 .StateFinalize("state1")
             );
             Assert.IsTrue(initialized);
+            Assert.AreEqual(BehaviorStatus.Initialized, status);
             Assert.AreEqual("state1-final", currentState);
         }
     }

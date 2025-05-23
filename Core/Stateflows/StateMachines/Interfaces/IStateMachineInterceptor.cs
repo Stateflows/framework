@@ -1,16 +1,15 @@
-﻿using System.Threading.Tasks;
-using Stateflows.StateMachines.Context.Interfaces;
+﻿using Stateflows.Common;
 
 namespace Stateflows.StateMachines
 {
     public interface IStateMachineInterceptor
     {
-        Task AfterHydrateAsync(IStateMachineActionContext context);
+        void AfterHydrate(IStateMachineActionContext context);
 
-        Task BeforeDehydrateAsync(IStateMachineActionContext context);
+        void BeforeDehydrate(IStateMachineActionContext context);
 
-        Task<bool> BeforeProcessEventAsync<TEvent>(IEventActionContext<TEvent> context);
+        bool BeforeProcessEvent<TEvent>(IEventContext<TEvent> context);
 
-        Task AfterProcessEventAsync<TEvent>(IEventActionContext<TEvent> context);
+        void AfterProcessEvent<TEvent>(IEventContext<TEvent> context, EventStatus eventStatus);
     }
 }

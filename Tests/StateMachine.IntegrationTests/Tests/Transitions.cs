@@ -1,4 +1,5 @@
 using Stateflows.Common;
+using StateMachine.IntegrationTests.Classes.Events;
 using StateMachine.IntegrationTests.Utils;
 
 namespace StateMachine.IntegrationTests.Tests
@@ -26,18 +27,32 @@ namespace StateMachine.IntegrationTests.Tests
                         .AddInitialState("state1", b => b
                             .AddOnExit(c => StateExited = true)
                             .AddTransition<SomeEvent>("state2", b => b
-                                .AddEffect(c => TransitionHappened = !c.StateMachine.CurrentState.HasValue)
+                                .AddEffect(c => TransitionHappened = !c.CurrentStates.HasValue)
                             )
                         )
                         .AddState("state2", b => b
                             .AddOnEntry(c => StateEntered = c.ExecutionSteps.LastOrDefault()?.SourceName == "state1")
                         )
                     )
+                    
+                    // .AddStateMachine("polymorphic", b => b
+                    //     .AddInitialState("state1", b => b
+                    //         .AddOnExit(c => StateExited = true)
+                    //         .AddTransition<SomeEvent>("state2", b => b
+                    //             .SetPolymorphicTriggers(true)
+                    //             .AddEffect(c => TransitionHappened = !c.CurrentState.HasValue)
+                    //         )
+                    //     )
+                    //     .AddState("state2", b => b
+                    //         .AddOnEntry(c => StateEntered = c.ExecutionSteps.LastOrDefault()?.SourceName == "state1")
+                    //     )
+                    // )
 
                     .AddStateMachine("guarded", b => b
                         .AddInitialState("state1", b => b
                             .AddTransition<OtherEvent>("state2", b => b
                                 .AddGuard(c => c.Event.AnswerToLifeUniverseAndEverything == 42)
+                                .AddGuard(Guards.Source.Namespace("x").Value("x").IsSet)
                             )
                         )
                         .AddState("state2")
@@ -107,6 +122,18 @@ namespace StateMachine.IntegrationTests.Tests
                             )
                         )
                     )
+                
+                    .AddStateMachine("parentToChildDefault", b => b
+                        .AddExecutionSequenceObserver()
+                        .AddInitialCompositeState("parent", b => b
+                            .AddDefaultTransition("child", b => b
+                                .AddNegatedGuard(Guards.Global.Value("counter").IsEqualTo(10))
+                            )
+                            .AddState("child", b => b
+                                .AddOnEntry(Effects.Global.Value("counter").Update(c => c + 1, 0))
+                            )
+                        )
+                    )
                 )
                 ;
         }
@@ -120,11 +147,11 @@ namespace StateMachine.IntegrationTests.Tests
 
             if (StateMachineLocator.TryLocateStateMachine(new StateMachineId("simple", "x"), out var sm))
             {
-                expectedEvents = (await sm.GetCurrentStateAsync()).Response.ExpectedEvents.ToArray();
+                expectedEvents = (await sm.GetStatusAsync()).Response.ExpectedEvents.ToArray();
                 
                 status = (await sm.SendAsync(new SomeEvent())).Status;
 
-                currentState = (await sm.GetCurrentStateAsync()).Response.StatesTree.Value;
+                currentState = (await sm.GetStatusAsync()).Response.CurrentStates.Value;
             }
 
             Assert.IsTrue(expectedEvents.Contains(Event<SomeEvent>.Name));
@@ -136,6 +163,31 @@ namespace StateMachine.IntegrationTests.Tests
             Assert.AreEqual("state2", currentState);
         }
 
+        // [TestMethod]
+        // public async Task InheritedTransition()
+        // {
+        //     var status = EventStatus.Rejected;
+        //     string currentState = "state1";
+        //     string[] expectedEvents = Array.Empty<string>();
+        //
+        //     if (StateMachineLocator.TryLocateStateMachine(new StateMachineId("polymorphic", "x"), out var sm))
+        //     {
+        //         expectedEvents = (await sm.GetStatusAsync()).Response.ExpectedEvents.ToArray();
+        //         
+        //         status = (await sm.SendAsync(new SomeInheritedEvent())).Status;
+        //
+        //         currentState = (await sm.GetStatusAsync()).Response.StatesTree.Value;
+        //     }
+        //
+        //     Assert.IsTrue(expectedEvents.Contains(Event<SomeEvent>.Name));
+        //     Assert.AreEqual(1, expectedEvents.Count());
+        //     Assert.AreEqual(EventStatus.Consumed, status);
+        //     Assert.IsTrue(StateExited);
+        //     Assert.IsTrue(TransitionHappened);
+        //     Assert.IsTrue(StateEntered);
+        //     Assert.AreEqual("state2", currentState);
+        // }
+
         [TestMethod]
         public async Task GuardedTransition()
         {
@@ -146,7 +198,7 @@ namespace StateMachine.IntegrationTests.Tests
             {
                 status = (await sm.SendAsync(new OtherEvent() { AnswerToLifeUniverseAndEverything = 43 })).Status;
 
-                currentState = (await sm.GetCurrentStateAsync()).Response.StatesTree.Value;
+                currentState = (await sm.GetStatusAsync()).Response.CurrentStates.Value;
             }
 
             Assert.AreEqual(EventStatus.NotConsumed, status);
@@ -165,7 +217,7 @@ namespace StateMachine.IntegrationTests.Tests
             {
                 status = (await sm.SendAsync(new OtherEvent() { AnswerToLifeUniverseAndEverything = 43 })).Status;
 
-                currentState = (await sm.GetCurrentStateAsync()).Response.StatesTree.Value;
+                currentState = (await sm.GetStatusAsync()).Response.CurrentStates.Value;
             }
 
             Assert.AreEqual(EventStatus.NotConsumed, status);
@@ -184,7 +236,7 @@ namespace StateMachine.IntegrationTests.Tests
             {
                 status = (await sm.SendAsync(new OtherEvent() { AnswerToLifeUniverseAndEverything = 43 })).Status;
 
-                currentState = (await sm.GetCurrentStateAsync()).Response.StatesTree.Value;
+                currentState = (await sm.GetStatusAsync()).Response.CurrentStates.Value;
             }
 
             Assert.AreEqual(EventStatus.NotConsumed, status);
@@ -203,7 +255,7 @@ namespace StateMachine.IntegrationTests.Tests
             {
                 status = (await sm.SendAsync(new OtherEvent() { AnswerToLifeUniverseAndEverything = 42, RequiredParameter = string.Empty })).Status;
 
-                currentState = (await sm.GetCurrentStateAsync()).Response.StatesTree.Value;
+                currentState = (await sm.GetStatusAsync()).Response.CurrentStates.Value;
             }
 
             Assert.AreEqual(EventStatus.Invalid, status);
@@ -222,7 +274,7 @@ namespace StateMachine.IntegrationTests.Tests
             {
                 status = (await sm.SendAsync(new SomeEvent())).Status;
 
-                currentState = (await sm.GetCurrentStateAsync()).Response.StatesTree.Value;
+                currentState = (await sm.GetStatusAsync()).Response.CurrentStates.Value;
             }
 
             Assert.AreEqual(EventStatus.Consumed, status);
@@ -239,7 +291,7 @@ namespace StateMachine.IntegrationTests.Tests
             {
                 status = (await sm.SendAsync(new SomeEvent())).Status;
 
-                currentState = (await sm.GetCurrentStateAsync()).Response.StatesTree.Value;
+                currentState = (await sm.GetStatusAsync()).Response.CurrentStates.Value;
             }
 
             ExecutionSequence.Verify(b => b
@@ -261,7 +313,7 @@ namespace StateMachine.IntegrationTests.Tests
             {
                 status = (await sm.SendAsync(new SomeEvent())).Status;
 
-                currentState = (await sm.GetCurrentStateAsync()).Response.StatesTree.Value;
+                currentState = (await sm.GetStatusAsync()).Response.CurrentStates.Value;
             }
 
             ExecutionSequence.Verify(b => b
@@ -271,6 +323,23 @@ namespace StateMachine.IntegrationTests.Tests
             Assert.IsTrue(TransitionHappened);
             Assert.IsTrue(StateExited);
             Assert.AreEqual("state1", currentState);
+        }
+
+        [TestMethod]
+        public async Task ParentToChildDefaultTransition()
+        {
+            if (StateMachineLocator.TryLocateStateMachine(new StateMachineId("parentToChildDefault", "x"), out var sm))
+            {
+                await sm.SendAsync(new Initialize());
+            }
+            
+            
+            ExecutionSequence.Verify(b => b
+                .StateMachineInitialize()
+                .StateEntry("parent")
+                .DefaultTransitionEffect("parent", "child")
+                .StateEntry("child")
+            );
         }
     }
 }

@@ -2,7 +2,7 @@
 
 namespace Stateflows.Common.Attributes
 {
-    [Obsolete("ValueSetNameAttribute is obsolete, use GlobalValueSetAttribute, StateValueSetAttribute, SourceStateValueSetAttribute or TargetStateValueSetAttribute with IValue<T> or target type directly instead.")]
+    [Obsolete("ValueSetNameAttribute is obsolete, use GlobalNamespaceAttribute, StateNamespaceAttribute, SourceStateNamespaceAttribute or TargetStateNamespaceAttribute with INamespace<T> instead.")]
     [AttributeUsage(AttributeTargets.Parameter, AllowMultiple = false)]
     public sealed class ValueSetNameAttribute : Attribute
     {

@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Threading.Tasks;
 using Stateflows.Common;
-using Stateflows.StateMachines.Inspection.Interfaces;
+using Stateflows.StateMachines.Context.Interfaces;
 
 namespace Stateflows.StateMachines.EventHandlers
 {
@@ -9,7 +9,7 @@ namespace Stateflows.StateMachines.EventHandlers
     {
         public Type EventType => typeof(Initialize);
 
-        public Task<EventStatus> TryHandleEventAsync<TEvent>(IEventInspectionContext<TEvent> context)
+        public Task<EventStatus> TryHandleEventAsync<TEvent>(IEventContext<TEvent> context)
             => Task.FromResult(
                 context.Event is Initialize
                     ? EventStatus.NotInitialized

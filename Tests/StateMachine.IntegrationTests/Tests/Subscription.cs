@@ -1,4 +1,5 @@
 using Stateflows.Common;
+using StateMachine.IntegrationTests.Classes.Events;
 using StateMachine.IntegrationTests.Utils;
 
 namespace StateMachine.IntegrationTests.Tests
@@ -22,12 +23,12 @@ namespace StateMachine.IntegrationTests.Tests
                         .AddExecutionSequenceObserver()
                         .AddInitialState("state1", b => b
                             //.AddDeferredEvent<OtherEvent>()
-                            .AddOnEntry(c => c.StateMachine.SubscribeAsync<SomeNotification>(new StateMachineId("subscribee", c.StateMachine.Id.Instance)))
+                            .AddOnEntry(c => c.Behavior.SubscribeAsync<SomeNotification>(new StateMachineId("subscribee", c.Behavior.Id.Instance)))
                             .AddTransition<SomeNotification>("state2")
                         )
                         .AddState("state2", b => b
                             .AddInternalTransition<OtherEvent>(b => b
-                                .AddEffect(c => c.StateMachine.UnsubscribeAsync<SomeNotification>(new StateMachineId("subscribee", c.StateMachine.Id.Instance)))
+                                .AddEffect(c => c.Behavior.UnsubscribeAsync<SomeNotification>(new StateMachineId("subscribee", c.Behavior.Id.Instance)))
                             )
                             .AddTransition<SomeNotification>("state3")
                         )
@@ -37,7 +38,7 @@ namespace StateMachine.IntegrationTests.Tests
                     .AddStateMachine("subscribee", b => b
                         .AddInitialState("state1", b => b
                             .AddInternalTransition<OtherEvent>(b => b
-                                .AddEffect(c => c.StateMachine.Publish(new SomeNotification()))
+                                .AddEffect(c => c.Behavior.Publish(new SomeNotification()))
                             )
                         )
                     )
@@ -63,7 +64,7 @@ namespace StateMachine.IntegrationTests.Tests
 
                 await Task.Delay(100);
 
-                currentState = (await subscriber.GetCurrentStateAsync()).Response?.StatesTree.Value;
+                currentState = (await subscriber.GetStatusAsync()).Response?.CurrentStates.Value;
             }
 
             Assert.AreEqual("state2", currentState);
@@ -86,7 +87,7 @@ namespace StateMachine.IntegrationTests.Tests
 
                 await subscribee.SendAsync(new OtherEvent());
 
-                await subscribee.GetCurrentStateAsync();
+                await subscribee.GetStatusAsync();
             }
 
             lock (StateMachineLocator)
@@ -105,7 +106,7 @@ namespace StateMachine.IntegrationTests.Tests
             {
                 await subscribee.SendAsync(new Initialize());
                 
-                _ = subscribee.WatchCurrentStateAsync(n => currentState = n.StatesTree.Value);
+                _ = subscribee.WatchStatusAsync(n => currentState = n.CurrentStates.Value);
 
                 _ = subscribee.WatchStatusAsync(n => currentStatus = n.BehaviorStatus);
             }

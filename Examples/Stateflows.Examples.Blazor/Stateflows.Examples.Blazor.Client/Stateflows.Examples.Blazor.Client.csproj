@@ -1,0 +1,30 @@
+<Project Sdk="Microsoft.NET.Sdk.BlazorWebAssembly">
+
+    <PropertyGroup>
+        <TargetFramework>net9.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+        <NoDefaultLaunchSettingsFile>true</NoDefaultLaunchSettingsFile>
+        <StaticWebAssetProjectMode>Default</StaticWebAssetProjectMode>
+        <LangVersion>13</LangVersion>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly" Version="9.0.4" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\..\..\Core\Stateflows.Common\Stateflows.Common.csproj" />
+      <ProjectReference Include="..\..\..\Extensions\Stateflows.Extensions.OpenTelemetry\Stateflows.Extensions.OpenTelemetry.csproj" />
+      <ProjectReference Include="..\..\..\Extensions\Stateflows.Extensions.PlantUml\Stateflows.Extensions.PlantUml.csproj" />
+      <ProjectReference Include="..\..\..\Transport\Stateflows.Transport.Http.Client\Stateflows.Transport.Http.Client.csproj" />
+      <ProjectReference Include="..\..\Stateflows.Examples.Common\Stateflows.Examples.Common.csproj" />
+    </ItemGroup>
+
+    <Target Name="AllowUsingAspNetCoreInBlazorWasm" AfterTargets="ProcessFrameworkReferences" >
+        <ItemGroup>
+            <UnavailableRuntimePack Remove="Microsoft.AspNetCore.App" />
+        </ItemGroup>
+    </Target>
+
+</Project>

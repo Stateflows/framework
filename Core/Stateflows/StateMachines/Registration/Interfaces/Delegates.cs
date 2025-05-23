@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Threading.Tasks;
-using Stateflows.Common;
 using Stateflows.StateMachines.Context.Interfaces;
 
 namespace Stateflows.StateMachines.Registration.Interfaces
@@ -44,18 +43,32 @@ namespace Stateflows.StateMachines.Registration.Interfaces
     public delegate void OverridenRegionBuildAction(IOverridenRegionBuilder builder);
 
     public delegate void TransitionBuildAction<TEvent>(ITransitionBuilder<TEvent> builder);
+    
+    public delegate void OverridenTransitionBuildAction<TEvent>(IOverridenTransitionBuilder<TEvent> builder);
 
     public delegate void InternalTransitionBuildAction<TEvent>(IInternalTransitionBuilder<TEvent> builder);
 
+    public delegate void OverridenInternalTransitionBuildAction<TEvent>(IOverridenInternalTransitionBuilder<TEvent> builder);
+
     public delegate void DefaultTransitionBuildAction(IDefaultTransitionBuilder builder);
+    
+    public delegate void OverridenDefaultTransitionBuildAction(IOverridenDefaultTransitionBuilder builder);
 
     public delegate void DefaultTransitionEffectBuildAction(IDefaultTransitionEffectBuilder builder);
+    
+    public delegate void OverridenDefaultTransitionEffectBuildAction(IOverridenDefaultTransitionEffectBuilder builder);
 
     public delegate void ElseTransitionBuildAction<TEvent>(IElseTransitionBuilder<TEvent> builder);
 
+    public delegate void OverridenElseTransitionBuildAction<TEvent>(IElseTransitionBuilder<TEvent> builder);
+
     public delegate void ElseInternalTransitionBuildAction<TEvent>(IElseInternalTransitionBuilder<TEvent> builder);
 
+    public delegate void OverridenElseInternalTransitionBuildAction<TEvent>(IElseInternalTransitionBuilder<TEvent> builder);
+
     public delegate void ElseDefaultTransitionBuildAction(IElseDefaultTransitionBuilder builder);
+
+    public delegate void OverridenElseDefaultTransitionBuildAction(IElseDefaultTransitionBuilder builder);
 
     public delegate void EmbeddedBehaviorBuildAction(IEmbeddedBehaviorBuilder builder);
 
@@ -69,8 +82,6 @@ namespace Stateflows.StateMachines.Registration.Interfaces
 
     public delegate IStateMachineExceptionHandler StateMachineExceptionHandlerFactory(IServiceProvider serviceProvider);
     public delegate Task<IStateMachineExceptionHandler> StateMachineExceptionHandlerFactoryAsync(IServiceProvider serviceProvider);
-
-    public delegate object StateActionInitializationBuilder(IStateActionContext context);
     
-    public delegate Task<object> StateActionInitializationBuilderAsync(IStateActionContext context);
+    public delegate object StateActionInitializationBuilder(IStateActionContext context);
 }

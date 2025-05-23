@@ -8,7 +8,7 @@ namespace Stateflows.Common
         protected RequestResult() : base() { }
 
         public RequestResult(EventHolder request, EventStatus status, EventValidation validation = null)
-            : base(request, status, validation)
+            : base(status, validation)
         {
             var holder = request.GetResponseHolder();
             ResponseHolder = (EventHolder<TResponse>)holder;
@@ -23,8 +23,8 @@ namespace Stateflows.Common
 
     public class RequestResult : SendResult
     {
-        public RequestResult(EventHolder request, EventHolder response, EventStatus status, EventValidation validation = null)
-            : base(request, status, validation)
+        public RequestResult(EventHolder response, EventStatus status, EventValidation validation = null)
+            : base(status, validation)
         {
             Response = response;
         }

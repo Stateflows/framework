@@ -1,10 +1,9 @@
 ﻿using System.Linq;
 using System.Collections.Generic;
-using Stateflows.Utils;
 using Stateflows.Common;
+using Stateflows.Common.Context.Interfaces;
 using Stateflows.Activities.Engine;
 using Stateflows.Activities.Context.Interfaces;
-using Stateflows.Activities.Inspection.Interfaces;
 
 namespace Stateflows.Activities.Context.Classes
 {
@@ -26,7 +25,7 @@ namespace Stateflows.Activities.Context.Classes
 
     internal class ActivityInitializationContext :
         BaseContext,
-        IActivityInitializationInspectionContext,
+        IActivityInitializationContext,
         IRootContext
     {
         public ActivityInitializationContext(RootContext context, NodeScope nodeScope, List<TokenHolder> inputTokens)
@@ -35,9 +34,9 @@ namespace Stateflows.Activities.Context.Classes
             InputTokens = inputTokens ?? new List<TokenHolder>();
         }
 
-        IActivityInspectionContext IActivityInitializationInspectionContext.Activity => Activity;
-
         IActivityContext IActivityActionContext.Activity => Activity;
+        
+        IBehaviorContext IBehaviorActionContext.Behavior => Activity;
 
         public List<TokenHolder> InputTokens;
 

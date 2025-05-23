@@ -24,7 +24,7 @@ namespace Stateflows.StateMachines
         public Func<IStateMachineActionContext, Task> Set<T>(T value)
         {
             var self = this;
-            return c => c.StateMachine.Values.SetAsync(self.ValueName, value);
+            return c => c.Behavior.Values.SetAsync(self.ValueName, value);
         }
 
         /// <summary>
@@ -37,7 +37,7 @@ namespace Stateflows.StateMachines
         public Func<IStateMachineActionContext, Task> Update<T>(Func<T, T> valueUpdater, T defaultValue = default)
         {
             var self = this;
-            return c => c.StateMachine.Values.UpdateAsync(self.ValueName, valueUpdater, defaultValue);
+            return c => c.Behavior.Values.UpdateAsync(self.ValueName, valueUpdater, defaultValue);
         }
 
         /// <summary>
@@ -49,18 +49,18 @@ namespace Stateflows.StateMachines
             get
             {
                 var self = this;
-                return c => c.StateMachine.Values.RemoveAsync(self.ValueName);
+                return c => c.Behavior.Values.RemoveAsync(self.ValueName);
             }
         }
     }
 
-    public struct StateActionGlobalValueSetExpression
+    public struct StateActionGlobalNamespaceExpression
     {
-        private readonly string ValueSetName;
+        private readonly string NamespaceName;
 
-        public StateActionGlobalValueSetExpression(string valueSetName)
+        public StateActionGlobalNamespaceExpression(string namespaceName)
         {
-            ValueSetName = valueSetName;
+            NamespaceName = namespaceName;
         }
 
         /// <summary>
@@ -71,7 +71,7 @@ namespace Stateflows.StateMachines
         public StateActionGlobalValueExpression Value(string valueName)
         {
             var self = this;
-            return new StateActionGlobalValueExpression($"{self.ValueSetName}.{valueName}");
+            return new StateActionGlobalValueExpression($"{self.NamespaceName}.{valueName}");
         }
 
         /// <summary>
@@ -84,8 +84,8 @@ namespace Stateflows.StateMachines
             {
                 var self = this;
                 return c =>
-                    ((ContextValuesCollection)c.StateMachine.Values).RemoveMatchingAsync(
-                        new Regex($"{self.ValueSetName}[.](.*)"));
+                    ((ContextValuesCollection)c.Behavior.Values).RemoveMatchingAsync(
+                        new Regex($"{self.NamespaceName}[.](.*)", RegexOptions.None, TimeSpan.FromSeconds(1)));
             }
         }
     }
@@ -108,7 +108,7 @@ namespace Stateflows.StateMachines
         public Func<IStateActionContext, Task> Set<T>(T value)
         {
             var self = this;
-            return c => c.CurrentState.Values.SetAsync(self.ValueName, value);
+            return c => c.State.Values.SetAsync(self.ValueName, value);
         }
 
         /// <summary>
@@ -121,7 +121,7 @@ namespace Stateflows.StateMachines
         public Func<IStateActionContext, Task> Update<T>(Func<T, T> valueUpdater, T defaultValue = default)
         {
             var self = this;
-            return c => c.CurrentState.Values.UpdateAsync(self.ValueName, valueUpdater, defaultValue);
+            return c => c.State.Values.UpdateAsync(self.ValueName, valueUpdater, defaultValue);
         }
 
         /// <summary>
@@ -133,18 +133,18 @@ namespace Stateflows.StateMachines
             get
             {
                 var self = this;
-                return c => c.CurrentState.Values.RemoveAsync(self.ValueName);
+                return c => c.State.Values.RemoveAsync(self.ValueName);
             }
         }
     }
 
-    public struct StateActionStateValueSetExpression
+    public struct StateActionStateNamespaceExpression
     {
-        private readonly string ValueSetName;
+        private readonly string NamespaceName;
 
-        public StateActionStateValueSetExpression(string valueSetName)
+        public StateActionStateNamespaceExpression(string namespaceName)
         {
-            ValueSetName = valueSetName;
+            NamespaceName = namespaceName;
         }
 
         /// <summary>
@@ -156,7 +156,7 @@ namespace Stateflows.StateMachines
         public Func<IStateActionContext, Task> Set<T>(string valueName, T value)
         {
             var self = this;
-            return c => c.CurrentState.Values.SetAsync($"{self.ValueSetName}.{valueName}", value);
+            return c => c.State.Values.SetAsync($"{self.NamespaceName}.{valueName}", value);
         }
 
         /// <summary>
@@ -169,7 +169,7 @@ namespace Stateflows.StateMachines
         public Func<IStateActionContext, Task> Update<T>(string valueName, Func<T, T> valueUpdater, T defaultValue = default)
         {
             var self = this;
-            return c => c.CurrentState.Values.UpdateAsync($"{self.ValueSetName}.{valueName}", valueUpdater, defaultValue);
+            return c => c.State.Values.UpdateAsync($"{self.NamespaceName}.{valueName}", valueUpdater, defaultValue);
         }
 
         /// <summary>
@@ -179,7 +179,7 @@ namespace Stateflows.StateMachines
         public Func<IStateActionContext, Task> Remove(string valueName)
         {
             var self = this;
-            return c => c.CurrentState.Values.RemoveAsync($"{self.ValueSetName}.{valueName}");
+            return c => c.State.Values.RemoveAsync($"{self.NamespaceName}.{valueName}");
         }
 
         /// <summary>
@@ -191,8 +191,8 @@ namespace Stateflows.StateMachines
             get
             {
                 var self = this;
-                return c => ((ContextValuesCollection)c.CurrentState.Values).RemoveMatchingAsync(
-                    new Regex($"{self.ValueSetName}[.](.*)")
+                return c => ((ContextValuesCollection)c.State.Values).RemoveMatchingAsync(
+                    new Regex($"{self.NamespaceName}[.](.*)", RegexOptions.None, TimeSpan.FromSeconds(1))
                 );
             }
         }
@@ -212,10 +212,10 @@ namespace Stateflows.StateMachines
         /// <summary>
         /// Provides declarative guards based on the global value set with given name.
         /// </summary>
-        /// <param name="valueSetName">Name of the global value set used in guard.</param>
+        /// <param name="namespaceName">Name of the global value set used in guard.</param>
         /// <returns>Declarative guards.</returns>
-        public StateActionGlobalValueSetExpression ValueSet(string valueSetName)
-            => new StateActionGlobalValueSetExpression(valueSetName);
+        public StateActionGlobalNamespaceExpression Namespace(string namespaceName)
+            => new StateActionGlobalNamespaceExpression(namespaceName);
     }
 
     public struct StateActionStateSelector
@@ -234,12 +234,12 @@ namespace Stateflows.StateMachines
         /// <summary>
         /// Provides declarative guards based on the state's value set with given name.
         /// </summary>
-        /// <param name="valueSetName">Name of the state's value set used in guard.</param>
+        /// <param name="namespaceName">Name of the state's value set used in guard.</param>
         /// <returns>Declarative guards.</returns>
-        public StateActionStateValueSetExpression ValueSet(string valueSetName)
+        public StateActionStateNamespaceExpression Namespace(string namespaceName)
         {
             var self = this;
-            return new StateActionStateValueSetExpression(valueSetName);
+            return new StateActionStateNamespaceExpression(namespaceName);
         }
     }
     

@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using Microsoft.Extensions.DependencyInjection;
 using Stateflows.Common;
 using Stateflows.Common.Context;
@@ -16,6 +17,8 @@ namespace Stateflows.StateMachines.Context.Classes
         public RootContext Context { get; }
 
         public object ExecutionTrigger => Context.ExecutionTriggerHolder.BoxedPayload;
+        public Guid ExecutionTriggerId => Context.ExecutionTriggerHolder.Id;
+        public virtual IEnumerable<EventHeader> Headers => Context.ExecutionTriggerHolder.Headers;
 
         public IEnumerable<IExecutionStep> ExecutionSteps => Context.ExecutionSteps;
 

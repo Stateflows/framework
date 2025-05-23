@@ -11,11 +11,14 @@ namespace Stateflows.Activities.Registration.Interfaces
 
     public delegate Task<bool> GuardDelegateAsync(IGuardContext context);
 
-    public delegate Task<TTargetToken> TransformationDelegateAsync<in TSourceToken, TTargetToken>(ITransformationContext<TSourceToken> context);
+    public delegate Task<TTransformedToken> TransformationDelegateAsync<in TToken, TTransformedToken>(ITransformationContext<TToken> context);
 
     public delegate Task ActionDelegateAsync(Context.Interfaces.IActionContext context);
 
     public delegate Task ExceptionHandlerDelegateAsync<in TException>(IExceptionHandlerContext<TException> context)
+        where TException : Exception;
+    
+    public delegate void ExceptionHandlerDelegate<in TException>(IExceptionHandlerContext<TException> context)
         where TException : Exception;
 
     public delegate Task<TEvent> SendEventActionDelegateAsync<TEvent>(Context.Interfaces.IActionContext context)

@@ -11,20 +11,19 @@ namespace Stateflows.Actions
         IActionsBuilder AddFromAssemblies(IEnumerable<Assembly> assemblies);
         [Obsolete("AddFromLoadedAssemblies() is deprecated, use AddFromAssembly(), AddFromAssemblies() or AddAction() instead.")]
         IActionsBuilder AddFromLoadedAssemblies();
-        IActionsBuilder AddAction(string actionName, ActionDelegateAsync actionDelegate);
-        IActionsBuilder AddAction(string actionName, int version, ActionDelegateAsync actionDelegate);
-        IActionsBuilder AddAction<TAction>(string actionName = null, int version = 1)
+        IActionsBuilder AddAction(string actionName, ActionDelegateAsync actionDelegate, bool reentrant = true);
+        IActionsBuilder AddAction(string actionName, int version, ActionDelegateAsync actionDelegate, bool reentrant = true);
+        IActionsBuilder AddAction<TAction>(string actionName = null, int version = 1, bool reentrant = true)
             where TAction : class, IAction;
-        IActionsBuilder AddAction<TAction>(int version)
+        IActionsBuilder AddAction<TAction>(int version, bool reentrant = true)
             where TAction : class, IAction;
-        // IActionsBuilder AddInterceptor<TInterceptor>()
-        //     where TInterceptor : class, IActionInterceptor;
-        // IActionsBuilder AddInterceptor(ActionInterceptorFactory interceptorFactory);
-        // IActionsBuilder AddExceptionHandler<TExceptionHandler>()
-        //     where TExceptionHandler : class, IActionExceptionHandler;
-        // IActionsBuilder AddExceptionHandler(ActionExceptionHandlerFactory exceptionHandlerFactory);
-        // IActionsBuilder AddObserver<TObserver>()
-        //     where TObserver : class, IActionObserver;
-        // IActionsBuilder AddObserver(ActionObserverFactory observerFactory);
+        IActionsBuilder AddAction<TAction>(bool reentrant)
+            where TAction : class, IAction;
+        IActionsBuilder AddInterceptor<TInterceptor>()
+            where TInterceptor : class, IActionInterceptor;
+        IActionsBuilder AddInterceptor(ActionInterceptorFactoryAsync interceptorFactoryAsync);
+        IActionsBuilder AddExceptionHandler<TExceptionHandler>()
+            where TExceptionHandler : class, IActionExceptionHandler;
+        IActionsBuilder AddExceptionHandler(ActionExceptionHandlerFactoryAsync exceptionHandlerFactoryAsync);
     }
 }

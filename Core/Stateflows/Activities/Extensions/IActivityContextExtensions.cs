@@ -1,23 +1,26 @@
-﻿using System;
-using Stateflows.Activities.Engine;
+﻿using Stateflows.Activities.Engine;
 using Stateflows.Activities.Models;
 using Stateflows.Activities.Context.Classes;
 using Stateflows.Activities.Context.Interfaces;
+using Stateflows.Common;
 
 namespace Stateflows.Activities.Extensions
 {
     internal static class IActivityContextExtensions
     {
         public static Executor GetExecutor(this IActivityContext context)
-            => (context as ActivityContext).Context.Executor;
+            => ((ActivityContext)context).Context.Executor;
 
-        public static Node GetNode(this Context.Interfaces.IActionContext context)
-            => (context as ActionContext).Node;
+        public static Node GetNode(this IActionContext context)
+            => ((ActionContext)context).Node;
+        
+        public static Executor GetExecutor(this IBehaviorContext context)
+            => ((ActivityContext)context).Context.Executor;
+        
+        public static RootContext GetContext(this IBehaviorContext context)
+            => ((BaseContext)context).Context;
 
-        public static RootContext GetContext(this IActivityContext context)
-            => (context as BaseContext).Context;
-
-        public static NodeScope GetNodeScope(this IActivityContext context)
-            => (context as BaseContext).NodeScope;
+        public static NodeScope GetNodeScope(this IBehaviorContext context)
+            => ((BaseContext)context).NodeScope;
     }
 }

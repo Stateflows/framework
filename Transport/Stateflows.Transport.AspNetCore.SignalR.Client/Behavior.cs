@@ -42,7 +42,7 @@ namespace Stateflows.Transport.SignalR.Client
 
             var result = StateflowsJsonConverter.DeserializeObject<RequestResult>(resultString);
 
-            return new SendResult(eventHolder, result.Status, result.Validation);
+            return new SendResult(result.Status, result.Validation);
         }
 
         public async Task<RequestResult<TResponse>> RequestAsync<TResponse>(IRequest<TResponse> request, IEnumerable<EventHeader> headers = null)
@@ -58,7 +58,12 @@ namespace Stateflows.Transport.SignalR.Client
 
             var result = StateflowsJsonConverter.DeserializeObject<RequestResult>(resultString);
 
-            return new RequestResult<TResponse>(requestHolder, result.Status, result.Validation);
+            return new RequestResult<TResponse>(
+                requestHolder,
+                result.Status,
+                result.Notifications,
+                result.Validation
+            );
         }
 
         public void Dispose()

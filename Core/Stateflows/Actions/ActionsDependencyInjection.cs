@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Diagnostics;
 using System.Collections.Generic;
+using System.Linq;
 using Microsoft.Extensions.DependencyInjection;
 using Stateflows.Actions.Context;
 using Stateflows.Actions.Engine;
@@ -19,6 +20,18 @@ namespace Stateflows.Actions
     public static class ActionsDependencyInjection
     {
         private static readonly Dictionary<IStateflowsBuilder, ActionsRegister> Registers = new Dictionary<IStateflowsBuilder, ActionsRegister>();
+
+        internal static void Cleanup(IStateflowsBuilder builder)
+        {
+            lock (Registers)
+            {
+                if (Registers.TryGetValue(builder, out var register) && !register.Actions.Any())
+                {
+                    var serviceDescriptor = builder.ServiceCollection.FirstOrDefault(descriptor => descriptor.ServiceType == typeof(IActionsRegister));
+                    builder.ServiceCollection.Remove(serviceDescriptor);
+                }
+            }
+        }
 
         [DebuggerHidden]
         public static IStateflowsBuilder AddActions(this IStateflowsBuilder stateflowsBuilder, ActionsBuildAction buildAction = null)

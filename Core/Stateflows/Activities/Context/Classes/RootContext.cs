@@ -375,17 +375,39 @@ namespace Stateflows.Activities.Context.Classes
         internal Node NodeOfOrigin { get; set; }
 
         internal bool IsNodeCompleted(Node node, NodeScope nodeScope)
-            => nodeScope.IsTerminated ||
-                (nodeScope.ChildScope?.IsTerminated ?? false) ||
+            => nodeScope is { IsTerminated: true } ||
+                nodeScope is { ChildScope: { IsTerminated: true } } ||
                 (
-                    !node.Nodes.Values.Any(node =>
+                    // event nodes without incoming flows ('ever-active')
+                    !node.Nodes.Values.Any(childNode =>
                         (
-                            node.Type == NodeType.AcceptEventAction ||
-                            node.Type == NodeType.TimeEventAction
+                            childNode.Type == NodeType.AcceptEventAction ||
+                            childNode.Type == NodeType.TimeEventAction
                         ) &&
-                        !node.IncomingEdges.Any()
+                        !childNode.IncomingEdges.Any()
                     ) &&
-                    !ActiveNodes.Any()
+                    
+                    // active structured child nodes
+                    !node.Nodes.Values.Any(childNode =>
+                        (
+                            childNode.Type == NodeType.StructuredActivity ||
+                            childNode.Type == NodeType.ParallelActivity ||
+                            childNode.Type == NodeType.IterativeActivity
+                        ) &&
+                        !IsNodeCompleted(childNode, null)
+                    ) &&
+                    
+                    // active event accepting nodes
+                    !node.Nodes.Values.Any(node => ActiveNodes.Keys.Contains(node.Identifier)) &&
+                    
+                    // input node on topmost level
+                    (
+                        (
+                            node is Graph &&
+                            node.InputNode == null
+                        ) ||
+                        !(node is Graph)
+                    )
                 );
 
         public async Task Send<TEvent>(TEvent @event, IEnumerable<EventHeader> headers = null)

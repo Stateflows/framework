@@ -1,3 +1,4 @@
+using StateMachine.IntegrationTests.Classes.Events;
 using StateMachine.IntegrationTests.Classes.StateMachines;
 using StateMachine.IntegrationTests.Classes.States;
 using StateMachine.IntegrationTests.Utils;
@@ -33,7 +34,7 @@ namespace StateMachine.IntegrationTests.Tests
             {
                 await sm.SendAsync(new SomeEvent());
 
-                currentState = (await sm.GetCurrentStateAsync()).Response?.StatesTree?.Value;
+                currentState = (await sm.GetStatusAsync()).Response?.CurrentStates?.Value;
             }
 
             Assert.AreEqual(State<FinalState>.Name, currentState);

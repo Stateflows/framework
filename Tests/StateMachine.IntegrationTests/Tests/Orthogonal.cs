@@ -1,4 +1,5 @@
 ﻿using Stateflows.Common;
+using StateMachine.IntegrationTests.Classes.Events;
 using StateMachine.IntegrationTests.Utils;
 
 namespace StateMachine.IntegrationTests.Tests
@@ -293,7 +294,7 @@ namespace StateMachine.IntegrationTests.Tests
             {
                 status = (await sm.SendAsync(new OtherEvent() { AnswerToLifeUniverseAndEverything = 42 })).Status;
 
-                var tree = (await sm.GetCurrentStateAsync()).Response.StatesTree;
+                var tree = (await sm.GetStatusAsync()).Response.CurrentStates;
                 currentState = tree.Value;
                 substate1 = tree.Root.Nodes.First().Value;
                 substate2 = tree.Root.Nodes.Last().Value;
@@ -316,7 +317,7 @@ namespace StateMachine.IntegrationTests.Tests
             {
                 status = (await sm.SendAsync(new OtherEvent() { AnswerToLifeUniverseAndEverything = 42 })).Status;
 
-                var tree = (await sm.GetCurrentStateAsync()).Response.StatesTree;
+                var tree = (await sm.GetStatusAsync()).Response.CurrentStates;
                 currentState = tree.Value;
                 substate1 = tree.Root.Nodes.First().Value;
                 substate2 = tree.Root.Nodes.Last().Value;
@@ -337,7 +338,7 @@ namespace StateMachine.IntegrationTests.Tests
             {
                 status = (await sm.SendAsync(new OtherEvent() { AnswerToLifeUniverseAndEverything = 42 })).Status;
 
-                var tree = (await sm.GetCurrentStateAsync()).Response.StatesTree;
+                var tree = (await sm.GetStatusAsync()).Response.CurrentStates;
                 currentState = tree.Value;
             }
 
@@ -356,7 +357,7 @@ namespace StateMachine.IntegrationTests.Tests
             {
                 status = (await sm.SendAsync(new OtherEvent() { AnswerToLifeUniverseAndEverything = 42 })).Status;
 
-                var tree = (await sm.GetCurrentStateAsync()).Response.StatesTree;
+                var tree = (await sm.GetStatusAsync()).Response.CurrentStates;
                 currentState = tree.Value;
                 substate1 = tree.Root.Nodes.First().Value;
                 substate2 = tree.Root.Nodes.Last().Value;
@@ -379,7 +380,7 @@ namespace StateMachine.IntegrationTests.Tests
             {
                 status = (await sm.SendAsync(new OtherEvent() { AnswerToLifeUniverseAndEverything = 42 })).Status;
 
-                var tree = (await sm.GetCurrentStateAsync()).Response.StatesTree;
+                var tree = (await sm.GetStatusAsync()).Response.CurrentStates;
                 currentState = tree.Value;
                 substate1 = tree.Root.Nodes.First().Value;
                 substate2 = tree.Root.Nodes.Last().Value;
@@ -403,7 +404,7 @@ namespace StateMachine.IntegrationTests.Tests
                 status = (await sm.SendAsync(new OtherEvent() { AnswerToLifeUniverseAndEverything = 42 })).Status;
                 status = (await sm.SendAsync(new SomeEvent())).Status;
 
-                var tree = (await sm.GetCurrentStateAsync()).Response.StatesTree;
+                var tree = (await sm.GetStatusAsync()).Response.CurrentStates;
                 currentState = tree.Value;
                 substate1 = tree.Root.Nodes.First().Value;
                 substate2 = tree.Root.Nodes.Last().Value;
@@ -427,7 +428,7 @@ namespace StateMachine.IntegrationTests.Tests
             {
                 status = (await sm.SendAsync(new SomeEvent())).Status;
 
-                var tree = (await sm.GetCurrentStateAsync()).Response.StatesTree;
+                var tree = (await sm.GetStatusAsync()).Response.CurrentStates;
                 currentState = tree.Value;
                 var allNodes = tree.GetAllNodes_FromTheTop().ToArray();
                 substate1 = allNodes.Skip(0).Take(1).First().Value;
@@ -454,7 +455,7 @@ namespace StateMachine.IntegrationTests.Tests
             {
                 status = (await sm.SendAsync(new SomeEvent())).Status;
 
-                var tree = (await sm.GetCurrentStateAsync()).Response.StatesTree;
+                var tree = (await sm.GetStatusAsync()).Response.CurrentStates;
                 currentState = tree.Value;
                 substate1 = tree.Root.Nodes.First().Value;
                 substate2 = tree.Root.Nodes.Last().Value;
@@ -491,7 +492,7 @@ namespace StateMachine.IntegrationTests.Tests
             {
                 status = (await sm.SendAsync(new SomeEvent())).Status;
 
-                var tree = (await sm.GetCurrentStateAsync()).Response.StatesTree;
+                var tree = (await sm.GetStatusAsync()).Response.CurrentStates;
                 currentState = tree.Value;
             }
             
@@ -524,7 +525,7 @@ namespace StateMachine.IntegrationTests.Tests
             {
                 status = (await sm.SendAsync(new SomeEvent())).Status;
 
-                var tree = (await sm.GetCurrentStateAsync()).Response.StatesTree;
+                var tree = (await sm.GetStatusAsync()).Response.CurrentStates;
                 currentState = tree.Value;
             }
             
@@ -557,7 +558,7 @@ namespace StateMachine.IntegrationTests.Tests
             {
                 status = (await sm.SendAsync(new SomeEvent())).Status;
 
-                var tree = (await sm.GetCurrentStateAsync()).Response.StatesTree;
+                var tree = (await sm.GetStatusAsync()).Response.CurrentStates;
                 currentState = tree.Value;
             }
             

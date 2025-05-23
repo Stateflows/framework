@@ -1,5 +1,8 @@
-﻿using System.Diagnostics;
+﻿using System;
+using System.Diagnostics;
+using System.Threading.Tasks;
 using Stateflows.Activities.Context.Classes;
+using Stateflows.Activities.Context.Interfaces;
 using Stateflows.Activities.Extensions;
 using Stateflows.Activities.Registration.Builders;
 
@@ -8,7 +11,7 @@ namespace Stateflows.Activities.Registration.Interfaces.Base
     public interface IActivity<out TReturn>
     {
         #region AddAction
-        TReturn AddAction(string actionNodeName, ActionDelegateAsync actionAsync, ActionBuildAction buildAction = null);
+        TReturn AddAction(string actionNodeName, Func<IActionContext, Task> actionAsync, ActionBuildAction buildAction = null);
         
         [DebuggerHidden]
         public TReturn AddAction<TAction>(TypedActionBuildAction buildAction = null)

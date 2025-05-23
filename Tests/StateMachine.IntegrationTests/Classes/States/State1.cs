@@ -11,7 +11,11 @@ namespace StateMachine.IntegrationTests.Classes.States
         private readonly IStateContext stateContext;
         private readonly IStateMachineContext stateMachineContext;
         private readonly Stateflows.StateMachines.IExecutionContext executionContext;
-        public State1(IStateContext stateContext, IStateMachineContext stateMachineContext, Stateflows.StateMachines.IExecutionContext executionContext)
+        public State1(
+            IStateContext stateContext,
+            IStateMachineContext stateMachineContext,
+            Stateflows.StateMachines.IExecutionContext executionContext
+        )
         {
             this.stateContext = stateContext;
             this.stateMachineContext = stateMachineContext;

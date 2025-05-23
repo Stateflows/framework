@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Linq;
 using System.Diagnostics;
-using System.Threading.Tasks;
 using System.Collections.Generic;
 using Stateflows.Common;
 using Stateflows.Activities.Models;
@@ -70,31 +69,31 @@ namespace Stateflows.Activities.Engine
             }
         }
 
-        public void RegisterAcceptEventNodes(IEnumerable<(Node Node, Guid ThreadId)> nodes)
-        {
-            lock (Context)
-            {
-                foreach ((var node, var threadId) in nodes)
-                {
-                    if (Context.ActiveNodes.Keys.Contains(node.Identifier))
-                    {
-                        continue;
-                    }
-
-                    Context.ActiveNodes.Add(node.Identifier, threadId);
-
-                    if (node.ActualEventTypes.Any(type => type.IsSubclassOf(typeof(TimeEvent))))
-                    {
-                        RegisterTimeEvent(node);
-                    }
-
-                    if (node.ActualEventTypes.Any(type => type == typeof(TimeEvent)))
-                    {
-                        RegisterStartupEvent(node);
-                    }
-                }
-            }
-        }
+        // public void RegisterAcceptEventNodes(IEnumerable<(Node Node, Guid ThreadId)> nodes)
+        // {
+        //     lock (Context)
+        //     {
+        //         foreach ((var node, var threadId) in nodes)
+        //         {
+        //             if (Context.ActiveNodes.Keys.Contains(node.Identifier))
+        //             {
+        //                 continue;
+        //             }
+        //
+        //             Context.ActiveNodes.Add(node.Identifier, threadId);
+        //
+        //             if (node.ActualEventTypes.Any(type => type.IsSubclassOf(typeof(TimeEvent))))
+        //             {
+        //                 RegisterTimeEvent(node);
+        //             }
+        //
+        //             if (node.ActualEventTypes.Any(type => type == typeof(TimeEvent)))
+        //             {
+        //                 RegisterStartupEvent(node);
+        //             }
+        //         }
+        //     }
+        // }
 
         public void RegisterAcceptEventNode(Node node, Guid threadId)
         {
@@ -119,7 +118,7 @@ namespace Stateflows.Activities.Engine
             }
         }
 
-        public void UnregisterAcceptEventNodes(IEnumerable<Node> nodes)
+        private void UnregisterAcceptEventNodes(IEnumerable<Node> nodes)
         {
             lock (Context)
             {
@@ -146,31 +145,21 @@ namespace Stateflows.Activities.Engine
             }
         }
 
-        public override Task AfterActivityInitializeAsync(IActivityInitializationContext context, bool initialized)
-            => Task.CompletedTask;
-
-        public override Task AfterActivityFinalizeAsync(IActivityFinalizationContext context)
+        public override void AfterActivityFinalize(IActivityFinalizationContext context)
         {
-            UnregisterAcceptEventNodes((context as IRootContext).Context.Executor.Graph.DanglingTimeEventActionNodes);
-
-            return Task.CompletedTask;
+            UnregisterAcceptEventNodes(((IRootContext)context).Context.Executor.Graph.DanglingTimeEventActionNodes);
         }
 
-        public override Task AfterNodeFinalizeAsync(IActivityNodeContext context)
+        public override void AfterNodeFinalize(IActivityNodeContext context)
         {
-            UnregisterAcceptEventNodes((context as ActionContext).Node.DanglingTimeEventActionNodes);
-
-            return Task.CompletedTask;
+            UnregisterAcceptEventNodes(((ActionContext)context).Node.DanglingTimeEventActionNodes);
         }
 
-        public override Task AfterNodeInitializeAsync(IActivityNodeContext context)
-            => Task.CompletedTask;
-
-        public override Task AfterProcessEventAsync<TEvent>(IEventContext<TEvent> context)
+        public override void AfterProcessEvent<TEvent>(IEventContext<TEvent> context, EventStatus eventStatus)
         {
-            Trace.WriteLine($"⦗→s⦘ Activity '{context.Activity.Id.Name}:{context.Activity.Id.Instance}': processed event '{Event.GetName(context.Event.GetType())}'");
+            Trace.WriteLine($"⦗→s⦘ Activity '{context.Behavior.Id.Name}:{context.Behavior.Id.Instance}': processed event '{Event.GetName(context.Event.GetType())}'");
 
-            Context = (context as BaseContext).Context;
+            Context = ((BaseContext)context).Context;
 
             if (Context.Context.PendingTimeEvents.Any())
             {
@@ -185,36 +174,48 @@ namespace Stateflows.Activities.Engine
             }
 
             Context.Context.TriggerOnStartup = Context.Context.PendingStartupEvents.Any();
-
-            return Task.CompletedTask;
         }
 
-        public override Task BeforeActivityInitializeAsync(IActivityInitializationContext context)
+        public override void AfterActivityInitialize(IActivityInitializationContext context, bool implicitInitialization, bool initialized)
         {
-            RegisterAcceptEventNodes(
-                (context as IRootContext).Context.Executor.Graph.AcceptEventActionNodes.Select(node => (node, Guid.NewGuid()))
-            );
-
-            return Task.CompletedTask;
+            if (initialized)
+            {
+                var rootContext = ((IRootContext)context);
+                
+                var currentNode = rootContext.Context.Executor.Graph;
+                foreach (var node in currentNode.DanglingAcceptEventActionNodes)
+                {
+                    var actionContext = new ActionContext(rootContext.Context, rootContext.NodeScope, node, Array.Empty<TokenHolder>());
+                    Context.Executor.Inspector.BeforeNodeActivate(actionContext, true);
+                
+                    RegisterAcceptEventNode(node, Guid.NewGuid());
+                    
+                    Context.Executor.Inspector.AfterNodeActivate(actionContext);
+                }
+            }
         }
 
-        public override Task BeforeNodeInitializeAsync(IActivityNodeContext context)
+        public override void AfterNodeInitialize(IActivityNodeContext context)
         {
-            RegisterAcceptEventNodes(
-                (context as ActionContext).Node.DanglingTimeEventActionNodes.Select(node => (node, Guid.NewGuid()))
-            );
-
-            return Task.CompletedTask;
+            var currentNode = ((ActionContext)context).Node;
+            var rootContext = (IRootContext)context;
+            
+            foreach (var node in currentNode.DanglingAcceptEventActionNodes)
+            {
+                var actionContext = new ActionContext(rootContext.Context, rootContext.NodeScope, node, Array.Empty<TokenHolder>());
+                Context.Executor.Inspector.BeforeNodeActivate(actionContext, true);
+                
+                RegisterAcceptEventNode(node, Guid.NewGuid());
+                
+                Context.Executor.Inspector.AfterNodeActivate(actionContext);
+            }
         }
 
-        public override Task BeforeNodeFinalizeAsync(IActivityNodeContext context)
-            => Task.CompletedTask;
-
-        public override Task<bool> BeforeProcessEventAsync<TEvent>(IEventContext<TEvent> context)
+        public override bool BeforeProcessEvent<TEvent>(IEventContext<TEvent> context)
         {
             var result = true;
 
-            Context = (context as BaseContext).Context;
+            Context = ((IRootContext)context).Context;
 
             if (context.Event is TimeEvent timeEvent)
             {
@@ -228,10 +229,10 @@ namespace Stateflows.Activities.Engine
 
             if (result)
             {
-                Trace.WriteLine($"⦗→s⦘ Activity '{context.Activity.Id.Name}:{context.Activity.Id.Instance}': received event '{Event.GetName(context.Event.GetType())}', trying to process it");
+                Trace.WriteLine($"⦗→s⦘ Activity '{context.Behavior.Id.Name}:{context.Behavior.Id.Instance}': received event '{Event.GetName(context.Event.GetType())}', trying to process it");
             }
 
-            return Task.FromResult(result);
+            return result;
         }
     }
 }

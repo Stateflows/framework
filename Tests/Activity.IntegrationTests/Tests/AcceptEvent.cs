@@ -1,3 +1,4 @@
+using Activity.IntegrationTests.Classes.Events;
 using OneOf;
 using Stateflows.Common;
 using StateMachine.IntegrationTests.Utils;
@@ -53,6 +54,25 @@ namespace Activity.IntegrationTests.Tests
                             Executed = true;
                         })
                     )
+                    .AddActivity("structuredAcceptMultipleEvents", b => b
+                        .AddInitial(b => b
+                            .AddControlFlow("structured")
+                        )
+                        .AddStructuredActivity("structured", b => b
+                            .AddInitial(b => b
+                                .AddControlFlow("final")
+                            )
+                            .AddAcceptEventAction<SomeEvent>(
+                                "accept",
+                                async c => Counter1++,
+                                b => b.AddControlFlow("final")
+                            )
+                            .AddAction("final", async c =>
+                            {
+                                Executed = true;
+                            })
+                        )
+                    )
                     .AddActivity("acceptOneOfEvents", b => b
                         .AddInitial(b => b
                             .AddControlFlow("final")
@@ -91,12 +111,42 @@ namespace Activity.IntegrationTests.Tests
         }
 
         [TestMethod]
+        public async Task AcceptInheritedEvent()
+        {
+            SendResult result = null;
+            if (ActivityLocator.TryLocateActivity(new ActivityId("acceptSingleEvent", "x"), out var a))
+            {
+                await a.SendAsync(new SomeInheritedEvent());
+                result = await a.SendAsync(new SomeInheritedEvent());
+            }
+
+            Assert.IsTrue(Executed);
+            Assert.AreEqual(1, Counter1);
+            Assert.AreEqual(EventStatus.NotConsumed, result?.Status);
+        }
+
+        [TestMethod]
         public async Task AcceptMultipleEvents()
         {
             if (ActivityLocator.TryLocateActivity(new ActivityId("acceptMultipleEvents", "x"), out var a))
             {
                 await a.SendAsync(new SomeEvent());
                 await a.SendAsync(new SomeEvent());
+            }
+
+            Assert.IsTrue(Executed);
+            Assert.AreEqual(2, Counter1);
+        }
+
+        [TestMethod]
+        public async Task StructuredAcceptMultipleEvents()
+        {
+            if (ActivityLocator.TryLocateActivity(new ActivityId("structuredAcceptMultipleEvents", "x"), out var a))
+            {
+                await a.SendAsync(new SomeEvent());
+                await a.SendAsync(new SomeEvent());
+                var activityInfo = (await a.GetStatusAsync()).Response;
+                Assert.IsTrue(activityInfo.ActiveNodes.Contains("accept"));
             }
 
             Assert.IsTrue(Executed);

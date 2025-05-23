@@ -38,7 +38,7 @@ namespace Stateflows.StateMachines.Engine
             var eventHandler = EventHandlers.FirstOrDefault(h => h.EventType.IsInstanceOfType(context.Event));
 
             return eventHandler != null
-                ? eventHandler.TryHandleEventAsync(context)
+                ? eventHandler.TryHandleEventAsync<TEvent>(context)
                 : Task.FromResult(EventStatus.NotConsumed);
         }
         
@@ -87,7 +87,6 @@ namespace Stateflows.StateMachines.Engine
                                     var status = await ev.ExecuteBehaviorAsync(this, result, executor);
 
                                     results.Add(new RequestResult(
-                                        ev,
                                         ev.IsRequest()
                                             ? ev.GetResponseHolder()
                                             : null,
@@ -137,7 +136,7 @@ namespace Stateflows.StateMachines.Engine
 
                         exceptions.AddRange(executor.Context.Exceptions);
 
-                        await executor.DehydrateAsync();
+                        executor.Dehydrate();
                     }
 
                     // out of try-finally to make sure that context won't be saved when execution fails
@@ -148,7 +147,7 @@ namespace Stateflows.StateMachines.Engine
             }
             catch (Exception e)
             {
-                Debug.WriteLine($"Exception thrown: '{e.GetType().FullName}' with message '{e.Message}'");
+                // Trace.WriteLine($"⦗→s⦘ State Machine '{id.Name}:{id.Instance}': exception '{e.GetType().FullName}' thrown with message '{e.Message}'");
 
                 return EventStatus.Failed;
             }
@@ -165,17 +164,24 @@ namespace Stateflows.StateMachines.Engine
         )
         {
             var eventContext = new EventContext<TEvent>(executor.Context);
+            var commonEventContext = new Common.Context.Classes.EventContext<TEvent>(
+                eventContext.Context.Context,
+                executor.ServiceProvider,
+                eventHolder
+            );
             
-            var inspector = await executor.GetInspectorAsync();
-
-            if (await inspector.BeforeProcessEventAsync(eventContext))
+            if (executor.Inspector.BeforeProcessEvent(eventContext, commonEventContext))
             {
                 try
                 {
-                    var attributes = eventHolder.GetType().GetCustomAttributes<NoImplicitInitializationAttribute>().ToArray();
-                    if (!executor.Initialized && !attributes.Any() && !typeof(Exception).IsAssignableFrom(eventHolder.PayloadType))
+                    var noImplicitInitialization =
+                        eventHolder.PayloadType.GetCustomAttributes<NoImplicitInitializationAttribute>().Any() ||
+                        eventHolder.Headers.Any(h => h is NoImplicitInitialization);
+                    
+                    // var attributes = eventHolder.GetType().GetCustomAttributes<NoImplicitInitializationAttribute>().ToArray();
+                    if (!executor.Initialized && /*!attributes.Any() &&*/ !typeof(Exception).IsAssignableFrom(eventHolder.PayloadType))
                     {
-                        result = await executor.InitializeAsync(eventHolder);
+                        result = await executor.InitializeAsync(eventHolder, noImplicitInitialization);
                     }
 
                     if (result != EventStatus.Initialized)
@@ -199,7 +205,6 @@ namespace Stateflows.StateMachines.Engine
                         }
                         else
                         {
-                            var noImplicitInitialization = attributes.Any();
                             result = result == EventStatus.NotInitialized
                                 ? EventStatus.NotInitialized
                                 : noImplicitInitialization
@@ -210,7 +215,12 @@ namespace Stateflows.StateMachines.Engine
                 }
                 finally
                 {
-                    await inspector.AfterProcessEventAsync(eventContext);
+                    if (result == EventStatus.Undelivered)
+                    {
+                        result = EventStatus.Failed;
+                    }
+                    
+                    executor.Inspector.AfterProcessEvent(eventContext, commonEventContext, result);
                 }
             }
             else
