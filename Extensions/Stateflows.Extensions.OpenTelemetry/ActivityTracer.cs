@@ -143,15 +143,7 @@ namespace Stateflows.Extensions.OpenTelemetry
             else
             {
                 var traceName = $"Activity initialized{(ImplicitInitialization ? " implicitly" : "")}";
-                InitializerActivity = EventProcessingActivity != null
-                    ? StateMachineTracer.Source.StartActivity(
-                        traceName,
-                        ActivityKind.Internal,
-                        EventProcessingActivity.Context
-                    )
-                    : StateMachineTracer.Source.StartActivity(
-                        traceName
-                    );
+                InitializerActivity = StateMachineTracer.Source.StartActivity(traceName);
             }
         }
 

@@ -210,7 +210,7 @@ internal class StateMachineVisitor(
 
                         if (locator.TryLocateStateMachine(new StateMachineId(stateMachineName, instance), out var behavior))
                         {
-                            var result = payload.Event == null || payload.Event.Equals(default(TEvent))
+                            var result = EqualityComparer<TEvent>.Default.Equals(payload.Event, default)
                                 ? new SendResult(
                                     EventStatus.Invalid,
                                     new EventValidation(false, [ new ValidationResult("Event not provided") ])
@@ -293,7 +293,7 @@ internal class StateMachineVisitor(
                         
                         if (locator.TryLocateStateMachine(new StateMachineId(stateMachineName, instance), out var behavior))
                         {
-                            var result = payload.Event == null || payload.Event.Equals(default(TRequest))
+                            var result = EqualityComparer<TRequest>.Default.Equals(payload.Event, default)
                                 ? new SendResult(
                                     EventStatus.Invalid,
                                     new EventValidation(false, [ new ValidationResult("Event not provided") ])

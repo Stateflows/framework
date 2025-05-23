@@ -159,7 +159,7 @@ internal class ActivityVisitor(
 
                         if (locator.TryLocateActivity(new ActivityId(activityName, instance), out var behavior))
                         {
-                            var result = payload.Event == null || payload.Event.Equals(default(TEvent))
+                            var result = EqualityComparer<TEvent>.Default.Equals(payload.Event, default)
                                 ? new SendResult(
                                     EventStatus.Invalid,
                                     new EventValidation(false, [ new ValidationResult("Event not provided") ])
@@ -257,7 +257,7 @@ internal class ActivityVisitor(
                 {
                     if (locator.TryLocateActivity(new ActivityId(activityName, instance), out var behavior))
                     {
-                        var result = payload.Event == null || payload.Event.Equals(default(TRequest))
+                        var result = EqualityComparer<TRequest>.Default.Equals(payload.Event, default)
                             ? new SendResult(
                                 EventStatus.Invalid,
                                 new EventValidation(false, [ new ValidationResult("Event not provided") ])
