@@ -187,7 +187,7 @@ namespace Stateflows.Extensions.OpenTelemetry
             ImplicitInitialization = implicitInitialization;
             if (Skip && !ImplicitInitialization) return;
             
-            if (EventProcessingActivity == null && Skip)
+            if (EventProcessingActivity == null)
             {
                 var header = context.Headers.FirstOrDefault(h => h is ActivityHeader);
                 if (header is ActivityHeader activityHeader)

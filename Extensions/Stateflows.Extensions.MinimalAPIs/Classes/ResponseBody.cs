@@ -35,5 +35,5 @@ internal class ResponseBody<TResponse>(RequestResult<TResponse> result, IEnumera
     public TResponse Response { get; } = result.Response;
     
     public bool ShouldSerializeResponse()
-        => Response != null;
+        => Response != null && !Response.Equals(default(TResponse));
 }

@@ -67,20 +67,16 @@ internal class ActivityVisitor(
         CurrentActivityName = activityName;
         typeMapper.VisitMappedTypes<TInitializationEvent>(this);
         CurrentActivityName = string.Empty;
-        
-        // RegisterEventEndpoint<TInitializationEvent>(activityName);
 
         return Task.CompletedTask;
     }
 
     public override Task AcceptEventNodeAddedAsync<TEvent>(string activityName, int activityVersion, string nodeName,
-        string parentNodeName = null)
+        string? parentNodeName = null)
     {
         CurrentActivityName = activityName;
         typeMapper.VisitMappedTypes<TEvent>(this);
         CurrentActivityName = string.Empty;
-
-        // RegisterEventEndpoint<TEvent>(activityName);
 
         return Task.CompletedTask;
     }
@@ -163,7 +159,7 @@ internal class ActivityVisitor(
 
                         if (locator.TryLocateActivity(new ActivityId(activityName, instance), out var behavior))
                         {
-                            var result = payload.Event == null
+                            var result = payload.Event == null || payload.Event.Equals(default(TEvent))
                                 ? new SendResult(
                                     EventStatus.Invalid,
                                     new EventValidation(false, [ new ValidationResult("Event not provided") ])
@@ -183,7 +179,7 @@ internal class ActivityVisitor(
         }
     }
 
-    public void RegisterEventEndpoint<TEvent>(string activityName)
+    private void RegisterEventEndpoint<TEvent>(string activityName)
     {
         var activity = GetRouteGroup(activityName);
 
@@ -231,7 +227,7 @@ internal class ActivityVisitor(
         }
     }
 
-    public void RegisterRemainingEndpoints()
+    private void RegisterRemainingEndpoints()
     {
         foreach (var activityName in RouteGroups.Keys)
         {
@@ -261,7 +257,7 @@ internal class ActivityVisitor(
                 {
                     if (locator.TryLocateActivity(new ActivityId(activityName, instance), out var behavior))
                     {
-                        var result = payload.Event == null
+                        var result = payload.Event == null || payload.Event.Equals(default(TRequest))
                             ? new SendResult(
                                 EventStatus.Invalid,
                                 new EventValidation(false, [ new ValidationResult("Event not provided") ])

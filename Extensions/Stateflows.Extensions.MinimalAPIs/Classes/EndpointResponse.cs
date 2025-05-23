@@ -19,5 +19,5 @@ public class EndpointResponse<TResult>(TResult result, IEnumerable<HateoasLink> 
     public TResult Result { get; } = result;
     
     public bool ShouldSerializeResult()
-        => Result != null;
+        => Result != null && !Result.Equals(default(TResult));
 }
