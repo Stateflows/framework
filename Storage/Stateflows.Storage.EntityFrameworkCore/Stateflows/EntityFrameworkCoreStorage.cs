@@ -53,7 +53,7 @@ namespace Stateflows.Storage.EntityFrameworkCore.Stateflows
             }
             catch (Exception e)
             {
-                Logger.LogError(LogTemplates.ExceptionLogTemplate, typeof(EntityFrameworkCoreStorage).FullName, nameof(DehydrateAsync), e.GetType().Name, e.Message);
+                Logger.LogError(e, LogTemplates.ExceptionLogTemplate, typeof(EntityFrameworkCoreStorage).FullName, nameof(DehydrateAsync), e.GetType().Name, e.Message);
             }
         }
 
@@ -69,7 +69,7 @@ namespace Stateflows.Storage.EntityFrameworkCore.Stateflows
             }
             catch (Exception e)
             {
-                Logger.LogError(LogTemplates.ExceptionLogTemplate, typeof(EntityFrameworkCoreStorage).FullName, nameof(HydrateAsync), e.GetType().Name, e.Message);
+                Logger.LogError(e, LogTemplates.ExceptionLogTemplate, typeof(EntityFrameworkCoreStorage).FullName, nameof(HydrateAsync), e.GetType().Name, e.Message);
             }
 
             result ??= new StateflowsContext(behaviorId);
@@ -79,7 +79,7 @@ namespace Stateflows.Storage.EntityFrameworkCore.Stateflows
 
         public async Task<IEnumerable<StateflowsContext>> GetAllContextsAsync(IEnumerable<BehaviorClass> behaviorClasses)
         {
-            StateflowsContext[] result = Array.Empty<StateflowsContext>();
+            var result = Array.Empty<StateflowsContext>();
 
             try
             {
@@ -89,7 +89,7 @@ namespace Stateflows.Storage.EntityFrameworkCore.Stateflows
             }
             catch (Exception e)
             {
-                Logger.LogError(LogTemplates.ExceptionLogTemplate, typeof(EntityFrameworkCoreStorage).FullName, nameof(GetAllContextsAsync), e.GetType().Name, e.Message);
+                Logger.LogError(e, LogTemplates.ExceptionLogTemplate, typeof(EntityFrameworkCoreStorage).FullName, nameof(GetAllContextsAsync), e.GetType().Name, e.Message);
             }
 
             return result;
@@ -107,7 +107,7 @@ namespace Stateflows.Storage.EntityFrameworkCore.Stateflows
             }
             catch (Exception e)
             {
-                Logger.LogError(LogTemplates.ExceptionLogTemplate, typeof(EntityFrameworkCoreStorage).FullName, nameof(GetAllContextIdsAsync), e.GetType().Name, e.Message);
+                Logger.LogError(e, LogTemplates.ExceptionLogTemplate, typeof(EntityFrameworkCoreStorage).FullName, nameof(GetAllContextIdsAsync), e.GetType().Name, e.Message);
             }
 
             return result;
@@ -115,7 +115,7 @@ namespace Stateflows.Storage.EntityFrameworkCore.Stateflows
 
         public Task<IEnumerable<StateflowsContext>> GetTimeTriggeredContextsAsync(IEnumerable<BehaviorClass> behaviorClasses)
         {
-            StateflowsContext[] result = Array.Empty<StateflowsContext>();
+            var result = Array.Empty<StateflowsContext>();
 
             try
             {
@@ -125,7 +125,7 @@ namespace Stateflows.Storage.EntityFrameworkCore.Stateflows
             }
             catch (Exception e)
             {
-                Logger.LogError(LogTemplates.ExceptionLogTemplate, typeof(EntityFrameworkCoreStorage).FullName, nameof(GetTimeTriggeredContextsAsync), e.GetType().Name, e.Message);
+                Logger.LogError(e, LogTemplates.ExceptionLogTemplate, typeof(EntityFrameworkCoreStorage).FullName, nameof(GetTimeTriggeredContextsAsync), e.GetType().Name, e.Message);
             }
 
             return Task.FromResult(result as IEnumerable<StateflowsContext>);
@@ -133,7 +133,7 @@ namespace Stateflows.Storage.EntityFrameworkCore.Stateflows
 
         public Task<IEnumerable<StateflowsContext>> GetStartupTriggeredContextsAsync(IEnumerable<BehaviorClass> behaviorClasses)
         {
-            StateflowsContext[] result = Array.Empty<StateflowsContext>();
+            var result = Array.Empty<StateflowsContext>();
 
             try
             {
@@ -143,7 +143,7 @@ namespace Stateflows.Storage.EntityFrameworkCore.Stateflows
             }
             catch (Exception e)
             {
-                Logger.LogError(LogTemplates.ExceptionLogTemplate, typeof(EntityFrameworkCoreStorage).FullName, nameof(GetTimeTriggeredContextsAsync), e.GetType().Name, e.Message);
+                Logger.LogError(e, LogTemplates.ExceptionLogTemplate, typeof(EntityFrameworkCoreStorage).FullName, nameof(GetTimeTriggeredContextsAsync), e.GetType().Name, e.Message);
             }
 
             return Task.FromResult(result as IEnumerable<StateflowsContext>);

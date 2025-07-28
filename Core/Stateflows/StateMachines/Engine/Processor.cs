@@ -19,19 +19,16 @@ namespace Stateflows.StateMachines.Engine
 
         private readonly StateMachinesRegister Register;
         private readonly IEnumerable<IStateMachineEventHandler> EventHandlers;
-        private readonly INotificationsHub Hub;
         private readonly IServiceProvider ServiceProvider;
 
         public Processor(
             StateMachinesRegister register,
             IEnumerable<IStateMachineEventHandler> eventHandlers,
-            INotificationsHub hub,
             IServiceProvider serviceProvider
         )
         {
             Register = register;
             EventHandlers = eventHandlers;
-            Hub = hub;
             ServiceProvider = serviceProvider;
         }
 

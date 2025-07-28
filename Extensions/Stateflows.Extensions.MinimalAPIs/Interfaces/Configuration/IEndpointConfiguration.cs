@@ -12,8 +12,8 @@ public interface IEndpointConfiguration
     /// <summary>
     /// Updates endpoint route
     /// </summary>
-    /// <param name="routeUpdateAction">Action that returns updated route</param>
-    IEndpointConfiguration UpdateRoute(Func<string, string> routeUpdateAction);
+    /// <param name="routeUpdater">Action that returns updated route</param>
+    IEndpointConfiguration UpdateRoute(Func<string, string> routeUpdater);
     
     /// <summary>
     /// Configures endpoint handler

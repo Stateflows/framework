@@ -22,8 +22,6 @@ internal static class Utils
     
     internal static IEnumerable<HateoasLink> ToHateoasLinks(this BehaviorInfo behaviorInfo, Dictionary<string, List<(HateoasLink, BehaviorStatus[])>> hateoasLinks)
     {
-        var behaviorTypeResource = behaviorInfo.Id.Type.ToResource();
-
         var links = new List<HateoasLink>();
 
         links.AddRange(

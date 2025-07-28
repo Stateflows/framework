@@ -21,7 +21,7 @@ public static class DependencyInjection
     
     internal static readonly List<System.Action<ActivityVisitor>> ActivityEndpointBuilders = [];
     
-    internal static string ApiRoutePrefix = String.Empty;
+    internal static string ApiRoutePrefix = string.Empty;
     
     /// <summary>
     /// Allows to define <a href="https://learn.microsoft.com/en-us/aspnet/core/fundamentals/minimal-apis/overview">Minimal API</a> endpoints in State Machine REST route group.

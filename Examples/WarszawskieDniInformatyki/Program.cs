@@ -88,39 +88,6 @@ app.UseAntiforgery();
 app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode();
 
-app.MapStateflowsMinimalAPIsEndpoints(b => b
-    .ConfigureGetAllClassesEndpoint(b => b
-        .Disable()
-    )
-    .ConfigureStateMachines(b => b
-        .ConfigureStateMachine("Doc", b => b
-            .ConfigureAllEndpoints(b => b
-                .UpdateRoute(b => b
-                    .Replace("Doc", "Dupa")
-                )
-            )
-        )
-    )
-);
+app.MapStateflowsMinimalAPIsEndpoints();
 
 app.Run();
-
-
-public class I : EndpointDefinitionInterceptor
-{
-    public override bool BeforeGetAllClassesEndpointDefinition(ref string method, ref string route)
-    {
-        return false;
-    }
-
-    public override bool BeforeGetInstancesEndpointDefinition(BehaviorClass behaviorClass, ref string method, ref string route)
-    {
-        return false;
-    }
-
-    public override bool BeforeEventEndpointDefinition<TEvent>(BehaviorClass behaviorClass, ref string method, ref string route)
-    {
-        route = route.Replace("Stateflows.Scheduler.StateMachine.StateflowsScheduler", "scheduler");
-        return true;
-    }
-}
