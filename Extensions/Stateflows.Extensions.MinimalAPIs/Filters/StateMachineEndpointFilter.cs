@@ -44,7 +44,7 @@ internal class StateMachineEndpointFilter(
                         metadata.StateMachineContext.Value.StateMachine = contextHolder.GetStateMachineContext();
                         metadata.StateMachineContext.Value.Status = contextHolder.BehaviorStatus;
                         metadata.StateMachineContext.Value.ExpectedEventNames = contextHolder.ExpectedEventNames;
-                        metadata.StateMachineContext.Value.CustomHateoasLinks = metadata.CustomHateoasLinks;
+                        metadata.StateMachineContext.Value.HateoasLinks = metadata.HateoasLinks;
                         metadata.StateMachineContext.Value.ElementsTree = contextHolder.CurrentStates;
                     }
 
@@ -55,7 +55,7 @@ internal class StateMachineEndpointFilter(
                         metadata.StateContext.Value.State = contextHolder.GetStateContext(metadata.ScopeName);
                         metadata.StateContext.Value.Status = contextHolder.BehaviorStatus;
                         metadata.StateContext.Value.ExpectedEventNames = contextHolder.ExpectedEventNames;
-                        metadata.StateContext.Value.CustomHateoasLinks = metadata.CustomHateoasLinks;
+                        metadata.StateContext.Value.HateoasLinks = metadata.HateoasLinks;
                         metadata.StateContext.Value.ElementsTree = contextHolder.CurrentStates;
                     }
 
@@ -65,7 +65,7 @@ internal class StateMachineEndpointFilter(
                         metadata.BehaviorContext.Value.Behavior = contextHolder.GetStateMachineContext();
                         metadata.BehaviorContext.Value.Status = contextHolder.BehaviorStatus;
                         metadata.BehaviorContext.Value.ExpectedEventNames = contextHolder.ExpectedEventNames;
-                        metadata.BehaviorContext.Value.CustomHateoasLinks = metadata.CustomHateoasLinks;
+                        metadata.BehaviorContext.Value.HateoasLinks = metadata.HateoasLinks;
                         metadata.BehaviorContext.Value.ElementsTree = contextHolder.CurrentStates;
                     }
 

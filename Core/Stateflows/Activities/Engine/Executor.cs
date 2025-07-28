@@ -18,18 +18,19 @@ using Stateflows.Activities.Models;
 using Stateflows.Activities.Streams;
 using Stateflows.Activities.Registration;
 using Stateflows.Activities.Context.Classes;
-using Stateflows.Activities.Context.Interfaces;
 using Stateflows.Activities.Inspection.Classes;
 using Stateflows.StateMachines.Extensions;
 
 namespace Stateflows.Activities.Engine
-{
+{    
     internal class Executor : IDisposable, IStateflowsExecutor
     {
         private static readonly object lockHandle = new object();
         private static readonly object nodesLockHandle = new object();
         private readonly Dictionary<Node, object> nodeLockHandles = new Dictionary<Node, object>();
-
+        
+        public bool StateHasChanged { get; set; }
+        
         private object GetLock(Node node)
         {
             object result = null;
@@ -270,6 +271,7 @@ namespace Stateflows.Activities.Engine
             if (Initialized)
             {
                 Context.ActiveNodes.Clear();
+                Context.FlowTokensCount.Clear();
                 Context.NodeTimeEvents.Clear();
                 Context.NodeThreads.Clear();
                 Context.OutputTokens.Clear();
@@ -320,6 +322,8 @@ namespace Stateflows.Activities.Engine
 
         public async Task<EventStatus> ProcessAsync<TEvent>(EventHolder<TEvent> eventHolder)
         {
+            StateHasChanged = false;
+            
             var result = EventStatus.Rejected;
 
             if (Initialized)
@@ -348,14 +352,6 @@ namespace Stateflows.Activities.Engine
                 var activeNodes = GetActiveNodes();
                 activeNode = activeNodes.FirstOrDefault(node =>
                     eventHolder.IsAcceptedBy(node, Context.NodeTimeEvents)
-                    // node.ActualEventTypes.Contains(eventHolder.PayloadType) &&
-                    // (
-                    //     !(eventHolder.Payload is TimeEvent timeEvent) ||
-                    //     (
-                    //         Context.NodeTimeEvents.TryGetValue(node.Identifier, out var timeEventId) &&
-                    //         timeEvent.Id == timeEventId
-                    //     )
-                    // )
                 );
             }
 
@@ -375,7 +371,7 @@ namespace Stateflows.Activities.Engine
                 ? tokensTransferEvent.Tokens
                 : null;
 
-            (var result, var output) = await ExecuteGraphAsync(input);
+            var (result, output) = await ExecuteGraphAsync(input);
 
             var tokensOutput = new TokensOutput() { Tokens = output.ToList() };
             if (eventHolder.Payload is IRequest<TokensOutput> inputTokens)
@@ -399,6 +395,13 @@ namespace Stateflows.Activities.Engine
             
             Context.ActivityOutputTokens.AddRange(output);
 
+            await DoHandleActivityOutput(output);
+
+            return (EventStatus.Consumed, output);
+        }
+
+        private async Task DoHandleActivityOutput(IEnumerable<TokenHolder> output)
+        {
             if (output.Any())
             {
                 var tokensOutput = new TokensOutput() { Tokens = output.ToList() };
@@ -423,8 +426,6 @@ namespace Stateflows.Activities.Engine
 
                 await notificationsHub.PublishRangeAsync(tokensOutputs);
             }
-
-            return (EventStatus.Consumed, output);
         }
 
         public async Task DoFinalizeAsync(IEnumerable<object> outputTokens = null)
@@ -798,9 +799,7 @@ namespace Stateflows.Activities.Engine
 
             lock (GetLock(node))
             {
-                var streams = !Context.NodesToExecute.Contains(node)
-                    ? Context.GetNodeStreams(node, nodeScope.ThreadId, node.Type != NodeType.Output)
-                    : Array.Empty<Stream>();
+                var streams = Context.GetNodeStreams(node, nodeScope.ThreadId, node.Type != NodeType.Output);
 
                 activated =
                     ( // initial node case
@@ -830,9 +829,10 @@ namespace Stateflows.Activities.Engine
                     {
                         foreach (var stream in streams)
                         {
-                            if (!stream.IsPersistent)
+                            if (!(stream.IsPersistent || InteractiveNodeTypes.Contains(node.Type)))
                             {
                                 Context.ClearStream(stream.EdgeIdentifier, nodeScope.ThreadId);
+                                Context.ActivatedFlows.Add(stream.EdgeIdentifier);
                             }
                         }
                     }
@@ -852,31 +852,42 @@ namespace Stateflows.Activities.Engine
             {
                 Inspector.BeforeNodeActivate(actionContext, activated);
             }
+            
+            RegisterNodePending(node);
 
             if (activated)
             {
-                if (
-                    InteractiveNodeTypes.Contains(node.Type) &&
-                    (
-                        Context.EventHolder == null ||
-                        !Context.EventHolder.IsAcceptedBy(node)
+                RegisterNodeActivation(node);
+
+                if (InteractiveNodeTypes.Contains(node.Type))
+                {
+                    if (
+                        (
+                            Context.EventHolder == null ||
+                            !Context.EventHolder.IsAcceptedBy(node)
+                        ) &&
+                        actuallyActivated
                         // !node.ActualEventTypes.Contains(Context.EventHolder.PayloadType)
                     )
-                )
-                {
-                    Inspector.AcceptEventsPlugin.RegisterAcceptEventNode(node, nodeScope.ThreadId);
-
-                    // if (Debugger.IsAttached)
                     {
-                        Trace.WriteLine($"⦗→s⦘ Activity '{node.Graph.Name}:{Context.Id.Instance}': AcceptEvent node '{node.Name}' registered and waiting for event");
-                    }
+                        Inspector.AcceptEventsPlugin.RegisterAcceptEventNode(node, nodeScope.ThreadId);
 
-                    if (actuallyActivated)
-                    {
+                        Trace.WriteLine($"⦗→s⦘ Activity '{node.Graph.Name}:{Context.Id.Instance}': {(node.Type == NodeType.AcceptEventAction ? "AcceptEvent" : "TimeEvent")} node '{node.Name}' registered and waiting for event");
+
                         Inspector.AfterNodeActivate(actionContext);
-                    }
 
-                    return;
+                        return;
+                    }
+                    else
+                    {
+                        foreach (var edge in node.IncomingEdges)
+                        {
+                            if (edge.Source.Type != NodeType.DataStore)
+                            {
+                                Context.ClearStream(edge.Identifier, nodeScope.ThreadId);
+                            }
+                        }
+                    }
                 }
 
                 ReportNodeExecuting(node, upstreamEdge, inputTokens, Context);
@@ -944,9 +955,11 @@ namespace Stateflows.Activities.Engine
                                 .Where(edge => edge.Target.Type == NodeType.Output || outputTokens.Any(t => t is TokenHolder<ControlToken>))
                                 .Where(edge => tokenNames.Contains(edge.TokenType.GetTokenName()) || edge.Weight == 0)
                                 .OrderBy(edge => edge.IsElse)
-                                .Select(async edge => (
-                                    Edge: edge,
-                                    Activated: await DoHandleEdgeAsync(edge, actionContext))
+                                .Select(async edge =>
+                                    (
+                                        Edge: edge,
+                                        Activated: await DoHandleEdgeAsync(edge, actionContext)
+                                    )
                                 )
                         )
                     )
@@ -1066,7 +1079,66 @@ namespace Stateflows.Activities.Engine
 
         internal void DoHandleOutput(ActionContext context)
             => context.Context.GetOutputTokens(context.Node.Identifier, context.NodeScope.ThreadId).AddRange(context.OutputTokens);
+        
 
+        public void RegisterNodeActivation(Node node)
+        {
+            lock (Context.Context.Values)
+            {
+                StateHasChanged = true;
+                
+                if (!Context.ActivatedNodes.Contains(node.Identifier))
+                {
+                    Context.ActivatedNodes.Add(node.Identifier);
+                }
+                
+                if (Context.PendingNodes.Contains(node.Identifier))
+                {
+                    Context.PendingNodes.Remove(node.Identifier);
+                }
+            }
+        }
+        public void RegisterNodePending(Node node)
+        {
+            lock (Context.Context.Values)
+            {
+                StateHasChanged = true;
+                
+                if (!Context.PendingNodes.Contains(node.Identifier))
+                {
+                    Context.PendingNodes.Add(node.Identifier);
+                }
+            }
+        }
+        
+        private void RegisterFlowAttempt(Edge edge, int tokensCount)
+        {
+            lock (Context.Context.Values)
+            {
+                StateHasChanged = true;
+                
+                if (Context.FlowTokensCount.TryGetValue(edge.Identifier, out var previousTokensCount))
+                {
+                    if (
+                        Context.FlowTokensCount[edge.Identifier] >= edge.Weight &&
+                        Context.ActivatedNodes.Contains(edge.Target.Identifier)
+                    )
+                    {
+                        Context.ActivatedNodes.Remove(edge.Target.Identifier);
+                        Context.FlowTokensCount[edge.Identifier] = tokensCount;
+                    }
+                    else
+                    {
+                        Context.FlowTokensCount[edge.Identifier] = previousTokensCount + tokensCount;
+                    }
+                }
+                else
+                {
+                    Context.FlowTokensCount[edge.Identifier] = tokensCount;
+                }
+            }
+        }
+        
         private async Task<bool> DoHandleEdgeAsync(Edge edge, ActionContext context)
         {
             var flowContext = new FlowContext(context.Context, context.NodeScope, edge);
@@ -1103,6 +1175,13 @@ namespace Stateflows.Activities.Engine
             }
 
             flowContext.TargetTokenCount = processedTokens.Count;
+            
+            RegisterFlowAttempt(
+                edge,
+                edgeTokenName != typeof(ControlToken).GetTokenName()
+                    ? processedTokens.Count
+                    : 1
+            );
             
             if (processedTokens.Count >= edge.Weight)
             {
@@ -1150,6 +1229,6 @@ namespace Stateflows.Activities.Engine
         }
 
         public async Task<IActivity> GetActivity(Type activityType)
-            => await StateflowsActivator.CreateInstanceAsync(NodeScope.ServiceProvider, activityType, "activity") as IActivity;
+            => await StateflowsActivator.CreateModelElementInstanceAsync(NodeScope.ServiceProvider, activityType, "activity") as IActivity;
     }
 }

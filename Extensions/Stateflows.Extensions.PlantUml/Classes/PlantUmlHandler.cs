@@ -19,7 +19,7 @@ namespace Stateflows.Extensions.PlantUml.Classes
         
         public Type EventType => typeof(PlantUmlInfoRequest);
 
-        public Task<EventStatus> TryHandleEventAsync<TEvent>(IEventContext<TEvent> context)
+        public Task<EventStatus> TryHandleEventAsync<TEvent>(StateMachines.Context.Interfaces.IEventContext<TEvent> context)
         {
             var inspection = ServiceProvider.GetRequiredService<IStateMachineInspection>();
             return Task.FromResult(HandleEvent(context.Event, () => inspection.GetPlantUml()));

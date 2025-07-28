@@ -145,6 +145,24 @@ namespace Stateflows.Actions.Engine
                         result = EventStatus.Consumed;
                     }
                 }
+                else
+                if (eventHolder is EventHolder<StartRelay> startRelayHolder)
+                {
+                    var startRelay = startRelayHolder.Payload;
+                    if (StateflowsContext.AddRelays(startRelay.BehaviorId, startRelay.NotificationNames))
+                    {
+                        result = EventStatus.Consumed;
+                    }
+                }
+                else
+                if (eventHolder is EventHolder<StopRelay> stopRelayHolder)
+                {
+                    var stopRelay = stopRelayHolder.Payload;
+                    if (StateflowsContext.RemoveRelays(stopRelay.BehaviorId, stopRelay.NotificationNames))
+                    {
+                        result = EventStatus.Consumed;
+                    }
+                }
                 else if (eventHolder is EventHolder<Initialize>)
                 {
                     var context = new ActionDelegateContext(StateflowsContext, eventHolder, ServiceProvider, new List<TokenHolder>() { eventHolder.Payload.ToTokenHolder() });
@@ -174,9 +192,8 @@ namespace Stateflows.Actions.Engine
                 {
                     var pendingNotifications = await Hub.GetNotificationsAsync(
                         StateflowsContext.Id,
-                        h =>
-                            notificationsRequestHolder.Payload.NotificationNames.Contains(h.Name) &&
-                            h.SentAt >= DateTime.Now - notificationsRequestHolder.Payload.Period
+                        notificationsRequestHolder.Payload.NotificationNames,
+                        DateTime.Now - notificationsRequestHolder.Payload.Period
                     );
                 
                     notificationsRequestHolder.Payload.Respond(

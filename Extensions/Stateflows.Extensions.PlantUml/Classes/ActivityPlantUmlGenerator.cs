@@ -51,22 +51,64 @@ namespace Stateflows.Extensions.PlantUml.Classes
                 builder.AppendLine($"{indent}" + "}");
             }
 
-            foreach (var transition in node.Flows)
+            foreach (var flow in node.Flows)
             {
-                var source = GetNodeName(transition.Source, parentName);
-                var target = GetNodeName(transition.Target, parentName);
+                var source = GetNodeName(flow.Source, parentName);
+                var target = GetNodeName(flow.Target, parentName);
 
-                if (transition.TokenName != "NodeReferenceToken")
+                switch (flow.Status)
                 {
-                    if (transition.TokenName == typeof(ControlToken).GetTokenName())
+                    case FlowStatus.Activated:
+                        builder.AppendLine("skinparam {");
+                        builder.AppendLine("ArrowColor green");
+                        builder.AppendLine("ArrowFontColor green");
+                        builder.AppendLine("}");
+                        break;
+                    
+                    case FlowStatus.NotActivated:
+                        builder.AppendLine("skinparam {");
+                        builder.AppendLine("ArrowColor orange");
+                        builder.AppendLine("ArrowFontColor orange");
+                        builder.AppendLine("}");
+                        break;
+                }
+
+                var stereotype = flow.Target.Status switch
+                {
+                    NodeStatus.Executed => "<<executed>>",
+                    NodeStatus.Active => "<<active>>",
+                    NodeStatus.Omitted => "<<omitted>>",
+                    NodeStatus.Failed => "<<failed>>",
+                    NodeStatus.NotUsed => "",
+                    _ => ""
+                };
+                
+                if (flow.TokenName != "NodeReferenceToken")
+                {
+                    if (flow.TokenName == typeof(ControlToken).GetTokenName())
                     {
-                        builder.AppendLine($"{indent}{source} --> {target}");
+                        builder.AppendLine($"{indent}{source} --> {target} {stereotype}");
                     }
                     else
                     {
-                        builder.AppendLine($"{indent}{source} -->[{transition.TokenName.ToShortName()}] {target}");
+                        var tokenCountInfo = flow.Status == FlowStatus.NotUsed
+                            ? flow.Weight > 1
+                                ? $" (expected {flow.Weight})"
+                                : ""
+                            : flow.Weight > 1
+                                ? $" (passed {flow.TokenCount} of expected {flow.Weight})"
+                                : flow.Weight == 0
+                                    ? $" (optional, passed {flow.TokenCount})"
+                                    : $" (passed {flow.TokenCount})";
+                        
+                        builder.AppendLine($"{indent}{source} -->[{flow.TokenName.ToShortName()}{tokenCountInfo}] {target} {stereotype}");
                     }
                 }
+                
+                builder.AppendLine("skinparam {");
+                builder.AppendLine("ArrowColor black");
+                builder.AppendLine("ArrowFontColor black");
+                builder.AppendLine("}");
             }
         }
 
@@ -75,6 +117,26 @@ namespace Stateflows.Extensions.PlantUml.Classes
             var builder = new StringBuilder();
 
             builder.AppendLine("@startuml");
+            
+            
+            builder.AppendLine("<style>");
+            builder.AppendLine("    .executed {");
+            builder.AppendLine("        LineColor green");
+            builder.AppendLine("        FontColor green");
+            builder.AppendLine("    }");
+            builder.AppendLine("    .omitted {");
+            builder.AppendLine("        LineColor orange");
+            builder.AppendLine("        FontColor orange");
+            builder.AppendLine("    }");
+            builder.AppendLine("    .active {");
+            builder.AppendLine("        LineColor blue");
+            builder.AppendLine("        FontColor blue");
+            builder.AppendLine("    }");
+            builder.AppendLine("    .failed {");
+            builder.AppendLine("        LineColor red");
+            builder.AppendLine("        FontColor red");
+            builder.AppendLine("    }");
+            builder.AppendLine("</style>");
 
             GetPlantUml(0, activity.Nodes, builder);
 

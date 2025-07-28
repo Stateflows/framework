@@ -23,9 +23,8 @@ namespace Stateflows.Activities.EventHandlers
             {
                 var pendingNotifications = await Hub.GetNotificationsAsync(
                     context.Behavior.Id,
-                    h =>
-                        request.NotificationNames.Contains(h.Name) &&
-                        h.SentAt >= DateTime.Now - request.Period
+                    request.NotificationNames,
+                    DateTime.Now - request.Period
                 );
                 
                 request.Respond(

@@ -1,6 +1,6 @@
 ﻿using System;
 using Stateflows.Actions;
-using Stateflows.StateMachines;
+using Stateflows.StateMachines.Context.Interfaces;
 using Stateflows.StateMachines.Registration;
 
 namespace Stateflows.Activities

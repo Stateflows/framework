@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Linq;
 using System.Threading.Tasks;
 using Stateflows.Common;
 using Stateflows.Common.Interfaces;
@@ -21,10 +20,11 @@ namespace Stateflows.StateMachines.EventHandlers
         {
             if (context.Event is NotificationsRequest request)
             {
-                var pendingNotifications = (await Hub.GetNotificationsAsync(context.Behavior.Id))
-                    .Where(h => request.NotificationNames.Contains(h.Name))
-                    .Where(h => h.SentAt >= DateTime.Now - request.Period)
-                    .ToArray();
+                var pendingNotifications = await Hub.GetNotificationsAsync(
+                    context.Behavior.Id,
+                    request.NotificationNames,
+                    DateTime.Now - request.Period
+                );
                 
                 request.Respond(
                     new NotificationsResponse

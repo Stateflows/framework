@@ -138,7 +138,6 @@ namespace Stateflows.Activities.Registration
                 {
                     if (e is StateflowsException)
                     {
-                        // Debug.WriteLine("catched and rethrowed");
                         throw;
                     }
                     else

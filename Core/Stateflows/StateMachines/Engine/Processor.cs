@@ -28,8 +28,8 @@ namespace Stateflows.StateMachines.Engine
         )
         {
             Register = register;
-            ServiceProvider = serviceProvider;
             EventHandlers = eventHandlers;
+            ServiceProvider = serviceProvider;
         }
 
         [DebuggerHidden]
@@ -48,7 +48,7 @@ namespace Stateflows.StateMachines.Engine
             try
             {
                 var result = EventStatus.Undelivered;
-
+                
                 var serviceProvider = ServiceProvider.CreateScope().ServiceProvider;
 
                 var storage = serviceProvider.GetRequiredService<IStateflowsStorage>();
@@ -147,7 +147,7 @@ namespace Stateflows.StateMachines.Engine
             }
             catch (Exception e)
             {
-                // Trace.WriteLine($"⦗→s⦘ State Machine '{id.Name}:{id.Instance}': exception '{e.GetType().FullName}' thrown with message '{e.Message}'");
+                Trace.WriteLine($"⦗→s⦘ State Machine '{id.Name}:{id.Instance}': exception '{e.GetType().FullName}' thrown with message '{e.Message}'");
 
                 return EventStatus.Failed;
             }

@@ -2,7 +2,7 @@
 
 namespace Stateflows
 {
-    [Obsolete]
+    [Obsolete("This class will be removed in a future release.")]
     public static class StateflowsEnvironments
     {
         public static readonly string Production = nameof(Production);

@@ -18,6 +18,8 @@ namespace Stateflows.Common
         public List<EventHeader> Headers { get; set; } = new List<EventHeader>();
         
         public int TimeToLive { get; set; }
+        
+        public bool Retained { get; set; }
 
         public DateTime SentAt { get; set; }
 

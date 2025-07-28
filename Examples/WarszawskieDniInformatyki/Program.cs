@@ -8,6 +8,7 @@ using Stateflows.Extensions.MinimalAPIs;
 using WarszawskieDniInformatyki.StateMachines.Document;
 using Scalar.AspNetCore;
 using Stateflows.Activities;
+using Stateflows.Scheduler.StateMachine;
 using WarszawskieDniInformatyki.Activities.Process;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -24,6 +25,7 @@ builder.Services.AddStateflows(b => b
     .AddPlantUml()
     .AddOpenTelemetry()
     .AddScheduling()
+    .AddOneOf()
     #endregion
 );
 
@@ -86,6 +88,6 @@ app.UseAntiforgery();
 app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode();
 
-app.MapStateflowsMinimalAPIsEndpoints(string.Empty);
+app.MapStateflowsMinimalAPIsEndpoints();
 
 app.Run();

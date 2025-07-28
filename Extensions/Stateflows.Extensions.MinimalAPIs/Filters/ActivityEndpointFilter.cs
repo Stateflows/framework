@@ -44,7 +44,7 @@ internal class ActivityEndpointFilter(
                         metadata.ActivityContext.Value.Activity = contextHolder.GetActivityContext();
                         metadata.ActivityContext.Value.Status = contextHolder.BehaviorStatus;
                         metadata.ActivityContext.Value.ExpectedEventNames = contextHolder.ExpectedEventNames;
-                        metadata.ActivityContext.Value.CustomHateoasLinks = metadata.CustomHateoasLinks;
+                        metadata.ActivityContext.Value.HateoasLinks = metadata.HateoasLinks;
                         metadata.ActivityContext.Value.ElementsTree = contextHolder.ActiveNodes;
                     }
 
@@ -57,7 +57,7 @@ internal class ActivityEndpointFilter(
                             : null;
                         metadata.ActivityNodeContext.Value.Status = contextHolder.BehaviorStatus;
                         metadata.ActivityNodeContext.Value.ExpectedEventNames = contextHolder.ExpectedEventNames;
-                        metadata.ActivityNodeContext.Value.CustomHateoasLinks = metadata.CustomHateoasLinks;
+                        metadata.ActivityNodeContext.Value.HateoasLinks = metadata.HateoasLinks;
                         metadata.ActivityNodeContext.Value.ElementsTree = contextHolder.ActiveNodes;
                     }
 
@@ -67,7 +67,7 @@ internal class ActivityEndpointFilter(
                         metadata.BehaviorContext.Value.Behavior = contextHolder.GetActivityContext();
                         metadata.BehaviorContext.Value.Status = contextHolder.BehaviorStatus;
                         metadata.BehaviorContext.Value.ExpectedEventNames = contextHolder.ExpectedEventNames;
-                        metadata.BehaviorContext.Value.CustomHateoasLinks = metadata.CustomHateoasLinks;
+                        metadata.BehaviorContext.Value.HateoasLinks = metadata.HateoasLinks;
                         metadata.BehaviorContext.Value.ElementsTree = contextHolder.ActiveNodes;
                     }
 

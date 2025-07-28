@@ -14,9 +14,8 @@ public class BehaviorEndpointContext : IBehaviorEndpointContext
     internal IBehaviorLocator Locator { get; set; }
     internal IEnumerable<string> ExpectedEventNames { get; set; }
     internal BehaviorStatus Status { get; set; }
-    internal Dictionary<string, List<HateoasLink>> CustomHateoasLinks { get; set; }
+    internal Dictionary<string, List<(HateoasLink, BehaviorStatus[])>> HateoasLinks { get; set; }
     internal IReadOnlyTree<string> ElementsTree { get; set; }
-
     public IBehaviorContext Behavior { get; internal set; }
 
     protected BehaviorInfo GetBehaviorInfo()
@@ -51,13 +50,13 @@ public class BehaviorEndpointContext : IBehaviorEndpointContext
     {
         var behaviorInfo = GetBehaviorInfo();
 
-        return new EndpointResponse(behaviorInfo.ToHateoasLinks(CustomHateoasLinks), behaviorInfo.ToMetadata());
+        return new EndpointResponse(behaviorInfo.ToHateoasLinks(HateoasLinks), behaviorInfo.ToMetadata());
     }
 
     public EndpointResponse<T> Response<T>(T result)
     {
         var behaviorInfo = GetBehaviorInfo();
 
-        return new EndpointResponse<T>(result, behaviorInfo.ToHateoasLinks(CustomHateoasLinks), behaviorInfo.ToMetadata());
+        return new EndpointResponse<T>(result, behaviorInfo.ToHateoasLinks(HateoasLinks), behaviorInfo.ToMetadata());
     }
 }

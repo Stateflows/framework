@@ -1,14 +1,15 @@
-using System.Reflection;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
-using Stateflows.Common.Attributes;
+using Microsoft.AspNetCore.Routing;
+using Stateflows.Common;
 using Stateflows.Extensions.MinimalAPIs.Interfaces;
-using Stateflows.StateMachines.Attributes;
 
 namespace Stateflows.Extensions.MinimalAPIs;
 
 internal class EndpointsBuilder(
+    IEndpointRouteBuilder routeBuilder,
     IBehaviorClassVisitor visitor,
+    Interceptor interceptor,
     BehaviorClass behaviorClass,
     string? scopeName = null
 ) : IEndpointsBuilder
@@ -17,6 +18,9 @@ internal class EndpointsBuilder(
     
     private RouteHandlerBuilder AddEndpoint(string pattern, string[] methods, Delegate handler)
     {
+        var route = $"/{behaviorClass.Type.ToResource()}/{behaviorClass.Name}/{{instance}}{pattern}";
+        var endpointEnabled = interceptor.BeforeCustomEndpointDefinition(behaviorClass, ref methods, ref route);
+
         var requireContext = handler.Method.GetParameters().Any(parameter =>
             parameter.ParameterType == typeof(IBehaviorEndpointContext) ||
             parameter.ParameterType == typeof(IStateEndpointContext) ||
@@ -24,46 +28,60 @@ internal class EndpointsBuilder(
             parameter.ParameterType == typeof(IActivityNodeEndpointContext) ||
             parameter.ParameterType == typeof(IActivityEndpointContext)
         );
-        
-        visitor.AddLink(new HateoasLink()
+
+        if (!endpointEnabled)
         {
-            Rel = "custom",
-            Href = pattern,
-            Method = string.Join(',', methods)
-        }, scopeName ?? "");
-        
-        var routeGroup = visitor.GetRouteGroup(behaviorClass.Name);
-        var endpoint = routeGroup
-            .MapMethods(
-                "/{instance}" + pattern,
-                methods,
-                handler
-            )
-            .WithMetadata(new EndpointMetadata()
-            {
-                BehaviorClass = behaviorClass,
-                Pattern = pattern,
-                RequireContext = requireContext,
-                ScopeName = scopeName,
-                CustomHateoasLinks = visitor.CustomHateoasLinks
-            })
+            handler = () => Results.NotFound();
+        }
+        else
+        {
+            visitor.HateoasLinks.AddLink(
+                behaviorClass.Name,
+                new HateoasLink()
+                {
+                    Rel = "custom",
+                    Href = route,
+                    Method = string.Join(',', methods)
+                },
+                [BehaviorStatus.Initialized],
+                scopeName ?? "",
+                string.IsNullOrEmpty(scopeName) ? "" : "node"
+            );
+        }
+
+        var endpoint = routeBuilder
+                .MapMethods(
+                    route,
+                    methods,
+                    handler
+                )
+                .WithMetadata(new EndpointMetadata()
+                {
+                    BehaviorClass = behaviorClass,
+                    Pattern = pattern,
+                    RequireContext = requireContext,
+                    ScopeName = scopeName,
+                    HateoasLinks = visitor.HateoasLinks
+                })
             ;
 
-        switch (behaviorClass.Type)
+        if (!endpointEnabled)
         {
-            case BehaviorType.Action:
-                endpoint = endpoint.AddEndpointFilter<ActionEndpointFilter>();
-                break;
-            
-            case BehaviorType.Activity:
-                endpoint = endpoint.AddEndpointFilter<ActivityEndpointFilter>();
-                break;
-            
-            case BehaviorType.StateMachine:
-                endpoint = endpoint.AddEndpointFilter<StateMachineEndpointFilter>();
-                break;
+            endpoint.ExcludeFromDescription();
         }
-        
+        else
+        {
+            endpoint = behaviorClass.Type switch
+            {
+                BehaviorType.Action => endpoint.AddEndpointFilter<ActionEndpointFilter>(),
+                BehaviorType.Activity => endpoint.AddEndpointFilter<ActivityEndpointFilter>(),
+                BehaviorType.StateMachine => endpoint.AddEndpointFilter<StateMachineEndpointFilter>(),
+                _ => endpoint
+            };
+
+            interceptor.AfterCustomEndpointDefinition(behaviorClass, methods, route, endpoint);
+        }
+
         return endpoint;
     }
     

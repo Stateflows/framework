@@ -26,7 +26,15 @@ namespace Stateflows.Activities.Inspection.Classes
 
         public NodeType Type => Node.Type;
 
-        public bool Active => false;// Executor.GetVerticesStackAsync(false).GetAwaiter().GetResult().Contains(Vertex);
+        public bool Active => Executor.NodesTree.Contains(Node);
+
+        public NodeStatus Status => Executor.Context.ActiveNodes.Keys.Contains(Node.Identifier)
+            ? NodeStatus.Active
+            : Executor.Context.ActivatedNodes.Contains(Node.Identifier)
+                ? NodeStatus.Executed
+                : Executor.Context.PendingNodes.Contains(Node.Identifier)
+                    ? NodeStatus.Omitted
+                    : NodeStatus.NotUsed;
 
         private IEnumerable<IFlowInspection> flows;
 

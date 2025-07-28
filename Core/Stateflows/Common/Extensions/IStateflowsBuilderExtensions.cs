@@ -5,7 +5,7 @@ namespace Stateflows
 {
     public static class IStateflowsBuilderExtensions
     {
-        [Obsolete]
+        [Obsolete("This method will be removed in a future release.")]
         public static IStateflowsBuilder SetEnvironment(this IStateflowsBuilder stateflowsBuilder, string environment)
         {
             (stateflowsBuilder as IStateflowsClientBuilder).SetEnvironment(environment);

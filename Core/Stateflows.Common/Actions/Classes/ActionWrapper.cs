@@ -13,7 +13,7 @@ namespace Stateflows.Common.Actions.Classes
         BehaviorId IBehavior.Id => Behavior.Id;
 
         public IServiceProvider ServiceProvider => (Behavior as IInjectionScope)?.ServiceProvider;
-
+        
         private IBehavior Behavior { get; }
 
         public ActionWrapper(IBehavior consumer)

@@ -24,7 +24,7 @@ namespace Stateflows.StateMachines.Engine
     {
         public readonly Graph Graph;
 
-        public bool StateHasChanged;
+        public bool StateHasChanged { get; set; }
 
         public readonly StateMachinesRegister Register;
 
@@ -921,7 +921,7 @@ namespace Stateflows.StateMachines.Engine
 
         public async Task<IStateMachine> GetStateMachineAsync(Type stateMachineType)
         {
-            return await StateflowsActivator.CreateInstanceAsync(ServiceProvider, stateMachineType, "state machine") as IStateMachine;
+            return await StateflowsActivator.CreateModelElementInstanceAsync(ServiceProvider, stateMachineType, "state machine") as IStateMachine;
         }
 
         public Task<TDefaultInitializer> GetDefaultInitializerAsync<TDefaultInitializer>(IStateMachineInitializationContext context)
@@ -939,7 +939,7 @@ namespace Stateflows.StateMachines.Engine
             StateMachinesContextHolder.BehaviorContext.Value = context.StateMachine;
             StateMachinesContextHolder.ExecutionContext.Value = context;
 
-            return StateflowsActivator.CreateInstanceAsync<TDefaultInitializer>(ServiceProvider, "default initializer");
+            return StateflowsActivator.CreateModelElementInstanceAsync<TDefaultInitializer>(ServiceProvider, "default initializer");
         }
 
         public Task<TInitializer> GetInitializerAsync<TInitializer, TInitializationEvent>(IStateMachineInitializationContext<TInitializationEvent> context)
@@ -957,7 +957,7 @@ namespace Stateflows.StateMachines.Engine
             StateMachinesContextHolder.BehaviorContext.Value = context.StateMachine;
             StateMachinesContextHolder.ExecutionContext.Value = context;
 
-            return StateflowsActivator.CreateInstanceAsync<TInitializer>(ServiceProvider, "initializer");
+            return StateflowsActivator.CreateModelElementInstanceAsync<TInitializer>(ServiceProvider, "initializer");
         }
 
         public Task<TFinalizer> GetFinalizerAsync<TFinalizer>(IStateMachineActionContext context)
@@ -975,7 +975,7 @@ namespace Stateflows.StateMachines.Engine
             StateMachinesContextHolder.BehaviorContext.Value = context.StateMachine;
             StateMachinesContextHolder.ExecutionContext.Value = context;
 
-            return StateflowsActivator.CreateInstanceAsync<TFinalizer>(ServiceProvider, "finalizer");
+            return StateflowsActivator.CreateModelElementInstanceAsync<TFinalizer>(ServiceProvider, "finalizer");
         }
 
         public Task<TState> GetStateAsync<TState>(IStateActionContext context)
@@ -993,7 +993,7 @@ namespace Stateflows.StateMachines.Engine
             StateMachinesContextHolder.BehaviorContext.Value = context.StateMachine;
             StateMachinesContextHolder.ExecutionContext.Value = context;
 
-            return StateflowsActivator.CreateInstanceAsync<TState>(ServiceProvider, "state");
+            return StateflowsActivator.CreateModelElementInstanceAsync<TState>(ServiceProvider, "state");
         }
 
         public Task<TTransition> GetTransitionAsync<TTransition, TEvent>(ITransitionContext<TEvent> context)
@@ -1011,7 +1011,7 @@ namespace Stateflows.StateMachines.Engine
             StateMachinesContextHolder.BehaviorContext.Value = context.StateMachine;
             StateMachinesContextHolder.ExecutionContext.Value = context;
 
-            return StateflowsActivator.CreateInstanceAsync<TTransition>(ServiceProvider, "transition");
+            return StateflowsActivator.CreateModelElementInstanceAsync<TTransition>(ServiceProvider, "transition");
         }
 
         public Task<TTransitionGuard> GetTransitionGuardAsync<TTransitionGuard, TEvent>(ITransitionContext<TEvent> context)
@@ -1030,7 +1030,7 @@ namespace Stateflows.StateMachines.Engine
             StateMachinesContextHolder.BehaviorContext.Value = context.StateMachine;
             StateMachinesContextHolder.ExecutionContext.Value = context;
 
-            return StateflowsActivator.CreateInstanceAsync<TTransitionGuard>(ServiceProvider, "transition guard");
+            return StateflowsActivator.CreateModelElementInstanceAsync<TTransitionGuard>(ServiceProvider, "transition guard");
         }
 
         public Task<TTransitionEffect> GetTransitionEffectAsync<TTransitionEffect, TEvent>(ITransitionContext<TEvent> context)
@@ -1049,7 +1049,7 @@ namespace Stateflows.StateMachines.Engine
             StateMachinesContextHolder.BehaviorContext.Value = context.StateMachine;
             StateMachinesContextHolder.ExecutionContext.Value = context;
 
-            return StateflowsActivator.CreateInstanceAsync<TTransitionEffect>(ServiceProvider, "transition effect");
+            return StateflowsActivator.CreateModelElementInstanceAsync<TTransitionEffect>(ServiceProvider, "transition effect");
         }
 
         public Task<TDefaultTransition> GetDefaultTransitionAsync<TDefaultTransition>(ITransitionContext<Completion> context)
@@ -1067,7 +1067,7 @@ namespace Stateflows.StateMachines.Engine
             StateMachinesContextHolder.BehaviorContext.Value = context.StateMachine;
             StateMachinesContextHolder.ExecutionContext.Value = context;
 
-            return StateflowsActivator.CreateInstanceAsync<TDefaultTransition>(ServiceProvider, "default transition");
+            return StateflowsActivator.CreateModelElementInstanceAsync<TDefaultTransition>(ServiceProvider, "default transition");
         }
 
         public Task<TDefaultTransitionGuard> GetDefaultTransitionGuardAsync<TDefaultTransitionGuard>(ITransitionContext<Completion> context)
@@ -1085,7 +1085,7 @@ namespace Stateflows.StateMachines.Engine
             StateMachinesContextHolder.BehaviorContext.Value = context.StateMachine;
             StateMachinesContextHolder.ExecutionContext.Value = context;
 
-            return StateflowsActivator.CreateInstanceAsync<TDefaultTransitionGuard>(ServiceProvider, "default transition guard");
+            return StateflowsActivator.CreateModelElementInstanceAsync<TDefaultTransitionGuard>(ServiceProvider, "default transition guard");
         }
 
         public Task<TDefaultTransitionEffect> GetDefaultTransitionEffectAsync<TDefaultTransitionEffect>(ITransitionContext<Completion> context)
@@ -1103,7 +1103,7 @@ namespace Stateflows.StateMachines.Engine
             StateMachinesContextHolder.BehaviorContext.Value = context.StateMachine;
             StateMachinesContextHolder.ExecutionContext.Value = context;
 
-            return StateflowsActivator.CreateInstanceAsync<TDefaultTransitionEffect>(ServiceProvider, "default transition effect");
+            return StateflowsActivator.CreateModelElementInstanceAsync<TDefaultTransitionEffect>(ServiceProvider, "default transition effect");
         }
     }
 }

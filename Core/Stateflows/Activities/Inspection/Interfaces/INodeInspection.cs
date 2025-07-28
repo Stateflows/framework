@@ -9,6 +9,8 @@ namespace Stateflows.Activities.Inspection.Interfaces
         NodeType Type { get; }
 
         bool Active { get; }
+        
+        NodeStatus Status { get; }
 
         IEnumerable<IFlowInspection> Flows { get; }
 

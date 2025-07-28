@@ -215,6 +215,45 @@ namespace Stateflows.Activities.Context.Classes
             }
         }
 
+        private List<string> activatedNodes = null;
+
+        public List<string> ActivatedNodes
+            => activatedNodes ??= new List<string>();
+
+        private List<string> pendingNodes = null;
+        public List<string> PendingNodes
+            => pendingNodes ??= new List<string>();
+
+        private Dictionary<string, int> flowTokensCount = null;
+        public Dictionary<string, int> FlowTokensCount
+        {
+            get
+            {
+                lock (Context.Values)
+                {
+                    if (flowTokensCount == null)
+                    {
+                        if (!Context.Values.TryGetValue(Constants.FlowTokensCount, out var flowTokensCountObj))
+                        {
+                            flowTokensCount = new Dictionary<string, int>();
+                            Context.Values[Constants.FlowTokensCount] = flowTokensCount;
+                        }
+                        else
+                        {
+                            flowTokensCount = flowTokensCountObj as Dictionary<string, int>;
+                        }
+                    }
+                }
+
+                return flowTokensCount;
+            }
+        }
+
+        private List<string> activatedFlows = null;
+
+        public List<string> ActivatedFlows
+            => activatedFlows ??= new List<string>();
+
         private Dictionary<string, Guid> nodeThreads = null;
         public Dictionary<string, Guid> NodeThreads
         {

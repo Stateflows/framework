@@ -6,6 +6,7 @@ using Microsoft.Extensions.Logging;
 using Stateflows.Common;
 using Stateflows.Extensions.OpenTelemetry.Headers;
 using Stateflows.StateMachines;
+using Stateflows.StateMachines.Context.Interfaces;
 
 namespace Stateflows.Extensions.OpenTelemetry
 {
@@ -22,7 +23,7 @@ namespace Stateflows.Extensions.OpenTelemetry
         internal static readonly ActivitySource Source = new ActivitySource(nameof(Stateflows));
 
         private Activity? EventProcessingActivity;
-        public bool BeforeProcessEvent<TEvent>(StateMachines.IEventContext<TEvent> context)
+        public bool BeforeProcessEvent<TEvent>(IEventContext<TEvent> context)
         {
             var noTracing =
                 context.Event!.GetType().GetCustomAttributes<NoTracingAttribute>().Any() ||
@@ -58,7 +59,7 @@ namespace Stateflows.Extensions.OpenTelemetry
             return true;
         }
 
-        public void AfterProcessEvent<TEvent>(StateMachines.IEventContext<TEvent> context, EventStatus eventStatus)
+        public void AfterProcessEvent<TEvent>(IEventContext<TEvent> context, EventStatus eventStatus)
         {
             if (context.Behavior.Id.Type != BehaviorType.StateMachine)
             {

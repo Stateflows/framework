@@ -131,28 +131,6 @@ namespace Stateflows.StateMachines.Context.Classes
             return values;
         }
 
-        // private List<string> statesStack = null;
-        // public List<string> StatesStack
-        // {
-        //     get
-        //     {
-        //         if (statesStack == null)
-        //         {
-        //             if (!stateflowsContext.Values.TryGetValue(Constants.StatesStack, out var statesStackObj))
-        //             {
-        //                 statesStack = new List<string>();
-        //                 stateflowsContext.Values[Constants.StatesStack] = statesStack;
-        //             }
-        //             else
-        //             {
-        //                 statesStack = statesStackObj as List<string>;
-        //             }
-        //         }
-        //
-        //         return statesStack;
-        //     }
-        // }
-
         private Tree<string> statesTree = null;
         public Tree<string> StatesTree
         {

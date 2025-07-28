@@ -118,6 +118,43 @@ namespace Stateflows.Common.Context
             return true;
         }
 
+        public Dictionary<string, List<BehaviorId>> Relays { get; set; } = new Dictionary<string, List<BehaviorId>>();
+
+        public bool AddRelays(BehaviorId subscriberBehaviorId, IEnumerable<string> notificationNames)
+        {
+            foreach (var notificationName in notificationNames)
+            {
+                if (!Relays.TryGetValue(notificationName, out var behaviorIds))
+                {
+                    behaviorIds = new List<BehaviorId>();
+                    Relays[notificationName] = behaviorIds;
+                }
+
+                if (!behaviorIds.Contains(subscriberBehaviorId))
+                {
+                    behaviorIds.Add(subscriberBehaviorId);
+                }
+            }
+
+            return true;
+        }
+
+        public bool RemoveRelays(BehaviorId subscriberBehaviorId, IEnumerable<string> notificationNames)
+        {
+            foreach (var notificationName in notificationNames)
+            {
+                if (
+                    Relays.TryGetValue(notificationName, out var behaviorIds) &&
+                    behaviorIds.Contains(subscriberBehaviorId)
+                )
+                {
+                    behaviorIds.Remove(subscriberBehaviorId);
+                }
+            }
+
+            return true;
+        }
+
         public bool ShouldSerializeValues()
             => Values.Any();
 

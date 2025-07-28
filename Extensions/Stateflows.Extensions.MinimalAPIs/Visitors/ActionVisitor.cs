@@ -10,38 +10,15 @@ using Stateflows.Common.Interfaces;
 
 namespace Stateflows.Extensions.MinimalAPIs;
 
-internal class ActionVisitor(RouteGroupBuilder behaviorsBuilder, System.Action<RouteHandlerBuilder> routeHandlerBuilderAction) : Actions.ActionVisitor, IBehaviorClassVisitor
+internal class ActionVisitor(IEndpointRouteBuilder routeBuilder, Interceptor interceptor)
+    : Actions.ActionVisitor, IBehaviorClassVisitor
 {
-    private readonly Dictionary<string, RouteGroupBuilder> RouteGroups = new();
-
-    public RouteGroupBuilder GetRouteGroup(string behaviorClassName)
-    {
-        if (!RouteGroups.TryGetValue(behaviorClassName, out var action))
-        {
-            action = behaviorsBuilder.MapGroup($"/{behaviorClassName}");
-            RouteGroups.Add(behaviorClassName, action);
-            
-            RegisterStandardEndpoints(behaviorClassName, action);
-        }
-
-        return action;
-    }
-
-    public Dictionary<string, List<HateoasLink>> CustomHateoasLinks { get; set; } = new();
-    public void AddLink(HateoasLink link, string scope = "")
-    {
-        if (!CustomHateoasLinks.TryGetValue(scope, out var links))
-        {
-            links = new List<HateoasLink>();
-            CustomHateoasLinks.Add(scope, links);
-        }
-        
-        links.Add(link);
-    }
+    public IEndpointRouteBuilder RouteBuilder => routeBuilder;
+    public Dictionary<string, List<(HateoasLink, BehaviorStatus[])>> HateoasLinks { get; set; } = new();
 
     public override Task ActionAddedAsync(string actionName, int actionVersion)
     {
-        GetRouteGroup(actionName);
+        RegisterStandardEndpoints(actionName, routeBuilder);
         
         return Task.CompletedTask;
     }
@@ -49,52 +26,69 @@ internal class ActionVisitor(RouteGroupBuilder behaviorsBuilder, System.Action<R
     private static string GetEventName<TEvent>()
         => JsonNamingPolicy.CamelCase.ConvertName(Event<TEvent>.Name.ToShortName());
 
-    private void RegisterStandardEndpoints(string actionName, RouteGroupBuilder action)
+    private void RegisterStandardEndpoints(string actionName, IEndpointRouteBuilder action)
     {
-        routeHandlerBuilderAction(
-            action.MapGet("/", async (IStateflowsStorage storage) =>
-            {
-                IEnumerable<BehaviorClass> actionClasses = [new ActionClass(actionName)];
-                var contexts = await storage.GetAllContextsAsync(actionClasses);
-                return Results.Ok(contexts.Select(context => context.Id));
-            })
-        );
+        var behaviorClass = new ActionClass(actionName);
         
-        routeHandlerBuilderAction(
-            action.MapGet("/{instance}/status",
-                async (string instance, IActionLocator locator) =>
+        var method = HttpMethods.Get;
+        var route = $"/{actionName}";
+        if (interceptor.BeforeGetInstancesEndpointDefinition(behaviorClass, ref method, ref route))
+        {
+            var routeHandlerBuilder = action.MapMethods(route, [method], async (IStateflowsStorage storage) =>
+            {
+                BehaviorClass[] actionClasses = [new ActionClass(actionName)];
+                var contextIds = await storage.GetAllContextIdsAsync(actionClasses);
+                return Results.Ok(contextIds.Select(id => new { Id = id }));
+            });
+
+            interceptor.AfterGetInstancesEndpointDefinition(behaviorClass, method, route, routeHandlerBuilder);
+        }
+
+        route = $"/{actionName}/{{instance}}/status";
+        method = HttpMethods.Get;
+        if (interceptor.BeforeEventEndpointDefinition<BehaviorInfoRequest>(behaviorClass, ref method, ref route))
+        {
+            var routeHandlerBuilder = action.MapMethods(
+                route,
+                [method],
+                async (
+                    string instance,
+                    IActionLocator locator
+                ) =>
                 {
                     if (locator.TryLocateAction(new ActionId(actionName, instance), out var behavior))
                     {
                         var result = await behavior.GetStatusAsync([new NoImplicitInitialization()]);
-                        return result.ToResult([], result.Response, CustomHateoasLinks);
+                        // workaround for return code 200 regardless behavior actual status
+                        result.Status = EventStatus.Consumed;
+                        return result.ToResult([], result.Response, HateoasLinks);
                     }
-                    
+
                     return Results.NotFound();
                 }
-            )
-        );
+            );
 
-        routeHandlerBuilderAction(
-            action.MapPost("/{instance}/initialize",
-                async (string instance, IActionLocator locator, RequestBody payload) =>
+            interceptor.AfterEventEndpointDefinition<BehaviorInfoRequest>(behaviorClass, method, route, routeHandlerBuilder);
+            
+            HateoasLinks.AddLink(
+                behaviorClass.Name,
+                new HateoasLink()
                 {
-                    if (locator.TryLocateAction(new ActionId(actionName, instance), out var behavior))
-                    {
-                        var result = await behavior.SendAsync(new Initialize());
-                        var behaviorInfo = (await behavior.GetStatusAsync([new NoImplicitInitialization()])).Response;
-                        var notifications = (await behavior.GetNotificationsAsync(payload.RequestedNotifications)).Response.Notifications.ToArray();
-                        return result.ToResult(notifications, behaviorInfo, CustomHateoasLinks);
-                    }
-                    
-                    return Results.NotFound();
-                }
-            )
-        );
+                    Rel = "status",
+                    Href = route,
+                    Method = method
+                },
+                [BehaviorStatus.NotInitialized, BehaviorStatus.Initialized, BehaviorStatus.Finalized]
+            );
+        }
 
-        routeHandlerBuilderAction(
-            action.MapGet(
-                "/{instance}/notifications",
+        route = $"/{actionName}/{{instance}}/notifications";
+        method = HttpMethods.Get;
+        if (interceptor.BeforeEventEndpointDefinition<NotificationsRequest>(behaviorClass, ref method, ref route))
+        {
+            var routeHandlerBuilder = action.MapMethods(
+                route,
+                [method],
                 async (
                     IActionLocator locator,
                     string instance,
@@ -105,54 +99,107 @@ internal class ActionVisitor(RouteGroupBuilder behaviorsBuilder, System.Action<R
                     period ??= TimeSpan.FromSeconds(60);
                     if (locator.TryLocateAction(new ActionId(actionName, instance), out var behavior))
                     {
-                        var result = await behavior.GetNotificationsAsync(names, period);
+                        var result = await behavior.GetNotificationsAsync(names, period, [new NoImplicitInitialization()]);
                         var behaviorInfo = (await behavior.GetStatusAsync([new NoImplicitInitialization()])).Response;
-                        return result.ToResult(result.Response.Notifications, behaviorInfo, CustomHateoasLinks);
+                        return result.ToResult(result.Response.Notifications, behaviorInfo, HateoasLinks);
                     }
                     return Results.NotFound();
-                })
-        );
+                });
+            
+            interceptor.AfterEventEndpointDefinition<NotificationsRequest>(behaviorClass, method, route, routeHandlerBuilder);
+            
+            HateoasLinks.AddLink(
+                behaviorClass.Name,
+                new HateoasLink()
+                {
+                    Rel = "notifications",
+                    Href = route,
+                    Method = method
+                },
+                [BehaviorStatus.Initialized, BehaviorStatus.Finalized]
+            );
+        }
 
-
-        routeHandlerBuilderAction(
-            action.MapPost("/{instance}/finalize",
-                async (string instance, IActionLocator locator, RequestBody payload) =>
+        route = $"/{actionName}/{{instance}}/finalize";
+        method = HttpMethods.Post;
+        if (interceptor.BeforeEventEndpointDefinition<Finalize>(behaviorClass, ref method, ref route))
+        {
+            var routeHandlerBuilder = action.MapMethods(
+                route,
+                [method],
+                async (
+                    string instance,
+                    IActionLocator locator
+                ) =>
                 {
                     if (locator.TryLocateAction(new ActionId(actionName, instance), out var behavior))
                     {
                         var result = await behavior.FinalizeAsync();
                         var behaviorInfo = (await behavior.GetStatusAsync([new NoImplicitInitialization()])).Response;
-                        var notifications = (await behavior.GetNotificationsAsync(payload.RequestedNotifications)).Response.Notifications.ToArray();
-                        return result.ToResult(notifications, behaviorInfo, CustomHateoasLinks);
+                        return result.ToResult([], behaviorInfo, HateoasLinks);
                     }
                     
                     return Results.NotFound();
                 }
-            )
-        );
+            );
+            
+            interceptor.AfterEventEndpointDefinition<Finalize>(behaviorClass, method, route, routeHandlerBuilder);
+            
+            HateoasLinks.AddLink(
+                behaviorClass.Name,
+                new HateoasLink()
+                {
+                    Rel = "finalize",
+                    Href = route,
+                    Method = method
+                },
+                [BehaviorStatus.Initialized]
+            );
+        }
 
-        routeHandlerBuilderAction(
-            action.MapDelete("/{instance}", 
-                async (string instance, IActionLocator locator) =>
+        route = $"/{actionName}/{{instance}}";
+        method = HttpMethods.Delete;
+        if (interceptor.BeforeEventEndpointDefinition<Reset>(behaviorClass, ref method, ref route))
+        {
+            var routeHandlerBuilder = action.MapMethods(
+                route,
+                [method],
+                async (
+                    string instance,
+                    IActionLocator locator
+                ) =>
                 {
                     if (locator.TryLocateAction(new ActionId(actionName, instance), out var behavior))
                     {
                         var result = await behavior.ResetAsync();
                         var behaviorInfo = (await behavior.GetStatusAsync([new NoImplicitInitialization()])).Response;
-                        return result.ToResult([], behaviorInfo, CustomHateoasLinks);
+                        return result.ToResult([], behaviorInfo, HateoasLinks);
                     }
                     
                     return Results.NotFound();
                 }
-            )
-        );
+            );
+            
+            interceptor.AfterEventEndpointDefinition<Reset>(behaviorClass, method, route, routeHandlerBuilder);
+            
+            HateoasLinks.AddLink(
+                behaviorClass.Name,
+                new HateoasLink()
+                {
+                    Rel = "reset",
+                    Href = route,
+                    Method = method
+                },
+                [BehaviorStatus.Initialized, BehaviorStatus.Finalized]
+            );
+        }
     }
 
     public override Task ActionTypeAddedAsync<TAction>(string actionName, int actionVersion)
     {
         if (typeof(IActionEndpoints).IsAssignableFrom(typeof(TAction)))
         {
-            var endpointsBuilder = new EndpointsBuilder(this, new ActionClass(actionName));
+            var endpointsBuilder = new EndpointsBuilder(routeBuilder, this, interceptor, new ActionClass(actionName));
             
             var action = (IActionEndpoints)StateflowsActivator.CreateUninitializedInstance<TAction>();
             action.RegisterEndpoints(endpointsBuilder);

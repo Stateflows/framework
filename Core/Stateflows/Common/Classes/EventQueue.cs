@@ -67,18 +67,20 @@ namespace Stateflows.Common.Classes
             Event.Set();
         }
 
-        public void Enqueue(T item)
+        public int Enqueue(T item)
         {
             if (Locked)
             {
                 lock (LockObject)
                 {
                     DoEnqueue(item);
+                    return Count;
                 }
             }
             else
             {
                 DoEnqueue(item);
+                return Count;
             }
         }
 

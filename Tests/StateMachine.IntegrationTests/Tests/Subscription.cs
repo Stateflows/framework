@@ -22,7 +22,6 @@ namespace StateMachine.IntegrationTests.Tests
                     .AddStateMachine("subscriber", b => b
                         .AddExecutionSequenceObserver()
                         .AddInitialState("state1", b => b
-                            //.AddDeferredEvent<OtherEvent>()
                             .AddOnEntry(c => c.Behavior.SubscribeAsync<SomeNotification>(new StateMachineId("subscribee", c.Behavior.Id.Instance)))
                             .AddTransition<SomeNotification>("state2")
                         )
@@ -40,7 +39,9 @@ namespace StateMachine.IntegrationTests.Tests
                             .AddInternalTransition<OtherEvent>(b => b
                                 .AddEffect(c => c.Behavior.Publish(new SomeNotification()))
                             )
+                            .AddTransition<SomeEvent>("state2")
                         )
+                        .AddState("state2")
                     )
                 )
                 ;
@@ -112,6 +113,27 @@ namespace StateMachine.IntegrationTests.Tests
             }
             
             Assert.AreEqual("state1", currentState);
+            Assert.AreEqual(BehaviorStatus.Initialized, currentStatus);
+        }
+
+        [TestMethod]
+        public async Task WatchRetainedStandardNotifications()
+        {
+            var currentStatus = BehaviorStatus.Unknown;
+            var currentState = "";
+
+            if (StateMachineLocator.TryLocateStateMachine(new StateMachineId("subscribee", "z"), out var subscribee))
+            {
+                await subscribee.SendAsync(new SomeEvent());
+                
+                _ = subscribee.WatchStatusAsync(n =>
+                {
+                    currentState = n.CurrentStates.Value;
+                    currentStatus = n.BehaviorStatus;
+                });
+            }
+            
+            Assert.AreEqual("state2", currentState);
             Assert.AreEqual(BehaviorStatus.Initialized, currentStatus);
         }
     }

@@ -1,3 +1,86 @@
+# 0.17.1
+## Core
+
+### Introduced: Relay
+Notifications published by one Behavior can be relayed by second Behavior - for subscribers and watchers of second Behavior it will be the same as if it is publishing them.
+
+Relay can be started by sending `StartRelay` Event to publisher and stopped by sending `StopRelay` Event.
+
+For embedded Behaviors (Actions and Activities bound to State Machines), relays can be declared the same way as for subscriptions:
+
+```csharp
+    // part of State Machine definition
+    .AddState("stateA", b => b
+        .AddTransition<SomeEvent>("stateB", b => b
+            .AddEffectActivity("effect", b => b
+                .AddRelay<SomeNotification>()
+            )
+        )
+    )
+```
+
+> Relaying is much faster than subscribing and republishing notification Event as it doesn't involve execution of relaying Behavior - it is publishing-as-usual, just using a different Behavior identity.
+
+> Note that relayed notification Event is not processed by relaying Behavior in any way. If there is a need to process an Event before it is republished, subscription should be used. 
+
+### Changed: Time To Live
+> Breaking change: by default, published notification Events have no TTL value set. This is a change from previous state when default TTL was set to 60 seconds. Moreover, `Publish()` method doesn't accept `timeToLiveInSeconds` parameter anymore.
+
+There is a new publishing method introduced: `PublishTimed()`, which accepts `timeToLiveInSeconds` parameter.
+
+### Introduced: Retained notifications
+Notifications now can be retained within cache, making them infinitely available for subscribers/watchers. Rules of notification Event retention:
+- There can be only one retained Event of type at one time; if a retained notification Event is published, previously retained Event of same type is discarded from cache and will no longer be available.
+- Retained notification can't have a Time To Live; if TTL is set on publish, it will be ignored.
+
+> Note: retention is designed to replace `RequestAndWatchAsync()` method which is now marked as obsolete as well as its `RequestAndWatchStatusAsync()` version. Instead of providing a support for request Event along with notification Event, simply retain your notification Event, so it will be available for subscribers anytime.
+
+There is a new publishing method introduced: `PublishRetained()`.
+
+Notification Event can be retained different ways:
+1. by providing `Retain` header when publishing:
+```csharp
+context.Publish(new MyNotification(), new List<EventHeader>() { new Retain() });
+```
+2. by using dedicated publising method `PublishRetained()`:
+```csharp
+context.PublishRetained(new MyNotification());
+```
+3. by marking notification Event type with `RetainedAttribute`:
+```csharp
+[Retain]
+public class MyNotification {}
+```
+
+> Note: `BehaviorInfo`, `StateMachineInfo` and `ActivityInfo` are retained by default using `RetainAttribute`.
+
+## Extensions
+
+### Enhanced: Stateflows.Extensions.MinimalAPIs
+Minimal APIs extension now enables full customization of endpoints using `IEndpointDefinitionInterceptor` interface or builder interface available via `MapStateflowsMinimalAPIsEndpoints()` method:
+
+```csharp
+app.MapStateflowsMinimalAPIsEndpoints(b => b
+    .ConfigureAllEndpoints(b => b
+        .ConfigureHandler(h => h.RequireAuthorization())
+    )
+    .ConfigureGetAllInstancesEndpoint(b => b
+        .Disable()
+    )
+    .ConfigureStateMachines(b => b
+        .ConfigureGetInstancesEndpoint(b => b
+            .Disable()
+        )
+        .ConfigureStateMachine("Doc", b => b
+            .Disable()
+        )
+    )
+    .SetApiRoutePrefix("custom")
+);
+```
+
+This configuration can also be done on the level of a Behavior definition class, too - using interfaces `IStateMachineEndpointsConfiguration`, `IActivityEndpointsConfiguration`, or `IActionEndpointsConfiguration`, respectively to Behavior type.
+
 # 0.17.0
 ## Core
 
@@ -37,12 +120,21 @@ Although this is not considered a typical transport layer (no client library is 
 Custom endpoints can be defined on the level of Behavior (those are available as long as Behavior instance is initialized) or on the level of State / Node (those are available only when given State / Node is active):
 ```csharp
     .AddState<Paid>(b => b
-        .AddEndpoints(b => b
-            .AddGet("/invoices", () => { /* endpoint logic here */ })
-        )
+        .AddEndpoints(b =>
+        {
+            b.AddGet("/invoices", () => { /* endpoint logic here */ });
+        })
     )
 ```
-Note that custom endpoints **are not executed in the context of a Behavior instance**; their purpose is to put CRUD operations for resources that are logically owned by a Behavior instance under its resource, making REST interface more coherent.
+Note that custom endpoints by default **are not executed in the context of a Behavior instance**; their purpose is to put CRUD operations for resources that are logically owned by a Behavior instance under its resource, making REST interface more coherent.
+
+If it is a requirement to run endpoint within context of a behavior, context may be injected using one of dedicated interfaces:
+- `IBehaviorEndpointContext` - available in all custom endpoints,
+- `IActionEndpointContext` - available in Action endpoints,
+- `IStateMachineEndpointContext` - available in State Machine endpoints,
+- `IStateEndpointContext` - available in State Machine, State-scoped endpoints,
+- `IActivityEndpointContext` - available in Activity endpoints,
+- `IActivityNodeEndpointContext` - available in Activity, Structured Activity-scoped endpoints.
 
 ### Introduced: Stateflows.Extensions.OpenTelemetry
 With this extension all interactions with Behaviors are logged and all internal works of State Machine and Activity models are traced accordingly to OpenTelemetry standards. Purpose of this extensions is to enhance debugging and auditing by enabling a structured insight into complexities of models and their execution.

@@ -16,9 +16,6 @@ using Stateflows.Common.Subscription;
 using Stateflows.Common.Registration.Builders;
 using Stateflows.Common.Registration.Interfaces;
 using IExecutionContext = Stateflows.Common.IExecutionContext;
-using Stateflows.Actions;
-using Stateflows.Activities;
-using Stateflows.StateMachines;
 
 namespace Stateflows
 {
@@ -65,10 +62,10 @@ namespace Stateflows
             services.AddStateflowsClient(b => { });
 
             buildAction(builder);
-
-            // StateMachinesDependencyInjection.Cleanup(builder);
-            // ActivitiesDependencyInjection.Cleanup(builder);
-            // ActionsDependencyInjection.Cleanup(builder);
+            
+            // builder.AddActions(b => b
+            //     .AddAction<FanOut>(true)
+            // );
 
             services.AddSingleton(_ => builder.TypeMapper);
 

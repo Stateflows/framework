@@ -1,4 +1,5 @@
 using System.Threading.Tasks;
+using Stateflows.Common;
 
 namespace Stateflows.Activities
 {
@@ -47,36 +48,26 @@ namespace Stateflows.Activities
         public virtual Task ControlFlowAddedAsync(string activityName, int activityVersion, string sourceNodeName, string targetNodeName, bool isElse = false)
             => Task.CompletedTask;
 
-        // public virtual Task ElseControlFlowAddedAsync(string activityName, int activityVersion, string sourceNodeName, string targetNodeName)
-        //     => Task.CompletedTask;
+        public virtual Task ControlFlowTypeAddedAsync<TControlFlow>(string activityName, int activityVersion, string sourceNodeName,
+            string targetNodeName, bool isElse = false) where TControlFlow : class, IControlFlow
+            => Task.CompletedTask;
 
         public virtual Task FlowAddedAsync<TToken>(string activityName, int activityVersion, string sourceNodeName, string targetNodeName, bool isElse = false)
             => Task.CompletedTask;
 
-        // public virtual Task TransformationFlowAddedAsync<TToken, TTransformedToken>(string activityName, int activityVersion,
-        //     string sourceNodeName, string targetNodeName)
-        //     => Task.CompletedTask;
-        //
-        // public virtual Task ElseFlowAddedAsync<TToken>(string activityName, int activityVersion, string sourceNodeName, string targetNodeName)
-        //     => Task.CompletedTask;
-        //
-        // public virtual Task ElseTransformationFlowAddedAsync<TToken, TTransformedToken>(string activityName, int activityVersion,
-        //     string sourceNodeName, string targetNodeName)
-        //     => Task.CompletedTask;
-        //
-        // public virtual Task ControlFlowGuardTypeAddedAsync<TGuard>(string activityName, int activityVersion, string sourceNodeName,
-        //     string targetNodeName = null)
-        //     where TGuard : class, IControlFlowGuard
-        //     => Task.CompletedTask;
-        //
-        // public virtual Task FlowGuardTypeAddedAsync<TToken, TGuard>(string activityName, int activityVersion, string sourceNodeName,
-        //     string targetNodeName = null)
-        //     where TGuard : class, IFlowGuard<TToken>
-        //     => Task.CompletedTask;
-        //
-        // public virtual Task FlowTransformationTypeAddedAsync<TToken, TTransformedToken, TTransformation>(string activityName,
-        //     int activityVersion, string sourceNodeName, string targetNodeName = null)
-        //     where TTransformation : class, IFlowTransformation<TToken, TTransformedToken>
-        //     => Task.CompletedTask;
+        public virtual Task FlowTypeAddedAsync<TToken, TFlow>(string activityName, int activityVersion, string sourceNodeName,
+            string targetNodeName, bool isElse = false) where TFlow : class, IFlow<TToken>
+            => Task.CompletedTask;
+
+        public virtual Task TransformationFlowAddedAsync<TToken, TTransformedToken>(string activityName, int activityVersion,
+            string sourceNodeName, string targetNodeName, bool isElse = false)
+            => Task.CompletedTask;
+
+        public virtual Task TransformationFlowTypeAddedAsync<TToken, TTransformedToken, TFlowTransformation>(string activityName,
+            int activityVersion, string sourceNodeName, string targetNodeName, bool isElse = false) where TFlowTransformation : class, IFlowTransformation<TToken, TTransformedToken>
+            => Task.CompletedTask;
+
+        public virtual Task CustomEventAddedAsync<TEvent>(string activityName, int activityVersion, BehaviorStatus[] supportedStatuses)
+            => Task.CompletedTask;
     }
 }

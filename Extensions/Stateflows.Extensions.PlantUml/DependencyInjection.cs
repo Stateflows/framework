@@ -14,6 +14,9 @@ namespace Stateflows
                 .AddStateMachines(b => b
                     .AddInterceptor<PlantUmlStateMachineInterceptor>()
                 )
+                .AddActivities(b => b
+                    .AddInterceptor<PlantUmlActivityInterceptor>()
+                )
                 .ServiceCollection
                 .AddSingleton<PlantUmlHandler>()
                 .AddSingleton<IActivityEventHandler>(services => services.GetService<PlantUmlHandler>())

@@ -2,93 +2,61 @@ using System.Reflection;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
-using Stateflows.Activities;
 using Stateflows.Common;
 using Stateflows.Common.Utilities;
+using Stateflows.Activities;
 using Stateflows.StateMachines;
 
 namespace Stateflows.Extensions.MinimalAPIs;
 
 internal static class Utils
 {
-    internal static IEnumerable<HateoasLink> ToHateoasLinks(this BehaviorInfo behaviorInfo, Dictionary<string, List<HateoasLink>> customHateoasLinks)
-    {
-        var behaviorTypeResource = behaviorInfo.Id.Type switch
+    internal static string ToResource(this string behaviorType)
+        => behaviorType switch
         {
             BehaviorType.StateMachine => "stateMachines",
             BehaviorType.Activity => "activities",
             BehaviorType.Action => "actions",
             _ => throw new ArgumentOutOfRangeException()
         };
+    
+    internal static IEnumerable<HateoasLink> ToHateoasLinks(this BehaviorInfo behaviorInfo, Dictionary<string, List<(HateoasLink, BehaviorStatus[])>> hateoasLinks)
+    {
+        var links = new List<HateoasLink>();
 
-        var routePrefix = $"{DependencyInjection.ApiRoutePrefix}/{behaviorTypeResource}";
+        links.AddRange(
+            behaviorInfo.ExpectedEvents.SelectMany(expectedEvent =>
+                hateoasLinks.TryGetValue($"{behaviorInfo.Id.Name}:event:{expectedEvent.ToShortName().ToCamelCase()}", out var eventLinks)
+                    ? eventLinks.ToInstanceLinks(DependencyInjection.ApiRoutePrefix, behaviorInfo)
+                    : []
+            )
+        );
         
-        var links = behaviorInfo.ExpectedEvents
-            .Select(ev => ev.ToShortName().ToCamelCase())
-            .Select(ev => new HateoasLink()
-            {
-                Rel = ev,
-                Href = $"{routePrefix}/{behaviorInfo.Id.Name}/{behaviorInfo.Id.Instance}/{ev}",
-                Method = "POST"
-            })
-            .ToList();
-
-        links.Add(new HateoasLink()
+        if (hateoasLinks.TryGetValue(behaviorInfo.Id.Name, out var globalLinks))
         {
-            Rel = "status",
-            Href = $"{routePrefix}/{behaviorInfo.Id.Name}/{behaviorInfo.Id.Instance}/status",
-            Method = "GET"
-        });
-
-        links.Add(new HateoasLink()
+            links.AddRange(globalLinks.ToInstanceLinks(DependencyInjection.ApiRoutePrefix, behaviorInfo));
+        }
+        
+        if (behaviorInfo is StateMachineInfo stateMachineInfo)
         {
-            Rel = "reset",
-            Href = $"{routePrefix}/{behaviorInfo.Id.Name}/{behaviorInfo.Id.Instance}",
-            Method = "DELETE"
-        });
-
-        if (behaviorInfo.BehaviorStatus == BehaviorStatus.Initialized)
+            links.AddRange(
+                stateMachineInfo.CurrentStates.GetAllNodes().SelectMany(node =>
+                    hateoasLinks.TryGetValue($"{behaviorInfo.Id.Name}:node:{node.Value}", out var stateLinks)
+                        ? stateLinks.ToInstanceLinks(DependencyInjection.ApiRoutePrefix, behaviorInfo)
+                        : []
+                )
+            );
+        }
+        
+        if (behaviorInfo is ActivityInfo activityInfo)
         {
-            links.Add(new HateoasLink()
-            {
-                Rel = "notifications",
-                Href = $"{routePrefix}/{behaviorInfo.Id.Name}/{behaviorInfo.Id.Instance}/notifications",
-                Method = "GET"
-            });
-
-            links.Add(new HateoasLink()
-            {
-                Rel = "finalize",
-                Href = $"{routePrefix}/{behaviorInfo.Id.Name}/{behaviorInfo.Id.Instance}/finalize",
-                Method = "POST"
-            });
-
-            if (customHateoasLinks.TryGetValue("", out var globalLinks))
-            {
-                links.AddRange(globalLinks.ToInstanceLinks(routePrefix, behaviorInfo));
-            }
-
-            if (behaviorInfo is StateMachineInfo stateMachineInfo)
-            {
-                links.AddRange(
-                    stateMachineInfo.CurrentStates.GetAllNodes().SelectMany(node =>
-                        customHateoasLinks.TryGetValue(node.Value, out var links)
-                            ? links.ToInstanceLinks(routePrefix, behaviorInfo)
-                            : []
-                    )
-                );
-            }
-
-            if (behaviorInfo is ActivityInfo activityInfo)
-            {
-                links.AddRange(
-                    activityInfo.ActiveNodes.GetAllNodes().SelectMany(node =>
-                        customHateoasLinks.TryGetValue(node.Value, out var links)
-                            ? links.ToInstanceLinks(routePrefix, behaviorInfo)
-                            : []
-                    )
-                );
-            }
+            links.AddRange(
+                activityInfo.ActiveNodes.GetAllNodes().SelectMany(node =>
+                    hateoasLinks.TryGetValue($"{behaviorInfo.Id.Name}:node:{node.Value}", out var nodeLinks)
+                        ? nodeLinks.ToInstanceLinks(DependencyInjection.ApiRoutePrefix, behaviorInfo)
+                        : []
+                )
+            );
         }
 
         return links;
@@ -114,17 +82,19 @@ internal static class Utils
         return metadata;
     }
 
-    private static IEnumerable<HateoasLink> ToInstanceLinks(this IEnumerable<HateoasLink> links, string routePrefix, BehaviorInfo behaviorInfo)
-        => links.Select(link => link with { Href = $"{routePrefix}/{behaviorInfo.Id.Name}/{behaviorInfo.Id.Instance}{link.Href}" });
+    private static IEnumerable<HateoasLink> ToInstanceLinks(this IEnumerable<(HateoasLink, BehaviorStatus[])> links, string routePrefix, BehaviorInfo behaviorInfo)
+        => links
+            .Where(link => link.Item2.Contains(behaviorInfo.BehaviorStatus))
+            .Select(link => link.Item1 with { Href = $"/{routePrefix}{link.Item1.Href}" });
     
-    public static IResult ToResult(this SendResult result, IEnumerable<EventHolder> notifications, BehaviorInfo behaviorInfo, Dictionary<string, List<HateoasLink>> customHateoasLinks)
+    public static IResult ToResult(this SendResult result, IEnumerable<EventHolder> notifications, BehaviorInfo behaviorInfo, Dictionary<string, List<(HateoasLink, BehaviorStatus[])>> customHateoasLinks)
     {
         var response = new ResponseBody(result, notifications, behaviorInfo.ToHateoasLinks(customHateoasLinks), behaviorInfo.ToMetadata());
         var jsonResult = StateflowsJsonConverter.SerializeObject(response, true);
         return jsonResult.ToResult(result.Status);
     }
     
-    public static IResult ToResult<TResponse>(this RequestResult<TResponse> result, IEnumerable<EventHolder> notifications, BehaviorInfo behaviorInfo, Dictionary<string, List<HateoasLink>> customHateoasLinks)
+    public static IResult ToResult<TResponse>(this RequestResult<TResponse> result, IEnumerable<EventHolder> notifications, BehaviorInfo behaviorInfo, Dictionary<string, List<(HateoasLink, BehaviorStatus[])>> customHateoasLinks)
     {
         var jsonResult = StateflowsJsonConverter.SerializeObject(new ResponseBody<TResponse>(result, notifications, behaviorInfo.ToHateoasLinks(customHateoasLinks), behaviorInfo.ToMetadata()), true);
         return jsonResult.ToResult(result.Status);

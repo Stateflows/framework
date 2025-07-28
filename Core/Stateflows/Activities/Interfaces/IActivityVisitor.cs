@@ -1,5 +1,6 @@
 ﻿using System.Threading.Tasks;
 using Stateflows.Activities;
+using Stateflows.Common;
 
 namespace Stateflows.Activities
 {
@@ -32,10 +33,21 @@ namespace Stateflows.Activities
             where TSendEventAction : class, ISendEventActionNode<TEvent>;
 
         Task ControlFlowAddedAsync(string activityName, int activityVersion, string sourceNodeName, string targetNodeName, bool isElse = false);
-        
-        // Task ElseControlFlowAddedAsync(string activityName, int activityVersion, string sourceNodeName, string targetNodeName);
 
+        Task ControlFlowTypeAddedAsync<TControlFlow>(string activityName, int activityVersion, string sourceNodeName, string targetNodeName, bool isElse = false)
+            where TControlFlow : class, IControlFlow;
+        
         Task FlowAddedAsync<TToken>(string activityName, int activityVersion, string sourceNodeName, string targetNodeName, bool isElse = false);
+
+        Task FlowTypeAddedAsync<TToken, TFlow>(string activityName, int activityVersion, string sourceNodeName, string targetNodeName, bool isElse = false)
+            where TFlow : class, IFlow<TToken>;
+        
+        Task TransformationFlowAddedAsync<TToken, TTransformedToken>(string activityName, int activityVersion, string sourceNodeName, string targetNodeName, bool isElse = false);
+
+        Task TransformationFlowTypeAddedAsync<TToken, TTransformedToken, TFlowTransformation>(string activityName, int activityVersion, string sourceNodeName, string targetNodeName, bool isElse = false)
+            where TFlowTransformation : class, IFlowTransformation<TToken, TTransformedToken>;
+        
+        Task CustomEventAddedAsync<TEvent>(string activityName, int activityVersion, BehaviorStatus[] supportedStatuses);
         
         // Task TransformationFlowAddedAsync<TToken, TTransformedToken>(string activityName, int activityVersion, string sourceNodeName, string targetNodeName);
         //

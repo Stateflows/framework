@@ -1,5 +1,4 @@
-﻿using Stateflows.Common;
-using StateMachine.IntegrationTests.Classes.Events;
+﻿using StateMachine.IntegrationTests.Classes.Events;
 
 namespace StateMachine.IntegrationTests.Classes.Transitions
 {

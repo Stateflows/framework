@@ -10,10 +10,10 @@ using Stateflows;
 using Stateflows.Actions;
 using Stateflows.Activities;
 using Stateflows.StateMachines;
-using Stateflows.Common.Registration.Interfaces;
-using Stateflows.Testing.StateMachines.Sequence;
 using Stateflows.Common.Classes;
+using Stateflows.Common.Registration.Interfaces;
 using Stateflows.Testing;
+using Stateflows.Testing.StateMachines.Sequence;
 
 namespace StateMachine.IntegrationTests.Utils
 {

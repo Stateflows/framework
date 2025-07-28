@@ -1,6 +1,4 @@
-﻿using Stateflows.Common;
-
-namespace Stateflows.Activities.Registration.Interfaces.Base
+﻿namespace Stateflows.Activities.Registration.Interfaces.Base
 {
     public interface IPublishEvent<out TReturn>
     {

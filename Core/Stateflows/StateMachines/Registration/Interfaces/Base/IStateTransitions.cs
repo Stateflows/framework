@@ -1,5 +1,6 @@
 ﻿using System.Diagnostics;
 using Stateflows.StateMachines.Extensions;
+using Stateflows.StateMachines.Registration.Interfaces.Internal;
 
 namespace Stateflows.StateMachines.Registration.Interfaces.Base
 {
@@ -126,9 +127,11 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         ///     . // Use . to see available builder methods
         /// </code></param>
         [DebuggerHidden]
-        public TReturn AddTransition<TEvent, TTransition>(string targetStateName, TransitionBuildAction<TEvent> transitionBuildAction = null)
+        public TReturn AddTransition<TEvent, TTransition>(string targetStateName,
+            TransitionBuildAction<TEvent> transitionBuildAction = null)
             where TTransition : class, ITransition<TEvent>
-            => AddTransition<TEvent>(
+        {
+            var result = AddTransition<TEvent>(
                 targetStateName,
                 b =>
                 {
@@ -136,6 +139,14 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
                     transitionBuildAction?.Invoke(b);
                 }
             );
+
+            var sourceName = ((IVertexBuilder)this).Name;
+            var graph = ((IGraphBuilder)this).Graph;
+            graph.VisitingTasks.Add(visitor =>
+                visitor.TransitionTypeAddedAsync<TEvent, TTransition>(graph.Name, graph.Version, sourceName, targetStateName, false));
+
+            return result;
+        }
 
         /// <summary>
         /// Adds transition triggered by TEvent coming from current state.<br/>
@@ -297,7 +308,8 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         [DebuggerHidden]
         public TReturn AddDefaultTransition<TTransition>(string targetStateName, DefaultTransitionBuildAction transitionBuildAction = null)
             where TTransition : class, IDefaultTransition
-            => AddDefaultTransition(
+        {
+            var result = AddDefaultTransition(
                 targetStateName,
                 b =>
                 {
@@ -305,6 +317,14 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
                     transitionBuildAction?.Invoke(b);
                 }
             );
+
+            var sourceName = ((IVertexBuilder)this).Name;
+            var graph = ((IGraphBuilder)this).Graph;
+            graph.VisitingTasks.Add(visitor =>
+                visitor.TransitionTypeAddedAsync<Completion, TTransition>(graph.Name, graph.Version, sourceName, targetStateName, false));
+
+            return result;
+        }
 
         /// <summary>
         /// Adds default transition coming from current state.<br/>
@@ -479,7 +499,8 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         [DebuggerHidden]
         public TReturn AddElseTransition<TEvent, TElseTransition>(string targetStateName, ElseTransitionBuildAction<TEvent> transitionBuildAction = null)
             where TElseTransition : class, ITransitionEffect<TEvent>
-            => AddElseTransition<TEvent>(
+        {
+            var result = AddElseTransition<TEvent>(
                 targetStateName,
                 b =>
                 {
@@ -487,6 +508,14 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
                     transitionBuildAction?.Invoke(b);
                 }
             );
+
+            var sourceName = ((IVertexBuilder)this).Name;
+            var graph = ((IGraphBuilder)this).Graph;
+            graph.VisitingTasks.Add(visitor =>
+                visitor.TransitionTypeAddedAsync<TEvent, TElseTransition>(graph.Name, graph.Version, sourceName, targetStateName, true));
+
+            return result;
+        }
 
         /// <summary>
         /// Adds else alternative for all transitions triggered by TEvent coming from current state.<br/><br/>
@@ -591,7 +620,8 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         [DebuggerHidden]
         public TReturn AddElseDefaultTransition<TElseTransition>(string targetStateName, ElseDefaultTransitionBuildAction transitionBuildAction = null)
             where TElseTransition : class, IDefaultTransitionEffect
-            => AddElseDefaultTransition(
+        {
+            var result = AddElseDefaultTransition(
             targetStateName,
                 b =>
                 {
@@ -599,6 +629,14 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
                     transitionBuildAction?.Invoke(b);
                 }
             );
+
+            var sourceName = ((IVertexBuilder)this).Name;
+            var graph = ((IGraphBuilder)this).Graph;
+            graph.VisitingTasks.Add(visitor =>
+                visitor.TransitionTypeAddedAsync<Completion, TElseTransition>(graph.Name, graph.Version, sourceName, targetStateName, true));
+
+            return result;
+        }
 
         /// <summary>
         /// Adds else alternative for all default transitions coming from current state.<br/><br/>

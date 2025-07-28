@@ -1,5 +1,4 @@
-﻿using System.ComponentModel.DataAnnotations;
-using System.Text.Json;
+﻿using System.Text.Json;
 using System.Reflection;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Http;
@@ -15,12 +14,13 @@ using Stateflows.Extensions.MinimalAPIs.Attributes;
 namespace Stateflows.Extensions.MinimalAPIs;
 
 internal class ActivityVisitor(
-    RouteGroupBuilder behaviorsBuilder,
-    Action<RouteHandlerBuilder> routeHandlerBuilderAction,
+    IEndpointRouteBuilder routeBuilder,
+    Interceptor interceptor,
     ITypeMapper typeMapper
 ) : Activities.ActivityVisitor, IBehaviorClassVisitor, ITypeVisitor
 {
-    private readonly Dictionary<string, RouteGroupBuilder> RouteGroups = new();
+    public IEndpointRouteBuilder RouteBuilder => routeBuilder;
+    public Interceptor Interceptor => interceptor;
     private readonly Dictionary<string, bool> Initializers = new();
     private readonly Dictionary<string, List<Type>> Triggers = new();
     private static readonly MethodInfo RegisterRequestMethod = typeof(ActivityVisitor).GetMethod(
@@ -29,36 +29,14 @@ internal class ActivityVisitor(
     )!;
 
     private string CurrentActivityName = string.Empty;
+    private BehaviorStatus[] SupportedStatuses = [];
     
     public void Visit<T>()
     {
         RegisterEventEndpoint<T>(CurrentActivityName);
     }
 
-    public RouteGroupBuilder GetRouteGroup(string behaviorClassName)
-    {
-        if (!RouteGroups.TryGetValue(behaviorClassName, out var activity))
-        {
-            activity = behaviorsBuilder.MapGroup($"/{behaviorClassName}");
-            RouteGroups.Add(behaviorClassName, activity);
-            
-            RegisterStandardEndpoints(behaviorClassName, activity);
-        }
-
-        return activity;
-    }
-
-    public Dictionary<string, List<HateoasLink>> CustomHateoasLinks { get; set; } = new();
-    public void AddLink(HateoasLink link, string scope = "")
-    {
-        if (!CustomHateoasLinks.TryGetValue(scope, out var links))
-        {
-            links = new List<HateoasLink>();
-            CustomHateoasLinks.Add(scope, links);
-        }
-        
-        links.Add(link);
-    }
+    public Dictionary<string, List<(HateoasLink, BehaviorStatus[])>> HateoasLinks { get; set; } = new();
 
     public override Task InitializerAddedAsync<TInitializationEvent>(string activityName, int activityVersion)
     {
@@ -83,7 +61,8 @@ internal class ActivityVisitor(
 
     public override Task ActivityAddedAsync(string activityName, int activityVersion)
     {
-        RegisterRemainingEndpoints();
+        RegisterStandardEndpoints(activityName);
+        RegisterRemainingEndpoints(activityName);
         
         return Task.CompletedTask;
     }
@@ -92,7 +71,7 @@ internal class ActivityVisitor(
     {
         if (typeof(IActivityEndpoints).IsAssignableFrom(typeof(TActivity)))
         {
-            var endpointsBuilder = new EndpointsBuilder(this, new ActivityClass(activityName));
+            var endpointsBuilder = new EndpointsBuilder(routeBuilder, this, interceptor, new ActivityClass(activityName));
             
             var activity = (IActivityEndpoints)StateflowsActivator.CreateUninitializedInstance<TActivity>();
             activity.RegisterEndpoints(endpointsBuilder);
@@ -101,19 +80,17 @@ internal class ActivityVisitor(
         return Task.CompletedTask;
     }
 
-    private void RegisterEventEndpoint<TEvent>(string activityName, RouteGroupBuilder activity)
-        => activity.RegisterEventEndpoint<TEvent>(routeHandlerBuilderAction,
-            BehaviorType.Activity, activityName, CustomHateoasLinks);
+    private void RegisterEventEndpoint<TEvent>(string activityName, IEndpointRouteBuilder activity)
+        => activity.RegisterEventEndpoint<TEvent>(interceptor,
+            BehaviorType.Activity, activityName, HateoasLinks);
 
-    private void RegisterRequestEndpoint<TRequest, TResponse>(string activityName, RouteGroupBuilder activity)
+    private void RegisterRequestEndpoint<TRequest, TResponse>(string activityName, IEndpointRouteBuilder activity)
         where TRequest : IRequest<TResponse>
-        => activity.RegisterRequestEndpoint<TRequest, TResponse>(routeHandlerBuilderAction,
-            BehaviorType.Activity, activityName, CustomHateoasLinks);
-
+        => activity.RegisterRequestEndpoint<TRequest, TResponse>(interceptor,
+            BehaviorType.Activity, activityName, HateoasLinks);
+    
     private void RegisterEventEndpoint<TEvent>(string activityName)
     {
-        var activity = GetRouteGroup(activityName);
-
         var eventType = typeof(TEvent);
         if (
             eventType.GetCustomAttributes<NoApiMappingAttribute>().Any() ||
@@ -147,46 +124,55 @@ internal class ActivityVisitor(
                     this,
                     BindingFlags.Instance | BindingFlags.NonPublic,
                     null,
-                    [activityName, activity], 
+                    [activityName, routeBuilder], 
                     null
                 );
             }
             else
             {
-                RegisterEventEndpoint<TEvent>(activityName, activity);
+                RegisterEventEndpoint<TEvent>(activityName, routeBuilder);
             }
         }
     }
 
-    private void RegisterRemainingEndpoints()
+    private void RegisterRemainingEndpoints(string activityName)
     {
-        foreach (var activityName in RouteGroups.Keys)
+        if (Initializers.TryGetValue(activityName, out var hasInitializers) && hasInitializers)
         {
-            if (Initializers.TryGetValue(activityName, out var hasInitializers) && hasInitializers)
-            {
-                continue;
-            }
-            
-            RegisterEventEndpoint<Initialize>(activityName);
+            return;
         }
+        
+        RegisterEventEndpoint<Initialize>(activityName);
     }
 
     private static string GetEventName<TEvent>()
         => JsonNamingPolicy.CamelCase.ConvertName(Event<TEvent>.Name.ToShortName());
 
-    private void RegisterStandardEndpoints(string activityName, RouteGroupBuilder activity)
+    private void RegisterStandardEndpoints(string activityName)
     {
-        routeHandlerBuilderAction(
-            activity.MapGet("/", async (IStateflowsStorage storage) =>
+        var behaviorClass = new ActivityClass(activityName);
+        
+        var method = HttpMethods.Get;
+        var route = $"/activities/{activityName}";
+        if (interceptor.BeforeGetInstancesEndpointDefinition(behaviorClass, ref method, ref route))
+        {
+            var routeHandlerBuilder = routeBuilder.MapMethods(route, [method], async (IStateflowsStorage storage) =>
             {
-                IEnumerable<BehaviorClass> actionClasses = [new ActivityClass(activityName)];
-                var contexts = await storage.GetAllContextsAsync(actionClasses);
-                return Results.Ok(contexts.Select(context => context.Id));
-            })
-        );
+                BehaviorClass[] actionClasses = [behaviorClass];
+                var contextIds = await storage.GetAllContextIdsAsync(actionClasses);
+                return Results.Ok(contextIds.Select(id => new { Id = id }));
+            });
 
-        routeHandlerBuilderAction(
-            activity.MapGet("/{instance}/status",
+            interceptor.AfterGetInstancesEndpointDefinition(behaviorClass, method, route, routeHandlerBuilder);
+        }
+
+        route = $"/activities/{activityName}/{{instance}}/status";
+        method = HttpMethods.Get;
+        if (interceptor.BeforeEventEndpointDefinition<ActivityInfoRequest>(behaviorClass, ref method, ref route))
+        {
+            var routeHandlerBuilder = routeBuilder.MapMethods(
+                route,
+                [method],
                 async (
                     string instance,
                     IActivityLocator locator
@@ -197,17 +183,34 @@ internal class ActivityVisitor(
                         var result = await behavior.GetStatusAsync([new NoImplicitInitialization()]);
                         // workaround for return code 200 regardless behavior actual status
                         result.Status = EventStatus.Consumed;
-                        return result.ToResult([], result.Response, CustomHateoasLinks);
+                        return result.ToResult([], result.Response, HateoasLinks);
                     }
 
                     return Results.NotFound();
                 }
-            )
-        );
+            );
 
-        routeHandlerBuilderAction(
-            activity.MapGet(
-                "/{instance}/notifications",
+            interceptor.AfterEventEndpointDefinition<ActivityInfoRequest>(behaviorClass, method, route, routeHandlerBuilder);
+            
+            HateoasLinks.AddLink(
+                behaviorClass.Name,
+                new HateoasLink()
+                {
+                    Rel = "status",
+                    Href = route,
+                    Method = method
+                },
+                [BehaviorStatus.NotInitialized, BehaviorStatus.Initialized, BehaviorStatus.Finalized]
+            );
+        }
+
+        route = $"/activities/{activityName}/{{instance}}/notifications";
+        method = HttpMethods.Get;
+        if (interceptor.BeforeEventEndpointDefinition<NotificationsRequest>(behaviorClass, ref method, ref route))
+        {
+            var routeHandlerBuilder = routeBuilder.MapMethods(
+                route,
+                [method],
                 async (
                     IActivityLocator locator,
                     string instance,
@@ -220,14 +223,33 @@ internal class ActivityVisitor(
                     {
                         var result = await behavior.GetNotificationsAsync(names, period);
                         var behaviorInfo = (await behavior.GetStatusAsync([new NoImplicitInitialization()])).Response;
-                        return result.ToResult(result.Response.Notifications, behaviorInfo, CustomHateoasLinks);
+                        return result.ToResult(result.Response.Notifications, behaviorInfo, HateoasLinks);
                     }
-                    return Results.NotFound();
-                })
-        );
 
-        routeHandlerBuilderAction(
-            activity.MapPost("/{instance}/finalize",
+                    return Results.NotFound();
+                });
+            
+            interceptor.AfterEventEndpointDefinition<NotificationsRequest>(behaviorClass, method, route, routeHandlerBuilder);
+            
+            HateoasLinks.AddLink(
+                behaviorClass.Name,
+                new HateoasLink()
+                {
+                    Rel = "notifications",
+                    Href = route,
+                    Method = method
+                },
+                [BehaviorStatus.Initialized, BehaviorStatus.Finalized]
+            );
+        }
+
+        route = $"/activities/{activityName}/{{instance}}/finalize";
+        method = HttpMethods.Post;
+        if (interceptor.BeforeEventEndpointDefinition<Finalize>(behaviorClass, ref method, ref route))
+        {
+            var routeHandlerBuilder = routeBuilder.MapMethods(
+                route,
+                [method],
                 async (
                     string instance,
                     IActivityLocator locator
@@ -237,29 +259,60 @@ internal class ActivityVisitor(
                     {
                         var result = await behavior.FinalizeAsync();
                         var behaviorInfo = (await behavior.GetStatusAsync([new NoImplicitInitialization()])).Response;
-                        return result.ToResult([], behaviorInfo, CustomHateoasLinks);
+                        return result.ToResult([], behaviorInfo, HateoasLinks);
                     }
                     
                     return Results.NotFound();
                 }
-            )
-        );
+            );
+            
+            interceptor.AfterEventEndpointDefinition<Finalize>(behaviorClass, method, route, routeHandlerBuilder);
+            
+            HateoasLinks.AddLink(
+                behaviorClass.Name,
+                new HateoasLink()
+                {
+                    Rel = "finalize",
+                    Href = route,
+                    Method = method
+                },
+                [BehaviorStatus.Initialized]
+            );
+        }
 
-        routeHandlerBuilderAction(
-            activity.MapDelete("/{instance}", 
+        route = $"/activities/{activityName}/{{instance}}";
+        method = HttpMethods.Delete;
+        if (interceptor.BeforeEventEndpointDefinition<Reset>(behaviorClass, ref method, ref route))
+        {
+            var routeHandlerBuilder = routeBuilder.MapMethods(
+                route,
+                [method],
                 async (string instance, IActivityLocator locator) =>
                 {
                     if (locator.TryLocateActivity(new ActivityId(activityName, instance), out var behavior))
                     {
                         var result = await behavior.ResetAsync();
                         var behaviorInfo = (await behavior.GetStatusAsync([new NoImplicitInitialization()])).Response;
-                        return result.ToResult([], behaviorInfo, CustomHateoasLinks);
+                        return result.ToResult([], behaviorInfo, HateoasLinks);
                     }
                     
                     return Results.NotFound();
                 }
-            )
-        );
+            );
+            
+            interceptor.AfterEventEndpointDefinition<Reset>(behaviorClass, method, route, routeHandlerBuilder);
+            
+            HateoasLinks.AddLink(
+                behaviorClass.Name,
+                new HateoasLink()
+                {
+                    Rel = "reset",
+                    Href = route,
+                    Method = method
+                },
+                [BehaviorStatus.Initialized, BehaviorStatus.Finalized]
+            );
+        }
     }
 
     public override Task NodeTypeAddedAsync<TNode>(string activityName, int activityVersion, string nodeName)
@@ -270,12 +323,21 @@ internal class ActivityVisitor(
             
             DependencyInjection.ActivityEndpointBuilders.Add(visitor =>
             {
-                var builder = new EndpointsBuilder(visitor, behaviorClass, nodeName);
+                var builder = new EndpointsBuilder(routeBuilder, visitor, interceptor, behaviorClass, nodeName);
                 
                 var node = (IStructuredActivityNodeEndpoints)StateflowsActivator.CreateUninitializedInstance<TNode>();
                 node.RegisterEndpoints(builder);
             });
         }
+
+        return Task.CompletedTask;
+    }
+
+    public override Task CustomEventAddedAsync<TEvent>(string activityName, int activityVersion, BehaviorStatus[] supportedStatuses)
+    {
+        CurrentActivityName = activityName;
+        typeMapper.VisitMappedTypes<TEvent>(this);
+        CurrentActivityName = string.Empty;
 
         return Task.CompletedTask;
     }

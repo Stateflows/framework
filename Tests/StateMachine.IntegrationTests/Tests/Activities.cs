@@ -40,7 +40,9 @@ namespace StateMachine.IntegrationTests.Tests
                         })
                         .AddInitialState("stateA", b => b
                             .AddTransition<SomeEvent>("stateB", b => b
-                                .AddGuardActivity("guard")
+                                .AddGuardActivity("guard", b => b
+                                    .AddRelay<SomeNotification>()
+                                )
                                 .AddEffectActivity("effect")
                             )
                         )

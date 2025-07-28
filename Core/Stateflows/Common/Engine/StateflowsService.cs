@@ -25,9 +25,10 @@ namespace Stateflows.Common
         public ExecutionToken EnqueueEvent(BehaviorId id, EventHolder eventHolder, IServiceProvider serviceProvider)
         {
             var token = new ExecutionToken(id, eventHolder, serviceProvider);
-
-            EventQueue.Enqueue(token);
-
+            
+            var counter = EventQueue.Enqueue(token);
+            token.Counter = counter;
+            
             return token;
         }
         

@@ -3,5 +3,7 @@
     public interface ISubscription<out TReturn>
     {
         TReturn AddSubscription<TNotification>();
+
+        TReturn AddRelay<TNotification>();
     }
 }

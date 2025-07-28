@@ -107,7 +107,7 @@ namespace Stateflows.Actions.Registration
                 
                 try
                 {
-                    var instance = (IAction)await StateflowsActivator.CreateInstanceAsync(
+                    var instance = (IAction)await StateflowsActivator.CreateModelElementInstanceAsync(
                         ((ActionDelegateContext)context).ServiceProvider,
                         actionType,
                         "action"
@@ -170,7 +170,7 @@ namespace Stateflows.Actions.Registration
         [DebuggerHidden]
         public void AddInterceptor<TInterceptor>()
             where TInterceptor : class, IActionInterceptor
-            => AddInterceptor(async serviceProvider => await StateflowsActivator.CreateInstanceAsync<TInterceptor>(serviceProvider));
+            => AddInterceptor(async serviceProvider => await StateflowsActivator.CreateModelElementInstanceAsync<TInterceptor>(serviceProvider));
         
         [DebuggerHidden]
         public void AddExceptionHandler(ActionExceptionHandlerFactoryAsync exceptionHandlerFactoryAsync)
@@ -179,7 +179,7 @@ namespace Stateflows.Actions.Registration
         [DebuggerHidden]
         public void AddExceptionHandler<TExceptionHandler>()
             where TExceptionHandler : class, IActionExceptionHandler
-            => AddExceptionHandler(async serviceProvider => await StateflowsActivator.CreateInstanceAsync<TExceptionHandler>(serviceProvider));
+            => AddExceptionHandler(async serviceProvider => await StateflowsActivator.CreateModelElementInstanceAsync<TExceptionHandler>(serviceProvider));
         #endregion
     }
 }

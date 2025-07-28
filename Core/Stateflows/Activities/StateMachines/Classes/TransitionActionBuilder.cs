@@ -7,7 +7,6 @@ namespace Stateflows.Activities.StateMachines.Interfaces
         BaseEmbeddedBehaviorBuilder,
         ITransitionActionBuilder<TEvent>,
         IInitializedTransitionActionBuilder<TEvent>
-
     {
         public TransitionBehaviorInitializationBuilderAsync<TEvent, EventHolder> InitializationBuilder { get; private set; } = null;
 
@@ -16,9 +15,16 @@ namespace Stateflows.Activities.StateMachines.Interfaces
             buildAction?.Invoke(this);
         }
 
-        public TransitionActionBuilder<TEvent> AddSubscription<TNotification>()
+        private TransitionActionBuilder<TEvent> AddSubscription<TNotification>()
         {
-            Notifications.Add(typeof(TNotification));
+            Subscriptions.Add(typeof(TNotification));
+
+            return this;
+        }
+
+        private TransitionActionBuilder<TEvent> AddRelay<TNotification>()
+        {
+            Relays.Add(typeof(TNotification));
 
             return this;
         }
@@ -28,5 +34,11 @@ namespace Stateflows.Activities.StateMachines.Interfaces
 
         IInitializedTransitionActionBuilder<TEvent> ISubscription<IInitializedTransitionActionBuilder<TEvent>>.AddSubscription<TNotification>()
             => AddSubscription<TNotification>();
+
+        ITransitionActionBuilder<TEvent> ISubscription<ITransitionActionBuilder<TEvent>>.AddRelay<TNotification>()
+            => AddRelay<TNotification>();
+
+        IInitializedTransitionActionBuilder<TEvent> ISubscription<IInitializedTransitionActionBuilder<TEvent>>.AddRelay<TNotification>()
+            => AddRelay<TNotification>();
     }
 }

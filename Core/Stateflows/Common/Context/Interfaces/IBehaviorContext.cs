@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Linq;
 using Stateflows.Common.Interfaces;
 
 namespace Stateflows.Common
@@ -29,7 +30,41 @@ namespace Stateflows.Common
         /// <typeparam name="TNotification">Type of notification</typeparam>
         /// <param name="notification">Notification event instance</param>
         /// <param name="headers">Notification event headers</param>
-        /// <param name="timeToLiveInSeconds">Notification time-to-live (in seconds)</param>
-        void Publish<TNotification>(TNotification notification, IEnumerable<EventHeader> headers = null, int timeToLiveInSeconds = 60);
+        void Publish<TNotification>(TNotification notification, IEnumerable<EventHeader> headers = null);
+
+        /// <summary>
+        /// Publishes timed notification to all subscribers and watchers of current behavior
+        /// </summary>
+        /// <typeparam name="TNotification">Type of notification</typeparam>
+        /// <param name="notification">Notification event instance</param>
+        /// <param name="timeToLiveInSeconds">Notification time-to-live in seconds (default value: 60 seconds)</param>
+        /// <param name="headers">Notification event headers</param>
+        void PublishTimed<TNotification>(TNotification notification, int timeToLiveInSeconds = 60, IEnumerable<EventHeader> headers = null)
+        {
+            var headersList = new List<EventHeader>() { new TimeToLive(timeToLiveInSeconds) };
+            if (headers != null)
+            {
+                headersList.AddRange(headers);
+            }
+
+            Publish(notification, headersList);
+        }
+
+        /// <summary>
+        /// Publishes retained notification to all subscribers and watchers of current behavior
+        /// </summary>
+        /// <typeparam name="TNotification">Type of notification</typeparam>
+        /// <param name="notification">Notification event instance</param>
+        /// <param name="headers">Notification event headers</param>
+        void PublishRetained<TNotification>(TNotification notification, IEnumerable<EventHeader> headers = null)
+        {
+            var headersList = new List<EventHeader>() { new Retain() };
+            if (headers != null)
+            {
+                headersList.AddRange(headers);
+            }
+
+            Publish(notification, headersList);
+        }
     }
 }

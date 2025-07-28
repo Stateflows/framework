@@ -1,6 +1,4 @@
-﻿using Activity.IntegrationTests.Classes.Tokens;
-
-namespace Activity.IntegrationTests.Classes.Flow
+﻿namespace Activity.IntegrationTests.Classes.Flow
 {
     internal class IntFlow : IFlowGuard<int>
     {

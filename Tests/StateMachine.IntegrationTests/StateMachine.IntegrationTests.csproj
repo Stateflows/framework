@@ -22,7 +22,6 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\Core\Stateflows.Testing\Stateflows.Testing.csproj" />
-    <ProjectReference Include="..\..\Core\Stateflows.Transport.Common\Stateflows.Common.Transport.csproj" />
     <ProjectReference Include="..\..\Core\Stateflows\Stateflows.csproj" />
     <ProjectReference Include="..\..\Extensions\Stateflows.Extensions.FluentValidation\Stateflows.Extensions.FluentValidation.csproj" />
     <ProjectReference Include="..\..\Extensions\Stateflows.Extensions.OneOf\Stateflows.Extensions.OneOf.csproj" />

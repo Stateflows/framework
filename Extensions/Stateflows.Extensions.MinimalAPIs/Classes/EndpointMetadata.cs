@@ -1,3 +1,5 @@
+using Stateflows.Common;
+
 namespace Stateflows.Extensions.MinimalAPIs;
 
 public class EndpointMetadata
@@ -6,7 +8,7 @@ public class EndpointMetadata
     public BehaviorClass BehaviorClass { get; set; }
     public string Pattern { get; set; }
     public bool RequireContext { get; set; }
-    public Dictionary<string, List<HateoasLink>> CustomHateoasLinks { get; set; }
+    public Dictionary<string, List<(HateoasLink, BehaviorStatus[])>> HateoasLinks { get; set; }
     
     public AsyncLocal<BehaviorEndpointContext> BehaviorContext { get; set; } = new();
     public AsyncLocal<StateMachineEndpointContext> StateMachineContext { get; set; } = new();

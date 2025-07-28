@@ -1,6 +1,4 @@
-﻿using Stateflows.Common;
-
-namespace StateMachine.IntegrationTests.Classes.States
+﻿namespace StateMachine.IntegrationTests.Classes.States
 {
     internal class State1 : IStateEntry, IStateExit
     {

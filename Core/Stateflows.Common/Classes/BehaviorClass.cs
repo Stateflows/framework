@@ -19,7 +19,7 @@ namespace Stateflows
             return this;
         }
 
-        [Obsolete]
+        [Obsolete("This property will be removed in a future release.")]
         public string Environment { get; set; }
 
         public string Type { get; set; }

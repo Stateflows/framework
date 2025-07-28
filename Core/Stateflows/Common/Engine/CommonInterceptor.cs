@@ -5,7 +5,7 @@ using Stateflows.Common.Context.Interfaces;
 
 namespace Stateflows.Common.Engine
 {
-    internal class CommonInterceptor// : IBehaviorInterceptor, IStateflowsExecutionInterceptor, IStateflowsTenantInterceptor
+    internal class CommonInterceptor
     {
         private readonly IEnumerable<IBehaviorInterceptor> Interceptors;
 
