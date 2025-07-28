@@ -8,7 +8,6 @@ using Stateflows.Common;
 using Stateflows.Common.Models;
 using Stateflows.Activities.Registration;
 using Stateflows.Activities.Context.Classes;
-using Microsoft.Extensions.DependencyInjection;
 using Stateflows.Activities.Exceptions;
 
 namespace Stateflows.Activities.Models

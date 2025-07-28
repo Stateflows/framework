@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.Logging;
+﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using Stateflows.Common;
 using Stateflows.Common.Context;
 using Stateflows.Common.Utilities;
@@ -23,6 +24,7 @@ namespace Stateflows.Storage.EntityFrameworkCore.Stateflows
         {
             try
             {
+                await DbContext.Contexts_v1.Where(x => x.TriggerOnStartup).ToArrayAsync();
                 var contextEntity = await DbContext.Contexts_v1.FindOrCreate(context, true);
                 contextEntity.Data = StateflowsJsonConverter.SerializePolymorphicObject(context);
                 contextEntity.TriggerTime = context.TriggerTime;
@@ -88,6 +90,24 @@ namespace Stateflows.Storage.EntityFrameworkCore.Stateflows
             catch (Exception e)
             {
                 Logger.LogError(LogTemplates.ExceptionLogTemplate, typeof(EntityFrameworkCoreStorage).FullName, nameof(GetAllContextsAsync), e.GetType().Name, e.Message);
+            }
+
+            return result;
+        }
+
+        public async Task<IEnumerable<BehaviorId>> GetAllContextIdsAsync(IEnumerable<BehaviorClass> behaviorClasses)
+        {
+            BehaviorId[] result = Array.Empty<BehaviorId>();
+
+            try
+            {
+                var contexts = await DbContext.Contexts_v1.FindByClassesAsync(behaviorClasses);
+
+                result = contexts.Select(c => StateflowsJsonConverter.DeserializeObject<BehaviorId>(c.BehaviorId)).ToArray();
+            }
+            catch (Exception e)
+            {
+                Logger.LogError(LogTemplates.ExceptionLogTemplate, typeof(EntityFrameworkCoreStorage).FullName, nameof(GetAllContextIdsAsync), e.GetType().Name, e.Message);
             }
 
             return result;

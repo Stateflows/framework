@@ -176,7 +176,7 @@ namespace Stateflows.Activities.Registration.Builders
         public IActivityBuilder AddExceptionHandler<TExceptionHandler>()
             where TExceptionHandler : class, IActivityExceptionHandler
         {
-            AddExceptionHandler(async serviceProvider => await StateflowsActivator.CreateInstanceAsync<TExceptionHandler>(serviceProvider, "exception handler"));
+            AddExceptionHandler(async serviceProvider => await StateflowsActivator.CreateModelElementInstanceAsync<TExceptionHandler>(serviceProvider, "exception handler"));
 
             return this;
         }
@@ -198,7 +198,7 @@ namespace Stateflows.Activities.Registration.Builders
         public IActivityBuilder AddInterceptor<TInterceptor>()
             where TInterceptor : class, IActivityInterceptor
         {
-            AddInterceptor(async serviceProvider => await StateflowsActivator.CreateInstanceAsync<TInterceptor>(serviceProvider, "interceptor"));
+            AddInterceptor(async serviceProvider => await StateflowsActivator.CreateModelElementInstanceAsync<TInterceptor>(serviceProvider, "interceptor"));
 
             return this;
         }
@@ -220,7 +220,7 @@ namespace Stateflows.Activities.Registration.Builders
         public IActivityBuilder AddObserver<TObserver>()
             where TObserver : class, IActivityObserver
         {
-            AddObserver(async serviceProvider => await StateflowsActivator.CreateInstanceAsync<TObserver>(serviceProvider, "observer"));
+            AddObserver(async serviceProvider => await StateflowsActivator.CreateModelElementInstanceAsync<TObserver>(serviceProvider, "observer"));
 
             return this;
         }

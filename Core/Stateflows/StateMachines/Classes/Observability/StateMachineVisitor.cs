@@ -1,5 +1,5 @@
 using System.Threading.Tasks;
-using Stateflows.StateMachines.Models;
+using Stateflows.Common;
 
 namespace Stateflows.StateMachines
 {
@@ -31,31 +31,11 @@ namespace Stateflows.StateMachines
         public virtual Task TransitionAddedAsync<TEvent>(string stateMachineName, int stateMachineVersion, string sourceVertexName, string targetVertexName = null, bool isElse = false)
             => Task.CompletedTask;
 
-        // public virtual Task ElseTransitionAddedAsync<TEvent>(string stateMachineName, int stateMachineVersion, string sourceVertexName, string targetVertexName = null)
-        //     => Task.CompletedTask;
-        //
-        // public virtual Task TransitionGuardTypeAddedAsync<TEvent, TGuard>(string stateMachineName, int stateMachineVersion, string sourceVertexName, string targetVertexName = null)
-        //     where TGuard : class, ITransitionGuard<TEvent>
-        //     => Task.CompletedTask;
-        //
-        // public virtual Task TransitionEffectTypeAddedAsync<TEvent, TEffect>(string stateMachineName, int stateMachineVersion, string sourceVertexName, string targetVertexName = null)
-        //     where TEffect : class, ITransitionEffect<TEvent>
-        //     => Task.CompletedTask;
-        //
-        // public virtual Task ElseTransitionEffectTypeAddedAsync<TEvent, TEffect>(string stateMachineName, int stateMachineVersion, string sourceVertexName, string targetVertexName = null)
-        //     where TEffect : class, ITransitionEffect<TEvent>
-        //     => Task.CompletedTask;
-        //
-        // public virtual Task DefaultTransitionGuardTypeAddedAsync<TGuard>(string stateMachineName, int stateMachineVersion, string sourceVertexName, string targetVertexName = null)
-        //     where TGuard : class, IDefaultTransitionGuard
-        //     => Task.CompletedTask;
-        //
-        // public virtual Task DefaultTransitionEffectTypeAddedAsync<TEffect>(string stateMachineName, int stateMachineVersion, string sourceVertexName, string targetVertexName = null)
-        //     where TEffect : class, IDefaultTransitionEffect
-        //     => Task.CompletedTask;
-        //
-        // public virtual Task ElseDefaultTransitionEffectTypeAddedAsync<TEffect>(string stateMachineName, int stateMachineVersion, string sourceVertexName, string targetVertexName = null)
-        //     where TEffect : class, IDefaultTransitionEffect
-        //     => Task.CompletedTask;
+        public virtual Task TransitionTypeAddedAsync<TEvent, TTransition>(string stateMachineName, int stateMachineVersion,
+            string sourceVertexName, string targetVertexName = null, bool isElse = false) where TTransition : class, ITransition<TEvent>
+            => Task.CompletedTask;
+
+        public virtual Task CustomEventAddedAsync<TEvent>(string stateMachineName, int stateMachineVersion, BehaviorStatus[] supportedStatuses)
+            => Task.CompletedTask;
     }
 }

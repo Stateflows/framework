@@ -42,7 +42,7 @@ namespace Stateflows.Common.Subscription
                 StateflowsJsonConverter.SerializePolymorphicObject(new List<EventHolder>())
             );
         
-        public async Task<EventHolder[]> GetNotificationsAsync(BehaviorId behaviorId, Func<EventHolder, bool> filter = null)
+        private async Task<IEnumerable<EventHolder>> GetNotificationsAsync(BehaviorId behaviorId, Func<EventHolder, bool> filter = null)
         {
             List<EventHolder> notifications;
 
@@ -62,22 +62,53 @@ namespace Stateflows.Common.Subscription
             ).ToArray();
         }
 
+        public Task<IEnumerable<EventHolder>> GetNotificationsAsync(BehaviorId behaviorId, IEnumerable<string> notificationNames, DateTime? lastNotificationCheck = null)
+            => GetNotificationsAsync(behaviorId, h =>
+                notificationNames.Contains(h.Name) &&
+                (
+                    h.SentAt.AddSeconds(h.TimeToLive) >= (lastNotificationCheck ?? DateTime.Now) ||
+                    h.Retained
+                )
+            );
+
+        public async Task<IEnumerable<TNotification>> GetNotificationsAsync<TNotification>(BehaviorId behaviorId, DateTime? lastNotificationCheck = null)
+            => (
+                    await GetNotificationsAsync(behaviorId, h =>
+                        h is EventHolder<TNotification> &&
+                        (
+                            h.SentAt.AddSeconds(h.TimeToLive) >= (lastNotificationCheck ?? DateTime.Now) ||
+                            h.Retained
+                        )
+                    )
+                )
+                .Select(h => h as EventHolder<TNotification>)
+                .Select(h => h!.Payload);
+
         public void RegisterHandler(INotificationHandler notificationHandler)
         {
-            Handlers.Add(notificationHandler);
+            lock (Handlers)
+            {
+                Handlers.Add(notificationHandler);
+            }
         }
 
         public void UnregisterHandler(INotificationHandler notificationHandler)
         {
-            Handlers.Remove(notificationHandler);
+            lock (Handlers)
+            {
+                Handlers.Remove(notificationHandler);
+            }
         }
 
-        private async Task RunHandlersAsync(EventHolder eventHolder)
+        private Task RunHandlersAsync(EventHolder eventHolder)
         {
-            foreach (var handler in Handlers)
+            INotificationHandler[] handlers;
+            lock (Handlers)
             {
-                await handler.HandleNotificationAsync(eventHolder);
+                handlers = Handlers.ToArray();
             }
+
+            return Task.WhenAll(handlers.Select(handler => handler.HandleNotificationAsync(eventHolder)));
         }   
 
         public Task PublishAsync(EventHolder eventHolder)
@@ -94,14 +125,18 @@ namespace Stateflows.Common.Subscription
             {
                 await UpdateNotificationsAsync(
                     group.Key,
-                    notifications => notifications.AddRange(group)
-                );
+                    notifications =>
+                    {
+                        var retainedNotifications = group.Where(n => n.Retained).Select(n => n.Name);
+                        foreach (var notification in notifications.Where(n => retainedNotifications.Contains(n.Name)))
+                        {
+                            notification.Retained = false;
+                        }
+                        notifications.AddRange(group);
+                    });
             }
 
-            foreach (var eventHolder in eventHoldersArray)
-            {
-                await RunHandlersAsync(eventHolder);
-            }
+            await Task.WhenAll(eventHoldersArray.Select(RunHandlersAsync));
         }
 
         public Task StartAsync(CancellationToken cancellationToken)

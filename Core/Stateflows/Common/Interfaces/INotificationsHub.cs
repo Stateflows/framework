@@ -12,7 +12,9 @@ namespace Stateflows.Common.Interfaces
         void RegisterHandler(INotificationHandler notificationHandler);
 
         void UnregisterHandler(INotificationHandler notificationHandler);
-
-        Task<EventHolder[]> GetNotificationsAsync(BehaviorId behaviorId, Func<EventHolder, bool> filter = null);
+        
+        Task<IEnumerable<EventHolder>> GetNotificationsAsync(BehaviorId behaviorId, IEnumerable<string> notificationNames, DateTime? lastNotificationCheck = null);
+        
+        Task<IEnumerable<TNotification>> GetNotificationsAsync<TNotification>(BehaviorId behaviorId, DateTime? lastNotificationCheck = null);
     }
 }

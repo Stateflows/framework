@@ -36,8 +36,8 @@ namespace Stateflows.Activities.Context.Classes
         public void Send<TEvent>(TEvent @event, IEnumerable<EventHeader> headers = null)
             => _ = Context.Send(@event, headers);
 
-        public void Publish<TNotification>(TNotification notification, IEnumerable<EventHeader> headers = null, int timeToLiveInSeconds = 60)
-            => _ = Subscriber.PublishAsync(Id, notification, headers, timeToLiveInSeconds);
+        public void Publish<TNotification>(TNotification notification, IEnumerable<EventHeader> headers = null)
+            => _ = Subscriber.PublishAsync(Id, notification, headers);
 
         public Task<SendResult> SubscribeAsync<TNotification>(BehaviorId behaviorId)
             => Subscriber.SubscribeAsync<TNotification>(behaviorId);

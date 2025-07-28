@@ -9,15 +9,6 @@ namespace Stateflows.StateMachines.Extensions
 {
     internal static class EventExtensions
     {
-        // public static bool Triggers(this EventHolder eventHolder, Edge edge)
-        //     => typeof(Exception).IsAssignableFrom(eventHolder.PayloadType)
-        //         ? edge.ActualTriggerTypes.Any(type => type.IsAssignableFrom(eventHolder.PayloadType))
-        //         : edge.ActualTriggers.Contains(eventHolder.Name) &&
-        //           (
-        //               !(eventHolder.BoxedPayload is TimeEvent timeEvent) || 
-        //               timeEvent.ConsumerSignature == edge.Signature
-        //           );
-        
         public static bool Triggers(this EventHolder eventHolder, Edge edge)
             => edge.PolymorphicTriggers
                 ? eventHolder.BoxedPayload is TimeEvent timeEvent1

@@ -96,7 +96,7 @@ namespace Stateflows.Activities.Engine
             ActivitiesContextHolder.ExecutionContext.Value = context;
             ActivitiesContextHolder.ExceptionContext.Value = null;
 
-            return StateflowsActivator.CreateInstanceAsync<TDefaultInitializer>(ServiceProvider, "default initializer");
+            return StateflowsActivator.CreateModelElementInstanceAsync<TDefaultInitializer>(ServiceProvider, "default initializer");
         }
 
         [DebuggerHidden]
@@ -116,7 +116,7 @@ namespace Stateflows.Activities.Engine
             ActivitiesContextHolder.ExecutionContext.Value = context;
             ActivitiesContextHolder.ExceptionContext.Value = null;
 
-            return StateflowsActivator.CreateInstanceAsync<TInitializer>(ServiceProvider, "initializer");
+            return StateflowsActivator.CreateModelElementInstanceAsync<TInitializer>(ServiceProvider, "initializer");
         }
         
         [DebuggerHidden]
@@ -136,7 +136,7 @@ namespace Stateflows.Activities.Engine
             ActivitiesContextHolder.ExecutionContext.Value = context;
             ActivitiesContextHolder.ExceptionContext.Value = null;
 
-            return StateflowsActivator.CreateInstanceAsync<TFinalizer>(ServiceProvider, "finalizer");
+            return StateflowsActivator.CreateModelElementInstanceAsync<TFinalizer>(ServiceProvider, "finalizer");
         }
         
         [DebuggerHidden]
@@ -156,7 +156,7 @@ namespace Stateflows.Activities.Engine
             ActivitiesContextHolder.ExecutionContext.Value = context;
             ActivitiesContextHolder.ExceptionContext.Value = null;
 
-            return StateflowsActivator.CreateInstanceAsync<TAction>(ServiceProvider, "action");
+            return StateflowsActivator.CreateModelElementInstanceAsync<TAction>(ServiceProvider, "action");
         }
 
         [DebuggerHidden]
@@ -177,7 +177,7 @@ namespace Stateflows.Activities.Engine
             ActivitiesContextHolder.ExecutionContext.Value = context;
             ActivitiesContextHolder.ExceptionContext.Value = null;
 
-            return StateflowsActivator.CreateInstanceAsync<TAcceptEventAction>(ServiceProvider, "accept event action");
+            return StateflowsActivator.CreateModelElementInstanceAsync<TAcceptEventAction>(ServiceProvider, "accept event action");
         }
 
         [DebuggerHidden]
@@ -197,7 +197,7 @@ namespace Stateflows.Activities.Engine
             ActivitiesContextHolder.ExecutionContext.Value = context;
             ActivitiesContextHolder.ExceptionContext.Value = null;
 
-            return StateflowsActivator.CreateInstanceAsync<TTimeEventAction>(ServiceProvider, "time event action");
+            return StateflowsActivator.CreateModelElementInstanceAsync<TTimeEventAction>(ServiceProvider, "time event action");
         }
 
         [DebuggerHidden]
@@ -217,7 +217,7 @@ namespace Stateflows.Activities.Engine
             ActivitiesContextHolder.ExecutionContext.Value = context;
             ActivitiesContextHolder.ExceptionContext.Value = null;
 
-            return StateflowsActivator.CreateInstanceAsync<TSendEventAction>(ServiceProvider, "send event action");
+            return StateflowsActivator.CreateModelElementInstanceAsync<TSendEventAction>(ServiceProvider, "send event action");
         }
 
         [DebuggerHidden]
@@ -237,7 +237,7 @@ namespace Stateflows.Activities.Engine
             ActivitiesContextHolder.ExecutionContext.Value = context;
             ActivitiesContextHolder.ExceptionContext.Value = null;
 
-            return StateflowsActivator.CreateInstanceAsync<TStructuredActivity>(ServiceProvider, "structured activity");
+            return StateflowsActivator.CreateModelElementInstanceAsync<TStructuredActivity>(ServiceProvider, "structured activity");
         }
 
         [DebuggerHidden]
@@ -258,7 +258,7 @@ namespace Stateflows.Activities.Engine
             ActivitiesContextHolder.ExecutionContext.Value = context;
             ActivitiesContextHolder.ExceptionContext.Value = context;
 
-            return StateflowsActivator.CreateInstanceAsync<TExceptionHandler>(ServiceProvider, "exception handler");
+            return StateflowsActivator.CreateModelElementInstanceAsync<TExceptionHandler>(ServiceProvider, "exception handler");
         }
         
         [DebuggerHidden]
@@ -278,7 +278,7 @@ namespace Stateflows.Activities.Engine
             ActivitiesContextHolder.ExecutionContext.Value = context;
             ActivitiesContextHolder.ExceptionContext.Value = null;
 
-            return StateflowsActivator.CreateInstanceAsync<TFlow>(ServiceProvider, serviceKind);
+            return StateflowsActivator.CreateModelElementInstanceAsync<TFlow>(ServiceProvider, serviceKind);
         }
 
         [DebuggerHidden]

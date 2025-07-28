@@ -21,7 +21,15 @@ namespace Stateflows.Activities.Inspection.Classes
             Inspector.InspectionFlows.Add(Edge, this);
         }
 
-        public bool Active { get; set; }
+        public int Weight => Edge.Weight;
+
+        public FlowStatus Status => Executor.Context.FlowTokensCount.TryGetValue(Edge.Identifier, out int count)
+            ? count >= Edge.Weight
+                ? FlowStatus.Activated
+                : FlowStatus.NotActivated
+            : FlowStatus.NotUsed;
+
+        public int TokenCount => Executor.Context.FlowTokensCount.TryGetValue(Edge.Identifier, out int count) ? count : 0;
 
         private INodeInspection source;
 
@@ -64,6 +72,8 @@ namespace Stateflows.Activities.Inspection.Classes
 
         public FlowType Type => Edge.TokenType == typeof(ControlToken)
             ? FlowType.ControlFlow
-            : FlowType.ObjectFlow;
+            : Edge.TokenType == Edge.TargetTokenType
+                ? FlowType.ObjectFlow
+                : FlowType.ObjectTransformationFlow;
     }
 }

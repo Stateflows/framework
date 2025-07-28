@@ -22,13 +22,5 @@ namespace Stateflows.Locks.DistributedLock.Classes
 
             return new StateflowsLockHandle(id, handle);
         }
-
-        public async Task<IStateflowsLockHandle> AquireValuesLockAsync(BehaviorId id, TimeSpan? timeout = null)
-        {
-            var distributedLock = await DistributedLockFactory($"{id.ToString()}.values");
-            var handle = distributedLock.Acquire(timeout);
-
-            return new StateflowsLockHandle(id, handle);
-        }
     }
 }

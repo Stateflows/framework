@@ -1,4 +1,5 @@
 ﻿using System.Threading.Tasks;
+using Stateflows.Common;
 
 namespace Stateflows.Actions
 {
@@ -8,5 +9,7 @@ namespace Stateflows.Actions
         
         Task ActionTypeAddedAsync<TAction>(string actionName, int actionVersion)
             where TAction : class, IAction;
+        
+        Task CustomEventAddedAsync<TEvent>(string actionName, int actionVersion, BehaviorStatus[] supportedStatuses);
     }
 }

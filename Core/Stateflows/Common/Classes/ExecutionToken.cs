@@ -22,6 +22,8 @@ namespace Stateflows.Common.Classes
         public Dictionary<object, EventHolder> Responses { get; set; } = new Dictionary<object, EventHolder>();
 
         public EventValidation Validation { get; internal set; }
+        
+        public int Counter { get; set; }
 
         public ExecutionToken(BehaviorId targetId, EventHolder eventHolder, IServiceProvider serviceProvider)
         {

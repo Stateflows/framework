@@ -1,4 +1,6 @@
-﻿namespace Stateflows.StateMachines
+﻿using Stateflows.StateMachines.Context.Interfaces;
+
+namespace Stateflows.StateMachines
 {
     public interface IStateMachineObserver
     {

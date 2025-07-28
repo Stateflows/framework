@@ -1,11 +1,10 @@
 ﻿using System;
 using Newtonsoft.Json;
 using System.Collections.Generic;
-using System.ComponentModel;
-using System.Linq;
 
 namespace Stateflows.Common
 {
+    [Retain]
     public class BehaviorInfo
     {
         public BehaviorId Id { get; set; }

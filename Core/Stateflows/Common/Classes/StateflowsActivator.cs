@@ -35,7 +35,26 @@ namespace Stateflows.Common.Classes
         [DebuggerHidden]
         public static object CreateUninitializedInstance(Type serviceType)
             => FormatterServices.GetUninitializedObject(serviceType); 
-
+        /// <summary>
+        /// Creates instance of class
+        /// </summary>
+        /// <param name="serviceProvider">Service provider used to resolve dependencies of given type</param>
+        /// <typeparam name="T">Type of class to be instantiated</typeparam>
+        /// <returns>Instance of given class</returns>
+        [DebuggerHidden]
+        public static T CreateClassInstance<T>(IServiceProvider serviceProvider)
+            => ActivatorUtilities.CreateInstance<T>(serviceProvider);
+        
+        /// <summary>
+        /// Creates instance of class
+        /// </summary>
+        /// <param name="serviceProvider">Service provider used to resolve dependencies of given type</param>
+        /// <param name="serviceType">Type of class to be instantiated</param>
+        /// <returns>Instance of given class</returns>
+        [DebuggerHidden]
+        public static object CreateClassInstance(IServiceProvider serviceProvider, Type serviceType)
+            => ActivatorUtilities.CreateInstance(serviceProvider, serviceType);
+        
         /// <summary>
         /// Creates instance of Stateflows model element class  
         /// </summary>
@@ -46,8 +65,8 @@ namespace Stateflows.Common.Classes
         /// <exception cref="StateflowsDefinitionException">Thrown in case of missing parameter attributes</exception>
         /// <exception cref="StateflowsRuntimeException">Thrown in case of missing required context values</exception>
         [DebuggerHidden]
-        public static async Task<T> CreateInstanceAsync<T>(IServiceProvider serviceProvider, string serviceKind = null)
-            => (T)await CreateInstanceAsync(serviceProvider, typeof(T), serviceKind);
+        public static async Task<T> CreateModelElementInstanceAsync<T>(IServiceProvider serviceProvider, string serviceKind = null)
+            => (T)await CreateModelElementInstanceAsync(serviceProvider, typeof(T), serviceKind);
         
         /// <summary>
         /// Creates instance of Stateflows model element class  
@@ -58,8 +77,8 @@ namespace Stateflows.Common.Classes
         /// <returns>Instance of given class</returns>
         /// <exception cref="StateflowsDefinitionException">Thrown in case of missing parameter attributes</exception>
         /// <exception cref="StateflowsRuntimeException">Thrown in case of missing required context values</exception>
-        // [DebuggerHidden]
-        public static async Task<object> CreateInstanceAsync(IServiceProvider serviceProvider, Type serviceType, string serviceKind = null)
+        [DebuggerHidden]
+        public static async Task<object> CreateModelElementInstanceAsync(IServiceProvider serviceProvider, Type serviceType, string serviceKind = null)
         {
             serviceKind ??= "service";
             var constructor = serviceType.GetConstructors().OrderByDescending(c => c.GetParameters().Length).FirstOrDefault();

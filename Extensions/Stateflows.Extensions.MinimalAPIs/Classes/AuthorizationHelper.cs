@@ -10,6 +10,11 @@ public static class AuthorizationHelper
         ClaimsPrincipal user,
         IAuthorizationService authorizationService)
     {
+        if (!user.Identity?.IsAuthenticated ?? false)
+        {
+            return false;
+        }
+        
         // Check Policy
         if (!string.IsNullOrEmpty(attribute.Policy))
         {

@@ -1,6 +1,6 @@
 ﻿namespace Stateflows.Activities.StateMachines.Interfaces
 {
-    public interface IStateSubscription<out TReturn>
+    public interface IXSubscription<out TReturn>
     {
         TReturn AddSubscription<TNotification>();
     }

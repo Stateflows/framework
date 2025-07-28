@@ -8,6 +8,7 @@ using Stateflows.Extensions.MinimalAPIs;
 using WarszawskieDniInformatyki.StateMachines.Document;
 using Scalar.AspNetCore;
 using Stateflows.Activities;
+using Stateflows.Scheduler.StateMachine;
 using WarszawskieDniInformatyki.Activities.Process;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -24,6 +25,7 @@ builder.Services.AddStateflows(b => b
     .AddPlantUml()
     .AddOpenTelemetry()
     .AddScheduling()
+    .AddOneOf()
     #endregion
 );
 
@@ -86,6 +88,39 @@ app.UseAntiforgery();
 app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode();
 
-app.MapStateflowsMinimalAPIsEndpoints(string.Empty);
+app.MapStateflowsMinimalAPIsEndpoints(b => b
+    .ConfigureGetAllClassesEndpoint(b => b
+        .Disable()
+    )
+    .ConfigureStateMachines(b => b
+        .ConfigureStateMachine("Doc", b => b
+            .ConfigureAllEndpoints(b => b
+                .UpdateRoute(b => b
+                    .Replace("Doc", "Dupa")
+                )
+            )
+        )
+    )
+);
 
 app.Run();
+
+
+public class I : EndpointDefinitionInterceptor
+{
+    public override bool BeforeGetAllClassesEndpointDefinition(ref string method, ref string route)
+    {
+        return false;
+    }
+
+    public override bool BeforeGetInstancesEndpointDefinition(BehaviorClass behaviorClass, ref string method, ref string route)
+    {
+        return false;
+    }
+
+    public override bool BeforeEventEndpointDefinition<TEvent>(BehaviorClass behaviorClass, ref string method, ref string route)
+    {
+        route = route.Replace("Stateflows.Scheduler.StateMachine.StateflowsScheduler", "scheduler");
+        return true;
+    }
+}

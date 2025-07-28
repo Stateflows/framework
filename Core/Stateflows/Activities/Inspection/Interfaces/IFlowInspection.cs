@@ -6,7 +6,11 @@
 
         FlowType Type { get; }
 
-        bool Active { get; }
+        int Weight { get; }
+        
+        FlowStatus Status { get; }
+        
+        int TokenCount { get; }
 
         INodeInspection Source { get; }
 

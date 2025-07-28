@@ -7,5 +7,7 @@ namespace Stateflows.Activities.Inspection.Interfaces
         ActivityId Id { get; }
 
         IEnumerable<INodeInspection> Nodes { get; }
+
+        bool StateHasChanged { get; }
     }
 }

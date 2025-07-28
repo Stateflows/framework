@@ -1,6 +1,7 @@
 ﻿using System;
 using Stateflows.Common;
 using Stateflows.StateMachines;
+using Stateflows.StateMachines.Context.Interfaces;
 
 namespace Stateflows.Testing.StateMachines.Sequence
 {

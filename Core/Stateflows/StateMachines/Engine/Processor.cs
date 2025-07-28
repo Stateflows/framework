@@ -19,17 +19,20 @@ namespace Stateflows.StateMachines.Engine
 
         private readonly StateMachinesRegister Register;
         private readonly IEnumerable<IStateMachineEventHandler> EventHandlers;
+        private readonly INotificationsHub Hub;
         private readonly IServiceProvider ServiceProvider;
 
         public Processor(
             StateMachinesRegister register,
             IEnumerable<IStateMachineEventHandler> eventHandlers,
+            INotificationsHub hub,
             IServiceProvider serviceProvider
         )
         {
             Register = register;
-            ServiceProvider = serviceProvider;
             EventHandlers = eventHandlers;
+            Hub = hub;
+            ServiceProvider = serviceProvider;
         }
 
         [DebuggerHidden]
@@ -48,7 +51,7 @@ namespace Stateflows.StateMachines.Engine
             try
             {
                 var result = EventStatus.Undelivered;
-
+                
                 var serviceProvider = ServiceProvider.CreateScope().ServiceProvider;
 
                 var storage = serviceProvider.GetRequiredService<IStateflowsStorage>();
@@ -147,7 +150,7 @@ namespace Stateflows.StateMachines.Engine
             }
             catch (Exception e)
             {
-                // Trace.WriteLine($"⦗→s⦘ State Machine '{id.Name}:{id.Instance}': exception '{e.GetType().FullName}' thrown with message '{e.Message}'");
+                Trace.WriteLine($"⦗→s⦘ State Machine '{id.Name}:{id.Instance}': exception '{e.GetType().FullName}' thrown with message '{e.Message}'");
 
                 return EventStatus.Failed;
             }

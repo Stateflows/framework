@@ -23,5 +23,6 @@ namespace Stateflows.Activities.Inspection.Classes
 
         public IEnumerable<INodeInspection> Nodes { get; set; }
 
+        public bool StateHasChanged => Executor.StateHasChanged;
     }
 }

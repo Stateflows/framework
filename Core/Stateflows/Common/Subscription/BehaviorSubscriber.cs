@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using System.ComponentModel.DataAnnotations;
+using System.Reflection;
 using Stateflows.Common.Context;
 
 namespace Stateflows.Common.Subscription
@@ -21,45 +21,69 @@ namespace Stateflows.Common.Subscription
             this.subscriptionHub = subscriptionHub;
         }
 
-        public async Task PublishAsync<TNotification>(BehaviorId behaviorId, TNotification notificationEvent, IEnumerable<EventHeader> headers = null, int timeToLiveInSeconds = 60)
+        public Task PublishAsync<TNotification>(BehaviorId behaviorId, TNotification notificationEvent, IEnumerable<EventHeader> headers = null)
         {
+            var notificationType = typeof(TNotification);
+            var ttlAttribute = notificationType.GetCustomAttribute<TimeToLiveAttribute>();
+            var retainAttribute = notificationType.GetCustomAttribute<RetainAttribute>();
+            var headersArray = headers?.ToArray() ?? new EventHeader[] { };
             var eventHolder = new EventHolder<TNotification>()
             {
                 Payload = notificationEvent,
                 SenderId = behaviorId,
                 SentAt = DateTime.Now,
-                Headers = headers?.ToList() ?? new List<EventHeader>(),
-                TimeToLive = timeToLiveInSeconds
+                Headers = headersArray.ToList(),
+                TimeToLive = ttlAttribute?.SecondsToLive ?? headersArray.OfType<TimeToLive>().FirstOrDefault()?.SecondsToLive ?? 0,
+                Retained = retainAttribute != null || headersArray.OfType<Retain>().FirstOrDefault() != null
             };
 
             if (context.Subscribers.TryGetValue(Event<TNotification>.Name, out var behaviorIds))
             {
-                await Task.WhenAll(
+                _ = Task.WhenAll(
                     behaviorIds.Select(
-                        behaviorId => behaviorLocator.TryLocateBehavior(behaviorId, out var behavior)
+                        id => behaviorLocator.TryLocateBehavior(id, out var behavior)
                             ? behavior.SendAsync(notificationEvent)
                             : Task.CompletedTask
                     )
                 );
             }
 
-            await subscriptionHub.PublishAsync(eventHolder);
+            _ = subscriptionHub.PublishAsync(eventHolder);
+
+            if (context.Relays.TryGetValue(Event<TNotification>.Name, out behaviorIds))
+            {
+                _ = Task.WhenAll(
+                    behaviorIds.Select(
+                        id =>
+                        {
+                            var relayedEventHolder = new EventHolder<TNotification>()
+                            {
+                                Payload = eventHolder.Payload,
+                                SenderId = id,
+                                SentAt = eventHolder.SentAt,
+                                Headers = eventHolder.Headers,
+                                TimeToLive = eventHolder.TimeToLive,
+                                Retained = eventHolder.Retained,
+                            };
+                            
+                            return subscriptionHub.PublishAsync(relayedEventHolder);
+                        })
+                );
+            }
+
+            return Task.CompletedTask;
         }
 
         public Task<SendResult> SubscribeAsync<TNotification>(BehaviorId behaviorId)
         {
             var request = new Subscribe() { BehaviorId = subscriberBehaviorId };
 
-            var eventHolder = new EventHolder<Subscribe>()
-            {
-                Payload = request,
-                SenderId = behaviorId,
-                SentAt = DateTime.Now,
-            };
-
             request.NotificationNames.Add(typeof(TNotification).GetEventName());
 
-            return behaviorLocator.TryLocateBehavior(behaviorId, out var behavior)
+            return behaviorLocator.TryLocateBehavior(
+                behaviorId,
+                out var behavior
+            )
                 ? behavior.SendAsync(request)
                 : Task.FromResult(
                     new SendResult(EventStatus.Undelivered)
@@ -70,16 +94,12 @@ namespace Stateflows.Common.Subscription
         {
             var request = new Unsubscribe() { BehaviorId = subscriberBehaviorId };
 
-            var eventHolder = new EventHolder<Unsubscribe>()
-            {
-                Payload = request,
-                SenderId = behaviorId,
-                SentAt = DateTime.Now,
-            };
-
             request.NotificationNames.Add(typeof(TNotification).GetEventName());
 
-            return behaviorLocator.TryLocateBehavior(behaviorId, out var behavior)
+            return behaviorLocator.TryLocateBehavior(
+                behaviorId,
+                out var behavior
+            )
                 ? behavior.SendAsync(request)
                 : Task.FromResult(
                     new SendResult(EventStatus.Undelivered)

@@ -139,7 +139,7 @@ namespace Stateflows.StateMachines.Registration
         [DebuggerHidden]
         public void AddInterceptor<TInterceptor>()
             where TInterceptor : class, IStateMachineInterceptor
-            =>  GlobalInterceptorFactories.Add(async serviceProvider => await StateflowsActivator.CreateInstanceAsync<TInterceptor>(serviceProvider, "interceptor"));
+            =>  GlobalInterceptorFactories.Add(async serviceProvider => await StateflowsActivator.CreateModelElementInstanceAsync<TInterceptor>(serviceProvider, "interceptor"));
 
         [DebuggerHidden]
         public void AddExceptionHandler(StateMachineExceptionHandlerFactory exceptionHandlerFactory)
@@ -152,7 +152,7 @@ namespace Stateflows.StateMachines.Registration
         [DebuggerHidden]
         public void AddExceptionHandler<TExceptionHandler>()
             where TExceptionHandler : class, IStateMachineExceptionHandler
-            =>  GlobalExceptionHandlerFactories.Add(async serviceProvider => await StateflowsActivator.CreateInstanceAsync<TExceptionHandler>(serviceProvider, "exception handler"));
+            =>  GlobalExceptionHandlerFactories.Add(async serviceProvider => await StateflowsActivator.CreateModelElementInstanceAsync<TExceptionHandler>(serviceProvider, "exception handler"));
 
         [DebuggerHidden]
         public void AddObserver(StateMachineObserverFactory observerFactory)
@@ -165,7 +165,7 @@ namespace Stateflows.StateMachines.Registration
         [DebuggerHidden]
         public void AddObserver<TObserver>()
             where TObserver : class, IStateMachineObserver
-            =>  GlobalObserverFactories.Add(async serviceProvider => await StateflowsActivator.CreateInstanceAsync<TObserver>(serviceProvider, "observer"));
+            =>  GlobalObserverFactories.Add(async serviceProvider => await StateflowsActivator.CreateModelElementInstanceAsync<TObserver>(serviceProvider, "observer"));
 
         public async Task VisitStateMachinesAsync(IStateMachineVisitor visitor)
         {

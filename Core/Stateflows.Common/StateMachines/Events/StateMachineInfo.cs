@@ -2,6 +2,7 @@
 
 namespace Stateflows.StateMachines
 {
+    [Retain]
     public sealed class StateMachineInfo : BehaviorInfo
     {
         private StateMachineId id;

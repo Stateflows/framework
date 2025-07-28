@@ -1,8 +1,8 @@
 ﻿using System;
 using System.Threading.Tasks;
 using Stateflows.Common;
-using Stateflows.StateMachines.Extensions;
 using Stateflows.StateMachines.Context.Interfaces;
+using Stateflows.StateMachines.Extensions;
 
 namespace Stateflows.StateMachines.EventHandlers
 {

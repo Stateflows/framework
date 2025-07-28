@@ -9,6 +9,7 @@ using Stateflows.Common;
 using Stateflows.Common.Classes;
 using Stateflows.Common.Utilities;
 using Stateflows.StateMachines;
+using Stateflows.StateMachines.Context.Interfaces;
 using Stateflows.StateMachines.Exceptions;
 using Stateflows.StateMachines.Registration;
 
@@ -23,7 +24,7 @@ namespace Stateflows.Activities
             {
                 _ = Task.Run(async () =>
                 {
-                    var integratedActionBuilder = new StateActionActionBuilder(buildAction);
+                    var integratedActionBuilder = new ActionActionBuilder(buildAction);
                     EventHolder initializationEvent = (integratedActionBuilder.InitializationBuilder != null)
                         ? await integratedActionBuilder.InitializationBuilder(context)
                         : new Initialize().ToEventHolder();
@@ -33,9 +34,11 @@ namespace Stateflows.Activities
                     {
                         new SetContextOwner() { ContextOwner = context.Behavior.Id }.ToEventHolder(),
                         integratedActionBuilder.GetSubscribe(context.Behavior.Id).ToEventHolder(),
+                        integratedActionBuilder.GetStartRelay(context.Behavior.Id).ToEventHolder(),
                         new SetGlobalValues() { Values = ((ContextValuesCollection)context.Behavior.Values).Values }.ToEventHolder(),
                         initializationEvent,
                         new TokensInput().ToEventHolder(),
+                        integratedActionBuilder.GetStopRelay(context.Behavior.Id).ToEventHolder(),
                         integratedActionBuilder.GetUnsubscribe(context.Behavior.Id).ToEventHolder()
                     });
                         
@@ -66,13 +69,15 @@ namespace Stateflows.Activities
                     request.Events.AddRange(new EventHolder[]
                     {
                         integratedActionBuilder.GetSubscribe(context.Behavior.Id).ToEventHolder(),
+                        integratedActionBuilder.GetStartRelay(context.Behavior.Id).ToEventHolder(),
                         new SetGlobalValues() { Values = ((ContextValuesCollection)context.Behavior.Values).Values }.ToEventHolder(),
                         tokensInput.ToEventHolder(),
+                        integratedActionBuilder.GetStopRelay(context.Behavior.Id).ToEventHolder(),
                         integratedActionBuilder.GetUnsubscribe(context.Behavior.Id).ToEventHolder()
                     });
 
                     var requestResult = await a.RequestAsync(request);
-                    var responseHolder = requestResult.Response.Results.ToArray()[^2].Response as EventHolder<TokensOutput>;
+                    var responseHolder = requestResult.Response.Results.ToArray()[^3].Response as EventHolder<TokensOutput>;
                     result = responseHolder?.Payload?.GetOfType<bool>().FirstOrDefault() ?? false;
                 });
             }
@@ -101,8 +106,10 @@ namespace Stateflows.Activities
                     request.Events.AddRange(new EventHolder[]
                     {
                         integratedActionBuilder.GetSubscribe(context.Behavior.Id).ToEventHolder(),
+                        integratedActionBuilder.GetStartRelay(context.Behavior.Id).ToEventHolder(),
                         new SetGlobalValues() { Values = ((ContextValuesCollection)context.Behavior.Values).Values }.ToEventHolder(),
                         tokensInput.ToEventHolder(),
+                        integratedActionBuilder.GetStopRelay(context.Behavior.Id).ToEventHolder(),
                         integratedActionBuilder.GetUnsubscribe(context.Behavior.Id).ToEventHolder()
                     });
 

@@ -57,6 +57,20 @@ namespace Stateflows.Common.Storage
             return Task.FromResult(result);
         }
 
+        public Task<IEnumerable<BehaviorId>> GetAllContextIdsAsync(IEnumerable<BehaviorClass> behaviorClasses)
+        {
+            IEnumerable<BehaviorId> result;
+
+            lock (Contexts)
+            {
+                result = Contexts.Keys
+                    .Where(key => behaviorClasses.Contains(key.BehaviorClass))
+                    .ToArray();
+            }
+
+            return Task.FromResult(result);
+        }
+
         public async Task<IEnumerable<StateflowsContext>> GetTimeTriggeredContextsAsync(IEnumerable<BehaviorClass> behaviorClasses)
             => (await GetAllContextsAsync(behaviorClasses))
                 .Where(context =>

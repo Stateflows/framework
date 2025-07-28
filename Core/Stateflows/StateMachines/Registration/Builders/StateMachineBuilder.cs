@@ -268,7 +268,7 @@ namespace Stateflows.StateMachines.Registration.Builders
         {
             Services.AddScoped<TExceptionHandler>();
             
-            AddExceptionHandler(async serviceProvider => await StateflowsActivator.CreateInstanceAsync<TExceptionHandler>(serviceProvider, "exception handler"));
+            AddExceptionHandler(async serviceProvider => await StateflowsActivator.CreateModelElementInstanceAsync<TExceptionHandler>(serviceProvider, "exception handler"));
 
             return this;
         }
@@ -329,7 +329,7 @@ namespace Stateflows.StateMachines.Registration.Builders
         {
             Services.AddScoped<TInterceptor>();
 
-            AddInterceptor(async serviceProvider => await StateflowsActivator.CreateInstanceAsync<TInterceptor>(serviceProvider, "interceptor"));
+            AddInterceptor(async serviceProvider => await StateflowsActivator.CreateModelElementInstanceAsync<TInterceptor>(serviceProvider, "interceptor"));
 
             return this;
         }
@@ -349,7 +349,7 @@ namespace Stateflows.StateMachines.Registration.Builders
         {
             Services.AddScoped<TObserver>();
             
-            AddObserver(async serviceProvider => await StateflowsActivator.CreateInstanceAsync<TObserver>(serviceProvider, "observer"));
+            AddObserver(async serviceProvider => await StateflowsActivator.CreateModelElementInstanceAsync<TObserver>(serviceProvider, "observer"));
 
             return this;
         }

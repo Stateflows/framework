@@ -74,7 +74,7 @@ namespace Activity.IntegrationTests.Tests
             ContextValues.InitializeGlobalValues();
 
             // Use StateflowsActivator to obtain tested action class instance
-            var action = await StateflowsActivator.CreateInstanceAsync<TestedAction>(ServiceProvider);
+            var action = await StateflowsActivator.CreateModelElementInstanceAsync<TestedAction>(ServiceProvider);
             
             await action.ExecuteAsync(CancellationToken.None);
 
@@ -97,7 +97,7 @@ namespace Activity.IntegrationTests.Tests
             ContextValues.InitializeGlobalValues();
             
             // Use StateflowsActivator to obtain tested flow class instance
-            var flow = await StateflowsActivator.CreateInstanceAsync<TestedFlow>(ServiceProvider);
+            var flow = await StateflowsActivator.CreateModelElementInstanceAsync<TestedFlow>(ServiceProvider);
 
             var result = await flow.GuardAsync(42);
 

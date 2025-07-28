@@ -3,7 +3,7 @@ using Stateflows.Extensions.PlantUml.Classes;
 
 namespace Stateflows.Extensions.PlantUml.Events
 {
-    [Event(nameof(PlantUmlInfo))]
+    [Event(nameof(PlantUmlInfo)), Retain]
     public sealed class PlantUmlInfo
     {
         public string PlantUml { get; set; }

@@ -113,16 +113,14 @@ namespace Stateflows.Common.Classes
 
             tenantAccessor.CurrentTenantId = await tenantProvider.GetCurrentTenantIdAsync();
             var lastNotificationCheck = DateTime.Now;
-            var pendingNotifications = await notificationsHub.GetNotificationsAsync(
+            var pendingNotifications = await notificationsHub.GetNotificationsAsync<TNotification>(
                 Id,
-                h =>
-                    h is EventHolder<TNotification> &&
-                    h.SentAt.AddSeconds(h.TimeToLive) >= lastNotificationCheck
+                lastNotificationCheck
             );
             
             foreach (var pendingNotification in pendingNotifications)
             {
-                handler(((EventHolder<TNotification>)pendingNotification).Payload);
+                handler(pendingNotification);
             }
 
             return watcher;
@@ -151,9 +149,8 @@ namespace Stateflows.Common.Classes
             var lastNotificationCheck = DateTime.Now;
             var pendingNotifications = await notificationsHub.GetNotificationsAsync(
                 Id,
-                h =>
-                    notificationNames.Contains(h.Name) &&
-                    h.SentAt.AddSeconds(h.TimeToLive) >= lastNotificationCheck
+                notificationNames,
+                lastNotificationCheck
             );
             
             foreach (var pendingNotification in pendingNotifications)
@@ -186,6 +183,19 @@ namespace Stateflows.Common.Classes
 
             return Task.CompletedTask;
         }
+        
+        public Task<IEnumerable<TNotification>> GetNotificationsAsync<TNotification>(DateTime? lastNotificationsCheck = null)
+            => notificationsHub.GetNotificationsAsync<TNotification>(
+                Id,
+                lastNotificationsCheck
+            );
+        
+        public Task<IEnumerable<EventHolder>> GetNotificationsAsync(string[] notificationNames, DateTime? lastNotificationsCheck = null)
+            => notificationsHub.GetNotificationsAsync(
+                Id,
+                notificationNames,
+                lastNotificationsCheck
+            );
 
         public void Dispose()
         {
@@ -195,7 +205,7 @@ namespace Stateflows.Common.Classes
 
         private void Dispose(bool disposing)
         {
-            notificationsHub.UnregisterHandler(this);
+            notificationsHub?.UnregisterHandler(this);
         }
 
         ~BaseBehavior()

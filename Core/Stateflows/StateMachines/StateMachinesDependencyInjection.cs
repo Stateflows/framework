@@ -67,7 +67,7 @@ namespace Stateflows.StateMachines
                         .AddScoped<IStateMachinePlugin, Engine.Exceptions>()
                         .AddSingleton(register)
                         .AddSingleton<IStateMachinesRegister>(register)
-                        .AddSingleton<IStateMachineContextProvider, StateMachineContextProvider>()
+                        .AddScoped<IStateMachineContextProvider, StateMachineContextProvider>()
                         .AddSingleton<IEventProcessor, Processor>()
                         .AddTransient<IBehaviorProvider, Provider>()
                         .AddSingleton<IStateMachineEventHandler, BehaviorStatusRequestHandler>()
@@ -77,6 +77,8 @@ namespace Stateflows.StateMachines
                         .AddSingleton<IStateMachineEventHandler, ResetHandler>()
                         .AddSingleton<IStateMachineEventHandler, SubscriptionHandler>()
                         .AddSingleton<IStateMachineEventHandler, UnsubscriptionHandler>()
+                        .AddSingleton<IStateMachineEventHandler, StartRelayHandler>()
+                        .AddSingleton<IStateMachineEventHandler, StopRelayHandler>()
                         .AddSingleton<IStateMachineEventHandler, NotificationsHandler>()
                         .AddSingleton<IStateMachineEventHandler, ContextValuesRequestHandler>()
                         .AddTransient(provider =>

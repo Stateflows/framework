@@ -3,7 +3,7 @@ using System.Threading.Tasks;
 
 namespace Stateflows.Common
 {
-    public interface IWatcher : IDisposable
+    public interface IWatcher : IDisposable, IAsyncDisposable
     {
         public Task UnwatchAsync()
         {

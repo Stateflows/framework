@@ -39,6 +39,10 @@ namespace Stateflows.Storage.MongoDB.Stateflows
             => (await _mongoDatabase.FindContextByBehaviorClassAsync(behaviorClasses))
                 .Select(e => StateflowsJsonConverter.DeserializeObject<StateflowsContext>(e.Data));
 
+        public async Task<IEnumerable<BehaviorId>> GetAllContextIdsAsync(IEnumerable<BehaviorClass> behaviorClasses)
+            => (await _mongoDatabase.FindContextByBehaviorClassAsync(behaviorClasses))
+                .Select(e => StateflowsJsonConverter.DeserializeObject<BehaviorId>(e.BehaviorId));
+
         public async Task<IEnumerable<StateflowsContext>> GetTimeTriggeredContextsAsync(IEnumerable<BehaviorClass> behaviorClasses)
             => (await _mongoDatabase.FindContextByTimeTriggerAsync(behaviorClasses))
                 .Select(e => StateflowsJsonConverter.DeserializeObject<StateflowsContext>(e.Data));

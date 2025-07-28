@@ -1,10 +1,8 @@
-using Stateflows.Activities;
 using StateMachine.IntegrationTests.Utils;
 using System.Diagnostics;
 using Stateflows.Actions;
 using Stateflows.Common;
 using Stateflows.Common.Attributes;
-using Stateflows.Common.Utilities;
 using StateMachine.IntegrationTests.Classes.Events;
 
 namespace StateMachine.IntegrationTests.Tests
@@ -83,6 +81,14 @@ namespace StateMachine.IntegrationTests.Tests
                         )
                         .AddFinalState("final")
                     )
+                    .AddStateMachine("relay", b => b
+                        .AddExecutionSequenceObserver()
+                        .AddInitialState("initial", b => b
+                            .AddOnEntryAction("heavyLoad", b => b
+                                .AddRelay<SomeEvent>()
+                            )
+                        )
+                    )
                     .AddStateMachine("values", b => b
                         .AddInitialState("initial", b => b
                             .AddOnEntry(Stateflows.StateMachines.Actions.Global.Value("processId").Set(42))
@@ -116,6 +122,10 @@ namespace StateMachine.IntegrationTests.Tests
                     .AddAction("entry", async c => EntryRun = true)
                     .AddAction("exit", async c => ExitRun = true)
                     .AddAction("subscribe", async c => c.Behavior.Publish(new SomeEvent()))
+                    .AddAction("heavyLoad", async c =>
+                    {
+                        c.Behavior.Publish(new SomeEvent() { TheresSomethingHappeningHere = "42" });
+                    })
                     .AddAction<TypedAction>()
                 )
                 ;
@@ -220,13 +230,24 @@ namespace StateMachine.IntegrationTests.Tests
                 currentState1 = currentState.CurrentStates.Value;
             }
 
-            // ExecutionSequence.Verify(b => b
-            //     .StateEntry("initial")
-            //     .StateExit("initial")
-            //     .StateEntry("final")
-            // );
-
             Assert.AreEqual("third", currentState1);
+        }
+
+        [TestMethod]
+        public async Task ActionRelay()
+        {
+            bool notificationDelivered = false;
+        
+            if (StateMachineLocator.TryLocateStateMachine(new StateMachineId("relay", "y"), out var sm))
+            {
+                await using var watcher = await sm.WatchAsync<SomeEvent>(n => notificationDelivered = true);
+                
+                await sm.SendAsync(new Initialize());
+                
+                await Task.Delay(100);
+            }
+            
+            Assert.IsTrue(notificationDelivered);
         }
     }
 }

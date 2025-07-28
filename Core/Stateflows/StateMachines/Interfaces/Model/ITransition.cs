@@ -3,20 +3,30 @@ using Stateflows.StateMachines.Registration.Interfaces;
 
 namespace Stateflows.StateMachines
 {
-    public interface IDefaultTransition { }
+    public interface IDefaultTransition : ITransition<Completion>
+    { }
 
-    public interface IDefaultTransitionEffect : IDefaultTransition
+    public interface IDefaultTransitionEffect : IDefaultTransition, ITransitionEffect<Completion>
     {
+        Task ITransitionEffect<Completion>.EffectAsync(Completion @event)
+            => EffectAsync();
+        
         Task EffectAsync();
     }
 
-    public interface IDefaultTransitionGuard : IDefaultTransition
+    public interface IDefaultTransitionGuard : IDefaultTransition, ITransitionGuard<Completion>
     {
+        Task<bool> ITransitionGuard<Completion>.GuardAsync(Completion @event)
+            => GuardAsync();
+        
         Task<bool> GuardAsync();
     }
 
-    public interface IDefaultTransitionDefinition : IDefaultTransition
+    public interface IDefaultTransitionDefinition : IDefaultTransition, ITransitionDefinition<Completion>
     {
+        void ITransitionDefinition<Completion>.Build(ITransitionBuilder<Completion> builder)
+            => Build(builder as IDefaultTransitionBuilder);
+        
         void Build(IDefaultTransitionBuilder builder);
     }
 

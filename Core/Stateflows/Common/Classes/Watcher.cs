@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Threading.Tasks;
 
 namespace Stateflows.Common.Classes
 {
@@ -10,6 +11,9 @@ namespace Stateflows.Common.Classes
         {
             this.unwatcher = unwatcher;
         }
+
+        public async ValueTask DisposeAsync()
+            => await unwatcher.UnwatchAsync(this);
         
         public void Dispose()
         {
