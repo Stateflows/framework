@@ -17,7 +17,6 @@
       <ProjectReference Include="..\..\..\Core\Stateflows.Common\Stateflows.Common.csproj" />
       <ProjectReference Include="..\..\..\Extensions\Stateflows.Extensions.OpenTelemetry\Stateflows.Extensions.OpenTelemetry.csproj" />
       <ProjectReference Include="..\..\..\Extensions\Stateflows.Extensions.PlantUml\Stateflows.Extensions.PlantUml.csproj" />
-      <ProjectReference Include="..\..\..\Transport\Stateflows.Transport.Http.Client\Stateflows.Transport.Http.Client.csproj" />
       <ProjectReference Include="..\..\Stateflows.Examples.Common\Stateflows.Examples.Common.csproj" />
     </ItemGroup>
 
