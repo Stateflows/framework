@@ -13,7 +13,7 @@ namespace Stateflows.StateMachines
         public Task<IWatcher> WatchStatusAsync(Action<StateMachineInfo> handler)
             => WatchAsync(handler);
         
-        [Obsolete]
+        [Obsolete("Use retained notification Events instead")]
         public Task<IWatcher> RequestAndWatchStatusAsync(Action<StateMachineInfo> handler, IEnumerable<EventHeader> headers = null)
             => RequestAndWatchAsync(new StateMachineInfoRequest(), handler, headers);
     }

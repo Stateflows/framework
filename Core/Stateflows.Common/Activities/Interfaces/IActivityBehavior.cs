@@ -14,7 +14,7 @@ namespace Stateflows.Activities
         public Task<IWatcher> WatchStatusAsync(Action<ActivityInfo> handler)
             => WatchAsync(handler);
         
-        [Obsolete]
+        [Obsolete("Use retained notification Events instead")]
         public Task<IWatcher> RequestAndWatchStatusAsync(Action<ActivityInfo> handler, IEnumerable<EventHeader> headers = null)
             => RequestAndWatchAsync(new ActivityInfoRequest(), handler, headers);
         

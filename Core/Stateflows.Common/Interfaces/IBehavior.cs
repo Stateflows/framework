@@ -30,7 +30,7 @@ namespace Stateflows.Common
         public Task<SendResult> FinalizeAsync(IEnumerable<EventHeader> headers = null)
             => SendAsync(new Finalize(), headers);
         
-        [Obsolete]
+        [Obsolete("Use retained notification Events instead")]
         public async Task<IWatcher> RequestAndWatchAsync<TRequest, TNotification>(TRequest request, Action<TNotification> handler, IEnumerable<EventHeader> headers = null)
             where TRequest : IRequest<TNotification>
         {
@@ -49,7 +49,7 @@ namespace Stateflows.Common
         public Task<IWatcher> WatchStatusAsync(Action<BehaviorInfo> handler)
             => WatchAsync(handler);
         
-        [Obsolete]
+        [Obsolete("Use retained notification Events instead")]
         public Task<IWatcher> RequestAndWatchStatusAsync(Action<BehaviorInfo> handler, IEnumerable<EventHeader> headers = null)
             => RequestAndWatchAsync(new BehaviorInfoRequest(), handler, headers);
 
