@@ -603,7 +603,8 @@ namespace Stateflows.Extensions.OpenTelemetry
             {
                 InitializerActivity.Stop();
                 InitializerActivity.SetStatus(ActivityStatusCode.Error);
-                InitializerActivity.AddException(exception);
+                // TODO: change to AddException after upgrade
+                InitializerActivity.SetCustomProperty(nameof(Exception), exception);
             }
 
             StopProcessingActivity(context, EventStatus.Failed, exception);

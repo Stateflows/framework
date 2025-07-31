@@ -316,7 +316,8 @@ namespace Stateflows.Extensions.OpenTelemetry
             {
                 InitializerActivity.Stop();
                 InitializerActivity.SetStatus(ActivityStatusCode.Error);
-                InitializerActivity.AddException(exception);
+                // TODO: change to AddException after upgrade
+                InitializerActivity.SetCustomProperty(nameof(Exception), exception);
             }
 
             StopProcessingActivity(context, EventStatus.Failed, exception);
@@ -333,7 +334,8 @@ namespace Stateflows.Extensions.OpenTelemetry
             {
                 FinalizerActivity.Stop();
                 FinalizerActivity.SetStatus(ActivityStatusCode.Error);
-                FinalizerActivity.AddException(exception);
+                // TODO: change to AddException after upgrade
+                FinalizerActivity.SetCustomProperty(nameof(Exception), exception);
             }
 
             StopProcessingActivity(context, EventStatus.Failed, exception);
@@ -350,7 +352,8 @@ namespace Stateflows.Extensions.OpenTelemetry
             {
                 GuardActivity.Stop();
                 GuardActivity.SetStatus(ActivityStatusCode.Error);
-                GuardActivity.AddException(exception);
+                // TODO: change to AddException after upgrade
+                GuardActivity.SetCustomProperty(nameof(Exception), exception);
                 GuardActivity = null;
             }
 
@@ -368,7 +371,8 @@ namespace Stateflows.Extensions.OpenTelemetry
             {
                 EffectActivity.Stop();
                 EffectActivity.SetStatus(ActivityStatusCode.Error);
-                EffectActivity.AddException(exception);
+                // TODO: change to AddException after upgrade
+                EffectActivity.SetCustomProperty(nameof(Exception), exception);
             }
 
             StopProcessingActivity(context, EventStatus.Failed, exception);
@@ -399,7 +403,8 @@ namespace Stateflows.Extensions.OpenTelemetry
             {
                 StateEntryActivity.Stop();
                 StateEntryActivity.SetStatus(ActivityStatusCode.Error);
-                StateEntryActivity.AddException(exception);
+                // TODO: change to AddException after upgrade
+                StateEntryActivity.SetCustomProperty(nameof(Exception), exception);
             }
 
             StopProcessingActivity(context, EventStatus.Failed, exception);
@@ -416,7 +421,8 @@ namespace Stateflows.Extensions.OpenTelemetry
             {
                 StateExitActivity.Stop();
                 StateExitActivity.SetStatus(ActivityStatusCode.Error);
-                StateExitActivity.AddException(exception);
+                // TODO: change to AddException after upgrade
+                StateExitActivity.SetCustomProperty(nameof(Exception), exception);
             }
 
             StopProcessingActivity(context, EventStatus.Failed, exception);

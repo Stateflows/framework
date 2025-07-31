@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Diagnostics;
 using System.Collections.Generic;
+using System.Linq;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
@@ -33,7 +34,7 @@ namespace Stateflows.Actions.Registration
             Services = services;
         }
 
-        public readonly Dictionary<string, ActionModel> Actions 
+        public readonly Dictionary<string, ActionModel> Actions
             = new Dictionary<string, ActionModel>();
 
         public readonly Dictionary<string, int> CurrentVersions = new Dictionary<string, int>();
@@ -154,7 +155,7 @@ namespace Stateflows.Actions.Registration
 
         public Task VisitActionsAsync(IActionVisitor visitor)
         {
-            foreach (var action in Actions.Values)
+            foreach (var action in Actions.Where(kv => kv.Key.EndsWith(".current")).Select(kv => kv.Value))
             {
                 action.VisitingAction(visitor);
             }
