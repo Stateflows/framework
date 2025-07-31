@@ -196,7 +196,7 @@ internal static class RequestBodyExtensions
             )
             : await behavior.SendAsync(payload.Event, implicitInitialization ? [] : [new NoImplicitInitialization()]);
                         
-        var notifications = (await behavior.GetNotificationsAsync(payload.RequestedNotifications)).Response.Notifications.ToArray();
+        var notifications = (await behavior.GetNotificationsAsync(payload.RequestedNotifications ?? []))?.Response?.Notifications?.ToArray() ?? [];
         var behaviorInfo = await behavior.GetBehaviorInfo();
 
         return result.ToResult(notifications, behaviorInfo, customHateoasLinks);
@@ -212,7 +212,7 @@ internal static class RequestBodyExtensions
                 new EventValidation(false, [ new ValidationResult("Event not provided") ])
             )
             : await behavior.RequestAsync(payload.Event, implicitInitialization ? [] : [new NoImplicitInitialization()]);
-        var notifications = (await behavior.GetNotificationsAsync(payload.RequestedNotifications)).Response.Notifications.ToArray();
+        var notifications = (await behavior.GetNotificationsAsync(payload.RequestedNotifications ?? [])).Response?.Notifications?.ToArray() ?? [];
         var behaviorInfo = await behavior.GetBehaviorInfo();
 
         return result.ToResult(notifications, behaviorInfo, customHateoasLinks);
