@@ -10,6 +10,7 @@ internal class StateMachineConfigurationVisitor(MinimalAPIsBuilder minimalApisBu
         if (typeof(IStateMachineEndpointsConfiguration).IsAssignableFrom(typeof(TStateMachine)))
         {
             var stateMachine = (IStateMachineEndpointsConfiguration)StateflowsActivator.CreateUninitializedInstance<TStateMachine>();
+            // var stateMachine = (IStateMachineEndpointsConfiguration)StateflowsActivator.CreateModelElementInstanceAsync<TStateMachine>(serviceProvider);
         
             minimalApisBuilder.CurrentClass = new StateMachineClass(stateMachineName);
             stateMachine.ConfigureEndpoints(minimalApisBuilder);

@@ -21,19 +21,15 @@ namespace Stateflows.Activities.Registration.Builders
         IElseObjectFlowBuilderWithWeight<TToken>,
         IControlFlowBuilder,
         IControlFlowBuilderWithWeight,
-        IElseControlFlowBuilder,
-        IInternal
+        IElseControlFlowBuilder
     {
         public Edge Edge { get; set; }
 
         public Graph Graph => Edge.Graph;
 
-        public IServiceCollection Services { get; private set; }
-
-        public FlowBuilder(Edge edge, IServiceCollection services)
+        public FlowBuilder(Edge edge)
         {
             Edge = edge;
-            Services = services;
         }
 
         public IObjectFlowBuilder<TToken> AddGuard(params Func<IGuardContext<TToken>, Task<bool>>[]  guardsAsync)
@@ -134,7 +130,7 @@ namespace Stateflows.Activities.Registration.Builders
             Edge.TokenPipeline.Actions.Add(logic);
             Edge.TargetTokenType = typeof(TTransformedToken);
 
-            return new FlowBuilder<TTransformedToken>(Edge, Services);
+            return new FlowBuilder<TTransformedToken>(Edge);
         }
 
         public IObjectFlowBuilderWithWeight<TToken> SetWeight(int weight)

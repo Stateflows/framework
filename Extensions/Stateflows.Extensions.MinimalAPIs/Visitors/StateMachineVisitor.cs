@@ -15,7 +15,8 @@ namespace Stateflows.Extensions.MinimalAPIs;
 internal class StateMachineVisitor(
     IEndpointRouteBuilder routeBuilder,
     Interceptor interceptor,
-    ITypeMapper typeMapper
+    ITypeMapper typeMapper,
+    IServiceProvider serviceProvider
 ) : StateMachines.StateMachineVisitor, IBehaviorClassVisitor, ITypeVisitor
 {
     public IEndpointRouteBuilder RouteBuilder => routeBuilder;
@@ -310,7 +311,7 @@ internal class StateMachineVisitor(
         {
             var endpointsBuilder = new EndpointsBuilder(routeBuilder, this, interceptor, new StateMachineClass(stateMachineName));
             
-            var stateMachine = (IStateMachineEndpoints)StateflowsActivator.CreateUninitializedInstance<TStateMachine>();
+            var stateMachine = (IStateMachineEndpoints)StateflowsActivator.CreateModelElementInstanceAsync<TStateMachine>(serviceProvider);
             stateMachine.RegisterEndpoints(endpointsBuilder);
         }
         

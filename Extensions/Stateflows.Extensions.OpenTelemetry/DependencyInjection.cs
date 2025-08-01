@@ -11,9 +11,9 @@ namespace Stateflows.Extensions.OpenTelemetry
         {
             var result = builder
                     .AddStateMachines(b => b
-                        .AddObserver(serviceProvider => serviceProvider.GetRequiredService<StateMachineTracer>())
-                        .AddInterceptor(serviceProvider => serviceProvider.GetRequiredService<StateMachineTracer>())
-                        .AddExceptionHandler(serviceProvider => serviceProvider.GetRequiredService<StateMachineTracer>())
+                        .AddObserver((serviceProvider, _) => serviceProvider.GetRequiredService<StateMachineTracer>())
+                        .AddInterceptor((serviceProvider, _) => serviceProvider.GetRequiredService<StateMachineTracer>())
+                        .AddExceptionHandler((serviceProvider, _) => serviceProvider.GetRequiredService<StateMachineTracer>())
                     )
                     .AddActivities(b => b
                         .AddObserver(serviceProvider => serviceProvider.GetRequiredService<ActivityTracer>())

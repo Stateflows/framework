@@ -1,13 +1,32 @@
 using Stateflows.Common;
+using Stateflows.Common.Attributes;
 using StateMachine.IntegrationTests.Classes.Events;
 using StateMachine.IntegrationTests.Utils;
 
 namespace StateMachine.IntegrationTests.Tests
 {
+    public class Handler : StateMachineExceptionHandler
+    {
+        public Handler([GlobalValue] IValue<int> counter)
+        {
+            this.counter = counter;
+        }
+        
+        private readonly IValue<int> counter;
+        
+        public override bool OnStateEntryException(IStateActionContext context, Exception exception)
+        {
+            var (success, counterValue) = counter.TryGetAsync().GetAwaiter().GetResult();
+            Exceptions.ExceptionHandled = success && counterValue == 42;
+            return true;
+        }
+    }
+    
     [TestClass]
     public class Exceptions : StateflowsTestClass
     {
         public bool eventConsumed = false;
+        public static bool ExceptionHandled = false;
 
         [TestInitialize]
         public override void Initialize()
@@ -58,6 +77,18 @@ namespace StateMachine.IntegrationTests.Tests
                             .AddOnEntry(c => throw new NotImplementedException("example"))
                         )
                         .AddState("state3")
+                    )
+                    
+                    .AddStateMachine("handled", b => b
+                        .AddInitialState("state1", b => b
+                            .AddOnEntry(c => c.Behavior.Values.SetAsync("counter", 42))
+                            .AddTransition<SomeEvent>("state2")
+                        )
+                        .AddState("state2", b => b
+                            .AddOnEntry(c => throw new NotImplementedException("example"))
+                        )
+                    
+                        .AddExceptionHandler<Handler>()
                     )
                 )
                 ;
@@ -129,6 +160,22 @@ namespace StateMachine.IntegrationTests.Tests
 
             Assert.AreEqual("state1", state1);
             Assert.AreEqual("state3", state2);
+        }
+
+        [TestMethod]
+        public async Task ExceptionHandledByHandler()
+        {
+            var state1 = string.Empty;
+
+            if (StateMachineLocator.TryLocateStateMachine(new StateMachineId("handled", "x"), out var sm))
+            {
+                await sm.SendAsync(new Initialize());
+                await sm.SendAsync(new SomeEvent());
+                state1 = (await sm.GetStatusAsync())?.Response?.CurrentStates?.Value;
+            }
+
+            Assert.AreEqual("state1", state1);
+            Assert.IsTrue(ExceptionHandled);
         }
     }
 }

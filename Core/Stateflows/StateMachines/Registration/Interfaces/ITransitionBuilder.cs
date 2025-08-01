@@ -25,7 +25,7 @@ namespace Stateflows.StateMachines.Registration.Interfaces
             builder.Edge.TriggerType = typeof(TTrigger);
             builder.Edge.Trigger = typeof(TTrigger).GetEventName();
             
-            return new TransitionBuilder<TTrigger>(builder.Edge, builder.Services);
+            return new TransitionBuilder<TTrigger>(builder.Edge);
         }
     }
 }

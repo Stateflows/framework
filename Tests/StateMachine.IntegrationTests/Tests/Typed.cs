@@ -1,3 +1,4 @@
+using Microsoft.Extensions.DependencyInjection;
 using Stateflows.Common;
 using StateMachine.IntegrationTests.Classes.Events;
 using StateMachine.IntegrationTests.Utils;

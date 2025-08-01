@@ -17,19 +17,14 @@ using Stateflows.Activities.Registration.Interfaces.Internal;
 
 namespace Stateflows.Activities.Registration
 {
-    internal class BaseActivityBuilder :
-        IInternal,
-        IGraphBuilder
+    internal class BaseActivityBuilder : IGraphBuilder
     {
         public Graph Graph => Node as Graph ?? Node.Graph;
 
         public Node Node { get; set; }
 
-        public IServiceCollection Services { get; }
-
-        public BaseActivityBuilder(Node parentNode, IServiceCollection services)
+        public BaseActivityBuilder(Node parentNode)
         {
-            Services = services;
             Node = parentNode;
         }
 
@@ -121,7 +116,7 @@ namespace Stateflows.Activities.Registration
 
             node.ChunkSize = chunkSize;
 
-            buildAction?.Invoke(new NodeBuilder(node, this, Services));
+            buildAction?.Invoke(new NodeBuilder(node, this));
             
             node.Action.Actions.Add(async c =>
             {
@@ -310,7 +305,7 @@ namespace Stateflows.Activities.Registration
                         await executor.DoFinalizeNodeAsync(node, c as ActionContext);
                     }
                 },
-                b => buildAction?.Invoke(new StructuredActivityBuilder(b.Node, this, Services))
+                b => buildAction?.Invoke(new StructuredActivityBuilder(b.Node, this))
             );
 
         public BaseActivityBuilder AddParallelActivity<TToken>(string parallelActivityNodeName, ParallelActivityBuildAction buildAction = null, int chunkSize = 1)
@@ -330,7 +325,7 @@ namespace Stateflows.Activities.Registration
                     c.OutputRange(await executor.DoExecuteParallelNodeAsync<TToken>(node, edge, c.Behavior.GetNodeScope(), ((ActionContext)c).InputTokens));
                     await executor.DoFinalizeNodeAsync(node, c as ActionContext);
                 },
-                b => buildAction?.Invoke(new StructuredActivityBuilder(b.Node, this, Services)),
+                b => buildAction?.Invoke(new StructuredActivityBuilder(b.Node, this)),
                 null,
                 chunkSize
             );
@@ -348,7 +343,7 @@ namespace Stateflows.Activities.Registration
                     c.OutputRange(await executor.DoExecuteIterativeNodeAsync<TToken>(c as ActionContext));
                     await executor.DoFinalizeNodeAsync(node, c as ActionContext);
                 },
-                b => buildAction?.Invoke(new StructuredActivityBuilder(b.Node, this, Services)),
+                b => buildAction?.Invoke(new StructuredActivityBuilder(b.Node, this)),
                 null,
                 chunkSize
             );

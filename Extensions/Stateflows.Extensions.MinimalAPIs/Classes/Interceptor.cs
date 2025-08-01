@@ -1,5 +1,4 @@
 using Microsoft.AspNetCore.Builder;
-using Stateflows.Extensions.MinimalAPIs.Interfaces;
 
 namespace Stateflows.Extensions.MinimalAPIs;
 

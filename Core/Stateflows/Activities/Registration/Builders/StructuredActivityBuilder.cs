@@ -23,10 +23,10 @@ namespace Stateflows.Activities.Registration.Builders
     {
         public NodeBuilder NodeBuilder { get; set; }
 
-        public StructuredActivityBuilder(Node parentNode, BaseActivityBuilder parentActivityBuilder, IServiceCollection services)
-            : base(parentNode, services)
+        public StructuredActivityBuilder(Node parentNode, BaseActivityBuilder parentActivityBuilder)
+            : base(parentNode)
         {
-            NodeBuilder = new NodeBuilder(Node, parentActivityBuilder, Services);
+            NodeBuilder = new NodeBuilder(Node, parentActivityBuilder);
         }
 
         public IActionBuilder AddFlow<TToken>(string targetNodeName, ObjectFlowBuildAction<TToken> buildAction = null)

@@ -54,7 +54,7 @@ namespace Stateflows.StateMachines
             {
                 if (!Registers.TryGetValue(stateflowsBuilder, out var register))
                 {
-                    register = new StateMachinesRegister(stateflowsBuilder as StateflowsBuilder, stateflowsBuilder.ServiceCollection);
+                    register = new StateMachinesRegister(stateflowsBuilder as StateflowsBuilder);
                     Registers.Add(stateflowsBuilder, register);
 
                     stateflowsBuilder

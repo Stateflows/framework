@@ -23,22 +23,18 @@ namespace Stateflows.Activities.Registration
         IJoinBuilder,
         IForkBuilder,
         IDecisionBuilder,
-        IDataStoreBuilder,
-        IInternal
+        IDataStoreBuilder
     {
         public Node Node { get; }
-
-        public IServiceCollection Services { get; }
 
         public Graph Graph => Node.Graph;
 
         public BaseActivityBuilder ActivityBuilder { get; }
 
-        public NodeBuilder(Node node, BaseActivityBuilder activityBuilder, IServiceCollection services)
+        public NodeBuilder(Node node, BaseActivityBuilder activityBuilder)
         {
             Node = node;
             ActivityBuilder = activityBuilder;
-            Services = services;
         }
 
         public IActionBuilder AddControlFlow(string targetNodeName, ControlFlowBuildAction buildAction = null)
@@ -100,7 +96,7 @@ namespace Stateflows.Activities.Registration
             Node.Edges.Add(edge);
             Node.Graph.AllEdgesList.Add(edge);
 
-            buildAction?.Invoke(new FlowBuilder<TToken>(edge, Services));
+            buildAction?.Invoke(new FlowBuilder<TToken>(edge));
 
             return this;
         }

@@ -33,7 +33,6 @@ namespace Stateflows.StateMachines.Registration.Builders
         IBehaviorStateBuilder,
         IBehaviorOverridenStateBuilder,
         IBehaviorOverridenRegionalizedStateBuilder,
-        IInternal,
         IVertexBuilder,
         IBehaviorBuilder,
         IEmbeddedBehaviorBuilder,
@@ -43,16 +42,13 @@ namespace Stateflows.StateMachines.Registration.Builders
 
         public Graph Graph => Vertex.Graph;
 
-        public IServiceCollection Services { get; }
-
         BehaviorClass IBehaviorBuilder.BehaviorClass => new BehaviorClass(Constants.StateMachine, Vertex.Graph.Name);
 
         int IBehaviorBuilder.BehaviorVersion => Vertex.Graph.Version;
 
-        public StateBuilder(Vertex vertex, IServiceCollection services)
+        public StateBuilder(Vertex vertex)
         {
             Vertex = vertex;
-            Services = services;
         }
 
         #region Events
@@ -285,7 +281,7 @@ namespace Stateflows.StateMachines.Registration.Builders
 
             Vertex.Graph.AllEdges.Add(edge);
 
-            transitionBuildAction?.Invoke(new TransitionBuilder<TEvent>(edge, Services));
+            transitionBuildAction?.Invoke(new TransitionBuilder<TEvent>(edge));
             
             Vertex.Graph.VisitingTasks.Add(visitor => visitor.TransitionAddedAsync<TEvent>(Vertex.Graph.Name, Vertex.Graph.Version, edge.SourceName, targetStateName == Constants.DefaultTransitionTarget ? edge.TargetName : null));
 
@@ -695,7 +691,7 @@ namespace Stateflows.StateMachines.Registration.Builders
                 throw new StateMachineOverrideException($"Transition triggered by '{Event<TEvent>.Name}' and targeting '{targetStateName}' not found in overriden state '{Vertex.Name}'", Vertex.Graph.Class);
             }
             
-            transitionBuildAction?.Invoke(new TransitionBuilder<TEvent>(edge, Services));
+            transitionBuildAction?.Invoke(new TransitionBuilder<TEvent>(edge));
 
             return this;
         }
@@ -714,7 +710,7 @@ namespace Stateflows.StateMachines.Registration.Builders
                 throw new StateMachineOverrideException($"Default transition targeting '{targetStateName}' not found in overriden state '{Vertex.Name}'", Vertex.Graph.Class);
             }
             
-            transitionBuildAction?.Invoke(new TransitionBuilder<Completion>(edge, Services));
+            transitionBuildAction?.Invoke(new TransitionBuilder<Completion>(edge));
 
             return this;
         }
@@ -733,7 +729,7 @@ namespace Stateflows.StateMachines.Registration.Builders
                 throw new StateMachineOverrideException($"Internal transition triggered by '{Event<TEvent>.Name}' not found in overriden state '{Vertex.Name}'", Vertex.Graph.Class);
             }
             
-            transitionBuildAction?.Invoke(new TransitionBuilder<TEvent>(edge, Services));
+            transitionBuildAction?.Invoke(new TransitionBuilder<TEvent>(edge));
 
             return this;
         }
@@ -753,7 +749,7 @@ namespace Stateflows.StateMachines.Registration.Builders
                 throw new StateMachineOverrideException($"Transition triggered by '{Event<TEvent>.Name}' and targeting '{targetStateName}' not found in overriden state '{Vertex.Name}'", Vertex.Graph.Class);
             }
             
-            transitionBuildAction?.Invoke(new TransitionBuilder<TEvent>(edge, Services));
+            transitionBuildAction?.Invoke(new TransitionBuilder<TEvent>(edge));
 
             return this;
         }
@@ -772,7 +768,7 @@ namespace Stateflows.StateMachines.Registration.Builders
                 throw new StateMachineOverrideException($"Default transition targeting '{targetStateName}' not found in overriden state '{Vertex.Name}'", Vertex.Graph.Class);
             }
             
-            transitionBuildAction?.Invoke(new TransitionBuilder<Completion>(edge, Services));
+            transitionBuildAction?.Invoke(new TransitionBuilder<Completion>(edge));
 
             return this;
         }
@@ -791,7 +787,7 @@ namespace Stateflows.StateMachines.Registration.Builders
                 throw new StateMachineOverrideException($"Internal transition triggered by '{Event<TEvent>.Name}' not found in overriden state '{Vertex.Name}'", Vertex.Graph.Class);
             }
             
-            transitionBuildAction?.Invoke(new TransitionBuilder<TEvent>(edge, Services));
+            transitionBuildAction?.Invoke(new TransitionBuilder<TEvent>(edge));
 
             return this;
         }
@@ -803,7 +799,7 @@ namespace Stateflows.StateMachines.Registration.Builders
                 ? VertexType.InitialCompositeState
                 : VertexType.CompositeState;
 
-            compositeStateBuildAction?.Invoke(new CompositeStateBuilder(Vertex.DefaultRegion, Services));
+            compositeStateBuildAction?.Invoke(new CompositeStateBuilder(Vertex.DefaultRegion));
 
             return this;
         }
@@ -815,7 +811,7 @@ namespace Stateflows.StateMachines.Registration.Builders
                 ? VertexType.InitialOrthogonalState
                 : VertexType.OrthogonalState;
 
-            orthogonalStateBuildAction?.Invoke(new OrthogonalStateBuilder(Vertex, Services));
+            orthogonalStateBuildAction?.Invoke(new OrthogonalStateBuilder(Vertex));
 
             return this;
         }

@@ -96,9 +96,11 @@ namespace Stateflows.StateMachines.Engine
         {
             RebuildVerticesTree();
 
-            await Inspector.BuildAsync();
+            var context = new StateMachineActionContext(Context);
 
-            Inspector.AfterHydrate(new StateMachineActionContext(Context));
+            await Inspector.BuildAsync(context);
+
+            Inspector.AfterHydrate(context);
         }
 
         public void Dehydrate()

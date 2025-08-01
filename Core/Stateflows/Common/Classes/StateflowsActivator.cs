@@ -6,10 +6,13 @@ using System.Runtime.Serialization;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using Stateflows.Common.Attributes;
+using Stateflows.Common.Context.Classes;
 using Stateflows.Common.Exceptions;
 using Stateflows.Common.Extensions;
 using Stateflows.Common.Interfaces;
+using Stateflows.StateMachines;
 using Stateflows.StateMachines.Attributes;
+using Stateflows.StateMachines.Context.Classes;
 
 namespace Stateflows.Common.Classes
 {
@@ -93,6 +96,14 @@ namespace Stateflows.Common.Classes
             for (var i = 0; i < parameters.Length; i++)
             {
                 var parameter = parameters[i];
+
+                if (parameter.ParameterType.IsImplementerOfRawGeneric(typeof(IValuesSet)))
+                {
+                    parameterValues[i] = await CreateModelElementInstanceAsync(serviceProvider, parameter.ParameterType, "values set");
+                    
+                    continue;
+                }
+
                 if (parameter.ParameterType.IsSubclassOfRawGeneric(typeof(BaseValueAccessor<>)))
                 {
                     var customAttribute = parameter.GetCustomAttribute<ValueNameAttribute>();
@@ -295,7 +306,32 @@ namespace Stateflows.Common.Classes
                 );
             }
 
+            var observabilityServiceKinds = new string[]
+            {
+                "interceptor",
+                "exception handler",
+                "observer"
+            };
+            
+            if (observabilityServiceKinds.Contains(serviceKind))
+            {
+                var message = valueName == parameter.Name
+                    ? $"Context value '{valueName}' cannot be read - reading values directly is not supported for {serviceKind} (required by {serviceKind} '{serviceType.Name}')"
+                    : $"Context value '{valueName}' cannot be read - reading values directly is not supported for {serviceKind} (required by constructor parameter '{parameter.Name}' of {serviceKind} '{serviceType.Name}')";
+
+                throw new StateflowsRuntimeException(message);
+            }
+
             var valueSet = valueSetSelector();
+            if (valueSet == null)
+            {
+                var message = valueName == parameter.Name
+                    ? $"Context value '{valueName}' cannot be read - no value set found (required by {serviceKind} '{serviceType.Name}')"
+                    : $"Context value '{valueName}' cannot be read - no value set found (required by constructor parameter '{parameter.Name}' of {serviceKind} '{serviceType.Name}')";
+
+                throw new StateflowsRuntimeException(message);
+            }
+            
             var tryGetMethod = typeof(IContextValues).GetMethod(nameof(IContextValues.TryGetAsync));
             var task = (Task)tryGetMethod!
                 .MakeGenericMethod(parameter.ParameterType)
