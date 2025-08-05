@@ -6,7 +6,7 @@ Notifications published by one Behavior can be relayed by second Behavior - for 
 
 Relay can be started by sending `StartRelay` Event to publisher and stopped by sending `StopRelay` Event.
 
-For embedded Behaviors (Actions and Activities bound to State Machines), relays can be declared the same way as for subscriptions:
+For embedded Behaviors (Actions and Activities bound to State Machines), relays can be declared the same way as subscriptions:
 
 ```csharp
     // part of State Machine definition

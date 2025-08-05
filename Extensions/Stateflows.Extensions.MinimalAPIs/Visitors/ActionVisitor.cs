@@ -39,7 +39,8 @@ internal class ActionVisitor(IEndpointRouteBuilder routeBuilder, Interceptor int
                 BehaviorClass[] actionClasses = [new ActionClass(actionName)];
                 var contextIds = await storage.GetAllContextIdsAsync(actionClasses);
                 return Results.Ok(contextIds.Select(id => new { Id = id }));
-            });
+            })
+            .WithTags($"{BehaviorType.Action} {actionName}");
 
             interceptor.AfterGetInstancesEndpointDefinition(behaviorClass, method, route, routeHandlerBuilder);
         }
@@ -66,7 +67,8 @@ internal class ActionVisitor(IEndpointRouteBuilder routeBuilder, Interceptor int
 
                     return Results.NotFound();
                 }
-            );
+            )
+            .WithTags($"{BehaviorType.Action} {actionName}");
 
             interceptor.AfterEventEndpointDefinition<BehaviorInfoRequest>(behaviorClass, method, route, routeHandlerBuilder);
             
@@ -104,7 +106,8 @@ internal class ActionVisitor(IEndpointRouteBuilder routeBuilder, Interceptor int
                         return result.ToResult(result.Response.Notifications, behaviorInfo, HateoasLinks);
                     }
                     return Results.NotFound();
-                });
+                })
+                .WithTags($"{BehaviorType.Action} {actionName}");
             
             interceptor.AfterEventEndpointDefinition<NotificationsRequest>(behaviorClass, method, route, routeHandlerBuilder);
             
@@ -141,7 +144,8 @@ internal class ActionVisitor(IEndpointRouteBuilder routeBuilder, Interceptor int
                     
                     return Results.NotFound();
                 }
-            );
+            )
+            .WithTags($"{BehaviorType.Action} {actionName}");
             
             interceptor.AfterEventEndpointDefinition<Finalize>(behaviorClass, method, route, routeHandlerBuilder);
             
@@ -178,7 +182,8 @@ internal class ActionVisitor(IEndpointRouteBuilder routeBuilder, Interceptor int
                     
                     return Results.NotFound();
                 }
-            );
+            )
+            .WithTags($"{BehaviorType.Action} {actionName}");
             
             interceptor.AfterEventEndpointDefinition<Reset>(behaviorClass, method, route, routeHandlerBuilder);
             

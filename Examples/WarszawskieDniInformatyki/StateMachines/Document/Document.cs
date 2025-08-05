@@ -54,7 +54,9 @@ public class Document : IStateMachine
                 )
             )
             .AddState<Reviewed>(b => b
-                .AddTransition<Accept, Accepted>()
+                .AddTransition<Accept, Accepted>(b => b
+                    .AddEffect(c => c.Event.Respond(new AcceptResponse()))
+                )
             )
             .AddState<Accepted>(b => b
                 .AddTransition<Pay, PayGuard, Paid>()

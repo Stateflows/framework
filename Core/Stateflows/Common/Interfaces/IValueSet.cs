@@ -1,5 +1,5 @@
 namespace Stateflows.Common
 {
-    public interface IValuesSet
+    public interface IValueSet
     { }
 }

@@ -58,6 +58,7 @@ internal static class RequestBodyExtensions
                         return Results.NotFound();
                     }
                 )
+                .WithTags($"{behaviorClass.Type} {behaviorClass.Name}")
                 : routeBuilder.MapMethods(
                     route,
                     [method],
@@ -82,7 +83,8 @@ internal static class RequestBodyExtensions
                             ? await payload.SendEndpointAsync(behavior, implicitInitialization, customHateoasLinks)
                             : Results.NotFound();
                     }
-                );
+                )
+                .WithTags($"{behaviorClass.Type} {behaviorClass.Name}");
 
             interceptor.AfterEventEndpointDefinition<TEvent>(behaviorClass, method, route, routeHandlerBuilder);
             
@@ -158,6 +160,7 @@ internal static class RequestBodyExtensions
                         return Results.NotFound();
                     }
                 )
+                .WithTags($"{behaviorClass.Type} {behaviorClass.Name}")
                 : routeBuilder.MapMethods(
                     route,
                     [method],
@@ -180,7 +183,8 @@ internal static class RequestBodyExtensions
                             ? await payload.RequestEndpointAsync<TRequest, TResponse>(behavior, implicitInitialization, customHateoasLinks)
                             : Results.NotFound();
                     }
-                );
+                )
+                .WithTags($"{behaviorClass.Type} {behaviorClass.Name}");
 
             interceptor.AfterEventEndpointDefinition<TRequest>(behaviorClass, method, route, routeHandlerBuilder);
         }
@@ -207,7 +211,8 @@ internal static class RequestBodyExtensions
         where TRequest : IRequest<TResponse>
     {
         var result = EqualityComparer<TRequest>.Default.Equals(payload.Event, default)
-            ? new SendResult(
+            ? new RequestResult<TResponse>(
+                new EventHolder<TRequest>(),
                 EventStatus.Invalid,
                 new EventValidation(false, [ new ValidationResult("Event not provided") ])
             )

@@ -161,7 +161,8 @@ internal class ActivityVisitor(
                 BehaviorClass[] actionClasses = [behaviorClass];
                 var contextIds = await storage.GetAllContextIdsAsync(actionClasses);
                 return Results.Ok(contextIds.Select(id => new { Id = id }));
-            });
+            })
+            .WithTags($"{BehaviorType.Activity} {activityName}");
 
             interceptor.AfterGetInstancesEndpointDefinition(behaviorClass, method, route, routeHandlerBuilder);
         }
@@ -188,7 +189,8 @@ internal class ActivityVisitor(
 
                     return Results.NotFound();
                 }
-            );
+            )
+            .WithTags($"{BehaviorType.Activity} {activityName}");
 
             interceptor.AfterEventEndpointDefinition<ActivityInfoRequest>(behaviorClass, method, route, routeHandlerBuilder);
             
@@ -223,11 +225,13 @@ internal class ActivityVisitor(
                     {
                         var result = await behavior.GetNotificationsAsync(names, period);
                         var behaviorInfo = (await behavior.GetStatusAsync([new NoImplicitInitialization()])).Response;
-                        return result.ToResult(result.Response.Notifications, behaviorInfo, HateoasLinks);
+                        return ((SendResult)result).ToResult(result.Response.Notifications, behaviorInfo, HateoasLinks);
                     }
 
                     return Results.NotFound();
-                });
+                }
+            )
+            .WithTags($"{BehaviorType.Activity} {activityName}");
             
             interceptor.AfterEventEndpointDefinition<NotificationsRequest>(behaviorClass, method, route, routeHandlerBuilder);
             
@@ -264,7 +268,8 @@ internal class ActivityVisitor(
                     
                     return Results.NotFound();
                 }
-            );
+            )
+            .WithTags($"{BehaviorType.Activity} {activityName}");
             
             interceptor.AfterEventEndpointDefinition<Finalize>(behaviorClass, method, route, routeHandlerBuilder);
             
@@ -298,7 +303,8 @@ internal class ActivityVisitor(
                     
                     return Results.NotFound();
                 }
-            );
+            )
+            .WithTags($"{BehaviorType.Activity} {activityName}");
             
             interceptor.AfterEventEndpointDefinition<Reset>(behaviorClass, method, route, routeHandlerBuilder);
             

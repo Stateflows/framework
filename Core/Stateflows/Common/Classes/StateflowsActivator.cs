@@ -97,7 +97,7 @@ namespace Stateflows.Common.Classes
             {
                 var parameter = parameters[i];
 
-                if (parameter.ParameterType.IsImplementerOfRawGeneric(typeof(IValuesSet)))
+                if (parameter.ParameterType.IsImplementerOfRawGeneric(typeof(IValueSet)))
                 {
                     parameterValues[i] = await CreateModelElementInstanceAsync(serviceProvider, parameter.ParameterType, "values set");
                     

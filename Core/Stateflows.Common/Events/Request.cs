@@ -63,7 +63,9 @@ namespace Stateflows.Common
         {
             lock (Responses)
             {
-                return Responses.Value.GetValueOrDefault(request);
+                return request != null
+                    ? Responses.Value?.GetValueOrDefault(request)
+                    : null;
             }
         }
     }

@@ -93,14 +93,8 @@ app.UseAntiforgery();
 app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode();
 
-app.MapStateflowsMinimalAPIsEndpoints(b =>b
-    .ConfigureStateMachines(b => b
-        .ConfigureStateMachine("Doc", b => b
-            .ConfigureAllEndpoints(b => b
-                .Disable()
-            )
-        )
-    )
+app.MapStateflowsMinimalAPIsEndpoints(b => b
+    .SetApiRoutePrefix("sf")
 );
 
 app.Run();

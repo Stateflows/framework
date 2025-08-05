@@ -128,7 +128,9 @@ public static class DependencyInjection
                     return result.Length != 0
                         ? Results.Ok(result)
                         : Results.NotFound();
-                });
+                }
+            )
+            .WithTags(nameof(Stateflows));
             
             interceptor.AfterGetAllClassesEndpointDefinition(method, route, allClasses);
         }
@@ -146,7 +148,8 @@ public static class DependencyInjection
                     var contextIds = await storage.GetAllContextIdsAsync(behaviorClasses);
                     return Results.Ok(contextIds.Select(id => new { Id = id }));
                 }
-            );
+            )
+            .WithTags(nameof(Stateflows));
             
             interceptor.AfterGetAllInstancesEndpointDefinition(method, route, endpointRouteBuilder);
         }
@@ -207,7 +210,9 @@ public static class DependencyInjection
                         return result.Length != 0
                             ? Results.Ok(result)
                             : Results.NotFound();
-                    });
+                    }
+                )
+                .WithTags(nameof(Stateflows));
 
                 interceptor.AfterGetClassesEndpointDefinition(BehaviorType.Activity, method, route, endpointRouteBuilder);
             }
@@ -226,7 +231,8 @@ public static class DependencyInjection
                         var contextIds = await storage.GetAllContextIdsAsync(activityClasses);
                         return Results.Ok(contextIds.Select(id => new { Id = id }));
                     }
-                );
+                )
+                .WithTags(nameof(Stateflows));
             
                 interceptor.AfterGetInstancesEndpointDefinition(ActivityClass.Type, method, route, endpointRouteBuilder);
             }
@@ -266,7 +272,9 @@ public static class DependencyInjection
                         return result.Length != 0
                             ? Results.Ok(result)
                             : Results.NotFound();
-                    });
+                    }
+                )
+                .WithTags(nameof(Stateflows));
 
                 interceptor.AfterGetClassesEndpointDefinition(BehaviorType.Action, method, route, endpointRouteBuilder);
             }
@@ -285,7 +293,8 @@ public static class DependencyInjection
                         var contextIds = await storage.GetAllContextIdsAsync(actionClasses);
                         return Results.Ok(contextIds.Select(id => new { Id = id }));
                     }
-                );
+                )
+                .WithTags(nameof(Stateflows));
             
                 interceptor.AfterGetInstancesEndpointDefinition(ActionClass.Type, method, route, endpointRouteBuilder);
             }
@@ -316,7 +325,9 @@ public static class DependencyInjection
                         return result.Length != 0
                             ? Results.Ok(result)
                             : Results.NotFound();
-                    });
+                    }
+                )
+                .WithTags(nameof(Stateflows));
 
                 interceptor.AfterGetClassesEndpointDefinition(BehaviorType.StateMachine, method, route, endpointRouteBuilder);
             }
@@ -335,7 +346,8 @@ public static class DependencyInjection
                         var contextIds = await storage.GetAllContextIdsAsync(actionClasses);
                         return Results.Ok(contextIds.Select(id => new { Id = id }));
                     }
-                );
+                )
+                .WithTags(nameof(Stateflows));
             
                 interceptor.AfterGetInstancesEndpointDefinition(StateMachineClass.Type, method, route, endpointRouteBuilder);
             }
