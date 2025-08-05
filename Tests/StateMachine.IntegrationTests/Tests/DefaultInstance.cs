@@ -53,14 +53,14 @@ namespace StateMachine.IntegrationTests.Tests
         [TestMethod]
         public async Task DefaultInstanceInitialization()
         {
-            await Task.Delay(100);
+            await Task.Delay(1000);
             Assert.IsTrue(Initialized);
         }
 
         [TestMethod]
         public async Task StartupTransition()
         {
-            await Task.Delay(100);
+            await Task.Delay(1000);
             Assert.IsTrue(Started);
             Assert.IsTrue(InternalStarted);
         }

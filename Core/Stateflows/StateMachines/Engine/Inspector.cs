@@ -43,11 +43,11 @@ namespace Stateflows.StateMachines.Engine
             ObserverFactories.AddRange(Executor.Register.GlobalObserverFactories);
         }
 
-        public async Task BuildAsync()
+        public async Task BuildAsync(IStateMachineActionContext context)
         {
-            Observers = await Task.WhenAll(ObserverFactories.Select(t => t(Executor.ServiceProvider)));
-            Interceptors = await Task.WhenAll(InterceptorFactories.Select(t => t(Executor.ServiceProvider)));
-            ExceptionHandlers = await Task.WhenAll(ExceptionHandlerFactories.Select(t => t(Executor.ServiceProvider)));
+            Observers = await Task.WhenAll(ObserverFactories.Select(t => t(Executor.ServiceProvider, context)));
+            Interceptors = await Task.WhenAll(InterceptorFactories.Select(t => t(Executor.ServiceProvider, context)));
+            ExceptionHandlers = await Task.WhenAll(ExceptionHandlerFactories.Select(t => t(Executor.ServiceProvider, context)));
         }
 
         public ActionInspection InitializeInspection;
@@ -68,9 +68,9 @@ namespace Stateflows.StateMachines.Engine
         private readonly List<StateMachineObserverFactoryAsync> ObserverFactories = new List<StateMachineObserverFactoryAsync>();
 
         private IEnumerable<IStateMachineObserver> Observers;
-
+        
         private IEnumerable<IStateMachineInterceptor> Interceptors;
-
+        
         private IEnumerable<IStateMachineExceptionHandler> ExceptionHandlers;
 
         private IEnumerable<IStateMachinePlugin> plugins;

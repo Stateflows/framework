@@ -36,7 +36,7 @@ namespace Stateflows.Actions
         [DebuggerHidden]
         public static IStateflowsBuilder AddActions(this IStateflowsBuilder stateflowsBuilder, ActionsBuildAction buildAction = null)
         {
-            var register = stateflowsBuilder.EnsureActivitiesServices();
+            var register = stateflowsBuilder.EnsureActionsServices();
             buildAction?.Invoke(new ActionsBuilder(register));
 
             return stateflowsBuilder;
@@ -47,7 +47,7 @@ namespace Stateflows.Actions
             where TAction : class, IAction
             => stateflowsBuilder.AddDefaultInstance(new StateMachineClass(Action<TAction>.Name).BehaviorClass, initializationRequestFactoryAsync);
 
-        private static ActionsRegister EnsureActivitiesServices(this IStateflowsBuilder stateflowsBuilder)
+        private static ActionsRegister EnsureActionsServices(this IStateflowsBuilder stateflowsBuilder)
         {
             lock (Registers)
             {

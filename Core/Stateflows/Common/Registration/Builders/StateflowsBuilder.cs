@@ -7,7 +7,7 @@ using Stateflows.Common.Registration.Interfaces;
 
 namespace Stateflows.Common.Registration.Builders
 {
-    internal class StateflowsBuilder : IStateflowsBuilder
+    internal class StateflowsBuilder : IStateflowsBuilder//, IStateflowsBehaviorsBuilder
     {
         private readonly List<IStateflowsTypeMapper> TypeMappers = new List<IStateflowsTypeMapper>();
 
@@ -27,5 +27,7 @@ namespace Stateflows.Common.Registration.Builders
 
             return this;
         }
+
+        // public List<IBehaviorRegister> Registers { get; } = new List<IBehaviorRegister>();
     }
 }

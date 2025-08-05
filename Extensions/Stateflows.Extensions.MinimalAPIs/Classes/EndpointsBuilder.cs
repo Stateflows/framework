@@ -63,6 +63,7 @@ internal class EndpointsBuilder(
                     ScopeName = scopeName,
                     HateoasLinks = visitor.HateoasLinks
                 })
+                .WithTags($"{behaviorClass.Type} {behaviorClass.Name}")
             ;
 
         if (!endpointEnabled)

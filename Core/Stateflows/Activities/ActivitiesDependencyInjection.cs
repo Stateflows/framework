@@ -55,7 +55,7 @@ namespace Stateflows.Activities
             {
                 if (!Registers.TryGetValue(stateflowsBuilder, out var register))
                 {
-                    register = new ActivitiesRegister(stateflowsBuilder as StateflowsBuilder, stateflowsBuilder.ServiceCollection);
+                    register = new ActivitiesRegister(stateflowsBuilder as StateflowsBuilder);
                     Registers.Add(stateflowsBuilder, register);
 
                     stateflowsBuilder

@@ -30,8 +30,8 @@ namespace Stateflows.Activities.Registration.Builders
             set => Node = value;
         }
 
-        public ActivityBuilder(string name, int version, Node parentNode, StateflowsBuilder stateflowsBuilder, IServiceCollection services)
-            : base(parentNode, services)
+        public ActivityBuilder(string name, int version, Node parentNode, StateflowsBuilder stateflowsBuilder)
+            : base(parentNode)
         {
             Graph = new Graph(name, version, stateflowsBuilder);
         }

@@ -21,6 +21,7 @@ namespace Stateflows.Activities.Engine
             };
 
             context.Behavior.Publish(notification);
+            context.Behavior.Publish<BehaviorInfo>(notification);
             
             foreach (var flowIdentifier in executor.Context.ActivatedFlows)
             {

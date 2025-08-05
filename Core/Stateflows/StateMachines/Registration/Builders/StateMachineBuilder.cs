@@ -7,6 +7,7 @@ using Stateflows.Common.Classes;
 using Stateflows.Common.Models;
 using Stateflows.Common.Registration;
 using Stateflows.Common.Registration.Builders;
+using Stateflows.StateMachines.Context;
 using Stateflows.StateMachines.Models;
 using Stateflows.StateMachines.Interfaces;
 using Stateflows.StateMachines.Exceptions;
@@ -24,21 +25,17 @@ namespace Stateflows.StateMachines.Registration.Builders
         IStateMachineBuilder,
         IFinalizedOverridenStateMachineBuilder,
         IOverridenStateMachineBuilder,
-        IInternal,
         IBehaviorBuilder,
         IGraphBuilder
     {
         public Graph Graph { get; }
-        
-        public IServiceCollection Services { get; }
 
         BehaviorClass IBehaviorBuilder.BehaviorClass => new BehaviorClass(Constants.StateMachine, Graph.Name);
 
         int IBehaviorBuilder.BehaviorVersion => Graph.Version;
 
-        public StateMachineBuilder(string name, int version, StateflowsBuilder stateflowsBuilder, IServiceCollection services)
+        public StateMachineBuilder(string name, int version, StateflowsBuilder stateflowsBuilder)
         {
-            Services = services;
             Graph = new Graph(name, version, stateflowsBuilder);
         }
 
@@ -148,7 +145,7 @@ namespace Stateflows.StateMachines.Registration.Builders
 
         [DebuggerHidden]
         public IInitializedStateMachineBuilder AddState(string stateName, StateBuildAction stateBuildAction = null)
-            => AddVertex(stateName, VertexType.State, vertex => stateBuildAction?.Invoke(new StateBuilder(vertex, Services)));
+            => AddVertex(stateName, VertexType.State, vertex => stateBuildAction?.Invoke(new StateBuilder(vertex)));
 
         IFinalizedOverridenStateMachineBuilder IStateMachine<IFinalizedOverridenStateMachineBuilder>.AddCompositeState(
             string compositeStateName,
@@ -181,10 +178,10 @@ namespace Stateflows.StateMachines.Registration.Builders
             => AddJoin(joinName, joinBuildAction) as IFinalizedOverridenStateMachineBuilder;
 
         public IInitializedStateMachineBuilder AddFork(string forkName, ForkBuildAction forkBuildAction)
-            => AddVertex(forkName, VertexType.Fork, vertex => forkBuildAction?.Invoke(new StateBuilder(vertex, Services)));
+            => AddVertex(forkName, VertexType.Fork, vertex => forkBuildAction?.Invoke(new StateBuilder(vertex)));
 
         public IInitializedStateMachineBuilder AddJoin(string joinName, JoinBuildAction joinBuildAction)
-            => AddVertex(joinName, VertexType.Join, vertex => joinBuildAction?.Invoke(new StateBuilder(vertex, Services)));
+            => AddVertex(joinName, VertexType.Join, vertex => joinBuildAction?.Invoke(new StateBuilder(vertex)));
 
         IFinalizedOverridenStateMachineBuilder IStateMachine<IFinalizedOverridenStateMachineBuilder>.AddState(string stateName, StateBuildAction stateBuildAction)
             => AddState(stateName, stateBuildAction) as IFinalizedOverridenStateMachineBuilder;
@@ -212,36 +209,36 @@ namespace Stateflows.StateMachines.Registration.Builders
 
         [DebuggerHidden]
         public IInitializedStateMachineBuilder AddJunction(string junctionName, JunctionBuildAction junctionBuildAction)
-            => AddVertex(junctionName, VertexType.Junction, vertex => junctionBuildAction?.Invoke(new StateBuilder(vertex, Services)));
+            => AddVertex(junctionName, VertexType.Junction, vertex => junctionBuildAction?.Invoke(new StateBuilder(vertex)));
 
         [DebuggerHidden]
         public IInitializedStateMachineBuilder AddChoice(string choiceName, ChoiceBuildAction choiceBuildAction)
-            => AddVertex(choiceName, VertexType.Choice, vertex => choiceBuildAction?.Invoke(new StateBuilder(vertex, Services)));
+            => AddVertex(choiceName, VertexType.Choice, vertex => choiceBuildAction?.Invoke(new StateBuilder(vertex)));
 
         #region AddCompositeState
 
         public IInitializedStateMachineBuilder AddCompositeState(string compositeStateName, CompositeStateBuildAction compositeStateBuildAction)
-            => AddVertex(compositeStateName, VertexType.CompositeState, vertex => compositeStateBuildAction?.Invoke(new CompositeStateBuilder(vertex.DefaultRegion, Services)));
+            => AddVertex(compositeStateName, VertexType.CompositeState, vertex => compositeStateBuildAction?.Invoke(new CompositeStateBuilder(vertex.DefaultRegion)));
 
         public IInitializedStateMachineBuilder AddOrthogonalState(string orthogonalStateName, OrthogonalStateBuildAction orthogonalStateBuildAction)
-            => AddVertex(orthogonalStateName, VertexType.OrthogonalState, vertex => orthogonalStateBuildAction?.Invoke(new OrthogonalStateBuilder(vertex, Services)));
+            => AddVertex(orthogonalStateName, VertexType.OrthogonalState, vertex => orthogonalStateBuildAction?.Invoke(new OrthogonalStateBuilder(vertex)));
 
         public IInitializedStateMachineBuilder AddInitialState(string stateName, StateBuildAction stateBuildAction = null)
         {
             Graph.InitialVertexName = stateName;
-            return AddVertex(stateName, VertexType.InitialState, vertex => stateBuildAction?.Invoke(new StateBuilder(vertex, Services)));
+            return AddVertex(stateName, VertexType.InitialState, vertex => stateBuildAction?.Invoke(new StateBuilder(vertex)));
         }
 
         public IInitializedStateMachineBuilder AddInitialCompositeState(string compositeStateName, CompositeStateBuildAction compositeStateBuildAction)
         {
             Graph.InitialVertexName = compositeStateName;
-            return AddVertex(compositeStateName, VertexType.InitialCompositeState, vertex => compositeStateBuildAction?.Invoke(new CompositeStateBuilder(vertex.DefaultRegion, Services)));
+            return AddVertex(compositeStateName, VertexType.InitialCompositeState, vertex => compositeStateBuildAction?.Invoke(new CompositeStateBuilder(vertex.DefaultRegion)));
         }
 
         public IInitializedStateMachineBuilder AddInitialOrthogonalState(string orthogonalStateName, OrthogonalStateBuildAction orthogonalStateBuildAction)
         {
             Graph.InitialVertexName = orthogonalStateName;
-            return AddVertex(orthogonalStateName, VertexType.InitialOrthogonalState, vertex => orthogonalStateBuildAction?.Invoke(new OrthogonalStateBuilder(vertex, Services)));
+            return AddVertex(orthogonalStateName, VertexType.InitialOrthogonalState, vertex => orthogonalStateBuildAction?.Invoke(new OrthogonalStateBuilder(vertex)));
         }
         #endregion
 
@@ -266,9 +263,23 @@ namespace Stateflows.StateMachines.Registration.Builders
         public IInitializedStateMachineBuilder AddExceptionHandler<TExceptionHandler>()
             where TExceptionHandler : class, IStateMachineExceptionHandler
         {
-            Services.AddScoped<TExceptionHandler>();
-            
-            AddExceptionHandler(async serviceProvider => await StateflowsActivator.CreateModelElementInstanceAsync<TExceptionHandler>(serviceProvider, "exception handler"));
+           
+            AddExceptionHandler(async (serviceProvider, context) =>
+            {
+                ContextValues.GlobalValuesHolder.Value = context.Behavior.Values;
+                ContextValues.StateValuesHolder.Value = null;
+                ContextValues.ParentStateValuesHolder.Value = null;
+                ContextValues.SourceStateValuesHolder.Value = null;
+                ContextValues.TargetStateValuesHolder.Value = null;
+
+                StateMachinesContextHolder.StateContext.Value = null;
+                StateMachinesContextHolder.TransitionContext.Value = null;
+                StateMachinesContextHolder.StateMachineContext.Value = context.StateMachine;
+                StateMachinesContextHolder.BehaviorContext.Value = context.Behavior;
+                StateMachinesContextHolder.ExecutionContext.Value = context;
+                
+                return await StateflowsActivator.CreateModelElementInstanceAsync<TExceptionHandler>(serviceProvider, "exception handler");
+            });
 
             return this;
         }
@@ -281,7 +292,7 @@ namespace Stateflows.StateMachines.Registration.Builders
             => AddObserver<TObserver>() as IOverridenStateMachineBuilder;
 
         public IInitializedStateMachineBuilder AddExceptionHandler(StateMachineExceptionHandlerFactory exceptionHandlerFactory)
-            => AddExceptionHandler(serviceProvider => Task.FromResult(exceptionHandlerFactory(serviceProvider)));
+            => AddExceptionHandler((serviceProvider, context) => Task.FromResult(exceptionHandlerFactory(serviceProvider, context)));
 
         public IInitializedStateMachineBuilder AddExceptionHandler(StateMachineExceptionHandlerFactoryAsync exceptionHandlerFactoryAsync)
         {
@@ -289,26 +300,7 @@ namespace Stateflows.StateMachines.Registration.Builders
 
             return this;
         }
-
-        // IInitializedStateMachineBuilder IStateMachineUtils<IInitializedStateMachineBuilder>.SetPolymorphicTriggers(bool polymorphicTriggers)
-        //     => SetPolymorphicTriggers(polymorphicTriggers) as IInitializedStateMachineBuilder;
-        //
-        // IFinalizedStateMachineBuilder IStateMachineUtils<IFinalizedStateMachineBuilder>.SetPolymorphicTriggers(bool polymorphicTriggers)
-        //     => SetPolymorphicTriggers(polymorphicTriggers) as IFinalizedStateMachineBuilder;
-        //
-        // public IStateMachineBuilder SetPolymorphicTriggers(bool polymorphicTriggers)
-        // {
-        //     Graph.PolymorphicTriggers = polymorphicTriggers;
-        //
-        //     return this;
-        // }
-        //
-        // IFinalizedOverridenStateMachineBuilder IStateMachineUtils<IFinalizedOverridenStateMachineBuilder>.SetPolymorphicTriggers(bool polymorphicTriggers)
-        //     => SetPolymorphicTriggers(polymorphicTriggers) as IFinalizedOverridenStateMachineBuilder;
-        //
-        // IOverridenStateMachineBuilder IStateMachineUtils<IOverridenStateMachineBuilder>.SetPolymorphicTriggers(bool polymorphicTriggers)
-        //     => SetPolymorphicTriggers(polymorphicTriggers) as IOverridenStateMachineBuilder;
-
+        
         IOverridenStateMachineBuilder IStateMachineUtils<IOverridenStateMachineBuilder>.AddInterceptor(StateMachineInterceptorFactory interceptorFactory)
             => AddInterceptor(interceptorFactory) as IOverridenStateMachineBuilder;
 
@@ -327,15 +319,28 @@ namespace Stateflows.StateMachines.Registration.Builders
         public IInitializedStateMachineBuilder AddInterceptor<TInterceptor>()
             where TInterceptor : class, IStateMachineInterceptor
         {
-            Services.AddScoped<TInterceptor>();
+            AddInterceptor(async (serviceProvider, context) =>
+            {
+                ContextValues.GlobalValuesHolder.Value = context.Behavior.Values;
+                ContextValues.StateValuesHolder.Value = null;
+                ContextValues.ParentStateValuesHolder.Value = null;
+                ContextValues.SourceStateValuesHolder.Value = null;
+                ContextValues.TargetStateValuesHolder.Value = null;
 
-            AddInterceptor(async serviceProvider => await StateflowsActivator.CreateModelElementInstanceAsync<TInterceptor>(serviceProvider, "interceptor"));
+                StateMachinesContextHolder.StateContext.Value = null;
+                StateMachinesContextHolder.TransitionContext.Value = null;
+                StateMachinesContextHolder.StateMachineContext.Value = context.StateMachine;
+                StateMachinesContextHolder.BehaviorContext.Value = context.Behavior;
+                StateMachinesContextHolder.ExecutionContext.Value = context;
+
+                return await StateflowsActivator.CreateModelElementInstanceAsync<TInterceptor>(serviceProvider, "interceptor");
+            });
 
             return this;
         }
 
         public IInitializedStateMachineBuilder AddInterceptor(StateMachineInterceptorFactory interceptorFactory)
-            => AddInterceptor(serviceProvider => Task.FromResult(interceptorFactory(serviceProvider)));
+            => AddInterceptor((serviceProvider, context) => Task.FromResult(interceptorFactory(serviceProvider, context)));
         
         public IInitializedStateMachineBuilder AddInterceptor(StateMachineInterceptorFactoryAsync interceptorFactoryAsync)
         {
@@ -347,15 +352,28 @@ namespace Stateflows.StateMachines.Registration.Builders
         public IInitializedStateMachineBuilder AddObserver<TObserver>()
             where TObserver : class, IStateMachineObserver
         {
-            Services.AddScoped<TObserver>();
-            
-            AddObserver(async serviceProvider => await StateflowsActivator.CreateModelElementInstanceAsync<TObserver>(serviceProvider, "observer"));
+            AddObserver(async (serviceProvider, context) =>
+            {
+                ContextValues.GlobalValuesHolder.Value = context.Behavior.Values;
+                ContextValues.StateValuesHolder.Value = null;
+                ContextValues.ParentStateValuesHolder.Value = null;
+                ContextValues.SourceStateValuesHolder.Value = null;
+                ContextValues.TargetStateValuesHolder.Value = null;
+
+                StateMachinesContextHolder.StateContext.Value = null;
+                StateMachinesContextHolder.TransitionContext.Value = null;
+                StateMachinesContextHolder.StateMachineContext.Value = context.StateMachine;
+                StateMachinesContextHolder.BehaviorContext.Value = context.Behavior;
+                StateMachinesContextHolder.ExecutionContext.Value = context;
+
+                return await StateflowsActivator.CreateModelElementInstanceAsync<TObserver>(serviceProvider, "observer");
+            });
 
             return this;
         }
 
         public IInitializedStateMachineBuilder AddObserver(StateMachineObserverFactory observerFactory)
-            => AddObserver(serviceProvider => Task.FromResult(observerFactory(serviceProvider)));
+            => AddObserver((serviceProvider, context) => Task.FromResult(observerFactory(serviceProvider, context)));
         
         public IInitializedStateMachineBuilder AddObserver(StateMachineObserverFactoryAsync observerFactoryAsync)
         {
@@ -458,7 +476,7 @@ namespace Stateflows.StateMachines.Registration.Builders
                 throw new StateMachineOverrideException($"State '{stateName}' not found in overriden state machine '{Graph.BaseStateMachineName}'", Graph.Class);
             }
             
-            stateBuildAction?.Invoke(new StateBuilder(vertex, Services));
+            stateBuildAction?.Invoke(new StateBuilder(vertex));
 
             return this;
         }
@@ -509,7 +527,7 @@ namespace Stateflows.StateMachines.Registration.Builders
                 throw new StateMachineOverrideException($"Composite state '{compositeStateName}' not found in overriden state machine '{Graph.BaseStateMachineName}'", Graph.Class);
             }
 
-            compositeStateBuildAction?.Invoke(new CompositeStateBuilder(vertex.DefaultRegion, Services));
+            compositeStateBuildAction?.Invoke(new CompositeStateBuilder(vertex.DefaultRegion));
 
             return this;
         }
@@ -529,7 +547,7 @@ namespace Stateflows.StateMachines.Registration.Builders
                 throw new StateMachineOverrideException($"Orthogonal state '{orthogonalStateName}' not found in overriden state machine '{Graph.BaseStateMachineName}'", Graph.Class);
             }
 
-            orthogonalStateBuildAction?.Invoke(new OrthogonalStateBuilder(vertex, Services));
+            orthogonalStateBuildAction?.Invoke(new OrthogonalStateBuilder(vertex));
 
             return this;
         }
@@ -541,7 +559,7 @@ namespace Stateflows.StateMachines.Registration.Builders
                 throw new StateMachineOverrideException($"Junction '{junctionName}' not found in overriden state machine '{Graph.BaseStateMachineName}'", Graph.Class);
             }
             
-            junctionBuildAction?.Invoke(new StateBuilder(vertex, Services));
+            junctionBuildAction?.Invoke(new StateBuilder(vertex));
 
             return this;
         }
@@ -553,7 +571,7 @@ namespace Stateflows.StateMachines.Registration.Builders
                 throw new StateMachineOverrideException($"Choice '{choiceName}' not found in overriden state machine '{Graph.BaseStateMachineName}'", Graph.Class);
             }
             
-            choiceBuildAction?.Invoke(new StateBuilder(vertex, Services));
+            choiceBuildAction?.Invoke(new StateBuilder(vertex));
 
             return this;
         }
@@ -565,7 +583,7 @@ namespace Stateflows.StateMachines.Registration.Builders
                 throw new StateMachineOverrideException($"Fork '{forkName}' not found in overriden state machine '{Graph.BaseStateMachineName}'", Graph.Class);
             }
             
-            forkBuildAction?.Invoke(new StateBuilder(vertex, Services));
+            forkBuildAction?.Invoke(new StateBuilder(vertex));
 
             return this;
         }
@@ -577,7 +595,7 @@ namespace Stateflows.StateMachines.Registration.Builders
                 throw new StateMachineOverrideException($"Join '{joinName}' not found in overriden state machine '{Graph.BaseStateMachineName}'", Graph.Class);
             }
             
-            joinBuildAction?.Invoke(new StateBuilder(vertex, Services));
+            joinBuildAction?.Invoke(new StateBuilder(vertex));
 
             return this;
         }

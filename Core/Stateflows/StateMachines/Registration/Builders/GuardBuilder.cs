@@ -12,17 +12,14 @@ namespace Stateflows.StateMachines.Registration.Builders
     internal class GuardBuilder<TEvent> :
         IGuardBuilder<TEvent>,
         IDefaultGuardBuilder,
-        IInternal,
         IEdgeBuilder
     {
         private readonly List<Func<ITransitionContext<TEvent>, Task<bool>>> Guards = new List<Func<ITransitionContext<TEvent>, Task<bool>>>();
 
-        private readonly IInternal InternalContext;
         public Edge Edge { get; private set; }
         
-        public GuardBuilder(IInternal internalContext, Edge edge)
+        public GuardBuilder(Edge edge)
         {
-            InternalContext = internalContext;
             Edge = edge;
         }
         
@@ -65,7 +62,7 @@ namespace Stateflows.StateMachines.Registration.Builders
 
         public IGuardBuilder<TEvent> AddAndExpression(Action<IGuardBuilder<TEvent>> guardExpression)
         {
-            var builder = new GuardBuilder<TEvent>(InternalContext, Edge);
+            var builder = new GuardBuilder<TEvent>(Edge);
             guardExpression.Invoke(builder);
             
             Guards.Add(builder.GetAndGuard());
@@ -75,15 +72,13 @@ namespace Stateflows.StateMachines.Registration.Builders
 
         public IGuardBuilder<TEvent> AddOrExpression(Action<IGuardBuilder<TEvent>> guardExpression)
         {
-            var builder = new GuardBuilder<TEvent>(InternalContext, Edge);
+            var builder = new GuardBuilder<TEvent>(Edge);
             guardExpression.Invoke(builder);
             
             Guards.Add(builder.GetOrGuard());
 
             return this;
         }
-
-        public IServiceCollection Services => InternalContext.Services;
 
         IDefaultGuardBuilder IBaseDefaultGuard<IDefaultGuardBuilder>.AddGuard(
             params Func<ITransitionContext<Completion>, Task<bool>>[] guardsAsync)

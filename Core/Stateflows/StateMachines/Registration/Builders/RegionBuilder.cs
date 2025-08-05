@@ -18,22 +18,18 @@ namespace Stateflows.StateMachines.Registration.Builders
         IFinalizedRegionBuilder,
         IFinalizedOverridenRegionBuilder,
         IOverridenRegionBuilder,
-        IInternal,
         IBehaviorBuilder
     {
         public Region Region { get; }
-
-        public IServiceCollection Services { get; }
 
         BehaviorClass IBehaviorBuilder.BehaviorClass => new BehaviorClass(Constants.StateMachine, Region.Graph.Name);
 
         int IBehaviorBuilder.BehaviorVersion => Region.Graph.Version;
 
-        public RegionBuilder(Region region, IServiceCollection services)
+        public RegionBuilder(Region region)
         {
             Region = region;
-            Services = services;
-            Builder = new StateBuilder(Region.ParentVertex, Services);
+            Builder = new StateBuilder(Region.ParentVertex);
         }
 
         private StateBuilder Builder { get; set; }
@@ -72,15 +68,15 @@ namespace Stateflows.StateMachines.Registration.Builders
         #region AddState
         [DebuggerHidden]
         public IInitializedRegionBuilder AddState(string stateName, StateBuildAction stateBuildAction = null)
-            => AddVertex(stateName, VertexType.State, vertex => stateBuildAction?.Invoke(new StateBuilder(vertex, Services)));
+            => AddVertex(stateName, VertexType.State, vertex => stateBuildAction?.Invoke(new StateBuilder(vertex)));
 
         [DebuggerHidden]
         public IInitializedRegionBuilder AddJunction(string junctionName, JunctionBuildAction junctionBuildAction)
-            => AddVertex(junctionName, VertexType.Junction, vertex => junctionBuildAction?.Invoke(new StateBuilder(vertex, Services)));
+            => AddVertex(junctionName, VertexType.Junction, vertex => junctionBuildAction?.Invoke(new StateBuilder(vertex)));
 
         [DebuggerHidden]
         public IInitializedRegionBuilder AddChoice(string choiceName, ChoiceBuildAction choiceBuildAction)
-            => AddVertex(choiceName, VertexType.Choice, vertex => choiceBuildAction?.Invoke(new StateBuilder(vertex, Services)));
+            => AddVertex(choiceName, VertexType.Choice, vertex => choiceBuildAction?.Invoke(new StateBuilder(vertex)));
 
         IOverridenRegionBuilder IStateMachine<IOverridenRegionBuilder>.AddFork(string forkName, ForkBuildAction forkBuildAction)
             => AddFork(forkName, forkBuildAction) as IOverridenRegionBuilder;
@@ -89,10 +85,10 @@ namespace Stateflows.StateMachines.Registration.Builders
             => AddJoin(joinName, joinBuildAction) as IOverridenRegionBuilder;
 
         public IInitializedRegionBuilder AddFork(string forkName, ForkBuildAction forkBuildAction)
-            => AddVertex(forkName, VertexType.Fork, vertex => forkBuildAction?.Invoke(new StateBuilder(vertex, Services)));
+            => AddVertex(forkName, VertexType.Fork, vertex => forkBuildAction?.Invoke(new StateBuilder(vertex)));
 
         public IInitializedRegionBuilder AddJoin(string joinName, JoinBuildAction joinBuildAction)
-            => AddVertex(joinName, VertexType.Join, vertex => joinBuildAction?.Invoke(new StateBuilder(vertex, Services)));
+            => AddVertex(joinName, VertexType.Join, vertex => joinBuildAction?.Invoke(new StateBuilder(vertex)));
 
         [DebuggerHidden]
         IOverridenRegionBuilder IStateMachine<IOverridenRegionBuilder>.AddCompositeState(string compositeStateName,
@@ -127,31 +123,31 @@ namespace Stateflows.StateMachines.Registration.Builders
 
         [DebuggerHidden]
         public IInitializedRegionBuilder AddCompositeState(string compositeStateName, CompositeStateBuildAction compositeStateBuildAction)
-            => AddVertex(compositeStateName, VertexType.CompositeState, vertex => compositeStateBuildAction?.Invoke(new CompositeStateBuilder(vertex.DefaultRegion, Services)));
+            => AddVertex(compositeStateName, VertexType.CompositeState, vertex => compositeStateBuildAction?.Invoke(new CompositeStateBuilder(vertex.DefaultRegion)));
 
         [DebuggerHidden]
         public IInitializedRegionBuilder AddOrthogonalState(string orthogonalStateName, OrthogonalStateBuildAction orthogonalStateBuildAction)
-            => AddVertex(orthogonalStateName, VertexType.OrthogonalState, vertex => orthogonalStateBuildAction?.Invoke(new OrthogonalStateBuilder(vertex, Services)));
+            => AddVertex(orthogonalStateName, VertexType.OrthogonalState, vertex => orthogonalStateBuildAction?.Invoke(new OrthogonalStateBuilder(vertex)));
 
         [DebuggerHidden]
         public IInitializedRegionBuilder AddInitialState(string stateName, StateBuildAction stateBuildAction = null)
         {
             Region.InitialVertexName = stateName;
-            return AddVertex(stateName, VertexType.InitialState, vertex => stateBuildAction?.Invoke(new StateBuilder(vertex, Services)));
+            return AddVertex(stateName, VertexType.InitialState, vertex => stateBuildAction?.Invoke(new StateBuilder(vertex)));
         }
 
         [DebuggerHidden]
         public IInitializedRegionBuilder AddInitialCompositeState(string compositeStateName, CompositeStateBuildAction compositeStateBuildAction)
         {
             Region.InitialVertexName = compositeStateName;
-            return AddVertex(compositeStateName, VertexType.InitialCompositeState, vertex => compositeStateBuildAction?.Invoke(new CompositeStateBuilder(vertex.DefaultRegion, Services)));
+            return AddVertex(compositeStateName, VertexType.InitialCompositeState, vertex => compositeStateBuildAction?.Invoke(new CompositeStateBuilder(vertex.DefaultRegion)));
         }
 
         [DebuggerHidden]
         public IInitializedRegionBuilder AddInitialOrthogonalState(string orthogonalStateName, OrthogonalStateBuildAction orthogonalStateBuildAction)
         {
             Region.InitialVertexName = orthogonalStateName;
-            return AddVertex(orthogonalStateName, VertexType.InitialOrthogonalState, vertex => orthogonalStateBuildAction?.Invoke(new OrthogonalStateBuilder(vertex, Services)));
+            return AddVertex(orthogonalStateName, VertexType.InitialOrthogonalState, vertex => orthogonalStateBuildAction?.Invoke(new OrthogonalStateBuilder(vertex)));
         }
         #endregion
 
@@ -169,7 +165,7 @@ namespace Stateflows.StateMachines.Registration.Builders
                 throw new StateMachineOverrideException($"State '{stateName}' not found in overriden composite state '{Region.ParentVertex.Name}'", Region.Graph.Class);
             }
             
-            stateBuildAction?.Invoke(new StateBuilder(vertex, Services));
+            stateBuildAction?.Invoke(new StateBuilder(vertex));
 
             return this;
         }
@@ -189,7 +185,7 @@ namespace Stateflows.StateMachines.Registration.Builders
                 throw new StateMachineOverrideException($"Composite state '{compositeStateName}' not found in overriden composite state '{Region.ParentVertex.Name}'", Region.Graph.Class);
             }
 
-            compositeStateBuildAction?.Invoke(new CompositeStateBuilder(vertex.DefaultRegion, Services));
+            compositeStateBuildAction?.Invoke(new CompositeStateBuilder(vertex.DefaultRegion));
 
             return this;
         }
@@ -209,7 +205,7 @@ namespace Stateflows.StateMachines.Registration.Builders
                 throw new StateMachineOverrideException($"Orthogonal state '{orthogonalStateName}' not found in overriden composite state '{Region.ParentVertex.Name}'", Region.Graph.Class);
             }
 
-            orthogonalStateBuildAction?.Invoke(new OrthogonalStateBuilder(vertex, Services));
+            orthogonalStateBuildAction?.Invoke(new OrthogonalStateBuilder(vertex));
 
             return this;
         }
@@ -221,7 +217,7 @@ namespace Stateflows.StateMachines.Registration.Builders
                 throw new StateMachineOverrideException($"Junction '{junctionName}' not found in overriden composite state '{Region.ParentVertex.Name}'", Region.Graph.Class);
             }
             
-            junctionBuildAction?.Invoke(new StateBuilder(vertex, Services));
+            junctionBuildAction?.Invoke(new StateBuilder(vertex));
 
             return this;
         }
@@ -233,7 +229,7 @@ namespace Stateflows.StateMachines.Registration.Builders
                 throw new StateMachineOverrideException($"Choice '{choiceName}' not found in overriden composite state '{Region.ParentVertex.Name}'", Region.Graph.Class);
             }
             
-            choiceBuildAction?.Invoke(new StateBuilder(vertex, Services));
+            choiceBuildAction?.Invoke(new StateBuilder(vertex));
 
             return this;
         }
@@ -245,7 +241,7 @@ namespace Stateflows.StateMachines.Registration.Builders
                 throw new StateMachineOverrideException($"Fork '{forkName}' not found in overriden composite state '{Region.ParentVertex.Name}'", Region.Graph.Class);
             }
             
-            forkBuildAction?.Invoke(new StateBuilder(vertex, Services));
+            forkBuildAction?.Invoke(new StateBuilder(vertex));
 
             return this;
         }
@@ -257,7 +253,7 @@ namespace Stateflows.StateMachines.Registration.Builders
                 throw new StateMachineOverrideException($"Join '{joinName}' not found in overriden composite state '{Region.ParentVertex.Name}'", Region.Graph.Class);
             }
             
-            joinBuildAction?.Invoke(new StateBuilder(vertex, Services));
+            joinBuildAction?.Invoke(new StateBuilder(vertex));
 
             return this;
         }

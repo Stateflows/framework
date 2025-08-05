@@ -4,24 +4,25 @@ using Stateflows.StateMachines.Attributes;
 
 namespace StateMachine.IntegrationTests.Classes.States
 {
+    internal record ValueSet1(
+        [StateValue] IValue<int?> nullable,
+        [StateValue] IValue<int?> nulled
+    ) : IValueSet
+    { }
+    
     internal class ValueState1 : IStateEntry
     {
         public ValueState1(
-            // [StateValue] IValue<int> counter,
             [ValueName("counter")] StateValue<int> counter,
-            [StateValue] IValue<int?> nullable,
-            [StateValue] IValue<int?> nulled
+            ValueSet1 valueSet
         )
         {
             this.counter = counter;
-            this.nullable = nullable;
-            this.nulled = nulled;
+            this.valueSet = valueSet;
         }
 
-        // private readonly IValue<int> counter;
         private readonly StateValue<int> counter;
-        private readonly IValue<int?> nullable;
-        private readonly IValue<int?> nulled;
+        private readonly ValueSet1 valueSet;
 
         public async Task OnEntryAsync()
         {
@@ -29,7 +30,7 @@ namespace StateMachine.IntegrationTests.Classes.States
 
             await counter.SetAsync(c + 1);
             
-            await nulled.SetAsync(null);
+            await valueSet.nulled.SetAsync(null);
         }
     }
 }

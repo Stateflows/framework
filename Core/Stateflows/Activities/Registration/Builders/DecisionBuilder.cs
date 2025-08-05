@@ -5,7 +5,7 @@ namespace Stateflows.Activities.Registration.Builders
     internal class DecisionBuilder<TToken> : NodeBuilder, IDecisionBuilder<TToken>
     {
         public DecisionBuilder(NodeBuilder builder)
-            : base(builder.Node, builder.ActivityBuilder, builder.Services)
+            : base(builder.Node, builder.ActivityBuilder)
         { }
 
         public IDecisionBuilder<TToken> AddFlow(string targetNodeName, ObjectFlowBuildAction<TToken> buildAction = null)

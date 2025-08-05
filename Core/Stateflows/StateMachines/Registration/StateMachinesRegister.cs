@@ -4,21 +4,21 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
-using Microsoft.Extensions.DependencyInjection;
+using Stateflows.Common;
 using Stateflows.Common.Classes;
 using Stateflows.Common.Registration.Builders;
+using Stateflows.StateMachines.Context;
 using Stateflows.StateMachines.Models;
 using Stateflows.StateMachines.Exceptions;
 using Stateflows.StateMachines.Registration.Builders;
 using Stateflows.StateMachines.Registration.Interfaces;
+using Stateflows.StateMachines.Registration.Interfaces.Base;
 
 namespace Stateflows.StateMachines.Registration
 {
-    internal class StateMachinesRegister : IStateMachinesRegister
+    internal class StateMachinesRegister : IStateMachinesRegister//, IBehaviorRegister
     {
         private readonly StateflowsBuilder stateflowsBuilder;
-
-        private IServiceCollection Services { get; }
 
         public List<StateMachineExceptionHandlerFactoryAsync> GlobalExceptionHandlerFactories { get; set; } = new List<StateMachineExceptionHandlerFactoryAsync>();
 
@@ -26,10 +26,10 @@ namespace Stateflows.StateMachines.Registration
 
         public List<StateMachineObserverFactoryAsync> GlobalObserverFactories { get; set; } = new List<StateMachineObserverFactoryAsync>();
         
-        public StateMachinesRegister(StateflowsBuilder stateflowsBuilder, IServiceCollection services)
+        public StateMachinesRegister(StateflowsBuilder stateflowsBuilder)
         {
             this.stateflowsBuilder = stateflowsBuilder;
-            Services = services;
+            // stateflowsBuilder.Registers.Add(this);
         }
 
         public readonly Dictionary<string, Graph> StateMachines = new Dictionary<string, Graph>();
@@ -38,6 +38,25 @@ namespace Stateflows.StateMachines.Registration
 
         private readonly MethodInfo StateMachineTypeAddedAsyncMethod =
             typeof(IStateMachineVisitor).GetMethod(nameof(IStateMachineVisitor.StateMachineTypeAddedAsync));
+
+        // private readonly List<Action<IServiceProvider>> StateMachineRegistrationActions =
+        //     new List<Action<IServiceProvider>>();
+        //
+        // private bool Built = false;
+        // private IServiceProvider ServiceProvider = null;
+        // public void Build(IServiceProvider serviceProvider)
+        // {
+        //     if (Built) return;
+        //     
+        //     ServiceProvider = serviceProvider;
+        //     
+        //     foreach (var action in StateMachineRegistrationActions)
+        //     {
+        //         action.Invoke(serviceProvider);
+        //     }
+        //     
+        //     Built = true;
+        // }
 
         private bool IsNewestVersion(string stateMachineName, int version)
         {
@@ -63,64 +82,87 @@ namespace Stateflows.StateMachines.Registration
         [DebuggerHidden]
         public void AddStateMachine(string stateMachineName, int version, StateMachineBuildAction buildAction)
         {
-            var key = $"{stateMachineName}.{version}";
-            var currentKey = $"{stateMachineName}.current";
+            // Action<IServiceProvider> action = _ => {
+                var key = $"{stateMachineName}.{version}";
+                var currentKey = $"{stateMachineName}.current";
 
-            if (StateMachines.ContainsKey(key))
-            {
-                throw new StateMachineDefinitionException($"State machine '{stateMachineName}' with version '{version}' is already registered", new StateMachineClass(stateMachineName));
-            }
+                if (StateMachines.ContainsKey(key))
+                {
+                    throw new StateMachineDefinitionException($"State machine '{stateMachineName}' with version '{version}' is already registered", new StateMachineClass(stateMachineName));
+                }
 
-            var builder = new StateMachineBuilder(stateMachineName, version, stateflowsBuilder, Services);
-            buildAction(builder);
-            builder.Graph.Build();
-            
-            builder.Graph.VisitingTasks.Add(v => v.StateMachineAddedAsync(stateMachineName, version));
+                var builder = new StateMachineBuilder(stateMachineName, version, stateflowsBuilder);
+                buildAction(builder);
+                builder.Graph.Build();
+                
+                builder.Graph.VisitingTasks.Add(v => v.StateMachineAddedAsync(stateMachineName, version));
 
-            StateMachines.Add(key, builder.Graph);
+                StateMachines.Add(key, builder.Graph);
 
-            if (IsNewestVersion(stateMachineName, version))
-            {
-                StateMachines[currentKey] = builder.Graph;
-            }
+                if (IsNewestVersion(stateMachineName, version))
+                {
+                    StateMachines[currentKey] = builder.Graph;
+                }
+            // };
+            //
+            // if (Built)
+            // {
+            //     action(ServiceProvider);
+            // }
+            // else
+            // {
+            //     StateMachineRegistrationActions.Add(action);
+            // }
         }
 
         [DebuggerHidden]
         public void AddStateMachine(string stateMachineName, int version, Type stateMachineType)
         {
-            var key = $"{stateMachineName}.{version}";
-            var currentKey = $"{stateMachineName}.current";
+            // Action<IServiceProvider> action = serviceProvider => {
+                var key = $"{stateMachineName}.{version}";
+                var currentKey = $"{stateMachineName}.current";
 
-            if (StateMachines.ContainsKey(key))
-            {
-                throw new StateMachineDefinitionException($"State machine '{stateMachineName}' with version '{version}' is already registered", new StateMachineClass(stateMachineName));
-            }
-
-            var sm = StateflowsActivator.CreateUninitializedInstance(stateMachineType) as IStateMachine;
-
-            var builder = new StateMachineBuilder(stateMachineName, version, stateflowsBuilder, Services)
+                if (StateMachines.ContainsKey(key))
                 {
-                    Graph =
+                    throw new StateMachineDefinitionException($"State machine '{stateMachineName}' with version '{version}' is already registered", new StateMachineClass(stateMachineName));
+                }
+
+                // var sm = StateflowsActivator.CreateModelElementInstanceAsync(serviceProvider, stateMachineType).GetAwaiter().GetResult() as IStateMachine;
+                var sm = StateflowsActivator.CreateUninitializedInstance(stateMachineType) as IStateMachine;
+
+                var builder = new StateMachineBuilder(stateMachineName, version, stateflowsBuilder)
                     {
-                        StateMachineType = stateMachineType
-                    }
-                };
-            sm.Build(builder);
-            builder.Graph.Build();
+                        Graph =
+                        {
+                            StateMachineType = stateMachineType
+                        }
+                    };
+                sm.Build(builder);
+                builder.Graph.Build();
 
-            var method = StateMachineTypeAddedAsyncMethod.MakeGenericMethod(stateMachineType);
+                var method = StateMachineTypeAddedAsyncMethod.MakeGenericMethod(stateMachineType);
 
-            builder.Graph.VisitingTasks.AddRange(new Func<IStateMachineVisitor, Task>[] {
-                v => v.StateMachineAddedAsync(stateMachineName, version),
-                v => (Task)method.Invoke(v, new object[] { stateMachineName, version })
-            });
-            
-            StateMachines.Add(key, builder.Graph);
+                builder.Graph.VisitingTasks.AddRange(new Func<IStateMachineVisitor, Task>[] {
+                    v => v.StateMachineAddedAsync(stateMachineName, version),
+                    v => (Task)method.Invoke(v, new object[] { stateMachineName, version })
+                });
+                
+                StateMachines.Add(key, builder.Graph);
 
-            if (IsNewestVersion(stateMachineName, version))
-            {
-                StateMachines[currentKey] = builder.Graph;
-            }
+                if (IsNewestVersion(stateMachineName, version))
+                {
+                    StateMachines[currentKey] = builder.Graph;
+                }
+            // };
+            //
+            // if (Built)
+            // {
+            //     action(ServiceProvider);
+            // }
+            // else
+            // {
+            //     StateMachineRegistrationActions.Add(action);
+            // }
         }
 
         [DebuggerHidden]
@@ -130,7 +172,7 @@ namespace Stateflows.StateMachines.Registration
 
         [DebuggerHidden]
         public void AddInterceptor(StateMachineInterceptorFactory interceptorFactory)
-            => GlobalInterceptorFactories.Add(serviceProvider => Task.FromResult(interceptorFactory(serviceProvider)));
+            => GlobalInterceptorFactories.Add((serviceProvider, context) => Task.FromResult(interceptorFactory(serviceProvider, context)));
         
         [DebuggerHidden]
         public void AddInterceptor(StateMachineInterceptorFactoryAsync interceptorFactoryAsync)
@@ -139,11 +181,27 @@ namespace Stateflows.StateMachines.Registration
         [DebuggerHidden]
         public void AddInterceptor<TInterceptor>()
             where TInterceptor : class, IStateMachineInterceptor
-            =>  GlobalInterceptorFactories.Add(async serviceProvider => await StateflowsActivator.CreateModelElementInstanceAsync<TInterceptor>(serviceProvider, "interceptor"));
+            =>  GlobalInterceptorFactories.Add(
+                async (serviceProvider, context) => {
+                    ContextValues.GlobalValuesHolder.Value = context.Behavior.Values;
+                    ContextValues.StateValuesHolder.Value = null;
+                    ContextValues.ParentStateValuesHolder.Value = null;
+                    ContextValues.SourceStateValuesHolder.Value = null;
+                    ContextValues.TargetStateValuesHolder.Value = null;
+    
+                    StateMachinesContextHolder.StateContext.Value = null;
+                    StateMachinesContextHolder.TransitionContext.Value = null;
+                    StateMachinesContextHolder.StateMachineContext.Value = context.StateMachine;
+                    StateMachinesContextHolder.BehaviorContext.Value = context.Behavior;
+                    StateMachinesContextHolder.ExecutionContext.Value = context;
+                    
+                    return await StateflowsActivator.CreateModelElementInstanceAsync<TInterceptor>(serviceProvider, "interceptor");
+                }
+            );
 
         [DebuggerHidden]
         public void AddExceptionHandler(StateMachineExceptionHandlerFactory exceptionHandlerFactory)
-            => GlobalExceptionHandlerFactories.Add(serviceProvider => Task.FromResult(exceptionHandlerFactory(serviceProvider)));
+            => GlobalExceptionHandlerFactories.Add((serviceProvider, context) => Task.FromResult(exceptionHandlerFactory(serviceProvider, context)));
         
         [DebuggerHidden]
         public void AddExceptionHandler(StateMachineExceptionHandlerFactoryAsync exceptionHandlerFactoryAsync)
@@ -152,11 +210,27 @@ namespace Stateflows.StateMachines.Registration
         [DebuggerHidden]
         public void AddExceptionHandler<TExceptionHandler>()
             where TExceptionHandler : class, IStateMachineExceptionHandler
-            =>  GlobalExceptionHandlerFactories.Add(async serviceProvider => await StateflowsActivator.CreateModelElementInstanceAsync<TExceptionHandler>(serviceProvider, "exception handler"));
+            =>  GlobalExceptionHandlerFactories.Add(
+                async (serviceProvider, context) => {
+                    ContextValues.GlobalValuesHolder.Value = context.Behavior.Values;
+                    ContextValues.StateValuesHolder.Value = null;
+                    ContextValues.ParentStateValuesHolder.Value = null;
+                    ContextValues.SourceStateValuesHolder.Value = null;
+                    ContextValues.TargetStateValuesHolder.Value = null;
+    
+                    StateMachinesContextHolder.StateContext.Value = null;
+                    StateMachinesContextHolder.TransitionContext.Value = null;
+                    StateMachinesContextHolder.StateMachineContext.Value = context.StateMachine;
+                    StateMachinesContextHolder.BehaviorContext.Value = context.Behavior;
+                    StateMachinesContextHolder.ExecutionContext.Value = context;
+                    
+                    return await StateflowsActivator.CreateModelElementInstanceAsync<TExceptionHandler>(serviceProvider, "exception handler");
+                }
+            );
 
         [DebuggerHidden]
         public void AddObserver(StateMachineObserverFactory observerFactory)
-            => GlobalObserverFactories.Add(serviceProvider => Task.FromResult(observerFactory(serviceProvider)));
+            => GlobalObserverFactories.Add((serviceProvider, context) => Task.FromResult(observerFactory(serviceProvider, context)));
         
         [DebuggerHidden]
         public void AddObserver(StateMachineObserverFactoryAsync observerFactoryAsync)
@@ -165,7 +239,23 @@ namespace Stateflows.StateMachines.Registration
         [DebuggerHidden]
         public void AddObserver<TObserver>()
             where TObserver : class, IStateMachineObserver
-            =>  GlobalObserverFactories.Add(async serviceProvider => await StateflowsActivator.CreateModelElementInstanceAsync<TObserver>(serviceProvider, "observer"));
+            =>  GlobalObserverFactories.Add(
+                async (serviceProvider, context) => {
+                    ContextValues.GlobalValuesHolder.Value = context.Behavior.Values;
+                    ContextValues.StateValuesHolder.Value = null;
+                    ContextValues.ParentStateValuesHolder.Value = null;
+                    ContextValues.SourceStateValuesHolder.Value = null;
+                    ContextValues.TargetStateValuesHolder.Value = null;
+    
+                    StateMachinesContextHolder.StateContext.Value = null;
+                    StateMachinesContextHolder.TransitionContext.Value = null;
+                    StateMachinesContextHolder.StateMachineContext.Value = context.StateMachine;
+                    StateMachinesContextHolder.BehaviorContext.Value = context.Behavior;
+                    StateMachinesContextHolder.ExecutionContext.Value = context;
+                    
+                    return await StateflowsActivator.CreateModelElementInstanceAsync<TObserver>(serviceProvider, "observer");
+                }
+            );
 
         public async Task VisitStateMachinesAsync(IStateMachineVisitor visitor)
         {

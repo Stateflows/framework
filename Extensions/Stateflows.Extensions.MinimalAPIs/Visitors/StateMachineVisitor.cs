@@ -15,7 +15,8 @@ namespace Stateflows.Extensions.MinimalAPIs;
 internal class StateMachineVisitor(
     IEndpointRouteBuilder routeBuilder,
     Interceptor interceptor,
-    ITypeMapper typeMapper
+    ITypeMapper typeMapper,
+    IServiceProvider serviceProvider
 ) : StateMachines.StateMachineVisitor, IBehaviorClassVisitor, ITypeVisitor
 {
     public IEndpointRouteBuilder RouteBuilder => routeBuilder;
@@ -148,7 +149,8 @@ internal class StateMachineVisitor(
                 BehaviorClass[] actionClasses = [new StateMachineClass(stateMachineName)];
                 var contextIds = await storage.GetAllContextIdsAsync(actionClasses);
                 return Results.Ok(contextIds.Select(id => new { Id = id }));
-            });
+            })
+            .WithTags($"{BehaviorType.StateMachine} {stateMachineName}");
 
             interceptor.AfterGetInstancesEndpointDefinition(behaviorClass, method, route, routeHandlerBuilder);
         }
@@ -175,7 +177,8 @@ internal class StateMachineVisitor(
 
                     return Results.NotFound();
                 }
-            );
+            )
+            .WithTags($"{BehaviorType.StateMachine} {stateMachineName}");
 
             interceptor.AfterEventEndpointDefinition<StateMachineInfoRequest>(behaviorClass, method, route, routeHandlerBuilder);
             
@@ -210,10 +213,12 @@ internal class StateMachineVisitor(
                     {
                         var result = await behavior.GetNotificationsAsync(names, period, [new NoImplicitInitialization()]);
                         var behaviorInfo = (await behavior.GetStatusAsync([new NoImplicitInitialization()])).Response;
-                        return result.ToResult(result.Response.Notifications, behaviorInfo, HateoasLinks);
+                        return ((SendResult)result).ToResult(result.Response.Notifications, behaviorInfo, HateoasLinks);
                     }
                     return Results.NotFound();
-                });
+                }
+            )
+            .WithTags($"{BehaviorType.StateMachine} {stateMachineName}");
             
             interceptor.AfterEventEndpointDefinition<NotificationsRequest>(behaviorClass, method, route, routeHandlerBuilder);
             
@@ -250,7 +255,8 @@ internal class StateMachineVisitor(
                     
                     return Results.NotFound();
                 }
-            );
+            )
+            .WithTags($"{BehaviorType.StateMachine} {stateMachineName}");
             
             interceptor.AfterEventEndpointDefinition<Finalize>(behaviorClass, method, route, routeHandlerBuilder);
             
@@ -287,7 +293,8 @@ internal class StateMachineVisitor(
                     
                     return Results.NotFound();
                 }
-            );
+            )
+            .WithTags($"{BehaviorType.StateMachine} {stateMachineName}");
             
             interceptor.AfterEventEndpointDefinition<Reset>(behaviorClass, method, route, routeHandlerBuilder);
             
@@ -310,7 +317,7 @@ internal class StateMachineVisitor(
         {
             var endpointsBuilder = new EndpointsBuilder(routeBuilder, this, interceptor, new StateMachineClass(stateMachineName));
             
-            var stateMachine = (IStateMachineEndpoints)StateflowsActivator.CreateUninitializedInstance<TStateMachine>();
+            var stateMachine = (IStateMachineEndpoints)StateflowsActivator.CreateModelElementInstanceAsync<TStateMachine>(serviceProvider);
             stateMachine.RegisterEndpoints(endpointsBuilder);
         }
         

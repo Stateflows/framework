@@ -30,6 +30,6 @@ namespace Stateflows.StateMachines
     public static class FinalizationResetPolicy
     {
         public static IStateMachineBuilder AddFinalizationResetPolicy(this IStateMachineBuilder builder, ResetMode resetMode = ResetMode.Full)
-            => builder.AddObserver(_ => new ResetObserver(resetMode));
+            => builder.AddObserver((serviceProvider, context) => new ResetObserver(resetMode));
     }
 }

@@ -38,11 +38,5 @@ namespace Stateflows.StateMachines
             where TObserver : class, IStateMachineObserver;
 
         Task VisitStateMachinesAsync(IStateMachineVisitor visitor);
-
-        // void AddVisitor(StateMachineVisitorFactory visitorFactory);
-        // void AddVisitor(StateMachineVisitorFactoryAsync visitorFactoryAsync);
-        //
-        // void AddVisitor<TVisitor>()
-        //     where TVisitor : class, IStateMachineVisitor;
     }
 }

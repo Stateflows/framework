@@ -4,17 +4,41 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Hosting;
 using Stateflows.Common.Classes;
+using Stateflows.Common.Registration.Interfaces;
 
 namespace Stateflows.Common
 {
-    internal class StateflowsService : IHostedService
+    internal class StateflowsService : IHostedService//, IStateflowsInitializer
     {
-        public StateflowsService(StateflowsEngine stateflowsEngine)
+        public StateflowsService(StateflowsEngine stateflowsEngine, /*IStateflowsBehaviorsBuilder behaviorsBuilder,*/ IServiceProvider serviceProvider)
         {
             StateflowsEngine = stateflowsEngine;
+            // BehaviorsBuilder = behaviorsBuilder;
+            ServiceProvider = serviceProvider;
         }
+        
+        // private bool behaviorsBuilt = false;
+        //
+        // public void Initialize(IServiceProvider serviceProvider)
+        // {
+        //     lock (this)
+        //     {
+        //         if (behaviorsBuilt) return;
+        //
+        //         foreach (var register in BehaviorsBuilder.Registers)
+        //         {
+        //             register.Build(serviceProvider);
+        //         }
+        //
+        //         behaviorsBuilt = true;
+        //     }
+        // }
 
         private readonly StateflowsEngine StateflowsEngine;
+
+        // private readonly IStateflowsBehaviorsBuilder BehaviorsBuilder;
+
+        private readonly IServiceProvider ServiceProvider;
         
         private readonly CancellationTokenSource CancellationTokenSource = new CancellationTokenSource();
         
@@ -35,6 +59,8 @@ namespace Stateflows.Common
         [DebuggerHidden]
         public Task StartAsync(CancellationToken cancellationToken)
         {
+            // Initialize(ServiceProvider);
+            
             executionTask = Task.Run(() =>
             {
                 while (!CancellationTokenSource.Token.IsCancellationRequested && !cancellationToken.IsCancellationRequested)

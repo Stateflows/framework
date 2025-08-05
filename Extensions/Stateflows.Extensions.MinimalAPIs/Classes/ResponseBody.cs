@@ -32,8 +32,12 @@ internal class ResponseBody(SendResult result, IEnumerable<EventHolder> notifica
 internal class ResponseBody<TResponse>(RequestResult<TResponse> result, IEnumerable<EventHolder> notifications, IEnumerable<HateoasLink> links, IDictionary<string, object> metadata)
     : ResponseBody(result, notifications, links, metadata)
 {
+    public new EventStatus Status { get; } = result.Status;
+        
+    public new string StatusText { get; } = Enum.GetName(typeof(EventStatus), result.Status)!;
+    
     public TResponse Response { get; } = result.Response;
     
     public bool ShouldSerializeResponse()
-        => EqualityComparer<TResponse>.Default.Equals(Response, default);
+        => !EqualityComparer<TResponse>.Default.Equals(Response, default);
 }

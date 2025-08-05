@@ -36,7 +36,6 @@ namespace Stateflows.StateMachines.Registration.Builders
         IOverridenElseDefaultTransitionBuilder,
         IBehaviorBuilder,
         IForwardedEventBuilder<TEvent>,
-        IInternal,
         IEdgeBuilder
     {
         public Edge Edge { get; private set; }
@@ -50,12 +49,9 @@ namespace Stateflows.StateMachines.Registration.Builders
 
         int IBehaviorBuilder.BehaviorVersion => Edge.Source.Graph.Version;
 
-        public IServiceCollection Services { get; }
-
-        public TransitionBuilder(Edge edge, IServiceCollection services)
+        public TransitionBuilder(Edge edge)
         {
             Edge = edge;
-            Services = services;
         }
 
         public ITransitionBuilder<TEvent> AddGuard(params Func<ITransitionContext<TEvent>, Task<bool>>[] guardsAsync)

@@ -42,6 +42,7 @@ namespace StateMachine.IntegrationTests.Utils
             ServiceCollection.AddSingleton<IExecutionSequenceBuilder, ExecutionSequence>();
             ServiceCollection.AddSingleton<TestingHost>();
             ServiceCollection.AddSingleton<IHostApplicationLifetime>(services => services.GetRequiredService<TestingHost>());
+            ServiceCollection.AddSingleton<ExecutionSequenceObserver>();
             ServiceCollection.AddLogging(builder => builder.AddConsole());
             ServiceCollection
                 .AddTransient(typeof(Input<>))

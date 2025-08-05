@@ -20,10 +20,10 @@ builder.Services.AddStateflows(b => b
         .AddAction<Work>()
     )
     .AddStateMachines(b => b
-        .AddStateMachine<Document>()
+        .AddStateMachine<Document>("Doc")
     )
     .AddActivities(b => b
-        .AddActivity<Process>()
+        .AddActivity<Process>("Proc")
     )
 
     #region extensions
@@ -93,6 +93,8 @@ app.UseAntiforgery();
 app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode();
 
-app.MapStateflowsMinimalAPIsEndpoints();
+app.MapStateflowsMinimalAPIsEndpoints(b => b
+    .SetApiRoutePrefix("sf")
+);
 
 app.Run();

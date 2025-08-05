@@ -67,8 +67,8 @@ internal static class Utils
         var metadata = new Dictionary<string, object>();
         metadata.Add(nameof(behaviorInfo.Id).ToCamelCase(), behaviorInfo.Id);
         metadata.Add(nameof(behaviorInfo.BehaviorStatus).ToCamelCase(), behaviorInfo.BehaviorStatus);
-        metadata.Add(nameof(behaviorInfo.ExpectedEvents).ToCamelCase(), behaviorInfo.ExpectedEvents);
         metadata.Add(nameof(behaviorInfo.BehaviorStatusText).ToCamelCase(), behaviorInfo.BehaviorStatusText);
+        metadata.Add(nameof(behaviorInfo.ExpectedEvents).ToCamelCase(), behaviorInfo.ExpectedEvents);
         switch (behaviorInfo)
         {
             case StateMachineInfo stateMachineInfo:
@@ -87,16 +87,17 @@ internal static class Utils
             .Where(link => link.Item2.Contains(behaviorInfo.BehaviorStatus))
             .Select(link => link.Item1 with { Href = $"/{routePrefix}{link.Item1.Href}" });
     
-    public static IResult ToResult(this SendResult result, IEnumerable<EventHolder> notifications, BehaviorInfo behaviorInfo, Dictionary<string, List<(HateoasLink, BehaviorStatus[])>> customHateoasLinks)
+    public static IResult ToResult<TResponse>(this RequestResult<TResponse> result, IEnumerable<EventHolder> notifications, BehaviorInfo behaviorInfo, Dictionary<string, List<(HateoasLink, BehaviorStatus[])>> customHateoasLinks)
     {
-        var response = new ResponseBody(result, notifications, behaviorInfo.ToHateoasLinks(customHateoasLinks), behaviorInfo.ToMetadata());
+        var response = new ResponseBody<TResponse>(result, notifications, behaviorInfo.ToHateoasLinks(customHateoasLinks), behaviorInfo.ToMetadata());
         var jsonResult = StateflowsJsonConverter.SerializeObject(response, true);
         return jsonResult.ToResult(result.Status);
     }
     
-    public static IResult ToResult<TResponse>(this RequestResult<TResponse> result, IEnumerable<EventHolder> notifications, BehaviorInfo behaviorInfo, Dictionary<string, List<(HateoasLink, BehaviorStatus[])>> customHateoasLinks)
+    public static IResult ToResult(this SendResult result, IEnumerable<EventHolder> notifications, BehaviorInfo behaviorInfo, Dictionary<string, List<(HateoasLink, BehaviorStatus[])>> customHateoasLinks)
     {
-        var jsonResult = StateflowsJsonConverter.SerializeObject(new ResponseBody<TResponse>(result, notifications, behaviorInfo.ToHateoasLinks(customHateoasLinks), behaviorInfo.ToMetadata()), true);
+        var response = new ResponseBody(result, notifications, behaviorInfo.ToHateoasLinks(customHateoasLinks), behaviorInfo.ToMetadata());
+        var jsonResult = StateflowsJsonConverter.SerializeObject(response, true);
         return jsonResult.ToResult(result.Status);
     }
 

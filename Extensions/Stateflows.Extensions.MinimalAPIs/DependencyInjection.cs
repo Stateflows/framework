@@ -8,6 +8,7 @@ using Stateflows.Common.Registration;
 using Stateflows.Activities;
 using Stateflows.Activities.Registration.Interfaces;
 using Stateflows.Activities.Registration.Interfaces.Base;
+using Stateflows.Common;
 using Stateflows.Extensions.MinimalAPIs.Interfaces;
 using Stateflows.StateMachines;
 using Stateflows.StateMachines.Registration.Interfaces;
@@ -101,6 +102,9 @@ public static class DependencyInjection
     /// <param name="minimalAPIsBuilderAction">Configuration action</param>
     public static void MapStateflowsMinimalAPIsEndpoints(this IEndpointRouteBuilder builder, System.Action<IMinimalAPIsBuilder>? minimalAPIsBuilderAction = null)
     {
+        // var initializer = builder.ServiceProvider.GetRequiredService<IStateflowsInitializer>();
+        // initializer.Initialize(builder.ServiceProvider);
+        
         ApiRoutePrefix = "stateflows";
 
         var interceptors = GetInterceptors(builder, minimalAPIsBuilderAction);
@@ -124,7 +128,9 @@ public static class DependencyInjection
                     return result.Length != 0
                         ? Results.Ok(result)
                         : Results.NotFound();
-                });
+                }
+            )
+            .WithTags(nameof(Stateflows));
             
             interceptor.AfterGetAllClassesEndpointDefinition(method, route, allClasses);
         }
@@ -137,12 +143,13 @@ public static class DependencyInjection
                 [method],
                 async (IBehaviorClassesProvider provider, IStateflowsStorage storage) =>
                 {
-                    var behaviorClasses = provider.AllBehaviorClasses
+                    var behaviorClasses = interceptor.FilterBehaviorClasses(provider.AllBehaviorClasses)
                         .ToArray();
                     var contextIds = await storage.GetAllContextIdsAsync(behaviorClasses);
                     return Results.Ok(contextIds.Select(id => new { Id = id }));
                 }
-            );
+            )
+            .WithTags(nameof(Stateflows));
             
             interceptor.AfterGetAllInstancesEndpointDefinition(method, route, endpointRouteBuilder);
         }
@@ -196,10 +203,16 @@ public static class DependencyInjection
                 var endpointRouteBuilder = root.MapMethods(
                     route,
                     [method],
-                    (IBehaviorClassesProvider provider) => Results.Ok(
-                        provider.AllBehaviorClasses.Where(behaviorClass => behaviorClass.Type == ActivityClass.Type)
-                    )
-                );
+                    (IBehaviorClassesProvider provider) =>
+                    {
+                        var result = interceptor.FilterBehaviorClasses(provider.AllBehaviorClasses.Where(behaviorClass =>
+                            behaviorClass.Type == ActivityClass.Type)).ToArray();
+                        return result.Length != 0
+                            ? Results.Ok(result)
+                            : Results.NotFound();
+                    }
+                )
+                .WithTags(nameof(Stateflows));
 
                 interceptor.AfterGetClassesEndpointDefinition(BehaviorType.Activity, method, route, endpointRouteBuilder);
             }
@@ -212,13 +225,14 @@ public static class DependencyInjection
                     [method],
                     async (IBehaviorClassesProvider provider, IStateflowsStorage storage) =>
                     {
-                        var activityClasses = provider.AllBehaviorClasses
-                            .Where(c => c.Type == ActivityClass.Type)
+                        var activityClasses = interceptor.FilterBehaviorClasses(provider.AllBehaviorClasses
+                            .Where(c => c.Type == ActivityClass.Type))
                             .ToArray();
                         var contextIds = await storage.GetAllContextIdsAsync(activityClasses);
                         return Results.Ok(contextIds.Select(id => new { Id = id }));
                     }
-                );
+                )
+                .WithTags(nameof(Stateflows));
             
                 interceptor.AfterGetInstancesEndpointDefinition(ActivityClass.Type, method, route, endpointRouteBuilder);
             }
@@ -251,10 +265,16 @@ public static class DependencyInjection
                 var endpointRouteBuilder = root.MapMethods(
                     route,
                     [method],
-                    (IBehaviorClassesProvider provider) => Results.Ok(
-                        provider.AllBehaviorClasses.Where(behaviorClass => behaviorClass.Type == ActionClass.Type)
-                    )
-                );
+                    (IBehaviorClassesProvider provider) =>
+                    {
+                        var result = interceptor.FilterBehaviorClasses(provider.AllBehaviorClasses.Where(behaviorClass =>
+                            behaviorClass.Type == ActionClass.Type)).ToArray();
+                        return result.Length != 0
+                            ? Results.Ok(result)
+                            : Results.NotFound();
+                    }
+                )
+                .WithTags(nameof(Stateflows));
 
                 interceptor.AfterGetClassesEndpointDefinition(BehaviorType.Action, method, route, endpointRouteBuilder);
             }
@@ -267,13 +287,14 @@ public static class DependencyInjection
                     [method],
                     async (IBehaviorClassesProvider provider, IStateflowsStorage storage) =>
                     {
-                        var actionClasses = provider.AllBehaviorClasses
-                            .Where(c => c.Type == ActionClass.Type)
+                        var actionClasses = interceptor.FilterBehaviorClasses(provider.AllBehaviorClasses
+                            .Where(c => c.Type == ActionClass.Type))
                             .ToArray();
                         var contextIds = await storage.GetAllContextIdsAsync(actionClasses);
                         return Results.Ok(contextIds.Select(id => new { Id = id }));
                     }
-                );
+                )
+                .WithTags(nameof(Stateflows));
             
                 interceptor.AfterGetInstancesEndpointDefinition(ActionClass.Type, method, route, endpointRouteBuilder);
             }
@@ -297,8 +318,16 @@ public static class DependencyInjection
                 var endpointRouteBuilder = root.MapMethods(
                     route,
                     [method],
-                    (IBehaviorClassesProvider provider) => Results.Ok(provider.AllBehaviorClasses.Where(behaviorClass => behaviorClass.Type == StateMachineClass.Type))
-                );
+                    (IBehaviorClassesProvider provider) =>
+                    {
+                        var result = interceptor.FilterBehaviorClasses(provider.AllBehaviorClasses.Where(behaviorClass =>
+                            behaviorClass.Type == StateMachineClass.Type)).ToArray();
+                        return result.Length != 0
+                            ? Results.Ok(result)
+                            : Results.NotFound();
+                    }
+                )
+                .WithTags(nameof(Stateflows));
 
                 interceptor.AfterGetClassesEndpointDefinition(BehaviorType.StateMachine, method, route, endpointRouteBuilder);
             }
@@ -311,13 +340,14 @@ public static class DependencyInjection
                     [method],
                     async (IBehaviorClassesProvider provider, IStateflowsStorage storage) =>
                     {
-                        var actionClasses = provider.AllBehaviorClasses
-                            .Where(c => c.Type == StateMachineClass.Type)
+                        var actionClasses = interceptor.FilterBehaviorClasses(provider.AllBehaviorClasses
+                            .Where(c => c.Type == StateMachineClass.Type))
                             .ToArray();
                         var contextIds = await storage.GetAllContextIdsAsync(actionClasses);
                         return Results.Ok(contextIds.Select(id => new { Id = id }));
                     }
-                );
+                )
+                .WithTags(nameof(Stateflows));
             
                 interceptor.AfterGetInstancesEndpointDefinition(StateMachineClass.Type, method, route, endpointRouteBuilder);
             }
@@ -325,7 +355,8 @@ public static class DependencyInjection
             var visitor = new StateMachineVisitor(
                 root,
                 interceptor,
-                builder.ServiceProvider.GetRequiredService<ITypeMapper>()
+                builder.ServiceProvider.GetRequiredService<ITypeMapper>(),
+                builder.ServiceProvider
             );
             
             stateMachinesRegister.VisitStateMachinesAsync(visitor);

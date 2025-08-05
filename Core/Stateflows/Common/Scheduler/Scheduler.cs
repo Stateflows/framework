@@ -13,10 +13,11 @@ namespace Stateflows.Common.Scheduler
     internal class Scheduler : IHostedService
     {
         private readonly CancellationTokenSource CancellationTokenSource = new CancellationTokenSource();
+        // private readonly IStateflowsInitializer Initializer;
         private readonly IStateflowsTenantExecutor Executor;
         private readonly IServiceScope Scope;
         private readonly ILogger<Scheduler> Logger;
-        private readonly IBehaviorLocator Locator;
+        private IBehaviorLocator Locator;
         private readonly IHostApplicationLifetime Lifetime;
 
         private IServiceProvider ServiceProvider
@@ -24,12 +25,13 @@ namespace Stateflows.Common.Scheduler
 
         private readonly MethodInfo SendAsyncMethod = typeof(IBehavior).GetMethod(nameof(IBehavior.SendAsync));
 
-        public Scheduler(IServiceProvider serviceProvider, IHostApplicationLifetime lifetime)
+        public Scheduler(IServiceProvider serviceProvider, /*IStateflowsInitializer initializer,*/ IHostApplicationLifetime lifetime)
         {
             Scope = serviceProvider.CreateScope();
+            // Initializer = initializer;
+            Locator = ServiceProvider.GetRequiredService<IBehaviorLocator>();
             Executor = ServiceProvider.GetRequiredService<IStateflowsTenantExecutor>();
             Logger = ServiceProvider.GetRequiredService<ILogger<Scheduler>>();
-            Locator = ServiceProvider.GetRequiredService<IBehaviorLocator>();
             Lifetime = lifetime;
         }
 
@@ -41,6 +43,8 @@ namespace Stateflows.Common.Scheduler
 
         public Task StartAsync(CancellationToken cancellationToken)
         {
+            // Initializer.Initialize(ServiceProvider);
+            
             Lifetime.ApplicationStarted.Register(ApplicationStarted);
 
             _ = Task.Run(async () =>

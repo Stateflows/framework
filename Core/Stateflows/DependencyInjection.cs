@@ -29,10 +29,12 @@ namespace Stateflows
                     .ServiceCollection
                     .AddSingleton<StateflowsEngine>()
                     .AddSingleton<StateflowsService>()
-                    .AddHostedService(provider => provider.GetService<StateflowsService>())
+                    // .AddSingleton((IStateflowsBehaviorsBuilder)stateflowsBuilder)
+                    // .AddSingleton<IStateflowsInitializer>(provider => provider.GetRequiredService<StateflowsService>())
+                    .AddHostedService(provider => provider.GetRequiredService<StateflowsService>())
                     .AddSingleton<NotificationsHub>()
-                    .AddHostedService(provider => provider.GetService<NotificationsHub>())
-                    .AddSingleton<INotificationsHub>(provider => provider.GetService<NotificationsHub>())
+                    .AddHostedService(provider => provider.GetRequiredService<NotificationsHub>())
+                    .AddSingleton<INotificationsHub>(provider => provider.GetRequiredService<NotificationsHub>())
                     .AddHostedService<Scheduler>()
                     .AddTransient<ScheduleExecutor>()
                     .AddTransient<StartupExecutor>()
@@ -53,7 +55,7 @@ namespace Stateflows
             return stateflowsBuilder;
         }
 
-        public static IServiceCollection AddStateflows(this IServiceCollection services, System.Action<IStateflowsBuilder> buildAction)
+        public static IServiceCollection AddStateflows(this IServiceCollection services, Action<IStateflowsBuilder> buildAction)
         {
             buildAction.ThrowIfNull(nameof(buildAction));
 
@@ -62,10 +64,6 @@ namespace Stateflows
             services.AddStateflowsClient(b => { });
 
             buildAction(builder);
-            
-            // builder.AddActions(b => b
-            //     .AddAction<FanOut>(true)
-            // );
 
             services.AddSingleton(_ => builder.TypeMapper);
 

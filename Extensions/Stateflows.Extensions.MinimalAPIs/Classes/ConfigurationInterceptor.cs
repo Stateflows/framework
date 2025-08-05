@@ -73,7 +73,14 @@ internal class ConfigurationInterceptor : EndpointDefinitionInterceptor
 
     public override bool BeforeGetClassesEndpointDefinition(string behaviorType, ref string method, ref string route)
     {
-        foreach (var rule in Rules.Where(rule => rule.Kind is EndpointKind.GetBehaviorClasses or EndpointKind.All && rule.BehaviorType == behaviorType))
+        foreach (var rule in Rules.Where(rule => 
+                rule.Kind is EndpointKind.GetBehaviorClasses or EndpointKind.All &&
+                (
+                    rule.BehaviorType == behaviorType ||
+                    (rule.BehaviorType == null && rule.BehaviorClass == null)
+                )
+            )
+        )
         {
             if (rule.Disable)
             {
@@ -88,7 +95,14 @@ internal class ConfigurationInterceptor : EndpointDefinitionInterceptor
 
     public override void AfterGetClassesEndpointDefinition(string behaviorType, string method, string route, IEndpointConventionBuilder routeHandlerBuilder)
     {
-        foreach (var rule in Rules.Where(rule => rule.Kind is EndpointKind.GetBehaviorClasses or EndpointKind.All && rule.BehaviorType == behaviorType))
+        foreach (var rule in Rules.Where(rule => 
+                rule.Kind is EndpointKind.GetBehaviorClasses or EndpointKind.All &&
+                (
+                    rule.BehaviorType == behaviorType ||
+                    (rule.BehaviorType == null && rule.BehaviorClass == null)
+                )
+            )
+        )
         {
             rule.EndpointConfigurator?.Invoke(routeHandlerBuilder);
         }
@@ -96,7 +110,7 @@ internal class ConfigurationInterceptor : EndpointDefinitionInterceptor
 
     public override bool BeforeGetAllClassesEndpointDefinition(ref string method, ref string route)
     {
-        foreach (var rule in Rules.Where(rule => rule.Kind is EndpointKind.GetAllBehaviorClasses or EndpointKind.All))
+        foreach (var rule in Rules.Where(rule => rule.Kind is EndpointKind.GetAllBehaviorClasses or EndpointKind.All && rule.BehaviorType == null && rule.BehaviorClass == null))
         {
             if (rule.Disable)
             {
@@ -111,7 +125,7 @@ internal class ConfigurationInterceptor : EndpointDefinitionInterceptor
 
     public override void AfterGetAllClassesEndpointDefinition(string method, string route, IEndpointConventionBuilder routeHandlerBuilder)
     {
-        foreach (var rule in Rules.Where(rule => rule.Kind is EndpointKind.GetAllBehaviorClasses or EndpointKind.All))
+        foreach (var rule in Rules.Where(rule => rule.Kind is EndpointKind.GetAllBehaviorClasses or EndpointKind.All && rule.BehaviorType == null && rule.BehaviorClass == null))
         {
             rule.EndpointConfigurator?.Invoke(routeHandlerBuilder);
         }
@@ -119,7 +133,15 @@ internal class ConfigurationInterceptor : EndpointDefinitionInterceptor
 
     public override bool BeforeGetInstancesEndpointDefinition(BehaviorClass behaviorClass, ref string method, ref string route)
     {
-        foreach (var rule in Rules.Where(rule => rule.Kind is EndpointKind.GetInstances or EndpointKind.All && (rule.BehaviorClass == behaviorClass || rule.BehaviorType == behaviorClass.Type)))
+        foreach (var rule in Rules.Where(rule => 
+                     rule.Kind is EndpointKind.GetInstances or EndpointKind.All &&
+                     (
+                         (rule.BehaviorType == null && rule.BehaviorClass == behaviorClass) ||
+                         rule.BehaviorType == behaviorClass.Type ||
+                         (rule.BehaviorType == null && rule.BehaviorClass == null)
+                     )
+                )
+        )
         {
             if (rule.Disable)
             {
@@ -134,7 +156,15 @@ internal class ConfigurationInterceptor : EndpointDefinitionInterceptor
 
     public override void AfterGetInstancesEndpointDefinition(BehaviorClass behaviorClass, string method, string route, IEndpointConventionBuilder routeHandlerBuilder)
     {
-        foreach (var rule in Rules.Where(rule => rule.Kind is EndpointKind.GetInstances or EndpointKind.All && (rule.BehaviorClass == behaviorClass || rule.BehaviorType == behaviorClass.Type)))
+        foreach (var rule in Rules.Where(rule => 
+                     rule.Kind is EndpointKind.GetInstances or EndpointKind.All &&
+                     (
+                         (rule.BehaviorType == null && rule.BehaviorClass == behaviorClass) ||
+                         rule.BehaviorType == behaviorClass.Type ||
+                         (rule.BehaviorType == null && rule.BehaviorClass == null)
+                     )
+                )
+        )
         {
             rule.EndpointConfigurator?.Invoke(routeHandlerBuilder);
         }
@@ -142,7 +172,14 @@ internal class ConfigurationInterceptor : EndpointDefinitionInterceptor
 
     public override bool BeforeGetInstancesEndpointDefinition(string behaviorType, ref string method, ref string route)
     {
-        foreach (var rule in Rules.Where(rule => rule.Kind is EndpointKind.GetInstances or EndpointKind.All && rule.BehaviorType == behaviorType))
+        foreach (var rule in Rules.Where(rule =>
+                rule.Kind is EndpointKind.GetInstances or EndpointKind.All &&
+                (
+                    rule.BehaviorType == behaviorType || 
+                    (rule.BehaviorType == null && rule.BehaviorClass == null)
+                )
+            )
+        )
         {
             if (rule.Disable)
             {
@@ -158,7 +195,14 @@ internal class ConfigurationInterceptor : EndpointDefinitionInterceptor
     public override void AfterGetInstancesEndpointDefinition(string behaviorType, string method, string route,
         IEndpointConventionBuilder routeHandlerBuilder)
     {
-        foreach (var rule in Rules.Where(rule => rule.Kind is EndpointKind.GetInstances or EndpointKind.All && rule.BehaviorType == behaviorType))
+        foreach (var rule in Rules.Where(rule =>
+                rule.Kind is EndpointKind.GetInstances or EndpointKind.All &&
+                (
+                    rule.BehaviorType == behaviorType || 
+                    (rule.BehaviorType == null && rule.BehaviorClass == null)
+                )
+            )
+        )
         {
             rule.EndpointConfigurator?.Invoke(routeHandlerBuilder);
         }
@@ -166,7 +210,7 @@ internal class ConfigurationInterceptor : EndpointDefinitionInterceptor
 
     public override bool BeforeGetAllInstancesEndpointDefinition(ref string method, ref string route)
     {
-        foreach (var rule in Rules.Where(rule => rule.Kind is EndpointKind.GetAllInstances or EndpointKind.All))
+        foreach (var rule in Rules.Where(rule => rule.Kind is EndpointKind.GetAllInstances or EndpointKind.All && rule.BehaviorType == null && rule.BehaviorClass == null))
         {
             if (rule.Disable)
             {
@@ -182,7 +226,7 @@ internal class ConfigurationInterceptor : EndpointDefinitionInterceptor
     public override void AfterGetAllInstancesEndpointDefinition(string method, string route,
         IEndpointConventionBuilder routeHandlerBuilder)
     {
-        foreach (var rule in Rules.Where(rule => rule.Kind is EndpointKind.GetAllInstances or EndpointKind.All))
+        foreach (var rule in Rules.Where(rule => rule.Kind is EndpointKind.GetAllInstances or EndpointKind.All && rule.BehaviorType == null && rule.BehaviorClass == null))
         {
             rule.EndpointConfigurator?.Invoke(routeHandlerBuilder);
         }
@@ -223,4 +267,16 @@ internal class ConfigurationInterceptor : EndpointDefinitionInterceptor
             }
         }
     }
+
+    public override IEnumerable<BehaviorClass> FilterBehaviorClasses(IEnumerable<BehaviorClass> behaviorClasses)
+        => behaviorClasses.Where(c => 
+            !Rules.Any(rule =>
+                rule.Disable &&
+                rule.Kind is EndpointKind.All &&
+                (
+                    rule.BehaviorClass == c ||
+                    (rule.BehaviorClass == null && rule.BehaviorType == c.Type)
+                )
+            )
+        ).ToArray();
 }

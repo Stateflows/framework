@@ -16,8 +16,6 @@ namespace Stateflows.Activities.Registration
 {
     internal class ActivitiesRegister : IActivitiesRegister
     {
-        private IServiceCollection Services { get; }
-
         public List<ActivityExceptionHandlerFactoryAsync> GlobalExceptionHandlerFactories { get; set; } = new List<ActivityExceptionHandlerFactoryAsync>();
 
         public List<ActivityInterceptorFactoryAsync> GlobalInterceptorFactories { get; set; } = new List<ActivityInterceptorFactoryAsync>();
@@ -26,10 +24,9 @@ namespace Stateflows.Activities.Registration
 
         private readonly StateflowsBuilder stateflowsBuilder = null;
 
-        public ActivitiesRegister(StateflowsBuilder stateflowsBuilder, IServiceCollection services)
+        public ActivitiesRegister(StateflowsBuilder stateflowsBuilder)
         {
             this.stateflowsBuilder = stateflowsBuilder;
-            Services = services;
         }
 
         public readonly Dictionary<string, Graph> Activities = new Dictionary<string, Graph>();
@@ -71,7 +68,7 @@ namespace Stateflows.Activities.Registration
                 throw new ActivityDefinitionException($"Activity '{activityName}' with version '{version}' is already registered", new ActivityClass(activityName));
             }
 
-            var builder = new ActivityBuilder(activityName, version, null, stateflowsBuilder, Services);
+            var builder = new ActivityBuilder(activityName, version, null, stateflowsBuilder);
             buildAction(builder);
             builder.Graph.Build();
 
@@ -98,7 +95,7 @@ namespace Stateflows.Activities.Registration
 
             var activity = StateflowsActivator.CreateUninitializedInstance(activityType) as IActivity;
 
-            var builder = new ActivityBuilder(activityName, version, null, stateflowsBuilder, Services);
+            var builder = new ActivityBuilder(activityName, version, null, stateflowsBuilder);
             builder.Graph.ActivityType = activityType;
             activity.Build(builder);
             builder.Graph.Build();
