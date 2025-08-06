@@ -25,10 +25,14 @@ namespace Stateflows.Activities
                 _ = Task.Run(async () =>
                 {
                     var integratedActionBuilder = new ActionActionBuilder(buildAction);
-                    EventHolder initializationEvent = (integratedActionBuilder.InitializationBuilder != null)
-                        ? await integratedActionBuilder.InitializationBuilder(context)
-                        : new Initialize().ToEventHolder();
 
+                    var tokensInput = new TokensInput();
+
+                    if (integratedActionBuilder.InitializationBuilder != null)
+                    {
+                        tokensInput.Add((await integratedActionBuilder.InitializationBuilder(context)).BoxedPayload);
+                    }
+                    
                     var request = new CompoundRequest();
                     request.Events.AddRange(new EventHolder[]
                     {
@@ -36,8 +40,7 @@ namespace Stateflows.Activities
                         integratedActionBuilder.GetSubscribe(context.Behavior.Id).ToEventHolder(),
                         integratedActionBuilder.GetStartRelay(context.Behavior.Id).ToEventHolder(),
                         new SetGlobalValues() { Values = ((ContextValuesCollection)context.Behavior.Values).Values }.ToEventHolder(),
-                        initializationEvent,
-                        new TokensInput().ToEventHolder(),
+                        tokensInput.ToEventHolder(),
                         integratedActionBuilder.GetStopRelay(context.Behavior.Id).ToEventHolder(),
                         integratedActionBuilder.GetUnsubscribe(context.Behavior.Id).ToEventHolder()
                     });
@@ -61,8 +64,14 @@ namespace Stateflows.Activities
                 await Task.Run(async () =>
                 {
                     var integratedActionBuilder = new TransitionActionBuilder<TEvent>(buildAction);
-                    
+
                     var tokensInput = new TokensInput();
+
+                    if (integratedActionBuilder.InitializationBuilder != null)
+                    {
+                        tokensInput.Add((await integratedActionBuilder.InitializationBuilder(context)).BoxedPayload);
+                    }
+                    
                     tokensInput.Add(ev);
 
                     var request = new CompoundRequest();
@@ -95,11 +104,17 @@ namespace Stateflows.Activities
             if (context.TryLocateAction(actionName, $"{context.Behavior.Id.Instance}.{context.Source.Name}.{Event<TEvent>.Name}.{Constants.Effect}.{context.EventId}", out var a))
             {
                 var ev = StateflowsJsonConverter.Clone(context.Event);
-                _ = Task.Run(() =>
+                _ = Task.Run(async () =>
                 {
                     var integratedActionBuilder = new TransitionActionBuilder<TEvent>(buildAction);
 
                     var tokensInput = new TokensInput();
+
+                    if (integratedActionBuilder.InitializationBuilder != null)
+                    {
+                        tokensInput.Add((await integratedActionBuilder.InitializationBuilder(context)).BoxedPayload);
+                    }
+                    
                     tokensInput.Add(ev);
 
                     var request = new CompoundRequest();
