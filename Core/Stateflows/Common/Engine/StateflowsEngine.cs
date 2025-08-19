@@ -37,6 +37,8 @@ namespace Stateflows.Common
         [DebuggerHidden]
         public async Task HandleEventAsync(ExecutionToken token)
         {
+            await Task.Delay(1);
+            
             ResponseHolder.SetResponses(token.Responses);
 
             token.Validation = await token.EventHolder.ValidateAsync(Validators);
@@ -60,16 +62,8 @@ namespace Stateflows.Common
             }
             catch (Exception)
             {
-                try
-                {
-                    throw;
-                }
-                finally
-                {
-                    token.Status = EventStatus.Failed;
-
-                    token.Handled.Set();
-                }
+                token.Status = EventStatus.Failed;
+                token.Handled.Set();
             }
         }
 

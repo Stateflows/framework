@@ -23,8 +23,6 @@ namespace Stateflows.Common.Classes
 
         public EventValidation Validation { get; internal set; }
         
-        public int Counter { get; set; }
-
         public ExecutionToken(BehaviorId targetId, EventHolder eventHolder, IServiceProvider serviceProvider)
         {
             TargetId = targetId;

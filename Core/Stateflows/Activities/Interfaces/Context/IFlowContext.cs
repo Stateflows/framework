@@ -19,6 +19,8 @@ namespace Stateflows.Activities
     public interface IBeforeFlowContext : IFlowContext
     {
         int TokenCount { get; }
+        
+        int SourceTokenCount { get; }
     }
 
     public interface IAfterFlowContext : IBeforeFlowContext

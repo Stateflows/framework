@@ -1,6 +1,6 @@
 ﻿namespace Stateflows.Common
 {
-    [NoImplicitInitialization]
+    [NoImplicitInitialization, NoTracing]
     internal class SetContextOwner : SystemEvent
     {
         public BehaviorId ContextOwner { get; set; }

@@ -76,9 +76,28 @@ namespace Stateflows.StateMachines.Models
                 BehaviorId = hostId,
                 NotificationNames = GetBehaviorSubscriptionNames()
             };
+        public List<Type> BehaviorRelays { get; set; } = new List<Type>();
+        public List<string> GetBehaviorRelayNames()
+            => BehaviorRelays
+                .Select(t => Event.GetName(t))
+                .ToList();
+
+        public StartRelay GetStartRelayRequest(StateMachineId hostId)
+            => new StartRelay()
+            {
+                BehaviorId = hostId,
+                NotificationNames = GetBehaviorRelayNames()
+            };
+
+        public StopRelay GetStopRelayRequest(StateMachineId hostId)
+            => new StopRelay()
+            {
+                BehaviorId = hostId,
+                NotificationNames = GetBehaviorRelayNames()
+            };
 
         public BehaviorId GetBehaviorId(StateMachineId hostId)
-            => new BehaviorId(BehaviorType, BehaviorName, $"__stateBehavior:{hostId.Name}:{hostId.Instance}:{Name}");
+            => new BehaviorId(BehaviorType, BehaviorName, $"{hostId.Name}:{hostId.Instance}:{Name}:Do:{new Random().Next()}");
 
         public bool IsOrthogonalTo(Vertex vertex)
         {

@@ -55,6 +55,8 @@ namespace Stateflows.Activities.Context.Classes
 
         public int TokenCount { get; set; }
 
+        public int SourceTokenCount { get; set; }
+
         public int TargetTokenCount { get; set; }
 
         public bool Activated => Stream.IsActivated;

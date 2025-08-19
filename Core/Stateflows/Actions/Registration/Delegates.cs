@@ -9,6 +9,10 @@ namespace Stateflows.Actions.Registration
     public delegate void ActionsBuildAction(IActionsBuilder register);
 
     public delegate Task<IActionInterceptor> ActionInterceptorFactoryAsync(IServiceProvider serviceProvider);
+
+    public delegate IActionInterceptor ActionInterceptorFactory(IServiceProvider serviceProvider);
     
     public delegate Task<IActionExceptionHandler> ActionExceptionHandlerFactoryAsync(IServiceProvider serviceProvider);
+    
+    public delegate IActionExceptionHandler ActionExceptionHandlerFactory(IServiceProvider serviceProvider);
 }

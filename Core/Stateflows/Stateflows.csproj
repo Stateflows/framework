@@ -42,4 +42,8 @@
     <ProjectReference Include="..\Stateflows.Common\Stateflows.Common.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="Common\Enums\" />
+  </ItemGroup>
+
 </Project>

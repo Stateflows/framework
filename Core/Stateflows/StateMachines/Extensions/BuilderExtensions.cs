@@ -1,4 +1,5 @@
-﻿using Stateflows.Common.Classes;
+﻿using System.Diagnostics;
+using Stateflows.Common.Classes;
 using Stateflows.StateMachines.Context.Classes;
 using Stateflows.StateMachines.Registration.Interfaces;
 
@@ -6,6 +7,7 @@ namespace Stateflows.StateMachines.Extensions
 {
     internal static class BuilderExtensions
     {
+        [DebuggerHidden]
         public static TReturn AddStateEvents<TState, TReturn>(this IStateBuilder builder)
             where TState : class, IState
         {
@@ -27,6 +29,7 @@ namespace Stateflows.StateMachines.Extensions
             return (TReturn)builder;
         }
 
+        [DebuggerHidden]
         public static TReturn AddCompositeStateEvents<TCompositeState, TReturn>(this ICompositeStateBuilder builder)
             where TCompositeState : class, ICompositeState
         {
@@ -58,6 +61,7 @@ namespace Stateflows.StateMachines.Extensions
             return (TReturn)builder;
         }
 
+        [DebuggerHidden]
         public static TReturn AddOrthogonalStateEvents<TOrthogonalState, TReturn>(this IOrthogonalStateBuilder builder)
             where TOrthogonalState : class, IOrthogonalState
         {
@@ -89,6 +93,7 @@ namespace Stateflows.StateMachines.Extensions
             return (TReturn)builder;
         }
 
+        [DebuggerHidden]
         public static void AddElseTransitionEvents<TElseTransition, TEvent>(this IElseTransitionBuilder<TEvent> builder)
             where TElseTransition : class, ITransitionEffect<TEvent>
         {
@@ -98,6 +103,7 @@ namespace Stateflows.StateMachines.Extensions
             }
         }
 
+        [DebuggerHidden]
         public static void AddTransitionEvents<TTransition, TEvent>(this ITransitionBuilder<TEvent> builder)
             where TTransition : class, ITransition<TEvent>
         {
@@ -117,6 +123,7 @@ namespace Stateflows.StateMachines.Extensions
             }
         }
 
+        [DebuggerHidden]
         public static void AddDefaultTransitionEvents<TTransition>(this IDefaultTransitionBuilder builder)
             where TTransition : class, IDefaultTransition
         {
@@ -136,6 +143,7 @@ namespace Stateflows.StateMachines.Extensions
             }
         }
 
+        [DebuggerHidden]
         public static void AddElseDefaultTransitionEvents<TElseTransition>(this IElseDefaultTransitionBuilder builder)
             where TElseTransition : class, IDefaultTransitionEffect
         {

@@ -29,11 +29,9 @@ namespace Stateflows.Extensions.OpenTelemetry
                 context.Event!.GetType().GetCustomAttributes<NoTracingAttribute>().Any() ||
                 context.Headers.Any(h => h is NoTracing);
             
-            if (noTracing)
-            {
-                Skip = true;
-            }
-            else
+            Skip = noTracing;
+            
+            if (!noTracing)
             {
                 var header = context.Headers.FirstOrDefault(h => h is ActivityHeader);
                 if (header is ActivityHeader activityHeader)
@@ -528,8 +526,8 @@ namespace Stateflows.Extensions.OpenTelemetry
                     context.TokenType == typeof(ControlToken)
                         ? $"Control flow ({context.SourceNode.Name.ToShortName()}) 🡢 ({context.TargetNode.Name.ToShortName()})"
                         : tokenName == targetTokenName
-                            ? $"Flow ({context.SourceNode.Name.ToShortName()}) –{tokenName} ({context.TokenCount})🡢 ({context.TargetNode.Name.ToShortName()})"
-                            : $"Flow ({context.SourceNode.Name.ToShortName()}) –{tokenName}/{targetTokenName} ({context.TokenCount})🡢 ({context.TargetNode.Name.ToShortName()})",
+                            ? $"Flow ({context.SourceNode.Name.ToShortName()}) –{tokenName} (passed {context.SourceTokenCount})🡢 ({context.TargetNode.Name.ToShortName()})"
+                            : $"Flow ({context.SourceNode.Name.ToShortName()}) –{tokenName}/{targetTokenName} (passed {context.SourceTokenCount})🡢 ({context.TargetNode.Name.ToShortName()})",
                     ActivityKind.Internal,
                     parentActivity!.Context
                 );
@@ -554,14 +552,21 @@ namespace Stateflows.Extensions.OpenTelemetry
                     activity.Stop();
                     if (!activated)
                     {
-                        displayName += ": not activated";
+                        if (context.Weight > 1)
+                        {
+                            displayName += $": not activated (offered {context.TokenCount} of {context.Weight})";
+                        }
+                        else
+                        {
+                            displayName += $": not activated (offered {context.TokenCount})";
+                        }
                     }
 
-                    if (context.TokenCount != context.TargetTokenCount)
+                    if (context.SourceTokenCount != context.TargetTokenCount)
                     {
                         displayName = displayName.Replace(
-                            $"({context.TokenCount})🡢",
-                            $"({context.TargetTokenCount} of {context.TokenCount})🡢"
+                            $"(passed {context.SourceTokenCount})🡢",
+                            $"(passed {context.TargetTokenCount} of {context.SourceTokenCount})🡢"
                         );
                     }
 

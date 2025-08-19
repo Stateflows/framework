@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Linq;
 using System.Reflection;
+using Stateflows.Common.Classes;
 
 namespace Stateflows.Common.Extensions
 {
@@ -15,7 +16,7 @@ namespace Stateflows.Common.Extensions
         public static bool IsNullable(this Type type)
             => type.IsSubclassOfRawGeneric(typeof(Nullable<>));
 
-        public static string GetReadableName(this Type type)
+        public static string GetReadableName(this Type type, TypedElements elementType)
         {
             var attribute = type.GetCustomAttribute<EventAttribute>(true);
             if (attribute != null)
@@ -26,12 +27,22 @@ namespace Stateflows.Common.Extensions
             var result = string.Empty;
             if (!type.IsGenericType)
             {
-                result = type.FullName;
+                result = StateflowsSettings.FullNames.HasFlag(elementType)
+                    ? type.FullName
+                    : type.Name;
             }
             else
             {
-                var typeName = type.GetGenericTypeDefinition().FullName.Split('`').First();
-                var typeNames = string.Join(", ", type.GetGenericArguments().Select(t => t.FullName));
+                var genericTypeDefinition = type.GetGenericTypeDefinition();
+                var baseName = StateflowsSettings.FullNames.HasFlag(elementType)
+                    ? genericTypeDefinition.FullName
+                    : genericTypeDefinition.Name;
+                
+                var typeName = baseName.Split('`').First();
+                var typeNames = string.Join(", ", type.GetGenericArguments().Select(t => StateflowsSettings.FullNames.HasFlag(elementType)
+                    ? t.FullName
+                    : t.Name
+                ));
                 result = $"{typeName}<{typeNames}>";
             }
 

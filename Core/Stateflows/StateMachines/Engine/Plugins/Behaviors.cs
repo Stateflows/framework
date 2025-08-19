@@ -6,13 +6,13 @@ using Stateflows.StateMachines.Context.Interfaces;
 
 namespace Stateflows.StateMachines.Engine
 {
-    internal class Behaviors : StateMachinePlugin
+    public class Behaviors : StateMachineObserver
     {
         public override void AfterStateEntry(IStateActionContext context)
         {
-            var vertex = (context as StateActionContext).Vertex;
+            var vertex = ((StateActionContext)context).Vertex;
 
-            var stateValues = (context as IRootContext).Context.GetStateValues(vertex.Name);
+            var stateValues = ((IRootContext)context).Context.GetStateValues(vertex.Name);
 
             if (vertex.BehaviorName != null)
             {
@@ -24,7 +24,12 @@ namespace Stateflows.StateMachines.Engine
 
                     if (vertex.BehaviorSubscriptions.Any())
                     {                        
-                        _ = behavior.SendAsync(vertex.GetSubscriptionRequest(context.Behavior.Id));
+                        behavior.SendAsync(vertex.GetSubscriptionRequest(context.Behavior.Id)).GetAwaiter().GetResult();
+                    }
+
+                    if (vertex.BehaviorRelays.Any())
+                    {                        
+                        behavior.SendAsync(vertex.GetStartRelayRequest(context.Behavior.Id)).GetAwaiter().GetResult();
                     }
 
                     var initializationRequest = vertex.BehaviorInitializationBuilder != null
@@ -42,17 +47,22 @@ namespace Stateflows.StateMachines.Engine
 
         public override void BeforeStateExit(IStateActionContext context)
         {
-            var vertex = (context as StateActionContext).Vertex;
+            var vertex = ((StateActionContext)context).Vertex;
 
             if (vertex.BehaviorName != null)
             {
-                var stateValues = (context as IRootContext).Context.GetStateValues(vertex.Name);
+                var stateValues = ((IRootContext)context).Context.GetStateValues(vertex.Name);
 
                 if (
                     stateValues.BehaviorId.HasValue &&
                     context.TryLocateBehavior(stateValues.BehaviorId.Value, out var behavior)
                 )
                 {
+                    if (vertex.BehaviorRelays.Any())
+                    {                        
+                        _ = behavior.SendAsync(vertex.GetStopRelayRequest(context.Behavior.Id));
+                    }
+                    
                     if (vertex.BehaviorSubscriptions.Any())
                     {
                         _ = behavior.SendAsync(vertex.GetUnsubscriptionRequest(context.Behavior.Id));

@@ -1,12 +1,11 @@
-﻿using Stateflows.Common.Extensions;
-using System;
-using System.Linq;
+﻿using System;
+using Stateflows.Common.Extensions;
 
 namespace Stateflows.Common
 {
     public static class EventInfoExtensions
     {
         public static string GetEventName(this Type @type)
-            => @type.GetReadableName();
+            => @type.GetReadableName(TypedElements.Events);
     }
 }

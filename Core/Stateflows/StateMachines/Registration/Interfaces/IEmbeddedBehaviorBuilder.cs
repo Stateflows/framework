@@ -1,10 +1,9 @@
-﻿namespace Stateflows.StateMachines.Registration.Interfaces
-{
-    public interface IEmbeddedBehaviorBuilder
-    {
-        IEmbeddedBehaviorBuilder AddForwardedEvent<TEvent>(ForwardedEventBuildAction<TEvent> buildAction = null)
-;
+﻿using Stateflows.Activities.StateMachines.Interfaces;
 
-        IEmbeddedBehaviorBuilder AddSubscription<TNotification>();
+namespace Stateflows.StateMachines.Registration.Interfaces
+{
+    public interface IEmbeddedBehaviorBuilder : ISubscription<IEmbeddedBehaviorBuilder>
+    {
+        IEmbeddedBehaviorBuilder AddForwardedEvent<TEvent>(ForwardedEventBuildAction<TEvent> buildAction = null);
     }
 }

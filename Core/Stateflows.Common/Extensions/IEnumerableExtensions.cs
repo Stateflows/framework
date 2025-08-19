@@ -35,9 +35,10 @@ namespace Stateflows.Common.Extensions
             {
                 try
                 {
-                    if (!action(item))
+                    var actualResult = action(item);
+                    if (actualResult != defaultResult)
                     {
-                        result = false;
+                        result = actualResult;
                     }
                 }
                 catch (Exception e)

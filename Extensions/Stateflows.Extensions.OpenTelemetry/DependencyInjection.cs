@@ -1,4 +1,5 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
+using Stateflows.Actions;
 using Stateflows.Activities;
 using Stateflows.Common.Registration.Interfaces;
 using Stateflows.StateMachines;
@@ -20,12 +21,17 @@ namespace Stateflows.Extensions.OpenTelemetry
                         .AddInterceptor(serviceProvider => serviceProvider.GetRequiredService<ActivityTracer>())
                         .AddExceptionHandler(serviceProvider => serviceProvider.GetRequiredService<ActivityTracer>())
                     )
+                    .AddActions(b => b
+                        .AddInterceptor(serviceProvider => serviceProvider.GetRequiredService<ActionTracer>())
+                        .AddExceptionHandler(serviceProvider => serviceProvider.GetRequiredService<ActionTracer>())
+                    )
                     .AddClientInterceptor<ClientInterceptor>();
                 ;
 
             builder.ServiceCollection
                 .AddScoped<StateMachineTracer>()
-                .AddScoped<ActivityTracer>();
+                .AddScoped<ActivityTracer>()
+                .AddScoped<ActionTracer>();
             
             builder.ServiceCollection.AddOpenTelemetry()
                 .WithTracing(b => b

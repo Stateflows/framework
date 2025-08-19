@@ -115,7 +115,7 @@ namespace Stateflows.Common.Classes
                     }
                     else
                     {
-                        throw new StateflowsDefinitionException($"ValueNameAttribute not found for parameter {parameter.Name} in constructor of {serviceKind} {serviceType.Name}");
+                        throw new InvalidOperationException($"ValueNameAttribute not found for parameter {parameter.Name} in constructor of {serviceKind} {serviceType.Name}");
                     }
                     
                     continue;
@@ -132,8 +132,7 @@ namespace Stateflows.Common.Classes
                     }
                     else
                     {
-                        throw new StateflowsDefinitionException(
-                            $"ValueSetNameAttribute not found for parameter {parameter.Name} in constructor {constructor.Name} of service {serviceType.Name}");
+                        throw new InvalidOperationException($"ValueSetNameAttribute not found for parameter {parameter.Name} in constructor {constructor.Name} of service {serviceType.Name}");
                     }
                     
                     continue;
@@ -285,7 +284,8 @@ namespace Stateflows.Common.Classes
         
             return Activator.CreateInstance(serviceType, parameterValues);
         }
-
+        
+        [DebuggerHidden]
         private static async Task<object> BuildParameterValueAsync(ParameterInfo parameter, ValueAttribute valueAttribute, Func<IContextValues> valueSetSelector, string collectionName, Type serviceType, string serviceKind)
         {
             var valueName = valueAttribute.Name ?? parameter.Name;
@@ -319,7 +319,7 @@ namespace Stateflows.Common.Classes
                     ? $"Context value '{valueName}' cannot be read - reading values directly is not supported for {serviceKind} (required by {serviceKind} '{serviceType.Name}')"
                     : $"Context value '{valueName}' cannot be read - reading values directly is not supported for {serviceKind} (required by constructor parameter '{parameter.Name}' of {serviceKind} '{serviceType.Name}')";
 
-                throw new StateflowsRuntimeException(message);
+                throw new InvalidOperationException(message);
             }
 
             var valueSet = valueSetSelector();
@@ -329,7 +329,7 @@ namespace Stateflows.Common.Classes
                     ? $"Context value '{valueName}' cannot be read - no value set found (required by {serviceKind} '{serviceType.Name}')"
                     : $"Context value '{valueName}' cannot be read - no value set found (required by constructor parameter '{parameter.Name}' of {serviceKind} '{serviceType.Name}')";
 
-                throw new StateflowsRuntimeException(message);
+                throw new InvalidOperationException(message);
             }
             
             var tryGetMethod = typeof(IContextValues).GetMethod(nameof(IContextValues.TryGetAsync));
@@ -352,7 +352,7 @@ namespace Stateflows.Common.Classes
                     ? $"Context value '{valueName}' not found (required by {serviceKind} '{serviceType.Name}')"
                     : $"Context value '{valueName}' not found (required by constructor parameter '{parameter.Name}' of {serviceKind} '{serviceType.Name}')";
 
-                throw new StateflowsRuntimeException(message);
+                throw new InvalidOperationException(message);
             }
 
             return success

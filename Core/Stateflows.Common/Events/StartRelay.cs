@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 namespace Stateflows.Common
 {
-    [NoImplicitInitialization]
+    [NoImplicitInitialization, NoTracing]
     public sealed class StartRelay
     {
         public BehaviorId BehaviorId { get; set; }
