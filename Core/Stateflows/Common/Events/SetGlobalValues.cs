@@ -2,7 +2,7 @@
 
 namespace Stateflows.Common
 {
-    [NoImplicitInitialization]
+    [NoImplicitInitialization, NoTracing]
     internal class SetGlobalValues : SystemEvent
     {
         public Dictionary<string, string> Values { get; set; }

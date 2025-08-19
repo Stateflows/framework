@@ -6,23 +6,33 @@ namespace Stateflows.Common.Utilities
 {
     public static class WaitHandleExtensions
     {
+        private static AsyncLocal<TaskCompletionSource<bool>> TaskCompletionSource =  new AsyncLocal<TaskCompletionSource<bool>>();
+        
+        [DebuggerHidden]
+        private static void Callback(object? state, bool timedOut)
+        {
+            TaskCompletionSource.Value.TrySetResult(true);
+        }
+        
         [DebuggerHidden]
         public static Task WaitOneAsync(this WaitHandle waitHandle, int millisecondsTimeout = -1)
         {
             waitHandle.ThrowIfNull(nameof(waitHandle));
 
-            var tcs = new TaskCompletionSource<bool>();
+            TaskCompletionSource.Value = new TaskCompletionSource<bool>();
             var registeredWaitHandle = ThreadPool.RegisterWaitForSingleObject(
                 waitHandle,
-                delegate { tcs.TrySetResult(true); },
+                Callback,
                 null,
                 millisecondsTimeout,
                 true
             );
 
-            var t = tcs.Task;
+            var t = TaskCompletionSource.Value.Task;
 
             t.ContinueWith((antecedent) => registeredWaitHandle.Unregister(null));
+
+            TaskCompletionSource.Value = null;
 
             return t;
         }

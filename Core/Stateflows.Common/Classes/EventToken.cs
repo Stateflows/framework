@@ -1,6 +1,4 @@
-﻿using Stateflows.Common;
-
-namespace Stateflows.Common.Classes
+﻿namespace Stateflows.Common.Classes
 {
     public class EventToken
     {

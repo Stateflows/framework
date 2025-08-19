@@ -55,12 +55,12 @@ namespace Stateflows.Actions.Engine
         public void AfterHydrate(ActionDelegateContext context)
         {
             // await Plugins.RunSafe(p => p.AfterHydrateAsync(context), nameof(AfterHydrate), Logger);
-            Interceptors.RunSafe(i => i.AfterHydrateAsync(context), nameof(AfterHydrate), Logger);
+            Interceptors.RunSafe(i => i.AfterHydrate(context), nameof(AfterHydrate), Logger);
         }
 
         public void BeforeDehydrate(ActionDelegateContext context)
         {
-            Interceptors.RunSafe(i => i.BeforeDehydrateAsync(context), nameof(BeforeDehydrate), Logger);
+            Interceptors.RunSafe(i => i.BeforeDehydrate(context), nameof(BeforeDehydrate), Logger);
             // await Plugins.RunSafe(p => p.BeforeDehydrateAsync(context), nameof(BeforeDehydrate), Logger);
         }
 
@@ -70,19 +70,19 @@ namespace Stateflows.Actions.Engine
             // var global = await GlobalInterceptor.BeforeProcessEvent(
             //     new Common.Context.Classes.EventContext<TEvent>(context.RootContext.Context, Executor.ServiceProvider, context.Event)
             // );
-            var local = Interceptors.RunSafe(i => i.BeforeProcessEventAsync(context), nameof(BeforeProcessEvent), Logger);
+            var local = Interceptors.RunSafe(i => i.BeforeProcessEvent(context), nameof(BeforeProcessEvent), Logger);
 
             return /*global &&*/ local/* && plugin*/;
         }
 
         public void AfterProcessEvent<TEvent>(EventContext<TEvent> context, EventStatus eventStatus)
         {
-            Interceptors.RunSafe(i => i.AfterProcessEventAsync(context, eventStatus), nameof(AfterProcessEvent), Logger);
+            Interceptors.RunSafe(i => i.AfterProcessEvent(context, eventStatus), nameof(AfterProcessEvent), Logger);
             // await GlobalInterceptor.AfterProcessEvent(new Common.Context.Classes.EventContext<TEvent>(context.RootContext.Context, Executor.ServiceProvider, context.Event), eventStatus);
             // await Plugins.RunSafe(p => p.AfterProcessEventAsync(context), nameof(AfterProcessEvent), Logger);
         }
         
         public bool OnActionException(ActionDelegateContext context, Exception exception)
-            => ExceptionHandlers.RunSafe(h => h.OnActionExceptionAsync(context, exception), nameof(OnActionException), Logger, false);
+            => ExceptionHandlers.RunSafe(h => h.OnActionException(context, exception), nameof(OnActionException), Logger, false);
     }
 }

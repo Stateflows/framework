@@ -2,9 +2,7 @@
 using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
-using Microsoft.Extensions.DependencyInjection;
 using Stateflows.Common;
-using Stateflows.Common.Exceptions;
 using Stateflows.Common.Registration;
 using Stateflows.StateMachines.Models;
 using Stateflows.StateMachines.Extensions;
@@ -62,29 +60,7 @@ namespace Stateflows.StateMachines.Registration.Builders
             Vertex.Initialize.Actions.Add(async c =>
             {
                 var context = new StateActionContext(c, Vertex, Constants.Entry);
-                try
-                {
-                    await actionAsync(context);
-                }
-                catch (Exception e)
-                {
-                    if (e is StateflowsDefinitionException)
-                    {
-                        throw;
-                    }
-                    else
-                    {
-                        // Trace.WriteLine($"⦗→s⦘ State Machine '{context.Context.Id.Name}:{context.Context.Id.Instance}': exception '{e.GetType().FullName}' thrown with message '{e.Message}'");
-                        if (!c.Executor.Inspector.OnStateInitializeException(context, e))
-                        {
-                            throw;
-                        }
-                        else
-                        {
-                            throw new BehaviorExecutionException(e);
-                        }
-                    }
-                }
+                await actionAsync(context);
             }
             );
 
@@ -101,29 +77,7 @@ namespace Stateflows.StateMachines.Registration.Builders
             Vertex.Finalize.Actions.Add(async c =>
             {
                 var context = new StateActionContext(c, Vertex, Constants.Entry);
-                try
-                {
-                    await actionAsync(context);
-                }
-                catch (Exception e)
-                {
-                    if (e is StateflowsDefinitionException)
-                    {
-                        throw;
-                    }
-                    else
-                    {
-                        Trace.WriteLine($"⦗→s⦘ State Machine '{context.Context.Id.Name}:{context.Context.Id.Instance}': exception '{e.GetType().FullName}' thrown with message '{e.Message}'");
-                        if (!c.Executor.Inspector.OnStateFinalizeException(context, e))
-                        {
-                            throw;
-                        }
-                        else
-                        {
-                            throw new BehaviorExecutionException(e);
-                        }
-                    }
-                }
+                await actionAsync(context);
             }
             );
 
@@ -142,29 +96,7 @@ namespace Stateflows.StateMachines.Registration.Builders
                 Vertex.Entry.Actions.Add(async c =>
                     {
                         var context = new StateActionContext(c, Vertex, Constants.Entry);
-                        try
-                        {
-                            await actionHandler(context);
-                        }
-                        catch (Exception e)
-                        {
-                            if (e is StateflowsDefinitionException)
-                            {
-                                throw;
-                            }
-                            else
-                            {
-                                // Trace.WriteLine($"⦗→s⦘ State Machine '{context.Context.Id.Name}:{context.Context.Id.Instance}': exception '{e.GetType().FullName}' thrown with message '{e.Message}'");
-                                if (!c.Executor.Inspector.OnStateEntryException(context, e))
-                                {
-                                    throw;
-                                }
-                                else
-                                {
-                                    throw new BehaviorExecutionException(e);
-                                }
-                            }
-                        }
+                        await actionHandler(context);
                     }
                 );
             }
@@ -184,29 +116,7 @@ namespace Stateflows.StateMachines.Registration.Builders
                 Vertex.Exit.Actions.Add(async c =>
                     {
                         var context = new StateActionContext(c, Vertex, Constants.Exit);
-                        try
-                        {
-                            await actionHandler(context);
-                        }
-                        catch (Exception e)
-                        {
-                            if (e is StateflowsDefinitionException)
-                            {
-                                throw;
-                            }
-                            else
-                            {
-                                // Trace.WriteLine($"⦗→s⦘ State Machine '{context.Context.Id.Name}:{context.Context.Id.Instance}': exception '{e.GetType().FullName}' thrown with message '{e.Message}'");
-                                if (!c.Executor.Inspector.OnStateExitException(context, e))
-                                {
-                                    throw;
-                                }
-                                else
-                                {
-                                    throw new BehaviorExecutionException(e);
-                                }
-                            }
-                        }
+                        await actionHandler(context);
                     }
                 );
             }
@@ -549,7 +459,9 @@ namespace Stateflows.StateMachines.Registration.Builders
             {
                 b.AddEffect(async c =>
                 {
-                    if (c.TryLocateBehavior(Vertex.GetBehaviorId(c.Behavior.Id), out var behavior))
+                    var stateValues = ((IRootContext)c).Context.GetStateValues(Vertex.Name);
+                    var behaviorId = stateValues.BehaviorId ?? Vertex.GetBehaviorId(c.Behavior.Id);
+                    if (c.TryLocateBehavior(behaviorId, out var behavior))
                     {
                         var result = await behavior.SendAsync(c.Event);
 
@@ -572,6 +484,13 @@ namespace Stateflows.StateMachines.Registration.Builders
         public IEmbeddedBehaviorBuilder AddSubscription<TNotification>()
         {
             Vertex.BehaviorSubscriptions.Add(typeof(TNotification));
+            
+            return this;
+        }
+
+        public IEmbeddedBehaviorBuilder AddRelay<TNotification>()
+        {
+            Vertex.BehaviorRelays.Add(typeof(TNotification));
             
             return this;
         }

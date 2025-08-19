@@ -48,29 +48,7 @@ namespace Stateflows.StateMachines.Registration.Builders
             Vertex.Initialize.Actions.Add(async c =>
             {
                 var context = new StateActionContext(c, Vertex, Constants.Entry);
-                try
-                {
-                    await actionAsync(context);
-                }
-                catch (Exception e)
-                {
-                    if (e is StateflowsDefinitionException)
-                    {
-                        throw;
-                    }
-                    else
-                    {
-                        // Trace.WriteLine($"⦗→s⦘ State Machine '{context.Context.Id.Name}:{context.Context.Id.Instance}': exception '{e.GetType().FullName}' thrown with message '{e.Message}'");
-                        if (!c.Executor.Inspector.OnStateInitializeException(context, e))
-                        {
-                            throw;
-                        }
-                        else
-                        {
-                            throw new BehaviorExecutionException(e);
-                        }
-                    }
-                }
+                await actionAsync(context);
             }
             );
 
@@ -87,29 +65,7 @@ namespace Stateflows.StateMachines.Registration.Builders
             Vertex.Finalize.Actions.Add(async c =>
             {
                 var context = new StateActionContext(c, Vertex, Constants.Entry);
-                try
-                {
-                    await actionAsync(context);
-                }
-                catch (Exception e)
-                {
-                    if (e is StateflowsDefinitionException)
-                    {
-                        throw;
-                    }
-                    else
-                    {
-                        // Trace.WriteLine($"⦗→s⦘ State Machine '{context.Context.Id.Name}:{context.Context.Id.Instance}': exception '{e.GetType().FullName}' thrown with message '{e.Message}'");
-                        if (!c.Executor.Inspector.OnStateFinalizeException(context, e))
-                        {
-                            throw;
-                        }
-                        else
-                        {
-                            throw new BehaviorExecutionException(e);
-                        }
-                    }
-                }
+                await actionAsync(context);
             }
             );
 
@@ -128,29 +84,7 @@ namespace Stateflows.StateMachines.Registration.Builders
                 Vertex.Entry.Actions.Add(async c =>
                     {
                         var context = new StateActionContext(c, Vertex, Constants.Entry);
-                        try
-                        {
-                            await actionHandler(context);
-                        }
-                        catch (Exception e)
-                        {
-                            if (e is StateflowsDefinitionException)
-                            {
-                                throw;
-                            }
-                            else
-                            {
-                                Trace.WriteLine($"⦗→s⦘ State Machine '{context.Context.Id.Name}:{context.Context.Id.Instance}': exception '{e.GetType().FullName}' thrown with message '{e.Message}'");
-                                if (!c.Executor.Inspector.OnStateEntryException(context, e))
-                                {
-                                    throw;
-                                }
-                                else
-                                {
-                                    throw new BehaviorExecutionException(e);
-                                }
-                            }
-                        }
+                        await actionHandler(context);
                     }
                 );
             }
@@ -170,29 +104,7 @@ namespace Stateflows.StateMachines.Registration.Builders
                 Vertex.Exit.Actions.Add(async c =>
                     {
                         var context = new StateActionContext(c, Vertex, Constants.Exit);
-                        try
-                        {
-                            await actionHandler(context);
-                        }
-                        catch (Exception e)
-                        {
-                            if (e is StateflowsDefinitionException)
-                            {
-                                throw;
-                            }
-                            else
-                            {
-                                Trace.WriteLine($"⦗→s⦘ State Machine '{context.Context.Id.Name}:{context.Context.Id.Instance}': exception '{e.GetType().FullName}' thrown with message '{e.Message}'");
-                                if (!c.Executor.Inspector.OnStateExitException(context, e))
-                                {
-                                    throw;
-                                }
-                                else
-                                {
-                                    throw new BehaviorExecutionException(e);
-                                }
-                            }
-                        }
+                        await actionHandler(context);
                     }
                 );
             }

@@ -9,17 +9,18 @@ using WarszawskieDniInformatyki.StateMachines.Document;
 using Scalar.AspNetCore;
 using Stateflows.Actions;
 using Stateflows.Activities;
-using Stateflows.Scheduler.StateMachine;
 using WarszawskieDniInformatyki.Actions.Work;
 using WarszawskieDniInformatyki.Activities.Process;
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddStateflows(b => b
+    .UseFullNamesFor(TypedElements.None)
     .AddActions(b => b
         .AddAction<Work>()
     )
     .AddStateMachines(b => b
+        .AddExceptionHandler<DocumentExceptionHandler>()
         .AddStateMachine<Document>("Doc")
     )
     .AddActivities(b => b

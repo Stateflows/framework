@@ -1,3 +1,4 @@
+using System.ComponentModel.DataAnnotations;
 using FluentValidation;
 using Microsoft.Extensions.DependencyInjection;
 using Stateflows.Common;
@@ -8,6 +9,12 @@ namespace StateMachine.IntegrationTests.Tests
 {
     public class FluentEvent
     {
+        public string Email { get; set; }
+    }
+    
+    public class AttributeEvent
+    {
+        [Required, EmailAddress]
         public string Email { get; set; }
     }
 
@@ -38,6 +45,7 @@ namespace StateMachine.IntegrationTests.Tests
                     .AddStateMachine("validation", b => b
                         .AddInitialState("initial", b => b
                             .AddTransition<FluentEvent>("final")
+                            .AddTransition<AttributeEvent>("final")
                         )
                         .AddFinalState("final")
                     )
@@ -51,19 +59,24 @@ namespace StateMachine.IntegrationTests.Tests
         public async Task FluentValidation()
         {
             string currentState = State<State1>.Name;
-            SendResult result = null;
+            SendResult result1 = null;
+            SendResult result2 = null;
 
             if (StateMachineLocator.TryLocateStateMachine(new StateMachineId("validation", "x"), out var sm))
             {
-                result = await sm.SendAsync(new FluentEvent() { Email = "user#example.com" });
+                result1 = await sm.SendAsync(new FluentEvent() { Email = "user#example.com" });
+                result2 = await sm.SendAsync(new AttributeEvent() { Email = "user#example.com" });
 
                 currentState = (await sm.GetStatusAsync()).Response?.CurrentStates?.Value;
             }
 
-            Assert.AreEqual(EventStatus.Invalid, result?.Status);
-            Assert.IsFalse(result?.Validation.IsValid);
-            Assert.AreEqual(1, result?.Validation.ValidationResults.Count());
-            Assert.AreEqual(nameof(FluentEvent.Email), result?.Validation.ValidationResults.First().MemberNames.First());
+            Assert.AreEqual(EventStatus.Invalid, result1?.Status);
+            Assert.IsFalse(result1?.Validation.IsValid);
+            Assert.AreEqual(1, result1?.Validation.ValidationResults.Count());
+            Assert.AreEqual(nameof(FluentEvent.Email), result1?.Validation.ValidationResults.First().MemberNames.First());
+            Assert.IsFalse(result2?.Validation.IsValid);
+            Assert.AreEqual(1, result2?.Validation.ValidationResults.Count());
+            Assert.AreEqual(nameof(FluentEvent.Email), result2?.Validation.ValidationResults.First().MemberNames.First());
             Assert.AreEqual("initial", currentState);
         }
     }

@@ -29,11 +29,9 @@ namespace Stateflows.Extensions.OpenTelemetry
                 context.Event!.GetType().GetCustomAttributes<NoTracingAttribute>().Any() ||
                 context.Headers.Any(h => h is NoTracing);
             
-            if (noTracing)
-            {
-                Skip = true;
-            }
-            else
+            Skip = noTracing;
+            
+            if (!noTracing)
             {
                 var header = context.Headers.FirstOrDefault(h => h is ActivityHeader);
                 if (header is ActivityHeader activityHeader)

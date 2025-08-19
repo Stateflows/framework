@@ -1,8 +1,11 @@
+using System.Diagnostics;
 using Stateflows.Common;
 using Stateflows.Common.Attributes;
 using Stateflows.Extensions.MinimalAPIs;
 using Stateflows.Extensions.MinimalAPIs.Interfaces;
 using Stateflows.StateMachines;
+using WarszawskieDniInformatyki.Actions.Work;
+using WarszawskieDniInformatyki.Activities.Process.Events;
 using WarszawskieDniInformatyki.StateMachines.Document.Effects;
 using WarszawskieDniInformatyki.StateMachines.Document.Events;
 using WarszawskieDniInformatyki.StateMachines.Document.Guards;
@@ -12,6 +15,15 @@ namespace WarszawskieDniInformatyki.StateMachines.Document;
 
 public struct Test {}
 public enum EnumTest {}
+
+public class DocumentExceptionHandler([GlobalValue] IValue<int> counter) : StateMachineExceptionHandler
+{
+    public override bool OnStateEntryException(IStateActionContext context, Exception exception)
+    {
+        Debug.WriteLine(exception.Message);
+        return true;
+    }
+}
 
 public class Document : IStateMachine
 {
@@ -54,15 +66,19 @@ public class Document : IStateMachine
                 )
             )
             .AddState<Reviewed>(b => b
+                .AddOnEntryAction<Work>()
                 .AddTransition<Accept, Accepted>(b => b
                     .AddEffect(c => c.Event.Respond(new AcceptResponse()))
                 )
             )
             .AddState<Accepted>(b => b
+                .AddDoActivity("Proc", b => b
+                    .AddForwardedEvent<Input>()
+                )
                 .AddTransition<Pay, PayGuard, Paid>()
                 .AddTransition<Reject, Rejected>()
             )
-            .AddState<Paid>() 
+            .AddState<Paid>()
             .AddState<Rejected>()
         ;
 }

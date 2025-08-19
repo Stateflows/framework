@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Threading;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Threading.Tasks;
 using Stateflows.Common.Utilities;
 using System.Runtime.Serialization;
@@ -26,6 +27,7 @@ namespace Stateflows.Common.Classes
 
         private readonly string QueueEmpty = "Queue empty.";
 
+        [DebuggerHidden]
         public async Task<bool> WaitAsync(CancellationToken cancellationToken)
         {
             while (!cancellationToken.IsCancellationRequested)

@@ -6,13 +6,13 @@ namespace Stateflows.Actions
 {
     public interface IActionInterceptor
     {
-        Task AfterHydrateAsync(IActionDelegateContext context);
+        void AfterHydrate(IActionDelegateContext context);
 
-        Task BeforeDehydrateAsync(IActionDelegateContext context);
+        void BeforeDehydrate(IActionDelegateContext context);
 
-        Task<bool> BeforeProcessEventAsync<TEvent>(IEventContext<TEvent> context);
+        bool BeforeProcessEvent<TEvent>(IEventContext<TEvent> context);
 
-        Task AfterProcessEventAsync<TEvent>(IEventContext<TEvent> context, EventStatus eventStatus);
+        void AfterProcessEvent<TEvent>(IEventContext<TEvent> context, EventStatus eventStatus);
 
     }
 }

@@ -1,4 +1,5 @@
-﻿using Stateflows.StateMachines.Extensions;
+﻿using System.Diagnostics;
+using Stateflows.StateMachines.Extensions;
 
 namespace Stateflows.StateMachines.Registration.Interfaces.Base
 {
@@ -10,6 +11,7 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         /// those implementations will be added to extended state. State name will remain unchanged.
         /// </summary>
         /// <typeparam name="TState">Extending state type</typeparam>
+        [DebuggerHidden]
         public TReturn ExtendWith<TState>()
             where TState : class, IState
             => ((IStateBuilder)this).AddStateEvents<TState, TReturn>();

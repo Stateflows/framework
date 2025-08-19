@@ -1,4 +1,5 @@
 ﻿using System;
+using Stateflows.Common.Classes;
 using Stateflows.Common.Registration.Interfaces;
 
 namespace Stateflows
@@ -11,6 +12,13 @@ namespace Stateflows
             BehaviorClassDefaults.CurrentEnvironment = environment;
 
             return stateflowsClientBuilder;
+        }
+        
+        public static IStateflowsClientBuilder UseFullNamesFor(this IStateflowsClientBuilder stateflowsBuilder, TypedElements typedElements)
+        {
+            StateflowsSettings.FullNames = typedElements;
+
+            return stateflowsBuilder;
         }
     }
 }

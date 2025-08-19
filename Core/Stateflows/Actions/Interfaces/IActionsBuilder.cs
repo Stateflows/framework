@@ -22,8 +22,12 @@ namespace Stateflows.Actions
         IActionsBuilder AddInterceptor<TInterceptor>()
             where TInterceptor : class, IActionInterceptor;
         IActionsBuilder AddInterceptor(ActionInterceptorFactoryAsync interceptorFactoryAsync);
+        IActionsBuilder AddInterceptor(ActionInterceptorFactory interceptorFactory)
+            => AddInterceptor(async serviceProvider => interceptorFactory(serviceProvider));
         IActionsBuilder AddExceptionHandler<TExceptionHandler>()
             where TExceptionHandler : class, IActionExceptionHandler;
         IActionsBuilder AddExceptionHandler(ActionExceptionHandlerFactoryAsync exceptionHandlerFactoryAsync);
+        IActionsBuilder AddExceptionHandler(ActionExceptionHandlerFactory exceptionHandlerFactory)
+            => AddExceptionHandler(async serviceProvider => exceptionHandlerFactory(serviceProvider));
     }
 }

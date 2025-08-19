@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Threading.Tasks;
+using Stateflows.Common.Extensions;
 using Stateflows.StateMachines.Registration.Interfaces;
 
 namespace Stateflows.StateMachines
@@ -31,11 +32,11 @@ namespace Stateflows.StateMachines
     public static class State<TState>
         where TState : class, IVertex
     {
-        public static string Name => typeof(TState).FullName;
+        public static string Name => State.GetName(typeof(TState));
     }
 
     public static class State
     {
-        public static string GetName(Type stateType) => stateType.FullName;
+        public static string GetName(Type stateType) => stateType.GetReadableName(TypedElements.StateMachineStates);
     }
 }

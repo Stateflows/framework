@@ -1,5 +1,6 @@
 ﻿using System.Reflection;
 using Stateflows.Activities.Attributes;
+using Stateflows.Common.Extensions;
 
 namespace Stateflows.Activities
 {
@@ -19,7 +20,7 @@ namespace Stateflows.Activities
                 var attribute = activityType.GetCustomAttribute<ActivityBehaviorAttribute>();
                 return attribute != null && attribute.Name != null
                     ? attribute.Name
-                    : activityType.FullName;
+                    : activityType.GetReadableName(TypedElements.Activities);
             }
         }
 

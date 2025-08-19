@@ -31,7 +31,7 @@ namespace Stateflows.Activities
             Payload = default;
         }
 
-        public override string Name => name ??= typeof(TToken).GetReadableName();
+        public override string Name => name ??= typeof(TToken).GetReadableName(TypedElements.Tokens);
 
         public TToken Payload { get; set; }
 

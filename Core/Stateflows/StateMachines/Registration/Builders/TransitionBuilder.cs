@@ -83,25 +83,6 @@ namespace Stateflows.StateMachines.Registration.Builders
                         {
                             result = await guardHandler(context);
                         }
-                        catch (Exception e)
-                        {
-                            if (e is StateflowsDefinitionException)
-                            {
-                                throw;
-                            }
-                            else
-                            {
-                                // Trace.WriteLine($"⦗→s⦘ Activity '{context.Context.Id.Name}:{context.Context.Id.Instance}': exception '{e.GetType().FullName}' thrown with message '{e.Message}'");
-                                if (!c.Executor.Inspector.OnTransitionGuardException(context, e))
-                                {
-                                    throw;
-                                }
-                                else
-                                {
-                                    throw new BehaviorExecutionException(e);
-                                }
-                            }
-                        }
                         finally
                         {
                             if (transitiveVertexTypes.Contains(Edge.Source.Type))
@@ -137,25 +118,6 @@ namespace Stateflows.StateMachines.Registration.Builders
                         try
                         {
                             await effectHandler(context);
-                        }
-                        catch (Exception e)
-                        {
-                            if (e is StateflowsDefinitionException)
-                            {
-                                throw;
-                            }
-                            else
-                            {
-                                // Trace.WriteLine($"⦗→s⦘ Activity '{context.Context.Id.Name}:{context.Context.Id.Instance}': exception '{e.GetType().FullName}' thrown with message '{e.Message}'");
-                                if (!c.Executor.Inspector.OnTransitionEffectException(context, e))
-                                {
-                                    throw;
-                                }
-                                else
-                                {
-                                    throw new BehaviorExecutionException(e);
-                                }
-                            }
                         }
                         finally
                         {

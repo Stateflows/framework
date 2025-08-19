@@ -1,4 +1,5 @@
 ﻿@page "/"
+@using WarszawskieDniInformatyki.Activities.Process.Events
 
 @inject IStateMachineLocator locator
 
@@ -12,6 +13,7 @@
     <button class="@(expectedEvents.Contains("Accept") ? null : "hide")" @onclick="Accept"><h3>Accept</h3></button>
     <button class="@(expectedEvents.Contains("Pay") ? null : "hide")" @onclick="Pay"><h3>Pay</h3></button>
     <button class="@(expectedEvents.Contains("Reject") ? null : "hide")" @onclick="Reject"><h3>Reject</h3></button>
+    <button class="@(expectedEvents.Contains("Input") ? null : "hide")" @onclick="Input"><h3>Input</h3></button>
     
     <br/>
     <img src="@plantUmlUrl" />
@@ -76,4 +78,6 @@
     private Task Pay() => stateMachineBehavior.SendAsync(new Pay() { Amount = 500 });
 
     private Task Reject() => stateMachineBehavior.SendAsync(new Reject());
+
+    private Task Input() => stateMachineBehavior.SendAsync(new Input());
 }

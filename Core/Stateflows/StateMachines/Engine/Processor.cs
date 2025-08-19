@@ -7,6 +7,7 @@ using System.ComponentModel.DataAnnotations;
 using System.Diagnostics;
 using Microsoft.Extensions.DependencyInjection;
 using Stateflows.Common;
+using Stateflows.Common.Exceptions;
 using Stateflows.Common.Interfaces;
 using Stateflows.StateMachines.Registration;
 using Stateflows.StateMachines.Context.Classes;
@@ -64,90 +65,92 @@ namespace Stateflows.StateMachines.Engine
                     return result;
                 }
 
-                using (var executor = new Executor(Register, graph, serviceProvider, stateflowsContext, eventHolder))
+                using var executor = new Executor(Register, graph, serviceProvider, stateflowsContext, eventHolder);
+                
+                await executor.HydrateAsync();
+
+                try
                 {
-                    await executor.HydrateAsync();
-
-                    try
+                    if (eventHolder is EventHolder<CompoundRequest> compoundRequestHolder)
                     {
-                        if (eventHolder is EventHolder<CompoundRequest> compoundRequestHolder)
+                        var compoundRequest = compoundRequestHolder.Payload;
+                        result = EventStatus.Consumed;
+                        var results = new List<RequestResult>();
+                        foreach (var ev in compoundRequest.Events)
                         {
-                            var compoundRequest = compoundRequestHolder.Payload;
-                            result = EventStatus.Consumed;
-                            var results = new List<RequestResult>();
-                            foreach (var ev in compoundRequest.Events)
-                            {
-                                ev.Headers.AddRange(eventHolder.Headers);
+                            ev.Headers.AddRange(eventHolder.Headers);
 
-                                executor.Context.SetEvent(ev);
+                            executor.Context.SetEvent(ev);
 
-                                executor.BeginScope();
-                                try
-                                {
-                                    var status = await ev.ExecuteBehaviorAsync(this, result, executor);
-
-                                    results.Add(new RequestResult(
-                                        ev.IsRequest()
-                                            ? ev.GetResponseHolder()
-                                            : null,
-                                        status,
-                                        new EventValidation(true, new List<ValidationResult>())
-                                    ));
-                                }
-                                finally
-                                {
-                                    executor.EndScope();
-
-                                    executor.Context.ClearEvent();
-                                }
-                            }
-
-                            if (!compoundRequest.IsRespondedTo())
-                            {
-                                compoundRequest.Respond(new CompoundResponse()
-                                {
-                                    Results = results
-                                });
-                            }
-                        }
-                        else
-                        {
                             executor.BeginScope();
                             try
                             {
-                                result = await ExecuteBehaviorAsync(eventHolder, result, executor);
+                                var status = await ev.ExecuteBehaviorAsync(this, result, executor);
+
+                                results.Add(new RequestResult(
+                                    ev.IsRequest()
+                                        ? ev.GetResponseHolder()
+                                        : null,
+                                    status,
+                                    new EventValidation(true, new List<ValidationResult>())
+                                ));
                             }
                             finally
                             {
                                 executor.EndScope();
+
+                                executor.Context.ClearEvent();
                             }
                         }
-                    }
-                    finally
-                    {
-                        if (stateflowsContext.Status == BehaviorStatus.Initialized)
+
+                        if (!compoundRequest.IsRespondedTo())
                         {
-                            stateflowsContext.Version = graph.Version;
+                            compoundRequest.Respond(new CompoundResponse()
+                            {
+                                Results = results
+                            });
                         }
-
-                        stateflowsContext.Status = executor.BehaviorStatus;
-
-                        stateflowsContext.LastExecutedAt = DateTime.Now;
-
-                        exceptions.AddRange(executor.Context.Exceptions);
-
-                        executor.Dehydrate();
+                    }
+                    else
+                    {
+                        executor.BeginScope();
+                        try
+                        {
+                            result = await ExecuteBehaviorAsync(eventHolder, result, executor);
+                        }
+                        finally
+                        {
+                            executor.EndScope();
+                        }
+                    }
+                }
+                finally
+                {
+                    if (stateflowsContext.Status == BehaviorStatus.Initialized)
+                    {
+                        stateflowsContext.Version = graph.Version;
                     }
 
-                    // out of try-finally to make sure that context won't be saved when execution fails
-                    await storage.DehydrateAsync(executor.Context.Context);
+                    stateflowsContext.Status = executor.BehaviorStatus;
+
+                    stateflowsContext.LastExecutedAt = DateTime.Now;
+
+                    exceptions.AddRange(executor.Context.Exceptions);
+
+                    executor.Dehydrate();
                 }
+
+                // out of try-finally to make sure that context won't be saved when execution fails
+                await storage.DehydrateAsync(executor.Context.Context);
 
                 return result;
             }
             catch (Exception e)
             {
-                Trace.WriteLine($"⦗→s⦘ State Machine '{id.Name}:{id.Instance}': exception '{e.GetType().FullName}' thrown with message '{e.Message}'");
+                if (!(e is BehaviorExecutionException))
+                {
+                    Trace.WriteLine($"⦗→s⦘ State Machine '{id.Name}:{id.Instance}': exception '{e.GetType().FullName}' thrown with message '{e.Message}'");
+                }
 
                 return EventStatus.Failed;
             }

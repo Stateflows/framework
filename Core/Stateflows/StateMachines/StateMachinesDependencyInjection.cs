@@ -3,6 +3,7 @@ using System.Diagnostics;
 using System.Collections.Generic;
 using System.Linq;
 using Microsoft.Extensions.DependencyInjection;
+using Stateflows.Common.Extensions;
 using Stateflows.Common.Interfaces;
 using Stateflows.Common.Initializer;
 using Stateflows.Common.Registration.Builders;
@@ -19,7 +20,7 @@ namespace Stateflows.StateMachines
 {
     public static class StateMachinesDependencyInjection
     {
-        private static readonly Dictionary<IStateflowsBuilder, StateMachinesRegister> Registers = new Dictionary<IStateflowsBuilder, StateMachinesRegister>();
+        internal static readonly Dictionary<IStateflowsBuilder, StateMachinesRegister> Registers = new Dictionary<IStateflowsBuilder, StateMachinesRegister>();
 
         internal static void Cleanup(IStateflowsBuilder builder)
         {
@@ -29,6 +30,19 @@ namespace Stateflows.StateMachines
                 {
                     var serviceDescriptor = builder.ServiceCollection.FirstOrDefault(descriptor => descriptor.ServiceType == typeof(IStateMachinesRegister));
                     builder.ServiceCollection.Remove(serviceDescriptor);
+                }
+            }
+        }
+
+        internal static void Build(IStateflowsBuilder builder)
+        {
+            lock (Registers)
+            {
+                if (builder.ServiceCollection.IsServiceRegistered<IStateMachinesRegister>() &&
+                    Registers.TryGetValue(builder, out var register)
+                   )
+                {
+                    register.AddObserver<Behaviors>();
                 }
             }
         }
@@ -61,7 +75,7 @@ namespace Stateflows.StateMachines
                         .EnsureStateflowServices()
                         .ServiceCollection
                         .AddScoped<IStateMachinePlugin, TimeEvents>()
-                        .AddScoped<IStateMachinePlugin, Behaviors>()
+                        // .AddScoped<IStateMachinePlugin, Behaviors>()
                         .AddScoped<IStateMachinePlugin, ContextCleanup>()
                         .AddScoped<IStateMachinePlugin, Notifications>()
                         .AddScoped<IStateMachinePlugin, Engine.Exceptions>()

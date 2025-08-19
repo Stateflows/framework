@@ -1,4 +1,5 @@
 ﻿using System.Reflection;
+using Stateflows.Common.Extensions;
 using Stateflows.StateMachines.Attributes;
 
 namespace Stateflows.StateMachines
@@ -19,7 +20,7 @@ namespace Stateflows.StateMachines
                 var attribute = stateMachineType.GetCustomAttribute<StateMachineBehaviorAttribute>();
                 return attribute != null && attribute.Name != null
                     ? attribute.Name
-                    : stateMachineType.FullName;
+                    : stateMachineType.GetReadableName(TypedElements.StateMachines);
             }
         }
 

@@ -20,7 +20,7 @@ public class Process : IActivity, IActivityEndpoints
                     .AddFlow<int>("thirdAction")
             )
             .AddAcceptEventAction<Input>(
-                async c => c.OutputRange(["1", "2", "3"]),
+                async c => c.OutputRange<string>(["1", "2", "3"]),
                 b => b
                     .AddFlow<string>("secondAction", b => b.SetWeight(8))
                     .AddFlow<string>("thirdAction")

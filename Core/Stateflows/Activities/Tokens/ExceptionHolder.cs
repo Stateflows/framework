@@ -16,7 +16,7 @@ namespace Stateflows.Activities
             Exception = default;
         }
 
-        public override string Name => name ??= typeof(TException).GetReadableName();
+        public override string Name => name ??= typeof(TException).GetReadableName(TypedElements.Exceptions);
 
         public TException TypedException
         {

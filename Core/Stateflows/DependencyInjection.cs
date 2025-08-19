@@ -15,6 +15,8 @@ using Stateflows.Common.Initializer;
 using Stateflows.Common.Subscription;
 using Stateflows.Common.Registration.Builders;
 using Stateflows.Common.Registration.Interfaces;
+using Stateflows.StateMachines;
+using Stateflows.StateMachines.Engine;
 using IExecutionContext = Stateflows.Common.IExecutionContext;
 
 namespace Stateflows
@@ -29,8 +31,6 @@ namespace Stateflows
                     .ServiceCollection
                     .AddSingleton<StateflowsEngine>()
                     .AddSingleton<StateflowsService>()
-                    // .AddSingleton((IStateflowsBehaviorsBuilder)stateflowsBuilder)
-                    // .AddSingleton<IStateflowsInitializer>(provider => provider.GetRequiredService<StateflowsService>())
                     .AddHostedService(provider => provider.GetRequiredService<StateflowsService>())
                     .AddSingleton<NotificationsHub>()
                     .AddHostedService(provider => provider.GetRequiredService<NotificationsHub>())
@@ -86,6 +86,8 @@ namespace Stateflows
             {
                 services.AddTransient<IStateflowsCache, InMemoryCache>();
             }
+
+            StateMachinesDependencyInjection.Build(builder);
 
             return services;
         }

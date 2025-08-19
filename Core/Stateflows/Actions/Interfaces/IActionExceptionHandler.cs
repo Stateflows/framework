@@ -6,6 +6,6 @@ namespace Stateflows.Actions
 {
     public interface IActionExceptionHandler
     {
-        Task<bool> OnActionExceptionAsync(IActionDelegateContext context, Exception exception);
+        bool OnActionException(IActionDelegateContext context, Exception exception);
     }
 }

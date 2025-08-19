@@ -1142,12 +1142,14 @@ namespace Stateflows.Activities.Engine
         private async Task<bool> DoHandleEdgeAsync(Edge edge, ActionContext context)
         {
             var flowContext = new FlowContext(context.Context, context.NodeScope, edge);
+            var stream = Context.GetStream(edge.Identifier, context.NodeScope.ThreadId);
             
             var edgeTokenName = edge.TokenType.GetTokenName();
 
             IEnumerable<TokenHolder> originalTokens = context.OutputTokens.Where(t => t.Name == edgeTokenName).ToArray();
 
-            flowContext.TokenCount = originalTokens.Count();
+            flowContext.TokenCount = stream.Tokens.Count;
+            flowContext.SourceTokenCount = originalTokens.Count();
             
             Inspector.BeforeFlowActivate(flowContext);
 
@@ -1182,11 +1184,10 @@ namespace Stateflows.Activities.Engine
                     ? processedTokens.Count
                     : 1
             );
-            
-            if (processedTokens.Count >= edge.Weight)
-            {
-                var stream = Context.GetStream(edge.Identifier, context.NodeScope.ThreadId);
 
+            var flowActivated = processedTokens.Count + stream.Tokens.Count >= edge.Weight;
+            if (flowActivated)
+            {
                 if (edgeTokenName != typeof(ControlToken).GetTokenName())
                 {
                     processedTokens.Add(new ControlToken().ToTokenHolder());
@@ -1199,12 +1200,17 @@ namespace Stateflows.Activities.Engine
                         context.OutputTokens.Remove(token);
                     }
                 }
+            }
 
-                lock (edge.Target)
-                {
-                    stream.Consume(processedTokens, edge.Source.Type == NodeType.DataStore);
-                }
-                
+            lock (edge.Target)
+            {
+                stream.Consume(processedTokens, edge.Source.Type == NodeType.DataStore);
+            }
+            
+            flowContext.TokenCount = stream.Tokens.Count;
+            
+            if (flowActivated)
+            {
                 Inspector.AfterFlowActivate(flowContext, true);
                 
                 return true;

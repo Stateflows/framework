@@ -19,12 +19,18 @@ namespace Stateflows.Activities
             where TActivity : class, IActivity;
         IActivitiesBuilder AddInterceptor<TInterceptor>()
             where TInterceptor : class, IActivityInterceptor;
-        IActivitiesBuilder AddInterceptor(ActivityInterceptorFactory interceptorFactory);
+        IActivitiesBuilder AddInterceptor(ActivityInterceptorFactoryAsync interceptorFactoryAsync);
+        public IActivitiesBuilder AddInterceptor(ActivityInterceptorFactory interceptorFactory)
+            => AddInterceptor(async serviceProvider => interceptorFactory(serviceProvider));
         IActivitiesBuilder AddExceptionHandler<TExceptionHandler>()
             where TExceptionHandler : class, IActivityExceptionHandler;
-        IActivitiesBuilder AddExceptionHandler(ActivityExceptionHandlerFactory exceptionHandlerFactory);
+        IActivitiesBuilder AddExceptionHandler(ActivityExceptionHandlerFactoryAsync exceptionHandlerFactoryAsync);
+        public IActivitiesBuilder AddExceptionHandler(ActivityExceptionHandlerFactory exceptionHandlerFactory)
+            => AddExceptionHandler(async serviceProvider => exceptionHandlerFactory(serviceProvider));
         IActivitiesBuilder AddObserver<TObserver>()
             where TObserver : class, IActivityObserver;
-        IActivitiesBuilder AddObserver(ActivityObserverFactory observerFactory);
+        IActivitiesBuilder AddObserver(ActivityObserverFactoryAsync observerFactoryAsync);
+        public IActivitiesBuilder AddObserver(ActivityObserverFactory observerFactory)
+            => AddObserver(async serviceProvider => observerFactory(serviceProvider));
     }
 }

@@ -20,7 +20,7 @@ namespace Stateflows.Activities
         [DebuggerHidden]
         internal static void RunStateAction(string stateActionName, IStateActionContext context, string actionName, StateActionActionBuildAction buildAction)
         {
-            if (context.TryLocateAction(actionName, $"{context.Behavior.Id.Instance}.{context.State.Name}.{stateActionName}.{Guid.NewGuid()}", out var a))
+            if (context.TryLocateAction(actionName, $"{stateActionName}:{new Random().Next()}", out var a))
             {
                 _ = Task.Run(async () =>
                 {
@@ -58,7 +58,7 @@ namespace Stateflows.Activities
         internal static async Task<bool> RunGuardAction<TEvent>(ITransitionContext<TEvent> context, string actionName, TransitionActionBuildAction<TEvent> buildAction)
         {
             var result = false;
-            if (context.TryLocateAction(actionName, $"{context.Behavior.Id.Instance}.{context.Source.Name}.{Constants.Guard}.{context.EventId}", out var a))
+            if (context.TryLocateAction(actionName, $"{Event<TEvent>.Name}.{Constants.Guard}.{context.EventId}", out var a))
             {
                 var ev = StateflowsJsonConverter.Clone(context.Event);
                 await Task.Run(async () =>
@@ -101,7 +101,7 @@ namespace Stateflows.Activities
         [DebuggerHidden]
         internal static Task RunEffectAction<TEvent>(ITransitionContext<TEvent> context, string actionName, TransitionActionBuildAction<TEvent> buildAction)
         {
-            if (context.TryLocateAction(actionName, $"{context.Behavior.Id.Instance}.{context.Source.Name}.{Event<TEvent>.Name}.{Constants.Effect}.{context.EventId}", out var a))
+            if (context.TryLocateAction(actionName, $"{Event<TEvent>.Name}.{Constants.Effect}.{context.EventId}", out var a))
             {
                 var ev = StateflowsJsonConverter.Clone(context.Event);
                 _ = Task.Run(async () =>

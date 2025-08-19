@@ -7,7 +7,9 @@ namespace StateMachine.IntegrationTests.Classes.States
     internal class ValueState2: IStateEntry
     {
         private readonly INamespace x;
-        public ValueState2([GlobalNamespace] INamespace x)
+        public ValueState2(
+            [GlobalNamespace] INamespace x
+        )
         {
             this.x = x;
         }

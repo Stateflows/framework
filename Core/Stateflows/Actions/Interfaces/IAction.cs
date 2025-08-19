@@ -2,6 +2,7 @@
 using System.Threading;
 using System.Threading.Tasks;
 using Stateflows.Actions.Attributes;
+using Stateflows.Common.Extensions;
 
 namespace Stateflows.Actions
 {
@@ -17,11 +18,11 @@ namespace Stateflows.Actions
         {
             get
             {
-                var activityType = typeof(TAction);
-                var attribute = activityType.GetCustomAttribute<ActionBehaviorAttribute>();
+                var actionType = typeof(TAction);
+                var attribute = actionType.GetCustomAttribute<ActionBehaviorAttribute>();
                 return attribute != null && attribute.Name != null
                     ? attribute.Name
-                    : activityType.FullName;
+                    : actionType.GetReadableName(TypedElements.Actions);
             }
         }
 
