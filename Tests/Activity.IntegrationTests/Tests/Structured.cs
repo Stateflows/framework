@@ -80,7 +80,7 @@ namespace Activity.IntegrationTests.Tests
                             async c => c.OutputRange(Enumerable.Range(0, 10)),
                             b => b.AddFlow<int>("main")
                         )
-                        .AddParallelActivity<int>("main", b => b
+                        .AddIterativeActivity<int>("main", b => b
                             .AddInitial(b => b
                                 .AddControlFlow("action1")
                             )

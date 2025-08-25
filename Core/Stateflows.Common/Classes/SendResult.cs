@@ -9,10 +9,10 @@ namespace Stateflows.Common
         [JsonConstructor]
         protected SendResult() { }
 
-        public SendResult(EventStatus status, EventValidation validation = null)
+        public SendResult(EventStatus status, EventValidation validation)
         {
             Status = status;
-            Validation = validation ?? new EventValidation(true);
+            Validation = validation;
         }
 
         public EventStatus Status { get; set; }

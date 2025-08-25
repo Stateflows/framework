@@ -188,22 +188,22 @@ namespace Stateflows.Actions.Engine
                     
                     result = EventStatus.Consumed;
                 }
-                else if (eventHolder is EventHolder<NotificationsRequest> notificationsRequestHolder)
-                {
-                    var pendingNotifications = await Hub.GetNotificationsAsync(
-                        StateflowsContext.Id,
-                        notificationsRequestHolder.Payload.NotificationNames,
-                        DateTime.Now - notificationsRequestHolder.Payload.Period
-                    );
-                
-                    notificationsRequestHolder.Payload.Respond(
-                        new NotificationsResponse
-                        {
-                            Notifications = pendingNotifications
-                        });
-                    
-                    result = EventStatus.Consumed;
-                }
+                // else if (eventHolder is EventHolder<NotificationsRequest> notificationsRequestHolder)
+                // {
+                //     var pendingNotifications = await Hub.GetNotificationsAsync(
+                //         StateflowsContext.Id,
+                //         notificationsRequestHolder.Payload.NotificationNames,
+                //         DateTime.Now - notificationsRequestHolder.Payload.Period
+                //     );
+                //
+                //     notificationsRequestHolder.Payload.Respond(
+                //         new NotificationsResponse
+                //         {
+                //             Notifications = pendingNotifications
+                //         });
+                //     
+                //     result = EventStatus.Consumed;
+                // }
                 else
                 {
                     var context = new ActionDelegateContext(StateflowsContext, eventHolder, ServiceProvider, new List<TokenHolder>() { eventHolder.Payload.ToTokenHolder() });

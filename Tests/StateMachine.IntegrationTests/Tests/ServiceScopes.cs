@@ -121,7 +121,7 @@ namespace StateMachine.IntegrationTests.Tests
         {
             if (StateMachineLocator.TryLocateStateMachine(new StateMachineId("compound", "x"), out var sm))
             {
-                var compoundRequest = new CompoundRequest()
+                var compoundRequest = new CompoundRequestBuilderRequest()
                     .Add(new SomeEvent())
                     .Add(new OtherEvent());
 

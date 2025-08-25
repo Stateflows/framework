@@ -14,13 +14,13 @@ namespace Stateflows.Common.Classes
         public BehaviorId Id { get; }
 
         protected readonly IServiceProvider serviceProvider;
-        private readonly NotificationsHub notificationsHub;
+        private readonly INotificationsHub notificationsHub;
         private readonly IStateflowsTenantProvider tenantProvider;
         private readonly ITenantAccessor tenantAccessor;
         private readonly Dictionary<string, List<Action<EventHolder>>> handlers = new Dictionary<string, List<Action<EventHolder>>>();
         private readonly Dictionary<IWatcher, Action<EventHolder>> handlersByWatcher = new Dictionary<IWatcher, Action<EventHolder>>();
 
-        public BaseBehavior(IServiceProvider serviceProvider, BehaviorId id, NotificationsHub notificationsHub)
+        public BaseBehavior(IServiceProvider serviceProvider, BehaviorId id, INotificationsHub notificationsHub)
         {
             this.serviceProvider = serviceProvider;
             this.notificationsHub = notificationsHub;

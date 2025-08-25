@@ -32,9 +32,7 @@ namespace Stateflows
                     .AddSingleton<StateflowsEngine>()
                     .AddSingleton<StateflowsService>()
                     .AddHostedService(provider => provider.GetRequiredService<StateflowsService>())
-                    .AddSingleton<NotificationsHub>()
-                    .AddHostedService(provider => provider.GetRequiredService<NotificationsHub>())
-                    .AddSingleton<INotificationsHub>(provider => provider.GetRequiredService<NotificationsHub>())
+                    .AddScoped<INotificationsHub, NotificationsHub>()
                     .AddHostedService<Scheduler>()
                     .AddTransient<ScheduleExecutor>()
                     .AddTransient<StartupExecutor>()
@@ -70,6 +68,11 @@ namespace Stateflows
             if (!services.IsServiceRegistered<IStateflowsStorage>())
             {
                 services.AddSingleton<IStateflowsStorage, InMemoryStorage>();
+            }
+
+            if (!services.IsServiceRegistered<IStateflowsNotificationsStorage>())
+            {
+                services.AddSingleton<IStateflowsNotificationsStorage, InMemoryNotificationsStorage>();
             }
 
             if (!services.IsServiceRegistered<IStateflowsLock>())

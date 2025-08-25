@@ -12,6 +12,7 @@
       <ProjectReference Include="..\..\Extensions\Stateflows.Extensions.OpenTelemetry\Stateflows.Extensions.OpenTelemetry.csproj" />
       <ProjectReference Include="..\..\Extensions\Stateflows.Extensions.PlantUml\Stateflows.Extensions.PlantUml.csproj" />
       <ProjectReference Include="..\..\Extensions\Stateflows.Extensions.Scheduling\Stateflows.Extensions.Scheduling.csproj" />
+      <ProjectReference Include="..\..\Storage\Stateflows.Storage.EntityFrameworkCore\Stateflows.Storage.EntityFrameworkCore.csproj" />
     </ItemGroup>
 
     <ItemGroup>
@@ -22,6 +23,11 @@
 
     <ItemGroup>
       <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="9.0.5" />
+      <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="8.0.19">
+        <PrivateAssets>all</PrivateAssets>
+        <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      </PackageReference>
+      <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="8.0.19" />
       <PackageReference Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" Version="1.12.0" />
       <PackageReference Include="OpenTelemetry.Extensions.Hosting" Version="1.12.0" />
       <PackageReference Include="OpenTelemetry.Instrumentation.AspNetCore" Version="1.12.0" />

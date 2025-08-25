@@ -71,7 +71,7 @@ namespace Stateflows.StateMachines.Engine
 
                 try
                 {
-                    if (eventHolder is EventHolder<CompoundRequest> compoundRequestHolder)
+                    if (eventHolder is EventHolder<CompoundRequestBuilderRequest> compoundRequestHolder)
                     {
                         var compoundRequest = compoundRequestHolder.Payload;
                         result = EventStatus.Consumed;
@@ -166,6 +166,9 @@ namespace Stateflows.StateMachines.Engine
             Executor executor
         )
         {
+            Trace.WriteLine($"⦗→s⦘ State Machine '{executor.Context.Id.Name}:{executor.Context.Id.Instance}': resetting StateHasChanged flag");
+            executor.StateHasChanged = false;
+            
             var eventContext = new EventContext<TEvent>(executor.Context);
             var commonEventContext = new Common.Context.Classes.EventContext<TEvent>(
                 eventContext.Context.Context,
@@ -181,8 +184,7 @@ namespace Stateflows.StateMachines.Engine
                         eventHolder.PayloadType.GetCustomAttributes<NoImplicitInitializationAttribute>().Any() ||
                         eventHolder.Headers.Any(h => h is NoImplicitInitialization);
                     
-                    // var attributes = eventHolder.GetType().GetCustomAttributes<NoImplicitInitializationAttribute>().ToArray();
-                    if (!executor.Initialized && /*!attributes.Any() &&*/ !typeof(Exception).IsAssignableFrom(eventHolder.PayloadType))
+                    if (!executor.Initialized && !typeof(Exception).IsAssignableFrom(eventHolder.PayloadType))
                     {
                         result = await executor.InitializeAsync(eventHolder, noImplicitInitialization);
                     }

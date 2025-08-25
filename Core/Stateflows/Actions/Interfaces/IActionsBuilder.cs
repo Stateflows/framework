@@ -9,8 +9,6 @@ namespace Stateflows.Actions
     {
         IActionsBuilder AddFromAssembly(Assembly assembly);
         IActionsBuilder AddFromAssemblies(IEnumerable<Assembly> assemblies);
-        [Obsolete("AddFromLoadedAssemblies() is deprecated, use AddFromAssembly(), AddFromAssemblies() or AddAction() instead.")]
-        IActionsBuilder AddFromLoadedAssemblies();
         IActionsBuilder AddAction(string actionName, ActionDelegateAsync actionDelegate, bool reentrant = true);
         IActionsBuilder AddAction(string actionName, int version, ActionDelegateAsync actionDelegate, bool reentrant = true);
         IActionsBuilder AddAction<TAction>(string actionName = null, int version = 1, bool reentrant = true)

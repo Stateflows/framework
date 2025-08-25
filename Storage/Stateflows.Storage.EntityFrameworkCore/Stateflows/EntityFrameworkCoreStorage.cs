@@ -6,6 +6,7 @@ using Stateflows.Common.Utilities;
 using Stateflows.Common.Interfaces;
 using Stateflows.Storage.EntityFrameworkCore.Utils;
 using Stateflows.Storage.EntityFrameworkCore.EntityFrameworkCore;
+using Stateflows.Storage.EntityFrameworkCore.EntityFrameworkCore.Entities;
 
 namespace Stateflows.Storage.EntityFrameworkCore.Stateflows
 {

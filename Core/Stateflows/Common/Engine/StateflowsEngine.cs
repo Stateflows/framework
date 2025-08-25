@@ -101,7 +101,7 @@ namespace Stateflows.Common
                         responseHolder.SenderId = id;
                         responseHolder.SentAt = DateTime.Now;
 
-                        if (eventHolder is EventHolder<CompoundRequest> compoundRequest)
+                        if (eventHolder is EventHolder<CompoundRequestBuilderRequest> compoundRequest)
                         {
                             foreach (var subResponseHolder in compoundRequest.Payload.Events
                                          .Select(subEventHolder => subEventHolder.GetResponseHolder())

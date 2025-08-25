@@ -13,7 +13,7 @@ namespace Stateflows.Common.Interfaces
 
         void UnregisterHandler(INotificationHandler notificationHandler);
         
-        Task<IEnumerable<EventHolder>> GetNotificationsAsync(BehaviorId behaviorId, IEnumerable<string> notificationNames, DateTime? lastNotificationCheck = null);
+        Task<IEnumerable<EventHolder>> GetNotificationsAsync(BehaviorId behaviorId, string[] notificationNames, DateTime? lastNotificationCheck = null);
         
         Task<IEnumerable<TNotification>> GetNotificationsAsync<TNotification>(BehaviorId behaviorId, DateTime? lastNotificationCheck = null);
     }

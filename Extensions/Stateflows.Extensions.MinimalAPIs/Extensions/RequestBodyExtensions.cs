@@ -12,6 +12,45 @@ namespace Stateflows.Extensions.MinimalAPIs;
 
 internal static class RequestBodyExtensions
 {
+    private static ICompoundRequestBuilder AddBehaviorInfoRequest(this ICompoundRequestBuilder builder, BehaviorId behaviorId)
+    {
+        switch (behaviorId.Type) 
+        {
+            case BehaviorType.StateMachine:
+                builder.Add(new StateMachineInfoRequest(), [new NoImplicitInitialization()]);
+                break;
+                        
+            case BehaviorType.Activity:
+                builder.Add(new ActivityInfoRequest(), [new NoImplicitInitialization()]);
+                break;
+                        
+            default:
+                builder.Add(new BehaviorInfoRequest(), [new NoImplicitInitialization()]);
+                break;
+        };
+        
+        return builder;
+    }
+
+    private static BehaviorInfo GetBehaviorInfo(this EventHolder holder, BehaviorId behaviorId)
+        => behaviorId.Type switch
+        {
+            BehaviorType.StateMachine => ((EventHolder<StateMachineInfo>)holder).Payload,
+            BehaviorType.Activity => ((EventHolder<ActivityInfo>)holder).Payload,
+            _ => ((EventHolder<BehaviorInfo>)holder).Payload,
+        };
+    
+    private static async Task<BehaviorInfo> GetBehaviorInfo(this IBehavior behavior)
+    {
+        var behaviorInfo = behavior.Id.Type switch
+        {
+            BehaviorType.StateMachine => (await behavior.RequestAsync(new StateMachineInfoRequest(), [new NoImplicitInitialization()])).Response,
+            BehaviorType.Activity => (await behavior.RequestAsync(new ActivityInfoRequest(), [new NoImplicitInitialization()])).Response,
+            _ => (await behavior.GetStatusAsync([new NoImplicitInitialization()])).Response
+        };
+        return behaviorInfo;
+    }
+    
     public static void RegisterEventEndpoint<TEvent>(this IEndpointRouteBuilder routeBuilder, Interceptor interceptor, string behaviorType, string behaviorName, Dictionary<string, List<(HateoasLink, BehaviorStatus[])>> customHateoasLinks)
     {
         var eventType = typeof(TEvent);
@@ -40,25 +79,13 @@ internal static class RequestBodyExtensions
                         {
                             return authorizationResult;
                         }
-
-                        if (locator.TryLocateBehavior(new BehaviorId(behaviorType, behaviorName, instance),
-                                out var behavior))
-                        {
-                            var result = await behavior.SendAsync(
-                                StateflowsActivator.CreateUninitializedInstance(eventType),
-                                implicitInitialization ? [] : [new NoImplicitInitialization()]);
-
-                            var notifications = (await behavior.GetNotificationsAsync(payload.RequestedNotifications))
-                                .Response.Notifications.ToArray();
-                            var behaviorInfo = await behavior.GetBehaviorInfo();
-
-                            return result.ToResult(notifications, behaviorInfo, customHateoasLinks);
-                        }
-
-                        return Results.NotFound();
+                        
+                        return locator.TryLocateBehavior(new BehaviorId(behaviorType, behaviorName, instance),
+                            out var behavior)
+                            ? await payload.SendEndpointAsync(StateflowsActivator.CreateUninitializedInstance<TEvent>(), behavior, implicitInitialization, customHateoasLinks)
+                            : Results.NotFound();
                     }
                 )
-                .WithTags($"{behaviorClass.Type} {behaviorClass.Name}")
                 : routeBuilder.MapMethods(
                     route,
                     [method],
@@ -80,11 +107,12 @@ internal static class RequestBodyExtensions
 
                         return locator.TryLocateBehavior(new BehaviorId(behaviorType, behaviorName, instance),
                             out var behavior)
-                            ? await payload.SendEndpointAsync(behavior, implicitInitialization, customHateoasLinks)
+                            ? await payload.SendEndpointAsync(payload.Event, behavior, implicitInitialization, customHateoasLinks)
                             : Results.NotFound();
                     }
-                )
-                .WithTags($"{behaviorClass.Type} {behaviorClass.Name}");
+                );
+
+            routeHandlerBuilder.WithTags($"{behaviorClass.Type} {behaviorClass.Name}");
 
             interceptor.AfterEventEndpointDefinition<TEvent>(behaviorClass, method, route, routeHandlerBuilder);
             
@@ -103,21 +131,11 @@ internal static class RequestBodyExtensions
         }
     }
 
-    private static async Task<BehaviorInfo> GetBehaviorInfo(this IBehavior behavior)
-    {
-        var behaviorInfo = behavior.Id.Type switch
-        {
-            BehaviorType.StateMachine => (await behavior.RequestAsync(new StateMachineInfoRequest(), [new NoImplicitInitialization()])).Response,
-            BehaviorType.Activity => (await behavior.RequestAsync(new ActivityInfoRequest(), [new NoImplicitInitialization()])).Response,
-            _ => (await behavior.GetStatusAsync([new NoImplicitInitialization()])).Response
-        };
-        return behaviorInfo;
-    }
-
     public static void RegisterRequestEndpoint<TRequest, TResponse>(this IEndpointRouteBuilder routeBuilder, Interceptor interceptor, string behaviorType, string behaviorName, Dictionary<string, List<(HateoasLink, BehaviorStatus[])>> customHateoasLinks)
         where TRequest : IRequest<TResponse>
     {
         var eventType = typeof(TRequest);
+        var eventName = Utils.GetEventName<TRequest>();
         var route = $"{behaviorType.ToResource()}/{behaviorName}/{{instance}}/" + Utils.GetEventName<TRequest>();
         var method = HttpMethods.Post;
         var behaviorClass = new BehaviorClass(behaviorType, behaviorName);
@@ -143,24 +161,11 @@ internal static class RequestBodyExtensions
                             return authorizationResult;
                         }
 
-                        if (locator.TryLocateBehavior(new BehaviorId(behaviorType, behaviorName, instance),
-                                out var behavior))
-                        {
-                            var result = await behavior.RequestAsync(
-                                (TRequest)StateflowsActivator.CreateUninitializedInstance(eventType),
-                                implicitInitialization ? [] : [new NoImplicitInitialization()]);
-
-                            var notifications = (await behavior.GetNotificationsAsync(payload.RequestedNotifications))
-                                .Response.Notifications.ToArray();
-                            var behaviorInfo = await behavior.GetBehaviorInfo();
-                            
-                            return result.ToResult(notifications, behaviorInfo, customHateoasLinks);
-                        }
-
-                        return Results.NotFound();
+                        return locator.TryLocateBehavior(new BehaviorId(behaviorType, behaviorName, instance), out var behavior)
+                            ? await payload.RequestEndpointAsync<TRequest, TResponse>(StateflowsActivator.CreateUninitializedInstance<TRequest>(), behavior, implicitInitialization, customHateoasLinks)
+                            : Results.NotFound();
                     }
                 )
-                .WithTags($"{behaviorClass.Type} {behaviorClass.Name}")
                 : routeBuilder.MapMethods(
                     route,
                     [method],
@@ -180,46 +185,71 @@ internal static class RequestBodyExtensions
                         }
 
                         return locator.TryLocateBehavior(new BehaviorId(behaviorType, behaviorName, instance), out var behavior)
-                            ? await payload.RequestEndpointAsync<TRequest, TResponse>(behavior, implicitInitialization, customHateoasLinks)
+                            ? await payload.RequestEndpointAsync<TRequest, TResponse>(payload.Event, behavior, implicitInitialization, customHateoasLinks)
                             : Results.NotFound();
                     }
-                )
-                .WithTags($"{behaviorClass.Type} {behaviorClass.Name}");
+                );
+
+            routeHandlerBuilder.WithTags($"{behaviorClass.Type} {behaviorClass.Name}");
 
             interceptor.AfterEventEndpointDefinition<TRequest>(behaviorClass, method, route, routeHandlerBuilder);
+            
+            customHateoasLinks.AddLink(
+                behaviorClass.Name,
+                new HateoasLink()
+                {
+                    Rel = eventName.ToShortName().ToCamelCase(),
+                    Href = route,
+                    Method = method
+                },
+                [BehaviorStatus.Initialized],
+                eventName,
+                "event"
+            );
         }
     }
     
-    public static async Task<IResult?> SendEndpointAsync<TEvent>(this RequestBody<TEvent> payload, IBehavior behavior,
+    private static async Task<IResult?> SendEndpointAsync<TEvent>(this RequestBody payload, TEvent @event, IBehavior behavior,
         bool implicitInitialization, Dictionary<string, List<(HateoasLink, BehaviorStatus[])>> customHateoasLinks)
     {
-        var result = EqualityComparer<TEvent>.Default.Equals(payload.Event, default)
+        var lastNotificationsCheck = DateTime.Now;
+        
+        var result = EqualityComparer<TEvent>.Default.Equals(@event, default)
             ? new SendResult(
                 EventStatus.Invalid,
                 new EventValidation(false, [ new ValidationResult("Event not provided") ])
             )
-            : await behavior.SendAsync(payload.Event, implicitInitialization ? [] : [new NoImplicitInitialization()]);
-                        
-        var notifications = (await behavior.GetNotificationsAsync(payload.RequestedNotifications ?? []))?.Response?.Notifications?.ToArray() ?? [];
+            : await behavior.SendAsync(@event, implicitInitialization ? [] : [new NoImplicitInitialization()]);
+        
+        var notifications = result.Status != EventStatus.Invalid
+            ? (await behavior.GetNotificationsAsync(payload.RequestedNotifications, lastNotificationsCheck)).ToArray()
+            : [];
+        
         var behaviorInfo = await behavior.GetBehaviorInfo();
-
+        
         return result.ToResult(notifications, behaviorInfo, customHateoasLinks);
     }
     
-    public static async Task<IResult> RequestEndpointAsync<TRequest, TResponse>(this RequestBody<TRequest> payload, IBehavior behavior,
+    private static async Task<IResult> RequestEndpointAsync<TRequest, TResponse>(this RequestBody payload, TRequest request, IBehavior behavior,
         bool implicitInitialization, Dictionary<string, List<(HateoasLink, BehaviorStatus[])>> customHateoasLinks)
         where TRequest : IRequest<TResponse>
     {
-        var result = EqualityComparer<TRequest>.Default.Equals(payload.Event, default)
+        var lastNotificationsCheck = DateTime.Now;
+        
+        var result = EqualityComparer<TRequest>.Default.Equals(request, default)
             ? new RequestResult<TResponse>(
                 new EventHolder<TRequest>(),
                 EventStatus.Invalid,
                 new EventValidation(false, [ new ValidationResult("Event not provided") ])
             )
-            : await behavior.RequestAsync(payload.Event, implicitInitialization ? [] : [new NoImplicitInitialization()]);
-        var notifications = (await behavior.GetNotificationsAsync(payload.RequestedNotifications ?? [])).Response?.Notifications?.ToArray() ?? [];
+            : await behavior.RequestAsync(request, implicitInitialization ? [] : [new NoImplicitInitialization()]);
+        
+        var notifications = result.Status != EventStatus.Invalid
+            ? (await behavior.GetNotificationsAsync(payload.RequestedNotifications, lastNotificationsCheck)).ToArray()
+            : [];
+        
         var behaviorInfo = await behavior.GetBehaviorInfo();
-
+        
         return result.ToResult(notifications, behaviorInfo, customHateoasLinks);
     }
 }

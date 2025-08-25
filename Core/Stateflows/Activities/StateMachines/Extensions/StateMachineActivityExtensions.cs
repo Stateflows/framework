@@ -28,7 +28,7 @@ namespace Stateflows.Activities
                         ? await integratedActivityBuilder.InitializationBuilder(context)
                         : new Initialize().ToEventHolder();
 
-                    var request = new CompoundRequest();
+                    var request = new CompoundRequestBuilderRequest();
                     request.Events.AddRange(new EventHolder[]
                     {
                         integratedActivityBuilder.GetSubscribe(context.Behavior.Id).ToEventHolder(),
@@ -65,7 +65,7 @@ namespace Stateflows.Activities
                     var tokensInput = new TokensInput();
                     tokensInput.Add(ev);
 
-                    var request = new CompoundRequest();
+                    var request = new CompoundRequestBuilderRequest();
                     request.Events.AddRange(new EventHolder[]
                     {
                         integratedActivityBuilder.GetSubscribe(context.Behavior.Id).ToEventHolder(),
@@ -107,7 +107,7 @@ namespace Stateflows.Activities
                     var tokensInput = new TokensInput();
                     tokensInput.Add(ev);
 
-                    var request = new CompoundRequest();
+                    var request = new CompoundRequestBuilderRequest();
                     request.Events.AddRange(new EventHolder[]
                     {
                         integratedActivityBuilder.GetSubscribe(context.Behavior.Id).ToEventHolder(),

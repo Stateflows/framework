@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Linq;
 using Microsoft.Extensions.Logging;
 using Stateflows.Common.Extensions;
 using Stateflows.Common.Context.Interfaces;
@@ -56,7 +57,7 @@ namespace Stateflows.Common.Engine
 
         public void AfterExecute(EventHolder eventHolder)
         {
-            foreach (var interceptor in ExecutionInterceptors)
+            foreach (var interceptor in ExecutionInterceptors.Reverse())
             {
                 interceptor.AfterExecute(eventHolder);
             }
@@ -78,7 +79,7 @@ namespace Stateflows.Common.Engine
 
         public void AfterExecute(string tenantId)
         {
-            foreach (var interceptor in TenantInterceptors)
+            foreach (var interceptor in TenantInterceptors.Reverse())
             {
                 interceptor.AfterExecute(tenantId);
             }

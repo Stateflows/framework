@@ -4,33 +4,33 @@ using Newtonsoft.Json;
 
 namespace Stateflows.Common
 {
-    public interface ICompound
+    public interface ICompoundRequestBuilder
     {
-        ICompound Add<TEvent>(TEvent @event);
-        ICompound AddRange<TEvent>(params TEvent[] events);
+        ICompoundRequestBuilder Add<TEvent>(TEvent @event, IEnumerable<EventHeader> headers = null);
+        ICompoundRequestBuilder AddRange<TEvent>(params TEvent[] events);
     }
 
-    public class CompoundRequest : IRequest<CompoundResponse>, ICompound
+    public class CompoundRequestBuilderRequest : IRequest<CompoundResponse>, ICompoundRequestBuilder
     {
         [JsonProperty(TypeNameHandling = TypeNameHandling.None)]
         public List<EventHolder> Events { get; set; } = new List<EventHolder>();
 
-        ICompound ICompound.Add<TEvent>(TEvent @event)
-            => Add(@event);
+        ICompoundRequestBuilder ICompoundRequestBuilder.Add<TEvent>(TEvent @event, IEnumerable<EventHeader> headers = null)
+            => Add(@event, headers);
 
-        public CompoundRequest Add<TEvent>(TEvent @event)
+        public CompoundRequestBuilderRequest Add<TEvent>(TEvent @event, IEnumerable<EventHeader> headers = null)
         {
-            Events.Add(new EventHolder<TEvent>() { Payload = @event });
+            Events.Add(@event.ToTypedEventHolder(headers));
 
             return this;
         }
 
-        ICompound ICompound.AddRange<TEvent>(params TEvent[] events)
+        ICompoundRequestBuilder ICompoundRequestBuilder.AddRange<TEvent>(params TEvent[] events)
             => AddRange(events);
 
-        public CompoundRequest AddRange<TEvent>(params TEvent[] events)
+        public CompoundRequestBuilderRequest AddRange<TEvent>(params TEvent[] events)
         {
-            Events.AddRange(events.Select(@event => new EventHolder<TEvent>() { Payload = @event }));
+            Events.AddRange(events.Select(@event => @event.ToTypedEventHolder()));
 
             return this;
         }

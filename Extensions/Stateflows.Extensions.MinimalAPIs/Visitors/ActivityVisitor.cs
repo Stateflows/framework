@@ -176,12 +176,13 @@ internal class ActivityVisitor(
                 [method],
                 async (
                     string instance,
-                    IActivityLocator locator
+                    IActivityLocator locator,
+                    [FromQuery] bool implicitInitialization = false
                 ) =>
                 {
                     if (locator.TryLocateActivity(new ActivityId(activityName, instance), out var behavior))
                     {
-                        var result = await behavior.GetStatusAsync([new NoImplicitInitialization()]);
+                        var result = await behavior.GetStatusAsync(implicitInitialization ? [] : [new NoImplicitInitialization()]);
                         // workaround for return code 200 regardless behavior actual status
                         result.Status = EventStatus.Consumed;
                         return result.ToResult([], result.Response, HateoasLinks);
@@ -220,13 +221,13 @@ internal class ActivityVisitor(
                     [FromQuery] TimeSpan? period
                 ) =>
                 {
-                    period ??= TimeSpan.FromSeconds(60);
                     if (locator.TryLocateActivity(new ActivityId(activityName, instance), out var behavior))
                     {
-                        var result = await behavior.GetNotificationsAsync(names, period);
+                        period ??= TimeSpan.FromSeconds(60);
+                        var notifications = (await behavior.GetNotificationsAsync(names, DateTime.Now - period)).ToArray();
                         var behaviorInfo = (await behavior.GetStatusAsync([new NoImplicitInitialization()])).Response;
-                        return ((SendResult)result).ToResult(result.Response.Notifications, behaviorInfo, HateoasLinks);
-                    }
+                        var result = new SendResult(EventStatus.Consumed, new EventValidation(true));
+                        return result.ToResult(notifications, behaviorInfo, HateoasLinks);                    }
 
                     return Results.NotFound();
                 }
@@ -261,6 +262,16 @@ internal class ActivityVisitor(
                 {
                     if (locator.TryLocateActivity(new ActivityId(activityName, instance), out var behavior))
                     {
+                        // var compoundResult = await behavior.SendCompoundAsync(b => b
+                        //     .Add(new Finalize())
+                        //     .Add(new ActivityInfoRequest(), [new NoImplicitInitialization()])
+                        // );
+                        //
+                        // var result = compoundResult.Response.Results.First();
+                        // var behaviorInfo = ((EventHolder<ActivityInfo>)compoundResult.Response.Results.Last().Response).Payload;
+                        //
+                        // return result.ToResult([], behaviorInfo, HateoasLinks);
+                        
                         var result = await behavior.FinalizeAsync();
                         var behaviorInfo = (await behavior.GetStatusAsync([new NoImplicitInitialization()])).Response;
                         return result.ToResult([], behaviorInfo, HateoasLinks);
@@ -296,6 +307,16 @@ internal class ActivityVisitor(
                 {
                     if (locator.TryLocateActivity(new ActivityId(activityName, instance), out var behavior))
                     {
+                        // var compoundResult = await behavior.SendCompoundAsync(b => b
+                        //     .Add(new Reset())
+                        //     .Add(new BehaviorInfoRequest(), [new NoImplicitInitialization()])
+                        // );
+                        //
+                        // var result = compoundResult.Response.Results.First();
+                        // var behaviorInfo = ((EventHolder<BehaviorInfo>)compoundResult.Response.Results.Last().Response).Payload;
+                        //
+                        // return result.ToResult([], behaviorInfo, HateoasLinks);
+                        
                         var result = await behavior.ResetAsync();
                         var behaviorInfo = (await behavior.GetStatusAsync([new NoImplicitInitialization()])).Response;
                         return result.ToResult([], behaviorInfo, HateoasLinks);

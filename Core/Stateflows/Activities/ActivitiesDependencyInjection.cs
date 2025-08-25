@@ -79,7 +79,6 @@ namespace Stateflows.Activities
                         .AddSingleton<IActivityEventHandler, UnsubscriptionHandler>()
                         .AddSingleton<IActivityEventHandler, StartRelayHandler>()
                         .AddSingleton<IActivityEventHandler, StopRelayHandler>()
-                        .AddSingleton<IActivityEventHandler, NotificationsHandler>()
                         .AddSingleton<IActivityEventHandler, SetGlobalValuesHandler>()
                         .AddSingleton<IActivityEventHandler, TokensOutputHandler>()
                         .AddSingleton<IActivityEventHandler, TypedTokensOutputHandler>()

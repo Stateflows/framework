@@ -46,6 +46,7 @@ namespace StateMachine.IntegrationTests.Tests
                         .AddInitialState("initial", b => b
                             .AddTransition<FluentEvent>("final")
                             .AddTransition<AttributeEvent>("final")
+                            .AddTransition<WrapperEvent<AttributeEvent>>("final")
                         )
                         .AddFinalState("final")
                     )
@@ -61,6 +62,8 @@ namespace StateMachine.IntegrationTests.Tests
             string currentState = State<State1>.Name;
             SendResult result1 = null;
             SendResult result2 = null;
+            SendResult result3 = null;
+            SendResult result4 = null;
 
             if (StateMachineLocator.TryLocateStateMachine(new StateMachineId("validation", "x"), out var sm))
             {
@@ -71,12 +74,15 @@ namespace StateMachine.IntegrationTests.Tests
             }
 
             Assert.AreEqual(EventStatus.Invalid, result1?.Status);
+            
             Assert.IsFalse(result1?.Validation.IsValid);
             Assert.AreEqual(1, result1?.Validation.ValidationResults.Count());
             Assert.AreEqual(nameof(FluentEvent.Email), result1?.Validation.ValidationResults.First().MemberNames.First());
+
             Assert.IsFalse(result2?.Validation.IsValid);
             Assert.AreEqual(1, result2?.Validation.ValidationResults.Count());
-            Assert.AreEqual(nameof(FluentEvent.Email), result2?.Validation.ValidationResults.First().MemberNames.First());
+            Assert.AreEqual(nameof(AttributeEvent.Email), result2?.Validation.ValidationResults.First().MemberNames.First());
+
             Assert.AreEqual("initial", currentState);
         }
     }
