@@ -555,6 +555,7 @@ namespace Stateflows.StateMachines.Engine
                 {
                     StateHasChanged = false; // exception, rolling back
                     Trace.WriteLine($"⦗→s⦘ State Machine '{Context.Id.Name}:{Context.Id.Instance}': exception '{e.GetType().FullName}' thrown with message '{e.Message}'");
+                    StateHasChanged = false;
                     if (!Inspector.OnStateMachineInitializationException(context, e))
                     {
                         throw;
@@ -607,6 +608,7 @@ namespace Stateflows.StateMachines.Engine
             {
                 StateHasChanged = false; // exception, rolling back
                 Trace.WriteLine($"⦗→s⦘ State Machine '{Context.Id.Name}:{Context.Id.Instance}': exception '{e.GetType().FullName}' thrown with message '{e.Message}'");
+                StateHasChanged = false;
                 if (!Inspector.OnStateMachineFinalizationException(context, e))
                 {
                     throw;
