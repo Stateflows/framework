@@ -2,7 +2,9 @@
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using Stateflows.Common.Interfaces;
+using Stateflows.Common.Storage;
 using Stateflows.Common.Subscription;
+using Stateflows.Common.Tenant;
 
 namespace Stateflows.Common.Classes
 {
@@ -10,7 +12,17 @@ namespace Stateflows.Common.Classes
     {
         private readonly StateflowsEngine engine;
         public StandaloneBehavior(StateflowsEngine engine, IServiceProvider serviceProvider, BehaviorId id)
-            : base(serviceProvider, id, new NotificationsHub(serviceProvider.GetRequiredService<IStateflowsCache>()))
+            : base(
+                serviceProvider,
+                id,
+                new NotificationsHub(
+                    new InMemoryNotificationsStorage(
+                        new SingleTenantAccessor(
+                            serviceProvider.GetRequiredService<ITenantAccessor>().CurrentTenantId
+                        )
+                    )
+                )
+            )
         {
             this.engine = engine;
         }

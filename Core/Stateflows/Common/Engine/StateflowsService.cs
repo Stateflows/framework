@@ -1,6 +1,7 @@
 using System;
 using System.Diagnostics;
 using System.Threading;
+using System.Threading.Channels;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Hosting;
 using Stateflows.Common.Classes;
@@ -18,7 +19,7 @@ namespace Stateflows.Common
         
         private readonly CancellationTokenSource CancellationTokenSource = new CancellationTokenSource();
         
-        private EventQueue<ExecutionToken> EventQueue { get; } = new EventQueue<ExecutionToken>(true);
+        private Channel<ExecutionToken> EventChannel { get; } = Channel.CreateUnbounded<ExecutionToken>();
         
         private Task executionTask;
 
@@ -26,7 +27,7 @@ namespace Stateflows.Common
         {
             var token = new ExecutionToken(id, eventHolder, serviceProvider);
 
-            EventQueue.Enqueue(token);
+            _ = EventChannel.Writer.WriteAsync(token);
             
             return token;
         }
@@ -44,17 +45,9 @@ namespace Stateflows.Common
         {
             while (!CancellationTokenSource.Token.IsCancellationRequested && !cancellationToken.IsCancellationRequested)
             {
-                if (!await EventQueue.WaitAsync(CancellationTokenSource.Token))
-                {
-                    continue;
-                }
+                var token = await EventChannel.Reader.ReadAsync(cancellationToken);
 
-                var token = EventQueue.Dequeue();
-
-                if (token != null)
-                {
-                    _ = StateflowsEngine.HandleEventAsync(token);
-                }
+                _ = StateflowsEngine.HandleEventAsync(token);
             }
         }
 

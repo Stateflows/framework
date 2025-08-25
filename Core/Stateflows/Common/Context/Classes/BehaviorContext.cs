@@ -14,7 +14,7 @@ namespace Stateflows.Common.Context.Classes
 
         private BehaviorSubscriber subscriber;
         private BehaviorSubscriber Subscriber
-            => subscriber ??= new BehaviorSubscriber(Id, Context, this, ServiceProvider.GetRequiredService<NotificationsHub>());
+            => subscriber ??= new BehaviorSubscriber(Id, Context, this, ServiceProvider.GetRequiredService<INotificationsHub>());
 
         public BehaviorContext(StateflowsContext context, IServiceProvider serviceProvider)
             : base(context, serviceProvider)
@@ -34,7 +34,7 @@ namespace Stateflows.Common.Context.Classes
         }
 
         public void Publish<TNotification>(TNotification notification, IEnumerable<EventHeader> headers = null)
-            => _ = Subscriber.PublishAsync(Id, notification, headers);
+            => Subscriber.PublishAsync(Id, notification, headers).GetAwaiter().GetResult();
 
         public Task<SendResult> SubscribeAsync<TNotification>(BehaviorId behaviorId)
             => _ = Subscriber.SubscribeAsync<TNotification>(behaviorId);

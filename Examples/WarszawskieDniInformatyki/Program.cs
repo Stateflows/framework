@@ -1,3 +1,4 @@
+using Microsoft.EntityFrameworkCore;
 using OpenTelemetry;
 using OpenTelemetry.Trace;
 using WarszawskieDniInformatyki.Components;
@@ -9,10 +10,16 @@ using WarszawskieDniInformatyki.StateMachines.Document;
 using Scalar.AspNetCore;
 using Stateflows.Actions;
 using Stateflows.Activities;
+using WarszawskieDniInformatyki;
 using WarszawskieDniInformatyki.Actions.Work;
 using WarszawskieDniInformatyki.Activities.Process;
 
 var builder = WebApplication.CreateBuilder(args);
+
+var conString = builder.Configuration.GetConnectionString("Default") ??
+                throw new InvalidOperationException("Connection string 'Default' not found.");
+builder.Services.AddDbContext<AppDbContext>(options =>
+    options.UseSqlServer(conString));
 
 builder.Services.AddStateflows(b => b
     .UseFullNamesFor(TypedElements.None)
@@ -32,6 +39,7 @@ builder.Services.AddStateflows(b => b
     .AddOpenTelemetry()
     .AddScheduling()
     .AddOneOf()
+    .AddEntityFrameworkCoreStorage<AppDbContext>()
     #endregion
 );
 

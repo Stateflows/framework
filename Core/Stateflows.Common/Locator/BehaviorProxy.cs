@@ -45,7 +45,7 @@ namespace Stateflows.Common.Locator
                 Trace.WriteLine($"⦗→s⦘ Client interceptor prevented Event dispatch.");
             }
 
-            result ??= new SendResult(EventStatus.Undelivered);
+            result ??= new SendResult(EventStatus.Undelivered, new EventValidation(true));
 
             return result;
         }
@@ -70,6 +70,14 @@ namespace Stateflows.Common.Locator
 
             return result;
         }
+
+        public Task<IEnumerable<TNotification>> GetNotificationsAsync<TNotification>(
+            DateTime? lastNotificationsCheck = null)
+            => Behavior.GetNotificationsAsync<TNotification>(lastNotificationsCheck);
+
+        public Task<IEnumerable<EventHolder>> GetNotificationsAsync(string[] notificationNames,
+            DateTime? lastNotificationsCheck = null)
+            => Behavior.GetNotificationsAsync(notificationNames, lastNotificationsCheck);
 
         public Task<IWatcher> WatchAsync<TNotification>(Action<TNotification> handler)
             => Behavior.WatchAsync(handler);

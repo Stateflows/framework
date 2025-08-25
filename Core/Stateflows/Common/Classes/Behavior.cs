@@ -1,6 +1,7 @@
 using System;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
+using Stateflows.Common.Interfaces;
 using Stateflows.Common.Subscription;
 using Stateflows.Common.Utilities;
 
@@ -10,7 +11,7 @@ namespace Stateflows.Common.Classes
     {
         private readonly StateflowsService service;
         public Behavior(StateflowsService service, IServiceProvider serviceProvider, BehaviorId id)
-            : base(serviceProvider, id, serviceProvider.GetRequiredService<NotificationsHub>())
+            : base(serviceProvider, id, serviceProvider.GetRequiredService<INotificationsHub>())
         {
             this.service = service;
         }

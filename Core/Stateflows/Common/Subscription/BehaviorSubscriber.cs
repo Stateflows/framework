@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using System.Reflection;
 using Stateflows.Common.Context;
+using Stateflows.Common.Interfaces;
 
 namespace Stateflows.Common.Subscription
 {
@@ -12,16 +13,16 @@ namespace Stateflows.Common.Subscription
         private readonly StateflowsContext context;
         private readonly BehaviorId subscriberBehaviorId;
         private readonly IBehaviorLocator behaviorLocator;
-        private readonly NotificationsHub subscriptionHub;
-        public BehaviorSubscriber(BehaviorId behaviorId, StateflowsContext context, IBehaviorLocator behaviorLocator, NotificationsHub subscriptionHub)
+        private readonly INotificationsHub notificationsHub;
+        public BehaviorSubscriber(BehaviorId behaviorId, StateflowsContext context, IBehaviorLocator behaviorLocator, INotificationsHub notificationsHub)
         {
             this.context = context;
             this.subscriberBehaviorId = behaviorId;
             this.behaviorLocator = behaviorLocator;
-            this.subscriptionHub = subscriptionHub;
+            this.notificationsHub = notificationsHub;
         }
 
-        public Task PublishAsync<TNotification>(BehaviorId behaviorId, TNotification notificationEvent, IEnumerable<EventHeader> headers = null)
+        public async Task PublishAsync<TNotification>(BehaviorId behaviorId, TNotification notificationEvent, IEnumerable<EventHeader> headers = null)
         {
             var notificationType = typeof(TNotification);
             var ttlAttribute = notificationType.GetCustomAttribute<TimeToLiveAttribute>();
@@ -48,11 +49,11 @@ namespace Stateflows.Common.Subscription
                 );
             }
 
-            _ = subscriptionHub.PublishAsync(eventHolder);
+            await notificationsHub.PublishAsync(eventHolder);
 
             if (context.Relays.TryGetValue(Event<TNotification>.Name, out behaviorIds))
             {
-                _ = Task.WhenAll(
+                await Task.WhenAll(
                     behaviorIds.Select(
                         id =>
                         {
@@ -66,12 +67,10 @@ namespace Stateflows.Common.Subscription
                                 Retained = eventHolder.Retained,
                             };
                             
-                            return subscriptionHub.PublishAsync(relayedEventHolder);
+                            return notificationsHub.PublishAsync(relayedEventHolder);
                         })
                 );
             }
-
-            return Task.CompletedTask;
         }
 
         public Task<SendResult> SubscribeAsync<TNotification>(BehaviorId behaviorId)
@@ -86,7 +85,7 @@ namespace Stateflows.Common.Subscription
             )
                 ? behavior.SendAsync(request)
                 : Task.FromResult(
-                    new SendResult(EventStatus.Undelivered)
+                    new SendResult(EventStatus.Undelivered, new EventValidation(true))
                 );
         }
 
@@ -102,7 +101,7 @@ namespace Stateflows.Common.Subscription
             )
                 ? behavior.SendAsync(request)
                 : Task.FromResult(
-                    new SendResult(EventStatus.Undelivered)
+                    new SendResult(EventStatus.Undelivered, new EventValidation(true))
                 );
         }
     }

@@ -17,9 +17,9 @@ namespace Stateflows.Common
         
         Task<RequestResult<TResponseEvent>> RequestAsync<TResponseEvent>(IRequest<TResponseEvent> request, IEnumerable<EventHeader> headers = null);
 
-        public Task<RequestResult<CompoundResponse>> SendCompoundAsync(Action<ICompound> builderAction, IEnumerable<EventHeader> headers = null)
+        public Task<RequestResult<CompoundResponse>> SendCompoundAsync(Action<ICompoundRequestBuilder> builderAction, IEnumerable<EventHeader> headers = null)
         {
-            var compound = new CompoundRequest();
+            var compound = new CompoundRequestBuilderRequest();
             builderAction(compound);
             return RequestAsync(compound, headers);
         }
@@ -29,42 +29,15 @@ namespace Stateflows.Common
 
         public Task<SendResult> FinalizeAsync(IEnumerable<EventHeader> headers = null)
             => SendAsync(new Finalize(), headers);
-        
-        [Obsolete("Use retained notification Events instead")]
-        public async Task<IWatcher> RequestAndWatchAsync<TRequest, TNotification>(TRequest request, Action<TNotification> handler, IEnumerable<EventHeader> headers = null)
-            where TRequest : IRequest<TNotification>
-        {
-            var watcher = await WatchAsync(handler);
-            var result = await RequestAsync(request, headers);
-            if (result.Status == EventStatus.Consumed)
-            {
-                _ = Task.Run(() => handler(result.Response));
-            }
-            return watcher;
-        }
 
         public Task<RequestResult<BehaviorInfo>> GetStatusAsync(IEnumerable<EventHeader> headers = null)
             => RequestAsync(new BehaviorInfoRequest(), headers);
 
         public Task<IWatcher> WatchStatusAsync(Action<BehaviorInfo> handler)
             => WatchAsync(handler);
-        
-        [Obsolete("Use retained notification Events instead")]
-        public Task<IWatcher> RequestAndWatchStatusAsync(Action<BehaviorInfo> handler, IEnumerable<EventHeader> headers = null)
-            => RequestAndWatchAsync(new BehaviorInfoRequest(), handler, headers);
 
-        public Task<RequestResult<NotificationsResponse>> GetNotificationsAsync<TNotification>(TimeSpan? period = null, IEnumerable<EventHeader> headers = null)
-            => RequestAsync(new NotificationsRequest()
-            {
-                Period = period ?? TimeSpan.FromSeconds(60),
-                NotificationNames = new List<string>() { Event<TNotification>.Name }
-            }, headers);
-        
-        public Task<RequestResult<NotificationsResponse>> GetNotificationsAsync(string[] notificationNames, TimeSpan? period = null, IEnumerable<EventHeader> headers = null)
-            => RequestAsync(new NotificationsRequest()
-            {
-                Period = period ?? TimeSpan.FromSeconds(60),
-                NotificationNames = notificationNames.ToList()
-            }, headers);
+        public Task<IEnumerable<TNotification>> GetNotificationsAsync<TNotification>(DateTime? lastNotificationsCheck = null);
+
+        public Task<IEnumerable<EventHolder>> GetNotificationsAsync(string[] notificationNames, DateTime? lastNotificationsCheck = null);
     }
 }

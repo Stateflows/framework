@@ -45,6 +45,14 @@ namespace Stateflows.Common.Activities.Classes
         public Task<RequestResult<TResponse>> RequestAsync<TResponse>(IRequest<TResponse> request, IEnumerable<EventHeader> headers = null)
             => Behavior.RequestAsync(request, headers);
 
+        public Task<IEnumerable<TNotification>> GetNotificationsAsync<TNotification>(
+            DateTime? lastNotificationsCheck = null)
+            => Behavior.GetNotificationsAsync<TNotification>(lastNotificationsCheck);
+
+        public Task<IEnumerable<EventHolder>> GetNotificationsAsync(string[] notificationNames,
+            DateTime? lastNotificationsCheck = null)
+            => Behavior.GetNotificationsAsync(notificationNames, lastNotificationsCheck);
+
         public Task<IWatcher> WatchAsync<TNotification>(Action<TNotification> handler)
             => Behavior.WatchAsync(handler);
 

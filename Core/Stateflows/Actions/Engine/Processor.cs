@@ -64,14 +64,14 @@ namespace Stateflows.Actions.Engine
                 
                 await executor.HydrateAsync(eventHolder);
                 
-                if (eventHolder is EventHolder<CompoundRequest> compoundRequestHolder)
+                if (eventHolder is EventHolder<CompoundRequestBuilderRequest> compoundRequestHolder)
                 {
                     var compoundRequest = compoundRequestHolder.Payload;
                     result = EventStatus.Consumed;
                     var results = new List<RequestResult>();
                     foreach (var ev in compoundRequest.Events)
                     {
-                        ev.Headers.AddRange(eventHolder.Headers);
+                        ev.Headers.AddRange(compoundRequestHolder.Headers);
 
                         var status = await ev.ExecuteBehaviorAsync(this, result, executor);
 

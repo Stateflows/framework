@@ -99,9 +99,11 @@ namespace Stateflows.StateMachines.Engine
         public override void AfterProcessEvent<TEvent>(IEventContext<TEvent> context, EventStatus eventStatus)
         {
             Trace.WriteLine($"⦗→s⦘ State Machine '{context.Behavior.Id.Name}:{context.Behavior.Id.Instance}': processed event '{Event.GetName(context.Event.GetType())}'");
-
+            
             var executor = context.Behavior.GetExecutor();
             if (!executor.StateHasChanged) return;
+            
+            Trace.WriteLine($"⦗→s⦘ State Machine '{context.Behavior.Id.Name}:{context.Behavior.Id.Instance}': state has changed, emitting");
             var notification = new StateMachineInfo()
             {
                 Id = executor.Context.Id,

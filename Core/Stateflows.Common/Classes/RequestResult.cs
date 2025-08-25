@@ -14,6 +14,12 @@ namespace Stateflows.Common
             ResponseHolder = (EventHolder<TResponse>)holder;
         }
 
+        public RequestResult(EventHolder<TResponse> response, EventStatus status, EventValidation validation = null)
+            : base(status, validation)
+        {
+            ResponseHolder = response;
+        }
+
         private EventHolder<TResponse> ResponseHolder { get; set; }
 
         public TResponse Response => ResponseHolder != null 

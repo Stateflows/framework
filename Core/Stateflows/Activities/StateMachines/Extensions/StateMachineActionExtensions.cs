@@ -33,7 +33,7 @@ namespace Stateflows.Activities
                         tokensInput.Add((await integratedActionBuilder.InitializationBuilder(context)).BoxedPayload);
                     }
                     
-                    var request = new CompoundRequest();
+                    var request = new CompoundRequestBuilderRequest();
                     request.Events.AddRange(new EventHolder[]
                     {
                         new SetContextOwner() { ContextOwner = context.Behavior.Id }.ToEventHolder(),
@@ -74,7 +74,7 @@ namespace Stateflows.Activities
                     
                     tokensInput.Add(ev);
 
-                    var request = new CompoundRequest();
+                    var request = new CompoundRequestBuilderRequest();
                     request.Events.AddRange(new EventHolder[]
                     {
                         integratedActionBuilder.GetSubscribe(context.Behavior.Id).ToEventHolder(),
@@ -117,7 +117,7 @@ namespace Stateflows.Activities
                     
                     tokensInput.Add(ev);
 
-                    var request = new CompoundRequest();
+                    var request = new CompoundRequestBuilderRequest();
                     request.Events.AddRange(new EventHolder[]
                     {
                         integratedActionBuilder.GetSubscribe(context.Behavior.Id).ToEventHolder(),

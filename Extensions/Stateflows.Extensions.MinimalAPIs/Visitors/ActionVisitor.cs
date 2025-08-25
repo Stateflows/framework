@@ -54,12 +54,13 @@ internal class ActionVisitor(IEndpointRouteBuilder routeBuilder, Interceptor int
                 [method],
                 async (
                     string instance,
-                    IActionLocator locator
+                    IActionLocator locator,
+                    [FromQuery] bool implicitInitialization = false
                 ) =>
                 {
                     if (locator.TryLocateAction(new ActionId(actionName, instance), out var behavior))
                     {
-                        var result = await behavior.GetStatusAsync([new NoImplicitInitialization()]);
+                        var result = await behavior.GetStatusAsync(implicitInitialization ? [] : [new NoImplicitInitialization()]);
                         // workaround for return code 200 regardless behavior actual status
                         result.Status = EventStatus.Consumed;
                         return result.ToResult([], result.Response, HateoasLinks);
@@ -98,12 +99,13 @@ internal class ActionVisitor(IEndpointRouteBuilder routeBuilder, Interceptor int
                     [FromQuery] TimeSpan? period
                 ) =>
                 {
-                    period ??= TimeSpan.FromSeconds(60);
                     if (locator.TryLocateAction(new ActionId(actionName, instance), out var behavior))
                     {
-                        var result = await behavior.GetNotificationsAsync(names, period, [new NoImplicitInitialization()]);
+                        period ??= TimeSpan.FromSeconds(60);
+                        var notifications = (await behavior.GetNotificationsAsync(names, DateTime.Now - period)).ToArray();
                         var behaviorInfo = (await behavior.GetStatusAsync([new NoImplicitInitialization()])).Response;
-                        return result.ToResult(result.Response.Notifications, behaviorInfo, HateoasLinks);
+                        var result = new SendResult(EventStatus.Consumed, new EventValidation(true));
+                        return result.ToResult(notifications, behaviorInfo, HateoasLinks);
                     }
                     return Results.NotFound();
                 })

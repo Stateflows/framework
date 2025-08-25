@@ -277,7 +277,8 @@ namespace Stateflows.StateMachines.Engine
         [DebuggerHidden]
         public async Task<EventStatus> ProcessAsync<TEvent>(EventHolder<TEvent> eventHolder)
         {
-            StateHasChanged = false;
+            // Trace.WriteLine($"⦗→s⦘ State Machine '{Context.Id.Name}:{Context.Id.Instance}': resetting StateHasChanged flag");
+            // StateHasChanged = false;
 
             var result = EventStatus.Rejected;
 
@@ -366,10 +367,6 @@ namespace Stateflows.StateMachines.Engine
                         foreach (var edge in edges)
                         {
                             if (!eventHolder.Triggers(edge) ||
-                                // (
-                                //     eventHolder.PayloadType == typeof(Completion) &&
-                                //     currentStack.Contains(edge.Target)
-                                // ) ||
                                 (
                                     lastActivatedEdge != null &&
                                     !edge.Source.IsOrthogonalTo(lastActivatedEdge.Source)
@@ -387,7 +384,6 @@ namespace Stateflows.StateMachines.Engine
                     }
                 }
 
-                // var forks = new Dictionary<Vertex, List<Edge>>();
                 var joins = new Dictionary<Vertex, List<Edge>>();
                 foreach (var edge in activatedEdges)
                 {
@@ -472,7 +468,7 @@ namespace Stateflows.StateMachines.Engine
             }
             catch (Exception e)
             {
-                StateHasChanged = false;
+                StateHasChanged = false; // exception, rolling back
                 if (!Inspector.OnTransitionGuardException(context, e))
                 {
                     throw;
@@ -506,7 +502,7 @@ namespace Stateflows.StateMachines.Engine
             }
             catch (Exception e)
             {
-                StateHasChanged = false;
+                StateHasChanged = false; // exception, rolling back
                 if (!Inspector.OnTransitionEffectException(context, e))
                 {
                     throw;
@@ -557,6 +553,7 @@ namespace Stateflows.StateMachines.Engine
                 }
                 catch (Exception e)
                 {
+                    StateHasChanged = false; // exception, rolling back
                     Trace.WriteLine($"⦗→s⦘ State Machine '{Context.Id.Name}:{Context.Id.Instance}': exception '{e.GetType().FullName}' thrown with message '{e.Message}'");
                     StateHasChanged = false;
                     if (!Inspector.OnStateMachineInitializationException(context, e))
@@ -609,6 +606,7 @@ namespace Stateflows.StateMachines.Engine
             }
             catch (Exception e)
             {
+                StateHasChanged = false; // exception, rolling back
                 Trace.WriteLine($"⦗→s⦘ State Machine '{Context.Id.Name}:{Context.Id.Instance}': exception '{e.GetType().FullName}' thrown with message '{e.Message}'");
                 StateHasChanged = false;
                 if (!Inspector.OnStateMachineFinalizationException(context, e))
@@ -643,7 +641,7 @@ namespace Stateflows.StateMachines.Engine
             }
             catch (Exception e)
             {
-                StateHasChanged = false;
+                StateHasChanged = false; // exception, rolling back
                 if (!Inspector.OnStateInitializeException(context, e))
                 {
                     throw;
@@ -676,7 +674,7 @@ namespace Stateflows.StateMachines.Engine
             }
             catch (Exception e)
             {
-                StateHasChanged = false;
+                StateHasChanged = false; // exception, rolling back
                 if (!Inspector.OnStateFinalizeException(context, e))
                 {
                     throw;
@@ -709,7 +707,7 @@ namespace Stateflows.StateMachines.Engine
             }
             catch (Exception e)
             {
-                StateHasChanged = false;
+                StateHasChanged = false; // exception, rolling back
                 if (!Inspector.OnStateEntryException(context, e))
                 {
                     throw;
@@ -742,7 +740,7 @@ namespace Stateflows.StateMachines.Engine
             }
             catch (Exception e)
             {
-                StateHasChanged = false;
+                StateHasChanged = false; // exception, rolling back
                 if (!Inspector.OnStateExitException(context, e))
                 {
                     throw;
