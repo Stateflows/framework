@@ -43,7 +43,7 @@ namespace StateMachine.IntegrationTests.Tests
             {
                 //await sm.InitializeAsync();
 
-                var request = new CompoundRequestBuilderRequest();
+                var request = new CompoundRequest();
                 request
                     .Add(new SomeEvent())
                     .Add(new OtherEvent());
@@ -67,7 +67,7 @@ namespace StateMachine.IntegrationTests.Tests
             {
                 //await sm.InitializeAsync();
 
-                var request = new CompoundRequestBuilderRequest()
+                var request = new CompoundRequest()
                     .Add(new OtherEvent())
                     .Add(new SomeEvent());
 
@@ -89,7 +89,7 @@ namespace StateMachine.IntegrationTests.Tests
 
             if (StateMachineLocator.TryLocateStateMachine(new StateMachineId("simple", "x"), out var sm))
             {
-                var request = new CompoundRequestBuilderRequest()
+                var request = new CompoundRequest()
                     .Add(new SomeEvent())
                     .Add(new OtherEvent() { RequiredParameter = "" });
 

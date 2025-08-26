@@ -19,7 +19,7 @@ namespace Stateflows.Common
 
         public Task<RequestResult<CompoundResponse>> SendCompoundAsync(Action<ICompoundRequestBuilder> builderAction, IEnumerable<EventHeader> headers = null)
         {
-            var compound = new CompoundRequestBuilderRequest();
+            var compound = new CompoundRequest();
             builderAction(compound);
             return RequestAsync(compound, headers);
         }

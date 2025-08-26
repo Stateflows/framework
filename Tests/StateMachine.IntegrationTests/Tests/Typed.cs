@@ -9,7 +9,7 @@ using StateMachine.IntegrationTests.Classes.StateMachines;
 namespace StateMachine.IntegrationTests.Tests
 {
     [TestClass]
-    public class Typed : StateflowsTestClass
+    public partial class Typed : StateflowsTestClass
     {
         [TestInitialize]
         public override void Initialize()

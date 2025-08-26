@@ -1,15 +1,28 @@
 using Stateflows.Common;
 using Stateflows.Activities;
-using Stateflows.Activities;
 using StateMachine.IntegrationTests.Classes.Events;
 using StateMachine.IntegrationTests.Utils;
 
 namespace StateMachine.IntegrationTests.Tests
 {
+    public class TypedAcceptEventAction : IAcceptEventActionNode<SomeEvent>
+    {
+        private readonly IActivityContext Context;
+        public TypedAcceptEventAction(IActivityContext context)
+        {
+            Context = context;
+        }
+        public async Task ExecuteAsync(SomeEvent @event, CancellationToken cancellationToken)
+        {
+            Behaviors.eventConsumed = await Context.Values.TryGetAsync<bool>("boolValue") is (true, true);
+            Context.Publish(new SomeNotification());
+        }
+    }
+
     [TestClass]
     public class Behaviors : StateflowsTestClass
     {
-        public bool eventConsumed = false;
+        public static bool eventConsumed = false;
 
         [TestInitialize]
         public override void Initialize()
@@ -48,6 +61,7 @@ namespace StateMachine.IntegrationTests.Tests
                     .AddStateMachine("doActivity", b => b
                         .AddExecutionSequenceObserver()
                         .AddInitialState("state1", b => b
+                            .AddOnEntry(c => c.Behavior.Values.SetAsync("boolValue", true))
                             .AddDoActivity("nested", b => b
                                 .AddForwardedEvent<SomeEvent>()
                                 .AddSubscription<SomeNotification>()
@@ -83,11 +97,12 @@ namespace StateMachine.IntegrationTests.Tests
                 )
                 .AddActivities(b => b
                     .AddActivity("nested", b => b
-                        .AddAcceptEventAction<SomeEvent>(async c =>
-                        {
-                            eventConsumed = true;
-                            c.Behavior.Publish(new SomeNotification());
-                        })
+                        .AddAcceptEventAction<SomeEvent, TypedAcceptEventAction>()
+                        // .AddAcceptEventAction<SomeEvent>(async c =>
+                        // {
+                        //     eventConsumed = await c.Behavior.Values.TryGetAsync<bool>("boolValue") is (true, true);
+                        //     c.Behavior.Publish(new SomeNotification());
+                        // })
                     )
                     .AddActivity("integrated", b => b
                         .AddInitial(b => b

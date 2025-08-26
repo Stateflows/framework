@@ -8,7 +8,7 @@ namespace Stateflows.Activities.StateMachines.Interfaces
         IActionActivityBuilder,
         IInitializedActionActivityBuilder
     {
-        public StateActionBehaviorInitializationBuilderAsync<EventHolder> InitializationBuilder { get; private set; } = null;
+        public StateActionBehaviorInitializationBuilderAsync<object> InitializationBuilder { get; private set; } = null;
 
         public ActionActivityBuilder(StateActionActivityBuildAction buildAction)
         {
@@ -19,7 +19,7 @@ namespace Stateflows.Activities.StateMachines.Interfaces
         {
             if (builderAsync != null)
             {
-                InitializationBuilder = async c => (await builderAsync(c)).ToEventHolder();
+                InitializationBuilder = async c => await builderAsync(c);
             }
 
             return this;

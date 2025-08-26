@@ -10,7 +10,7 @@ namespace Stateflows.Common
         ICompoundRequestBuilder AddRange<TEvent>(params TEvent[] events);
     }
 
-    public class CompoundRequestBuilderRequest : IRequest<CompoundResponse>, ICompoundRequestBuilder
+    public class CompoundRequest : IRequest<CompoundResponse>, ICompoundRequestBuilder
     {
         [JsonProperty(TypeNameHandling = TypeNameHandling.None)]
         public List<EventHolder> Events { get; set; } = new List<EventHolder>();
@@ -18,7 +18,7 @@ namespace Stateflows.Common
         ICompoundRequestBuilder ICompoundRequestBuilder.Add<TEvent>(TEvent @event, IEnumerable<EventHeader> headers = null)
             => Add(@event, headers);
 
-        public CompoundRequestBuilderRequest Add<TEvent>(TEvent @event, IEnumerable<EventHeader> headers = null)
+        public CompoundRequest Add<TEvent>(TEvent @event, IEnumerable<EventHeader> headers = null)
         {
             Events.Add(@event.ToTypedEventHolder(headers));
 
@@ -28,7 +28,7 @@ namespace Stateflows.Common
         ICompoundRequestBuilder ICompoundRequestBuilder.AddRange<TEvent>(params TEvent[] events)
             => AddRange(events);
 
-        public CompoundRequestBuilderRequest AddRange<TEvent>(params TEvent[] events)
+        public CompoundRequest AddRange<TEvent>(params TEvent[] events)
         {
             Events.AddRange(events.Select(@event => @event.ToTypedEventHolder()));
 

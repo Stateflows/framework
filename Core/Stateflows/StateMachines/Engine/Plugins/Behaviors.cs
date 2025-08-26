@@ -1,5 +1,6 @@
 ﻿using System.Linq;
 using Stateflows.Common;
+using Stateflows.Common.Classes;
 using Stateflows.StateMachines.Exceptions;
 using Stateflows.StateMachines.Context.Classes;
 using Stateflows.StateMachines.Context.Interfaces;
@@ -21,26 +22,40 @@ namespace Stateflows.StateMachines.Engine
                 if (context.TryLocateBehavior(behaviorId, out var behavior))
                 {
                     stateValues.BehaviorId = behaviorId;
+                    
+                    var request = new CompoundRequest()
+                        .Add(new SetContextOwner() { ContextOwner = context.Behavior.Id })
+                        .Add(new SetGlobalValues() { Values = ((ContextValuesCollection)context.Behavior.Values).Values })
+                    ;
 
                     if (vertex.BehaviorSubscriptions.Any())
-                    {                        
-                        behavior.SendAsync(vertex.GetSubscriptionRequest(context.Behavior.Id)).GetAwaiter().GetResult();
+                    {
+                        request.Add(vertex.GetSubscriptionRequest(context.Behavior.Id));
                     }
 
                     if (vertex.BehaviorRelays.Any())
-                    {                        
-                        behavior.SendAsync(vertex.GetStartRelayRequest(context.Behavior.Id)).GetAwaiter().GetResult();
+                    {
+                        request.Add(vertex.GetStartRelayRequest(context.Behavior.Id));
                     }
 
                     var initializationRequest = vertex.BehaviorInitializationBuilder != null
                         ? vertex.BehaviorInitializationBuilder(context)
                         : new Initialize();
                     
-                    _ = behavior.SendAsync(initializationRequest);
+                    request.Events.Add(initializationRequest.ToEventHolder());
+                    
+                    _ = behavior.SendAsync(request);
                 }
                 else
                 {
-                    throw new StateDefinitionException(context.State.Name, $"DoActivity '{vertex.BehaviorName}' not found", context.Behavior.Id.BehaviorClass);
+                    throw new StateDefinitionException(
+                        context.State.Name,
+                        vertex.BehaviorType == BehaviorType.Activity
+                            ? "DoActivity"
+                            : "Submachine" +
+                        $" '{vertex.BehaviorName}' not found",
+                        context.Behavior.Id.BehaviorClass
+                    );
                 }
             }
         }
@@ -58,17 +73,21 @@ namespace Stateflows.StateMachines.Engine
                     context.TryLocateBehavior(stateValues.BehaviorId.Value, out var behavior)
                 )
                 {
+                    var request = new CompoundRequest();
+                    
                     if (vertex.BehaviorRelays.Any())
-                    {                        
-                        _ = behavior.SendAsync(vertex.GetStopRelayRequest(context.Behavior.Id));
+                    {
+                        request.Add(vertex.GetStopRelayRequest(context.Behavior.Id));
                     }
                     
                     if (vertex.BehaviorSubscriptions.Any())
                     {
-                        _ = behavior.SendAsync(vertex.GetUnsubscriptionRequest(context.Behavior.Id));
+                        request.Add(vertex.GetUnsubscriptionRequest(context.Behavior.Id));
                     }
 
-                    _ = behavior.SendAsync(new Finalize());
+                    request.Add(new Finalize());
+                    
+                    _ = behavior.SendAsync(request);
                     stateValues.BehaviorId = null;
                 }
             }

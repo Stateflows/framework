@@ -1,8 +1,6 @@
-﻿using Stateflows.Activities.Models;
+﻿using Stateflows.Common;
+using Stateflows.Activities.Models;
 using Stateflows.Activities.Engine;
-using Stateflows.Activities.Context.Interfaces;
-using Stateflows.Common;
-using Stateflows.Common.Context.Interfaces;
 
 namespace Stateflows.Activities.Context.Classes
 {

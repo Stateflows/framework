@@ -8,7 +8,7 @@ namespace Stateflows.Activities.StateMachines.Interfaces
         ITransitionActivityBuilder<TEvent>,
         IInitializedTransitionActivityBuilder<TEvent>
     {
-        public TransitionBehaviorInitializationBuilderAsync<TEvent, EventHolder> InitializationBuilder { get; private set; } = null;
+        public TransitionBehaviorInitializationBuilderAsync<TEvent, object> InitializationBuilder { get; private set; } = null;
 
         public TransitionActivityBuilder(TransitionActivityBuildAction<TEvent> buildAction)
         {

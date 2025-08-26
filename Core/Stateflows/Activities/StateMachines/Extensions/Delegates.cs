@@ -8,7 +8,7 @@ namespace Stateflows.Activities.Extensions
 {
     public delegate Task<TInitializationEvent> StateActionBehaviorInitializationBuilderAsync<TInitializationEvent>(IStateActionContext context);
  
-    public delegate Task<EventHolder> TransitionBehaviorInitializationBuilderAsync<TEvent, TInitializationEvent>(ITransitionContext<TEvent> context);
+    public delegate Task<TInitializationEvent> TransitionBehaviorInitializationBuilderAsync<TEvent, TInitializationEvent>(ITransitionContext<TEvent> context);
  
     public delegate void StateActionActivityBuildAction(IActionActivityBuilder builder);
     public delegate void StateActionActionBuildAction(IActionActionBuilder builder);

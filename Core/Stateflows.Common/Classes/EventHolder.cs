@@ -50,7 +50,7 @@ namespace Stateflows.Common
             var validationResults = new List<ValidationResult>();
             var isValid = true;
 
-            if (this is EventHolder<CompoundRequestBuilderRequest> compoundRequestHolder)
+            if (this is EventHolder<CompoundRequest> compoundRequestHolder)
             {
                 var compoundRequest = compoundRequestHolder.Payload;
                 var results = new List<RequestResult>();

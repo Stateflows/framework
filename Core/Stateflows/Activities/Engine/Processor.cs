@@ -71,7 +71,7 @@ namespace Stateflows.Activities.Engine
 
             try
             {
-                if (eventHolder is EventHolder<CompoundRequestBuilderRequest> compoundRequestHolder)
+                if (eventHolder is EventHolder<CompoundRequest> compoundRequestHolder)
                 {
                     var compoundRequest = compoundRequestHolder.Payload;
                     result = EventStatus.Consumed;

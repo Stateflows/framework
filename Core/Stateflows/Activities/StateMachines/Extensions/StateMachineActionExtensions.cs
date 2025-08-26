@@ -32,18 +32,16 @@ namespace Stateflows.Activities
                     {
                         tokensInput.Add((await integratedActionBuilder.InitializationBuilder(context)).BoxedPayload);
                     }
-                    
-                    var request = new CompoundRequestBuilderRequest();
-                    request.Events.AddRange(new EventHolder[]
-                    {
-                        new SetContextOwner() { ContextOwner = context.Behavior.Id }.ToEventHolder(),
-                        integratedActionBuilder.GetSubscribe(context.Behavior.Id).ToEventHolder(),
-                        integratedActionBuilder.GetStartRelay(context.Behavior.Id).ToEventHolder(),
-                        new SetGlobalValues() { Values = ((ContextValuesCollection)context.Behavior.Values).Values }.ToEventHolder(),
-                        tokensInput.ToEventHolder(),
-                        integratedActionBuilder.GetStopRelay(context.Behavior.Id).ToEventHolder(),
-                        integratedActionBuilder.GetUnsubscribe(context.Behavior.Id).ToEventHolder()
-                    });
+
+                    var request = new CompoundRequest()
+                        .Add(new SetContextOwner() { ContextOwner = context.Behavior.Id })
+                        .Add(integratedActionBuilder.GetSubscribe(context.Behavior.Id))
+                        .Add(integratedActionBuilder.GetStartRelay(context.Behavior.Id))
+                        .Add(new SetGlobalValues() { Values = ((ContextValuesCollection)context.Behavior.Values).Values })
+                        .Add(tokensInput)
+                        .Add(integratedActionBuilder.GetStopRelay(context.Behavior.Id))
+                        .Add(integratedActionBuilder.GetUnsubscribe(context.Behavior.Id))
+                    ;
                         
                     _ = a.SendAsync(request);
                 });
@@ -74,16 +72,14 @@ namespace Stateflows.Activities
                     
                     tokensInput.Add(ev);
 
-                    var request = new CompoundRequestBuilderRequest();
-                    request.Events.AddRange(new EventHolder[]
-                    {
-                        integratedActionBuilder.GetSubscribe(context.Behavior.Id).ToEventHolder(),
-                        integratedActionBuilder.GetStartRelay(context.Behavior.Id).ToEventHolder(),
-                        new SetGlobalValues() { Values = ((ContextValuesCollection)context.Behavior.Values).Values }.ToEventHolder(),
-                        tokensInput.ToEventHolder(),
-                        integratedActionBuilder.GetStopRelay(context.Behavior.Id).ToEventHolder(),
-                        integratedActionBuilder.GetUnsubscribe(context.Behavior.Id).ToEventHolder()
-                    });
+                    var request = new CompoundRequest()
+                        .Add(integratedActionBuilder.GetSubscribe(context.Behavior.Id))
+                        .Add(integratedActionBuilder.GetStartRelay(context.Behavior.Id))
+                        .Add(new SetGlobalValues() { Values = ((ContextValuesCollection)context.Behavior.Values).Values })
+                        .Add(tokensInput)
+                        .Add(integratedActionBuilder.GetStopRelay(context.Behavior.Id))
+                        .Add(integratedActionBuilder.GetUnsubscribe(context.Behavior.Id))
+                    ;
 
                     var requestResult = await a.RequestAsync(request);
                     var responseHolder = requestResult.Response.Results.ToArray()[^3].Response as EventHolder<TokensOutput>;
@@ -117,16 +113,14 @@ namespace Stateflows.Activities
                     
                     tokensInput.Add(ev);
 
-                    var request = new CompoundRequestBuilderRequest();
-                    request.Events.AddRange(new EventHolder[]
-                    {
-                        integratedActionBuilder.GetSubscribe(context.Behavior.Id).ToEventHolder(),
-                        integratedActionBuilder.GetStartRelay(context.Behavior.Id).ToEventHolder(),
-                        new SetGlobalValues() { Values = ((ContextValuesCollection)context.Behavior.Values).Values }.ToEventHolder(),
-                        tokensInput.ToEventHolder(),
-                        integratedActionBuilder.GetStopRelay(context.Behavior.Id).ToEventHolder(),
-                        integratedActionBuilder.GetUnsubscribe(context.Behavior.Id).ToEventHolder()
-                    });
+                    var request = new CompoundRequest()
+                        .Add(integratedActionBuilder.GetSubscribe(context.Behavior.Id))
+                        .Add(integratedActionBuilder.GetStartRelay(context.Behavior.Id))
+                        .Add(new SetGlobalValues() { Values = ((ContextValuesCollection)context.Behavior.Values).Values })
+                        .Add(tokensInput)
+                        .Add(integratedActionBuilder.GetStopRelay(context.Behavior.Id))
+                        .Add(integratedActionBuilder.GetUnsubscribe(context.Behavior.Id))
+                    ;
 
                     _ = a.SendAsync(request);
                 });

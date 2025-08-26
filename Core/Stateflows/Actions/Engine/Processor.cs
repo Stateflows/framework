@@ -64,7 +64,7 @@ namespace Stateflows.Actions.Engine
                 
                 await executor.HydrateAsync(eventHolder);
                 
-                if (eventHolder is EventHolder<CompoundRequestBuilderRequest> compoundRequestHolder)
+                if (eventHolder is EventHolder<CompoundRequest> compoundRequestHolder)
                 {
                     var compoundRequest = compoundRequestHolder.Payload;
                     result = EventStatus.Consumed;

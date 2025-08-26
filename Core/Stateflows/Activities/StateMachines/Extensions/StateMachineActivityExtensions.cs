@@ -24,20 +24,20 @@ namespace Stateflows.Activities
                 _ = Task.Run(async () =>
                 {
                     var integratedActivityBuilder = new ActionActivityBuilder(buildAction);
-                    EventHolder initializationEvent = (integratedActivityBuilder.InitializationBuilder != null)
+                    var initializationEvent = integratedActivityBuilder.InitializationBuilder != null
                         ? await integratedActivityBuilder.InitializationBuilder(context)
-                        : new Initialize().ToEventHolder();
+                        : new Initialize();
 
-                    var request = new CompoundRequestBuilderRequest();
-                    request.Events.AddRange(new EventHolder[]
-                    {
-                        integratedActivityBuilder.GetSubscribe(context.Behavior.Id).ToEventHolder(),
-                        integratedActivityBuilder.GetStartRelay(context.Behavior.Id).ToEventHolder(),
-                        new SetGlobalValues() { Values = ((ContextValuesCollection)context.Behavior.Values).Values }.ToEventHolder(),
-                        initializationEvent,
-                        integratedActivityBuilder.GetStopRelay(context.Behavior.Id).ToEventHolder(),
-                        integratedActivityBuilder.GetUnsubscribe(context.Behavior.Id).ToEventHolder()
-                    });
+                    var request = new CompoundRequest()
+                        .Add(integratedActivityBuilder.GetSubscribe(context.Behavior.Id))
+                        .Add(integratedActivityBuilder.GetStartRelay(context.Behavior.Id))
+                        .Add(new SetGlobalValues() { Values = ((ContextValuesCollection)context.Behavior.Values).Values })
+                    ;
+                    request.Events.Add(initializationEvent.ToTypedEventHolder());
+                    request
+                        .Add(integratedActivityBuilder.GetStopRelay(context.Behavior.Id))
+                        .Add(integratedActivityBuilder.GetUnsubscribe(context.Behavior.Id))
+                    ;
                         
                     _ = a.SendAsync(request);
                 });
@@ -58,25 +58,25 @@ namespace Stateflows.Activities
                 await Task.Run(async () =>
                 {
                     var integratedActivityBuilder = new TransitionActivityBuilder<TEvent>(buildAction);
-                    EventHolder initializationEvent = (integratedActivityBuilder.InitializationBuilder != null)
+                    var initializationEvent = integratedActivityBuilder.InitializationBuilder != null
                         ? await integratedActivityBuilder.InitializationBuilder(context)
-                        : new Initialize().ToEventHolder();
+                        : new Initialize();
 
                     var tokensInput = new TokensInput();
                     tokensInput.Add(ev);
 
-                    var request = new CompoundRequestBuilderRequest();
-                    request.Events.AddRange(new EventHolder[]
-                    {
-                        integratedActivityBuilder.GetSubscribe(context.Behavior.Id).ToEventHolder(),
-                        integratedActivityBuilder.GetStartRelay(context.Behavior.Id).ToEventHolder(),
-                        new SetGlobalValues() { Values = ((ContextValuesCollection)context.Behavior.Values).Values }.ToEventHolder(),
-                        initializationEvent,
-                        tokensInput.ToEventHolder(),
-                        integratedActivityBuilder.GetStopRelay(context.Behavior.Id).ToEventHolder(),
-                        integratedActivityBuilder.GetUnsubscribe(context.Behavior.Id).ToEventHolder(),
-                        new TokensOutputRequest<bool>().ToEventHolder()
-                    });
+                    var request = new CompoundRequest()
+                        .Add(integratedActivityBuilder.GetSubscribe(context.Behavior.Id))
+                        .Add(integratedActivityBuilder.GetStartRelay(context.Behavior.Id))
+                        .Add(new SetGlobalValues() { Values = ((ContextValuesCollection)context.Behavior.Values).Values })
+                    ;
+                    request.Events.Add(initializationEvent.ToTypedEventHolder());
+                    request
+                        .Add(tokensInput)
+                        .Add(integratedActivityBuilder.GetStopRelay(context.Behavior.Id))
+                        .Add(integratedActivityBuilder.GetUnsubscribe(context.Behavior.Id))
+                        .Add(new TokensOutputRequest<bool>())
+                    ;
 
                     var requestResult = await a.RequestAsync(request);
                     var responseHolder = requestResult.Response.Results.Last().Response as EventHolder<TokensOutput<bool>>;
@@ -100,24 +100,24 @@ namespace Stateflows.Activities
                 _ = Task.Run(async () =>
                 {
                     var integratedActivityBuilder = new TransitionActivityBuilder<TEvent>(buildAction);
-                    EventHolder initializationEvent = (integratedActivityBuilder.InitializationBuilder != null)
+                    var initializationEvent = (integratedActivityBuilder.InitializationBuilder != null)
                         ? await integratedActivityBuilder.InitializationBuilder(context)
-                        : new Initialize().ToEventHolder();
+                        : new Initialize();
 
                     var tokensInput = new TokensInput();
                     tokensInput.Add(ev);
 
-                    var request = new CompoundRequestBuilderRequest();
-                    request.Events.AddRange(new EventHolder[]
-                    {
-                        integratedActivityBuilder.GetSubscribe(context.Behavior.Id).ToEventHolder(),
-                        integratedActivityBuilder.GetStartRelay(context.Behavior.Id).ToEventHolder(),
-                        new SetGlobalValues() { Values = ((ContextValuesCollection)context.Behavior.Values).Values }.ToEventHolder(),
-                        initializationEvent,
-                        tokensInput.ToEventHolder(),
-                        integratedActivityBuilder.GetStopRelay(context.Behavior.Id).ToEventHolder(),
-                        integratedActivityBuilder.GetUnsubscribe(context.Behavior.Id).ToEventHolder()
-                    });
+                    var request = new CompoundRequest()
+                        .Add(integratedActivityBuilder.GetSubscribe(context.Behavior.Id))
+                        .Add(integratedActivityBuilder.GetStartRelay(context.Behavior.Id))
+                        .Add(new SetGlobalValues() { Values = ((ContextValuesCollection)context.Behavior.Values).Values })
+                    ;
+                    request.Events.Add(initializationEvent.ToTypedEventHolder());
+                    request
+                        .Add(tokensInput)
+                        .Add(integratedActivityBuilder.GetStopRelay(context.Behavior.Id))
+                        .Add(integratedActivityBuilder.GetUnsubscribe(context.Behavior.Id))
+                    ;
 
                     _ = a.SendAsync(request);
                 });

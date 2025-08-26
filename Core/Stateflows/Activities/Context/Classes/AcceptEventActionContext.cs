@@ -5,7 +5,7 @@ using Stateflows.Activities.Context.Interfaces;
 
 namespace Stateflows.Activities.Context.Classes
 {
-    internal class AcceptEventActionContext<TEvent> : BaseContext, IAcceptEventActionContext<TEvent>
+    internal class AcceptEventActionContext<TEvent> : ActionContext, IAcceptEventActionContext<TEvent>
     {
         IActivityContext IActivityActionContext.Activity => Activity;
         
@@ -14,7 +14,7 @@ namespace Stateflows.Activities.Context.Classes
         private readonly ActionContext ActionContext;
 
         public AcceptEventActionContext(ActionContext actionContext)
-            : base(actionContext)
+            : base(actionContext.Context, actionContext.NodeScope, actionContext.Node, actionContext.InputTokens)
         {
             ActionContext = actionContext;
             Event = default;
