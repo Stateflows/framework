@@ -457,19 +457,15 @@ namespace Stateflows.StateMachines.Registration.Builders
         public IEmbeddedBehaviorBuilder AddForwardedEvent<TEvent>(ForwardedEventBuildAction<TEvent> buildAction = null)
             => AddInternalTransition<TEvent>(b =>
             {
-                b.AddEffect(async c =>
+                b.AddEffect(c =>
                 {
                     var stateValues = ((IRootContext)c).Context.GetStateValues(Vertex.Name);
                     var behaviorId = stateValues.BehaviorId ?? Vertex.GetBehaviorId(c.Behavior.Id);
                     if (c.TryLocateBehavior(behaviorId, out var behavior))
                     {
-                        var result = await behavior.SendAsync(c.Event);
+                        _ = behavior.SendAsync(c.Event);
 
-                        c.Behavior.GetExecutor().OverrideEventStatus(
-                            result.Status == EventStatus.Consumed
-                                ? EventStatus.Forwarded
-                                : result.Status
-                        );
+                        c.Behavior.GetExecutor().OverrideEventStatus(EventStatus.Forwarded);
                     }
                     else
                     {
