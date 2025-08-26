@@ -1,4 +1,5 @@
 ﻿using System.Reflection;
+using System.Diagnostics;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.AspNetCore.Builder;
@@ -19,6 +20,7 @@ internal class StateMachineVisitor(
     IServiceProvider serviceProvider
 ) : StateMachines.StateMachineVisitor, IBehaviorClassVisitor, ITypeVisitor
 {
+    internal static readonly ActivitySource Source = new ActivitySource(nameof(Stateflows));
     public IEndpointRouteBuilder RouteBuilder => routeBuilder;
     public Interceptor Interceptor => interceptor;
     private readonly Dictionary<string, bool> Initializers = new();
@@ -212,8 +214,15 @@ internal class StateMachineVisitor(
                     if (locator.TryLocateStateMachine(new StateMachineId(stateMachineName, instance), out var behavior))
                     {
                         period ??= TimeSpan.FromSeconds(60);
+                        
+                        var a = Source.StartActivity($"State Machine '{behaviorClass.Name.ToShortName()}:{instance}' processing 'GetNotificationsAsync()'");
                         var notifications = (await behavior.GetNotificationsAsync(names, DateTime.Now - period)).ToArray();
+                        a?.Stop();
+                        
+                        a = Source.StartActivity($"State Machine '{behaviorClass.Name.ToShortName()}:{instance}' processing 'GetStatusAsync()'");
                         var behaviorInfo = (await behavior.GetStatusAsync([new NoImplicitInitialization()])).Response;
+                        a?.Stop();
+                        
                         var result = new SendResult(EventStatus.Consumed, new EventValidation(true));
                         return result.ToResult(notifications, behaviorInfo, HateoasLinks);
                     }
