@@ -45,7 +45,7 @@ namespace Stateflows.Common
         {
             while (!CancellationTokenSource.Token.IsCancellationRequested && !cancellationToken.IsCancellationRequested)
             {
-                var token = await EventChannel.Reader.ReadAsync(cancellationToken);
+                var token = await EventChannel.Reader.ReadAsync(CancellationTokenSource.Token);
 
                 _ = StateflowsEngine.HandleEventAsync(token);
             }
