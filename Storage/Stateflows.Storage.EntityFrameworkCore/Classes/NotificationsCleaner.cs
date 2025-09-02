@@ -70,9 +70,15 @@ public class NotificationsCleaner<TDbContext> : IHostedService
 
     public Task StopAsync(CancellationToken cancellationToken)
     {
-        CancellationTokenSource.Cancel();
+        try
+        {
+            CancellationTokenSource.Cancel();
 
-        cleaningTask.Wait();
+            cleaningTask.Wait();
+        }
+        catch (Exception)
+        {
+        }
 
         return Task.CompletedTask;
     }

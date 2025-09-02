@@ -53,9 +53,15 @@ namespace Stateflows.Common
 
         public Task StopAsync(CancellationToken cancellationToken)
         {
-            CancellationTokenSource.Cancel();
+            try
+            {
+                CancellationTokenSource.Cancel();
 
-            executionTask.Wait();
+                executionTask.Wait();
+            }
+            catch (Exception)
+            {
+            }
 
             return Task.CompletedTask;
         }
