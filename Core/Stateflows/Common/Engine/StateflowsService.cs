@@ -55,7 +55,7 @@ namespace Stateflows.Common
         {
             CancellationTokenSource.Cancel();
 
-            executionTask.Wait(cancellationToken);
+            executionTask.Wait();
 
             return Task.CompletedTask;
         }
