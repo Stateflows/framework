@@ -5,10 +5,11 @@ using System.Threading.Channels;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Hosting;
 using Stateflows.Common.Classes;
+using Stateflows.Common.Engine.Interfaces;
 
 namespace Stateflows.Common
 {
-    internal class StateflowsService : IHostedService
+    internal class StateflowsService : IHostedService, IStateflowsTelemetry
     {
         public StateflowsService(StateflowsEngine stateflowsEngine)
         {
@@ -22,6 +23,8 @@ namespace Stateflows.Common
         private Channel<ExecutionToken> EventChannel { get; } = Channel.CreateUnbounded<ExecutionToken>();
         
         private Task executionTask;
+        
+        private int behaviorExecutionCounter = 0;
 
         public ExecutionToken EnqueueEvent(BehaviorId id, EventHolder eventHolder, IServiceProvider serviceProvider)
         {
@@ -47,7 +50,23 @@ namespace Stateflows.Common
             {
                 var token = await EventChannel.Reader.ReadAsync(CancellationTokenSource.Token);
 
-                _ = StateflowsEngine.HandleEventAsync(token);
+                _ = Task.Run(
+                    async () =>
+                    {
+                        lock (this)
+                        {
+                            behaviorExecutionCounter++;
+                        }
+                        
+                        await StateflowsEngine.HandleEventAsync(token);
+                        
+                        lock (this)
+                        {
+                            behaviorExecutionCounter--;
+                        }
+                    },
+                    cancellationToken
+                );
             }
         }
 
@@ -64,6 +83,18 @@ namespace Stateflows.Common
             }
 
             return Task.CompletedTask;
+        }
+
+        public int EventQueueLength => EventChannel.Reader.Count;
+        public int BehaviorExecutionsCount
+        {
+            get
+            {
+                lock (this)
+                {
+                    return behaviorExecutionCounter;
+                }
+            }
         }
     }
 }

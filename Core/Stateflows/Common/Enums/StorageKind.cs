@@ -7,6 +7,7 @@ namespace Stateflows.Common.Enums
     {
         Context = 1,
         Notifications = 2,
-        All = Context | Notifications,
+        Values = 4,
+        All = Context | Notifications | Values,
     }
 }

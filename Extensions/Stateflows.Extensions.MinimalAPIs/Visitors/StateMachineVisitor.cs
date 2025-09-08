@@ -343,12 +343,32 @@ internal class StateMachineVisitor(
         if (typeof(IStateMachineEndpoints).IsAssignableFrom(typeof(TStateMachine)))
         {
             var endpointsBuilder = new EndpointsBuilder(routeBuilder, this, interceptor, new StateMachineClass(stateMachineName));
-            
-            var stateMachine = (IStateMachineEndpoints)StateflowsActivator.CreateModelElementInstanceAsync<TStateMachine>(serviceProvider);
-            stateMachine.RegisterEndpoints(endpointsBuilder);
+
+            RegisterEndpoints<TStateMachine>(endpointsBuilder);
+
+            // var endpointsBuilder = new EndpointsBuilder(routeBuilder, this, interceptor, new StateMachineClass(stateMachineName));
+            //
+            // var stateMachine = (IStateMachineEndpoints)StateflowsActivator.CreateModelElementInstanceAsync<TStateMachine>(serviceProvider);
+            // stateMachine.RegisterEndpoints(endpointsBuilder);
         }
         
         return Task.CompletedTask;
+    }
+
+    private static void RegisterEndpoints<TEndpointsOwner>(EndpointsBuilder endpointsBuilder)
+    {
+        // Try to invoke a static RegisterEndpoints(EndpointsBuilder) on the concrete type
+        var smType = typeof(TEndpointsOwner);
+        var staticRegister = smType.GetMethod(
+            "RegisterEndpoints",
+            BindingFlags.Public | BindingFlags.Static,
+            binder: null,
+            types: [ typeof(EndpointsBuilder) ],
+            modifiers: null
+        );
+
+        // static method found -> invoke without creating an instance
+        staticRegister.Invoke(null, new object[] { endpointsBuilder });
     }
 
     public override Task VertexTypeAddedAsync<TVertex>(string stateMachineName, int stateMachineVersion, string vertexName)
@@ -359,10 +379,12 @@ internal class StateMachineVisitor(
             
             DependencyInjection.StateMachineEndpointBuilders.Add(visitor =>
             {
-                var builder = new EndpointsBuilder(routeBuilder, visitor, interceptor, behaviorClass, vertexName);
+                var endpointsBuilder = new EndpointsBuilder(routeBuilder, visitor, interceptor, behaviorClass, vertexName);
                 
-                var state = (IStateEndpoints)StateflowsActivator.CreateUninitializedInstance<TVertex>();
-                state.RegisterEndpoints(builder);
+                RegisterEndpoints<TVertex>(endpointsBuilder);
+                
+                // var state = (IStateEndpoints)StateflowsActivator.CreateUninitializedInstance<TVertex>();
+                // state.RegisterEndpoints(endpointsBuilder);
             });
         }
 

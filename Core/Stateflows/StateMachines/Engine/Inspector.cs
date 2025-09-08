@@ -45,8 +45,15 @@ namespace Stateflows.StateMachines.Engine
         public async Task BuildAsync(IStateMachineActionContext context)
         {
             Observers = await Task.WhenAll(ObserverFactories.Select(t => t(Executor.ServiceProvider, context)));
+            ReverseObservers = Observers.Reverse().ToArray();
+            
             Interceptors = await Task.WhenAll(InterceptorFactories.Select(t => t(Executor.ServiceProvider, context)));
+            ReverseInterceptors = Interceptors.Reverse().ToArray();
+            
             ExceptionHandlers = await Task.WhenAll(ExceptionHandlerFactories.Select(t => t(Executor.ServiceProvider, context)));
+
+            Plugins = Executor.ServiceProvider.GetService<IEnumerable<IStateMachinePlugin>>().ToArray();
+            ReversePlugins = Plugins.Reverse().ToArray();
         }
 
         public ActionInspection InitializeInspection;
@@ -66,15 +73,13 @@ namespace Stateflows.StateMachines.Engine
 
         private readonly List<StateMachineObserverFactoryAsync> ObserverFactories = new List<StateMachineObserverFactoryAsync>();
 
-        private IEnumerable<IStateMachineObserver> Observers;
-        
-        private IEnumerable<IStateMachineInterceptor> Interceptors;
-        
-        private IEnumerable<IStateMachineExceptionHandler> ExceptionHandlers;
-
-        private IEnumerable<IStateMachinePlugin> plugins;
-        private IEnumerable<IStateMachinePlugin> Plugins
-            => plugins ??= Executor.ServiceProvider.GetService<IEnumerable<IStateMachinePlugin>>();
+        private IStateMachineObserver[] Observers;
+        private IStateMachineObserver[] ReverseObservers;
+        private IStateMachineInterceptor[] Interceptors;
+        private IStateMachineInterceptor[] ReverseInterceptors;
+        private IStateMachineExceptionHandler[] ExceptionHandlers;
+        private IStateMachinePlugin[] Plugins;
+        private IStateMachinePlugin[] ReversePlugins;
 
         public void BeforeStateMachineInitialize(StateMachineInitializationContext context, bool implicitInitialization)
         {
@@ -89,8 +94,8 @@ namespace Stateflows.StateMachines.Engine
 
         public void AfterStateMachineInitialize(StateMachineInitializationContext context, bool implicitInitialization, bool initialized)
         {
-            Observers.Reverse().RunSafe(o => o.AfterStateMachineInitialize(context, implicitInitialization, initialized), nameof(AfterStateMachineInitialize), Logger);
-            Plugins.Reverse().RunSafe(o => o.AfterStateMachineInitialize(context, implicitInitialization, initialized), nameof(AfterStateMachineInitialize), Logger);
+            ReverseObservers.RunSafe(o => o.AfterStateMachineInitialize(context, implicitInitialization, initialized), nameof(AfterStateMachineInitialize), Logger);
+            ReversePlugins.RunSafe(o => o.AfterStateMachineInitialize(context, implicitInitialization, initialized), nameof(AfterStateMachineInitialize), Logger);
 
             if (InitializeInspection != null)
             {
@@ -111,8 +116,8 @@ namespace Stateflows.StateMachines.Engine
 
         public void AfterStateMachineFinalize(StateMachineActionContext context)
         {
-            Observers.Reverse().RunSafe(o => o.AfterStateMachineFinalize(context), nameof(AfterStateMachineFinalize), Logger);
-            Plugins.Reverse().RunSafe(o => o.AfterStateMachineFinalize(context), nameof(AfterStateMachineFinalize), Logger);
+            ReverseObservers.RunSafe(o => o.AfterStateMachineFinalize(context), nameof(AfterStateMachineFinalize), Logger);
+            ReversePlugins.RunSafe(o => o.AfterStateMachineFinalize(context), nameof(AfterStateMachineFinalize), Logger);
 
             if (FinalizeInspection != null)
             {
@@ -133,8 +138,8 @@ namespace Stateflows.StateMachines.Engine
 
         public void AfterStateInitialize(StateActionContext context)
         {
-            Observers.Reverse().RunSafe(o => o.AfterStateInitialize(context), nameof(AfterStateInitialize), Logger);
-            Plugins.Reverse().RunSafe(o => o.AfterStateInitialize(context), nameof(AfterStateInitialize), Logger);
+            ReverseObservers.RunSafe(o => o.AfterStateInitialize(context), nameof(AfterStateInitialize), Logger);
+            ReversePlugins.RunSafe(o => o.AfterStateInitialize(context), nameof(AfterStateInitialize), Logger);
 
             if (InspectionStates.TryGetValue(context.Vertex.Identifier, out var stateInspection))
             {
@@ -155,8 +160,8 @@ namespace Stateflows.StateMachines.Engine
 
         public void AfterStateFinalize(StateActionContext context)
         {
-            Observers.Reverse().RunSafe(o => o.AfterStateFinalize(context), nameof(AfterStateFinalize), Logger);
-            Plugins.Reverse().RunSafe(o => o.AfterStateFinalize(context), nameof(AfterStateFinalize), Logger);
+            ReverseObservers.RunSafe(o => o.AfterStateFinalize(context), nameof(AfterStateFinalize), Logger);
+            ReversePlugins.RunSafe(o => o.AfterStateFinalize(context), nameof(AfterStateFinalize), Logger);
 
             if (InspectionStates.TryGetValue(context.Vertex.Identifier, out var stateInspection))
             {
@@ -177,8 +182,8 @@ namespace Stateflows.StateMachines.Engine
 
         public void AfterStateEntry(StateActionContext context)
         {
-            Observers.Reverse().RunSafe(o => o.AfterStateEntry(context), nameof(AfterStateEntry), Logger);
-            Plugins.Reverse().RunSafe(o => o.AfterStateEntry(context), nameof(AfterStateEntry), Logger);
+            ReverseObservers.RunSafe(o => o.AfterStateEntry(context), nameof(AfterStateEntry), Logger);
+            ReversePlugins.RunSafe(o => o.AfterStateEntry(context), nameof(AfterStateEntry), Logger);
 
             if (InspectionStates.TryGetValue(context.Vertex.Identifier, out var stateInspection))
             {
@@ -199,8 +204,8 @@ namespace Stateflows.StateMachines.Engine
 
         public void AfterStateExit(StateActionContext context)
         {
-            Observers.Reverse().RunSafe(o => o.AfterStateExit(context), nameof(AfterStateExit), Logger);
-            Plugins.Reverse().RunSafe(o => o.AfterStateExit(context), nameof(AfterStateExit), Logger);
+            ReverseObservers.RunSafe(o => o.AfterStateExit(context), nameof(AfterStateExit), Logger);
+            ReversePlugins.RunSafe(o => o.AfterStateExit(context), nameof(AfterStateExit), Logger);
 
             if (InspectionStates.TryGetValue(context.Vertex.Identifier, out var stateInspection))
             {
@@ -219,10 +224,10 @@ namespace Stateflows.StateMachines.Engine
             Observers.RunSafe(o => o.BeforeTransitionGuard(context), nameof(BeforeTransitionGuard), Logger);
         }
 
-        public void AfterGuard<TEvent>(GuardContext<TEvent> context, bool guardResult)
+        public void AfterTransitionGuard<TEvent>(GuardContext<TEvent> context, bool guardResult)
         {
-            Observers.Reverse().RunSafe(o => o.AfterTransitionGuard(context, guardResult), nameof(AfterGuard), Logger);
-            Plugins.Reverse().RunSafe(o => o.AfterTransitionGuard(context, guardResult), nameof(AfterGuard), Logger);
+            ReverseObservers.RunSafe(o => o.AfterTransitionGuard(context, guardResult), nameof(AfterTransitionGuard), Logger);
+            ReversePlugins.RunSafe(o => o.AfterTransitionGuard(context, guardResult), nameof(AfterTransitionGuard), Logger);
 
             if (InspectionTransitions.TryGetValue(context.Edge, out var stateInspection))
             {
@@ -244,8 +249,8 @@ namespace Stateflows.StateMachines.Engine
         public void AfterEffect<TEvent>(TransitionContext<TEvent> context)
 
         {
-            Observers.Reverse().RunSafe(o => o.AfterTransitionEffect(context), nameof(AfterEffect), Logger);
-            Plugins.Reverse().RunSafe(o => o.AfterTransitionEffect(context), nameof(AfterEffect), Logger);
+            ReverseObservers.RunSafe(o => o.AfterTransitionEffect(context), nameof(AfterEffect), Logger);
+            ReversePlugins.RunSafe(o => o.AfterTransitionEffect(context), nameof(AfterEffect), Logger);
 
             if (InspectionTransitions.TryGetValue(context.Edge, out var stateInspection))
             {
@@ -255,9 +260,9 @@ namespace Stateflows.StateMachines.Engine
 
         public void AfterHydrate(StateMachineActionContext context)
         {
-            Plugins.Reverse().RunSafe(i => i.AfterHydrate(context), nameof(AfterHydrate), Logger);
+            ReversePlugins.RunSafe(i => i.AfterHydrate(context), nameof(AfterHydrate), Logger);
             GlobalInterceptor.AfterHydrate(new BehaviorActionContext(context.Context.Context, Executor.ServiceProvider));
-            Interceptors.Reverse().RunSafe(i => i.AfterHydrate(context), nameof(AfterHydrate), Logger);
+            ReverseInterceptors.RunSafe(i => i.AfterHydrate(context), nameof(AfterHydrate), Logger);
         }
 
         public void BeforeDehydrate(StateMachineActionContext context)
@@ -278,9 +283,9 @@ namespace Stateflows.StateMachines.Engine
 
         public void AfterProcessEvent<TEvent>(Context.Classes.EventContext<TEvent> context, Common.Context.Classes.EventContext<TEvent> commonContext, EventStatus eventStatus)
         {
-            Interceptors.Reverse().RunSafe(i => i.AfterProcessEvent(context, eventStatus), nameof(AfterProcessEvent), Logger);
+            ReverseInterceptors.RunSafe(i => i.AfterProcessEvent(context, eventStatus), nameof(AfterProcessEvent), Logger);
             GlobalInterceptor.AfterProcessEvent(commonContext, eventStatus);
-            Plugins.Reverse().RunSafe(i => i.AfterProcessEvent(context, eventStatus), nameof(AfterProcessEvent), Logger);
+            ReversePlugins.RunSafe(i => i.AfterProcessEvent(context, eventStatus), nameof(AfterProcessEvent), Logger);
         }
 
         private static bool ShouldPropagateException(Graph graph, bool handled)

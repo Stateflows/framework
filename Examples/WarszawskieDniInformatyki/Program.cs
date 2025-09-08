@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using OpenTelemetry;
+using OpenTelemetry.Metrics;
 using OpenTelemetry.Trace;
 using WarszawskieDniInformatyki.Components;
 using Stateflows;
@@ -39,7 +40,7 @@ builder.Services.AddStateflows(b => b
     .AddOpenTelemetry()
     .AddScheduling()
     .AddOneOf()
-    .AddEntityFrameworkCoreStorage<AppDbContext>()
+    // .AddEntityFrameworkCoreStorage<AppDbContext>()
     #endregion
 );
 
@@ -57,12 +58,24 @@ builder.Logging.AddOpenTelemetry(logging =>
 
 var otel = builder.Services.AddOpenTelemetry();
 
-// Add Tracing for ASP.NET Core and our custom ActivitySource and export via OTLP
-otel.WithTracing(tracing =>
-{
-    // tracing.AddAspNetCoreInstrumentation();
-    tracing.AddHttpClientInstrumentation();
-});
+// Add Metrics for ASP.NET Core and our custom metrics and export via OTLP
+otel.WithMetrics(metrics => metrics
+    // Metrics provider from OpenTelemetry
+    .AddAspNetCoreInstrumentation()
+    // Metrics provides by ASP.NET Core in .NET 8
+    .AddMeter("Microsoft.AspNetCore.Hosting")
+    .AddMeter("Microsoft.AspNetCore.Server.Kestrel")
+    // Metrics provided by System.Net libraries
+    .AddMeter("System.Net.Http")
+    .AddMeter("System.Net.NameResolution")
+    .AddPrometheusExporter()
+);
+
+// // Add Tracing for ASP.NET Core and our custom ActivitySource and export via OTLP
+// otel.WithTracing(tracing => tracing
+//     .AddAspNetCoreInstrumentation()
+//     // .AddHttpClientInstrumentation()
+// );
 
 // Export OpenTelemetry data via OTLP, using env vars for the configuration
 var OtlpEndpoint = builder.Configuration["OTEL_EXPORTER_OTLP_ENDPOINT"];
@@ -105,5 +118,7 @@ app.MapRazorComponents<App>()
 app.MapStateflowsMinimalAPIsEndpoints(b => b
     .SetApiRoutePrefix("sf")
 );
+
+app.MapPrometheusScrapingEndpoint();
 
 app.Run();

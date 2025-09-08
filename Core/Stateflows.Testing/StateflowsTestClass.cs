@@ -38,7 +38,7 @@ namespace StateMachine.IntegrationTests.Utils
 
         public virtual void Initialize()
         {
-            ServiceCollection.AddStateflows(b => InitializeStateflows(b));
+            ServiceCollection.AddStateflows(b => InitializeStateflows(b.UseFullNamesFor(TypedElements.None)));
             ServiceCollection.AddSingleton<IExecutionSequenceBuilder, ExecutionSequence>();
             ServiceCollection.AddSingleton<TestingHost>();
             ServiceCollection.AddSingleton<IHostApplicationLifetime>(services => services.GetRequiredService<TestingHost>());

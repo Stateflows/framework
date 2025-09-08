@@ -27,7 +27,7 @@ public class DocumentExceptionHandler([GlobalValue] IValue<int> counter) : State
 
 public class Document : IStateMachine
 {
-    public void Build(IStateMachineBuilder builder)
+    public static void Build(IStateMachineBuilder builder)
         => builder
             .AddDefaultInitializer(async c =>
             {
@@ -72,9 +72,7 @@ public class Document : IStateMachine
                 )
             )
             .AddState<Accepted>(b => b
-                .AddDoActivity("Proc", b => b
-                    .AddForwardedEvent<Input>()
-                )
+                .AddDoActivity("Proc")
                 .AddTransition<Pay, PayGuard, Paid>()
                 .AddTransition<Reject, Rejected>()
             )

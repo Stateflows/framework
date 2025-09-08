@@ -15,6 +15,8 @@ using Stateflows.Actions.Context.Interfaces;
 using Stateflows.Actions.Models;
 using Stateflows.Actions.Registration;
 using Stateflows.Activities;
+using Stateflows.Common.Utilities;
+using Stateflows.StateMachines.Models;
 
 namespace Stateflows.Actions.Engine
 {
@@ -79,7 +81,7 @@ namespace Stateflows.Actions.Engine
             
             var inspector = await GetInspectorAsync();
             
-            Trace.WriteLine($"⦗→s⦘ Action '{StateflowsContext.Id.Name}:{StateflowsContext.Id.Instance}': received event '{Event.GetName(eventHolder.PayloadType)}', trying to process it");
+            Trace.WriteLine($"⦗→s⦘ Action '{StateflowsContext.Id.Name}:{StateflowsContext.Id.Instance}': received event '{Event.GetName(eventHolder.PayloadType)}', processing");
 
             var eventContext = new EventContext<TEvent>(StateflowsContext, eventHolder, ServiceProvider);
             this.inspector.BeforeProcessEvent(eventContext);
@@ -109,21 +111,21 @@ namespace Stateflows.Actions.Engine
                 else
                 if (eventHolder is EventHolder<SetContextOwner> setContextOwnerHolder)
                 {
-                    eventContext.RootContext.Context.ContextOwner = setContextOwnerHolder.Payload.ContextOwner;
+                    eventContext.RootContext.Context.ContextOwnerId = setContextOwnerHolder.Payload.ContextOwner;
                     
                     result = EventStatus.Consumed;
                 }
                 else
                 if (eventHolder is EventHolder<SetGlobalValues> setGlobalValuesHolder)
                 {
-                    IActionDelegateContext context = eventContext;
-                    var values = (ContextValuesCollection)context.Behavior.Values;
-                
-                    values.Values.Clear();
-                    foreach (var entry in setGlobalValuesHolder.Payload.Values)
-                    {
-                        values.Values[entry.Key] = entry.Value;
-                    }
+                    // IActionDelegateContext context = eventContext;
+                    // var values = (ContextValuesCollection)context.Behavior.Values;
+                    //
+                    // values.Values.Clear();
+                    // foreach (var entry in setGlobalValuesHolder.Payload.Values)
+                    // {
+                    //     values.Values[entry.Key] = entry.Value;
+                    // }
                     
                     result = EventStatus.Consumed;
                 }
@@ -215,6 +217,8 @@ namespace Stateflows.Actions.Engine
                     
                     Trace.WriteLine($"⦗→s⦘ Action '{StateflowsContext.Id.Name}:{StateflowsContext.Id.Instance}': executed");
 
+                    HandleGuardRequest(eventHolder, context);
+
                     result = EventStatus.Consumed;
                 }
             }
@@ -231,6 +235,75 @@ namespace Stateflows.Actions.Engine
             Trace.WriteLine($"⦗→s⦘ Action '{StateflowsContext.Id.Name}:{StateflowsContext.Id.Instance}': processed event '{Event.GetName(eventHolder.PayloadType)}'");
 
             return result;
+        }
+
+        private static void HandleGuardRequest<TEvent>(EventHolder<TEvent> eventHolder, ActionDelegateContext context)
+        {
+            var guardRequest = context.Headers.OfType<GuardRequest>().FirstOrDefault();
+            if (guardRequest != null)
+            {
+                var output = context.OutputTokens.OfType<TokenHolder<bool>>().FirstOrDefault()?.Payload ?? false;
+
+                if (output)
+                {
+                    var headers = context.Headers
+                        .Where(h => !(h is GuardRequest))
+                        .Append(
+                            new GuardResponse()
+                            {
+                                GuardIdentifier = guardRequest.GuardIdentifier
+                            }
+                        )
+                        .ToArray();
+
+                    context.Send(eventHolder.Payload, headers);
+                }
+                        
+                var behaviorId = context.RootContext.Context.ContextOwnerId.Value;
+                if (behaviorId.Type == BehaviorType.StateMachine)
+                {
+                    if (output)
+                    {
+                        switch (guardRequest.EdgeType)
+                        {
+                            case EdgeType.Transition:
+                                Trace.WriteLine(
+                                    $"⦗→s⦘ State Machine '{behaviorId.Name}:{behaviorId.Instance}': delegated guard passed transition from '{guardRequest.SourceName}' to '{guardRequest.TargetName}' triggered by event '{eventHolder.Name}', retransmitting event");
+                                break;
+
+                            case EdgeType.DefaultTransition:
+                                Trace.WriteLine(
+                                    $"⦗→s⦘ State Machine '{behaviorId.Name}:{behaviorId.Instance}': delegated guard passed default transition from '{guardRequest.SourceName}' to '{guardRequest.TargetName}', retransmitting event");
+                                break;
+
+                            case EdgeType.InternalTransition:
+                                Trace.WriteLine(
+                                    $"⦗→s⦘ State Machine '{behaviorId.Name}:{behaviorId.Instance}': delegated guard passed internal transition in '{guardRequest.SourceName}' triggered by event '{eventHolder.Name}', retransmitting event");
+                                break;
+                        }
+                    }
+                    else
+                    {
+                        switch (guardRequest.EdgeType)
+                        {
+                            case EdgeType.Transition:
+                                Trace.WriteLine(
+                                    $"⦗→s⦘ State Machine '{behaviorId.Name}:{behaviorId.Instance}': delegated guard stopped event '{eventHolder.Name}' from triggering transition from '{guardRequest.SourceName}' to '{guardRequest.TargetName}'");
+                                break;
+
+                            case EdgeType.DefaultTransition:
+                                Trace.WriteLine(
+                                    $"⦗→s⦘ State Machine '{behaviorId.Name}:{behaviorId.Instance}': delegated guard stopped default transition from '{guardRequest.SourceName}' to '{guardRequest.TargetName}'");
+                                break;
+
+                            case EdgeType.InternalTransition:
+                                Trace.WriteLine(
+                                    $"⦗→s⦘ State Machine '{behaviorId.Name}:{behaviorId.Instance}': delegated guard stopped event '{eventHolder.Name}' from triggering internal transition in '{guardRequest.SourceName}'");
+                                break;
+                        }
+                    }
+                }
+            }
         }
 
         [DebuggerHidden]

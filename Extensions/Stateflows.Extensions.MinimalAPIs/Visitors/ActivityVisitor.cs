@@ -67,14 +67,32 @@ internal class ActivityVisitor(
         return Task.CompletedTask;
     }
 
+    private static void RegisterEndpoints<TEndpointsOwner>(EndpointsBuilder endpointsBuilder)
+    {
+        // Try to invoke a static RegisterEndpoints(EndpointsBuilder) on the concrete type
+        var smType = typeof(TEndpointsOwner);
+        var staticRegister = smType.GetMethod(
+            "RegisterEndpoints",
+            BindingFlags.Public | BindingFlags.Static,
+            binder: null,
+            types: [ typeof(EndpointsBuilder) ],
+            modifiers: null
+        );
+
+        // static method found -> invoke without creating an instance
+        staticRegister.Invoke(null, new object[] { endpointsBuilder });
+    }
+
     public override Task ActivityTypeAddedAsync<TActivity>(string activityName, int activityVersion)
     {
         if (typeof(IActivityEndpoints).IsAssignableFrom(typeof(TActivity)))
         {
             var endpointsBuilder = new EndpointsBuilder(routeBuilder, this, interceptor, new ActivityClass(activityName));
+
+            RegisterEndpoints<TActivity>(endpointsBuilder);
             
-            var activity = (IActivityEndpoints)StateflowsActivator.CreateUninitializedInstance<TActivity>();
-            activity.RegisterEndpoints(endpointsBuilder);
+            // var activity = (IActivityEndpoints)StateflowsActivator.CreateUninitializedInstance<TActivity>();
+            // activity.RegisterEndpoints(endpointsBuilder);
         }
         
         return Task.CompletedTask;
@@ -350,10 +368,12 @@ internal class ActivityVisitor(
             
             DependencyInjection.ActivityEndpointBuilders.Add(visitor =>
             {
-                var builder = new EndpointsBuilder(routeBuilder, visitor, interceptor, behaviorClass, nodeName);
+                var endpointsBuilder = new EndpointsBuilder(routeBuilder, visitor, interceptor, behaviorClass, nodeName);
                 
-                var node = (IStructuredActivityNodeEndpoints)StateflowsActivator.CreateUninitializedInstance<TNode>();
-                node.RegisterEndpoints(builder);
+                RegisterEndpoints<TNode>(endpointsBuilder);
+                
+                // var node = (IStructuredActivityNodeEndpoints)StateflowsActivator.CreateUninitializedInstance<TNode>();
+                // node.RegisterEndpoints(endpointsBuilder);
             });
         }
 

@@ -221,12 +221,12 @@ internal static class RequestBodyExtensions
             )
             : await behavior.SendAsync(@event, implicitInitialization ? [] : [new NoImplicitInitialization()]);
         
-        var notifications = result.Status != EventStatus.Invalid
+        var notifications = result.Status != EventStatus.Invalid && (payload.RequestedNotifications?.Any() ?? false)
             ? (await behavior.GetNotificationsAsync(payload.RequestedNotifications, lastNotificationsCheck)).ToArray()
             : [];
         
         var behaviorInfo = await behavior.GetBehaviorInfo();
-        
+
         return result.ToResult(notifications, behaviorInfo, customHateoasLinks);
     }
     
@@ -244,12 +244,12 @@ internal static class RequestBodyExtensions
             )
             : await behavior.RequestAsync(request, implicitInitialization ? [] : [new NoImplicitInitialization()]);
         
-        var notifications = result.Status != EventStatus.Invalid
+        var notifications = result.Status != EventStatus.Invalid && (payload.RequestedNotifications?.Any() ?? false)
             ? (await behavior.GetNotificationsAsync(payload.RequestedNotifications, lastNotificationsCheck)).ToArray()
             : [];
         
         var behaviorInfo = await behavior.GetBehaviorInfo();
-        
+
         return result.ToResult(notifications, behaviorInfo, customHateoasLinks);
     }
 }

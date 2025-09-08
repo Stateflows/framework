@@ -79,32 +79,32 @@ namespace Stateflows.StateMachines.Registration.Builders
         }
 
         [DebuggerHidden]
-        public IInitializedCompositeStateBuilder AddOnInitialize(Func<IStateActionContext, Task> actionAsync)
+        public IInitializedCompositeStateBuilder AddOnInitialize(params Func<IStateActionContext, Task>[] actionsAsync)
         {
-            Builder.AddOnInitialize(actionAsync);
+            Builder.AddOnInitialize(actionsAsync);
             return this;
         }
 
         [DebuggerHidden]
-        IFinalizedOverridenCompositeStateBuilder ICompositeStateEvents<IFinalizedOverridenCompositeStateBuilder>.AddOnFinalize(Func<IStateActionContext, Task> actionAsync)
-            => AddOnFinalize(actionAsync) as IFinalizedOverridenCompositeStateBuilder;
+        IFinalizedOverridenCompositeStateBuilder ICompositeStateFinalization<IFinalizedOverridenCompositeStateBuilder>.AddOnFinalize(params Func<IStateActionContext, Task>[] actionsAsync)
+            => AddOnFinalize(actionsAsync) as IFinalizedOverridenCompositeStateBuilder;
 
         [DebuggerHidden]
-        IFinalizedOverridenCompositeStateBuilder ICompositeStateEvents<IFinalizedOverridenCompositeStateBuilder>.AddOnInitialize(Func<IStateActionContext, Task> actionAsync)
-            => AddOnInitialize(actionAsync) as IFinalizedOverridenCompositeStateBuilder;
+        IFinalizedOverridenCompositeStateBuilder ICompositeStateInitialization<IFinalizedOverridenCompositeStateBuilder>.AddOnInitialize(params Func<IStateActionContext, Task>[] actionsAsync)
+            => AddOnInitialize(actionsAsync) as IFinalizedOverridenCompositeStateBuilder;
 
         [DebuggerHidden]
-        IOverridenCompositeStateBuilder ICompositeStateEvents<IOverridenCompositeStateBuilder>.AddOnFinalize(Func<IStateActionContext, Task> actionAsync)
-            => AddOnFinalize(actionAsync) as IOverridenCompositeStateBuilder;
+        IOverridenCompositeStateBuilder ICompositeStateFinalization<IOverridenCompositeStateBuilder>.AddOnFinalize(params Func<IStateActionContext, Task>[] actionsAsync)
+            => AddOnFinalize(actionsAsync) as IOverridenCompositeStateBuilder;
 
         [DebuggerHidden]
-        IOverridenCompositeStateBuilder ICompositeStateEvents<IOverridenCompositeStateBuilder>.AddOnInitialize(Func<IStateActionContext, Task> actionAsync)
-            => AddOnInitialize(actionAsync) as IOverridenCompositeStateBuilder;
+        IOverridenCompositeStateBuilder ICompositeStateInitialization<IOverridenCompositeStateBuilder>.AddOnInitialize(params Func<IStateActionContext, Task>[] actionsAsync)
+            => AddOnInitialize(actionsAsync) as IOverridenCompositeStateBuilder;
 
         [DebuggerHidden]
-        public IInitializedCompositeStateBuilder AddOnFinalize(Func<IStateActionContext, Task> actionAsync)
+        public IInitializedCompositeStateBuilder AddOnFinalize(params Func<IStateActionContext, Task>[] actionsAsync)
         {
-            Builder.AddOnFinalize(actionAsync);
+            Builder.AddOnFinalize(actionsAsync);
             return this;
         }
         
@@ -266,8 +266,8 @@ namespace Stateflows.StateMachines.Registration.Builders
         #endregion
 
         [DebuggerHidden]
-        public IFinalizedCompositeStateBuilder AddFinalState(string finalStateName = FinalState.Name)
-            => AddVertex(finalStateName, VertexType.FinalState) as IFinalizedCompositeStateBuilder;
+        public IFinalizedCompositeStateBuilder AddFinalState(string finalStateName = null)
+            => AddVertex(finalStateName ?? State<FinalState>.Name, VertexType.FinalState) as IFinalizedCompositeStateBuilder;
 
         #region AddCompositeState
         [DebuggerHidden]
@@ -311,12 +311,12 @@ namespace Stateflows.StateMachines.Registration.Builders
             => AddOnExit(actionsAsync) as ICompositeStateBuilder;
 
         [DebuggerHidden]
-        ICompositeStateBuilder ICompositeStateEvents<ICompositeStateBuilder>.AddOnInitialize(Func<IStateActionContext, Task> actionAsync)
-            => AddOnInitialize(actionAsync) as ICompositeStateBuilder;
+        ICompositeStateBuilder ICompositeStateInitialization<ICompositeStateBuilder>.AddOnInitialize(params Func<IStateActionContext, Task>[] actionsAsync)
+            => AddOnInitialize(actionsAsync) as ICompositeStateBuilder;
 
         [DebuggerHidden]
-        ICompositeStateBuilder ICompositeStateEvents<ICompositeStateBuilder>.AddOnFinalize(Func<IStateActionContext, Task> actionAsync)
-            => AddOnFinalize(actionAsync) as ICompositeStateBuilder;
+        ICompositeStateBuilder ICompositeStateFinalization<ICompositeStateBuilder>.AddOnFinalize(params Func<IStateActionContext, Task>[] actionsAsync)
+            => AddOnFinalize(actionsAsync) as ICompositeStateBuilder;
 
         [DebuggerHidden]
         IInitializedCompositeStateBuilder IStateMachineInitial<IInitializedCompositeStateBuilder>.AddInitialState(string stateName, StateBuildAction stateBuildAction)
@@ -391,12 +391,12 @@ namespace Stateflows.StateMachines.Registration.Builders
             => AddElseInternalTransition<TEvent>(builder => transitionBuildAction?.Invoke(builder)) as IFinalizedCompositeStateBuilder;
 
         [DebuggerHidden]
-        IFinalizedCompositeStateBuilder ICompositeStateEvents<IFinalizedCompositeStateBuilder>.AddOnInitialize(Func<IStateActionContext, Task> actionAsync)
-            => AddOnInitialize(actionAsync) as IFinalizedCompositeStateBuilder;
+        IFinalizedCompositeStateBuilder ICompositeStateInitialization<IFinalizedCompositeStateBuilder>.AddOnInitialize(params Func<IStateActionContext, Task>[] actionsAsync)
+            => AddOnInitialize(actionsAsync) as IFinalizedCompositeStateBuilder;
 
         [DebuggerHidden]
-        IFinalizedCompositeStateBuilder ICompositeStateEvents<IFinalizedCompositeStateBuilder>.AddOnFinalize(Func<IStateActionContext, Task> actionAsync)
-            => AddOnFinalize(actionAsync) as IFinalizedCompositeStateBuilder;
+        IFinalizedCompositeStateBuilder ICompositeStateFinalization<IFinalizedCompositeStateBuilder>.AddOnFinalize(params Func<IStateActionContext, Task>[] actionsAsync)
+            => AddOnFinalize(actionsAsync) as IFinalizedCompositeStateBuilder;
 
         [DebuggerHidden]
         public IInitializedCompositeStateBuilder AddJunction(string junctionName, JunctionBuildAction junctionBuildAction)
@@ -665,11 +665,11 @@ namespace Stateflows.StateMachines.Registration.Builders
         IOverridenRegionalizedCompositeStateBuilder IStateUtils<IOverridenRegionalizedCompositeStateBuilder>.AddDeferredEvent<TEvent>()
             => AddDeferredEvent<TEvent>() as IOverridenRegionalizedCompositeStateBuilder;
 
-        IOverridenRegionalizedCompositeStateBuilder ICompositeStateEvents<IOverridenRegionalizedCompositeStateBuilder>.AddOnInitialize(Func<IStateActionContext, Task> actionAsync)
-            => AddOnInitialize(actionAsync) as IOverridenRegionalizedCompositeStateBuilder;
+        IOverridenRegionalizedCompositeStateBuilder ICompositeStateInitialization<IOverridenRegionalizedCompositeStateBuilder>.AddOnInitialize(params Func<IStateActionContext, Task>[] actionsAsync)
+            => AddOnInitialize(actionsAsync) as IOverridenRegionalizedCompositeStateBuilder;
 
-        IOverridenRegionalizedCompositeStateBuilder ICompositeStateEvents<IOverridenRegionalizedCompositeStateBuilder>.AddOnFinalize(Func<IStateActionContext, Task> actionAsync)
-            => AddOnFinalize(actionAsync) as IOverridenRegionalizedCompositeStateBuilder;
+        IOverridenRegionalizedCompositeStateBuilder ICompositeStateFinalization<IOverridenRegionalizedCompositeStateBuilder>.AddOnFinalize(params Func<IStateActionContext, Task>[] actionsAsync)
+            => AddOnFinalize(actionsAsync) as IOverridenRegionalizedCompositeStateBuilder;
 
         IOverridenRegionalizedCompositeStateBuilder IStateTransitions<IOverridenRegionalizedCompositeStateBuilder>.AddTransition<TEvent>(string targetStateName, TransitionBuildAction<TEvent> transitionBuildAction)
             => AddTransition<TEvent>(targetStateName, transitionBuildAction) as IOverridenRegionalizedCompositeStateBuilder;

@@ -6,7 +6,7 @@ namespace Stateflows.StateMachines
 {
     public interface IStateMachine
     {
-        void Build(IStateMachineBuilder builder);
+        static abstract void Build(IStateMachineBuilder builder);
     }
 
     public static class StateMachine<TStateMachine>

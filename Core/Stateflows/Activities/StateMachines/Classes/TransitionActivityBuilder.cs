@@ -1,13 +1,21 @@
-﻿using Stateflows.Common;
+﻿using System.Threading.Tasks;
 using Stateflows.Activities.Extensions;
+using Stateflows.StateMachines.Context.Interfaces;
 
 namespace Stateflows.Activities.StateMachines.Interfaces
 {
     internal class TransitionActivityBuilder<TEvent> :
         BaseEmbeddedBehaviorBuilder,
         ITransitionActivityBuilder<TEvent>,
-        IInitializedTransitionActivityBuilder<TEvent>
+        IInstantiatedTransitionActivityBuilder<TEvent>
     {
+        private TransitionBehaviorInstanceBuilderAsync<TEvent> InstanceBuilder { get; set; } = null;
+        
+        public async Task<string> GetInstanceAsync(ITransitionContext<TEvent> context, string defaultInstance)
+            => InstanceBuilder != null
+                ? await InstanceBuilder(context)
+                : defaultInstance;
+        
         public TransitionBehaviorInitializationBuilderAsync<TEvent, object> InitializationBuilder { get; private set; } = null;
 
         public TransitionActivityBuilder(TransitionActivityBuildAction<TEvent> buildAction)
@@ -15,40 +23,22 @@ namespace Stateflows.Activities.StateMachines.Interfaces
             buildAction?.Invoke(this);
         }
 
-        IInitializedTransitionActivityBuilder<TEvent> ITransitionInitialization<TEvent, IInitializedTransitionActivityBuilder<TEvent>>.InitializeWith<TInitializationEvent>(TransitionBehaviorInitializationBuilderAsync<TEvent, TInitializationEvent> builderAsync)
+        public IInstantiatedTransitionActivityBuilder<TEvent> InstantiateAs(TransitionBehaviorInstanceBuilderAsync<TEvent> builderAsync)
         {
             if (builderAsync != null)
             {
-                InitializationBuilder = async c => await builderAsync(c);
+                InstanceBuilder = builderAsync;
             }
 
             return this;
         }
 
-        private TransitionActivityBuilder<TEvent> AddSubscription<TNotification>()
+        public void InitializeWith<TInitializationEvent>(TransitionBehaviorInitializationBuilderAsync<TEvent, TInitializationEvent> builderAsync)
         {
-            Subscriptions.Add(typeof(TNotification));
-
-            return this;
+            if (builderAsync != null)
+            {
+                InitializationBuilder = async c => await builderAsync(c);
+            }
         }
-
-        private TransitionActivityBuilder<TEvent> AddRelay<TNotification>()
-        {
-            Relays.Add(typeof(TNotification));
-
-            return this;
-        }
-
-        ITransitionActivityBuilder<TEvent> ISubscription<ITransitionActivityBuilder<TEvent>>.AddSubscription<TNotification>()
-            => AddSubscription<TNotification>();
-
-        IInitializedTransitionActivityBuilder<TEvent> ISubscription<IInitializedTransitionActivityBuilder<TEvent>>.AddSubscription<TNotification>()
-            => AddSubscription<TNotification>();
-
-        ITransitionActivityBuilder<TEvent> ISubscription<ITransitionActivityBuilder<TEvent>>.AddRelay<TNotification>()
-            => AddRelay<TNotification>();
-
-        IInitializedTransitionActivityBuilder<TEvent> ISubscription<IInitializedTransitionActivityBuilder<TEvent>>.AddRelay<TNotification>()
-            => AddRelay<TNotification>();
     }
 }

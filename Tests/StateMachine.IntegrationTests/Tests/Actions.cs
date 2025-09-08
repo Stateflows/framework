@@ -25,7 +25,7 @@ namespace StateMachine.IntegrationTests.Tests
         {
             if (ProcessId == 42)
             {
-                ActionContext.Publish(new SomeEvent());
+                ActionContext.Send(new SomeEvent());
             }
             
             return Task.CompletedTask;
@@ -74,9 +74,7 @@ namespace StateMachine.IntegrationTests.Tests
                     .AddStateMachine("subscription", b => b
                         .AddExecutionSequenceObserver()
                         .AddInitialState("initial", b => b
-                            .AddOnEntryAction("subscribe", b => b
-                                .AddSubscription<SomeEvent>()
-                            )
+                            .AddOnEntryAction("subscribe")
                             .AddTransition<SomeEvent>("final")
                         )
                         .AddFinalState("final")
@@ -84,9 +82,7 @@ namespace StateMachine.IntegrationTests.Tests
                     .AddStateMachine("relay", b => b
                         .AddExecutionSequenceObserver()
                         .AddInitialState("initial", b => b
-                            .AddOnEntryAction("heavyLoad", b => b
-                                .AddRelay<SomeEvent>()
-                            )
+                            .AddOnEntryAction("heavyLoad")
                         )
                     )
                     .AddStateMachine("values", b => b
@@ -95,9 +91,7 @@ namespace StateMachine.IntegrationTests.Tests
                             .AddDefaultTransition("second")
                         )
                         .AddState("second", b => b
-                            .AddOnEntryAction<TypedAction>(b => b
-                                .AddSubscription<SomeEvent>()
-                            )
+                            .AddOnEntryAction<TypedAction>()
                             .AddTransition<SomeEvent>("third")
                         )
                         .AddState("third")
@@ -121,7 +115,7 @@ namespace StateMachine.IntegrationTests.Tests
                     .AddAction("effect", async c => EffectRun = true)
                     .AddAction("entry", async c => EntryRun = true)
                     .AddAction("exit", async c => ExitRun = true)
-                    .AddAction("subscribe", async c => c.Behavior.Publish(new SomeEvent()))
+                    .AddAction("subscribe", async c => c.Behavior.Send(new SomeEvent()))
                     .AddAction("heavyLoad", async c =>
                     {
                         c.Behavior.Publish(new SomeEvent() { TheresSomethingHappeningHere = "42" });
@@ -142,6 +136,8 @@ namespace StateMachine.IntegrationTests.Tests
 
                 await sm.SendAsync(new SomeEvent());
 
+                await Task.Delay(100);
+                
                 var currentState = (await sm.GetStatusAsync()).Response;
 
                 currentState1 = currentState.CurrentStates.Value;
@@ -152,8 +148,6 @@ namespace StateMachine.IntegrationTests.Tests
                 .StateExit("stateA")
                 .StateEntry("stateB")
             );
-
-            await Task.Delay(100);
 
             Assert.AreEqual("stateB", currentState1);
             Assert.AreEqual(true, GuardRun);
@@ -172,6 +166,8 @@ namespace StateMachine.IntegrationTests.Tests
                 await sm.SendAsync(new BoolInit() { Value = false });
 
                 await sm.SendAsync(new SomeEvent());
+
+                await Task.Delay(100);
 
                 var currentState = (await sm.GetStatusAsync()).Response;
 

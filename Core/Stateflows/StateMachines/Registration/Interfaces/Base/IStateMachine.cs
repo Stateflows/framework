@@ -265,7 +265,7 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         ///     . // Use . to see available builder methods
         /// </code></param>
         TReturn AddJunction(JunctionBuildAction junctionBuildAction)
-            => AddJunction(Junction.Name, junctionBuildAction);
+            => AddJunction(State<Junction>.Name, junctionBuildAction);
         #endregion
 
         #region AddChoice
@@ -295,7 +295,7 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         ///     . // Use . to see available builder methods
         /// </code></param>
         TReturn AddChoice(ChoiceBuildAction choiceBuildAction)
-            => AddChoice(Choice.Name, choiceBuildAction);
+            => AddChoice(State<Choice>.Name, choiceBuildAction);
         #endregion
 
         #region AddFork
@@ -323,7 +323,7 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         ///     . // Use . to see available builder methods
         /// </code></param>
         TReturn AddFork(ForkBuildAction forkBuildAction)
-            => AddFork(Fork.Name, forkBuildAction);
+            => AddFork(State<Fork>.Name, forkBuildAction);
         #endregion
 
         #region AddJoin
@@ -351,7 +351,7 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         ///     . // Use . to see available builder methods
         /// </code></param>
         TReturn AddJoin(JoinBuildAction joinBuildAction)
-            => AddJoin(Join.Name, joinBuildAction);
+            => AddJoin(State<Join>.Name, joinBuildAction);
         #endregion
     }
 }

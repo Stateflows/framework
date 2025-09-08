@@ -70,7 +70,7 @@ namespace Stateflows.StateMachines.Registration.Interfaces
 
     public delegate void OverridenElseDefaultTransitionBuildAction(IElseDefaultTransitionBuilder builder);
 
-    public delegate void EmbeddedBehaviorBuildAction(IEmbeddedBehaviorBuilder builder);
+    // public delegate void EmbeddedBehaviorBuildAction(IEmbeddedBehaviorBuilder builder);
 
     public delegate void ForwardedEventBuildAction<TEvent>(IForwardedEventBuilder<TEvent> builder);
 

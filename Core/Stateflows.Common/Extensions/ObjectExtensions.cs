@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using Stateflows.Activities;
 
-namespace Stateflows.Common
+namespace Stateflows.Common.Utilities
 {
     public static class ObjectExtensions
     {

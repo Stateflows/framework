@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Linq;
 using System.Collections.Generic;
-using Newtonsoft.Json;
+using System.Text.Json.Serialization;
 
 namespace Stateflows.Common.Context
 {
@@ -22,10 +22,10 @@ namespace Stateflows.Common.Context
 
         public int Version { get; set; } = 0;
 
-        [JsonIgnore]
+        [Newtonsoft.Json.JsonIgnore]
         public bool Deleted { get; set; }
 
-        [JsonIgnore]
+        [Newtonsoft.Json.JsonIgnore]
         public bool Stored { get; set; }
 
         public BehaviorStatus Status { get; set; } = BehaviorStatus.Unknown;
@@ -164,7 +164,11 @@ namespace Stateflows.Common.Context
             => GlobalValues.Any();
 
         public Dictionary<string, string> GlobalValues { get; } = new Dictionary<string, string>();
+
+        public BehaviorId? ContextOwnerId { get; set; } = null;
         
-        public BehaviorId ContextOwner { get; set; }
+        [Newtonsoft.Json.JsonIgnore]
+        [JsonIgnore]
+        public Dictionary<string, object> RuntimeMetadata { get; } = new Dictionary<string, object>();
     }
 }

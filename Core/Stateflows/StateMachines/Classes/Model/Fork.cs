@@ -2,6 +2,6 @@
 {
     public sealed class Fork : IVertex
     {
-        public const string Name = "Stateflows.StateMachines.Fork";
+        public static string Name => State<Fork>.Name;
     }
 }

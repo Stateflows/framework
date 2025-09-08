@@ -4,8 +4,8 @@ namespace WarszawskieDniInformatyki.Actions.Work;
 
 public class Work : IAction
 {
-    public Task ExecuteAsync(CancellationToken cancellationToken)
+    public async Task ExecuteAsync(CancellationToken cancellationToken)
     {
-        return Task.CompletedTask;
+        await Task.Delay(3000, cancellationToken);
     }
 }

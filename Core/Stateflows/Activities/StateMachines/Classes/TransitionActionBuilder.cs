@@ -1,44 +1,28 @@
-﻿using Stateflows.Common;
+﻿using System.Threading.Tasks;
 using Stateflows.Activities.Extensions;
+using Stateflows.StateMachines.Context.Interfaces;
 
 namespace Stateflows.Activities.StateMachines.Interfaces
 {
     internal class TransitionActionBuilder<TEvent> :
         BaseEmbeddedBehaviorBuilder,
-        ITransitionActionBuilder<TEvent>,
-        IInitializedTransitionActionBuilder<TEvent>
+        ITransitionActionBuilder<TEvent>
     {
-        public TransitionBehaviorInitializationBuilderAsync<TEvent, EventHolder> InitializationBuilder { get; private set; } = null;
+        private TransitionBehaviorInstanceBuilderAsync<TEvent> InstanceBuilder { get; set; } = null;
+        
+        public async Task<string> GetInstanceAsync(ITransitionContext<TEvent> context, string defaultInstance)
+            => InstanceBuilder != null
+                ? await InstanceBuilder(context)
+                : defaultInstance;
 
         public TransitionActionBuilder(TransitionActionBuildAction<TEvent> buildAction)
         {
             buildAction?.Invoke(this);
         }
 
-        private TransitionActionBuilder<TEvent> AddSubscription<TNotification>()
+        public void InstantiateAs(TransitionBehaviorInstanceBuilderAsync<TEvent> builderAsync)
         {
-            Subscriptions.Add(typeof(TNotification));
-
-            return this;
+            InstanceBuilder = builderAsync;
         }
-
-        private TransitionActionBuilder<TEvent> AddRelay<TNotification>()
-        {
-            Relays.Add(typeof(TNotification));
-
-            return this;
-        }
-
-        ITransitionActionBuilder<TEvent> ISubscription<ITransitionActionBuilder<TEvent>>.AddSubscription<TNotification>()
-            => AddSubscription<TNotification>();
-
-        IInitializedTransitionActionBuilder<TEvent> ISubscription<IInitializedTransitionActionBuilder<TEvent>>.AddSubscription<TNotification>()
-            => AddSubscription<TNotification>();
-
-        ITransitionActionBuilder<TEvent> ISubscription<ITransitionActionBuilder<TEvent>>.AddRelay<TNotification>()
-            => AddRelay<TNotification>();
-
-        IInitializedTransitionActionBuilder<TEvent> ISubscription<IInitializedTransitionActionBuilder<TEvent>>.AddRelay<TNotification>()
-            => AddRelay<TNotification>();
     }
 }

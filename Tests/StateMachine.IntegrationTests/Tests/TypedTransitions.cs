@@ -135,7 +135,7 @@ namespace StateMachine.IntegrationTests.Tests
                     .AddStateMachine("exits", b => b
                         .AddInitialState("state1", b => b
                             .AddOnExit(c => StateExited = true)
-                            .AddOnExits<OnExit1, OnExit2, OnExit3>()
+                            .AddOnExit<OnExit1, OnExit2, OnExit3>()
                             .AddTransition<SomeEvent>("state2")
                         )
                         .AddState("state2", b => b

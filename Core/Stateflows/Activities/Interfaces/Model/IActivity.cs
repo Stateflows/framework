@@ -6,7 +6,7 @@ namespace Stateflows.Activities
 {
     public interface IActivity
     {
-        void Build(IActivityBuilder builder);
+        static abstract void Build(IActivityBuilder builder);
     }
 
     public static class Activity<TActivity>

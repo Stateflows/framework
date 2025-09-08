@@ -1,11 +1,17 @@
 using Stateflows.Activities;
 using StateMachine.IntegrationTests.Utils;
 using System.Diagnostics;
+using Stateflows.Common;
 using StateMachine.IntegrationTests.Classes.Events;
 
 namespace StateMachine.IntegrationTests.Tests
 {
     public class BoolInit
+    {
+        public bool Value { get; set; }
+    }
+
+    public class InitHeader : EventHeader
     {
         public bool Value { get; set; }
     }
@@ -40,9 +46,7 @@ namespace StateMachine.IntegrationTests.Tests
                         })
                         .AddInitialState("stateA", b => b
                             .AddTransition<SomeEvent>("stateB", b => b
-                                .AddGuardActivity("guard", b => b
-                                    .AddRelay<SomeNotification>()
-                                )
+                                .AddGuardActivity("guard")
                                 .AddEffectActivity("effect")
                             )
                         )
@@ -54,11 +58,7 @@ namespace StateMachine.IntegrationTests.Tests
                 )   
                 .AddActivities(b => b
                     .AddActivity("guard", b => b
-                        .AddInitial(b => b
-                            .AddControlFlow("main")
-                        )
-                        .AddAction(
-                            "main",
+                        .AddAcceptEventAction<SomeEvent>(
                             async c =>
                             {
                                 GuardRun = true;
@@ -119,6 +119,8 @@ namespace StateMachine.IntegrationTests.Tests
 
                 await sm.SendAsync(new SomeEvent());
 
+                await Task.Delay(200);
+
                 var currentState = (await sm.GetStatusAsync()).Response;
 
                 currentState1 = currentState.CurrentStates.Value;
@@ -149,6 +151,8 @@ namespace StateMachine.IntegrationTests.Tests
                 await sm.SendAsync(new BoolInit() { Value = false });
 
                 await sm.SendAsync(new SomeEvent());
+
+                await Task.Delay(100);
 
                 var currentState = (await sm.GetStatusAsync()).Response;
 

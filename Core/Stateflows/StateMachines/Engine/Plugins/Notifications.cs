@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Diagnostics;
+using System.Linq;
 using Stateflows.Common;
+using Stateflows.StateMachines.Context.Classes;
 using Stateflows.StateMachines.Context.Interfaces;
 using Stateflows.StateMachines.Extensions;
 
@@ -77,21 +79,40 @@ namespace Stateflows.StateMachines.Engine
         {
             if (guardResult) return;
             var eventName = Event.GetName(context.Event.GetType());
-            if (context.Target != null)
+
+            var transitionContext = (TransitionContext<TEvent>)context;
+            var guardDelegations = context.Headers.OfType<GuardDelegation>();
+            if (guardDelegations.Any(g => g.EdgeIdentifier == transitionContext.Edge.Identifier))
             {
-                Trace.WriteLine(string.IsNullOrEmpty(eventName)
-                    ? $"⦗→s⦘ State Machine '{context.Behavior.Id.Name}:{context.Behavior.Id.Instance}': guard stopped default transition from '{context.Source.Name}' to '{context.Target.Name}'"
-                    : $"⦗→s⦘ State Machine '{context.Behavior.Id.Name}:{context.Behavior.Id.Instance}': guard stopped event '{eventName}' from triggering transition from '{context.Source.Name}' to '{context.Target.Name}'");
+                if (context.Target != null)
+                {
+                    Trace.WriteLine(string.IsNullOrEmpty(eventName)
+                        ? $"⦗→s⦘ State Machine '{context.Behavior.Id.Name}:{context.Behavior.Id.Instance}': delegated guard on default transition from '{context.Source.Name}' to '{context.Target.Name}'"
+                        : $"⦗→s⦘ State Machine '{context.Behavior.Id.Name}:{context.Behavior.Id.Instance}': delegated guard on transition from '{context.Source.Name}' to '{context.Target.Name}' triggered by event '{eventName}'");
+                }
+                else
+                {
+                    Trace.WriteLine($"⦗→s⦘ State Machine '{context.Behavior.Id.Name}:{context.Behavior.Id.Instance}': delegated guard on internal transition in '{context.Source.Name}' triggered by event '{eventName}'");
+                }
             }
             else
             {
-                Trace.WriteLine($"⦗→s⦘ State Machine '{context.Behavior.Id.Name}:{context.Behavior.Id.Instance}': guard stopped event '{eventName}' from triggering internal transition in '{context.Source.Name}'");
+                if (context.Target != null)
+                {
+                    Trace.WriteLine(string.IsNullOrEmpty(eventName)
+                        ? $"⦗→s⦘ State Machine '{context.Behavior.Id.Name}:{context.Behavior.Id.Instance}': guard stopped default transition from '{context.Source.Name}' to '{context.Target.Name}'"
+                        : $"⦗→s⦘ State Machine '{context.Behavior.Id.Name}:{context.Behavior.Id.Instance}': guard stopped event '{eventName}' from triggering transition from '{context.Source.Name}' to '{context.Target.Name}'");
+                }
+                else
+                {
+                    Trace.WriteLine($"⦗→s⦘ State Machine '{context.Behavior.Id.Name}:{context.Behavior.Id.Instance}': guard stopped event '{eventName}' from triggering internal transition in '{context.Source.Name}'");
+                }
             }
         }
 
         public override bool BeforeProcessEvent<TEvent>(IEventContext<TEvent> context)
         {
-            Trace.WriteLine($"⦗→s⦘ State Machine '{context.Behavior.Id.Name}:{context.Behavior.Id.Instance}': received event '{Event.GetName(context.Event.GetType())}', trying to process it");
+            Trace.WriteLine($"⦗→s⦘ State Machine '{context.Behavior.Id.Name}:{context.Behavior.Id.Instance}': received event '{Event.GetName(context.Event.GetType())}', processing");
 
             return true;
         }
@@ -103,7 +124,7 @@ namespace Stateflows.StateMachines.Engine
             var executor = context.Behavior.GetExecutor();
             if (!executor.StateHasChanged) return;
             
-            Trace.WriteLine($"⦗→s⦘ State Machine '{context.Behavior.Id.Name}:{context.Behavior.Id.Instance}': state has changed, emitting");
+            // Trace.WriteLine($"⦗→s⦘ State Machine '{context.Behavior.Id.Name}:{context.Behavior.Id.Instance}': state has changed, emitting");
             var notification = new StateMachineInfo()
             {
                 Id = executor.Context.Id,

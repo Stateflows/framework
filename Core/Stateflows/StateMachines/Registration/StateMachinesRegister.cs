@@ -43,12 +43,9 @@ namespace Stateflows.StateMachines.Registration
         //     new List<Action<IServiceProvider>>();
         //
         // private bool Built = false;
-        // private IServiceProvider ServiceProvider = null;
         // public void Build(IServiceProvider serviceProvider)
         // {
         //     if (Built) return;
-        //     
-        //     ServiceProvider = serviceProvider;
         //     
         //     foreach (var action in StateMachineRegistrationActions)
         //     {
@@ -57,6 +54,21 @@ namespace Stateflows.StateMachines.Registration
         //     
         //     Built = true;
         // }
+
+        private static void RegisterStateMachine(Type stateMachineType, StateMachineBuilder stateMachineBuilder)
+        {
+            // Try to invoke a static RegisterEndpoints(EndpointsBuilder) on the concrete type
+            var staticRegister = stateMachineType.GetMethod(
+                "Build",
+                BindingFlags.Public | BindingFlags.Static,
+                binder: null,
+                types: [ typeof(StateMachineBuilder) ],
+                modifiers: null
+            );
+
+            // static method found -> invoke without creating an instance
+            staticRegister.Invoke(null, [ stateMachineBuilder ]);
+        }
 
         private bool IsNewestVersion(string stateMachineName, int version)
         {
@@ -128,30 +140,31 @@ namespace Stateflows.StateMachines.Registration
                 }
 
                 // var sm = StateflowsActivator.CreateModelElementInstanceAsync(serviceProvider, stateMachineType).GetAwaiter().GetResult() as IStateMachine;
-                var sm = StateflowsActivator.CreateUninitializedInstance(stateMachineType) as IStateMachine;
+                // var sm = StateflowsActivator.CreateUninitializedInstance(stateMachineType) as IStateMachine;
 
-                var builder = new StateMachineBuilder(stateMachineName, version, stateflowsBuilder)
+                var stateMachineBuilder = new StateMachineBuilder(stateMachineName, version, stateflowsBuilder)
                     {
                         Graph =
                         {
                             StateMachineType = stateMachineType
                         }
                     };
-                sm.Build(builder);
-                builder.Graph.Build();
+                RegisterStateMachine(stateMachineType, stateMachineBuilder);
+                // sm.Build(builder);
+                stateMachineBuilder.Graph.Build();
 
                 var method = StateMachineTypeAddedAsyncMethod.MakeGenericMethod(stateMachineType);
 
-                builder.Graph.VisitingTasks.AddRange(new Func<IStateMachineVisitor, Task>[] {
+                stateMachineBuilder.Graph.VisitingTasks.AddRange(new Func<IStateMachineVisitor, Task>[] {
                     v => v.StateMachineAddedAsync(stateMachineName, version),
                     v => (Task)method.Invoke(v, new object[] { stateMachineName, version })
                 });
                 
-                StateMachines.Add(key, builder.Graph);
+                StateMachines.Add(key, stateMachineBuilder.Graph);
 
                 if (IsNewestVersion(stateMachineName, version))
                 {
-                    StateMachines[currentKey] = builder.Graph;
+                    StateMachines[currentKey] = stateMachineBuilder.Graph;
                 }
             // };
             //

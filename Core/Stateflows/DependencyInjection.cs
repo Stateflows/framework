@@ -3,11 +3,13 @@ using System.Linq;
 using Microsoft.Extensions.DependencyInjection;
 using Stateflows.Common;
 using Stateflows.Common.Cache;
+using Stateflows.Common.Classes;
 using Stateflows.Common.Lock;
 using Stateflows.Common.Tenant;
 using Stateflows.Common.Engine;
 using Stateflows.Common.Storage;
 using Stateflows.Common.Context;
+using Stateflows.Common.Engine.Interfaces;
 using Stateflows.Common.Scheduler;
 using Stateflows.Common.Extensions;
 using Stateflows.Common.Interfaces;
@@ -15,6 +17,7 @@ using Stateflows.Common.Initializer;
 using Stateflows.Common.Subscription;
 using Stateflows.Common.Registration.Builders;
 using Stateflows.Common.Registration.Interfaces;
+using Stateflows.Common.Utilities;
 using Stateflows.StateMachines;
 using Stateflows.StateMachines.Engine;
 using IExecutionContext = Stateflows.Common.IExecutionContext;
@@ -32,6 +35,7 @@ namespace Stateflows
                     .AddSingleton<StateflowsEngine>()
                     .AddSingleton<StateflowsService>()
                     .AddHostedService(provider => provider.GetRequiredService<StateflowsService>())
+                    .AddSingleton<IStateflowsTelemetry>(provider => provider.GetRequiredService<StateflowsService>())
                     .AddScoped<INotificationsHub, NotificationsHub>()
                     .AddHostedService<Scheduler>()
                     .AddTransient<ScheduleExecutor>()
@@ -73,6 +77,11 @@ namespace Stateflows
             if (!services.IsServiceRegistered<IStateflowsNotificationsStorage>())
             {
                 services.AddSingleton<IStateflowsNotificationsStorage, InMemoryNotificationsStorage>();
+            }
+
+            if (!services.IsServiceRegistered<IStateflowsValueStorage>())
+            {
+                services.AddSingleton<IStateflowsValueStorage, InMemoryValueStorage>();
             }
 
             if (!services.IsServiceRegistered<IStateflowsLock>())

@@ -227,11 +227,11 @@ namespace Stateflows.Common.Classes
             return Task.CompletedTask;
         }
 
-        public Task RemoveMatchingAsync(Regex keyPattern)
+        public Task RemovePrefixedAsync(string prefix)
         {
             lock (Values)
             {
-                var matchingKeys = Values.Keys.Where(key => keyPattern.IsMatch(key));
+                var matchingKeys = Values.Keys.Where(key => key.StartsWith(prefix));
                 foreach (var key in matchingKeys)
                 {
                     Values.Remove(key);
@@ -239,6 +239,14 @@ namespace Stateflows.Common.Classes
             }
 
             return Task.CompletedTask;
+        }
+
+        public Task<bool> HasAnyPrefixedAsync(string prefix)
+        {
+            lock (Values)
+            {
+                return Task.FromResult(Values.Keys.Any(key => key.StartsWith(prefix)));
+            }
         }
 
         public Task<bool> HasAnyMatchingAsync(Regex keyPattern)
@@ -267,10 +275,10 @@ namespace Stateflows.Common.Classes
             return Task.CompletedTask;
         }
 
-        private static T ParseStringToEnum<T>(string value)
+        public static T ParseStringToEnum<T>(string value)
             => (T)(object)JToken.Parse(value).Value<int>();
 
-        private static T ParseStringToTypedValue<T>(string value)
+        public static T ParseStringToTypedValue<T>(string value)
             => typeof(T) == typeof(string)
                 ? JToken.Parse($"\"{value}\"").Value<T>()
                 : JToken.Parse(value).Value<T>();

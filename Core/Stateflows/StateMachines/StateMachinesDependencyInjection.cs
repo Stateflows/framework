@@ -93,6 +93,8 @@ namespace Stateflows.StateMachines
                         .AddSingleton<IStateMachineEventHandler, UnsubscriptionHandler>()
                         .AddSingleton<IStateMachineEventHandler, StartRelayHandler>()
                         .AddSingleton<IStateMachineEventHandler, StopRelayHandler>()
+                        .AddSingleton<IStateMachineEventHandler, SetGlobalValuesHandler>()
+                        .AddSingleton<IStateMachineEventHandler, SetContextOwnerHandler>()
                         .AddSingleton<IStateMachineEventHandler, ContextValuesRequestHandler>()
                         .AddTransient(provider =>
                             StateMachinesContextHolder.StateMachineContext.Value ??

@@ -1,6 +1,4 @@
 using Activity.IntegrationTests.Classes.Tokens;
-using Stateflows.Activities;
-using Stateflows.Activities.Registration.Interfaces.Base;
 using Stateflows.Common;
 using Stateflows.Common.Attributes;
 using StateMachine.IntegrationTests.Utils;

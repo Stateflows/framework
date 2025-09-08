@@ -166,7 +166,7 @@ namespace Stateflows.StateMachines.Engine
             Executor executor
         )
         {
-            Trace.WriteLine($"⦗→s⦘ State Machine '{executor.Context.Id.Name}:{executor.Context.Id.Instance}': resetting StateHasChanged flag");
+            // Trace.WriteLine($"⦗→s⦘ State Machine '{executor.Context.Id.Name}:{executor.Context.Id.Instance}': resetting StateHasChanged flag");
             executor.StateHasChanged = false;
             
             var eventContext = new EventContext<TEvent>(executor.Context);

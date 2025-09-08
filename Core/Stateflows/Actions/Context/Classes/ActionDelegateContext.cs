@@ -9,17 +9,18 @@ using Stateflows.Common.Context;
 
 namespace Stateflows.Actions.Context.Classes
 {
-    public class ActionDelegateContext : IActionDelegateContext
+    public class ActionDelegateContext : ActionContext, IActionDelegateContext
     {
         public ActionDelegateContext(StateflowsContext context, EventHolder eventHolder, IServiceProvider serviceProvider, List<TokenHolder> inputTokens = null)
+            : base(new RootContext(context, eventHolder, serviceProvider), serviceProvider, inputTokens)
         {
             ServiceProvider = serviceProvider;
-            RootContext = new RootContext(context, eventHolder);
+            // RootContext = new RootContext(context, eventHolder, serviceProvider);
             InputTokens = inputTokens;
         }
 
         internal readonly IServiceProvider ServiceProvider;
-        internal readonly RootContext RootContext;
+        // internal readonly RootContext RootContext;
         internal readonly List<TokenHolder> InputTokens;
 
         public IEnumerable<TokenHolder> OutputTokens

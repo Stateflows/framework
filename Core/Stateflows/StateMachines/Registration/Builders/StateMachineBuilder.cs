@@ -1,18 +1,17 @@
 ﻿using System;
 using System.Diagnostics;
 using System.Threading.Tasks;
-using Microsoft.Extensions.DependencyInjection;
 using Stateflows.Common;
 using Stateflows.Common.Classes;
 using Stateflows.Common.Models;
 using Stateflows.Common.Registration;
 using Stateflows.Common.Registration.Builders;
+using Stateflows.Common.Utilities;
 using Stateflows.StateMachines.Context;
 using Stateflows.StateMachines.Models;
 using Stateflows.StateMachines.Interfaces;
 using Stateflows.StateMachines.Exceptions;
 using Stateflows.StateMachines.Context.Classes;
-using Stateflows.StateMachines.Context.Interfaces;
 using Stateflows.StateMachines.Registration.Interfaces;
 using Stateflows.StateMachines.Registration.Interfaces.Base;
 using Stateflows.StateMachines.Registration.Interfaces.Internal;
@@ -204,8 +203,8 @@ namespace Stateflows.StateMachines.Registration.Builders
              => AddChoice(choiceName, choiceBuildAction) as IOverridenStateMachineBuilder;
 
         [DebuggerHidden]
-        public IFinalizedStateMachineBuilder AddFinalState(string finalStateName = FinalState.Name)
-            => AddVertex(finalStateName, VertexType.FinalState) as IFinalizedStateMachineBuilder;
+        public IFinalizedStateMachineBuilder AddFinalState(string finalStateName = null)
+            => AddVertex(finalStateName ?? State<FinalState>.Name, VertexType.FinalState) as IFinalizedStateMachineBuilder;
 
         [DebuggerHidden]
         public IInitializedStateMachineBuilder AddJunction(string junctionName, JunctionBuildAction junctionBuildAction)
@@ -441,8 +440,9 @@ namespace Stateflows.StateMachines.Registration.Builders
             where TStateMachine : class, IStateMachine
         {
             Graph.BaseStateMachineName = StateMachine<TStateMachine>.Name;
-            var sm = StateflowsActivator.CreateUninitializedInstance(typeof(TStateMachine)) as IStateMachine;
-            sm.Build(this);
+            TStateMachine.Build(this);
+            // var sm = StateflowsActivator.CreateUninitializedInstance(typeof(TStateMachine)) as IStateMachine;
+            // sm.Build(this);
             
             foreach (var vertex in Graph.AllVertices.Values)
             {

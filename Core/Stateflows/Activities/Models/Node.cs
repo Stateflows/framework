@@ -9,6 +9,7 @@ using Stateflows.Common.Models;
 using Stateflows.Activities.Registration;
 using Stateflows.Activities.Context.Classes;
 using Stateflows.Activities.Exceptions;
+using Stateflows.Common.Utilities;
 
 namespace Stateflows.Activities.Models
 {

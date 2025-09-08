@@ -83,9 +83,7 @@ namespace Stateflows.StateMachines
             get
             {
                 var self = this;
-                return c =>
-                    ((ContextValuesCollection)c.Behavior.Values).RemoveMatchingAsync(
-                        new Regex($"{self.NamespaceName}[.](.*)", RegexOptions.None, TimeSpan.FromSeconds(1)));
+                return c => c.Behavior.Values.RemovePrefixedAsync($"{self.NamespaceName}.");
             }
         }
     }
@@ -191,9 +189,7 @@ namespace Stateflows.StateMachines
             get
             {
                 var self = this;
-                return c => ((ContextValuesCollection)c.State.Values).RemoveMatchingAsync(
-                    new Regex($"{self.NamespaceName}[.](.*)", RegexOptions.None, TimeSpan.FromSeconds(1))
-                );
+                return c => c.Behavior.Values.RemovePrefixedAsync($"{self.NamespaceName}.");
             }
         }
     }

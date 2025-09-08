@@ -1,6 +1,7 @@
 ﻿using System.Linq;
 using Stateflows.Common;
 using Stateflows.Common.Classes;
+using Stateflows.Common.Utilities;
 using Stateflows.StateMachines.Exceptions;
 using Stateflows.StateMachines.Context.Classes;
 using Stateflows.StateMachines.Context.Interfaces;
@@ -25,24 +26,14 @@ namespace Stateflows.StateMachines.Engine
                     
                     var request = new CompoundRequest()
                         .Add(new SetContextOwner() { ContextOwner = context.Behavior.Id })
-                        .Add(new SetGlobalValues() { Values = ((ContextValuesCollection)context.Behavior.Values).Values })
+                        //.Add(new SetGlobalValues() { Values = ((ContextValuesCollection)context.Behavior.Values).Values })
                     ;
-
-                    if (vertex.BehaviorSubscriptions.Any())
-                    {
-                        request.Add(vertex.GetSubscriptionRequest(context.Behavior.Id));
-                    }
-
-                    if (vertex.BehaviorRelays.Any())
-                    {
-                        request.Add(vertex.GetStartRelayRequest(context.Behavior.Id));
-                    }
 
                     var initializationRequest = vertex.BehaviorInitializationBuilder != null
                         ? vertex.BehaviorInitializationBuilder(context)
                         : new Initialize();
                     
-                    request.Events.Add(initializationRequest.ToEventHolder());
+                    request.Events.Add(initializationRequest.ToTypedEventHolder());
                     
                     _ = behavior.SendAsync(request);
                 }
@@ -74,16 +65,6 @@ namespace Stateflows.StateMachines.Engine
                 )
                 {
                     var request = new CompoundRequest();
-                    
-                    if (vertex.BehaviorRelays.Any())
-                    {
-                        request.Add(vertex.GetStopRelayRequest(context.Behavior.Id));
-                    }
-                    
-                    if (vertex.BehaviorSubscriptions.Any())
-                    {
-                        request.Add(vertex.GetUnsubscriptionRequest(context.Behavior.Id));
-                    }
 
                     request.Add(new Finalize());
                     

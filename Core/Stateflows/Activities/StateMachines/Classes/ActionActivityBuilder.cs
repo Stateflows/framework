@@ -1,13 +1,21 @@
-﻿using Stateflows.Common;
+﻿using System.Threading.Tasks;
 using Stateflows.Activities.Extensions;
+using Stateflows.StateMachines;
 
 namespace Stateflows.Activities.StateMachines.Interfaces
 {
     internal class ActionActivityBuilder :
         BaseEmbeddedBehaviorBuilder,
         IActionActivityBuilder,
-        IInitializedActionActivityBuilder
+        IInstantiatedActionActivityBuilder
     {
+        private StateActionBehaviorInstanceBuilderAsync InstanceBuilder { get; set; } = null;
+
+        public async Task<string> GetInstanceAsync(IStateActionContext context, string defaultInstance)
+            => InstanceBuilder != null
+                ? await InstanceBuilder(context)
+                : defaultInstance;
+        
         public StateActionBehaviorInitializationBuilderAsync<object> InitializationBuilder { get; private set; } = null;
 
         public ActionActivityBuilder(StateActionActivityBuildAction buildAction)
@@ -15,40 +23,22 @@ namespace Stateflows.Activities.StateMachines.Interfaces
             buildAction?.Invoke(this);
         }
 
-        IInitializedActionActivityBuilder IStateActionInitialization<IInitializedActionActivityBuilder>.InitializeWith<TInitializationEvent>(StateActionBehaviorInitializationBuilderAsync<TInitializationEvent> builderAsync)
+        public IInstantiatedActionActivityBuilder InstantiateAs(StateActionBehaviorInstanceBuilderAsync builderAsync)
         {
             if (builderAsync != null)
             {
-                InitializationBuilder = async c => await builderAsync(c);
+                InstanceBuilder = builderAsync;
             }
 
             return this;
         }
 
-        public ActionActivityBuilder AddSubscription<TNotification>()
+        void IStateActionInitialization.InitializeWith<TInitializationEvent>(StateActionBehaviorInitializationBuilderAsync<TInitializationEvent> builderAsync)
         {
-            Subscriptions.Add(typeof(TNotification));
-
-            return this;
+            if (builderAsync != null)
+            {
+                InitializationBuilder = async c => await builderAsync(c);
+            }
         }
-
-        public ActionActivityBuilder AddRelay<TNotification>()
-        {
-            Relays.Add(typeof(TNotification));
-
-            return this;
-        }
-
-        IInitializedActionActivityBuilder ISubscription<IInitializedActionActivityBuilder>.AddRelay<TNotification>()
-            => AddRelay<TNotification>();
-
-        IActionActivityBuilder ISubscription<IActionActivityBuilder>.AddRelay<TNotification>()
-            => AddRelay<TNotification>();
-
-        IActionActivityBuilder ISubscription<IActionActivityBuilder>.AddSubscription<TNotification>()
-            => AddSubscription<TNotification>();
-
-        IInitializedActionActivityBuilder ISubscription<IInitializedActionActivityBuilder>.AddSubscription<TNotification>()
-            => AddSubscription<TNotification>();
     }
 }

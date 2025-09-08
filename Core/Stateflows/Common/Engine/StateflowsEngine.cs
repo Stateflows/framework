@@ -72,7 +72,7 @@ namespace Stateflows.Common
         {
             var result = EventStatus.Undelivered;
 
-            if (!Processors.TryGetValue(id.Type, out var processor) || !Interceptor.BeforeExecute(eventHolder))
+            if (!Processors.TryGetValue(id.Type, out var processor) || !Interceptor.BeforeExecute(id, eventHolder))
             {
                 return result;
             }
@@ -117,7 +117,7 @@ namespace Stateflows.Common
             }
             finally
             {
-                Interceptor.AfterExecute(eventHolder);
+                Interceptor.AfterExecute(id, eventHolder);
             }
 
             return result;

@@ -7,7 +7,7 @@ namespace WarszawskieDniInformatyki.Activities.Process;
 
 public class Process : IActivity, IActivityEndpoints
 {
-    public void Build(IActivityBuilder builder)
+    public static void Build(IActivityBuilder builder)
         => builder
             .AddInitial(b => b
                 .AddControlFlow("firstAction")
@@ -35,7 +35,7 @@ public class Process : IActivity, IActivityEndpoints
             )
             ;
 
-    public void RegisterEndpoints(IEndpointsBuilder endpointsBuilder)
+    public static void RegisterEndpoints(IEndpointsBuilder endpointsBuilder)
     {
         endpointsBuilder
             .AddGet("/global", async (IActivityEndpointContext context) =>

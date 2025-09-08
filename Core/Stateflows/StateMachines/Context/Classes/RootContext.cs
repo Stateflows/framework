@@ -8,6 +8,8 @@ using Stateflows.Common.Context;
 using Stateflows.StateMachines.Engine;
 using Stateflows.StateMachines.Registration;
 using System.Net.Http.Headers;
+using Stateflows.Common.Classes;
+using Stateflows.Common.Interfaces;
 using Stateflows.Common.Utilities;
 
 namespace Stateflows.StateMachines.Context.Classes
@@ -216,7 +218,7 @@ namespace Stateflows.StateMachines.Context.Classes
         public async Task SendAsync<TEvent>(TEvent @event, IEnumerable<EventHeader> headers = null)
         {
             var locator = Executor.ServiceProvider.GetService<IBehaviorLocator>();
-            if (locator != null && locator.TryLocateBehavior(Id, out var behavior))
+            if (locator != null && locator.TryLocateBehavior(Context.ContextOwnerId ?? Id, out var behavior))
             {
                 await behavior.SendAsync(@event, headers).ConfigureAwait(false);
             }

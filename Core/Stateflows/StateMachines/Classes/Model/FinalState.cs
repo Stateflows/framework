@@ -2,6 +2,6 @@
 {
     public sealed class FinalState : IFinalState
     {
-        public const string Name = "Stateflows.StateMachines.FinalState";
+        public static string Name => State<FinalState>.Name;
     }
 }

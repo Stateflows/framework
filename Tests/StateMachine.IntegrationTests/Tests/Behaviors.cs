@@ -15,7 +15,7 @@ namespace StateMachine.IntegrationTests.Tests
         public async Task ExecuteAsync(SomeEvent @event, CancellationToken cancellationToken)
         {
             Behaviors.eventConsumed = await Context.Values.TryGetAsync<bool>("boolValue") is (true, true);
-            Context.Publish(new SomeNotification());
+            Context.Send(new SomeNotification());
         }
     }
 
@@ -39,10 +39,7 @@ namespace StateMachine.IntegrationTests.Tests
                     .AddStateMachine("submachine", b => b
                         .AddExecutionSequenceObserver()
                         .AddInitialState("state1", b => b
-                            .AddSubmachine("nested", b => b
-                                .AddForwardedEvent<SomeEvent>()
-                                .AddSubscription<SomeNotification>()
-                            )
+                            .AddSubmachine("nested")
                             .AddTransition<SomeNotification>("state2")
                         )
                         .AddState("state2")
@@ -54,7 +51,7 @@ namespace StateMachine.IntegrationTests.Tests
                             .AddTransition<SomeEvent>("stateB")
                         )
                         .AddState("stateB", b => b
-                            .AddOnEntry(c => c.Behavior.Publish(new SomeNotification()))
+                            .AddOnEntry(c => c.Behavior.Send(new SomeNotification()))
                         )
                     )
 
@@ -62,10 +59,7 @@ namespace StateMachine.IntegrationTests.Tests
                         .AddExecutionSequenceObserver()
                         .AddInitialState("state1", b => b
                             .AddOnEntry(c => c.Behavior.Values.SetAsync("boolValue", true))
-                            .AddDoActivity("nested", b => b
-                                .AddForwardedEvent<SomeEvent>()
-                                .AddSubscription<SomeNotification>()
-                            )
+                            .AddDoActivity("nested")
                             .AddTransition<SomeNotification>("state2")
                         )
                         .AddState("state2")
@@ -76,8 +70,8 @@ namespace StateMachine.IntegrationTests.Tests
                         .AddInitialState("state1", b => b
                             .AddInternalTransition<SomeEvent>(b => b
                                 .AddEffectActivity(
-                                    "integrated",
-                                    b => b.AddSubscription<SomeNotification>()
+                                    "integrated"/*,
+                                    b => b.AddSubscription<SomeNotification>()*/
                                 )
                             )
                             .AddTransition<SomeNotification>("state2")
@@ -113,20 +107,15 @@ namespace StateMachine.IntegrationTests.Tests
                             async c =>
                             {
                                 eventConsumed = true;
-                                c.Behavior.Publish(new SomeNotification());
+                                c.Behavior.Send(new SomeNotification());
                             }
                         )
                     )
                     .AddActivity("guard", b => b
-                        .AddInput(b => b
-                            .AddFlow<SomeEvent>("guard")
-                        )
-                        .AddAction(
-                            "guard",
+                        .AddAcceptEventAction<SomeEvent>(
                             async c =>
                             {
-                                var t = c.GetTokensOfType<SomeEvent>().First();
-                                c.Output(t.TheresSomethingHappeningHere != string.Empty);
+                                c.Output(c.Event.TheresSomethingHappeningHere != string.Empty);
                             },
                             b => b.AddFlow<bool, OutputNode>()
                         )
@@ -249,7 +238,7 @@ namespace StateMachine.IntegrationTests.Tests
                 .StateEntry("state2")
             );
             Assert.IsTrue(initialized);
-            Assert.AreEqual(EventStatus.Consumed, someStatus1);
+            Assert.AreEqual(EventStatus.Forwarded, someStatus1);
             Assert.AreEqual("state2", currentState1);
         }
     }

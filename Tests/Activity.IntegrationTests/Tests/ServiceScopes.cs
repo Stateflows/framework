@@ -1,5 +1,4 @@
 using Microsoft.Extensions.DependencyInjection;
-using Stateflows.Activities;
 using Stateflows.Common;
 using StateMachine.IntegrationTests.Utils;
 

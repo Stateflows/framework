@@ -1,10 +1,11 @@
 ﻿namespace Stateflows.Activities.StateMachines.Interfaces
 {
     public interface ITransitionActionBuilder<TEvent> :
-        ISubscription<ITransitionActionBuilder<TEvent>>
+        ITransitionInstantation<TEvent>
+        //ISubscription<IInstantiatedTransitionActionBuilder<TEvent>>
     { }
 
-    public interface IInitializedTransitionActionBuilder<TEvent> :
-        ISubscription<IInitializedTransitionActionBuilder<TEvent>>
-    { }
+    // public interface IInstantiatedTransitionActionBuilder<TEvent> :
+    //     //ISubscription<IInstantiatedTransitionActionBuilder<TEvent>>
+    // { }
 }

@@ -80,6 +80,7 @@ namespace Stateflows.Activities
                         .AddSingleton<IActivityEventHandler, StartRelayHandler>()
                         .AddSingleton<IActivityEventHandler, StopRelayHandler>()
                         .AddSingleton<IActivityEventHandler, SetGlobalValuesHandler>()
+                        .AddSingleton<IActivityEventHandler, SetContextOwnerHandler>()
                         .AddSingleton<IActivityEventHandler, TokensOutputHandler>()
                         .AddSingleton<IActivityEventHandler, TypedTokensOutputHandler>()
                         .AddTransient(provider =>

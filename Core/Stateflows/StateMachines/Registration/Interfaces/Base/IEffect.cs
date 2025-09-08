@@ -50,7 +50,7 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         /// <param name="buildAction">Build action</param>
         [DebuggerHidden]
         public TReturn AddEffectAction(string actionName, TransitionActionBuildAction<TEvent> buildAction = null)
-            => AddEffect(c => StateMachineActionExtensions.RunEffectAction(c, actionName, buildAction));
+            => AddEffect(c => StateMachineActionExtensions.RunEffectActionAsync(c, actionName, buildAction));
 
         /// <summary>
         /// Adds action behavior as effect

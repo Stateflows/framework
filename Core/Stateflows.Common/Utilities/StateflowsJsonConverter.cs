@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Diagnostics;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using Newtonsoft.Json.Serialization;
 
 namespace Stateflows.Common.Utilities
@@ -98,5 +99,13 @@ namespace Stateflows.Common.Utilities
         {
             return JsonConvert.DeserializeObject<T>(value, polymorphicSettings);
         }
+        
+        public static T ParseStringToEnum<T>(string value)
+            => (T)(object)JToken.Parse(value).Value<int>();
+
+        public static T ParseStringToTypedValue<T>(string value)
+            => typeof(T) == typeof(string)
+                ? JToken.Parse($"\"{value}\"").Value<T>()
+                : JToken.Parse(value).Value<T>();
     }
 }

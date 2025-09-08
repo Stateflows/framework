@@ -11,15 +11,16 @@ namespace Stateflows.Activities.Registration.Extensions
         public static Func<TContext, TResult> AddActivityInvocationContext<TContext, TResult>(this Func<TContext, TResult> lambda, Graph graph)
             where TContext : IBehaviorLocator
         {
+            return lambda;
             var activityType = graph.ActivityType;
             var lambdaInfo = lambda.GetMethodInfo();
             return (activityType != null && lambdaInfo.DeclaringType == activityType)
                 ? (TContext context) =>
                     {
                         var rootContext = (context as IRootContext).Context;
-                        var stateMachineInstance = rootContext.Executor.GetActivity(graph.ActivityType);
+                        var activityInstance = rootContext.Executor.GetActivityAsync(graph.ActivityType).GetAwaiter().GetResult();
 
-                        return (TResult)lambdaInfo.Invoke(stateMachineInstance, new object[] { context });
+                        return (TResult)lambdaInfo.Invoke(activityInstance, [ context ]);
                     }
                 : lambda;
         }
@@ -27,15 +28,16 @@ namespace Stateflows.Activities.Registration.Extensions
         public static Action<TContext> AddActivityInvocationContext<TContext>(this Action<TContext> lambda, Graph graph)
             where TContext : IBehaviorLocator
         {
+            return lambda;
             var activityType = graph.ActivityType;
             var lambdaInfo = lambda.GetMethodInfo();
             return (activityType != null && lambdaInfo.DeclaringType == activityType)
                 ? (TContext context) =>
                     {
                         var rootContext = (context as IRootContext).Context;
-                        var stateMachineInstance = rootContext.Executor.GetActivity(graph.ActivityType);
+                        var activityInstance = rootContext.Executor.GetActivityAsync(graph.ActivityType).GetAwaiter().GetResult();
 
-                        lambdaInfo.Invoke(stateMachineInstance, new object[] { context });
+                        lambdaInfo.Invoke(activityInstance, [ context ]);
                     }
                 : lambda;
         }

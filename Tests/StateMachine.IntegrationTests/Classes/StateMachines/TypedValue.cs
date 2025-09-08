@@ -4,7 +4,7 @@ namespace StateMachine.IntegrationTests.Classes.StateMachines
 {
     public class TypedValue : IStateMachine
     {
-        public void Build(IStateMachineBuilder builder)
+        public static void Build(IStateMachineBuilder builder)
             => builder
                 .AddInitializer<ValueInitializationRequest>(async c =>
                 {

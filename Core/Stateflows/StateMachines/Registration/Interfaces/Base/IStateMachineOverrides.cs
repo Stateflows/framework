@@ -144,7 +144,7 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         ///     . // Use . to see available builder methods
         /// </code></param>
         TReturn UseJunction(OverridenJunctionBuildAction junctionBuildAction)
-            => UseJunction(Junction.Name, junctionBuildAction);
+            => UseJunction(State<Junction>.Name, junctionBuildAction);
         #endregion
 
         #region UseChoice
@@ -174,7 +174,7 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         ///     . // Use . to see available builder methods
         /// </code></param>
         TReturn UseChoice(OverridenChoiceBuildAction choiceBuildAction)
-            => UseChoice(Choice.Name, choiceBuildAction);
+            => UseChoice(State<Choice>.Name, choiceBuildAction);
         #endregion
 
         #region UseFork
@@ -202,7 +202,7 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         ///     . // Use . to see available builder methods
         /// </code></param>
         TReturn UseFork(OverridenForkBuildAction forkBuildAction)
-            => UseFork(Fork.Name, forkBuildAction);
+            => UseFork(State<Fork>.Name, forkBuildAction);
         #endregion
 
         #region UseJoin
@@ -230,7 +230,7 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         ///     . // Use . to see available builder methods
         /// </code></param>
         TReturn UseJoin(OverridenJoinBuildAction joinBuildAction)
-            => UseJoin(Join.Name, joinBuildAction);
+            => UseJoin(State<Join>.Name, joinBuildAction);
         #endregion
     }
 }

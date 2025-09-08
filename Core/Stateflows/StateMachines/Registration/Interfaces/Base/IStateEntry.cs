@@ -6,7 +6,6 @@ using Stateflows.Actions;
 using Stateflows.Activities;
 using Stateflows.Activities.Extensions;
 using Stateflows.StateMachines.Context.Classes;
-using Stateflows.StateMachines.Context.Interfaces;
 using Stateflows.StateMachines.Registration.Extensions;
 using Stateflows.StateMachines.Registration.Interfaces.Internal;
 
@@ -31,7 +30,7 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         /// <param name="buildAction">Build action</param>
         [DebuggerHidden]
         public TReturn AddOnEntryActivity(string activityName, StateActionActivityBuildAction buildAction = null)
-            => AddOnEntry(c => StateMachineActivityExtensions.RunStateActivity(Constants.Entry, c, activityName, buildAction));
+            => AddOnEntry(c => StateMachineActivityExtensions.RunStateActivityAsync(Constants.Entry, c, activityName, buildAction));
 
         /// <summary>
         /// Adds activity behavior that will be started when current state enters
@@ -50,7 +49,7 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         /// <param name="buildAction">Build action</param>
         [DebuggerHidden]
         public TReturn AddOnEntryAction(string actionName, StateActionActionBuildAction buildAction = null)
-            => AddOnEntry(c => StateMachineActionExtensions.RunStateAction(Constants.Entry, c, actionName, buildAction));
+            => AddOnEntry(c => StateMachineActionExtensions.RunStateActionAsync(Constants.Entry, c, actionName, buildAction));
 
         /// <summary>
         /// Adds action behavior that will be started when current state enters
@@ -92,7 +91,7 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         /// </summary>
         /// <typeparam name="TStateEntry1">The type of the first state entry handler.</typeparam>
         /// <typeparam name="TStateEntry2">The type of the second state entry handler.</typeparam>
-        TReturn AddOnEntries<TStateEntry1, TStateEntry2>()
+        TReturn AddOnEntry<TStateEntry1, TStateEntry2>()
             where TStateEntry1 : class, IStateEntry
             where TStateEntry2 : class, IStateEntry
         {
@@ -106,12 +105,12 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         /// <typeparam name="TStateEntry1">The type of the first state entry handler.</typeparam>
         /// <typeparam name="TStateEntry2">The type of the second state entry handler.</typeparam>
         /// <typeparam name="TStateEntry3">The type of the third state entry handler.</typeparam>
-        TReturn AddOnEntries<TStateEntry1, TStateEntry2, TStateEntry3>()
+        TReturn AddOnEntry<TStateEntry1, TStateEntry2, TStateEntry3>()
             where TStateEntry1 : class, IStateEntry
             where TStateEntry2 : class, IStateEntry
             where TStateEntry3 : class, IStateEntry
         {
-            AddOnEntries<TStateEntry1, TStateEntry2>();
+            AddOnEntry<TStateEntry1, TStateEntry2>();
             return AddOnEntry<TStateEntry3>();
         }
 
@@ -122,13 +121,13 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         /// <typeparam name="TStateEntry2">The type of the second state entry handler.</typeparam>
         /// <typeparam name="TStateEntry3">The type of the third state entry handler.</typeparam>
         /// <typeparam name="TStateEntry4">The type of the fourth state entry handler.</typeparam>
-        TReturn AddOnEntries<TStateEntry1, TStateEntry2, TStateEntry3, TStateEntry4>()
+        TReturn AddOnEntry<TStateEntry1, TStateEntry2, TStateEntry3, TStateEntry4>()
             where TStateEntry1 : class, IStateEntry
             where TStateEntry2 : class, IStateEntry
             where TStateEntry3 : class, IStateEntry
             where TStateEntry4 : class, IStateEntry
         {
-            AddOnEntries<TStateEntry1, TStateEntry2, TStateEntry3>();
+            AddOnEntry<TStateEntry1, TStateEntry2, TStateEntry3>();
             return AddOnEntry<TStateEntry4>();
         }
 
@@ -140,14 +139,14 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         /// <typeparam name="TStateEntry3">The type of the third state entry handler.</typeparam>
         /// <typeparam name="TStateEntry4">The type of the fourth state entry handler.</typeparam>
         /// <typeparam name="TStateEntry5">The type of the fifth state entry handler.</typeparam>
-        TReturn AddOnEntries<TStateEntry1, TStateEntry2, TStateEntry3, TStateEntry4, TStateEntry5>()
+        TReturn AddOnEntry<TStateEntry1, TStateEntry2, TStateEntry3, TStateEntry4, TStateEntry5>()
             where TStateEntry1 : class, IStateEntry
             where TStateEntry2 : class, IStateEntry
             where TStateEntry3 : class, IStateEntry
             where TStateEntry4 : class, IStateEntry
             where TStateEntry5 : class, IStateEntry
         {
-            AddOnEntries<TStateEntry1, TStateEntry2, TStateEntry3, TStateEntry4>();
+            AddOnEntry<TStateEntry1, TStateEntry2, TStateEntry3, TStateEntry4>();
             return AddOnEntry<TStateEntry5>();
         }
     }

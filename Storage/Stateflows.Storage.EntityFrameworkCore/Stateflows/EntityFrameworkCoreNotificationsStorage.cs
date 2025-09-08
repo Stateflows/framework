@@ -11,8 +11,6 @@ namespace Stateflows.Storage.EntityFrameworkCore.Stateflows
 {
     internal class EntityFrameworkCoreNotificationsStorage : IStateflowsNotificationsStorage
     {
-        internal static readonly ActivitySource Source = new ActivitySource(nameof(Stateflows));
-        
         private readonly IStateflowsDbContext_v1 DbContext;
         private readonly ILogger<EntityFrameworkCoreNotificationsStorage> Logger;
 
@@ -30,7 +28,6 @@ namespace Stateflows.Storage.EntityFrameworkCore.Stateflows
 
         public async Task<IEnumerable<EventHolder>> GetNotificationsAsync(BehaviorId behaviorId, string[] notificationNames, DateTime lastNotificationCheck)
         {
-            var a = Source.StartActivity($"State Machine '{behaviorId.Name.ToShortName()}:{behaviorId.Instance}' running #1 query");
             var notifications = await DbContext.Notifications_v1.Where(n =>
                 n.SenderType == behaviorId.Type &&
                 n.SenderName == behaviorId.Name &&
@@ -41,9 +38,7 @@ namespace Stateflows.Storage.EntityFrameworkCore.Stateflows
                     n.Retained
                 )
             ).ToArrayAsync();
-            a?.Stop();
 
-            a = Source.StartActivity($"State Machine '{behaviorId.Name.ToShortName()}:{behaviorId.Instance}' running #2 query");
             notifications = notifications.Except(notifications.Where(n => 
                 n.Retained &&
                 notifications.Any(m =>
@@ -55,11 +50,8 @@ namespace Stateflows.Storage.EntityFrameworkCore.Stateflows
                     m.SentAt < n.SentAt
                 )
             )).ToArray();
-            a?.Stop();
 
-            a = Source.StartActivity($"State Machine '{behaviorId.Name.ToShortName()}:{behaviorId.Instance}' running serialization");
             var result = notifications.Select(n => (EventHolder)StateflowsJsonConverter.DeserializeObject(n.Data));
-            a?.Stop();
             
             return result;
         }

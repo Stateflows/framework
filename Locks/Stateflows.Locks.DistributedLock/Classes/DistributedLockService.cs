@@ -15,12 +15,15 @@ namespace Stateflows.Locks.DistributedLock.Classes
              DistributedLockFactory = distributedLockFactory;
         }
 
-        public async Task<IStateflowsLockHandle> AquireLockAsync(BehaviorId id, TimeSpan? timeout = null)
+        public Task<IStateflowsLockHandle> AquireLockAsync(BehaviorId id, TimeSpan? timeout = null)
+            => AquireLockAsync(id, string.Empty, timeout);
+        
+        public async Task<IStateflowsLockHandle> AquireLockAsync(BehaviorId id, string scope, TimeSpan? timeout = null)
         {
-            var distributedLock = await DistributedLockFactory(id.ToString());
-            var handle = distributedLock.Acquire(timeout);
+            var distributedLock = await DistributedLockFactory(scope == string.Empty ? id.ToString() : $"{id.ToString()}.{scope}");
+            var handle = await distributedLock.AcquireAsync(timeout);
 
-            return new StateflowsLockHandle(id, handle);
+            return new StateflowsLockHandle(id, scope, handle);
         }
     }
 }

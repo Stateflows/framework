@@ -3,11 +3,11 @@ using System.Linq;
 using System.Diagnostics;
 using System.Threading.Tasks;
 using Stateflows.Common;
-using Stateflows.Common.Classes;
 using Stateflows.Common.Utilities;
 using Stateflows.Activities.Extensions;
 using Stateflows.Activities.StateMachines.Interfaces;
 using Stateflows.StateMachines;
+using Stateflows.StateMachines.Context.Classes;
 using Stateflows.StateMachines.Context.Interfaces;
 using Stateflows.StateMachines.Exceptions;
 using Stateflows.StateMachines.Registration;
@@ -17,117 +17,146 @@ namespace Stateflows.Activities
     public static class StateMachineActivityExtensions
     {
         [DebuggerHidden]
-        internal static void RunStateActivity(string actionName, IStateActionContext context, string activityName, StateActionActivityBuildAction buildAction)
+        internal static async Task RunStateActivityAsync(string stateActionName, IStateActionContext context, string activityName, StateActionActivityBuildAction buildAction)
         {
-            if (context.TryLocateActivity(activityName, $"{actionName}:{new Random().Next()}", out var a))
+            var integratedActivityBuilder = new ActionActivityBuilder(buildAction);
+            var instance = await integratedActivityBuilder.GetInstanceAsync(context, context.GetBehaviorInstance($"{stateActionName}:{new Random().Next()}"));
+            if (!context.TryLocateActivity(activityName, instance, out var a))
             {
-                _ = Task.Run(async () =>
-                {
-                    var integratedActivityBuilder = new ActionActivityBuilder(buildAction);
-                    var initializationEvent = integratedActivityBuilder.InitializationBuilder != null
-                        ? await integratedActivityBuilder.InitializationBuilder(context)
-                        : new Initialize();
+                throw new StateMachineRuntimeException($"On{stateActionName}Activity '{activityName}' not found", context.Behavior.Id.BehaviorClass);
+            }
 
-                    var request = new CompoundRequest()
-                        .Add(integratedActivityBuilder.GetSubscribe(context.Behavior.Id))
-                        .Add(integratedActivityBuilder.GetStartRelay(context.Behavior.Id))
-                        .Add(new SetGlobalValues() { Values = ((ContextValuesCollection)context.Behavior.Values).Values })
-                    ;
-                    request.Events.Add(initializationEvent.ToTypedEventHolder());
-                    request
-                        .Add(integratedActivityBuilder.GetStopRelay(context.Behavior.Id))
-                        .Add(integratedActivityBuilder.GetUnsubscribe(context.Behavior.Id))
-                    ;
-                        
-                    _ = a.SendAsync(request);
-                });
-            }
-            else
-            {
-                throw new StateMachineRuntimeException($"On{actionName}Activity '{activityName}' not found", context.Behavior.Id.BehaviorClass);
-            }
+            var initializationEvent = integratedActivityBuilder.InitializationBuilder != null
+                ? await integratedActivityBuilder.InitializationBuilder(context)
+                : new Initialize();
+
+            var request = new CompoundRequest()
+                .Add(new SetContextOwner() { ContextOwner = context.Behavior.Id })
+            ;
+            request.Events.Add(initializationEvent.ToTypedEventHolder());
+                
+            _ = a.SendAsync(request);
         }
 
         [DebuggerHidden]
-        internal static async Task<bool> RunGuardActivity<TEvent>(ITransitionContext<TEvent> context, string activityName, TransitionActivityBuildAction<TEvent> buildAction)
+        internal static async Task<bool> RunGuardActivityAsync<TEvent>(int guardIndex, ITransitionContext<TEvent> context, string activityName, TransitionActivityBuildAction<TEvent> buildAction)
         {
-            var result = false;
-            if (context.TryLocateActivity(activityName, $"{context.Behavior.Id.Instance}.{context.Source.Name}.{Constants.Guard}.{context.EventId}", out var a))
+            var transitionContext = (TransitionContext<TEvent>)context;
+            var edgeGuardIdentifier = $"{transitionContext.Edge.Identifier}.{guardIndex.ToString()}.{activityName}";
+            
+            var guardResponse = context.Headers.OfType<GuardResponse>().FirstOrDefault();
+            if (guardResponse != null && guardResponse.GuardIdentifier == edgeGuardIdentifier)
             {
-                var ev = StateflowsJsonConverter.Clone(context.Event);
-                await Task.Run(async () =>
-                {
-                    var integratedActivityBuilder = new TransitionActivityBuilder<TEvent>(buildAction);
-                    var initializationEvent = integratedActivityBuilder.InitializationBuilder != null
-                        ? await integratedActivityBuilder.InitializationBuilder(context)
-                        : new Initialize();
-
-                    var tokensInput = new TokensInput();
-                    tokensInput.Add(ev);
-
-                    var request = new CompoundRequest()
-                        .Add(integratedActivityBuilder.GetSubscribe(context.Behavior.Id))
-                        .Add(integratedActivityBuilder.GetStartRelay(context.Behavior.Id))
-                        .Add(new SetGlobalValues() { Values = ((ContextValuesCollection)context.Behavior.Values).Values })
-                    ;
-                    request.Events.Add(initializationEvent.ToTypedEventHolder());
-                    request
-                        .Add(tokensInput)
-                        .Add(integratedActivityBuilder.GetStopRelay(context.Behavior.Id))
-                        .Add(integratedActivityBuilder.GetUnsubscribe(context.Behavior.Id))
-                        .Add(new TokensOutputRequest<bool>())
-                    ;
-
-                    var requestResult = await a.RequestAsync(request);
-                    var responseHolder = requestResult.Response.Results.Last().Response as EventHolder<TokensOutput<bool>>;
-                    result = responseHolder?.Payload?.GetAll()?.FirstOrDefault() ?? false;
-                });
+                return true;
             }
-            else
+            
+            var integratedActivityBuilder = new TransitionActivityBuilder<TEvent>(buildAction);
+            var instance = await integratedActivityBuilder.GetInstanceAsync(
+                context,
+                context.GetBehaviorInstance(context.Target != null
+                    ? $"{Event<TEvent>.Name}:{context.Target.Name}:{Constants.Guard}:{context.EventId}"
+                    : $"{Event<TEvent>.Name}:{Constants.Guard}:{context.EventId}"
+                )
+            );
+            if (!context.TryLocateActivity(activityName, instance, out var a))
             {
                 throw new StateMachineRuntimeException($"GuardActivity '{activityName}' not found", context.Behavior.Id.BehaviorClass);
             }
 
-            return result;
+            var headers = transitionContext.Context.EventHolder.Headers
+                .Where(h => !(h is GuardDelegation))
+                .Append(
+                    new GuardRequest()
+                    {
+                        GuardIdentifier = edgeGuardIdentifier,
+                        TargetName = transitionContext.Edge.TargetName,
+                        SourceName = transitionContext.Edge.SourceName,
+                        EdgeType = transitionContext.Edge.Type
+                    }
+                )
+                .ToArray();
+            
+            var ev = StateflowsJsonConverter.Clone(context.Event);
+            var initializationEvent = integratedActivityBuilder.InitializationBuilder != null
+                ? await integratedActivityBuilder.InitializationBuilder(context)
+                : new Initialize();
+            
+            // var tokensInput = new TokensInput();
+            // tokensInput.Add(ev);
+            
+            var request = new CompoundRequest()
+                .Add(new SetContextOwner() { ContextOwner = context.Behavior.Id })
+            ;
+            request.Events.Add(initializationEvent.ToTypedEventHolder());
+            request.Add(ev, headers)
+                // .Add(new TokensOutputRequest<bool>())
+            ;
+            // var request = new CompoundRequest()
+            //     .Add(new SetContextOwner() { ContextOwner = context.Behavior.Id })
+            //     .Add(context.Event, headers)
+            // ;
+
+            transitionContext.Context.EventHolder.Headers.Add(new GuardDelegation() { EdgeIdentifier = transitionContext.Edge.Identifier });
+
+            _ = a.RequestAsync(request);
+            
+            return false;
+            // var integratedActivityBuilder = new TransitionActivityBuilder<TEvent>(buildAction);
+            // var instance = await integratedActivityBuilder.GetInstanceAsync(context, context.GetBehaviorInstance($"{Event<TEvent>.Name}.{Constants.Guard}.{context.EventId}"));
+            // if (!context.TryLocateActivity(activityName, instance, out var a))
+            // {
+            //     throw new StateMachineRuntimeException($"GuardActivity '{activityName}' not found", context.Behavior.Id.BehaviorClass);
+            // }
+            //
+            // var ev = StateflowsJsonConverter.Clone(context.Event);
+            // var initializationEvent = integratedActivityBuilder.InitializationBuilder != null
+            //     ? await integratedActivityBuilder.InitializationBuilder(context)
+            //     : new Initialize();
+            //
+            // var tokensInput = new TokensInput();
+            // tokensInput.Add(ev);
+            //
+            // var request = new CompoundRequest()
+            //     .Add(new SetContextOwner() { ContextOwner = context.Behavior.Id })
+            //     //.Add(new SetGlobalValues() { Values = ((ContextValuesCollection)context.Behavior.Values).Values })
+            // ;
+            // request.Events.Add(initializationEvent.ToTypedEventHolder());
+            // request
+            //     .Add(tokensInput)
+            //     .Add(new TokensOutputRequest<bool>())
+            // ;
+            //
+            // var requestResult = await a.RequestAsync(request);
+            // var responseHolder = requestResult.Response.Results.Last().Response as EventHolder<TokensOutput<bool>>;
+            // return responseHolder?.Payload?.GetAll()?.FirstOrDefault() ?? false;
         }
 
         [DebuggerHidden]
-        internal static Task RunEffectActivity<TEvent>(ITransitionContext<TEvent> context, string activityName, TransitionActivityBuildAction<TEvent> buildAction)
+        internal static async Task RunEffectActivity<TEvent>(ITransitionContext<TEvent> context, string activityName, TransitionActivityBuildAction<TEvent> buildAction)
         {
-            if (context.TryLocateActivity(activityName, $"{context.Behavior.Id.Instance}.{context.Source.Name}.{Event<TEvent>.Name}.{Constants.Effect}.{context.EventId}", out var a))
-            {
-                var ev = StateflowsJsonConverter.Clone(context.Event);
-                _ = Task.Run(async () =>
-                {
-                    var integratedActivityBuilder = new TransitionActivityBuilder<TEvent>(buildAction);
-                    var initializationEvent = (integratedActivityBuilder.InitializationBuilder != null)
-                        ? await integratedActivityBuilder.InitializationBuilder(context)
-                        : new Initialize();
-
-                    var tokensInput = new TokensInput();
-                    tokensInput.Add(ev);
-
-                    var request = new CompoundRequest()
-                        .Add(integratedActivityBuilder.GetSubscribe(context.Behavior.Id))
-                        .Add(integratedActivityBuilder.GetStartRelay(context.Behavior.Id))
-                        .Add(new SetGlobalValues() { Values = ((ContextValuesCollection)context.Behavior.Values).Values })
-                    ;
-                    request.Events.Add(initializationEvent.ToTypedEventHolder());
-                    request
-                        .Add(tokensInput)
-                        .Add(integratedActivityBuilder.GetStopRelay(context.Behavior.Id))
-                        .Add(integratedActivityBuilder.GetUnsubscribe(context.Behavior.Id))
-                    ;
-
-                    _ = a.SendAsync(request);
-                });
-            }
-            else
+            var integratedActivityBuilder = new TransitionActivityBuilder<TEvent>(buildAction);
+            var instance = await integratedActivityBuilder.GetInstanceAsync(context, context.GetBehaviorInstance($"{Event<TEvent>.Name}.{Constants.Effect}.{context.EventId}"));
+            if (!context.TryLocateActivity(activityName, instance, out var a))
             {
                 throw new StateMachineRuntimeException($"EffectActivity '{activityName}' not found", context.Behavior.Id.BehaviorClass);
             }
 
-            return Task.CompletedTask;
+            var ev = StateflowsJsonConverter.Clone(context.Event);
+            var initializationEvent = (integratedActivityBuilder.InitializationBuilder != null)
+                ? await integratedActivityBuilder.InitializationBuilder(context)
+                : new Initialize();
+
+            var tokensInput = new TokensInput();
+            tokensInput.Add(ev);
+
+            var request = new CompoundRequest()
+                .Add(new SetContextOwner() { ContextOwner = context.Behavior.Id })
+                //.Add(new SetGlobalValues() { Values = ((ContextValuesCollection)context.Behavior.Values).Values })
+            ;
+            request.Events.Add(initializationEvent.ToTypedEventHolder());
+            request.Add(tokensInput);
+
+            _ = a.SendAsync(request);
         }
     }
 }

@@ -38,7 +38,7 @@ namespace StateMachine.IntegrationTests.Classes.StateMachines
             FinalizeFired = false;
         }
 
-        public void Build(IStateMachineBuilder builder)
+        public static void Build(IStateMachineBuilder builder)
         {
             builder
                 .AddDefaultInitializer<Initializer1>()

@@ -2,6 +2,6 @@
 {
     public sealed class Junction : IVertex
     {
-        public const string Name = "Stateflows.StateMachines.Junction";
+        public static string Name => State<Junction>.Name;
     }
 }

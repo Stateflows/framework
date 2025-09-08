@@ -2,7 +2,7 @@
 
 namespace Stateflows.Activities
 {
-    [Retain]
+    [Retain, StrictOwnership]
     public sealed class ActivityInfo : BehaviorInfo
     {
         private ActivityId id;

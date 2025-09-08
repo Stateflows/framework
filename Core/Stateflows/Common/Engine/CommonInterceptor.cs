@@ -41,12 +41,12 @@ namespace Stateflows.Common.Engine
         public bool BeforeProcessEvent<TEvent>(IEventContext<TEvent> context)
             => Interceptors.RunSafe(i => i.BeforeProcessEvent(context), nameof(BeforeProcessEvent), Logger);
 
-        public bool BeforeExecute(EventHolder eventHolder)
+        public bool BeforeExecute(BehaviorId id, EventHolder eventHolder)
         {
             var result = true;
             foreach (var interceptor in ExecutionInterceptors)
             {
-                if (!interceptor.BeforeExecute(eventHolder))
+                if (!interceptor.BeforeExecute(id, eventHolder))
                 {
                     result = false;
                 }
@@ -55,11 +55,11 @@ namespace Stateflows.Common.Engine
             return result;
         }
 
-        public void AfterExecute(EventHolder eventHolder)
+        public void AfterExecute(BehaviorId id, EventHolder eventHolder)
         {
             foreach (var interceptor in ExecutionInterceptors.Reverse())
             {
-                interceptor.AfterExecute(eventHolder);
+                interceptor.AfterExecute(id, eventHolder);
             }
         }
 

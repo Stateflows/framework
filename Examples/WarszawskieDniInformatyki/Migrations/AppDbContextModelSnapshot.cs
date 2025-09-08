@@ -17,7 +17,7 @@ namespace WarszawskieDniInformatyki.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "9.0.8")
+                .HasAnnotation("ProductVersion", "8.0.19")
                 .HasAnnotation("Relational:MaxIdentifierLength", 128);
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
@@ -110,6 +110,45 @@ namespace WarszawskieDniInformatyki.Migrations
                     b.HasIndex("SenderType");
 
                     b.ToTable("StateflowsNotifications_v1");
+                });
+
+            modelBuilder.Entity("Stateflows.Storage.EntityFrameworkCore.EntityFrameworkCore.Entities.Value_v1", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("BehaviorInstance")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("BehaviorName")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("BehaviorType")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("Key")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Value")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("BehaviorInstance");
+
+                    b.HasIndex("BehaviorName");
+
+                    b.HasIndex("BehaviorType");
+
+                    b.ToTable("StateflowsValues_v1");
                 });
 #pragma warning restore 612, 618
         }

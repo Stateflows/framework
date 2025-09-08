@@ -6,4 +6,9 @@ namespace Stateflows.Activities.StateMachines.Interfaces
     {
         TReturn InitializeWith<TInitializationEvent>(StateActionBehaviorInitializationBuilderAsync<TInitializationEvent> builderAsync);
     }
+    
+    public interface IStateActionInitialization
+    {
+        void InitializeWith<TInitializationEvent>(StateActionBehaviorInitializationBuilderAsync<TInitializationEvent> builderAsync);
+    }
 }

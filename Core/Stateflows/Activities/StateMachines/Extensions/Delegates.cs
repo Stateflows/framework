@@ -1,11 +1,12 @@
-﻿using Stateflows.Common;
-using Stateflows.Activities.StateMachines.Interfaces;
+﻿using Stateflows.Activities.StateMachines.Interfaces;
 using System.Threading.Tasks;
 using Stateflows.StateMachines;
 using Stateflows.StateMachines.Context.Interfaces;
 
 namespace Stateflows.Activities.Extensions
 {
+    public delegate Task<string> StateActionBehaviorInstanceBuilderAsync(IStateActionContext context);
+    public delegate Task<string> TransitionBehaviorInstanceBuilderAsync<TEvent>(ITransitionContext<TEvent> context);
     public delegate Task<TInitializationEvent> StateActionBehaviorInitializationBuilderAsync<TInitializationEvent>(IStateActionContext context);
  
     public delegate Task<TInitializationEvent> TransitionBehaviorInitializationBuilderAsync<TEvent, TInitializationEvent>(ITransitionContext<TEvent> context);

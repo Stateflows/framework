@@ -112,8 +112,8 @@ namespace Stateflows.StateMachines.Registration.Builders
 
         #region AddFinalState
         [DebuggerHidden]
-        public IFinalizedRegionBuilder AddFinalState(string finalStateName = FinalState.Name)
-            => AddVertex(finalStateName, VertexType.FinalState) as IFinalizedRegionBuilder;
+        public IFinalizedRegionBuilder AddFinalState(string finalStateName = null)
+            => AddVertex(finalStateName ?? State<FinalState>.Name, VertexType.FinalState) as IFinalizedRegionBuilder;
         #endregion
 
         #region AddCompositeState

@@ -12,7 +12,7 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         /// <param name="doActionName">Action name</param>
         /// <param name="buildAction">Build action</param>
         /// <param name="initializationBuilder">Initialization builder; generates initialization event for embedded State Machine</param>
-        TReturn AddDoAction(string doActionName, EmbeddedBehaviorBuildAction buildAction = null, StateActionInitializationBuilder initializationBuilder = null);
+        TReturn AddDoAction(string doActionName, StateActionInitializationBuilder initializationBuilder = null);
         
         /// <summary>
         /// Embeds Action in current state.<br/>
@@ -22,8 +22,8 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         /// <param name="buildAction">Build action</param>
         /// <param name="initializationBuilder">Initialization builder; generates initialization event for embedded State Machine</param>
         [DebuggerHidden]
-        public TReturn AddDoAction<TAction>(EmbeddedBehaviorBuildAction buildAction = null, StateActionInitializationBuilder initializationBuilder = null)
+        public TReturn AddDoAction<TAction>(StateActionInitializationBuilder initializationBuilder = null)
             where TAction : class, IAction
-            => AddDoAction(Action<TAction>.Name, buildAction, initializationBuilder);
+            => AddDoAction(Action<TAction>.Name, initializationBuilder);
     }
 }

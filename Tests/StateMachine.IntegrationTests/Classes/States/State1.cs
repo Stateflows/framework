@@ -1,6 +1,9 @@
-﻿namespace StateMachine.IntegrationTests.Classes.States
+﻿using Stateflows.StateMachines.Registration.Interfaces;
+using StateMachine.IntegrationTests.Classes.Events;
+
+namespace StateMachine.IntegrationTests.Classes.States
 {
-    internal class State1 : IStateEntry, IStateExit
+    internal class State1 : IStateEntry, IStateExit, IStateDefinition
     {
         public static bool EntryFired = false;
 
@@ -36,6 +39,11 @@
         {
             ExitFired = stateContext != null && stateMachineContext?.Id.Instance != null && executionContext != null;
             return Task.CompletedTask;
+        }
+
+        public void Build(IStateBuilder builder)
+        {
+            builder.AddDoActivity(b => b.AddAcceptEventAction<SomeEvent>(async c => { }));
         }
     }
 }

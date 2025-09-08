@@ -15,6 +15,7 @@ using Stateflows.Activities.Registration.Interfaces;
 using Stateflows.Activities.Registration.Interfaces.Base;
 using Stateflows.Activities.Registration.Interfaces.Internal;
 using Stateflows.Common.Registration;
+using Stateflows.Common.Utilities;
 
 namespace Stateflows.Activities.Registration.Builders
 {

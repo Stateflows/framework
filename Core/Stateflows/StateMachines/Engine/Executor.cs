@@ -10,6 +10,7 @@ using Stateflows.Common.Context;
 using Stateflows.Common.Classes;
 using Stateflows.Common.Interfaces;
 using Stateflows.Common.Exceptions;
+using Stateflows.Common.Utilities;
 using Stateflows.StateMachines.Models;
 using Stateflows.StateMachines.Context;
 using Stateflows.StateMachines.Extensions;
@@ -441,6 +442,12 @@ namespace Stateflows.StateMachines.Engine
                 return EventStatus.Deferred;
             }
             
+            var guardDelegations = Context.EventHolder.Headers.OfType<GuardDelegation>();
+            if (guardDelegations.Any())
+            {
+                return EventStatus.Forwarded;
+            }
+            
             RebuildVerticesTree();
 
             await DispatchNextDeferredEvent();
@@ -462,7 +469,7 @@ namespace Stateflows.StateMachines.Engine
 
                 var result = await edge.Guards.WhenAll(Context);
 
-                Inspector.AfterGuard(context, result);
+                Inspector.AfterTransitionGuard(context, result);
                 
                 return result;
             }
@@ -528,14 +535,14 @@ namespace Stateflows.StateMachines.Engine
                 : noImplicitInitialization
                     ? null
                     : Graph.DefaultInitializer;
-            
+
             if (initializer != null)
             {
                 BeginScope();
                 
                 var context = new StateMachineInitializationContext(Context);
                 Inspector.BeforeStateMachineInitialize(context, initializer == Graph.DefaultInitializer && eventHolder.Name != Event<Initialize>.Name);
-
+                
                 try
                 {
                     result = await initializer.WhenAll(Context)
@@ -1034,10 +1041,8 @@ namespace Stateflows.StateMachines.Engine
             return result == EventStatus.Consumed;
         }
 
-        public async Task<IStateMachine> GetStateMachineAsync(Type stateMachineType)
-        {
-            return await StateflowsActivator.CreateModelElementInstanceAsync(ServiceProvider, stateMachineType, "state machine") as IStateMachine;
-        }
+        public Task<object> GetStateMachineAsync(Type stateMachineType)
+            => StateflowsActivator.CreateModelElementInstanceAsync(ServiceProvider, stateMachineType, "state machine");
 
         [DebuggerHidden]
         public Task<TDefaultInitializer> GetDefaultInitializerAsync<TDefaultInitializer>(IStateMachineInitializationContext context)

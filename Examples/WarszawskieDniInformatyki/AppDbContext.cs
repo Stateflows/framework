@@ -14,4 +14,5 @@ public class AppDbContext : DbContext, IStateflowsDbContext_v1
     
     public DbSet<Context_v1> Contexts_v1 { get; set; }
     public DbSet<Notification_v1> Notifications_v1 { get; set; }
+    public DbSet<Value_v1> Values_v1 { get; set; }
 }

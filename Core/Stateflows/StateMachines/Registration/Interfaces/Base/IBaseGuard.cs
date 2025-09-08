@@ -31,7 +31,11 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         /// <param name="buildAction">Build action</param>
         [DebuggerHidden]
         public TReturn AddGuardActivity(string activityName, TransitionActivityBuildAction<TEvent> buildAction = null)
-            => AddGuard(c => StateMachineActivityExtensions.RunGuardActivity(c, activityName, buildAction));
+        {
+            var guardIndex = (this as IEdgeBuilder).Edge.Guards.Actions.Count;
+            
+            return AddGuard(c => StateMachineActivityExtensions.RunGuardActivityAsync(guardIndex, c, activityName, buildAction));
+        }
 
         /// <summary>
         /// Adds activity behavior as guard
@@ -42,7 +46,7 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         public TReturn AddGuardActivity<TActivity>(TransitionActivityBuildAction<TEvent> buildAction = null)
             where TActivity : class, IActivity
             => AddGuardActivity(Activity<TActivity>.Name, buildAction);
-        
+
         /// <summary>
         /// Adds action behavior as guard
         /// </summary>
@@ -50,7 +54,11 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         /// <param name="buildAction">Build action</param>
         [DebuggerHidden]
         public TReturn AddGuardAction(string actionName, TransitionActionBuildAction<TEvent> buildAction = null)
-            => AddGuard(c => StateMachineActionExtensions.RunGuardAction(c, actionName, buildAction));
+        {
+            var guardIndex = (this as IEdgeBuilder).Edge.Guards.Actions.Count;
+
+            return AddGuard(c => StateMachineActionExtensions.RunGuardActionAsync(guardIndex, c, actionName, buildAction));
+        }
 
         /// <summary>
         /// Adds action behavior as guard

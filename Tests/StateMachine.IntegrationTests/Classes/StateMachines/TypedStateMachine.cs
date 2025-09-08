@@ -91,7 +91,7 @@ namespace StateMachine.IntegrationTests.Classes.StateMachines
     [StateMachineBehavior]
     internal class TypedStateMachine : IStateMachine
     {
-        public void Build(IStateMachineBuilder builder)
+        public static void Build(IStateMachineBuilder builder)
         {
             builder
                 .AddInitializer<OtherEvent, TypedOtherInitializer>()

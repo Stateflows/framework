@@ -5,7 +5,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Microsoft.Extensions.DependencyInjection;
 using Stateflows.Common.Interfaces;
-using Stateflows.Common.Subscription;
+using Stateflows.Common.Utilities;
 
 namespace Stateflows.Common.Classes
 {

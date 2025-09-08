@@ -9,24 +9,28 @@ namespace Stateflows.Common.Lock
 {
     internal class InProcessLock : IStateflowsLock
     {
-        private Dictionary<BehaviorId, EventWaitHandle> Events { get; } = new Dictionary<BehaviorId, EventWaitHandle>();
+        private Dictionary<string, EventWaitHandle> Events { get; } = new Dictionary<string, EventWaitHandle>();
 
         public Task<IStateflowsLockHandle> AquireLockAsync(BehaviorId id, TimeSpan? timeout = null)
+            => AquireLockAsync(id, string.Empty, timeout);
+        
+        public Task<IStateflowsLockHandle> AquireLockAsync(BehaviorId id, string scope, TimeSpan? timeout = null)
         {
             EventWaitHandle @event = null;
-
+            var idString = scope == string.Empty ? id.ToString() : $"{id.ToString()}.{scope}";
+            
             lock (Events)
             {
-                if (!Events.TryGetValue(id, out @event))
+                if (!Events.TryGetValue(idString, out @event))
                 {
                     @event = new EventWaitHandle(true, EventResetMode.AutoReset);
-                    Events.Add(id, @event);
+                    Events.Add(idString, @event);
                 }
             }
 
             @event.WaitOne((int)(timeout?.TotalMilliseconds ?? -1));
 
-            return Task.FromResult(new StateflowsLockHandle(id, new AsyncDisposableHandle(@event)) as IStateflowsLockHandle);
+            return Task.FromResult(new StateflowsLockHandle(id, scope, new AsyncDisposableHandle(@event)) as IStateflowsLockHandle);
         }
     }
 }

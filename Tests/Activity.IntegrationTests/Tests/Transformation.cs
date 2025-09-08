@@ -1,5 +1,4 @@
 using Stateflows.Common;
-using Stateflows.Activities;
 using StateMachine.IntegrationTests.Utils;
 
 namespace Activity.IntegrationTests.Tests

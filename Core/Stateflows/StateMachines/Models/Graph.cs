@@ -64,7 +64,7 @@ namespace Stateflows.StateMachines.Models
 
         public readonly List<StateMachineObserverFactoryAsync> ObserverFactories = new List<StateMachineObserverFactoryAsync>();
 
-        public readonly List<BehaviorClass> RequiredBehaviors = new List<BehaviorClass>();
+        public List<BehaviorClass> RequiredBehaviors = new List<BehaviorClass>();
 
         [DebuggerHidden]
         public void Validate(IEnumerable<BehaviorClass> behaviorClasses)
@@ -219,6 +219,17 @@ namespace Stateflows.StateMachines.Models
                         );
                     }
                 }
+            }
+
+            foreach (var edge in AllEdges)
+            {
+                var triggerDescriptor = edge.IsElse
+                    ? $"{edge.Trigger}|else"
+                    : edge.Trigger;
+
+                edge.Identifier = edge.Target != null
+                    ? $"{edge.Source.Identifier}-{triggerDescriptor}->{edge.Target.Identifier}"
+                    : $"{edge.Source.Identifier}-{triggerDescriptor}";
             }
         }
     }

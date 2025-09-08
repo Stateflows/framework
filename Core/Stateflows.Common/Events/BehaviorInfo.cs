@@ -4,7 +4,7 @@ using System.Collections.Generic;
 
 namespace Stateflows.Common
 {
-    [Retain]
+    [Retain, StrictOwnership]
     public class BehaviorInfo
     {
         public BehaviorId Id { get; set; }

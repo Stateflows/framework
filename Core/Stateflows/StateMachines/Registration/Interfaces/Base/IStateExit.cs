@@ -6,7 +6,6 @@ using Stateflows.Actions;
 using Stateflows.Activities;
 using Stateflows.Activities.Extensions;
 using Stateflows.StateMachines.Context.Classes;
-using Stateflows.StateMachines.Context.Interfaces;
 using Stateflows.StateMachines.Registration.Extensions;
 using Stateflows.StateMachines.Registration.Interfaces.Internal;
 
@@ -31,7 +30,7 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         /// <param name="buildAction">Build action</param>
         [DebuggerHidden]
         public TReturn AddOnExitActivity(string activityName, StateActionActivityBuildAction buildAction = null)
-            => AddOnExit(c => StateMachineActivityExtensions.RunStateActivity(Constants.Exit, c, activityName, buildAction));
+            => AddOnExit(c => StateMachineActivityExtensions.RunStateActivityAsync(Constants.Exit, c, activityName, buildAction));
 
         /// <summary>
         /// Adds action behavior that will be started when current state exits
@@ -50,7 +49,7 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         /// <param name="buildAction">Build action</param>
         [DebuggerHidden]
         public TReturn AddOnExitAction(string actionName, StateActionActionBuildAction buildAction = null)
-            => AddOnExit(c => StateMachineActionExtensions.RunStateAction(Constants.Exit, c, actionName, buildAction));
+            => AddOnExit(c => StateMachineActionExtensions.RunStateActionAsync(Constants.Exit, c, actionName, buildAction));
 
         /// <summary>
         /// Adds activity behavior that will be started when current state exits
@@ -92,7 +91,7 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         /// </summary>
         /// <typeparam name="TStateExit1">The type of the first state exit handler.</typeparam>
         /// <typeparam name="TStateExit2">The type of the second state exit handler.</typeparam>
-        TReturn AddOnExits<TStateExit1, TStateExit2>()
+        TReturn AddOnExit<TStateExit1, TStateExit2>()
             where TStateExit1 : class, IStateExit
             where TStateExit2 : class, IStateExit
         {
@@ -106,12 +105,12 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         /// <typeparam name="TStateExit1">The type of the first state exit handler.</typeparam>
         /// <typeparam name="TStateExit2">The type of the second state exit handler.</typeparam>
         /// <typeparam name="TStateExit3">The type of the third state exit handler.</typeparam>
-        TReturn AddOnExits<TStateExit1, TStateExit2, TStateExit3>()
+        TReturn AddOnExit<TStateExit1, TStateExit2, TStateExit3>()
             where TStateExit1 : class, IStateExit
             where TStateExit2 : class, IStateExit
             where TStateExit3 : class, IStateExit
         {
-            AddOnExits<TStateExit1, TStateExit2>();
+            AddOnExit<TStateExit1, TStateExit2>();
             return AddOnExit<TStateExit3>();
         }
 
@@ -122,13 +121,13 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         /// <typeparam name="TStateExit2">The type of the second state exit handler.</typeparam>
         /// <typeparam name="TStateExit3">The type of the third state exit handler.</typeparam>
         /// <typeparam name="TStateExit4">The type of the fourth state exit handler.</typeparam>
-        TReturn AddOnExits<TStateExit1, TStateExit2, TStateExit3, TStateExit4>()
+        TReturn AddOnExit<TStateExit1, TStateExit2, TStateExit3, TStateExit4>()
             where TStateExit1 : class, IStateExit
             where TStateExit2 : class, IStateExit
             where TStateExit3 : class, IStateExit
             where TStateExit4 : class, IStateExit
         {
-            AddOnExits<TStateExit1, TStateExit2, TStateExit3>();
+            AddOnExit<TStateExit1, TStateExit2, TStateExit3>();
             return AddOnExit<TStateExit4>();
         }
 
@@ -140,14 +139,14 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         /// <typeparam name="TStateExit3">The type of the third state exit handler.</typeparam>
         /// <typeparam name="TStateExit4">The type of the fourth state exit handler.</typeparam>
         /// <typeparam name="TStateExit5">The type of the fifth state exit handler.</typeparam>
-        TReturn AddOnExits<TStateExit1, TStateExit2, TStateExit3, TStateExit4, TStateExit5>()
+        TReturn AddOnExit<TStateExit1, TStateExit2, TStateExit3, TStateExit4, TStateExit5>()
             where TStateExit1 : class, IStateExit
             where TStateExit2 : class, IStateExit
             where TStateExit3 : class, IStateExit
             where TStateExit4 : class, IStateExit
             where TStateExit5 : class, IStateExit
         {
-            AddOnExits<TStateExit1, TStateExit2, TStateExit3, TStateExit4>();
+            AddOnExit<TStateExit1, TStateExit2, TStateExit3, TStateExit4>();
             return AddOnExit<TStateExit5>();
         }
     }

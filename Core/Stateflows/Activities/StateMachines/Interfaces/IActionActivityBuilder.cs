@@ -1,11 +1,17 @@
 ﻿namespace Stateflows.Activities.StateMachines.Interfaces
 {
     public interface IActionActivityBuilder :
-        IStateActionInitialization<IInitializedActionActivityBuilder>,
-        ISubscription<IActionActivityBuilder>
+        IStateActionInstantation<IInstantiatedActionActivityBuilder>,
+        IStateActionInitialization//<IInitializedActionActivityBuilder>,
+        //ISubscription<IInitializedActionActivityBuilder>
     { }
 
-    public interface IInitializedActionActivityBuilder :
-        ISubscription<IInitializedActionActivityBuilder>
+    public interface IInstantiatedActionActivityBuilder :
+        IStateActionInitialization//<IInitializedActionActivityBuilder>,
+        //ISubscription<IInitializedActionActivityBuilder>
     { }
+
+    // public interface IInitializedActionActivityBuilder :
+    //     //ISubscription<IInitializedActionActivityBuilder>
+    // { }
 }
