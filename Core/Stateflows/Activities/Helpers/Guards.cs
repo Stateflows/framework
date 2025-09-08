@@ -129,7 +129,7 @@ namespace Stateflows.Activities
             get
             {
                 var self = this;
-                return c => ((ContextValuesCollection)c.Behavior.Values)!.HasAnyMatchingAsync(new Regex($"{self.NamespaceName}[.](.*)", RegexOptions.None, TimeSpan.FromSeconds(1)));
+                return c => c.Behavior.Values.HasAnyPrefixedAsync($"{self.NamespaceName}.");
             }
         }
     }
