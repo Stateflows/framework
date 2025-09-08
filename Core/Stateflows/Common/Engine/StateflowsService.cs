@@ -35,7 +35,7 @@ namespace Stateflows.Common
         [DebuggerHidden]
         public Task StartAsync(CancellationToken cancellationToken)
         {
-            executionTask = ExecutionTaskAsync(cancellationToken);
+            executionTask = ExecutionTaskAsync(CancellationTokenSource.Token);
 
             return Task.CompletedTask;
         }
@@ -43,9 +43,9 @@ namespace Stateflows.Common
         [DebuggerHidden]
         private async Task ExecutionTaskAsync(CancellationToken cancellationToken)
         {
-            while (!CancellationTokenSource.Token.IsCancellationRequested && !cancellationToken.IsCancellationRequested)
+            while (!cancellationToken.IsCancellationRequested)
             {
-                var token = await EventChannel.Reader.ReadAsync(cancellationToken);
+                var token = await EventChannel.Reader.ReadAsync(CancellationTokenSource.Token);
 
                 _ = StateflowsEngine.HandleEventAsync(token);
             }
@@ -53,9 +53,15 @@ namespace Stateflows.Common
 
         public Task StopAsync(CancellationToken cancellationToken)
         {
-            CancellationTokenSource.Cancel();
+            try
+            {
+                CancellationTokenSource.Cancel();
 
-            executionTask.Wait(cancellationToken);
+                executionTask.Wait();
+            }
+            catch (Exception)
+            {
+            }
 
             return Task.CompletedTask;
         }

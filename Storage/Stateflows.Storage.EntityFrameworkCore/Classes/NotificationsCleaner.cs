@@ -8,6 +8,8 @@ namespace Stateflows.Classes;
 public class NotificationsCleaner<TDbContext> : IHostedService
     where TDbContext : DbContext, IStateflowsDbContext_v1
 {
+    private Task cleaningTask = null;
+    
     public NotificationsCleaner(IServiceProvider serviceProvider)
     {
         ServiceProvider = serviceProvider;
@@ -18,7 +20,7 @@ public class NotificationsCleaner<TDbContext> : IHostedService
     
     public Task StartAsync(CancellationToken cancellationToken)
     {
-        _ = Task.Run(() => CleaningLoop(CancellationTokenSource.Token), cancellationToken);
+        cleaningTask = CleaningLoopAsync(CancellationTokenSource.Token);
 
         return Task.CompletedTask;
     }
@@ -26,7 +28,7 @@ public class NotificationsCleaner<TDbContext> : IHostedService
     private static DateTime GetCurrentTick()
         => new DateTime(DateTime.Now.Year, DateTime.Now.Month, DateTime.Now.Day, DateTime.Now.Hour, DateTime.Now.Minute, 0);
     
-    private async Task CleaningLoop(CancellationToken cancellationToken)
+    private async Task CleaningLoopAsync(CancellationToken cancellationToken)
     {
         var lastTick = GetCurrentTick();
     
@@ -68,7 +70,15 @@ public class NotificationsCleaner<TDbContext> : IHostedService
 
     public Task StopAsync(CancellationToken cancellationToken)
     {
-        CancellationTokenSource.Cancel();
+        try
+        {
+            CancellationTokenSource.Cancel();
+
+            cleaningTask.Wait();
+        }
+        catch (Exception)
+        {
+        }
 
         return Task.CompletedTask;
     }
