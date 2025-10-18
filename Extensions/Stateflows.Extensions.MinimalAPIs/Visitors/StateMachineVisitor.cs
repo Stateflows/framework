@@ -19,6 +19,7 @@ internal class StateMachineVisitor(
     ITypeMapper typeMapper
 ) : StateMachines.StateMachineVisitor, IBehaviorClassVisitor, ITypeVisitor
 {
+    internal static readonly ActivitySource Source = new ActivitySource(nameof(Stateflows));
     public IEndpointRouteBuilder RouteBuilder => routeBuilder;
     public Interceptor Interceptor => interceptor;
     private readonly Dictionary<string, bool> Initializers = new();
