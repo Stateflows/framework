@@ -2,15 +2,12 @@
 using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
-using Microsoft.Extensions.DependencyInjection;
 using Stateflows.Common;
-using Stateflows.Common.Exceptions;
 using Stateflows.Common.Registration;
+using Stateflows.Common.Utilities;
 using Stateflows.StateMachines.Models;
 using Stateflows.StateMachines.Exceptions;
 using Stateflows.StateMachines.Context.Classes;
-using Stateflows.StateMachines.Context.Interfaces;
-using Stateflows.StateMachines.Registration.Extensions;
 using Stateflows.StateMachines.Registration.Interfaces;
 using Stateflows.StateMachines.Registration.Interfaces.Base;
 using Stateflows.StateMachines.Registration.Interfaces.Internal;
@@ -20,8 +17,9 @@ namespace Stateflows.StateMachines.Registration.Builders
     internal class OrthogonalStateBuilder :
         IOrthogonalStateBuilder,
         IOverridenOrthogonalStateBuilder,
-        IVertexBuilder,
+        IStateBuilderInfo,
         IGraphBuilder,
+        IVertexBuilder,
         IBehaviorBuilder
     {   
         public Vertex Vertex { get; }
@@ -39,35 +37,37 @@ namespace Stateflows.StateMachines.Registration.Builders
 
         #region Events
         [DebuggerHidden]
-        public IOrthogonalStateBuilder AddOnInitialize(Func<IStateActionContext, Task> actionAsync)
+        public IOrthogonalStateBuilder AddOnInitialize(params Func<IStateActionContext, Task>[] actionsAsync)
         {
-            actionAsync.ThrowIfNull(nameof(actionAsync));
-
-            actionAsync = actionAsync.AddStateMachineInvocationContext(Vertex.Graph);
-
-            Vertex.Initialize.Actions.Add(async c =>
+            foreach (var actionAsync in actionsAsync)
             {
-                var context = new StateActionContext(c, Vertex, Constants.Entry);
-                await actionAsync(context);
+                actionAsync.ThrowIfNull(nameof(actionAsync));
+
+                Vertex.Initialize.Actions.Add(async c =>
+                    {
+                        var context = new StateActionContext(c, Vertex, Constants.Entry);
+                        await actionAsync(context);
+                    }
+                );
             }
-            );
 
             return this;
         }
 
         [DebuggerHidden]
-        public IOrthogonalStateBuilder AddOnFinalize(Func<IStateActionContext, Task> actionAsync)
+        public IOrthogonalStateBuilder AddOnFinalize(params Func<IStateActionContext, Task>[] actionsAsync)
         {
-            actionAsync.ThrowIfNull(nameof(actionAsync));
-
-            actionAsync = actionAsync.AddStateMachineInvocationContext(Vertex.Graph);
-
-            Vertex.Finalize.Actions.Add(async c =>
+            foreach (var actionAsync in actionsAsync)
             {
-                var context = new StateActionContext(c, Vertex, Constants.Entry);
-                await actionAsync(context);
+                actionAsync.ThrowIfNull(nameof(actionAsync));
+
+                Vertex.Finalize.Actions.Add(async c =>
+                    {
+                        var context = new StateActionContext(c, Vertex, Constants.Entry);
+                        await actionAsync(context);
+                    }
+                );
             }
-            );
 
             return this;
         }
@@ -79,12 +79,10 @@ namespace Stateflows.StateMachines.Registration.Builders
             {
                 actionAsync.ThrowIfNull(nameof(actionAsync));
 
-                var actionHandler = actionAsync.AddStateMachineInvocationContext(Vertex.Graph);
-
                 Vertex.Entry.Actions.Add(async c =>
                     {
                         var context = new StateActionContext(c, Vertex, Constants.Entry);
-                        await actionHandler(context);
+                        await actionAsync(context);
                     }
                 );
             }
@@ -99,12 +97,10 @@ namespace Stateflows.StateMachines.Registration.Builders
             {
                 actionAsync.ThrowIfNull(nameof(actionAsync));
 
-                var actionHandler = actionAsync.AddStateMachineInvocationContext(Vertex.Graph);
-
                 Vertex.Exit.Actions.Add(async c =>
                     {
                         var context = new StateActionContext(c, Vertex, Constants.Exit);
-                        await actionHandler(context);
+                        await actionAsync(context);
                     }
                 );
             }
@@ -374,12 +370,12 @@ namespace Stateflows.StateMachines.Registration.Builders
             => AddOnExit(actionsAsync) as IOverridenOrthogonalStateBuilder;
 
         [DebuggerHidden]
-        IOverridenOrthogonalStateBuilder ICompositeStateEvents<IOverridenOrthogonalStateBuilder>.AddOnInitialize(Func<IStateActionContext, Task> actionAsync)
-            => AddOnInitialize(actionAsync) as IOverridenOrthogonalStateBuilder;
+        IOverridenOrthogonalStateBuilder ICompositeStateInitialization<IOverridenOrthogonalStateBuilder>.AddOnInitialize(params Func<IStateActionContext, Task>[] actionsAsync)
+            => AddOnInitialize(actionsAsync) as IOverridenOrthogonalStateBuilder;
         
         [DebuggerHidden]
-        IOverridenOrthogonalStateBuilder ICompositeStateEvents<IOverridenOrthogonalStateBuilder>.AddOnFinalize(Func<IStateActionContext, Task> actionAsync)
-            => AddOnFinalize(actionAsync) as IOverridenOrthogonalStateBuilder;
+        IOverridenOrthogonalStateBuilder ICompositeStateFinalization<IOverridenOrthogonalStateBuilder>.AddOnFinalize(params Func<IStateActionContext, Task>[] actionsAsync)
+            => AddOnFinalize(actionsAsync) as IOverridenOrthogonalStateBuilder;
 
         IOverridenOrthogonalStateBuilder IStateUtils<IOverridenOrthogonalStateBuilder>.AddDeferredEvent<TEvent>()
             => AddDeferredEvent<TEvent>() as IOverridenOrthogonalStateBuilder;

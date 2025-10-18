@@ -1,6 +1,5 @@
 using Activity.IntegrationTests.Classes.Events;
 using Stateflows.Common;
-using Stateflows.Activities.Context.Interfaces;
 using StateMachine.IntegrationTests.Utils;
 
 namespace Activity.IntegrationTests.Tests

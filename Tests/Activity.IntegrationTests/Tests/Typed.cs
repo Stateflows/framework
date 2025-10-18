@@ -1,6 +1,4 @@
 using Activity.IntegrationTests.Classes.Tokens;
-using Stateflows.Activities;
-using Stateflows.Activities.Registration.Interfaces.Base;
 using Stateflows.Common;
 using Stateflows.Common.Attributes;
 using StateMachine.IntegrationTests.Utils;
@@ -16,7 +14,7 @@ namespace Activity.IntegrationTests.Tests
         IInputTokens<SomeToken> someTokens,
         IInputTokens<string> strings,
         IOutputTokens<string> output,
-        [ValueName("global")] GlobalValue<string> value
+        [GlobalValue("global")] IValue<string> value
     ) : IActionNode
     {
 

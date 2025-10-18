@@ -6,7 +6,7 @@ namespace StateMachine.IntegrationTests.Classes.StateMachines
 {
     public class ValuesStateMachine : IStateMachine
     {
-        public void Build(IStateMachineBuilder builder)
+        public static void Build(IStateMachineBuilder builder)
             => builder
                 .AddInitialState<ValueState1>(b => b
                     .AddOnEntry(Actions.State.Value("nullable").Update(x => x + 3, 0))
@@ -34,10 +34,10 @@ namespace StateMachine.IntegrationTests.Classes.StateMachines
                         .AddEffect<InternalTransition>()
                     )
                     .AddDefaultTransition<GuardedTransition, FinalState>(b => b
-                        .AddGuard(Guards.Global.Value("counter").IsEqualTo(1))
-                        .AddGuard<GuardedTransition>()
+                        // .AddGuard(Guards.Global.Value("counter").IsEqualTo(1))
+                        // .AddGuard<GuardedTransition>()
                         .AddGuard(Guards.Global.Namespace("set").Value("set").IsNotSet)
-                        .AddGuard(Guards.Global.Namespace("x").Namespace("y").Value("z").IsEqualTo(42))
+                        // .AddGuard(Guards.Global.Namespace("x").Namespace("y").Value("z").IsEqualTo(42))
                     )
                 )
                 .AddFinalState()

@@ -1,7 +1,8 @@
 using System;
-using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
+using System.Diagnostics;
+using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Stateflows.Common;
 using Stateflows.Extensions.OpenTelemetry.Headers;
@@ -33,24 +34,31 @@ namespace Stateflows.Extensions.OpenTelemetry
             
             if (!noTracing)
             {
+                var eventName = context.Event is Completion
+                    ? "Completion"
+                    : context.Event.GetType().GetEventName().ToShortName();
+                
                 var header = context.Headers.FirstOrDefault(h => h is ActivityHeader);
                 if (header is ActivityHeader activityHeader)
                 {
                     EventProcessingActivity = Source.StartActivity(
-                        $"State Machine '{context.Behavior.Id.Name.ToShortName()}:{context.Behavior.Id.InstanceText}' processing '{context.Event.GetType().GetEventName().ToShortName()}'",
+                        $"State Machine '{context.Behavior.Id.Name.ToShortName()}:{context.Behavior.Id.InstanceText}' processing {eventName}",
                         ActivityKind.Internal,
                         parentContext: activityHeader.Activity.Context
                     );
                 }
                 
                 EventProcessingActivity ??= Source.StartActivity(
-                    $"State Machine '{context.Behavior.Id.Name.ToShortName()}:{context.Behavior.Id.InstanceText}' processing '{context.Event.GetType().GetEventName().ToShortName()}'"
+                    $"State Machine '{context.Behavior.Id.Name.ToShortName()}:{context.Behavior.Id.InstanceText}' processing {eventName}"
                 );
-
+                
+                EventProcessingActivity.AddTag("StateMachineId", $"{context.Behavior.Id.Name.ToShortName()}:{context.Behavior.Id.InstanceText}");
+                EventProcessingActivity.AddTag("Event", eventName);
+                
                 Logger.LogTrace(
                     message: "State Machine '{StateMachineId}' received event '{Event}', processing",
                     $"{context.Behavior.Id.Name.ToShortName()}:{context.Behavior.Id.InstanceText}",
-                    context.Event.GetType().GetEventName().ToShortName()
+                    eventName
                 );
             }
             
@@ -63,6 +71,8 @@ namespace Stateflows.Extensions.OpenTelemetry
             {
                 return;
             }
+            
+            EventProcessingActivity?.AddTag("EventStatus", eventStatus);
             
             if (!Skip)
             {
@@ -80,7 +90,7 @@ namespace Stateflows.Extensions.OpenTelemetry
             if (Skip && !ImplicitInitialization) return;
 
             var eventName = context.Event!.GetType().GetEventName().ToShortName();
-            var triggerEventName = context.Event!.GetType().GetEventName().ToShortName();
+            var triggerEventName = context.TriggerType.GetEventName().ToShortName();
             if (eventName != Event<Completion>.Name.ToShortName())
             {
                 if (DefaultGuardActivity != null)
@@ -102,7 +112,9 @@ namespace Stateflows.Extensions.OpenTelemetry
                             : $"Transition ({context.Source.Name.ToShortName()}) –{eventName}🡢 ({context.Target?.Name.ToShortName()})"
                         : context.Target == null
                             ? $"Internal transition ({context.Source.Name.ToShortName()})/{triggerEventName} triggered by {eventName}"
-                            : $"Transition ({context.Source.Name.ToShortName()}) –{triggerEventName}🡢 ({context.Target?.Name.ToShortName()}) triggered by {eventName}"
+                            : $"Transition ({context.Source.Name.ToShortName()}) –{triggerEventName}🡢 ({context.Target?.Name.ToShortName()}) triggered by {eventName}",
+                    ActivityKind.Internal,
+                    StateEntryActivity?.Context ?? EventProcessingActivity.Context
                 );
 
                 if (context.ExecutionTrigger != (object)context.Event && GuardActivity != null)
@@ -124,7 +136,11 @@ namespace Stateflows.Extensions.OpenTelemetry
                     GuardActivity = null;
                 }
                 
-                DefaultGuardActivity = Source.StartActivity($"Default transition ({context.Source.Name.ToShortName()}) 🡢 ({context.Target?.Name.ToShortName()})");
+                DefaultGuardActivity = Source.StartActivity(
+                    $"Default transition ({context.Source.Name.ToShortName()}) 🡢 ({context.Target?.Name.ToShortName()})",
+                    ActivityKind.Internal,
+                    StateEntryActivity?.Context ?? EventProcessingActivity.Context
+                );
             }
         }
 
@@ -419,8 +435,7 @@ namespace Stateflows.Extensions.OpenTelemetry
             {
                 StateExitActivity.Stop();
                 StateExitActivity.SetStatus(ActivityStatusCode.Error);
-                // TODO: change to AddException after upgrade
-                StateExitActivity.SetCustomProperty(nameof(Exception), exception);
+                StateExitActivity.AddException(exception);
             }
 
             StopProcessingActivity(context, EventStatus.Failed, exception);
@@ -430,12 +445,16 @@ namespace Stateflows.Extensions.OpenTelemetry
 
         private void StopProcessingActivity(IBehaviorActionContext context, EventStatus eventStatus, Exception exception = null!)
         {
+            var eventName = context.ExecutionTrigger is Completion
+                ? "Completion"
+                : context.ExecutionTrigger.GetType().GetEventName().ToShortName();
+            
             if (exception == null!)
             {
                 Logger.LogTrace(
                     message: "State Machine '{StateMachineId}' processed event '{Event}' with result '{EventStatus}'",
                     $"{context.Behavior.Id.Name.ToShortName()}:{context.Behavior.Id.InstanceText}",
-                    context.ExecutionTrigger.GetType().GetEventName().ToShortName(),
+                    eventName,
                     eventStatus
                 );
             }
@@ -444,11 +463,11 @@ namespace Stateflows.Extensions.OpenTelemetry
                 Logger.LogError(
                     message: "State Machine '{StateMachineId}' failed to process event '{Event}'",
                     exception: exception,
-                    args: new object[]
-                    {
+                    args:
+                    [
                         $"{context.Behavior.Id.Name.ToShortName()}:{context.Behavior.Id.InstanceText}",
-                        context.ExecutionTrigger.GetType().GetEventName().ToShortName()
-                    }
+                        eventName
+                    ]
                 );
 
                 EventProcessingActivity?.SetStatus(ActivityStatusCode.Error);

@@ -18,8 +18,10 @@ namespace Stateflows.StateMachines.Context.Classes
         }
 
         private IStateContext state = null;
-        IStateMachineContext IStateMachineActionContext.StateMachine => StateMachine;
         public IStateContext State => state ??= new StateContext(Vertex, Context);
+        public IReadOnlyTree<IStateContext> CurrentStates => StateMachine.CurrentStates;
         public IBehaviorContext Behavior => StateMachine;
+        public bool TryGetStateContext(string stateName, out IStateContext stateContext)
+            => StateMachine.TryGetStateContext(stateName, out stateContext);
     }
 }

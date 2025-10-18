@@ -12,10 +12,12 @@ namespace Stateflows.StateMachines.Registration.Builders
     internal class StateMachinesBuilder : IStateMachinesBuilder
     {
         private readonly IStateMachinesRegister Register;
+        private readonly bool SystemRegistrations;
 
-        public StateMachinesBuilder(IStateMachinesRegister register)
+        public StateMachinesBuilder(IStateMachinesRegister register, bool systemRegistrations)
         {
             Register = register;
+            SystemRegistrations = systemRegistrations;
         }
 
         [DebuggerHidden]

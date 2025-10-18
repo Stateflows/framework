@@ -1,43 +1,53 @@
 ﻿using System;
 using System.Diagnostics;
+using System.Linq;
+using System.Threading.Tasks;
 using Stateflows.Common;
+using Stateflows.Common.Engine;
+using Stateflows.Common.Interfaces;
+using Stateflows.StateMachines.Context.Classes;
 using Stateflows.StateMachines.Context.Interfaces;
 using Stateflows.StateMachines.Extensions;
 
 namespace Stateflows.StateMachines.Engine
 {
-    internal class Notifications : StateMachinePlugin
+    internal class Notifications(IStateflowsValueStorage valueStorage) : StateMachinePlugin
     {
         public override void AfterStateEntry(IStateActionContext context)
         {
-            Trace.WriteLine($"⦗→s⦘ State Machine '{context.Behavior.Id.Name}:{context.Behavior.Id.Instance}': entered '{context.State.Name}'");
+            var stateflowsContext = ((BaseContext)context).Context.Context;
+            Trace.WriteLine($"⦗→s⦘ State Machine '{stateflowsContext.Id.Name}:{stateflowsContext.Id.Instance}': entered '{context.State.Name}'");
         }
 
         public override void AfterStateExit(IStateActionContext context)
         {
-            Trace.WriteLine($"⦗→s⦘ State Machine '{context.Behavior.Id.Name}:{context.Behavior.Id.Instance}': exited '{context.State.Name}'");
+            var stateflowsContext = ((BaseContext)context).Context.Context;
+            Trace.WriteLine($"⦗→s⦘ State Machine '{stateflowsContext.Id.Name}:{stateflowsContext.Id.Instance}': exited '{context.State.Name}'");
         }
 
         public override void AfterStateInitialize(IStateActionContext context)
         {
-            Trace.WriteLine($"⦗→s⦘ State Machine '{context.Behavior.Id.Name}:{context.Behavior.Id.Instance}': initialized '{context.State.Name}'");
+            var stateflowsContext = ((BaseContext)context).Context.Context;
+            Trace.WriteLine($"⦗→s⦘ State Machine '{stateflowsContext.Id.Name}:{stateflowsContext.Id.Instance}': initialized '{context.State.Name}'");
         }
 
         public override void AfterStateFinalize(IStateActionContext context)
         {
-            Trace.WriteLine($"⦗→s⦘ State Machine '{context.Behavior.Id.Name}:{context.Behavior.Id.Instance}': finalized '{context.State.Name}'");
+            var stateflowsContext = ((BaseContext)context).Context.Context;
+            Trace.WriteLine($"⦗→s⦘ State Machine '{stateflowsContext.Id.Name}:{stateflowsContext.Id.Instance}': finalized '{context.State.Name}'");
         }
 
         public override void AfterStateMachineInitialize(IStateMachineInitializationContext context, bool implicitInitialization, bool initialized)
         {
-            Trace.WriteLine($"⦗→s⦘ State Machine '{context.Behavior.Id.Name}:{context.Behavior.Id.Instance}': {(initialized ? "" : "not ")}initialized");
+            var stateflowsContext = ((BaseContext)context).Context.Context;
+            Trace.WriteLine($"⦗→s⦘ State Machine '{stateflowsContext.Id.Name}:{stateflowsContext.Id.Instance}': {(initialized ? "" : "not ")}initialized{(implicitInitialization ? " implicitly" : "")}");
 
             var executor = context.Behavior.GetExecutor();
             var notification = new BehaviorInfo()
             {
                 Id = executor.Context.Id,
                 BehaviorStatus = BehaviorStatus.Initialized,
-                ExpectedEvents = executor.GetExpectedEventNames()
+                ExpectedEvents = executor.GetExpectedEventNamesAsync().GetAwaiter().GetResult()
             };
 
             context.Behavior.Publish(notification);
@@ -45,7 +55,11 @@ namespace Stateflows.StateMachines.Engine
 
         public override void AfterStateMachineFinalize(IStateMachineActionContext context)
         {
-            Trace.WriteLine($"⦗→s⦘ State Machine '{context.Behavior.Id.Name}:{context.Behavior.Id.Instance}': finalized");
+            var stateflowsContext = ((BaseContext)context).Context.Context;
+            
+            valueStorage.RemoveAsync(stateflowsContext.Id, CommonValues.ForceFinalizeKey).GetAwaiter().GetResult();
+            
+            Trace.WriteLine($"⦗→s⦘ State Machine '{stateflowsContext.Id.Name}:{stateflowsContext.Id.Instance}': finalized");
 
             var notification = new BehaviorInfo()
             {
@@ -58,58 +72,86 @@ namespace Stateflows.StateMachines.Engine
 
         public override void BeforeTransitionEffect<TEvent>(ITransitionContext<TEvent> context)
         {
+            var stateflowsContext = ((BaseContext)context).Context.Context;
             var eventName = Event.GetName(context.Event.GetType());
             if (context.Target != null)
             {
                 Trace.WriteLine(string.IsNullOrEmpty(eventName)
-                    ? $"⦗→s⦘ State Machine '{context.Behavior.Id.Name}:{context.Behavior.Id.Instance}': default transition from '{context.Source.Name}' to '{context.Target.Name}'"
-                    : $"⦗→s⦘ State Machine '{context.Behavior.Id.Name}:{context.Behavior.Id.Instance}': event '{eventName}' triggered transition from '{context.Source.Name}' to '{context.Target.Name}'");
+                    ? $"⦗→s⦘ State Machine '{stateflowsContext.Id.Name}:{stateflowsContext.Id.Instance}': default transition from '{context.Source.Name}' to '{context.Target.Name}'"
+                    : $"⦗→s⦘ State Machine '{stateflowsContext.Id.Name}:{stateflowsContext.Id.Instance}': event '{eventName}' triggered transition from '{context.Source.Name}' to '{context.Target.Name}'");
             }
             else
             {
-                Trace.WriteLine($"⦗→s⦘ State Machine '{context.Behavior.Id.Name}:{context.Behavior.Id.Instance}': event '{eventName}' triggered internal transition in '{context.Source.Name}'");
+                Trace.WriteLine($"⦗→s⦘ State Machine '{stateflowsContext.Id.Name}:{stateflowsContext.Id.Instance}': event '{eventName}' triggered internal transition in '{context.Source.Name}'");
             }
-            
-            return;
         }
 
         public override void AfterTransitionGuard<TEvent>(ITransitionContext<TEvent> context, bool guardResult)
         {
-            if (guardResult) return;
-            var eventName = Event.GetName(context.Event.GetType());
-            if (context.Target != null)
+            var stateflowsContext = ((BaseContext)context).Context.Context;
+            if (guardResult)
             {
-                Trace.WriteLine(string.IsNullOrEmpty(eventName)
-                    ? $"⦗→s⦘ State Machine '{context.Behavior.Id.Name}:{context.Behavior.Id.Instance}': guard stopped default transition from '{context.Source.Name}' to '{context.Target.Name}'"
-                    : $"⦗→s⦘ State Machine '{context.Behavior.Id.Name}:{context.Behavior.Id.Instance}': guard stopped event '{eventName}' from triggering transition from '{context.Source.Name}' to '{context.Target.Name}'");
+                return;
+            }
+            
+            var eventName = Event.GetName(context.Event.GetType());
+
+            var transitionContext = (TransitionContext<TEvent>)context;
+            var guardDelegations = context.Headers.OfType<GuardDelegation>();
+            if (guardDelegations.Any(g => g.EdgeIdentifier == transitionContext.Edge.Identifier))
+            {
+                if (context.Target != null)
+                {
+                    Trace.WriteLine(string.IsNullOrEmpty(eventName)
+                        ? $"⦗→s⦘ State Machine '{stateflowsContext.Id.Name}:{stateflowsContext.Id.Instance}': delegated guard on default transition from '{context.Source.Name}' to '{context.Target.Name}'"
+                        : $"⦗→s⦘ State Machine '{stateflowsContext.Id.Name}:{stateflowsContext.Id.Instance}': delegated guard on transition from '{context.Source.Name}' to '{context.Target.Name}' triggered by event '{eventName}'");
+                }
+                else
+                {
+                    Trace.WriteLine($"⦗→s⦘ State Machine '{stateflowsContext.Id.Name}:{stateflowsContext.Id.Instance}': delegated guard on internal transition in '{context.Source.Name}' triggered by event '{eventName}'");
+                }
             }
             else
             {
-                Trace.WriteLine($"⦗→s⦘ State Machine '{context.Behavior.Id.Name}:{context.Behavior.Id.Instance}': guard stopped event '{eventName}' from triggering internal transition in '{context.Source.Name}'");
+                if (context.Target != null)
+                {
+                    Trace.WriteLine(string.IsNullOrEmpty(eventName)
+                        ? $"⦗→s⦘ State Machine '{stateflowsContext.Id.Name}:{stateflowsContext.Id.Instance}': guard stopped default transition from '{context.Source.Name}' to '{context.Target.Name}'"
+                        : $"⦗→s⦘ State Machine '{stateflowsContext.Id.Name}:{stateflowsContext.Id.Instance}': guard stopped event '{eventName}' from triggering transition from '{context.Source.Name}' to '{context.Target.Name}'");
+                }
+                else
+                {
+                    Trace.WriteLine($"⦗→s⦘ State Machine '{stateflowsContext.Id.Name}:{stateflowsContext.Id.Instance}': guard stopped event '{eventName}' from triggering internal transition in '{context.Source.Name}'");
+                }
             }
         }
 
         public override bool BeforeProcessEvent<TEvent>(IEventContext<TEvent> context)
         {
-            Trace.WriteLine($"⦗→s⦘ State Machine '{context.Behavior.Id.Name}:{context.Behavior.Id.Instance}': received event '{Event.GetName(context.Event.GetType())}', trying to process it");
+            var stateflowsContext = ((BaseContext)context).Context.Context;
+            Trace.WriteLine($"⦗→s⦘ State Machine '{stateflowsContext.Id.Name}:{stateflowsContext.Id.Instance}': received event '{Event.GetName(context.Event.GetType())}', processing");
 
             return true;
         }
 
         public override void AfterProcessEvent<TEvent>(IEventContext<TEvent> context, EventStatus eventStatus)
         {
-            Trace.WriteLine($"⦗→s⦘ State Machine '{context.Behavior.Id.Name}:{context.Behavior.Id.Instance}': processed event '{Event.GetName(context.Event.GetType())}'");
+            var stateflowsContext = ((BaseContext)context).Context.Context;
+            Trace.WriteLine($"⦗→s⦘ State Machine '{stateflowsContext.Id.Name}:{stateflowsContext.Id.Instance}': processed event '{Event.GetName(context.Event.GetType())}' with result '{eventStatus}'");
             
             var executor = context.Behavior.GetExecutor();
-            if (!executor.StateHasChanged) return;
+            if (!executor.StateHasChanged)
+            {
+                return;
+            }
             
-            Trace.WriteLine($"⦗→s⦘ State Machine '{context.Behavior.Id.Name}:{context.Behavior.Id.Instance}': state has changed, emitting");
+            // Trace.WriteLine($"⦗→s⦘ State Machine '{stateflowsContext.Id.Name}:{stateflowsContext.Id.Instance}': state has changed, emitting");
             var notification = new StateMachineInfo()
             {
                 Id = executor.Context.Id,
                 BehaviorStatus = executor.BehaviorStatus,
                 CurrentStates = executor.GetStatesTree(),
-                ExpectedEvents = executor.GetExpectedEventNames(),
+                ExpectedEvents = executor.GetExpectedEventNamesAsync().GetAwaiter().GetResult(),
             };
 
             context.Behavior.Publish(notification);
@@ -117,56 +159,64 @@ namespace Stateflows.StateMachines.Engine
 
         public override bool OnStateMachineInitializationException(IStateMachineInitializationContext context, Exception exception)
         {
-            Trace.WriteLine($"⦗→s⦘ State Machine '{context.Behavior.Id.Name}:{context.Behavior.Id.Instance}': unhandled exception '{exception.GetType().Name}' thrown with message '{exception.Message}' on State Machine initialization");
+            var stateflowsContext = ((BaseContext)context).Context.Context;
+            Trace.WriteLine($"⦗→s⦘ State Machine '{stateflowsContext.Id.Name}:{stateflowsContext.Id.Instance}': unhandled exception '{exception.GetType().Name}' thrown with message '{exception.Message}' on State Machine initialization");
 
             return false;
         }
 
         public override bool OnStateMachineFinalizationException(IStateMachineActionContext context, Exception exception)
         {
-            Trace.WriteLine($"⦗→s⦘ State Machine '{context.Behavior.Id.Name}:{context.Behavior.Id.Instance}': unhandled exception '{exception.GetType().Name}' thrown with message '{exception.Message}' on State Machine finalization");
+            var stateflowsContext = ((BaseContext)context).Context.Context;
+            Trace.WriteLine($"⦗→s⦘ State Machine '{stateflowsContext.Id.Name}:{stateflowsContext.Id.Instance}': unhandled exception '{exception.GetType().Name}' thrown with message '{exception.Message}' on State Machine finalization");
 
             return false;
         }
 
         public override bool OnTransitionGuardException<TEvent>(ITransitionContext<TEvent> context, Exception exception)
         {
-            Trace.WriteLine($"⦗→s⦘ State Machine '{context.Behavior.Id.Name}:{context.Behavior.Id.Instance}': unhandled exception '{exception.GetType().Name}' thrown with message '{exception.Message}' on guard of transition from state '{context.Source.Name}'");
+            var stateflowsContext = ((BaseContext)context).Context.Context;
+            Trace.WriteLine($"⦗→s⦘ State Machine '{stateflowsContext.Id.Name}:{stateflowsContext.Id.Instance}': unhandled exception '{exception.GetType().Name}' thrown with message '{exception.Message}' on guard of transition from state '{context.Source.Name}'");
 
             return false;
         }
 
         public override bool OnTransitionEffectException<TEvent>(ITransitionContext<TEvent> context, Exception exception)
         {
-            Trace.WriteLine($"⦗→s⦘ State Machine '{context.Behavior.Id.Name}:{context.Behavior.Id.Instance}': unhandled exception '{exception.GetType().Name}' thrown with message '{exception.Message}' on effect of transition from state '{context.Source.Name}'");
+            var stateflowsContext = ((BaseContext)context).Context.Context;
+            Trace.WriteLine($"⦗→s⦘ State Machine '{stateflowsContext.Id.Name}:{stateflowsContext.Id.Instance}': unhandled exception '{exception.GetType().Name}' thrown with message '{exception.Message}' on effect of transition from state '{context.Source.Name}'");
 
             return false;
         }
 
         public override bool OnStateInitializationException(IStateActionContext context, Exception exception)
         {
-            Trace.WriteLine($"⦗→s⦘ State Machine '{context.Behavior.Id.Name}:{context.Behavior.Id.Instance}': unhandled exception '{exception.GetType().Name}' thrown with message '{exception.Message}' on state '{context.State.Name}' initialization");
+            var stateflowsContext = ((BaseContext)context).Context.Context;
+            Trace.WriteLine($"⦗→s⦘ State Machine '{stateflowsContext.Id.Name}:{stateflowsContext.Id.Instance}': unhandled exception '{exception.GetType().Name}' thrown with message '{exception.Message}' on state '{context.State.Name}' initialization");
 
             return false;
         }
 
         public override bool OnStateFinalizationException(IStateActionContext context, Exception exception)
         {
-            Trace.WriteLine($"⦗→s⦘ State Machine '{context.Behavior.Id.Name}:{context.Behavior.Id.Instance}': unhandled exception '{exception.GetType().Name}' thrown with message '{exception.Message}' on state '{context.State.Name}' finalization");
+            var stateflowsContext = ((BaseContext)context).Context.Context;
+            Trace.WriteLine($"⦗→s⦘ State Machine '{stateflowsContext.Id.Name}:{stateflowsContext.Id.Instance}': unhandled exception '{exception.GetType().Name}' thrown with message '{exception.Message}' on state '{context.State.Name}' finalization");
 
             return false;
         }
 
         public override bool OnStateEntryException(IStateActionContext context, Exception exception)
         {
-            Trace.WriteLine($"⦗→s⦘ State Machine '{context.Behavior.Id.Name}:{context.Behavior.Id.Instance}': unhandled exception '{exception.GetType().Name}' thrown with message '{exception.Message}' on entry to state '{context.State.Name}'");
+            var stateflowsContext = ((BaseContext)context).Context.Context;
+            Trace.WriteLine($"⦗→s⦘ State Machine '{stateflowsContext.Id.Name}:{stateflowsContext.Id.Instance}': unhandled exception '{exception.GetType().Name}' thrown with message '{exception.Message}' on entry to state '{context.State.Name}'");
 
             return false;
         }
 
         public override bool OnStateExitException(IStateActionContext context, Exception exception)
         {
-            Trace.WriteLine($"⦗→s⦘ State Machine '{context.Behavior.Id.Name}:{context.Behavior.Id.Instance}': unhandled exception '{exception.GetType().Name}' thrown with message '{exception.Message}' on exit from state '{context.State.Name}'");
+            var stateflowsContext = ((BaseContext)context).Context.Context;
+            Trace.WriteLine($"⦗→s⦘ State Machine '{stateflowsContext.Id.Name}:{stateflowsContext.Id.Instance}': unhandled exception '{exception.GetType().Name}' thrown with message '{exception.Message}' on exit from state '{context.State.Name}'");
 
             return false;
         }

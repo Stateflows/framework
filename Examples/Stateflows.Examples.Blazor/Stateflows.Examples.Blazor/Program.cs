@@ -1,11 +1,11 @@
 using OpenTelemetry;
-using OpenTelemetry.Trace;
+using Scalar.AspNetCore;
 using Stateflows;
 using Stateflows.StateMachines;
 using Stateflows.Examples.Blazor.Components;
 using Stateflows.Examples.Behaviors.StateMachines.Document;
+using Stateflows.Extensions.MinimalAPIs;
 using Stateflows.Extensions.OpenTelemetry;
-using Stateflows.Transport.Http;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -27,6 +27,7 @@ builder.Services.AddStateflows(b => b
     .AddOpenTelemetry()
 );
 
+builder.Services.AddOpenApi();
 
 #region OpenTelemetry
 // Setup logging to be exported via OpenTelemetry
@@ -56,6 +57,9 @@ builder.Services.AddRazorComponents()
 
 var app = builder.Build();
 
+app.MapOpenApi();
+app.MapScalarApiReference();
+
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
@@ -79,7 +83,7 @@ app.MapRazorComponents<App>()
     .AddAdditionalAssemblies(typeof(Stateflows.Examples.Blazor.Client._Imports).Assembly);
 
 
-// For WebAssembly to interact with Stateflows behaviors, transport layer must be configured.
-app.MapStateflowsHttpTransport();
+// API interface must be exposed for WebAssembly to interact with Stateflows
+app.MapStateflowsMinimalAPIsEndpoints();
 
 app.Run();

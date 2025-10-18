@@ -4,8 +4,6 @@ using System.Linq;
 using System.Threading.Tasks;
 using Stateflows.StateMachines.Context.Classes;
 using Stateflows.StateMachines.Context.Interfaces;
-using Stateflows.StateMachines.Registration.Extensions;
-using Stateflows.StateMachines.Registration.Interfaces.Internal;
 
 namespace Stateflows.StateMachines.Registration.Interfaces.Base
 {
@@ -31,12 +29,7 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         /// <param name="effects">Synchronous effect handlers</param>
         [DebuggerHidden]
         public TReturn AddEffect(params Action<ITransitionContext<Completion>>[] effects)
-            => AddEffect(
-                effects.Select(effect => effect
-                    .AddStateMachineInvocationContext(((IEdgeBuilder)this).Edge.Graph)
-                    .ToAsync()
-                ).ToArray()
-            );
+            => AddEffect(effects.Select(effect => effect.ToAsync()).ToArray());
 
         /// <summary>
         /// Adds a typed effect to the current transition.

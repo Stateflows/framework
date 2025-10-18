@@ -4,14 +4,11 @@ using Stateflows.Activities.Context.Interfaces;
 using Stateflows.Common;
 using Stateflows.Common.Utilities;
 using Stateflows.Common.Exceptions;
-using Stateflows.Common.Context.Interfaces;
 
 namespace Stateflows.Activities.Context.Classes
 {
     internal class EventContext<TEvent> : BaseContext, Interfaces.IEventContext<TEvent>, IRootContext, IStateflowsEventContext<TEvent>
     {
-        IActivityContext IActivityActionContext.Activity => Activity;
-        
         IBehaviorContext IBehaviorActionContext.Behavior => Activity;
 
         public EventContext(RootContext context, NodeScope nodeScope)
@@ -37,5 +34,8 @@ namespace Stateflows.Activities.Context.Classes
         }
 
         public TEvent Event { get; private set; }
+
+        public object LockHandle => Activity.LockHandle;
+        public IReadOnlyTree<INodeContext> ActiveNodes => Activity.ActiveNodes;
     }
 }

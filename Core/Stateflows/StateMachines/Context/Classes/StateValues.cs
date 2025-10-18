@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Linq;
 using System.Collections.Generic;
+using Stateflows.Common;
 
 namespace Stateflows.StateMachines.Context.Classes
 {
@@ -19,6 +20,11 @@ namespace Stateflows.StateMachines.Context.Classes
         public bool ShouldSerializeTimeEventIds()
             => TimeEventIds.Any();
 
+        public TreeNode<string> HistoryTree { get; set; }
+
+        public bool ShouldSerializeHistoryTree()
+            => HistoryTree != null;
+        
         public Dictionary<string, Guid> TimeEventIds { get; set; } = new Dictionary<string, Guid>();
 
         public bool ShouldSerializeStartupEventIds()

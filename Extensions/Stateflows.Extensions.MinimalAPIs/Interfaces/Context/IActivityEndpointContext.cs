@@ -7,13 +7,8 @@ namespace Stateflows.Extensions.MinimalAPIs.Interfaces;
 
 public interface IActivityEndpointContext : IBehaviorEndpointContext
 {
-    [Obsolete("Activity context property is obsolete, use Behavior or ActiveNodes properties instead.")]
-    IActivityContext Activity { get; }
-    
-    IBehaviorContext IBehaviorEndpointContext.Behavior => Activity;
-        
     /// <summary>
-    /// Information about current state of a State Machine
+    /// Information about active nodes of an Activity
     /// </summary>
     IReadOnlyTree<IActivityNodeContext> ActiveNodes { get; }
     

@@ -6,8 +6,6 @@ namespace Stateflows.Activities.Context.Classes
 {
     internal class ActivityNodeContext : BaseContext, IActivityNodeContext
     {
-        IActivityContext IActivityActionContext.Activity => Activity;
-        
         IBehaviorContext IBehaviorActionContext.Behavior => Activity;
 
         internal Node Node { get; }
@@ -33,5 +31,8 @@ namespace Stateflows.Activities.Context.Classes
         private ICurrentNodeContext currentNode = null;
         ICurrentNodeContext IActivityNodeContext.Node
             => currentNode ??= new NodeContext(Node, Edge, Context, NodeScope);
+
+        public object LockHandle => Activity.LockHandle;
+        public IReadOnlyTree<INodeContext> ActiveNodes => Activity.ActiveNodes;
     }
 }

@@ -5,10 +5,12 @@ using System.Threading.Tasks;
 using Stateflows.Actions;
 using Stateflows.Activities;
 using Stateflows.Activities.Extensions;
+using Stateflows.Activities.Registration.Interfaces;
 using Stateflows.StateMachines.Context.Classes;
 using Stateflows.StateMachines.Context.Interfaces;
 using Stateflows.StateMachines.Registration.Extensions;
 using Stateflows.StateMachines.Registration.Interfaces.Internal;
+using ActionDelegateAsync = Stateflows.Actions.Registration.ActionDelegateAsync;
 
 namespace Stateflows.StateMachines.Registration.Interfaces.Base
 {
@@ -25,42 +27,86 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         TReturn AddGuard(params Func<ITransitionContext<TEvent>, Task<bool>>[] guardsAsync);
 
         /// <summary>
-        /// Adds activity behavior as guard
-        /// </summary>
-        /// <param name="activityName">Activity behavior name</param>
-        /// <param name="buildAction">Build action</param>
-        [DebuggerHidden]
-        public TReturn AddGuardActivity(string activityName, TransitionActivityBuildAction<TEvent> buildAction = null)
-            => AddGuard(c => StateMachineActivityExtensions.RunGuardActivity(c, activityName, buildAction));
-
-        /// <summary>
-        /// Adds activity behavior as guard
+        /// Registers activity behavior as guard
         /// </summary>
         /// <param name="buildAction">Build action</param>
         /// <typeparam name="TActivity">Activity behavior type</typeparam>
         [DebuggerHidden]
-        public TReturn AddGuardActivity<TActivity>(TransitionActivityBuildAction<TEvent> buildAction = null)
+        public TReturn AddGuardActivity<TActivity>()
             where TActivity : class, IActivity
-            => AddGuardActivity(Activity<TActivity>.Name, buildAction);
-        
-        /// <summary>
-        /// Adds action behavior as guard
-        /// </summary>
-        /// <param name="actionName">Action behavior name</param>
-        /// <param name="buildAction">Build action</param>
-        [DebuggerHidden]
-        public TReturn AddGuardAction(string actionName, TransitionActionBuildAction<TEvent> buildAction = null)
-            => AddGuard(c => StateMachineActionExtensions.RunGuardAction(c, actionName, buildAction));
+        {
+            var edge = ((IEdgeBuilder)this).Edge;
+            var vertex = edge.Source;
+            var activityName = $"{vertex.Graph.Name}.{vertex.Name}.{edge.Trigger}";
+            if (edge.Target != null)
+            {
+                activityName += $".{edge.Target}";
+            }
+            activityName += $".guard.{edge.Guards.Actions.Count}";
+            
+            vertex.Graph.StateflowsBuilder.AddActivities(b => b.AddActivity<TActivity>(activityName));
+            return AddGuard(c => StateMachineActivityExtensions.RunGuardActivityAsync(edge.Guards.Actions.Count, c, activityName));
+        }
 
         /// <summary>
-        /// Adds action behavior as guard
+        /// Registers Activity behavior as guard
         /// </summary>
-        /// <param name="buildAction">Build action</param>
+        /// <param name="activityBuildAction">Activity build action</param>
+        public TReturn AddGuardActivity(ReactiveActivityBuildAction activityBuildAction)
+        {
+            var edge = ((IEdgeBuilder)this).Edge;
+            var vertex = edge.Source;
+            var activityName = $"{vertex.Graph.Name}.{vertex.Name}.{edge.Trigger}";
+            if (edge.Target != null)
+            {
+                activityName += $".{edge.Target}";
+            }
+            activityName += $".guard.{edge.Guards.Actions.Count}";
+            
+            vertex.Graph.StateflowsBuilder.AddActivities(b => b.AddActivity(activityName, activityBuildAction));
+            return AddGuard(c => StateMachineActivityExtensions.RunGuardActivityAsync(edge.Guards.Actions.Count, c, activityName));
+        }
+
+        /// <summary>
+        /// Registers action behavior as guard
+        /// </summary>
         /// <typeparam name="TAction">Action behavior type</typeparam>
         [DebuggerHidden]
-        public TReturn AddGuardAction<TAction>(TransitionActionBuildAction<TEvent> buildAction = null)
+        public TReturn AddGuardAction<TAction>()
             where TAction : class, IAction
-            => AddGuardAction(Stateflows.Actions.Action<TAction>.Name, buildAction);
+        {
+            var edge = ((IEdgeBuilder)this).Edge;
+            var vertex = edge.Source;
+            var actionName = $"{vertex.Graph.Name}.{vertex.Name}.{edge.Trigger}";
+            if (edge.Target != null)
+            {
+                actionName += $".{edge.Target}";
+            }
+            actionName += $".guard.{edge.Guards.Actions.Count}";
+            
+            vertex.Graph.StateflowsBuilder.AddActions(b => b.AddAction<TAction>(actionName));
+            return AddGuard(c => StateMachineActionExtensions.RunGuardActionAsync(edge.Guards.Actions.Count, c, actionName));
+        }
+
+        /// <summary>
+        /// Registers Action behavior as guard
+        /// </summary>
+        /// <param name="actionDelegate">Action delegate</param>
+        /// <param name="reentrant">Flag that determines if action delegate can be executed in parallel</param>
+        public TReturn AddGuardAction(ActionDelegateAsync actionDelegate, bool reentrant = true)
+        {
+            var edge = ((IEdgeBuilder)this).Edge;
+            var vertex = edge.Source;
+            var actionName = $"{vertex.Graph.Name}.{vertex.Name}.{edge.Trigger}";
+            if (edge.Target != null)
+            {
+                actionName += $".{edge.Target}";
+            }
+            actionName += $".guard.{edge.Guards.Actions.Count}";
+            
+            vertex.Graph.StateflowsBuilder.AddActions(b => b.AddAction(actionName, actionDelegate, reentrant));
+            return AddGuard(c => StateMachineActionExtensions.RunGuardActionAsync(edge.Guards.Actions.Count, c, actionName));
+        }
 
         /// <summary>
         /// Adds a function-based guard to the current transition.<br/>
@@ -72,13 +118,7 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         /// <param name="guards">The guard functions.</param>
         [DebuggerHidden]
         public TReturn AddGuard(params Func<ITransitionContext<TEvent>, bool>[] guards)
-            => AddGuard(
-                guards.Select(guard => guard
-                    .AddStateMachineInvocationContext(((IEdgeBuilder)this).Edge.Graph)
-                    .ToAsync()
-                ).ToArray()
-
-            );
+            => AddGuard(guards.Select(guard => guard.ToAsync()).ToArray());
 
         /// <summary>
         /// Adds a typed guard handler to the current transition.
@@ -103,13 +143,8 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         /// <param name="guards">The guard functions.</param>
         [DebuggerHidden]
         public TReturn AddNegatedGuard(params Func<ITransitionContext<TEvent>, bool>[] guards)
-            => AddNegatedGuard(
-                guards.Select(guard => guard
-                    .AddStateMachineInvocationContext(((IEdgeBuilder)this).Edge.Graph)
-                    .ToAsync()
-                ).ToArray()
-            );
-
+            => AddNegatedGuard(guards.Select(guard => guard.ToAsync()).ToArray());
+        
         /// <summary>
         /// Adds a negated typed guard handler to the current transition.
         /// </summary>

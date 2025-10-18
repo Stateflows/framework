@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
+using System.Threading;
 using System.Threading.Tasks;
 using Stateflows.Common;
 using Stateflows.Common.Classes;
@@ -8,32 +10,39 @@ using Stateflows.Common.Interfaces;
 using Stateflows.Common.Subscription;
 using Microsoft.Extensions.DependencyInjection;
 using Stateflows.Activities;
+using Stateflows.Common.Context;
+using Stateflows.Common.Utilities;
 
 namespace Stateflows.Actions.Context.Classes
 {
-    public class ActionContext : IActionContext, IBehaviorLocator
+    public class ActionContext : IActionContext, IBehaviorLocator, IStateflowsContextProvider
     {
-        BehaviorId IBehaviorContext.Id => Context.Id;
+        BehaviorId IBehaviorContext.Id => Context.ContextOwnerId ?? RootContext.Id;
 
-        private readonly RootContext Context;
+        internal readonly RootContext RootContext;
 
-        public readonly List<TokenHolder> OutputTokens = new List<TokenHolder>();
+        public List<TokenHolder> OutputTokens { get; } = [];
         
-        public readonly List<TokenHolder> InputTokens = new List<TokenHolder>();
+        public List<TokenHolder> InputTokens { get; } = [];
 
         public IServiceProvider ServiceProvider { get; }
 
-        public ActionId Id => Context.Id;
+        public ActionId Id => RootContext.Id;
 
         private BehaviorSubscriber subscriber;
         private BehaviorSubscriber Subscriber
-            => subscriber ??= new BehaviorSubscriber(Id, Context.Context, this, ServiceProvider.GetRequiredService<INotificationsHub>());
+            => subscriber ??= new BehaviorSubscriber(Id, RootContext.Context, this, ServiceProvider.GetRequiredService<INotificationsHub>());
 
-        public ActionContext(RootContext context, IServiceProvider serviceProvider, IEnumerable<TokenHolder> tokens)
+        public ActionContext(RootContext rootContext, IServiceProvider serviceProvider, IEnumerable<TokenHolder> tokens)
         {
-            Context = context;
+            RootContext = rootContext;
             ServiceProvider = serviceProvider;
-            Values = new ContextValuesCollection(context.GlobalValues);
+            Values = new ValuesStorage(
+                string.Empty,
+                RootContext.Context.ContextOwnerId ?? RootContext.Id,
+                ServiceProvider.GetRequiredService<IStateflowsLock>(),
+                ServiceProvider.GetRequiredService<IStateflowsValueStorage>()
+            );
             if (tokens != null)
             {
                 InputTokens.AddRange(tokens);
@@ -43,10 +52,20 @@ namespace Stateflows.Actions.Context.Classes
         public IContextValues Values { get; }
 
         public void Send<TEvent>(TEvent @event, IEnumerable<EventHeader> headers = null)
-            => _ = Context.Send(@event, headers);
+            => _ = RootContext.Send(@event, headers);
 
         public void Publish<TNotification>(TNotification notification, IEnumerable<EventHeader> headers = null)
-            => Subscriber.PublishAsync(Id, notification, headers).GetAwaiter().GetResult();
+        {
+            var strictOwnershipHeader = headers?.OfType<StrictOwnership>().FirstOrDefault();
+            var strictOwnershipAttribute = typeof(TNotification).GetCustomAttribute<StrictOwnershipAttribute>();
+            var id = strictOwnershipHeader != null || strictOwnershipAttribute != null
+                ? (BehaviorId)Id
+                : RootContext.Context.ContextOwnerId ?? Id;
+            
+            Subscriber.PublishAsync(id, notification, headers).GetAwaiter().GetResult();
+        }
+
+        public bool IsEmbedded => Context.ContextOwnerId != null;
 
         public Task<SendResult> SubscribeAsync<TNotification>(BehaviorId behaviorId)
             => Subscriber.SubscribeAsync<TNotification>(behaviorId);
@@ -69,5 +88,10 @@ namespace Stateflows.Actions.Context.Classes
 
         public void OutputRange<TToken>(IEnumerable<TToken> tokens)
             => OutputTokens.AddRange(tokens.Select(token => token.ToTokenHolder()));
+
+        public StateflowsContext Context => RootContext.Context;
+
+        internal CancellationTokenSource CancellationTokenSource = new();
+        public CancellationToken CancellationToken => CancellationTokenSource.Token;
     }
 }

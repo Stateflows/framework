@@ -2,6 +2,7 @@
 using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
+using System.Runtime.CompilerServices;
 using System.Runtime.Serialization;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
@@ -37,7 +38,8 @@ namespace Stateflows.Common.Classes
         /// <returns>Instance of given class</returns>
         [DebuggerHidden]
         public static object CreateUninitializedInstance(Type serviceType)
-            => FormatterServices.GetUninitializedObject(serviceType); 
+            => RuntimeHelpers.GetUninitializedObject(serviceType);
+        
         /// <summary>
         /// Creates instance of class
         /// </summary>
@@ -104,39 +106,39 @@ namespace Stateflows.Common.Classes
                     continue;
                 }
 
-                if (parameter.ParameterType.IsSubclassOfRawGeneric(typeof(BaseValueAccessor<>)))
-                {
-                    var customAttribute = parameter.GetCustomAttribute<ValueNameAttribute>();
+                // if (parameter.ParameterType.IsSubclassOfRawGeneric(typeof(BaseValueAccessor<>)))
+                // {
+                //     var customAttribute = parameter.GetCustomAttribute<ValueNameAttribute>();
+                //
+                //     if (customAttribute != null)
+                //     {
+                //         // Resolve service by name
+                //         parameterValues[i] = Activator.CreateInstance(parameter.ParameterType, customAttribute.Name);
+                //     }
+                //     else
+                //     {
+                //         throw new InvalidOperationException($"ValueNameAttribute not found for parameter {parameter.Name} in constructor of {serviceKind} {serviceType.Name}");
+                //     }
+                //     
+                //     continue;
+                // }
 
-                    if (customAttribute != null)
-                    {
-                        // Resolve service by name
-                        parameterValues[i] = Activator.CreateInstance(parameter.ParameterType, customAttribute.Name);
-                    }
-                    else
-                    {
-                        throw new InvalidOperationException($"ValueNameAttribute not found for parameter {parameter.Name} in constructor of {serviceKind} {serviceType.Name}");
-                    }
-                    
-                    continue;
-                }
-
-                if (parameter.ParameterType.IsSubclassOf(typeof(BaseNamespaceAccessor)))
-                {
-                    var customAttribute = parameter.GetCustomAttribute<ValueSetNameAttribute>();
-
-                    if (customAttribute != null)
-                    {
-                        // Resolve service by name
-                        parameterValues[i] = Activator.CreateInstance(parameter.ParameterType, customAttribute.Name);
-                    }
-                    else
-                    {
-                        throw new InvalidOperationException($"ValueSetNameAttribute not found for parameter {parameter.Name} in constructor {constructor.Name} of service {serviceType.Name}");
-                    }
-                    
-                    continue;
-                }
+                // if (parameter.ParameterType.IsSubclassOf(typeof(BaseNamespaceAccessor)))
+                // {
+                //     var customAttribute = parameter.GetCustomAttribute<ValueSetNameAttribute>();
+                //
+                //     if (customAttribute != null)
+                //     {
+                //         // Resolve service by name
+                //         parameterValues[i] = Activator.CreateInstance(parameter.ParameterType, customAttribute.Name);
+                //     }
+                //     else
+                //     {
+                //         throw new InvalidOperationException($"ValueSetNameAttribute not found for parameter {parameter.Name} in constructor {constructor.Name} of service {serviceType.Name}");
+                //     }
+                //     
+                //     continue;
+                // }
 
                 if (parameter.ParameterType == typeof(INamespace))
                 {

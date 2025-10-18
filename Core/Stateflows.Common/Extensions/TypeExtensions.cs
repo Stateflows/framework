@@ -24,7 +24,7 @@ namespace Stateflows.Common.Extensions
                 return attribute.Name;
             }
 
-            var result = string.Empty;
+            string result;
             if (!type.IsGenericType)
             {
                 result = StateflowsSettings.FullNames.HasFlag(elementType)
@@ -35,7 +35,7 @@ namespace Stateflows.Common.Extensions
             {
                 var genericTypeDefinition = type.GetGenericTypeDefinition();
                 var baseName = StateflowsSettings.FullNames.HasFlag(elementType)
-                    ? genericTypeDefinition.FullName
+                    ? genericTypeDefinition.FullName ?? genericTypeDefinition.Name
                     : genericTypeDefinition.Name;
                 
                 var typeName = baseName.Split('`').First();
@@ -105,5 +105,18 @@ namespace Stateflows.Common.Extensions
 
         public static bool IsRequest(this Type eventType)
             => eventType.IsImplementerOfRawGeneric(typeof(IRequest<>));
+
+        public static void CallStaticMethod(this Type type, string methodName, Type[] parameterTypes, object[] parameters)
+        {
+            var staticMethod = type.GetMethod(
+                methodName,
+                BindingFlags.Public | BindingFlags.Static,
+                binder: null,
+                types: parameterTypes,
+                modifiers: null
+            );
+
+            staticMethod.Invoke(null, parameters);
+        }
     }
 }

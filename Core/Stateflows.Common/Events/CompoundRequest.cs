@@ -1,6 +1,7 @@
 ﻿using System.Linq;
 using System.Collections.Generic;
 using Newtonsoft.Json;
+using Stateflows.Common.Utilities;
 
 namespace Stateflows.Common
 {
@@ -15,7 +16,7 @@ namespace Stateflows.Common
         [JsonProperty(TypeNameHandling = TypeNameHandling.None)]
         public List<EventHolder> Events { get; set; } = new List<EventHolder>();
 
-        ICompoundRequestBuilder ICompoundRequestBuilder.Add<TEvent>(TEvent @event, IEnumerable<EventHeader> headers = null)
+        ICompoundRequestBuilder ICompoundRequestBuilder.Add<TEvent>(TEvent @event, IEnumerable<EventHeader> headers)
             => Add(@event, headers);
 
         public CompoundRequest Add<TEvent>(TEvent @event, IEnumerable<EventHeader> headers = null)

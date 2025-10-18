@@ -9,6 +9,9 @@ using Stateflows.Common;
 using Stateflows.Common.Interfaces;
 using Stateflows.Activities.Registration;
 using Stateflows.Activities.Context.Classes;
+using Stateflows.Common.Engine;
+using Stateflows.Common.Utilities;
+using Stateflows.StateMachines;
 
 namespace Stateflows.Activities.Engine
 {
@@ -16,9 +19,10 @@ namespace Stateflows.Activities.Engine
     {
         string IEventProcessor.BehaviorType => BehaviorType.Activity;
 
-        public readonly ActivitiesRegister Register;
-        public readonly IEnumerable<IActivityEventHandler> EventHandlers;
-        public readonly IServiceProvider ServiceProvider;
+        private readonly ActivitiesRegister Register;
+        private readonly IEnumerable<IActivityEventHandler> EventHandlers;
+        private readonly IServiceProvider ServiceProvider;
+        private readonly IStateflowsValueStorage ValueStorage;
 
         public Processor(
             ActivitiesRegister register,
@@ -29,6 +33,7 @@ namespace Stateflows.Activities.Engine
             Register = register;
             ServiceProvider = serviceProvider;
             EventHandlers = eventHandlers;
+            ValueStorage = ServiceProvider.GetRequiredService<IStateflowsValueStorage>();
         }
 
         private Task<EventStatus> TryHandleEventAsync<TEvent>(EventContext<TEvent> context)
@@ -71,35 +76,47 @@ namespace Stateflows.Activities.Engine
 
             try
             {
-                if (eventHolder is EventHolder<CompoundRequest> compoundRequestHolder)
+                if (await TryCancelAsync(id, eventHolder, result, executor))
                 {
-                    var compoundRequest = compoundRequestHolder.Payload;
-                    result = EventStatus.Consumed;
-                    var results = new List<RequestResult>();
-                    foreach (var ev in compoundRequest.Events)
-                    {
-                        ev.Headers.AddRange(eventHolder.Headers);
-
-                        var status = await ev.ExecuteBehaviorAsync(this, result, executor);
-
-                        results.Add(new RequestResult(
-                            ev.GetResponseHolder(),
-                            status,
-                            new EventValidation(true, new List<ValidationResult>())
-                        ));
-                    }
-
-                    if (!compoundRequest.IsRespondedTo())
-                    {
-                        compoundRequest.Respond(new CompoundResponse()
-                        {
-                            Results = results
-                        });
-                    }
+                    result = EventStatus.Cancelled;
                 }
                 else
                 {
-                    result = await ExecuteBehaviorAsync(eventHolder, result, executor);
+                    if (eventHolder is EventHolder<CompoundRequest> compoundRequestHolder)
+                    {
+                        var compoundRequest = compoundRequestHolder.Payload;
+                        result = EventStatus.Consumed;
+                        var results = new List<RequestResult>();
+                        foreach (var ev in compoundRequest.Events)
+                        {
+                            ev.Headers.AddRange(eventHolder.Headers);
+
+                            var status = await ev.ExecuteBehaviorAsync(this, result, executor);
+
+                            results.Add(new RequestResult(
+                                ev.GetResponseHolder(),
+                                status,
+                                new EventValidation(true, new List<ValidationResult>())
+                            ));
+                        }
+
+                        if (!compoundRequest.IsRespondedTo())
+                        {
+                            compoundRequest.Respond(new CompoundResponse()
+                            {
+                                Results = results
+                            });
+                        }
+                    }
+                    else
+                    {
+                        result = await ExecuteBehaviorAsync(eventHolder, result, executor);
+                    }
+                }
+
+                if (await TryCancelAsync(id, eventHolder, result, executor))
+                {
+                    result = EventStatus.Cancelled;
                 }
             }
             finally
@@ -119,6 +136,38 @@ namespace Stateflows.Activities.Engine
             }
 
             return result;
+        }
+
+        public Task CancelProcessingAsync(BehaviorId id)
+            => Task.CompletedTask;
+
+        private async Task<bool> TryCancelAsync<TEvent>(BehaviorId id, EventHolder<TEvent> eventHolder, EventStatus result, Executor executor)
+        {
+            if (eventHolder.Payload is Finalize)
+            {
+                return false;
+            }
+            
+            var forceFinalize = await ValueStorage.GetOrDefaultAsync(id, CommonValues.ForceFinalizeKey, false);
+            if (forceFinalize)
+            {
+                await ValueStorage.RemoveAsync(id, CommonValues.ForceFinalizeKey);
+                
+                try
+                {
+                    var finalize = new Finalize().ToEventHolder();
+                    executor.Context.SetEvent(finalize);
+                    _ = await executor.CancelAsync();
+                }
+                finally
+                {
+                    executor.Context.ClearEvent();
+                }
+
+                return true;
+            }
+
+            return false;
         }
 
         Task<EventStatus> IStateflowsProcessor.ExecuteBehaviorAsync<TEvent>(EventHolder<TEvent> eventHolder, EventStatus result, IStateflowsExecutor stateflowsExecutor)

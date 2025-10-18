@@ -34,7 +34,7 @@ namespace StateMachine.IntegrationTests.Classes.StateMachines
     [StateMachineBehavior]
     internal class EverythingStateMachine : IStateMachine
     {
-        public void Build(IStateMachineBuilder builder)
+        public static void Build(IStateMachineBuilder builder)
         {
             builder
                 .AddInitializer<SomeEvent, SomeInitializer>()

@@ -3,6 +3,7 @@ using System.Threading.Tasks;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using Microsoft.Extensions.DependencyInjection;
+using Stateflows.Actions.Context.Classes;
 using Stateflows.Common;
 using Stateflows.Common.Interfaces;
 using Stateflows.Actions.Registration;
@@ -114,6 +115,22 @@ namespace Stateflows.Actions.Engine
             }
 
             return result;
+        }
+
+        public Task CancelProcessingAsync(BehaviorId id)
+        {
+            lock (ActionDelegateContext.Instances)
+            {
+                if (ActionDelegateContext.Instances.TryGetValue(id, out var contextList))
+                {
+                    foreach (var context in contextList)
+                    {
+                        context.CancellationTokenSource.Cancel();
+                    }
+                }
+            }
+            
+            return Task.CompletedTask;
         }
 
         public Task<EventStatus> ExecuteBehaviorAsync<TEvent>(EventHolder<TEvent> eventHolder,

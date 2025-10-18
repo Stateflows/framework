@@ -7,15 +7,15 @@ namespace StateMachine.IntegrationTests.Tests
 {
     public class TypedAcceptEventAction : IAcceptEventActionNode<SomeEvent>
     {
-        private readonly IActivityContext Context;
-        public TypedAcceptEventAction(IActivityContext context)
+        private readonly IBehaviorContext Context;
+        public TypedAcceptEventAction(IBehaviorContext context)
         {
             Context = context;
         }
         public async Task ExecuteAsync(SomeEvent @event, CancellationToken cancellationToken)
         {
             Behaviors.eventConsumed = await Context.Values.TryGetAsync<bool>("boolValue") is (true, true);
-            Context.Publish(new SomeNotification());
+            Context.Send(new SomeNotification());
         }
     }
 
@@ -39,11 +39,40 @@ namespace StateMachine.IntegrationTests.Tests
                     .AddStateMachine("submachine", b => b
                         .AddExecutionSequenceObserver()
                         .AddInitialState("state1", b => b
-                            .AddSubmachine("nested", b => b
-                                .AddForwardedEvent<SomeEvent>()
-                                .AddSubscription<SomeNotification>()
+                            .AddSubmachine(b => b
+                                .AddExecutionSequenceObserver()
+                                .AddInitialState("stateA", b => b
+                                    .AddTransition<SomeEvent>("stateB")
+                                )
+                                .AddState("stateB", b => b
+                                    .AddOnEntry(c => c.Behavior.Send(new SomeNotification()))
+                                )
                             )
                             .AddTransition<SomeNotification>("state2")
+                        )
+                        .AddState("state2", b => b
+                            .AddTransition<OtherEvent>("state1")
+                        )
+                    )
+                    
+                    .AddStateMachine("submachineBubbling", b => b
+                        .AddExecutionSequenceObserver()
+                        .AddInitialState("state1", b => b
+                            .AddSubmachine(b => b
+                                .AddExecutionSequenceObserver()
+                                .AddInitialState("stateA", b => b
+                                    .AddTransition<SomeEvent, Deny>("stateB")
+                                    .AddSubmachine(b => b
+                                        .AddExecutionSequenceObserver()
+                                        .AddInitialState("stateX", b => b
+                                            .AddTransition<SomeEvent, Deny>("stateY")
+                                        )
+                                        .AddState("stateY")
+                                    )
+                                )
+                                .AddState("stateB")
+                            )
+                            .AddTransition<SomeEvent>("state2")
                         )
                         .AddState("state2")
                     )
@@ -54,7 +83,7 @@ namespace StateMachine.IntegrationTests.Tests
                             .AddTransition<SomeEvent>("stateB")
                         )
                         .AddState("stateB", b => b
-                            .AddOnEntry(c => c.Behavior.Publish(new SomeNotification()))
+                            .AddOnEntry(c => c.Behavior.Send(new SomeNotification()))
                         )
                     )
 
@@ -62,9 +91,8 @@ namespace StateMachine.IntegrationTests.Tests
                         .AddExecutionSequenceObserver()
                         .AddInitialState("state1", b => b
                             .AddOnEntry(c => c.Behavior.Values.SetAsync("boolValue", true))
-                            .AddDoActivity("nested", b => b
-                                .AddForwardedEvent<SomeEvent>()
-                                .AddSubscription<SomeNotification>()
+                            .AddDoActivity(b => b
+                                .AddAcceptEventAction<SomeEvent, TypedAcceptEventAction>()
                             )
                             .AddTransition<SomeNotification>("state2")
                         )
@@ -75,9 +103,18 @@ namespace StateMachine.IntegrationTests.Tests
                         .AddExecutionSequenceObserver()
                         .AddInitialState("state1", b => b
                             .AddInternalTransition<SomeEvent>(b => b
-                                .AddEffectActivity(
-                                    "integrated",
-                                    b => b.AddSubscription<SomeNotification>()
+                                .AddEffectActivity(b => b
+                                    .AddInitial(b => b
+                                        .AddControlFlow("effect")
+                                    )
+                                    .AddAction(
+                                        "effect",
+                                        async c =>
+                                        {
+                                            eventConsumed = true;
+                                            c.Behavior.Send(new SomeNotification());
+                                        }
+                                    )
                                 )
                             )
                             .AddTransition<SomeNotification>("state2")
@@ -89,20 +126,38 @@ namespace StateMachine.IntegrationTests.Tests
                         .AddExecutionSequenceObserver()
                         .AddInitialState("state1", b => b
                             .AddTransition<SomeEvent>("state2", b => b
-                                .AddGuardActivity("guard")
+                                .AddGuardActivity(b => b
+                                    .AddAcceptEventAction<SomeEvent>(
+                                        async c =>
+                                        {
+                                            c.Output(c.Event.TheresSomethingHappeningHere != string.Empty);
+                                        },
+                                        b => b.AddFlow<bool, OutputNode>()
+                                    )
+                                    .AddOutput()
+                                )
                             )
                         )
-                        .AddState("state2")
+                        .AddState("state2", b => b
+                            .AddDefaultTransition("state3", b => b
+                                .AddGuardActivity(b => b
+                                    .AddAcceptEventAction<Completion>(
+                                        async c =>
+                                        {
+                                            c.Output(true);
+                                        },
+                                        b => b.AddFlow<bool, OutputNode>()
+                                    )
+                                    .AddOutput()
+                                )
+                            )
+                        )
+                        .AddState("state3")
                     )
                 )
                 .AddActivities(b => b
                     .AddActivity("nested", b => b
                         .AddAcceptEventAction<SomeEvent, TypedAcceptEventAction>()
-                        // .AddAcceptEventAction<SomeEvent>(async c =>
-                        // {
-                        //     eventConsumed = await c.Behavior.Values.TryGetAsync<bool>("boolValue") is (true, true);
-                        //     c.Behavior.Publish(new SomeNotification());
-                        // })
                     )
                     .AddActivity("integrated", b => b
                         .AddInitial(b => b
@@ -113,22 +168,30 @@ namespace StateMachine.IntegrationTests.Tests
                             async c =>
                             {
                                 eventConsumed = true;
-                                c.Behavior.Publish(new SomeNotification());
+                                c.Behavior.Send(new SomeNotification());
                             }
                         )
                     )
                     .AddActivity("guard", b => b
-                        .AddInput(b => b
-                            .AddFlow<SomeEvent>("guard")
-                        )
-                        .AddAction(
-                            "guard",
+                        .AddAcceptEventAction<SomeEvent>(
                             async c =>
                             {
-                                var t = c.GetTokensOfType<SomeEvent>().First();
-                                c.Output(t.TheresSomethingHappeningHere != string.Empty);
+                                c.Output(c.Event.TheresSomethingHappeningHere != string.Empty);
                             },
-                            b => b.AddFlow<bool, OutputNode>()
+                            b => b
+                                .AddFlow<bool, OutputNode>(b => b
+                                    .SetWeight(0)
+                                )
+                        )
+                        .AddAcceptEventAction<Completion>(
+                            async c =>
+                            {
+                                c.Output(true);
+                            },
+                            b => b
+                                .AddFlow<bool, OutputNode>(b => b
+                                    .SetWeight(0)
+                                )
                         )
                         .AddOutput()
                     )
@@ -154,16 +217,70 @@ namespace StateMachine.IntegrationTests.Tests
                 var currentState = (await sm.GetStatusAsync()).Response;
 
                 currentState1 = currentState.CurrentStates.Value;
+
+                await sm.SendAsync(new OtherEvent());
+
+                await Task.Delay(5000);
+            }
+
+            ExecutionSequence.Verify(b => b
+                .StateEntry("state1")
+                
+                .StateEntry("stateA")
+                .StateExit("stateA")
+                .StateEntry("stateB")
+                .StateExit("stateB")
+                .StateMachineFinalize()
+                
+                .StateEntry("state2")
+            
+                .StateExit("state2")
+                .StateEntry("state1")
+                .StateEntry("stateA")
+            );
+            Assert.IsTrue(initialized);
+            Assert.AreEqual(EventStatus.Forwarded, someStatus1);
+            Assert.AreEqual("state2", currentState1);
+        }
+
+        [TestMethod]
+        public async Task SubmachineBubbling()
+        {
+            var initialized = false;
+            string currentState1 = "";
+            var someStatus1 = EventStatus.Rejected;
+
+            if (StateMachineLocator.TryLocateStateMachine(new StateMachineId("submachineBubbling", "x"), out var sm))
+            {
+                initialized = (await sm.SendAsync(new Initialize())).Status == EventStatus.Initialized;
+
+                someStatus1 = (await sm.SendAsync(new SomeEvent())).Status;
+
+                await Task.Delay(100);
+
+                var currentState = (await sm.GetStatusAsync()).Response;
+
+                currentState1 = currentState.CurrentStates.Value;
             }
 
             ExecutionSequence.Verify(b => b
                 .StateEntry("state1")
                 .StateEntry("stateA")
-                .StateExit("stateA")
-                .StateEntry("stateB")
-                .StateEntry("state2")
-                .StateExit("stateB")
+                .StateEntry("stateX")
+                
+                .TransitionGuard(Event<SomeEvent>.Name, "stateX", "stateY")
+                .TransitionGuard(Event<SomeEvent>.Name, "stateA", "stateB")
+                .TransitionGuard(Event<SomeEvent>.Name, "state1", "state2")
+                
+                .StateExit("stateX")
                 .StateMachineFinalize()
+                .StateExit("stateA")
+                .StateMachineFinalize()
+                .StateExit("state1")
+
+                .TransitionEffect(Event<SomeEvent>.Name, "state1", "state2")
+                
+                .StateEntry("state2")
             );
             Assert.IsTrue(initialized);
             Assert.AreEqual(EventStatus.Forwarded, someStatus1);
@@ -249,8 +366,8 @@ namespace StateMachine.IntegrationTests.Tests
                 .StateEntry("state2")
             );
             Assert.IsTrue(initialized);
-            Assert.AreEqual(EventStatus.Consumed, someStatus1);
-            Assert.AreEqual("state2", currentState1);
+            Assert.AreEqual(EventStatus.Forwarded, someStatus1);
+            Assert.AreEqual("state3", currentState1);
         }
     }
 }

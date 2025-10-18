@@ -13,5 +13,7 @@ namespace Stateflows.StateMachines
         /// Tree of States that represents current configuration of State Machine behavior instance
         /// </summary>
         IReadOnlyTree<IStateContext> CurrentStates { get; }
+        
+        bool TryGetStateContext(string stateName, out IStateContext stateContext);
     }
 }

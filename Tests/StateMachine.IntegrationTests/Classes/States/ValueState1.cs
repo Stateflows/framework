@@ -13,7 +13,7 @@ namespace StateMachine.IntegrationTests.Classes.States
     internal class ValueState1 : IStateEntry
     {
         public ValueState1(
-            [ValueName("counter")] StateValue<int> counter,
+            [StateValue] IValue<int> counter,
             ValueSet1 valueSet
         )
         {
@@ -21,7 +21,7 @@ namespace StateMachine.IntegrationTests.Classes.States
             this.valueSet = valueSet;
         }
 
-        private readonly StateValue<int> counter;
+        private readonly IValue<int> counter;
         private readonly ValueSet1 valueSet;
 
         public async Task OnEntryAsync()

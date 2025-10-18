@@ -11,7 +11,7 @@ namespace Stateflows.StateMachines.EventHandlers
     {
         public Type EventType => typeof(ContextValuesRequest);
 
-        public async Task<EventStatus> TryHandleEventAsync<TEvent>(IEventContext<TEvent> context)
+        public Task<EventStatus> TryHandleEventAsync<TEvent>(IEventContext<TEvent> context)
         {
             if (context.Event is ContextValuesRequest request)
             {
@@ -22,10 +22,10 @@ namespace Stateflows.StateMachines.EventHandlers
                         .ToDictionary(e => e.Key, e => e.Value.Values)
                 });
 
-                return EventStatus.Consumed;
+                return Task.FromResult(EventStatus.Consumed);
             }
 
-            return EventStatus.NotConsumed;
+            return Task.FromResult(EventStatus.NotConsumed);
         }
     }
 }

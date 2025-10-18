@@ -3,6 +3,10 @@ using StateMachine.IntegrationTests.Utils;
 
 namespace Activity.IntegrationTests.Tests
 {
+    public class ReportedVisit
+    {
+    }
+
     [TestClass]
     public class Iterative : StateflowsTestClass
     {

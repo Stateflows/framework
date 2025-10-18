@@ -112,7 +112,7 @@ namespace Stateflows.StateMachines
             var self = this;
             return async c =>
             {
-                var result = await c.StateMachine.Values.TryGetAsync<T>(self.ValueName);
+                var result = await c.Behavior.Values.TryGetAsync<T>(self.ValueName);
                 return result.Success && condition(result.Value);
             };
         }
@@ -298,7 +298,7 @@ namespace Stateflows.StateMachines
             get
             {
                 var self = this;
-                return c => ((ContextValuesCollection)c.Behavior.Values)!.HasAnyMatchingAsync(new Regex($"{self.NamespaceName}[.](.*)", RegexOptions.None, TimeSpan.FromSeconds(1)));
+                return c => c.Behavior.Values.HasAnyPrefixedAsync($"{self.NamespaceName}.");
             }
         }
     }
@@ -353,7 +353,7 @@ namespace Stateflows.StateMachines
                 {
                     var valueSet = self.GetValueSet(c);
                     return valueSet != null
-                        ? ((ContextValuesCollection)valueSet)!.HasAnyMatchingAsync(new Regex($"{self.NamespaceName}[.](.*)", RegexOptions.None, TimeSpan.FromSeconds(1)))
+                        ? valueSet.HasAnyPrefixedAsync($"{self.NamespaceName}.")
                         : Task.FromResult(false);
                 };
             }

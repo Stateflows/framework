@@ -4,5 +4,5 @@ namespace Stateflows.Activities;
 
 public interface IStructuredActivityNodeEndpoints : IStructuredActivityNode
 {
-    void RegisterEndpoints(IEndpointsBuilder endpointsBuilder);
+    static abstract void RegisterEndpoints(IEndpointsBuilder endpointsBuilder);
 }

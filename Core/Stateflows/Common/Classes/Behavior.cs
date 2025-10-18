@@ -18,7 +18,7 @@ namespace Stateflows.Common.Classes
 
         protected override async Task<ExecutionToken> ProcessEventAsync(BehaviorId id, EventHolder eventHolder)
         {
-            var executionToken = service.EnqueueEvent(Id, eventHolder, serviceProvider);
+            var executionToken = service.EnqueueEvent(Id, eventHolder, ServiceProvider);
             await executionToken.Handled.WaitOneAsync().ConfigureAwait(false);
 
             return executionToken;

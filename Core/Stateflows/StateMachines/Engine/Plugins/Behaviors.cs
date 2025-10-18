@@ -1,14 +1,46 @@
 ﻿using System.Linq;
+using System.Reflection;
+using System.Threading.Tasks;
 using Stateflows.Common;
-using Stateflows.Common.Classes;
+using Stateflows.Common.Extensions;
+using Stateflows.Common.Interfaces;
+using Stateflows.Common.Utilities;
 using Stateflows.StateMachines.Exceptions;
 using Stateflows.StateMachines.Context.Classes;
 using Stateflows.StateMachines.Context.Interfaces;
 
 namespace Stateflows.StateMachines.Engine
 {
-    public class Behaviors : StateMachineObserver
+    internal class Behaviors(IStateflowsValueStorage valueStorage) : StateMachinePlugin
     {
+        public override void AfterProcessEvent<TEvent>(IEventContext<TEvent> context, EventStatus eventStatus)
+        {
+            if (context.Behavior.IsEmbedded)
+            {
+                if (eventStatus == EventStatus.NotConsumed)
+                {
+                    var headers = context.Headers.ToList();
+                    
+                    var noBubblingAttribute = context.Event.GetType().GetCustomAttribute<NoBubblingAttribute>();
+                    if (!headers.Any(h => h is NoBubbling) && noBubblingAttribute == null)
+                    {
+                        var noForwardingAttribute = context.Event.GetType().GetCustomAttribute<NoForwardingAttribute>();
+                        if (!headers.Any(h => h is NoForwarding) && noForwardingAttribute == null)
+                        {
+                            headers.Add(new NoForwarding());
+                        }
+
+                        context.Behavior.Send(context.Event, headers);
+                    }
+                }
+
+                if (eventStatus == EventStatus.Consumed)
+                {
+                    context.Behavior.Send(new Completion());
+                }
+            }
+        }
+
         public override void AfterStateEntry(IStateActionContext context)
         {
             var vertex = ((StateActionContext)context).Vertex;
@@ -24,27 +56,17 @@ namespace Stateflows.StateMachines.Engine
                     stateValues.BehaviorId = behaviorId;
                     
                     var request = new CompoundRequest()
-                        .Add(new SetContextOwner() { ContextOwner = context.Behavior.Id })
-                        .Add(new SetGlobalValues() { Values = ((ContextValuesCollection)context.Behavior.Values).Values })
+                        .Add(new Reset())
+                        .Add(((BaseContext)context).Context.Context.GetContextOwnerSetter())
                     ;
-
-                    if (vertex.BehaviorSubscriptions.Any())
-                    {
-                        request.Add(vertex.GetSubscriptionRequest(context.Behavior.Id));
-                    }
-
-                    if (vertex.BehaviorRelays.Any())
-                    {
-                        request.Add(vertex.GetStartRelayRequest(context.Behavior.Id));
-                    }
 
                     var initializationRequest = vertex.BehaviorInitializationBuilder != null
                         ? vertex.BehaviorInitializationBuilder(context)
                         : new Initialize();
                     
-                    request.Events.Add(initializationRequest.ToEventHolder());
+                    request.Events.Add(initializationRequest.ToTypedEventHolder());
                     
-                    _ = behavior.SendAsync(request);
+                    Task.Run(() => _ = behavior.SendAsync(request));
                 }
                 else
                 {
@@ -73,21 +95,7 @@ namespace Stateflows.StateMachines.Engine
                     context.TryLocateBehavior(stateValues.BehaviorId.Value, out var behavior)
                 )
                 {
-                    var request = new CompoundRequest();
-                    
-                    if (vertex.BehaviorRelays.Any())
-                    {
-                        request.Add(vertex.GetStopRelayRequest(context.Behavior.Id));
-                    }
-                    
-                    if (vertex.BehaviorSubscriptions.Any())
-                    {
-                        request.Add(vertex.GetUnsubscriptionRequest(context.Behavior.Id));
-                    }
-
-                    request.Add(new Finalize());
-                    
-                    _ = behavior.SendAsync(request);
+                    behavior.SendAsync(new Finalize()).GetAwaiter().GetResult();
                     stateValues.BehaviorId = null;
                 }
             }

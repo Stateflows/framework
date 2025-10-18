@@ -10,11 +10,11 @@ namespace StateMachine.IntegrationTests.Classes.Transitions
 
         private readonly IStateMachineContext stateMachineContext;
         private readonly ITransitionContext transitionContext;
-        private readonly Stateflows.StateMachines.IExecutionContext executionContext;
+        private readonly IExecutionContext executionContext;
         public SomeEventTransition(
             IStateMachineContext stateMachineContext, 
             ITransitionContext transitionContext,
-            Stateflows.StateMachines.IExecutionContext executionContext
+            IExecutionContext executionContext
         )
         {
             this.stateMachineContext = stateMachineContext;

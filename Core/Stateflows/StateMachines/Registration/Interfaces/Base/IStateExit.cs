@@ -4,11 +4,10 @@ using System.Linq;
 using System.Threading.Tasks;
 using Stateflows.Actions;
 using Stateflows.Activities;
-using Stateflows.Activities.Extensions;
+using Stateflows.Activities.Registration.Interfaces;
 using Stateflows.StateMachines.Context.Classes;
-using Stateflows.StateMachines.Context.Interfaces;
-using Stateflows.StateMachines.Registration.Extensions;
 using Stateflows.StateMachines.Registration.Interfaces.Internal;
+using ActionDelegateAsync = Stateflows.Actions.Registration.ActionDelegateAsync;
 
 namespace Stateflows.StateMachines.Registration.Interfaces.Base
 {
@@ -24,43 +23,64 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         /// <param name="actionsAsync">Action handlers</param>
         TReturn AddOnExit(params Func<IStateActionContext, Task>[] actionsAsync);
 
+        #region AddOnExitActivity
         /// <summary>
-        /// Adds activity behavior that will be started when current state exits
-        /// </summary>
-        /// <param name="activityName">Name of activity behavior</param>
-        /// <param name="buildAction">Build action</param>
-        [DebuggerHidden]
-        public TReturn AddOnExitActivity(string activityName, StateActionActivityBuildAction buildAction = null)
-            => AddOnExit(c => StateMachineActivityExtensions.RunStateActivity(Constants.Exit, c, activityName, buildAction));
-
-        /// <summary>
-        /// Adds action behavior that will be started when current state exits
-        /// </summary>
-        /// <param name="buildAction">Build action</param>
-        /// <typeparam name="TAction">Action behavior type</typeparam>
-        [DebuggerHidden]
-        public TReturn AddOnExitAction<TAction>(StateActionActionBuildAction buildAction = null)
-            where TAction : class, IAction
-            => AddOnExitAction(Stateflows.Actions.Action<TAction>.Name, buildAction);
-
-        /// <summary>
-        /// Adds action behavior that will be started when current state exits
-        /// </summary>
-        /// <param name="actionName">Name of action behavior</param>
-        /// <param name="buildAction">Build action</param>
-        [DebuggerHidden]
-        public TReturn AddOnExitAction(string actionName, StateActionActionBuildAction buildAction = null)
-            => AddOnExit(c => StateMachineActionExtensions.RunStateAction(Constants.Exit, c, actionName, buildAction));
-
-        /// <summary>
-        /// Adds activity behavior that will be started when current state exits
+        /// Registers activity behavior that will be started when current state exits
         /// </summary>
         /// <param name="buildAction">Build action</param>
         /// <typeparam name="TActivity">Activity behavior type</typeparam>
         [DebuggerHidden]
-        public TReturn AddOnExitActivity<TActivity>(StateActionActivityBuildAction buildAction = null)
+        public TReturn AddOnExitActivity<TActivity>()
             where TActivity : class, IActivity
-            => AddOnExitActivity(Activity<TActivity>.Name, buildAction);
+        {
+            var vertex = ((IVertexBuilder)this).Vertex;
+            var activityName = $"{vertex.Graph.Name}.{vertex.Name}.onExit.{vertex.Entry.Actions.Count}";
+            vertex.Graph.StateflowsBuilder.AddActivities(b => b.AddActivity<TActivity>(activityName));
+            return AddOnExit(c => StateMachineActivityExtensions.RunStateActivityAsync(Constants.Exit, c, activityName));
+        }
+
+        /// <summary>
+        /// Registers activity behavior that will be started when current state enters
+        /// </summary>
+        /// <param name="activityBuildAction">Activity build action</param>
+        public TReturn AddOnExitActivity(ReactiveActivityBuildAction activityBuildAction)
+        {
+            var vertex = ((IVertexBuilder)this).Vertex;
+            var activityName = $"{vertex.Graph.Name}.{vertex.Name}.onExit.{vertex.Entry.Actions.Count}";
+            vertex.Graph.StateflowsBuilder.AddActivities(b => b.AddActivity(activityName, activityBuildAction));
+            return AddOnExit(c => StateMachineActivityExtensions.RunStateActivityAsync(Constants.Exit, c, activityName));
+        }
+        #endregion
+        
+        #region AddOnExitAction
+        /// <summary>
+        /// Registers action behavior that will be started when current state exits
+        /// </summary>
+        /// <param name="buildAction">Build action</param>
+        /// <typeparam name="TAction">Action behavior type</typeparam>
+        [DebuggerHidden]
+        public TReturn AddOnExitAction<TAction>()
+            where TAction : class, IAction
+        {
+            var vertex = ((IVertexBuilder)this).Vertex;
+            var actionName = $"{vertex.Graph.Name}.{vertex.Name}.onExit.{vertex.Entry.Actions.Count}";
+            vertex.Graph.StateflowsBuilder.AddActions(b => b.AddAction<TAction>(actionName));
+            return AddOnExit(c => StateMachineActionExtensions.RunStateActionAsync(Constants.Exit, c, actionName));
+        }
+        
+        /// <summary>
+        /// Registers action behavior that will be started when current state exits
+        /// </summary>
+        /// <param name="actionDelegateAsync">Action delegate</param>
+        /// <param name="reentrant">Determines if action can be reentrant</param>
+        public TReturn AddOnExitAction(ActionDelegateAsync actionDelegateAsync, bool reentrant = true)
+        {
+            var vertex = ((IVertexBuilder)this).Vertex;
+            var actionName = $"{vertex.Graph.Name}.{vertex.Name}.onExit.{vertex.Entry.Actions.Count}";
+            vertex.Graph.StateflowsBuilder.AddActions(b => b.AddAction(actionName, actionDelegateAsync, reentrant));
+            return AddOnExit(c => StateMachineActionExtensions.RunStateActionAsync(Constants.Exit, c, actionName));
+        }
+        #endregion
 
         /// <summary>
         /// Adds synchronous exit handler coming from current state.<br/>
@@ -72,12 +92,7 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         /// <param name="actions">Synchronous action handlers</param>
         [DebuggerHidden]
         public TReturn AddOnExit(params System.Action<IStateActionContext>[] actions)
-            => AddOnExit(
-                actions.Select(action => action
-                    .AddStateMachineInvocationContext(((IGraphBuilder)this).Graph)
-                    .ToAsync()
-                ).ToArray()
-            );
+            => AddOnExit(actions.Select(action => action.ToAsync()).ToArray());
 
         /// <summary>
         /// Adds multiple typed exit handlers to the current state.
@@ -92,7 +107,7 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         /// </summary>
         /// <typeparam name="TStateExit1">The type of the first state exit handler.</typeparam>
         /// <typeparam name="TStateExit2">The type of the second state exit handler.</typeparam>
-        TReturn AddOnExits<TStateExit1, TStateExit2>()
+        TReturn AddOnExit<TStateExit1, TStateExit2>()
             where TStateExit1 : class, IStateExit
             where TStateExit2 : class, IStateExit
         {
@@ -106,12 +121,12 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         /// <typeparam name="TStateExit1">The type of the first state exit handler.</typeparam>
         /// <typeparam name="TStateExit2">The type of the second state exit handler.</typeparam>
         /// <typeparam name="TStateExit3">The type of the third state exit handler.</typeparam>
-        TReturn AddOnExits<TStateExit1, TStateExit2, TStateExit3>()
+        TReturn AddOnExit<TStateExit1, TStateExit2, TStateExit3>()
             where TStateExit1 : class, IStateExit
             where TStateExit2 : class, IStateExit
             where TStateExit3 : class, IStateExit
         {
-            AddOnExits<TStateExit1, TStateExit2>();
+            AddOnExit<TStateExit1, TStateExit2>();
             return AddOnExit<TStateExit3>();
         }
 
@@ -122,13 +137,13 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         /// <typeparam name="TStateExit2">The type of the second state exit handler.</typeparam>
         /// <typeparam name="TStateExit3">The type of the third state exit handler.</typeparam>
         /// <typeparam name="TStateExit4">The type of the fourth state exit handler.</typeparam>
-        TReturn AddOnExits<TStateExit1, TStateExit2, TStateExit3, TStateExit4>()
+        TReturn AddOnExit<TStateExit1, TStateExit2, TStateExit3, TStateExit4>()
             where TStateExit1 : class, IStateExit
             where TStateExit2 : class, IStateExit
             where TStateExit3 : class, IStateExit
             where TStateExit4 : class, IStateExit
         {
-            AddOnExits<TStateExit1, TStateExit2, TStateExit3>();
+            AddOnExit<TStateExit1, TStateExit2, TStateExit3>();
             return AddOnExit<TStateExit4>();
         }
 
@@ -140,14 +155,14 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         /// <typeparam name="TStateExit3">The type of the third state exit handler.</typeparam>
         /// <typeparam name="TStateExit4">The type of the fourth state exit handler.</typeparam>
         /// <typeparam name="TStateExit5">The type of the fifth state exit handler.</typeparam>
-        TReturn AddOnExits<TStateExit1, TStateExit2, TStateExit3, TStateExit4, TStateExit5>()
+        TReturn AddOnExit<TStateExit1, TStateExit2, TStateExit3, TStateExit4, TStateExit5>()
             where TStateExit1 : class, IStateExit
             where TStateExit2 : class, IStateExit
             where TStateExit3 : class, IStateExit
             where TStateExit4 : class, IStateExit
             where TStateExit5 : class, IStateExit
         {
-            AddOnExits<TStateExit1, TStateExit2, TStateExit3, TStateExit4>();
+            AddOnExit<TStateExit1, TStateExit2, TStateExit3, TStateExit4>();
             return AddOnExit<TStateExit5>();
         }
     }

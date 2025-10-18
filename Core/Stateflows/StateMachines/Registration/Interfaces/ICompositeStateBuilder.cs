@@ -8,7 +8,8 @@ namespace Stateflows.StateMachines.Registration.Interfaces
         IStateUtils<IInitializedCompositeStateBuilder>,
         ICompositeStateTypedEvents<IInitializedCompositeStateBuilder>,
         IStateTransitions<IInitializedCompositeStateBuilder>,
-        IStateMachine<IInitializedCompositeStateBuilder>,
+        IStateMachineElements<IInitializedCompositeStateBuilder>,
+        IStateHistory<IInitializedCompositeStateBuilder>,
         IStateMachineFinal<IFinalizedCompositeStateBuilder>
     { }
 
@@ -27,7 +28,8 @@ namespace Stateflows.StateMachines.Registration.Interfaces
         ICompositeStateTypedEvents<ICompositeStateBuilder>,
         IStateTransitions<ICompositeStateBuilder>,
         IStateMachineInitial<IInitializedCompositeStateBuilder>,
-        IStateMachine<IInitializedCompositeStateBuilder>
+        IStateMachineElements<IInitializedCompositeStateBuilder>,
+        IStateHistory<ICompositeStateBuilder>
     { }
 
     public interface IFinalizedOverridenCompositeStateBuilder :
@@ -58,7 +60,8 @@ namespace Stateflows.StateMachines.Registration.Interfaces
         ICompositeStateTypedEvents<IOverridenCompositeStateBuilder>,
         IStateTransitions<IOverridenCompositeStateBuilder>,
         IStateTransitionsOverrides<IOverridenCompositeStateBuilder>,
-        IStateMachine<IOverridenCompositeStateBuilder>,
+        IStateMachineElements<IOverridenCompositeStateBuilder>,
+        IStateHistory<IOverridenCompositeStateBuilder>,
         IStateMachineOverrides<IOverridenCompositeStateBuilder>,
         IStateOrthogonalization<IOverridenRegionalizedCompositeStateBuilder>,
         IStateMachineFinal<IFinalizedOverridenCompositeStateBuilder>
@@ -71,7 +74,8 @@ namespace Stateflows.StateMachines.Registration.Interfaces
         ICompositeStateTypedEvents<IOverridenRegionalizedCompositeStateBuilder>,
         IStateTransitions<IOverridenRegionalizedCompositeStateBuilder>,
         IStateTransitionsOverrides<IOverridenRegionalizedCompositeStateBuilder>,
-        IStateMachine<IOverridenRegionalizedCompositeStateBuilder>,
+        IStateMachineElements<IOverridenRegionalizedCompositeStateBuilder>,
+        IStateHistory<IOverridenRegionalizedCompositeStateBuilder>,
         IStateMachineOverrides<IOverridenRegionalizedCompositeStateBuilder>,
         IStateMachineFinal<IFinalizedOverridenRegionalizedCompositeStateBuilder>
     { }

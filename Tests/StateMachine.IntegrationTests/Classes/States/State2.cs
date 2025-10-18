@@ -1,4 +1,5 @@
-﻿using Stateflows.StateMachines.Context.Interfaces;
+﻿using Stateflows.Common;
+using Stateflows.StateMachines.Context.Interfaces;
 
 namespace StateMachine.IntegrationTests.Classes.States
 {
@@ -9,11 +10,11 @@ namespace StateMachine.IntegrationTests.Classes.States
         public static bool ExitFired = false;
 
         private readonly IStateContext stateContext;
-        private readonly IStateMachineContext stateMachineContext;
-        public State2(IStateContext stateContext, IStateMachineContext stateMachineContext)
+        private readonly IBehaviorContext behaviorContext;
+        public State2(IStateContext stateContext, IBehaviorContext behaviorContext)
         {
             this.stateContext = stateContext;
-            this.stateMachineContext = stateMachineContext;
+            this.behaviorContext = behaviorContext;
         }
 
         public static void Reset()
@@ -24,13 +25,13 @@ namespace StateMachine.IntegrationTests.Classes.States
 
         public Task OnEntryAsync()
         {
-            EntryFired = stateContext != null && stateMachineContext?.Id.Instance != null;
+            EntryFired = stateContext != null && behaviorContext?.Id.Instance != null;
             return Task.CompletedTask;
         }
 
         public Task OnExitAsync()
         {
-            ExitFired = stateContext != null && stateMachineContext?.Id.Instance != null;
+            ExitFired = stateContext != null && behaviorContext?.Id.Instance != null;
             return Task.CompletedTask;
         }
     }

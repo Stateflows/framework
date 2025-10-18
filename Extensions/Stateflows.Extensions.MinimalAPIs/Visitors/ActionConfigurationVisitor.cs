@@ -1,5 +1,6 @@
 ﻿using Stateflows.Actions;
 using Stateflows.Common.Classes;
+using Stateflows.Common.Extensions;
 
 namespace Stateflows.Extensions.MinimalAPIs;
 
@@ -8,12 +9,11 @@ internal class ActionConfigurationVisitor(MinimalAPIsBuilder minimalApisBuilder)
 {
     public override Task ActionTypeAddedAsync<TAction>(string actionName, int actionVersion)
     {
-        if (typeof(IActionEndpointsConfiguration).IsAssignableFrom(typeof(TAction)))
+        var actionType = typeof(TAction);
+        if (typeof(IActionEndpointsConfiguration).IsAssignableFrom(actionType))
         {
-            var action = (IActionEndpointsConfiguration)StateflowsActivator.CreateUninitializedInstance<TAction>();
-            
             minimalApisBuilder.CurrentClass = new ActionClass(actionName);
-            action.ConfigureEndpoints(minimalApisBuilder);
+            actionType.CallStaticMethod(nameof(IActionEndpointsConfiguration.ConfigureEndpoints), [ typeof(IBehaviorClassEndpointsConfiguration) ], [ minimalApisBuilder ]);
             minimalApisBuilder.CurrentClass = null;
         }
         

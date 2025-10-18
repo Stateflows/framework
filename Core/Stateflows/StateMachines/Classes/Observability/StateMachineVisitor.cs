@@ -1,3 +1,5 @@
+using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using Stateflows.Common;
 
@@ -36,6 +38,10 @@ namespace Stateflows.StateMachines
             => Task.CompletedTask;
 
         public virtual Task CustomEventAddedAsync<TEvent>(string stateMachineName, int stateMachineVersion, BehaviorStatus[] supportedStatuses)
+            => Task.CompletedTask;
+
+        public Task BehaviorEmbeddedAsync(string stateMachineName, int stateMachineVersion, string vertexName, string behaviorName,
+            string behaviorType, IEnumerable<Type> eventTypes)
             => Task.CompletedTask;
     }
 }

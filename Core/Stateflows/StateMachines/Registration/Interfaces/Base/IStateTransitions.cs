@@ -140,7 +140,7 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
                 }
             );
 
-            var sourceName = ((IVertexBuilder)this).Name;
+            var sourceName = ((IStateBuilderInfo)this).Name;
             var graph = ((IGraphBuilder)this).Graph;
             graph.VisitingTasks.Add(visitor =>
                 visitor.TransitionTypeAddedAsync<TEvent, TTransition>(graph.Name, graph.Version, sourceName, targetStateName, false));
@@ -318,7 +318,7 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
                 }
             );
 
-            var sourceName = ((IVertexBuilder)this).Name;
+            var sourceName = ((IStateBuilderInfo)this).Name;
             var graph = ((IGraphBuilder)this).Graph;
             graph.VisitingTasks.Add(visitor =>
                 visitor.TransitionTypeAddedAsync<Completion, TTransition>(graph.Name, graph.Version, sourceName, targetStateName, false));
@@ -509,7 +509,7 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
                 }
             );
 
-            var sourceName = ((IVertexBuilder)this).Name;
+            var sourceName = ((IStateBuilderInfo)this).Name;
             var graph = ((IGraphBuilder)this).Graph;
             graph.VisitingTasks.Add(visitor =>
                 visitor.TransitionTypeAddedAsync<TEvent, TElseTransition>(graph.Name, graph.Version, sourceName, targetStateName, true));
@@ -630,7 +630,7 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
                 }
             );
 
-            var sourceName = ((IVertexBuilder)this).Name;
+            var sourceName = ((IStateBuilderInfo)this).Name;
             var graph = ((IGraphBuilder)this).Graph;
             graph.VisitingTasks.Add(visitor =>
                 visitor.TransitionTypeAddedAsync<Completion, TElseTransition>(graph.Name, graph.Version, sourceName, targetStateName, true));

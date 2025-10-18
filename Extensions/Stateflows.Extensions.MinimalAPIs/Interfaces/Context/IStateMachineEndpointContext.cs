@@ -7,15 +7,10 @@ namespace Stateflows.Extensions.MinimalAPIs.Interfaces;
 
 public interface IStateMachineEndpointContext : IBehaviorEndpointContext
 {
-    [Obsolete("StateMachine context property is obsolete, use Behavior or CurrentState properties instead.")]
-    IStateMachineContext StateMachine { get; }
-    
-    IBehaviorContext IBehaviorEndpointContext.Behavior => StateMachine;
-        
     /// <summary>
     /// Information about current state of a State Machine
     /// </summary>
-    IReadOnlyTree<IStateContext> CurrentStates => StateMachine.CurrentStates;
+    IReadOnlyTree<IStateContext> CurrentStates { get; }
     
     public new static ValueTask<IStateMachineEndpointContext?> BindAsync(HttpContext context, ParameterInfo parameter)
     {

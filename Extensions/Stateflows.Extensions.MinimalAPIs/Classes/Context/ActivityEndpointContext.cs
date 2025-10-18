@@ -9,7 +9,7 @@ public class ActivityEndpointContext : BehaviorEndpointContext, IActivityEndpoin
 {
     private IReadOnlyTree<IActivityNodeContext>? activeNodes;
     public IReadOnlyTree<IActivityNodeContext> ActiveNodes =>
-        activeNodes ??= Activity.ActiveNodes.Translate<IActivityNodeContext>(n => new ActivityNodeContext() { Name = n.Name }).AsReadOnly();
+        activeNodes ??= Activity.ActiveNodes.Translate<IActivityNodeContext>(n => new ActivityNodeContext() { Name = n.Name, NodeType = n.NodeType }).AsReadOnly();
     
     public IActivityContext Activity { get; internal set; }
 }

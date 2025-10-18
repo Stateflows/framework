@@ -1,16 +1,12 @@
 ﻿using System;
-using Stateflows.Common;
 using Stateflows.StateMachines.Models;
 using Stateflows.StateMachines.Context.Interfaces;
-using Stateflows.StateMachines.Inspection.Interfaces;
 
 namespace Stateflows.StateMachines.Context.Classes
 {
     internal class TransitionContext<TEvent> : EventContext<TEvent>, ITransitionContext<TEvent>, IEdgeContext
     {
         public Edge Edge { get; }
-
-        IStateMachineContext IStateMachineActionContext.StateMachine => StateMachine;
 
         public TransitionContext(RootContext context, Edge edge) : base(context)
         {

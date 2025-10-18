@@ -54,11 +54,11 @@ namespace Stateflows.Common.Actions.Classes
             DateTime? lastNotificationsCheck = null)
             => Behavior.GetNotificationsAsync(notificationNames, lastNotificationsCheck);
 
-        public Task<IWatcher> WatchAsync<TNotification>(Action<TNotification> handler)
-            => Behavior.WatchAsync(handler);
+        public Task<IWatcher> WatchAsync<TNotification>(Action<TNotification> handler, DateTime? replayNotificatonsSince = null)
+            => Behavior.WatchAsync(handler, replayNotificatonsSince);
 
-        public Task<IWatcher> WatchAsync(string[] notificationNames, Action<EventHolder> handler)
-            => Behavior.WatchAsync(notificationNames, handler);
+        public Task<IWatcher> WatchAsync(string[] notificationNames, Action<EventHolder> handler, DateTime? replayNotificatonsSince = null)
+            => Behavior.WatchAsync(notificationNames, handler, replayNotificatonsSince);
 
         public void Dispose()
         {

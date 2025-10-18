@@ -6,7 +6,7 @@ namespace StateMachine.IntegrationTests.Tests
 {
     public class BaseStateMachine : IStateMachine
     {
-        public void Build(IStateMachineBuilder builder) => builder
+        public static void Build(IStateMachineBuilder builder) => builder
             .AddInitialState("initial", b => b
                 .AddTransition<SomeEvent>("state1")
             )
@@ -16,7 +16,7 @@ namespace StateMachine.IntegrationTests.Tests
 
     public class InheritedStateMachine : IStateMachine
     {
-        public void Build(IStateMachineBuilder builder) => builder
+        public static void Build(IStateMachineBuilder builder) => builder
             .UseStateMachine<BaseStateMachine>(b => b
                 .UseState("state1", b => b
                     .AddDefaultTransition("state2")
@@ -43,7 +43,7 @@ namespace StateMachine.IntegrationTests.Tests
 
     public class OrthogonalizedStateMachine : IStateMachine
     {
-        public void Build(IStateMachineBuilder builder) => builder
+        public static void Build(IStateMachineBuilder builder) => builder
             .UseStateMachine<BaseStateMachine>(b => b
                 .UseState("state1", b => b
                     .MakeOrthogonal(b => b
@@ -63,7 +63,7 @@ namespace StateMachine.IntegrationTests.Tests
 
     public class InheritedOrthogonalStateMachine : IStateMachine
     {
-        public void Build(IStateMachineBuilder builder) => builder
+        public static void Build(IStateMachineBuilder builder) => builder
             .UseStateMachine<OrthogonalizedStateMachine>(b => b
                 .UseOrthogonalState("state1", b => b
                     .UseRegion(0, b => b
@@ -96,7 +96,7 @@ namespace StateMachine.IntegrationTests.Tests
 
     public class BaseTypedStateMachine : IStateMachine
     {
-        public void Build(IStateMachineBuilder builder) => builder
+        public static void Build(IStateMachineBuilder builder) => builder
             .AddInitialState<OverrideState1>(b => b
                 .AddTransition<SomeEvent, OverrideState2>()
             )
@@ -106,7 +106,7 @@ namespace StateMachine.IntegrationTests.Tests
 
     public class CompositeStateMachine : IStateMachine
     {
-        public void Build(IStateMachineBuilder builder) => builder
+        public static void Build(IStateMachineBuilder builder) => builder
             .UseStateMachine<BaseStateMachine>(b => b
                 .UseState("state1", b => b
                     .AddDefaultTransition("state2")

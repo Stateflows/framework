@@ -5,10 +5,13 @@ using System.Threading.Tasks;
 using Stateflows.Actions;
 using Stateflows.Activities;
 using Stateflows.Activities.Extensions;
+using Stateflows.Activities.Registration.Interfaces;
 using Stateflows.StateMachines.Context.Classes;
 using Stateflows.StateMachines.Context.Interfaces;
+using Stateflows.StateMachines.Registration.Builders;
 using Stateflows.StateMachines.Registration.Extensions;
 using Stateflows.StateMachines.Registration.Interfaces.Internal;
+using ActionDelegateAsync = Stateflows.Actions.Registration.ActionDelegateAsync;
 
 namespace Stateflows.StateMachines.Registration.Interfaces.Base
 {
@@ -25,42 +28,85 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         TReturn AddEffect(params Func<ITransitionContext<TEvent>, Task>[] effectsAsync);
 
         /// <summary>
-        /// Adds activity behavior as effect
+        /// Registers Activity behavior as effect
         /// </summary>
-        /// <param name="activityName">Activity behavior name</param>
-        /// <param name="buildAction">Build action</param>
-        [DebuggerHidden]
-        public TReturn AddEffectActivity(string activityName, TransitionActivityBuildAction<TEvent> buildAction = null)
-            => AddEffect(c => StateMachineActivityExtensions.RunEffectActivity(c, activityName, buildAction));
-
-        /// <summary>
-        /// Adds activity behavior as effect
-        /// </summary>
-        /// <param name="buildAction">Build action</param>
         /// <typeparam name="TActivity">Activity behavior type</typeparam>
         [DebuggerHidden]
-        public TReturn AddEffectActivity<TActivity>(TransitionActivityBuildAction<TEvent> buildAction = null)
+        public TReturn AddEffectActivity<TActivity>()
             where TActivity : class, IActivity
-            => AddEffectActivity(Activity<TActivity>.Name, buildAction);
-        
-        /// <summary>
-        /// Adds action behavior as effect
-        /// </summary>
-        /// <param name="actionName">Action behavior name</param>
-        /// <param name="buildAction">Build action</param>
-        [DebuggerHidden]
-        public TReturn AddEffectAction(string actionName, TransitionActionBuildAction<TEvent> buildAction = null)
-            => AddEffect(c => StateMachineActionExtensions.RunEffectAction(c, actionName, buildAction));
+        {
+            var edge = ((IEdgeBuilder)this).Edge;
+            var vertex = edge.Source;
+            var activityName = $"{vertex.Graph.Name}.{vertex.Name}.{edge.Trigger}";
+            if (edge.Target != null)
+            {
+                activityName += $".{edge.Target}";
+            }
+            activityName += $".effect.{edge.Effects.Actions.Count}";
+            
+            vertex.Graph.StateflowsBuilder.AddActivities(b => b.AddActivity<TActivity>(activityName));
+            return AddEffect(c => StateMachineActivityExtensions.RunEffectActivity(c, activityName));
+        }
 
         /// <summary>
-        /// Adds action behavior as effect
+        /// Registers Activity behavior as effect
         /// </summary>
-        /// <param name="buildAction">Build action</param>
+        /// <param name="activityBuildAction">Activity build action</param>
+        public TReturn AddEffectActivity(ReactiveActivityBuildAction activityBuildAction)
+        {
+            var edge = ((IEdgeBuilder)this).Edge;
+            var vertex = edge.Source;
+            var activityName = $"{vertex.Graph.Name}.{vertex.Name}.{edge.Trigger}";
+            if (edge.Target != null)
+            {
+                activityName += $".{edge.Target}";
+            }
+            activityName += $".effect.{edge.Effects.Actions.Count}";
+            
+            vertex.Graph.StateflowsBuilder.AddActivities(b => b.AddActivity(activityName, activityBuildAction));
+            return AddEffect(c => StateMachineActivityExtensions.RunEffectActivity(c, activityName));
+        }
+        
+        /// <summary>
+        /// Registers action behavior as effect
+        /// </summary>
         /// <typeparam name="TAction">Action behavior type</typeparam>
         [DebuggerHidden]
-        public TReturn AddEffectAction<TAction>(TransitionActionBuildAction<TEvent> buildAction = null)
+        public TReturn AddEffectAction<TAction>()
             where TAction : class, IAction
-            => AddEffectAction(Stateflows.Actions.Action<TAction>.Name, buildAction);
+        {
+            var edge = ((IEdgeBuilder)this).Edge;
+            var vertex = edge.Source;
+            var actionName = $"{vertex.Graph.Name}.{vertex.Name}.{edge.Trigger}";
+            if (edge.Target != null)
+            {
+                actionName += $".{edge.Target}";
+            }
+            actionName += $".effect.{edge.Effects.Actions.Count}";
+            
+            vertex.Graph.StateflowsBuilder.AddActions(b => b.AddAction<TAction>(actionName));
+            return AddEffect(c => StateMachineActionExtensions.RunEffectActionAsync(c, actionName));
+        }
+
+        /// <summary>
+        /// Registers Action behavior as effect
+        /// </summary>
+        /// <param name="actionDelegate">Action delegate</param>
+        /// <param name="reentrant">Flag that determines if action delegate can be executed in parallel</param>
+        public TReturn AddEffectAction(ActionDelegateAsync actionDelegate, bool reentrant = true)
+        {
+            var edge = ((IEdgeBuilder)this).Edge;
+            var vertex = edge.Source;
+            var actionName = $"{vertex.Graph.Name}.{vertex.Name}.{edge.Trigger}";
+            if (edge.Target != null)
+            {
+                actionName += $".{edge.Target}";
+            }
+            actionName += $".effect.{edge.Effects.Actions.Count}";
+            
+            vertex.Graph.StateflowsBuilder.AddActions(b => b.AddAction(actionName, actionDelegate, reentrant));
+            return AddEffect(c => StateMachineActionExtensions.RunEffectActionAsync(c, actionName));
+        }
         
         /// <summary>
         /// Adds a synchronous effect function to the current transition.<br/>
@@ -72,12 +118,7 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         /// <param name="effects">Synchronous effect functions</param>
         [DebuggerHidden]
         public TReturn AddEffect(params System.Action<ITransitionContext<TEvent>>[] effects)
-            => AddEffect(
-                effects.Select(effect => effect
-                    .AddStateMachineInvocationContext(((IEdgeBuilder)this).Edge.Graph)
-                    .ToAsync()
-                ).ToArray()
-            );
+            => AddEffect(effects.Select(effect => effect.ToAsync()).ToArray());
 
         /// <summary>
         /// Adds a typed effect handler to the current transition.

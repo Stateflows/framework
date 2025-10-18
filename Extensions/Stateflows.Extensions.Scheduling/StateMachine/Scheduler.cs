@@ -10,7 +10,7 @@ namespace Stateflows.Scheduler.StateMachine
 {
     public class StateflowsScheduler : IStateMachine
     {
-        public void Build(IStateMachineBuilder builder) => builder
+        public static void Build(IStateMachineBuilder builder) => builder
             .AddInitialCompositeState("main", b => b
                 .AddInternalTransition<OneOf<ScheduleCron, ScheduleDelay, ScheduleInterval, ScheduleTime>, ScheduleEffect>()
                 .AddInternalTransition<Unschedule, UnscheduleEffect>()

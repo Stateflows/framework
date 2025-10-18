@@ -2,6 +2,6 @@
 {
     public sealed class Choice : IVertex
     {
-        public const string Name = "Stateflows.StateMachines.Choice";
+        public static string Name => State<Choice>.Name;
     }
 }

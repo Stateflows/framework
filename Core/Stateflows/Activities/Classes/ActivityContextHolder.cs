@@ -34,7 +34,9 @@ namespace Stateflows.Activities.Classes
         public ActivityId ActivityId => rootContext.Id;
         public BehaviorStatus BehaviorStatus => rootContext.Context.Status;
         private IEnumerable<string> expectedEventNames;
-        public IEnumerable<string> ExpectedEventNames => expectedEventNames ??= rootContext.Executor.GetExpectedEventNames();
+        // public IEnumerable<string> ExpectedEventNames => expectedEventNames ??= rootContext.Executor.GetExpectedEventNamesAsync();
+        public async Task<IEnumerable<string>> GetExpectedEventNamesAsync()
+            => expectedEventNames ??= await rootContext.Executor.GetExpectedEventNamesAsync();
         public IReadOnlyTree<string> ActiveNodes => rootContext.Executor.GetNodesTree();
         
         public IActivityContext GetActivityContext()

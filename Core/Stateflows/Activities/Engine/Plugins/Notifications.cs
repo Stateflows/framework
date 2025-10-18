@@ -1,12 +1,16 @@
 using System;
 using System.Diagnostics;
-using Stateflows.Activities.Context.Interfaces;
-using Stateflows.Activities.Extensions;
+using System.Threading.Tasks;
+using Stateflows.Activities.Context.Classes;
 using Stateflows.Common;
+using Stateflows.Activities.Extensions;
+using Stateflows.Activities.Context.Interfaces;
+using Stateflows.Common.Engine;
+using Stateflows.Common.Interfaces;
 
 namespace Stateflows.Activities.Engine
 {
-    internal class Notifications : ActivityPlugin
+    internal class Notifications(IStateflowsValueStorage valueStorage) : ActivityPlugin
     {
         public override void AfterProcessEvent<TEvent>(IEventContext<TEvent> context, EventStatus eventStatus)
         {
@@ -17,7 +21,7 @@ namespace Stateflows.Activities.Engine
                 Id = executor.Context.Id,
                 BehaviorStatus = executor.BehaviorStatus,
                 ActiveNodes = executor.GetNodesTree(),
-                ExpectedEvents = executor.GetExpectedEventNames(),
+                ExpectedEvents = executor.GetExpectedEventNamesAsync().GetAwaiter().GetResult(),
             };
 
             context.Behavior.Publish(notification);
@@ -76,6 +80,20 @@ namespace Stateflows.Activities.Engine
             Trace.WriteLine($"⦗→s⦘ Activity '{context.Behavior.Id.Name}:{context.Behavior.Id.Instance}': unhandled exception '{exception.GetType().Name}' thrown with message '{exception.Message}' on transformation of flow from node {context.SourceNode.Name}");
 
             return false;
+        }
+
+        public override void AfterActivityInitialize(IActivityInitializationContext context, bool implicitInitialization, bool initialized)
+        {
+            Trace.WriteLine($"⦗→s⦘ Activity '{context.Behavior.Id.Name}:{context.Behavior.Id.Instance}': {(initialized ? "" : "not ")}initialized{(implicitInitialization ? " implicitly" : "")}");
+        }
+
+        public override void AfterActivityFinalize(IActivityFinalizationContext context)
+        {
+            Trace.WriteLine($"⦗→s⦘ Activity '{context.Behavior.Id.Name}:{context.Behavior.Id.Instance}': finalized");
+            
+            var stateflowsContext = ((BaseContext)context).Context.Context;
+            
+            valueStorage.RemoveAsync(stateflowsContext.Id, CommonValues.ForceFinalizeKey).GetAwaiter().GetResult();
         }
     }
 }

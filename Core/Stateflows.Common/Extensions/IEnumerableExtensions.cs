@@ -10,7 +10,7 @@ namespace Stateflows.Common.Extensions
     public static class IEnumerableExtensions
     {
         [DebuggerHidden]
-        public static void RunProtected<T>(this IEnumerable<T> enumerable, Action<T> action, Action<Exception> exceptionHandler)
+        public static void RunProtected<T>(this IEnumerable<T> enumerable, Action<T> action, Action<Exception, T> exceptionHandler)
             where T : class
         {
             foreach (var item in enumerable)
@@ -21,13 +21,13 @@ namespace Stateflows.Common.Extensions
                 }
                 catch (Exception e)
                 {
-                    exceptionHandler(e);
+                    exceptionHandler(e, item);
                 }
             }
         }
 
         [DebuggerHidden]
-        public static bool RunProtected<T>(this IEnumerable<T> enumerable, Predicate<T> action, Action<Exception> exceptionHandler, bool defaultResult = true)
+        public static bool RunProtected<T>(this IEnumerable<T> enumerable, Predicate<T> action, Action<Exception, T> exceptionHandler, bool defaultResult = true)
             where T : class
         {
             var result = defaultResult;
@@ -43,7 +43,7 @@ namespace Stateflows.Common.Extensions
                 }
                 catch (Exception e)
                 {
-                    exceptionHandler(e);
+                    exceptionHandler(e, item);
                 }
             }
 
@@ -55,7 +55,7 @@ namespace Stateflows.Common.Extensions
             where T : class
             => enumerable.RunProtected<T>(
                 action,
-                e => logger.LogError(LogTemplates.ExceptionLogTemplate, typeof(T).DeclaringType.FullName, methodName, e.GetType().Name, e.Message)
+                (e, t) => logger.LogError(LogTemplates.ExceptionLogTemplate, t.GetType().FullName, methodName, e.GetType().Name, e.Message)
             );
 
         [DebuggerHidden]
@@ -63,7 +63,7 @@ namespace Stateflows.Common.Extensions
             where T : class
             => enumerable.RunProtected<T>(
                 action,
-                e => logger.LogError(LogTemplates.ExceptionLogTemplate, typeof(T).DeclaringType.FullName, methodName, e.GetType().Name, e.Message),
+                (e, t) => logger.LogError(LogTemplates.ExceptionLogTemplate, t.GetType().FullName, methodName, e.GetType().Name, e.Message),
                 defaultResult
             );
     }

@@ -1,8 +1,9 @@
-﻿namespace Stateflows.StateMachines.Registration.Interfaces
+﻿using Stateflows.StateMachines.Models;
+
+namespace Stateflows.StateMachines.Registration.Interfaces.Internal
 {
-    public interface IVertexBuilder
+    internal interface IVertexBuilder
     {
-        string Name { get; }
-        VertexType Type { get; }
+        Vertex Vertex { get; }
     }
 }

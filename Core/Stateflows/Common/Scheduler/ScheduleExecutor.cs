@@ -39,7 +39,7 @@ namespace Stateflows.Common.Scheduler
             BehaviorClassesProvider = behaviorClassesProvider;
             Locator = behaviorLocator;
             Logger = logger;
-            HandlingLockId = new BehaviorId(nameof(Scheduler), nameof(HandlingLockId), new BehaviorClass("", "").Environment);
+            HandlingLockId = new BehaviorId(nameof(Scheduler), nameof(HandlingLockId), string.Empty);
         }
 
         public async Task ExecuteAsync()

@@ -18,11 +18,11 @@ namespace Stateflows.StateMachines.Context.Classes
 
         public object ExecutionTrigger => Context.ExecutionTriggerHolder.BoxedPayload;
         public Guid ExecutionTriggerId => Context.ExecutionTriggerHolder.Id;
-        public virtual IEnumerable<EventHeader> Headers => Context.ExecutionTriggerHolder.Headers;
+        public virtual List<EventHeader> Headers => Context.ExecutionTriggerHolder.Headers;
 
         public IEnumerable<IExecutionStep> ExecutionSteps => Context.ExecutionSteps;
 
-        public StateMachineContext stateMachine;
+        private StateMachineContext stateMachine;
         public StateMachineContext StateMachine => stateMachine ??= new StateMachineContext(Context);
 
         private IBehaviorLocator behaviorLocator;

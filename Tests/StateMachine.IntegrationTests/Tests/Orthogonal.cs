@@ -27,7 +27,8 @@ namespace StateMachine.IntegrationTests.Tests
                     .AddStateMachine("fork", b => b
                         .AddExecutionSequenceObserver()
                         .AddInitialState("state1", b => b
-                            .AddTransition<SomeEvent>(Fork.Name)
+                            .AddTransition<SomeEvent, Fork>()
+                            .AddTransition<OtherEvent>("stateA")
                         )
                         .AddFork(b => b
                             .AddTransition("stateA")
@@ -35,10 +36,41 @@ namespace StateMachine.IntegrationTests.Tests
                         )
                         .AddOrthogonalState("orthogonal", b => b
                             .AddRegion(b => b
+                                .AddInitialState("initialA")
                                 .AddState("stateA")
                             )
                             .AddRegion(b => b
+                                .AddInitialState("initialB")
                                 .AddState("stateB")
+                            )
+                        )
+                    )
+                        
+                    .AddStateMachine("partialFork", b => b
+                        .AddExecutionSequenceObserver()
+                        .AddInitialState("state1", b => b
+                            .AddTransition<SomeEvent, Fork>()
+                        )
+                        .AddFork(b => b
+                            .AddTransition("stateB")
+                            .AddTransition("stateC")
+                        )
+                        .AddOrthogonalState("orthogonal", b => b
+                            .AddRegion(b => b
+                                .AddInitialState("initialA")
+                                .AddState("stateA")
+                            )
+                            .AddRegion(b => b
+                                .AddInitialState("initialB")
+                                .AddState("stateB")
+                            )
+                            .AddRegion(b => b
+                                .AddInitialState("initialC")
+                                .AddState("stateC")
+                            )
+                            .AddRegion(b => b
+                                .AddInitialState("initialD")
+                                .AddState("stateD")
                             )
                         )
                     )
@@ -195,6 +227,38 @@ namespace StateMachine.IntegrationTests.Tests
                         )
                     )
 
+                    .AddStateMachine("history", b => b
+                        .AddInitialState("state1", b => b
+                            .AddTransition<OtherEvent>("state2")
+                        )
+                        .AddOrthogonalState("state2", b => b
+                            .AddRegion(b => b
+                                .AddHistory("region1")
+                                .AddInitialState("state2.1.1", b => b
+                                    .AddTransition<SomeEvent>("state2.1.2")
+                                )
+                                .AddState("state2.1.2")
+                            )
+                            .AddRegion(b => b
+                                .AddHistory("region2")
+                                .AddInitialState("state2.2.1", b => b
+                                    .AddTransition<SomeEvent>("state2.2.2")
+                                )
+                                .AddState("state2.2.2")
+                            )
+                        
+                            .AddTransition<OtherEvent>("state3")
+                        )
+                        .AddState("state3", b => b
+                            .AddTransition<OtherEvent>("fork1")
+                            .AddTransition<SomeEvent>("region1")
+                        )
+                        .AddFork("fork1", b => b
+                            .AddTransition("region1")
+                            .AddTransition("region2")
+                        )
+                    )
+
                     .AddStateMachine("parallelTransitions", b => b
                         .AddInitialState("state1", b => b
                             .AddTransition<OtherEvent>("state2")
@@ -303,6 +367,73 @@ namespace StateMachine.IntegrationTests.Tests
             Assert.AreEqual("state2", currentState);
             Assert.AreEqual("state2.1.1", substate1);
             Assert.AreEqual("state2.2.1", substate2);
+        }
+
+        [TestMethod]
+        public async Task History()
+        {
+            var status = EventStatus.Rejected;
+            string currentState = "";
+            string substate1 = "";
+            string substate2 = "";
+
+            if (StateMachineLocator.TryLocateStateMachine(new StateMachineId("history", "x"), out var sm))
+            {
+                await sm.SendAsync(new OtherEvent());
+                await sm.SendAsync(new SomeEvent());
+                await sm.SendAsync(new OtherEvent());
+                await sm.SendAsync(new OtherEvent());
+
+                var tree = (await sm.GetStatusAsync()).Response.CurrentStates;
+                currentState = tree.Value;
+                substate1 = tree.Root.Nodes.First().Value;
+                substate2 = tree.Root.Nodes.Last().Value;
+            }
+
+            Assert.AreEqual("state2", currentState);
+            Assert.AreEqual("state2.1.2", substate1);
+            Assert.AreEqual("state2.2.2", substate2);
+        }
+
+        [TestMethod] public async Task PartialHistory()
+        {
+            var status = EventStatus.Rejected;
+            IReadOnlyTree<string> tree = null;
+
+            if (StateMachineLocator.TryLocateStateMachine(new StateMachineId("history", "x"), out var sm))
+            {
+                await sm.SendAsync(new OtherEvent());
+                await sm.SendAsync(new SomeEvent());
+                await sm.SendAsync(new OtherEvent());
+                await sm.SendAsync(new SomeEvent());
+
+                tree = (await sm.GetStatusAsync()).Response.CurrentStates;
+            }
+
+            Assert.AreEqual("state2", tree?.Value);
+            Assert.AreEqual("state2.1.2", tree?.Root.Nodes.First().Value);
+            Assert.AreEqual("state2.2.1", tree?.Root.Nodes.Skip(1).First().Value);
+            Assert.AreEqual(2, tree?.Root.Nodes.Count());
+        }
+
+        [TestMethod] public async Task PartialFork()
+        {
+            var status = EventStatus.Rejected;
+            IReadOnlyTree<string> tree = null;
+
+            if (StateMachineLocator.TryLocateStateMachine(new StateMachineId("partialFork", "x"), out var sm))
+            {
+                await sm.SendAsync(new SomeEvent());
+
+                tree = (await sm.GetStatusAsync()).Response.CurrentStates;
+            }
+
+            Assert.AreEqual("orthogonal", tree?.Value);
+            Assert.AreEqual("initialA", tree?.Root.Nodes.First().Value);
+            Assert.AreEqual("stateB", tree?.Root.Nodes.Skip(1).First().Value);
+            Assert.AreEqual("stateC", tree?.Root.Nodes.Skip(2).First().Value);
+            Assert.AreEqual("initialD", tree?.Root.Nodes.Skip(3).First().Value);
+            Assert.AreEqual(4, tree?.Root.Nodes.Count());
         }
 
         [TestMethod]
@@ -480,6 +611,41 @@ namespace StateMachine.IntegrationTests.Tests
             Assert.AreEqual("orthogonal", currentState);
             Assert.AreEqual("stateA", substate1);
             Assert.AreEqual("stateB", substate2);
+        }
+
+        [TestMethod]
+        public async Task PartialEntry()
+        {
+            var status = EventStatus.Rejected;
+            string currentState = "";
+            string substate1 = "";
+            string substate2 = "";
+
+            if (StateMachineLocator.TryLocateStateMachine(new StateMachineId("fork", "x"), out var sm))
+            {
+                status = (await sm.SendAsync(new OtherEvent())).Status;
+
+                var tree = (await sm.GetStatusAsync()).Response.CurrentStates;
+                currentState = tree.Value;
+                substate1 = tree.Root.Nodes.First().Value;
+                substate2 = tree.Root.Nodes.Last().Value;
+            }
+            
+            ExecutionSequence.Verify(b => b
+                .StateMachineInitialize()
+                .StateEntry("state1")
+                .StateExit("state1")
+                .TransitionEffect(Event<OtherEvent>.Name,"state1", "stateA")
+                .StateEntry("orthogonal")
+                .StateInitialize("orthogonal")
+                .StateEntry("stateA")
+                .StateEntry("initialB")
+            );
+
+            Assert.AreEqual(EventStatus.Consumed, status);
+            Assert.AreEqual("orthogonal", currentState);
+            Assert.AreEqual("stateA", substate1);
+            Assert.AreEqual("initialB", substate2);
         }
 
         [TestMethod]

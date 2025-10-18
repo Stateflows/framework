@@ -1,7 +1,7 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using Stateflows.Common;
-using Stateflows.StateMachines.Models;
 
 namespace Stateflows.StateMachines
 {
@@ -29,5 +29,7 @@ namespace Stateflows.StateMachines
             where TTransition : class, ITransition<TEvent>;
         
         Task CustomEventAddedAsync<TEvent>(string stateMachineName, int stateMachineVersion, BehaviorStatus[] supportedStatuses);
+        
+        Task BehaviorEmbeddedAsync(string stateMachineName, int stateMachineVersion, string vertexName, string behaviorName, string behaviorType, IEnumerable<Type> eventTypes);
     }
 }

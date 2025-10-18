@@ -2,7 +2,6 @@
 
 namespace Stateflows.Common.Exceptions
 {
-#pragma warning disable S3925 // "ISerializable" should be implemented correctly
     public class BehaviorDefinitionException : StateflowsDefinitionException
     {
         public BehaviorClass BehaviorClass { get; }
@@ -17,5 +16,4 @@ namespace Stateflows.Common.Exceptions
             BehaviorClass = behaviorClass;
         }
     }
-#pragma warning restore S3925 // "ISerializable" should be implemented correctly
 }

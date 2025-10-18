@@ -1,11 +1,17 @@
 using Stateflows.Activities;
 using StateMachine.IntegrationTests.Utils;
 using System.Diagnostics;
+using Stateflows.Common;
 using StateMachine.IntegrationTests.Classes.Events;
 
 namespace StateMachine.IntegrationTests.Tests
 {
     public class BoolInit
+    {
+        public bool Value { get; set; }
+    }
+
+    public class InitHeader : EventHeader
     {
         public bool Value { get; set; }
     }
@@ -40,25 +46,62 @@ namespace StateMachine.IntegrationTests.Tests
                         })
                         .AddInitialState("stateA", b => b
                             .AddTransition<SomeEvent>("stateB", b => b
-                                .AddGuardActivity("guard", b => b
-                                    .AddRelay<SomeNotification>()
+                                .AddGuardActivity(b => b
+                                    .AddAcceptEventAction<SomeEvent>(
+                                        async c =>
+                                        {
+                                            GuardRun = true;
+                                            var (success, value) = await c.Behavior.Values.TryGetAsync<bool>("value");
+                                            if (success)
+                                            {
+                                                Debug.WriteLine($"value: {value}");
+                                                c.Output(value);
+                                            }
+                                            else
+                                            {
+                                                Debug.WriteLine($"value: not available");
+                                            }
+                                        },
+                                        b => b.AddFlow<bool, OutputNode>()
+                                    )
+                                    .AddOutput()
                                 )
-                                .AddEffectActivity("effect")
+                                .AddEffectActivity(b => b
+                                    .AddInput(b => b
+                                        .AddFlow<SomeEvent>("main")
+                                    )
+                                    .AddAction("main", async c =>
+                                    {
+                                        EffectRun = true;
+                                    })
+                                )
                             )
                         )
                         .AddState("stateB", b => b
-                            .AddOnEntryActivity("entry")
-                            .AddOnExitActivity("exit")
+                            .AddOnEntryActivity(b => b
+                                .AddInitial(b => b
+                                    .AddControlFlow("main")
+                                )
+                                .AddAction("main", async c =>
+                                {
+                                    EntryRun = true;
+                                })
+                            )
+                            .AddOnExitActivity(b => b
+                                .AddInitial(b => b
+                                    .AddControlFlow("main")
+                                )
+                                .AddAction("main", async c =>
+                                {
+                                    ExitRun = true;
+                                })
+                            )
                         )
                     )
                 )   
                 .AddActivities(b => b
                     .AddActivity("guard", b => b
-                        .AddInitial(b => b
-                            .AddControlFlow("main")
-                        )
-                        .AddAction(
-                            "main",
+                        .AddAcceptEventAction<SomeEvent>(
                             async c =>
                             {
                                 GuardRun = true;
@@ -86,24 +129,24 @@ namespace StateMachine.IntegrationTests.Tests
                             EffectRun = true;
                         })
                     )
-                    .AddActivity("entry", b => b
-                        .AddInitial(b => b
-                            .AddControlFlow("main")
-                        )
-                        .AddAction("main", async c =>
-                        {
-                            EntryRun = true;
-                        })
-                    )
-                    .AddActivity("exit", b => b
-                        .AddInitial(b => b
-                            .AddControlFlow("main")
-                        )
-                        .AddAction("main", async c =>
-                        {
-                            ExitRun = true;
-                        })
-                    )
+                    // .AddActivity("entry", b => b
+                    //     .AddInitial(b => b
+                    //         .AddControlFlow("main")
+                    //     )
+                    //     .AddAction("main", async c =>
+                    //     {
+                    //         EntryRun = true;
+                    //     })
+                    // )
+                    // .AddActivity("exit", b => b
+                    //     .AddInitial(b => b
+                    //         .AddControlFlow("main")
+                    //     )
+                    //     .AddAction("main", async c =>
+                    //     {
+                    //         ExitRun = true;
+                    //     })
+                    // )
                 )
                 ;
         }
@@ -118,6 +161,8 @@ namespace StateMachine.IntegrationTests.Tests
                 await sm.SendAsync(new BoolInit() { Value = true });
 
                 await sm.SendAsync(new SomeEvent());
+
+                await Task.Delay(300);
 
                 var currentState = (await sm.GetStatusAsync()).Response;
 
@@ -149,6 +194,8 @@ namespace StateMachine.IntegrationTests.Tests
                 await sm.SendAsync(new BoolInit() { Value = false });
 
                 await sm.SendAsync(new SomeEvent());
+
+                await Task.Delay(100);
 
                 var currentState = (await sm.GetStatusAsync()).Response;
 

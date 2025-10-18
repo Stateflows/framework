@@ -34,12 +34,17 @@ namespace Stateflows.Activities
                 }
             }
         }
+
+        [DebuggerHidden]
+        public static IStateflowsBuilder AddActivities(this IStateflowsBuilder stateflowsBuilder,
+            ActivitiesBuildAction buildAction = null)
+            => AddActivities(stateflowsBuilder, buildAction, false);
         
         [DebuggerHidden]
-        public static IStateflowsBuilder AddActivities(this IStateflowsBuilder stateflowsBuilder, ActivitiesBuildAction buildAction = null)
+        public static IStateflowsBuilder AddActivities(this IStateflowsBuilder stateflowsBuilder, ActivitiesBuildAction buildAction, bool systemRegistrations)
         {
             var register = stateflowsBuilder.EnsureActivitiesServices();
-            buildAction?.Invoke(new ActivitiesBuilder(register));
+            buildAction?.Invoke(new ActivitiesBuilder(register, systemRegistrations));
 
             return stateflowsBuilder;
         }
@@ -49,7 +54,7 @@ namespace Stateflows.Activities
             where TActivity : class, IActivity
             => stateflowsBuilder.AddDefaultInstance(new StateMachineClass(Activity<TActivity>.Name).BehaviorClass, initializationRequestFactoryAsync);
 
-        private static ActivitiesRegister EnsureActivitiesServices(this IStateflowsBuilder stateflowsBuilder)
+        internal static ActivitiesRegister EnsureActivitiesServices(this IStateflowsBuilder stateflowsBuilder)
         {
             lock (Registers)
             {
@@ -65,6 +70,7 @@ namespace Stateflows.Activities
                         .AddScoped<Notifications>()
                         .AddScoped<IActivityPlugin>(serviceProvider => serviceProvider.GetRequiredService<AcceptEvents>())
                         .AddScoped<IActivityPlugin>(serviceProvider => serviceProvider.GetRequiredService<Notifications>())
+                        .AddScoped<IActivityPlugin, Behaviors>()
                         .AddSingleton(register)
                         .AddSingleton<IActivitiesRegister>(register)
                         .AddScoped<IActivityContextProvider, ActivityContextProvider>()
@@ -80,25 +86,26 @@ namespace Stateflows.Activities
                         .AddSingleton<IActivityEventHandler, StartRelayHandler>()
                         .AddSingleton<IActivityEventHandler, StopRelayHandler>()
                         .AddSingleton<IActivityEventHandler, SetGlobalValuesHandler>()
+                        .AddSingleton<IActivityEventHandler, SetContextOwnerHandler>()
                         .AddSingleton<IActivityEventHandler, TokensOutputHandler>()
                         .AddSingleton<IActivityEventHandler, TypedTokensOutputHandler>()
-                        .AddTransient(provider =>
+                        .AddTransient(_ =>
                             ActivitiesContextHolder.ActivityContext.Value ??
                             throw new InvalidOperationException($"No service for type '{typeof(IActivityContext).FullName}' is available in this context.")
                         )
-                        .AddTransient(provider =>
+                        .AddTransient(_ =>
                             ActivitiesContextHolder.NodeContext.Value ??
                             throw new InvalidOperationException($"No service for type '{typeof(INodeContext).FullName}' is available in this context.")
                         )
-                        .AddTransient(provider =>
+                        .AddTransient(_ =>
                             ActivitiesContextHolder.FlowContext.Value ??
                             throw new InvalidOperationException($"No service for type '{typeof(IFlowContext).FullName}' is available in this context.")
                         )
-                        .AddTransient(provider =>
+                        .AddTransient(_ =>
                             ActivitiesContextHolder.ExceptionContext.Value ??
                             throw new InvalidOperationException($"No service for type '{typeof(IExceptionContext).FullName}' is available in this context.")
                         )
-                        .AddTransient(provider =>
+                        .AddTransient(_ =>
                             ActivitiesContextHolder.Inspection.Value ??
                             throw new InvalidOperationException(
                                 $"No service for type '{typeof(IActivityInspection).FullName}' is available in this context.")
@@ -107,6 +114,12 @@ namespace Stateflows.Activities
                         .AddTransient(typeof(IInputToken<>), typeof(InputToken<>))
                         .AddTransient(typeof(IOptionalInputTokens<>), typeof(OptionalInputTokens<>))
                         .AddTransient(typeof(IOptionalInputToken<>), typeof(OptionalInputToken<>))
+                        
+                        .AddTransient(typeof(IInputOutputTokens<>), typeof(InputOutputTokens<>))
+                        .AddTransient(typeof(IInputOutputToken<>), typeof(InputOutputToken<>))
+                        .AddTransient(typeof(IOptionalInputOutputTokens<>), typeof(OptionalInputOutputTokens<>))
+                        .AddTransient(typeof(IOptionalInputOutputToken<>), typeof(OptionalInputOutputToken<>))
+                        
                         .AddTransient(typeof(IOutputTokens<>), typeof(OutputTokens<>))
                         ;
                 }

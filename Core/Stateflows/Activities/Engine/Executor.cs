@@ -19,7 +19,12 @@ using Stateflows.Activities.Streams;
 using Stateflows.Activities.Registration;
 using Stateflows.Activities.Context.Classes;
 using Stateflows.Activities.Inspection.Classes;
+using Stateflows.Common.Engine;
+using Stateflows.StateMachines;
 using Stateflows.StateMachines.Extensions;
+using Stateflows.StateMachines.Models;
+using Edge = Stateflows.Activities.Models.Edge;
+using Graph = Stateflows.Activities.Models.Graph;
 
 namespace Stateflows.Activities.Engine
 {    
@@ -28,6 +33,8 @@ namespace Stateflows.Activities.Engine
         private static readonly object lockHandle = new object();
         private static readonly object nodesLockHandle = new object();
         private readonly Dictionary<Node, object> nodeLockHandles = new Dictionary<Node, object>();
+        private readonly IStateflowsEventFilter eventFilter;
+        private readonly IStateflowsValueStorage valueStorage;
         
         public bool StateHasChanged { get; set; }
         
@@ -93,16 +100,19 @@ namespace Stateflows.Activities.Engine
             NodeScope = new NodeScope(serviceProvider, graph, null, Guid.NewGuid());
             Graph = graph;
 
-            var logger = serviceProvider.GetService<ILogger<Executor>>();
+            var logger = serviceProvider.GetRequiredService<ILogger<Executor>>();
             Inspector = new Inspector(this, logger);
             ActivitiesContextHolder.Inspection.Value = new ActivityInspection(this, Inspector);
+
+            eventFilter = serviceProvider.GetRequiredService<IStateflowsEventFilter>();
+            valueStorage = serviceProvider.GetRequiredService<IStateflowsValueStorage>();
         }
 
         public RootContext Context { get; private set; }
 
         public readonly Inspector Inspector;
         
-        private EventWaitHandle FinalizationEvent { get; } = new EventWaitHandle(false, EventResetMode.AutoReset);
+        private EventWaitHandle FinalizationEvent { get; } = new(false, EventResetMode.AutoReset);
 
         private bool Finalized
         {
@@ -150,20 +160,25 @@ namespace Stateflows.Activities.Engine
         public IReadOnlyTree<string> GetNodesTree()
             => NodesTree.Translate(node => node.OwnName);
 
-        public Type[] GetExpectedEvents()
-            => BehaviorStatus == BehaviorStatus.Initialized
-                ? GetActiveNodes()
-                    .SelectMany(node => node.ActualEventTypes)
-                    .Distinct()
-                    .ToArray()
-                : BehaviorStatus == BehaviorStatus.NotInitialized
-                    ? Graph.InitializerTypes.Any()
+        public Task<IEnumerable<Type>> GetExpectedEventsAsync()
+            => eventFilter.FilterTypesAsync(
+                BehaviorStatus switch
+                {
+                    BehaviorStatus.Initialized => GetActiveNodes()
+                        .SelectMany(node => node.ActualEventTypes)
+                        .Distinct()
+                        .ToArray(),
+                    
+                    BehaviorStatus.NotInitialized => Graph.InitializerTypes.Any()
                         ? Graph.InitializerTypes.ToArray()
-                        : new[] { typeof(Initialize) }
-                    : Array.Empty<Type>();
+                        : [ typeof(Initialize) ],
+                    
+                    _ => []
+                }
+            );
 
-        public IEnumerable<string> GetExpectedEventNames()
-            => GetExpectedEvents()
+        public async Task<IEnumerable<string>> GetExpectedEventNamesAsync()
+            => (await GetExpectedEventsAsync())
                 .Where(type => !typeof(SystemEvent).IsAssignableFrom(type))
                 .Where(type => !typeof(Exception).IsAssignableFrom(type))
                 .Select(type => type.GetEventName())
@@ -238,7 +253,8 @@ namespace Stateflows.Activities.Engine
                         Context.SetEvent(new Initialize().ToEventHolder());
                     }
 
-                    await ExecuteGraphAsync(input);
+                    var (_, outputTokens) = await ExecuteGraphAsync(input);
+                    // HandleGuardRequest(outputTokens, eventHolder);
 
                     if (result == InitializationStatus.InitializedImplicitly)
                     {
@@ -372,10 +388,11 @@ namespace Stateflows.Activities.Engine
                 : null;
 
             var (result, output) = await ExecuteGraphAsync(input);
-
-            var tokensOutput = new TokensOutput() { Tokens = output.ToList() };
+            HandleGuardRequest(output, eventHolder);
+            
             if (eventHolder.Payload is IRequest<TokensOutput> inputTokens)
             {
+                var tokensOutput = new TokensOutput() { Tokens = output.ToList() };
                 inputTokens.Respond(tokensOutput);
             }
 
@@ -399,6 +416,76 @@ namespace Stateflows.Activities.Engine
 
             return (EventStatus.Consumed, output);
         }
+        
+        private void HandleGuardRequest<TEvent>(IEnumerable<TokenHolder> outputTokens, EventHolder<TEvent> eventHolder)
+        {
+            var guardRequest = eventHolder.Headers.OfType<GuardRequest>().FirstOrDefault();
+            if (guardRequest != null)
+            {
+                var output = outputTokens.OfType<TokenHolder<bool>>().FirstOrDefault()?.Payload ?? false;
+
+                if (output)
+                {
+                    var headers = eventHolder.Headers
+                        .Where(h => !(h is GuardRequest))
+                        .Append(
+                            new GuardResponse()
+                            {
+                                GuardIdentifier = guardRequest.GuardIdentifier
+                            }
+                        )
+                        .ToArray();
+
+                    _ = Context.SendAsync(eventHolder.Payload, headers);
+                }
+                        
+                var behaviorId = Context.Context.ContextOwnerId.Value;
+                if (behaviorId.Type == BehaviorType.StateMachine)
+                {
+                    if (output)
+                    {
+                        switch (guardRequest.EdgeType)
+                        {
+                            case EdgeType.Transition:
+                                Trace.WriteLine(
+                                    $"⦗→s⦘ State Machine '{behaviorId.Name}:{behaviorId.Instance}': delegated guard passed transition from '{guardRequest.SourceName}' to '{guardRequest.TargetName}' triggered by event '{eventHolder.Name}', retransmitting event");
+                                break;
+
+                            case EdgeType.DefaultTransition:
+                                Trace.WriteLine(
+                                    $"⦗→s⦘ State Machine '{behaviorId.Name}:{behaviorId.Instance}': delegated guard passed default transition from '{guardRequest.SourceName}' to '{guardRequest.TargetName}', retransmitting event");
+                                break;
+
+                            case EdgeType.InternalTransition:
+                                Trace.WriteLine(
+                                    $"⦗→s⦘ State Machine '{behaviorId.Name}:{behaviorId.Instance}': delegated guard passed internal transition in '{guardRequest.SourceName}' triggered by event '{eventHolder.Name}', retransmitting event");
+                                break;
+                        }
+                    }
+                    else
+                    {
+                        switch (guardRequest.EdgeType)
+                        {
+                            case EdgeType.Transition:
+                                Trace.WriteLine(
+                                    $"⦗→s⦘ State Machine '{behaviorId.Name}:{behaviorId.Instance}': delegated guard stopped event '{eventHolder.Name}' from triggering transition from '{guardRequest.SourceName}' to '{guardRequest.TargetName}'");
+                                break;
+
+                            case EdgeType.DefaultTransition:
+                                Trace.WriteLine(
+                                    $"⦗→s⦘ State Machine '{behaviorId.Name}:{behaviorId.Instance}': delegated guard stopped default transition from '{guardRequest.SourceName}' to '{guardRequest.TargetName}'");
+                                break;
+
+                            case EdgeType.InternalTransition:
+                                Trace.WriteLine(
+                                    $"⦗→s⦘ State Machine '{behaviorId.Name}:{behaviorId.Instance}': delegated guard stopped event '{eventHolder.Name}' from triggering internal transition in '{guardRequest.SourceName}'");
+                                break;
+                        }
+                    }
+                }
+            }
+        }
+
 
         private async Task DoHandleActivityOutput(IEnumerable<TokenHolder> output)
         {
@@ -466,6 +553,11 @@ namespace Stateflows.Activities.Engine
             RebuildNodesTree();
 
             FinalizationEvent.Set();
+
+            if (Context.Context.ContextParentId != null)
+            {
+                _ = Context.SendAsync(new DoActivityFinalized());
+            }
         }
 
         public async Task<(IEnumerable<TokenHolder> Output, bool Finalized)> DoExecuteStructuredNodeAsync(Node node, NodeScope nodeScope, IEnumerable<TokenHolder> input = null)
@@ -750,8 +842,6 @@ namespace Stateflows.Activities.Engine
 
             if (handler != null)
             {
-                // Trace.WriteLine($"⦗→s⦘ Activity '{node.Graph.Name}:{context.Activity.Id.Instance}': handling '{exceptionName}'");
-
                 var exceptionContext = new ActionContext(
                     context.Context,
                     currentScope,
@@ -788,6 +878,13 @@ namespace Stateflows.Activities.Engine
 
         public async Task DoHandleNodeAsync(Node node, Edge upstreamEdge, NodeScope nodeScope, IEnumerable<TokenHolder> input = null, IEnumerable<TokenHolder> selectionTokens = null)
         {
+            if (await TryForceFinalizeAsync(nodeScope))
+            {
+                Trace.WriteLine($"⦗→s⦘ Activity '{node.Graph.Name}:{Context.Id.Instance}': forcefully finalized before executing node '{node.Name}'");
+
+                return;
+            }
+
             if (CancellableTypes.Contains(node.Type) && nodeScope.CancellationToken.IsCancellationRequested)
             {
                 return;
@@ -923,8 +1020,15 @@ namespace Stateflows.Activities.Engine
                         }
                     }
                 }
+                
+                if (await TryForceFinalizeAsync(nodeScope))
+                {
+                    Trace.WriteLine($"⦗→s⦘ Activity '{node.Graph.Name}:{Context.Id.Instance}': forcefully finalized after executing node '{node.Name}'");
 
-                if (node.Type == NodeType.Output || node.Type == NodeType.ExceptionHandler)
+                    return;
+                }
+                
+                if (node.Type is NodeType.Output or NodeType.ExceptionHandler)
                 {
                     DoHandleOutput(actionContext);
                 }
@@ -974,6 +1078,28 @@ namespace Stateflows.Activities.Engine
             }
 
             Inspector.AfterNodeActivate(actionContext);
+        }
+
+        private async Task<bool> TryForceFinalizeAsync(NodeScope nodeScope)
+        {
+            if (await valueStorage.GetOrDefaultAsync(Context.Id, CommonValues.ForceFinalizeKey, false))
+            {
+                await valueStorage.RemoveAsync(Context.Id, CommonValues.ForceFinalizeKey);
+
+                var scope = nodeScope;
+                while (scope.BaseNodeScope != null)
+                {
+                    scope = scope.BaseNodeScope;
+                }
+
+                scope.Terminate();
+
+                await CancelAsync();
+
+                return true;
+            }
+
+            return false;
         }
 
         private static void ReportNodeExecuting(Node node, Edge upstreamEdge, IEnumerable<TokenHolder> inputTokens, RootContext context)
@@ -1234,7 +1360,7 @@ namespace Stateflows.Activities.Engine
             NodeScope.Dispose();
         }
 
-        public async Task<IActivity> GetActivity(Type activityType)
-            => await StateflowsActivator.CreateModelElementInstanceAsync(NodeScope.ServiceProvider, activityType, "activity") as IActivity;
+        public async Task<object> GetActivityAsync(Type activityType)
+            => await StateflowsActivator.CreateModelElementInstanceAsync(NodeScope.ServiceProvider, activityType, "activity");
     }
 }

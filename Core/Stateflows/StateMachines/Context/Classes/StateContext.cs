@@ -1,6 +1,8 @@
-﻿using Stateflows.Common.Classes;
+﻿using Microsoft.Extensions.DependencyInjection;
+using Stateflows.Common.Classes;
 using Stateflows.Common.Interfaces;
 using Stateflows.StateMachines.Models;
+using Stateflows.StateMachines.Registration;
 
 namespace Stateflows.StateMachines.Context.Classes
 {
@@ -21,7 +23,13 @@ namespace Stateflows.StateMachines.Context.Classes
             Vertex = vertex;
             Context = context;
             StateValues = Context.GetStateValues(Name);
-            Values = new ContextValuesCollection(StateValues.Values);
+            // Values = new ContextValuesCollection(StateValues.Values);
+            Values = new ValuesStorage(
+                $"{Constants.State}.{vertex.Identifier}",
+                Context.Context.ContextOwnerId ?? Context.Id,
+                Context.Executor.ServiceProvider.GetRequiredService<IStateflowsLock>(),
+                Context.Executor.ServiceProvider.GetRequiredService<IStateflowsValueStorage>()
+            );
         }
 
         public IContextValues Values { get; }

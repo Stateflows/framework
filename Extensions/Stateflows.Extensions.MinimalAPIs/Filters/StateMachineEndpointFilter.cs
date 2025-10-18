@@ -43,7 +43,7 @@ internal class StateMachineEndpointFilter(
                         metadata.StateMachineContext.Value.Locator = behaviorLocator;
                         metadata.StateMachineContext.Value.StateMachine = contextHolder.GetStateMachineContext();
                         metadata.StateMachineContext.Value.Status = contextHolder.BehaviorStatus;
-                        metadata.StateMachineContext.Value.ExpectedEventNames = contextHolder.ExpectedEventNames;
+                        metadata.StateMachineContext.Value.ExpectedEventNames = await contextHolder.GetExpectedEventNamesAsync();
                         metadata.StateMachineContext.Value.HateoasLinks = metadata.HateoasLinks;
                         metadata.StateMachineContext.Value.ElementsTree = contextHolder.CurrentStates;
                     }
@@ -54,7 +54,7 @@ internal class StateMachineEndpointFilter(
                         metadata.StateContext.Value.StateMachine = contextHolder.GetStateMachineContext();
                         metadata.StateContext.Value.State = contextHolder.GetStateContext(metadata.ScopeName);
                         metadata.StateContext.Value.Status = contextHolder.BehaviorStatus;
-                        metadata.StateContext.Value.ExpectedEventNames = contextHolder.ExpectedEventNames;
+                        metadata.StateContext.Value.ExpectedEventNames = await contextHolder.GetExpectedEventNamesAsync();
                         metadata.StateContext.Value.HateoasLinks = metadata.HateoasLinks;
                         metadata.StateContext.Value.ElementsTree = contextHolder.CurrentStates;
                     }
@@ -64,7 +64,7 @@ internal class StateMachineEndpointFilter(
                         metadata.BehaviorContext.Value.Locator = behaviorLocator;
                         metadata.BehaviorContext.Value.Behavior = contextHolder.GetStateMachineContext();
                         metadata.BehaviorContext.Value.Status = contextHolder.BehaviorStatus;
-                        metadata.BehaviorContext.Value.ExpectedEventNames = contextHolder.ExpectedEventNames;
+                        metadata.BehaviorContext.Value.ExpectedEventNames = await contextHolder.GetExpectedEventNamesAsync();
                         metadata.BehaviorContext.Value.HateoasLinks = metadata.HateoasLinks;
                         metadata.BehaviorContext.Value.ElementsTree = contextHolder.CurrentStates;
                     }

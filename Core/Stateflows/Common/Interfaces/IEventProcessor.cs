@@ -9,5 +9,7 @@ namespace Stateflows.Common.Interfaces
         string BehaviorType { get; }
         
         Task<EventStatus> ProcessEventAsync<TEvent>(BehaviorId id, EventHolder<TEvent> eventHolder, List<Exception> exceptions);
+
+        Task CancelProcessingAsync(BehaviorId id);
     }
 }

@@ -15,10 +15,11 @@ namespace Stateflows.Actions.Context.Classes
 
         internal IServiceProvider ServiceProvider { get; set; }
 
-        public RootContext(StateflowsContext context, EventHolder eventHolder)
+        public RootContext(StateflowsContext context, EventHolder eventHolder, IServiceProvider serviceProvider)
         {
             Context = context;
             EventHolder = eventHolder;
+            ServiceProvider = serviceProvider;
             Id = new ActionId(Context.Id);
         }
 
@@ -31,7 +32,7 @@ namespace Stateflows.Actions.Context.Classes
         public async Task Send<TEvent>(TEvent @event, IEnumerable<EventHeader> headers = null)
         {
             var locator = ServiceProvider.GetService<IBehaviorLocator>();
-            if (locator != null && locator.TryLocateBehavior(Id.BehaviorId, out var behavior))
+            if (locator != null && locator.TryLocateBehavior(Context.ContextParentId ?? Id.BehaviorId, out var behavior))
             {
                 await behavior.SendAsync(@event, headers);
             }

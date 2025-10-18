@@ -4,7 +4,7 @@ namespace Stateflows.Activities
 {
     public interface IEdge
     {
-        int Weight => 1;
+        static virtual int Weight => 1;
     }
 
     public interface IFlow<TToken> : IEdge

@@ -9,6 +9,7 @@ namespace Stateflows.Storage.EntityFrameworkCore.EntityFrameworkCore
     {
         DbSet<Context_v1> Contexts_v1 { get; set; }
         DbSet<Notification_v1> Notifications_v1 { get; set; }
+        DbSet<Value_v1> Values_v1 { get; set; }
         Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
     }
 }

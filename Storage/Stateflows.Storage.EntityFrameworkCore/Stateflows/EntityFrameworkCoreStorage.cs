@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using System.Diagnostics;
 using Microsoft.Extensions.Logging;
 using Stateflows.Common;
 using Stateflows.Common.Context;
@@ -25,8 +25,12 @@ namespace Stateflows.Storage.EntityFrameworkCore.Stateflows
         {
             try
             {
-                await DbContext.Contexts_v1.Where(x => x.TriggerOnStartup).ToArrayAsync();
-                var contextEntity = await DbContext.Contexts_v1.FindOrCreate(context, true);
+                var contextEntity = context.RuntimeMetadata.TryGetValue(nameof(EntityFrameworkCoreStorage), out var contextEntityObj)
+                    ? (Context_v1)contextEntityObj
+                    : await DbContext.Contexts_v1.FindOrCreate(context, true);
+
+                context.RuntimeMetadata.Remove(nameof(EntityFrameworkCoreStorage));
+
                 contextEntity.Data = StateflowsJsonConverter.SerializePolymorphicObject(context);
                 contextEntity.TriggerTime = context.TriggerTime;
                 contextEntity.TriggerOnStartup = context.TriggerOnStartup;
@@ -67,6 +71,7 @@ namespace Stateflows.Storage.EntityFrameworkCore.Stateflows
                 var c = await DbContext.Contexts_v1.FindOrCreate(behaviorId);
 
                 result = StateflowsJsonConverter.DeserializeObject<StateflowsContext>(c.Data ?? string.Empty);
+                result?.RuntimeMetadata.Add(nameof(EntityFrameworkCoreStorage), c);
             }
             catch (Exception e)
             {

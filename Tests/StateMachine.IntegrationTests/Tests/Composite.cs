@@ -180,6 +180,39 @@ namespace StateMachine.IntegrationTests.Tests
                         )
                         .AddFinalState()
                     )
+                
+                    .AddStateMachine("history", b => b
+                        .AddInitialCompositeState("state1", b => b
+                            .AddHistory()
+                            .AddInitialState("state2", b => b
+                                .AddTransition<SomeEvent>("state3")
+                            )
+                            .AddState("state3", b => b
+                                .AddTransition<OtherEvent>("state4")
+                            )
+                        )
+                        .AddState("state4", b => b
+                            .AddTransition<OtherEvent, History>()
+                        )
+                    )
+                
+                    .AddStateMachine("defaultHistory", b => b
+                        .AddInitialState("state1", b => b
+                            .AddTransition<SomeEvent, History>()
+                        )
+                        .AddCompositeState("state2", b => b
+                            .AddHistory(b => b
+                                .AddTransition("state5", b => b
+                                    .AddGuard(c => ((SomeEvent)c.ExecutionTrigger).InitializationSuccessful)
+                                )
+                            )
+                            .AddInitialState("state3", b => b
+                                .AddTransition<OtherEvent>("state4")
+                            )
+                            .AddState("state4")
+                            .AddState("state5")
+                        )
+                    )
                 )
                 ;
         }
@@ -382,6 +415,62 @@ namespace StateMachine.IntegrationTests.Tests
 
             Assert.AreEqual("state2", currentState?.CurrentStates.Root.Value);
             Assert.IsFalse(currentState?.CurrentStates.Root.Nodes.Any());
+        }
+        
+        [TestMethod]
+        public async Task History()
+        {
+            var status = EventStatus.Rejected;
+
+            if (StateMachineLocator.TryLocateStateMachine(new StateMachineId("history", "x"), out var sm))
+            {
+                await sm.SendAsync(new SomeEvent());
+                await sm.SendAsync(new OtherEvent());
+                await sm.SendAsync(new OtherEvent());
+
+                var response = (await sm.GetStatusAsync()).Response;
+                var currentStates = response.CurrentStates
+                    .GetAllNodes_ParentsFirst()
+                    .Select(n => n.Value)
+                    .ToList();
+                Assert.IsTrue(currentStates is ["state1", "state3"]);
+            }
+        }
+        
+        [TestMethod]
+        public async Task DefaultHistory()
+        {
+            var status = EventStatus.Rejected;
+
+            if (StateMachineLocator.TryLocateStateMachine(new StateMachineId("defaultHistory", "x"), out var sm))
+            {
+                await sm.SendAsync(new SomeEvent() { InitializationSuccessful = true });
+
+                var response = (await sm.GetStatusAsync()).Response;
+                var currentStates = response.CurrentStates
+                    .GetAllNodes_ParentsFirst()
+                    .Select(n => n.Value)
+                    .ToList();
+                Assert.IsTrue(currentStates is ["state2", "state5"]);
+            }
+        }
+        
+        [TestMethod]
+        public async Task NoHistory()
+        {
+            var status = EventStatus.Rejected;
+
+            if (StateMachineLocator.TryLocateStateMachine(new StateMachineId("defaultHistory", "x"), out var sm))
+            {
+                await sm.SendAsync(new SomeEvent() { InitializationSuccessful = false });
+
+                var response = (await sm.GetStatusAsync()).Response;
+                var currentStates = response.CurrentStates
+                    .GetAllNodes_ParentsFirst()
+                    .Select(n => n.Value)
+                    .ToList();
+                Assert.IsTrue(currentStates is ["state2", "state3"]);
+            }
         }
     }
 }

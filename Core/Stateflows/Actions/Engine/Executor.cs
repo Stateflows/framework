@@ -15,6 +15,9 @@ using Stateflows.Actions.Context.Interfaces;
 using Stateflows.Actions.Models;
 using Stateflows.Actions.Registration;
 using Stateflows.Activities;
+using Stateflows.Common.Utilities;
+using Stateflows.StateMachines;
+using Stateflows.StateMachines.Models;
 
 namespace Stateflows.Actions.Engine
 {
@@ -56,10 +59,18 @@ namespace Stateflows.Actions.Engine
             var inspector = await GetInspectorAsync();
             
             var scope = ServiceProvider.CreateScope();
+
+            var context = new ActionDelegateContext(StateflowsContext, eventHolder, scope.ServiceProvider);
+            try
+            {
+                inspector.AfterHydrate(context);
+            }
+            finally
+            {
+                context.Clear();
             
-            inspector.AfterHydrate(new ActionDelegateContext(StateflowsContext, eventHolder, scope.ServiceProvider));
-            
-            scope.Dispose();
+                scope.Dispose();
+            }
         }
 
         public async Task DehydrateAsync(EventHolder eventHolder)
@@ -68,9 +79,18 @@ namespace Stateflows.Actions.Engine
 
             var scope = ServiceProvider.CreateScope();
 
-            inspector.BeforeDehydrate(new ActionDelegateContext(StateflowsContext, eventHolder, scope.ServiceProvider));
+            var context = new ActionDelegateContext(StateflowsContext, eventHolder, scope.ServiceProvider);
             
-            scope.Dispose();
+            try
+            {
+                inspector.BeforeDehydrate(context);
+            }
+            finally
+            {
+                context.Clear();
+            
+                scope.Dispose();
+            }
         }
         
         public async Task<EventStatus> DoProcessAsync<TEvent>(EventHolder<TEvent> eventHolder)
@@ -79,7 +99,7 @@ namespace Stateflows.Actions.Engine
             
             var inspector = await GetInspectorAsync();
             
-            Trace.WriteLine($"⦗→s⦘ Action '{StateflowsContext.Id.Name}:{StateflowsContext.Id.Instance}': received event '{Event.GetName(eventHolder.PayloadType)}', trying to process it");
+            Trace.WriteLine($"⦗→s⦘ Action '{StateflowsContext.Id.Name}:{StateflowsContext.Id.Instance}': received event '{Event.GetName(eventHolder.PayloadType)}', processing");
 
             var eventContext = new EventContext<TEvent>(StateflowsContext, eventHolder, ServiceProvider);
             this.inspector.BeforeProcessEvent(eventContext);
@@ -89,41 +109,35 @@ namespace Stateflows.Actions.Engine
                 if (eventHolder is EventHolder<TokensInput> tokensInputHolder)
                 {
                     var context = new ActionDelegateContext(StateflowsContext, eventHolder, ServiceProvider, tokensInputHolder.Payload.Tokens);
-                    InputTokens.TokensHolder.Value = context.InputTokens.ToList();
-                    
-                    await InvokeActionAsync(context);
-
-                    InputTokens.TokensHolder.Value = null;
-                    
-                    Trace.WriteLine($"⦗→s⦘ Action '{StateflowsContext.Id.Name}:{StateflowsContext.Id.Instance}': executed");
-                    
-                    var tokensOutput = new TokensOutput()
+                    try
                     {
-                        Tokens = context.OutputTokens.ToList()
-                    };
-                        
-                    tokensInputHolder.Respond(tokensOutput.ToEventHolder());
+                        InputTokens.TokensHolder.Value = context.InputTokens.ToList();
                     
-                    result = EventStatus.Consumed;
+                        await InvokeActionAsync(context);
+
+                        InputTokens.TokensHolder.Value = null;
+                    
+                        Trace.WriteLine($"⦗→s⦘ Action '{StateflowsContext.Id.Name}:{StateflowsContext.Id.Instance}': executed");
+                    
+                        var tokensOutput = new TokensOutput()
+                        {
+                            Tokens = context.OutputTokens.ToList()
+                        };
+                        
+                        tokensInputHolder.Respond(tokensOutput.ToEventHolder());
+                    }
+                    finally
+                    {
+                        context.Clear();
+                    
+                        result = EventStatus.Consumed;
+                    }
                 }
                 else
                 if (eventHolder is EventHolder<SetContextOwner> setContextOwnerHolder)
                 {
-                    eventContext.RootContext.Context.ContextOwner = setContextOwnerHolder.Payload.ContextOwner;
-                    
-                    result = EventStatus.Consumed;
-                }
-                else
-                if (eventHolder is EventHolder<SetGlobalValues> setGlobalValuesHolder)
-                {
-                    IActionDelegateContext context = eventContext;
-                    var values = (ContextValuesCollection)context.Behavior.Values;
-                
-                    values.Values.Clear();
-                    foreach (var entry in setGlobalValuesHolder.Payload.Values)
-                    {
-                        values.Values[entry.Key] = entry.Value;
-                    }
+                    eventContext.RootContext.Context.ContextOwnerId = setContextOwnerHolder.Payload.ContextOwnerId;
+                    eventContext.RootContext.Context.ContextParentId = setContextOwnerHolder.Payload.ContextParentId;
                     
                     result = EventStatus.Consumed;
                 }
@@ -166,15 +180,22 @@ namespace Stateflows.Actions.Engine
                 else if (eventHolder is EventHolder<Initialize>)
                 {
                     var context = new ActionDelegateContext(StateflowsContext, eventHolder, ServiceProvider, new List<TokenHolder>() { eventHolder.Payload.ToTokenHolder() });
-                    InputTokens.TokensHolder.Value = context.InputTokens.ToList();
+                    try
+                    {
+                        InputTokens.TokensHolder.Value = context.InputTokens.ToList();
                     
-                    await InvokeActionAsync(context);
+                        await InvokeActionAsync(context);
 
-                    InputTokens.TokensHolder.Value = null;
+                        InputTokens.TokensHolder.Value = null;
                     
-                    Trace.WriteLine($"⦗→s⦘ Action '{StateflowsContext.Id.Name}:{StateflowsContext.Id.Instance}': executed");
+                        Trace.WriteLine($"⦗→s⦘ Action '{StateflowsContext.Id.Name}:{StateflowsContext.Id.Instance}': executed");
+                    }
+                    finally
+                    {
+                        context.Clear();
 
-                    result = EventStatus.Consumed;
+                        result = EventStatus.Consumed;
+                    }
                 }
                 else if (eventHolder is EventHolder<Reset> resetHolder)
                 {
@@ -184,38 +205,31 @@ namespace Stateflows.Actions.Engine
                 }
                 else if (eventHolder is EventHolder<Finalize>)
                 {
-                    FinalizeBehavior();
+                    FinalizeBehavior(eventContext);
                     
                     result = EventStatus.Consumed;
                 }
-                // else if (eventHolder is EventHolder<NotificationsRequest> notificationsRequestHolder)
-                // {
-                //     var pendingNotifications = await Hub.GetNotificationsAsync(
-                //         StateflowsContext.Id,
-                //         notificationsRequestHolder.Payload.NotificationNames,
-                //         DateTime.Now - notificationsRequestHolder.Payload.Period
-                //     );
-                //
-                //     notificationsRequestHolder.Payload.Respond(
-                //         new NotificationsResponse
-                //         {
-                //             Notifications = pendingNotifications
-                //         });
-                //     
-                //     result = EventStatus.Consumed;
-                // }
                 else
                 {
-                    var context = new ActionDelegateContext(StateflowsContext, eventHolder, ServiceProvider, new List<TokenHolder>() { eventHolder.Payload.ToTokenHolder() });
-                    InputTokens.TokensHolder.Value = context.InputTokens.ToList();
+                    var context = new ActionDelegateContext(StateflowsContext, eventHolder, ServiceProvider, [eventHolder.Payload.ToTokenHolder()]);
+                    try
+                    {
+                        InputTokens.TokensHolder.Value = context.InputTokens.ToList();
 
-                    await InvokeActionAsync(context);
+                        await InvokeActionAsync(context);
 
-                    InputTokens.TokensHolder.Value = null;
+                        InputTokens.TokensHolder.Value = null;
                     
-                    Trace.WriteLine($"⦗→s⦘ Action '{StateflowsContext.Id.Name}:{StateflowsContext.Id.Instance}': executed");
+                        Trace.WriteLine($"⦗→s⦘ Action '{StateflowsContext.Id.Name}:{StateflowsContext.Id.Instance}': executed");
 
-                    result = EventStatus.Consumed;
+                        HandleGuardRequest(eventHolder, context);
+                    }
+                    finally
+                    {
+                        context.Clear();
+
+                        result = EventStatus.Consumed;
+                    }
                 }
             }
             finally
@@ -228,9 +242,78 @@ namespace Stateflows.Actions.Engine
                 inspector.AfterProcessEvent(eventContext, result);
             }
             
-            Trace.WriteLine($"⦗→s⦘ Action '{StateflowsContext.Id.Name}:{StateflowsContext.Id.Instance}': processed event '{Event.GetName(eventHolder.PayloadType)}'");
+            Trace.WriteLine($"⦗→s⦘ Action '{StateflowsContext.Id.Name}:{StateflowsContext.Id.Instance}': processed event '{Event.GetName(eventHolder.PayloadType)}' with result '{result}'");
 
             return result;
+        }
+
+        private static void HandleGuardRequest<TEvent>(EventHolder<TEvent> eventHolder, ActionDelegateContext context)
+        {
+            var guardRequest = context.Headers.OfType<GuardRequest>().FirstOrDefault();
+            if (guardRequest != null)
+            {
+                var output = context.OutputTokens.OfType<TokenHolder<bool>>().FirstOrDefault()?.Payload ?? false;
+
+                if (output)
+                {
+                    var headers = context.Headers
+                        .Where(h => !(h is GuardRequest))
+                        .Append(
+                            new GuardResponse()
+                            {
+                                GuardIdentifier = guardRequest.GuardIdentifier
+                            }
+                        )
+                        .ToArray();
+
+                    context.Send(eventHolder.Payload, headers);
+                }
+                        
+                var behaviorId = context.RootContext.Context.ContextOwnerId.Value;
+                if (behaviorId.Type == BehaviorType.StateMachine)
+                {
+                    if (output)
+                    {
+                        switch (guardRequest.EdgeType)
+                        {
+                            case EdgeType.Transition:
+                                Trace.WriteLine(
+                                    $"⦗→s⦘ State Machine '{behaviorId.Name}:{behaviorId.Instance}': delegated guard passed transition from '{guardRequest.SourceName}' to '{guardRequest.TargetName}' triggered by event '{eventHolder.Name}', retransmitting event");
+                                break;
+
+                            case EdgeType.DefaultTransition:
+                                Trace.WriteLine(
+                                    $"⦗→s⦘ State Machine '{behaviorId.Name}:{behaviorId.Instance}': delegated guard passed default transition from '{guardRequest.SourceName}' to '{guardRequest.TargetName}', retransmitting event");
+                                break;
+
+                            case EdgeType.InternalTransition:
+                                Trace.WriteLine(
+                                    $"⦗→s⦘ State Machine '{behaviorId.Name}:{behaviorId.Instance}': delegated guard passed internal transition in '{guardRequest.SourceName}' triggered by event '{eventHolder.Name}', retransmitting event");
+                                break;
+                        }
+                    }
+                    else
+                    {
+                        switch (guardRequest.EdgeType)
+                        {
+                            case EdgeType.Transition:
+                                Trace.WriteLine(
+                                    $"⦗→s⦘ State Machine '{behaviorId.Name}:{behaviorId.Instance}': delegated guard stopped event '{eventHolder.Name}' from triggering transition from '{guardRequest.SourceName}' to '{guardRequest.TargetName}'");
+                                break;
+
+                            case EdgeType.DefaultTransition:
+                                Trace.WriteLine(
+                                    $"⦗→s⦘ State Machine '{behaviorId.Name}:{behaviorId.Instance}': delegated guard stopped default transition from '{guardRequest.SourceName}' to '{guardRequest.TargetName}'");
+                                break;
+
+                            case EdgeType.InternalTransition:
+                                Trace.WriteLine(
+                                    $"⦗→s⦘ State Machine '{behaviorId.Name}:{behaviorId.Instance}': delegated guard stopped event '{eventHolder.Name}' from triggering internal transition in '{guardRequest.SourceName}'");
+                                break;
+                        }
+                    }
+                }
+            }
         }
 
         [DebuggerHidden]
@@ -256,9 +339,14 @@ namespace Stateflows.Actions.Engine
 
 
         [DebuggerHidden]
-        private void FinalizeBehavior()
+        private void FinalizeBehavior(ActionContext context)
         {
             StateflowsContext.Status = BehaviorStatus.Finalized;
+
+            if (context.Context.ContextParentId != null)
+            {
+                context.Send(new DoActionFinalized());
+            }
         }
 
         [DebuggerHidden]

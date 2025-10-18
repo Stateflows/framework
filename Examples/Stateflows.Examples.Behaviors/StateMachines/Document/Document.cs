@@ -1,36 +1,38 @@
 using Stateflows.Common;
+using Stateflows.Examples.Behaviors.Activities.Invoicing;
 using Stateflows.Examples.Behaviors.StateMachines.Document.Effects;
 using Stateflows.Examples.Behaviors.StateMachines.Document.Guards;
 using Stateflows.Examples.Behaviors.StateMachines.Document.States;
 using Stateflows.Examples.Common.Events;
-using Stateflows.Extensions.MinimalAPIs;
 using Stateflows.StateMachines;
+using Stateflows.StateMachines.Attributes;
 
 namespace Stateflows.Examples.Behaviors.StateMachines.Document;
 
+[StateMachineBehavior]
 public class Document : IStateMachine
 {
-    public void Build(IStateMachineBuilder builder)
-        => builder
-            .AddInitialState<New>(b => b
-                .AddTransition<Review, Reviewed>(b => b
-                    .AddEffect<ReviewEffect>()
-                )
-                .AddTransition<AfterFiveMinutes, Rejected>()
+    public static void Build(IStateMachineBuilder builder) => builder
+        .AddInitialState<New>(b => b
+            .AddTransition<Review, ApprovalPending>(b => b
+                .AddEffect<ReviewEffect>()
             )
-            .AddState<Reviewed>(b => b
-                .AddTransition<Accept, Accepted>() 
-                .AddTransition<Reject, Rejected>()
+            .AddTransition<AfterOneMinute, ReportAutorejection, Rejected>()
+        )
+        .AddState<ApprovalPending>(b => b
+            .AddTransition<Approve, Approved>()
+            .AddTransition<Reject, ReportRejection, Rejected>()
+        )
+        .AddCompositeState<Approved>(b => b
+            .AddInitialState<GeneratingInvoice>(b => b
+                .AddDoActivity<Invoicing>()
+                .AddTransition<DoActivityFinalized, InvoiceGenerated>()
             )
-            .AddState<Accepted>(b => b
-                .AddTransition<Pay, PayGuard, Paid>() 
-                .AddTransition<Reject, Rejected>()
+            .AddState<InvoiceGenerated>(b => b
+                .AddTransition<PaymentBooked, VerifyPayment, Paid>()
             )
-            .AddState<Paid>(b => b
-                .AddEndpoints(b => b
-                    .AddGet("/invoices", () => { })
-                )
-            )
-            .AddState<Rejected>()
-        ;
+        )
+        .AddState<Paid>()
+        .AddState<Rejected>()
+    ;
 }

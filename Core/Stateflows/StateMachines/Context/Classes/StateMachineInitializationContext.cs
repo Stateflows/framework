@@ -28,8 +28,11 @@ namespace Stateflows.StateMachines.Context.Classes
             : base(context)
         { }
 
-        IStateMachineContext IStateMachineActionContext.StateMachine => StateMachine;
+        public IReadOnlyTree<IStateContext> CurrentStates => StateMachine.CurrentStates;
         
         public IBehaviorContext Behavior => StateMachine;
+        
+        public bool TryGetStateContext(string stateName, out IStateContext stateContext)
+            => StateMachine.TryGetStateContext(stateName, out stateContext);
     }
 }

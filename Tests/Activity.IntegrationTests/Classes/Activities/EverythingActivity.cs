@@ -9,7 +9,7 @@ namespace Activity.IntegrationTests.Classes.Activities
 {
     internal class EverythingActivity : IActivity
     {
-        public void Build(IActivityBuilder builder)
+        public static void Build(IActivityBuilder builder)
         {
             builder
                 .AddInitial(b => b

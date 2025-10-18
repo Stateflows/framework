@@ -3,9 +3,11 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.AspNetCore.Builder;
+using Microsoft.Net.Http.Headers;
 using Stateflows.Common;
 using Stateflows.Actions;
 using Stateflows.Common.Classes;
+using Stateflows.Common.Extensions;
 using Stateflows.Common.Interfaces;
 
 namespace Stateflows.Extensions.MinimalAPIs;
@@ -55,15 +57,39 @@ internal class ActionVisitor(IEndpointRouteBuilder routeBuilder, Interceptor int
                 async (
                     string instance,
                     IActionLocator locator,
-                    [FromQuery] bool implicitInitialization = false
+                    HttpContext httpContext,
+                    [FromQuery] bool implicitInitialization = false,
+                    [FromQuery] bool stream = false
                 ) =>
                 {
                     if (locator.TryLocateAction(new ActionId(actionName, instance), out var behavior))
                     {
-                        var result = await behavior.GetStatusAsync(implicitInitialization ? [] : [new NoImplicitInitialization()]);
-                        // workaround for return code 200 regardless behavior actual status
-                        result.Status = EventStatus.Consumed;
-                        return result.ToResult([], result.Response, HateoasLinks);
+                        if (stream)
+                        {
+                            httpContext.Response.Headers.Append(HeaderNames.ContentType, "text/event-stream");
+                            
+                            await using var watcher = await behavior.WatchAsync(
+                                [ Event<BehaviorInfo>.Name ],
+                                async eventHolder => await httpContext.WriteEventAsync(eventHolder)
+                            );
+
+                            while (!httpContext.RequestAborted.IsCancellationRequested)
+                            {
+                                await Task.Delay(1000);
+                            }
+
+                            return Results.Empty;
+                        }
+                        else
+                        {
+                            var result =
+                                await behavior.GetStatusAsync(implicitInitialization
+                                    ? []
+                                    : [new NoImplicitInitialization()]);
+                            // workaround for return code 200 regardless behavior actual status
+                            result.Status = EventStatus.Consumed;
+                            return result.ToResult([], result.Response, HateoasLinks);
+                        }
                     }
 
                     return Results.NotFound();
@@ -93,19 +119,45 @@ internal class ActionVisitor(IEndpointRouteBuilder routeBuilder, Interceptor int
                 route,
                 [method],
                 async (
-                    IActionLocator locator,
                     string instance,
+                    IActionLocator locator,
+                    HttpContext httpContext,
                     [FromQuery] string[] names,
-                    [FromQuery] TimeSpan? period
+                    [FromQuery] TimeSpan? period,
+                    [FromQuery] bool stream = false
                 ) =>
                 {
                     if (locator.TryLocateAction(new ActionId(actionName, instance), out var behavior))
                     {
-                        period ??= TimeSpan.FromSeconds(60);
-                        var notifications = (await behavior.GetNotificationsAsync(names, DateTime.Now - period)).ToArray();
-                        var behaviorInfo = (await behavior.GetStatusAsync([new NoImplicitInitialization()])).Response;
-                        var result = new SendResult(EventStatus.Consumed, new EventValidation(true));
-                        return result.ToResult(notifications, behaviorInfo, HateoasLinks);
+                        if (stream)
+                        {
+                            period ??= TimeSpan.FromSeconds(0);
+                            
+                            httpContext.Response.Headers.Append(HeaderNames.ContentType, "text/event-stream");
+                            
+                            await using var watcher = await behavior.WatchAsync(
+                                names,
+                                async eventHolder => await httpContext.WriteEventAsync(eventHolder),
+                                DateTime.Now - period.Value
+                            );
+
+                            while (!httpContext.RequestAborted.IsCancellationRequested)
+                            {
+                                await Task.Delay(1000);
+                            }
+
+                            return Results.Empty;
+                        }
+                        else
+                        {
+                            period ??= TimeSpan.FromSeconds(60);
+                            var notifications = (await behavior.GetNotificationsAsync(names, DateTime.Now - period))
+                                .ToArray();
+                            var behaviorInfo = (await behavior.GetStatusAsync([new NoImplicitInitialization()]))
+                                .Response;
+                            var result = new SendResult(EventStatus.Consumed, new EventValidation(true));
+                            return result.ToResult(notifications, behaviorInfo, HateoasLinks);
+                        }
                     }
                     return Results.NotFound();
                 })
@@ -204,12 +256,15 @@ internal class ActionVisitor(IEndpointRouteBuilder routeBuilder, Interceptor int
 
     public override Task ActionTypeAddedAsync<TAction>(string actionName, int actionVersion)
     {
-        if (typeof(IActionEndpoints).IsAssignableFrom(typeof(TAction)))
+        var actionType = typeof(TAction);
+        if (typeof(IActionEndpoints).IsAssignableFrom(actionType))
         {
             var endpointsBuilder = new EndpointsBuilder(routeBuilder, this, interceptor, new ActionClass(actionName));
             
-            var action = (IActionEndpoints)StateflowsActivator.CreateUninitializedInstance<TAction>();
-            action.RegisterEndpoints(endpointsBuilder);
+            actionType.CallStaticMethod(nameof(IActionEndpoints.RegisterEndpoints), [ typeof(IEndpointsBuilder) ], [ endpointsBuilder ]);
+            
+            // var action = (IActionEndpoints)StateflowsActivator.CreateUninitializedInstance<TAction>();
+            // action.RegisterEndpoints(endpointsBuilder);
         }
         
         return Task.CompletedTask;

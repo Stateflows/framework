@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Reflection;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using Stateflows.Actions.Registration;
 
 namespace Stateflows.Actions
@@ -21,11 +22,11 @@ namespace Stateflows.Actions
             where TInterceptor : class, IActionInterceptor;
         IActionsBuilder AddInterceptor(ActionInterceptorFactoryAsync interceptorFactoryAsync);
         IActionsBuilder AddInterceptor(ActionInterceptorFactory interceptorFactory)
-            => AddInterceptor(async serviceProvider => interceptorFactory(serviceProvider));
+            => AddInterceptor(serviceProvider => Task.FromResult(interceptorFactory(serviceProvider)));
         IActionsBuilder AddExceptionHandler<TExceptionHandler>()
             where TExceptionHandler : class, IActionExceptionHandler;
         IActionsBuilder AddExceptionHandler(ActionExceptionHandlerFactoryAsync exceptionHandlerFactoryAsync);
         IActionsBuilder AddExceptionHandler(ActionExceptionHandlerFactory exceptionHandlerFactory)
-            => AddExceptionHandler(async serviceProvider => exceptionHandlerFactory(serviceProvider));
+            => AddExceptionHandler(serviceProvider => Task.FromResult(exceptionHandlerFactory(serviceProvider)));
     }
 }

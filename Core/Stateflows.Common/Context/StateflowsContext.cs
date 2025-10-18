@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Linq;
 using System.Collections.Generic;
-using Newtonsoft.Json;
+using System.Text.Json.Serialization;
 
 namespace Stateflows.Common.Context
 {
@@ -22,10 +22,10 @@ namespace Stateflows.Common.Context
 
         public int Version { get; set; } = 0;
 
-        [JsonIgnore]
+        [Newtonsoft.Json.JsonIgnore]
         public bool Deleted { get; set; }
 
-        [JsonIgnore]
+        [Newtonsoft.Json.JsonIgnore]
         public bool Stored { get; set; }
 
         public BehaviorStatus Status { get; set; } = BehaviorStatus.Unknown;
@@ -42,7 +42,7 @@ namespace Stateflows.Common.Context
         public Dictionary<Guid, TimeEvent> PendingTimeEvents { get; set; } = new Dictionary<Guid, TimeEvent>();
 
         public bool ShouldSerializePendingStartupEvents()
-            => PendingStartupEvents.Any();
+            => PendingStartupEvents.Count != 0;
 
         public Dictionary<Guid, Startup> PendingStartupEvents { get; set; } = new Dictionary<Guid, Startup>();
 
@@ -156,15 +156,20 @@ namespace Stateflows.Common.Context
         }
 
         public bool ShouldSerializeValues()
-            => Values.Any();
+            => Values.Count != 0;
 
-        public Dictionary<string, object> Values { get; } = new Dictionary<string, object>();
+        public Dictionary<string, object> Values { get; } = [];
 
         public bool ShouldSerializeGlobalValues()
-            => GlobalValues.Any();
+            => GlobalValues.Count != 0;
 
-        public Dictionary<string, string> GlobalValues { get; } = new Dictionary<string, string>();
+        public Dictionary<string, string> GlobalValues { get; } = [];
+
+        public BehaviorId? ContextOwnerId { get; set; } = null;
+        public BehaviorId? ContextParentId { get; set; } = null;
         
-        public BehaviorId ContextOwner { get; set; }
+        [Newtonsoft.Json.JsonIgnore]
+        [JsonIgnore]
+        public Dictionary<string, object> RuntimeMetadata { get; } = [];
     }
 }

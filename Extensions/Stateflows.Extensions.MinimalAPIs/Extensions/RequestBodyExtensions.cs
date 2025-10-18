@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Routing;
 using Stateflows.Activities;
 using Stateflows.Common;
 using Stateflows.Common.Classes;
+using Stateflows.Extensions.MinimalAPIs.Headers;
 using Stateflows.StateMachines;
 
 namespace Stateflows.Extensions.MinimalAPIs;
@@ -82,7 +83,7 @@ internal static class RequestBodyExtensions
                         
                         return locator.TryLocateBehavior(new BehaviorId(behaviorType, behaviorName, instance),
                             out var behavior)
-                            ? await payload.SendEndpointAsync(StateflowsActivator.CreateUninitializedInstance<TEvent>(), behavior, implicitInitialization, customHateoasLinks)
+                            ? await payload.SendEndpointAsync(StateflowsActivator.CreateUninitializedInstance<TEvent>(), behavior, implicitInitialization, customHateoasLinks, context)
                             : Results.NotFound();
                     }
                 )
@@ -107,7 +108,7 @@ internal static class RequestBodyExtensions
 
                         return locator.TryLocateBehavior(new BehaviorId(behaviorType, behaviorName, instance),
                             out var behavior)
-                            ? await payload.SendEndpointAsync(payload.Event, behavior, implicitInitialization, customHateoasLinks)
+                            ? await payload.SendEndpointAsync(payload.Event, behavior, implicitInitialization, customHateoasLinks, context)
                             : Results.NotFound();
                     }
                 );
@@ -162,7 +163,7 @@ internal static class RequestBodyExtensions
                         }
 
                         return locator.TryLocateBehavior(new BehaviorId(behaviorType, behaviorName, instance), out var behavior)
-                            ? await payload.RequestEndpointAsync<TRequest, TResponse>(StateflowsActivator.CreateUninitializedInstance<TRequest>(), behavior, implicitInitialization, customHateoasLinks)
+                            ? await payload.RequestEndpointAsync<TRequest, TResponse>(StateflowsActivator.CreateUninitializedInstance<TRequest>(), behavior, implicitInitialization, customHateoasLinks, context)
                             : Results.NotFound();
                     }
                 )
@@ -185,7 +186,7 @@ internal static class RequestBodyExtensions
                         }
 
                         return locator.TryLocateBehavior(new BehaviorId(behaviorType, behaviorName, instance), out var behavior)
-                            ? await payload.RequestEndpointAsync<TRequest, TResponse>(payload.Event, behavior, implicitInitialization, customHateoasLinks)
+                            ? await payload.RequestEndpointAsync<TRequest, TResponse>(payload.Event, behavior, implicitInitialization, customHateoasLinks, context)
                             : Results.NotFound();
                     }
                 );
@@ -210,46 +211,50 @@ internal static class RequestBodyExtensions
     }
     
     private static async Task<IResult?> SendEndpointAsync<TEvent>(this RequestBody payload, TEvent @event, IBehavior behavior,
-        bool implicitInitialization, Dictionary<string, List<(HateoasLink, BehaviorStatus[])>> customHateoasLinks)
+        bool implicitInitialization, Dictionary<string, List<(HateoasLink, BehaviorStatus[])>> customHateoasLinks, HttpContext context)
     {
         var lastNotificationsCheck = DateTime.Now;
         
+        List<EventHeader> headers = implicitInitialization ? [] : [new NoImplicitInitialization()];
+        headers.Add(new HttpContextHeader { Context = context });
         var result = EqualityComparer<TEvent>.Default.Equals(@event, default)
             ? new SendResult(
                 EventStatus.Invalid,
                 new EventValidation(false, [ new ValidationResult("Event not provided") ])
             )
-            : await behavior.SendAsync(@event, implicitInitialization ? [] : [new NoImplicitInitialization()]);
+            : await behavior.SendAsync(@event, headers);
         
-        var notifications = result.Status != EventStatus.Invalid
+        var notifications = result.Status != EventStatus.Invalid && (payload.RequestedNotifications?.Any() ?? false)
             ? (await behavior.GetNotificationsAsync(payload.RequestedNotifications, lastNotificationsCheck)).ToArray()
             : [];
         
         var behaviorInfo = await behavior.GetBehaviorInfo();
-        
+
         return result.ToResult(notifications, behaviorInfo, customHateoasLinks);
     }
     
     private static async Task<IResult> RequestEndpointAsync<TRequest, TResponse>(this RequestBody payload, TRequest request, IBehavior behavior,
-        bool implicitInitialization, Dictionary<string, List<(HateoasLink, BehaviorStatus[])>> customHateoasLinks)
+        bool implicitInitialization, Dictionary<string, List<(HateoasLink, BehaviorStatus[])>> customHateoasLinks, HttpContext context)
         where TRequest : IRequest<TResponse>
     {
         var lastNotificationsCheck = DateTime.Now;
-        
+
+        List<EventHeader> headers = implicitInitialization ? [] : [new NoImplicitInitialization()];
+        headers.Add(new HttpContextHeader { Context = context });
         var result = EqualityComparer<TRequest>.Default.Equals(request, default)
             ? new RequestResult<TResponse>(
                 new EventHolder<TRequest>(),
                 EventStatus.Invalid,
                 new EventValidation(false, [ new ValidationResult("Event not provided") ])
             )
-            : await behavior.RequestAsync(request, implicitInitialization ? [] : [new NoImplicitInitialization()]);
+            : await behavior.RequestAsync(request, headers);
         
-        var notifications = result.Status != EventStatus.Invalid
+        var notifications = result.Status != EventStatus.Invalid && (payload.RequestedNotifications?.Any() ?? false)
             ? (await behavior.GetNotificationsAsync(payload.RequestedNotifications, lastNotificationsCheck)).ToArray()
             : [];
         
         var behaviorInfo = await behavior.GetBehaviorInfo();
-        
+
         return result.ToResult(notifications, behaviorInfo, customHateoasLinks);
     }
 }

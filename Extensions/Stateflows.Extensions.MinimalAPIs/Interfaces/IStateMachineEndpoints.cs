@@ -4,5 +4,5 @@ namespace Stateflows.StateMachines;
 
 public interface IStateMachineEndpoints : IStateMachine
 {
-    void RegisterEndpoints(IEndpointsBuilder endpointsBuilder);
+    static abstract void RegisterEndpoints(IEndpointsBuilder endpointsBuilder);
 }

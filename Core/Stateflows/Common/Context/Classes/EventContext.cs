@@ -18,7 +18,7 @@ namespace Stateflows.Common.Context.Classes
 
         public TEvent Event { get; }
         public Guid EventId { get; }
-        public IEnumerable<EventHeader> Headers { get; }
+        public List<EventHeader> Headers { get; }
         public object ExecutionTrigger => Event;
         public Guid ExecutionTriggerId => EventId; 
     }

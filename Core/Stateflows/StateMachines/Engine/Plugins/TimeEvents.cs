@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Linq;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using Stateflows.Common;
 using Stateflows.StateMachines.Models;
 using Stateflows.StateMachines.Context.Classes;
@@ -10,11 +11,11 @@ namespace Stateflows.StateMachines.Engine
 {
     internal class TimeEvents : StateMachinePlugin, IEqualityComparer<Edge>
     {
-        private readonly List<Vertex> EnteredStates = new List<Vertex>();
+        private readonly List<Vertex> EnteredStates = [];
 
-        private readonly List<Guid> TimeEventIdsToClear = new List<Guid>();
+        private readonly List<Guid> TimeEventIdsToClear = [];
 
-        private readonly List<Guid> StartupEventIdsToClear = new List<Guid>();
+        private readonly List<Guid> StartupEventIdsToClear = [];
 
         private Edge ConsumedInTransition { get; set; }
 

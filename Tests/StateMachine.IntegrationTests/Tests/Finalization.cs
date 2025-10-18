@@ -1,5 +1,5 @@
 using Stateflows.Common;
-using Stateflows.StateMachines;
+using StateMachine.IntegrationTests.Classes.Events;
 using StateMachine.IntegrationTests.Utils;
 
 namespace StateMachine.IntegrationTests.Tests
@@ -37,26 +37,69 @@ namespace StateMachine.IntegrationTests.Tests
                         )
                         .AddFinalState()
                     )
+                
+                    .AddStateMachine("forceFinalization", b => b
+                        .AddExecutionSequenceObserver()
+                        .AddInitialState("state1", b => b
+                            .AddTransition<SomeEvent>("state2")
+                        )
+                        .AddState("state2", b => b
+                            .AddOnEntry(_ => Task.Delay(1000))
+                            .AddTransition<OtherEvent>("state3")
+                        )
+                        .AddState("state3")
+                    )
+                
+                    .AddStateMachine("noReinitialization", b => b
+                        .AddExecutionSequenceObserver()
+                        .AddInitialState("state1", b => b
+                            .AddTransition<SomeEvent>("state2")
+                        )
+                        .AddState("state2")
+                    )
                 )
                 ;
         }
 
-        //[TestMethod]
-        //public async Task NoFinalization()
-        //{
-        //    var status = EventStatus.Consumed;
-        //    string? currentState = "";
+        [TestMethod]
+        public async Task ForceFinalization()
+        {
+            var status1 = EventStatus.Undelivered;
+            var status2 = EventStatus.Undelivered;
+            var status3 = EventStatus.Undelivered;
+            var behaviorStatus = BehaviorStatus.Unknown;
+            string? currentState = "";
 
-        //    if (StateMachineLocator.TryLocateStateMachine(new StateMachineId("simple", "x"), out var sm))
-        //    {
-        //        status = (await sm.SendAsync(new SomeEvent())).Status;
+            if (StateMachineLocator.TryLocateStateMachine(new StateMachineId("forceFinalization", "x"), out var sm))
+            {
+                var task1 = Task.Run(async () =>
+                {
+                    status1 = (await sm.SendAsync(new SomeEvent())).Status;
+                });
+                
+                var task2 = Task.Run(async () =>
+                {
+                    await Task.Delay(100);
+                    status2 = (await sm.SendAsync(new OtherEvent())).Status;
+                });
+                
+                var task3 = Task.Run(async () => {
+                    await Task.Delay(200);
+                    status3 = (await sm.SendAsync(new Finalize())).Status;
+                });
+                
+                await Task.WhenAll(task1, task2, task3);
 
-        //        currentState = (await sm.GetStatusAsync()).Response?.StatesTree.Value;
-        //    }
+                var statusResponse = (await sm.GetStatusAsync()).Response;
+                currentState = statusResponse?.CurrentStates?.Value;
+                behaviorStatus = statusResponse?.BehaviorStatus ?? BehaviorStatus.Unknown;
+            }
 
-        //    Assert.AreEqual(EventStatus.NotConsumed, status);
-        //    Assert.AreNotEqual(FinalState.Name, currentState);
-        //}
+            Assert.AreEqual(EventStatus.Cancelled, status1);
+            Assert.AreEqual(EventStatus.NotConsumed, status2);
+            Assert.AreEqual(EventStatus.NotConsumed, status3);
+            Assert.AreEqual(BehaviorStatus.Finalized, behaviorStatus);
+        }
 
         [TestMethod]
         public async Task SimpleFinalization()
@@ -106,6 +149,36 @@ namespace StateMachine.IntegrationTests.Tests
             Assert.IsTrue(initialized);
             Assert.AreEqual(BehaviorStatus.Initialized, status);
             Assert.AreEqual("state1-final", currentState);
+        }
+
+        [TestMethod]
+        public async Task NoReinitialization()
+        {
+            EventStatus status1 = EventStatus.Undelivered;
+            EventStatus status2 = EventStatus.Undelivered;
+            EventStatus status3 = EventStatus.Undelivered;
+            var initialized = false;
+            var finalized = false;
+            string currentState = string.Empty;
+
+            if (StateMachineLocator.TryLocateStateMachine(new StateMachineId("noReinitialization", "x"), out var sm))
+            {
+                status1 = (await sm.SendAsync(new SomeEvent())).Status;
+
+                status2 = (await sm.FinalizeAsync()).Status;
+                
+                status3 = (await sm.SendAsync(new SomeEvent())).Status;
+
+                currentState = (await sm.GetStatusAsync()).Response.CurrentStates.Value;
+            }
+
+            ExecutionSequence.Verify(b => b
+                .StateMachineFinalize()
+            );
+            Assert.AreEqual(EventStatus.Consumed, status1);
+            Assert.AreEqual(EventStatus.Consumed, status2);
+            Assert.AreEqual(EventStatus.NotConsumed, status3);
+            Assert.AreEqual(null, currentState);
         }
     }
 }

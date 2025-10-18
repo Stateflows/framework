@@ -12,6 +12,7 @@ using Stateflows.Common.Classes;
 using Stateflows.Common.Registration.Builders;
 using Stateflows.Actions.Models;
 using Stateflows.Actions.Exceptions;
+using Stateflows.Common.Interfaces;
 
 namespace Stateflows.Actions.Registration
 {
@@ -101,10 +102,13 @@ namespace Stateflows.Actions.Registration
 
             ActionDelegateAsync actionDelegate = async context =>
             {
-                ActionsContextHolder.ActionContext.Value = context.Action;
-                ActionsContextHolder.BehaviorContext.Value = context.Action;
+                if (((IStateflowsContextProvider)context).Context.ContextOwnerId == null)
+                {
+                    ActionsContextHolder.ActionContext.Value = (IActionContext)context.Behavior;
+                }
+                ActionsContextHolder.BehaviorContext.Value = context.Behavior;
                 ActionsContextHolder.ExecutionContext.Value = context;
-                ContextValues.GlobalValuesHolder.Value = context.Action.Values;
+                ContextValues.GlobalValuesHolder.Value = context.Behavior.Values;
                 
                 try
                 {
@@ -114,11 +118,10 @@ namespace Stateflows.Actions.Registration
                         "action"
                     );
                     
-                    await instance.ExecuteAsync(CancellationToken.None);
+                    await instance.ExecuteAsync(context.CancellationToken);
                 }
                 finally
                 {
-                    ActionsContextHolder.ActionContext.Value = null;
                     ActionsContextHolder.ExecutionContext.Value = null;
                     ContextValues.GlobalValuesHolder.Value = null;
                 }
@@ -128,7 +131,7 @@ namespace Stateflows.Actions.Registration
             Func<IActionVisitor, Task> visitingAction = async v =>
             {
                 await v.ActionAddedAsync(actionName, version);
-                await (Task)method.Invoke(v, new object[] { actionName, version });
+                await (Task)method.Invoke(v, [actionName, version]);
             };
             
             var actionModel = new ActionModel()

@@ -1,16 +1,15 @@
 ﻿using System.Linq;
 using System.Collections.Generic;
 using Stateflows.Common;
-using Stateflows.Common.Context.Interfaces;
 using Stateflows.Activities.Engine;
 using Stateflows.Activities.Context.Interfaces;
+using Stateflows.Common.Utilities;
 
 namespace Stateflows.Activities.Context.Classes
 {
     internal class ActivityInitializationContext<TInitializationEvent> :
         ActivityInitializationContext,
-        IActivityInitializationContext<TInitializationEvent>,
-        IRootContext
+        IActivityInitializationContext<TInitializationEvent>
     {
         public ActivityInitializationContext(RootContext context, NodeScope nodeScope, EventHolder<TInitializationEvent> initializationEventHolder, List<TokenHolder> inputTokens)
             : base(context, nodeScope, inputTokens)
@@ -31,19 +30,20 @@ namespace Stateflows.Activities.Context.Classes
         public ActivityInitializationContext(RootContext context, NodeScope nodeScope, List<TokenHolder> inputTokens)
             : base(context, nodeScope)
         {
-            InputTokens = inputTokens ?? new List<TokenHolder>();
+            InputTokens = inputTokens ?? [];
         }
-
-        IActivityContext IActivityActionContext.Activity => Activity;
         
         IBehaviorContext IBehaviorActionContext.Behavior => Activity;
 
         public List<TokenHolder> InputTokens;
 
         public void Output<TToken>(TToken token)
-            => OutputRange(new TToken[] { token });
+            => OutputRange([ token ]);
 
         public void OutputRange<TToken>(IEnumerable<TToken> tokens)
             => InputTokens.AddRange(tokens.Select(token => token.ToTokenHolder()).ToArray());
+
+        public object LockHandle => Activity.LockHandle;
+        public IReadOnlyTree<INodeContext> ActiveNodes => Activity.ActiveNodes;
     }
 }

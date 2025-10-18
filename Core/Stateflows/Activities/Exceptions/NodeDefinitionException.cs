@@ -1,8 +1,5 @@
-﻿using System.Runtime.Serialization;
-
-namespace Stateflows.Activities.Exceptions
+﻿namespace Stateflows.Activities.Exceptions
 {
-#pragma warning disable S3925 // "ISerializable" should be implemented correctly
     public class NodeDefinitionException : ActivityDefinitionException
     {
         public NodeDefinitionException(string nodeName, string message, ActivityClass activityClass) : base(message, activityClass)
@@ -11,13 +8,5 @@ namespace Stateflows.Activities.Exceptions
         }
 
         public string NodeName { get; set; }
-
-        public override void GetObjectData(SerializationInfo info, StreamingContext context)
-        {
-            base.GetObjectData(info, context);
-
-            info.AddValue(NodeName, NodeName);
-        }
     }
-#pragma warning restore S3925 // "ISerializable" should be implemented correctly
 }

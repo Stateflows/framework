@@ -1,8 +1,5 @@
-﻿using System.Runtime.Serialization;
-
-namespace Stateflows.StateMachines.Exceptions
+﻿namespace Stateflows.StateMachines.Exceptions
 {
-#pragma warning disable S3925 // "ISerializable" should be implemented correctly
     internal class StateDefinitionException : StateMachineDefinitionException
     {
         public StateDefinitionException(string stateName, string message, StateMachineClass stateMachineClass) : base(message, stateMachineClass)
@@ -11,13 +8,5 @@ namespace Stateflows.StateMachines.Exceptions
         }
 
         public string StateName { get; set; }
-
-        public override void GetObjectData(SerializationInfo info, StreamingContext context)
-        {
-            base.GetObjectData(info, context);
-
-            info.AddValue(StateName, StateName);
-        }
     }
-#pragma warning restore S3925 // "ISerializable" should be implemented correctly
 }

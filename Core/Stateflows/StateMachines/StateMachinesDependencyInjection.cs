@@ -42,16 +42,25 @@ namespace Stateflows.StateMachines
                     Registers.TryGetValue(builder, out var register)
                    )
                 {
-                    register.AddObserver<Behaviors>();
+                    foreach (var graph in register.StateMachines.Values)
+                    {
+                        graph.Build();
+                    }
                 }
             }
         }
 
         [DebuggerHidden]
-        public static IStateflowsBuilder AddStateMachines(this IStateflowsBuilder stateflowsBuilder, StateMachinesBuildAction buildAction = null)
+        public static IStateflowsBuilder AddStateMachines(this IStateflowsBuilder stateflowsBuilder,
+            StateMachinesBuildAction buildAction = null)
+            => AddStateMachines(stateflowsBuilder, buildAction, false);
+
+        [DebuggerHidden]
+        internal static IStateflowsBuilder AddStateMachines(this IStateflowsBuilder stateflowsBuilder,
+            StateMachinesBuildAction buildAction, bool systemRegistrations)
         {
             var register = stateflowsBuilder.EnsureStateMachinesServices();
-            buildAction?.Invoke(new StateMachinesBuilder(register));
+            buildAction?.Invoke(new StateMachinesBuilder(register, systemRegistrations));
 
             return stateflowsBuilder;
         }
@@ -62,7 +71,7 @@ namespace Stateflows.StateMachines
             => stateflowsBuilder.AddDefaultInstance(new StateMachineClass(StateMachine<TStateMachine>.Name).BehaviorClass, initializationRequestFactoryAsync);
 
         [DebuggerHidden]
-        private static IStateMachinesRegister EnsureStateMachinesServices(this IStateflowsBuilder stateflowsBuilder)
+        internal static IStateMachinesRegister EnsureStateMachinesServices(this IStateflowsBuilder stateflowsBuilder)
         {
             lock (Registers)
             {
@@ -74,8 +83,8 @@ namespace Stateflows.StateMachines
                     stateflowsBuilder
                         .EnsureStateflowServices()
                         .ServiceCollection
+                        .AddScoped<IStateMachinePlugin, Behaviors>()
                         .AddScoped<IStateMachinePlugin, TimeEvents>()
-                        // .AddScoped<IStateMachinePlugin, Behaviors>()
                         .AddScoped<IStateMachinePlugin, ContextCleanup>()
                         .AddScoped<IStateMachinePlugin, Notifications>()
                         .AddScoped<IStateMachinePlugin, Engine.Exceptions>()
@@ -93,28 +102,30 @@ namespace Stateflows.StateMachines
                         .AddSingleton<IStateMachineEventHandler, UnsubscriptionHandler>()
                         .AddSingleton<IStateMachineEventHandler, StartRelayHandler>()
                         .AddSingleton<IStateMachineEventHandler, StopRelayHandler>()
+                        .AddSingleton<IStateMachineEventHandler, SetGlobalValuesHandler>()
+                        .AddSingleton<IStateMachineEventHandler, SetContextOwnerHandler>()
                         .AddSingleton<IStateMachineEventHandler, ContextValuesRequestHandler>()
-                        .AddTransient(provider =>
+                        .AddTransient(_ =>
                             StateMachinesContextHolder.StateMachineContext.Value ??
                             throw new InvalidOperationException(
                                 $"No service for type '{typeof(IStateMachineContext).FullName}' is available in this context.")
                         )
-                        .AddTransient(provider =>
+                        .AddTransient(_ =>
                             StateMachinesContextHolder.StateContext.Value ??
                             throw new InvalidOperationException(
                                 $"No service for type '{typeof(IStateContext).FullName}' is available in this context.")
                         )
-                        .AddTransient(provider =>
+                        .AddTransient(_ =>
                             StateMachinesContextHolder.TransitionContext.Value ??
                             throw new InvalidOperationException(
                                 $"No service for type '{typeof(ITransitionContext).FullName}' is available in this context.")
                         )
-                        .AddTransient(provider =>
+                        .AddTransient(_ =>
                             StateMachinesContextHolder.ExecutionContext.Value ??
                             throw new InvalidOperationException(
                                 $"No service for type '{typeof(IExecutionContext).FullName}' is available in this context.")
                         )
-                        .AddTransient(provider =>
+                        .AddTransient(_ =>
                             StateMachinesContextHolder.Inspection.Value ??
                             throw new InvalidOperationException(
                                 $"No service for type '{typeof(IStateMachineInspection).FullName}' is available in this context.")

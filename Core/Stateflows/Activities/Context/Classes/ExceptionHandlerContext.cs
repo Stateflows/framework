@@ -9,9 +9,7 @@ namespace Stateflows.Activities.Context.Classes
     internal class ExceptionHandlerContext<TException> : ActionContext, IExceptionHandlerContext<TException>
         where TException : Exception
     {
-        IActivityContext IActivityActionContext.Activity => Activity;
-
-        public TException exception = null;
+        private TException exception = null;
         public TException Exception
         {
             get

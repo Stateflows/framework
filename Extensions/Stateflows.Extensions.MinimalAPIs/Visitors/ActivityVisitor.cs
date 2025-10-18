@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.AspNetCore.Builder;
+using Microsoft.Net.Http.Headers;
 using Stateflows.Common;
 using Stateflows.Common.Classes;
 using Stateflows.Common.Extensions;
@@ -67,14 +68,33 @@ internal class ActivityVisitor(
         return Task.CompletedTask;
     }
 
+    // private static void RegisterEndpoints<TEndpointsOwner>(EndpointsBuilder endpointsBuilder)
+    // {
+    //     var activityType = typeof(TEndpointsOwner);
+    //     var staticRegister = activityType.GetMethod(
+    //         nameof(IActivityEndpoints.RegisterEndpoints),
+    //         BindingFlags.Public | BindingFlags.Static,
+    //         binder: null,
+    //         types: [ typeof(EndpointsBuilder) ],
+    //         modifiers: null
+    //     );
+    //
+    //     staticRegister.Invoke(null, [ endpointsBuilder ]);
+    // }
+
     public override Task ActivityTypeAddedAsync<TActivity>(string activityName, int activityVersion)
     {
-        if (typeof(IActivityEndpoints).IsAssignableFrom(typeof(TActivity)))
+        var activityType = typeof(TActivity);
+        if (typeof(IActivityEndpoints).IsAssignableFrom(activityType))
         {
             var endpointsBuilder = new EndpointsBuilder(routeBuilder, this, interceptor, new ActivityClass(activityName));
             
-            var activity = (IActivityEndpoints)StateflowsActivator.CreateUninitializedInstance<TActivity>();
-            activity.RegisterEndpoints(endpointsBuilder);
+            activityType.CallStaticMethod(nameof(IActivityEndpoints.RegisterEndpoints), [ typeof(IEndpointsBuilder) ], [ endpointsBuilder ]);
+
+            // RegisterEndpoints<TActivity>(endpointsBuilder);
+            
+            // var activity = (IActivityEndpoints)StateflowsActivator.CreateUninitializedInstance<TActivity>();
+            // activity.RegisterEndpoints(endpointsBuilder);
         }
         
         return Task.CompletedTask;
@@ -177,15 +197,39 @@ internal class ActivityVisitor(
                 async (
                     string instance,
                     IActivityLocator locator,
-                    [FromQuery] bool implicitInitialization = false
+                    HttpContext httpContext,
+                    [FromQuery] bool implicitInitialization = false,
+                    [FromQuery] bool stream = false
                 ) =>
                 {
                     if (locator.TryLocateActivity(new ActivityId(activityName, instance), out var behavior))
                     {
-                        var result = await behavior.GetStatusAsync(implicitInitialization ? [] : [new NoImplicitInitialization()]);
-                        // workaround for return code 200 regardless behavior actual status
-                        result.Status = EventStatus.Consumed;
-                        return result.ToResult([], result.Response, HateoasLinks);
+                        if (stream)
+                        {
+                            httpContext.Response.Headers.Append(HeaderNames.ContentType, "text/event-stream");
+                            
+                            await using var watcher = await behavior.WatchAsync(
+                                [ Event<ActivityInfo>.Name ],
+                                async eventHolder => await httpContext.WriteEventAsync(eventHolder)
+                            );
+
+                            while (!httpContext.RequestAborted.IsCancellationRequested)
+                            {
+                                await Task.Delay(1000);
+                            }
+
+                            return Results.Empty;
+                        }
+                        else
+                        {
+                            var result =
+                                await behavior.GetStatusAsync(implicitInitialization
+                                    ? []
+                                    : [new NoImplicitInitialization()]);
+                            // workaround for return code 200 regardless behavior actual status
+                            result.Status = EventStatus.Consumed;
+                            return result.ToResult([], result.Response, HateoasLinks);
+                        }
                     }
 
                     return Results.NotFound();
@@ -215,19 +259,46 @@ internal class ActivityVisitor(
                 route,
                 [method],
                 async (
-                    IActivityLocator locator,
                     string instance,
+                    IActivityLocator locator,
+                    HttpContext httpContext,
                     [FromQuery] string[] names,
-                    [FromQuery] TimeSpan? period
+                    [FromQuery] TimeSpan? period,
+                    [FromQuery] bool stream = false
                 ) =>
                 {
                     if (locator.TryLocateActivity(new ActivityId(activityName, instance), out var behavior))
                     {
-                        period ??= TimeSpan.FromSeconds(60);
-                        var notifications = (await behavior.GetNotificationsAsync(names, DateTime.Now - period)).ToArray();
-                        var behaviorInfo = (await behavior.GetStatusAsync([new NoImplicitInitialization()])).Response;
-                        var result = new SendResult(EventStatus.Consumed, new EventValidation(true));
-                        return result.ToResult(notifications, behaviorInfo, HateoasLinks);                    }
+                        if (stream)
+                        {
+                            period ??= TimeSpan.FromSeconds(0);
+                            
+                            httpContext.Response.Headers.Append(HeaderNames.ContentType, "text/event-stream");
+                            
+                            await using var watcher = await behavior.WatchAsync(
+                                names,
+                                async eventHolder => await httpContext.WriteEventAsync(eventHolder),
+                                DateTime.Now - period.Value
+                            );
+
+                            while (!httpContext.RequestAborted.IsCancellationRequested)
+                            {
+                                await Task.Delay(1000);
+                            }
+
+                            return Results.Empty;
+                        }
+                        else
+                        {
+                            period ??= TimeSpan.FromSeconds(60);
+                            var notifications = (await behavior.GetNotificationsAsync(names, DateTime.Now - period))
+                                .ToArray();
+                            var behaviorInfo = (await behavior.GetStatusAsync([new NoImplicitInitialization()]))
+                                .Response;
+                            var result = new SendResult(EventStatus.Consumed, new EventValidation(true));
+                            return result.ToResult(notifications, behaviorInfo, HateoasLinks);
+                        }
+                    }
 
                     return Results.NotFound();
                 }
@@ -344,16 +415,20 @@ internal class ActivityVisitor(
 
     public override Task NodeTypeAddedAsync<TNode>(string activityName, int activityVersion, string nodeName)
     {
-        if (typeof(IStructuredActivityNodeEndpoints).IsAssignableFrom(typeof(TNode)))
+        var nodeType = typeof(TNode);
+        if (typeof(IStructuredActivityNodeEndpoints).IsAssignableFrom(nodeType))
         {
             var behaviorClass = new ActivityClass(activityName);
             
             DependencyInjection.ActivityEndpointBuilders.Add(visitor =>
             {
-                var builder = new EndpointsBuilder(routeBuilder, visitor, interceptor, behaviorClass, nodeName);
+                var endpointsBuilder = new EndpointsBuilder(routeBuilder, visitor, interceptor, behaviorClass, nodeName);
                 
-                var node = (IStructuredActivityNodeEndpoints)StateflowsActivator.CreateUninitializedInstance<TNode>();
-                node.RegisterEndpoints(builder);
+                nodeType.CallStaticMethod(nameof(IStructuredActivityNodeEndpoints.RegisterEndpoints), [ typeof(IEndpointsBuilder) ], [ endpointsBuilder ]);
+                // RegisterEndpoints<TNode>(endpointsBuilder);
+                
+                // var node = (IStructuredActivityNodeEndpoints)StateflowsActivator.CreateUninitializedInstance<TNode>();
+                // node.RegisterEndpoints(endpointsBuilder);
             });
         }
 

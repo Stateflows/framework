@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Diagnostics;
 using System.Threading.Tasks;
-using Microsoft.Extensions.DependencyInjection;
 using Stateflows.Common;
 using Stateflows.Common.Models;
 using Stateflows.Common.Classes;
@@ -10,11 +9,11 @@ using Stateflows.Common.Registration.Builders;
 using Stateflows.Activities.Models;
 using Stateflows.Activities.Context.Classes;
 using Stateflows.Activities.Context.Interfaces;
-using Stateflows.Activities.Registration.Extensions;
 using Stateflows.Activities.Registration.Interfaces;
 using Stateflows.Activities.Registration.Interfaces.Base;
 using Stateflows.Activities.Registration.Interfaces.Internal;
 using Stateflows.Common.Registration;
+using Stateflows.Common.Utilities;
 
 namespace Stateflows.Activities.Registration.Builders
 {
@@ -73,8 +72,6 @@ namespace Stateflows.Activities.Registration.Builders
         public IActivityBuilder AddInitializer<TInitializationEvent>(Func<IActivityInitializationContext<TInitializationEvent>, Task<bool>> actionAsync)
         {
             actionAsync.ThrowIfNull(nameof(actionAsync));
-
-            actionAsync = actionAsync.AddActivityInvocationContext(Graph);
 
             var initializerName = typeof(TInitializationEvent).GetEventName();
             

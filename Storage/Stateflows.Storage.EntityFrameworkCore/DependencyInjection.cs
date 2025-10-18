@@ -38,6 +38,17 @@ namespace Stateflows
                     .AddTransient<IStateflowsNotificationsStorage, EntityFrameworkCoreNotificationsStorage>();
             }
 
+            if (storageKind.HasFlag(StorageKind.Values))
+            {
+                if (builder.ServiceCollection.IsServiceRegistered<IStateflowsValueStorage>())
+                {
+                    throw new StateflowsDefinitionException("Another Stateflows value storage already registered");
+                }
+
+                builder.ServiceCollection
+                    .AddTransient<IStateflowsValueStorage, EntityFrameworkCoreValueStorage>();
+            }
+
             builder.ServiceCollection
                 .AddDbContext<IStateflowsDbContext_v1, TDbContext>()
                 .AddHostedService<NotificationsCleaner<TDbContext>>();

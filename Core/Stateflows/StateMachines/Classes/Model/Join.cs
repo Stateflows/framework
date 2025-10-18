@@ -2,6 +2,6 @@
 {
     public sealed class Join : IVertex
     {
-        public const string Name = "Stateflows.StateMachines.Join";
+        public static string Name => State<Join>.Name;
     }
 }

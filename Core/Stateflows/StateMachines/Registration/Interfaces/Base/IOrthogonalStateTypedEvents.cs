@@ -6,14 +6,14 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
     public interface IOrthogonalStateTypedEvents<out TReturn> : ICompositeStateEvents<TReturn>
     {
         #region AddOnInitialize
-        /// <summary>
-        /// Adds multiple typed initialization handlers to the current orthogonal state.
-        /// </summary>
-        /// <typeparam name="TOrthogonalStateInitialization">The type of the state initialization handler.</typeparam>
-        [DebuggerHidden]
-        TReturn AddOnInitialize<TOrthogonalStateInitialization>()
-            where TOrthogonalStateInitialization : class, IOrthogonalStateInitialization
-            => AddOnInitialize(async c => await (await ((BaseContext)c).Context.Executor.GetStateAsync<TOrthogonalStateInitialization>(c)).OnInitializeAsync());
+        // /// <summary>
+        // /// Adds multiple typed initialization handlers to the current orthogonal state.
+        // /// </summary>
+        // /// <typeparam name="TOrthogonalStateInitialization">The type of the state initialization handler.</typeparam>
+        // [DebuggerHidden]
+        // TReturn AddOnInitialize<TOrthogonalStateInitialization>()
+        //     where TOrthogonalStateInitialization : class, IOrthogonalStateInitialization
+        //     => AddOnInitialize(async c => await (await ((BaseContext)c).Context.Executor.GetStateAsync<TOrthogonalStateInitialization>(c)).OnInitializeAsync());
 
         /// <summary>
         /// Adds multiple typed initialization handlers to the current orthogonal state.
@@ -85,14 +85,14 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         #endregion
 
         #region AddOnFinalize
-        /// <summary>
-        /// Adds multiple typed finalization handlers to the current orthogonal state.
-        /// </summary>
-        /// <typeparam name="TOrthogonalStateFinalization">The type of the state finalization handler.</typeparam>
-        [DebuggerHidden]
-        TReturn AddOnFinalize<TOrthogonalStateFinalization>()
-            where TOrthogonalStateFinalization : class, IOrthogonalStateFinalization
-            => AddOnFinalize(async c => await (await ((BaseContext)c).Context.Executor.GetStateAsync<TOrthogonalStateFinalization>(c)).OnFinalizeAsync());
+        // /// <summary>
+        // /// Adds multiple typed finalization handlers to the current orthogonal state.
+        // /// </summary>
+        // /// <typeparam name="TOrthogonalStateFinalization">The type of the state finalization handler.</typeparam>
+        // [DebuggerHidden]
+        // TReturn AddOnFinalize<TOrthogonalStateFinalization>()
+        //     where TOrthogonalStateFinalization : class, IOrthogonalStateFinalization
+        //     => AddOnFinalize(async c => await (await ((BaseContext)c).Context.Executor.GetStateAsync<TOrthogonalStateFinalization>(c)).OnFinalizeAsync());
 
         /// <summary>
         /// Adds multiple typed finalization handlers to the current orthogonal state.

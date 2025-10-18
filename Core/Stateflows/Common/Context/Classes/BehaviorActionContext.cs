@@ -15,6 +15,6 @@ namespace Stateflows.Common.Context.Classes
         // todo
         public object ExecutionTrigger { get; }
         public Guid ExecutionTriggerId { get; }
-        public IEnumerable<EventHeader> Headers { get; }
+        public List<EventHeader> Headers { get; }
     }
 }

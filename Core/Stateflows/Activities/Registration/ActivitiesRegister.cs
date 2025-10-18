@@ -57,6 +57,19 @@ namespace Stateflows.Activities.Registration
             return result;
         }
 
+        private static void RegisterActivity(Type activityType, ActivityBuilder activityBuilder)
+        {
+            var staticRegister = activityType.GetMethod(
+                nameof(IActivity.Build),
+                BindingFlags.Public | BindingFlags.Static,
+                binder: null,
+                types: [ typeof(ActivityBuilder) ],
+                modifiers: null
+            );
+
+            staticRegister.Invoke(null, [ activityBuilder ]);
+        }
+
         [DebuggerHidden]
         public void AddActivity(string activityName, int version, ReactiveActivityBuildAction buildAction)
         {
@@ -93,26 +106,27 @@ namespace Stateflows.Activities.Registration
                 throw new ActivityDefinitionException($"Activity '{activityName}' with version '{version}' is already registered", new ActivityClass(activityName));
             }
 
-            var activity = StateflowsActivator.CreateUninitializedInstance(activityType) as IActivity;
+            // var activity = StateflowsActivator.CreateUninitializedInstance(activityType) as IActivity;
 
-            var builder = new ActivityBuilder(activityName, version, null, stateflowsBuilder);
-            builder.Graph.ActivityType = activityType;
-            activity.Build(builder);
-            builder.Graph.Build();
+            var activityBuilder = new ActivityBuilder(activityName, version, null, stateflowsBuilder);
+            activityBuilder.Graph.ActivityType = activityType;
+            RegisterActivity(activityType, activityBuilder);
+            // activity.Build(builder);
+            activityBuilder.Graph.Build();
 
             var method = ActivityTypeAddedAsyncMethod.MakeGenericMethod(activityType);
             
-            builder.Graph.VisitingTasks.AddRange(new Func<IActivityVisitor, Task>[]
+            activityBuilder.Graph.VisitingTasks.AddRange(new Func<IActivityVisitor, Task>[]
             {
                 v => v.ActivityAddedAsync(activityName, version),
                 v => (Task)method.Invoke(v, new object[] { activityName, version })
             });
 
-            Activities.Add(key, builder.Graph);
+            Activities.Add(key, activityBuilder.Graph);
 
             if (IsNewestVersion(activityName, version))
             {
-                Activities[currentKey] = builder.Graph;
+                Activities[currentKey] = activityBuilder.Graph;
             }
         }
 
@@ -125,6 +139,19 @@ namespace Stateflows.Activities.Registration
         {
             var tasks = Activities
                 .Where((item, index) => !item.Key.EndsWith(".current"))
+                .Select(item => item.Value)
+                .SelectMany(graph => graph.VisitingTasks);
+            
+            foreach (var task in tasks)
+            {
+                await task(visitor);
+            }
+        }
+
+        public async Task VisitActivitiesAsync(string activityName, int version, IActivityVisitor visitor)
+        {
+            var tasks = Activities
+                .Where(item => item.Key == $"{activityName}.{version}")
                 .Select(item => item.Value)
                 .SelectMany(graph => graph.VisitingTasks);
             

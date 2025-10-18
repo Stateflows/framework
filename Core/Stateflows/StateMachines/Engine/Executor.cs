@@ -3,6 +3,7 @@ using System.Linq;
 using System.Diagnostics;
 using System.Threading.Tasks;
 using System.Collections.Generic;
+using System.Reflection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.DependencyInjection;
 using Stateflows.Common;
@@ -10,6 +11,7 @@ using Stateflows.Common.Context;
 using Stateflows.Common.Classes;
 using Stateflows.Common.Interfaces;
 using Stateflows.Common.Exceptions;
+using Stateflows.Common.Utilities;
 using Stateflows.StateMachines.Models;
 using Stateflows.StateMachines.Context;
 using Stateflows.StateMachines.Extensions;
@@ -34,6 +36,7 @@ namespace Stateflows.StateMachines.Engine
 
         private EventStatus EventStatus;
         private bool IsEventStatusOverriden;
+        private readonly IStateflowsEventFilter eventFilter;
 
         public void OverrideEventStatus(EventStatus eventStatus)
         {
@@ -51,6 +54,8 @@ namespace Stateflows.StateMachines.Engine
             var logger = serviceProvider.GetRequiredService<ILogger<Executor>>();
             Inspector = new Inspector(this, logger);
             StateMachinesContextHolder.Inspection.Value = new StateMachineInspection(this, Inspector);
+
+            eventFilter = serviceProvider.GetRequiredService<IStateflowsEventFilter>();
         }
 
         public void Dispose()
@@ -107,10 +112,10 @@ namespace Stateflows.StateMachines.Engine
             => Inspector.BeforeDehydrate(new StateMachineActionContext(Context));
 
         public bool Initialized
-            => VerticesTree.HasValue;
+            => VerticesTree.HasValue || Context.Finalized;
 
         private bool Finalized
-            => VerticesTree.Value?.Type == VertexType.FinalState;
+            => VerticesTree.Value?.Type == VertexType.FinalState || Context.Finalized;
 
         public BehaviorStatus BehaviorStatus =>
             (Initialized, Finalized) switch
@@ -173,6 +178,8 @@ namespace Stateflows.StateMachines.Engine
 
             if (!Initialized) return false;
             
+            if (Finalized) return false;
+            
             foreach (var vertex in VerticesTree.GetAllNodes_ChildrenFirst().Select(node => node.Value))
             {
                 await DoExitAsync(vertex);
@@ -181,6 +188,7 @@ namespace Stateflows.StateMachines.Engine
             await DoFinalizeStateMachineAsync();
 
             Context.StatesTree.Root = null;
+            Context.Finalized = true;
             StateHasChanged = true;
 
             return true;
@@ -228,6 +236,7 @@ namespace Stateflows.StateMachines.Engine
             }
 
             await Task.WhenAll(vertex.Regions
+                .Where(region => VerticesTree.GetAllNodes_ParentsFirst().All(v => v.Value.ParentRegion != region))
                 .Where(region => region.InitialVertex != null)
                 .Select(region => DoInitializeCascadeAsync(region.InitialVertex))
             );
@@ -250,28 +259,33 @@ namespace Stateflows.StateMachines.Engine
             });
         }
 
-        public IEnumerable<string> GetExpectedEventNames()
-            => GetExpectedEvents()
+        public async Task<IEnumerable<string>> GetExpectedEventNamesAsync()
+            => (await GetExpectedEventsAsync())
                 .Where(type => !typeof(SystemEvent).IsAssignableFrom(type))
                 .Where(type => !typeof(Exception).IsAssignableFrom(type))
                 .Select(type => type.GetEventName())
                 .ToArray();
 
-        private IEnumerable<Type> GetExpectedEvents()
+        private Task<IEnumerable<Type>> GetExpectedEventsAsync()
         {
-            var currentStack = VerticesTree.GetAllNodes_FromTheTop().Select(node => node.Value).ToArray() ?? new Vertex[0];
+            var currentStack = VerticesTree.GetAllNodes_FromTheTop().Select(node => node.Value).ToArray();
 
-            return currentStack.Any()
-                ? currentStack
-                    .SelectMany(vertex => vertex.Edges.Values)
-                    .SelectMany(edge => edge.ActualTriggerTypes)
-                    .Distinct()
-                    .ToArray()
-                : BehaviorStatus == BehaviorStatus.NotInitialized
-                    ? Graph.InitializerTypes.Any()
+            return eventFilter.FilterTypesAsync(
+                BehaviorStatus switch
+                {
+                    BehaviorStatus.Initialized => currentStack
+                        .SelectMany(vertex => vertex.Edges.Values)
+                        .SelectMany(edge => edge.ActualTriggerTypes)
+                        .Distinct()
+                        .ToArray(),
+                    
+                    BehaviorStatus.NotInitialized => Graph.InitializerTypes.Any()
                         ? Graph.InitializerTypes.ToArray()
-                        : new[] { typeof(Initialize) }
-                    : Array.Empty<Type>();
+                        : [ typeof(Initialize) ],
+                    
+                    _ => []
+                }
+            );
         }
 
         [DebuggerHidden]
@@ -333,7 +347,7 @@ namespace Stateflows.StateMachines.Engine
         Task<EventStatus> IStateflowsExecutor.DoProcessAsync<TEvent>(EventHolder<TEvent> eventHolder)
             => DoProcessAsync(eventHolder);
 
-        [DebuggerHidden]
+        // [DebuggerHidden]
         private async Task<EventStatus> DoProcessAsync<TEvent>(EventHolder<TEvent> eventHolder)
         {
             Debug.Assert(Context != null, $"Context is not available. Is state machine '{Graph.Name}' hydrated?");
@@ -354,6 +368,22 @@ namespace Stateflows.StateMachines.Engine
 
                 foreach (var vertex in currentStack)
                 {
+                    if (
+                        vertex.BehaviorEventTypes.Contains(eventHolder.PayloadType) &&
+                        !eventHolder.Headers.Any(h => h is NoForwarding) &&
+                        !eventHolder.PayloadType.GetCustomAttributes<NoForwardingAttribute>().Any()
+                    )
+                    {
+                        var locator = ServiceProvider.GetRequiredService<IBehaviorLocator>();
+                        var behaviorId = vertex.GetBehaviorId(Context.Id);
+                        if (locator.TryLocateBehavior(behaviorId, out var behavior))
+                        {
+                            _ = behavior.SendAsync(eventHolder.Payload, eventHolder.Headers);
+
+                            return EventStatus.Forwarded;
+                        }
+                    }
+                    
                     var edges = vertex.OrderedEdges
                         .SelectMany(edge => edge.GetActualEdges())
                         .ToArray();
@@ -380,7 +410,6 @@ namespace Stateflows.StateMachines.Engine
 
                             lastActivatedEdge = edge;
                         }
-                        
                     }
                 }
 
@@ -424,7 +453,11 @@ namespace Stateflows.StateMachines.Engine
                             eventHolder.Payload
                         );
 
-                        await DoConsumeAsync<TEvent>(edge);
+                        var regionsToOmit = edge.Source.Type == VertexType.Fork
+                            ? edge.Source.Edges.Values.SelectMany(e => e.Target.GetParentRegions()).ToArray()
+                            : [];
+
+                        await DoConsumeAsync<TEvent>(edge, regionsToOmit);
                         
                         result = EventStatus.Consumed;
                     }
@@ -439,6 +472,12 @@ namespace Stateflows.StateMachines.Engine
             if (deferred)
             {
                 return EventStatus.Deferred;
+            }
+            
+            var guardDelegations = Context.EventHolder.Headers.OfType<GuardDelegation>();
+            if (guardDelegations.Any())
+            {
+                return EventStatus.Forwarded;
             }
             
             RebuildVerticesTree();
@@ -462,7 +501,7 @@ namespace Stateflows.StateMachines.Engine
 
                 var result = await edge.Guards.WhenAll(Context);
 
-                Inspector.AfterGuard(context, result);
+                Inspector.AfterTransitionGuard(context, result);
                 
                 return result;
             }
@@ -528,14 +567,14 @@ namespace Stateflows.StateMachines.Engine
                 : noImplicitInitialization
                     ? null
                     : Graph.DefaultInitializer;
-            
+
             if (initializer != null)
             {
                 BeginScope();
                 
                 var context = new StateMachineInitializationContext(Context);
                 Inspector.BeforeStateMachineInitialize(context, initializer == Graph.DefaultInitializer && eventHolder.Name != Event<Initialize>.Name);
-
+                
                 try
                 {
                     result = await initializer.WhenAll(Context)
@@ -603,6 +642,11 @@ namespace Stateflows.StateMachines.Engine
                 await Graph.Finalize.WhenAll(Context);
 
                 Inspector.AfterStateMachineFinalize(context);
+
+                if (Context.Context.ContextParentId != null)
+                {
+                    _ = Context.SendAsync(new SubmachineFinalized());
+                }
             }
             catch (Exception e)
             {
@@ -690,7 +734,7 @@ namespace Stateflows.StateMachines.Engine
             }
         }
         
-        [DebuggerHidden]
+        // [DebuggerHidden]
         private async Task DoEntryAsync(Vertex vertex)
         {
             StateActionContext context = null;
@@ -756,9 +800,10 @@ namespace Stateflows.StateMachines.Engine
             }
         }
 
-        [DebuggerHidden]
-        private async Task DoConsumeAsync<TEvent>(Edge edge)
+        // [DebuggerHidden]
+        private async Task DoConsumeAsync<TEvent>(Edge edge, Region[] regionsToOmit = null)
         {
+            regionsToOmit ??= [];
             var exitingVertices = new List<Vertex>();
             var enteringVertices = new List<Vertex>();
 
@@ -812,8 +857,20 @@ namespace Stateflows.StateMachines.Engine
 
                 // exit non-exited regions of exited orthogonal states
                 exitingVertices = exitingVertices.SelectMany(exitingVertex => exitingVertex.GetBranch().Reverse()).Distinct().ToList();
+                
+                // cleanup of non-active states
+                exitingVertices = exitingVertices.Where(exitingVertex => Context.StatesTree.TryFind(exitingVertex.Identifier, out var _)).ToList();
 
-                foreach (var exitingVertex in exitingVertices.Where(exitingVertex => Context.StatesTree.TryFind(exitingVertex.Identifier, out var _)))
+                foreach (var exitingVertex in exitingVertices.Where(exitingVertex => exitingVertex.ParentRegion?.HasHistory ?? false))
+                {
+                    if (Context.StatesTree.TryFind(exitingVertex.Identifier, out var node))
+                    {
+                        var stateValues = Context.GetStateValues(exitingVertex.ParentRegion.History.Name);
+                        stateValues.HistoryTree = node.Clone();
+                    }
+                }
+
+                foreach (var exitingVertex in exitingVertices)
                 {
                     await DoExitAsync(exitingVertex);
 
@@ -833,11 +890,11 @@ namespace Stateflows.StateMachines.Engine
             {
                 var enteringVertex = enteringVertices[i];
 
-                if (!Context.StatesTree.Contains(enteringVertex.Identifier))
+                if (!Context.StatesTree.Contains(enteringVertex.Identifier) && enteringVertex.Type != VertexType.History)
                 {
                     await DoEntryAsync(enteringVertex);
 
-                    if (enteringVertex.Regions.Any())
+                    if (enteringVertex.Regions.Any() && edge.Target.Type != VertexType.History)
                     {
                         await DoInitializeStateAsync(enteringVertex);
                     }
@@ -850,7 +907,7 @@ namespace Stateflows.StateMachines.Engine
                     var initializing = true;
                     foreach (var region in enteringVertex.Regions)
                     {
-                        if (region == enteredRegion)
+                        if (region == enteredRegion || VerticesTree.GetAllNodes_ParentsFirst().Any(v => v.Value.ParentRegion == region))
                         {
                             initializing = false;
                             continue;
@@ -865,7 +922,10 @@ namespace Stateflows.StateMachines.Engine
                         }
                         else
                         {
-                            regions.Add(region);
+                            if (!regionsToOmit.Contains(region))
+                            {
+                                regions.Add(region);
+                            }
                         }
                     }
                 }
@@ -882,17 +942,77 @@ namespace Stateflows.StateMachines.Engine
             {
                 var topVertex = enteringVertices.Last();
 
-                await DoInitializeCascadeAsync(topVertex, true);
-
-                if (topVertex.Type == VertexType.FinalState)
+                var handled = false;
+                if (topVertex.Type == VertexType.History)
                 {
-                    if (topVertex.ParentRegion is null)
+                    var historyValues = Context.GetStateValues(topVertex.Name);
+                    if (historyValues.HistoryTree != null)
                     {
-                        await DoFinalizeStateMachineAsync();
+                        var historyTree = historyValues.HistoryTree.Clone();
+                        var parentIdentifier = topVertex.HistoricalRegion.ParentVertex?.Identifier;
+                        if (parentIdentifier != null)
+                        {
+                            if (Context.StatesTree.TryFind(parentIdentifier, out var parent))
+                            {
+                                parent.Attach(historyTree);
+                            }
+                        }
+                        else
+                        {
+                            Context.StatesTree.Root = historyTree;
+                        }
+                        
+                        RebuildVerticesTree();
+
+                        var historyList = historyTree.GetAllNodes_ParentsFirst().Select(n => n.Value);
+                        foreach (var vertexName in historyList)
+                        {
+                            await DoEntryAsync(Graph.AllVertices[vertexName]);
+                        }
+
+                        handled = true;
+                        // await DoInitializeCascadeAsync(topVertex.HistoricalRegion.ParentVertex, true);
+
+                        // return;
                     }
                     else
                     {
-                        await DoFinalizeStateAsync(topVertex.ParentRegion.ParentVertex);
+                        // default history
+                        if (topVertex.Edges.Any())
+                        {
+                            Context.SetEvent(new Completion().ToEventHolder());
+                            
+                            if (await DoGuardAsync<Completion>(topVertex.Edges.Values.First()))
+                            {
+                                await DoConsumeAsync<Completion>(topVertex.Edges.Values.First());
+                            
+                                handled = true;
+                                // Context.ClearEvent();
+                                //
+                                // return;
+                            }
+                            
+                            Context.ClearEvent();
+                        }
+                    }
+                    
+                    topVertex = topVertex.HistoricalRegion.ParentVertex;
+                }
+                
+                if (!handled)
+                {
+                    await DoInitializeCascadeAsync(topVertex, true);
+
+                    if (topVertex.Type == VertexType.FinalState)
+                    {
+                        if (topVertex.ParentRegion is null)
+                        {
+                            await DoFinalizeStateMachineAsync();
+                        }
+                        else
+                        {
+                            await DoFinalizeStateAsync(topVertex.ParentRegion.ParentVertex);
+                        }
                     }
                 }
             }
@@ -1034,11 +1154,6 @@ namespace Stateflows.StateMachines.Engine
             return result == EventStatus.Consumed;
         }
 
-        public async Task<IStateMachine> GetStateMachineAsync(Type stateMachineType)
-        {
-            return await StateflowsActivator.CreateModelElementInstanceAsync(ServiceProvider, stateMachineType, "state machine") as IStateMachine;
-        }
-
         [DebuggerHidden]
         public Task<TDefaultInitializer> GetDefaultInitializerAsync<TDefaultInitializer>(IStateMachineInitializationContext context)
             where TDefaultInitializer : class, IDefaultInitializer
@@ -1051,8 +1166,11 @@ namespace Stateflows.StateMachines.Engine
 
             StateMachinesContextHolder.StateContext.Value = null;
             StateMachinesContextHolder.TransitionContext.Value = null;
-            StateMachinesContextHolder.StateMachineContext.Value = context.StateMachine;
-            StateMachinesContextHolder.BehaviorContext.Value = context.StateMachine;
+            StateMachinesContextHolder.BehaviorContext.Value = context.Behavior;
+            if (((IStateflowsContextProvider)context).Context.ContextOwnerId == null)
+            {
+                StateMachinesContextHolder.StateMachineContext.Value = ((BaseContext)context).StateMachine;
+            }
             StateMachinesContextHolder.ExecutionContext.Value = context;
 
             return StateflowsActivator.CreateModelElementInstanceAsync<TDefaultInitializer>(ServiceProvider, "default initializer");
@@ -1070,8 +1188,11 @@ namespace Stateflows.StateMachines.Engine
 
             StateMachinesContextHolder.StateContext.Value = null;
             StateMachinesContextHolder.TransitionContext.Value = null;
-            StateMachinesContextHolder.StateMachineContext.Value = context.StateMachine;
-            StateMachinesContextHolder.BehaviorContext.Value = context.StateMachine;
+            StateMachinesContextHolder.BehaviorContext.Value = context.Behavior;
+            if (((IStateflowsContextProvider)context).Context.ContextOwnerId == null)
+            {
+                StateMachinesContextHolder.StateMachineContext.Value = ((BaseContext)context).StateMachine;
+            }
             StateMachinesContextHolder.ExecutionContext.Value = context;
 
             return StateflowsActivator.CreateModelElementInstanceAsync<TInitializer>(ServiceProvider, "initializer");
@@ -1089,8 +1210,11 @@ namespace Stateflows.StateMachines.Engine
 
             StateMachinesContextHolder.StateContext.Value = null;
             StateMachinesContextHolder.TransitionContext.Value = null;
-            StateMachinesContextHolder.StateMachineContext.Value = context.StateMachine;
-            StateMachinesContextHolder.BehaviorContext.Value = context.StateMachine;
+            StateMachinesContextHolder.BehaviorContext.Value = context.Behavior;
+            if (((IStateflowsContextProvider)context).Context.ContextOwnerId == null)
+            {
+                StateMachinesContextHolder.StateMachineContext.Value = ((BaseContext)context).StateMachine;
+            }
             StateMachinesContextHolder.ExecutionContext.Value = context;
 
             return StateflowsActivator.CreateModelElementInstanceAsync<TFinalizer>(ServiceProvider, "finalizer");
@@ -1108,8 +1232,11 @@ namespace Stateflows.StateMachines.Engine
 
             StateMachinesContextHolder.StateContext.Value = context.State;
             StateMachinesContextHolder.TransitionContext.Value = null;
-            StateMachinesContextHolder.StateMachineContext.Value = context.StateMachine;
-            StateMachinesContextHolder.BehaviorContext.Value = context.StateMachine;
+            StateMachinesContextHolder.BehaviorContext.Value = context.Behavior;
+            if (((IStateflowsContextProvider)context).Context.ContextOwnerId == null)
+            {
+                StateMachinesContextHolder.StateMachineContext.Value = ((BaseContext)context).StateMachine;
+            }
             StateMachinesContextHolder.ExecutionContext.Value = context;
 
             return StateflowsActivator.CreateModelElementInstanceAsync<TState>(ServiceProvider, "state");
@@ -1127,8 +1254,11 @@ namespace Stateflows.StateMachines.Engine
 
             StateMachinesContextHolder.StateContext.Value = null;
             StateMachinesContextHolder.TransitionContext.Value = context;
-            StateMachinesContextHolder.StateMachineContext.Value = context.StateMachine;
-            StateMachinesContextHolder.BehaviorContext.Value = context.StateMachine;
+            StateMachinesContextHolder.BehaviorContext.Value = context.Behavior;
+            if (((IStateflowsContextProvider)context).Context.ContextOwnerId == null)
+            {
+                StateMachinesContextHolder.StateMachineContext.Value = ((BaseContext)context).StateMachine;
+            }
             StateMachinesContextHolder.ExecutionContext.Value = context;
 
             return StateflowsActivator.CreateModelElementInstanceAsync<TTransition>(ServiceProvider, "transition");
@@ -1147,8 +1277,11 @@ namespace Stateflows.StateMachines.Engine
 
             StateMachinesContextHolder.StateContext.Value = null;
             StateMachinesContextHolder.TransitionContext.Value = context;
-            StateMachinesContextHolder.StateMachineContext.Value = context.StateMachine;
-            StateMachinesContextHolder.BehaviorContext.Value = context.StateMachine;
+            StateMachinesContextHolder.BehaviorContext.Value = context.Behavior;
+            if (((IStateflowsContextProvider)context).Context.ContextOwnerId == null)
+            {
+                StateMachinesContextHolder.StateMachineContext.Value = ((BaseContext)context).StateMachine;
+            }
             StateMachinesContextHolder.ExecutionContext.Value = context;
 
             return StateflowsActivator.CreateModelElementInstanceAsync<TTransitionGuard>(ServiceProvider, "transition guard");
@@ -1167,8 +1300,11 @@ namespace Stateflows.StateMachines.Engine
 
             StateMachinesContextHolder.StateContext.Value = null;
             StateMachinesContextHolder.TransitionContext.Value = context;
-            StateMachinesContextHolder.StateMachineContext.Value = context.StateMachine;
-            StateMachinesContextHolder.BehaviorContext.Value = context.StateMachine;
+            StateMachinesContextHolder.BehaviorContext.Value = context.Behavior;
+            if (((IStateflowsContextProvider)context).Context.ContextOwnerId == null)
+            {
+                StateMachinesContextHolder.StateMachineContext.Value = ((BaseContext)context).StateMachine;
+            }
             StateMachinesContextHolder.ExecutionContext.Value = context;
 
             return StateflowsActivator.CreateModelElementInstanceAsync<TTransitionEffect>(ServiceProvider, "transition effect");
@@ -1186,8 +1322,11 @@ namespace Stateflows.StateMachines.Engine
 
             StateMachinesContextHolder.StateContext.Value = null;
             StateMachinesContextHolder.TransitionContext.Value = context;
-            StateMachinesContextHolder.StateMachineContext.Value = context.StateMachine;
-            StateMachinesContextHolder.BehaviorContext.Value = context.StateMachine;
+            StateMachinesContextHolder.BehaviorContext.Value = context.Behavior;
+            if (((IStateflowsContextProvider)context).Context.ContextOwnerId == null)
+            {
+                StateMachinesContextHolder.StateMachineContext.Value = ((BaseContext)context).StateMachine;
+            }
             StateMachinesContextHolder.ExecutionContext.Value = context;
 
             return StateflowsActivator.CreateModelElementInstanceAsync<TDefaultTransition>(ServiceProvider, "default transition");
@@ -1205,8 +1344,11 @@ namespace Stateflows.StateMachines.Engine
 
             StateMachinesContextHolder.StateContext.Value = null;
             StateMachinesContextHolder.TransitionContext.Value = context;
-            StateMachinesContextHolder.StateMachineContext.Value = context.StateMachine;
-            StateMachinesContextHolder.BehaviorContext.Value = context.StateMachine;
+            StateMachinesContextHolder.BehaviorContext.Value = context.Behavior;
+            if (((IStateflowsContextProvider)context).Context.ContextOwnerId == null)
+            {
+                StateMachinesContextHolder.StateMachineContext.Value = ((BaseContext)context).StateMachine;
+            }
             StateMachinesContextHolder.ExecutionContext.Value = context;
 
             return StateflowsActivator.CreateModelElementInstanceAsync<TDefaultTransitionGuard>(ServiceProvider, "default transition guard");
@@ -1224,8 +1366,11 @@ namespace Stateflows.StateMachines.Engine
 
             StateMachinesContextHolder.StateContext.Value = null;
             StateMachinesContextHolder.TransitionContext.Value = context;
-            StateMachinesContextHolder.StateMachineContext.Value = context.StateMachine;
-            StateMachinesContextHolder.BehaviorContext.Value = context.StateMachine;
+            StateMachinesContextHolder.BehaviorContext.Value = context.Behavior;
+            if (((IStateflowsContextProvider)context).Context.ContextOwnerId == null)
+            {
+                StateMachinesContextHolder.StateMachineContext.Value = ((BaseContext)context).StateMachine;
+            }
             StateMachinesContextHolder.ExecutionContext.Value = context;
 
             return StateflowsActivator.CreateModelElementInstanceAsync<TDefaultTransitionEffect>(ServiceProvider, "default transition effect");

@@ -3,11 +3,13 @@ using System.Linq;
 using Microsoft.Extensions.DependencyInjection;
 using Stateflows.Common;
 using Stateflows.Common.Cache;
+using Stateflows.Common.Classes;
 using Stateflows.Common.Lock;
 using Stateflows.Common.Tenant;
 using Stateflows.Common.Engine;
 using Stateflows.Common.Storage;
 using Stateflows.Common.Context;
+using Stateflows.Common.Engine.Interfaces;
 using Stateflows.Common.Scheduler;
 using Stateflows.Common.Extensions;
 using Stateflows.Common.Interfaces;
@@ -15,6 +17,7 @@ using Stateflows.Common.Initializer;
 using Stateflows.Common.Subscription;
 using Stateflows.Common.Registration.Builders;
 using Stateflows.Common.Registration.Interfaces;
+using Stateflows.Common.Utilities;
 using Stateflows.StateMachines;
 using Stateflows.StateMachines.Engine;
 using IExecutionContext = Stateflows.Common.IExecutionContext;
@@ -32,6 +35,7 @@ namespace Stateflows
                     .AddSingleton<StateflowsEngine>()
                     .AddSingleton<StateflowsService>()
                     .AddHostedService(provider => provider.GetRequiredService<StateflowsService>())
+                    .AddSingleton<IStateflowsTelemetry>(provider => provider.GetRequiredService<StateflowsService>())
                     .AddScoped<INotificationsHub, NotificationsHub>()
                     .AddHostedService<Scheduler>()
                     .AddTransient<ScheduleExecutor>()
@@ -75,6 +79,11 @@ namespace Stateflows
                 services.AddSingleton<IStateflowsNotificationsStorage, InMemoryNotificationsStorage>();
             }
 
+            if (!services.IsServiceRegistered<IStateflowsValueStorage>())
+            {
+                services.AddSingleton<IStateflowsValueStorage, InMemoryValueStorage>();
+            }
+
             if (!services.IsServiceRegistered<IStateflowsLock>())
             {
                 services.AddSingleton<IStateflowsLock, InProcessLock>();
@@ -90,6 +99,11 @@ namespace Stateflows
                 services.AddTransient<IStateflowsCache, InMemoryCache>();
             }
 
+            if (!services.IsServiceRegistered<IStateflowsEventFilter>())
+            {
+                services.AddSingleton<IStateflowsEventFilter, NoOpEventFilter>();
+            }
+
             StateMachinesDependencyInjection.Build(builder);
 
             return services;
@@ -99,6 +113,7 @@ namespace Stateflows
         /// Declares that default instance of given behavior class (with instance == string.Empty) should be
         /// initialized automatically on host startup.
         /// </summary>
+        /// <param name="stateflowsBuilder">Extended builder</param>
         /// <param name="behaviorClass">Class of default behavior</param>
         /// <param name="initializationRequestFactoryAsync">
         /// Factory that generates custom initialization event for default instance of a behavior.
@@ -114,6 +129,7 @@ namespace Stateflows
         /// Registers global interceptor for all hosted behavior instances.
         /// </summary>
         /// <typeparam name="TInterceptor">Interceptor class to be registered</typeparam>
+        /// <param name="stateflowsBuilder">Extended builder</param>
         public static IStateflowsBuilder AddInterceptor<TInterceptor>(this IStateflowsBuilder stateflowsBuilder)
             where TInterceptor : class, IBehaviorInterceptor
         {
@@ -125,6 +141,7 @@ namespace Stateflows
         /// <summary>
         /// Registers global interceptor for all hosted behavior instances.
         /// </summary>
+        /// <param name="stateflowsBuilder">Extended builder</param>
         /// <param name="interceptorFactory">Factory method which returns an instance of interceptor to register</param>
         public static IStateflowsBuilder AddInterceptor(this IStateflowsBuilder stateflowsBuilder, BehaviorInterceptorFactory interceptorFactory)
         {
@@ -137,6 +154,7 @@ namespace Stateflows
         /// Registers client interceptor for all communication with behavior instances (hosted locally or remotely).
         /// </summary>
         /// <typeparam name="TClientInterceptor">Interceptor class to be registered</typeparam>
+        /// <param name="stateflowsBuilder">Extended builder</param>
         public static IStateflowsBuilder AddClientInterceptor<TClientInterceptor>(this IStateflowsBuilder stateflowsBuilder)
             where TClientInterceptor : class, IStateflowsClientInterceptor
         {
@@ -149,6 +167,7 @@ namespace Stateflows
         /// Registers client interceptor for all communication with behavior instances (hosted locally or remotely).
         /// </summary>
         /// <param name="clientInterceptorFactory">Factory method which returns an instance of interceptor to register</param>
+        /// <param name="stateflowsBuilder">Extended builder</param>
         public static IStateflowsBuilder AddClientInterceptor(this IStateflowsBuilder stateflowsBuilder, ClientInterceptorFactory clientInterceptorFactory)
         {
             stateflowsBuilder.ServiceCollection.AddScoped(s => clientInterceptorFactory(s));
@@ -160,6 +179,7 @@ namespace Stateflows
         /// Registers custom validator for Events that are incoming to hosted behavior instances.
         /// </summary>
         /// <typeparam name="TValidator">Validator class to be registered</typeparam>
+        /// <param name="stateflowsBuilder">Extended builder</param>
         public static IStateflowsBuilder AddValidator<TValidator>(this IStateflowsBuilder stateflowsBuilder)
             where TValidator : class, IStateflowsValidator
         {
@@ -171,6 +191,7 @@ namespace Stateflows
         /// <summary>
         /// Registers custom validator for Events that are incoming to hosted behavior instances.
         /// </summary>
+        /// <param name="stateflowsBuilder">Extended builder</param>
         /// <param name="validatorFactory">Factory method which returns an instance of validator to register</param>
         public static IStateflowsBuilder AddValidator(this IStateflowsBuilder stateflowsBuilder, ValidatorFactory validatorFactory)
         {

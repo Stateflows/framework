@@ -2,7 +2,7 @@
 {
     public interface IStateflowsExecutionInterceptor
     {
-        bool BeforeExecute(EventHolder eventHolder);
-        void AfterExecute(EventHolder eventHolder);
+        bool BeforeExecute(BehaviorId id, EventHolder eventHolder);
+        void AfterExecute(BehaviorId id, EventHolder eventHolder);
     }
 }

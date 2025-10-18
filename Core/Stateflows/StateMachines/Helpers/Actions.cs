@@ -83,9 +83,7 @@ namespace Stateflows.StateMachines
             get
             {
                 var self = this;
-                return c =>
-                    ((ContextValuesCollection)c.Behavior.Values).RemoveMatchingAsync(
-                        new Regex($"{self.NamespaceName}[.](.*)", RegexOptions.None, TimeSpan.FromSeconds(1)));
+                return c => c.Behavior.Values.RemovePrefixedAsync($"{self.NamespaceName}.");
             }
         }
     }
@@ -151,6 +149,7 @@ namespace Stateflows.StateMachines
         /// Declares an action that sets the specified state value.
         /// </summary>
         /// <typeparam name="T">Type of the value.</typeparam>
+        /// <param name="valueName">Name of value to set.</param>
         /// <param name="value">Value to set.</param>
         /// <returns>State action function.</returns>
         public Func<IStateActionContext, Task> Set<T>(string valueName, T value)
@@ -163,6 +162,7 @@ namespace Stateflows.StateMachines
         /// Declares an action that updates the specified state value.
         /// </summary>
         /// <typeparam name="T">Type of the value.</typeparam>
+        /// <param name="valueName">Name of value to set.</param>
         /// <param name="valueUpdater">Function to update the value.</param>
         /// <param name="defaultValue">Default value if the value is not set.</param>
         /// <returns>State action function.</returns>
@@ -191,9 +191,7 @@ namespace Stateflows.StateMachines
             get
             {
                 var self = this;
-                return c => ((ContextValuesCollection)c.State.Values).RemoveMatchingAsync(
-                    new Regex($"{self.NamespaceName}[.](.*)", RegexOptions.None, TimeSpan.FromSeconds(1))
-                );
+                return c => c.Behavior.Values.RemovePrefixedAsync($"{self.NamespaceName}.");
             }
         }
     }

@@ -192,6 +192,13 @@ namespace Stateflows.Common
                 .SelectMany(item => item.GetAllNodesLeveled(level + 1))
                 .Append((this, level));
 
+        public TreeNode<T> Attach(TreeNode<T> node)
+        {
+            node = node.Clone();
+            NodesList.Add(node);
+            return node;
+        }
+
         public TreeNode<T> Add(T value)
         {
             var tree = new TreeNode<T>(value, this);
@@ -248,6 +255,9 @@ namespace Stateflows.Common
                         .Where(item => item != null)
                         .ToList()
                 );
+
+        public TreeNode<T> Clone()
+            => Translate(x => x);
     }
 
     public interface ITree<T>
@@ -339,6 +349,9 @@ namespace Stateflows.Common
         
         public Tree<Target> Translate<Target>(Func<T, Target> selector, Func<T, bool> guard = null)
             => new Tree<Target> { Root = Root?.Translate(selector, guard) };
+
+        public Tree<T> Clone()
+            => Translate(x => x);
 
         ITreeNode<T> ITree<T>.AddTo(T value, T parent)
             => AddTo(value, parent);

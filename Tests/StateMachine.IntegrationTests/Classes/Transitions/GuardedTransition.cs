@@ -1,11 +1,10 @@
 ﻿using Stateflows.Common;
+using Stateflows.Common.Attributes;
 
 namespace StateMachine.IntegrationTests.Classes.Transitions
 {
-    internal class GuardedTransition : IDefaultTransitionGuard
+    internal class GuardedTransition([GlobalValue] IValue<int> counter) : IDefaultTransitionGuard
     {
-        private readonly GlobalValue<int> counter = new("counter");
-
         public async Task<bool> GuardAsync()
         {
             var (success, c) = await counter.TryGetAsync();
