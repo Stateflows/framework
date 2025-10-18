@@ -38,5 +38,6 @@ namespace Stateflows.StateMachines
             where TObserver : class, IStateMachineObserver;
 
         Task VisitStateMachinesAsync(IStateMachineVisitor visitor);
+        Task VisitStateMachineAsync(string stateMachineName, int version, IStateMachineVisitor visitor);
     }
 }

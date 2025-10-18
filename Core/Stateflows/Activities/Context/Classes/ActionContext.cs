@@ -20,12 +20,12 @@ namespace Stateflows.Activities.Context.Classes
             }
         }
 
-        public List<TokenHolder> InputTokens { get; } = new List<TokenHolder>();
+        public List<TokenHolder> InputTokens { get; protected set; } = [];
 
-        public List<TokenHolder> OutputTokens { get; } = new List<TokenHolder>();
+        public List<TokenHolder> OutputTokens { get; protected set; } = [];
 
         public void Output<TToken>(TToken token)
-            => OutputRange(new TToken[] { token });
+            => OutputRange([ token ]);
 
         public void OutputRange<TToken>(IEnumerable<TToken> tokens)
             => OutputTokens.AddRange(tokens.ToTokenHolders());
@@ -42,6 +42,6 @@ namespace Stateflows.Activities.Context.Classes
         public IEnumerable<object> GetAllTokens()
             => InputTokens.ToBoxedTokens().ToArray();
 
-        public IEnumerable<object> Tokens { get; }
+        public IEnumerable<object> Tokens { get; protected set; }
     }
 }

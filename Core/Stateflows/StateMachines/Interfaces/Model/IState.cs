@@ -23,10 +23,13 @@ namespace Stateflows.StateMachines
 
     public interface IStateDefinition : IState
     {
-        void Build(IStateBuilder builder);
+        static abstract void Build(IStateBuilder builder);
     }
 
     public interface IFinalState : IVertex
+    { }
+
+    public interface IHistory : IVertex
     { }
 
     public static class State<TState>

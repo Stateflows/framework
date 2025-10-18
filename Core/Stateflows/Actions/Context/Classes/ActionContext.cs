@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using System.Threading;
 using System.Threading.Tasks;
 using Stateflows.Common;
 using Stateflows.Common.Classes;
@@ -9,19 +10,20 @@ using Stateflows.Common.Interfaces;
 using Stateflows.Common.Subscription;
 using Microsoft.Extensions.DependencyInjection;
 using Stateflows.Activities;
+using Stateflows.Common.Context;
 using Stateflows.Common.Utilities;
 
 namespace Stateflows.Actions.Context.Classes
 {
-    public class ActionContext : IActionContext, IBehaviorLocator
+    public class ActionContext : IActionContext, IBehaviorLocator, IStateflowsContextProvider
     {
-        BehaviorId IBehaviorContext.Id => RootContext.Id;
+        BehaviorId IBehaviorContext.Id => Context.ContextOwnerId ?? RootContext.Id;
 
         internal readonly RootContext RootContext;
 
-        public readonly List<TokenHolder> OutputTokens = new List<TokenHolder>();
+        public List<TokenHolder> OutputTokens { get; } = [];
         
-        public readonly List<TokenHolder> InputTokens = new List<TokenHolder>();
+        public List<TokenHolder> InputTokens { get; } = [];
 
         public IServiceProvider ServiceProvider { get; }
 
@@ -35,7 +37,6 @@ namespace Stateflows.Actions.Context.Classes
         {
             RootContext = rootContext;
             ServiceProvider = serviceProvider;
-            // Values = new ContextValuesCollection(context.GlobalValues);
             Values = new ValuesStorage(
                 string.Empty,
                 RootContext.Context.ContextOwnerId ?? RootContext.Id,
@@ -63,7 +64,8 @@ namespace Stateflows.Actions.Context.Classes
             
             Subscriber.PublishAsync(id, notification, headers).GetAwaiter().GetResult();
         }
-            // => Subscriber.PublishAsync(Context.Context.ContextOwnerId ?? Id, notification, headers).GetAwaiter().GetResult();
+
+        public bool IsEmbedded => Context.ContextOwnerId != null;
 
         public Task<SendResult> SubscribeAsync<TNotification>(BehaviorId behaviorId)
             => Subscriber.SubscribeAsync<TNotification>(behaviorId);
@@ -86,5 +88,10 @@ namespace Stateflows.Actions.Context.Classes
 
         public void OutputRange<TToken>(IEnumerable<TToken> tokens)
             => OutputTokens.AddRange(tokens.Select(token => token.ToTokenHolder()));
+
+        public StateflowsContext Context => RootContext.Context;
+
+        internal CancellationTokenSource CancellationTokenSource = new();
+        public CancellationToken CancellationToken => CancellationTokenSource.Token;
     }
 }

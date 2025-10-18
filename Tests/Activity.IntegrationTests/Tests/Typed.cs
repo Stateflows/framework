@@ -14,7 +14,7 @@ namespace Activity.IntegrationTests.Tests
         IInputTokens<SomeToken> someTokens,
         IInputTokens<string> strings,
         IOutputTokens<string> output,
-        [ValueName("global")] GlobalValue<string> value
+        [GlobalValue("global")] IValue<string> value
     ) : IActionNode
     {
 

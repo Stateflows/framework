@@ -33,7 +33,7 @@ public static class DependencyInjection
         System.Action<IEndpointsBuilder> endpointsBuilder)
     {
         var stateMachineClass = ((IBehaviorBuilder)stateBuilder).BehaviorClass;
-        var stateName = ((IVertexBuilder)stateBuilder).Name;
+        var stateName = ((IStateBuilderInfo)stateBuilder).Name;
         StateMachineEndpointBuilders.Add(visitor =>
         {
             var builder = new EndpointsBuilder(visitor.RouteBuilder, visitor, visitor.Interceptor, stateMachineClass, stateName);
@@ -102,9 +102,7 @@ public static class DependencyInjection
     /// <param name="minimalAPIsBuilderAction">Configuration action</param>
     public static void MapStateflowsMinimalAPIsEndpoints(this IEndpointRouteBuilder builder, System.Action<IMinimalAPIsBuilder>? minimalAPIsBuilderAction = null)
     {
-        // var initializer = builder.ServiceProvider.GetRequiredService<IStateflowsInitializer>();
-        // initializer.Initialize(builder.ServiceProvider);
-        
+        RequestDelegate x = null;
         ApiRoutePrefix = "stateflows";
 
         var interceptors = GetInterceptors(builder, minimalAPIsBuilderAction);
@@ -355,8 +353,7 @@ public static class DependencyInjection
             var visitor = new StateMachineVisitor(
                 root,
                 interceptor,
-                builder.ServiceProvider.GetRequiredService<ITypeMapper>(),
-                builder.ServiceProvider
+                builder.ServiceProvider.GetRequiredService<ITypeMapper>()
             );
             
             stateMachinesRegister.VisitStateMachinesAsync(visitor);

@@ -7,6 +7,7 @@ namespace Stateflows.Common.Interfaces
     public interface INotificationsHub
     {
         Task PublishAsync(EventHolder eventHolder);
+        
         Task PublishRangeAsync(IEnumerable<EventHolder> eventHolders);
 
         void RegisterHandler(INotificationHandler notificationHandler);

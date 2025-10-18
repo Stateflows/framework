@@ -42,10 +42,12 @@ namespace Stateflows.StateMachines.Context.Classes
 
         public Guid EventId => Context.EventHolder.Id;
 
-        public override IEnumerable<EventHeader> Headers => Context.EventHolder.Headers;
+        public override List<EventHeader> Headers => Context.EventHolder.Headers;
 
-        IStateMachineContext IStateMachineActionContext.StateMachine => StateMachine;
-        
+        public IReadOnlyTree<IStateContext> CurrentStates => StateMachine.CurrentStates;
+        public bool TryGetStateContext(string stateName, out IStateContext stateContext)
+            => StateMachine.TryGetStateContext(stateName, out stateContext);
+
         public IBehaviorContext Behavior => StateMachine;
     }
 }

@@ -13,5 +13,6 @@ namespace Stateflows.StateMachines
         Choice,
         Join,
         Fork,
+        History
     }
 }

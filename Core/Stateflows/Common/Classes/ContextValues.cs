@@ -1,7 +1,6 @@
 ﻿using System.Threading;
 using System.Collections.Generic;
 using Stateflows.Common.Interfaces;
-using Stateflows.Common.Lock;
 
 namespace Stateflows.Common.Classes
 {
@@ -24,17 +23,19 @@ namespace Stateflows.Common.Classes
             GlobalValuesHolder.Value = new ContextValuesCollection(new Dictionary<string, string>());
         }
         public static IContextValues GlobalValues
-            => GlobalValuesHolder.Value;// ??= new ContextValuesCollection(new Dictionary<string, string>());
+            => GlobalValuesHolder.Value;
 
         internal static readonly AsyncLocal<IContextValues> StateValuesHolder = new AsyncLocal<IContextValues>();
         internal static bool AreStateValuesAvailable
             => StateValuesHolder.Value != null;
+        
         public static void InitializeStateValues()
         {
             StateValuesHolder.Value = new ContextValuesCollection(new Dictionary<string, string>());
         }
+        
         public static IContextValues StateValues
-            => StateValuesHolder.Value;// ??= new ContextValuesCollection(new Dictionary<string, string>());
+            => StateValuesHolder.Value;
 
         internal static readonly AsyncLocal<IContextValues> ParentStateValuesHolder = new AsyncLocal<IContextValues>();
         internal static bool AreParentStateValuesAvailable
@@ -44,7 +45,7 @@ namespace Stateflows.Common.Classes
             ParentStateValuesHolder.Value = new ContextValuesCollection(new Dictionary<string, string>());
         }
         public static IContextValues ParentStateValues
-            => ParentStateValuesHolder.Value;// ??= new ContextValuesCollection(new Dictionary<string, string>());
+            => ParentStateValuesHolder.Value;
 
         internal static readonly AsyncLocal<IContextValues> SourceStateValuesHolder = new AsyncLocal<IContextValues>();
         internal static bool AreSourceStateValuesAvailable
@@ -54,7 +55,7 @@ namespace Stateflows.Common.Classes
             SourceStateValuesHolder.Value = new ContextValuesCollection(new Dictionary<string, string>());
         }
         public static IContextValues SourceStateValues
-            => SourceStateValuesHolder.Value;// ??= new ContextValuesCollection(new Dictionary<string, string>());
+            => SourceStateValuesHolder.Value;
 
         internal static readonly AsyncLocal<IContextValues> TargetStateValuesHolder = new AsyncLocal<IContextValues>();
         internal static bool AreTargetStateValuesAvailable
@@ -64,6 +65,6 @@ namespace Stateflows.Common.Classes
             TargetStateValuesHolder.Value = new ContextValuesCollection(new Dictionary<string, string>());
         }
         public static IContextValues TargetStateValues
-            => TargetStateValuesHolder.Value;// ??= new ContextValuesCollection(new Dictionary<string, string>());
+            => TargetStateValuesHolder.Value;
     }
 }

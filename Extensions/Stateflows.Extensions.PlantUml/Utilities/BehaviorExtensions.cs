@@ -25,5 +25,8 @@ namespace Stateflows
 
             return watcher;
         }
+        
+        public static Task<IWatcher> WatchPlantUmlAsync(this IBehavior behavior, Func<PlantUmlInfo, Task> asyncHandler, bool immediateRequest = true)
+            => WatchPlantUmlAsync(behavior, handler: n => _ = asyncHandler(n), immediateRequest);
     }
 }

@@ -2,6 +2,7 @@
 using System.Linq;
 using System.Threading.Tasks;
 using System.Collections.Generic;
+using System.Diagnostics;
 using Microsoft.Extensions.DependencyInjection;
 using Stateflows.Common;
 using Stateflows.Common.Context;
@@ -171,9 +172,13 @@ namespace Stateflows.StateMachines.Context.Classes
             }
         }
 
-        public string State { get; set; } = string.Empty;
+        public bool Finalized
+        {
+            get => stateflowsContext.Values.TryGetValue(Constants.Finalized, out var result) && (bool)result;
+            set => stateflowsContext.Values[Constants.Finalized] = value;
+        }
 
-        private readonly Stack<EventHolder> EventsStack = new Stack<EventHolder>();
+        private readonly Stack<EventHolder> EventsStack = new();
 
         public void SetEvent(EventHolder eventHolder)
         {
@@ -218,8 +223,13 @@ namespace Stateflows.StateMachines.Context.Classes
         public async Task SendAsync<TEvent>(TEvent @event, IEnumerable<EventHeader> headers = null)
         {
             var locator = Executor.ServiceProvider.GetService<IBehaviorLocator>();
-            if (locator != null && locator.TryLocateBehavior(Context.ContextOwnerId ?? Id, out var behavior))
+            if (locator != null && locator.TryLocateBehavior(Context.ContextParentId ?? Id, out var behavior))
             {
+                if (@event is Completion)
+                {
+                    Debug.WriteLine($"{behavior.Id.Name} is receiving completion");
+                }
+
                 await behavior.SendAsync(@event, headers).ConfigureAwait(false);
             }
         }

@@ -112,7 +112,7 @@ namespace Stateflows.StateMachines
             var self = this;
             return async c =>
             {
-                var result = await c.StateMachine.Values.TryGetAsync<T>(self.ValueName);
+                var result = await c.Behavior.Values.TryGetAsync<T>(self.ValueName);
                 return result.Success && condition(result.Value);
             };
         }

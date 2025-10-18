@@ -7,6 +7,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Stateflows.Common.Classes;
 using Stateflows.Common.Engine;
 using Stateflows.Common.Interfaces;
+using Stateflows.StateMachines;
 
 namespace Stateflows.Common
 {
@@ -18,6 +19,7 @@ namespace Stateflows.Common
         private readonly CommonInterceptor Interceptor;
         private readonly IStateflowsTenantProvider TenantProvider;
         private readonly ITenantAccessor TenantAccessor;
+        private readonly IStateflowsValueStorage ValueStorage;
         private readonly IStateflowsValidator[] Validators;
         private Dictionary<string, IEventProcessor> processors;
 
@@ -31,6 +33,7 @@ namespace Stateflows.Common
             Interceptor = ServiceProvider.GetRequiredService<CommonInterceptor>();
             TenantAccessor = ServiceProvider.GetRequiredService<ITenantAccessor>();
             TenantProvider = ServiceProvider.GetRequiredService<IStateflowsTenantProvider>();
+            ValueStorage = ServiceProvider.GetRequiredService<IStateflowsValueStorage>();
             Validators = ServiceProvider.GetRequiredService<IEnumerable<IStateflowsValidator>>().ToArray();
         }
 
@@ -67,7 +70,7 @@ namespace Stateflows.Common
             }
         }
 
-        [DebuggerHidden]
+        // [DebuggerHidden]
         async Task<EventStatus> IStateflowsEngine.ProcessEventAsync<TEvent>(BehaviorId id, EventHolder<TEvent> eventHolder, List<Exception> exceptions, Dictionary<object, EventHolder> responses)
         {
             var result = EventStatus.Undelivered;
@@ -78,7 +81,14 @@ namespace Stateflows.Common
             }
             
             TenantAccessor.CurrentTenantId = await TenantProvider.GetCurrentTenantIdAsync();
+            
+            if (eventHolder.Payload is Finalize { Mode: FinalizationMode.Immediate })
+            {
+                await ValueStorage.SetAsync(id, CommonValues.ForceFinalizeKey, true);
+                await processor.CancelProcessingAsync(id);
+            }
 
+            // todo: check for reentrant flag in action definition
             await using var lockHandle = await (
                 id.Type == BehaviorType.Action
                     ? Lock.AquireNoLockAsync(id)

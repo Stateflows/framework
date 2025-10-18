@@ -24,6 +24,6 @@ namespace Stateflows.StateMachines
 
     public interface ICompositeStateDefinition : ICompositeState
     {
-        void Build(ICompositeStateBuilder builder);
+        static abstract void Build(ICompositeStateBuilder builder);
     }
 }

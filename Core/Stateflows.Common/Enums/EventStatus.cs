@@ -45,6 +45,10 @@
         /// <summary>
         /// Event was forwarded to embedded behavior
         /// </summary>
-        Forwarded
+        Forwarded,
+        /// <summary>
+        /// Event processing was cancelled
+        /// </summary>
+        Cancelled
     }
 }

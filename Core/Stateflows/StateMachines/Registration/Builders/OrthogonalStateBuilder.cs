@@ -8,7 +8,6 @@ using Stateflows.Common.Utilities;
 using Stateflows.StateMachines.Models;
 using Stateflows.StateMachines.Exceptions;
 using Stateflows.StateMachines.Context.Classes;
-using Stateflows.StateMachines.Registration.Extensions;
 using Stateflows.StateMachines.Registration.Interfaces;
 using Stateflows.StateMachines.Registration.Interfaces.Base;
 using Stateflows.StateMachines.Registration.Interfaces.Internal;
@@ -18,8 +17,9 @@ namespace Stateflows.StateMachines.Registration.Builders
     internal class OrthogonalStateBuilder :
         IOrthogonalStateBuilder,
         IOverridenOrthogonalStateBuilder,
-        IVertexBuilder,
+        IStateBuilderInfo,
         IGraphBuilder,
+        IVertexBuilder,
         IBehaviorBuilder
     {   
         public Vertex Vertex { get; }
@@ -43,12 +43,10 @@ namespace Stateflows.StateMachines.Registration.Builders
             {
                 actionAsync.ThrowIfNull(nameof(actionAsync));
 
-                var actionHandler = actionAsync.AddStateMachineInvocationContext(Vertex.Graph);
-
                 Vertex.Initialize.Actions.Add(async c =>
                     {
                         var context = new StateActionContext(c, Vertex, Constants.Entry);
-                        await actionHandler(context);
+                        await actionAsync(context);
                     }
                 );
             }
@@ -63,12 +61,10 @@ namespace Stateflows.StateMachines.Registration.Builders
             {
                 actionAsync.ThrowIfNull(nameof(actionAsync));
 
-                var actionHandler = actionAsync.AddStateMachineInvocationContext(Vertex.Graph);
-
                 Vertex.Finalize.Actions.Add(async c =>
                     {
                         var context = new StateActionContext(c, Vertex, Constants.Entry);
-                        await actionHandler(context);
+                        await actionAsync(context);
                     }
                 );
             }
@@ -83,12 +79,10 @@ namespace Stateflows.StateMachines.Registration.Builders
             {
                 actionAsync.ThrowIfNull(nameof(actionAsync));
 
-                var actionHandler = actionAsync.AddStateMachineInvocationContext(Vertex.Graph);
-
                 Vertex.Entry.Actions.Add(async c =>
                     {
                         var context = new StateActionContext(c, Vertex, Constants.Entry);
-                        await actionHandler(context);
+                        await actionAsync(context);
                     }
                 );
             }
@@ -103,12 +97,10 @@ namespace Stateflows.StateMachines.Registration.Builders
             {
                 actionAsync.ThrowIfNull(nameof(actionAsync));
 
-                var actionHandler = actionAsync.AddStateMachineInvocationContext(Vertex.Graph);
-
                 Vertex.Exit.Actions.Add(async c =>
                     {
                         var context = new StateActionContext(c, Vertex, Constants.Exit);
-                        await actionHandler(context);
+                        await actionAsync(context);
                     }
                 );
             }

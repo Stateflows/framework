@@ -7,8 +7,6 @@ namespace Stateflows.Activities.Context.Classes
         IGuardContext<TToken>,
         ITransformationContext<TToken>
     {
-        IActivityContext IActivityActionContext.Activity => Activity;
-
         public TokenFlowContext(TokenPipelineContext context, TToken token)
             : base(context)
         {

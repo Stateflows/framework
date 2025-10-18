@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Threading.Tasks;
-using Stateflows.StateMachines.Context.Interfaces;
 
 namespace Stateflows.StateMachines.Registration.Interfaces
 {
@@ -8,7 +7,7 @@ namespace Stateflows.StateMachines.Registration.Interfaces
 
     public delegate void StateMachineBuildAction(IStateMachineBuilder builder);
     
-    public delegate void OverridenStateMachineBuildAction(IOverridenStateMachineBuilder builder);
+    public delegate void OverridenStateMachineBuildAction(IOverridenStateMachineElementsBuilder elementsBuilder);
 
     public delegate void StateBuildAction(IStateBuilder builder);
     
@@ -29,6 +28,8 @@ namespace Stateflows.StateMachines.Registration.Interfaces
     public delegate void JoinBuildAction(IJoinBuilder builder);
     
     public delegate void OverridenJoinBuildAction(IOverridenJoinBuilder builder);
+    
+    public delegate void HistoryBuildAction(IHistoryBuilder builder);
 
     public delegate void CompositeStateBuildAction(ICompositeStateBuilder builder);
 

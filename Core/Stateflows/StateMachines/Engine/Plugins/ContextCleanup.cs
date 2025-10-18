@@ -1,5 +1,6 @@
 ﻿using System.Linq;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using Stateflows.StateMachines.Models;
 using Stateflows.StateMachines.Context.Classes;
 using Stateflows.StateMachines.Context.Interfaces;
@@ -12,21 +13,29 @@ namespace Stateflows.StateMachines.Engine
 
         public override void AfterStateExit(IStateActionContext context)
         {
-            var vertex = (context as StateActionContext).Vertex;
+            var vertex = ((StateActionContext)context).Vertex;
 
-            ExitedStates.Add(vertex);
+            if (!(vertex.ParentRegion?.IsHistoryEnabled ?? false))
+            {
+                ExitedStates.Add(vertex);
+            }
         }
 
         public override void AfterTransitionEffect<TEvent>(ITransitionContext<TEvent> context)
         {
             if (context.Target != null)
             {
-                var ctx = (context as IRootContext).Context;
+                // var ctx = ((IRootContext)context).Context;
                 foreach (var vertexName in ExitedStates.Select(v => v.Name))
                 {
                     if (vertexName != context.Target.Name)
                     {
-                        ctx.ClearStateValues(vertexName);
+                        if (context.TryGetStateContext(vertexName, out var stateContext))
+                        {
+                            stateContext.Values.ClearAsync().GetAwaiter().GetResult();
+                        }
+                        
+                        // ctx.ClearStateValues(vertexName);
                     }
                 }
                 ExitedStates.Clear();

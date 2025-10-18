@@ -1,14 +1,11 @@
 ﻿using System.Collections.Generic;
 using Stateflows.Common;
-using Stateflows.Common.Context.Interfaces;
 using Stateflows.Activities.Context.Interfaces;
 
 namespace Stateflows.Activities.Context.Classes
 {
     internal class AcceptEventActionContext<TEvent> : ActionContext, IAcceptEventActionContext<TEvent>
     {
-        IActivityContext IActivityActionContext.Activity => Activity;
-        
         IBehaviorContext IBehaviorActionContext.Behavior => Activity;
 
         private readonly ActionContext ActionContext;
@@ -18,6 +15,8 @@ namespace Stateflows.Activities.Context.Classes
         {
             ActionContext = actionContext;
             Event = default;
+            OutputTokens = actionContext.OutputTokens;
+            InputTokens = actionContext.InputTokens;
 
             if (Context.EventHolder is EventHolder<TEvent> holder)
             {
@@ -27,11 +26,11 @@ namespace Stateflows.Activities.Context.Classes
             {
                 var @event = Context.EventHolder.BoxedPayload;
 
-                var converter = typeof(TEvent).GetMethod("op_Implicit", new[] { @event.GetType() });
+                var converter = typeof(TEvent).GetMethod("op_Implicit", [ @event.GetType() ]);
 
                 if (converter != null)
                 {
-                    @event = converter.Invoke(null, new[] { @event });
+                    @event = converter.Invoke(null, [ @event ]);
                 }
 
                 Event = (TEvent)@event;
@@ -43,20 +42,5 @@ namespace Stateflows.Activities.Context.Classes
         ICurrentNodeContext IActivityNodeContext.Node => ((IActivityNodeContext)ActionContext).Node;
 
         public IEnumerable<object> Input => ActionContext.InputTokens;
-
-        public void Output<TToken>(TToken token)
-            => ActionContext.Output<TToken>(token);
-
-        public void OutputRange<TToken>(IEnumerable<TToken> tokens)
-            => ActionContext.OutputRange<TToken>(tokens);
-
-        public void PassTokensOfTypeOn<TToken>()
-            => ActionContext.PassTokensOfTypeOn<TToken>();
-
-        public void PassAllTokensOn()
-            => ActionContext.PassAllTokensOn();
-
-        public IEnumerable<TToken> GetTokensOfType<TToken>()
-            => ActionContext.GetTokensOfType<TToken>();
     }
 }

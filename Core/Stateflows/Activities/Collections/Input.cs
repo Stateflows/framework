@@ -21,7 +21,7 @@ namespace Stateflows.Activities
 
     internal class InputTokens<TToken> : IInputTokens<TToken>
     {
-        private IEnumerable<TToken> Tokens
+        internal IEnumerable<TToken> Tokens
             => InputTokens.Tokens.OfType<TokenHolder<TToken>>().Select(t => t.Payload);
         
         public IEnumerator<TToken> GetEnumerator()
@@ -45,7 +45,7 @@ namespace Stateflows.Activities
 
     internal class OptionalInputTokens<TToken> : IOptionalInputTokens<TToken>
     {
-        private IEnumerable<TToken> Tokens
+        internal IEnumerable<TToken> Tokens
             => InputTokens.Tokens.OfType<TokenHolder<TToken>>().Select(t => t.Payload);
 
         public IEnumerator<TToken> GetEnumerator()

@@ -13,7 +13,7 @@ namespace Stateflows.Activities.Context.Classes
 {
     internal class ActivityContext : BaseContext, IActivityContext
     {
-        BehaviorId IBehaviorContext.Id => Context.Id;
+        BehaviorId IBehaviorContext.Id => Context.Context.ContextOwnerId ?? Context.Id;
 
         public object LockHandle => Context;
 
@@ -43,7 +43,7 @@ namespace Stateflows.Activities.Context.Classes
         public IContextValues Values { get; }
 
         public void Send<TEvent>(TEvent @event, IEnumerable<EventHeader> headers = null)
-            => _ = Context.Send(@event, headers);
+            => _ = Context.SendAsync(@event, headers);
 
         public void Publish<TNotification>(TNotification notification, IEnumerable<EventHeader> headers = null)
         {
@@ -55,6 +55,8 @@ namespace Stateflows.Activities.Context.Classes
             
             Subscriber.PublishAsync(id, notification, headers).GetAwaiter().GetResult();
         }
+
+        public bool IsEmbedded => Context.Context.ContextOwnerId != null;
 
         public Task<SendResult> SubscribeAsync<TNotification>(BehaviorId behaviorId)
             => Subscriber.SubscribeAsync<TNotification>(behaviorId);

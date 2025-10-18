@@ -59,16 +59,14 @@ namespace Stateflows.Activities.Registration
 
         private static void RegisterActivity(Type activityType, ActivityBuilder activityBuilder)
         {
-            // Try to invoke a static RegisterEndpoints(EndpointsBuilder) on the concrete type
             var staticRegister = activityType.GetMethod(
-                "Build",
+                nameof(IActivity.Build),
                 BindingFlags.Public | BindingFlags.Static,
                 binder: null,
                 types: [ typeof(ActivityBuilder) ],
                 modifiers: null
             );
 
-            // static method found -> invoke without creating an instance
             staticRegister.Invoke(null, [ activityBuilder ]);
         }
 
@@ -141,6 +139,19 @@ namespace Stateflows.Activities.Registration
         {
             var tasks = Activities
                 .Where((item, index) => !item.Key.EndsWith(".current"))
+                .Select(item => item.Value)
+                .SelectMany(graph => graph.VisitingTasks);
+            
+            foreach (var task in tasks)
+            {
+                await task(visitor);
+            }
+        }
+
+        public async Task VisitActivitiesAsync(string activityName, int version, IActivityVisitor visitor)
+        {
+            var tasks = Activities
+                .Where(item => item.Key == $"{activityName}.{version}")
                 .Select(item => item.Value)
                 .SelectMany(graph => graph.VisitingTasks);
             

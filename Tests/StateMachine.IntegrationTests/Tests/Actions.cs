@@ -10,14 +10,14 @@ namespace StateMachine.IntegrationTests.Tests
     public class TypedAction : IAction
     {
         private int ProcessId;
-        private IActionContext ActionContext;
+        private IBehaviorContext BehaviorContext;
 
         public TypedAction(
-            IActionContext actionContext,
+            IBehaviorContext behaviorContext,
             [GlobalValue] int processId
         )
         {
-            ActionContext = actionContext;
+            BehaviorContext = behaviorContext;
             ProcessId = processId;
         }
         
@@ -25,7 +25,7 @@ namespace StateMachine.IntegrationTests.Tests
         {
             if (ProcessId == 42)
             {
-                ActionContext.Send(new SomeEvent());
+                BehaviorContext.Send(new SomeEvent());
             }
             
             return Task.CompletedTask;
@@ -62,19 +62,32 @@ namespace StateMachine.IntegrationTests.Tests
                         })
                         .AddInitialState("stateA", b => b
                             .AddTransition<SomeEvent>("stateB", b => b
-                                .AddGuardAction("guard")
-                                .AddEffectAction("effect")
+                                .AddGuardAction(async c =>
+                                {
+                                    GuardRun = true;
+                                    var (success, value) = await c.Behavior.Values.TryGetAsync<bool>("value");
+                                    if (success)
+                                    {
+                                        Debug.WriteLine($"value: {value}");
+                                        c.Output(value);
+                                    }
+                                    else
+                                    {
+                                        Debug.WriteLine($"value: not available");
+                                    }
+                                })
+                                .AddEffectAction(async c => EffectRun = true)
                             )
                         )
                         .AddState("stateB", b => b
-                            .AddOnEntryAction("entry")
-                            .AddOnExitAction("exit")
+                            .AddOnEntryAction(async c => EntryRun = true)
+                            .AddOnExitAction(async c => ExitRun = true)
                         )
                     )
                     .AddStateMachine("subscription", b => b
                         .AddExecutionSequenceObserver()
                         .AddInitialState("initial", b => b
-                            .AddOnEntryAction("subscribe")
+                            .AddOnEntryAction(async c => c.Behavior.Send(new SomeEvent()))
                             .AddTransition<SomeEvent>("final")
                         )
                         .AddFinalState("final")
@@ -82,7 +95,10 @@ namespace StateMachine.IntegrationTests.Tests
                     .AddStateMachine("relay", b => b
                         .AddExecutionSequenceObserver()
                         .AddInitialState("initial", b => b
-                            .AddOnEntryAction("heavyLoad")
+                            .AddOnEntryAction(async c =>
+                            {
+                                c.Behavior.Publish(new SomeEvent() { TheresSomethingHappeningHere = "42" });
+                            })
                         )
                     )
                     .AddStateMachine("values", b => b
@@ -112,15 +128,6 @@ namespace StateMachine.IntegrationTests.Tests
                             Debug.WriteLine($"value: not available");
                         }
                     })
-                    .AddAction("effect", async c => EffectRun = true)
-                    .AddAction("entry", async c => EntryRun = true)
-                    .AddAction("exit", async c => ExitRun = true)
-                    .AddAction("subscribe", async c => c.Behavior.Send(new SomeEvent()))
-                    .AddAction("heavyLoad", async c =>
-                    {
-                        c.Behavior.Publish(new SomeEvent() { TheresSomethingHappeningHere = "42" });
-                    })
-                    .AddAction<TypedAction>()
                 )
                 ;
         }
@@ -136,7 +143,7 @@ namespace StateMachine.IntegrationTests.Tests
 
                 await sm.SendAsync(new SomeEvent());
 
-                await Task.Delay(100);
+                await Task.Delay(200);
                 
                 var currentState = (await sm.GetStatusAsync()).Response;
 

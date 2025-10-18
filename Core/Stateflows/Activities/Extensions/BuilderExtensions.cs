@@ -47,9 +47,7 @@ namespace Stateflows.Activities.Extensions
         {
             if (typeof(IEdge).GetProperty(nameof(IEdge.Weight)).IsImplementedIn<TFlow>())
             {
-                var objectFlow = StateflowsActivator.CreateUninitializedInstance<TFlow>();
-
-                builder.SetWeight(objectFlow.Weight);
+                builder.SetWeight(TFlow.Weight);
             }
 
             if (typeof(IFlowGuard<TToken>).IsAssignableFrom(typeof(TFlow)))
@@ -75,9 +73,7 @@ namespace Stateflows.Activities.Extensions
         {
             if (typeof(IEdge).GetProperty(nameof(IEdge.Weight)).IsImplementedIn<TTransformationFlow>())
             {
-                var objectFlow = StateflowsActivator.CreateUninitializedInstance<TTransformationFlow>();
-
-                builder.SetWeight(objectFlow.Weight);
+                builder.SetWeight(TTransformationFlow.Weight);
             }
 
             if (typeof(IFlowGuard<TToken>).IsAssignableFrom(typeof(TTransformationFlow)))
@@ -120,9 +116,7 @@ namespace Stateflows.Activities.Extensions
         {
             if (typeof(IEdge).GetProperty(nameof(IEdge.Weight)).IsImplementedIn<TTransformationFlow>())
             {
-                var objectFlow = StateflowsActivator.CreateUninitializedInstance<TTransformationFlow>();
-
-                builder.SetWeight(objectFlow.Weight);
+                builder.SetWeight(TTransformationFlow.Weight);
             }
 
             if (typeof(IFlowTransformation<TToken, TTransformedToken>).IsAssignableFrom(typeof(TTransformationFlow)))
@@ -143,22 +137,20 @@ namespace Stateflows.Activities.Extensions
             }
         }
 
-        public static void AddControlFlowEvents<TFlow>(this IControlFlowBuilder builder)
-            where TFlow : class, IControlFlow
+        public static void AddControlFlowEvents<TControlFlow>(this IControlFlowBuilder builder)
+            where TControlFlow : class, IControlFlow
         {
-            if (typeof(IEdge).GetProperty(nameof(IEdge.Weight)).IsImplementedIn<TFlow>())
+            if (typeof(IEdge).GetProperty(nameof(IEdge.Weight)).IsImplementedIn<TControlFlow>())
             {
-                var objectFlow = StateflowsActivator.CreateUninitializedInstance<TFlow>();
-
-                builder.SetWeight(objectFlow.Weight);
+                builder.SetWeight(TControlFlow.Weight);
             }
 
-            if (typeof(IControlFlowGuard).IsAssignableFrom(typeof(TFlow)))
+            if (typeof(IControlFlowGuard).IsAssignableFrom(typeof(TControlFlow)))
             {
                 builder.AddGuard(async c =>
                 {
                     var result = false;
-                    var flow = await ((BaseContext)c).NodeScope.GetFlowAsync<TFlow>(c);
+                    var flow = await ((BaseContext)c).NodeScope.GetFlowAsync<TControlFlow>(c);
                     if (flow != null)
                     {
                         ActivityFlowContextAccessor.Context.Value = c;

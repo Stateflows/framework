@@ -4,5 +4,5 @@ namespace Stateflows.Activities;
 
 public interface IActivityEndpointsConfiguration : IActivity
 {
-    void ConfigureEndpoints(IBehaviorClassEndpointsConfiguration configuration);
+    static abstract void ConfigureEndpoints(IBehaviorClassEndpointsConfiguration configuration);
 }

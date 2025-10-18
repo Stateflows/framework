@@ -1,5 +1,4 @@
 ﻿using System;
-using Stateflows.Common.Context.Interfaces;
 using Stateflows.Activities.Engine;
 using Stateflows.Activities.Models;
 using Stateflows.Activities.Streams;
@@ -15,8 +14,6 @@ namespace Stateflows.Activities.Context.Classes
         IActivityAfterFlowContext,
         IRootContext
     {
-        IActivityContext IActivityActionContext.Activity => Activity;
-        
         IBehaviorContext IBehaviorActionContext.Behavior => Activity;
 
         internal readonly Edge Edge;
@@ -60,5 +57,8 @@ namespace Stateflows.Activities.Context.Classes
         public int TargetTokenCount { get; set; }
 
         public bool Activated => Stream.IsActivated;
+
+        public object LockHandle => Activity.LockHandle;
+        public IReadOnlyTree<INodeContext> ActiveNodes => Activity.ActiveNodes;
     }
 }

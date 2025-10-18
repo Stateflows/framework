@@ -10,7 +10,7 @@ namespace Stateflows.StateMachines.EventHandlers
     {
         public Type EventType => typeof(BehaviorInfoRequest);
 
-        public Task<EventStatus> TryHandleEventAsync<TEvent>(IEventContext<TEvent> context)
+        public async Task<EventStatus> TryHandleEventAsync<TEvent>(IEventContext<TEvent> context)
         {
             if (context.Event is BehaviorInfoRequest request)
             {
@@ -20,13 +20,13 @@ namespace Stateflows.StateMachines.EventHandlers
                 {
                     Id = executor.Context.Id,
                     BehaviorStatus = executor.BehaviorStatus,
-                    ExpectedEvents = executor.GetExpectedEventNames(),
+                    ExpectedEvents = await executor.GetExpectedEventNamesAsync(),
                 });
 
-                return Task.FromResult(EventStatus.Consumed);
+                return EventStatus.Consumed;
             }
 
-            return Task.FromResult(EventStatus.NotConsumed);
+            return EventStatus.NotConsumed;
         }
     }
 }

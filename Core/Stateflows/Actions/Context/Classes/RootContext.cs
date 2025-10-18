@@ -32,7 +32,7 @@ namespace Stateflows.Actions.Context.Classes
         public async Task Send<TEvent>(TEvent @event, IEnumerable<EventHeader> headers = null)
         {
             var locator = ServiceProvider.GetService<IBehaviorLocator>();
-            if (locator != null && locator.TryLocateBehavior(Context.ContextOwnerId ?? Id.BehaviorId, out var behavior))
+            if (locator != null && locator.TryLocateBehavior(Context.ContextParentId ?? Id.BehaviorId, out var behavior))
             {
                 await behavior.SendAsync(@event, headers);
             }

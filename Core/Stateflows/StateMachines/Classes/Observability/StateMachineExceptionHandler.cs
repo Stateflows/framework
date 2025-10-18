@@ -6,7 +6,7 @@ namespace Stateflows.StateMachines
     public abstract class StateMachineExceptionHandler : IStateMachineExceptionHandler
     {
         public virtual bool OnStateMachineInitializationException(IStateMachineInitializationContext context, Exception exception)
-                => false;
+            => false;
 
         public virtual bool OnStateMachineFinalizationException(IStateMachineActionContext context, Exception exception)
             => false;

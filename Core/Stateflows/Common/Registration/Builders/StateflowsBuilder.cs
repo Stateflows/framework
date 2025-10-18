@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using Microsoft.Extensions.DependencyInjection;
 using Stateflows.Common.Classes;
 using Stateflows.Common.Interfaces;
@@ -7,9 +6,9 @@ using Stateflows.Common.Registration.Interfaces;
 
 namespace Stateflows.Common.Registration.Builders
 {
-    internal class StateflowsBuilder : IStateflowsBuilder//, IStateflowsBehaviorsBuilder
+    internal class StateflowsBuilder : IStateflowsBuilder
     {
-        private readonly List<IStateflowsTypeMapper> TypeMappers = new List<IStateflowsTypeMapper>();
+        private readonly List<IStateflowsTypeMapper> TypeMappers = [];
 
         internal readonly ITypeMapper TypeMapper;
 
@@ -27,7 +26,5 @@ namespace Stateflows.Common.Registration.Builders
 
             return this;
         }
-
-        // public List<IBehaviorRegister> Registers { get; } = new List<IBehaviorRegister>();
     }
 }

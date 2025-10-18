@@ -35,7 +35,7 @@ namespace Stateflows.Common.Context.Classes
         public void Send<TEvent>(TEvent @event, IEnumerable<EventHeader> headers = null)
         {
             var locator = ServiceProvider.GetService<IBehaviorLocator>();
-            if (locator.TryLocateBehavior(Context.ContextOwnerId ?? Id, out var behavior))
+            if (locator.TryLocateBehavior(Context.ContextParentId ?? Id, out var behavior))
             {
                 _ = behavior.SendAsync(@event, headers);
             }
@@ -51,6 +51,9 @@ namespace Stateflows.Common.Context.Classes
             
             Subscriber.PublishAsync(id, notification, headers).GetAwaiter().GetResult();
         }
+
+        
+        public bool IsEmbedded => Context.ContextOwnerId != null;
 
         public Task<SendResult> SubscribeAsync<TNotification>(BehaviorId behaviorId)
             => _ = Subscriber.SubscribeAsync<TNotification>(behaviorId);

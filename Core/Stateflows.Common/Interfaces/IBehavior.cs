@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Threading.Tasks;
 using System.Collections.Generic;
-using System.Linq;
 using Stateflows.Common.Interfaces;
 
 namespace Stateflows.Common
@@ -27,14 +26,17 @@ namespace Stateflows.Common
         public Task<SendResult> ResetAsync(ResetMode resetMode = ResetMode.Full, IEnumerable<EventHeader> headers = null)
             => SendAsync(new Reset { Mode = resetMode }, headers);
 
-        public Task<SendResult> FinalizeAsync(IEnumerable<EventHeader> headers = null)
-            => SendAsync(new Finalize(), headers);
+        public Task<SendResult> FinalizeAsync(FinalizationMode finalizationMode = FinalizationMode.Immediate, IEnumerable<EventHeader> headers = null)
+            => SendAsync(new Finalize() { Mode = finalizationMode }, headers);
 
         public Task<RequestResult<BehaviorInfo>> GetStatusAsync(IEnumerable<EventHeader> headers = null)
             => RequestAsync(new BehaviorInfoRequest(), headers);
 
         public Task<IWatcher> WatchStatusAsync(Action<BehaviorInfo> handler)
             => WatchAsync(handler);
+
+        public Task<IWatcher> WatchStatusAsync(Func<BehaviorInfo, Task> asyncHandler)
+            => WatchStatusAsync(handler: n => _ = asyncHandler(n));
 
         public Task<IEnumerable<TNotification>> GetNotificationsAsync<TNotification>(DateTime? lastNotificationsCheck = null);
 

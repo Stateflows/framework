@@ -20,7 +20,7 @@ namespace StateMachine.IntegrationTests.Utils
     public abstract class StateflowsTestClass
     {
         private IServiceCollection serviceCollection;
-        private IServiceCollection ServiceCollection => serviceCollection ??= new ServiceCollection();
+        protected IServiceCollection ServiceCollection => serviceCollection ??= new ServiceCollection();
 
         private IServiceProvider serviceProvider;
         protected IServiceProvider ServiceProvider => serviceProvider ??= ServiceCollection.BuildServiceProvider();
@@ -44,12 +44,6 @@ namespace StateMachine.IntegrationTests.Utils
             ServiceCollection.AddSingleton<IHostApplicationLifetime>(services => services.GetRequiredService<TestingHost>());
             ServiceCollection.AddSingleton<ExecutionSequenceObserver>();
             ServiceCollection.AddLogging(builder => builder.AddConsole());
-            ServiceCollection
-                .AddTransient(typeof(Input<>))
-                .AddTransient(typeof(SingleInput<>))
-                .AddTransient(typeof(OptionalInput<>))
-                .AddTransient(typeof(OptionalSingleInput<>))
-                .AddTransient(typeof(Output<>));
 
             var hostedServices = ServiceProvider.GetRequiredService<IEnumerable<IHostedService>>();
             Task.WaitAll(hostedServices.Select(s => s.StartAsync(new CancellationToken())).ToArray());

@@ -13,7 +13,7 @@ namespace Stateflows.StateMachines.Context.Classes
 {
     internal class StateMachineContext : BaseContext, IStateMachineContext
     {
-        BehaviorId IBehaviorContext.Id => Context.Id;
+        BehaviorId IBehaviorContext.Id => Context.Context.ContextOwnerId ?? Context.Id;
 
         public StateMachineId Id => Context.Id;
 
@@ -41,6 +41,19 @@ namespace Stateflows.StateMachines.Context.Classes
         public IReadOnlyTree<IStateContext> CurrentStates
             => currentStates ??= Context.Executor.VerticesTree.Translate<IStateContext>(vertex => new StateContext(Context.Executor.Graph.AllVertices.GetValueOrDefault(vertex.Identifier), Context));
 
+        public bool TryGetStateContext(string stateName, out IStateContext stateContext)
+        {
+            stateContext = null;
+            if (Context.Executor.Graph.AllVertices.TryGetValue(stateName, out var vertex))
+            {
+                stateContext = new StateContext(vertex, Context);
+
+                return true;
+            }
+            
+            return false;
+        }
+
         public void Send<TEvent>(TEvent @event, IEnumerable<EventHeader> headers = null)
             => _ = Context.SendAsync(@event, headers);
 
@@ -54,7 +67,9 @@ namespace Stateflows.StateMachines.Context.Classes
             
             Subscriber.PublishAsync(id, notification, headers).GetAwaiter().GetResult();
         }
-            // => Subscriber.PublishAsync(Context.Context.ContextOwnerId ?? Id, notification, headers).GetAwaiter().GetResult();
+
+        public bool IsEmbedded => Context.Context.ContextOwnerId != null;
+        // => Subscriber.PublishAsync(Context.Context.ContextOwnerId ?? Id, notification, headers).GetAwaiter().GetResult();
 
         public IServiceProvider ServiceProvider => Context.Executor.ServiceProvider;
 

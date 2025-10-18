@@ -42,7 +42,7 @@ namespace Stateflows.Common.Context
         public Dictionary<Guid, TimeEvent> PendingTimeEvents { get; set; } = new Dictionary<Guid, TimeEvent>();
 
         public bool ShouldSerializePendingStartupEvents()
-            => PendingStartupEvents.Any();
+            => PendingStartupEvents.Count != 0;
 
         public Dictionary<Guid, Startup> PendingStartupEvents { get; set; } = new Dictionary<Guid, Startup>();
 
@@ -156,19 +156,20 @@ namespace Stateflows.Common.Context
         }
 
         public bool ShouldSerializeValues()
-            => Values.Any();
+            => Values.Count != 0;
 
-        public Dictionary<string, object> Values { get; } = new Dictionary<string, object>();
+        public Dictionary<string, object> Values { get; } = [];
 
         public bool ShouldSerializeGlobalValues()
-            => GlobalValues.Any();
+            => GlobalValues.Count != 0;
 
-        public Dictionary<string, string> GlobalValues { get; } = new Dictionary<string, string>();
+        public Dictionary<string, string> GlobalValues { get; } = [];
 
         public BehaviorId? ContextOwnerId { get; set; } = null;
+        public BehaviorId? ContextParentId { get; set; } = null;
         
         [Newtonsoft.Json.JsonIgnore]
         [JsonIgnore]
-        public Dictionary<string, object> RuntimeMetadata { get; } = new Dictionary<string, object>();
+        public Dictionary<string, object> RuntimeMetadata { get; } = [];
     }
 }

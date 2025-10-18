@@ -20,7 +20,7 @@ namespace Activity.IntegrationTests.Tests
         }
     }
     
-    public class TestedAction(IServiceX serviceX, IInputToken<int> input, [GlobalValue] IValue<int> foo) : IActionNode
+    public class TestedAction(IServiceX serviceX, IInputOutputToken<int> input, [GlobalValue] IValue<int> foo) : IActionNode
     {
         public async Task ExecuteAsync(CancellationToken cancellationToken)
         {

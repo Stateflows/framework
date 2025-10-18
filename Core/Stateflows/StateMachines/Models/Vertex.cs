@@ -1,7 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using Microsoft.Extensions.DependencyInjection;
 using Stateflows.Common;
+using Stateflows.Common.Interfaces;
 using Stateflows.Common.Models;
 using Stateflows.StateMachines.Interfaces;
 using Stateflows.StateMachines.Registration;
@@ -53,52 +55,34 @@ namespace Stateflows.StateMachines.Models
                 return Regions.First();
             }
         }
-
+        
+        /// <summary>
+        /// Refers to a region that current vertex serves as a history entrypoint (History vertices only!)
+        /// </summary>
+        public Region HistoricalRegion { get; set; }
         public StateActionInitializationBuilder BehaviorInitializationBuilder { get; set; }
         public string BehaviorName { get; set; }
         public string BehaviorType { get; set; }
-        // public List<Type> BehaviorSubscriptions { get; set; } = new List<Type>();
-        // public List<string> GetBehaviorSubscriptionNames()
-        //     => BehaviorSubscriptions
-        //     .Select(t => Event.GetName(t))
-        //     .ToList();
+        public List<Type> BehaviorEventTypes = [];
 
-        // public Subscribe GetSubscriptionRequest(StateMachineId hostId)
-        //     => new Subscribe()
-        //     {
-        //         BehaviorId = hostId,
-        //         NotificationNames = GetBehaviorSubscriptionNames()
-        //     };
-        //
-        // public Unsubscribe GetUnsubscriptionRequest(StateMachineId hostId)
-        //     => new Unsubscribe()
-        //     {
-        //         BehaviorId = hostId,
-        //         NotificationNames = GetBehaviorSubscriptionNames()
-        //     };
-        // public List<Type> BehaviorRelays { get; set; } = new List<Type>();
-        // public List<string> GetBehaviorRelayNames()
-        //     => BehaviorRelays
-        //         .Select(t => Event.GetName(t))
-        //         .ToList();
-        //
-        // public StartRelay GetStartRelayRequest(StateMachineId hostId)
-        //     => new StartRelay()
-        //     {
-        //         BehaviorId = hostId,
-        //         NotificationNames = GetBehaviorRelayNames()
-        //     };
-        //
-        // public StopRelay GetStopRelayRequest(StateMachineId hostId)
-        //     => new StopRelay()
-        //     {
-        //         BehaviorId = hostId,
-        //         NotificationNames = GetBehaviorRelayNames()
-        //     };
+        public BehaviorId GetBehaviorId(StateMachineId hostId) => new(BehaviorType, BehaviorName, hostId.Instance);
 
-        public BehaviorId GetBehaviorId(StateMachineId hostId)
-            => new BehaviorId(BehaviorType, BehaviorName, $"{hostId.Name}:{hostId.Instance}:{Name}:Do:{new Random().Next()}");
+        public bool IsChildOf(Vertex vertex)
+        {
+            var currentVertex = this;
+            while (currentVertex != null)
+            {
+                if (currentVertex == vertex)
+                {
+                    return true;
+                }
 
+                currentVertex = currentVertex?.ParentRegion?.ParentVertex;
+            }
+            
+            return false;
+        }
+        
         public bool IsOrthogonalTo(Vertex vertex)
         {
             if (this == vertex)
@@ -139,6 +123,20 @@ namespace Stateflows.StateMachines.Models
             {
                 result.AddRange(Regions.SelectMany(region =>
                     region.Vertices.Values.SelectMany(vertex => vertex.GetBranch())));
+            }
+
+            return result;
+        }
+
+        public IEnumerable<Region> GetParentRegions()
+        {
+            var result = new List<Region>();
+            var currentRegion = ParentRegion;
+            while (currentRegion != null)
+            {
+                result.Add(currentRegion);
+
+                currentRegion = currentRegion.ParentVertex.ParentRegion;
             }
 
             return result;

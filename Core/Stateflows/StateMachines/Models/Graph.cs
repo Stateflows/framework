@@ -3,12 +3,14 @@ using System.Linq;
 using System.Diagnostics;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using Stateflows.Activities;
 using Stateflows.Common;
 using Stateflows.Common.Models;
 using Stateflows.Common.Registration.Builders;
 using Stateflows.StateMachines.Exceptions;
 using Stateflows.StateMachines.Interfaces;
 using Stateflows.StateMachines.Registration;
+using Stateflows.StateMachines.Registration.Builders;
 using Stateflows.StateMachines.Registration.Interfaces;
 
 namespace Stateflows.StateMachines.Models
@@ -23,6 +25,17 @@ namespace Stateflows.StateMachines.Models
 
         public IEnumerable<VertexType> StateVertexTypes = new List<VertexType>()
         {
+            VertexType.State,
+            VertexType.InitialState,
+            VertexType.CompositeState,
+            VertexType.InitialCompositeState,
+            VertexType.OrthogonalState,
+            VertexType.InitialOrthogonalState,
+        };
+
+        public IEnumerable<VertexType> ForkTargetableVertexTypes = new List<VertexType>()
+        {
+            VertexType.History,
             VertexType.State,
             VertexType.InitialState,
             VertexType.CompositeState,
@@ -142,6 +155,31 @@ namespace Stateflows.StateMachines.Models
                 {
                     throw new StateMachineDefinitionException($"Choice pseudostate '{vertex.Name}' in state machine '{Name}' must have exactly one else transition in state machine '{Name}'", Class);
                 }
+
+                if (!string.IsNullOrEmpty(vertex.BehaviorName))
+                {
+                    switch (vertex.BehaviorType)
+                    {
+                        case BehaviorType.Action:
+                            break;
+                        
+                        case BehaviorType.Activity:
+                            var activitiesRegister = StateflowsBuilder.EnsureActivitiesServices();
+                            var doActivityVisitor = new DoActivityVisitor(StateflowsBuilder.TypeMapper);
+                            activitiesRegister.VisitActivitiesAsync(vertex.BehaviorName, 1, doActivityVisitor);
+                            vertex.BehaviorEventTypes.AddRange(doActivityVisitor.EventTypes);
+
+                            break;
+                        
+                        case BehaviorType.StateMachine:
+                            var stateMachinesRegister = StateflowsBuilder.EnsureStateMachinesServices();
+                            var submachineVisitor = new SubmachineVisitor(StateflowsBuilder.TypeMapper);
+                            stateMachinesRegister.VisitStateMachineAsync(vertex.BehaviorName, 1, submachineVisitor);
+                            vertex.BehaviorEventTypes.AddRange(submachineVisitor.EventTypes);
+                            
+                            break;
+                    }
+                }
             }
 
             foreach (var edge in AllEdges)
@@ -187,10 +225,29 @@ namespace Stateflows.StateMachines.Models
 
                 if (edge.Source is { Type: VertexType.Fork })
                 {
+                    if (!ForkTargetableVertexTypes.Contains(edge.Target.Type))
+                    {
+                        throw new TransitionDefinitionException(
+                            $"Transition outgoing from fork '{edge.SourceName}' must always target a state or a history entrypoint in state machine '{Name}'",
+                            Class
+                        );
+                    }
+                }
+
+                if (edge.Source is { Type: VertexType.History })
+                {
                     if (!StateVertexTypes.Contains(edge.Target.Type))
                     {
                         throw new TransitionDefinitionException(
-                            $"Transition outgoing from fork '{edge.SourceName}' must always target a state in state machine '{Name}'",
+                            $"Transition outgoing from history '{edge.SourceName}' must always target a state in state machine '{Name}'",
+                            Class
+                        );
+                    }
+                    
+                    if (!edge.Target.IsChildOf(edge.Source.ParentRegion.ParentVertex))
+                    {
+                        throw new TransitionDefinitionException(
+                            $"Transition outgoing from history '{edge.SourceName}' must always target a state within its parent region in state machine '{Name}'",
                             Class
                         );
                     }

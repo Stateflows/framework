@@ -3,7 +3,8 @@
 namespace Stateflows.StateMachines.Registration.Interfaces
 {
     public interface IInitializedRegionBuilder :
-        IStateMachine<IInitializedRegionBuilder>,
+        IStateMachineElements<IInitializedRegionBuilder>,
+        IStateHistory<IInitializedRegionBuilder>,
         IStateMachineFinal<IFinalizedRegionBuilder>
     { }
 
@@ -12,7 +13,8 @@ namespace Stateflows.StateMachines.Registration.Interfaces
 
     public interface IRegionBuilder :
         IStateMachineInitial<IInitializedRegionBuilder>,
-        IStateMachine<IInitializedRegionBuilder>
+        IStateMachineElements<IInitializedRegionBuilder>,
+        IStateHistory<IRegionBuilder>
     { }
 
     public interface IFinalizedOverridenRegionBuilder :
@@ -20,7 +22,8 @@ namespace Stateflows.StateMachines.Registration.Interfaces
     { }
 
     public interface IOverridenRegionBuilder :
-        IStateMachine<IOverridenRegionBuilder>,
+        IStateMachineElements<IOverridenRegionBuilder>,
+        IStateHistory<IOverridenRegionBuilder>,
         IStateMachineOverrides<IOverridenRegionBuilder>,
         IStateMachineFinal<IFinalizedOverridenRegionBuilder>
     { }

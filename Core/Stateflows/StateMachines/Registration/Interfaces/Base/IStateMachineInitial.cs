@@ -19,6 +19,19 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         ///     . // Use . to see available builder methods
         /// </code></param>
         TReturn AddInitialState(string stateName, StateBuildAction stateBuildAction = null);
+        
+        /// <summary>
+        /// Adds an initial state to the state machine.<br/>
+        /// <a href="https://github.com/Stateflows/framework/wiki/State">States</a> represent a stable configuration of a <a href="https://github.com/Stateflows/framework/wiki/Behaviors">Behavior</a>.
+        /// </summary>
+        /// <param name="stateBuildAction">State build action<br/>
+        /// Use the following pattern to implement build action:
+        /// <code>
+        /// b => b
+        ///     . // Use . to see available builder methods
+        /// </code></param>
+        TReturn AddInitialState(StateBuildAction stateBuildAction = null)
+            => AddInitialState(null, stateBuildAction);
 
         /// <summary>
         /// Adds an initial state to the state machine.<br/>

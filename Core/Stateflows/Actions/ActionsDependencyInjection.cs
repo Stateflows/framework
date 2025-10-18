@@ -63,16 +63,19 @@ namespace Stateflows.Actions
                         .AddSingleton<IActionsRegister>(register)
                         .AddScoped<IEventProcessor, Processor>()
                         .AddTransient<IBehaviorProvider, Provider>()
+                        
                         .AddTransient(typeof(IInputTokens<>), typeof(InputTokens<>))
                         .AddTransient(typeof(IInputToken<>), typeof(InputToken<>))
                         .AddTransient(typeof(IOptionalInputTokens<>), typeof(OptionalInputTokens<>))
                         .AddTransient(typeof(IOptionalInputToken<>), typeof(OptionalInputToken<>))
+
+                        .AddTransient(typeof(IInputOutputTokens<>), typeof(InputOutputTokens<>))
+                        .AddTransient(typeof(IInputOutputToken<>), typeof(InputOutputToken<>))
+                        .AddTransient(typeof(IOptionalInputOutputTokens<>), typeof(OptionalInputOutputTokens<>))
+                        .AddTransient(typeof(IOptionalInputOutputToken<>), typeof(OptionalInputOutputToken<>))
+
                         .AddTransient(typeof(IOutputTokens<>), typeof(OutputTokens<>))
-                        .AddTransient(provider =>
-                            ActionsContextHolder.ActionContext.Value ??
-                            throw new InvalidOperationException($"No service for type '{typeof(IActionContext).FullName}' is available in this context.")
-                        )
-                        .AddTransient(provider =>
+                        .AddTransient(_ =>
                             ActionsContextHolder.ExecutionContext.Value ??
                             throw new InvalidOperationException($"No service for type '{typeof(IExecutionContext).FullName}' is available in this context.")
                         )

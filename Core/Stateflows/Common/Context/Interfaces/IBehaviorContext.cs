@@ -65,5 +65,7 @@ namespace Stateflows.Common
 
             Publish(notification, headersList);
         }
+        
+        bool IsEmbedded { get; }
     }
 }

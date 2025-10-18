@@ -2,6 +2,7 @@
 using System.Linq;
 using System.Diagnostics;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using Stateflows.Common;
 using Stateflows.Activities.Models;
 using Stateflows.Activities.Context.Classes;
@@ -69,32 +70,6 @@ namespace Stateflows.Activities.Engine
             }
         }
 
-        // public void RegisterAcceptEventNodes(IEnumerable<(Node Node, Guid ThreadId)> nodes)
-        // {
-        //     lock (Context)
-        //     {
-        //         foreach ((var node, var threadId) in nodes)
-        //         {
-        //             if (Context.ActiveNodes.Keys.Contains(node.Identifier))
-        //             {
-        //                 continue;
-        //             }
-        //
-        //             Context.ActiveNodes.Add(node.Identifier, threadId);
-        //
-        //             if (node.ActualEventTypes.Any(type => type.IsSubclassOf(typeof(TimeEvent))))
-        //             {
-        //                 RegisterTimeEvent(node);
-        //             }
-        //
-        //             if (node.ActualEventTypes.Any(type => type == typeof(TimeEvent)))
-        //             {
-        //                 RegisterStartupEvent(node);
-        //             }
-        //         }
-        //     }
-        // }
-
         public void RegisterAcceptEventNode(Node node, Guid threadId)
         {
             lock (Context)
@@ -157,7 +132,7 @@ namespace Stateflows.Activities.Engine
 
         public override void AfterProcessEvent<TEvent>(IEventContext<TEvent> context, EventStatus eventStatus)
         {
-            Trace.WriteLine($"⦗→s⦘ Activity '{context.Behavior.Id.Name}:{context.Behavior.Id.Instance}': processed event '{Event.GetName(context.Event.GetType())}'");
+            Trace.WriteLine($"⦗→s⦘ Activity '{context.Behavior.Id.Name}:{context.Behavior.Id.Instance}': processed event '{Event.GetName(context.Event.GetType())}' with result '{eventStatus}'");
 
             Context = ((BaseContext)context).Context;
 

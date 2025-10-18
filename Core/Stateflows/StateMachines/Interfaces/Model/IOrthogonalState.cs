@@ -19,6 +19,6 @@ namespace Stateflows.StateMachines
 
     public interface IOrthogonalStateDefinition : IOrthogonalState
     {
-        void Build(IOrthogonalStateBuilder builder);
+        static abstract void Build(IOrthogonalStateBuilder builder);
     }
 }

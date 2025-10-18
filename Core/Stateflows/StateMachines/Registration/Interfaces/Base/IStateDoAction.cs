@@ -7,19 +7,17 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
     {
         /// <summary>
         /// Embeds Action in current state.<br/>
-        /// Embedded Action will be initialized on state entry and finalized on state exit. Events can be forwarded from State Machine to embedded Action using <see cref="buildAction"/>
+        /// Embedded Action will be initialized on state entry and finalized on state exit.
         /// </summary>
         /// <param name="doActionName">Action name</param>
-        /// <param name="buildAction">Build action</param>
         /// <param name="initializationBuilder">Initialization builder; generates initialization event for embedded State Machine</param>
         TReturn AddDoAction(string doActionName, StateActionInitializationBuilder initializationBuilder = null);
         
         /// <summary>
         /// Embeds Action in current state.<br/>
-        /// Embedded Action will be initialized on state entry and finalized on state exit. Events can be forwarded from State Machine to embedded Action using <see cref="buildAction"/>
+        /// Embedded Action will be initialized on state entry and finalized on state exit.
         /// </summary>
         /// <typeparam name="TAction">Action class; must implement <see cref="IAction"/> interface</typeparam>
-        /// <param name="buildAction">Build action</param>
         /// <param name="initializationBuilder">Initialization builder; generates initialization event for embedded State Machine</param>
         [DebuggerHidden]
         public TReturn AddDoAction<TAction>(StateActionInitializationBuilder initializationBuilder = null)

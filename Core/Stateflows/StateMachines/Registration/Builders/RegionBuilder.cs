@@ -1,8 +1,5 @@
 ﻿using System;
 using System.Diagnostics;
-using Microsoft.Extensions.DependencyInjection;
-using Stateflows.Common;
-using Stateflows.Common.Extensions;
 using Stateflows.Common.Registration;
 using Stateflows.StateMachines.Models;
 using Stateflows.StateMachines.Exceptions;
@@ -18,9 +15,12 @@ namespace Stateflows.StateMachines.Registration.Builders
         IFinalizedRegionBuilder,
         IFinalizedOverridenRegionBuilder,
         IOverridenRegionBuilder,
-        IBehaviorBuilder
+        IBehaviorBuilder,
+        IGraphBuilder
     {
         public Region Region { get; }
+
+        public Graph Graph => Region.Graph;
 
         BehaviorClass IBehaviorBuilder.BehaviorClass => new BehaviorClass(Constants.StateMachine, Region.Graph.Name);
 
@@ -78,10 +78,10 @@ namespace Stateflows.StateMachines.Registration.Builders
         public IInitializedRegionBuilder AddChoice(string choiceName, ChoiceBuildAction choiceBuildAction)
             => AddVertex(choiceName, VertexType.Choice, vertex => choiceBuildAction?.Invoke(new StateBuilder(vertex)));
 
-        IOverridenRegionBuilder IStateMachine<IOverridenRegionBuilder>.AddFork(string forkName, ForkBuildAction forkBuildAction)
+        IOverridenRegionBuilder IStateMachineElements<IOverridenRegionBuilder>.AddFork(string forkName, ForkBuildAction forkBuildAction)
             => AddFork(forkName, forkBuildAction) as IOverridenRegionBuilder;
 
-        IOverridenRegionBuilder IStateMachine<IOverridenRegionBuilder>.AddJoin(string joinName, JoinBuildAction joinBuildAction)
+        IOverridenRegionBuilder IStateMachineElements<IOverridenRegionBuilder>.AddJoin(string joinName, JoinBuildAction joinBuildAction)
             => AddJoin(joinName, joinBuildAction) as IOverridenRegionBuilder;
 
         public IInitializedRegionBuilder AddFork(string forkName, ForkBuildAction forkBuildAction)
@@ -91,21 +91,21 @@ namespace Stateflows.StateMachines.Registration.Builders
             => AddVertex(joinName, VertexType.Join, vertex => joinBuildAction?.Invoke(new StateBuilder(vertex)));
 
         [DebuggerHidden]
-        IOverridenRegionBuilder IStateMachine<IOverridenRegionBuilder>.AddCompositeState(string compositeStateName,
+        IOverridenRegionBuilder IStateMachineElements<IOverridenRegionBuilder>.AddCompositeState(string compositeStateName,
             CompositeStateBuildAction compositeStateBuildAction)
             => AddCompositeState(compositeStateName, compositeStateBuildAction) as IOverridenRegionBuilder;
 
         [DebuggerHidden]
-        IOverridenRegionBuilder IStateMachine<IOverridenRegionBuilder>.AddOrthogonalState(string orthogonalStateName,
+        IOverridenRegionBuilder IStateMachineElements<IOverridenRegionBuilder>.AddOrthogonalState(string orthogonalStateName,
             OrthogonalStateBuildAction orthogonalStateBuildAction)
             => AddOrthogonalState(orthogonalStateName, orthogonalStateBuildAction) as IOverridenRegionBuilder;
 
         [DebuggerHidden]
-        IOverridenRegionBuilder IStateMachine<IOverridenRegionBuilder>.AddJunction(string junctionName, JunctionBuildAction junctionBuildAction)
+        IOverridenRegionBuilder IStateMachineElements<IOverridenRegionBuilder>.AddJunction(string junctionName, JunctionBuildAction junctionBuildAction)
             => AddJunction(junctionName, junctionBuildAction) as IOverridenRegionBuilder;
 
         [DebuggerHidden]
-        IOverridenRegionBuilder IStateMachine<IOverridenRegionBuilder>.AddChoice(string choiceName, ChoiceBuildAction choiceBuildAction)
+        IOverridenRegionBuilder IStateMachineElements<IOverridenRegionBuilder>.AddChoice(string choiceName, ChoiceBuildAction choiceBuildAction)
             => AddChoice(choiceName, choiceBuildAction) as IOverridenRegionBuilder;
 
         #endregion
@@ -118,7 +118,7 @@ namespace Stateflows.StateMachines.Registration.Builders
 
         #region AddCompositeState
         [DebuggerHidden]
-        IOverridenRegionBuilder IStateMachine<IOverridenRegionBuilder>.AddState(string stateName, StateBuildAction stateBuildAction)
+        IOverridenRegionBuilder IStateMachineElements<IOverridenRegionBuilder>.AddState(string stateName, StateBuildAction stateBuildAction)
             => AddState(stateName, stateBuildAction) as IOverridenRegionBuilder;
 
         [DebuggerHidden]
@@ -132,6 +132,7 @@ namespace Stateflows.StateMachines.Registration.Builders
         [DebuggerHidden]
         public IInitializedRegionBuilder AddInitialState(string stateName, StateBuildAction stateBuildAction = null)
         {
+            stateName ??= $"{Region.ParentVertex.Name}:{Region.ParentVertex.Regions.IndexOf(Region)}:{InitialState.Name}";
             Region.InitialVertexName = stateName;
             return AddVertex(stateName, VertexType.InitialState, vertex => stateBuildAction?.Invoke(new StateBuilder(vertex)));
         }
@@ -284,5 +285,25 @@ namespace Stateflows.StateMachines.Registration.Builders
 
         IFinalizedOverridenRegionBuilder IStateMachineOverrides<IFinalizedOverridenRegionBuilder>.UseChoice(string choiceName, OverridenChoiceBuildAction choiceBuildAction)
             => UseChoice(choiceName, choiceBuildAction) as IFinalizedOverridenRegionBuilder;
+
+        public IInitializedRegionBuilder AddHistory(string historyEntrypointName, HistoryBuildAction buildAction = null)
+        {
+            historyEntrypointName ??= State<History>.Name;
+            AddVertex(historyEntrypointName, VertexType.History);
+            var historyVertex = Region.Vertices[historyEntrypointName];
+            historyVertex.HistoricalRegion = Region;
+            Region.History ??= historyVertex;
+            
+            buildAction?.Invoke(new StateBuilder(historyVertex));
+
+            return this;
+        }
+
+        IOverridenRegionBuilder IStateHistory<IOverridenRegionBuilder>.AddHistory(string historyEntrypointName,
+            HistoryBuildAction buildAction)
+            => AddHistory(historyEntrypointName, buildAction) as IOverridenRegionBuilder;
+
+        IRegionBuilder IStateHistory<IRegionBuilder>.AddHistory(string historyEntrypointName, HistoryBuildAction buildAction)
+            => AddHistory(historyEntrypointName, buildAction) as IRegionBuilder;
     }
 }

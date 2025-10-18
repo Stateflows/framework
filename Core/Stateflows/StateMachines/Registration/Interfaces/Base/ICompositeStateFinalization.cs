@@ -4,10 +4,10 @@ using System.Linq;
 using System.Threading.Tasks;
 using Stateflows.Actions;
 using Stateflows.Activities;
-using Stateflows.Activities.Extensions;
+using Stateflows.Activities.Registration.Interfaces;
 using Stateflows.StateMachines.Context.Classes;
-using Stateflows.StateMachines.Registration.Extensions;
 using Stateflows.StateMachines.Registration.Interfaces.Internal;
+using ActionDelegateAsync = Stateflows.Actions.Registration.ActionDelegateAsync;
 
 namespace Stateflows.StateMachines.Registration.Interfaces.Base
 {
@@ -23,43 +23,64 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         /// <param name="actionsAsync">Action handlers</param>
         TReturn AddOnFinalize(params Func<IStateActionContext, Task>[] actionsAsync);
         
+        #region AddOnFinalizeActivity
         /// <summary>
-        /// Adds activity behavior that will be started when current state finalizes
+        /// Registers activity behavior that will be started when current state finalizes
         /// </summary>
-        /// <param name="activityName">Activity behavior name</param>
-        /// <param name="buildAction">Build action</param>
-        [DebuggerHidden]
-        public TReturn AddOnFinalizeActivity(string activityName, StateActionActivityBuildAction buildAction = null)
-            => AddOnFinalize(c => StateMachineActivityExtensions.RunStateActivityAsync(Constants.Finalization, c, activityName, buildAction));
-
-        /// <summary>
-        /// Adds activity behavior that will be started when current state finalizes
-        /// </summary>
-        /// <param name="buildAction">Build action</param>
+       
         /// <typeparam name="TActivity">Activity behavior type</typeparam>
         [DebuggerHidden]
-        public TReturn AddOnFinalizeActivity<TActivity>(StateActionActivityBuildAction buildAction = null)
+        public TReturn AddOnFinalizeActivity<TActivity>()
             where TActivity : class, IActivity
-            => AddOnFinalizeActivity(Activity<TActivity>.Name, buildAction);
-        
-        /// <summary>
-        /// Adds action behavior that will be started when current state finalizes
-        /// </summary>
-        /// <param name="actionName">Action behavior name</param>
-        /// <param name="buildAction">Build action</param>
-        [DebuggerHidden]
-        public TReturn AddOnFinalizeAction(string actionName, StateActionActionBuildAction buildAction = null)
-            => AddOnFinalize(c => StateMachineActionExtensions.RunStateActionAsync(Constants.Finalization, c, actionName, buildAction));
+        {
+            var vertex = ((IVertexBuilder)this).Vertex;
+            var activityName = $"{vertex.Graph.Name}.{vertex.Name}.onFinalize.{vertex.Entry.Actions.Count}";
+            vertex.Graph.StateflowsBuilder.AddActivities(b => b.AddActivity<TActivity>(activityName));
+            return AddOnFinalize(c => StateMachineActivityExtensions.RunStateActivityAsync(Constants.Finalization, c, activityName));
+        }
 
         /// <summary>
-        /// Adds action behavior that will be started when current state finalizes
+        /// Registers activity behavior that will be started when current state finalizes
         /// </summary>
-        /// <param name="buildAction">Build action</param>
+        /// <param name="activityBuildAction">Activity build action</param>
+        public TReturn AddOnFinalizeActivity(ReactiveActivityBuildAction activityBuildAction)
+        {
+            var vertex = ((IVertexBuilder)this).Vertex;
+            var activityName = $"{vertex.Graph.Name}.{vertex.Name}.onFinalize.{vertex.Entry.Actions.Count}";
+            vertex.Graph.StateflowsBuilder.AddActivities(b => b.AddActivity(activityName, activityBuildAction));
+            return AddOnFinalize(c => StateMachineActivityExtensions.RunStateActivityAsync(Constants.Finalization, c, activityName));
+        }
+        #endregion
+        
+        #region AddOnFinalizeAction
+        /// <summary>
+        /// Registers action behavior that will be started when current state finalizes
+        /// </summary>
+       
         /// <typeparam name="TAction">Action behavior type</typeparam>
         [DebuggerHidden]
-        public TReturn AddOnFinalizeAction<TAction>(StateActionActionBuildAction buildAction = null)
+        public TReturn AddOnFinalizeAction<TAction>()
             where TAction : class, IAction
-            => AddOnFinalizeAction(Stateflows.Actions.Action<TAction>.Name, buildAction);
+        {
+            var vertex = ((IVertexBuilder)this).Vertex;
+            var actionName = $"{vertex.Graph.Name}.{vertex.Name}.onFinalize.{vertex.Entry.Actions.Count}";
+            vertex.Graph.StateflowsBuilder.AddActions(b => b.AddAction<TAction>(actionName));
+            return AddOnFinalize(c => StateMachineActionExtensions.RunStateActionAsync(Constants.Finalization, c, actionName));
+        }
+        
+        /// <summary>
+        /// Registers action behavior that will be started when current state finalizes
+        /// </summary>
+        /// <param name="actionDelegateAsync">Action delegate</param>
+        /// <param name="reentrant">Determines if action can be reentrant</param>
+        public TReturn AddOnFinalizeAction(ActionDelegateAsync actionDelegateAsync, bool reentrant = true)
+        {
+            var vertex = ((IVertexBuilder)this).Vertex;
+            var actionName = $"{vertex.Graph.Name}.{vertex.Name}.onFinalize.{vertex.Entry.Actions.Count}";
+            vertex.Graph.StateflowsBuilder.AddActions(b => b.AddAction(actionName, actionDelegateAsync, reentrant));
+            return AddOnFinalize(c => StateMachineActionExtensions.RunStateActionAsync(Constants.Finalization, c, actionName));
+        }
+        #endregion
         
         /// <summary>
         /// Adds synchronous finalization handler coming from current state.<br/>
@@ -71,12 +92,7 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         /// <param name="actions">Synchronous action handlers</param>
         [DebuggerHidden]
         public TReturn AddOnFinalize(params System.Action<IStateActionContext>[] actions)
-            => AddOnFinalize(
-                actions.Select(action => action
-                    .AddStateMachineInvocationContext(((IGraphBuilder)this).Graph)
-                    .ToAsync()
-                ).ToArray()
-            );
+            => AddOnFinalize(actions.Select(action => action.ToAsync()).ToArray());
 
         /// <summary>
         /// Adds multiple typed finalization handlers to the current state.

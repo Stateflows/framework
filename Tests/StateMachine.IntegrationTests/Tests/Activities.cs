@@ -46,13 +46,56 @@ namespace StateMachine.IntegrationTests.Tests
                         })
                         .AddInitialState("stateA", b => b
                             .AddTransition<SomeEvent>("stateB", b => b
-                                .AddGuardActivity("guard")
-                                .AddEffectActivity("effect")
+                                .AddGuardActivity(b => b
+                                    .AddAcceptEventAction<SomeEvent>(
+                                        async c =>
+                                        {
+                                            GuardRun = true;
+                                            var (success, value) = await c.Behavior.Values.TryGetAsync<bool>("value");
+                                            if (success)
+                                            {
+                                                Debug.WriteLine($"value: {value}");
+                                                c.Output(value);
+                                            }
+                                            else
+                                            {
+                                                Debug.WriteLine($"value: not available");
+                                            }
+                                        },
+                                        b => b.AddFlow<bool, OutputNode>()
+                                    )
+                                    .AddOutput()
+                                )
+                                .AddEffectActivity(b => b
+                                    .AddInput(b => b
+                                        .AddFlow<SomeEvent>("main")
+                                    )
+                                    .AddAction("main", async c =>
+                                    {
+                                        EffectRun = true;
+                                    })
+                                )
                             )
                         )
                         .AddState("stateB", b => b
-                            .AddOnEntryActivity("entry")
-                            .AddOnExitActivity("exit")
+                            .AddOnEntryActivity(b => b
+                                .AddInitial(b => b
+                                    .AddControlFlow("main")
+                                )
+                                .AddAction("main", async c =>
+                                {
+                                    EntryRun = true;
+                                })
+                            )
+                            .AddOnExitActivity(b => b
+                                .AddInitial(b => b
+                                    .AddControlFlow("main")
+                                )
+                                .AddAction("main", async c =>
+                                {
+                                    ExitRun = true;
+                                })
+                            )
                         )
                     )
                 )   
@@ -86,24 +129,24 @@ namespace StateMachine.IntegrationTests.Tests
                             EffectRun = true;
                         })
                     )
-                    .AddActivity("entry", b => b
-                        .AddInitial(b => b
-                            .AddControlFlow("main")
-                        )
-                        .AddAction("main", async c =>
-                        {
-                            EntryRun = true;
-                        })
-                    )
-                    .AddActivity("exit", b => b
-                        .AddInitial(b => b
-                            .AddControlFlow("main")
-                        )
-                        .AddAction("main", async c =>
-                        {
-                            ExitRun = true;
-                        })
-                    )
+                    // .AddActivity("entry", b => b
+                    //     .AddInitial(b => b
+                    //         .AddControlFlow("main")
+                    //     )
+                    //     .AddAction("main", async c =>
+                    //     {
+                    //         EntryRun = true;
+                    //     })
+                    // )
+                    // .AddActivity("exit", b => b
+                    //     .AddInitial(b => b
+                    //         .AddControlFlow("main")
+                    //     )
+                    //     .AddAction("main", async c =>
+                    //     {
+                    //         ExitRun = true;
+                    //     })
+                    // )
                 )
                 ;
         }
@@ -119,7 +162,7 @@ namespace StateMachine.IntegrationTests.Tests
 
                 await sm.SendAsync(new SomeEvent());
 
-                await Task.Delay(200);
+                await Task.Delay(300);
 
                 var currentState = (await sm.GetStatusAsync()).Response;
 

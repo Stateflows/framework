@@ -2,11 +2,6 @@
 using System.Linq;
 using System.Threading.Tasks;
 using System.Collections.Generic;
-using System.Diagnostics;
-using System.Reflection;
-using Microsoft.Extensions.DependencyInjection;
-using Stateflows.Common;
-using Stateflows.Common.Exceptions;
 using Stateflows.Common.Registration;
 using Stateflows.Common.Utilities;
 using Stateflows.StateMachines.Models;
@@ -14,7 +9,6 @@ using Stateflows.StateMachines.Context.Classes;
 using Stateflows.StateMachines.Context.Interfaces;
 using Stateflows.StateMachines.Exceptions;
 using Stateflows.StateMachines.Registration.Interfaces;
-using Stateflows.StateMachines.Registration.Extensions;
 using Stateflows.StateMachines.Registration.Interfaces.Base;
 using Stateflows.StateMachines.Registration.Interfaces.Internal;
 
@@ -69,8 +63,6 @@ namespace Stateflows.StateMachines.Registration.Builders
                     );
                 }
 
-                var guardHandler = guardAsync.AddStateMachineInvocationContext(Edge.Graph);
-
                 Edge.Guards.Actions.Add(async c =>
                     {
                         if (transitiveVertexTypes.Contains(Edge.Source.Type))
@@ -82,7 +74,7 @@ namespace Stateflows.StateMachines.Registration.Builders
                         var result = false;
                         try
                         {
-                            result = await guardHandler(context);
+                            result = await guardAsync(context);
                         }
                         finally
                         {
@@ -106,8 +98,6 @@ namespace Stateflows.StateMachines.Registration.Builders
             {
                 effectAsync.ThrowIfNull(nameof(effectAsync));
 
-                var effectHandler = effectAsync.AddStateMachineInvocationContext(Edge.Graph);
-
                 Edge.Effects.Actions.Add(async c =>
                     {
                         if (transitiveVertexTypes.Contains(Edge.Source.Type))
@@ -118,7 +108,7 @@ namespace Stateflows.StateMachines.Registration.Builders
                         var context = new TransitionContext<TEvent>(c, Edge);
                         try
                         {
-                            await effectHandler(context);
+                            await effectAsync(context);
                         }
                         finally
                         {

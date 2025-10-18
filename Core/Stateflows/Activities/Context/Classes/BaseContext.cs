@@ -32,7 +32,7 @@ namespace Stateflows.Activities.Context.Classes
 
         public object ExecutionTrigger => Context.ExecutionTriggerHolder.BoxedPayload;
         public Guid ExecutionTriggerId => Context.ExecutionTriggerHolder.Id;
-        public IEnumerable<EventHeader> Headers => Context.ExecutionTriggerHolder.Headers;
+        public List<EventHeader> Headers => Context.ExecutionTriggerHolder.Headers;
 
         public CancellationToken CancellationToken => NodeScope.CancellationToken;
 

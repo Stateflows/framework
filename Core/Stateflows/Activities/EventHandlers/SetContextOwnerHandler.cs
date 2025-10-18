@@ -14,7 +14,8 @@ namespace Stateflows.Activities.EventHandlers
         {
             if (context.Event is SetContextOwner @event)
             {
-                ((EventContext<TEvent>)context).Context.Context.ContextOwnerId = @event.ContextOwner;
+                ((EventContext<TEvent>)context).Context.Context.ContextOwnerId = @event.ContextOwnerId;
+                ((EventContext<TEvent>)context).Context.Context.ContextParentId = @event.ContextParentId;
                 
                 return Task.FromResult(EventStatus.Consumed);
             }

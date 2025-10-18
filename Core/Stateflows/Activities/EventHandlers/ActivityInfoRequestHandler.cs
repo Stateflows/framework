@@ -10,7 +10,7 @@ namespace Stateflows.Activities.EventHandlers
     {
         public Type EventType => typeof(ActivityInfoRequest);
 
-        public Task<EventStatus> TryHandleEventAsync<TEvent>(IEventContext<TEvent> context)
+        public async Task<EventStatus> TryHandleEventAsync<TEvent>(IEventContext<TEvent> context)
         {
             if (context.Event is ActivityInfoRequest request)
             {
@@ -20,16 +20,16 @@ namespace Stateflows.Activities.EventHandlers
                 {
                     Id = executor.Context.Id,
                     ActiveNodes = executor.GetNodesTree(),
-                    ExpectedEvents = executor.GetExpectedEventNames(),
+                    ExpectedEvents = await executor.GetExpectedEventNamesAsync(),
                     BehaviorStatus = executor.BehaviorStatus
                 };
 
                 request.Respond(response);
 
-                return Task.FromResult(EventStatus.Consumed);
+                return EventStatus.Consumed;
             }
 
-            return Task.FromResult(EventStatus.NotConsumed);
+            return EventStatus.NotConsumed;
         }
     }
 }

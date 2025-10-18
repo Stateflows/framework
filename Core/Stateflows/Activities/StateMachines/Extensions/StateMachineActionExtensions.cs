@@ -2,27 +2,22 @@
 using System.Linq;
 using System.Diagnostics;
 using System.Threading.Tasks;
-using Stateflows.Activities.Extensions;
-using Stateflows.Activities.StateMachines.Interfaces;
 using Stateflows.Common;
-using Stateflows.Common.Classes;
+using Stateflows.Common.Extensions;
 using Stateflows.Common.Utilities;
 using Stateflows.StateMachines;
 using Stateflows.StateMachines.Context.Classes;
 using Stateflows.StateMachines.Context.Interfaces;
 using Stateflows.StateMachines.Exceptions;
-using Stateflows.StateMachines.Registration;
 
 namespace Stateflows.Activities
 {
     public static class StateMachineActionExtensions
     {
         [DebuggerHidden]
-        internal static async Task RunStateActionAsync(string stateActionName, IStateActionContext context, string actionName, StateActionActionBuildAction buildAction)
+        internal static Task RunStateActionAsync(string stateActionName, IStateActionContext context, string actionName)
         {
-            var integratedActionBuilder = new ActionActionBuilder(buildAction);
-            var instance = await integratedActionBuilder.GetInstanceAsync(context, context.GetBehaviorInstance($"{stateActionName}:{new Random().Next()}"));
-            if (!context.TryLocateAction(actionName, instance, out var a))
+            if (!context.TryLocateAction(actionName, $"{context.Behavior.Id.Instance}:{new Random().Next()}", out var a))
             {
                 throw new StateMachineRuntimeException($"On{stateActionName}Action '{actionName}' not found", context.Behavior.Id.BehaviorClass);
             }
@@ -30,15 +25,17 @@ namespace Stateflows.Activities
             var tokensInput = new TokensInput();
 
             var request = new CompoundRequest()
-                .Add(new SetContextOwner() { ContextOwner = context.Behavior.Id })
+                .Add(((BaseContext)context).Context.Context.GetContextOwnerSetter())
                 .Add(tokensInput)
             ;
                 
             _ = a.SendAsync(request);
+
+            return Task.CompletedTask;
         }
 
         [DebuggerHidden]
-        internal static async Task<bool> RunGuardActionAsync<TEvent>(int guardIndex, ITransitionContext<TEvent> context, string actionName, TransitionActionBuildAction<TEvent> buildAction)
+        internal static Task<bool> RunGuardActionAsync<TEvent>(int guardIndex, ITransitionContext<TEvent> context, string actionName)
         {
             var transitionContext = (TransitionContext<TEvent>)context;
             var edgeGuardIdentifier = $"{transitionContext.Edge.Identifier}.{guardIndex.ToString()}.{actionName}";
@@ -46,18 +43,10 @@ namespace Stateflows.Activities
             var guardResponse = context.Headers.OfType<GuardResponse>().FirstOrDefault();
             if (guardResponse != null && guardResponse.GuardIdentifier == edgeGuardIdentifier)
             {
-                return true;
+                return Task.FromResult(true);
             }
             
-            var integratedActionBuilder = new TransitionActionBuilder<TEvent>(buildAction);
-            var instance = await integratedActionBuilder.GetInstanceAsync(
-                context,
-                context.GetBehaviorInstance(context.Target != null
-                    ? $"{Event<TEvent>.Name}:{context.Target.Name}:{Constants.Guard}:{context.EventId}"
-                    : $"{Event<TEvent>.Name}:{Constants.Guard}:{context.EventId}"
-                )
-            );
-            if (!context.TryLocateAction(actionName, instance, out var a))
+            if (!context.TryLocateAction(actionName, $"{context.Behavior.Id.Instance}:{context.EventId}", out var a))
             {
                 throw new StateMachineRuntimeException($"GuardAction '{actionName}' not found", context.Behavior.Id.BehaviorClass);
             }
@@ -76,7 +65,7 @@ namespace Stateflows.Activities
                 .ToArray();
             
             var request = new CompoundRequest()
-                .Add(new SetContextOwner() { ContextOwner = context.Behavior.Id })
+                .Add(((BaseContext)context).Context.Context.GetContextOwnerSetter())
                 .Add(context.Event, headers)
             ;
 
@@ -84,21 +73,13 @@ namespace Stateflows.Activities
 
             _ = a.RequestAsync(request);
             
-            return false;
+            return Task.FromResult(false);
         }
 
         [DebuggerHidden]
-        internal static async Task RunEffectActionAsync<TEvent>(ITransitionContext<TEvent> context, string actionName, TransitionActionBuildAction<TEvent> buildAction)
+        internal static Task RunEffectActionAsync<TEvent>(ITransitionContext<TEvent> context, string actionName)
         {
-            var integratedActionBuilder = new TransitionActionBuilder<TEvent>(buildAction);
-            var instance = await integratedActionBuilder.GetInstanceAsync(
-                context,
-                context.GetBehaviorInstance(context.Target != null
-                    ? $"{Event<TEvent>.Name}:{context.Target.Name}:{Constants.Effect}:{context.EventId}"
-                    : $"{Event<TEvent>.Name}:{Constants.Effect}:{context.EventId}"
-                )
-            );
-            if (!context.TryLocateAction(actionName, instance, out var a))
+            if (!context.TryLocateAction(actionName, $"{context.Behavior.Id.Instance}:{context.EventId}", out var a))
             {
                 throw new StateMachineRuntimeException($"EffectAction '{actionName}' not found", context.Behavior.Id.BehaviorClass);
             }
@@ -110,11 +91,13 @@ namespace Stateflows.Activities
             tokensInput.Add(ev);
 
             var request = new CompoundRequest()
-                .Add(new SetContextOwner() { ContextOwner = context.Behavior.Id })
+                .Add(((BaseContext)context).Context.Context.GetContextOwnerSetter())
                 .Add(tokensInput)
             ;
 
             _ = a.SendAsync(request);
+
+            return Task.CompletedTask;
         }
     }
 }

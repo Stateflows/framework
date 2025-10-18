@@ -46,6 +46,9 @@ namespace Stateflows.Extensions.OpenTelemetry
                 EventProcessingActivity ??= StateMachineTracer.Source.StartActivity(
                     $"Activity '{context.Behavior.Id.Name.ToShortName()}:{context.Behavior.Id.InstanceText}' processing '{context.Event.GetType().GetEventName().ToShortName()}'"
                 );
+                
+                EventProcessingActivity.AddTag("ActivityId", $"{context.Behavior.Id.Name.ToShortName()}:{context.Behavior.Id.InstanceText}");
+                EventProcessingActivity.AddTag("Event", context.Event.GetType().GetEventName().ToShortName());
 
                 Logger.LogTrace(
                     message: "Activity '{ActivityId}' received event '{Event}', processing",
@@ -63,6 +66,8 @@ namespace Stateflows.Extensions.OpenTelemetry
             {
                 ExecutionActivities.Clear();
             }
+            
+            EventProcessingActivity?.AddTag("EventStatus", eventStatus);
 
             lock (FlowActivationActivities)
             {

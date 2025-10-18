@@ -4,10 +4,10 @@ using System.Linq;
 using System.Threading.Tasks;
 using Stateflows.Actions;
 using Stateflows.Activities;
-using Stateflows.Activities.Extensions;
+using Stateflows.Activities.Registration.Interfaces;
 using Stateflows.StateMachines.Context.Classes;
-using Stateflows.StateMachines.Registration.Extensions;
 using Stateflows.StateMachines.Registration.Interfaces.Internal;
+using ActionDelegateAsync = Stateflows.Actions.Registration.ActionDelegateAsync;
 
 namespace Stateflows.StateMachines.Registration.Interfaces.Base
 {
@@ -23,43 +23,64 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         /// <param name="actionsAsync">Action handlers</param>
         TReturn AddOnInitialize(params Func<IStateActionContext, Task>[] actionsAsync);
         
+        #region AddOnInitializeActivity
         /// <summary>
-        /// Adds activity behavior that will be started when current state initializes
+        /// Registers activity behavior that will be started when current state initializes
         /// </summary>
-        /// <param name="activityName">Activity behavior name</param>
-        /// <param name="buildAction">Build action</param>
-        [DebuggerHidden]
-        public TReturn AddOnInitializeActivity(string activityName, StateActionActivityBuildAction buildAction = null)
-            => AddOnInitialize(c => StateMachineActivityExtensions.RunStateActivityAsync(Constants.Initialization, c, activityName, buildAction));
-
-        /// <summary>
-        /// Adds activity behavior that will be started when current state initializes
-        /// </summary>
-        /// <param name="buildAction">Build action</param>
+       
         /// <typeparam name="TActivity">Activity behavior type</typeparam>
         [DebuggerHidden]
-        public TReturn AddOnInitializeActivity<TActivity>(StateActionActivityBuildAction buildAction = null)
+        public TReturn AddOnInitializeActivity<TActivity>()
             where TActivity : class, IActivity
-            => AddOnInitializeActivity(Activity<TActivity>.Name, buildAction);
-        
-        /// <summary>
-        /// Adds action behavior that will be started when current state initializes
-        /// </summary>
-        /// <param name="actionName">Action behavior name</param>
-        /// <param name="buildAction">Build action</param>
-        [DebuggerHidden]
-        public TReturn AddOnInitializeAction(string actionName, StateActionActionBuildAction buildAction = null)
-            => AddOnInitialize(c => StateMachineActionExtensions.RunStateActionAsync(Constants.Initialization, c, actionName, buildAction));
+        {
+            var vertex = ((IVertexBuilder)this).Vertex;
+            var activityName = $"{vertex.Graph.Name}.{vertex.Name}.onInitialize.{vertex.Entry.Actions.Count}";
+            vertex.Graph.StateflowsBuilder.AddActivities(b => b.AddActivity<TActivity>(activityName));
+            return AddOnInitialize(c => StateMachineActivityExtensions.RunStateActivityAsync(Constants.Initialization, c, activityName));
+        }
 
         /// <summary>
-        /// Adds action behavior that will be started when current state initializes
+        /// Registers activity behavior that will be started when current state initializes
         /// </summary>
-        /// <param name="buildAction">Build action</param>
+        /// <param name="activityBuildAction">Activity build action</param>
+        public TReturn AddOnInitializeActivity(ReactiveActivityBuildAction activityBuildAction)
+        {
+            var vertex = ((IVertexBuilder)this).Vertex;
+            var activityName = $"{vertex.Graph.Name}.{vertex.Name}.onInitialize.{vertex.Entry.Actions.Count}";
+            vertex.Graph.StateflowsBuilder.AddActivities(b => b.AddActivity(activityName, activityBuildAction));
+            return AddOnInitialize(c => StateMachineActivityExtensions.RunStateActivityAsync(Constants.Initialization, c, activityName));
+        }
+        #endregion
+        
+        #region AddOnInitializeAction
+        /// <summary>
+        /// Registers action behavior that will be started when current state initializes
+        /// </summary>
+       
         /// <typeparam name="TAction">Action behavior type</typeparam>
         [DebuggerHidden]
-        public TReturn AddOnInitializeAction<TAction>(StateActionActionBuildAction buildAction = null)
+        public TReturn AddOnInitializeAction<TAction>()
             where TAction : class, IAction
-            => AddOnInitializeAction(Stateflows.Actions.Action<TAction>.Name, buildAction);
+        {
+            var vertex = ((IVertexBuilder)this).Vertex;
+            var actionName = $"{vertex.Graph.Name}.{vertex.Name}.onInitialize.{vertex.Entry.Actions.Count}";
+            vertex.Graph.StateflowsBuilder.AddActions(b => b.AddAction<TAction>(actionName));
+            return AddOnInitialize(c => StateMachineActionExtensions.RunStateActionAsync(Constants.Initialization, c, actionName));
+        }
+        
+        /// <summary>
+        /// Registers action behavior that will be started when current state initializes
+        /// </summary>
+        /// <param name="actionDelegateAsync">Action delegate</param>
+        /// <param name="reentrant">Determines if action can be reentrant</param>
+        public TReturn AddOnInitializeAction(ActionDelegateAsync actionDelegateAsync, bool reentrant = true)
+        {
+            var vertex = ((IVertexBuilder)this).Vertex;
+            var actionName = $"{vertex.Graph.Name}.{vertex.Name}.onInitialize.{vertex.Entry.Actions.Count}";
+            vertex.Graph.StateflowsBuilder.AddActions(b => b.AddAction(actionName, actionDelegateAsync, reentrant));
+            return AddOnInitialize(c => StateMachineActionExtensions.RunStateActionAsync(Constants.Initialization, c, actionName));
+        }
+        #endregion
         
         /// <summary>
         /// Adds synchronous initialization handler coming from current state.<br/>
@@ -71,12 +92,7 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         /// <param name="actions">Synchronous action handlers</param>
         [DebuggerHidden]
         public TReturn AddOnInitialize(params System.Action<IStateActionContext>[] actions)
-            => AddOnInitialize(
-                actions.Select(action => action
-                    .AddStateMachineInvocationContext(((IGraphBuilder)this).Graph)
-                    .ToAsync()
-                ).ToArray()
-            );
+            => AddOnInitialize(actions.Select(action => action.ToAsync()).ToArray());
 
         /// <summary>
         /// Adds multiple typed initialization handlers to the current state.

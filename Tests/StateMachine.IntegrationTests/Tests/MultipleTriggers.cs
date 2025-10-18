@@ -1,8 +1,7 @@
 using OneOf;
 using Stateflows.Common;
-using Stateflows.StateMachines;
-using StateMachine.IntegrationTests.Classes.Events;
 using StateMachine.IntegrationTests.Utils;
+using StateMachine.IntegrationTests.Classes.Events;
 
 namespace StateMachine.IntegrationTests.Tests
 {
@@ -20,9 +19,7 @@ namespace StateMachine.IntegrationTests.Tests
         protected override void InitializeStateflows(IStateflowsBuilder builder)
         {
             builder
-                .AddOneOf()
                 .AddStateMachines(b => b
-
                     .AddStateMachine("simple", b => b
                         .AddInitialState("state1", b => b
                             .AddTransition<OneOf<OtherEvent, SomeEvent>>("state2", b => b
@@ -54,6 +51,7 @@ namespace StateMachine.IntegrationTests.Tests
                         .AddState("state2")
                     )
                 )
+                .AddOneOf()
                 ;
         }
 

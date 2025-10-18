@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Reflection;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using Stateflows.Activities.Registration.Interfaces;
 
 namespace Stateflows.Activities
@@ -19,16 +20,16 @@ namespace Stateflows.Activities
             where TInterceptor : class, IActivityInterceptor;
         IActivitiesBuilder AddInterceptor(ActivityInterceptorFactoryAsync interceptorFactoryAsync);
         public IActivitiesBuilder AddInterceptor(ActivityInterceptorFactory interceptorFactory)
-            => AddInterceptor(async serviceProvider => interceptorFactory(serviceProvider));
+            => AddInterceptor(serviceProvider => Task.FromResult(interceptorFactory(serviceProvider)));
         IActivitiesBuilder AddExceptionHandler<TExceptionHandler>()
             where TExceptionHandler : class, IActivityExceptionHandler;
         IActivitiesBuilder AddExceptionHandler(ActivityExceptionHandlerFactoryAsync exceptionHandlerFactoryAsync);
         public IActivitiesBuilder AddExceptionHandler(ActivityExceptionHandlerFactory exceptionHandlerFactory)
-            => AddExceptionHandler(async serviceProvider => exceptionHandlerFactory(serviceProvider));
+            => AddExceptionHandler(serviceProvider => Task.FromResult(exceptionHandlerFactory(serviceProvider)));
         IActivitiesBuilder AddObserver<TObserver>()
             where TObserver : class, IActivityObserver;
         IActivitiesBuilder AddObserver(ActivityObserverFactoryAsync observerFactoryAsync);
         public IActivitiesBuilder AddObserver(ActivityObserverFactory observerFactory)
-            => AddObserver(async serviceProvider => observerFactory(serviceProvider));
+            => AddObserver(serviceProvider => Task.FromResult(observerFactory(serviceProvider)));
     }
 }

@@ -8,26 +8,26 @@ namespace Stateflows.Common.Utilities
 {
     public static class StateflowsJsonConverter
     {
-        private static readonly JsonSerializerSettings polymorphicCamelSettings = new JsonSerializerSettings()
+        private static readonly JsonSerializerSettings PolymorphicCamelSettings = new JsonSerializerSettings()
         {
             TypeNameHandling = TypeNameHandling.All,
             ReferenceLoopHandling = ReferenceLoopHandling.Ignore,
             ContractResolver = new CamelCasePropertyNamesContractResolver()
         };
 
-        private static readonly JsonSerializerSettings polymorphicSettings = new JsonSerializerSettings()
+        private static readonly JsonSerializerSettings PolymorphicSettings = new JsonSerializerSettings()
         {
             TypeNameHandling = TypeNameHandling.All,
             ReferenceLoopHandling = ReferenceLoopHandling.Ignore
         };
 
-        private static readonly JsonSerializerSettings camelSettings = new JsonSerializerSettings()
+        private static readonly JsonSerializerSettings CamelSettings = new JsonSerializerSettings()
         {
             ReferenceLoopHandling = ReferenceLoopHandling.Ignore,
             ContractResolver = new CamelCasePropertyNamesContractResolver()
         };
 
-        private static readonly JsonSerializerSettings settings = new JsonSerializerSettings()
+        private static readonly JsonSerializerSettings Settings = new JsonSerializerSettings()
         {
             ReferenceLoopHandling = ReferenceLoopHandling.Ignore
         };
@@ -45,24 +45,42 @@ namespace Stateflows.Common.Utilities
         /// Serializes the specified object to a JSON string.
         /// </summary>
         /// <param name="value">The object to serialize.</param>
+        /// <param name="useCamelCase">Specifies, if names should be normalized to camelCase.</param>
+        /// <param name="formatting">Formatting settings.</param>
         /// <returns>A JSON string representation of the object.</returns>
         [DebuggerStepThrough]
         public static string SerializePolymorphicObject(object value, bool useCamelCase = false, Formatting formatting = Formatting.None)
         {
+            var settings = useCamelCase
+                ? PolymorphicCamelSettings
+                : PolymorphicSettings;
+            var oldFormatting = settings.Formatting;
             settings.Formatting = formatting;
-            return JsonConvert.SerializeObject(value, null, useCamelCase ? polymorphicCamelSettings : polymorphicSettings);
+            var result = JsonConvert.SerializeObject(value, null, settings);
+            settings.Formatting = oldFormatting;
+            
+            return result;
         }
 
         /// <summary>
         /// Serializes the specified object to a JSON string.
         /// </summary>
         /// <param name="value">The object to serialize.</param>
+        /// <param name="useCamelCase">Specifies, if names should be normalized to camelCase.</param>
+        /// <param name="formatting">Formatting settings.</param>
         /// <returns>A JSON string representation of the object.</returns>
         [DebuggerStepThrough]
         public static string SerializeObject(object value, bool useCamelCase = false, Formatting formatting = Formatting.None)
         {
+            var settings = useCamelCase
+                ? CamelSettings
+                : Settings;
+            var oldFormatting = settings.Formatting;
             settings.Formatting = formatting;
-            return JsonConvert.SerializeObject(value, null, useCamelCase ? camelSettings : settings);
+            var result = JsonConvert.SerializeObject(value, null, settings);
+            settings.Formatting = oldFormatting;
+            
+            return result;
         }
 
         /// <summary>
@@ -73,7 +91,7 @@ namespace Stateflows.Common.Utilities
         [DebuggerStepThrough]
         public static object DeserializeObject(string value)
         {
-            return JsonConvert.DeserializeObject(value, null, polymorphicSettings);
+            return JsonConvert.DeserializeObject(value, null, PolymorphicSettings);
         }
 
         /// <summary>
@@ -85,7 +103,7 @@ namespace Stateflows.Common.Utilities
         [DebuggerStepThrough]
         public static object DeserializeObject(string value, Type type)
         {
-            return JsonConvert.DeserializeObject(value, type, polymorphicSettings);
+            return JsonConvert.DeserializeObject(value, type, PolymorphicSettings);
         }
 
         /// <summary>
@@ -97,7 +115,7 @@ namespace Stateflows.Common.Utilities
         [DebuggerStepThrough]
         public static T DeserializeObject<T>(string value)
         {
-            return JsonConvert.DeserializeObject<T>(value, polymorphicSettings);
+            return JsonConvert.DeserializeObject<T>(value, PolymorphicSettings);
         }
         
         public static T ParseStringToEnum<T>(string value)

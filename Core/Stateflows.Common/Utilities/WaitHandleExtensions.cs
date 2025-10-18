@@ -9,7 +9,7 @@ namespace Stateflows.Common.Utilities
         private static AsyncLocal<TaskCompletionSource<bool>> TaskCompletionSource =  new AsyncLocal<TaskCompletionSource<bool>>();
         
         [DebuggerHidden]
-        private static void Callback(object? state, bool timedOut)
+        private static void Callback(object state, bool timedOut)
         {
             TaskCompletionSource.Value.TrySetResult(true);
         }
