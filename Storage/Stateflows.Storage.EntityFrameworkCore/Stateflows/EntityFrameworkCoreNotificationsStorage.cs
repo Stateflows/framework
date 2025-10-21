@@ -9,8 +9,6 @@ namespace Stateflows.Storage.EntityFrameworkCore.Stateflows
 {
     internal class EntityFrameworkCoreNotificationsStorage : IStateflowsNotificationsStorage
     {
-        internal static readonly ActivitySource Source = new ActivitySource(nameof(Stateflows));
-        
         private readonly IStateflowsDbContext_v1 DbContext;
         private readonly ILogger<EntityFrameworkCoreNotificationsStorage> Logger;
 

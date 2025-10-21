@@ -12,7 +12,7 @@ using ActionDelegateAsync = Stateflows.Actions.Registration.ActionDelegateAsync;
 
 namespace Stateflows.StateMachines.Registration.Interfaces.Base
 {
-    public interface IBaseDefaultGuard<out TReturn>
+    public interface IBaseDeferralGuard<TEvent, out TReturn>
     {
         /// <summary>
         /// Adds a function-based guard to the current transition.<br/>
@@ -22,23 +22,12 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         /// }</code>
         /// </summary>
         /// <param name="guardsAsync">The asynchronous guard functions.</param>
-        TReturn AddGuard(params Func<ITransitionContext<Completion>, Task<bool>>[] guardsAsync);
+        TReturn AddGuard(params Func<IDeferralContext<TEvent>, Task<bool>>[] guardsAsync);
 
         /// <summary>
-        /// Adds a function-based guard to the current transition.<br/>
-        /// Use the following pattern to implement function:
-        /// <code>c => {
-        ///     // function logic here; transition context is available via c parameter
-        /// }</code>
+        /// Registers activity behavior as guard
         /// </summary>
-        /// <param name="guards">The guard functions.</param>
-        [DebuggerHidden]
-        public TReturn AddGuard(params Func<ITransitionContext<Completion>, bool>[] guards)
-            => AddGuard(guards.Select(guard => guard.ToAsync()).ToArray());
-
-        /// <summary>
-        /// Adds activity behavior as guard
-        /// </summary>
+        /// <param name="buildAction">Build action</param>
         /// <typeparam name="TActivity">Activity behavior type</typeparam>
         [DebuggerHidden]
         public TReturn AddGuardActivity<TActivity>()
@@ -54,7 +43,7 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
             activityName += $".guard.{edge.Guards.Actions.Count}";
             
             vertex.Graph.StateflowsBuilder.AddActivities(b => b.AddActivity<TActivity>(activityName));
-            return AddGuard(c => StateMachineActivityExtensions.RunTransitionGuardActivityAsync(edge.Guards.Actions.Count, c, activityName));
+            return AddGuard(c => StateMachineActivityExtensions.RunDeferralGuardActivityAsync(edge.Guards.Actions.Count, c, activityName));
         }
 
         /// <summary>
@@ -73,7 +62,7 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
             activityName += $".guard.{edge.Guards.Actions.Count}";
             
             vertex.Graph.StateflowsBuilder.AddActivities(b => b.AddActivity(activityName, activityBuildAction));
-            return AddGuard(c => StateMachineActivityExtensions.RunTransitionGuardActivityAsync(edge.Guards.Actions.Count, c, activityName));
+            return AddGuard(c => StateMachineActivityExtensions.RunDeferralGuardActivityAsync(edge.Guards.Actions.Count, c, activityName));
         }
 
         /// <summary>
@@ -94,7 +83,7 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
             actionName += $".guard.{edge.Guards.Actions.Count}";
             
             vertex.Graph.StateflowsBuilder.AddActions(b => b.AddAction<TAction>(actionName));
-            return AddGuard(c => StateMachineActionExtensions.RunTransitionGuardActionAsync(edge.Guards.Actions.Count, c, actionName));
+            return AddGuard(c => StateMachineActionExtensions.RunDeferralGuardActionAsync(edge.Guards.Actions.Count, c, actionName));
         }
 
         /// <summary>
@@ -114,23 +103,11 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
             actionName += $".guard.{edge.Guards.Actions.Count}";
             
             vertex.Graph.StateflowsBuilder.AddActions(b => b.AddAction(actionName, actionDelegate, reentrant));
-            return AddGuard(c => StateMachineActionExtensions.RunTransitionGuardActionAsync(edge.Guards.Actions.Count, c, actionName));
+            return AddGuard(c => StateMachineActionExtensions.RunDeferralGuardActionAsync(edge.Guards.Actions.Count, c, actionName));
         }
 
         /// <summary>
-        /// Adds a negated function-based guard to the current transition.<br/>
-        /// Use the following pattern to implement function:
-        /// <code>async c => {
-        ///     // function logic here; transition context is available via c parameter
-        /// }</code>
-        /// </summary>
-        /// <param name="guardsAsync">The asynchronous guard functions.</param>
-        [DebuggerHidden]
-        TReturn AddNegatedGuard(params Func<ITransitionContext<Completion>, Task<bool>>[] guardsAsync)
-            => AddGuard(guardsAsync.Select<Func<ITransitionContext<Completion>, Task<bool>>, Func<ITransitionContext<Completion>, Task<bool>>>(guardAsync => async c => !await guardAsync.Invoke(c)).ToArray());
-
-        /// <summary>
-        /// Adds a negated function-based guard to the current transition.<br/>
+        /// Adds a function-based guard to the current transition.<br/>
         /// Use the following pattern to implement function:
         /// <code>c => {
         ///     // function logic here; transition context is available via c parameter
@@ -138,8 +115,8 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         /// </summary>
         /// <param name="guards">The guard functions.</param>
         [DebuggerHidden]
-        public TReturn AddNegatedGuard(params Func<ITransitionContext<Completion>, bool>[] guards)
-            => AddNegatedGuard(guards.Select(guard => guard.ToAsync()).ToArray());
+        public TReturn AddGuard(params Func<IDeferralContext<TEvent>, bool>[] guards)
+            => AddGuard(guards.Select(guard => guard.ToAsync()).ToArray());
 
         /// <summary>
         /// Adds a typed guard handler to the current transition.
@@ -147,16 +124,32 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         /// <typeparam name="TGuard">The type of the guard handler.</typeparam>
         [DebuggerHidden]
         TReturn AddGuard<TGuard>()
-            where TGuard : class, IDefaultTransitionGuard
-            => AddGuard(async c => await (await ((BaseContext)c).Context.Executor.GetDefaultTransitionGuardAsync<TGuard>(c)).GuardAsync());
+            where TGuard : class, IDeferralGuard<TEvent>
+            => AddGuard(async c => await (await ((BaseContext)c).Context.Executor.GetDeferralGuardAsync<TGuard, TEvent>(c)).GuardAsync(c.Event));
 
+        /// <summary>
+        /// Adds a negated function-based guard to the current transition.
+        /// </summary>
+        /// <param name="guardsAsync">The asynchronous guard functions.</param>
+        [DebuggerHidden]
+        TReturn AddNegatedGuard(params Func<IDeferralContext<TEvent>, Task<bool>>[] guardsAsync)
+            => AddGuard(guardsAsync.Select<Func<IDeferralContext<TEvent>, Task<bool>>, Func<IDeferralContext<TEvent>, Task<bool>>>(guardAsync => async c => !await guardAsync.Invoke(c)).ToArray());
+
+        /// <summary>
+        /// Adds a negated function-based guard to the current transition.
+        /// </summary>
+        /// <param name="guards">The guard functions.</param>
+        [DebuggerHidden]
+        public TReturn AddNegatedGuard(params Func<IDeferralContext<TEvent>, bool>[] guards)
+            => AddNegatedGuard(guards.Select(guard => guard.ToAsync()).ToArray());
+        
         /// <summary>
         /// Adds a negated typed guard handler to the current transition.
         /// </summary>
         /// <typeparam name="TGuard">The type of the guard handler.</typeparam>
         [DebuggerHidden]
         TReturn AddNegatedGuard<TGuard>()
-            where TGuard : class, IDefaultTransitionGuard
-            => AddGuard(async c => !await (await ((BaseContext)c).Context.Executor.GetDefaultTransitionGuardAsync<TGuard>(c)).GuardAsync());
+            where TGuard : class, IDeferralGuard<TEvent>
+            => AddGuard(async c => !await (await ((BaseContext)c).Context.Executor.GetDeferralGuardAsync<TGuard, TEvent>(c)).GuardAsync(c.Event)!);
     }
 }

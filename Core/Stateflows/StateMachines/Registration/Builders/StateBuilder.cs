@@ -134,7 +134,7 @@ namespace Stateflows.StateMachines.Registration.Builders
 
         #region Utils
         [DebuggerHidden]
-        public IStateBuilder AddDeferredEvent<TEvent>()
+        public IStateBuilder AddDeferredEvent<TEvent>(DeferralBuildAction<TEvent> buildAction)
         {
             if (typeof(TEvent) == typeof(Completion))
                 throw new DeferralDefinitionException(typeof(TEvent).GetEventName(), "Completion event cannot be deferred.", Vertex.Graph.Class);
@@ -145,7 +145,11 @@ namespace Stateflows.StateMachines.Registration.Builders
             if (typeof(TEvent).IsSubclassOf(typeof(TimeEvent)))
                 throw new DeferralDefinitionException(typeof(TEvent).GetEventName(), "Time events cannot be deferred.", Vertex.Graph.Class);
 
-            Vertex.DeferredEvents.Add(typeof(TEvent).GetEventName());
+            var builder = new DeferralBuilder<TEvent>(Vertex);
+            
+            buildAction?.Invoke(builder);
+
+            Vertex.Deferrals.Add(typeof(TEvent).GetEventName(), builder.Logic);
 
             return this;
         }
@@ -429,8 +433,8 @@ namespace Stateflows.StateMachines.Registration.Builders
             => AddOnExit(actionsAsync) as IBehaviorStateBuilder;
 
         [DebuggerHidden]
-        IBehaviorStateBuilder IStateUtils<IBehaviorStateBuilder>.AddDeferredEvent<TEvent>()
-            => AddDeferredEvent<TEvent>() as IBehaviorStateBuilder;
+        IBehaviorStateBuilder IStateUtils<IBehaviorStateBuilder>.AddDeferredEvent<TEvent>(DeferralBuildAction<TEvent> buildAction)
+            => AddDeferredEvent<TEvent>(buildAction) as IBehaviorStateBuilder;
 
         [DebuggerHidden]
         IBehaviorStateBuilder IStateTransitions<IBehaviorStateBuilder>.AddTransition<TEvent>(string targetStateName, TransitionBuildAction<TEvent> transitionBuildAction)
@@ -537,8 +541,8 @@ namespace Stateflows.StateMachines.Registration.Builders
             => AddOnExit(actionsAsync) as IOverridenStateBuilder;
 
         [DebuggerHidden]
-        IOverridenStateBuilder IStateUtils<IOverridenStateBuilder>.AddDeferredEvent<TEvent>()
-            => AddDeferredEvent<TEvent>() as IOverridenStateBuilder;
+        IOverridenStateBuilder IStateUtils<IOverridenStateBuilder>.AddDeferredEvent<TEvent>(DeferralBuildAction<TEvent> buildAction)
+            => AddDeferredEvent<TEvent>(buildAction) as IOverridenStateBuilder;
 
         [DebuggerHidden]
         IBehaviorOverridenRegionalizedStateBuilder IStateTransitionsOverrides<IBehaviorOverridenRegionalizedStateBuilder>.
@@ -793,8 +797,8 @@ namespace Stateflows.StateMachines.Registration.Builders
             => AddOnExit(actionsAsync) as IBehaviorOverridenStateBuilder;
 
         [DebuggerHidden]
-        IBehaviorOverridenStateBuilder IStateUtils<IBehaviorOverridenStateBuilder>.AddDeferredEvent<TEvent>()
-            => AddDeferredEvent<TEvent>() as IBehaviorOverridenStateBuilder;
+        IBehaviorOverridenStateBuilder IStateUtils<IBehaviorOverridenStateBuilder>.AddDeferredEvent<TEvent>(DeferralBuildAction<TEvent> buildAction)
+            => AddDeferredEvent<TEvent>(buildAction) as IBehaviorOverridenStateBuilder;
 
         [DebuggerHidden]
         IBehaviorOverridenRegionalizedStateBuilder IStateComposition<IBehaviorOverridenRegionalizedStateBuilder>.
@@ -815,8 +819,8 @@ namespace Stateflows.StateMachines.Registration.Builders
             => AddOnExit(actionsAsync) as IOverridenRegionalizedStateBuilder;
 
         [DebuggerHidden]
-        IOverridenRegionalizedStateBuilder IStateUtils<IOverridenRegionalizedStateBuilder>.AddDeferredEvent<TEvent>()
-            => AddDeferredEvent<TEvent>() as IOverridenRegionalizedStateBuilder;
+        IOverridenRegionalizedStateBuilder IStateUtils<IOverridenRegionalizedStateBuilder>.AddDeferredEvent<TEvent>(DeferralBuildAction<TEvent> buildAction)
+            => AddDeferredEvent<TEvent>(buildAction) as IOverridenRegionalizedStateBuilder;
 
         [DebuggerHidden]
         IBehaviorOverridenRegionalizedStateBuilder IStateEntry<IBehaviorOverridenRegionalizedStateBuilder>.AddOnEntry(params Func<IStateActionContext, Task>[] actionsAsync)
@@ -827,8 +831,8 @@ namespace Stateflows.StateMachines.Registration.Builders
             => AddOnExit(actionsAsync) as IBehaviorOverridenRegionalizedStateBuilder;
 
         [DebuggerHidden]
-        IBehaviorOverridenRegionalizedStateBuilder IStateUtils<IBehaviorOverridenRegionalizedStateBuilder>.AddDeferredEvent<TEvent>()
-            => AddDeferredEvent<TEvent>() as IBehaviorOverridenRegionalizedStateBuilder;
+        IBehaviorOverridenRegionalizedStateBuilder IStateUtils<IBehaviorOverridenRegionalizedStateBuilder>.AddDeferredEvent<TEvent>(DeferralBuildAction<TEvent> buildAction)
+            => AddDeferredEvent<TEvent>(buildAction) as IBehaviorOverridenRegionalizedStateBuilder;
 
         [DebuggerHidden]
         IForkBuilder IForkTransitions<IForkBuilder>.AddTransition(string targetStateName, DefaultTransitionEffectBuildAction transitionBuildAction)
@@ -912,5 +916,20 @@ namespace Stateflows.StateMachines.Registration.Builders
 
         public IHistoryBuilder AddTransition(string targetStateName, DefaultTransitionBuildAction transitionBuildAction = null)
             => AddDefaultTransition(targetStateName, transitionBuildAction) as IHistoryBuilder;
+
+        // IOverridenStateBuilder IStateUtils<IOverridenStateBuilder>.AddDeferredEvent<TEvent>(DeferralBuildAction<TEvent> buildAction)
+        //     => (IOverridenStateBuilder)AddDeferredEvent(buildAction);
+        //
+        // IOverridenRegionalizedStateBuilder IStateUtils<IOverridenRegionalizedStateBuilder>.AddDeferredEvent<TEvent>(DeferralBuildAction<TEvent> buildAction)
+        //     => (IOverridenRegionalizedStateBuilder)AddDeferredEvent(buildAction);
+        //
+        // IBehaviorStateBuilder IStateUtils<IBehaviorStateBuilder>.AddDeferredEvent<TEvent>(DeferralBuildAction<TEvent> buildAction)
+        //     => (IBehaviorStateBuilder)AddDeferredEvent(buildAction);
+        //
+        // IBehaviorOverridenStateBuilder IStateUtils<IBehaviorOverridenStateBuilder>.AddDeferredEvent<TEvent>(DeferralBuildAction<TEvent> buildAction)
+        //     => (IBehaviorOverridenStateBuilder)AddDeferredEvent(buildAction);
+        //
+        // IBehaviorOverridenRegionalizedStateBuilder IStateUtils<IBehaviorOverridenRegionalizedStateBuilder>.AddDeferredEvent<TEvent>(DeferralBuildAction<TEvent> buildAction)
+        //     => (IBehaviorOverridenRegionalizedStateBuilder)AddDeferredEvent(buildAction);
     }
 }

@@ -419,7 +419,7 @@ namespace Stateflows.Activities.Engine
         
         private void HandleGuardRequest<TEvent>(IEnumerable<TokenHolder> outputTokens, EventHolder<TEvent> eventHolder)
         {
-            var guardRequest = eventHolder.Headers.OfType<GuardRequest>().FirstOrDefault();
+            var guardRequest = eventHolder.Headers.OfType<TransitionGuardRequest>().FirstOrDefault();
             if (guardRequest != null)
             {
                 var output = outputTokens.OfType<TokenHolder<bool>>().FirstOrDefault()?.Payload ?? false;
@@ -427,9 +427,9 @@ namespace Stateflows.Activities.Engine
                 if (output)
                 {
                     var headers = eventHolder.Headers
-                        .Where(h => !(h is GuardRequest))
+                        .Where(h => !(h is TransitionGuardRequest))
                         .Append(
-                            new GuardResponse()
+                            new TransitionGuardResponse()
                             {
                                 GuardIdentifier = guardRequest.GuardIdentifier
                             }

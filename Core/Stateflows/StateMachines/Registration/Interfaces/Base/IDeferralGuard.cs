@@ -4,43 +4,43 @@ using Stateflows.StateMachines.Registration.Interfaces.Internal;
 
 namespace Stateflows.StateMachines.Registration.Interfaces.Base
 {
-    public interface IDefaultGuard<out TReturn> : IBaseDefaultGuard<TReturn>
+    public interface IDeferralGuard<TEvent, out TReturn> : IBaseDeferralGuard<TEvent, TReturn>
     {
         /// <summary>
-        /// Adds a guard expression to the current transition.
+        /// Adds a guard expression to the current deferral.
         /// </summary>
         /// <param name="guardExpression">The guard expression to add.</param>
-        TReturn AddGuardExpression(Func<IDefaultGuardBuilder, IDefaultGuardBuilder> guardExpression)
+        TReturn AddGuardExpression(Func<IDeferralGuardBuilder<TEvent>, IDeferralGuardBuilder<TEvent>> guardExpression)
         {
-            var builder = new GuardBuilder<Completion>(((IVertexBuilder)this).Vertex);
+            var builder = new DeferralGuardBuilder<TEvent>(((IVertexBuilder)this).Vertex);
             guardExpression.Invoke(builder);
 
             return AddGuard(builder.GetAndGuard());
         }
 
         /// <summary>
-        /// Adds multiple typed guard handlers to the current transition.
+        /// Adds multiple typed guard handlers to the current deferral.
         /// </summary>
         /// <typeparam name="TGuard1">The type of the first guard handler.</typeparam>
         /// <typeparam name="TGuard2">The type of the second guard handler.</typeparam>
         TReturn AddGuards<TGuard1, TGuard2>()
-            where TGuard1 : class, IDefaultTransitionGuard
-            where TGuard2 : class, IDefaultTransitionGuard
+            where TGuard1 : class, IDeferralGuard<TEvent>
+            where TGuard2 : class, IDeferralGuard<TEvent>
             => AddGuardExpression(b => b
                 .AddGuard<TGuard1>()
                 .AddGuard<TGuard2>()
             );
 
         /// <summary>
-        /// Adds multiple typed guard handlers to the current transition.
+        /// Adds multiple typed guard handlers to the current deferral.
         /// </summary>
         /// <typeparam name="TGuard1">The type of the first guard handler.</typeparam>
         /// <typeparam name="TGuard2">The type of the second guard handler.</typeparam>
         /// <typeparam name="TGuard3">The type of the third guard handler.</typeparam>
         TReturn AddGuards<TGuard1, TGuard2, TGuard3>()
-            where TGuard1 : class, IDefaultTransitionGuard
-            where TGuard2 : class, IDefaultTransitionGuard
-            where TGuard3 : class, IDefaultTransitionGuard
+            where TGuard1 : class, IDeferralGuard<TEvent>
+            where TGuard2 : class, IDeferralGuard<TEvent>
+            where TGuard3 : class, IDeferralGuard<TEvent>
             => AddGuardExpression(b => b
                 .AddGuard<TGuard1>()
                 .AddGuard<TGuard2>()
@@ -48,17 +48,17 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
             );
 
         /// <summary>
-        /// Adds multiple typed guard handlers to the current transition.
+        /// Adds multiple typed guard handlers to the current deferral.
         /// </summary>
         /// <typeparam name="TGuard1">The type of the first guard handler.</typeparam>
         /// <typeparam name="TGuard2">The type of the second guard handler.</typeparam>
         /// <typeparam name="TGuard3">The type of the third guard handler.</typeparam>
         /// <typeparam name="TGuard4">The type of the fourth guard handler.</typeparam>
         TReturn AddGuards<TGuard1, TGuard2, TGuard3, TGuard4>()
-            where TGuard1 : class, IDefaultTransitionGuard
-            where TGuard2 : class, IDefaultTransitionGuard
-            where TGuard3 : class, IDefaultTransitionGuard
-            where TGuard4 : class, IDefaultTransitionGuard
+            where TGuard1 : class, IDeferralGuard<TEvent>
+            where TGuard2 : class, IDeferralGuard<TEvent>
+            where TGuard3 : class, IDeferralGuard<TEvent>
+            where TGuard4 : class, IDeferralGuard<TEvent>
             => AddGuardExpression(b => b
                 .AddGuard<TGuard1>()
                 .AddGuard<TGuard2>()
@@ -67,7 +67,7 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
             );
 
         /// <summary>
-        /// Adds multiple typed guard handlers to the current transition.
+        /// Adds multiple typed guard handlers to the current deferral.
         /// </summary>
         /// <typeparam name="TGuard1">The type of the first guard handler.</typeparam>
         /// <typeparam name="TGuard2">The type of the second guard handler.</typeparam>
@@ -75,11 +75,11 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         /// <typeparam name="TGuard4">The type of the fourth guard handler.</typeparam>
         /// <typeparam name="TGuard5">The type of the fifth guard handler.</typeparam>
         TReturn AddGuards<TGuard1, TGuard2, TGuard3, TGuard4, TGuard5>()
-            where TGuard1 : class, IDefaultTransitionGuard
-            where TGuard2 : class, IDefaultTransitionGuard
-            where TGuard3 : class, IDefaultTransitionGuard
-            where TGuard4 : class, IDefaultTransitionGuard
-            where TGuard5 : class, IDefaultTransitionGuard
+            where TGuard1 : class, IDeferralGuard<TEvent>
+            where TGuard2 : class, IDeferralGuard<TEvent>
+            where TGuard3 : class, IDeferralGuard<TEvent>
+            where TGuard4 : class, IDeferralGuard<TEvent>
+            where TGuard5 : class, IDeferralGuard<TEvent>
             => AddGuardExpression(b => b
                 .AddGuard<TGuard1>()
                 .AddGuard<TGuard2>()
