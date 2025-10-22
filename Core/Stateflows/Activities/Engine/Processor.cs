@@ -51,7 +51,7 @@ namespace Stateflows.Activities.Engine
             using var serviceScope = ServiceProvider.CreateScope();
             var serviceProvider = serviceScope.ServiceProvider;
 
-            var storage = serviceProvider.GetRequiredService<IStateflowsStorage>();
+            using var storage = serviceProvider.GetRequiredService<IStateflowsStorage>();
 
             var stateflowsContext = await storage.HydrateAsync(id);
 

@@ -63,5 +63,10 @@ namespace Stateflows.Storage.EntityFrameworkCore.Stateflows
             
             return result;
         }
+
+        public void Dispose()
+        {
+            DbContext.Dispose();
+        }
     }
 }

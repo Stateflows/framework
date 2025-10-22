@@ -149,5 +149,10 @@ namespace Stateflows.Storage.EntityFrameworkCore.Stateflows
 
             return Task.FromResult(result as IEnumerable<StateflowsContext>);
         }
+
+        public void Dispose()
+        {
+            DbContext.Dispose();
+        }
     }
 }
