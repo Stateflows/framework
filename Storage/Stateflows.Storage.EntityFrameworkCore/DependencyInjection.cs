@@ -39,7 +39,7 @@ namespace Stateflows
             }
 
             builder.ServiceCollection
-                .AddDbContext<IStateflowsDbContext_v1, TDbContext>()
+                .AddScoped<IStateflowsDbContext_v1>(provider => provider.GetRequiredService<TDbContext>())
                 .AddHostedService<NotificationsCleaner<TDbContext>>();
 
             return builder;
