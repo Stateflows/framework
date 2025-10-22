@@ -55,22 +55,18 @@ namespace Stateflows.Actions.Engine
         {
             var inspector = await GetInspectorAsync();
             
-            var scope = ServiceProvider.CreateScope();
+            using var serviceScope = ServiceProvider.CreateScope();
             
-            inspector.AfterHydrate(new ActionDelegateContext(StateflowsContext, eventHolder, scope.ServiceProvider));
-            
-            scope.Dispose();
+            inspector.AfterHydrate(new ActionDelegateContext(StateflowsContext, eventHolder, serviceScope.ServiceProvider));
         }
 
         public async Task DehydrateAsync(EventHolder eventHolder)
         {
             var inspector = await GetInspectorAsync();
 
-            var scope = ServiceProvider.CreateScope();
+            using var scope = ServiceProvider.CreateScope();
 
             inspector.BeforeDehydrate(new ActionDelegateContext(StateflowsContext, eventHolder, scope.ServiceProvider));
-            
-            scope.Dispose();
         }
         
         public async Task<EventStatus> DoProcessAsync<TEvent>(EventHolder<TEvent> eventHolder)

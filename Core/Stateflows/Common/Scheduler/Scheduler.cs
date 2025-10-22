@@ -25,10 +25,9 @@ namespace Stateflows.Common.Scheduler
 
         private readonly MethodInfo SendAsyncMethod = typeof(IBehavior).GetMethod(nameof(IBehavior.SendAsync));
 
-        public Scheduler(IServiceProvider serviceProvider, /*IStateflowsInitializer initializer,*/ IHostApplicationLifetime lifetime)
+        public Scheduler(IServiceProvider serviceProvider, IHostApplicationLifetime lifetime)
         {
             Scope = serviceProvider.CreateScope();
-            // Initializer = initializer;
             Locator = ServiceProvider.GetRequiredService<IBehaviorLocator>();
             Executor = ServiceProvider.GetRequiredService<IStateflowsTenantExecutor>();
             Logger = ServiceProvider.GetRequiredService<ILogger<Scheduler>>();

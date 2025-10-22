@@ -49,8 +49,10 @@ namespace Stateflows.StateMachines.Engine
             try
             {
                 var result = EventStatus.Undelivered;
+
+                using var serviceScope = ServiceProvider.CreateScope();
                 
-                var serviceProvider = ServiceProvider.CreateScope().ServiceProvider;
+                var serviceProvider = serviceScope.ServiceProvider;
 
                 var storage = serviceProvider.GetRequiredService<IStateflowsStorage>();
 
