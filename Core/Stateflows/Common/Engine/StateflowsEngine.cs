@@ -19,10 +19,7 @@ namespace Stateflows.Common
         private readonly IStateflowsTenantProvider TenantProvider;
         private readonly ITenantAccessor TenantAccessor;
         private readonly IStateflowsValidator[] Validators;
-        private Dictionary<string, IEventProcessor> processors;
-
-        private Dictionary<string, IEventProcessor> Processors
-            => processors ??= ServiceProvider.GetRequiredService<IEnumerable<IEventProcessor>>().ToDictionary(p => p.BehaviorType, p => p);
+        private readonly Dictionary<string, IEventProcessor> Processors;
 
         public StateflowsEngine(IServiceProvider serviceProvider)
         {
@@ -32,6 +29,7 @@ namespace Stateflows.Common
             TenantAccessor = ServiceProvider.GetRequiredService<ITenantAccessor>();
             TenantProvider = ServiceProvider.GetRequiredService<IStateflowsTenantProvider>();
             Validators = ServiceProvider.GetRequiredService<IEnumerable<IStateflowsValidator>>().ToArray();
+            Processors = ServiceProvider.GetRequiredService<IEnumerable<IEventProcessor>>().ToDictionary(p => p.BehaviorType, p => p);
         }
 
         [DebuggerHidden]

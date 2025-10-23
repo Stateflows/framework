@@ -16,18 +16,21 @@ namespace Stateflows.Activities.Engine
     {
         string IEventProcessor.BehaviorType => BehaviorType.Activity;
 
-        public readonly ActivitiesRegister Register;
-        public readonly IEnumerable<IActivityEventHandler> EventHandlers;
-        public readonly IServiceProvider ServiceProvider;
+        private readonly ActivitiesRegister Register;
+        private readonly IEnumerable<IActivityEventHandler> EventHandlers;
+        private readonly IStateflowsStorage Storage;
+        private readonly IServiceProvider ServiceProvider;
 
         public Processor(
             ActivitiesRegister register,
             IEnumerable<IActivityEventHandler> eventHandlers,
+            IStateflowsStorage storage,
             IServiceProvider serviceProvider
         )
         {
             Register = register;
             ServiceProvider = serviceProvider;
+            Storage = storage;
             EventHandlers = eventHandlers;
         }
 
@@ -51,9 +54,7 @@ namespace Stateflows.Activities.Engine
             using var serviceScope = ServiceProvider.CreateScope();
             var serviceProvider = serviceScope.ServiceProvider;
 
-            using var storage = serviceProvider.GetRequiredService<IStateflowsStorage>();
-
-            var stateflowsContext = await storage.HydrateAsync(id);
+            var stateflowsContext = await Storage.HydrateAsync(id);
 
             var key = stateflowsContext.Version != 0
                 ? $"{id.Name}.{stateflowsContext.Version}"
@@ -116,7 +117,7 @@ namespace Stateflows.Activities.Engine
 
                 exceptions.AddRange(context.Exceptions);
 
-                await storage.DehydrateAsync(executor.Dehydrate().Context);
+                await Storage.DehydrateAsync(executor.Dehydrate().Context);
             }
 
             return result;

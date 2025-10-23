@@ -1,5 +1,5 @@
-﻿using System.Diagnostics;
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Stateflows.Common;
 using Stateflows.Common.Utilities;
@@ -9,41 +9,41 @@ using Stateflows.Storage.EntityFrameworkCore.EntityFrameworkCore.Entities;
 
 namespace Stateflows.Storage.EntityFrameworkCore.Stateflows
 {
-    internal class EntityFrameworkCoreNotificationsStorage : IStateflowsNotificationsStorage
+    internal class EntityFrameworkCoreNotificationsStorage<TDbContext>(
+        IServiceProvider serviceProvider,
+        ILogger<EntityFrameworkCoreNotificationsStorage<TDbContext>> logger,
+        IDbContextFactory<TDbContext> dbContextFactory
+    ) : IStateflowsNotificationsStorage
+        where TDbContext : DbContext, IStateflowsDbContext_v1
     {
-        internal static readonly ActivitySource Source = new ActivitySource(nameof(Stateflows));
-        
-        private readonly IStateflowsDbContext_v1 DbContext;
-        private readonly ILogger<EntityFrameworkCoreNotificationsStorage> Logger;
+        private readonly ILogger<EntityFrameworkCoreNotificationsStorage<TDbContext>> Logger = logger;
 
-        public EntityFrameworkCoreNotificationsStorage(IStateflowsDbContext_v1 dbContext, ILogger<EntityFrameworkCoreNotificationsStorage> logger)
+        public async Task SaveNotificationsAsync(BehaviorId behaviorId, EventHolder[] notifications)
         {
-            DbContext = dbContext;
-            Logger = logger;
-        }
-        
-        public Task SaveNotificationsAsync(BehaviorId behaviorId, EventHolder[] notifications)
-        {
-            DbContext.Notifications_v1.AddRange(notifications.Select(n => new Notification_v1(n)));
-            return DbContext.SaveChangesAsync();
+            await using var dbContext = await dbContextFactory.CreateDbContextAsync();
+            
+            dbContext.Notifications_v1.AddRange(notifications.Select(n => new Notification_v1(n)));
+            await dbContext.SaveChangesAsync();
         }
 
         public async Task<IEnumerable<EventHolder>> GetNotificationsAsync(BehaviorId behaviorId, string[] notificationNames, DateTime lastNotificationCheck)
         {
-            var a = Source.StartActivity($"State Machine '{behaviorId.Name.ToShortName()}:{behaviorId.Instance}' running #1 query");
-            var notifications = await DbContext.Notifications_v1.Where(n =>
-                n.SenderType == behaviorId.Type &&
-                n.SenderName == behaviorId.Name &&
-                n.SenderInstance == behaviorId.Instance &&
-                notificationNames.Contains(n.Name) &&
-                (
-                    n.SentAt.AddSeconds(n.TimeToLive) >= lastNotificationCheck ||
-                    n.Retained
+            await using var dbContext = await dbContextFactory.CreateDbContextAsync();
+            
+            var notifications = await dbContext.Notifications_v1
+                .Where(n =>
+                    n.SenderType == behaviorId.Type &&
+                    n.SenderName == behaviorId.Name &&
+                    n.SenderInstance == behaviorId.Instance &&
+                    notificationNames.Contains(n.Name) &&
+                    (
+                        n.SentAt.AddSeconds(n.TimeToLive) >= lastNotificationCheck ||
+                        n.Retained
+                    )
                 )
-            ).ToArrayAsync();
-            a?.Stop();
-
-            a = Source.StartActivity($"State Machine '{behaviorId.Name.ToShortName()}:{behaviorId.Instance}' running #2 query");
+                .AsNoTracking()
+                .ToArrayAsync();
+            
             notifications = notifications.Except(notifications.Where(n => 
                 n.Retained &&
                 notifications.Any(m =>
@@ -55,18 +55,13 @@ namespace Stateflows.Storage.EntityFrameworkCore.Stateflows
                     m.SentAt < n.SentAt
                 )
             )).ToArray();
-            a?.Stop();
-
-            a = Source.StartActivity($"State Machine '{behaviorId.Name.ToShortName()}:{behaviorId.Instance}' running serialization");
+            
             var result = notifications.Select(n => (EventHolder)StateflowsJsonConverter.DeserializeObject(n.Data));
-            a?.Stop();
             
             return result;
         }
 
         public void Dispose()
-        {
-            DbContext.Dispose();
-        }
+        { }
     }
 }

@@ -213,21 +213,51 @@ internal static class RequestBodyExtensions
         bool implicitInitialization, Dictionary<string, List<(HateoasLink, BehaviorStatus[])>> customHateoasLinks)
     {
         var lastNotificationsCheck = DateTime.Now;
-        
-        var result = EqualityComparer<TEvent>.Default.Equals(@event, default)
-            ? new SendResult(
+
+        if (EqualityComparer<TEvent>.Default.Equals(@event, default))
+        {
+            var result = new SendResult(
                 EventStatus.Invalid,
-                new EventValidation(false, [ new ValidationResult("Event not provided") ])
-            )
-            : await behavior.SendAsync(@event, implicitInitialization ? [] : [new NoImplicitInitialization()]);
-        
-        var notifications = result.Status != EventStatus.Invalid
-            ? (await behavior.GetNotificationsAsync(payload.RequestedNotifications, lastNotificationsCheck)).ToArray()
-            : [];
-        
-        var behaviorInfo = await behavior.GetBehaviorInfo();
-        
-        return result.ToResult(notifications, behaviorInfo, customHateoasLinks);
+                new EventValidation(false, [new ValidationResult("Event not provided")])
+            );
+            
+            var behaviorInfo = await behavior.GetBehaviorInfo();
+            
+            return result.ToResult([], behaviorInfo, customHateoasLinks);
+        }
+        else
+        {
+            var compoundResult = await behavior.SendCompoundAsync(b =>
+                {
+                    b.Add(@event, implicitInitialization ? [] : [new NoImplicitInitialization()]);
+
+                    switch (behavior.Id.Type)
+                    {
+                        case BehaviorType.StateMachine:
+                            b.Add(new StateMachineInfoRequest(),
+                                implicitInitialization ? [] : [new NoImplicitInitialization()]);
+                            break;
+                        case BehaviorType.Activity:
+                            b.Add(new ActivityInfoRequest(),
+                                implicitInitialization ? [] : [new NoImplicitInitialization()]);
+                            break;
+                        case BehaviorType.Action:
+                            b.Add(new BehaviorInfoRequest(),
+                                implicitInitialization ? [] : [new NoImplicitInitialization()]);
+                            break;
+                    }
+                }
+            );
+
+            var result = compoundResult.Response.Results.First();
+            var behaviorInfo = (BehaviorInfo)compoundResult.Response.Results.Last().Response.BoxedPayload;
+            
+            var notifications = payload.RequestedNotifications is { Length: > 0 } && result.Status == EventStatus.Consumed
+                ? (await behavior.GetNotificationsAsync(payload.RequestedNotifications, lastNotificationsCheck)).ToArray()
+                : [];
+            
+            return result.ToResult(notifications, behaviorInfo, customHateoasLinks);
+        }
     }
     
     private static async Task<IResult> RequestEndpointAsync<TRequest, TResponse>(this RequestBody payload, TRequest request, IBehavior behavior,
@@ -235,21 +265,69 @@ internal static class RequestBodyExtensions
         where TRequest : IRequest<TResponse>
     {
         var lastNotificationsCheck = DateTime.Now;
-        
-        var result = EqualityComparer<TRequest>.Default.Equals(request, default)
-            ? new RequestResult<TResponse>(
-                new EventHolder<TRequest>(),
+
+        if (EqualityComparer<TRequest>.Default.Equals(request, default))
+        {
+            var result = new SendResult(
                 EventStatus.Invalid,
-                new EventValidation(false, [ new ValidationResult("Event not provided") ])
-            )
-            : await behavior.RequestAsync(request, implicitInitialization ? [] : [new NoImplicitInitialization()]);
-        
-        var notifications = result.Status != EventStatus.Invalid
-            ? (await behavior.GetNotificationsAsync(payload.RequestedNotifications, lastNotificationsCheck)).ToArray()
-            : [];
-        
-        var behaviorInfo = await behavior.GetBehaviorInfo();
-        
-        return result.ToResult(notifications, behaviorInfo, customHateoasLinks);
+                new EventValidation(false, [new ValidationResult("Event not provided")])
+            );
+            
+            var behaviorInfo = await behavior.GetBehaviorInfo();
+            
+            return result.ToResult([], behaviorInfo, customHateoasLinks);
+        }
+        else
+        {
+            var compoundResult = await behavior.SendCompoundAsync(b =>
+                {
+                    b.Add(request, implicitInitialization ? [] : [new NoImplicitInitialization()]);
+
+                    switch (behavior.Id.Type)
+                    {
+                        case BehaviorType.StateMachine:
+                            b.Add(new StateMachineInfoRequest(),
+                                implicitInitialization ? [] : [new NoImplicitInitialization()]);
+                            break;
+                        case BehaviorType.Activity:
+                            b.Add(new ActivityInfoRequest(),
+                                implicitInitialization ? [] : [new NoImplicitInitialization()]);
+                            break;
+                        case BehaviorType.Action:
+                            b.Add(new BehaviorInfoRequest(),
+                                implicitInitialization ? [] : [new NoImplicitInitialization()]);
+                            break;
+                    }
+                }
+            );
+
+            var result = compoundResult.Response.Results.First();
+            var behaviorInfo = (BehaviorInfo)compoundResult.Response.Results.Last().Response.BoxedPayload;
+
+            var notifications =
+                payload.RequestedNotifications is { Length: > 0 } && result.Status == EventStatus.Consumed
+                    ? (await behavior.GetNotificationsAsync(payload.RequestedNotifications, lastNotificationsCheck))
+                    .ToArray()
+                    : [];
+
+            return result.ToResult(notifications, behaviorInfo, customHateoasLinks);
+        }
+        // var lastNotificationsCheck = DateTime.Now;
+        //
+        // var result = EqualityComparer<TRequest>.Default.Equals(request, default)
+        //     ? new RequestResult<TResponse>(
+        //         new EventHolder<TRequest>(),
+        //         EventStatus.Invalid,
+        //         new EventValidation(false, [ new ValidationResult("Event not provided") ])
+        //     )
+        //     : await behavior.RequestAsync(request, implicitInitialization ? [] : [new NoImplicitInitialization()]);
+        //
+        // var notifications = result.Status != EventStatus.Invalid
+        //     ? (await behavior.GetNotificationsAsync(payload.RequestedNotifications, lastNotificationsCheck)).ToArray()
+        //     : [];
+        //
+        // var behaviorInfo = await behavior.GetBehaviorInfo();
+        //
+        // return result.ToResult(notifications, behaviorInfo, customHateoasLinks);
     }
 }

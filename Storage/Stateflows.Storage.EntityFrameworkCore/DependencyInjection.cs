@@ -24,7 +24,7 @@ namespace Stateflows
                 }
 
                 builder.ServiceCollection
-                    .AddTransient<IStateflowsStorage, EntityFrameworkCoreStorage>();
+                    .AddTransient<IStateflowsStorage, EntityFrameworkCoreStorage<TDbContext>>();
             }
 
             if (storageKind.HasFlag(StorageKind.Notifications))
@@ -35,7 +35,7 @@ namespace Stateflows
                 }
 
                 builder.ServiceCollection
-                    .AddTransient<IStateflowsNotificationsStorage, EntityFrameworkCoreNotificationsStorage>();
+                    .AddTransient<IStateflowsNotificationsStorage, EntityFrameworkCoreNotificationsStorage<TDbContext>>();
             }
 
             builder.ServiceCollection

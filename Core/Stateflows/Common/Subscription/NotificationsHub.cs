@@ -3,6 +3,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Collections.Generic;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Stateflows.Common.Interfaces;
 using Stateflows.Common.Utilities;
@@ -16,9 +17,9 @@ namespace Stateflows.Common.Subscription
         //     Cache = cache;
         // }
 
-        public NotificationsHub(IStateflowsNotificationsStorage storage)
+        public NotificationsHub(IServiceProvider serviceProvider)
         {
-            Storage = storage;
+            Storage = serviceProvider.CreateScope().ServiceProvider.GetService<IStateflowsNotificationsStorage>();
         }
 
         // private readonly IStateflowsCache Cache;

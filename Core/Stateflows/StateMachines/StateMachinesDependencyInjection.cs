@@ -82,7 +82,7 @@ namespace Stateflows.StateMachines
                         .AddSingleton(register)
                         .AddSingleton<IStateMachinesRegister>(register)
                         .AddScoped<IStateMachineContextProvider, StateMachineContextProvider>()
-                        .AddSingleton<IEventProcessor, Processor>()
+                        .AddScoped<IEventProcessor, Processor>()
                         .AddTransient<IBehaviorProvider, Provider>()
                         .AddSingleton<IStateMachineEventHandler, BehaviorStatusRequestHandler>()
                         .AddSingleton<IStateMachineEventHandler, StateMachineInfoRequestHandler>()

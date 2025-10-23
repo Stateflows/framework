@@ -32,7 +32,7 @@ namespace Stateflows
                     .AddSingleton<StateflowsEngine>()
                     .AddSingleton<StateflowsService>()
                     .AddHostedService(provider => provider.GetRequiredService<StateflowsService>())
-                    .AddScoped<INotificationsHub, NotificationsHub>()
+                    .AddSingleton<INotificationsHub, NotificationsHub>()
                     .AddHostedService<Scheduler>()
                     .AddTransient<ScheduleExecutor>()
                     .AddTransient<StartupExecutor>()
