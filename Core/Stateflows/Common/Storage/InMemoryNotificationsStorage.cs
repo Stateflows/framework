@@ -57,5 +57,10 @@ namespace Stateflows.Common.Storage
             
             return Task.FromResult<IEnumerable<EventHolder>>(Array.Empty<EventHolder>());
         }
+
+        public void Dispose()
+        {
+            // TODO release managed resources here
+        }
     }
 }

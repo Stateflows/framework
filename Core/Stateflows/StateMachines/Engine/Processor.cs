@@ -23,17 +23,20 @@ namespace Stateflows.StateMachines.Engine
 
         private readonly StateMachinesRegister Register;
         private readonly IEnumerable<IStateMachineEventHandler> EventHandlers;
+        private readonly IStateflowsStorage Storage;
         private readonly IServiceProvider ServiceProvider;
         private readonly IStateflowsValueStorage ValueStorage;
 
         public Processor(
             StateMachinesRegister register,
             IEnumerable<IStateMachineEventHandler> eventHandlers,
+            IStateflowsStorage storage,
             IServiceProvider serviceProvider
         )
         {
             Register = register;
             EventHandlers = eventHandlers;
+            Storage = storage;
             ServiceProvider = serviceProvider;
             ValueStorage = ServiceProvider.GetRequiredService<IStateflowsValueStorage>();
         }
@@ -54,12 +57,12 @@ namespace Stateflows.StateMachines.Engine
             try
             {
                 var result = EventStatus.Undelivered;
+
+                using var serviceScope = ServiceProvider.CreateScope();
                 
-                var serviceProvider = ServiceProvider.CreateScope().ServiceProvider;
+                var serviceProvider = serviceScope.ServiceProvider;
 
-                var storage = serviceProvider.GetRequiredService<IStateflowsStorage>();
-
-                var stateflowsContext = await storage.HydrateAsync(id);
+                var stateflowsContext = await Storage.HydrateAsync(id);
 
                 var key = stateflowsContext.Version != 0
                     ? $"{id.Name}.{stateflowsContext.Version}"
@@ -158,7 +161,7 @@ namespace Stateflows.StateMachines.Engine
                 }
 
                 // out of try-finally to make sure that context won't be saved when execution fails
-                await storage.DehydrateAsync(executor.Context.Context);
+                await Storage.DehydrateAsync(executor.Context.Context);
 
                 return result;
             }

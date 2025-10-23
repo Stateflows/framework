@@ -16,11 +16,12 @@ namespace Stateflows.Common.Classes
                 serviceProvider,
                 id,
                 new NotificationsHub(
-                    new InMemoryNotificationsStorage(
-                        new SingleTenantAccessor(
-                            serviceProvider.GetRequiredService<ITenantAccessor>().CurrentTenantId
-                        )
-                    )
+                    serviceProvider
+                    // new InMemoryNotificationsStorage(
+                    //     new SingleTenantAccessor(
+                    //         serviceProvider.GetRequiredService<ITenantAccessor>().CurrentTenantId
+                    //     )
+                    // )
                 )
             )
         {

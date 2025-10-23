@@ -58,8 +58,8 @@ namespace Stateflows.Actions.Engine
         {
             var inspector = await GetInspectorAsync();
             
-            var scope = ServiceProvider.CreateScope();
-
+            using var serviceScope = ServiceProvider.CreateScope();
+            
             var context = new ActionDelegateContext(StateflowsContext, eventHolder, scope.ServiceProvider);
             try
             {
@@ -68,8 +68,6 @@ namespace Stateflows.Actions.Engine
             finally
             {
                 context.Clear();
-            
-                scope.Dispose();
             }
         }
 
@@ -77,10 +75,9 @@ namespace Stateflows.Actions.Engine
         {
             var inspector = await GetInspectorAsync();
 
-            var scope = ServiceProvider.CreateScope();
+            using var scope = ServiceProvider.CreateScope();
 
             var context = new ActionDelegateContext(StateflowsContext, eventHolder, scope.ServiceProvider);
-            
             try
             {
                 inspector.BeforeDehydrate(context);
@@ -88,8 +85,6 @@ namespace Stateflows.Actions.Engine
             finally
             {
                 context.Clear();
-            
-                scope.Dispose();
             }
         }
         

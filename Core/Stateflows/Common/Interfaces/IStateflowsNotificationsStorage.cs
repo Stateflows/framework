@@ -4,7 +4,7 @@ using System.Threading.Tasks;
 
 namespace Stateflows.Common.Interfaces
 {
-    public interface IStateflowsNotificationsStorage
+    public interface IStateflowsNotificationsStorage : IDisposable
     {
         Task SaveNotificationsAsync(BehaviorId behaviorId, EventHolder[] notifications);
         Task<IEnumerable<EventHolder>> GetNotificationsAsync(BehaviorId behaviorId, string[] notificationNames, DateTime lastNotificationCheck);

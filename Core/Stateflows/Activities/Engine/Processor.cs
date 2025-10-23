@@ -22,18 +22,22 @@ namespace Stateflows.Activities.Engine
         private readonly ActivitiesRegister Register;
         private readonly IEnumerable<IActivityEventHandler> EventHandlers;
         private readonly IServiceProvider ServiceProvider;
+        private readonly IStateflowsStorage Storage;
         private readonly IStateflowsValueStorage ValueStorage;
 
         public Processor(
             ActivitiesRegister register,
             IEnumerable<IActivityEventHandler> eventHandlers,
+            IStateflowsStorage storage,
+            IStateflowsValueStorage valueStorage,
             IServiceProvider serviceProvider
         )
         {
             Register = register;
             ServiceProvider = serviceProvider;
+            Storage = storage;
             EventHandlers = eventHandlers;
-            ValueStorage = ServiceProvider.GetRequiredService<IStateflowsValueStorage>();
+            ValueStorage = valueStorage;
         }
 
         private Task<EventStatus> TryHandleEventAsync<TEvent>(EventContext<TEvent> context)
@@ -53,11 +57,10 @@ namespace Stateflows.Activities.Engine
         {
             var result = EventStatus.Undelivered;
 
-            var serviceProvider = ServiceProvider.CreateScope().ServiceProvider;
+            using var serviceScope = ServiceProvider.CreateScope();
+            var serviceProvider = serviceScope.ServiceProvider;
 
-            var storage = serviceProvider.GetRequiredService<IStateflowsStorage>();
-
-            var stateflowsContext = await storage.HydrateAsync(id);
+            var stateflowsContext = await Storage.HydrateAsync(id);
 
             var key = stateflowsContext.Version != 0
                 ? $"{id.Name}.{stateflowsContext.Version}"
@@ -132,7 +135,7 @@ namespace Stateflows.Activities.Engine
 
                 exceptions.AddRange(context.Exceptions);
 
-                await storage.DehydrateAsync(executor.Dehydrate().Context);
+                await Storage.DehydrateAsync(executor.Dehydrate().Context);
             }
 
             return result;

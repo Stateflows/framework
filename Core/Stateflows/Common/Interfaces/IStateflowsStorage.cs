@@ -1,10 +1,11 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using Stateflows.Common.Context;
 
 namespace Stateflows.Common.Interfaces
 {
-    public interface IStateflowsStorage
+    public interface IStateflowsStorage : IDisposable
     {
         Task<StateflowsContext> HydrateAsync(BehaviorId behaviorId);
         Task DehydrateAsync(StateflowsContext context);

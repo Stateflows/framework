@@ -332,11 +332,6 @@ namespace Stateflows.Activities.Engine
             where TTransformationFlow : class, IFlowTransformation<TToken, TTransformedToken>
             => GetFlowInternalAsync<TTransformationFlow>(context, "object transformation flow");
         
-        // [DebuggerHidden]
-        // public Task<TElseTransformationFlow> GetElseObjectTransformationFlowAsync<TElseTransformationFlow, TToken, TTransformedToken>(IActivityFlowContext<TToken> context)
-        //     where TElseTransformationFlow : class, IFlowTransformation<TToken, TTransformedToken>
-        //     => GetFlowInternalAsync<TElseTransformationFlow>(context, "else-object transformation flow");
-
         public void Dispose()
         {
             Dispose(true);
@@ -346,6 +341,7 @@ namespace Stateflows.Activities.Engine
         protected virtual void Dispose(bool disposing)
         {
             scope?.Dispose();
+            ChildScope?.Dispose();
         }
     }
 }
