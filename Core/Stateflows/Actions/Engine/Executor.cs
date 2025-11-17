@@ -244,7 +244,7 @@ namespace Stateflows.Actions.Engine
 
         private static void HandleGuardRequest<TEvent>(EventHolder<TEvent> eventHolder, ActionDelegateContext context)
         {
-            var guardRequest = context.Headers.OfType<GuardRequest>().FirstOrDefault();
+            var guardRequest = context.Headers.OfType<TransitionGuardRequest>().FirstOrDefault();
             if (guardRequest != null)
             {
                 var output = context.OutputTokens.OfType<TokenHolder<bool>>().FirstOrDefault()?.Payload ?? false;
@@ -252,9 +252,9 @@ namespace Stateflows.Actions.Engine
                 if (output)
                 {
                     var headers = context.Headers
-                        .Where(h => !(h is GuardRequest))
+                        .Where(h => !(h is TransitionGuardRequest))
                         .Append(
-                            new GuardResponse()
+                            new TransitionGuardResponse()
                             {
                                 GuardIdentifier = guardRequest.GuardIdentifier
                             }

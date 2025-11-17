@@ -22,6 +22,5 @@ namespace Stateflows.StateMachines
 
             return hit;
         }
-            // => !(await Task.WhenAll(action.Actions.Select(a => a(context)))).Any(result => !result);
     }
 }

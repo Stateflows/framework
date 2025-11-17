@@ -16,7 +16,7 @@ namespace Stateflows.StateMachines
 
     public interface IDefaultTransitionGuard : IDefaultTransition, ITransitionGuard<Completion>
     {
-        Task<bool> ITransitionGuard<Completion>.GuardAsync(Completion @event)
+        Task<bool> IGuard<Completion>.GuardAsync(Completion @event)
             => GuardAsync();
         
         Task<bool> GuardAsync();
@@ -37,10 +37,7 @@ namespace Stateflows.StateMachines
         Task EffectAsync(TEvent @event);
     }
 
-    public interface ITransitionGuard<in TEvent> : ITransition<TEvent>
-    {
-        Task<bool> GuardAsync(TEvent @event);
-    }
+    public interface ITransitionGuard<in TEvent> : ITransition<TEvent>, IGuard<TEvent>;
 
     public interface ITransitionDefinition<TEvent> : ITransition<TEvent>
     {
@@ -49,7 +46,7 @@ namespace Stateflows.StateMachines
 
     public interface ITransitionGuard : IDefaultTransitionGuard, ITransitionGuard<object>
     {
-        Task<bool> ITransitionGuard<object>.GuardAsync(object @event)
+        Task<bool> IGuard<object>.GuardAsync(object @event)
             => GuardAsync();
     }
 

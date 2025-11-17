@@ -97,7 +97,7 @@ namespace Stateflows.StateMachines.Engine
             var eventName = Event.GetName(context.Event.GetType());
 
             var transitionContext = (TransitionContext<TEvent>)context;
-            var guardDelegations = context.Headers.OfType<GuardDelegation>();
+            var guardDelegations = context.Headers.OfType<TransitionGuardDelegation>();
             if (guardDelegations.Any(g => g.EdgeIdentifier == transitionContext.Edge.Identifier))
             {
                 if (context.Target != null)

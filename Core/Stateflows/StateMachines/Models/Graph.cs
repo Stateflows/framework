@@ -145,10 +145,10 @@ namespace Stateflows.StateMachines.Models
                     .Where(edge => edge.ActualTriggers.All(trigger => !string.IsNullOrEmpty(trigger)))
                     .SelectMany(edge => edge.ActualTriggers);
 
-                var deferredEvents = vertex.DeferredEvents.Where(deferredEvent => vertexTriggers.Contains(deferredEvent));
+                var deferredEvents = vertex.Deferrals.Where(deferral => !deferral.Value.Any && vertexTriggers.Contains(deferral.Key));
                 if (deferredEvents.Any())
                 {
-                    throw new DeferralDefinitionException(deferredEvents.First(), $"Event '{deferredEvents.First()}' triggers a transition outgoing from state '{vertex.Name}' in state machine '{Name}' and cannot be deferred by that state in state machine '{Name}'", Class);
+                    throw new DeferralDefinitionException(deferredEvents.First().Key, $"Event '{deferredEvents.First()}' triggers a transition outgoing from state '{vertex.Name}' in state machine '{Name}' and cannot be deferred unconditionally by that state in state machine '{Name}'", Class);
                 }
 
                 if (vertex.Type == VertexType.Choice && vertex.Edges.Values.Count(edge => edge.IsElse) != 1)

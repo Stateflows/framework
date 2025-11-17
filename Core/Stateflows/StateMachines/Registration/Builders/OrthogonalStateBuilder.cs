@@ -111,7 +111,7 @@ namespace Stateflows.StateMachines.Registration.Builders
 
         #region Utils
         [DebuggerHidden]
-        public IOrthogonalStateBuilder AddDeferredEvent<TEvent>()
+        public IOrthogonalStateBuilder AddDeferredEvent<TEvent>(DeferralBuildAction<TEvent> buildAction)
         {
             if (typeof(TEvent) == typeof(Completion))
                 throw new DeferralDefinitionException(typeof(TEvent).GetEventName(), "Completion event cannot be deferred.", Vertex.Graph.Class);
@@ -122,7 +122,10 @@ namespace Stateflows.StateMachines.Registration.Builders
             if (typeof(TEvent).IsSubclassOf(typeof(TimeEvent)))
                 throw new DeferralDefinitionException(typeof(TEvent).GetEventName(), "Time events cannot be deferred.", Vertex.Graph.Class);
 
-            Vertex.DeferredEvents.Add(typeof(TEvent).GetEventName());
+            var builder = new DeferralBuilder<TEvent>(Vertex);
+            buildAction?.Invoke(builder);
+
+            Vertex.Deferrals.Add(typeof(TEvent).GetEventName(), builder.Logic);
 
             return this;
         }
@@ -377,8 +380,8 @@ namespace Stateflows.StateMachines.Registration.Builders
         IOverridenOrthogonalStateBuilder ICompositeStateFinalization<IOverridenOrthogonalStateBuilder>.AddOnFinalize(params Func<IStateActionContext, Task>[] actionsAsync)
             => AddOnFinalize(actionsAsync) as IOverridenOrthogonalStateBuilder;
 
-        IOverridenOrthogonalStateBuilder IStateUtils<IOverridenOrthogonalStateBuilder>.AddDeferredEvent<TEvent>()
-            => AddDeferredEvent<TEvent>() as IOverridenOrthogonalStateBuilder;
+        IOverridenOrthogonalStateBuilder IStateUtils<IOverridenOrthogonalStateBuilder>.AddDeferredEvent<TEvent>(DeferralBuildAction<TEvent> buildAction)
+            => AddDeferredEvent<TEvent>(buildAction) as IOverridenOrthogonalStateBuilder;
 
         [DebuggerHidden]
         IOverridenOrthogonalStateBuilder IRegions<IOverridenOrthogonalStateBuilder>.AddRegion(RegionBuildAction buildAction)

@@ -8,6 +8,6 @@
         /// Instead, it is stored to be handled later, as soon as state machine reaches the configuration which does not defer this event.
         /// </summary>
         /// <typeparam name="TEvent">The type of the event to be deferred.</typeparam>
-        TReturn AddDeferredEvent<TEvent>();
+        TReturn AddDeferredEvent<TEvent>(DeferralBuildAction<TEvent> buildAction = null);
     }
 }

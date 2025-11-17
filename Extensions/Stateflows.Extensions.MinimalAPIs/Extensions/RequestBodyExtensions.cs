@@ -137,7 +137,7 @@ internal static class RequestBodyExtensions
     {
         var eventType = typeof(TRequest);
         var eventName = Utils.GetEventName<TRequest>();
-        var route = $"{behaviorType.ToResource()}/{behaviorName}/{{instance}}/" + Utils.GetEventName<TRequest>();
+        var route = $"/{behaviorType.ToResource()}/{behaviorName}/{{instance}}/" + Utils.GetEventName<TRequest>();
         var method = HttpMethods.Post;
         var behaviorClass = new BehaviorClass(behaviorType, behaviorName);
         if (interceptor.BeforeEventEndpointDefinition<TRequest>(behaviorClass, ref method, ref route))

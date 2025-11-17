@@ -8,21 +8,20 @@ using Stateflows.StateMachines.Registration.Interfaces.Internal;
 
 namespace Stateflows.StateMachines.Registration.Builders
 {
-    internal class GuardBuilder<TEvent> :
-        IGuardBuilder<TEvent>,
-        IDefaultGuardBuilder,
+    internal class DeferralGuardBuilder<TEvent> :
+        IDeferralGuardBuilder<TEvent>,
         IVertexBuilder
     {
-        private readonly List<Func<ITransitionContext<TEvent>, Task<bool>>> Guards = [];
+        private readonly List<Func<IDeferralContext<TEvent>, Task<bool>>> Guards = [];
 
         public Vertex Vertex { get; private set; }
         
-        public GuardBuilder(Vertex vertex)
+        public DeferralGuardBuilder(Vertex vertex)
         {
             Vertex = vertex;
         }
         
-        public Func<ITransitionContext<TEvent>, Task<bool>> GetAndGuard()
+        public Func<IDeferralContext<TEvent>, Task<bool>> GetAndGuard()
             => async c =>
             {
                 var result = true;
@@ -37,7 +36,7 @@ namespace Stateflows.StateMachines.Registration.Builders
                 return result;
             };
         
-        public Func<ITransitionContext<TEvent>, Task<bool>> GetOrGuard()
+        public Func<IDeferralContext<TEvent>, Task<bool>> GetOrGuard()
             => async c =>
             {
                 var result = false;
@@ -52,16 +51,16 @@ namespace Stateflows.StateMachines.Registration.Builders
                 return result;
             };
         
-        public IGuardBuilder<TEvent> AddGuard(params Func<ITransitionContext<TEvent>, Task<bool>>[] guardsAsync)
+        public IDeferralGuardBuilder<TEvent> AddGuard(params Func<IDeferralContext<TEvent>, Task<bool>>[] guardsAsync)
         {
             Guards.AddRange(guardsAsync);
 
             return this;
         }
 
-        public IGuardBuilder<TEvent> AddAndExpression(Action<IGuardBuilder<TEvent>> guardExpression)
+        public IDeferralGuardBuilder<TEvent> AddAndExpression(Action<IDeferralGuardBuilder<TEvent>> guardExpression)
         {
-            var builder = new GuardBuilder<TEvent>(Vertex);
+            var builder = new DeferralGuardBuilder<TEvent>(Vertex);
             guardExpression.Invoke(builder);
             
             Guards.Add(builder.GetAndGuard());
@@ -69,24 +68,14 @@ namespace Stateflows.StateMachines.Registration.Builders
             return this;
         }
 
-        public IGuardBuilder<TEvent> AddOrExpression(Action<IGuardBuilder<TEvent>> guardExpression)
+        public IDeferralGuardBuilder<TEvent> AddOrExpression(Action<IDeferralGuardBuilder<TEvent>> guardExpression)
         {
-            var builder = new GuardBuilder<TEvent>(Vertex);
+            var builder = new DeferralGuardBuilder<TEvent>(Vertex);
             guardExpression.Invoke(builder);
             
             Guards.Add(builder.GetOrGuard());
 
             return this;
         }
-
-        IDefaultGuardBuilder IBaseDefaultGuard<IDefaultGuardBuilder>.AddGuard(
-            params Func<ITransitionContext<Completion>, Task<bool>>[] guardsAsync)
-            => (this as GuardBuilder<Completion>)!.AddGuard(guardsAsync) as IDefaultGuardBuilder;
-
-        IDefaultGuardBuilder IDefaultGuardBuilder.AddAndExpression(Action<IDefaultGuardBuilder> guardExpression)
-            => AddAndExpression(b => guardExpression.Invoke(b as IDefaultGuardBuilder)) as IDefaultGuardBuilder;
-
-        IDefaultGuardBuilder IDefaultGuardBuilder.AddOrExpression(Action<IDefaultGuardBuilder> guardExpression)
-            => AddOrExpression(b => guardExpression.Invoke(b as IDefaultGuardBuilder)) as IDefaultGuardBuilder;
     }
 }

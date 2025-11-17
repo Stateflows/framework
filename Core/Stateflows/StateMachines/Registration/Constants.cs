@@ -16,6 +16,7 @@
         public const string Initialize = nameof(Initialize);
         public const string Finalize = nameof(Finalize);
         public const string Exit = nameof(Exit);
+        public const string Deferral = nameof(Deferral);
         public const string Initialization = nameof(Initialization);
         public const string Finalization = nameof(Finalization);
         public const string Guard = nameof(Guard);
