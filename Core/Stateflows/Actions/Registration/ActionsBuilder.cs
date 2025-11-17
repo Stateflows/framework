@@ -11,10 +11,12 @@ namespace Stateflows.Actions.Registration.Builders
     internal class ActionsBuilder : IActionsBuilder
     {
         private readonly ActionsRegister Register;
+        private readonly bool SystemRegistrations;
 
-        public ActionsBuilder(ActionsRegister register)
+        public ActionsBuilder(ActionsRegister register, bool systemRegistrations)
         {
             Register = register;
+            SystemRegistrations = systemRegistrations;
         }
 
         [DebuggerHidden]

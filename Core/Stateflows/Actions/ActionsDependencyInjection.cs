@@ -3,6 +3,7 @@ using System.Diagnostics;
 using System.Collections.Generic;
 using System.Linq;
 using Microsoft.Extensions.DependencyInjection;
+using Stateflows.Actions.Classes;
 using Stateflows.Actions.Context;
 using Stateflows.Actions.Engine;
 using Stateflows.Actions.Service;
@@ -37,7 +38,16 @@ namespace Stateflows.Actions
         public static IStateflowsBuilder AddActions(this IStateflowsBuilder stateflowsBuilder, ActionsBuildAction buildAction = null)
         {
             var register = stateflowsBuilder.EnsureActionsServices();
-            buildAction?.Invoke(new ActionsBuilder(register));
+            buildAction?.Invoke(new ActionsBuilder(register, false));
+
+            return stateflowsBuilder;
+        }
+        
+        [DebuggerHidden]
+        internal static IStateflowsBuilder AddActions(this IStateflowsBuilder stateflowsBuilder, ActionsBuildAction buildAction, bool systemRegistrations)
+        {
+            var register = stateflowsBuilder.EnsureActionsServices();
+            buildAction?.Invoke(new ActionsBuilder(register, systemRegistrations));
 
             return stateflowsBuilder;
         }
@@ -53,7 +63,7 @@ namespace Stateflows.Actions
             {
                 if (!Registers.TryGetValue(stateflowsBuilder, out var register))
                 {
-                    register = new ActionsRegister(stateflowsBuilder as StateflowsBuilder, stateflowsBuilder.ServiceCollection);
+                    register = new ActionsRegister();
                     Registers.Add(stateflowsBuilder, register);
 
                     stateflowsBuilder
@@ -61,6 +71,7 @@ namespace Stateflows.Actions
                         .ServiceCollection
                         .AddSingleton(register)
                         .AddSingleton<IActionsRegister>(register)
+                        .AddSingleton<IActionContextProvider, ActionContextProvider>()
                         .AddScoped<IEventProcessor, Processor>()
                         .AddTransient<IBehaviorProvider, Provider>()
                         

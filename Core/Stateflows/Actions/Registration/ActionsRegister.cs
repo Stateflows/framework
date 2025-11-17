@@ -13,32 +13,22 @@ using Stateflows.Common.Registration.Builders;
 using Stateflows.Actions.Models;
 using Stateflows.Actions.Exceptions;
 using Stateflows.Common.Interfaces;
+using Stateflows.Common.Registration;
 
 namespace Stateflows.Actions.Registration
 {
     internal class ActionsRegister : IActionsRegister
     {
-        private IServiceCollection Services { get; }
-
-        public List<ActionExceptionHandlerFactoryAsync> GlobalExceptionHandlerFactories { get; set; } = new List<ActionExceptionHandlerFactoryAsync>();
+        public readonly List<ActionExceptionHandlerFactoryAsync> GlobalExceptionHandlerFactories = [];
         
-        public List<ActionInterceptorFactoryAsync> GlobalInterceptorFactories { get; set; } = new List<ActionInterceptorFactoryAsync>();
+        public readonly List<ActionInterceptorFactoryAsync> GlobalInterceptorFactories = [];
 
         private readonly MethodInfo ActionTypeAddedAsyncMethod =
             typeof(IActionVisitor).GetMethod(nameof(IActionVisitor.ActionTypeAddedAsync));
 
-        private readonly StateflowsBuilder stateflowsBuilder = null;
+        public readonly Dictionary<string, ActionModel> Actions = new();
 
-        public ActionsRegister(StateflowsBuilder stateflowsBuilder, IServiceCollection services)
-        {
-            this.stateflowsBuilder = stateflowsBuilder;
-            Services = services;
-        }
-
-        public readonly Dictionary<string, ActionModel> Actions
-            = new Dictionary<string, ActionModel>();
-
-        public readonly Dictionary<string, int> CurrentVersions = new Dictionary<string, int>();
+        private readonly Dictionary<string, int> CurrentVersions = new();
 
         private bool IsNewestVersion(string actionName, int version)
         {
@@ -67,15 +57,13 @@ namespace Stateflows.Actions.Registration
             var key = $"{actionName}.{version}";
             var currentKey = $"{actionName}.current";
 
-            Func<IActionVisitor, Task> visitingAction = v => v.ActionAddedAsync(actionName, version);
-
             var actionModel = new ActionModel()
             {
                 Name = actionName,
                 Version = version,
                 Reentrant = reentrant,
                 Delegate = actionDelegate,
-                VisitingAction = visitingAction
+                VisitingAction = VisitingActionAsync
             };
             
             if (!Actions.TryAdd(key, actionModel))
@@ -87,6 +75,10 @@ namespace Stateflows.Actions.Registration
             {
                 Actions[currentKey] = actionModel;
             }
+
+            return;
+
+            Task VisitingActionAsync(IActionVisitor v) => v.ActionAddedAsync(actionName, version);
         }
 
         [DebuggerHidden]

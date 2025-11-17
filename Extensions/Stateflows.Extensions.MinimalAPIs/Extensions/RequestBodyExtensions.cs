@@ -223,7 +223,6 @@ internal static class RequestBodyExtensions
             );
             
             var behaviorInfo = await behavior.GetBehaviorInfo();
-            
             return result.ToResult([], behaviorInfo, customHateoasLinks);
         }
         else
@@ -236,15 +235,15 @@ internal static class RequestBodyExtensions
                     {
                         case BehaviorType.StateMachine:
                             b.Add(new StateMachineInfoRequest(),
-                                implicitInitialization ? [] : [new NoImplicitInitialization()]);
+                                implicitInitialization ? [new ForcedExecution()] : [new NoImplicitInitialization(), new ForcedExecution()]);
                             break;
                         case BehaviorType.Activity:
                             b.Add(new ActivityInfoRequest(),
-                                implicitInitialization ? [] : [new NoImplicitInitialization()]);
+                                implicitInitialization ? [new ForcedExecution()] : [new NoImplicitInitialization(), new ForcedExecution()]);
                             break;
                         case BehaviorType.Action:
                             b.Add(new BehaviorInfoRequest(),
-                                implicitInitialization ? [] : [new NoImplicitInitialization()]);
+                                implicitInitialization ? [new ForcedExecution()] : [new NoImplicitInitialization(), new ForcedExecution()]);
                             break;
                     }
                 }
@@ -288,15 +287,15 @@ internal static class RequestBodyExtensions
                     {
                         case BehaviorType.StateMachine:
                             b.Add(new StateMachineInfoRequest(),
-                                implicitInitialization ? [] : [new NoImplicitInitialization()]);
+                                implicitInitialization ? [new ForcedExecution()] : [new NoImplicitInitialization(), new ForcedExecution()]);
                             break;
                         case BehaviorType.Activity:
                             b.Add(new ActivityInfoRequest(),
-                                implicitInitialization ? [] : [new NoImplicitInitialization()]);
+                                implicitInitialization ? [new ForcedExecution()] : [new NoImplicitInitialization(), new ForcedExecution()]);
                             break;
                         case BehaviorType.Action:
                             b.Add(new BehaviorInfoRequest(),
-                                implicitInitialization ? [] : [new NoImplicitInitialization()]);
+                                implicitInitialization ? [new ForcedExecution()] : [new NoImplicitInitialization(), new ForcedExecution()]);
                             break;
                     }
                 }

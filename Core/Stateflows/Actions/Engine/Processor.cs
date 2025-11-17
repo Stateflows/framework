@@ -2,6 +2,7 @@
 using System.Threading.Tasks;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
+using System.Linq;
 using Microsoft.Extensions.DependencyInjection;
 using Stateflows.Actions.Context.Classes;
 using Stateflows.Common;
@@ -71,19 +72,50 @@ namespace Stateflows.Actions.Engine
                 if (eventHolder is EventHolder<CompoundRequest> compoundRequestHolder)
                 {
                     var compoundRequest = compoundRequestHolder.Payload;
+                    var compoundResponse = compoundRequest.GetResponse();
                     result = EventStatus.Consumed;
                     var results = new List<RequestResult>();
+                    var i = -1;
                     foreach (var ev in compoundRequest.Events)
                     {
+                        i++;
+                                
+                        RequestResult responseResult = null;
+                        if (compoundResponse != null)
+                        {
+                            responseResult = ((List<RequestResult>)compoundResponse.Results)[i];
+                            if (
+                                responseResult?.Status == EventStatus.Invalid ||
+                                (
+                                    responseResult?.Status == EventStatus.Omitted &&
+                                    !ev.Headers.Any(h => h is ForcedExecution)
+                                )
+                            )
+                            {
+                                continue;
+                            }
+                        }
+
                         ev.Headers.AddRange(compoundRequestHolder.Headers);
 
                         var status = await ev.ExecuteBehaviorAsync(this, result, executor);
 
-                        results.Add(new RequestResult(
-                            ev.GetResponseHolder(),
-                            status,
-                            new EventValidation(true, new List<ValidationResult>())
-                        ));
+                        if (responseResult != null)
+                        {
+                            responseResult.Status = status;
+                            responseResult.Response = ev.IsRequest()
+                                ? ev.GetResponseHolder()
+                                : null;
+                            responseResult.Validation = new EventValidation(true, new List<ValidationResult>());
+                        }
+                        else
+                        {
+                            results.Add(new RequestResult(
+                                ev.GetResponseHolder(),
+                                status,
+                                new EventValidation(true, new List<ValidationResult>())
+                            ));
+                        }
                     }
 
                     if (!compoundRequest.IsRespondedTo())

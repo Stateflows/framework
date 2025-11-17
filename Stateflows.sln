@@ -58,6 +58,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Stateflows.Examples.Blazor.
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Stateflows.Extensions.MinimalAPIs", "Extensions\Stateflows.Extensions.MinimalAPIs\Stateflows.Extensions.MinimalAPIs.csproj", "{77084AF3-1766-4B4A-855C-44F28B2ECA2E}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Stateflows.Integrations.Sputnik", "..\Cosmos\Stateflows\src\Stateflows.Integrations.Sputnik\Stateflows.Integrations.Sputnik.csproj", "{EE71919B-A10E-4B3F-A062-5979EB736975}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -140,6 +142,10 @@ Global
 		{77084AF3-1766-4B4A-855C-44F28B2ECA2E}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{77084AF3-1766-4B4A-855C-44F28B2ECA2E}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{77084AF3-1766-4B4A-855C-44F28B2ECA2E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{EE71919B-A10E-4B3F-A062-5979EB736975}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{EE71919B-A10E-4B3F-A062-5979EB736975}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{EE71919B-A10E-4B3F-A062-5979EB736975}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{EE71919B-A10E-4B3F-A062-5979EB736975}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

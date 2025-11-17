@@ -13,6 +13,6 @@ public class New(
     {
         logger.LogTrace($"Created new document: {context.Id.Instance}");
 
-        return Task.CompletedTask;
+        return context.Values.SetAsync("the-answer", 42);
     }
 }

@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Builder;
+using Stateflows.Common;
 
 namespace Stateflows.Extensions.MinimalAPIs;
 
@@ -23,9 +24,10 @@ internal class EndpointConfigurationRule
     public bool Disable { get; init; } = false;
     public Func<string, string>? RouteUpdater { get; init; }
     public Action<IEndpointConventionBuilder>? EndpointConfigurator { get; init; }
+    public Func<IServiceProvider, IEndpointMetadataBuilder>? MetadataBuilderFactory { get; init; }
 }
 
-internal class ConfigurationInterceptor : EndpointDefinitionInterceptor
+internal class ConfigurationInterceptor(IServiceProvider serviceProvider) : EndpointDefinitionInterceptor
 {
     public List<EndpointConfigurationRule> Rules { get; } = new();
     

@@ -60,7 +60,7 @@ namespace Stateflows.Actions.Engine
             
             using var serviceScope = ServiceProvider.CreateScope();
             
-            var context = new ActionDelegateContext(StateflowsContext, eventHolder, scope.ServiceProvider);
+            var context = new ActionDelegateContext(StateflowsContext, this, eventHolder, serviceScope.ServiceProvider);
             try
             {
                 inspector.AfterHydrate(context);
@@ -77,7 +77,7 @@ namespace Stateflows.Actions.Engine
 
             using var scope = ServiceProvider.CreateScope();
 
-            var context = new ActionDelegateContext(StateflowsContext, eventHolder, scope.ServiceProvider);
+            var context = new ActionDelegateContext(StateflowsContext, this, eventHolder, scope.ServiceProvider);
             try
             {
                 inspector.BeforeDehydrate(context);
@@ -96,14 +96,14 @@ namespace Stateflows.Actions.Engine
             
             Trace.WriteLine($"⦗→s⦘ Action '{StateflowsContext.Id.Name}:{StateflowsContext.Id.Instance}': received event '{Event.GetName(eventHolder.PayloadType)}', processing");
 
-            var eventContext = new EventContext<TEvent>(StateflowsContext, eventHolder, ServiceProvider);
+            var eventContext = new EventContext<TEvent>(StateflowsContext, this, eventHolder, ServiceProvider);
             this.inspector.BeforeProcessEvent(eventContext);
             
             try
             {
                 if (eventHolder is EventHolder<TokensInput> tokensInputHolder)
                 {
-                    var context = new ActionDelegateContext(StateflowsContext, eventHolder, ServiceProvider, tokensInputHolder.Payload.Tokens);
+                    var context = new ActionDelegateContext(StateflowsContext, this, eventHolder, ServiceProvider, tokensInputHolder.Payload.Tokens);
                     try
                     {
                         InputTokens.TokensHolder.Value = context.InputTokens.ToList();
@@ -119,7 +119,7 @@ namespace Stateflows.Actions.Engine
                             Tokens = context.OutputTokens.ToList()
                         };
                         
-                        tokensInputHolder.Respond(tokensOutput.ToEventHolder());
+                        tokensInputHolder.Respond(tokensOutput.ToEventHolder(context.Behavior.Id));
                     }
                     finally
                     {
@@ -174,7 +174,7 @@ namespace Stateflows.Actions.Engine
                 }
                 else if (eventHolder is EventHolder<Initialize>)
                 {
-                    var context = new ActionDelegateContext(StateflowsContext, eventHolder, ServiceProvider, new List<TokenHolder>() { eventHolder.Payload.ToTokenHolder() });
+                    var context = new ActionDelegateContext(StateflowsContext, this, eventHolder, ServiceProvider, new List<TokenHolder>() { eventHolder.Payload.ToTokenHolder() });
                     try
                     {
                         InputTokens.TokensHolder.Value = context.InputTokens.ToList();
@@ -206,7 +206,7 @@ namespace Stateflows.Actions.Engine
                 }
                 else
                 {
-                    var context = new ActionDelegateContext(StateflowsContext, eventHolder, ServiceProvider, [eventHolder.Payload.ToTokenHolder()]);
+                    var context = new ActionDelegateContext(StateflowsContext, this, eventHolder, ServiceProvider, [eventHolder.Payload.ToTokenHolder()]);
                     try
                     {
                         InputTokens.TokensHolder.Value = context.InputTokens.ToList();

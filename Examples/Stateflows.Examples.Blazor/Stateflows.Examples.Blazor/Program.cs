@@ -4,6 +4,8 @@ using Stateflows;
 using Stateflows.StateMachines;
 using Stateflows.Examples.Blazor.Components;
 using Stateflows.Examples.Behaviors.StateMachines.Document;
+using Stateflows.Examples.Behaviors.StateMachines.Document.Builders;
+using Stateflows.Examples.Behaviors.StateMachines.Document.Interceptors;
 using Stateflows.Extensions.MinimalAPIs;
 using Stateflows.Extensions.OpenTelemetry;
 
@@ -19,6 +21,8 @@ builder.Services.AddStateflows(b => b
         // If no name is provided, full name of class would be used as a behavior class name.
         .AddStateMachine<Document>("Doc")
     )
+    
+    .AddInterceptor<InfoEnhanceInterceptor>()
     
     // Add PlantUML extension to enable State Machines and Activities visualizations.
     .AddPlantUml()
@@ -84,6 +88,14 @@ app.MapRazorComponents<App>()
 
 
 // API interface must be exposed for WebAssembly to interact with Stateflows
-app.MapStateflowsMinimalAPIsEndpoints();
+app.MapStateflowsMinimalAPIsEndpoints(b => b
+    .ConfigureStateMachines(b => b
+        .ConfigureStateMachine("Doc", b => b
+            .ConfigureAllEndpoints(b => b
+                .AddMetadataBuilder<DocMetadataBuilder>()
+            )
+        )
+    )
+);
 
 app.Run();

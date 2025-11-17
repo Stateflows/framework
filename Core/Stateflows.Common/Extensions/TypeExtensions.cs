@@ -110,7 +110,7 @@ namespace Stateflows.Common.Extensions
         {
             var staticMethod = type.GetMethod(
                 methodName,
-                BindingFlags.Public | BindingFlags.Static,
+                BindingFlags.Public | BindingFlags.Static | BindingFlags.FlattenHierarchy,
                 binder: null,
                 types: parameterTypes,
                 modifiers: null

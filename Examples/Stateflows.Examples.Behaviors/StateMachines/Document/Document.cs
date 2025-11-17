@@ -2,6 +2,7 @@ using Stateflows.Common;
 using Stateflows.Examples.Behaviors.Activities.Invoicing;
 using Stateflows.Examples.Behaviors.StateMachines.Document.Effects;
 using Stateflows.Examples.Behaviors.StateMachines.Document.Guards;
+using Stateflows.Examples.Behaviors.StateMachines.Document.Interceptors;
 using Stateflows.Examples.Behaviors.StateMachines.Document.States;
 using Stateflows.Examples.Common.Events;
 using Stateflows.StateMachines;
@@ -13,6 +14,7 @@ namespace Stateflows.Examples.Behaviors.StateMachines.Document;
 public class Document : IStateMachine
 {
     public static void Build(IStateMachineBuilder builder) => builder
+        .AddInterceptor<HttpContextInterceptor>()
         .AddInitialState<New>(b => b
             .AddTransition<Review, ApprovalPending>(b => b
                 .AddEffect<ReviewEffect>()

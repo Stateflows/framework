@@ -50,7 +50,13 @@ namespace Stateflows.Common
 
             try
             {
-                if (token.Validation.IsValid)
+                if (
+                    token.Validation.IsValid ||
+                    (
+                        token.EventHolder is EventHolder<CompoundRequest> compoundRequest &&
+                        compoundRequest.Payload.Events.Any(ev => ev.Headers.Any(h => h is ForcedExecution))
+                    )
+                )
                 {
                     status = await token.EventHolder.ProcessEventAsync(this, token.TargetId, token.Exceptions, token.Responses);
                 }
@@ -68,7 +74,7 @@ namespace Stateflows.Common
             }
         }
 
-        // [DebuggerHidden]
+        [DebuggerHidden]
         async Task<EventStatus> IStateflowsEngine.ProcessEventAsync<TEvent>(BehaviorId id, EventHolder<TEvent> eventHolder, List<Exception> exceptions, Dictionary<object, EventHolder> responses)
         {
             var result = EventStatus.Undelivered;
@@ -109,9 +115,9 @@ namespace Stateflows.Common
                         responseHolder.SenderId = id;
                         responseHolder.SentAt = DateTime.Now;
 
-                        if (eventHolder is EventHolder<CompoundRequest> compoundRequest)
+                        if (eventHolder is EventHolder<CompoundRequest> compoundRequestHolder)
                         {
-                            foreach (var subResponseHolder in compoundRequest.Payload.Events
+                            foreach (var subResponseHolder in compoundRequestHolder.Payload.Events
                                          .Select(subEventHolder => subEventHolder.GetResponseHolder())
                                          .Where(subResponseHolder => subResponseHolder != null)
                             )

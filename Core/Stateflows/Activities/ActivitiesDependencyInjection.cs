@@ -41,7 +41,7 @@ namespace Stateflows.Activities
             => AddActivities(stateflowsBuilder, buildAction, false);
         
         [DebuggerHidden]
-        public static IStateflowsBuilder AddActivities(this IStateflowsBuilder stateflowsBuilder, ActivitiesBuildAction buildAction, bool systemRegistrations)
+        internal static IStateflowsBuilder AddActivities(this IStateflowsBuilder stateflowsBuilder, ActivitiesBuildAction buildAction, bool systemRegistrations)
         {
             var register = stateflowsBuilder.EnsureActivitiesServices();
             buildAction?.Invoke(new ActivitiesBuilder(register, systemRegistrations));
@@ -73,7 +73,7 @@ namespace Stateflows.Activities
                         .AddScoped<IActivityPlugin, Behaviors>()
                         .AddSingleton(register)
                         .AddSingleton<IActivitiesRegister>(register)
-                        .AddScoped<IActivityContextProvider, ActivityContextProvider>()
+                        .AddSingleton<IActivityContextProvider, ActivityContextProvider>()
                         .AddScoped<IEventProcessor, Processor>()
                         .AddTransient<IBehaviorProvider, Provider>()
                         .AddSingleton<IActivityEventHandler, BehaviorStatusHandler>()

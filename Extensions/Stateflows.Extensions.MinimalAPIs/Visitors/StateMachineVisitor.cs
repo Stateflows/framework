@@ -19,7 +19,6 @@ internal class StateMachineVisitor(
     ITypeMapper typeMapper
 ) : StateMachines.StateMachineVisitor, IBehaviorClassVisitor, ITypeVisitor
 {
-    internal static readonly ActivitySource Source = new ActivitySource(nameof(Stateflows));
     public IEndpointRouteBuilder RouteBuilder => routeBuilder;
     public Interceptor Interceptor => interceptor;
     private readonly Dictionary<string, bool> Initializers = new();
@@ -264,8 +263,8 @@ internal class StateMachineVisitor(
                             var notifications = (await behavior.GetNotificationsAsync(names, DateTime.Now - period.Value)).ToArray();
                             var behaviorInfo = (await behavior.GetStatusAsync([new NoImplicitInitialization()])).Response;
                             
-                            var result = new SendResult(EventStatus.Consumed, new EventValidation(true));
-                            return result.ToResult(notifications, behaviorInfo, HateoasLinks);
+                            var sendResult = new SendResult(EventStatus.Consumed, new EventValidation(true));
+                            return sendResult.ToResult(notifications, behaviorInfo, HateoasLinks);
                         }
                     }
 
@@ -309,10 +308,9 @@ internal class StateMachineVisitor(
                         //
                         // var result = compoundResult.Response.Results.First();
                         // var behaviorInfo = ((EventHolder<StateMachineInfo>)compoundResult.Response.Results.Last().Response).Payload;
-                        
-                        var result = await behavior.FinalizeAsync();
+                        var sendResult = await behavior.FinalizeAsync();
                         var behaviorInfo = (await behavior.GetStatusAsync([new NoImplicitInitialization()])).Response;
-                        return result.ToResult([], behaviorInfo, HateoasLinks);
+                        return sendResult.ToResult([], behaviorInfo, HateoasLinks);
                     }
                     
                     return Results.NotFound();
@@ -355,10 +353,9 @@ internal class StateMachineVisitor(
                         //
                         // var result = compoundResult.Response.Results.First();
                         // var behaviorInfo = ((EventHolder<StateMachineInfo>)compoundResult.Response.Results.Last().Response).Payload;
-                        
-                        var result = await behavior.ResetAsync();
+                        var sendResult = await behavior.ResetAsync();
                         var behaviorInfo = (await behavior.GetStatusAsync([new NoImplicitInitialization()])).Response;
-                        return result.ToResult([], behaviorInfo, HateoasLinks);
+                        return sendResult.ToResult([], behaviorInfo, HateoasLinks);
                     }
                     
                     return Results.NotFound();

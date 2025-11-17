@@ -1,12 +1,14 @@
 ﻿using System.Threading;
 using System.Collections.Generic;
+using System.Reflection;
+using System.Threading.Tasks;
+using Stateflows.Common.Classes;
 
 namespace Stateflows.Common
 {
     public static class ResponseHolder
     {
-        private static readonly AsyncLocal<Dictionary<object, EventHolder>> Responses =
-            new AsyncLocal<Dictionary<object, EventHolder>>();
+        private static readonly AsyncLocal<Dictionary<object, EventHolder>> Responses = new();
 
         public static bool ResponsesAreSet()
         {

@@ -1,7 +1,6 @@
-﻿using Stateflows.Common.Interfaces;
-using System;
-using System.Collections.Generic;
+﻿using System;
 using System.Threading;
+using System.Collections.Generic;
 
 namespace Stateflows.Common.Classes
 {
@@ -13,13 +12,13 @@ namespace Stateflows.Common.Classes
 
         public EventHolder EventHolder { get; private set; }
 
-        public EventWaitHandle Handled { get; } = new EventWaitHandle(false, EventResetMode.AutoReset);
+        public EventWaitHandle Handled { get; } = new(false, EventResetMode.AutoReset);
 
         public EventStatus Status { get; set; }
 
-        public List<Exception> Exceptions { get; set; } = new List<Exception>();
+        public List<Exception> Exceptions { get; set; } = [];
 
-        public Dictionary<object, EventHolder> Responses { get; set; } = new Dictionary<object, EventHolder>();
+        public Dictionary<object, EventHolder> Responses { get; set; } = new();
 
         public EventValidation Validation { get; internal set; }
         

@@ -9,56 +9,16 @@ using Stateflows.Storage.EntityFrameworkCore.EntityFrameworkCore.Entities;
 
 namespace Stateflows.Storage.EntityFrameworkCore.Stateflows
 {
-    internal class EntityFrameworkCoreValueStorage : IStateflowsValueStorage
+    internal class EntityFrameworkCoreValueStorage<TDbContext>(
+        IDbContextFactory<TDbContext> dbContextFactory,
+        ILogger<EntityFrameworkCoreValueStorage<TDbContext>> logger
+    ) : IStateflowsValueStorage
+        where TDbContext : DbContext, IStateflowsDbContext_v1
     {
-        private readonly IStateflowsDbContext_v1 DbContext;
-        private readonly ILogger<EntityFrameworkCoreNotificationsStorage> Logger;
-
-        public EntityFrameworkCoreValueStorage(IStateflowsDbContext_v1 dbContext, ILogger<EntityFrameworkCoreNotificationsStorage> logger)
-        {
-            DbContext = dbContext;
-            Logger = logger;
-        }
-        
-        public Task SaveNotificationsAsync(BehaviorId behaviorId, EventHolder[] notifications)
-        {
-            DbContext.Notifications_v1.AddRange(notifications.Select(n => new Notification_v1(n)));
-            return DbContext.SaveChangesAsync();
-        }
-
-        public async Task<IEnumerable<EventHolder>> GetNotificationsAsync(BehaviorId behaviorId, string[] notificationNames, DateTime lastNotificationCheck)
-        {
-            var notifications = await DbContext.Notifications_v1.Where(n =>
-                n.SenderType == behaviorId.Type &&
-                n.SenderName == behaviorId.Name &&
-                n.SenderInstance == behaviorId.Instance &&
-                notificationNames.Contains(n.Name) &&
-                (
-                    n.SentAt.AddSeconds(n.TimeToLive) >= lastNotificationCheck ||
-                    n.Retained
-                )
-            ).ToArrayAsync();
-
-            notifications = notifications.Except(notifications.Where(n => 
-                n.Retained &&
-                notifications.Any(m =>
-                    m.Retained &&
-                    m.SenderType == n.SenderType &&
-                    m.SenderName == n.SenderName &&
-                    m.SenderInstance == n.SenderInstance &&
-                    m.Name == n.Name &&
-                    m.SentAt < n.SentAt
-                )
-            )).ToArray();
-
-            var result = notifications.Select(n => (EventHolder)StateflowsJsonConverter.DeserializeObject(n.Data));
-            
-            return result;
-        }
-
         public async Task SetAsync<T>(BehaviorId behaviorId, string key, T value)
         {
-            var entry = await DbContext.Values_v1.Where(v =>
+            await using var dbContext = await dbContextFactory.CreateDbContextAsync();
+            var entry = await dbContext.Values_v1.Where(v =>
                 v.BehaviorType == behaviorId.Type &&
                 v.BehaviorName == behaviorId.Name &&
                 v.BehaviorInstance == behaviorId.Instance &&
@@ -67,33 +27,41 @@ namespace Stateflows.Storage.EntityFrameworkCore.Stateflows
             if (entry == null)
             {
                 entry = new Value_v1(behaviorId.Type, behaviorId.Name, behaviorId.Instance, key, string.Empty);
-                DbContext.Values_v1.Add(entry);
+                dbContext.Values_v1.Add(entry);
             }
 
             entry.Value = StateflowsJsonConverter.SerializePolymorphicObject(value);
 
-            await DbContext.SaveChangesAsync();
+            await dbContext.SaveChangesAsync();
         }
 
-        public Task<bool> IsSetAsync(BehaviorId behaviorId, string key)
-            => DbContext.Values_v1.AnyAsync(v =>
+        public async Task<bool> IsSetAsync(BehaviorId behaviorId, string key)
+        {
+            await using var dbContext = await dbContextFactory.CreateDbContextAsync();
+            return await dbContext.Values_v1.AnyAsync(v =>
                 v.BehaviorType == behaviorId.Type &&
                 v.BehaviorName == behaviorId.Name &&
                 v.BehaviorInstance == behaviorId.Instance &&
                 v.Key == key);
+        }
 
-        public Task<bool> HasAnyPrefixedAsync(BehaviorId behaviorId, string prefix)
-            => DbContext.Values_v1.AnyAsync(v =>
+        public async Task<bool> HasAnyPrefixedAsync(BehaviorId behaviorId, string prefix)
+        {
+            await using var dbContext = await dbContextFactory.CreateDbContextAsync();
+            return await dbContext.Values_v1.AnyAsync(v =>
                 v.BehaviorType == behaviorId.Type &&
                 v.BehaviorName == behaviorId.Name &&
                 v.BehaviorInstance == behaviorId.Instance &&
                 v.Key.StartsWith(prefix));
+        }
 
-        public async Task<(bool Success, T Value)> TryGetAsync<T>(BehaviorId behaviorId, string key)
+        public async Task<(bool Success, T? Value)> TryGetAsync<T>(BehaviorId behaviorId, string key)
         {
             (bool Success, T Value) result = (false, default(T));
             
-            var entry = await DbContext.Values_v1.Where(v =>
+            await using var dbContext = await dbContextFactory.CreateDbContextAsync();
+            
+            var entry = await dbContext.Values_v1.Where(v =>
                 v.BehaviorType == behaviorId.Type &&
                 v.BehaviorName == behaviorId.Name &&
                 v.BehaviorInstance == behaviorId.Instance &&
@@ -131,7 +99,9 @@ namespace Stateflows.Storage.EntityFrameworkCore.Stateflows
         {
             var result = defaultValue;
             
-            var entry = await DbContext.Values_v1.Where(v =>
+            await using var dbContext = await dbContextFactory.CreateDbContextAsync();
+            
+            var entry = await dbContext.Values_v1.Where(v =>
                 v.BehaviorType == behaviorId.Type &&
                 v.BehaviorName == behaviorId.Name &&
                 v.BehaviorInstance == behaviorId.Instance &&
@@ -161,7 +131,9 @@ namespace Stateflows.Storage.EntityFrameworkCore.Stateflows
         {
             var result = defaultValue;
             
-            var entry = await DbContext.Values_v1.Where(v =>
+            await using var dbContext = await dbContextFactory.CreateDbContextAsync();
+            
+            var entry = await dbContext.Values_v1.Where(v =>
                 v.BehaviorType == behaviorId.Type &&
                 v.BehaviorName == behaviorId.Name &&
                 v.BehaviorInstance == behaviorId.Instance &&
@@ -170,7 +142,7 @@ namespace Stateflows.Storage.EntityFrameworkCore.Stateflows
             if (entry == null)
             {
                 entry = new Value_v1(behaviorId.Type, behaviorId.Name, behaviorId.Instance, key, string.Empty);
-                DbContext.Values_v1.Add(entry);
+                dbContext.Values_v1.Add(entry);
             }
             else
             {
@@ -191,27 +163,36 @@ namespace Stateflows.Storage.EntityFrameworkCore.Stateflows
             
             entry.Value = StateflowsJsonConverter.SerializePolymorphicObject(result);
 
-            await DbContext.SaveChangesAsync();
+            await dbContext.SaveChangesAsync();
         }
 
-        public Task RemoveAsync(BehaviorId behaviorId, string key)
-            => DbContext.Values_v1.Where(v =>
+        public async Task RemoveAsync(BehaviorId behaviorId, string key)
+        {
+            await using var dbContext = await dbContextFactory.CreateDbContextAsync();
+            await dbContext.Values_v1.Where(v =>
                 v.BehaviorType == behaviorId.Type &&
                 v.BehaviorName == behaviorId.Name &&
                 v.BehaviorInstance == behaviorId.Instance &&
                 v.Key == key).ExecuteDeleteAsync();
+        }
 
-        public Task RemovePrefixedAsync(BehaviorId behaviorId, string prefix)
-            => DbContext.Values_v1.Where(v =>
+        public async Task RemovePrefixedAsync(BehaviorId behaviorId, string prefix)
+        {
+            await using var dbContext = await dbContextFactory.CreateDbContextAsync();
+            await dbContext.Values_v1.Where(v =>
                 v.BehaviorType == behaviorId.Type &&
                 v.BehaviorName == behaviorId.Name &&
                 v.BehaviorInstance == behaviorId.Instance &&
                 v.Key.StartsWith(prefix)).ExecuteDeleteAsync();
+        }
 
-        public Task ClearAsync(BehaviorId behaviorId)
-            => DbContext.Values_v1.Where(v =>
+        public async Task ClearAsync(BehaviorId behaviorId)
+        {
+            await using var dbContext = await dbContextFactory.CreateDbContextAsync();
+            await dbContext.Values_v1.Where(v =>
                 v.BehaviorType == behaviorId.Type &&
                 v.BehaviorName == behaviorId.Name &&
                 v.BehaviorInstance == behaviorId.Instance).ExecuteDeleteAsync();
+        }
     }
 }

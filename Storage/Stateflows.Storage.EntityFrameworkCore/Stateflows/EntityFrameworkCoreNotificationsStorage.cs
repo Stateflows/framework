@@ -1,5 +1,4 @@
 ﻿using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Stateflows.Common;
 using Stateflows.Common.Utilities;
@@ -10,7 +9,6 @@ using Stateflows.Storage.EntityFrameworkCore.EntityFrameworkCore.Entities;
 namespace Stateflows.Storage.EntityFrameworkCore.Stateflows
 {
     internal class EntityFrameworkCoreNotificationsStorage<TDbContext>(
-        IServiceProvider serviceProvider,
         ILogger<EntityFrameworkCoreNotificationsStorage<TDbContext>> logger,
         IDbContextFactory<TDbContext> dbContextFactory
     ) : IStateflowsNotificationsStorage

@@ -1,4 +1,6 @@
 using Microsoft.AspNetCore.Builder;
+using Microsoft.Extensions.DependencyInjection;
+using Stateflows.Common;
 using Stateflows.Common.Classes;
 using Stateflows.Extensions.MinimalAPIs.Interfaces;
 
@@ -25,7 +27,7 @@ internal class MinimalAPIsBuilder(IServiceProvider serviceProvider) :
         {
             if (interceptor == null)
             {
-                interceptor = new ConfigurationInterceptor();
+                interceptor = new ConfigurationInterceptor(serviceProvider);
                 interceptorFactories.Add(_ => interceptor);
             }
 
@@ -173,6 +175,22 @@ internal class MinimalAPIsBuilder(IServiceProvider serviceProvider) :
                 BehaviorClass = CurrentClass,
                 Event = CurrentEvent,
                 EndpointConfigurator = routeHandlerBuilderAction
+            }
+        );
+
+        return this;
+    }
+
+    public IEndpointConfiguration AddMetadataBuilder<TMetadataBuilder>(Func<IServiceProvider, TMetadataBuilder>? builderFactory = null) where TMetadataBuilder : class, IEndpointMetadataBuilder
+    {
+        Interceptor.Rules.Add(
+            new EndpointConfigurationRule()
+            {
+                Kind = CurrentKind,
+                BehaviorType = CurrentType,
+                BehaviorClass = CurrentClass,
+                Event = CurrentEvent,
+                MetadataBuilderFactory = builderFactory ?? (provider => ActivatorUtilities.CreateInstance<TMetadataBuilder>(provider))
             }
         );
 

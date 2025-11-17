@@ -8,6 +8,7 @@ using Stateflows.Common.Classes;
 using Stateflows.Common.Interfaces;
 using Stateflows.Common.Subscription;
 using Stateflows.Activities.Engine;
+using Stateflows.Common.Engine;
 
 namespace Stateflows.Activities.Context.Classes
 {
@@ -25,7 +26,14 @@ namespace Stateflows.Activities.Context.Classes
 
         private BehaviorSubscriber subscriber;
         private BehaviorSubscriber Subscriber
-            => subscriber ??= new BehaviorSubscriber(Id, Context.Context, this, ServiceProvider.GetRequiredService<INotificationsHub>());
+            => subscriber ??= new BehaviorSubscriber(
+                Id,
+                Context.Context,
+                this,
+                ServiceProvider.GetRequiredService<INotificationsHub>(),
+                ServiceProvider.GetRequiredService<CommonInterceptor>(),
+                ServiceProvider
+            );
 
         public ActivityContext(RootContext context, NodeScope nodeScope)
             : base(context, nodeScope)

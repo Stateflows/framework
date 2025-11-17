@@ -368,7 +368,7 @@ namespace Stateflows.StateMachines.Registration.Builders
             where TStateMachine : class, IStateMachine
         {
             var submachineName = $"{Vertex.Graph.Name}.{Vertex.Name}.submachine";
-            Vertex.Graph.StateflowsBuilder.AddStateMachines(b => b.AddStateMachine<TStateMachine>(submachineName));
+            Vertex.Graph.StateflowsBuilder.AddStateMachines(b => b.AddStateMachine<TStateMachine>(submachineName), true);
             
             Vertex.BehaviorType = BehaviorType.StateMachine;
             Vertex.BehaviorName = submachineName;
@@ -393,11 +393,14 @@ namespace Stateflows.StateMachines.Registration.Builders
 
         #region DoActivity
         [DebuggerHidden]
+        private string GetDoActivityName()
+            => $"{Vertex.Graph.Name}.{Vertex.Name}.doActivity";
+        
         private StateBuilder AddDoActivity<TActivity>(StateActionInitializationBuilder initializationBuilder = null)
             where TActivity : class, IActivity
         {
-            var doActivityName = $"{Vertex.Graph.Name}.{Vertex.Name}.doActivity";
-            Vertex.Graph.StateflowsBuilder.AddActivities(b => b.AddActivity<TActivity>(doActivityName));
+            var doActivityName = GetDoActivityName();
+            Vertex.Graph.StateflowsBuilder.AddActivities(b => b.AddActivity<TActivity>(doActivityName), true);
             
             Vertex.BehaviorType = BehaviorType.Activity;
             Vertex.BehaviorName = doActivityName;
@@ -405,15 +408,47 @@ namespace Stateflows.StateMachines.Registration.Builders
             
             return this;
         }
-        
+
         [DebuggerHidden]
         private StateBuilder AddDoActivity(ReactiveActivityBuildAction activityBuildAction, StateActionInitializationBuilder initializationBuilder = null)
         {
-            var doActivityName = $"{Vertex.Graph.Name}.{Vertex.Name}.doActivity";
+            var doActivityName = GetDoActivityName();
             Vertex.Graph.StateflowsBuilder.AddActivities(b => b.AddActivity(doActivityName, activityBuildAction), true);
             
             Vertex.BehaviorType = BehaviorType.Activity;
             Vertex.BehaviorName = doActivityName;
+            Vertex.BehaviorInitializationBuilder = initializationBuilder;
+            
+            return this;
+        }
+        #endregion
+
+        #region DoAction
+        [DebuggerHidden]
+        private string GetDoActionName()
+            => $"{Vertex.Graph.Name}.{Vertex.Name}.doAction";
+        
+        private StateBuilder AddDoAction<TAction>(StateActionInitializationBuilder initializationBuilder = null)
+            where TAction : class, IAction
+        {
+            var doActionName = GetDoActionName();
+            Vertex.Graph.StateflowsBuilder.AddActions(b => b.AddAction<TAction>(doActionName), true);
+            
+            Vertex.BehaviorType = BehaviorType.Action;
+            Vertex.BehaviorName = doActionName;
+            Vertex.BehaviorInitializationBuilder = initializationBuilder;
+            
+            return this;
+        }
+
+        [DebuggerHidden]
+        private StateBuilder AddDoAction(ActionDelegateAsync actionDelegate, bool reentrant = true, StateActionInitializationBuilder initializationBuilder = null)
+        {
+            var doActionName = GetDoActionName();
+            Vertex.Graph.StateflowsBuilder.AddActions(b => b.AddAction(doActionName, actionDelegate, reentrant), true);
+            
+            Vertex.BehaviorType = BehaviorType.Action;
+            Vertex.BehaviorName = doActionName;
             Vertex.BehaviorInitializationBuilder = initializationBuilder;
             
             return this;
@@ -489,44 +524,6 @@ namespace Stateflows.StateMachines.Registration.Builders
         [DebuggerHidden]
         void IPseudostateElseTransitions<IChoiceBuilder>.AddElseTransition(string targetStateName, ElseDefaultTransitionBuildAction transitionBuildAction)
             => AddElseDefaultTransition(targetStateName, transitionBuildAction);
-
-        // [DebuggerHidden]
-        // public IEmbeddedBehaviorBuilder AddForwardedEvent<TEvent>(ForwardedEventBuildAction<TEvent> buildAction = null)
-        //     => AddInternalTransition<TEvent>(b =>
-        //     {
-        //         b.AddEffect(c =>
-        //         {
-        //             var stateValues = ((IRootContext)c).Context.GetStateValues(Vertex.Name);
-        //             var behaviorId = stateValues.BehaviorId ?? Vertex.GetBehaviorId(c.Behavior.Id);
-        //             if (c.TryLocateBehavior(behaviorId, out var behavior))
-        //             {
-        //                 _ = behavior.SendAsync(c.Event);
-        //
-        //                 c.Behavior.GetExecutor().OverrideEventStatus(EventStatus.Forwarded);
-        //             }
-        //             else
-        //             {
-        //                 throw new StateDefinitionException(c.Source.Name, $"DoActivity '{Vertex.BehaviorName}' not found", c.Behavior.Id.BehaviorClass);
-        //             }
-        //         });
-        //
-        //         buildAction?.Invoke(b as IForwardedEventBuilder<TEvent>);
-        //     }) as IEmbeddedBehaviorBuilder;
-
-        // [DebuggerHidden]
-        // public IEmbeddedBehaviorBuilder AddSubscription<TNotification>()
-        // {
-        //     Vertex.BehaviorSubscriptions.Add(typeof(TNotification));
-        //     
-        //     return this;
-        // }
-        //
-        // public IEmbeddedBehaviorBuilder AddRelay<TNotification>()
-        // {
-        //     Vertex.BehaviorRelays.Add(typeof(TNotification));
-        //     
-        //     return this;
-        // }
 
         [DebuggerHidden]
         IOverridenStateBuilder IStateEntry<IOverridenStateBuilder>.AddOnEntry(params Func<IStateActionContext, Task>[] actionsAsync)
@@ -909,6 +906,34 @@ namespace Stateflows.StateMachines.Registration.Builders
         IBehaviorStateBuilder IStateDoActivity<IBehaviorStateBuilder>.AddDoActivity(ReactiveActivityBuildAction activityBuildAction,
             StateActionInitializationBuilder initializationBuilder)
             => AddDoActivity(activityBuildAction, initializationBuilder);
+
+        [DebuggerHidden]
+        IBehaviorStateBuilder IStateDoAction<IBehaviorStateBuilder>.AddDoAction<TAction>(StateActionInitializationBuilder initializationBuilder)
+            => AddDoAction<TAction>(initializationBuilder);
+
+        [DebuggerHidden]
+        IBehaviorOverridenRegionalizedStateBuilder IStateDoAction<IBehaviorOverridenRegionalizedStateBuilder>.AddDoAction(ActionDelegateAsync actionDelegate, bool reentrant,
+            StateActionInitializationBuilder initializationBuilder)
+            => AddDoAction(actionDelegate, reentrant, initializationBuilder);
+
+        [DebuggerHidden]
+        IBehaviorOverridenRegionalizedStateBuilder IStateDoAction<IBehaviorOverridenRegionalizedStateBuilder>.AddDoAction<TAction>(
+            StateActionInitializationBuilder initializationBuilder)
+            => AddDoAction<TAction>(initializationBuilder);
+
+        [DebuggerHidden]
+        IBehaviorOverridenStateBuilder IStateDoAction<IBehaviorOverridenStateBuilder>.AddDoAction(ActionDelegateAsync actionDelegate, bool reentrant,
+            StateActionInitializationBuilder initializationBuilder)
+            => AddDoAction(actionDelegate, reentrant, initializationBuilder);
+
+        [DebuggerHidden]
+        IBehaviorOverridenStateBuilder IStateDoAction<IBehaviorOverridenStateBuilder>.AddDoAction<TAction>(StateActionInitializationBuilder initializationBuilder)
+            => AddDoAction<TAction>(initializationBuilder);
+
+        [DebuggerHidden]
+        IBehaviorStateBuilder IStateDoAction<IBehaviorStateBuilder>.AddDoAction(ActionDelegateAsync actionDelegate, bool reentrant,
+            StateActionInitializationBuilder initializationBuilder)
+            => AddDoAction(actionDelegate, reentrant, initializationBuilder);
 
         public IHistoryBuilder AddTransition(string targetStateName, DefaultTransitionBuildAction transitionBuildAction = null)
             => AddDefaultTransition(targetStateName, transitionBuildAction) as IHistoryBuilder;

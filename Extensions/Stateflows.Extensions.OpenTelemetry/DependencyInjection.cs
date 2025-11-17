@@ -27,7 +27,7 @@ namespace Stateflows.Extensions.OpenTelemetry
                         .AddExceptionHandler(serviceProvider => serviceProvider.GetRequiredService<ActionTracer>())
                     )
                     .AddClientInterceptor<ClientInterceptor>()
-                    .AddInterceptor<BehaviorInterceptor>()
+                    .AddInterceptor<MetricsInterceptor>()
                 ;
 
             builder.ServiceCollection

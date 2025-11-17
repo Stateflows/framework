@@ -12,7 +12,6 @@ using Stateflows.Storage.EntityFrameworkCore.EntityFrameworkCore.Entities;
 namespace Stateflows.Storage.EntityFrameworkCore.Stateflows
 {
     internal class EntityFrameworkCoreStorage<TDbContext>(
-        IServiceProvider serviceProvider,
         ILogger<EntityFrameworkCoreStorage<TDbContext>> logger,
         IDbContextFactory<TDbContext> dbContextFactory
     ) : IStateflowsStorage
@@ -23,11 +22,11 @@ namespace Stateflows.Storage.EntityFrameworkCore.Stateflows
             await using var dbContext = await dbContextFactory.CreateDbContextAsync();
             try
             {
-                var contextEntity = context.RuntimeMetadata.TryGetValue(nameof(EntityFrameworkCoreStorage), out var contextEntityObj)
+                var contextEntity = context.RuntimeMetadata.TryGetValue(nameof(EntityFrameworkCoreStorage<TDbContext>), out var contextEntityObj)
                     ? (Context_v1)contextEntityObj
-                    : await DbContext.Contexts_v1.FindOrCreate(context, true);
+                    : await dbContext.Contexts_v1.FindOrCreate(context, true);
 
-                context.RuntimeMetadata.Remove(nameof(EntityFrameworkCoreStorage));
+                context.RuntimeMetadata.Remove(nameof(EntityFrameworkCoreStorage<TDbContext>));
 
                 // var contextEntity = await dbContext.Contexts_v1.FindOrCreate(context, true);
                 contextEntity.Data = StateflowsJsonConverter.SerializePolymorphicObject(context);
@@ -72,7 +71,7 @@ namespace Stateflows.Storage.EntityFrameworkCore.Stateflows
                 var c = await dbContext.Contexts_v1.FindOrCreate(behaviorId);
 
                 result = StateflowsJsonConverter.DeserializeObject<StateflowsContext>(c.Data ?? string.Empty);
-                result?.RuntimeMetadata.Add(nameof(EntityFrameworkCoreStorage), c);
+                result?.RuntimeMetadata.Add(nameof(EntityFrameworkCoreStorage<TDbContext>), c);
             }
             catch (Exception e)
             {
