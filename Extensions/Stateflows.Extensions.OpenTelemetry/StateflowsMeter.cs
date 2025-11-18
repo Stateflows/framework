@@ -29,6 +29,12 @@ public class StateflowsMeter : IHostedService
             () => stateflowsTelemetry.BehaviorExecutionsCount,
             description: "Active behavior executions"
         );
+        
+        Meter.CreateObservableGauge(
+            "stateflows.behavior.execution.queueLength",
+            () => stateflowsTelemetry.EventQueueLength,
+            description: "Queued events"
+        );
     }
 
     public Task StartAsync(CancellationToken cancellationToken)

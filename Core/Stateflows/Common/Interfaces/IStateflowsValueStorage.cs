@@ -3,7 +3,7 @@ using System.Threading.Tasks;
 
 namespace Stateflows.Common.Interfaces
 {
-    public interface IStateflowsValueStorage
+    public interface IStateflowsValueStorage : IDisposable
     {
         Task SetAsync<T>(BehaviorId behaviorId, string key, T value);
 

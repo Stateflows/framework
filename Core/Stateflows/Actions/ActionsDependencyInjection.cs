@@ -71,7 +71,7 @@ namespace Stateflows.Actions
                         .ServiceCollection
                         .AddSingleton(register)
                         .AddSingleton<IActionsRegister>(register)
-                        .AddSingleton<IActionContextProvider, ActionContextProvider>()
+                        .AddScoped<IActionContextProvider, ActionContextProvider>()
                         .AddScoped<IEventProcessor, Processor>()
                         .AddTransient<IBehaviorProvider, Provider>()
                         

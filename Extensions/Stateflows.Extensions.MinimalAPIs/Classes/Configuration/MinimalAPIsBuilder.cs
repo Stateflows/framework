@@ -181,22 +181,6 @@ internal class MinimalAPIsBuilder(IServiceProvider serviceProvider) :
         return this;
     }
 
-    public IEndpointConfiguration AddMetadataBuilder<TMetadataBuilder>(Func<IServiceProvider, TMetadataBuilder>? builderFactory = null) where TMetadataBuilder : class, IEndpointMetadataBuilder
-    {
-        Interceptor.Rules.Add(
-            new EndpointConfigurationRule()
-            {
-                Kind = CurrentKind,
-                BehaviorType = CurrentType,
-                BehaviorClass = CurrentClass,
-                Event = CurrentEvent,
-                MetadataBuilderFactory = builderFactory ?? (provider => ActivatorUtilities.CreateInstance<TMetadataBuilder>(provider))
-            }
-        );
-
-        return this;
-    }
-
     private MinimalAPIsBuilder ConfigureGetInstancesEndpoint(string behaviorType, Action<IEndpointConfiguration> configureEndpointAction)
     {
         CurrentKind = EndpointKind.GetInstances;

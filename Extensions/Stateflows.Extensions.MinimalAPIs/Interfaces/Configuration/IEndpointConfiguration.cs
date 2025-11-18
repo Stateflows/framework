@@ -21,10 +21,4 @@ public interface IEndpointConfiguration
     /// </summary>
     /// <param name="routeHandlerBuilderAction">Action that configures endpoint handler</param>
     IEndpointConfiguration ConfigureHandler(Action<IEndpointConventionBuilder> routeHandlerBuilderAction);
-    
-    /// <summary>
-    /// Updates endpoint route
-    /// </summary>
-    IEndpointConfiguration AddMetadataBuilder<TMetadataBuilder>(Func<IServiceProvider, TMetadataBuilder>? builderFactory = null)
-        where TMetadataBuilder : class, IEndpointMetadataBuilder;
 }

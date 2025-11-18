@@ -91,7 +91,7 @@ namespace Stateflows.StateMachines
                         .AddScoped<IStateMachinePlugin, Engine.Exceptions>()
                         .AddSingleton(register)
                         .AddSingleton<IStateMachinesRegister>(register)
-                        .AddSingleton<IStateMachineContextProvider, StateMachineContextProvider>()
+                        .AddScoped<IStateMachineContextProvider, StateMachineContextProvider>()
                         .AddScoped<IEventProcessor, Processor>()
                         .AddTransient<IBehaviorProvider, Provider>()
                         .AddSingleton<IStateMachineEventHandler, BehaviorStatusRequestHandler>()

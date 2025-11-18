@@ -11,7 +11,6 @@ using Stateflows.Activities.Registration;
 using Stateflows.Activities.Context.Classes;
 using Stateflows.Common.Engine;
 using Stateflows.Common.Utilities;
-using Stateflows.StateMachines;
 
 namespace Stateflows.Activities.Engine
 {

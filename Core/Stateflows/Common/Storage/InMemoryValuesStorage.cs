@@ -203,5 +203,10 @@ namespace Stateflows.Common.Storage
             
             return Task.CompletedTask;
         }
+
+        public void Dispose()
+        {
+            // TODO release managed resources here
+        }
     }
 }

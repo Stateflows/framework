@@ -436,8 +436,5 @@ namespace Stateflows.StateMachines.Engine
 
             return handled;
         }
-
-        public Task NotificationPublishedAsync<TNotification>(IBehaviorActionContext context, TNotification notification)
-            => GlobalInterceptor.NotificationPublishedAsync(context, notification);
     }
 }

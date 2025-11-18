@@ -73,7 +73,7 @@ namespace Stateflows.Activities
                         .AddScoped<IActivityPlugin, Behaviors>()
                         .AddSingleton(register)
                         .AddSingleton<IActivitiesRegister>(register)
-                        .AddSingleton<IActivityContextProvider, ActivityContextProvider>()
+                        .AddScoped<IActivityContextProvider, ActivityContextProvider>()
                         .AddScoped<IEventProcessor, Processor>()
                         .AddTransient<IBehaviorProvider, Provider>()
                         .AddSingleton<IActivityEventHandler, BehaviorStatusHandler>()

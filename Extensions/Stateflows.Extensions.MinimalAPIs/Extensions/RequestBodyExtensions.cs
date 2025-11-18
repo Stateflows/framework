@@ -234,16 +234,28 @@ internal static class RequestBodyExtensions
                     switch (behavior.Id.Type)
                     {
                         case BehaviorType.StateMachine:
-                            b.Add(new StateMachineInfoRequest(),
-                                implicitInitialization ? [new ForcedExecution()] : [new NoImplicitInitialization(), new ForcedExecution()]);
+                            b.Add(
+                                new StateMachineInfoRequest(),
+                                implicitInitialization
+                                    ? [new ForcedExecution()]
+                                    : [new NoImplicitInitialization(), new ForcedExecution()]
+                            );
                             break;
                         case BehaviorType.Activity:
-                            b.Add(new ActivityInfoRequest(),
-                                implicitInitialization ? [new ForcedExecution()] : [new NoImplicitInitialization(), new ForcedExecution()]);
+                            b.Add(
+                                new ActivityInfoRequest(),
+                                implicitInitialization
+                                    ? [new ForcedExecution()]
+                                    : [new NoImplicitInitialization(), new ForcedExecution()]
+                            );
                             break;
                         case BehaviorType.Action:
-                            b.Add(new BehaviorInfoRequest(),
-                                implicitInitialization ? [new ForcedExecution()] : [new NoImplicitInitialization(), new ForcedExecution()]);
+                            b.Add(
+                                new BehaviorInfoRequest(),
+                                implicitInitialization
+                                    ? [new ForcedExecution()]
+                                    : [new NoImplicitInitialization(), new ForcedExecution()]
+                            );
                             break;
                     }
                 }
@@ -286,16 +298,28 @@ internal static class RequestBodyExtensions
                     switch (behavior.Id.Type)
                     {
                         case BehaviorType.StateMachine:
-                            b.Add(new StateMachineInfoRequest(),
-                                implicitInitialization ? [new ForcedExecution()] : [new NoImplicitInitialization(), new ForcedExecution()]);
+                            b.Add(
+                                new StateMachineInfoRequest(),
+                                implicitInitialization
+                                    ? [new ForcedExecution()]
+                                    : [new NoImplicitInitialization(), new ForcedExecution()]
+                            );
                             break;
                         case BehaviorType.Activity:
-                            b.Add(new ActivityInfoRequest(),
-                                implicitInitialization ? [new ForcedExecution()] : [new NoImplicitInitialization(), new ForcedExecution()]);
+                            b.Add(
+                                new ActivityInfoRequest(),
+                                implicitInitialization
+                                    ? [new ForcedExecution()]
+                                    : [new NoImplicitInitialization(), new ForcedExecution()]
+                            );
                             break;
                         case BehaviorType.Action:
-                            b.Add(new BehaviorInfoRequest(),
-                                implicitInitialization ? [new ForcedExecution()] : [new NoImplicitInitialization(), new ForcedExecution()]);
+                            b.Add(
+                                new BehaviorInfoRequest(),
+                                implicitInitialization
+                                    ? [new ForcedExecution()]
+                                    : [new NoImplicitInitialization(), new ForcedExecution()]
+                            );
                             break;
                     }
                 }

@@ -7,7 +7,6 @@
 <PageTitle>Blazor Server (JS-driven)</PageTitle>
 
 <script>
-    console.log("loaded");
     const machineName = "Doc";
     let currentInstance = "";
     let notificationsSource = null;
@@ -74,7 +73,6 @@
             body: JSON.stringify({ Event: { Content : content, Rating: 42 }})
         });
 
-        console.log(result);
         if (result && result.status && result.statusText === "Invalid" && !result.eventValidation.isValid) {
             // adapt to your API's validation result shape
             alert("Validation error: " + result.eventValidation.validationResults[0].errorMessage);

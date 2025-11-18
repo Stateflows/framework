@@ -1,6 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using Stateflows.Common;
 using Stateflows.Common.Extensions;
 using Stateflows.Common.Utilities;
 using Stateflows.Common.Interfaces;
@@ -9,15 +9,15 @@ using Stateflows.Storage.EntityFrameworkCore.EntityFrameworkCore.Entities;
 
 namespace Stateflows.Storage.EntityFrameworkCore.Stateflows
 {
-    internal class EntityFrameworkCoreValueStorage<TDbContext>(
-        IDbContextFactory<TDbContext> dbContextFactory,
-        ILogger<EntityFrameworkCoreValueStorage<TDbContext>> logger
-    ) : IStateflowsValueStorage
+    internal class EntityFrameworkCoreValueStorage<TDbContext>(IServiceProvider serviceProvider) : IStateflowsValueStorage
         where TDbContext : DbContext, IStateflowsDbContext_v1
     {
         public async Task SetAsync<T>(BehaviorId behaviorId, string key, T value)
         {
-            await using var dbContext = await dbContextFactory.CreateDbContextAsync();
+            await using var scope = serviceProvider.CreateAsyncScope();
+            var dbContextFactory = scope.ServiceProvider.GetService<IDbContextFactory<TDbContext>>() ?? new DbContextFactory<TDbContext>(scope.ServiceProvider);
+            var dbContext = await dbContextFactory.CreateDbContextAsync();
+            
             var entry = await dbContext.Values_v1.Where(v =>
                 v.BehaviorType == behaviorId.Type &&
                 v.BehaviorName == behaviorId.Name &&
@@ -33,11 +33,15 @@ namespace Stateflows.Storage.EntityFrameworkCore.Stateflows
             entry.Value = StateflowsJsonConverter.SerializePolymorphicObject(value);
 
             await dbContext.SaveChangesAsync();
+                
+            dbContext.ChangeTracker.Clear();
         }
 
         public async Task<bool> IsSetAsync(BehaviorId behaviorId, string key)
         {
-            await using var dbContext = await dbContextFactory.CreateDbContextAsync();
+            await using var scope = serviceProvider.CreateAsyncScope();
+            var dbContextFactory = scope.ServiceProvider.GetService<IDbContextFactory<TDbContext>>() ?? new DbContextFactory<TDbContext>(scope.ServiceProvider);
+            var dbContext = await dbContextFactory.CreateDbContextAsync();
             return await dbContext.Values_v1.AnyAsync(v =>
                 v.BehaviorType == behaviorId.Type &&
                 v.BehaviorName == behaviorId.Name &&
@@ -47,7 +51,9 @@ namespace Stateflows.Storage.EntityFrameworkCore.Stateflows
 
         public async Task<bool> HasAnyPrefixedAsync(BehaviorId behaviorId, string prefix)
         {
-            await using var dbContext = await dbContextFactory.CreateDbContextAsync();
+            await using var scope = serviceProvider.CreateAsyncScope();
+            var dbContextFactory = scope.ServiceProvider.GetService<IDbContextFactory<TDbContext>>() ?? new DbContextFactory<TDbContext>(scope.ServiceProvider);
+            var dbContext = await dbContextFactory.CreateDbContextAsync();
             return await dbContext.Values_v1.AnyAsync(v =>
                 v.BehaviorType == behaviorId.Type &&
                 v.BehaviorName == behaviorId.Name &&
@@ -59,7 +65,9 @@ namespace Stateflows.Storage.EntityFrameworkCore.Stateflows
         {
             (bool Success, T Value) result = (false, default(T));
             
-            await using var dbContext = await dbContextFactory.CreateDbContextAsync();
+            await using var scope = serviceProvider.CreateAsyncScope();
+            var dbContextFactory = scope.ServiceProvider.GetService<IDbContextFactory<TDbContext>>() ?? new DbContextFactory<TDbContext>(scope.ServiceProvider);
+            var dbContext = await dbContextFactory.CreateDbContextAsync();
             
             var entry = await dbContext.Values_v1.Where(v =>
                 v.BehaviorType == behaviorId.Type &&
@@ -99,7 +107,9 @@ namespace Stateflows.Storage.EntityFrameworkCore.Stateflows
         {
             var result = defaultValue;
             
-            await using var dbContext = await dbContextFactory.CreateDbContextAsync();
+            await using var scope = serviceProvider.CreateAsyncScope();
+            var dbContextFactory = scope.ServiceProvider.GetService<IDbContextFactory<TDbContext>>() ?? new DbContextFactory<TDbContext>(scope.ServiceProvider);
+            var dbContext = await dbContextFactory.CreateDbContextAsync();
             
             var entry = await dbContext.Values_v1.Where(v =>
                 v.BehaviorType == behaviorId.Type &&
@@ -131,7 +141,9 @@ namespace Stateflows.Storage.EntityFrameworkCore.Stateflows
         {
             var result = defaultValue;
             
-            await using var dbContext = await dbContextFactory.CreateDbContextAsync();
+            await using var scope = serviceProvider.CreateAsyncScope();
+            var dbContextFactory = scope.ServiceProvider.GetService<IDbContextFactory<TDbContext>>() ?? new DbContextFactory<TDbContext>(scope.ServiceProvider);
+            var dbContext = await dbContextFactory.CreateDbContextAsync();
             
             var entry = await dbContext.Values_v1.Where(v =>
                 v.BehaviorType == behaviorId.Type &&
@@ -164,11 +176,16 @@ namespace Stateflows.Storage.EntityFrameworkCore.Stateflows
             entry.Value = StateflowsJsonConverter.SerializePolymorphicObject(result);
 
             await dbContext.SaveChangesAsync();
+                
+            dbContext.ChangeTracker.Clear();
         }
 
         public async Task RemoveAsync(BehaviorId behaviorId, string key)
         {
-            await using var dbContext = await dbContextFactory.CreateDbContextAsync();
+            
+            await using var scope = serviceProvider.CreateAsyncScope();
+            var dbContextFactory = scope.ServiceProvider.GetService<IDbContextFactory<TDbContext>>() ?? new DbContextFactory<TDbContext>(scope.ServiceProvider);
+            var dbContext = await dbContextFactory.CreateDbContextAsync();
             await dbContext.Values_v1.Where(v =>
                 v.BehaviorType == behaviorId.Type &&
                 v.BehaviorName == behaviorId.Name &&
@@ -178,7 +195,10 @@ namespace Stateflows.Storage.EntityFrameworkCore.Stateflows
 
         public async Task RemovePrefixedAsync(BehaviorId behaviorId, string prefix)
         {
-            await using var dbContext = await dbContextFactory.CreateDbContextAsync();
+            
+            await using var scope = serviceProvider.CreateAsyncScope();
+            var dbContextFactory = scope.ServiceProvider.GetService<IDbContextFactory<TDbContext>>() ?? new DbContextFactory<TDbContext>(scope.ServiceProvider);
+            var dbContext = await dbContextFactory.CreateDbContextAsync();
             await dbContext.Values_v1.Where(v =>
                 v.BehaviorType == behaviorId.Type &&
                 v.BehaviorName == behaviorId.Name &&
@@ -188,11 +208,17 @@ namespace Stateflows.Storage.EntityFrameworkCore.Stateflows
 
         public async Task ClearAsync(BehaviorId behaviorId)
         {
-            await using var dbContext = await dbContextFactory.CreateDbContextAsync();
+            
+            await using var scope = serviceProvider.CreateAsyncScope();
+            var dbContextFactory = scope.ServiceProvider.GetService<IDbContextFactory<TDbContext>>() ?? new DbContextFactory<TDbContext>(scope.ServiceProvider);
+            var dbContext = await dbContextFactory.CreateDbContextAsync();
             await dbContext.Values_v1.Where(v =>
                 v.BehaviorType == behaviorId.Type &&
                 v.BehaviorName == behaviorId.Name &&
                 v.BehaviorInstance == behaviorId.Instance).ExecuteDeleteAsync();
         }
+
+        public void Dispose()
+        { }
     }
 }
