@@ -134,7 +134,7 @@ namespace Stateflows.StateMachines.Registration.Builders
 
         #region Utils
         [DebuggerHidden]
-        public IStateBuilder AddDeferredEvent<TEvent>()
+        public IStateBuilder AddDeferredEvent<TEvent>(DeferralBuildAction<TEvent> buildAction)
         {
             if (typeof(TEvent) == typeof(Completion))
                 throw new DeferralDefinitionException(typeof(TEvent).GetEventName(), "Completion event cannot be deferred.", Vertex.Graph.Class);
@@ -145,7 +145,11 @@ namespace Stateflows.StateMachines.Registration.Builders
             if (typeof(TEvent).IsSubclassOf(typeof(TimeEvent)))
                 throw new DeferralDefinitionException(typeof(TEvent).GetEventName(), "Time events cannot be deferred.", Vertex.Graph.Class);
 
-            Vertex.DeferredEvents.Add(typeof(TEvent).GetEventName());
+            var builder = new DeferralBuilder<TEvent>(Vertex);
+            
+            buildAction?.Invoke(builder);
+
+            Vertex.Deferrals.Add(typeof(TEvent).GetEventName(), builder.Logic);
 
             return this;
         }
@@ -368,7 +372,7 @@ namespace Stateflows.StateMachines.Registration.Builders
             where TStateMachine : class, IStateMachine
         {
             var submachineName = $"{Vertex.Graph.Name}.{Vertex.Name}.submachine";
-            Vertex.Graph.StateflowsBuilder.AddStateMachines(b => b.AddStateMachine<TStateMachine>(submachineName));
+            Vertex.Graph.StateflowsBuilder.AddStateMachines(b => b.AddStateMachine<TStateMachine>(submachineName), true);
             
             Vertex.BehaviorType = BehaviorType.StateMachine;
             Vertex.BehaviorName = submachineName;
@@ -393,11 +397,14 @@ namespace Stateflows.StateMachines.Registration.Builders
 
         #region DoActivity
         [DebuggerHidden]
+        private string GetDoActivityName()
+            => $"{Vertex.Graph.Name}.{Vertex.Name}.doActivity";
+        
         private StateBuilder AddDoActivity<TActivity>(StateActionInitializationBuilder initializationBuilder = null)
             where TActivity : class, IActivity
         {
-            var doActivityName = $"{Vertex.Graph.Name}.{Vertex.Name}.doActivity";
-            Vertex.Graph.StateflowsBuilder.AddActivities(b => b.AddActivity<TActivity>(doActivityName));
+            var doActivityName = GetDoActivityName();
+            Vertex.Graph.StateflowsBuilder.AddActivities(b => b.AddActivity<TActivity>(doActivityName), true);
             
             Vertex.BehaviorType = BehaviorType.Activity;
             Vertex.BehaviorName = doActivityName;
@@ -405,15 +412,47 @@ namespace Stateflows.StateMachines.Registration.Builders
             
             return this;
         }
-        
+
         [DebuggerHidden]
         private StateBuilder AddDoActivity(ReactiveActivityBuildAction activityBuildAction, StateActionInitializationBuilder initializationBuilder = null)
         {
-            var doActivityName = $"{Vertex.Graph.Name}.{Vertex.Name}.doActivity";
+            var doActivityName = GetDoActivityName();
             Vertex.Graph.StateflowsBuilder.AddActivities(b => b.AddActivity(doActivityName, activityBuildAction), true);
             
             Vertex.BehaviorType = BehaviorType.Activity;
             Vertex.BehaviorName = doActivityName;
+            Vertex.BehaviorInitializationBuilder = initializationBuilder;
+            
+            return this;
+        }
+        #endregion
+
+        #region DoAction
+        [DebuggerHidden]
+        private string GetDoActionName()
+            => $"{Vertex.Graph.Name}.{Vertex.Name}.doAction";
+        
+        private StateBuilder AddDoAction<TAction>(StateActionInitializationBuilder initializationBuilder = null)
+            where TAction : class, IAction
+        {
+            var doActionName = GetDoActionName();
+            Vertex.Graph.StateflowsBuilder.AddActions(b => b.AddAction<TAction>(doActionName), true);
+            
+            Vertex.BehaviorType = BehaviorType.Action;
+            Vertex.BehaviorName = doActionName;
+            Vertex.BehaviorInitializationBuilder = initializationBuilder;
+            
+            return this;
+        }
+
+        [DebuggerHidden]
+        private StateBuilder AddDoAction(ActionDelegateAsync actionDelegate, bool reentrant = true, StateActionInitializationBuilder initializationBuilder = null)
+        {
+            var doActionName = GetDoActionName();
+            Vertex.Graph.StateflowsBuilder.AddActions(b => b.AddAction(doActionName, actionDelegate, reentrant), true);
+            
+            Vertex.BehaviorType = BehaviorType.Action;
+            Vertex.BehaviorName = doActionName;
             Vertex.BehaviorInitializationBuilder = initializationBuilder;
             
             return this;
@@ -429,8 +468,8 @@ namespace Stateflows.StateMachines.Registration.Builders
             => AddOnExit(actionsAsync) as IBehaviorStateBuilder;
 
         [DebuggerHidden]
-        IBehaviorStateBuilder IStateUtils<IBehaviorStateBuilder>.AddDeferredEvent<TEvent>()
-            => AddDeferredEvent<TEvent>() as IBehaviorStateBuilder;
+        IBehaviorStateBuilder IStateUtils<IBehaviorStateBuilder>.AddDeferredEvent<TEvent>(DeferralBuildAction<TEvent> buildAction)
+            => AddDeferredEvent<TEvent>(buildAction) as IBehaviorStateBuilder;
 
         [DebuggerHidden]
         IBehaviorStateBuilder IStateTransitions<IBehaviorStateBuilder>.AddTransition<TEvent>(string targetStateName, TransitionBuildAction<TEvent> transitionBuildAction)
@@ -490,44 +529,6 @@ namespace Stateflows.StateMachines.Registration.Builders
         void IPseudostateElseTransitions<IChoiceBuilder>.AddElseTransition(string targetStateName, ElseDefaultTransitionBuildAction transitionBuildAction)
             => AddElseDefaultTransition(targetStateName, transitionBuildAction);
 
-        // [DebuggerHidden]
-        // public IEmbeddedBehaviorBuilder AddForwardedEvent<TEvent>(ForwardedEventBuildAction<TEvent> buildAction = null)
-        //     => AddInternalTransition<TEvent>(b =>
-        //     {
-        //         b.AddEffect(c =>
-        //         {
-        //             var stateValues = ((IRootContext)c).Context.GetStateValues(Vertex.Name);
-        //             var behaviorId = stateValues.BehaviorId ?? Vertex.GetBehaviorId(c.Behavior.Id);
-        //             if (c.TryLocateBehavior(behaviorId, out var behavior))
-        //             {
-        //                 _ = behavior.SendAsync(c.Event);
-        //
-        //                 c.Behavior.GetExecutor().OverrideEventStatus(EventStatus.Forwarded);
-        //             }
-        //             else
-        //             {
-        //                 throw new StateDefinitionException(c.Source.Name, $"DoActivity '{Vertex.BehaviorName}' not found", c.Behavior.Id.BehaviorClass);
-        //             }
-        //         });
-        //
-        //         buildAction?.Invoke(b as IForwardedEventBuilder<TEvent>);
-        //     }) as IEmbeddedBehaviorBuilder;
-
-        // [DebuggerHidden]
-        // public IEmbeddedBehaviorBuilder AddSubscription<TNotification>()
-        // {
-        //     Vertex.BehaviorSubscriptions.Add(typeof(TNotification));
-        //     
-        //     return this;
-        // }
-        //
-        // public IEmbeddedBehaviorBuilder AddRelay<TNotification>()
-        // {
-        //     Vertex.BehaviorRelays.Add(typeof(TNotification));
-        //     
-        //     return this;
-        // }
-
         [DebuggerHidden]
         IOverridenStateBuilder IStateEntry<IOverridenStateBuilder>.AddOnEntry(params Func<IStateActionContext, Task>[] actionsAsync)
             => AddOnEntry(actionsAsync) as IOverridenStateBuilder;
@@ -537,8 +538,8 @@ namespace Stateflows.StateMachines.Registration.Builders
             => AddOnExit(actionsAsync) as IOverridenStateBuilder;
 
         [DebuggerHidden]
-        IOverridenStateBuilder IStateUtils<IOverridenStateBuilder>.AddDeferredEvent<TEvent>()
-            => AddDeferredEvent<TEvent>() as IOverridenStateBuilder;
+        IOverridenStateBuilder IStateUtils<IOverridenStateBuilder>.AddDeferredEvent<TEvent>(DeferralBuildAction<TEvent> buildAction)
+            => AddDeferredEvent<TEvent>(buildAction) as IOverridenStateBuilder;
 
         [DebuggerHidden]
         IBehaviorOverridenRegionalizedStateBuilder IStateTransitionsOverrides<IBehaviorOverridenRegionalizedStateBuilder>.
@@ -793,8 +794,8 @@ namespace Stateflows.StateMachines.Registration.Builders
             => AddOnExit(actionsAsync) as IBehaviorOverridenStateBuilder;
 
         [DebuggerHidden]
-        IBehaviorOverridenStateBuilder IStateUtils<IBehaviorOverridenStateBuilder>.AddDeferredEvent<TEvent>()
-            => AddDeferredEvent<TEvent>() as IBehaviorOverridenStateBuilder;
+        IBehaviorOverridenStateBuilder IStateUtils<IBehaviorOverridenStateBuilder>.AddDeferredEvent<TEvent>(DeferralBuildAction<TEvent> buildAction)
+            => AddDeferredEvent<TEvent>(buildAction) as IBehaviorOverridenStateBuilder;
 
         [DebuggerHidden]
         IBehaviorOverridenRegionalizedStateBuilder IStateComposition<IBehaviorOverridenRegionalizedStateBuilder>.
@@ -815,8 +816,8 @@ namespace Stateflows.StateMachines.Registration.Builders
             => AddOnExit(actionsAsync) as IOverridenRegionalizedStateBuilder;
 
         [DebuggerHidden]
-        IOverridenRegionalizedStateBuilder IStateUtils<IOverridenRegionalizedStateBuilder>.AddDeferredEvent<TEvent>()
-            => AddDeferredEvent<TEvent>() as IOverridenRegionalizedStateBuilder;
+        IOverridenRegionalizedStateBuilder IStateUtils<IOverridenRegionalizedStateBuilder>.AddDeferredEvent<TEvent>(DeferralBuildAction<TEvent> buildAction)
+            => AddDeferredEvent<TEvent>(buildAction) as IOverridenRegionalizedStateBuilder;
 
         [DebuggerHidden]
         IBehaviorOverridenRegionalizedStateBuilder IStateEntry<IBehaviorOverridenRegionalizedStateBuilder>.AddOnEntry(params Func<IStateActionContext, Task>[] actionsAsync)
@@ -827,8 +828,8 @@ namespace Stateflows.StateMachines.Registration.Builders
             => AddOnExit(actionsAsync) as IBehaviorOverridenRegionalizedStateBuilder;
 
         [DebuggerHidden]
-        IBehaviorOverridenRegionalizedStateBuilder IStateUtils<IBehaviorOverridenRegionalizedStateBuilder>.AddDeferredEvent<TEvent>()
-            => AddDeferredEvent<TEvent>() as IBehaviorOverridenRegionalizedStateBuilder;
+        IBehaviorOverridenRegionalizedStateBuilder IStateUtils<IBehaviorOverridenRegionalizedStateBuilder>.AddDeferredEvent<TEvent>(DeferralBuildAction<TEvent> buildAction)
+            => AddDeferredEvent<TEvent>(buildAction) as IBehaviorOverridenRegionalizedStateBuilder;
 
         [DebuggerHidden]
         IForkBuilder IForkTransitions<IForkBuilder>.AddTransition(string targetStateName, DefaultTransitionEffectBuildAction transitionBuildAction)
@@ -910,7 +911,50 @@ namespace Stateflows.StateMachines.Registration.Builders
             StateActionInitializationBuilder initializationBuilder)
             => AddDoActivity(activityBuildAction, initializationBuilder);
 
+        [DebuggerHidden]
+        IBehaviorStateBuilder IStateDoAction<IBehaviorStateBuilder>.AddDoAction<TAction>(StateActionInitializationBuilder initializationBuilder)
+            => AddDoAction<TAction>(initializationBuilder);
+
+        [DebuggerHidden]
+        IBehaviorOverridenRegionalizedStateBuilder IStateDoAction<IBehaviorOverridenRegionalizedStateBuilder>.AddDoAction(ActionDelegateAsync actionDelegate, bool reentrant,
+            StateActionInitializationBuilder initializationBuilder)
+            => AddDoAction(actionDelegate, reentrant, initializationBuilder);
+
+        [DebuggerHidden]
+        IBehaviorOverridenRegionalizedStateBuilder IStateDoAction<IBehaviorOverridenRegionalizedStateBuilder>.AddDoAction<TAction>(
+            StateActionInitializationBuilder initializationBuilder)
+            => AddDoAction<TAction>(initializationBuilder);
+
+        [DebuggerHidden]
+        IBehaviorOverridenStateBuilder IStateDoAction<IBehaviorOverridenStateBuilder>.AddDoAction(ActionDelegateAsync actionDelegate, bool reentrant,
+            StateActionInitializationBuilder initializationBuilder)
+            => AddDoAction(actionDelegate, reentrant, initializationBuilder);
+
+        [DebuggerHidden]
+        IBehaviorOverridenStateBuilder IStateDoAction<IBehaviorOverridenStateBuilder>.AddDoAction<TAction>(StateActionInitializationBuilder initializationBuilder)
+            => AddDoAction<TAction>(initializationBuilder);
+
+        [DebuggerHidden]
+        IBehaviorStateBuilder IStateDoAction<IBehaviorStateBuilder>.AddDoAction(ActionDelegateAsync actionDelegate, bool reentrant,
+            StateActionInitializationBuilder initializationBuilder)
+            => AddDoAction(actionDelegate, reentrant, initializationBuilder);
+
         public IHistoryBuilder AddTransition(string targetStateName, DefaultTransitionBuildAction transitionBuildAction = null)
             => AddDefaultTransition(targetStateName, transitionBuildAction) as IHistoryBuilder;
+
+        // IOverridenStateBuilder IStateUtils<IOverridenStateBuilder>.AddDeferredEvent<TEvent>(DeferralBuildAction<TEvent> buildAction)
+        //     => (IOverridenStateBuilder)AddDeferredEvent(buildAction);
+        //
+        // IOverridenRegionalizedStateBuilder IStateUtils<IOverridenRegionalizedStateBuilder>.AddDeferredEvent<TEvent>(DeferralBuildAction<TEvent> buildAction)
+        //     => (IOverridenRegionalizedStateBuilder)AddDeferredEvent(buildAction);
+        //
+        // IBehaviorStateBuilder IStateUtils<IBehaviorStateBuilder>.AddDeferredEvent<TEvent>(DeferralBuildAction<TEvent> buildAction)
+        //     => (IBehaviorStateBuilder)AddDeferredEvent(buildAction);
+        //
+        // IBehaviorOverridenStateBuilder IStateUtils<IBehaviorOverridenStateBuilder>.AddDeferredEvent<TEvent>(DeferralBuildAction<TEvent> buildAction)
+        //     => (IBehaviorOverridenStateBuilder)AddDeferredEvent(buildAction);
+        //
+        // IBehaviorOverridenRegionalizedStateBuilder IStateUtils<IBehaviorOverridenRegionalizedStateBuilder>.AddDeferredEvent<TEvent>(DeferralBuildAction<TEvent> buildAction)
+        //     => (IBehaviorOverridenRegionalizedStateBuilder)AddDeferredEvent(buildAction);
     }
 }

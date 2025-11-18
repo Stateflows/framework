@@ -12,7 +12,7 @@ namespace Stateflows.StateMachines.Extensions
         public static bool Triggers(this EventHolder eventHolder, Edge edge)
         {
             var edgeGuardIdentifier = $"{edge.Identifier}.";
-            var guardResponse = eventHolder.Headers.OfType<GuardResponse>().FirstOrDefault();
+            var guardResponse = eventHolder.Headers.OfType<TransitionGuardResponse>().FirstOrDefault();
             if (guardResponse != null && !guardResponse.GuardIdentifier.StartsWith(edgeGuardIdentifier))
             {
                 return false;

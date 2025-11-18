@@ -2,12 +2,13 @@
 using System.Threading.Tasks;
 using System.Collections.Generic;
 using Microsoft.Extensions.DependencyInjection;
+using Stateflows.Actions.Engine;
 using Stateflows.Common;
 using Stateflows.Common.Context;
 
 namespace Stateflows.Actions.Context.Classes
 {
-    public class RootContext
+    internal class RootContext
     {
         public ActionId Id { get; }
 
@@ -15,9 +16,10 @@ namespace Stateflows.Actions.Context.Classes
 
         internal IServiceProvider ServiceProvider { get; set; }
 
-        public RootContext(StateflowsContext context, EventHolder eventHolder, IServiceProvider serviceProvider)
+        public RootContext(StateflowsContext context, Executor executor, EventHolder eventHolder, IServiceProvider serviceProvider)
         {
             Context = context;
+            Executor = executor;
             EventHolder = eventHolder;
             ServiceProvider = serviceProvider;
             Id = new ActionId(Context.Id);
@@ -25,6 +27,8 @@ namespace Stateflows.Actions.Context.Classes
 
         public Dictionary<string, string> GlobalValues => Context.GlobalValues;
 
+        public Executor Executor { get; set; }
+        
         public EventHolder EventHolder { get; set; }
 
         public readonly List<Exception> Exceptions = new List<Exception>();

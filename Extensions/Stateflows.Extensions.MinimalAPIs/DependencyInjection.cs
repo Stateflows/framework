@@ -8,7 +8,6 @@ using Stateflows.Common.Registration;
 using Stateflows.Activities;
 using Stateflows.Activities.Registration.Interfaces;
 using Stateflows.Activities.Registration.Interfaces.Base;
-using Stateflows.Common;
 using Stateflows.Extensions.MinimalAPIs.Interfaces;
 using Stateflows.StateMachines;
 using Stateflows.StateMachines.Registration.Interfaces;
@@ -23,6 +22,8 @@ public static class DependencyInjection
     internal static readonly List<System.Action<ActivityVisitor>> ActivityEndpointBuilders = [];
     
     internal static string ApiRoutePrefix = string.Empty;
+    
+    internal static Interceptor Interceptor { get; private set; }
     
     /// <summary>
     /// Allows to define <a href="https://learn.microsoft.com/en-us/aspnet/core/fundamentals/minimal-apis/overview">Minimal API</a> endpoints in State Machine REST route group.
@@ -102,12 +103,11 @@ public static class DependencyInjection
     /// <param name="minimalAPIsBuilderAction">Configuration action</param>
     public static void MapStateflowsMinimalAPIsEndpoints(this IEndpointRouteBuilder builder, System.Action<IMinimalAPIsBuilder>? minimalAPIsBuilderAction = null)
     {
-        RequestDelegate x = null;
         ApiRoutePrefix = "stateflows";
 
         var interceptors = GetInterceptors(builder, minimalAPIsBuilderAction);
 
-        var interceptor = new Interceptor(interceptors);
+        Interceptor = new Interceptor(interceptors);
         
         var root = string.IsNullOrEmpty(ApiRoutePrefix)
             ? builder
@@ -115,14 +115,14 @@ public static class DependencyInjection
 
         var route = "/classes";
         var method = HttpMethods.Get;
-        if (interceptor.BeforeGetAllClassesEndpointDefinition(ref method, ref route))
+        if (Interceptor.BeforeGetAllClassesEndpointDefinition(ref method, ref route))
         {
             var allClasses = root.MapMethods(
                 route,
                 [method],
                 (IBehaviorClassesProvider provider) =>
                 {
-                    var result = interceptor.FilterBehaviorClasses(provider.AllBehaviorClasses).ToArray();
+                    var result = Interceptor.FilterBehaviorClasses(provider.AllBehaviorClasses).ToArray();
                     return result.Length != 0
                         ? Results.Ok(result)
                         : Results.NotFound();
@@ -130,18 +130,18 @@ public static class DependencyInjection
             )
             .WithTags(nameof(Stateflows));
             
-            interceptor.AfterGetAllClassesEndpointDefinition(method, route, allClasses);
+            Interceptor.AfterGetAllClassesEndpointDefinition(method, route, allClasses);
         }
 
         route = "/";
-        if (interceptor.BeforeGetAllInstancesEndpointDefinition(ref method, ref route))
+        if (Interceptor.BeforeGetAllInstancesEndpointDefinition(ref method, ref route))
         {
             var endpointRouteBuilder = root.MapMethods(
                 route,
                 [method],
                 async (IBehaviorClassesProvider provider, IStateflowsStorage storage) =>
                 {
-                    var behaviorClasses = interceptor.FilterBehaviorClasses(provider.AllBehaviorClasses)
+                    var behaviorClasses = Interceptor.FilterBehaviorClasses(provider.AllBehaviorClasses)
                         .ToArray();
                     var contextIds = await storage.GetAllContextIdsAsync(behaviorClasses);
                     return Results.Ok(contextIds.Select(id => new { Id = id }));
@@ -149,14 +149,14 @@ public static class DependencyInjection
             )
             .WithTags(nameof(Stateflows));
             
-            interceptor.AfterGetAllInstancesEndpointDefinition(method, route, endpointRouteBuilder);
+            Interceptor.AfterGetAllInstancesEndpointDefinition(method, route, endpointRouteBuilder);
         }
 
-        RegisterActionsApi(builder, interceptor, root);
+        RegisterActionsApi(builder, Interceptor, root);
 
-        RegisterActivitiesApi(builder, interceptor, root);
+        RegisterActivitiesApi(builder, Interceptor, root);
 
-        RegisterStateMachinesApi(builder, interceptor, root);
+        RegisterStateMachinesApi(builder, Interceptor, root);
     }
 
     private static IEnumerable<IEndpointDefinitionInterceptor> GetInterceptors(IEndpointRouteBuilder builder, System.Action<IMinimalAPIsBuilder>? minimalAPIsBuilderAction)

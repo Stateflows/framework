@@ -11,11 +11,12 @@ using Stateflows.Common.Subscription;
 using Microsoft.Extensions.DependencyInjection;
 using Stateflows.Activities;
 using Stateflows.Common.Context;
+using Stateflows.Common.Engine;
 using Stateflows.Common.Utilities;
 
 namespace Stateflows.Actions.Context.Classes
 {
-    public class ActionContext : IActionContext, IBehaviorLocator, IStateflowsContextProvider
+    internal class ActionContext : IActionContext, IBehaviorLocator, IStateflowsContextProvider
     {
         BehaviorId IBehaviorContext.Id => Context.ContextOwnerId ?? RootContext.Id;
 
@@ -31,7 +32,14 @@ namespace Stateflows.Actions.Context.Classes
 
         private BehaviorSubscriber subscriber;
         private BehaviorSubscriber Subscriber
-            => subscriber ??= new BehaviorSubscriber(Id, RootContext.Context, this, ServiceProvider.GetRequiredService<INotificationsHub>());
+            => subscriber ??= new BehaviorSubscriber(
+                Id,
+                RootContext.Context,
+                this,
+                ServiceProvider.GetRequiredService<INotificationsHub>(),
+                ServiceProvider.GetRequiredService<CommonInterceptor>(),
+                ServiceProvider
+            );
 
         public ActionContext(RootContext rootContext, IServiceProvider serviceProvider, IEnumerable<TokenHolder> tokens)
         {

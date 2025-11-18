@@ -31,6 +31,13 @@ namespace Stateflows.StateMachines
 
     public interface IHistory : IVertex
     { }
+    
+    public interface IGuard<in TEvent>
+    {
+        Task<bool> GuardAsync(TEvent @event);
+    }
+
+    public interface IDeferralGuard<in TEvent> : IGuard<TEvent>;
 
     public static class State<TState>
         where TState : class, IVertex

@@ -10,9 +10,11 @@ namespace Stateflows.Common.Registration.Builders
     {
         private readonly List<IStateflowsTypeMapper> TypeMappers = [];
 
+        internal static int MaxConcurrentBehaviorExecutions = 0;
+
         internal readonly ITypeMapper TypeMapper;
 
-        public IServiceCollection ServiceCollection { get; private set; }
+        public IServiceCollection ServiceCollection { get; }
 
         public StateflowsBuilder(IServiceCollection services)
         {
@@ -24,6 +26,13 @@ namespace Stateflows.Common.Registration.Builders
         {
             TypeMappers.Add(new TTypeMapper());
 
+            return this;
+        }
+
+        public IStateflowsBuilder SetMaxConcurrentBehaviorExecutions(int maxConcurrentBehaviorExecutions)
+        {
+            MaxConcurrentBehaviorExecutions = maxConcurrentBehaviorExecutions;
+            
             return this;
         }
     }

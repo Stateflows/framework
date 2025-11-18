@@ -36,12 +36,13 @@ namespace Stateflows
                     .AddSingleton<StateflowsService>()
                     .AddHostedService(provider => provider.GetRequiredService<StateflowsService>())
                     .AddSingleton<IStateflowsTelemetry>(provider => provider.GetRequiredService<StateflowsService>())
-                    .AddScoped<INotificationsHub, NotificationsHub>()
+                    .AddSingleton<INotificationsHub, NotificationsHub>()
                     .AddHostedService<Scheduler>()
                     .AddTransient<ScheduleExecutor>()
                     .AddTransient<StartupExecutor>()
                     .AddSingleton<ITenantAccessor, TenantAccessor>()
                     .AddScoped<CommonInterceptor>()
+                    .AddScoped<IBehaviorContextProvider, BehaviorContextProvider>()
                     .AddScoped<IStateflowsTenantExecutor, TenantExecutor>()
                     .AddTransient(provider =>
                         CommonContextHolder.ExecutionContext.Value ??

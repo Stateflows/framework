@@ -13,7 +13,7 @@ namespace Stateflows.Storage.EntityFrameworkCore.Utils
         public static async Task<Context_v1> FindOrCreate(this DbSet<Context_v1> dbSet, BehaviorId id, bool track = false)
         {
             var query = dbSet.Where(c => c.BehaviorId == id.ToString());
-            if (!track)
+            // if (!track)
             {
                 query = query.AsNoTracking();
             }

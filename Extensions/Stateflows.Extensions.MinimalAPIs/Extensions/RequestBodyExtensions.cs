@@ -6,41 +6,12 @@ using Microsoft.AspNetCore.Routing;
 using Stateflows.Activities;
 using Stateflows.Common;
 using Stateflows.Common.Classes;
-using Stateflows.Extensions.MinimalAPIs.Headers;
 using Stateflows.StateMachines;
 
 namespace Stateflows.Extensions.MinimalAPIs;
 
 internal static class RequestBodyExtensions
 {
-    private static ICompoundRequestBuilder AddBehaviorInfoRequest(this ICompoundRequestBuilder builder, BehaviorId behaviorId)
-    {
-        switch (behaviorId.Type) 
-        {
-            case BehaviorType.StateMachine:
-                builder.Add(new StateMachineInfoRequest(), [new NoImplicitInitialization()]);
-                break;
-                        
-            case BehaviorType.Activity:
-                builder.Add(new ActivityInfoRequest(), [new NoImplicitInitialization()]);
-                break;
-                        
-            default:
-                builder.Add(new BehaviorInfoRequest(), [new NoImplicitInitialization()]);
-                break;
-        };
-        
-        return builder;
-    }
-
-    private static BehaviorInfo GetBehaviorInfo(this EventHolder holder, BehaviorId behaviorId)
-        => behaviorId.Type switch
-        {
-            BehaviorType.StateMachine => ((EventHolder<StateMachineInfo>)holder).Payload,
-            BehaviorType.Activity => ((EventHolder<ActivityInfo>)holder).Payload,
-            _ => ((EventHolder<BehaviorInfo>)holder).Payload,
-        };
-    
     private static async Task<BehaviorInfo> GetBehaviorInfo(this IBehavior behavior)
     {
         var behaviorInfo = behavior.Id.Type switch
@@ -137,7 +108,7 @@ internal static class RequestBodyExtensions
     {
         var eventType = typeof(TRequest);
         var eventName = Utils.GetEventName<TRequest>();
-        var route = $"{behaviorType.ToResource()}/{behaviorName}/{{instance}}/" + Utils.GetEventName<TRequest>();
+        var route = $"/{behaviorType.ToResource()}/{behaviorName}/{{instance}}/" + Utils.GetEventName<TRequest>();
         var method = HttpMethods.Post;
         var behaviorClass = new BehaviorClass(behaviorType, behaviorName);
         if (interceptor.BeforeEventEndpointDefinition<TRequest>(behaviorClass, ref method, ref route))
@@ -214,23 +185,62 @@ internal static class RequestBodyExtensions
         bool implicitInitialization, Dictionary<string, List<(HateoasLink, BehaviorStatus[])>> customHateoasLinks, HttpContext context)
     {
         var lastNotificationsCheck = DateTime.Now;
-        
-        List<EventHeader> headers = implicitInitialization ? [] : [new NoImplicitInitialization()];
-        headers.Add(new HttpContextHeader { Context = context });
-        var result = EqualityComparer<TEvent>.Default.Equals(@event, default)
-            ? new SendResult(
-                EventStatus.Invalid,
-                new EventValidation(false, [ new ValidationResult("Event not provided") ])
-            )
-            : await behavior.SendAsync(@event, headers);
-        
-        var notifications = result.Status != EventStatus.Invalid && (payload.RequestedNotifications?.Any() ?? false)
-            ? (await behavior.GetNotificationsAsync(payload.RequestedNotifications, lastNotificationsCheck)).ToArray()
-            : [];
-        
-        var behaviorInfo = await behavior.GetBehaviorInfo();
 
-        return result.ToResult(notifications, behaviorInfo, customHateoasLinks);
+        if (EqualityComparer<TEvent>.Default.Equals(@event, default))
+        {
+            var result = new SendResult(
+                EventStatus.Invalid,
+                new EventValidation(false, [new ValidationResult("Event not provided")])
+            );
+            
+            var behaviorInfo = await behavior.GetBehaviorInfo();
+            return result.ToResult([], behaviorInfo, customHateoasLinks);
+        }
+        else
+        {
+            var compoundResult = await behavior.SendCompoundAsync(b =>
+                {
+                    b.Add(@event, implicitInitialization ? [] : [new NoImplicitInitialization()]);
+
+                    switch (behavior.Id.Type)
+                    {
+                        case BehaviorType.StateMachine:
+                            b.Add(
+                                new StateMachineInfoRequest(),
+                                implicitInitialization
+                                    ? [new ForcedExecution()]
+                                    : [new NoImplicitInitialization(), new ForcedExecution()]
+                            );
+                            break;
+                        case BehaviorType.Activity:
+                            b.Add(
+                                new ActivityInfoRequest(),
+                                implicitInitialization
+                                    ? [new ForcedExecution()]
+                                    : [new NoImplicitInitialization(), new ForcedExecution()]
+                            );
+                            break;
+                        case BehaviorType.Action:
+                            b.Add(
+                                new BehaviorInfoRequest(),
+                                implicitInitialization
+                                    ? [new ForcedExecution()]
+                                    : [new NoImplicitInitialization(), new ForcedExecution()]
+                            );
+                            break;
+                    }
+                }
+            );
+
+            var result = compoundResult.Response.Results.First();
+            var behaviorInfo = (BehaviorInfo)compoundResult.Response.Results.Last().Response.BoxedPayload;
+            
+            var notifications = payload.RequestedNotifications is { Length: > 0 } && result.Status == EventStatus.Consumed
+                ? (await behavior.GetNotificationsAsync(payload.RequestedNotifications, lastNotificationsCheck)).ToArray()
+                : [];
+            
+            return result.ToResult(notifications, behaviorInfo, customHateoasLinks);
+        }
     }
     
     private static async Task<IResult> RequestEndpointAsync<TRequest, TResponse>(this RequestBody payload, TRequest request, IBehavior behavior,
@@ -239,22 +249,64 @@ internal static class RequestBodyExtensions
     {
         var lastNotificationsCheck = DateTime.Now;
 
-        List<EventHeader> headers = implicitInitialization ? [] : [new NoImplicitInitialization()];
-        headers.Add(new HttpContextHeader { Context = context });
-        var result = EqualityComparer<TRequest>.Default.Equals(request, default)
-            ? new RequestResult<TResponse>(
-                new EventHolder<TRequest>(),
+        if (EqualityComparer<TRequest>.Default.Equals(request, default))
+        {
+            var result = new SendResult(
                 EventStatus.Invalid,
-                new EventValidation(false, [ new ValidationResult("Event not provided") ])
-            )
-            : await behavior.RequestAsync(request, headers);
-        
-        var notifications = result.Status != EventStatus.Invalid && (payload.RequestedNotifications?.Any() ?? false)
-            ? (await behavior.GetNotificationsAsync(payload.RequestedNotifications, lastNotificationsCheck)).ToArray()
-            : [];
-        
-        var behaviorInfo = await behavior.GetBehaviorInfo();
+                new EventValidation(false, [new ValidationResult("Event not provided")])
+            );
+            
+            var behaviorInfo = await behavior.GetBehaviorInfo();
+            
+            return result.ToResult([], behaviorInfo, customHateoasLinks);
+        }
+        else
+        {
+            var compoundResult = await behavior.SendCompoundAsync(b =>
+                {
+                    b.Add(request, implicitInitialization ? [] : [new NoImplicitInitialization()]);
 
-        return result.ToResult(notifications, behaviorInfo, customHateoasLinks);
+                    switch (behavior.Id.Type)
+                    {
+                        case BehaviorType.StateMachine:
+                            b.Add(
+                                new StateMachineInfoRequest(),
+                                implicitInitialization
+                                    ? [new ForcedExecution()]
+                                    : [new NoImplicitInitialization(), new ForcedExecution()]
+                            );
+                            break;
+                        case BehaviorType.Activity:
+                            b.Add(
+                                new ActivityInfoRequest(),
+                                implicitInitialization
+                                    ? [new ForcedExecution()]
+                                    : [new NoImplicitInitialization(), new ForcedExecution()]
+                            );
+                            break;
+                        case BehaviorType.Action:
+                            b.Add(
+                                new BehaviorInfoRequest(),
+                                implicitInitialization
+                                    ? [new ForcedExecution()]
+                                    : [new NoImplicitInitialization(), new ForcedExecution()]
+                            );
+                            break;
+                    }
+                }
+            );
+
+            var result = compoundResult.Response.Results.First();
+            var requestResult = new RequestResult<TResponse>(result);
+            var behaviorInfo = (BehaviorInfo)compoundResult.Response.Results.Last().Response.BoxedPayload;
+
+            var notifications =
+                payload.RequestedNotifications is { Length: > 0 } && requestResult.Status == EventStatus.Consumed
+                    ? (await behavior.GetNotificationsAsync(payload.RequestedNotifications, lastNotificationsCheck))
+                    .ToArray()
+                    : [];
+
+            return requestResult.ToResult(notifications, behaviorInfo, customHateoasLinks);
+        }
     }
 }

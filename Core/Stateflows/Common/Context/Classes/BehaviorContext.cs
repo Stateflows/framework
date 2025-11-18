@@ -5,6 +5,7 @@ using System.Reflection;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using Stateflows.Common.Classes;
+using Stateflows.Common.Engine;
 using Stateflows.Common.Interfaces;
 using Stateflows.Common.Subscription;
 
@@ -16,7 +17,14 @@ namespace Stateflows.Common.Context.Classes
 
         private BehaviorSubscriber subscriber;
         private BehaviorSubscriber Subscriber
-            => subscriber ??= new BehaviorSubscriber(Id, Context, this, ServiceProvider.GetRequiredService<INotificationsHub>());
+            => subscriber ??= new BehaviorSubscriber(
+                Id,
+                Context,
+                this,
+                ServiceProvider.GetRequiredService<INotificationsHub>(),
+                ServiceProvider.GetRequiredService<CommonInterceptor>(),
+                ServiceProvider
+            );
 
         public BehaviorContext(StateflowsContext context, IServiceProvider serviceProvider)
             : base(context, serviceProvider)

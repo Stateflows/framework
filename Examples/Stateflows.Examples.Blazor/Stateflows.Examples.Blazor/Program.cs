@@ -1,17 +1,29 @@
+using Medallion.Threading.SqlServer;
+using Microsoft.EntityFrameworkCore;
 using OpenTelemetry;
 using Scalar.AspNetCore;
 using Stateflows;
 using Stateflows.StateMachines;
 using Stateflows.Examples.Blazor.Components;
 using Stateflows.Examples.Behaviors.StateMachines.Document;
+using Stateflows.Examples.Behaviors.StateMachines.Document.Interceptors;
+using Stateflows.Examples.Blazor;
 using Stateflows.Extensions.MinimalAPIs;
 using Stateflows.Extensions.OpenTelemetry;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// Uncomment, if you want to use storage:
+//
+builder.Services.AddDbContext<AppDbContext>(options
+    => options.UseSqlServer(builder.Configuration.GetConnectionString("Default"))
+);
+
 // In order to host Stateflows behaviors, Stateflows framework must be registered in the app.
 builder.Services.AddStateflows(b => b
-    
+            
+    .SetMaxConcurrentBehaviorExecutions(10)
+            
     // Each type of behavior must be registered explicitly - in this example only State Machines are used.
     .AddStateMachines(b => b
             
@@ -20,11 +32,21 @@ builder.Services.AddStateflows(b => b
         .AddStateMachine<Document>("Doc")
     )
     
+    .AddInterceptor<InfoEnhanceInterceptor>()
+    
     // Add PlantUML extension to enable State Machines and Activities visualizations.
     .AddPlantUml()
 
     // Add OpenTelemetry extension to enable tracing and logging.
     .AddOpenTelemetry()
+
+    // Uncomment, if you want to use storage:
+    //
+    .AddEntityFrameworkCoreStorage<AppDbContext>()
+    
+    .AddDistributedLock(async (serviceProvider, lockKey)
+        => new SqlDistributedLock(lockKey, builder.Configuration.GetConnectionString("Default"))
+    )
 );
 
 builder.Services.AddOpenApi();

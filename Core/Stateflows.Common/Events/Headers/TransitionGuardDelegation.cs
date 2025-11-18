@@ -1,6 +1,6 @@
 namespace Stateflows.Common
 {
-    public sealed class GuardDelegation : EventHeader
+    public sealed class TransitionGuardDelegation : EventHeader
     {
         public string EdgeIdentifier { get; set; }
     }

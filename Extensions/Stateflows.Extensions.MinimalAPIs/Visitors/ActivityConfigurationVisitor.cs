@@ -10,7 +10,7 @@ internal class ActivityConfigurationVisitor(MinimalAPIsBuilder minimalApisBuilde
     public override Task ActivityTypeAddedAsync<TActivity>(string activityName, int activityVersion)
     {
         var activityType = typeof(TActivity);
-        if (typeof(IActivityEndpointsConfiguration).IsAssignableFrom(typeof(TActivity)))
+        if (typeof(IActivityEndpointsConfiguration).IsAssignableFrom(activityType))
         {
             minimalApisBuilder.CurrentClass = new ActivityClass(activityName);
             activityType.CallStaticMethod(nameof(IActivityEndpointsConfiguration.ConfigureEndpoints), [ typeof(IBehaviorClassEndpointsConfiguration) ], [ minimalApisBuilder ]);

@@ -4,16 +4,17 @@ using Stateflows.Common;
 using Stateflows.Common.Context;
 using Stateflows.Activities;
 using Stateflows.Actions.Context.Interfaces;
+using Stateflows.Actions.Engine;
 
 namespace Stateflows.Actions.Context.Classes
 {
-    public class ActionDelegateContext : ActionContext, IActionDelegateContext
+    internal class ActionDelegateContext : ActionContext, IActionDelegateContext
     {
         internal static Dictionary<BehaviorId, List<ActionDelegateContext>> Instances = [];
 
-        public ActionDelegateContext(StateflowsContext context, EventHolder eventHolder,
+        public ActionDelegateContext(StateflowsContext context, Executor executor, EventHolder eventHolder,
             IServiceProvider serviceProvider, List<TokenHolder> inputTokens = null)
-            : base(new RootContext(context, eventHolder, serviceProvider), serviceProvider, inputTokens)
+            : base(new RootContext(context, executor, eventHolder, serviceProvider), serviceProvider, inputTokens)
         {
             lock (Instances)
             {

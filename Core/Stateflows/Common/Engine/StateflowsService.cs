@@ -4,8 +4,10 @@ using System.Threading;
 using System.Threading.Channels;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 using Stateflows.Common.Classes;
 using Stateflows.Common.Engine.Interfaces;
+using Stateflows.Common.Registration.Builders;
 
 namespace Stateflows.Common
 {
@@ -14,23 +16,27 @@ namespace Stateflows.Common
         public StateflowsService(StateflowsEngine stateflowsEngine)
         {
             StateflowsEngine = stateflowsEngine;
+            var maxConcurrency = StateflowsBuilder.MaxConcurrentBehaviorExecutions > 0
+                ? StateflowsBuilder.MaxConcurrentBehaviorExecutions
+                : Environment.ProcessorCount;
+            ConcurrencySemaphore = new SemaphoreSlim(maxConcurrency, maxConcurrency);
         }
 
         private readonly StateflowsEngine StateflowsEngine;
         
-        private readonly CancellationTokenSource CancellationTokenSource = new CancellationTokenSource();
+        private readonly CancellationTokenSource CancellationTokenSource = new();
         
         private Channel<ExecutionToken> EventChannel { get; } = Channel.CreateUnbounded<ExecutionToken>();
-        
-        private Task executionTask;
-        
+
+        private readonly SemaphoreSlim ConcurrencySemaphore;
+
         private int behaviorExecutionCounter = 0;
 
-        public ExecutionToken EnqueueEvent(BehaviorId id, EventHolder eventHolder, IServiceProvider serviceProvider)
+        public async ValueTask<ExecutionToken> EnqueueEventAsync(BehaviorId id, EventHolder eventHolder, IServiceProvider serviceProvider)
         {
             var token = new ExecutionToken(id, eventHolder, serviceProvider);
 
-            _ = EventChannel.Writer.WriteAsync(token);
+            await EventChannel.Writer.WriteAsync(token);
             
             return token;
         }
@@ -38,7 +44,7 @@ namespace Stateflows.Common
         [DebuggerHidden]
         public Task StartAsync(CancellationToken cancellationToken)
         {
-            executionTask = ExecutionTaskAsync(CancellationTokenSource.Token);
+            _ = ExecutionTaskAsync(CancellationTokenSource.Token);
 
             return Task.CompletedTask;
         }
@@ -48,21 +54,22 @@ namespace Stateflows.Common
         {
             while (!cancellationToken.IsCancellationRequested)
             {
-                var token = await EventChannel.Reader.ReadAsync(CancellationTokenSource.Token);
+                var token = await EventChannel.Reader.ReadAsync(cancellationToken);
+
+                await ConcurrencySemaphore.WaitAsync(cancellationToken);
 
                 _ = Task.Run(
                     async () =>
                     {
-                        lock (this)
+                        try
                         {
-                            behaviorExecutionCounter++;
+                            Interlocked.Increment(ref behaviorExecutionCounter);
+                            await StateflowsEngine.HandleEventAsync(token);
                         }
-                        
-                        await StateflowsEngine.HandleEventAsync(token);
-                        
-                        lock (this)
+                        finally
                         {
-                            behaviorExecutionCounter--;
+                            Interlocked.Decrement(ref behaviorExecutionCounter);
+                            ConcurrencySemaphore.Release();
                         }
                     },
                     cancellationToken
@@ -72,29 +79,12 @@ namespace Stateflows.Common
 
         public Task StopAsync(CancellationToken cancellationToken)
         {
-            try
-            {
-                CancellationTokenSource.Cancel();
-
-                executionTask.Wait();
-            }
-            catch (Exception)
-            {
-            }
+            CancellationTokenSource.Cancel();
 
             return Task.CompletedTask;
         }
 
         public int EventQueueLength => EventChannel.Reader.Count;
-        public int BehaviorExecutionsCount
-        {
-            get
-            {
-                lock (this)
-                {
-                    return behaviorExecutionCounter;
-                }
-            }
-        }
+        public int BehaviorExecutionsCount => System.Threading.Volatile.Read(ref behaviorExecutionCounter);
     }
 }

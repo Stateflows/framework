@@ -25,7 +25,7 @@ namespace Stateflows.Activities.EventHandlers
                 var responseType = typeof(TokensOutput<>).MakeGenericType(tokenType);
                 var response = Activator.CreateInstance(responseType) as TokensOutputEvent;
                 response!.Tokens.AddRange(result);
-                ResponseHolder.Respond(context.Event, response.ToTypedEventHolder());
+                ResponseHolder.Respond(context.Event, response.ToTypedEventHolder(context.Behavior.Id));
                 
                 return Task.FromResult(EventStatus.Consumed);
             }

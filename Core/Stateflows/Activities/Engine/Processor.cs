@@ -11,7 +11,6 @@ using Stateflows.Activities.Registration;
 using Stateflows.Activities.Context.Classes;
 using Stateflows.Common.Engine;
 using Stateflows.Common.Utilities;
-using Stateflows.StateMachines;
 
 namespace Stateflows.Activities.Engine
 {
@@ -22,18 +21,22 @@ namespace Stateflows.Activities.Engine
         private readonly ActivitiesRegister Register;
         private readonly IEnumerable<IActivityEventHandler> EventHandlers;
         private readonly IServiceProvider ServiceProvider;
+        private readonly IStateflowsStorage Storage;
         private readonly IStateflowsValueStorage ValueStorage;
 
         public Processor(
             ActivitiesRegister register,
             IEnumerable<IActivityEventHandler> eventHandlers,
+            IStateflowsStorage storage,
+            IStateflowsValueStorage valueStorage,
             IServiceProvider serviceProvider
         )
         {
             Register = register;
             ServiceProvider = serviceProvider;
+            Storage = storage;
             EventHandlers = eventHandlers;
-            ValueStorage = ServiceProvider.GetRequiredService<IStateflowsValueStorage>();
+            ValueStorage = valueStorage;
         }
 
         private Task<EventStatus> TryHandleEventAsync<TEvent>(EventContext<TEvent> context)
@@ -53,11 +56,10 @@ namespace Stateflows.Activities.Engine
         {
             var result = EventStatus.Undelivered;
 
-            var serviceProvider = ServiceProvider.CreateScope().ServiceProvider;
+            using var serviceScope = ServiceProvider.CreateScope();
+            var serviceProvider = serviceScope.ServiceProvider;
 
-            var storage = serviceProvider.GetRequiredService<IStateflowsStorage>();
-
-            var stateflowsContext = await storage.HydrateAsync(id);
+            var stateflowsContext = await Storage.HydrateAsync(id);
 
             var key = stateflowsContext.Version != 0
                 ? $"{id.Name}.{stateflowsContext.Version}"
@@ -85,19 +87,50 @@ namespace Stateflows.Activities.Engine
                     if (eventHolder is EventHolder<CompoundRequest> compoundRequestHolder)
                     {
                         var compoundRequest = compoundRequestHolder.Payload;
+                        var compoundResponse = compoundRequest.GetResponse();
                         result = EventStatus.Consumed;
                         var results = new List<RequestResult>();
+                        var i = -1;
                         foreach (var ev in compoundRequest.Events)
                         {
+                            i++;
+                                
+                            RequestResult responseResult = null;
+                            if (compoundResponse != null)
+                            {
+                                responseResult = ((List<RequestResult>)compoundResponse.Results)[i];
+                                if (
+                                    responseResult?.Status == EventStatus.Invalid ||
+                                    (
+                                        responseResult?.Status == EventStatus.Omitted &&
+                                        !ev.Headers.Any(h => h is ForcedExecution)
+                                    )
+                                )
+                                {
+                                    continue;
+                                }
+                            }
+
                             ev.Headers.AddRange(eventHolder.Headers);
 
                             var status = await ev.ExecuteBehaviorAsync(this, result, executor);
 
-                            results.Add(new RequestResult(
-                                ev.GetResponseHolder(),
-                                status,
-                                new EventValidation(true, new List<ValidationResult>())
-                            ));
+                            if (responseResult != null)
+                            {
+                                responseResult.Status = status;
+                                responseResult.Response = ev.IsRequest()
+                                    ? ev.GetResponseHolder()
+                                    : null;
+                                responseResult.Validation = new EventValidation(true, new List<ValidationResult>());
+                            }
+                            else
+                            {
+                                results.Add(new RequestResult(
+                                    ev.GetResponseHolder(),
+                                    status,
+                                    new EventValidation(true, new List<ValidationResult>())
+                                ));
+                            }
                         }
 
                         if (!compoundRequest.IsRespondedTo())
@@ -132,7 +165,7 @@ namespace Stateflows.Activities.Engine
 
                 exceptions.AddRange(context.Exceptions);
 
-                await storage.DehydrateAsync(executor.Dehydrate().Context);
+                await Storage.DehydrateAsync(executor.Dehydrate().Context);
             }
 
             return result;

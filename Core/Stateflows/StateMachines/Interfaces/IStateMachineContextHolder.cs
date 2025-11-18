@@ -9,7 +9,6 @@ namespace Stateflows.StateMachines
     {
         StateMachineId StateMachineId { get; }
         BehaviorStatus BehaviorStatus { get; }
-        // IEnumerable<string> ExpectedEventNames { get; }
         Task<IEnumerable<string>> GetExpectedEventNamesAsync();
         IReadOnlyTree<string> CurrentStates { get; }
         IStateMachineContext GetStateMachineContext();

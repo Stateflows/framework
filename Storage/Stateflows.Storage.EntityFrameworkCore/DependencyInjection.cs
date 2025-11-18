@@ -24,7 +24,7 @@ namespace Stateflows
                 }
 
                 builder.ServiceCollection
-                    .AddTransient<IStateflowsStorage, EntityFrameworkCoreStorage>();
+                    .AddTransient<IStateflowsStorage, EntityFrameworkCoreStorage<TDbContext>>();
             }
 
             if (storageKind.HasFlag(StorageKind.Notifications))
@@ -35,7 +35,7 @@ namespace Stateflows
                 }
 
                 builder.ServiceCollection
-                    .AddTransient<IStateflowsNotificationsStorage, EntityFrameworkCoreNotificationsStorage>();
+                    .AddTransient<IStateflowsNotificationsStorage, EntityFrameworkCoreNotificationsStorage<TDbContext>>();
             }
 
             if (storageKind.HasFlag(StorageKind.Values))
@@ -46,11 +46,11 @@ namespace Stateflows
                 }
 
                 builder.ServiceCollection
-                    .AddTransient<IStateflowsValueStorage, EntityFrameworkCoreValueStorage>();
+                    .AddTransient<IStateflowsValueStorage, EntityFrameworkCoreValueStorage<TDbContext>>();
             }
 
             builder.ServiceCollection
-                .AddDbContext<IStateflowsDbContext_v1, TDbContext>()
+                .AddScoped<IStateflowsDbContext_v1>(provider => provider.GetRequiredService<TDbContext>())
                 .AddHostedService<NotificationsCleaner<TDbContext>>();
 
             return builder;

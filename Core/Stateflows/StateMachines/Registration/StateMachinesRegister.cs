@@ -4,7 +4,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
-using Stateflows.Common;
 using Stateflows.Common.Classes;
 using Stateflows.Common.Interfaces;
 using Stateflows.Common.Registration.Builders;
@@ -17,25 +16,17 @@ using Stateflows.StateMachines.Registration.Interfaces;
 
 namespace Stateflows.StateMachines.Registration
 {
-    internal class StateMachinesRegister : IStateMachinesRegister//, IBehaviorRegister
+    internal class StateMachinesRegister(StateflowsBuilder stateflowsBuilder) : IStateMachinesRegister
     {
-        private readonly StateflowsBuilder stateflowsBuilder;
+        public readonly List<StateMachineExceptionHandlerFactoryAsync> GlobalExceptionHandlerFactories = [];
 
-        public List<StateMachineExceptionHandlerFactoryAsync> GlobalExceptionHandlerFactories { get; set; } = new List<StateMachineExceptionHandlerFactoryAsync>();
+        public readonly List<StateMachineInterceptorFactoryAsync> GlobalInterceptorFactories = [];
 
-        public List<StateMachineInterceptorFactoryAsync> GlobalInterceptorFactories { get; set; } = new List<StateMachineInterceptorFactoryAsync>();
-
-        public List<StateMachineObserverFactoryAsync> GlobalObserverFactories { get; set; } = new List<StateMachineObserverFactoryAsync>();
-        
-        public StateMachinesRegister(StateflowsBuilder stateflowsBuilder)
-        {
-            this.stateflowsBuilder = stateflowsBuilder;
-            // stateflowsBuilder.Registers.Add(this);
-        }
+        public readonly List<StateMachineObserverFactoryAsync> GlobalObserverFactories = [];
 
         public readonly Dictionary<string, Graph> StateMachines = [];
 
-        public readonly Dictionary<string, int> CurrentVersions = [];
+        private readonly Dictionary<string, int> CurrentVersions = [];
 
         private readonly MethodInfo StateMachineTypeAddedAsyncMethod =
             typeof(IStateMachineVisitor).GetMethod(nameof(IStateMachineVisitor.StateMachineTypeAddedAsync));
@@ -124,10 +115,10 @@ namespace Stateflows.StateMachines.Registration
 
             var method = StateMachineTypeAddedAsyncMethod.MakeGenericMethod(stateMachineType);
 
-            builder.Graph.VisitingTasks.AddRange(new Func<IStateMachineVisitor, Task>[] {
+            builder.Graph.VisitingTasks.AddRange([
                 v => v.StateMachineAddedAsync(stateMachineName, version),
-                v => (Task)method.Invoke(v, new object[] { stateMachineName, version })
-            });
+                v => (Task)method.Invoke(v, [ stateMachineName, version ])
+            ]);
             
             StateMachines.Add(key, builder.Graph);
 
@@ -241,7 +232,7 @@ namespace Stateflows.StateMachines.Registration
         public async Task VisitStateMachinesAsync(IStateMachineVisitor visitor)
         {
             var tasks = StateMachines
-                .Where((item, index) => !item.Key.EndsWith(".current"))
+                .Where((item, _) => !item.Key.EndsWith(".current"))
                 .Select(item => item.Value)
                 .SelectMany(graph => graph.VisitingTasks);
             

@@ -12,7 +12,7 @@ public class SendMail(IInputOutputToken<Invoice> invoice, [GlobalValue] IValue<b
         invoice.PassOn();
         
         // send invoice.Token via email
-
+        
         return mailSent.SetAsync(true);
     }
 }

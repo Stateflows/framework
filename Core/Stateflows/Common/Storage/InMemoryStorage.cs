@@ -109,5 +109,10 @@ namespace Stateflows.Common.Storage
             => (await GetAllContextsAsync(behaviorClasses))
                 .Where(context => context.TriggerOnStartup)
                 .ToArray();
+
+        public void Dispose()
+        {
+            // TODO release managed resources here
+        }
     }
 }

@@ -2,6 +2,7 @@
 using System.Threading.Tasks;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
+using System.Linq;
 using Microsoft.Extensions.DependencyInjection;
 using Stateflows.Actions.Context.Classes;
 using Stateflows.Common;
@@ -16,16 +17,19 @@ namespace Stateflows.Actions.Engine
 
         private readonly ActionsRegister Register;
         private readonly IStateflowsLock StateflowsLock;
+        private readonly IStateflowsStorage Storage;
         private readonly IServiceProvider ServiceProvider;
 
         public Processor(
             ActionsRegister register,
             IStateflowsLock stateflowsLock,
+            IStateflowsStorage storage,
             IServiceProvider serviceProvider
         )
         {
             Register = register;
             StateflowsLock = stateflowsLock;
+            Storage = storage;
             ServiceProvider = serviceProvider;
         }
 
@@ -33,11 +37,11 @@ namespace Stateflows.Actions.Engine
         {
             var result = EventStatus.Undelivered;
 
-            var serviceProvider = ServiceProvider.CreateScope().ServiceProvider;
+            using var serviceScope = ServiceProvider.CreateScope();
+            
+            var serviceProvider = serviceScope.ServiceProvider;
 
-            var storage = serviceProvider.GetRequiredService<IStateflowsStorage>();
-
-            var stateflowsContext = await storage.HydrateAsync(id);
+            var stateflowsContext = await Storage.HydrateAsync(id);
             
             var key = stateflowsContext.Version != 0
                 ? $"{id.Name}.{stateflowsContext.Version}"
@@ -58,7 +62,7 @@ namespace Stateflows.Actions.Engine
 
                 if (action.Reentrant)
                 {
-                    stateflowsContext = await storage.HydrateAsync(id);
+                    stateflowsContext = await Storage.HydrateAsync(id);
                 }
 
                 var executor = new Executor(Register, stateflowsContext, serviceProvider, action);
@@ -68,19 +72,50 @@ namespace Stateflows.Actions.Engine
                 if (eventHolder is EventHolder<CompoundRequest> compoundRequestHolder)
                 {
                     var compoundRequest = compoundRequestHolder.Payload;
+                    var compoundResponse = compoundRequest.GetResponse();
                     result = EventStatus.Consumed;
                     var results = new List<RequestResult>();
+                    var i = -1;
                     foreach (var ev in compoundRequest.Events)
                     {
+                        i++;
+                                
+                        RequestResult responseResult = null;
+                        if (compoundResponse != null)
+                        {
+                            responseResult = ((List<RequestResult>)compoundResponse.Results)[i];
+                            if (
+                                responseResult?.Status == EventStatus.Invalid ||
+                                (
+                                    responseResult?.Status == EventStatus.Omitted &&
+                                    !ev.Headers.Any(h => h is ForcedExecution)
+                                )
+                            )
+                            {
+                                continue;
+                            }
+                        }
+
                         ev.Headers.AddRange(compoundRequestHolder.Headers);
 
                         var status = await ev.ExecuteBehaviorAsync(this, result, executor);
 
-                        results.Add(new RequestResult(
-                            ev.GetResponseHolder(),
-                            status,
-                            new EventValidation(true, new List<ValidationResult>())
-                        ));
+                        if (responseResult != null)
+                        {
+                            responseResult.Status = status;
+                            responseResult.Response = ev.IsRequest()
+                                ? ev.GetResponseHolder()
+                                : null;
+                            responseResult.Validation = new EventValidation(true, new List<ValidationResult>());
+                        }
+                        else
+                        {
+                            results.Add(new RequestResult(
+                                ev.GetResponseHolder(),
+                                status,
+                                new EventValidation(true, new List<ValidationResult>())
+                            ));
+                        }
                     }
 
                     if (!compoundRequest.IsRespondedTo())
@@ -111,7 +146,7 @@ namespace Stateflows.Actions.Engine
 
                 // exceptions.AddRange(context.Exceptions);
 
-                await storage.DehydrateAsync(stateflowsContext);
+                await Storage.DehydrateAsync(stateflowsContext);
             }
 
             return result;

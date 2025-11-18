@@ -2,7 +2,7 @@ using Stateflows.StateMachines.Models;
 
 namespace Stateflows.Common
 {
-    internal sealed class GuardRequest : EventHeader
+    internal sealed class TransitionGuardRequest : EventHeader
     {
         public string GuardIdentifier { get; set; }
         public EdgeType EdgeType { get; set; }
@@ -10,7 +10,7 @@ namespace Stateflows.Common
         public string TargetName { get; set; }
     }
     
-    internal sealed class GuardResponse : EventHeader
+    internal sealed class TransitionGuardResponse : EventHeader
     {
         public string GuardIdentifier { get; set; }
     }

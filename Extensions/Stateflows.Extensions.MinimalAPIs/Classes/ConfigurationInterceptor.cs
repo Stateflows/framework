@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Builder;
+using Stateflows.Common;
 
 namespace Stateflows.Extensions.MinimalAPIs;
 
@@ -25,7 +26,7 @@ internal class EndpointConfigurationRule
     public Action<IEndpointConventionBuilder>? EndpointConfigurator { get; init; }
 }
 
-internal class ConfigurationInterceptor : EndpointDefinitionInterceptor
+internal class ConfigurationInterceptor(IServiceProvider serviceProvider) : EndpointDefinitionInterceptor
 {
     public List<EndpointConfigurationRule> Rules { get; } = new();
     

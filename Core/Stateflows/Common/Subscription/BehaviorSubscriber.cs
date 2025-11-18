@@ -4,30 +4,27 @@ using System.Linq;
 using System.Threading.Tasks;
 using System.Reflection;
 using Stateflows.Common.Context;
+using Stateflows.Common.Context.Classes;
+using Stateflows.Common.Engine;
 using Stateflows.Common.Interfaces;
 
 namespace Stateflows.Common.Subscription
 {
-    internal class BehaviorSubscriber
+    internal class BehaviorSubscriber(
+        BehaviorId subscriberBehaviorId,
+        StateflowsContext context,
+        IBehaviorLocator behaviorLocator,
+        INotificationsHub notificationsHub,
+        CommonInterceptor commonInterceptor,
+        IServiceProvider serviceProvider
+    )
     {
-        private readonly StateflowsContext context;
-        private readonly BehaviorId subscriberBehaviorId;
-        private readonly IBehaviorLocator behaviorLocator;
-        private readonly INotificationsHub notificationsHub;
-        public BehaviorSubscriber(BehaviorId behaviorId, StateflowsContext context, IBehaviorLocator behaviorLocator, INotificationsHub notificationsHub)
-        {
-            this.context = context;
-            this.subscriberBehaviorId = behaviorId;
-            this.behaviorLocator = behaviorLocator;
-            this.notificationsHub = notificationsHub;
-        }
-
         public async Task PublishAsync<TNotification>(BehaviorId behaviorId, TNotification notificationEvent, IEnumerable<EventHeader> headers = null)
         {
             var notificationType = typeof(TNotification);
             var ttlAttribute = notificationType.GetCustomAttribute<TimeToLiveAttribute>();
             var retainAttribute = notificationType.GetCustomAttribute<RetainAttribute>();
-            var headersArray = headers?.ToArray() ?? new EventHeader[] { };
+            var headersArray = headers?.ToArray() ?? [];
             var eventHolder = new EventHolder<TNotification>()
             {
                 Payload = notificationEvent,
@@ -37,6 +34,8 @@ namespace Stateflows.Common.Subscription
                 TimeToLive = ttlAttribute?.SecondsToLive ?? headersArray.OfType<TimeToLive>().FirstOrDefault()?.SecondsToLive ?? 0,
                 Retained = retainAttribute != null || headersArray.OfType<Retain>().FirstOrDefault() != null
             };
+
+            await commonInterceptor.NotificationPublishedAsync(new BehaviorActionContext(context, serviceProvider), notificationEvent);
 
             if (context.Subscribers.TryGetValue(Event<TNotification>.Name, out var behaviorIds))
             {

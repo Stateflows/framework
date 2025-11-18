@@ -8,8 +8,8 @@ using Stateflows.Common.Interfaces;
 using Stateflows.Common.Initializer;
 using Stateflows.Common.Registration.Builders;
 using Stateflows.Common.Registration.Interfaces;
-using Stateflows.StateMachines.Classes;
 using Stateflows.StateMachines.Engine;
+using Stateflows.StateMachines.Classes;
 using Stateflows.StateMachines.Context;
 using Stateflows.StateMachines.Registration;
 using Stateflows.StateMachines.EventHandlers;
@@ -20,7 +20,7 @@ namespace Stateflows.StateMachines
 {
     public static class StateMachinesDependencyInjection
     {
-        internal static readonly Dictionary<IStateflowsBuilder, StateMachinesRegister> Registers = new Dictionary<IStateflowsBuilder, StateMachinesRegister>();
+        private static readonly Dictionary<IStateflowsBuilder, StateMachinesRegister> Registers = new();
 
         internal static void Cleanup(IStateflowsBuilder builder)
         {
@@ -38,9 +38,10 @@ namespace Stateflows.StateMachines
         {
             lock (Registers)
             {
-                if (builder.ServiceCollection.IsServiceRegistered<IStateMachinesRegister>() &&
+                if (
+                    builder.ServiceCollection.IsServiceRegistered<IStateMachinesRegister>() &&
                     Registers.TryGetValue(builder, out var register)
-                   )
+                )
                 {
                     foreach (var graph in register.StateMachines.Values)
                     {
@@ -91,7 +92,7 @@ namespace Stateflows.StateMachines
                         .AddSingleton(register)
                         .AddSingleton<IStateMachinesRegister>(register)
                         .AddScoped<IStateMachineContextProvider, StateMachineContextProvider>()
-                        .AddSingleton<IEventProcessor, Processor>()
+                        .AddScoped<IEventProcessor, Processor>()
                         .AddTransient<IBehaviorProvider, Provider>()
                         .AddSingleton<IStateMachineEventHandler, BehaviorStatusRequestHandler>()
                         .AddSingleton<IStateMachineEventHandler, StateMachineInfoRequestHandler>()

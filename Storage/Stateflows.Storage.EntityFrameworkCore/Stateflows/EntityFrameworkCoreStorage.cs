@@ -1,4 +1,5 @@
-﻿using System.Diagnostics;
+﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Stateflows.Common;
 using Stateflows.Common.Context;
@@ -10,26 +11,24 @@ using Stateflows.Storage.EntityFrameworkCore.EntityFrameworkCore.Entities;
 
 namespace Stateflows.Storage.EntityFrameworkCore.Stateflows
 {
-    internal class EntityFrameworkCoreStorage : IStateflowsStorage
+    internal class EntityFrameworkCoreStorage<TDbContext>(
+        ILogger<EntityFrameworkCoreStorage<TDbContext>> logger,
+        IServiceProvider serviceProvider)
+        : IStateflowsStorage
+        where TDbContext : DbContext, IStateflowsDbContext_v1
     {
-        private readonly IStateflowsDbContext_v1 DbContext;
-        private readonly ILogger<EntityFrameworkCoreStorage> Logger;
-
-        public EntityFrameworkCoreStorage(IStateflowsDbContext_v1 dbContext, ILogger<EntityFrameworkCoreStorage> logger)
-        {
-            DbContext = dbContext;
-            Logger = logger;
-        }
-
         public async Task DehydrateAsync(StateflowsContext context)
-        {
+        {            
+            await using var scope = serviceProvider.CreateAsyncScope();
+            var dbContextFactory = scope.ServiceProvider.GetService<IDbContextFactory<TDbContext>>() ?? new DbContextFactory<TDbContext>(scope.ServiceProvider);
+            var dbContext = await dbContextFactory.CreateDbContextAsync();
             try
             {
-                var contextEntity = context.RuntimeMetadata.TryGetValue(nameof(EntityFrameworkCoreStorage), out var contextEntityObj)
+                var contextEntity = context.RuntimeMetadata.TryGetValue(nameof(EntityFrameworkCoreStorage<TDbContext>), out var contextEntityObj)
                     ? (Context_v1)contextEntityObj
-                    : await DbContext.Contexts_v1.FindOrCreate(context, true);
+                    : await dbContext.Contexts_v1.FindOrCreate(context, true);
 
-                context.RuntimeMetadata.Remove(nameof(EntityFrameworkCoreStorage));
+                context.RuntimeMetadata.Remove(nameof(EntityFrameworkCoreStorage<TDbContext>));
 
                 contextEntity.Data = StateflowsJsonConverter.SerializePolymorphicObject(context);
                 contextEntity.TriggerTime = context.TriggerTime;
@@ -39,43 +38,49 @@ namespace Stateflows.Storage.EntityFrameworkCore.Stateflows
                 {
                     if (contextEntity.Id != 0)
                     {
-                        DbContext.Contexts_v1.Remove(contextEntity);
+                        dbContext.Contexts_v1.Remove(contextEntity);
                     }
                 }
                 else
                 {
                     if (contextEntity.Id == 0)
                     {
-                        DbContext.Contexts_v1.Add(contextEntity);
+                        dbContext.Contexts_v1.Add(contextEntity);
                     }
                     else
                     {
-                        DbContext.Contexts_v1.Update(contextEntity);
+                        dbContext.Contexts_v1.Update(contextEntity);
                     }
                 }
 
-                await DbContext.SaveChangesAsync();
+                await dbContext.SaveChangesAsync();
+                
+                dbContext.ChangeTracker.Clear();
             }
             catch (Exception e)
             {
-                Logger.LogError(e, LogTemplates.ExceptionLogTemplate, typeof(EntityFrameworkCoreStorage).FullName, nameof(DehydrateAsync), e.GetType().Name, e.Message);
+                logger.LogError(e, LogTemplates.ExceptionLogTemplate, typeof(EntityFrameworkCoreStorage<TDbContext>).FullName, nameof(DehydrateAsync), e.GetType().Name, e.Message);
             }
         }
 
         public async Task<StateflowsContext> HydrateAsync(BehaviorId behaviorId)
-        {
+        {            
+            await using var scope = serviceProvider.CreateAsyncScope();
+            var dbContextFactory = scope.ServiceProvider.GetService<IDbContextFactory<TDbContext>>() ?? new DbContextFactory<TDbContext>(scope.ServiceProvider);
+            var dbContext = await dbContextFactory.CreateDbContextAsync();
+            
             StateflowsContext? result = null;
 
             try
             {
-                var c = await DbContext.Contexts_v1.FindOrCreate(behaviorId);
+                var c = await dbContext.Contexts_v1.FindOrCreate(behaviorId);
 
                 result = StateflowsJsonConverter.DeserializeObject<StateflowsContext>(c.Data ?? string.Empty);
-                result?.RuntimeMetadata.Add(nameof(EntityFrameworkCoreStorage), c);
+                result?.RuntimeMetadata.Add(nameof(EntityFrameworkCoreStorage<TDbContext>), c);
             }
             catch (Exception e)
             {
-                Logger.LogError(e, LogTemplates.ExceptionLogTemplate, typeof(EntityFrameworkCoreStorage).FullName, nameof(HydrateAsync), e.GetType().Name, e.Message);
+                logger.LogError(e, LogTemplates.ExceptionLogTemplate, typeof(EntityFrameworkCoreStorage<TDbContext>).FullName, nameof(HydrateAsync), e.GetType().Name, e.Message);
             }
 
             result ??= new StateflowsContext(behaviorId);
@@ -84,75 +89,94 @@ namespace Stateflows.Storage.EntityFrameworkCore.Stateflows
         }
 
         public async Task<IEnumerable<StateflowsContext>> GetAllContextsAsync(IEnumerable<BehaviorClass> behaviorClasses)
-        {
+        {            
+            await using var scope = serviceProvider.CreateAsyncScope();
+            var dbContextFactory = scope.ServiceProvider.GetService<IDbContextFactory<TDbContext>>() ?? new DbContextFactory<TDbContext>(scope.ServiceProvider);
+            var dbContext = await dbContextFactory.CreateDbContextAsync();
+            
             var result = Array.Empty<StateflowsContext>();
 
             try
             {
-                var contexts = await DbContext.Contexts_v1.FindByClassesAsync(behaviorClasses);
+                var contexts = await dbContext.Contexts_v1.FindByClassesAsync(behaviorClasses);
 
                 result = contexts.Select(c => StateflowsJsonConverter.DeserializeObject<StateflowsContext>(c.Data ?? string.Empty)).ToArray();
             }
             catch (Exception e)
             {
-                Logger.LogError(e, LogTemplates.ExceptionLogTemplate, typeof(EntityFrameworkCoreStorage).FullName, nameof(GetAllContextsAsync), e.GetType().Name, e.Message);
+                logger.LogError(e, LogTemplates.ExceptionLogTemplate, typeof(EntityFrameworkCoreStorage<TDbContext>).FullName, nameof(GetAllContextsAsync), e.GetType().Name, e.Message);
             }
 
             return result;
         }
 
         public async Task<IEnumerable<BehaviorId>> GetAllContextIdsAsync(IEnumerable<BehaviorClass> behaviorClasses)
-        {
+        {            
+            await using var scope = serviceProvider.CreateAsyncScope();
+            var dbContextFactory = scope.ServiceProvider.GetService<IDbContextFactory<TDbContext>>() ?? new DbContextFactory<TDbContext>(scope.ServiceProvider);
+            var dbContext = await dbContextFactory.CreateDbContextAsync();
+            
             BehaviorId[] result = Array.Empty<BehaviorId>();
 
             try
             {
-                var contexts = await DbContext.Contexts_v1.FindByClassesAsync(behaviorClasses);
+                var contexts = await dbContext.Contexts_v1.FindByClassesAsync(behaviorClasses);
 
                 result = contexts.Select(c => StateflowsJsonConverter.DeserializeObject<BehaviorId>(c.BehaviorId)).ToArray();
             }
             catch (Exception e)
             {
-                Logger.LogError(e, LogTemplates.ExceptionLogTemplate, typeof(EntityFrameworkCoreStorage).FullName, nameof(GetAllContextIdsAsync), e.GetType().Name, e.Message);
+                logger.LogError(e, LogTemplates.ExceptionLogTemplate, typeof(EntityFrameworkCoreStorage<TDbContext>).FullName, nameof(GetAllContextIdsAsync), e.GetType().Name, e.Message);
             }
 
             return result;
         }
 
-        public Task<IEnumerable<StateflowsContext>> GetTimeTriggeredContextsAsync(IEnumerable<BehaviorClass> behaviorClasses)
-        {
+        public async Task<IEnumerable<StateflowsContext>> GetTimeTriggeredContextsAsync(IEnumerable<BehaviorClass> behaviorClasses)
+        {            
+            await using var scope = serviceProvider.CreateAsyncScope();
+            var dbContextFactory = scope.ServiceProvider.GetService<IDbContextFactory<TDbContext>>() ?? new DbContextFactory<TDbContext>(scope.ServiceProvider);
+            var dbContext = await dbContextFactory.CreateDbContextAsync();
+            
             var result = Array.Empty<StateflowsContext>();
 
             try
             {
-                var contexts = DbContext.Contexts_v1.FindByTriggerTime(behaviorClasses);
+                var contexts = dbContext.Contexts_v1.FindByTriggerTime(behaviorClasses);
 
                 result = contexts.Select(c => StateflowsJsonConverter.DeserializeObject<StateflowsContext>(c.Data ?? string.Empty)).ToArray();
             }
             catch (Exception e)
             {
-                Logger.LogError(e, LogTemplates.ExceptionLogTemplate, typeof(EntityFrameworkCoreStorage).FullName, nameof(GetTimeTriggeredContextsAsync), e.GetType().Name, e.Message);
+                logger.LogError(e, LogTemplates.ExceptionLogTemplate, typeof(EntityFrameworkCoreStorage<TDbContext>).FullName, nameof(GetTimeTriggeredContextsAsync), e.GetType().Name, e.Message);
             }
 
-            return Task.FromResult(result as IEnumerable<StateflowsContext>);
+            return result;
         }
 
-        public Task<IEnumerable<StateflowsContext>> GetStartupTriggeredContextsAsync(IEnumerable<BehaviorClass> behaviorClasses)
-        {
+        public async Task<IEnumerable<StateflowsContext>> GetStartupTriggeredContextsAsync(IEnumerable<BehaviorClass> behaviorClasses)
+        {            
+            await using var scope = serviceProvider.CreateAsyncScope();
+            var dbContextFactory = scope.ServiceProvider.GetService<IDbContextFactory<TDbContext>>() ?? new DbContextFactory<TDbContext>(scope.ServiceProvider);
+            var dbContext = await dbContextFactory.CreateDbContextAsync();
+            
             var result = Array.Empty<StateflowsContext>();
 
             try
             {
-                var contexts = DbContext.Contexts_v1.FindByTriggerOnStartup(behaviorClasses);
+                var contexts = dbContext.Contexts_v1.FindByTriggerOnStartup(behaviorClasses);
 
                 result = contexts.Select(c => StateflowsJsonConverter.DeserializeObject<StateflowsContext>(c.Data ?? string.Empty)).ToArray();
             }
             catch (Exception e)
             {
-                Logger.LogError(e, LogTemplates.ExceptionLogTemplate, typeof(EntityFrameworkCoreStorage).FullName, nameof(GetTimeTriggeredContextsAsync), e.GetType().Name, e.Message);
+                logger.LogError(e, LogTemplates.ExceptionLogTemplate, typeof(EntityFrameworkCoreStorage<TDbContext>).FullName, nameof(GetTimeTriggeredContextsAsync), e.GetType().Name, e.Message);
             }
 
-            return Task.FromResult(result as IEnumerable<StateflowsContext>);
+            return result;
         }
+
+        public void Dispose()
+        { }
     }
 }

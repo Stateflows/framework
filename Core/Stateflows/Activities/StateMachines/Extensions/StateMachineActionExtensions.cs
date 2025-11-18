@@ -35,12 +35,52 @@ namespace Stateflows.Activities
         }
 
         [DebuggerHidden]
-        internal static Task<bool> RunGuardActionAsync<TEvent>(int guardIndex, ITransitionContext<TEvent> context, string actionName)
+        internal static Task<bool> RunDeferralGuardActionAsync<TEvent>(int guardIndex, IDeferralContext<TEvent> context, string actionName)
+        {
+            var deferralContext = (DeferralContext<TEvent>)context;
+            var deferralGuardIdentifier = $"{deferralContext.State.Name}.{Event<TEvent>.Name}.{guardIndex.ToString()}.{actionName}";
+            
+            var guardResponse = context.Headers.OfType<TransitionGuardResponse>().FirstOrDefault();
+            if (guardResponse != null && guardResponse.GuardIdentifier == deferralGuardIdentifier)
+            {
+                return Task.FromResult(true);
+            }
+            
+            if (!context.TryLocateAction(actionName, $"{context.Behavior.Id.Instance}:{context.EventId}", out var a))
+            {
+                throw new StateMachineRuntimeException($"GuardAction '{actionName}' not found", context.Behavior.Id.BehaviorClass);
+            }
+
+            var headers = deferralContext.Context.EventHolder.Headers
+                .Where(h => !(h is TransitionGuardDelegation))
+                .Append(
+                    new DeferralGuardRequest()
+                    {
+                        GuardIdentifier = deferralGuardIdentifier,
+                        StateName = deferralContext.State.Name,
+                    }
+                )
+                .ToArray();
+            
+            var request = new CompoundRequest()
+                    .Add(((BaseContext)context).Context.Context.GetContextOwnerSetter())
+                    .Add(context.Event, headers)
+                ;
+
+            deferralContext.Context.EventHolder.Headers.Add(new DeferralGuardDelegation() { VertexIdentifier = deferralContext.State.Name, EventName = Event<TEvent>.Name});
+
+            _ = a.RequestAsync(request);
+            
+            return Task.FromResult(false);
+        }
+
+        [DebuggerHidden]
+        internal static Task<bool> RunTransitionGuardActionAsync<TEvent>(int guardIndex, ITransitionContext<TEvent> context, string actionName)
         {
             var transitionContext = (TransitionContext<TEvent>)context;
             var edgeGuardIdentifier = $"{transitionContext.Edge.Identifier}.{guardIndex.ToString()}.{actionName}";
             
-            var guardResponse = context.Headers.OfType<GuardResponse>().FirstOrDefault();
+            var guardResponse = context.Headers.OfType<TransitionGuardResponse>().FirstOrDefault();
             if (guardResponse != null && guardResponse.GuardIdentifier == edgeGuardIdentifier)
             {
                 return Task.FromResult(true);
@@ -52,9 +92,9 @@ namespace Stateflows.Activities
             }
 
             var headers = transitionContext.Context.EventHolder.Headers
-                .Where(h => !(h is GuardDelegation))
+                .Where(h => !(h is TransitionGuardDelegation))
                 .Append(
-                    new GuardRequest()
+                    new TransitionGuardRequest()
                     {
                         GuardIdentifier = edgeGuardIdentifier,
                         TargetName = transitionContext.Edge.TargetName,
@@ -69,7 +109,7 @@ namespace Stateflows.Activities
                 .Add(context.Event, headers)
             ;
 
-            transitionContext.Context.EventHolder.Headers.Add(new GuardDelegation() { EdgeIdentifier = transitionContext.Edge.Identifier });
+            transitionContext.Context.EventHolder.Headers.Add(new TransitionGuardDelegation() { EdgeIdentifier = transitionContext.Edge.Identifier });
 
             _ = a.RequestAsync(request);
             

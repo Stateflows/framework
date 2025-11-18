@@ -12,7 +12,7 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         /// <param name="guardExpression">The guard expression to add.</param>
         TReturn AddGuardExpression(Func<IGuardBuilder<TEvent>, IGuardBuilder<TEvent>> guardExpression)
         {
-            var builder = new GuardBuilder<TEvent>(((IEdgeBuilder)this).Edge);
+            var builder = new GuardBuilder<TEvent>(((IVertexBuilder)this).Vertex);
             guardExpression.Invoke(builder);
 
             return AddGuard(builder.GetAndGuard());
