@@ -65,7 +65,7 @@ namespace Stateflows.Common.Classes
         {
             await using (await Lock.AquireLockAsync(BehaviorId, Scope, LockTimeout))
             {
-                return await Storage.GetOrDefaultAsync<T>(BehaviorId, GetKey(key));
+                return await Storage.GetOrDefaultAsync<T>(BehaviorId, GetKey(key), defaultValue);
             }
         }
 
