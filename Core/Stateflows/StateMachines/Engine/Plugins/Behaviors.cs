@@ -11,7 +11,7 @@ using Stateflows.StateMachines.Context.Interfaces;
 
 namespace Stateflows.StateMachines.Engine
 {
-    internal class Behaviors(IStateflowsValueStorage valueStorage) : StateMachinePlugin
+    internal class Behaviors : StateMachinePlugin
     {
         public override void AfterProcessEvent<TEvent>(IEventContext<TEvent> context, EventStatus eventStatus)
         {

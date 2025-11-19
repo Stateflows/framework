@@ -1,8 +1,10 @@
 ﻿@page "/"
+@using System.Diagnostics
 @using Stateflows.Examples.Common.Headers
 @rendermode InteractiveServer
 @inject IStateMachineLocator locator
 @inject IJSRuntime jsRuntime
+@inject ILogger<InProcess> logger
 
 <PageTitle>Blazor Server</PageTitle>
 
@@ -93,9 +95,6 @@
         
         await stateMachineBehavior.SendAsync(new Initialize());
     }
-    
-    
-    
 
     private Task Create() => CreateNewDocument();
 

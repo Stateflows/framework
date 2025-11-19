@@ -4,5 +4,5 @@ namespace Stateflows.Actions;
 
 public interface IActionEndpointsConfiguration : IAction
 {
-    void ConfigureEndpoints(IBehaviorClassEndpointsConfiguration configuration);
+    static abstract void ConfigureEndpoints(IBehaviorClassEndpointsConfiguration configuration);
 }

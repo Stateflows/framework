@@ -12,22 +12,23 @@ using Stateflows.Storage.EntityFrameworkCore.EntityFrameworkCore.Entities;
 namespace Stateflows.Storage.EntityFrameworkCore.Stateflows
 {
     internal class EntityFrameworkCoreStorage<TDbContext>(
-        IServiceProvider serviceProvider,
         ILogger<EntityFrameworkCoreStorage<TDbContext>> logger,
-        IDbContextFactory<TDbContext> dbContextFactory
-    ) : IStateflowsStorage
+        IServiceProvider serviceProvider)
+        : IStateflowsStorage
         where TDbContext : DbContext, IStateflowsDbContext_v1
     {
         public async Task DehydrateAsync(StateflowsContext context)
-        {
-            await using var dbContext = await dbContextFactory.CreateDbContextAsync();
+        {            
+            await using var scope = serviceProvider.CreateAsyncScope();
+            var dbContextFactory = scope.ServiceProvider.GetService<IDbContextFactory<TDbContext>>() ?? new DbContextFactory<TDbContext>(scope.ServiceProvider);
+            var dbContext = await dbContextFactory.CreateDbContextAsync();
             try
             {
-                var contextEntity = context.RuntimeMetadata.TryGetValue(nameof(EntityFrameworkCoreStorage), out var contextEntityObj)
+                var contextEntity = context.RuntimeMetadata.TryGetValue(nameof(EntityFrameworkCoreStorage<TDbContext>), out var contextEntityObj)
                     ? (Context_v1)contextEntityObj
-                    : await DbContext.Contexts_v1.FindOrCreate(context, true);
+                    : await dbContext.Contexts_v1.FindOrCreate(context, true);
 
-                context.RuntimeMetadata.Remove(nameof(EntityFrameworkCoreStorage));
+                context.RuntimeMetadata.Remove(nameof(EntityFrameworkCoreStorage<TDbContext>));
 
                 // var contextEntity = await dbContext.Contexts_v1.FindOrCreate(context, true);
                 contextEntity.Data = StateflowsJsonConverter.SerializePolymorphicObject(context);
@@ -54,6 +55,8 @@ namespace Stateflows.Storage.EntityFrameworkCore.Stateflows
                 }
 
                 await dbContext.SaveChangesAsync();
+                
+                dbContext.ChangeTracker.Clear();
             }
             catch (Exception e)
             {
@@ -62,8 +65,10 @@ namespace Stateflows.Storage.EntityFrameworkCore.Stateflows
         }
 
         public async Task<StateflowsContext> HydrateAsync(BehaviorId behaviorId)
-        {
-            await using var dbContext = await dbContextFactory.CreateDbContextAsync();
+        {            
+            await using var scope = serviceProvider.CreateAsyncScope();
+            var dbContextFactory = scope.ServiceProvider.GetService<IDbContextFactory<TDbContext>>() ?? new DbContextFactory<TDbContext>(scope.ServiceProvider);
+            var dbContext = await dbContextFactory.CreateDbContextAsync();
             
             StateflowsContext? result = null;
 
@@ -72,7 +77,7 @@ namespace Stateflows.Storage.EntityFrameworkCore.Stateflows
                 var c = await dbContext.Contexts_v1.FindOrCreate(behaviorId);
 
                 result = StateflowsJsonConverter.DeserializeObject<StateflowsContext>(c.Data ?? string.Empty);
-                result?.RuntimeMetadata.Add(nameof(EntityFrameworkCoreStorage), c);
+                result?.RuntimeMetadata.Add(nameof(EntityFrameworkCoreStorage<TDbContext>), c);
             }
             catch (Exception e)
             {
@@ -85,8 +90,10 @@ namespace Stateflows.Storage.EntityFrameworkCore.Stateflows
         }
 
         public async Task<IEnumerable<StateflowsContext>> GetAllContextsAsync(IEnumerable<BehaviorClass> behaviorClasses)
-        {
-            await using var dbContext = await dbContextFactory.CreateDbContextAsync();
+        {            
+            await using var scope = serviceProvider.CreateAsyncScope();
+            var dbContextFactory = scope.ServiceProvider.GetService<IDbContextFactory<TDbContext>>() ?? new DbContextFactory<TDbContext>(scope.ServiceProvider);
+            var dbContext = await dbContextFactory.CreateDbContextAsync();
             
             var result = Array.Empty<StateflowsContext>();
 
@@ -105,8 +112,10 @@ namespace Stateflows.Storage.EntityFrameworkCore.Stateflows
         }
 
         public async Task<IEnumerable<BehaviorId>> GetAllContextIdsAsync(IEnumerable<BehaviorClass> behaviorClasses)
-        {
-            await using var dbContext = await dbContextFactory.CreateDbContextAsync();
+        {            
+            await using var scope = serviceProvider.CreateAsyncScope();
+            var dbContextFactory = scope.ServiceProvider.GetService<IDbContextFactory<TDbContext>>() ?? new DbContextFactory<TDbContext>(scope.ServiceProvider);
+            var dbContext = await dbContextFactory.CreateDbContextAsync();
             
             BehaviorId[] result = Array.Empty<BehaviorId>();
 
@@ -125,8 +134,10 @@ namespace Stateflows.Storage.EntityFrameworkCore.Stateflows
         }
 
         public async Task<IEnumerable<StateflowsContext>> GetTimeTriggeredContextsAsync(IEnumerable<BehaviorClass> behaviorClasses)
-        {
-            await using var dbContext = await dbContextFactory.CreateDbContextAsync();
+        {            
+            await using var scope = serviceProvider.CreateAsyncScope();
+            var dbContextFactory = scope.ServiceProvider.GetService<IDbContextFactory<TDbContext>>() ?? new DbContextFactory<TDbContext>(scope.ServiceProvider);
+            var dbContext = await dbContextFactory.CreateDbContextAsync();
             
             var result = Array.Empty<StateflowsContext>();
 
@@ -145,8 +156,10 @@ namespace Stateflows.Storage.EntityFrameworkCore.Stateflows
         }
 
         public async Task<IEnumerable<StateflowsContext>> GetStartupTriggeredContextsAsync(IEnumerable<BehaviorClass> behaviorClasses)
-        {
-            await using var dbContext = await dbContextFactory.CreateDbContextAsync();
+        {            
+            await using var scope = serviceProvider.CreateAsyncScope();
+            var dbContextFactory = scope.ServiceProvider.GetService<IDbContextFactory<TDbContext>>() ?? new DbContextFactory<TDbContext>(scope.ServiceProvider);
+            var dbContext = await dbContextFactory.CreateDbContextAsync();
             
             var result = Array.Empty<StateflowsContext>();
 

@@ -31,9 +31,11 @@ namespace Stateflows.StateMachines.Registration.Builders
         IOverridenElseDefaultTransitionBuilder,
         IBehaviorBuilder,
         IForwardedEventBuilder<TEvent>,
-        IEdgeBuilder
+        IEdgeBuilder,
+        IVertexBuilder
     {
         public Edge Edge { get; private set; }
+        public Vertex Vertex { get; private set; }
 
         private readonly IEnumerable<VertexType> transitiveVertexTypes = new HashSet<VertexType>() {
             VertexType.Junction,
@@ -47,6 +49,7 @@ namespace Stateflows.StateMachines.Registration.Builders
         public TransitionBuilder(Edge edge)
         {
             Edge = edge;
+            Vertex = edge.Source;
         }
 
         public ITransitionBuilder<TEvent> AddGuard(params Func<ITransitionContext<TEvent>, Task<bool>>[] guardsAsync)
@@ -151,33 +154,6 @@ namespace Stateflows.StateMachines.Registration.Builders
         IForwardedEventBuilder<TEvent> IBaseGuard<TEvent, IForwardedEventBuilder<TEvent>>.AddGuard(params Func<ITransitionContext<TEvent>, Task<bool>>[] guardsAsync)
             => AddGuard(guardsAsync) as IForwardedEventBuilder<TEvent>;
 
-        // public ITransitionBuilder<TEvent> SetPolymorphicTriggers(bool polymorphicTriggers)
-        // {
-        //     Edge.PolymorphicTriggers = polymorphicTriggers;
-        //     return this;
-        // }
-        //
-        // IElseTransitionBuilder<TEvent> ITriggeredTransitionUtils<IElseTransitionBuilder<TEvent>>.SetPolymorphicTriggers(bool polymorphicTriggers)
-        //     => SetPolymorphicTriggers(polymorphicTriggers) as IElseTransitionBuilder<TEvent>;
-        //
-        // IElseInternalTransitionBuilder<TEvent> ITriggeredTransitionUtils<IElseInternalTransitionBuilder<TEvent>>.SetPolymorphicTriggers(bool polymorphicTriggers)
-        //     => SetPolymorphicTriggers(polymorphicTriggers) as IElseInternalTransitionBuilder<TEvent>;
-        //
-        // IElseDefaultTransitionBuilder ITriggeredTransitionUtils<IElseDefaultTransitionBuilder>.SetPolymorphicTriggers(bool polymorphicTriggers)
-        //     => SetPolymorphicTriggers(polymorphicTriggers) as IElseDefaultTransitionBuilder;
-        //
-        // IOverridenTransitionBuilder<TEvent> ITriggeredTransitionUtils<IOverridenTransitionBuilder<TEvent>>.SetPolymorphicTriggers(bool polymorphicTriggers)
-        //     => SetPolymorphicTriggers(polymorphicTriggers) as IOverridenTransitionBuilder<TEvent>;
-        //
-        // IOverridenElseTransitionBuilder<TEvent> ITriggeredTransitionUtils<IOverridenElseTransitionBuilder<TEvent>>.SetPolymorphicTriggers(bool polymorphicTriggers)
-        //     => SetPolymorphicTriggers(polymorphicTriggers) as IOverridenElseTransitionBuilder<TEvent>;
-        //
-        // IOverridenElseInternalTransitionBuilder<TEvent> ITriggeredTransitionUtils<IOverridenElseInternalTransitionBuilder<TEvent>>.SetPolymorphicTriggers(bool polymorphicTriggers)
-        //     => SetPolymorphicTriggers(polymorphicTriggers) as IOverridenElseInternalTransitionBuilder<TEvent>;
-        //
-        // IOverridenElseDefaultTransitionBuilder ITriggeredTransitionUtils<IOverridenElseDefaultTransitionBuilder>.SetPolymorphicTriggers(bool polymorphicTriggers)
-        //     => SetPolymorphicTriggers(polymorphicTriggers) as IOverridenElseDefaultTransitionBuilder;
-
         public ITransitionBuilder<TEvent> SetIsLocal(bool isLocal)
         {
             Edge.IsLocal = isLocal;
@@ -257,11 +233,5 @@ namespace Stateflows.StateMachines.Registration.Builders
 
         IOverridenElseDefaultTransitionBuilder IDefaultEffect<IOverridenElseDefaultTransitionBuilder>.AddEffect(params Func<ITransitionContext<Completion>, Task>[] effectsAsync)
             => (this as TransitionBuilder<Completion>)!.AddEffect(effectsAsync) as IOverridenElseDefaultTransitionBuilder;
-
-        // IInternalTransitionBuilder<TEvent> ITriggeredTransitionUtils<IInternalTransitionBuilder<TEvent>>.SetPolymorphicTriggers(bool polymorphicTriggers)
-        //     => SetPolymorphicTriggers(polymorphicTriggers) as IInternalTransitionBuilder<TEvent>;
-        //
-        // IOverridenInternalTransitionBuilder<TEvent> ITriggeredTransitionUtils<IOverridenInternalTransitionBuilder<TEvent>>.SetPolymorphicTriggers(bool polymorphicTriggers)
-        //     => SetPolymorphicTriggers(polymorphicTriggers) as IOverridenInternalTransitionBuilder<TEvent>;
     }
 }

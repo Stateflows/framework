@@ -6,5 +6,7 @@ namespace Stateflows.Common.Registration.Interfaces
     {
         IStateflowsBuilder AddTypeMapper<TTypeMapper>()
             where TTypeMapper : class, IStateflowsTypeMapper, new();
+        
+        IStateflowsBuilder SetMaxConcurrentBehaviorExecutions(int maxConcurrentBehaviorExecutions);
     }
 }

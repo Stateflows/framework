@@ -286,9 +286,19 @@ namespace Stateflows.StateMachines.Engine
             ReverseInterceptors.RunSafe(i => i.AfterProcessEvent(context, eventStatus), nameof(AfterProcessEvent), Logger);
             GlobalInterceptor.AfterProcessEvent(commonContext, eventStatus);
             ReversePlugins.RunSafe(i => i.AfterProcessEvent(context, eventStatus), nameof(AfterProcessEvent), Logger);
+
+            if (context.Context.EventHolder.IsRespondedTo())
+            {
+                GlobalInterceptor
+                    .RequestResponded(
+                        context,
+                        context.Context.EventHolder,
+                        context.Context.EventHolder.GetResponseHolder()
+                    );
+            }
         }
 
-        private static bool ShouldPropagateException(Graph graph, bool handled)
+        private static bool ShouldPropagateException(bool handled)
             => !handled;
 
         public bool OnStateMachineInitializationException(StateMachineInitializationContext context, Exception exception)
@@ -300,7 +310,7 @@ namespace Stateflows.StateMachines.Engine
                 Plugins.RunSafe(i => i.OnStateMachineInitializationException(context, exception), nameof(OnStateMachineInitializationException), Logger);
             }
 
-            if (ShouldPropagateException(context.Context.Executor.Graph, handled))
+            if (ShouldPropagateException(handled))
             {
                 context.Context.AddException(exception);
             }
@@ -317,7 +327,7 @@ namespace Stateflows.StateMachines.Engine
                 Plugins.RunSafe(i => i.OnStateMachineFinalizationException(context, exception), nameof(OnStateMachineFinalizationException), Logger);
             }
 
-            if (ShouldPropagateException(context.Context.Executor.Graph, handled))
+            if (ShouldPropagateException(handled))
             {
                 context.Context.AddException(exception);
             }
@@ -334,7 +344,7 @@ namespace Stateflows.StateMachines.Engine
                 Plugins.RunSafe(i => i.OnTransitionGuardException(context, exception), nameof(OnTransitionGuardException), Logger);
             }
 
-            if (ShouldPropagateException(context.Context.Executor.Graph, handled))
+            if (ShouldPropagateException(handled))
             {
                 context.Context.AddException(exception);
             }
@@ -351,7 +361,7 @@ namespace Stateflows.StateMachines.Engine
                 Plugins.RunSafe(h => h.OnTransitionEffectException(context, exception), nameof(OnTransitionEffectException), Logger);
             }
 
-            if (ShouldPropagateException(context.Context.Executor.Graph, handled))
+            if (ShouldPropagateException(handled))
             {
                 context.Context.AddException(exception);
             }
@@ -368,7 +378,7 @@ namespace Stateflows.StateMachines.Engine
                 Plugins.RunSafe(i => i.OnStateInitializationException(context, exception), nameof(OnStateInitializeException), Logger);
             }
 
-            if (ShouldPropagateException(context.Context.Executor.Graph, handled))
+            if (ShouldPropagateException(handled))
             {
                 context.Context.AddException(exception);
             }
@@ -385,7 +395,7 @@ namespace Stateflows.StateMachines.Engine
                 Plugins.RunSafe(i => i.OnStateFinalizationException(context, exception), nameof(OnStateFinalizeException), Logger);
             }
 
-            if (ShouldPropagateException(context.Context.Executor.Graph, handled))
+            if (ShouldPropagateException(handled))
             {
                 context.Context.AddException(exception);
             }
@@ -402,7 +412,7 @@ namespace Stateflows.StateMachines.Engine
                 Plugins.RunSafe(i => i.OnStateEntryException(context, exception), nameof(OnStateEntryException), Logger);
             }
 
-            if (ShouldPropagateException(context.Context.Executor.Graph, handled))
+            if (ShouldPropagateException(handled))
             {
                 context.Context.AddException(exception);
             }
@@ -419,7 +429,7 @@ namespace Stateflows.StateMachines.Engine
                 Plugins.RunSafe(i => i.OnStateExitException(context, exception), nameof(OnStateExitException), Logger);
             }
 
-            if (ShouldPropagateException(context.Context.Executor.Graph, handled))
+            if (ShouldPropagateException(handled))
             {
                 context.Context.AddException(exception);
             }

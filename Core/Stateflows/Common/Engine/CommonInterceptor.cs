@@ -1,50 +1,35 @@
-﻿using System.Collections.Generic;
-using System.Linq;
+﻿using System.Linq;
+using System.Collections.Generic;
+using System.Reflection;
+using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Stateflows.Common.Extensions;
 using Stateflows.Common.Context.Interfaces;
 
 namespace Stateflows.Common.Engine
 {
-    internal class CommonInterceptor
+    internal class CommonInterceptor(
+        IEnumerable<IBehaviorInterceptor> interceptors,
+        IEnumerable<IStateflowsExecutionInterceptor> executionInterceptors,
+        IEnumerable<IStateflowsTenantInterceptor> tenantInterceptors,
+        ILogger<CommonInterceptor> logger)
     {
-        private readonly IEnumerable<IBehaviorInterceptor> Interceptors;
-
-        private readonly IEnumerable<IStateflowsExecutionInterceptor> ExecutionInterceptors;
-
-        private readonly IEnumerable<IStateflowsTenantInterceptor> TenantInterceptors;
-
-        private readonly ILogger<CommonInterceptor> Logger;
-
-        public CommonInterceptor(
-            IEnumerable<IBehaviorInterceptor> interceptors,
-            IEnumerable<IStateflowsExecutionInterceptor> executionInterceptors,
-            IEnumerable<IStateflowsTenantInterceptor> tenantInterceptors,
-            ILogger<CommonInterceptor> logger
-        )
-        {
-            Interceptors = interceptors;
-            ExecutionInterceptors = executionInterceptors;
-            TenantInterceptors = tenantInterceptors;
-            Logger = logger;
-        }
-
         public void AfterHydrate(IBehaviorActionContext context)
-            => Interceptors.RunSafe(i => i.AfterHydrateAsync(context), nameof(AfterHydrate), Logger);
+            => interceptors.RunSafe(i => i.AfterHydrateAsync(context), nameof(AfterHydrate), logger);
 
         public void AfterProcessEvent<TEvent>(IEventContext<TEvent> context, EventStatus eventStatus)
-            => Interceptors.RunSafe(i => i.AfterProcessEvent(context, eventStatus), nameof(AfterProcessEvent), Logger);
+            => interceptors.RunSafe(i => i.AfterProcessEvent(context, eventStatus), nameof(AfterProcessEvent), logger);
 
         public void BeforeDehydrate(IBehaviorActionContext context)
-            => Interceptors.RunSafe(i => i.BeforeDehydrateAsync(context), nameof(BeforeDehydrate), Logger);
+            => interceptors.RunSafe(i => i.BeforeDehydrateAsync(context), nameof(BeforeDehydrate), logger);
 
         public bool BeforeProcessEvent<TEvent>(IEventContext<TEvent> context)
-            => Interceptors.RunSafe(i => i.BeforeProcessEvent(context), nameof(BeforeProcessEvent), Logger);
+            => interceptors.RunSafe(i => i.BeforeProcessEvent(context), nameof(BeforeProcessEvent), logger);
 
         public bool BeforeExecute(BehaviorId id, EventHolder eventHolder)
         {
             var result = true;
-            foreach (var interceptor in ExecutionInterceptors)
+            foreach (var interceptor in executionInterceptors)
             {
                 if (!interceptor.BeforeExecute(id, eventHolder))
                 {
@@ -57,7 +42,7 @@ namespace Stateflows.Common.Engine
 
         public void AfterExecute(BehaviorId id, EventHolder eventHolder)
         {
-            foreach (var interceptor in ExecutionInterceptors.Reverse())
+            foreach (var interceptor in executionInterceptors.Reverse())
             {
                 interceptor.AfterExecute(id, eventHolder);
             }
@@ -66,7 +51,7 @@ namespace Stateflows.Common.Engine
         public bool BeforeExecute(string tenantId)
         {
             var result = true;
-            foreach (var interceptor in TenantInterceptors)
+            foreach (var interceptor in tenantInterceptors)
             {
                 if (!interceptor.BeforeExecute(tenantId))
                 {
@@ -79,10 +64,35 @@ namespace Stateflows.Common.Engine
 
         public void AfterExecute(string tenantId)
         {
-            foreach (var interceptor in TenantInterceptors.Reverse())
+            foreach (var interceptor in tenantInterceptors.Reverse())
             {
                 interceptor.AfterExecute(tenantId);
             }
         }
+
+        public async Task NotificationPublishedAsync<TNotification>(IBehaviorActionContext context, TNotification notification)
+        {
+            foreach (var interceptor in interceptors)
+            {
+                await interceptor.NotificationPublishedAsync(context, notification);
+            }
+        }
+
+        public async Task RequestRespondedAsync<TRequest, TResponse>(IBehaviorActionContext context, TRequest request, TResponse response)
+            where TRequest : IRequest<TResponse>
+        {
+            foreach (var interceptor in interceptors)
+            {
+                await interceptor.RequestRespondedAsync(context, request, response);
+            }
+        }
+
+        private static readonly MethodInfo RequestRespondedAsyncMethod =
+            typeof(CommonInterceptor).GetMethod(nameof(RequestRespondedAsync));
+        
+        public void RequestResponded(IBehaviorActionContext context, EventHolder request, EventHolder response)
+            => ((Task)RequestRespondedAsyncMethod
+                .MakeGenericMethod(request.PayloadType, response.PayloadType)
+                .Invoke(this, [context, request.BoxedPayload, response.BoxedPayload])!).Wait();
     }
 }

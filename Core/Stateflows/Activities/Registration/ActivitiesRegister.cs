@@ -106,21 +106,23 @@ namespace Stateflows.Activities.Registration
                 throw new ActivityDefinitionException($"Activity '{activityName}' with version '{version}' is already registered", new ActivityClass(activityName));
             }
 
-            // var activity = StateflowsActivator.CreateUninitializedInstance(activityType) as IActivity;
-
-            var activityBuilder = new ActivityBuilder(activityName, version, null, stateflowsBuilder);
-            activityBuilder.Graph.ActivityType = activityType;
+            var activityBuilder = new ActivityBuilder(activityName, version, null, stateflowsBuilder)
+            {
+                Graph =
+                {
+                    ActivityType = activityType
+                }
+            };
             RegisterActivity(activityType, activityBuilder);
-            // activity.Build(builder);
             activityBuilder.Graph.Build();
 
             var method = ActivityTypeAddedAsyncMethod.MakeGenericMethod(activityType);
             
-            activityBuilder.Graph.VisitingTasks.AddRange(new Func<IActivityVisitor, Task>[]
-            {
+            activityBuilder.Graph.VisitingTasks.AddRange(
+            [
                 v => v.ActivityAddedAsync(activityName, version),
-                v => (Task)method.Invoke(v, new object[] { activityName, version })
-            });
+                v => (Task)method.Invoke(v, [ activityName, version ])
+            ]);
 
             Activities.Add(key, activityBuilder.Graph);
 

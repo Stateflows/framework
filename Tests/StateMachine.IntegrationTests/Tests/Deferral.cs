@@ -29,6 +29,16 @@ namespace StateMachine.IntegrationTests.Tests
                         )
                         .AddState("state3")
                     )
+                    
+                    .AddStateMachine("conditional", b => b
+                        .AddInitialState("state1", b => b
+                            .AddDeferredEvent<OtherEvent>(b => b
+                                .AddGuard(c => c.Event.AnswerToLifeUniverseAndEverything == 42)
+                            )
+                            .AddTransition<OtherEvent>("state2")
+                        )
+                        .AddState("state2")
+                    )
 
                     .AddStateMachine("nested", b => b
                         .AddInitialCompositeState("state1", b => b
@@ -99,6 +109,32 @@ namespace StateMachine.IntegrationTests.Tests
             Assert.AreEqual(EventStatus.Deferred, otherStatus);
             Assert.AreEqual(EventStatus.Consumed, someStatus);
             Assert.AreEqual("state3", currentState);
+        }
+
+        [TestMethod]
+        public async Task ConditionalDeferral()
+        {
+            var initialized = false;
+            string currentState = "";
+            var otherStatus1 = EventStatus.Rejected;
+            var otherStatus2 = EventStatus.Rejected;
+
+            if (StateMachineLocator.TryLocateStateMachine(new StateMachineId("conditional", "x"), out var sm))
+            {
+                var x = (await sm.SendAsync(new Initialize())).Status;
+                initialized = x == EventStatus.Initialized;
+
+                otherStatus1 = (await sm.SendAsync(new OtherEvent())).Status;
+
+                otherStatus2 = (await sm.SendAsync(new OtherEvent() { AnswerToLifeUniverseAndEverything = 69 })).Status;
+
+                currentState = (await sm.GetStatusAsync()).Response.CurrentStates.Value;
+            }
+
+            Assert.IsTrue(initialized);
+            Assert.AreEqual(EventStatus.Deferred, otherStatus1);
+            Assert.AreEqual(EventStatus.Consumed, otherStatus2);
+            Assert.AreEqual("state2", currentState);
         }
 
         [TestMethod]

@@ -46,7 +46,7 @@ namespace Stateflows
                 }
 
                 builder.ServiceCollection
-                    .AddTransient<IStateflowsValueStorage, EntityFrameworkCoreValueStorage>();
+                    .AddTransient<IStateflowsValueStorage, EntityFrameworkCoreValueStorage<TDbContext>>();
             }
 
             builder.ServiceCollection

@@ -8,8 +8,12 @@
     </PropertyGroup>
 
     <ItemGroup>
+        <PackageReference Include="DistributedLock.SqlServer" Version="1.0.6" />
         <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="9.0.9" />
+        <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="8.0.22" />
         <PackageReference Include="Scalar.AspNetCore" Version="2.8.10" />
+        <ProjectReference Include="..\..\..\Locks\Stateflows.Locks.DistributedLock\Stateflows.Locks.DistributedLock.csproj" />
+        <ProjectReference Include="..\..\..\Storage\Stateflows.Storage.EntityFrameworkCore\Stateflows.Storage.EntityFrameworkCore.csproj" />
         <ProjectReference Include="..\..\Stateflows.Examples.Behaviors\Stateflows.Examples.Behaviors.csproj" />
         <ProjectReference Include="..\Stateflows.Examples.Blazor.Client\Stateflows.Examples.Blazor.Client.csproj"/>
         <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.Server" Version="9.0.4" />

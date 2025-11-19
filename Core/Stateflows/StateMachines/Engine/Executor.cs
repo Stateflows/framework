@@ -11,6 +11,7 @@ using Stateflows.Common.Context;
 using Stateflows.Common.Classes;
 using Stateflows.Common.Interfaces;
 using Stateflows.Common.Exceptions;
+using Stateflows.Common.Models;
 using Stateflows.Common.Utilities;
 using Stateflows.StateMachines.Models;
 using Stateflows.StateMachines.Context;
@@ -19,6 +20,7 @@ using Stateflows.StateMachines.Registration;
 using Stateflows.StateMachines.Context.Classes;
 using Stateflows.StateMachines.Context.Interfaces;
 using Stateflows.StateMachines.Inspection.Classes;
+using Stateflows.StateMachines.Interfaces;
 
 namespace Stateflows.StateMachines.Engine
 {
@@ -81,8 +83,8 @@ namespace Stateflows.StateMachines.Engine
 
         public readonly Inspector Inspector;
 
-        private string[] GetDeferredEvents()
-            => VerticesTree.GetAllNodes_FromTheTop().SelectMany(vertex => vertex.Value.DeferredEvents).ToArray();
+        private KeyValuePair<string, Logic<StateMachinePredicateAsync>>[] GetDeferrals()
+            => VerticesTree.GetAllNodes_FromTheTop().SelectMany(vertex => vertex.Value.Deferrals).ToArray();
 
         public Tree<Vertex> VerticesTree { get; private set; } = null;
 
@@ -310,25 +312,33 @@ namespace Stateflows.StateMachines.Engine
         }
 
         [DebuggerHidden]
-        private bool TryDeferEvent<TEvent>(EventHolder<TEvent> eventHolder)
+        private async Task<bool> TryDeferEventAsync(KeyValuePair<string, Logic<StateMachinePredicateAsync>>[] deferrals, EventHolder eventHolder)
         {
-            var deferredEvents = GetDeferredEvents();
-            if (!deferredEvents.Any() || !deferredEvents.Contains(eventHolder.Name))
+            var matchingDeferrals = deferrals.Where(deferral => deferral.Key == eventHolder.Name);
+            foreach (var deferral in matchingDeferrals)
             {
-                return false;
+                if (await deferral.Value.WhenAll(Context))
+                {
+                    Context.DeferredEvents.Add(eventHolder);
+                    
+                    return true;
+                }
             }
             
-            Context.DeferredEvents.Add(eventHolder);
-            
-            return true;
+            return false;
         }
 
         [DebuggerHidden]
         private async Task DispatchNextDeferredEvent()
         {
-            var deferredEvents = GetDeferredEvents();
-            foreach (var eventHolder in Context.DeferredEvents.Where(eventHolder => !deferredEvents.Any() || !deferredEvents.Contains(eventHolder.Name)))
+            var deferrals = GetDeferrals();
+            foreach (var eventHolder in Context.DeferredEvents)
             {
+                if (await TryDeferEventAsync(deferrals, eventHolder))
+                {
+                    continue;
+                }
+                
                 Context.DeferredEvents.Remove(eventHolder);
 
                 Context.SetEvent(eventHolder);
@@ -347,7 +357,7 @@ namespace Stateflows.StateMachines.Engine
         Task<EventStatus> IStateflowsExecutor.DoProcessAsync<TEvent>(EventHolder<TEvent> eventHolder)
             => DoProcessAsync(eventHolder);
 
-        // [DebuggerHidden]
+        [DebuggerHidden]
         private async Task<EventStatus> DoProcessAsync<TEvent>(EventHolder<TEvent> eventHolder)
         {
             Debug.Assert(Context != null, $"Context is not available. Is state machine '{Graph.Name}' hydrated?");
@@ -358,7 +368,8 @@ namespace Stateflows.StateMachines.Engine
 
             var result = EventStatus.NotConsumed;
 
-            if (!TryDeferEvent(eventHolder))
+            var deferrals = GetDeferrals();
+            if (!await TryDeferEventAsync(deferrals, eventHolder))
             {
                 deferred = false;
 
@@ -474,7 +485,7 @@ namespace Stateflows.StateMachines.Engine
                 return EventStatus.Deferred;
             }
             
-            var guardDelegations = Context.EventHolder.Headers.OfType<GuardDelegation>();
+            var guardDelegations = Context.EventHolder.Headers.OfType<TransitionGuardDelegation>();
             if (guardDelegations.Any())
             {
                 return EventStatus.Forwarded;
@@ -734,7 +745,7 @@ namespace Stateflows.StateMachines.Engine
             }
         }
         
-        // [DebuggerHidden]
+        [DebuggerHidden]
         private async Task DoEntryAsync(Vertex vertex)
         {
             StateActionContext context = null;
@@ -800,7 +811,7 @@ namespace Stateflows.StateMachines.Engine
             }
         }
 
-        // [DebuggerHidden]
+        [DebuggerHidden]
         private async Task DoConsumeAsync<TEvent>(Edge edge, Region[] regionsToOmit = null)
         {
             regionsToOmit ??= [];
@@ -1285,6 +1296,25 @@ namespace Stateflows.StateMachines.Engine
             StateMachinesContextHolder.ExecutionContext.Value = context;
 
             return StateflowsActivator.CreateModelElementInstanceAsync<TTransitionGuard>(ServiceProvider, "transition guard");
+        }
+
+        [DebuggerHidden]
+        public Task<TTransitionGuard> GetDeferralGuardAsync<TTransitionGuard, TEvent>(IDeferralContext<TEvent> context)
+            where TTransitionGuard : class, IDeferralGuard<TEvent>
+
+        {
+            ContextValues.GlobalValuesHolder.Value = context.Behavior.Values;
+            ContextValues.StateValuesHolder.Value = context.State.Values;
+
+            StateMachinesContextHolder.StateContext.Value = context.State;
+            StateMachinesContextHolder.BehaviorContext.Value = context.Behavior;
+            if (((IStateflowsContextProvider)context).Context.ContextOwnerId == null)
+            {
+                StateMachinesContextHolder.StateMachineContext.Value = ((BaseContext)context).StateMachine;
+            }
+            StateMachinesContextHolder.ExecutionContext.Value = context;
+
+            return StateflowsActivator.CreateModelElementInstanceAsync<TTransitionGuard>(ServiceProvider, "deferral guard");
         }
 
         [DebuggerHidden]

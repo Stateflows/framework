@@ -9,26 +9,26 @@ using Stateflows.Storage.EntityFrameworkCore.EntityFrameworkCore.Entities;
 
 namespace Stateflows.Storage.EntityFrameworkCore.Stateflows
 {
-    internal class EntityFrameworkCoreNotificationsStorage<TDbContext>(
-        IServiceProvider serviceProvider,
-        ILogger<EntityFrameworkCoreNotificationsStorage<TDbContext>> logger,
-        IDbContextFactory<TDbContext> dbContextFactory
-    ) : IStateflowsNotificationsStorage
+    internal class EntityFrameworkCoreNotificationsStorage<TDbContext>(IServiceProvider serviceProvider) : IStateflowsNotificationsStorage
         where TDbContext : DbContext, IStateflowsDbContext_v1
     {
-        private readonly ILogger<EntityFrameworkCoreNotificationsStorage<TDbContext>> Logger = logger;
-
         public async Task SaveNotificationsAsync(BehaviorId behaviorId, EventHolder[] notifications)
         {
-            await using var dbContext = await dbContextFactory.CreateDbContextAsync();
+            await using var scope = serviceProvider.CreateAsyncScope();
+            var dbContextFactory = scope.ServiceProvider.GetService<IDbContextFactory<TDbContext>>() ?? new DbContextFactory<TDbContext>(scope.ServiceProvider);
+            var dbContext = await dbContextFactory.CreateDbContextAsync();
             
             dbContext.Notifications_v1.AddRange(notifications.Select(n => new Notification_v1(n)));
             await dbContext.SaveChangesAsync();
+                
+            dbContext.ChangeTracker.Clear();
         }
 
         public async Task<IEnumerable<EventHolder>> GetNotificationsAsync(BehaviorId behaviorId, string[] notificationNames, DateTime lastNotificationCheck)
         {
-            await using var dbContext = await dbContextFactory.CreateDbContextAsync();
+            await using var scope = serviceProvider.CreateAsyncScope();
+            var dbContextFactory = scope.ServiceProvider.GetService<IDbContextFactory<TDbContext>>() ?? new DbContextFactory<TDbContext>(scope.ServiceProvider);
+            var dbContext = await dbContextFactory.CreateDbContextAsync();
             
             var notifications = await dbContext.Notifications_v1
                 .Where(n =>

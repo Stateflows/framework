@@ -6,7 +6,6 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.Net.Http.Headers;
 using Stateflows.Common;
 using Stateflows.Actions;
-using Stateflows.Common.Classes;
 using Stateflows.Common.Extensions;
 using Stateflows.Common.Interfaces;
 
@@ -82,13 +81,13 @@ internal class ActionVisitor(IEndpointRouteBuilder routeBuilder, Interceptor int
                         }
                         else
                         {
-                            var result =
+                            var requestResult =
                                 await behavior.GetStatusAsync(implicitInitialization
                                     ? []
                                     : [new NoImplicitInitialization()]);
                             // workaround for return code 200 regardless behavior actual status
-                            result.Status = EventStatus.Consumed;
-                            return result.ToResult([], result.Response, HateoasLinks);
+                            requestResult.Status = EventStatus.Consumed;
+                            return requestResult.ToResult([], requestResult.Response, HateoasLinks);
                         }
                     }
 
@@ -155,8 +154,8 @@ internal class ActionVisitor(IEndpointRouteBuilder routeBuilder, Interceptor int
                                 .ToArray();
                             var behaviorInfo = (await behavior.GetStatusAsync([new NoImplicitInitialization()]))
                                 .Response;
-                            var result = new SendResult(EventStatus.Consumed, new EventValidation(true));
-                            return result.ToResult(notifications, behaviorInfo, HateoasLinks);
+                            var sendResult = new SendResult(EventStatus.Consumed, new EventValidation(true));
+                            return sendResult.ToResult(notifications, behaviorInfo, HateoasLinks);
                         }
                     }
                     return Results.NotFound();
@@ -191,9 +190,9 @@ internal class ActionVisitor(IEndpointRouteBuilder routeBuilder, Interceptor int
                 {
                     if (locator.TryLocateAction(new ActionId(actionName, instance), out var behavior))
                     {
-                        var result = await behavior.FinalizeAsync();
+                        var sendResult = await behavior.FinalizeAsync();
                         var behaviorInfo = (await behavior.GetStatusAsync([new NoImplicitInitialization()])).Response;
-                        return result.ToResult([], behaviorInfo, HateoasLinks);
+                        return sendResult.ToResult([], behaviorInfo, HateoasLinks);
                     }
                     
                     return Results.NotFound();
@@ -229,9 +228,9 @@ internal class ActionVisitor(IEndpointRouteBuilder routeBuilder, Interceptor int
                 {
                     if (locator.TryLocateAction(new ActionId(actionName, instance), out var behavior))
                     {
-                        var result = await behavior.ResetAsync();
+                        var sendResult = await behavior.ResetAsync();
                         var behaviorInfo = (await behavior.GetStatusAsync([new NoImplicitInitialization()])).Response;
-                        return result.ToResult([], behaviorInfo, HateoasLinks);
+                        return sendResult.ToResult([], behaviorInfo, HateoasLinks);
                     }
                     
                     return Results.NotFound();

@@ -4,11 +4,9 @@ using System.Linq;
 using System.Threading.Tasks;
 using Stateflows.Actions;
 using Stateflows.Activities;
-using Stateflows.Activities.Extensions;
 using Stateflows.Activities.Registration.Interfaces;
 using Stateflows.StateMachines.Context.Classes;
 using Stateflows.StateMachines.Context.Interfaces;
-using Stateflows.StateMachines.Registration.Extensions;
 using Stateflows.StateMachines.Registration.Interfaces.Internal;
 using ActionDelegateAsync = Stateflows.Actions.Registration.ActionDelegateAsync;
 
@@ -56,7 +54,7 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
             activityName += $".guard.{edge.Guards.Actions.Count}";
             
             vertex.Graph.StateflowsBuilder.AddActivities(b => b.AddActivity<TActivity>(activityName));
-            return AddGuard(c => StateMachineActivityExtensions.RunGuardActivityAsync(edge.Guards.Actions.Count, c, activityName));
+            return AddGuard(c => StateMachineActivityExtensions.RunTransitionGuardActivityAsync(edge.Guards.Actions.Count, c, activityName));
         }
 
         /// <summary>
@@ -75,7 +73,7 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
             activityName += $".guard.{edge.Guards.Actions.Count}";
             
             vertex.Graph.StateflowsBuilder.AddActivities(b => b.AddActivity(activityName, activityBuildAction));
-            return AddGuard(c => StateMachineActivityExtensions.RunGuardActivityAsync(edge.Guards.Actions.Count, c, activityName));
+            return AddGuard(c => StateMachineActivityExtensions.RunTransitionGuardActivityAsync(edge.Guards.Actions.Count, c, activityName));
         }
 
         /// <summary>
@@ -96,7 +94,7 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
             actionName += $".guard.{edge.Guards.Actions.Count}";
             
             vertex.Graph.StateflowsBuilder.AddActions(b => b.AddAction<TAction>(actionName));
-            return AddGuard(c => StateMachineActionExtensions.RunGuardActionAsync(edge.Guards.Actions.Count, c, actionName));
+            return AddGuard(c => StateMachineActionExtensions.RunTransitionGuardActionAsync(edge.Guards.Actions.Count, c, actionName));
         }
 
         /// <summary>
@@ -116,7 +114,7 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
             actionName += $".guard.{edge.Guards.Actions.Count}";
             
             vertex.Graph.StateflowsBuilder.AddActions(b => b.AddAction(actionName, actionDelegate, reentrant));
-            return AddGuard(c => StateMachineActionExtensions.RunGuardActionAsync(edge.Guards.Actions.Count, c, actionName));
+            return AddGuard(c => StateMachineActionExtensions.RunTransitionGuardActionAsync(edge.Guards.Actions.Count, c, actionName));
         }
 
         /// <summary>

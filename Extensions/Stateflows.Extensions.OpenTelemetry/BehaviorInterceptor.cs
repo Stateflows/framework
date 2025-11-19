@@ -1,34 +1,34 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Diagnostics.Metrics;
 using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
 using Stateflows.Common;
+using Stateflows.Common.Classes;
 using Stateflows.Common.Context.Interfaces;
 
 namespace Stateflows.Extensions.OpenTelemetry;
 
-public class BehaviorInterceptor : IBehaviorInterceptor
+public class MetricsInterceptor : BehaviorInterceptor
 {
     private Stopwatch _stopwatch;
     private static double _lastDuration;
 
-    public Task AfterHydrateAsync(IBehaviorActionContext context)
+    public override Task AfterHydrateAsync(IBehaviorActionContext context)
         => Task.CompletedTask;
 
-    public Task BeforeDehydrateAsync(IBehaviorActionContext context)
+    public override Task BeforeDehydrateAsync(IBehaviorActionContext context)
         => Task.CompletedTask;
 
-    public bool BeforeProcessEvent<TEvent>(IEventContext<TEvent> context)
+    public override bool BeforeProcessEvent<TEvent>(IEventContext<TEvent> context)
     {
         _stopwatch = Stopwatch.StartNew();
         
         return true;
     }
 
-    public void AfterProcessEvent<TEvent>(IEventContext<TEvent> context, EventStatus eventStatus)
+    public override void AfterProcessEvent<TEvent>(IEventContext<TEvent> context, EventStatus eventStatus)
     {
         _stopwatch.Stop();
         

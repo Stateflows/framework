@@ -11,15 +11,15 @@ namespace Stateflows.StateMachines.Registration.Builders
     internal class GuardBuilder<TEvent> :
         IGuardBuilder<TEvent>,
         IDefaultGuardBuilder,
-        IEdgeBuilder
+        IVertexBuilder
     {
-        private readonly List<Func<ITransitionContext<TEvent>, Task<bool>>> Guards = new List<Func<ITransitionContext<TEvent>, Task<bool>>>();
+        private readonly List<Func<ITransitionContext<TEvent>, Task<bool>>> Guards = [];
 
-        public Edge Edge { get; private set; }
+        public Vertex Vertex { get; private set; }
         
-        public GuardBuilder(Edge edge)
+        public GuardBuilder(Vertex vertex)
         {
-            Edge = edge;
+            Vertex = vertex;
         }
         
         public Func<ITransitionContext<TEvent>, Task<bool>> GetAndGuard()
@@ -61,7 +61,7 @@ namespace Stateflows.StateMachines.Registration.Builders
 
         public IGuardBuilder<TEvent> AddAndExpression(Action<IGuardBuilder<TEvent>> guardExpression)
         {
-            var builder = new GuardBuilder<TEvent>(Edge);
+            var builder = new GuardBuilder<TEvent>(Vertex);
             guardExpression.Invoke(builder);
             
             Guards.Add(builder.GetAndGuard());
@@ -71,7 +71,7 @@ namespace Stateflows.StateMachines.Registration.Builders
 
         public IGuardBuilder<TEvent> AddOrExpression(Action<IGuardBuilder<TEvent>> guardExpression)
         {
-            var builder = new GuardBuilder<TEvent>(Edge);
+            var builder = new GuardBuilder<TEvent>(Vertex);
             guardExpression.Invoke(builder);
             
             Guards.Add(builder.GetOrGuard());

@@ -8,61 +8,41 @@ using Stateflows.Common.Interfaces;
 
 namespace Stateflows.Common.Scheduler
 {
-    internal class ScheduleExecutor
+    internal class ScheduleExecutor(
+        IServiceProvider services,
+        IStateflowsLock @lock,
+        IBehaviorClassesProvider behaviorClassesProvider,
+        IBehaviorLocator behaviorLocator,
+        ILogger<Scheduler> logger
+    )
     {
-        private readonly IStateflowsLock Lock;
+        private readonly TimeSpan LockTimeout = new(0, 0, 10);
 
-        private readonly IBehaviorClassesProvider BehaviorClassesProvider;
-
-        private readonly IBehaviorLocator Locator;
-
-        private readonly ILogger<Scheduler> Logger;
-
-        private readonly TimeSpan LockTimeout = new TimeSpan(0, 0, 10);
-
-        private BehaviorId HandlingLockId;
-
-        private readonly IServiceProvider Services;
+        private BehaviorId HandlingLockId = new(nameof(Scheduler), nameof(HandlingLockId), string.Empty);
 
         private readonly MethodInfo SendAsyncMethod = typeof(IBehavior).GetMethod(nameof(IBehavior.SendAsync));
-
-        public ScheduleExecutor(
-            IServiceProvider services,
-            IStateflowsLock @lock,
-            IBehaviorClassesProvider behaviorClassesProvider,
-            IBehaviorLocator behaviorLocator,
-            ILogger<Scheduler> logger
-        )
-        {
-            Services = services;
-            Lock = @lock;
-            BehaviorClassesProvider = behaviorClassesProvider;
-            Locator = behaviorLocator;
-            Logger = logger;
-            HandlingLockId = new BehaviorId(nameof(Scheduler), nameof(HandlingLockId), string.Empty);
-        }
 
         public async Task ExecuteAsync()
         {
             try
             {
-                var storage = Services.GetRequiredService<IStateflowsStorage>();
+                var storage = services.GetRequiredService<IStateflowsStorage>();
 
-                await using (await Lock.AquireLockAsync(HandlingLockId, LockTimeout))
+                await using (await @lock.AquireLockAsync(HandlingLockId, LockTimeout))
                 {
-                    var contexts = await storage.GetTimeTriggeredContextsAsync(BehaviorClassesProvider.LocalBehaviorClasses);
+                    var contexts = await storage.GetTimeTriggeredContextsAsync(behaviorClassesProvider.LocalBehaviorClasses);
 
                     foreach (var context in contexts)
                     {
                         var timeEvents = context.PendingTimeEvents.Values.Where(timeEvent => timeEvent.TriggerTime < DateTime.Now).ToArray();
 
-                        if (timeEvents.Any() && Locator.TryLocateBehavior(context.Id, out var behavior))
+                        if (timeEvents.Length != 0 && behaviorLocator.TryLocateBehavior(context.Id, out var behavior))
                         {
                             foreach (var timeEvent in timeEvents)
                             {
                                 _ = SendAsyncMethod
                                     .MakeGenericMethod(timeEvent.GetType())
-                                    .Invoke(behavior, new object[] { timeEvent, null });
+                                    .Invoke(behavior, [timeEvent, null]);
                             }
                         }
                     }
@@ -70,7 +50,7 @@ namespace Stateflows.Common.Scheduler
             }
             catch (Exception e)
             {
-                Logger.LogError(LogTemplates.ExceptionLogTemplate, typeof(ScheduleExecutor).FullName, nameof(ExecuteAsync), e.GetType().Name, e.Message);
+                logger.LogError(LogTemplates.ExceptionLogTemplate, typeof(ScheduleExecutor).FullName, nameof(ExecuteAsync), e.GetType().Name, e.Message);
             }
         }
     }

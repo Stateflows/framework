@@ -15,5 +15,7 @@ namespace Stateflows.Common
 
         [JsonProperty(TypeNameHandling = TypeNameHandling.None)]
         public IEnumerable<string> ExpectedEvents { get; set; }
+
+        public Dictionary<string, object> Metadata { get; set; } = new();
     }
 }

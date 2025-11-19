@@ -12,6 +12,8 @@ namespace Stateflows.StateMachines.Registration.Interfaces
     public delegate void StateBuildAction(IStateBuilder builder);
     
     public delegate void OverridenStateBuildAction(IOverridenStateBuilder builder);
+    
+    public delegate void DeferralBuildAction<TEvent>(IDeferralBuilder<TEvent> builder);
 
     public delegate void JunctionBuildAction(IJunctionBuilder builder);
     

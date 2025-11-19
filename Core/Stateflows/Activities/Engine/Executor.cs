@@ -57,8 +57,8 @@ namespace Stateflows.Activities.Engine
         public readonly ActivitiesRegister Register;
         public readonly NodeScope NodeScope;
 
-        private static readonly NodeType[] CancellableTypes = new NodeType[]
-        {
+        private static readonly NodeType[] CancellableTypes =
+        [
             NodeType.Action,
             NodeType.Decision,
             NodeType.Fork,
@@ -72,27 +72,27 @@ namespace Stateflows.Activities.Engine
             NodeType.IterativeActivity,
             NodeType.ExceptionHandler,
             NodeType.DataStore
-        };
+        ];
 
-        public readonly NodeType[] StructuralTypes = new NodeType[]
-        {
+        public readonly NodeType[] StructuralTypes =
+        [
             NodeType.StructuredActivity,
             NodeType.ParallelActivity,
             NodeType.IterativeActivity
-        };
+        ];
 
-        private static readonly NodeType[] SystemTypes = new NodeType[]
-        {
+        private static readonly NodeType[] SystemTypes =
+        [
             NodeType.Initial,
             NodeType.Input,
             NodeType.Output
-        };
+        ];
 
-        private static readonly NodeType[] InteractiveNodeTypes = new NodeType[]
-        {
+        private static readonly NodeType[] InteractiveNodeTypes =
+        [
             NodeType.AcceptEventAction,
             NodeType.TimeEventAction,
-        };
+        ];
 
         public Executor(ActivitiesRegister register, Graph graph, IServiceProvider serviceProvider)
         {
@@ -419,7 +419,7 @@ namespace Stateflows.Activities.Engine
         
         private void HandleGuardRequest<TEvent>(IEnumerable<TokenHolder> outputTokens, EventHolder<TEvent> eventHolder)
         {
-            var guardRequest = eventHolder.Headers.OfType<GuardRequest>().FirstOrDefault();
+            var guardRequest = eventHolder.Headers.OfType<TransitionGuardRequest>().FirstOrDefault();
             if (guardRequest != null)
             {
                 var output = outputTokens.OfType<TokenHolder<bool>>().FirstOrDefault()?.Payload ?? false;
@@ -427,9 +427,9 @@ namespace Stateflows.Activities.Engine
                 if (output)
                 {
                     var headers = eventHolder.Headers
-                        .Where(h => !(h is GuardRequest))
+                        .Where(h => !(h is TransitionGuardRequest))
                         .Append(
-                            new GuardResponse()
+                            new TransitionGuardResponse()
                             {
                                 GuardIdentifier = guardRequest.GuardIdentifier
                             }
@@ -890,9 +890,9 @@ namespace Stateflows.Activities.Engine
                 return;
             }
 
-            var activated = false;
+            bool activated;
 
-            IEnumerable<TokenHolder> inputTokens = Array.Empty<TokenHolder>();
+            IEnumerable<TokenHolder> inputTokens;
 
             lock (GetLock(node))
             {

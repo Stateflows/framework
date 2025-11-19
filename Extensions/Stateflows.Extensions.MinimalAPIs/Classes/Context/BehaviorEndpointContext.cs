@@ -49,14 +49,16 @@ public class BehaviorEndpointContext : IBehaviorEndpointContext
     public EndpointResponse Response()
     {
         var behaviorInfo = GetBehaviorInfo();
-
-        return new EndpointResponse(behaviorInfo.ToHateoasLinks(HateoasLinks), behaviorInfo.ToMetadata());
+        var metadata = behaviorInfo.ToMetadata();
+        
+        return new EndpointResponse(behaviorInfo.ToHateoasLinks(HateoasLinks), metadata);
     }
 
     public EndpointResponse<T> Response<T>(T result)
     {
         var behaviorInfo = GetBehaviorInfo();
-
-        return new EndpointResponse<T>(result, behaviorInfo.ToHateoasLinks(HateoasLinks), behaviorInfo.ToMetadata());
+        var metadata = behaviorInfo.ToMetadata();
+        
+        return new EndpointResponse<T>(result, behaviorInfo.ToHateoasLinks(HateoasLinks), metadata);
     }
 }

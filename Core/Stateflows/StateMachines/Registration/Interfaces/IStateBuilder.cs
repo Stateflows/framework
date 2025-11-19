@@ -7,7 +7,8 @@ namespace Stateflows.StateMachines.Registration.Interfaces
         IStateUtils<IStateBuilder>,
         IStateTransitions<IStateBuilder>,
         IStateSubmachine<IBehaviorStateBuilder>,
-        IStateDoActivity<IBehaviorStateBuilder>
+        IStateDoActivity<IBehaviorStateBuilder>,
+        IStateDoAction<IBehaviorStateBuilder>
     { }
 
     public interface IBehaviorStateBuilder :
@@ -25,7 +26,8 @@ namespace Stateflows.StateMachines.Registration.Interfaces
         IStateComposition<IOverridenRegionalizedStateBuilder>,
         IStateOrthogonalization<IOverridenRegionalizedStateBuilder>,
         IStateSubmachine<IBehaviorOverridenStateBuilder>,
-        IStateDoActivity<IBehaviorOverridenStateBuilder>
+        IStateDoActivity<IBehaviorOverridenStateBuilder>,
+        IStateDoAction<IBehaviorOverridenStateBuilder>
     { }
     
     public interface IOverridenRegionalizedStateBuilder :
@@ -35,7 +37,8 @@ namespace Stateflows.StateMachines.Registration.Interfaces
         IStateTransitions<IOverridenRegionalizedStateBuilder>,
         IStateTransitionsOverrides<IOverridenRegionalizedStateBuilder>,
         IStateSubmachine<IBehaviorOverridenRegionalizedStateBuilder>,
-        IStateDoActivity<IBehaviorOverridenRegionalizedStateBuilder>
+        IStateDoActivity<IBehaviorOverridenRegionalizedStateBuilder>,
+        IStateDoAction<IBehaviorOverridenRegionalizedStateBuilder>
     { }
 
     public interface IBehaviorOverridenStateBuilder :

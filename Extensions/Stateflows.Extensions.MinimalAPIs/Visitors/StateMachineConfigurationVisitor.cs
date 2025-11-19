@@ -1,4 +1,5 @@
 ﻿using Stateflows.Common.Classes;
+using Stateflows.Common.Extensions;
 using Stateflows.StateMachines;
 
 namespace Stateflows.Extensions.MinimalAPIs;
@@ -7,13 +8,11 @@ internal class StateMachineConfigurationVisitor(MinimalAPIsBuilder minimalApisBu
 {
     public override Task StateMachineTypeAddedAsync<TStateMachine>(string stateMachineName, int stateMachineVersion)
     {
-        if (typeof(IStateMachineEndpointsConfiguration).IsAssignableFrom(typeof(TStateMachine)))
+        var stateMachineType = typeof(TStateMachine);
+        if (typeof(IStateMachineEndpointsConfiguration).IsAssignableFrom(stateMachineType))
         {
-            var stateMachine = (IStateMachineEndpointsConfiguration)StateflowsActivator.CreateUninitializedInstance<TStateMachine>();
-            // var stateMachine = (IStateMachineEndpointsConfiguration)StateflowsActivator.CreateModelElementInstanceAsync<TStateMachine>(serviceProvider);
-        
             minimalApisBuilder.CurrentClass = new StateMachineClass(stateMachineName);
-            stateMachine.ConfigureEndpoints(minimalApisBuilder);
+            stateMachineType.CallStaticMethod(nameof(IStateMachineEndpointsConfiguration.ConfigureEndpoints), [ typeof(IBehaviorClassEndpointsConfiguration) ], [ minimalApisBuilder ]);
             minimalApisBuilder.CurrentClass = null;
         }
         

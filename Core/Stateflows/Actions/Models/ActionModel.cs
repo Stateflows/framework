@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Stateflows.Actions.Registration;
+using Stateflows.Common.Registration;
 
 namespace Stateflows.Actions.Models
 {
@@ -13,8 +14,8 @@ namespace Stateflows.Actions.Models
         public ActionDelegateAsync Delegate { get; set; }
         public Func<IActionVisitor, Task> VisitingAction { get; set; }
 
-        public List<ActionExceptionHandlerFactoryAsync> ExceptionHandlerFactories { get; set; } = new List<ActionExceptionHandlerFactoryAsync>();
+        public List<ActionExceptionHandlerFactoryAsync> ExceptionHandlerFactories { get; set; } = [];
         
-        public List<ActionInterceptorFactoryAsync> InterceptorFactories { get; set; } = new List<ActionInterceptorFactoryAsync>();
+        public List<ActionInterceptorFactoryAsync> InterceptorFactories { get; set; } = [];
     }
 }

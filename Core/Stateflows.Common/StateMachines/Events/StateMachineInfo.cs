@@ -3,7 +3,7 @@
 namespace Stateflows.StateMachines
 {
     [Retain, StrictOwnership]
-    public sealed class StateMachineInfo : BehaviorInfo
+    public class StateMachineInfo : BehaviorInfo
     {
         private StateMachineId id;
 

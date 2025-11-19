@@ -12,8 +12,7 @@ namespace Stateflows.Common.Scheduler
 {
     internal class Scheduler : IHostedService
     {
-        private readonly CancellationTokenSource CancellationTokenSource = new CancellationTokenSource();
-        // private readonly IStateflowsInitializer Initializer;
+        private readonly CancellationTokenSource CancellationTokenSource = new();
         private readonly IStateflowsTenantExecutor Executor;
         private readonly IServiceScope Scope;
         private readonly ILogger<Scheduler> Logger;
@@ -36,25 +35,23 @@ namespace Stateflows.Common.Scheduler
 
         public void ApplicationStarted()
         {
-            Task.WaitAll(Executor.ExecuteByTenantsAsync(() => InitiateBehaviors()));
-            Task.WaitAll(Executor.ExecuteByTenantsAsync(() => HandleStartupEvents()));
+            Executor.ExecuteByTenantsAsync(InitiateBehaviors).Wait();
+            Executor.ExecuteByTenantsAsync(HandleStartupEvents).Wait();
         }
 
         public Task StartAsync(CancellationToken cancellationToken)
         {
-            // Initializer.Initialize(ServiceProvider);
-            
             Lifetime.ApplicationStarted.Register(ApplicationStarted);
 
             _ = Task.Run(async () =>
             {
                 await TimingLoop(CancellationTokenSource.Token).ConfigureAwait(false);
-            });
+            }, cancellationToken);
 
             return Task.CompletedTask;
         }
 
-        private DateTime GetCurrentTick()
+        private static DateTime GetCurrentTick()
             => new DateTime(DateTime.Now.Year, DateTime.Now.Month, DateTime.Now.Day, DateTime.Now.Hour, DateTime.Now.Minute, 0);
 
         private async Task TimingLoop(CancellationToken cancellationToken)
@@ -71,7 +68,7 @@ namespace Stateflows.Common.Scheduler
 
                     try
                     {
-                        await Executor.ExecuteByTenantsAsync(() => HandleTimeEvents()).ConfigureAwait(false);
+                        await Executor.ExecuteByTenantsAsync(HandleTimeEvents).ConfigureAwait(false);
                     }
                     catch (Exception e)
                     {
@@ -79,7 +76,7 @@ namespace Stateflows.Common.Scheduler
                     }
                 }
 
-                await Task.Delay(1000).ConfigureAwait(false);
+                await Task.Delay(1000, cancellationToken).ConfigureAwait(false);
             }
         }
 

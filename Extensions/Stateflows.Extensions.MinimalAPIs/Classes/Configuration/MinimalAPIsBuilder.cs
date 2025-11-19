@@ -1,4 +1,6 @@
 using Microsoft.AspNetCore.Builder;
+using Microsoft.Extensions.DependencyInjection;
+using Stateflows.Common;
 using Stateflows.Common.Classes;
 using Stateflows.Extensions.MinimalAPIs.Interfaces;
 
@@ -25,7 +27,7 @@ internal class MinimalAPIsBuilder(IServiceProvider serviceProvider) :
         {
             if (interceptor == null)
             {
-                interceptor = new ConfigurationInterceptor();
+                interceptor = new ConfigurationInterceptor(serviceProvider);
                 interceptorFactories.Add(_ => interceptor);
             }
 

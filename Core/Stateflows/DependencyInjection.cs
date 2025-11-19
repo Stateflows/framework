@@ -42,6 +42,7 @@ namespace Stateflows
                     .AddTransient<StartupExecutor>()
                     .AddSingleton<ITenantAccessor, TenantAccessor>()
                     .AddScoped<CommonInterceptor>()
+                    .AddScoped<IBehaviorContextProvider, BehaviorContextProvider>()
                     .AddScoped<IStateflowsTenantExecutor, TenantExecutor>()
                     .AddTransient(provider =>
                         CommonContextHolder.ExecutionContext.Value ??

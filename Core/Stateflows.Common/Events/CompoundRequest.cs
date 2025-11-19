@@ -14,7 +14,7 @@ namespace Stateflows.Common
     public class CompoundRequest : IRequest<CompoundResponse>, ICompoundRequestBuilder
     {
         [JsonProperty(TypeNameHandling = TypeNameHandling.None)]
-        public List<EventHolder> Events { get; set; } = new List<EventHolder>();
+        public List<EventHolder> Events { get; set; } = [];
 
         ICompoundRequestBuilder ICompoundRequestBuilder.Add<TEvent>(TEvent @event, IEnumerable<EventHeader> headers)
             => Add(@event, headers);

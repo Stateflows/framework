@@ -1,13 +1,14 @@
 using Microsoft.AspNetCore.Builder;
+using Stateflows.Common;
 
 namespace Stateflows.Extensions.MinimalAPIs;
 
-internal class Interceptor(IEnumerable<IEndpointDefinitionInterceptor> interceptors) : IEndpointDefinitionInterceptor
+internal class Interceptor(IEnumerable<IEndpointDefinitionInterceptor> interceptors) : EndpointDefinitionInterceptor
 {
-    public IEnumerable<BehaviorClass> FilterBehaviorClasses(IEnumerable<BehaviorClass> behaviorClasses)
+    public override IEnumerable<BehaviorClass> FilterBehaviorClasses(IEnumerable<BehaviorClass> behaviorClasses)
         => interceptors.Aggregate(behaviorClasses, (current, interceptor) => interceptor.FilterBehaviorClasses(current));
 
-    public bool BeforeEventEndpointDefinition<TEvent>(BehaviorClass behaviorClass, ref string method, ref string route)
+    public override bool BeforeEventEndpointDefinition<TEvent>(BehaviorClass behaviorClass, ref string method, ref string route)
     {
         foreach (var interceptor in interceptors)
         {
@@ -20,7 +21,7 @@ internal class Interceptor(IEnumerable<IEndpointDefinitionInterceptor> intercept
         return true;
     }
 
-    public void AfterEventEndpointDefinition<TEvent>(BehaviorClass behaviorClass, string method, string route, IEndpointConventionBuilder routeHandlerBuilder)
+    public override void AfterEventEndpointDefinition<TEvent>(BehaviorClass behaviorClass, string method, string route, IEndpointConventionBuilder routeHandlerBuilder)
     {
         foreach (var interceptor in interceptors.Reverse())
         {
@@ -28,7 +29,7 @@ internal class Interceptor(IEnumerable<IEndpointDefinitionInterceptor> intercept
         }
     }
 
-    public bool BeforeGetClassesEndpointDefinition(string behaviorType, ref string method, ref string route)
+    public override bool BeforeGetClassesEndpointDefinition(string behaviorType, ref string method, ref string route)
     {
         foreach (var interceptor in interceptors)
         {
@@ -41,7 +42,7 @@ internal class Interceptor(IEnumerable<IEndpointDefinitionInterceptor> intercept
         return true;
     }
 
-    public void AfterGetClassesEndpointDefinition(string behaviorType, string method, string route, IEndpointConventionBuilder routeHandlerBuilder)
+    public override void AfterGetClassesEndpointDefinition(string behaviorType, string method, string route, IEndpointConventionBuilder routeHandlerBuilder)
     {
         foreach (var interceptor in interceptors.Reverse())
         {
@@ -49,7 +50,7 @@ internal class Interceptor(IEnumerable<IEndpointDefinitionInterceptor> intercept
         }
     }
 
-    public bool BeforeGetAllClassesEndpointDefinition(ref string method, ref string route)
+    public override bool BeforeGetAllClassesEndpointDefinition(ref string method, ref string route)
     {
         foreach (var interceptor in interceptors)
         {
@@ -62,7 +63,7 @@ internal class Interceptor(IEnumerable<IEndpointDefinitionInterceptor> intercept
         return true;
     }
 
-    public void AfterGetAllClassesEndpointDefinition(string method, string route, IEndpointConventionBuilder routeHandlerBuilder)
+    public override void AfterGetAllClassesEndpointDefinition(string method, string route, IEndpointConventionBuilder routeHandlerBuilder)
     {
         foreach (var interceptor in interceptors.Reverse())
         {
@@ -70,7 +71,7 @@ internal class Interceptor(IEnumerable<IEndpointDefinitionInterceptor> intercept
         }
     }
 
-    public bool BeforeGetInstancesEndpointDefinition(BehaviorClass behaviorClass, ref string method, ref string route)
+    public override bool BeforeGetInstancesEndpointDefinition(BehaviorClass behaviorClass, ref string method, ref string route)
     {
         foreach (var interceptor in interceptors)
         {
@@ -83,7 +84,7 @@ internal class Interceptor(IEnumerable<IEndpointDefinitionInterceptor> intercept
         return true;
     }
 
-    public void AfterGetInstancesEndpointDefinition(BehaviorClass behaviorClass, string method, string route,
+    public override void AfterGetInstancesEndpointDefinition(BehaviorClass behaviorClass, string method, string route,
         IEndpointConventionBuilder routeHandlerBuilder)
     {
         foreach (var interceptor in interceptors.Reverse())
@@ -92,7 +93,7 @@ internal class Interceptor(IEnumerable<IEndpointDefinitionInterceptor> intercept
         }
     }
 
-    public bool BeforeGetAllInstancesEndpointDefinition(ref string method, ref string route)
+    public override bool BeforeGetAllInstancesEndpointDefinition(ref string method, ref string route)
     {
         foreach (var interceptor in interceptors)
         {
@@ -105,7 +106,7 @@ internal class Interceptor(IEnumerable<IEndpointDefinitionInterceptor> intercept
         return true;
     }
 
-    public void AfterGetAllInstancesEndpointDefinition(string method, string route,
+    public override void AfterGetAllInstancesEndpointDefinition(string method, string route,
         IEndpointConventionBuilder routeHandlerBuilder)
     {
         foreach (var interceptor in interceptors.Reverse())
@@ -114,7 +115,7 @@ internal class Interceptor(IEnumerable<IEndpointDefinitionInterceptor> intercept
         }
     }
 
-    public bool BeforeGetInstancesEndpointDefinition(string behaviorType, ref string method, ref string route)
+    public override bool BeforeGetInstancesEndpointDefinition(string behaviorType, ref string method, ref string route)
     {
         foreach (var interceptor in interceptors)
         {
@@ -127,7 +128,7 @@ internal class Interceptor(IEnumerable<IEndpointDefinitionInterceptor> intercept
         return true;
     }
 
-    public void AfterGetInstancesEndpointDefinition(string behaviorType, string method, string route,
+    public override void AfterGetInstancesEndpointDefinition(string behaviorType, string method, string route,
         IEndpointConventionBuilder routeHandlerBuilder)
     {
         foreach (var interceptor in interceptors.Reverse())
@@ -136,7 +137,7 @@ internal class Interceptor(IEnumerable<IEndpointDefinitionInterceptor> intercept
         }
     }
 
-    public bool BeforeCustomEndpointDefinition(BehaviorClass behaviorClass, ref string[] methods, ref string route)
+    public override bool BeforeCustomEndpointDefinition(BehaviorClass behaviorClass, ref string[] methods, ref string route)
     {
         foreach (var interceptor in interceptors)
         {
@@ -149,7 +150,7 @@ internal class Interceptor(IEnumerable<IEndpointDefinitionInterceptor> intercept
         return true;
     }
 
-    public void AfterCustomEndpointDefinition(BehaviorClass behaviorClass, string[] methods, string route,
+    public override void AfterCustomEndpointDefinition(BehaviorClass behaviorClass, string[] methods, string route,
         IEndpointConventionBuilder routeHandlerBuilder)
     {
         foreach (var interceptor in interceptors.Reverse())

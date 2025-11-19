@@ -2,6 +2,8 @@
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Diagnostics;
+using System.Linq;
+using System.Reflection;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
 using Stateflows.Common.Interfaces;
@@ -14,8 +16,8 @@ namespace Stateflows.Common
 
         public abstract string Name { get; }
 
-        [Newtonsoft.Json.JsonProperty(TypeNameHandling = Newtonsoft.Json.TypeNameHandling.None)]
-        public List<EventHeader> Headers { get; set; } = new List<EventHeader>();
+        [JsonProperty(TypeNameHandling = TypeNameHandling.None)]
+        public List<EventHeader> Headers { get; set; } = [];
         
         public int TimeToLive { get; set; }
         

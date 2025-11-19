@@ -7,7 +7,6 @@ using System.ComponentModel.DataAnnotations;
 using System.Diagnostics;
 using Microsoft.Extensions.DependencyInjection;
 using Stateflows.Common;
-using Stateflows.Common.Classes;
 using Stateflows.Common.Engine;
 using Stateflows.Common.Exceptions;
 using Stateflows.Common.Interfaces;
@@ -41,7 +40,7 @@ namespace Stateflows.StateMachines.Engine
             ValueStorage = ServiceProvider.GetRequiredService<IStateflowsValueStorage>();
         }
 
-        //[DebuggerHidden]
+        [DebuggerHidden]
         private Task<EventStatus> TryHandleEventAsync<TEvent>(EventContext<TEvent> context)
         {
             var eventHandler = EventHandlers.FirstOrDefault(h => h.EventType.IsInstanceOfType(context.Event));
@@ -51,7 +50,7 @@ namespace Stateflows.StateMachines.Engine
                 : Task.FromResult(EventStatus.NotConsumed);
         }
         
-        //[DebuggerHidden]
+        [DebuggerHidden]
         public async Task<EventStatus> ProcessEventAsync<TEvent>(BehaviorId id, EventHolder<TEvent> eventHolder, List<Exception> exceptions)
         {
             try
@@ -88,10 +87,30 @@ namespace Stateflows.StateMachines.Engine
                         if (eventHolder is EventHolder<CompoundRequest> compoundRequestHolder)
                         {
                             var compoundRequest = compoundRequestHolder.Payload;
+                            var compoundResponse = compoundRequest.GetResponse();
                             result = EventStatus.Consumed;
                             var results = new List<RequestResult>();
+                            var i = -1;
                             foreach (var ev in compoundRequest.Events)
                             {
+                                i++;
+                                
+                                RequestResult responseResult = null;
+                                if (compoundResponse != null)
+                                {
+                                    responseResult = ((List<RequestResult>)compoundResponse.Results)[i];
+                                    if (
+                                        responseResult?.Status == EventStatus.Invalid ||
+                                        (
+                                            responseResult?.Status == EventStatus.Omitted &&
+                                            !ev.Headers.Any(h => h is ForcedExecution)
+                                        )
+                                    )
+                                    {
+                                        continue;
+                                    }
+                                }
+
                                 ev.Headers.AddRange(eventHolder.Headers);
 
                                 executor.Context.SetEvent(ev);
@@ -101,13 +120,24 @@ namespace Stateflows.StateMachines.Engine
                                 {
                                     var status = await ev.ExecuteBehaviorAsync(this, result, executor);
 
-                                    results.Add(new RequestResult(
-                                        ev.IsRequest()
+                                    if (responseResult != null)
+                                    {
+                                        responseResult.Status = status;
+                                        responseResult.Response = ev.IsRequest()
                                             ? ev.GetResponseHolder()
-                                            : null,
-                                        status,
-                                        new EventValidation(true, new List<ValidationResult>())
-                                    ));
+                                            : null;
+                                        responseResult.Validation = new EventValidation(true, new List<ValidationResult>());
+                                    }
+                                    else
+                                    {
+                                        results.Add(new RequestResult(
+                                            ev.IsRequest()
+                                                ? ev.GetResponseHolder()
+                                                : null,
+                                            status,
+                                            new EventValidation(true, new List<ValidationResult>())
+                                        ));
+                                    }
                                 }
                                 finally
                                 {
@@ -215,7 +245,7 @@ namespace Stateflows.StateMachines.Engine
         Task<EventStatus> IStateflowsProcessor.ExecuteBehaviorAsync<TEvent>(EventHolder<TEvent> eventHolder, EventStatus result, IStateflowsExecutor stateflowsExecutor)
             => ExecuteBehaviorAsync(eventHolder, result, stateflowsExecutor as Executor);
 
-        //[DebuggerHidden]
+        [DebuggerHidden]
         private async Task<EventStatus> ExecuteBehaviorAsync<TEvent>(
             EventHolder<TEvent> eventHolder,
             EventStatus result,

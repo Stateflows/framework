@@ -108,22 +108,22 @@ namespace Stateflows.Common.Extensions
             return result;
         }
 
-        // [DebuggerHidden]
-        // public static Task RunSafeAsync<T>(this IEnumerable<T> enumerable, ActionAsync<T> action, string methodName, ILogger logger)
-        //     where T : class
-        //     => enumerable.RunProtectedAsync<T>(
-        //         action,
-        //         e => logger.LogError(LogTemplates.ExceptionLogTemplate, typeof(T).DeclaringType.FullName, methodName, e.GetType().Name, e.Message)
-        //     );
-        //
-        // [DebuggerHidden]
-        // public static Task<bool> RunSafeAsync<T>(this IEnumerable<T> enumerable, PredicateAsync<T> action, string methodName, ILogger logger, bool defaultResult = true)
-        //     where T : class
-        //     => enumerable.RunProtectedAsync<T>(
-        //         action,
-        //         e => logger.LogError(LogTemplates.ExceptionLogTemplate, typeof(T).DeclaringType.FullName, methodName, e.GetType().Name, e.Message),
-        //         defaultResult
-        //     );
+        [DebuggerHidden]
+        public static Task RunSafeAsync<T>(this IEnumerable<T> enumerable, ActionAsync<T> action, string methodName, ILogger logger)
+            where T : class
+            => enumerable.RunProtectedAsync<T>(
+                action,
+                e => logger.LogError(LogTemplates.ExceptionLogTemplate, typeof(T).DeclaringType.FullName, methodName, e.GetType().Name, e.Message)
+            );
+        
+        [DebuggerHidden]
+        public static Task<bool> RunSafeAsync<T>(this IEnumerable<T> enumerable, PredicateAsync<T> action, string methodName, ILogger logger, bool defaultResult = true)
+            where T : class
+            => enumerable.RunProtectedAsync<T>(
+                action,
+                e => logger.LogError(LogTemplates.ExceptionLogTemplate, typeof(T).DeclaringType.FullName, methodName, e.GetType().Name, e.Message),
+                defaultResult
+            );
 
         [DebuggerHidden]
         public static void RunSafe<T>(this IEnumerable<T> enumerable, ActionAsync<T> action, string methodName, ILogger logger)

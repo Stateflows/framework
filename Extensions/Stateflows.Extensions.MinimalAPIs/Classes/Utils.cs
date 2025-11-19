@@ -64,11 +64,14 @@ internal static class Utils
 
     internal static IDictionary<string, object> ToMetadata(this BehaviorInfo behaviorInfo)
     {
-        var metadata = new Dictionary<string, object>();
-        metadata.Add(nameof(behaviorInfo.Id).ToCamelCase(), behaviorInfo.Id);
-        metadata.Add(nameof(behaviorInfo.BehaviorStatus).ToCamelCase(), behaviorInfo.BehaviorStatus);
-        metadata.Add(nameof(behaviorInfo.BehaviorStatusText).ToCamelCase(), behaviorInfo.BehaviorStatusText);
-        metadata.Add(nameof(behaviorInfo.ExpectedEvents).ToCamelCase(), behaviorInfo.ExpectedEvents);
+        var metadata = new Dictionary<string, object>
+        {
+            { nameof(behaviorInfo.Id).ToCamelCase(), behaviorInfo.Id },
+            { nameof(behaviorInfo.BehaviorStatus).ToCamelCase(), behaviorInfo.BehaviorStatus },
+            { nameof(behaviorInfo.BehaviorStatusText).ToCamelCase(), behaviorInfo.BehaviorStatusText },
+            { nameof(behaviorInfo.ExpectedEvents).ToCamelCase(), behaviorInfo.ExpectedEvents }
+        };
+        
         switch (behaviorInfo)
         {
             case StateMachineInfo stateMachineInfo:
@@ -77,6 +80,11 @@ internal static class Utils
             case ActivityInfo activityInfo:
                 metadata.Add(nameof(activityInfo.ActiveNodes).ToCamelCase(), activityInfo.ActiveNodes);
                 break;
+        }
+
+        foreach (var metadataKeyValue in behaviorInfo.Metadata)
+        {
+            metadata.TryAdd(metadataKeyValue.Key, metadataKeyValue.Value);
         }
 
         return metadata;

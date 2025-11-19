@@ -3,7 +3,7 @@ using System.Threading.Tasks;
 
 namespace Stateflows.Common.Interfaces
 {
-    public interface IStateflowsValueStorage
+    public interface IStateflowsValueStorage : IDisposable
     {
         Task SetAsync<T>(BehaviorId behaviorId, string key, T value);
 
@@ -11,7 +11,7 @@ namespace Stateflows.Common.Interfaces
 
         Task<bool> HasAnyPrefixedAsync(BehaviorId behaviorId, string prefix);
 
-        Task<(bool Success, T Value)> TryGetAsync<T>(BehaviorId behaviorId, string key);
+        Task<(bool Success, T? Value)> TryGetAsync<T>(BehaviorId behaviorId, string key);
 
         Task<T> GetOrDefaultAsync<T>(BehaviorId behaviorId, string key, T defaultValue = default);
 
