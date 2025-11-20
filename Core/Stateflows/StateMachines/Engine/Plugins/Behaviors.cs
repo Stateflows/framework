@@ -1,4 +1,5 @@
-﻿using System.Linq;
+﻿using System.Diagnostics;
+using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
 using Stateflows.Common;
@@ -55,26 +56,26 @@ namespace Stateflows.StateMachines.Engine
                 {
                     stateValues.BehaviorId = behaviorId;
                     
-                    var request = new CompoundRequest()
-                        .Add(new Reset())
-                        .Add(((BaseContext)context).Context.Context.GetContextOwnerSetter())
-                    ;
-
+                    behavior.ResetAsync().Wait();
+                    behavior.SendAsync(((BaseContext)context).Context.Context.GetContextOwnerSetter()).Wait();
+                    
                     var initializationRequest = vertex.BehaviorInitializationBuilder != null
                         ? vertex.BehaviorInitializationBuilder(context)
                         : new Initialize();
                     
-                    request.Events.Add(initializationRequest.ToTypedEventHolder());
-                    
-                    Task.Run(() => _ = behavior.SendAsync(request));
+                    _ = behavior.SendCompoundAsync(b => b.Add(initializationRequest.ToTypedEventHolder()));
                 }
                 else
                 {
                     throw new StateDefinitionException(
                         context.State.Name,
-                        vertex.BehaviorType == BehaviorType.Activity
-                            ? "DoActivity"
-                            : "Submachine" +
+                        vertex.BehaviorType switch
+                        {
+                            BehaviorType.Activity => "DoActivity",
+                            BehaviorType.Action => "DoAction",
+                            BehaviorType.StateMachine => "Submachine",
+                            _ => vertex.BehaviorType
+                        } +
                         $" '{vertex.BehaviorName}' not found",
                         context.Behavior.Id.BehaviorClass
                     );

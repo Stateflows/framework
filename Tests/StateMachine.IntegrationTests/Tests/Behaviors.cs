@@ -23,6 +23,7 @@ namespace StateMachine.IntegrationTests.Tests
     public class Behaviors : StateflowsTestClass
     {
         public static bool eventConsumed = false;
+        public static int executionCount = 0;
 
         [TestInitialize]
         public override void Initialize()
@@ -97,6 +98,42 @@ namespace StateMachine.IntegrationTests.Tests
                             .AddTransition<SomeNotification>("state2")
                         )
                         .AddState("state2")
+                    )
+
+                    .AddStateMachine("repeatedDoActivity", b => b
+                        .AddExecutionSequenceObserver()
+                        .AddDefaultInitializer(async c =>
+                        {
+                            await c.Behavior.Values.SetAsync("correlationId", 42);
+                            return true;
+                        })
+                        .AddInitialState("state1", b => b
+                            .AddDoActivity(b => b
+                                .AddAcceptEventAction<SomeEvent>(actionAsync: async c =>
+                                {
+                                    if (await c.Behavior.Values.GetOrDefaultAsync("correlationId", -1) == 42)
+                                    {
+                                        executionCount++;
+                                        if (executionCount == 1)
+                                        {
+                                            c.Behavior.Publish(new SomeNotification());
+                                        }
+                                        if (executionCount == 2)
+                                        {
+                                            c.Behavior.Publish(new OtherNotification());
+                                        }
+                                    }
+                                    else
+                                    {
+                                        throw new InvalidOperationException();
+                                    }
+                                })
+                            )
+                            .AddTransition<OtherEvent>("state2")
+                        )
+                        .AddState("state2", b => b
+                            .AddTransition<OtherEvent>("state1")
+                        )
                     )
 
                     .AddStateMachine("effectActivity", b => b
@@ -313,6 +350,32 @@ namespace StateMachine.IntegrationTests.Tests
             Assert.AreEqual(EventStatus.Forwarded, someStatus1);
             Assert.AreEqual(true, eventConsumed);
             Assert.AreEqual("state2", currentState1);
+        }
+
+        [TestMethod]
+        public async Task RepeatedDoActivity()
+        {
+            var initialized = false;
+            string currentState1 = "";
+            var someStatus1 = EventStatus.Rejected;
+
+            if (StateMachineLocator.TryLocateStateMachine(new StateMachineId("repeatedDoActivity", "x"), out var sm))
+            {
+                await sm.SendAsync(new Initialize());
+                await sm.SendAsync(new SomeEvent());
+                await sm.NextAsync<SomeNotification>(DateTime.Now.AddSeconds(-1));
+                await sm.SendAsync(new OtherEvent());
+                await sm.SendAsync(new OtherEvent());
+                await sm.SendAsync(new SomeEvent());
+                await sm.NextAsync<OtherNotification>(DateTime.Now.AddSeconds(-1));
+            }
+
+            ExecutionSequence.Verify(b => b
+                .StateEntry("state1")
+                .StateEntry("state2")
+                .StateEntry("state1")
+            );
+            Assert.AreEqual(2, executionCount);
         }
 
         [TestMethod]

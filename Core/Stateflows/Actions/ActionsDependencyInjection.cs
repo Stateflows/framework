@@ -13,14 +13,13 @@ using Stateflows.Activities;
 using Stateflows.Common;
 using Stateflows.Common.Interfaces;
 using Stateflows.Common.Initializer;
-using Stateflows.Common.Registration.Builders;
 using Stateflows.Common.Registration.Interfaces;
 
 namespace Stateflows.Actions
 {
     public static class ActionsDependencyInjection
     {
-        private static readonly Dictionary<IStateflowsBuilder, ActionsRegister> Registers = new Dictionary<IStateflowsBuilder, ActionsRegister>();
+        private static readonly Dictionary<IStateflowsBuilder, ActionsRegister> Registers = new();
 
         internal static void Cleanup(IStateflowsBuilder builder)
         {

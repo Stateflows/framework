@@ -165,7 +165,9 @@ namespace Stateflows.Activities.Engine
 
                 exceptions.AddRange(context.Exceptions);
 
-                await Storage.DehydrateAsync(executor.Dehydrate().Context);
+                stateflowsContext = executor.Dehydrate().Context;
+
+                await Storage.DehydrateAsync(stateflowsContext);
             }
 
             return result;
