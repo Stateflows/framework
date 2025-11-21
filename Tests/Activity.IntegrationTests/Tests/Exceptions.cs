@@ -383,8 +383,8 @@ namespace Activity.IntegrationTests.Tests
 
             Assert.IsTrue(Executed1);
             Assert.IsTrue(Executed2);
-            Assert.AreEqual("Main.faulty", Value1);
-            Assert.AreEqual("Main", Value2);
+            Assert.AreEqual("Activity.IntegrationTests.Tests.Main.faulty", Value1);
+            Assert.AreEqual("Activity.IntegrationTests.Tests.Main", Value2);
         }
 
         [TestMethod]
