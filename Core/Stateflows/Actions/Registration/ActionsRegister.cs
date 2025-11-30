@@ -1,23 +1,19 @@
 ﻿using System;
-using System.Diagnostics;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
-using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.Extensions.DependencyInjection;
 using Stateflows.Actions.Context;
 using Stateflows.Actions.Context.Classes;
-using Stateflows.Common.Classes;
-using Stateflows.Common.Registration.Builders;
-using Stateflows.Actions.Models;
 using Stateflows.Actions.Exceptions;
+using Stateflows.Actions.Models;
+using Stateflows.Common.Classes;
 using Stateflows.Common.Interfaces;
-using Stateflows.Common.Registration;
 
 namespace Stateflows.Actions.Registration
 {
-    internal class ActionsRegister : IActionsRegister
+    internal class ActionsRegister : IActionsRegister, IIsSystemRegistration
     {
         public readonly List<ActionExceptionHandlerFactoryAsync> GlobalExceptionHandlerFactories = [];
         
@@ -29,6 +25,8 @@ namespace Stateflows.Actions.Registration
         public readonly Dictionary<string, ActionModel> Actions = new();
 
         private readonly Dictionary<string, int> CurrentVersions = new();
+
+        public bool IsSystemRegistration { get; set; } = false;
 
         private bool IsNewestVersion(string actionName, int version)
         {

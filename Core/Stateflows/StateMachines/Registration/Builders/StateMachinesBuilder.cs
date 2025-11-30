@@ -6,12 +6,28 @@ using System.Collections.Generic;
 using Stateflows.Common.Extensions;
 using Stateflows.StateMachines.Attributes;
 using Stateflows.StateMachines.Registration.Interfaces;
+using Stateflows.Common.Interfaces;
 
 namespace Stateflows.StateMachines.Registration.Builders
 {
-    internal class StateMachinesBuilder(IStateMachinesRegister register, bool systemRegistrations)
+    internal class StateMachinesBuilder
         : IStateMachinesBuilder
     {
+        private readonly IStateMachinesRegister Register;
+        private readonly bool SystemRegistrations;
+
+        public StateMachinesBuilder(IStateMachinesRegister register, bool systemRegistrations)
+        {
+            Register = register;
+            SystemRegistrations = systemRegistrations;
+
+            // To avoid braking of existing interfaces, manually set flag property until proper refactor
+            if (Register is IIsSystemRegistration registration)
+            {
+                registration.IsSystemRegistration = SystemRegistrations;
+            }
+        }
+
         [DebuggerHidden]
         public IStateMachinesBuilder AddFromAssembly(Assembly assembly)
         {
@@ -21,7 +37,7 @@ namespace Stateflows.StateMachines.Registration.Builders
                     typeof(IStateMachine).IsAssignableFrom(type) &&
                     type.GetCustomAttributes(typeof(StateMachineBehaviorAttribute)).FirstOrDefault() is StateMachineBehaviorAttribute attribute)
                 {
-                    register.AddStateMachine(attribute.Name ?? type.FullName, attribute.Version, type);
+                    Register.AddStateMachine(attribute.Name ?? type.FullName, attribute.Version, type);
                 }
             });
 
@@ -46,7 +62,7 @@ namespace Stateflows.StateMachines.Registration.Builders
         [DebuggerHidden]
         public IStateMachinesBuilder AddStateMachine(string stateMachineName, StateMachineBuildAction buildAction)
         {
-            register.AddStateMachine(stateMachineName, 1, buildAction);
+            Register.AddStateMachine(stateMachineName, 1, buildAction);
 
             return this;
         }
@@ -54,7 +70,7 @@ namespace Stateflows.StateMachines.Registration.Builders
         [DebuggerHidden]
         public IStateMachinesBuilder AddStateMachine(string stateMachineName, int version, StateMachineBuildAction buildAction)
         {
-            register.AddStateMachine(stateMachineName, version, buildAction);
+            Register.AddStateMachine(stateMachineName, version, buildAction);
 
             return this;
         }
@@ -63,7 +79,7 @@ namespace Stateflows.StateMachines.Registration.Builders
         public IStateMachinesBuilder AddStateMachine<TStateMachine>(string stateMachineName = null, int version = 1)
             where TStateMachine : class, IStateMachine
         {
-            register.AddStateMachine<TStateMachine>(stateMachineName ?? StateMachine<TStateMachine>.Name, version);
+            Register.AddStateMachine<TStateMachine>(stateMachineName ?? StateMachine<TStateMachine>.Name, version);
 
             return this;
         }
@@ -78,7 +94,7 @@ namespace Stateflows.StateMachines.Registration.Builders
         public IStateMachinesBuilder AddInterceptor<TInterceptor>()
             where TInterceptor : class, IStateMachineInterceptor
         {
-            register.AddInterceptor<TInterceptor>();
+            Register.AddInterceptor<TInterceptor>();
 
             return this;
         }
@@ -86,7 +102,7 @@ namespace Stateflows.StateMachines.Registration.Builders
         [DebuggerHidden]
         public IStateMachinesBuilder AddInterceptor(StateMachineInterceptorFactory interceptorFactory)
         {
-            register.AddInterceptor(interceptorFactory);
+            Register.AddInterceptor(interceptorFactory);
 
             return this;
         }
@@ -94,7 +110,7 @@ namespace Stateflows.StateMachines.Registration.Builders
         [DebuggerHidden]
         public IStateMachinesBuilder AddInterceptor(StateMachineInterceptorFactoryAsync interceptorFactoryAsync)
         {
-            register.AddInterceptor(interceptorFactoryAsync);
+            Register.AddInterceptor(interceptorFactoryAsync);
 
             return this;
         }
@@ -103,7 +119,7 @@ namespace Stateflows.StateMachines.Registration.Builders
         public IStateMachinesBuilder AddExceptionHandler<TExceptionHandler>()
             where TExceptionHandler : class, IStateMachineExceptionHandler
         {
-            register.AddExceptionHandler<TExceptionHandler>();
+            Register.AddExceptionHandler<TExceptionHandler>();
 
             return this;
         }
@@ -111,7 +127,7 @@ namespace Stateflows.StateMachines.Registration.Builders
         [DebuggerHidden]
         public IStateMachinesBuilder AddExceptionHandler(StateMachineExceptionHandlerFactory exceptionHandlerFactory)
         {
-            register.AddExceptionHandler(exceptionHandlerFactory);
+            Register.AddExceptionHandler(exceptionHandlerFactory);
 
             return this;
         }
@@ -119,7 +135,7 @@ namespace Stateflows.StateMachines.Registration.Builders
         [DebuggerHidden]
         public IStateMachinesBuilder AddExceptionHandler(StateMachineExceptionHandlerFactoryAsync exceptionHandlerFactoryAsync)
         {
-            register.AddExceptionHandler(exceptionHandlerFactoryAsync);
+            Register.AddExceptionHandler(exceptionHandlerFactoryAsync);
 
             return this;
         }
@@ -128,7 +144,7 @@ namespace Stateflows.StateMachines.Registration.Builders
         public IStateMachinesBuilder AddObserver<TObserver>()
             where TObserver : class, IStateMachineObserver
         {
-            register.AddObserver<TObserver>();
+            Register.AddObserver<TObserver>();
 
             return this;
         }
@@ -136,7 +152,7 @@ namespace Stateflows.StateMachines.Registration.Builders
         [DebuggerHidden]
         public IStateMachinesBuilder AddObserver(StateMachineObserverFactory observerFactory)
         {
-            register.AddObserver(observerFactory);
+            Register.AddObserver(observerFactory);
 
             return this;
         }
@@ -144,7 +160,7 @@ namespace Stateflows.StateMachines.Registration.Builders
         [DebuggerHidden]
         public IStateMachinesBuilder AddObserver(StateMachineObserverFactoryAsync observerFactoryAsync)
         {
-            register.AddObserver(observerFactoryAsync);
+            Register.AddObserver(observerFactoryAsync);
 
             return this;
         }

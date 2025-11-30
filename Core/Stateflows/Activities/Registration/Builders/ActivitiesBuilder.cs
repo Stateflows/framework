@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using Stateflows.Common.Extensions;
 using Stateflows.Activities.Attributes;
 using Stateflows.Activities.Registration.Interfaces;
+using Stateflows.Common.Interfaces;
 
 namespace Stateflows.Activities.Registration.Builders
 {
@@ -18,6 +19,12 @@ namespace Stateflows.Activities.Registration.Builders
         {
             Register = register;
             SystemRegistrations = systemRegistrations;
+
+            // To avoid braking of existing interfaces, manually set flag property until proper refactor
+            if (register is IIsSystemRegistration registration)
+            {
+                registration.IsSystemRegistration = SystemRegistrations;
+            }
         }
 
         [DebuggerHidden]

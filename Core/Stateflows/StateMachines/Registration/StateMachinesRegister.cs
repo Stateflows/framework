@@ -16,7 +16,7 @@ using Stateflows.StateMachines.Registration.Interfaces;
 
 namespace Stateflows.StateMachines.Registration
 {
-    internal class StateMachinesRegister(StateflowsBuilder stateflowsBuilder) : IStateMachinesRegister
+    internal class StateMachinesRegister(StateflowsBuilder stateflowsBuilder) : IStateMachinesRegister, IIsSystemRegistration
     {
         public readonly List<StateMachineExceptionHandlerFactoryAsync> GlobalExceptionHandlerFactories = [];
 
@@ -30,6 +30,8 @@ namespace Stateflows.StateMachines.Registration
 
         private readonly MethodInfo StateMachineTypeAddedAsyncMethod =
             typeof(IStateMachineVisitor).GetMethod(nameof(IStateMachineVisitor.StateMachineTypeAddedAsync));
+
+        public bool IsSystemRegistration { get; set; }
 
         private static void RegisterStateMachine(Type stateMachineType, StateMachineElementsBuilder stateMachineElementsBuilder)
         {
