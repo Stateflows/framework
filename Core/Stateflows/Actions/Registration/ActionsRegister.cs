@@ -76,7 +76,7 @@ namespace Stateflows.Actions.Registration
 
             return;
 
-            Task VisitingActionAsync(IActionVisitor v) => v.ActionAddedAsync(actionName, version);
+            Task VisitingActionAsync(IActionVisitor v) => v.ActionAddedAsync(actionName, version, IsSystemRegistration);
         }
 
         [DebuggerHidden]
@@ -120,7 +120,7 @@ namespace Stateflows.Actions.Registration
             var method = ActionTypeAddedAsyncMethod.MakeGenericMethod(actionType);
             Func<IActionVisitor, Task> visitingAction = async v =>
             {
-                await v.ActionAddedAsync(actionName, version);
+                await v.ActionAddedAsync(actionName, version, IsSystemRegistration);
                 await (Task)method.Invoke(v, [actionName, version]);
             };
             
