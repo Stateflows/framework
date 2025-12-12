@@ -1,6 +1,6 @@
 ﻿namespace Stateflows.Common.Interfaces;
 
-public interface IIsSystemRegistration
+internal interface IIsSystemRegistration
 {
     bool IsSystemRegistration { get; set; }
 }
