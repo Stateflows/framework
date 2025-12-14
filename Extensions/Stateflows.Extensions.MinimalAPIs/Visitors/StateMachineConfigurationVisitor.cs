@@ -18,7 +18,7 @@ internal class StateMachineConfigurationVisitor(MinimalAPIsBuilder minimalApisBu
         return Task.CompletedTask;
     }
 
-    public override Task StateMachineAddedAsync(string stateMachineName, int stateMachineVersion, bool isSystemRegistration)
+    public override Task StateMachineAddedAsync(string stateMachineName, int stateMachineVersion, bool isSystemRegistration = false)
     {
         if (isSystemRegistration)
         {

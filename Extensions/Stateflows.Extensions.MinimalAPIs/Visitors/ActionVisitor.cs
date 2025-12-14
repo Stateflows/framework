@@ -17,7 +17,7 @@ internal class ActionVisitor(IEndpointRouteBuilder routeBuilder, Interceptor int
     public IEndpointRouteBuilder RouteBuilder => routeBuilder;
     public Dictionary<string, List<(HateoasLink, BehaviorStatus[])>> HateoasLinks { get; set; } = new();
 
-    public override Task ActionAddedAsync(string actionName, int actionVersion, bool isSystemRegistration)
+    public override Task ActionAddedAsync(string actionName, int actionVersion, bool isSystemRegistration = false)
     {
         RegisterStandardEndpoints(actionName, routeBuilder);
         return Task.CompletedTask;
