@@ -7,7 +7,7 @@ namespace Stateflows.StateMachines
 {
     public interface IStateMachineVisitor
     {
-        Task StateMachineAddedAsync(string stateMachineName, int stateMachineVersion, bool isSystemRegistration);
+        Task StateMachineAddedAsync(string stateMachineName, int stateMachineVersion, bool isSystemRegistration = false);
 
         Task StateMachineTypeAddedAsync<TStateMachine>(string stateMachineName, int stateMachineVersion)
             where TStateMachine : class, IStateMachine;
