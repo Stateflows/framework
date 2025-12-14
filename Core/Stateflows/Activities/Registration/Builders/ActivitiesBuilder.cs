@@ -1,42 +1,42 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
-using System.Diagnostics;
-using System.Collections.Generic;
-using Stateflows.Common.Extensions;
 using Stateflows.Activities.Attributes;
 using Stateflows.Activities.Registration.Interfaces;
+using Stateflows.Common.Extensions;
 using Stateflows.Common.Interfaces;
 
 namespace Stateflows.Activities.Registration.Builders
 {
-    internal class ActivitiesBuilder : IActivitiesBuilder
+    internal class ActivitiesBuilder(ActivitiesRegister register, bool systemRegistrations) : IActivitiesBuilder
     {
-        private readonly ActivitiesRegister Register;
-        private readonly bool SystemRegistrations;
-
-        public ActivitiesBuilder(ActivitiesRegister register, bool systemRegistrations)
-        {
-            Register = register;
-            SystemRegistrations = systemRegistrations;
-
-            // To avoid braking of existing interfaces, manually set flag property until proper refactor
-            if (register is IIsSystemRegistration registration)
-            {
-                registration.IsSystemRegistration = SystemRegistrations;
-            }
-        }
-
         [DebuggerHidden]
         public IActivitiesBuilder AddFromAssembly(Assembly assembly)
         {
             assembly.GetAttributedTypes<ActivityBehaviorAttribute>().ToList().ForEach(@type =>
             {
-                if (typeof(IActivity).IsAssignableFrom(@type))
+                if (!typeof(IActivity).IsAssignableFrom(@type))
                 {
-                    var attribute = @type.GetCustomAttributes(typeof(ActivityBehaviorAttribute)).FirstOrDefault() as ActivityBehaviorAttribute;
-                    Register.AddActivity(attribute?.Name ?? @type.FullName, attribute?.Version ?? 1, @type);
+                    return;
                 }
+
+                var attribute = @type.GetCustomAttributes(typeof(ActivityBehaviorAttribute)).FirstOrDefault() as ActivityBehaviorAttribute;
+
+                if (register is IIsSystemRegistration registration)
+                {
+                    // Register is a singleton, modify IsSystemRegistration only for the duration of the AddAction call
+                    var valueBefore = registration.IsSystemRegistration;
+                    registration.IsSystemRegistration = systemRegistrations;
+
+                    register.AddActivity(attribute?.Name ?? @type.FullName, attribute?.Version ?? 1, @type);
+                    registration.IsSystemRegistration = valueBefore;
+
+                    return;
+                }
+
+                register.AddActivity(attribute?.Name ?? @type.FullName, attribute?.Version ?? 1, @type);
             });
 
             return this;
@@ -65,7 +65,19 @@ namespace Stateflows.Activities.Registration.Builders
         [DebuggerHidden]
         public IActivitiesBuilder AddActivity(string activityName, int version, ReactiveActivityBuildAction buildAction)
         {
-            Register.AddActivity(activityName, version, buildAction);
+            if (register is IIsSystemRegistration registration)
+            {
+                // Register is a singleton, modify IsSystemRegistration only for the duration of the AddAction call
+                var valueBefore = registration.IsSystemRegistration;
+                registration.IsSystemRegistration = systemRegistrations;
+
+                register.AddActivity(activityName, version, buildAction);
+                registration.IsSystemRegistration = valueBefore;
+
+                return this;
+            }
+
+            register.AddActivity(activityName, version, buildAction);
 
             return this;
         }
@@ -74,7 +86,19 @@ namespace Stateflows.Activities.Registration.Builders
         public IActivitiesBuilder AddActivity<TActivity>(string activityName = null, int version = 1)
             where TActivity : class, IActivity
         {
-            Register.AddActivity<TActivity>(activityName ?? Activity<TActivity>.Name, version);
+            if (register is IIsSystemRegistration registration)
+            {
+                // Register is a singleton, modify IsSystemRegistration only for the duration of the AddAction call
+                var valueBefore = registration.IsSystemRegistration;
+                registration.IsSystemRegistration = systemRegistrations;
+
+                register.AddActivity<TActivity>(activityName ?? Activity<TActivity>.Name, version);
+                registration.IsSystemRegistration = valueBefore;
+
+                return this;
+            }
+
+            register.AddActivity<TActivity>(activityName ?? Activity<TActivity>.Name, version);
 
             return this;
         }
@@ -89,7 +113,7 @@ namespace Stateflows.Activities.Registration.Builders
         public IActivitiesBuilder AddInterceptor<TInterceptor>()
             where TInterceptor : class, IActivityInterceptor
         {
-            Register.AddInterceptor<TInterceptor>();
+            register.AddInterceptor<TInterceptor>();
 
             return this;
         }
@@ -97,7 +121,7 @@ namespace Stateflows.Activities.Registration.Builders
         [DebuggerHidden]
         public IActivitiesBuilder AddInterceptor(ActivityInterceptorFactoryAsync interceptorFactoryAsync)
         {
-            Register.AddInterceptor(interceptorFactoryAsync);
+            register.AddInterceptor(interceptorFactoryAsync);
 
             return this;
         }
@@ -106,7 +130,7 @@ namespace Stateflows.Activities.Registration.Builders
         public IActivitiesBuilder AddExceptionHandler<TExceptionHandler>()
             where TExceptionHandler : class, IActivityExceptionHandler
         {
-            Register.AddExceptionHandler<TExceptionHandler>();
+            register.AddExceptionHandler<TExceptionHandler>();
 
             return this;
         }
@@ -114,7 +138,7 @@ namespace Stateflows.Activities.Registration.Builders
         [DebuggerHidden]
         public IActivitiesBuilder AddExceptionHandler(ActivityExceptionHandlerFactoryAsync exceptionHandlerFactoryAsync)
         {
-            Register.AddExceptionHandler(exceptionHandlerFactoryAsync);
+            register.AddExceptionHandler(exceptionHandlerFactoryAsync);
 
             return this;
         }
@@ -123,7 +147,7 @@ namespace Stateflows.Activities.Registration.Builders
         public IActivitiesBuilder AddObserver<TObserver>()
             where TObserver : class, IActivityObserver
         {
-            Register.AddObserver<TObserver>();
+            register.AddObserver<TObserver>();
 
             return this;
         }
@@ -131,7 +155,7 @@ namespace Stateflows.Activities.Registration.Builders
         [DebuggerHidden]
         public IActivitiesBuilder AddObserver(ActivityObserverFactoryAsync observerFactoryAsync)
         {
-            Register.AddObserver(observerFactoryAsync);
+            register.AddObserver(observerFactoryAsync);
 
             return this;
         }
