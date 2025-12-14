@@ -64,11 +64,6 @@ internal class StateMachineVisitor(
 
     public override Task StateMachineAddedAsync(string stateMachineName, int stateMachineVersion, bool isSystemRegistration)
     {
-        if (isSystemRegistration)
-        {
-            return Task.CompletedTask;
-        }
-
         RegisterStandardEndpoints(stateMachineName);
         RegisterRemainingEndpoints(stateMachineName);
 

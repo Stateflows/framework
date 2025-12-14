@@ -19,11 +19,6 @@ internal class ActionVisitor(IEndpointRouteBuilder routeBuilder, Interceptor int
 
     public override Task ActionAddedAsync(string actionName, int actionVersion, bool isSystemRegistration)
     {
-        if (isSystemRegistration)
-        {
-            return Task.CompletedTask;
-        }
-
         RegisterStandardEndpoints(actionName, routeBuilder);
         return Task.CompletedTask;
     }

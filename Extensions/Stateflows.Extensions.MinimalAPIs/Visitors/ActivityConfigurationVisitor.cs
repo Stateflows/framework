@@ -1,6 +1,4 @@
-﻿using System.Reflection;
-using Stateflows.Common.Classes;
-using Stateflows.Activities;
+﻿using Stateflows.Activities;
 using Stateflows.Common.Extensions;
 
 namespace Stateflows.Extensions.MinimalAPIs;
@@ -13,10 +11,25 @@ internal class ActivityConfigurationVisitor(MinimalAPIsBuilder minimalApisBuilde
         if (typeof(IActivityEndpointsConfiguration).IsAssignableFrom(activityType))
         {
             minimalApisBuilder.CurrentClass = new ActivityClass(activityName);
-            activityType.CallStaticMethod(nameof(IActivityEndpointsConfiguration.ConfigureEndpoints), [ typeof(IBehaviorClassEndpointsConfiguration) ], [ minimalApisBuilder ]);
+            activityType.CallStaticMethod(nameof(IActivityEndpointsConfiguration.ConfigureEndpoints), [typeof(IBehaviorClassEndpointsConfiguration)], [minimalApisBuilder]);
             minimalApisBuilder.CurrentClass = null;
         }
-        
+
         return Task.CompletedTask;
+    }
+
+    public override Task ActivityAddedAsync(string activityName, int activityVersion, bool isSystemRegistration)
+    {
+        if (isSystemRegistration)
+        {
+            minimalApisBuilder.ConfigureActivities(b =>
+                b.ConfigureActivity(
+                    activityName,
+                    b => b.Disable()
+                )
+            );
+        }
+
+        return base.ActivityAddedAsync(activityName, activityVersion, isSystemRegistration);
     }
 }

@@ -61,11 +61,6 @@ internal class ActivityVisitor(
 
     public override Task ActivityAddedAsync(string activityName, int activityVersion, bool isSystemRegistration)
     {
-        if (isSystemRegistration)
-        {
-            return Task.CompletedTask;
-        }
-
         RegisterStandardEndpoints(activityName);
         RegisterRemainingEndpoints(activityName);
 

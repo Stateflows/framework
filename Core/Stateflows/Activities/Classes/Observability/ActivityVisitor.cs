@@ -5,7 +5,7 @@ namespace Stateflows.Activities
 {
     public abstract class ActivityVisitor : IActivityVisitor
     {
-        public virtual Task ActivityAddedAsync(string activityName, int activityVersion, bool isSystemRegistration)
+        public virtual Task ActivityAddedAsync(string activityName, int activityVersion, bool isSystemRegistration = false)
             => Task.CompletedTask;
 
         public virtual Task ActivityTypeAddedAsync<TActivity>(string activityName, int activityVersion)
