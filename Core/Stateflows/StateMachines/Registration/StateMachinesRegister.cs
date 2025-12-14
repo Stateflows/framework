@@ -84,7 +84,10 @@ namespace Stateflows.StateMachines.Registration
             buildAction(builder);
             builder.Graph.Build();
 
-            builder.Graph.VisitingTasks.Add(v => v.StateMachineAddedAsync(stateMachineName, version, IsSystemRegistration));
+            // Assign to local variable to avoid value being overriden when invoking lambda function at a later stage
+            var localIsSystemRegistration = IsSystemRegistration;
+
+            builder.Graph.VisitingTasks.Add(v => v.StateMachineAddedAsync(stateMachineName, version, localIsSystemRegistration));
 
             StateMachines.Add(key, builder.Graph);
 
@@ -117,8 +120,11 @@ namespace Stateflows.StateMachines.Registration
 
             var method = StateMachineTypeAddedAsyncMethod.MakeGenericMethod(stateMachineType);
 
+            // Assign to local variable to avoid value being overriden when invoking lambda function at a later stage
+            var localIsSystemRegistration = IsSystemRegistration;
+
             builder.Graph.VisitingTasks.AddRange([
-                v => v.StateMachineAddedAsync(stateMachineName, version, IsSystemRegistration),
+                v => v.StateMachineAddedAsync(stateMachineName, version, localIsSystemRegistration),
                 v => (Task)method.Invoke(v, [ stateMachineName, version ])
             ]);
 

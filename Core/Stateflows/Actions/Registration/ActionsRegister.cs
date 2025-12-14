@@ -16,7 +16,7 @@ namespace Stateflows.Actions.Registration
     internal class ActionsRegister : IActionsRegister, IIsSystemRegistration
     {
         public readonly List<ActionExceptionHandlerFactoryAsync> GlobalExceptionHandlerFactories = [];
-        
+
         public readonly List<ActionInterceptorFactoryAsync> GlobalInterceptorFactories = [];
 
         private readonly MethodInfo ActionTypeAddedAsyncMethod =
@@ -63,7 +63,7 @@ namespace Stateflows.Actions.Registration
                 Delegate = actionDelegate,
                 VisitingAction = VisitingActionAsync
             };
-            
+
             if (!Actions.TryAdd(key, actionModel))
             {
                 throw new ActionDefinitionException($"Action '{actionName}' with version '{version}' is already registered", new ActionClass(actionName));
@@ -76,7 +76,13 @@ namespace Stateflows.Actions.Registration
 
             return;
 
-            Task VisitingActionAsync(IActionVisitor v) => v.ActionAddedAsync(actionName, version, IsSystemRegistration);
+            Task VisitingActionAsync(IActionVisitor v)
+            {
+                // Assign to local variable to avoid value being overriden when invoking lambda function at a later stage
+                var localIsSystemRegistration = IsSystemRegistration;
+
+                return v.ActionAddedAsync(actionName, version, localIsSystemRegistration);
+            }
         }
 
         [DebuggerHidden]
@@ -99,7 +105,7 @@ namespace Stateflows.Actions.Registration
                 ActionsContextHolder.BehaviorContext.Value = context.Behavior;
                 ActionsContextHolder.ExecutionContext.Value = context;
                 ContextValues.GlobalValuesHolder.Value = context.Behavior.Values;
-                
+
                 try
                 {
                     var instance = (IAction)await StateflowsActivator.CreateModelElementInstanceAsync(
@@ -107,7 +113,7 @@ namespace Stateflows.Actions.Registration
                         actionType,
                         "action"
                     );
-                    
+
                     await instance.ExecuteAsync(context.CancellationToken);
                 }
                 finally
@@ -118,12 +124,16 @@ namespace Stateflows.Actions.Registration
             };
 
             var method = ActionTypeAddedAsyncMethod.MakeGenericMethod(actionType);
+
+            // Assign to local variable to avoid value being overriden when invoking lambda function at a later stage
+            var localIsSystemRegistration = IsSystemRegistration;
+
             Func<IActionVisitor, Task> visitingAction = async v =>
             {
-                await v.ActionAddedAsync(actionName, version, IsSystemRegistration);
+                await v.ActionAddedAsync(actionName, version, localIsSystemRegistration);
                 await (Task)method.Invoke(v, [actionName, version]);
             };
-            
+
             var actionModel = new ActionModel()
             {
                 Name = actionName,
@@ -152,7 +162,7 @@ namespace Stateflows.Actions.Registration
             {
                 action.VisitingAction(visitor);
             }
-            
+
             return Task.CompletedTask;
         }
 
@@ -160,16 +170,16 @@ namespace Stateflows.Actions.Registration
         [DebuggerHidden]
         public void AddInterceptor(ActionInterceptorFactoryAsync interceptorFactoryAsync)
             => GlobalInterceptorFactories.Add(interceptorFactoryAsync);
-        
+
         [DebuggerHidden]
         public void AddInterceptor<TInterceptor>()
             where TInterceptor : class, IActionInterceptor
             => AddInterceptor(async serviceProvider => await StateflowsActivator.CreateModelElementInstanceAsync<TInterceptor>(serviceProvider));
-        
+
         [DebuggerHidden]
         public void AddExceptionHandler(ActionExceptionHandlerFactoryAsync exceptionHandlerFactoryAsync)
             => GlobalExceptionHandlerFactories.Add(exceptionHandlerFactoryAsync);
-        
+
         [DebuggerHidden]
         public void AddExceptionHandler<TExceptionHandler>()
             where TExceptionHandler : class, IActionExceptionHandler

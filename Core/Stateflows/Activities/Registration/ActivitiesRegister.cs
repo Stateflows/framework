@@ -14,7 +14,7 @@ using Stateflows.Common.Registration.Builders;
 
 namespace Stateflows.Activities.Registration
 {
-    internal class ActivitiesRegister : IActivitiesRegister, IIsSystemRegistration
+    internal class ActivitiesRegister(StateflowsBuilder stateflowsBuilder) : IActivitiesRegister, IIsSystemRegistration
     {
         public List<ActivityExceptionHandlerFactoryAsync> GlobalExceptionHandlerFactories { get; set; } = new List<ActivityExceptionHandlerFactoryAsync>();
 
@@ -22,13 +22,8 @@ namespace Stateflows.Activities.Registration
 
         public List<ActivityObserverFactoryAsync> GlobalObserverFactories { get; set; } = new List<ActivityObserverFactoryAsync>();
 
-        private readonly StateflowsBuilder stateflowsBuilder = null;
+        private readonly StateflowsBuilder stateflowsBuilder = stateflowsBuilder;
         public bool IsSystemRegistration { get; set; } = false;
-
-        public ActivitiesRegister(StateflowsBuilder stateflowsBuilder)
-        {
-            this.stateflowsBuilder = stateflowsBuilder;
-        }
 
         public readonly Dictionary<string, Graph> Activities = new Dictionary<string, Graph>();
 
@@ -86,7 +81,10 @@ namespace Stateflows.Activities.Registration
             buildAction(builder);
             builder.Graph.Build();
 
-            builder.Graph.VisitingTasks.Add(v => v.ActivityAddedAsync(activityName, version, IsSystemRegistration));
+            // Assign to local variable to avoid value being overriden when invoking lambda function at a later stage
+            var localIsSystemRegistration = IsSystemRegistration;
+
+            builder.Graph.VisitingTasks.Add(v => v.ActivityAddedAsync(activityName, version, localIsSystemRegistration));
 
             Activities.Add(key, builder.Graph);
 
@@ -119,9 +117,12 @@ namespace Stateflows.Activities.Registration
 
             var method = ActivityTypeAddedAsyncMethod.MakeGenericMethod(activityType);
 
+            // Assign to local variable to avoid value being overriden when invoking lambda function at a later stage
+            var localIsSystemRegistration = IsSystemRegistration;
+
             activityBuilder.Graph.VisitingTasks.AddRange(
             [
-                v => v.ActivityAddedAsync(activityName, version, IsSystemRegistration),
+                v => v.ActivityAddedAsync(activityName, version, localIsSystemRegistration),
                 v => (Task)method.Invoke(v, [ activityName, version ])
             ]);
 
