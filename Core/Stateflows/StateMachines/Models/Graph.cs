@@ -73,13 +73,13 @@ namespace Stateflows.StateMachines.Models
         public Logic<StateMachineActionAsync> Finalize { get; } =
             new Logic<StateMachineActionAsync>(Constants.Finalize);
 
-        public readonly List<StateMachineExceptionHandlerFactoryAsync> ExceptionHandlerFactories = new List<StateMachineExceptionHandlerFactoryAsync>();
+        public readonly List<StateMachineExceptionHandlerFactoryAsync> ExceptionHandlerFactories = new();
 
-        public readonly List<StateMachineInterceptorFactoryAsync> InterceptorFactories = new List<StateMachineInterceptorFactoryAsync>();
+        public readonly List<StateMachineInterceptorFactoryAsync> InterceptorFactories = new();
 
-        public readonly List<StateMachineObserverFactoryAsync> ObserverFactories = new List<StateMachineObserverFactoryAsync>();
+        public readonly List<StateMachineObserverFactoryAsync> ObserverFactories = new();
 
-        public List<BehaviorClass> RequiredBehaviors = new List<BehaviorClass>();
+        public List<BehaviorClass> RequiredBehaviors = new();
 
         [DebuggerHidden]
         public void Validate(IEnumerable<BehaviorClass> behaviorClasses)

@@ -23,7 +23,7 @@ public interface IActionObservability<out TReturn>
     TReturn AddExceptionHandler(ActionExceptionHandlerFactory exceptionHandlerFactory)
         => AddExceptionHandler(serviceProvider => Task.FromResult(exceptionHandlerFactory(serviceProvider)));
 
-    TReturn AddExceptionHandler(ActionExceptionHandlerFactoryAsync exceptionHandlerFactory);
+    TReturn AddExceptionHandler(ActionExceptionHandlerFactoryAsync exceptionHandlerFactoryAsync);
 
     TReturn AddExceptionHandler<TExceptionHandler>()
         where TExceptionHandler : class, IActionExceptionHandler;

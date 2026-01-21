@@ -55,13 +55,13 @@ namespace Stateflows.Actions.Registration.Builders
                 var beforeValue = registration.IsSystemRegistration;
                 registration.IsSystemRegistration = systemRegistrations;
 
-                register.AddAction(actionName, version, actionDelegate, reentrant);
+                register.AddAction(actionName, version, actionDelegate, buildAction);
                 registration.IsSystemRegistration = beforeValue;
 
                 return this;
             }
 
-            Register.AddAction(actionName, version, actionDelegate, buildAction);
+            register.AddAction(actionName, version, actionDelegate, buildAction);
 
             return this;
         }
@@ -76,13 +76,13 @@ namespace Stateflows.Actions.Registration.Builders
                 var beforeValue = registration.IsSystemRegistration;
                 registration.IsSystemRegistration = systemRegistrations;
 
-                register.AddAction<TAction>(actionName ?? Action<TAction>.Name, version, reentrant);
+                register.AddAction<TAction>(actionName ?? Action<TAction>.Name, version, buildAction);
                 registration.IsSystemRegistration = beforeValue;
 
                 return this;
             }
 
-            Register.AddAction<TAction>(actionName ?? Action<TAction>.Name, version, buildAction);
+            register.AddAction<TAction>(actionName ?? Action<TAction>.Name, version, buildAction);
 
             return this;
         }
@@ -114,7 +114,7 @@ namespace Stateflows.Actions.Registration.Builders
         public IActionsBuilder AddObserver<TObserver>()
             where TObserver : class, IActionObserver
         {
-            Register.AddObserver<TObserver>();
+            register.AddObserver<TObserver>();
         
             return this;
         }
@@ -122,7 +122,7 @@ namespace Stateflows.Actions.Registration.Builders
         [DebuggerHidden]
         public IActionsBuilder AddObserver(ActionObserverFactoryAsync observerFactoryAsync)
         {
-            Register.AddObserver(observerFactoryAsync);
+            register.AddObserver(observerFactoryAsync);
         
             return this;
         }

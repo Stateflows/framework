@@ -30,4 +30,7 @@ public static class FinalizationResetPolicy
 {
     public static IStateMachineBuilder AddFinalizationResetPolicy(this IStateMachineBuilder builder, ResetMode resetMode = ResetMode.Full)
         => builder.AddObserver((_, _) => new ResetObserver(resetMode));
+    
+    public static IStateMachineUtilsBuilder AddFinalizationResetPolicy(this IStateMachineUtilsBuilder builder, ResetMode resetMode = ResetMode.Full)
+        => builder.AddObserver((_, _) => new ResetObserver(resetMode));
 }

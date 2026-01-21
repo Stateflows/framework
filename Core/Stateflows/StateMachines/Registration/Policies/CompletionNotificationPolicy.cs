@@ -19,4 +19,7 @@ public static class CompletionNotificationPolicy
 {
     public static IStateMachineBuilder AddCompletionNotificationPolicy(this IStateMachineBuilder builder)
         => builder.AddInterceptor((_, _) => new CompletionNotification());
+    
+    public static IStateMachineUtilsBuilder AddCompletionNotificationPolicy(this IStateMachineUtilsBuilder builder)
+        => builder.AddInterceptor((_, _) => new CompletionNotification());
 }

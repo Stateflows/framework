@@ -19,4 +19,7 @@ public static class FinalizedNotificationPolicy
 {
     public static IActivityBuilder AddFinalizedNotificationPolicy(this IActivityBuilder builder)
         => builder.AddObserver(_ => new FinalizedNotification());
+    
+    public static IActivityUtilsBuilder AddFinalizedNotificationPolicy(this IActivityUtilsBuilder builder)
+        => builder.AddObserver(_ => new FinalizedNotification());
 }

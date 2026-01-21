@@ -18,4 +18,7 @@ public static class FinalizedNotificationPolicy
 {
     public static IStateMachineBuilder AddFinalizedNotificationPolicy(this IStateMachineBuilder builder)
         => builder.AddObserver((_, _) => new FinalizedNotification());
+    
+    public static IStateMachineUtilsBuilder AddFinalizedNotificationPolicy(this IStateMachineUtilsBuilder builder)
+        => builder.AddObserver((_, _) => new FinalizedNotification());
 }

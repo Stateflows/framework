@@ -31,12 +31,12 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         /// <param name="buildAction">Build action</param>
         /// <typeparam name="TActivity">Activity behavior type</typeparam>
         [DebuggerHidden]
-        public TReturn AddOnExitActivity<TActivity>()
+        public TReturn AddOnExitActivity<TActivity>(ActivityUtilsBuildAction buildAction = null)
             where TActivity : class, IActivity
         {
             var vertex = ((IVertexBuilder)this).Vertex;
             var activityName = $"{vertex.Graph.Name}.{vertex.Name}.onExit.{vertex.Entry.Actions.Count}";
-            vertex.Graph.StateflowsBuilder.AddActivities(b => b.AddActivity<TActivity>(activityName));
+            vertex.Graph.StateflowsBuilder.AddActivities(b => b.AddActivity<TActivity>(activityName, buildAction: buildAction));
             return AddOnExit(c => StateMachineActivityExtensions.RunStateActivityAsync(Constants.Exit, c, activityName));
         }
 

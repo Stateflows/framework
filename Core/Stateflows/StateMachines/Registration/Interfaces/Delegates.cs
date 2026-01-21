@@ -7,6 +7,8 @@ namespace Stateflows.StateMachines.Registration.Interfaces
 
     public delegate void StateMachineBuildAction(IStateMachineBuilder builder);
     
+    public delegate void StateMachineUtilsBuildAction(IStateMachineUtilsBuilder builder);
+    
     public delegate void OverridenStateMachineBuildAction(IOverridenStateMachineElementsBuilder elementsBuilder);
 
     public delegate void StateBuildAction(IStateBuilder builder);

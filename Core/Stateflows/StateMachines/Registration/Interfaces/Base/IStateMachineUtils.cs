@@ -1,4 +1,6 @@
-﻿namespace Stateflows.StateMachines.Registration.Interfaces.Base
+﻿using System.Threading.Tasks;
+
+namespace Stateflows.StateMachines.Registration.Interfaces.Base
 {
     public interface IStateMachineUtils<out TReturn>
     {
@@ -12,9 +14,16 @@
         /// <summary>
         /// Adds an interceptor to the state machine.
         /// </summary>
+        /// <param name="interceptorFactoryAsync">The factory method to create the interceptor.</param>
+        TReturn AddInterceptor(StateMachineInterceptorFactoryAsync interceptorFactoryAsync);
+        
+        /// <summary>
+        /// Adds an interceptor to the state machine.
+        /// </summary>
         /// <param name="interceptorFactory">The factory method to create the interceptor.</param>
-        TReturn AddInterceptor(StateMachineInterceptorFactory interceptorFactory);
-
+        TReturn AddInterceptor(StateMachineInterceptorFactory interceptorFactory)
+            => AddInterceptor((serviceProvider, context) => Task.FromResult(interceptorFactory(serviceProvider, context)));
+        
         /// <summary>
         /// Adds an interceptor to the state machine.
         /// </summary>
@@ -25,8 +34,15 @@
         /// <summary>
         /// Adds an observer to the state machine.
         /// </summary>
+        /// <param name="observerFactoryAsync">The factory method to create the observer.</param>
+        TReturn AddObserver(StateMachineObserverFactoryAsync observerFactoryAsync);
+
+        /// <summary>
+        /// Adds an observer to the state machine.
+        /// </summary>
         /// <param name="observerFactory">The factory method to create the observer.</param>
-        TReturn AddObserver(StateMachineObserverFactory observerFactory);
+        TReturn AddObserver(StateMachineObserverFactory observerFactory)
+            => AddObserver((serviceProvider, context) => Task.FromResult(observerFactory(serviceProvider, context)));
 
         /// <summary>
         /// Adds an observer to the state machine.
@@ -38,8 +54,15 @@
         /// <summary>
         /// Adds an exception handler to the state machine.
         /// </summary>
+        /// <param name="exceptionHandlerFactoryAsync">The factory method to create the exception handler.</param>
+        TReturn AddExceptionHandler(StateMachineExceptionHandlerFactoryAsync exceptionHandlerFactoryAsync);
+
+        /// <summary>
+        /// Adds an exception handler to the state machine.
+        /// </summary>
         /// <param name="exceptionHandlerFactory">The factory method to create the exception handler.</param>
-        TReturn AddExceptionHandler(StateMachineExceptionHandlerFactory exceptionHandlerFactory);
+        TReturn AddExceptionHandler(StateMachineExceptionHandlerFactory exceptionHandlerFactory)
+            => AddExceptionHandler((serviceProvider, context) => Task.FromResult(exceptionHandlerFactory(serviceProvider, context)));
 
         /// <summary>
         /// Adds an exception handler to the state machine.

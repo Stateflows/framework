@@ -23,4 +23,7 @@ public static class CompletionNotificationPolicy
 {
     public static IActivityBuilder AddCompletionNotificationPolicy(this IActivityBuilder builder)
         => builder.AddInterceptor(_ => new CompletionNotification());
+    
+    public static IActivityUtilsBuilder AddCompletionNotificationPolicy(this IActivityUtilsBuilder builder)
+        => builder.AddInterceptor(_ => new CompletionNotification());
 }

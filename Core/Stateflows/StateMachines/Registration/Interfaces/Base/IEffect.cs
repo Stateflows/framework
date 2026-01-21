@@ -30,7 +30,7 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         /// </summary>
         /// <typeparam name="TActivity">Activity behavior type</typeparam>
         [DebuggerHidden]
-        public TReturn AddEffectActivity<TActivity>()
+        public TReturn AddEffectActivity<TActivity>(ActivityUtilsBuildAction buildAction = null)
             where TActivity : class, IActivity
         {
             var edge = ((IEdgeBuilder)this).Edge;
@@ -42,7 +42,7 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
             }
             activityName += $".effect.{edge.Effects.Actions.Count}";
             
-            vertex.Graph.StateflowsBuilder.AddActivities(b => b.AddActivity<TActivity>(activityName));
+            vertex.Graph.StateflowsBuilder.AddActivities(b => b.AddActivity<TActivity>(activityName, buildAction: buildAction));
             return AddEffect(c => StateMachineActivityExtensions.RunEffectActivity(c, activityName));
         }
 

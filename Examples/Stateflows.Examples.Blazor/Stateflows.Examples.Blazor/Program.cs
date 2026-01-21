@@ -21,9 +21,10 @@ builder.Services.AddDbContext<AppDbContext>(options
 
 // In order to host Stateflows behaviors, Stateflows framework must be registered in the app.
 builder.Services.AddStateflows(b => b
-            
-    .SetMaxConcurrentBehaviorExecutions(10)
-            
+    .AddResource("heavy-work", b => b
+        .SetMaxConcurrentBehaviorExecutions(3)
+    )
+        
     // Each type of behavior must be registered explicitly - in this example only State Machines are used.
     .AddStateMachines(b => b
             

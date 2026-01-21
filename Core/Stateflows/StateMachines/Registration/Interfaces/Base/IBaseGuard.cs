@@ -31,7 +31,7 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         /// <param name="buildAction">Build action</param>
         /// <typeparam name="TActivity">Activity behavior type</typeparam>
         [DebuggerHidden]
-        public TReturn AddGuardActivity<TActivity>()
+        public TReturn AddGuardActivity<TActivity>(ActivityUtilsBuildAction buildAction = null)
             where TActivity : class, IActivity
         {
             var edge = ((IEdgeBuilder)this).Edge;
@@ -43,7 +43,7 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
             }
             activityName += $".guard.{edge.Guards.Actions.Count}";
             
-            vertex.Graph.StateflowsBuilder.AddActivities(b => b.AddActivity<TActivity>(activityName));
+            vertex.Graph.StateflowsBuilder.AddActivities(b => b.AddActivity<TActivity>(activityName, buildAction: buildAction));
             return AddGuard(c => StateMachineActivityExtensions.RunTransitionGuardActivityAsync(edge.Guards.Actions.Count, c, activityName));
         }
 

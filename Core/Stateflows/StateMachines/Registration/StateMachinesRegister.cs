@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using Stateflows.Common.Classes;
 using Stateflows.Common.Interfaces;
 using Stateflows.Common.Registration.Builders;
+using Stateflows.StateMachine.Registration.Builders;
 using Stateflows.StateMachines.Context;
 using Stateflows.StateMachines.Context.Classes;
 using Stateflows.StateMachines.Exceptions;
@@ -98,7 +99,7 @@ namespace Stateflows.StateMachines.Registration
         }
 
         [DebuggerHidden]
-        public void AddStateMachine(string stateMachineName, int version, Type stateMachineType, string resourceName = null)
+        public void AddStateMachine(string stateMachineName, int version, Type stateMachineType, StateMachineUtilsBuildAction buildAction = null)
         {
             var key = $"{stateMachineName}.{version}";
             var currentKey = $"{stateMachineName}.current";
@@ -117,10 +118,7 @@ namespace Stateflows.StateMachines.Registration
             };
             RegisterStateMachine(stateMachineType, builder);
             builder.Graph.Build();
-            if (resourceName != null)
-            {
-                builder.Graph.ResourceName = resourceName;
-            }
+            buildAction?.Invoke(new StateMachineUtilsBuilder(builder.Graph));
 
             var method = StateMachineTypeAddedAsyncMethod.MakeGenericMethod(stateMachineType);
 
@@ -141,9 +139,9 @@ namespace Stateflows.StateMachines.Registration
         }
 
         [DebuggerHidden]
-        public void AddStateMachine<TStateMachine>(string stateMachineName = null, int version = 1, string resourceName = null)
+        public void AddStateMachine<TStateMachine>(string stateMachineName = null, int version = 1, StateMachineUtilsBuildAction buildAction = null)
             where TStateMachine : class, IStateMachine
-            => AddStateMachine(stateMachineName ?? StateMachine<TStateMachine>.Name, version, typeof(TStateMachine), resourceName);
+            => AddStateMachine(stateMachineName ?? StateMachine<TStateMachine>.Name, version, typeof(TStateMachine), buildAction);
 
         [DebuggerHidden]
         public void AddInterceptor(StateMachineInterceptorFactory interceptorFactory)

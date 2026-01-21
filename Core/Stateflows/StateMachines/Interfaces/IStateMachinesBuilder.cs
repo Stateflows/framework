@@ -11,9 +11,9 @@ namespace Stateflows.StateMachines
         IStateMachinesBuilder AddFromAssemblies(IEnumerable<Assembly> assemblies);
         IStateMachinesBuilder AddStateMachine(string stateMachineName, StateMachineBuildAction buildAction);
         IStateMachinesBuilder AddStateMachine(string stateMachineName, int version, StateMachineBuildAction buildAction);
-        IStateMachinesBuilder AddStateMachine<TStateMachine>(string stateMachineName = null, int version = 1, string resourceName = null)
+        IStateMachinesBuilder AddStateMachine<TStateMachine>(string stateMachineName = null, int version = 1, StateMachineUtilsBuildAction buildAction = null)
             where TStateMachine : class, IStateMachine;
-        IStateMachinesBuilder AddStateMachine<TStateMachine>(int version, string resourceName = null)
+        IStateMachinesBuilder AddStateMachine<TStateMachine>(int version, StateMachineUtilsBuildAction buildAction = null)
             where TStateMachine : class, IStateMachine;
         IStateMachinesBuilder AddInterceptor<TInterceptor>()
             where TInterceptor : class, IStateMachineInterceptor;
