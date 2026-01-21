@@ -1,8 +1,16 @@
+using System.Collections.Generic;
+
 namespace Stateflows.Common.Engine.Interfaces;
+
+public interface IStateflowsResource
+{
+    string Name { get; }
+    int EventQueueLength { get; }
+    int BehaviorExecutionsCount { get; }
+}
 
 public interface IStateflowsTelemetry
 {
-    public int EventQueueLength { get; }
-    public int BehaviorExecutionsCount { get; }
-    
+    IEnumerable<IStateflowsResource> Resources { get; }
+    IReadOnlyDictionary<BehaviorClass, IStateflowsResource> ResourcesByBehaviorClass { get; }
 }

@@ -47,5 +47,7 @@
         /// <typeparam name="TExceptionHandler">The type of the exception handler.</typeparam>
         TReturn AddExceptionHandler<TExceptionHandler>()
             where TExceptionHandler : class, IStateMachineExceptionHandler;
+        
+        TReturn SetResourceName(string resourceName);
     }
 }

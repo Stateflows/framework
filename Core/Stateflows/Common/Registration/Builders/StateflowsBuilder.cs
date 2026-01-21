@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using Microsoft.Extensions.DependencyInjection;
 using Stateflows.Common.Classes;
 using Stateflows.Common.Interfaces;
@@ -10,9 +11,11 @@ namespace Stateflows.Common.Registration.Builders
     {
         private readonly List<IStateflowsTypeMapper> TypeMappers = [];
 
-        internal static int MaxConcurrentBehaviorExecutions = 0;
-
         internal readonly ITypeMapper TypeMapper;
+        
+        internal readonly Dictionary<string, Resource> ResourceNames = [];
+        
+        internal readonly Dictionary<BehaviorClass, Resource> ResourcesByBehaviorClass = [];
 
         public IServiceCollection ServiceCollection { get; }
 
@@ -20,6 +23,7 @@ namespace Stateflows.Common.Registration.Builders
         {
             ServiceCollection = services;
             TypeMapper = new TypeMapper(TypeMappers);
+            AddResource("", b => { });
         }
 
         IStateflowsBuilder IStateflowsBuilder.AddTypeMapper<TTypeMapper>()
@@ -29,10 +33,14 @@ namespace Stateflows.Common.Registration.Builders
             return this;
         }
 
-        public IStateflowsBuilder SetMaxConcurrentBehaviorExecutions(int maxConcurrentBehaviorExecutions)
+        public IStateflowsBuilder AddResource(string resourceName, Action<IResourceBuilder> builderAction)
         {
-            MaxConcurrentBehaviorExecutions = maxConcurrentBehaviorExecutions;
+            if (ResourceNames.ContainsKey(resourceName)) throw new ArgumentException($"Resource {resourceName} is already registered");
             
+            var builder = new ResourceBuilder(resourceName);
+            builderAction(builder);
+            ResourceNames.Add(resourceName, builder.Build());
+
             return this;
         }
     }

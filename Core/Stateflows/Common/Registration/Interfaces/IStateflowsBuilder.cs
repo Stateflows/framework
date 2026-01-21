@@ -1,4 +1,5 @@
-﻿using Stateflows.Common.Interfaces;
+﻿using System;
+using Stateflows.Common.Interfaces;
 
 namespace Stateflows.Common.Registration.Interfaces
 {
@@ -6,7 +7,7 @@ namespace Stateflows.Common.Registration.Interfaces
     {
         IStateflowsBuilder AddTypeMapper<TTypeMapper>()
             where TTypeMapper : class, IStateflowsTypeMapper, new();
-        
-        IStateflowsBuilder SetMaxConcurrentBehaviorExecutions(int maxConcurrentBehaviorExecutions);
+
+        IStateflowsBuilder AddResource(string resourceName, Action<IResourceBuilder> builderAction);
     }
 }

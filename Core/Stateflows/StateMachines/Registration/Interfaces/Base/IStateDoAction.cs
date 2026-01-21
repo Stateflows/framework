@@ -23,7 +23,6 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         /// <param name="actionDelegate"></param>
         /// <param name="reentrant"></param>
         /// <param name="initializationBuilder">Initialization builder; generates initialization event for embedded Action</param>
-        public TReturn AddDoAction(ActionDelegateAsync actionDelegate, bool reentrant = true,
-            StateActionInitializationBuilder initializationBuilder = null);
+        public TReturn AddDoAction(ActionDelegateAsync actionDelegate, StateActionInitializationBuilder initializationBuilder = null);
     }
 }

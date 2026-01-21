@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.Diagnostics.Metrics;
 using System.Threading;
 using System.Threading.Tasks;
@@ -9,32 +10,44 @@ namespace Stateflows.Extensions.OpenTelemetry;
 public class StateflowsMeter : IHostedService
 {
     public static Meter Meter = new("Stateflows", "1.0.0");
-    public static Counter<long> ExecutionCounter = Meter.CreateCounter<long>(
-        "stateflows.behavior.execution.count",
-        "count",
-        description: "Counts the number of behavior executions"
-    );
-    
-    public static Histogram<double> ExecutionDuration = Meter.CreateHistogram<double>(
-        "stateflows.behavior.execution.duration",
-        "ms",
-        description: "Duration of behavior execution",
-        advice: new InstrumentAdvice<double> { HistogramBucketBoundaries = [0.01, 0.05, 0.1, 0.5, 1, 5] }
-    );
+    public static IDictionary<string, Counter<long>> ExecutionCounters = new Dictionary<string, Counter<long>>();
+    public static IDictionary<string, Histogram<double>> ExecutionDurations = new Dictionary<string, Histogram<double>>();
+    public static IReadOnlyDictionary<BehaviorClass, IStateflowsResource> ResourcesByBehaviorClass;
     
     public StateflowsMeter(IStateflowsTelemetry stateflowsTelemetry)
     {
-        Meter.CreateObservableGauge(
-            "stateflows.behavior.execution.running",
-            () => stateflowsTelemetry.BehaviorExecutionsCount,
-            description: "Active behavior executions"
-        );
+        ResourcesByBehaviorClass = stateflowsTelemetry.ResourcesByBehaviorClass;
+        foreach (var resource in stateflowsTelemetry.Resources)
+        {
+            var resourceName = resource.Name == ""
+                ? "default"
+                : resource.Name;
+            
+            ExecutionCounters.Add(resource.Name, Meter.CreateCounter<long>(
+                $"stateflows.resource.{resourceName}.execution.count",
+                "count",
+                description: "Counts the number of behavior executions"
+            ));
+            
+            ExecutionDurations.Add(resource.Name, Meter.CreateHistogram<double>(
+                $"stateflows.resource.{resourceName}.execution.duration",
+                "ms",
+                description: "Duration of behavior execution",
+                advice: new InstrumentAdvice<double> { HistogramBucketBoundaries = [0.01, 0.05, 0.1, 0.5, 1, 5] }
+            ));
+            
+            Meter.CreateObservableGauge(
+                $"stateflows.resource.{resourceName}.execution.running",
+                () => resource.BehaviorExecutionsCount,
+                description: "Active behavior executions"
+            );
         
-        Meter.CreateObservableGauge(
-            "stateflows.behavior.execution.queueLength",
-            () => stateflowsTelemetry.EventQueueLength,
-            description: "Queued events"
-        );
+            Meter.CreateObservableGauge(
+                $"stateflows.resource.{resourceName}.execution.queueLength",
+                () => resource.EventQueueLength,
+                description: "Queued events"
+            );
+        }
     }
 
     public Task StartAsync(CancellationToken cancellationToken)

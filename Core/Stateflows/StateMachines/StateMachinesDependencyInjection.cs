@@ -35,7 +35,7 @@ namespace Stateflows.StateMachines
         }
 
         internal static void Build(IStateflowsBuilder builder)
-        {
+        {   
             lock (Registers)
             {
                 if (
@@ -101,11 +101,8 @@ namespace Stateflows.StateMachines
                         .AddSingleton<IStateMachineEventHandler, ResetHandler>()
                         .AddSingleton<IStateMachineEventHandler, SubscriptionHandler>()
                         .AddSingleton<IStateMachineEventHandler, UnsubscriptionHandler>()
-                        .AddSingleton<IStateMachineEventHandler, StartRelayHandler>()
-                        .AddSingleton<IStateMachineEventHandler, StopRelayHandler>()
                         .AddSingleton<IStateMachineEventHandler, SetGlobalValuesHandler>()
                         .AddSingleton<IStateMachineEventHandler, SetContextOwnerHandler>()
-                        .AddSingleton<IStateMachineEventHandler, ContextValuesRequestHandler>()
                         .AddTransient(_ =>
                             StateMachinesContextHolder.StateMachineContext.Value ??
                             throw new InvalidOperationException(

@@ -4,6 +4,9 @@ using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
+using Stateflows.Common.Classes;
+using Stateflows.Common.Registration.Builders;
+using Stateflows.Activities.Models;
 using Stateflows.Activities.Exceptions;
 using Stateflows.Activities.Models;
 using Stateflows.Activities.Registration.Builders;
@@ -16,18 +19,18 @@ namespace Stateflows.Activities.Registration
 {
     internal class ActivitiesRegister(StateflowsBuilder stateflowsBuilder) : IActivitiesRegister, IIsSystemRegistration
     {
-        public List<ActivityExceptionHandlerFactoryAsync> GlobalExceptionHandlerFactories { get; set; } = new List<ActivityExceptionHandlerFactoryAsync>();
+        public List<ActivityExceptionHandlerFactoryAsync> GlobalExceptionHandlerFactories = [];
 
-        public List<ActivityInterceptorFactoryAsync> GlobalInterceptorFactories { get; set; } = new List<ActivityInterceptorFactoryAsync>();
+        public List<ActivityInterceptorFactoryAsync> GlobalInterceptorFactories = [];
 
-        public List<ActivityObserverFactoryAsync> GlobalObserverFactories { get; set; } = new List<ActivityObserverFactoryAsync>();
+        public List<ActivityObserverFactoryAsync> GlobalObserverFactories = [];
 
         private readonly StateflowsBuilder stateflowsBuilder = stateflowsBuilder;
         public bool IsSystemRegistration { get; set; } = false;
 
-        public readonly Dictionary<string, Graph> Activities = new Dictionary<string, Graph>();
+        public readonly Dictionary<string, Graph> Activities = [];
 
-        public readonly Dictionary<string, int> CurrentVersions = new Dictionary<string, int>();
+        public readonly Dictionary<string, int> CurrentVersions = [];
 
         private readonly MethodInfo ActivityTypeAddedAsyncMethod =
             typeof(IActivityVisitor).GetMethod(nameof(IActivityVisitor.ActivityTypeAddedAsync));
@@ -77,25 +80,25 @@ namespace Stateflows.Activities.Registration
                 throw new ActivityDefinitionException($"Activity '{activityName}' with version '{version}' is already registered", new ActivityClass(activityName));
             }
 
-            var builder = new ActivityBuilder(activityName, version, null, stateflowsBuilder);
-            buildAction(builder);
-            builder.Graph.Build();
+            var activityBuilder = new ActivityBuilder(activityName, version, null, stateflowsBuilder);
+            buildAction(activityBuilder);
+            activityBuilder.Graph.Build();
 
             // Assign to local variable to avoid value being overriden when invoking lambda function at a later stage
             var localIsSystemRegistration = IsSystemRegistration;
 
-            builder.Graph.VisitingTasks.Add(v => v.ActivityAddedAsync(activityName, version, localIsSystemRegistration));
+            activityBuilder.Graph.VisitingTasks.Add(v => v.ActivityAddedAsync(activityName, version, localIsSystemRegistration));
 
-            Activities.Add(key, builder.Graph);
+            Activities.Add(key, activityBuilder.Graph);
 
             if (IsNewestVersion(activityName, version))
             {
-                Activities[currentKey] = builder.Graph;
+                Activities[currentKey] = activityBuilder.Graph;
             }
         }
 
         [DebuggerHidden]
-        public void AddActivity(string activityName, int version, Type activityType)
+        public void AddActivity(string activityName, int version, Type activityType, ActivityUtilsBuildAction buildAction = null)
         {
             var key = $"{activityName}.{version}";
             var currentKey = $"{activityName}.current";
@@ -114,6 +117,7 @@ namespace Stateflows.Activities.Registration
             };
             RegisterActivity(activityType, activityBuilder);
             activityBuilder.Graph.Build();
+            buildAction?.Invoke(new ActivityUtilsBuilder(activityBuilder.Graph));
 
             var method = ActivityTypeAddedAsyncMethod.MakeGenericMethod(activityType);
 
@@ -135,9 +139,9 @@ namespace Stateflows.Activities.Registration
         }
 
         [DebuggerHidden]
-        public void AddActivity<TActivity>(string activityName = null, int version = 1)
+        public void AddActivity<TActivity>(string activityName = null, int version = 1, ActivityUtilsBuildAction buildAction = null)
             where TActivity : class, IActivity
-            => AddActivity(activityName ?? Activity<TActivity>.Name, version, typeof(TActivity));
+            => AddActivity(activityName ?? Activity<TActivity>.Name, version, typeof(TActivity), buildAction);
 
         public async Task VisitActivitiesAsync(IActivityVisitor visitor)
         {

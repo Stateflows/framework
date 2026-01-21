@@ -4,11 +4,13 @@ using System.Threading.Tasks;
 using System.Collections.Generic;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Stateflows.Common;
 using Stateflows.Common.Engine;
 using Stateflows.Common.Extensions;
 using Stateflows.Actions.Context.Classes;
+using Stateflows.Actions.Context.Interfaces;
 using Stateflows.Actions.Registration;
-using Stateflows.Common;
+using Stateflows.Common.Context.Classes;
 
 namespace Stateflows.Actions.Engine
 {
@@ -32,21 +34,35 @@ namespace Stateflows.Actions.Engine
 
             InterceptorFactories.AddRange(Executor.ActionModel.InterceptorFactories);
             InterceptorFactories.AddRange(Executor.Register.GlobalInterceptorFactories);
+
+            ObserverFactories.AddRange(Executor.ActionModel.ObserverFactories);
+            ObserverFactories.AddRange(Executor.Register.GlobalObserverFactories);
         }
 
         public async Task BuildAsync()
         {
+            Observers = await Task.WhenAll(ObserverFactories.Select(t => t(Executor.ServiceProvider)));
+            ReverseObservers = Observers.Reverse().ToArray();
+            
             Interceptors = await Task.WhenAll(InterceptorFactories.Select(t => t(Executor.ServiceProvider)));
+            ReverseInterceptors = Interceptors.Reverse().ToArray();
+
             ExceptionHandlers = await Task.WhenAll(ExceptionHandlerFactories.Select(t => t(Executor.ServiceProvider)));
         }
 
-        private readonly List<ActionExceptionHandlerFactoryAsync> ExceptionHandlerFactories = new List<ActionExceptionHandlerFactoryAsync>();
+        private readonly List<ActionExceptionHandlerFactoryAsync> ExceptionHandlerFactories = [];
 
-        private readonly List<ActionInterceptorFactoryAsync> InterceptorFactories = new List<ActionInterceptorFactoryAsync>();
+        private readonly List<ActionInterceptorFactoryAsync> InterceptorFactories = [];
+
+        private readonly List<ActionObserverFactoryAsync> ObserverFactories = [];
         
-        private IEnumerable<IActionInterceptor> Interceptors;
+        private IActionInterceptor[] Interceptors;
+        private IActionInterceptor[] ReverseInterceptors;
+        
+        private IActionObserver[] Observers;
+        private IActionObserver[] ReverseObservers;
 
-        private IEnumerable<IActionExceptionHandler> ExceptionHandlers;
+        private IActionExceptionHandler[] ExceptionHandlers;
 
         // private IEnumerable<IActionPlugin> plugins;
         // public IEnumerable<IActionPlugin> Plugins
@@ -55,34 +71,57 @@ namespace Stateflows.Actions.Engine
         public void AfterHydrate(ActionDelegateContext context)
         {
             // await Plugins.RunSafe(p => p.AfterHydrateAsync(context), nameof(AfterHydrate), Logger);
-            Interceptors.RunSafe(i => i.AfterHydrate(context), nameof(AfterHydrate), Logger);
+            GlobalInterceptor.AfterHydrate(context);
+            ReverseInterceptors.RunSafe(i => i.AfterHydrate(context), nameof(AfterHydrate), Logger);
         }
 
         public void BeforeDehydrate(ActionDelegateContext context)
         {
             Interceptors.RunSafe(i => i.BeforeDehydrate(context), nameof(BeforeDehydrate), Logger);
+            GlobalInterceptor.BeforeDehydrate(context);
             // await Plugins.RunSafe(p => p.BeforeDehydrateAsync(context), nameof(BeforeDehydrate), Logger);
         }
 
-        public bool BeforeProcessEvent<TEvent>(EventContext<TEvent> context)
+        public bool BeforeProcessEvent<TEvent>(Context.Classes.EventContext<TEvent> context)
         {
             // var plugin = await Plugins.RunSafe(i => i.BeforeProcessEventAsync(context), nameof(BeforeProcessEvent), Logger);
             // var global = await GlobalInterceptor.BeforeProcessEvent(
             //     new Common.Context.Classes.EventContext<TEvent>(context.RootContext.Context, Executor.ServiceProvider, context.Event)
             // );
+            var global = GlobalInterceptor.BeforeProcessEvent(context);
             var local = Interceptors.RunSafe(i => i.BeforeProcessEvent(context), nameof(BeforeProcessEvent), Logger);
 
-            return /*global &&*/ local/* && plugin*/;
+            return global && local/* && plugin*/;
         }
 
-        public void AfterProcessEvent<TEvent>(EventContext<TEvent> context, EventStatus eventStatus)
+        public void AfterProcessEvent<TEvent>(Context.Classes.EventContext<TEvent> context, EventStatus eventStatus)
         {
             Interceptors.RunSafe(i => i.AfterProcessEvent(context, eventStatus), nameof(AfterProcessEvent), Logger);
-            // await GlobalInterceptor.AfterProcessEvent(new Common.Context.Classes.EventContext<TEvent>(context.RootContext.Context, Executor.ServiceProvider, context.Event), eventStatus);
+            GlobalInterceptor.AfterProcessEvent(context, eventStatus);
             // await Plugins.RunSafe(p => p.AfterProcessEventAsync(context), nameof(AfterProcessEvent), Logger);
         }
         
         public bool OnActionException(ActionDelegateContext context, Exception exception)
             => ExceptionHandlers.RunSafe(h => h.OnActionException(context, exception), nameof(OnActionException), Logger, false);
+
+        public void BeforeActionInitialize(IActionDelegateContext context)
+        {
+            Observers.RunSafe(i => i.BeforeActionInitialize(context), nameof(BeforeActionInitialize), Logger);
+        }
+
+        public void AfterActionInitialize(IActionDelegateContext context)
+        {
+            ReverseObservers.RunSafe(i => i.AfterActionInitialize(context), nameof(AfterActionInitialize), Logger);
+        }
+
+        public void BeforeActionFinalize(IActionDelegateContext context)
+        {
+            Observers.RunSafe(i => i.BeforeActionFinalize(context), nameof(BeforeActionFinalize), Logger);
+        }
+
+        public void AfterActionFinalize(IActionDelegateContext context)
+        {
+            ReverseObservers.RunSafe(i => i.AfterActionFinalize(context), nameof(AfterActionFinalize), Logger);
+        }
     }
 }

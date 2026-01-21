@@ -39,10 +39,7 @@ namespace Stateflows.StateMachines.Context.Classes
             deferredEvents = null;
             embeddedBehaviorStatuses = null;
             stateValues = null;
-            // statesStack = null;
         }
-
-        public Dictionary<string, string> GlobalValues => stateflowsContext.GlobalValues;
 
         private List<EventHolder> deferredEvents = null;
         public List<EventHolder> DeferredEvents

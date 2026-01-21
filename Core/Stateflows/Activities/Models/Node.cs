@@ -182,6 +182,22 @@ namespace Stateflows.Activities.Models
             }
         }
 
+        private Node finalNode;
+        private bool finalNodeSet;
+        public Node FinalNode
+        {
+            get
+            {
+                if (!finalNodeSet)
+                {
+                    finalNode = Nodes.Values.FirstOrDefault(n => n.Type == NodeType.Final);
+                    finalNodeSet = true;
+                }
+
+                return finalNode;
+            }
+        }
+
         private IEnumerable<Node> acceptEventActionNodes;
         public IEnumerable<Node> AcceptEventActionNodes
             => acceptEventActionNodes ??= Nodes.Values

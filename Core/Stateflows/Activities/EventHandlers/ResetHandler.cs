@@ -11,7 +11,6 @@ namespace Stateflows.Activities.EventHandlers
         public Type EventType => typeof(Reset);
 
         public Task<EventStatus> TryHandleEventAsync<TEvent>(IEventContext<TEvent> context)
-
         {
             if (context.Event is Reset request)
             {

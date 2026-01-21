@@ -12,6 +12,8 @@ namespace Stateflows.Activities.Registration.Builders
 {
     internal class ActivitiesBuilder(ActivitiesRegister register, bool systemRegistrations) : IActivitiesBuilder
     {
+        private readonly bool SystemRegistrations = systemRegistrations;
+
         [DebuggerHidden]
         public IActivitiesBuilder AddFromAssembly(Assembly assembly)
         {
@@ -83,7 +85,7 @@ namespace Stateflows.Activities.Registration.Builders
         }
 
         [DebuggerHidden]
-        public IActivitiesBuilder AddActivity<TActivity>(string activityName = null, int version = 1)
+        public IActivitiesBuilder AddActivity<TActivity>(string activityName = null, int version = 1, ActivityUtilsBuildAction buildAction = null)
             where TActivity : class, IActivity
         {
             if (register is IIsSystemRegistration registration)
@@ -92,21 +94,21 @@ namespace Stateflows.Activities.Registration.Builders
                 var valueBefore = registration.IsSystemRegistration;
                 registration.IsSystemRegistration = systemRegistrations;
 
-                register.AddActivity<TActivity>(activityName ?? Activity<TActivity>.Name, version);
+                register.AddActivity<TActivity>(activityName ?? Activity<TActivity>.Name, version, buildAction);
                 registration.IsSystemRegistration = valueBefore;
 
                 return this;
             }
 
-            register.AddActivity<TActivity>(activityName ?? Activity<TActivity>.Name, version);
+            register.AddActivity<TActivity>(activityName ?? Activity<TActivity>.Name, version, buildAction);
 
             return this;
         }
 
         [DebuggerHidden]
-        public IActivitiesBuilder AddActivity<TActivity>(int version)
+        public IActivitiesBuilder AddActivity<TActivity>(int version, ActivityUtilsBuildAction buildAction = null)
             where TActivity : class, IActivity
-            => AddActivity<TActivity>(null, version);
+            => AddActivity<TActivity>(null, version, buildAction);
 
         #region Observability
         [DebuggerHidden]

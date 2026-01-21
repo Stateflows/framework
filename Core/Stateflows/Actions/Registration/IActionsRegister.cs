@@ -1,27 +1,33 @@
 ﻿using System;
 using System.Threading.Tasks;
 using Stateflows.Actions.Registration;
+using Stateflows.Actions.Registration.Interfaces;
 
 namespace Stateflows.Actions
 {
     public interface IActionsRegister
     {
-        void AddAction(string actionName, ActionDelegateAsync actionDelegate, bool reentrant = true)
-            => AddAction(actionName, 1, actionDelegate);
+        void AddAction(string actionName, ActionDelegateAsync actionDelegate, ActionBuildAction buildAction = null)
+            => AddAction(actionName, 1, actionDelegate, buildAction);
         
-        void AddAction(string actionName, int version, ActionDelegateAsync actionDelegate, bool reentrant = true);
+        void AddAction(string actionName, int version, ActionDelegateAsync actionDelegate, ActionBuildAction buildAction = null);
 
-        void AddAction(string actionName, Type actionType)
-            => AddAction(actionName, 1, actionType);
+        void AddAction(string actionName, Type actionType, ActionBuildAction buildAction = null)
+            => AddAction(actionName, 1, actionType, buildAction);
         
-        void AddAction(string actionName, int version, Type actionType, bool reentrant = true);
+        void AddAction(string actionName, int version, Type actionType, ActionBuildAction buildAction = null);
         
-        void AddAction<TAction>(string actionName = null, int version = 1, bool reentrant = true)
+        void AddAction<TAction>(string actionName = null, int version = 1, ActionBuildAction buildAction = null)
             where TAction : class, IAction;
 
         Task VisitActionsAsync(IActionVisitor visitor);
 
         #region Observability
+        void AddObserver(ActionObserverFactoryAsync observerFactoryAsync);
+        
+        void AddObserver<TObserver>()
+            where TObserver : class, IActionObserver;
+        
         void AddInterceptor(ActionInterceptorFactoryAsync interceptorFactoryAsync);
         
         void AddInterceptor<TInterceptor>()

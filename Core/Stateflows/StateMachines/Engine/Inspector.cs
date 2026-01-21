@@ -67,11 +67,11 @@ namespace Stateflows.StateMachines.Engine
         private IStateMachineInspection inspection;
         public IStateMachineInspection Inspection => inspection ??= new StateMachineInspection(Executor, this);
 
-        private readonly List<StateMachineExceptionHandlerFactoryAsync> ExceptionHandlerFactories = new List<StateMachineExceptionHandlerFactoryAsync>();
+        private readonly List<StateMachineExceptionHandlerFactoryAsync> ExceptionHandlerFactories = [];
 
-        private readonly List<StateMachineInterceptorFactoryAsync> InterceptorFactories = new List<StateMachineInterceptorFactoryAsync>();
+        private readonly List<StateMachineInterceptorFactoryAsync> InterceptorFactories = [];
 
-        private readonly List<StateMachineObserverFactoryAsync> ObserverFactories = new List<StateMachineObserverFactoryAsync>();
+        private readonly List<StateMachineObserverFactoryAsync> ObserverFactories = [];
 
         private IStateMachineObserver[] Observers;
         private IStateMachineObserver[] ReverseObservers;
@@ -261,14 +261,14 @@ namespace Stateflows.StateMachines.Engine
         public void AfterHydrate(StateMachineActionContext context)
         {
             ReversePlugins.RunSafe(i => i.AfterHydrate(context), nameof(AfterHydrate), Logger);
-            GlobalInterceptor.AfterHydrate(new BehaviorActionContext(context.Context.Context, Executor.ServiceProvider));
+            GlobalInterceptor.AfterHydrate(context);
             ReverseInterceptors.RunSafe(i => i.AfterHydrate(context), nameof(AfterHydrate), Logger);
         }
 
         public void BeforeDehydrate(StateMachineActionContext context)
         {
             Interceptors.RunSafe(i => i.BeforeDehydrate(context), nameof(BeforeDehydrate), Logger);
-            GlobalInterceptor.BeforeDehydrate(new BehaviorActionContext(context.Context.Context, Executor.ServiceProvider));
+            GlobalInterceptor.BeforeDehydrate(context);
             Plugins.RunSafe(i => i.BeforeDehydrate(context), nameof(BeforeDehydrate), Logger);
         }
 

@@ -4,13 +4,11 @@ using System.Linq;
 using System.Threading.Tasks;
 using Stateflows.Actions;
 using Stateflows.Activities;
-using Stateflows.Activities.Extensions;
 using Stateflows.Activities.Registration.Interfaces;
 using Stateflows.StateMachines.Context.Classes;
 using Stateflows.StateMachines.Context.Interfaces;
-using Stateflows.StateMachines.Registration.Builders;
-using Stateflows.StateMachines.Registration.Extensions;
 using Stateflows.StateMachines.Registration.Interfaces.Internal;
+using ActionBuildAction = Stateflows.Actions.Registration.Interfaces.ActionBuildAction;
 using ActionDelegateAsync = Stateflows.Actions.Registration.ActionDelegateAsync;
 
 namespace Stateflows.StateMachines.Registration.Interfaces.Base
@@ -71,8 +69,9 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         /// Registers action behavior as effect
         /// </summary>
         /// <typeparam name="TAction">Action behavior type</typeparam>
+        /// <param name="buildAction">Build action</param>
         [DebuggerHidden]
-        public TReturn AddEffectAction<TAction>()
+        public TReturn AddEffectAction<TAction>(ActionBuildAction buildAction = null)
             where TAction : class, IAction
         {
             var edge = ((IEdgeBuilder)this).Edge;
@@ -84,7 +83,7 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
             }
             actionName += $".effect.{edge.Effects.Actions.Count}";
             
-            vertex.Graph.StateflowsBuilder.AddActions(b => b.AddAction<TAction>(actionName));
+            vertex.Graph.StateflowsBuilder.AddActions(b => b.AddAction<TAction>(actionName, buildAction: buildAction));
             return AddEffect(c => StateMachineActionExtensions.RunEffectActionAsync(c, actionName));
         }
 
@@ -92,8 +91,8 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         /// Registers Action behavior as effect
         /// </summary>
         /// <param name="actionDelegate">Action delegate</param>
-        /// <param name="reentrant">Flag that determines if action delegate can be executed in parallel</param>
-        public TReturn AddEffectAction(ActionDelegateAsync actionDelegate, bool reentrant = true)
+        /// <param name="buildAction">Build action</param>
+        public TReturn AddEffectAction(ActionDelegateAsync actionDelegate, ActionBuildAction buildAction = null)
         {
             var edge = ((IEdgeBuilder)this).Edge;
             var vertex = edge.Source;
@@ -104,7 +103,7 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
             }
             actionName += $".effect.{edge.Effects.Actions.Count}";
             
-            vertex.Graph.StateflowsBuilder.AddActions(b => b.AddAction(actionName, actionDelegate, reentrant));
+            vertex.Graph.StateflowsBuilder.AddActions(b => b.AddAction(actionName, actionDelegate, buildAction: buildAction));
             return AddEffect(c => StateMachineActionExtensions.RunEffectActionAsync(c, actionName));
         }
         

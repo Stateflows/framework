@@ -7,8 +7,9 @@ namespace Stateflows.Common.Extensions
 {
     public static class TypeExtensions
     {
-        public static bool IsPrimitiveOrNullablePrimitive(this Type type)
-            => type.IsPrimitive || (
+        public static bool IsPrimitiveOrNullablePrimitive(this Type type) =>
+            type.IsPrimitive ||
+            (
                 type.IsNullable() &&
                 type.GenericTypeArguments.First().IsPrimitive
             );

@@ -1,5 +1,4 @@
-﻿using System.Threading.Tasks;
-using Stateflows.Activities.Context.Interfaces;
+﻿using Stateflows.Activities.Context.Interfaces;
 
 namespace Stateflows.Activities
 {

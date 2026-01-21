@@ -8,6 +8,7 @@ using Stateflows.Actions.Context.Classes;
 using Stateflows.Common;
 using Stateflows.Common.Interfaces;
 using Stateflows.Actions.Registration;
+using Stateflows.Common.Context;
 
 namespace Stateflows.Actions.Engine
 {
@@ -55,19 +56,29 @@ namespace Stateflows.Actions.Engine
             try
             {
                 await using var lockHandle = await (
-                    action.Reentrant
+                    action.IsStateless
                         ? StateflowsLock.AquireNoLockAsync(id)
                         : StateflowsLock.AquireLockAsync(id)
                 );
 
-                if (action.Reentrant)
-                {
-                    stateflowsContext = await Storage.HydrateAsync(id);
-                }
+                stateflowsContext = action.IsStateless
+                    ? new StateflowsContext(id)
+                    : await Storage.HydrateAsync(id);
 
                 var executor = new Executor(Register, stateflowsContext, serviceProvider, action);
                 
                 await executor.HydrateAsync(eventHolder);
+                
+                
+                if (stateflowsContext.Status != BehaviorStatus.Initialized)
+                {
+                    stateflowsContext.Status = BehaviorStatus.Initialized;
+
+                    var context = new ActionDelegateContext(stateflowsContext, executor, eventHolder, serviceProvider);
+                    var inspector = await executor.GetInspectorAsync();
+                    inspector.BeforeActionInitialize(context);
+                    inspector.AfterActionInitialize(context);
+                }
                 
                 if (eventHolder is EventHolder<CompoundRequest> compoundRequestHolder)
                 {
@@ -146,7 +157,10 @@ namespace Stateflows.Actions.Engine
 
                 // exceptions.AddRange(context.Exceptions);
 
-                await Storage.DehydrateAsync(stateflowsContext);
+                if (!action.IsStateless)
+                {
+                    await Storage.DehydrateAsync(stateflowsContext);
+                }
             }
 
             return result;

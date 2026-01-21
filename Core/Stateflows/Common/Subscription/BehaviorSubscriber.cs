@@ -49,27 +49,6 @@ namespace Stateflows.Common.Subscription
             }
 
             await notificationsHub.PublishAsync(eventHolder);
-
-            if (context.Relays.TryGetValue(Event<TNotification>.Name, out behaviorIds))
-            {
-                await Task.WhenAll(
-                    behaviorIds.Select(
-                        id =>
-                        {
-                            var relayedEventHolder = new EventHolder<TNotification>()
-                            {
-                                Payload = eventHolder.Payload,
-                                SenderId = id,
-                                SentAt = eventHolder.SentAt,
-                                Headers = eventHolder.Headers,
-                                TimeToLive = eventHolder.TimeToLive,
-                                Retained = eventHolder.Retained,
-                            };
-                            
-                            return notificationsHub.PublishAsync(relayedEventHolder);
-                        })
-                );
-            }
         }
 
         public Task<SendResult> SubscribeAsync<TNotification>(BehaviorId behaviorId)

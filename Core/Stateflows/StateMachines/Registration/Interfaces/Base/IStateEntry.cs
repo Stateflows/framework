@@ -4,10 +4,10 @@ using System.Linq;
 using System.Threading.Tasks;
 using Stateflows.Actions;
 using Stateflows.Activities;
-using Stateflows.Activities.Extensions;
 using Stateflows.Activities.Registration.Interfaces;
 using Stateflows.StateMachines.Context.Classes;
 using Stateflows.StateMachines.Registration.Interfaces.Internal;
+using ActionBuildAction = Stateflows.Actions.Registration.Interfaces.ActionBuildAction;
 using ActionDelegateAsync = Stateflows.Actions.Registration.ActionDelegateAsync;
 
 namespace Stateflows.StateMachines.Registration.Interfaces.Base
@@ -57,15 +57,15 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         /// <summary>
         /// Registers action behavior that will be started when current state enters
         /// </summary>
-       
         /// <typeparam name="TAction">Action behavior type</typeparam>
+        /// <param name="buildAction">Build action</param>
         [DebuggerHidden]
-        public TReturn AddOnEntryAction<TAction>()
+        public TReturn AddOnEntryAction<TAction>(ActionBuildAction buildAction = null)
             where TAction : class, IAction
         {
             var vertex = ((IVertexBuilder)this).Vertex;
             var actionName = $"{vertex.Graph.Name}.{vertex.Name}.onEntry.{vertex.Entry.Actions.Count}";
-            vertex.Graph.StateflowsBuilder.AddActions(b => b.AddAction<TAction>(actionName));
+            vertex.Graph.StateflowsBuilder.AddActions(b => b.AddAction<TAction>(actionName, buildAction: buildAction));
             return AddOnEntry(c => StateMachineActionExtensions.RunStateActionAsync(Constants.Entry, c, actionName));
         }
         
@@ -73,12 +73,12 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         /// Registers action behavior that will be started when current state enters
         /// </summary>
         /// <param name="actionDelegateAsync">Action delegate</param>
-        /// <param name="reentrant">Determines if action can be reentrant</param>
-        public TReturn AddOnEntryAction(ActionDelegateAsync actionDelegateAsync, bool reentrant = true)
+        /// <param name="buildAction">Build action</param>
+        public TReturn AddOnEntryAction(ActionDelegateAsync actionDelegateAsync, ActionBuildAction buildAction = null)
         {
             var vertex = ((IVertexBuilder)this).Vertex;
             var actionName = $"{vertex.Graph.Name}.{vertex.Name}.onEntry.{vertex.Entry.Actions.Count}";
-            vertex.Graph.StateflowsBuilder.AddActions(b => b.AddAction(actionName, actionDelegateAsync, reentrant));
+            vertex.Graph.StateflowsBuilder.AddActions(b => b.AddAction(actionName, actionDelegateAsync, buildAction: buildAction));
             return AddOnEntry(c => StateMachineActionExtensions.RunStateActionAsync(Constants.Entry, c, actionName));
         }
         #endregion
