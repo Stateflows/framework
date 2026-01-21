@@ -109,7 +109,10 @@ namespace Stateflows.Activities
                 .Add(context.Event, headers)
             ;
 
-            transitionContext.Context.EventHolder.Headers.Add(new TransitionGuardDelegation() { EdgeIdentifier = transitionContext.Edge.Identifier });
+            transitionContext.Context.EventHolder.Headers.Add(new TransitionGuardDelegation()
+            {
+                EdgeIdentifier = transitionContext.Edge.Identifier
+            });
 
             _ = a.RequestAsync(request);
             

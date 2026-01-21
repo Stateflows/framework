@@ -44,6 +44,8 @@ namespace Stateflows.Common
         public abstract Task<EventStatus> ProcessEventAsync(IStateflowsEngine engine, BehaviorId id, List<Exception> exceptions, Dictionary<object, EventHolder> responses);
 
         public abstract Task<EventStatus> ExecuteBehaviorAsync(IStateflowsProcessor processor, EventStatus result, IStateflowsExecutor stateflowsExecutor);
+        
+        public abstract Task<SendResult> SendAsync(IBehavior behavior, IEnumerable<EventHeader> headers = null);
 
         protected abstract Task<bool> InternalValidateAsync(IStateflowsValidator validator, List<ValidationResult> validationResults);
         
@@ -128,6 +130,9 @@ namespace Stateflows.Common
         [DebuggerHidden]
         public override Task<EventStatus> ExecuteBehaviorAsync(IStateflowsProcessor processor, EventStatus result, IStateflowsExecutor stateflowsExecutor)
             => processor.ExecuteBehaviorAsync(this, result, stateflowsExecutor);
+
+        public override Task<SendResult> SendAsync(IBehavior behavior, IEnumerable<EventHeader> headers = null)
+            => behavior.SendAsync(Payload, headers);
 
         protected override Task<bool> InternalValidateAsync(IStateflowsValidator validator,
             List<ValidationResult> validationResults)

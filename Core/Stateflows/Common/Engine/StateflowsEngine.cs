@@ -7,12 +7,13 @@ using Microsoft.Extensions.DependencyInjection;
 using Stateflows.Common.Classes;
 using Stateflows.Common.Engine;
 using Stateflows.Common.Interfaces;
-using Stateflows.StateMachines;
+using Stateflows.Common.Registration.Builders;
 
 namespace Stateflows.Common
 {
     internal class StateflowsEngine : IStateflowsEngine
     {
+        internal readonly StateflowsBuilder StateflowsBuilder;
         private readonly IServiceScope Scope;
         private IServiceProvider ServiceProvider => Scope.ServiceProvider;
         private readonly IStateflowsLock Lock;
@@ -23,8 +24,9 @@ namespace Stateflows.Common
         private readonly IStateflowsValidator[] Validators;
         private readonly Dictionary<string, IEventProcessor> Processors;
 
-        public StateflowsEngine(IServiceProvider serviceProvider)
+        public StateflowsEngine(IServiceProvider serviceProvider, StateflowsBuilder stateflowsBuilder)
         {
+            StateflowsBuilder = stateflowsBuilder;
             Scope = serviceProvider.CreateScope();
             Lock = ServiceProvider.GetRequiredService<IStateflowsLock>();
             Interceptor = ServiceProvider.GetRequiredService<CommonInterceptor>();

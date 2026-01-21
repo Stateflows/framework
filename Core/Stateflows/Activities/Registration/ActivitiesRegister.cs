@@ -4,7 +4,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
-using Microsoft.Extensions.DependencyInjection;
 using Stateflows.Common.Classes;
 using Stateflows.Common.Registration.Builders;
 using Stateflows.Activities.Models;
@@ -16,11 +15,11 @@ namespace Stateflows.Activities.Registration
 {
     internal class ActivitiesRegister : IActivitiesRegister
     {
-        public List<ActivityExceptionHandlerFactoryAsync> GlobalExceptionHandlerFactories { get; set; } = new List<ActivityExceptionHandlerFactoryAsync>();
+        public List<ActivityExceptionHandlerFactoryAsync> GlobalExceptionHandlerFactories = [];
 
-        public List<ActivityInterceptorFactoryAsync> GlobalInterceptorFactories { get; set; } = new List<ActivityInterceptorFactoryAsync>();
+        public List<ActivityInterceptorFactoryAsync> GlobalInterceptorFactories = [];
 
-        public List<ActivityObserverFactoryAsync> GlobalObserverFactories { get; set; } = new List<ActivityObserverFactoryAsync>();
+        public List<ActivityObserverFactoryAsync> GlobalObserverFactories = [];
 
         private readonly StateflowsBuilder stateflowsBuilder = null;
 
@@ -29,9 +28,9 @@ namespace Stateflows.Activities.Registration
             this.stateflowsBuilder = stateflowsBuilder;
         }
 
-        public readonly Dictionary<string, Graph> Activities = new Dictionary<string, Graph>();
+        public readonly Dictionary<string, Graph> Activities = [];
 
-        public readonly Dictionary<string, int> CurrentVersions = new Dictionary<string, int>();
+        public readonly Dictionary<string, int> CurrentVersions = [];
 
         private readonly MethodInfo ActivityTypeAddedAsyncMethod =
             typeof(IActivityVisitor).GetMethod(nameof(IActivityVisitor.ActivityTypeAddedAsync));
@@ -81,22 +80,22 @@ namespace Stateflows.Activities.Registration
                 throw new ActivityDefinitionException($"Activity '{activityName}' with version '{version}' is already registered", new ActivityClass(activityName));
             }
 
-            var builder = new ActivityBuilder(activityName, version, null, stateflowsBuilder);
-            buildAction(builder);
-            builder.Graph.Build();
+            var activityBuilder = new ActivityBuilder(activityName, version, null, stateflowsBuilder);
+            buildAction(activityBuilder);
+            activityBuilder.Graph.Build();
 
-            builder.Graph.VisitingTasks.Add(v => v.ActivityAddedAsync(activityName, version));
+            activityBuilder.Graph.VisitingTasks.Add(v => v.ActivityAddedAsync(activityName, version));
 
-            Activities.Add(key, builder.Graph);
+            Activities.Add(key, activityBuilder.Graph);
 
             if (IsNewestVersion(activityName, version))
             {
-                Activities[currentKey] = builder.Graph;
+                Activities[currentKey] = activityBuilder.Graph;
             }
         }
 
         [DebuggerHidden]
-        public void AddActivity(string activityName, int version, Type activityType)
+        public void AddActivity(string activityName, int version, Type activityType, ActivityUtilsBuildAction buildAction = null)
         {
             var key = $"{activityName}.{version}";
             var currentKey = $"{activityName}.current";
@@ -115,6 +114,7 @@ namespace Stateflows.Activities.Registration
             };
             RegisterActivity(activityType, activityBuilder);
             activityBuilder.Graph.Build();
+            buildAction?.Invoke(new ActivityUtilsBuilder(activityBuilder.Graph));
 
             var method = ActivityTypeAddedAsyncMethod.MakeGenericMethod(activityType);
             
@@ -133,9 +133,9 @@ namespace Stateflows.Activities.Registration
         }
 
         [DebuggerHidden]
-        public void AddActivity<TActivity>(string activityName = null, int version = 1)
+        public void AddActivity<TActivity>(string activityName = null, int version = 1, ActivityUtilsBuildAction buildAction = null)
             where TActivity : class, IActivity
-            => AddActivity(activityName ?? Activity<TActivity>.Name, version, typeof(TActivity));
+            => AddActivity(activityName ?? Activity<TActivity>.Name, version, typeof(TActivity), buildAction);
 
         public async Task VisitActivitiesAsync(IActivityVisitor visitor)
         {
@@ -165,10 +165,6 @@ namespace Stateflows.Activities.Registration
 
         #region Observability
         [DebuggerHidden]
-        public void AddInterceptor(ActivityInterceptorFactory interceptorFactory)
-            => GlobalInterceptorFactories.Add(serviceProvider => Task.FromResult(interceptorFactory(serviceProvider)));
-        
-        [DebuggerHidden]
         public void AddInterceptor(ActivityInterceptorFactoryAsync interceptorFactory)
             => GlobalInterceptorFactories.Add(interceptorFactory);
 
@@ -176,10 +172,6 @@ namespace Stateflows.Activities.Registration
         public void AddInterceptor<TInterceptor>()
             where TInterceptor : class, IActivityInterceptor
             => AddInterceptor(async serviceProvider => await StateflowsActivator.CreateModelElementInstanceAsync<TInterceptor>(serviceProvider, "interceptor"));
-
-        [DebuggerHidden]
-        public void AddExceptionHandler(ActivityExceptionHandlerFactory exceptionHandlerFactory)
-            => GlobalExceptionHandlerFactories.Add(serviceProvider => Task.FromResult(exceptionHandlerFactory(serviceProvider)));
         
         [DebuggerHidden]
         public void AddExceptionHandler(ActivityExceptionHandlerFactoryAsync exceptionHandlerFactory)
@@ -189,10 +181,6 @@ namespace Stateflows.Activities.Registration
         public void AddExceptionHandler<TExceptionHandler>()
             where TExceptionHandler : class, IActivityExceptionHandler
             => AddExceptionHandler(async serviceProvider => await StateflowsActivator.CreateModelElementInstanceAsync<TExceptionHandler>(serviceProvider, "exception handler"));
-
-        [DebuggerHidden]
-        public void AddObserver(ActivityObserverFactory observerFactory)
-            => GlobalObserverFactories.Add(serviceProvider => Task.FromResult(observerFactory(serviceProvider)));
         
         [DebuggerHidden]
         public void AddObserver(ActivityObserverFactoryAsync observerFactory)

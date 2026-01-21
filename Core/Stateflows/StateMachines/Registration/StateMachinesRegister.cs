@@ -93,7 +93,7 @@ namespace Stateflows.StateMachines.Registration
         }
 
         [DebuggerHidden]
-        public void AddStateMachine(string stateMachineName, int version, Type stateMachineType)
+        public void AddStateMachine(string stateMachineName, int version, Type stateMachineType, string resourceName = null)
         {
             var key = $"{stateMachineName}.{version}";
             var currentKey = $"{stateMachineName}.current";
@@ -112,6 +112,10 @@ namespace Stateflows.StateMachines.Registration
                 };
             RegisterStateMachine(stateMachineType, builder);
             builder.Graph.Build();
+            if (resourceName != null)
+            {
+                builder.Graph.ResourceName = resourceName;
+            }
 
             var method = StateMachineTypeAddedAsyncMethod.MakeGenericMethod(stateMachineType);
 
@@ -129,9 +133,9 @@ namespace Stateflows.StateMachines.Registration
         }
 
         [DebuggerHidden]
-        public void AddStateMachine<TStateMachine>(string stateMachineName = null, int version = 1)
+        public void AddStateMachine<TStateMachine>(string stateMachineName = null, int version = 1, string resourceName = null)
             where TStateMachine : class, IStateMachine
-            => AddStateMachine(stateMachineName ?? StateMachine<TStateMachine>.Name, version, typeof(TStateMachine));
+            => AddStateMachine(stateMachineName ?? StateMachine<TStateMachine>.Name, version, typeof(TStateMachine), resourceName);
 
         [DebuggerHidden]
         public void AddInterceptor(StateMachineInterceptorFactory interceptorFactory)

@@ -6,17 +6,14 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Stateflows.Common;
-using Stateflows.Common.Classes;
 using Stateflows.Common.Context;
 using Stateflows.Common.Exceptions;
 using Stateflows.Common.Interfaces;
 using Stateflows.Actions.Context.Classes;
-using Stateflows.Actions.Context.Interfaces;
 using Stateflows.Actions.Models;
 using Stateflows.Actions.Registration;
 using Stateflows.Activities;
 using Stateflows.Common.Utilities;
-using Stateflows.StateMachines;
 using Stateflows.StateMachines.Models;
 
 namespace Stateflows.Actions.Engine
@@ -131,6 +128,10 @@ namespace Stateflows.Actions.Engine
                 else
                 if (eventHolder is EventHolder<SetContextOwner> setContextOwnerHolder)
                 {
+                    ResetBehavior(ResetMode.Full);
+                    
+                    StateflowsContext.Deleted = false;
+
                     eventContext.RootContext.Context.ContextOwnerId = setContextOwnerHolder.Payload.ContextOwnerId;
                     eventContext.RootContext.Context.ContextParentId = setContextOwnerHolder.Payload.ContextParentId;
                     
@@ -150,24 +151,6 @@ namespace Stateflows.Actions.Engine
                 {
                     var unsubscribe = unsubscribeHolder.Payload;
                     if (StateflowsContext.RemoveSubscribers(unsubscribe.BehaviorId, unsubscribe.NotificationNames))
-                    {
-                        result = EventStatus.Consumed;
-                    }
-                }
-                else
-                if (eventHolder is EventHolder<StartRelay> startRelayHolder)
-                {
-                    var startRelay = startRelayHolder.Payload;
-                    if (StateflowsContext.AddRelays(startRelay.BehaviorId, startRelay.NotificationNames))
-                    {
-                        result = EventStatus.Consumed;
-                    }
-                }
-                else
-                if (eventHolder is EventHolder<StopRelay> stopRelayHolder)
-                {
-                    var stopRelay = stopRelayHolder.Payload;
-                    if (StateflowsContext.RemoveRelays(stopRelay.BehaviorId, stopRelay.NotificationNames))
                     {
                         result = EventStatus.Consumed;
                     }
@@ -200,7 +183,9 @@ namespace Stateflows.Actions.Engine
                 }
                 else if (eventHolder is EventHolder<Finalize>)
                 {
+                    inspector.BeforeActionFinalize(eventContext);
                     FinalizeBehavior(eventContext);
+                    inspector.AfterActionFinalize(eventContext);
                     
                     result = EventStatus.Consumed;
                 }
@@ -337,11 +322,6 @@ namespace Stateflows.Actions.Engine
         private void FinalizeBehavior(ActionContext context)
         {
             StateflowsContext.Status = BehaviorStatus.Finalized;
-
-            if (context.Context.ContextParentId != null)
-            {
-                context.Send(new DoActionFinalized());
-            }
         }
 
         [DebuggerHidden]

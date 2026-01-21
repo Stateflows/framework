@@ -2,7 +2,6 @@ using System;
 using System.Linq;
 using System.Reflection;
 using System.Diagnostics;
-using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Stateflows.Common;
 using Stateflows.Extensions.OpenTelemetry.Headers;
@@ -42,22 +41,22 @@ namespace Stateflows.Extensions.OpenTelemetry
                 if (header is ActivityHeader activityHeader)
                 {
                     EventProcessingActivity = Source.StartActivity(
-                        $"State Machine '{context.Behavior.Id.Name.ToShortName()}:{context.Behavior.Id.InstanceText}' processing {eventName}",
+                        $"State Machine '{context.Behavior.ActualId.Name.ToShortName()}:{context.Behavior.ActualId.InstanceText}' processing {eventName}",
                         ActivityKind.Internal,
                         parentContext: activityHeader.Activity.Context
                     );
                 }
                 
                 EventProcessingActivity ??= Source.StartActivity(
-                    $"State Machine '{context.Behavior.Id.Name.ToShortName()}:{context.Behavior.Id.InstanceText}' processing {eventName}"
+                    $"State Machine '{context.Behavior.ActualId.Name.ToShortName()}:{context.Behavior.ActualId.InstanceText}' processing {eventName}"
                 );
                 
-                EventProcessingActivity.AddTag("StateMachineId", $"{context.Behavior.Id.Name.ToShortName()}:{context.Behavior.Id.InstanceText}");
+                EventProcessingActivity.AddTag("StateMachineId", $"{context.Behavior.ActualId.Name.ToShortName()}:{context.Behavior.ActualId.InstanceText}");
                 EventProcessingActivity.AddTag("Event", eventName);
                 
                 Logger.LogTrace(
                     message: "State Machine '{StateMachineId}' received event '{Event}', processing",
-                    $"{context.Behavior.Id.Name.ToShortName()}:{context.Behavior.Id.InstanceText}",
+                    $"{context.Behavior.ActualId.Name.ToShortName()}:{context.Behavior.ActualId.InstanceText}",
                     eventName
                 );
             }
@@ -67,7 +66,7 @@ namespace Stateflows.Extensions.OpenTelemetry
 
         public void AfterProcessEvent<TEvent>(IEventContext<TEvent> context, EventStatus eventStatus)
         {
-            if (context.Behavior.Id.Type != BehaviorType.StateMachine)
+            if (context.Behavior.ActualId.Type != BehaviorType.StateMachine)
             {
                 return;
             }
@@ -117,7 +116,19 @@ namespace Stateflows.Extensions.OpenTelemetry
                     StateEntryActivity?.Context ?? EventProcessingActivity.Context
                 );
 
-                if (context.ExecutionTrigger != (object)context.Event && GuardActivity != null)
+                if (
+                    (
+                        (
+                            context.ExecutionTrigger is CompoundRequest compoundRequest &&
+                            compoundRequest.Events.All(e => e.BoxedPayload != (object)context.Event)
+                        ) ||
+                        (
+                            context.ExecutionTrigger is not CompoundRequest &&
+                            context.ExecutionTrigger != (object)context.Event
+                        )
+                    ) &&
+                    GuardActivity != null
+                )
                 {
                     GuardActivity.DisplayName = GuardActivity.DisplayName.Replace(eventName, $"deferred {eventName}");
                 }
@@ -208,14 +219,14 @@ namespace Stateflows.Extensions.OpenTelemetry
                 if (header is ActivityHeader activityHeader)
                 {
                     InitializerActivity = Source.StartActivity(
-                        $"State Machine '{context.Behavior.Id.Name.ToShortName()}:{context.Behavior.Id.InstanceText}' initialized{(ImplicitInitialization ? " implicitly" : "")}",
+                        $"State Machine '{context.Behavior.ActualId.Name.ToShortName()}:{context.Behavior.ActualId.InstanceText}' initialized{(ImplicitInitialization ? " implicitly" : "")}",
                         ActivityKind.Internal,
                         parentContext: activityHeader.Activity.Context
                     );
                 }
                 
                 InitializerActivity ??= Source.StartActivity(
-                    $"State Machine '{context.Behavior.Id.Name.ToShortName()}:{context.Behavior.Id.InstanceText}' initialized{(ImplicitInitialization ? " implicitly" : "")}"
+                    $"State Machine '{context.Behavior.ActualId.Name.ToShortName()}:{context.Behavior.ActualId.InstanceText}' initialized{(ImplicitInitialization ? " implicitly" : "")}"
                 );
                 
                 EventProcessingActivity = InitializerActivity;
@@ -235,7 +246,7 @@ namespace Stateflows.Extensions.OpenTelemetry
                 if (!initialized)
                 {
                     InitializerActivity.DisplayName =
-                        $"Activity '{context.Behavior.Id.Name.ToShortName()}:{context.Behavior.Id.InstanceText}' not initialized";
+                        $"Activity '{context.Behavior.ActualId.Name.ToShortName()}:{context.Behavior.ActualId.InstanceText}' not initialized";
                 }
 
                 InitializerActivity.Stop();
@@ -453,7 +464,7 @@ namespace Stateflows.Extensions.OpenTelemetry
             {
                 Logger.LogTrace(
                     message: "State Machine '{StateMachineId}' processed event '{Event}' with result '{EventStatus}'",
-                    $"{context.Behavior.Id.Name.ToShortName()}:{context.Behavior.Id.InstanceText}",
+                    $"{context.Behavior.ActualId.Name.ToShortName()}:{context.Behavior.ActualId.InstanceText}",
                     eventName,
                     eventStatus
                 );
@@ -465,7 +476,7 @@ namespace Stateflows.Extensions.OpenTelemetry
                     exception: exception,
                     args:
                     [
-                        $"{context.Behavior.Id.Name.ToShortName()}:{context.Behavior.Id.InstanceText}",
+                        $"{context.Behavior.ActualId.Name.ToShortName()}:{context.Behavior.ActualId.InstanceText}",
                         eventName
                     ]
                 );

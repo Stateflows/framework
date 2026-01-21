@@ -16,6 +16,7 @@ using Stateflows.Activities.EventHandlers;
 using Stateflows.Activities.Inspection.Interfaces;
 using Stateflows.Activities.Registration.Builders;
 using Stateflows.Activities.Registration.Interfaces;
+using Stateflows.Common.Extensions;
 
 namespace Stateflows.Activities
 {
@@ -83,8 +84,6 @@ namespace Stateflows.Activities
                         .AddSingleton<IActivityEventHandler, ResetHandler>()
                         .AddSingleton<IActivityEventHandler, SubscriptionHandler>()
                         .AddSingleton<IActivityEventHandler, UnsubscriptionHandler>()
-                        .AddSingleton<IActivityEventHandler, StartRelayHandler>()
-                        .AddSingleton<IActivityEventHandler, StopRelayHandler>()
                         .AddSingleton<IActivityEventHandler, SetGlobalValuesHandler>()
                         .AddSingleton<IActivityEventHandler, SetContextOwnerHandler>()
                         .AddSingleton<IActivityEventHandler, TokensOutputHandler>()
@@ -125,6 +124,23 @@ namespace Stateflows.Activities
                 }
 
                 return register;
+            }
+        }
+
+        internal static void Build(IStateflowsBuilder builder)
+        {   
+            lock (Registers)
+            {
+                if (
+                    builder.ServiceCollection.IsServiceRegistered<IActivitiesRegister>() &&
+                    Registers.TryGetValue(builder, out var register)
+                )
+                {
+                    foreach (var graph in register.Activities.Values)
+                    {
+                        graph.Build();
+                    }
+                }
             }
         }
     }

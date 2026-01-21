@@ -178,6 +178,13 @@ namespace Stateflows.Activities.Registration.Builders
             return this;
         }
 
+        public IActivityBuilder SetResourceName(string resourceName)
+        {
+            Graph.ResourceName = resourceName;
+
+            return this;
+        }
+
         public IActivityBuilder AddExceptionHandler(ActivityExceptionHandlerFactory exceptionHandlerFactory)
         {
             Graph.ExceptionHandlerFactories.Add(serviceProvider => Task.FromResult(exceptionHandlerFactory(serviceProvider)));

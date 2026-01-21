@@ -44,30 +44,34 @@ namespace Stateflows.Activities.Engine
         public async Task BuildAsync()
         {
             Observers = await Task.WhenAll(ObserverFactories.Select(t => t(Executor.NodeScope.ServiceProvider)));
+            ReverseObservers = Observers.Reverse().ToArray();
+            
             Interceptors = await Task.WhenAll(InterceptorFactories.Select(t => t(Executor.NodeScope.ServiceProvider)));
+            ReverseInterceptors = Interceptors.Reverse().ToArray();
+            
             ExceptionHandlers = await Task.WhenAll(ExceptionHandlerFactories.Select(t => t(Executor.NodeScope.ServiceProvider)));
         }
 
         public IDictionary<Node, NodeInspection> InspectionNodes { get; } = new Dictionary<Node, NodeInspection>();
-
         public IDictionary<Edge, FlowInspection> InspectionFlows { get; } = new Dictionary<Edge, FlowInspection>();
-
 
         private IActivityInspection inspection;
 
         public IActivityInspection Inspection => inspection ??= new ActivityInspection(Executor, this);
 
-        private readonly List<ActivityExceptionHandlerFactoryAsync> ExceptionHandlerFactories = new List<ActivityExceptionHandlerFactoryAsync>();
+        private readonly List<ActivityExceptionHandlerFactoryAsync> ExceptionHandlerFactories = [];
 
-        private readonly List<ActivityInterceptorFactoryAsync> InterceptorFactories = new List<ActivityInterceptorFactoryAsync>();
+        private readonly List<ActivityInterceptorFactoryAsync> InterceptorFactories = [];
 
-        private readonly List<ActivityObserverFactoryAsync> ObserverFactories = new List<ActivityObserverFactoryAsync>();
+        private readonly List<ActivityObserverFactoryAsync> ObserverFactories = [];
 
-        private IEnumerable<IActivityObserver> Observers;
+        private IActivityObserver[] Observers;
+        private IActivityObserver[] ReverseObservers;
 
-        private IEnumerable<IActivityInterceptor> Interceptors;
+        private IActivityInterceptor[] Interceptors;
+        private IActivityInterceptor[] ReverseInterceptors;
 
-        private IEnumerable<IActivityExceptionHandler> ExceptionHandlers;
+        private IActivityExceptionHandler[] ExceptionHandlers;
 
         private IEnumerable<IActivityPlugin> plugins;
         public IEnumerable<IActivityPlugin> Plugins
@@ -80,25 +84,21 @@ namespace Stateflows.Activities.Engine
         public void AfterHydrate(ActivityActionContext context)
         {
             Plugins.RunSafe(p => p.AfterHydrate(context), nameof(AfterHydrate), Logger);
-            Interceptors.RunSafe(i => i.AfterHydrate(context), nameof(AfterHydrate), Logger);
+            GlobalInterceptor.AfterHydrate(context);
+            ReverseInterceptors.RunSafe(i => i.AfterHydrate(context), nameof(AfterHydrate), Logger);
         }
 
         public void BeforeDehydrate(ActivityActionContext context)
         {
             Interceptors.RunSafe(i => i.BeforeDehydrate(context), nameof(BeforeDehydrate), Logger);
+            GlobalInterceptor.BeforeDehydrate(context);
             Plugins.RunSafe(p => p.BeforeDehydrate(context), nameof(BeforeDehydrate), Logger);
         }
 
         public bool BeforeProcessEvent<TEvent>(EventContext<TEvent> context)
         {
             var plugin = Plugins.RunSafe(i => i.BeforeProcessEvent(context), nameof(BeforeProcessEvent), Logger);
-            var global = GlobalInterceptor.BeforeProcessEvent(
-                new Common.Context.Classes.EventContext<TEvent>(
-                    context.Context.Context,
-                    Executor.NodeScope.ServiceProvider,
-                    (EventHolder<TEvent>)context.Context.EventHolder
-                )
-            );
+            var global = GlobalInterceptor.BeforeProcessEvent(context);
             var local = Interceptors.RunSafe(i => i.BeforeProcessEvent(context), nameof(BeforeProcessEvent), Logger);
 
             return global && local && plugin;
@@ -106,15 +106,8 @@ namespace Stateflows.Activities.Engine
 
         public void AfterProcessEvent<TEvent>(EventContext<TEvent> context, EventStatus eventStatus)
         {
-            Interceptors.RunSafe(i => i.AfterProcessEvent(context, eventStatus), nameof(AfterProcessEvent), Logger);
-            GlobalInterceptor.AfterProcessEvent(
-                new Common.Context.Classes.EventContext<TEvent>(
-                    context.Context.Context,
-                    Executor.NodeScope.ServiceProvider,
-                    (EventHolder<TEvent>)context.Context.EventHolder
-                ),
-                eventStatus
-            );
+            ReverseInterceptors.RunSafe(i => i.AfterProcessEvent(context, eventStatus), nameof(AfterProcessEvent), Logger);
+            GlobalInterceptor.AfterProcessEvent(context, eventStatus);
             Plugins.RunSafe(p => p.AfterProcessEvent(context, eventStatus), nameof(AfterProcessEvent), Logger);
         }
 
@@ -127,7 +120,7 @@ namespace Stateflows.Activities.Engine
         public void AfterActivityInitialize(IActivityInitializationContext context, bool implicitInitialization, bool initialized)
         {
             Plugins.RunSafe(o => o.AfterActivityInitialize(context, implicitInitialization, initialized), nameof(AfterActivityInitialize), Logger);
-            Observers.RunSafe(p => p.AfterActivityInitialize(context, implicitInitialization, initialized), nameof(AfterActivityInitialize), Logger);
+            ReverseObservers.RunSafe(p => p.AfterActivityInitialize(context, implicitInitialization, initialized), nameof(AfterActivityInitialize), Logger);
         }
 
         public void BeforeActivityFinalize(ActivityActionContext context)
@@ -139,7 +132,7 @@ namespace Stateflows.Activities.Engine
         public void AfterActivityFinalize(ActivityActionContext context)
         {
             Plugins.RunSafe(o => o.AfterActivityFinalize(context), nameof(AfterActivityFinalize), Logger);
-            Observers.RunSafe(p => p.AfterActivityFinalize(context), nameof(AfterActivityFinalize), Logger);
+            ReverseObservers.RunSafe(p => p.AfterActivityFinalize(context), nameof(AfterActivityFinalize), Logger);
         }
 
         public void BeforeNodeInitialize(ActionContext context)
@@ -151,7 +144,7 @@ namespace Stateflows.Activities.Engine
         public void AfterNodeInitialize(ActionContext context)
         {
             Plugins.RunSafe(o => o.AfterNodeInitialize(context), nameof(AfterNodeInitialize), Logger);
-            Observers.RunSafe(p => p.AfterNodeInitialize(context), nameof(AfterNodeInitialize), Logger);
+            ReverseObservers.RunSafe(p => p.AfterNodeInitialize(context), nameof(AfterNodeInitialize), Logger);
         }
 
         public void BeforeNodeFinalize(ActionContext context)
@@ -163,7 +156,7 @@ namespace Stateflows.Activities.Engine
         public void AfterNodeFinalize(ActionContext context)
         {
             Plugins.RunSafe(o => o.AfterNodeFinalize(context), nameof(AfterNodeFinalize), Logger);
-            Observers.RunSafe(p => p.AfterNodeFinalize(context), nameof(AfterNodeFinalize), Logger);
+            ReverseObservers.RunSafe(p => p.AfterNodeFinalize(context), nameof(AfterNodeFinalize), Logger);
         }
 
         public void BeforeNodeExecute(ActionContext context)
@@ -175,7 +168,7 @@ namespace Stateflows.Activities.Engine
         public void AfterNodeExecute(ActionContext context)
         {
             Plugins.RunSafe(o => o.AfterNodeExecute(context), nameof(AfterNodeExecute), Logger);
-            Observers.RunSafe(p => p.AfterNodeExecute(context), nameof(AfterNodeExecute), Logger);
+            ReverseObservers.RunSafe(p => p.AfterNodeExecute(context), nameof(AfterNodeExecute), Logger);
         }
 
         public void BeforeNodeActivate(ActionContext context, bool activated)
@@ -187,7 +180,7 @@ namespace Stateflows.Activities.Engine
         public void AfterNodeActivate(ActionContext context)
         {
             Plugins.RunSafe(o => o.AfterNodeActivate(context), nameof(AfterNodeActivate), Logger);
-            Observers.RunSafe(p => p.AfterNodeActivate(context), nameof(AfterNodeActivate), Logger);
+            ReverseObservers.RunSafe(p => p.AfterNodeActivate(context), nameof(AfterNodeActivate), Logger);
         }
 
         public void BeforeFlowActivate(FlowContext context)
@@ -199,7 +192,7 @@ namespace Stateflows.Activities.Engine
         public void AfterFlowActivate(FlowContext context, bool activated)
         {
             Plugins.RunSafe(o => o.AfterFlowActivate(context, activated), nameof(AfterFlowActivate), Logger);
-            Observers.RunSafe(p => p.AfterFlowActivate(context, activated), nameof(AfterFlowActivate), Logger);
+            ReverseObservers.RunSafe(p => p.AfterFlowActivate(context, activated), nameof(AfterFlowActivate), Logger);
         }
 
         public void BeforeFlowGuard<TToken>(TokenFlowContext<TToken> context)
@@ -211,7 +204,7 @@ namespace Stateflows.Activities.Engine
         public void AfterFlowGuard<TToken>(TokenFlowContext<TToken> context, bool guardResult)
         {
             Plugins.RunSafe(o => o.AfterFlowGuard(context, guardResult), nameof(AfterFlowGuard), Logger);
-            Observers.RunSafe(p => p.AfterFlowGuard(context, guardResult), nameof(AfterFlowGuard), Logger);
+            ReverseObservers.RunSafe(p => p.AfterFlowGuard(context, guardResult), nameof(AfterFlowGuard), Logger);
         }
 
         public void BeforeFlowTransform<TToken, TTransformedToken>(TokenFlowContext<TToken> context)
@@ -223,7 +216,7 @@ namespace Stateflows.Activities.Engine
         public void AfterFlowTransform<TToken, TTransformedToken>(TokenFlowContext<TToken, TTransformedToken> context)
         {
             Plugins.RunSafe(o => o.AfterFlowTransform(context), nameof(AfterFlowTransform), Logger);
-            Observers.RunSafe(p => p.AfterFlowTransform(context), nameof(AfterFlowTransform), Logger);
+            ReverseObservers.RunSafe(p => p.AfterFlowTransform(context), nameof(AfterFlowTransform), Logger);
         }
 
         private static bool ShouldPropagateException(Graph graph, bool handled)

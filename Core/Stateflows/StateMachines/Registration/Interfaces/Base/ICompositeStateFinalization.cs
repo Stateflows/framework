@@ -7,6 +7,7 @@ using Stateflows.Activities;
 using Stateflows.Activities.Registration.Interfaces;
 using Stateflows.StateMachines.Context.Classes;
 using Stateflows.StateMachines.Registration.Interfaces.Internal;
+using ActionBuildAction = Stateflows.Actions.Registration.Interfaces.ActionBuildAction;
 using ActionDelegateAsync = Stateflows.Actions.Registration.ActionDelegateAsync;
 
 namespace Stateflows.StateMachines.Registration.Interfaces.Base
@@ -56,15 +57,15 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         /// <summary>
         /// Registers action behavior that will be started when current state finalizes
         /// </summary>
-       
+        /// <param name="buildAction">Build action</param>
         /// <typeparam name="TAction">Action behavior type</typeparam>
         [DebuggerHidden]
-        public TReturn AddOnFinalizeAction<TAction>()
+        public TReturn AddOnFinalizeAction<TAction>(ActionBuildAction buildAction = null)
             where TAction : class, IAction
         {
             var vertex = ((IVertexBuilder)this).Vertex;
             var actionName = $"{vertex.Graph.Name}.{vertex.Name}.onFinalize.{vertex.Entry.Actions.Count}";
-            vertex.Graph.StateflowsBuilder.AddActions(b => b.AddAction<TAction>(actionName));
+            vertex.Graph.StateflowsBuilder.AddActions(b => b.AddAction<TAction>(actionName, buildAction: buildAction));
             return AddOnFinalize(c => StateMachineActionExtensions.RunStateActionAsync(Constants.Finalization, c, actionName));
         }
         
@@ -72,12 +73,12 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         /// Registers action behavior that will be started when current state finalizes
         /// </summary>
         /// <param name="actionDelegateAsync">Action delegate</param>
-        /// <param name="reentrant">Determines if action can be reentrant</param>
-        public TReturn AddOnFinalizeAction(ActionDelegateAsync actionDelegateAsync, bool reentrant = true)
+        /// <param name="buildAction">Build action</param>
+        public TReturn AddOnFinalizeAction(ActionDelegateAsync actionDelegateAsync, ActionBuildAction buildAction = null)
         {
             var vertex = ((IVertexBuilder)this).Vertex;
             var actionName = $"{vertex.Graph.Name}.{vertex.Name}.onFinalize.{vertex.Entry.Actions.Count}";
-            vertex.Graph.StateflowsBuilder.AddActions(b => b.AddAction(actionName, actionDelegateAsync, reentrant));
+            vertex.Graph.StateflowsBuilder.AddActions(b => b.AddAction(actionName, actionDelegateAsync, buildAction: buildAction));
             return AddOnFinalize(c => StateMachineActionExtensions.RunStateActionAsync(Constants.Finalization, c, actionName));
         }
         #endregion

@@ -255,6 +255,25 @@ namespace Stateflows.StateMachines.Registration.Builders
         IFinalizedOverridenStateMachineElementsBuilder IStateMachineUtils<IFinalizedOverridenStateMachineElementsBuilder>.AddExceptionHandler<TExceptionHandler>()
             => AddExceptionHandler<TExceptionHandler>() as IFinalizedOverridenStateMachineElementsBuilder;
 
+        IOverridenStateMachineElementsBuilder IStateMachineUtils<IOverridenStateMachineElementsBuilder>.SetResourceName(string resourceName)
+            => SetResourceName(resourceName) as IOverridenStateMachineElementsBuilder;
+
+        IFinalizedOverridenStateMachineElementsBuilder IStateMachineUtils<IFinalizedOverridenStateMachineElementsBuilder>.SetResourceName(string resourceName)
+            => SetResourceName(resourceName) as IFinalizedOverridenStateMachineElementsBuilder;
+
+        IFinalizedStateMachineBuilder IStateMachineUtils<IFinalizedStateMachineBuilder>.SetResourceName(string resourceName)
+            => SetResourceName(resourceName) as IFinalizedStateMachineBuilder;
+
+        IInitializedStateMachineElementsBuilder IStateMachineUtils<IInitializedStateMachineElementsBuilder>.SetResourceName(string resourceName)
+            => SetResourceName(resourceName) as IInitializedStateMachineElementsBuilder;
+
+        public IStateMachineBuilder SetResourceName(string resourceName)
+        {
+            Graph.ResourceName = resourceName;
+
+            return this;
+        }
+
         IOverridenStateMachineElementsBuilder IStateMachineUtils<IOverridenStateMachineElementsBuilder>.AddExceptionHandler(StateMachineExceptionHandlerFactory exceptionHandlerFactory)
             => AddExceptionHandler(exceptionHandlerFactory) as IOverridenStateMachineElementsBuilder;
 

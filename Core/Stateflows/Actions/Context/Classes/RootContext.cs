@@ -25,8 +25,6 @@ namespace Stateflows.Actions.Context.Classes
             Id = new ActionId(Context.Id);
         }
 
-        public Dictionary<string, string> GlobalValues => Context.GlobalValues;
-
         public Executor Executor { get; set; }
         
         public EventHolder EventHolder { get; set; }

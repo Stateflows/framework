@@ -10,7 +10,7 @@ using Stateflows.Common.Exceptions;
 
 namespace Stateflows.Actions.Context.Classes
 {
-    internal class EventContext<TEvent> : ActionDelegateContext, IEventContext<TEvent>
+    internal class EventContext<TEvent> : ActionDelegateContext, IEventContext<TEvent>, Common.Context.Interfaces.IEventContext<TEvent>
     {
         public EventContext(StateflowsContext context, Executor executor, EventHolder eventHolder, IServiceProvider serviceProvider,
             List<TokenHolder> inputTokens = null)
@@ -36,5 +36,6 @@ namespace Stateflows.Actions.Context.Classes
         }
 
         public TEvent Event { get; }
+        public Guid EventId => RootContext.EventHolder.Id;
     }
 }

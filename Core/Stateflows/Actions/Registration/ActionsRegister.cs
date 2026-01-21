@@ -3,17 +3,15 @@ using System.Diagnostics;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
-using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.Extensions.DependencyInjection;
-using Stateflows.Actions.Context;
-using Stateflows.Actions.Context.Classes;
 using Stateflows.Common.Classes;
-using Stateflows.Common.Registration.Builders;
-using Stateflows.Actions.Models;
-using Stateflows.Actions.Exceptions;
 using Stateflows.Common.Interfaces;
-using Stateflows.Common.Registration;
+using Stateflows.Actions.Models;
+using Stateflows.Actions.Context;
+using Stateflows.Actions.Exceptions;
+using Stateflows.Actions.Context.Classes;
+using Stateflows.Actions.Registration.Builders;
+using Stateflows.Actions.Registration.Interfaces;
 
 namespace Stateflows.Actions.Registration
 {
@@ -22,6 +20,8 @@ namespace Stateflows.Actions.Registration
         public readonly List<ActionExceptionHandlerFactoryAsync> GlobalExceptionHandlerFactories = [];
         
         public readonly List<ActionInterceptorFactoryAsync> GlobalInterceptorFactories = [];
+        
+        public readonly List<ActionObserverFactoryAsync> GlobalObserverFactories = [];
 
         private readonly MethodInfo ActionTypeAddedAsyncMethod =
             typeof(IActionVisitor).GetMethod(nameof(IActionVisitor.ActionTypeAddedAsync));
@@ -52,7 +52,7 @@ namespace Stateflows.Actions.Registration
         }
 
         [DebuggerHidden]
-        public void AddAction(string actionName, int version, ActionDelegateAsync actionDelegate, bool reentrant = true)
+        public void AddAction(string actionName, int version, ActionDelegateAsync actionDelegate, ActionBuildAction buildAction = null)
         {
             var key = $"{actionName}.{version}";
             var currentKey = $"{actionName}.current";
@@ -61,10 +61,11 @@ namespace Stateflows.Actions.Registration
             {
                 Name = actionName,
                 Version = version,
-                Reentrant = reentrant,
                 Delegate = actionDelegate,
-                VisitingAction = VisitingActionAsync
+                VisitingAction = VisitingActionAsync,
             };
+            
+            buildAction?.Invoke(new ActionBuilder(actionModel));
             
             if (!Actions.TryAdd(key, actionModel))
             {
@@ -82,7 +83,7 @@ namespace Stateflows.Actions.Registration
         }
 
         [DebuggerHidden]
-        public void AddAction(string actionName, int version, Type actionType, bool reentrant = true)
+        public void AddAction(string actionName, int version, Type actionType, ActionBuildAction buildAction = null)
         {
             var key = $"{actionName}.{version}";
             var currentKey = $"{actionName}.current";
@@ -130,10 +131,11 @@ namespace Stateflows.Actions.Registration
             {
                 Name = actionName,
                 Version = version,
-                Reentrant = reentrant,
                 Delegate = actionDelegate,
-                VisitingAction = visitingAction
+                VisitingAction = visitingAction,
             };
+            
+            buildAction?.Invoke(new ActionBuilder(actionModel));
 
             Actions.Add(key, actionModel);
 
@@ -144,9 +146,9 @@ namespace Stateflows.Actions.Registration
         }
 
         [DebuggerHidden]
-        public void AddAction<TAction>(string actionName = null, int version = 1, bool reentrant = true)
+        public void AddAction<TAction>(string actionName = null, int version = 1, ActionBuildAction buildAction = null)
             where TAction : class, IAction
-            => AddAction(actionName ?? Action<TAction>.Name, version, typeof(TAction), reentrant);
+            => AddAction(actionName ?? Action<TAction>.Name, version, typeof(TAction), buildAction);
 
         public Task VisitActionsAsync(IActionVisitor visitor)
         {
@@ -167,6 +169,15 @@ namespace Stateflows.Actions.Registration
         public void AddInterceptor<TInterceptor>()
             where TInterceptor : class, IActionInterceptor
             => AddInterceptor(async serviceProvider => await StateflowsActivator.CreateModelElementInstanceAsync<TInterceptor>(serviceProvider));
+        
+        [DebuggerHidden]
+        public void AddObserver(ActionObserverFactoryAsync observerFactoryAsync)
+            => GlobalObserverFactories.Add(observerFactoryAsync);
+        
+        [DebuggerHidden]
+        public void AddObserver<TObserver>()
+            where TObserver : class, IActionObserver
+            => AddObserver(async serviceProvider => await StateflowsActivator.CreateModelElementInstanceAsync<TObserver>(serviceProvider));
         
         [DebuggerHidden]
         public void AddExceptionHandler(ActionExceptionHandlerFactoryAsync exceptionHandlerFactoryAsync)

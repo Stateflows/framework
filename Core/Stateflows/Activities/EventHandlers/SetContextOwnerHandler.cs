@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Threading.Tasks;
 using Stateflows.Common;
+using Stateflows.Activities.Extensions;
 using Stateflows.Activities.Context.Classes;
 using Stateflows.Activities.Context.Interfaces;
 
@@ -14,8 +15,14 @@ namespace Stateflows.Activities.EventHandlers
         {
             if (context.Event is SetContextOwner @event)
             {
-                ((EventContext<TEvent>)context).Context.Context.ContextOwnerId = @event.ContextOwnerId;
-                ((EventContext<TEvent>)context).Context.Context.ContextParentId = @event.ContextParentId;
+                context.Behavior.GetExecutor().Reset(ResetMode.Full);
+
+                var stateflowsContext = ((EventContext<TEvent>)context).Context.Context;
+                
+                stateflowsContext.Deleted = false;
+                
+                stateflowsContext.ContextOwnerId = @event.ContextOwnerId;
+                stateflowsContext.ContextParentId = @event.ContextParentId;
                 
                 return Task.FromResult(EventStatus.Consumed);
             }

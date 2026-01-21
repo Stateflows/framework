@@ -1,5 +1,4 @@
-﻿using Stateflows.Common.Classes;
-using Stateflows.Common.Extensions;
+﻿using Stateflows.Common.Extensions;
 using Stateflows.StateMachines;
 
 namespace Stateflows.Extensions.MinimalAPIs;

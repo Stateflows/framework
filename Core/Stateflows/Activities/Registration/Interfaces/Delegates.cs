@@ -45,6 +45,8 @@ namespace Stateflows.Activities.Registration.Interfaces
     public delegate void ElseControlFlowBuildAction(IElseControlFlowBuilder builder);
 
     public delegate void ReactiveActivityBuildAction(IActivityBuilder builder);
+    
+    public delegate void ActivityUtilsBuildAction(IActivityUtilsBuilder builder);
 
     internal delegate void NodeBuildAction(NodeBuilder builder);
 

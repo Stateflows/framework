@@ -12,9 +12,9 @@ namespace Stateflows.Activities
         IActivitiesBuilder AddFromAssemblies(IEnumerable<Assembly> assemblies);
         IActivitiesBuilder AddActivity(string activityName, ReactiveActivityBuildAction buildAction);
         IActivitiesBuilder AddActivity(string activityName, int version, ReactiveActivityBuildAction buildAction);
-        IActivitiesBuilder AddActivity<TActivity>(string activityName = null, int version = 1)
+        IActivitiesBuilder AddActivity<TActivity>(string activityName = null, int version = 1, ActivityUtilsBuildAction buildAction = null)
             where TActivity : class, IActivity;
-        IActivitiesBuilder AddActivity<TActivity>(int version)
+        IActivitiesBuilder AddActivity<TActivity>(int version, ActivityUtilsBuildAction buildAction = null)
             where TActivity : class, IActivity;
         IActivitiesBuilder AddInterceptor<TInterceptor>()
             where TInterceptor : class, IActivityInterceptor;

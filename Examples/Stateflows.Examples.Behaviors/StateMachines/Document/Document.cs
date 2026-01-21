@@ -1,4 +1,7 @@
+using Stateflows.Action;
+using Stateflows.Actions;
 using Stateflows.Common;
+using Stateflows.Examples.Behaviors.Actions;
 using Stateflows.Examples.Behaviors.Activities.Invoicing;
 using Stateflows.Examples.Behaviors.StateMachines.Document.Effects;
 using Stateflows.Examples.Behaviors.StateMachines.Document.Guards;
@@ -34,7 +37,18 @@ public class Document : IStateMachine
                 .AddTransition<PaymentBooked, VerifyPayment, Paid>()
             )
         )
-        .AddState<Paid>()
+        .AddState<Paid>(b => b
+            .AddInternalTransition<Reject>(b => b
+                .AddEffectAction<HeavyWorker>(b => b
+                    // .AddFinalizedNotificationPolicy()
+                    // .AddCompletionNotificationPolicy()
+                    .SetResourceName("heavy-work")
+                )
+            )
+            .AddDefaultTransition<Rejected>(b => b
+                .AddGuard(async c => await c.Behavior.Values.GetOrDefaultAsync<int>("counter") > 5)
+            )
+        )
         .AddState<Rejected>()
     ;
 }

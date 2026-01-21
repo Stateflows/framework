@@ -14,8 +14,12 @@ namespace StateMachine.IntegrationTests.Tests
     {
         public bool EnumGet = false;
         public bool IntGet = false;
+        public bool GuidGet = false;
         public Foo EnumValue = Foo.First;
         public int IntValue = 0;
+        public Guid GuidValue = Guid.Empty;
+
+        public Guid TestedGuid = Guid.NewGuid();
 
         [TestInitialize]
         public override void Initialize()
@@ -31,7 +35,11 @@ namespace StateMachine.IntegrationTests.Tests
                 .AddStateMachines(b => b
                     .AddStateMachine("context", b => b
                         .AddInitialState("state1", b => b
-                            .AddOnEntry(c => c.Behavior.Values.SetAsync(nameof(Foo), Foo.Last))
+                            .AddOnEntry(async c =>
+                            {
+                                await c.Behavior.Values.SetAsync(nameof(Foo), Foo.Last);
+                                await c.Behavior.Values.SetAsync(nameof(Guid), TestedGuid);
+                            })
                             .AddDefaultTransition("state2")
                         )
                         .AddState("state2", b => b
@@ -39,6 +47,7 @@ namespace StateMachine.IntegrationTests.Tests
                             {
                                 (EnumGet, EnumValue) = await c.Behavior.Values.TryGetAsync<Foo>(nameof(Foo));
                                 (IntGet, IntValue) = await c.Behavior.Values.TryGetAsync<int>(nameof(Foo));
+                                (GuidGet, GuidValue) = await c.Behavior.Values.TryGetAsync<Guid>(nameof(Guid));
                             })
                         )
                     )
@@ -58,6 +67,9 @@ namespace StateMachine.IntegrationTests.Tests
             Assert.IsTrue(IntGet);
             Assert.AreEqual(Foo.Last, EnumValue);
             Assert.AreEqual((int)Foo.Last, IntValue);
+
+            Assert.IsTrue(GuidGet);
+            Assert.AreEqual(TestedGuid, GuidValue);
         }
     }
 }

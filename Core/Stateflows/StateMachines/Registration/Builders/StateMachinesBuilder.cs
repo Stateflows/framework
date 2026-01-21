@@ -60,18 +60,18 @@ namespace Stateflows.StateMachines.Registration.Builders
         }
 
         [DebuggerHidden]
-        public IStateMachinesBuilder AddStateMachine<TStateMachine>(string stateMachineName = null, int version = 1)
+        public IStateMachinesBuilder AddStateMachine<TStateMachine>(string stateMachineName = null, int version = 1, string resourceName = null)
             where TStateMachine : class, IStateMachine
         {
-            register.AddStateMachine<TStateMachine>(stateMachineName ?? StateMachine<TStateMachine>.Name, version);
+            register.AddStateMachine<TStateMachine>(stateMachineName ?? StateMachine<TStateMachine>.Name, version, resourceName);
 
             return this;
         }
 
         [DebuggerHidden]
-        public IStateMachinesBuilder AddStateMachine<TStateMachine>(int version)
+        public IStateMachinesBuilder AddStateMachine<TStateMachine>(int version, string resourceName = null)
             where TStateMachine : class, IStateMachine
-            => AddStateMachine<TStateMachine>(null, version);
+            => AddStateMachine<TStateMachine>(null, version, resourceName);
 
         #region Observability
         [DebuggerHidden]

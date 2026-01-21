@@ -28,8 +28,6 @@ namespace Stateflows.Activities.Context.Classes
             Id = new ActivityId(Context.Id);
         }
 
-        public Dictionary<string, string> GlobalValues => Context.GlobalValues;
-
         private Dictionary<Guid, Dictionary<string, Stream>> streams = null;
         public Dictionary<Guid, Dictionary<string, Stream>> Streams
         {
@@ -417,6 +415,11 @@ namespace Stateflows.Activities.Context.Classes
             => nodeScope is { IsTerminated: true } ||
                 nodeScope is { ChildScope: { IsTerminated: true } } ||
                 (
+                    !(
+                        node.Type == NodeType.IterativeActivity &&
+                        node.FinalNode != null
+                    ) &&
+                    
                     // event nodes without incoming flows ('ever-active')
                     !node.Nodes.Values.Any(childNode =>
                         (

@@ -9,16 +9,9 @@ using Stateflows.Activities.Registration.Interfaces;
 
 namespace Stateflows.Activities.Registration.Builders
 {
-    internal class ActivitiesBuilder : IActivitiesBuilder
+    internal class ActivitiesBuilder(ActivitiesRegister register, bool systemRegistrations) : IActivitiesBuilder
     {
-        private readonly ActivitiesRegister Register;
-        private readonly bool SystemRegistrations;
-
-        public ActivitiesBuilder(ActivitiesRegister register, bool systemRegistrations)
-        {
-            Register = register;
-            SystemRegistrations = systemRegistrations;
-        }
+        private readonly bool SystemRegistrations = systemRegistrations;
 
         [DebuggerHidden]
         public IActivitiesBuilder AddFromAssembly(Assembly assembly)
@@ -28,7 +21,7 @@ namespace Stateflows.Activities.Registration.Builders
                 if (typeof(IActivity).IsAssignableFrom(@type))
                 {
                     var attribute = @type.GetCustomAttributes(typeof(ActivityBehaviorAttribute)).FirstOrDefault() as ActivityBehaviorAttribute;
-                    Register.AddActivity(attribute?.Name ?? @type.FullName, attribute?.Version ?? 1, @type);
+                    register.AddActivity(attribute?.Name ?? @type.FullName, attribute?.Version ?? 1, @type);
                 }
             });
 
@@ -58,31 +51,31 @@ namespace Stateflows.Activities.Registration.Builders
         [DebuggerHidden]
         public IActivitiesBuilder AddActivity(string activityName, int version, ReactiveActivityBuildAction buildAction)
         {
-            Register.AddActivity(activityName, version, buildAction);
+            register.AddActivity(activityName, version, buildAction);
 
             return this;
         }
 
         [DebuggerHidden]
-        public IActivitiesBuilder AddActivity<TActivity>(string activityName = null, int version = 1)
+        public IActivitiesBuilder AddActivity<TActivity>(string activityName = null, int version = 1, ActivityUtilsBuildAction buildAction = null)
             where TActivity : class, IActivity
         {
-            Register.AddActivity<TActivity>(activityName ?? Activity<TActivity>.Name, version);
+            register.AddActivity<TActivity>(activityName ?? Activity<TActivity>.Name, version, buildAction);
 
             return this;
         }
 
         [DebuggerHidden]
-        public IActivitiesBuilder AddActivity<TActivity>(int version)
+        public IActivitiesBuilder AddActivity<TActivity>(int version, ActivityUtilsBuildAction buildAction = null)
             where TActivity : class, IActivity
-            => AddActivity<TActivity>(null, version);
+            => AddActivity<TActivity>(null, version, buildAction);
 
         #region Observability
         [DebuggerHidden]
         public IActivitiesBuilder AddInterceptor<TInterceptor>()
             where TInterceptor : class, IActivityInterceptor
         {
-            Register.AddInterceptor<TInterceptor>();
+            register.AddInterceptor<TInterceptor>();
 
             return this;
         }
@@ -90,7 +83,7 @@ namespace Stateflows.Activities.Registration.Builders
         [DebuggerHidden]
         public IActivitiesBuilder AddInterceptor(ActivityInterceptorFactoryAsync interceptorFactoryAsync)
         {
-            Register.AddInterceptor(interceptorFactoryAsync);
+            register.AddInterceptor(interceptorFactoryAsync);
 
             return this;
         }
@@ -99,7 +92,7 @@ namespace Stateflows.Activities.Registration.Builders
         public IActivitiesBuilder AddExceptionHandler<TExceptionHandler>()
             where TExceptionHandler : class, IActivityExceptionHandler
         {
-            Register.AddExceptionHandler<TExceptionHandler>();
+            register.AddExceptionHandler<TExceptionHandler>();
 
             return this;
         }
@@ -107,7 +100,7 @@ namespace Stateflows.Activities.Registration.Builders
         [DebuggerHidden]
         public IActivitiesBuilder AddExceptionHandler(ActivityExceptionHandlerFactoryAsync exceptionHandlerFactoryAsync)
         {
-            Register.AddExceptionHandler(exceptionHandlerFactoryAsync);
+            register.AddExceptionHandler(exceptionHandlerFactoryAsync);
 
             return this;
         }
@@ -116,7 +109,7 @@ namespace Stateflows.Activities.Registration.Builders
         public IActivitiesBuilder AddObserver<TObserver>()
             where TObserver : class, IActivityObserver
         {
-            Register.AddObserver<TObserver>();
+            register.AddObserver<TObserver>();
 
             return this;
         }
@@ -124,7 +117,7 @@ namespace Stateflows.Activities.Registration.Builders
         [DebuggerHidden]
         public IActivitiesBuilder AddObserver(ActivityObserverFactoryAsync observerFactoryAsync)
         {
-            Register.AddObserver(observerFactoryAsync);
+            register.AddObserver(observerFactoryAsync);
 
             return this;
         }

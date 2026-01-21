@@ -14,6 +14,7 @@ namespace Stateflows.Common.Context.Classes
     internal class BehaviorContext : BaseContext, IBehaviorContext
     {
         public BehaviorId Id => Context.Id;
+        public BehaviorId ActualId => Context.Id;
 
         private BehaviorSubscriber subscriber;
         private BehaviorSubscriber Subscriber
@@ -29,7 +30,6 @@ namespace Stateflows.Common.Context.Classes
         public BehaviorContext(StateflowsContext context, IServiceProvider serviceProvider)
             : base(context, serviceProvider)
         {
-            // Values = new ContextValuesCollection(context.GlobalValues);
             Values = new ValuesStorage(
                 string.Empty,
                 Context.ContextOwnerId ?? Context.Id,

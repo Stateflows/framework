@@ -15,6 +15,7 @@ namespace Stateflows.StateMachines.Context.Classes
     internal class StateMachineContext : BaseContext, IStateMachineContext
     {
         BehaviorId IBehaviorContext.Id => Context.Context.ContextOwnerId ?? Context.Id;
+        public BehaviorId ActualId => Context.Id;
 
         public StateMachineId Id => Context.Id;
 

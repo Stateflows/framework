@@ -11,12 +11,12 @@ namespace Stateflows.StateMachines
         
         void AddStateMachine(string stateMachineName, int version, StateMachineBuildAction buildAction);
 
-        void AddStateMachine(string stateMachineName, Type stateMachineType)
-            => AddStateMachine(stateMachineName, 1, stateMachineType);
+        void AddStateMachine(string stateMachineName, Type stateMachineType, string resourceName = null)
+            => AddStateMachine(stateMachineName, 1, stateMachineType, resourceName);
         
-        void AddStateMachine(string stateMachineName, int version, Type stateMachineType);
+        void AddStateMachine(string stateMachineName, int version, Type stateMachineType, string resourceName = null);
 
-        void AddStateMachine<TStateMachine>(string stateMachineName = null, int version = 1)
+        void AddStateMachine<TStateMachine>(string stateMachineName = null, int version = 1, string resourceName = null)
             where TStateMachine : class, IStateMachine;
 
         void AddInterceptor(StateMachineInterceptorFactory interceptorFactory);
