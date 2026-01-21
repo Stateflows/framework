@@ -18,15 +18,16 @@ namespace Stateflows.Scheduler.StateMachine.Effects
             Schedules = schedules;
         }
 
-        public Task EffectAsync(OneOf<ScheduleCron, ScheduleDelay, ScheduleInterval, ScheduleTime> @event)
+        public async Task EffectAsync(OneOf<ScheduleCron, ScheduleDelay, ScheduleInterval, ScheduleTime> @event)
         {
             var scheduleEvent = (ScheduleBase)@event.Value;
-            return Schedules.UpdateAsync(
+            var scheduleId = Guid.NewGuid();
+            await Schedules.UpdateAsync(
                 schedules =>
                 {
                     schedules.Add(new Entry()
                     {
-                        Id = Guid.NewGuid(),
+                        Id = scheduleId,
                         CreatedAt = DateTime.Now,
                         Events = scheduleEvent.Events,
                         Recipients = scheduleEvent.Recipients,
@@ -67,6 +68,8 @@ namespace Stateflows.Scheduler.StateMachine.Effects
                 },
                 new List<Entry>()
             );
+
+            scheduleEvent.Respond(new ScheduleResponse() { Id = scheduleId });
         }
     }
 }

@@ -254,7 +254,6 @@ namespace Stateflows.Activities.Engine
                     }
 
                     var (_, outputTokens) = await ExecuteGraphAsync(input);
-                    // HandleGuardRequest(outputTokens, eventHolder);
 
                     if (result == InitializationStatus.InitializedImplicitly)
                     {
@@ -291,7 +290,6 @@ namespace Stateflows.Activities.Engine
                 Context.NodeTimeEvents.Clear();
                 Context.NodeThreads.Clear();
                 Context.OutputTokens.Clear();
-                Context.GlobalValues.Clear();
                 Context.Streams.Clear();
                 Context.Context.PendingTimeEvents.Clear();
                 Context.Context.PendingStartupEvents.Clear();
@@ -314,10 +312,18 @@ namespace Stateflows.Activities.Engine
             if (Initialized)
             {
                 Context.Context.Values.Clear();
+                Context.Context.Status = BehaviorStatus.Unknown;
+                Context.Context.LastExecutedAt = DateTime.MinValue;
+                Context.Context.TriggerTime = null;
+                Context.Context.TriggerOnStartup = false;
+                Context.Context.PendingTimeEvents = [];
+                Context.Context.PendingStartupEvents = [];
 
                 if (resetMode != ResetMode.KeepVersionAndSubscriptions) // KeepSubscriptions || Full
                 {
                     Context.Context.Version = 0;
+                    Context.Context.Subscriptions = [];
+                    Context.Context.Subscribers = [];
 
                     if (resetMode != ResetMode.KeepSubscriptions) // Full
                     {
@@ -553,11 +559,6 @@ namespace Stateflows.Activities.Engine
             RebuildNodesTree();
 
             FinalizationEvent.Set();
-
-            if (Context.Context.ContextParentId != null)
-            {
-                _ = Context.SendAsync(new DoActivityFinalized());
-            }
         }
 
         public async Task<(IEnumerable<TokenHolder> Output, bool Finalized)> DoExecuteStructuredNodeAsync(Node node, NodeScope nodeScope, IEnumerable<TokenHolder> input = null)
@@ -680,7 +681,7 @@ namespace Stateflows.Activities.Engine
 
             foreach (var inputPartition in inputPartitions)
             {
-                await DoExecuteStructureAsync(
+                var result = await DoExecuteStructureAsync(
                     context.Node,
                     context.NodeScope.CreateChildScope(context.Node, context.Edge, threadId),
                     restOfInput.Concat(inputPartition),
@@ -700,6 +701,11 @@ namespace Stateflows.Activities.Engine
                 {
                     Context.Streams.Remove(threadId);
                     Context.OutputTokens.Remove(threadId);
+                }
+
+                if (result && context.Node.FinalNode != null)
+                {
+                    break;
                 }
             }
 

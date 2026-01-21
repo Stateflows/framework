@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Linq;
 using Microsoft.Extensions.DependencyInjection;
+using Stateflows.Actions;
+using Stateflows.Activities;
 using Stateflows.Common;
 using Stateflows.Common.Cache;
 using Stateflows.Common.Classes;
@@ -32,7 +34,7 @@ namespace Stateflows
             {
                 stateflowsBuilder
                     .ServiceCollection
-                    .AddSingleton<StateflowsEngine>()
+                    .AddSingleton<StateflowsEngine>(serviceProvider => new StateflowsEngine(serviceProvider, (StateflowsBuilder)stateflowsBuilder))
                     .AddSingleton<StateflowsService>()
                     .AddHostedService(provider => provider.GetRequiredService<StateflowsService>())
                     .AddSingleton<IStateflowsTelemetry>(provider => provider.GetRequiredService<StateflowsService>())
@@ -58,7 +60,7 @@ namespace Stateflows
             return stateflowsBuilder;
         }
 
-        public static IServiceCollection AddStateflows(this IServiceCollection services, Action<IStateflowsBuilder> buildAction)
+        public static IServiceCollection AddStateflows(this IServiceCollection services, System.Action<IStateflowsBuilder> buildAction)
         {
             buildAction.ThrowIfNull(nameof(buildAction));
 
@@ -105,6 +107,8 @@ namespace Stateflows
                 services.AddSingleton<IStateflowsEventFilter, NoOpEventFilter>();
             }
 
+            ActionsDependencyInjection.Build(builder);
+            ActivitiesDependencyInjection.Build(builder);
             StateMachinesDependencyInjection.Build(builder);
 
             return services;

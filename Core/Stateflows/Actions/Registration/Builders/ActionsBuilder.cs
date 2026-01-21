@@ -6,6 +6,7 @@ using System.Reflection;
 using Stateflows.Actions.Attributes;
 using Stateflows.Common.Extensions;
 using Stateflows.Common.Interfaces;
+using Stateflows.Actions.Registration.Interfaces;
 
 namespace Stateflows.Actions.Registration.Builders
 {
@@ -37,17 +38,16 @@ namespace Stateflows.Actions.Registration.Builders
             return this;
         }
 
-
         [DebuggerHidden]
         public IActionsBuilder AddFromLoadedAssemblies()
             => AddFromAssemblies(AppDomain.CurrentDomain.GetAssemblies());
 
         [DebuggerHidden]
-        public IActionsBuilder AddAction(string actionName, ActionDelegateAsync actionDelegate, bool reentrant = true)
-            => AddAction(actionName, 1, actionDelegate, reentrant);
+        public IActionsBuilder AddAction(string actionName, ActionDelegateAsync actionDelegate, ActionBuildAction buildAction = null)
+            => AddAction(actionName, 1, actionDelegate, buildAction);
 
         [DebuggerHidden]
-        public IActionsBuilder AddAction(string actionName, int version, ActionDelegateAsync actionDelegate, bool reentrant = true)
+        public IActionsBuilder AddAction(string actionName, int version, ActionDelegateAsync actionDelegate, ActionBuildAction buildAction = null)
         {
             if (register is IIsSystemRegistration registration)
             {
@@ -55,19 +55,19 @@ namespace Stateflows.Actions.Registration.Builders
                 var beforeValue = registration.IsSystemRegistration;
                 registration.IsSystemRegistration = systemRegistrations;
 
-                register.AddAction(actionName, version, actionDelegate, reentrant);
+                register.AddAction(actionName, version, actionDelegate, buildAction);
                 registration.IsSystemRegistration = beforeValue;
 
                 return this;
             }
 
-            register.AddAction(actionName, version, actionDelegate, reentrant);
+            register.AddAction(actionName, version, actionDelegate, buildAction);
 
             return this;
         }
 
         [DebuggerHidden]
-        public IActionsBuilder AddAction<TAction>(string actionName = null, int version = 1, bool reentrant = true)
+        public IActionsBuilder AddAction<TAction>(string actionName = null, int version = 1, ActionBuildAction buildAction = null)
             where TAction : class, IAction
         {
             if (register is IIsSystemRegistration registration)
@@ -76,26 +76,21 @@ namespace Stateflows.Actions.Registration.Builders
                 var beforeValue = registration.IsSystemRegistration;
                 registration.IsSystemRegistration = systemRegistrations;
 
-                register.AddAction<TAction>(actionName ?? Action<TAction>.Name, version, reentrant);
+                register.AddAction<TAction>(actionName ?? Action<TAction>.Name, version, buildAction);
                 registration.IsSystemRegistration = beforeValue;
 
                 return this;
             }
 
-            register.AddAction<TAction>(actionName ?? Action<TAction>.Name, version, reentrant);
+            register.AddAction<TAction>(actionName ?? Action<TAction>.Name, version, buildAction);
 
             return this;
         }
 
         [DebuggerHidden]
-        public IActionsBuilder AddAction<TAction>(int version, bool reentrant = true)
+        public IActionsBuilder AddAction<TAction>(int version, ActionBuildAction buildAction = null)
             where TAction : class, IAction
-            => AddAction<TAction>(null, version, reentrant);
-
-        [DebuggerHidden]
-        public IActionsBuilder AddAction<TAction>(bool reentrant = true)
-            where TAction : class, IAction
-            => AddAction<TAction>(null, 1, reentrant);
+            => AddAction<TAction>(null, version, buildAction);
 
         #region Observability
         [DebuggerHidden]
@@ -112,6 +107,23 @@ namespace Stateflows.Actions.Registration.Builders
         {
             register.AddInterceptor(interceptorFactoryAsync);
 
+            return this;
+        }
+
+        [DebuggerHidden]
+        public IActionsBuilder AddObserver<TObserver>()
+            where TObserver : class, IActionObserver
+        {
+            register.AddObserver<TObserver>();
+        
+            return this;
+        }
+        
+        [DebuggerHidden]
+        public IActionsBuilder AddObserver(ActionObserverFactoryAsync observerFactoryAsync)
+        {
+            register.AddObserver(observerFactoryAsync);
+        
             return this;
         }
 

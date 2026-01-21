@@ -8,12 +8,13 @@ using Stateflows.Common.Models;
 using Stateflows.Common.Registration.Builders;
 using Stateflows.Activities.Exceptions;
 using Stateflows.Activities.Registration.Interfaces;
-using Stateflows.Common.Extensions;
 
 namespace Stateflows.Activities.Models
 {
     internal class Graph : Node
     {
+        internal string ResourceName = null;
+        
         internal readonly List<Func<IActivityVisitor, Task>> VisitingTasks = new List<Func<IActivityVisitor, Task>>();
         
         internal readonly StateflowsBuilder StateflowsBuilder = null;
@@ -35,22 +36,39 @@ namespace Stateflows.Activities.Models
         public int Version { get; }
         public Type ActivityType { get; set; }
         public bool Interactive { get; set; } = false;
-        public readonly Dictionary<string, Node> AllNodes = new Dictionary<string, Node>();
-        public readonly Dictionary<string, Node> AllNamedNodes = new Dictionary<string, Node>();
-        public readonly List<Edge> AllEdgesList = new List<Edge>();
-        public readonly Dictionary<string, Edge> AllEdges = new Dictionary<string, Edge>();
+        private bool Built { get; set; } = false;
+        public readonly Dictionary<string, Node> AllNodes = [];
+        public readonly Dictionary<string, Node> AllNamedNodes = [];
+        public readonly List<Edge> AllEdgesList = [];
+        public readonly Dictionary<string, Edge> AllEdges = [];
 
-        public readonly Dictionary<string, Logic<ActivityPredicateAsync>> Initializers = new Dictionary<string, Logic<ActivityPredicateAsync>>();
-        public readonly List<Type> InitializerTypes = new List<Type>();
+        public readonly Dictionary<string, Logic<ActivityPredicateAsync>> Initializers = [];
+        public readonly List<Type> InitializerTypes = [];
         public Logic<ActivityPredicateAsync> DefaultInitializer;
 
-        public readonly List<ActivityExceptionHandlerFactoryAsync> ExceptionHandlerFactories = new List<ActivityExceptionHandlerFactoryAsync>();
-        public readonly List<ActivityInterceptorFactoryAsync> InterceptorFactories = new List<ActivityInterceptorFactoryAsync>();
-        public readonly List<ActivityObserverFactoryAsync> ObserverFactories = new List<ActivityObserverFactoryAsync>();
+        public readonly List<ActivityExceptionHandlerFactoryAsync> ExceptionHandlerFactories = [];
+        public readonly List<ActivityInterceptorFactoryAsync> InterceptorFactories = [];
+        public readonly List<ActivityObserverFactoryAsync> ObserverFactories = [];
 
         [DebuggerHidden]
         public void Build()
         {
+            if (Built)
+            {
+                return;
+            }
+
+            Built = true;
+            
+            if (StateflowsBuilder.ResourceNames.TryGetValue(ResourceName ?? string.Empty, out var resourceName))
+            {
+                StateflowsBuilder.ResourcesByBehaviorClass[Class] = resourceName;
+            }
+            else
+            {
+                throw new InvalidOperationException($"Resource group {ResourceName ?? string.Empty} does not exist");
+            }
+            
             foreach (var edge in AllEdgesList)
             {
                 var nodes = edge.Source.Parent?.NamedNodes ?? NamedNodes;

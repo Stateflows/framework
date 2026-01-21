@@ -1,5 +1,4 @@
-﻿using System.Threading.Tasks;
-using Stateflows.Common;
+﻿using Stateflows.Common;
 using Stateflows.Activities.Context.Interfaces;
 
 namespace Stateflows.Activities
@@ -30,6 +29,9 @@ namespace Stateflows.Activities
     public static class FinalizationResetPolicy
     {
         public static IActivityBuilder AddFinalizationResetPolicy(this IActivityBuilder builder, ResetMode resetMode = ResetMode.Full)
+            => builder.AddObserver(_ => new ResetObserver(resetMode));
+        
+        public static IActivityUtilsBuilder AddFinalizationResetPolicy(this IActivityUtilsBuilder builder, ResetMode resetMode = ResetMode.Full)
             => builder.AddObserver(_ => new ResetObserver(resetMode));
     }
 }

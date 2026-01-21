@@ -13,6 +13,7 @@ namespace Stateflows
         {
             stateflowsBuilder
                 .AddValidator<CronEventValidator>()
+                .AddOneOf()
                 .AddStateMachines(b => b
                     .AddStateMachine<StateflowsScheduler>()
                 );

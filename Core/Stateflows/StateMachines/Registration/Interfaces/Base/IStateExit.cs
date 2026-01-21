@@ -7,6 +7,7 @@ using Stateflows.Activities;
 using Stateflows.Activities.Registration.Interfaces;
 using Stateflows.StateMachines.Context.Classes;
 using Stateflows.StateMachines.Registration.Interfaces.Internal;
+using ActionBuildAction = Stateflows.Actions.Registration.Interfaces.ActionBuildAction;
 using ActionDelegateAsync = Stateflows.Actions.Registration.ActionDelegateAsync;
 
 namespace Stateflows.StateMachines.Registration.Interfaces.Base
@@ -30,12 +31,12 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         /// <param name="buildAction">Build action</param>
         /// <typeparam name="TActivity">Activity behavior type</typeparam>
         [DebuggerHidden]
-        public TReturn AddOnExitActivity<TActivity>()
+        public TReturn AddOnExitActivity<TActivity>(ActivityUtilsBuildAction buildAction = null)
             where TActivity : class, IActivity
         {
             var vertex = ((IVertexBuilder)this).Vertex;
             var activityName = $"{vertex.Graph.Name}.{vertex.Name}.onExit.{vertex.Entry.Actions.Count}";
-            vertex.Graph.StateflowsBuilder.AddActivities(b => b.AddActivity<TActivity>(activityName));
+            vertex.Graph.StateflowsBuilder.AddActivities(b => b.AddActivity<TActivity>(activityName, buildAction: buildAction));
             return AddOnExit(c => StateMachineActivityExtensions.RunStateActivityAsync(Constants.Exit, c, activityName));
         }
 
@@ -59,12 +60,12 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         /// <param name="buildAction">Build action</param>
         /// <typeparam name="TAction">Action behavior type</typeparam>
         [DebuggerHidden]
-        public TReturn AddOnExitAction<TAction>()
+        public TReturn AddOnExitAction<TAction>(ActionBuildAction buildAction = null)
             where TAction : class, IAction
         {
             var vertex = ((IVertexBuilder)this).Vertex;
             var actionName = $"{vertex.Graph.Name}.{vertex.Name}.onExit.{vertex.Entry.Actions.Count}";
-            vertex.Graph.StateflowsBuilder.AddActions(b => b.AddAction<TAction>(actionName));
+            vertex.Graph.StateflowsBuilder.AddActions(b => b.AddAction<TAction>(actionName, buildAction: buildAction));
             return AddOnExit(c => StateMachineActionExtensions.RunStateActionAsync(Constants.Exit, c, actionName));
         }
         
@@ -72,12 +73,12 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         /// Registers action behavior that will be started when current state exits
         /// </summary>
         /// <param name="actionDelegateAsync">Action delegate</param>
-        /// <param name="reentrant">Determines if action can be reentrant</param>
-        public TReturn AddOnExitAction(ActionDelegateAsync actionDelegateAsync, bool reentrant = true)
+        /// <param name="buildAction">Build action</param>
+        public TReturn AddOnExitAction(ActionDelegateAsync actionDelegateAsync, ActionBuildAction buildAction = null)
         {
             var vertex = ((IVertexBuilder)this).Vertex;
             var actionName = $"{vertex.Graph.Name}.{vertex.Name}.onExit.{vertex.Entry.Actions.Count}";
-            vertex.Graph.StateflowsBuilder.AddActions(b => b.AddAction(actionName, actionDelegateAsync, reentrant));
+            vertex.Graph.StateflowsBuilder.AddActions(b => b.AddAction(actionName, actionDelegateAsync, buildAction: buildAction));
             return AddOnExit(c => StateMachineActionExtensions.RunStateActionAsync(Constants.Exit, c, actionName));
         }
         #endregion

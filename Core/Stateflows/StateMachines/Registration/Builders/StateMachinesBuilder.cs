@@ -73,7 +73,7 @@ namespace Stateflows.StateMachines.Registration.Builders
         }
 
         [DebuggerHidden]
-        public IStateMachinesBuilder AddStateMachine<TStateMachine>(string stateMachineName = null, int version = 1)
+        public IStateMachinesBuilder AddStateMachine<TStateMachine>(string stateMachineName = null, int version = 1, StateMachineUtilsBuildAction buildAction = null)
             where TStateMachine : class, IStateMachine
         {
             if (register is IIsSystemRegistration registration)
@@ -82,21 +82,21 @@ namespace Stateflows.StateMachines.Registration.Builders
                 var valueBefore = registration.IsSystemRegistration;
                 registration.IsSystemRegistration = systemRegistrations;
 
-                register.AddStateMachine<TStateMachine>(stateMachineName ?? StateMachine<TStateMachine>.Name, version);
+                register.AddStateMachine<TStateMachine>(stateMachineName ?? StateMachine<TStateMachine>.Name, version, buildAction);
                 registration.IsSystemRegistration = valueBefore;
 
                 return this;
             }
 
-            register.AddStateMachine<TStateMachine>(stateMachineName ?? StateMachine<TStateMachine>.Name, version);
+            register.AddStateMachine<TStateMachine>(stateMachineName ?? StateMachine<TStateMachine>.Name, version, buildAction);
 
             return this;
         }
 
         [DebuggerHidden]
-        public IStateMachinesBuilder AddStateMachine<TStateMachine>(int version)
+        public IStateMachinesBuilder AddStateMachine<TStateMachine>(int version, StateMachineUtilsBuildAction buildAction = null)
             where TStateMachine : class, IStateMachine
-            => AddStateMachine<TStateMachine>(null, version);
+            => AddStateMachine<TStateMachine>(null, version, buildAction);
 
         #region Observability
         [DebuggerHidden]

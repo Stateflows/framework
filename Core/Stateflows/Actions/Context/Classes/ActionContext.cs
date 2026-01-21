@@ -11,22 +11,20 @@ using Stateflows.Common.Subscription;
 using Microsoft.Extensions.DependencyInjection;
 using Stateflows.Activities;
 using Stateflows.Common.Context;
+using Stateflows.Common.Context.Classes;
 using Stateflows.Common.Engine;
 using Stateflows.Common.Utilities;
 
 namespace Stateflows.Actions.Context.Classes
 {
-    internal class ActionContext : IActionContext, IBehaviorLocator, IStateflowsContextProvider
+    internal class ActionContext : BehaviorActionContext, IActionContext, IBehaviorLocator, IStateflowsContextProvider
     {
         BehaviorId IBehaviorContext.Id => Context.ContextOwnerId ?? RootContext.Id;
+        public BehaviorId ActualId => RootContext.Id;
 
         internal readonly RootContext RootContext;
-
         public List<TokenHolder> OutputTokens { get; } = [];
-        
         public List<TokenHolder> InputTokens { get; } = [];
-
-        public IServiceProvider ServiceProvider { get; }
 
         public ActionId Id => RootContext.Id;
 
@@ -42,9 +40,9 @@ namespace Stateflows.Actions.Context.Classes
             );
 
         public ActionContext(RootContext rootContext, IServiceProvider serviceProvider, IEnumerable<TokenHolder> tokens)
+            : base(rootContext.Context, serviceProvider)
         {
             RootContext = rootContext;
-            ServiceProvider = serviceProvider;
             Values = new ValuesStorage(
                 string.Empty,
                 RootContext.Context.ContextOwnerId ?? RootContext.Id,

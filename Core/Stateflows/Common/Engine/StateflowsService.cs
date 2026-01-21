@@ -1,13 +1,12 @@
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
 using System.Threading;
-using System.Threading.Channels;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Logging;
 using Stateflows.Common.Classes;
 using Stateflows.Common.Engine.Interfaces;
-using Stateflows.Common.Registration.Builders;
 
 namespace Stateflows.Common
 {
@@ -16,27 +15,19 @@ namespace Stateflows.Common
         public StateflowsService(StateflowsEngine stateflowsEngine)
         {
             StateflowsEngine = stateflowsEngine;
-            var maxConcurrency = StateflowsBuilder.MaxConcurrentBehaviorExecutions > 0
-                ? StateflowsBuilder.MaxConcurrentBehaviorExecutions
-                : Environment.ProcessorCount;
-            ConcurrencySemaphore = new SemaphoreSlim(maxConcurrency, maxConcurrency);
         }
 
         private readonly StateflowsEngine StateflowsEngine;
         
         private readonly CancellationTokenSource CancellationTokenSource = new();
-        
-        private Channel<ExecutionToken> EventChannel { get; } = Channel.CreateUnbounded<ExecutionToken>();
-
-        private readonly SemaphoreSlim ConcurrencySemaphore;
-
-        private int behaviorExecutionCounter = 0;
 
         public async ValueTask<ExecutionToken> EnqueueEventAsync(BehaviorId id, EventHolder eventHolder, IServiceProvider serviceProvider)
         {
             var token = new ExecutionToken(id, eventHolder, serviceProvider);
 
-            await EventChannel.Writer.WriteAsync(token);
+            var resource = StateflowsEngine.StateflowsBuilder.ResourcesByBehaviorClass[id.BehaviorClass];
+            
+            await resource.WriteAsync(token);
             
             return token;
         }
@@ -50,31 +41,38 @@ namespace Stateflows.Common
         }
 
         [DebuggerHidden]
-        private async Task ExecutionTaskAsync(CancellationToken cancellationToken)
+        private Task ExecutionTaskAsync(CancellationToken cancellationToken)
         {
-            while (!cancellationToken.IsCancellationRequested)
+            foreach (var resourceName in StateflowsEngine.StateflowsBuilder.ResourceNames.Values)
             {
-                var token = await EventChannel.Reader.ReadAsync(cancellationToken);
-
-                await ConcurrencySemaphore.WaitAsync(cancellationToken);
-
                 _ = Task.Run(
                     async () =>
                     {
-                        try
+                        while (!cancellationToken.IsCancellationRequested)
                         {
-                            Interlocked.Increment(ref behaviorExecutionCounter);
-                            await StateflowsEngine.HandleEventAsync(token);
-                        }
-                        finally
-                        {
-                            Interlocked.Decrement(ref behaviorExecutionCounter);
-                            ConcurrencySemaphore.Release();
+                            var token = await resourceName.ReadAsync(cancellationToken);
+
+                            _ = Task.Run(
+                                async () =>
+                                {
+                                    try
+                                    {
+                                        await StateflowsEngine.HandleEventAsync(token);
+                                    }
+                                    finally
+                                    {
+                                        await resourceName.ReleaseAsync(cancellationToken);
+                                    }
+                                },
+                                cancellationToken
+                            );
                         }
                     },
                     cancellationToken
                 );
             }
+
+            return Task.CompletedTask;
         }
 
         public Task StopAsync(CancellationToken cancellationToken)
@@ -84,7 +82,24 @@ namespace Stateflows.Common
             return Task.CompletedTask;
         }
 
-        public int EventQueueLength => EventChannel.Reader.Count;
-        public int BehaviorExecutionsCount => System.Threading.Volatile.Read(ref behaviorExecutionCounter);
+        public IEnumerable<IStateflowsResource> Resources => StateflowsEngine.StateflowsBuilder.ResourceNames.Values;
+
+        private Dictionary<BehaviorClass, IStateflowsResource> resourcesByBehaviorClass;
+        public IReadOnlyDictionary<BehaviorClass, IStateflowsResource> ResourcesByBehaviorClass
+        {
+            get
+            {
+                if (resourcesByBehaviorClass == null)
+                {
+                    resourcesByBehaviorClass = new Dictionary<BehaviorClass, IStateflowsResource>();
+                    foreach (var pair in  StateflowsEngine.StateflowsBuilder.ResourcesByBehaviorClass)
+                    {
+                        resourcesByBehaviorClass[pair.Key] = pair.Value;
+                    }
+                }
+
+                return resourcesByBehaviorClass;
+            }
+        } 
     }
 }

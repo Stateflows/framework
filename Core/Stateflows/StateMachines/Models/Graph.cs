@@ -17,6 +17,8 @@ namespace Stateflows.StateMachines.Models
 {
     internal class Graph
     {
+        internal string? ResourceName = null;
+
         internal readonly List<Func<IStateMachineVisitor, Task>> VisitingTasks = new List<Func<IStateMachineVisitor, Task>>();
         
         internal readonly StateflowsBuilder StateflowsBuilder;
@@ -71,13 +73,13 @@ namespace Stateflows.StateMachines.Models
         public Logic<StateMachineActionAsync> Finalize { get; } =
             new Logic<StateMachineActionAsync>(Constants.Finalize);
 
-        public readonly List<StateMachineExceptionHandlerFactoryAsync> ExceptionHandlerFactories = new List<StateMachineExceptionHandlerFactoryAsync>();
+        public readonly List<StateMachineExceptionHandlerFactoryAsync> ExceptionHandlerFactories = new();
 
-        public readonly List<StateMachineInterceptorFactoryAsync> InterceptorFactories = new List<StateMachineInterceptorFactoryAsync>();
+        public readonly List<StateMachineInterceptorFactoryAsync> InterceptorFactories = new();
 
-        public readonly List<StateMachineObserverFactoryAsync> ObserverFactories = new List<StateMachineObserverFactoryAsync>();
+        public readonly List<StateMachineObserverFactoryAsync> ObserverFactories = new();
 
-        public List<BehaviorClass> RequiredBehaviors = new List<BehaviorClass>();
+        public List<BehaviorClass> RequiredBehaviors = new();
 
         [DebuggerHidden]
         public void Validate(IEnumerable<BehaviorClass> behaviorClasses)
@@ -93,6 +95,15 @@ namespace Stateflows.StateMachines.Models
         [DebuggerHidden]
         public void Build()
         {
+            if (StateflowsBuilder.ResourceNames.TryGetValue(ResourceName ?? string.Empty, out var resourceName))
+            {
+                StateflowsBuilder.ResourcesByBehaviorClass[Class] = resourceName;
+            }
+            else
+            {
+                throw new InvalidOperationException($"Resource group {ResourceName ?? string.Empty} does not exist");
+            }
+
             Debug.Assert(InitialVertexName != null, $"Initial vertex name not assigned. Is state machine '{Name}' built properly?");
 
             if (Vertices.TryGetValue(InitialVertexName, out var initialVertex))
@@ -166,7 +177,7 @@ namespace Stateflows.StateMachines.Models
                         case BehaviorType.Activity:
                             var activitiesRegister = StateflowsBuilder.EnsureActivitiesServices();
                             var doActivityVisitor = new DoActivityVisitor(StateflowsBuilder.TypeMapper);
-                            activitiesRegister.VisitActivitiesAsync(vertex.BehaviorName, 1, doActivityVisitor);
+                            activitiesRegister.VisitActivitiesAsync(vertex.BehaviorName, 1, doActivityVisitor).Wait();
                             vertex.BehaviorEventTypes.AddRange(doActivityVisitor.EventTypes);
 
                             break;
@@ -174,7 +185,7 @@ namespace Stateflows.StateMachines.Models
                         case BehaviorType.StateMachine:
                             var stateMachinesRegister = StateflowsBuilder.EnsureStateMachinesServices();
                             var submachineVisitor = new SubmachineVisitor(StateflowsBuilder.TypeMapper);
-                            stateMachinesRegister.VisitStateMachineAsync(vertex.BehaviorName, 1, submachineVisitor);
+                            stateMachinesRegister.VisitStateMachineAsync(vertex.BehaviorName, 1, submachineVisitor).Wait();
                             vertex.BehaviorEventTypes.AddRange(submachineVisitor.EventTypes);
                             
                             break;

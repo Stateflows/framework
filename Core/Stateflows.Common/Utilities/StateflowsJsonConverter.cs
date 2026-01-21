@@ -56,7 +56,7 @@ namespace Stateflows.Common.Utilities
                 : PolymorphicSettings;
             var oldFormatting = settings.Formatting;
             settings.Formatting = formatting;
-            var result = JsonConvert.SerializeObject(value, null, settings);
+            var result = JsonConvert.SerializeObject(value, value?.GetType(), settings);
             settings.Formatting = oldFormatting;
             
             return result;
@@ -122,8 +122,10 @@ namespace Stateflows.Common.Utilities
             => (T)(object)JToken.Parse(value).Value<int>();
 
         public static T ParseStringToTypedValue<T>(string value)
-            => typeof(T) == typeof(string)
-                ? JToken.Parse($"\"{value}\"").Value<T>()
-                : JToken.Parse(value).Value<T>();
+            => typeof(T) == typeof(Guid)
+                ? (T)(object)Guid.Parse(value)
+                : typeof(T) == typeof(string)
+                    ? JToken.Parse($"\"{value}\"").Value<T>()
+                    : JToken.Parse(value).Value<T>();
     }
 }

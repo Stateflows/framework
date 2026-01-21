@@ -1,11 +1,8 @@
-﻿using System.Diagnostics;
-using System.Linq;
+﻿using System.Linq;
 using System.Reflection;
-using System.Threading.Tasks;
 using Stateflows.Common;
-using Stateflows.Common.Extensions;
-using Stateflows.Common.Interfaces;
 using Stateflows.Common.Utilities;
+using Stateflows.Common.Extensions;
 using Stateflows.StateMachines.Exceptions;
 using Stateflows.StateMachines.Context.Classes;
 using Stateflows.StateMachines.Context.Interfaces;
@@ -56,14 +53,15 @@ namespace Stateflows.StateMachines.Engine
                 {
                     stateValues.BehaviorId = behaviorId;
                     
-                    behavior.ResetAsync().Wait();
                     behavior.SendAsync(((BaseContext)context).Context.Context.GetContextOwnerSetter()).Wait();
                     
-                    var initializationRequest = vertex.BehaviorInitializationBuilder != null
-                        ? vertex.BehaviorInitializationBuilder(context)
-                        : new Initialize();
+                    var initializationRequest = (
+                        vertex.BehaviorInitializationBuilder != null
+                            ? vertex.BehaviorInitializationBuilder(context)
+                            : new Initialize()
+                    ).ToTypedEventHolder();
                     
-                    _ = behavior.SendCompoundAsync(b => b.Add(initializationRequest.ToTypedEventHolder()));
+                    _ = initializationRequest.SendAsync(behavior);
                 }
                 else
                 {

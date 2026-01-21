@@ -51,7 +51,9 @@ namespace Stateflows.Common.Storage
 
         private static void InternalSet<T>(string key, T value, Dictionary<string, string> behaviorValues)
         {
-            behaviorValues[key] = StateflowsJsonConverter.SerializePolymorphicObject(value);
+            behaviorValues[key] = typeof(T) == typeof(Guid)
+                ? ((Guid)(object)value).ToString()
+                : StateflowsJsonConverter.SerializePolymorphicObject(value);
         }
 
         public Task<bool> IsSetAsync(BehaviorId behaviorId, string key)
@@ -92,7 +94,11 @@ namespace Stateflows.Common.Storage
                     ? ContextValuesCollection.ParseStringToTypedValue<T>(data)
                     : type.IsEnum
                         ? ContextValuesCollection.ParseStringToEnum<T>(data)
-                        : StateflowsJsonConverter.DeserializeObject(data);
+                        : type == typeof(Guid)
+                            ? Guid.Parse(data)
+                            : type == typeof(Guid)
+                                ? Guid.Parse(data)
+                                : StateflowsJsonConverter.DeserializeObject(data);
 
                 if (type.IsNullable() && deserializedData is null)
                 {
@@ -133,7 +139,9 @@ namespace Stateflows.Common.Storage
                 ? ContextValuesCollection.ParseStringToTypedValue<T>(data)
                 : type.IsEnum
                     ? ContextValuesCollection.ParseStringToEnum<T>(data)
-                    : StateflowsJsonConverter.DeserializeObject(data);
+                    : type == typeof(Guid)
+                        ? Guid.Parse(data)
+                        : StateflowsJsonConverter.DeserializeObject(data);
 
             if (type.IsNullable() && deserializedData is null)
             {

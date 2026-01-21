@@ -11,9 +11,9 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         /// Embedded Activity will be initialized on state entry and finalized on state exit. Every event accepted by embedded Activity will be sent to it first and retransmitted to embedding State Machine in case of rejection by embedded one.
         /// </summary>
         /// <typeparam name="TActivity">Activity class; must implement <see cref="IActivity"/> interface</typeparam>
-        /// <param name="initializationBuilder">Initialization builder; generates initialization event for embedded Activity</param>
+        /// <param name="buildAction">Build action</param>
         [DebuggerHidden]
-        public TReturn AddDoActivity<TActivity>(StateActionInitializationBuilder initializationBuilder = null)
+        public TReturn AddDoActivity<TActivity>(ActivityUtilsBuildAction buildAction = null)
             where TActivity : class, IActivity;
 
         /// <summary>
@@ -21,8 +21,7 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         /// Embedded Activity will be initialized on state entry and finalized on state exit. Every event accepted by embedded Activity will be sent to it first and retransmitted to embedding State Machine in case of rejection by embedded one.
         /// </summary>
         /// <param name="activityBuildAction">Activity build action</param>
-        /// <param name="initializationBuilder">Initialization builder; generates initialization event for embedded Activity</param>
-        public TReturn AddDoActivity(ReactiveActivityBuildAction activityBuildAction,
-            StateActionInitializationBuilder initializationBuilder = null);
+        /// <param name="buildAction">Build action</param>
+        public TReturn AddDoActivity(ReactiveActivityBuildAction activityBuildAction);
     }
 }

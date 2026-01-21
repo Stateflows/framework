@@ -11,8 +11,10 @@ using Stateflows.Actions.Registration;
 using Stateflows.Actions.Registration.Builders;
 using Stateflows.Activities;
 using Stateflows.Common;
+using Stateflows.Common.Extensions;
 using Stateflows.Common.Interfaces;
 using Stateflows.Common.Initializer;
+using Stateflows.Common.Registration.Builders;
 using Stateflows.Common.Registration.Interfaces;
 
 namespace Stateflows.Actions
@@ -93,6 +95,24 @@ namespace Stateflows.Actions
                 }
 
                 return register;
+            }
+        }
+
+        internal static void Build(IStateflowsBuilder builder)
+        {
+            var stateflowsBuilder = (StateflowsBuilder)builder;
+            lock (Registers)
+            {
+                if (
+                    builder.ServiceCollection.IsServiceRegistered<IActionsRegister>() &&
+                    Registers.TryGetValue(builder, out var register)
+                )
+                {
+                    foreach (var model in register.Actions.Values)
+                    {
+                        model.Build(stateflowsBuilder);
+                    }
+                }
             }
         }
     }

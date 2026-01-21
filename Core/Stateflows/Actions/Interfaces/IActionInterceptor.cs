@@ -1,6 +1,5 @@
-﻿using System.Threading.Tasks;
+﻿using Stateflows.Common;
 using Stateflows.Actions.Context.Interfaces;
-using Stateflows.Common;
 
 namespace Stateflows.Actions
 {

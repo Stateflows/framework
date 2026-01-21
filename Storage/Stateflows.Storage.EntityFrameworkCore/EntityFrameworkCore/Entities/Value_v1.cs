@@ -1,7 +1,5 @@
 using System.ComponentModel.DataAnnotations.Schema;
 using Microsoft.EntityFrameworkCore;
-using Stateflows.Common;
-using Stateflows.Common.Utilities;
 
 namespace Stateflows.Storage.EntityFrameworkCore.EntityFrameworkCore.Entities;
 

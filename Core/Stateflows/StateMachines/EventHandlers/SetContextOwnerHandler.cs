@@ -2,6 +2,7 @@
 using System.Threading.Tasks;
 using Stateflows.Common;
 using Stateflows.StateMachines.Context.Classes;
+using Stateflows.StateMachines.Extensions;
 
 namespace Stateflows.StateMachines.EventHandlers
 {
@@ -12,8 +13,14 @@ namespace Stateflows.StateMachines.EventHandlers
         {
             if (context.Event is SetContextOwner @event)
             {
-                ((EventContext<TEvent>)context).Context.Context.ContextOwnerId = @event.ContextOwnerId;
-                ((EventContext<TEvent>)context).Context.Context.ContextParentId = @event.ContextParentId;
+                context.Behavior.GetExecutor().Reset(ResetMode.Full);
+
+                var stateflowsContext = ((EventContext<TEvent>)context).Context.Context;
+                
+                stateflowsContext.Deleted = false;
+
+                stateflowsContext.ContextOwnerId = @event.ContextOwnerId;
+                stateflowsContext.ContextParentId = @event.ContextParentId;
                 
                 return Task.FromResult(EventStatus.Consumed);
             }

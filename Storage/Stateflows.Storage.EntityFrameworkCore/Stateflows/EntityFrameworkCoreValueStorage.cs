@@ -1,9 +1,9 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
+using Stateflows.Common;
 using Stateflows.Common.Extensions;
-using Stateflows.Common.Utilities;
 using Stateflows.Common.Interfaces;
+using Stateflows.Common.Utilities;
 using Stateflows.Storage.EntityFrameworkCore.EntityFrameworkCore;
 using Stateflows.Storage.EntityFrameworkCore.EntityFrameworkCore.Entities;
 
@@ -30,7 +30,9 @@ namespace Stateflows.Storage.EntityFrameworkCore.Stateflows
                 dbContext.Values_v1.Add(entry);
             }
 
-            entry.Value = StateflowsJsonConverter.SerializePolymorphicObject(value);
+            entry.Value = typeof(T) == typeof(Guid)
+                ? ((Guid)(object)value).ToString()
+                : StateflowsJsonConverter.SerializePolymorphicObject(value);
 
             await dbContext.SaveChangesAsync();
                 
@@ -85,7 +87,9 @@ namespace Stateflows.Storage.EntityFrameworkCore.Stateflows
                 ? StateflowsJsonConverter.ParseStringToTypedValue<T>(entry.Value)
                 : type.IsEnum
                     ? StateflowsJsonConverter.ParseStringToEnum<T>(entry.Value)
-                    : StateflowsJsonConverter.DeserializeObject(entry.Value);
+                    : type == typeof(Guid)
+                        ? Guid.Parse(entry.Value)
+                        : StateflowsJsonConverter.DeserializeObject(entry.Value);
 
             if (type.IsNullable() && deserializedData is null)
             {
@@ -127,13 +131,15 @@ namespace Stateflows.Storage.EntityFrameworkCore.Stateflows
                 ? StateflowsJsonConverter.ParseStringToTypedValue<T>(entry.Value)
                 : type.IsEnum
                     ? StateflowsJsonConverter.ParseStringToEnum<T>(entry.Value)
-                    : StateflowsJsonConverter.DeserializeObject(entry.Value);
+                    : type == typeof(Guid) && (entry.Value != null)
+                        ? Guid.Parse(entry.Value)
+                        : StateflowsJsonConverter.DeserializeObject(entry.Value);
 
             if (!(type.IsNullable() && deserializedData is null) && deserializedData is T t)
             {
                 result = t;
             }
-            
+
             return result;
         }
 
@@ -163,7 +169,9 @@ namespace Stateflows.Storage.EntityFrameworkCore.Stateflows
                     ? StateflowsJsonConverter.ParseStringToTypedValue<T>(entry.Value)
                     : type.IsEnum
                         ? StateflowsJsonConverter.ParseStringToEnum<T>(entry.Value)
-                        : StateflowsJsonConverter.DeserializeObject(entry.Value);
+                        : type == typeof(Guid)
+                            ? Guid.Parse(entry.Value)
+                            : StateflowsJsonConverter.DeserializeObject(entry.Value);
 
                 if (!(type.IsNullable() && deserializedData is null) && deserializedData is T t)
                 {
@@ -173,7 +181,9 @@ namespace Stateflows.Storage.EntityFrameworkCore.Stateflows
 
             result = valueUpdater.Invoke(result);
             
-            entry.Value = StateflowsJsonConverter.SerializePolymorphicObject(result);
+            entry.Value = typeof(T) == typeof(Guid)
+                ? ((Guid)(object)result).ToString()
+                : StateflowsJsonConverter.SerializePolymorphicObject(result);
 
             await dbContext.SaveChangesAsync();
                 
@@ -195,7 +205,6 @@ namespace Stateflows.Storage.EntityFrameworkCore.Stateflows
 
         public async Task RemovePrefixedAsync(BehaviorId behaviorId, string prefix)
         {
-            
             await using var scope = serviceProvider.CreateAsyncScope();
             var dbContextFactory = scope.ServiceProvider.GetService<IDbContextFactory<TDbContext>>() ?? new DbContextFactory<TDbContext>(scope.ServiceProvider);
             var dbContext = await dbContextFactory.CreateDbContextAsync();

@@ -24,8 +24,8 @@ namespace Action.IntegrationTests.Tests
         {
             builder
                 .AddActions(b => b
-                    .AddAction("reentrant", ReentrantActionAsync)
-                    .AddAction("non-reentrant", ReentrantActionAsync, false)
+                    .AddAction("reentrant", ReentrantActionAsync, b => b.SetIsStateless(true))
+                    .AddAction("non-reentrant", ReentrantActionAsync)
                 )
                 ;
         }

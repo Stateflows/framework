@@ -293,9 +293,6 @@ namespace Stateflows.StateMachines.Engine
         [DebuggerHidden]
         public async Task<EventStatus> ProcessAsync<TEvent>(EventHolder<TEvent> eventHolder)
         {
-            // Trace.WriteLine($"⦗→s⦘ State Machine '{Context.Id.Name}:{Context.Id.Instance}': resetting StateHasChanged flag");
-            // StateHasChanged = false;
-
             var result = EventStatus.Rejected;
 
             if (Initialized)
@@ -653,11 +650,6 @@ namespace Stateflows.StateMachines.Engine
                 await Graph.Finalize.WhenAll(Context);
 
                 Inspector.AfterStateMachineFinalize(context);
-
-                if (Context.Context.ContextParentId != null)
-                {
-                    _ = Context.SendAsync(new SubmachineFinalized());
-                }
             }
             catch (Exception e)
             {
@@ -982,9 +974,6 @@ namespace Stateflows.StateMachines.Engine
                         }
 
                         handled = true;
-                        // await DoInitializeCascadeAsync(topVertex.HistoricalRegion.ParentVertex, true);
-
-                        // return;
                     }
                     else
                     {
@@ -998,9 +987,6 @@ namespace Stateflows.StateMachines.Engine
                                 await DoConsumeAsync<Completion>(topVertex.Edges.Values.First());
                             
                                 handled = true;
-                                // Context.ClearEvent();
-                                //
-                                // return;
                             }
                             
                             Context.ClearEvent();

@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using Stateflows.Common;
 using Stateflows.Common.Classes;
 using Stateflows.Common.Context.Interfaces;
+using Stateflows.Common.Registration.Interfaces;
 
 namespace Stateflows.Extensions.OpenTelemetry;
 
@@ -42,23 +43,30 @@ public class MetricsInterceptor : BehaviorInterceptor
         }
 
         var eventName = Event.GetName(context.Event.GetType());
+        var resourceName = StateflowsMeter.ResourcesByBehaviorClass[context.Behavior.ActualId.BehaviorClass].Name;
         
-        StateflowsMeter.ExecutionDuration.Record(
-            _stopwatch.Elapsed.TotalMilliseconds,
-            new KeyValuePair<string, object?>("behavior.class", context.Behavior.Id.BehaviorClass),
-            new KeyValuePair<string, object?>("behavior.id", context.Behavior.Id),
-            new KeyValuePair<string, object?>("behavior.id.instance", context.Behavior.Id.Instance),
-            new KeyValuePair<string, object?>("event.name", eventName),
-            new KeyValuePair<string, object?>("event.status", Enum.GetName(eventStatus))
-        );
-        
-        StateflowsMeter.ExecutionCounter.Add(
-            1,
-            new KeyValuePair<string, object?>("behavior.class", context.Behavior.Id.BehaviorClass),
-            new KeyValuePair<string, object?>("behavior.id", context.Behavior.Id),
-            new KeyValuePair<string, object?>("behavior.id.instance", context.Behavior.Id.Instance),
-            new KeyValuePair<string, object?>("event.name", eventName),
-            new KeyValuePair<string, object?>("event.status", Enum.GetName(eventStatus))
-        );
+        if (StateflowsMeter.ExecutionDurations.TryGetValue(resourceName, out var histogram))
+        {
+            histogram.Record(
+                _stopwatch.Elapsed.TotalMilliseconds,
+                new KeyValuePair<string, object?>("behavior.class", context.Behavior.ActualId.BehaviorClass),
+                new KeyValuePair<string, object?>("behavior.id", context.Behavior.ActualId),
+                new KeyValuePair<string, object?>("behavior.id.instance", context.Behavior.ActualId.Instance),
+                new KeyValuePair<string, object?>("event.name", eventName),
+                new KeyValuePair<string, object?>("event.status", Enum.GetName(eventStatus))
+            );
+        }
+
+        if (StateflowsMeter.ExecutionCounters.TryGetValue(resourceName, out var counter))
+        {
+            counter.Add(
+                1,
+                new KeyValuePair<string, object?>("behavior.class", context.Behavior.ActualId.BehaviorClass),
+                new KeyValuePair<string, object?>("behavior.id", context.Behavior.ActualId),
+                new KeyValuePair<string, object?>("behavior.id.instance", context.Behavior.ActualId.Instance),
+                new KeyValuePair<string, object?>("event.name", eventName),
+                new KeyValuePair<string, object?>("event.status", Enum.GetName(eventStatus))
+            );
+        }
     }
 }

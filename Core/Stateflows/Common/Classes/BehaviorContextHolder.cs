@@ -6,9 +6,9 @@ using Stateflows.StateMachines;
 namespace Stateflows.Common.Classes;
 
 internal class BehaviorContextHolder(
-    IStateMachineContextHolder? stateMachineContextHolder = null,
-    IActionContextHolder? actionContextHolder = null,
-    IActivityContextHolder? activityContextHolder = null
+    IStateMachineContextHolder stateMachineContextHolder = null,
+    IActionContextHolder actionContextHolder = null,
+    IActivityContextHolder activityContextHolder = null
 ) : IBehaviorContextHolder
 {
     public ValueTask DisposeAsync()

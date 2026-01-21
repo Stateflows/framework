@@ -33,9 +33,11 @@ namespace Stateflows.StateMachines.Engine
             var stateValues = Context.GetStateValues(vertex.Name);
 
             var timeEventIds = stateValues.TimeEventIds.Values.ToArray();
+            stateValues.TimeEventIds.Clear();
             TimeEventIdsToClear.AddRange(timeEventIds);
 
             var startupEventIds = stateValues.StartupEventIds.Values.ToArray();
+            stateValues.StartupEventIds.Clear();
             StartupEventIdsToClear.AddRange(startupEventIds);
         }
 

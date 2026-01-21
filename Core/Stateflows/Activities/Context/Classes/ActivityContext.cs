@@ -15,6 +15,7 @@ namespace Stateflows.Activities.Context.Classes
     internal class ActivityContext : BaseContext, IActivityContext
     {
         BehaviorId IBehaviorContext.Id => Context.Context.ContextOwnerId ?? Context.Id;
+        public BehaviorId ActualId => Context.Id;
 
         public object LockHandle => Context;
 
@@ -38,14 +39,12 @@ namespace Stateflows.Activities.Context.Classes
         public ActivityContext(RootContext context, NodeScope nodeScope)
             : base(context, nodeScope)
         {
-            // Values = new ContextValuesCollection(context.GlobalValues);
             Values = new ValuesStorage(
                 string.Empty,
                 Context.Context.ContextOwnerId ?? Context.Id,
                 Context.Executor.NodeScope.ServiceProvider.GetRequiredService<IStateflowsLock>(),
                 Context.Executor.NodeScope.ServiceProvider.GetRequiredService<IStateflowsValueStorage>()
             );
-
         }
 
         public IContextValues Values { get; }

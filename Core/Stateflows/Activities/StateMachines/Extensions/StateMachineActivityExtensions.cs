@@ -68,7 +68,11 @@ namespace Stateflows.Activities
                 .Add(ev, headers)
             ;
 
-            deferralContext.Context.EventHolder.Headers.Add(new DeferralGuardDelegation() { VertexIdentifier = deferralContext.State.Name, EventName = Event<TEvent>.Name });
+            deferralContext.Context.EventHolder.Headers.Add(new DeferralGuardDelegation()
+            {
+                VertexIdentifier = deferralContext.State.Name,
+                EventName = Event<TEvent>.Name
+            });
 
             _ = a.RequestAsync(request);
             
@@ -113,7 +117,10 @@ namespace Stateflows.Activities
                 .Add(ev, headers)
             ;
 
-            transitionContext.Context.EventHolder.Headers.Add(new TransitionGuardDelegation() { EdgeIdentifier = transitionContext.Edge.Identifier });
+            transitionContext.Context.EventHolder.Headers.Add(new TransitionGuardDelegation()
+            {
+                EdgeIdentifier = transitionContext.Edge.Identifier
+            });
 
             _ = a.RequestAsync(request);
             
