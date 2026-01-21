@@ -1,26 +1,22 @@
 ﻿using System;
-using System.Diagnostics;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
-using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.Extensions.DependencyInjection;
 using Stateflows.Actions.Context;
 using Stateflows.Actions.Context.Classes;
-using Stateflows.Common.Classes;
-using Stateflows.Common.Registration.Builders;
-using Stateflows.Actions.Models;
 using Stateflows.Actions.Exceptions;
+using Stateflows.Actions.Models;
+using Stateflows.Common.Classes;
 using Stateflows.Common.Interfaces;
-using Stateflows.Common.Registration;
 
 namespace Stateflows.Actions.Registration
 {
-    internal class ActionsRegister : IActionsRegister
+    internal class ActionsRegister : IActionsRegister, IIsSystemRegistration
     {
         public readonly List<ActionExceptionHandlerFactoryAsync> GlobalExceptionHandlerFactories = [];
-        
+
         public readonly List<ActionInterceptorFactoryAsync> GlobalInterceptorFactories = [];
 
         private readonly MethodInfo ActionTypeAddedAsyncMethod =
@@ -29,6 +25,8 @@ namespace Stateflows.Actions.Registration
         public readonly Dictionary<string, ActionModel> Actions = new();
 
         private readonly Dictionary<string, int> CurrentVersions = new();
+
+        public bool IsSystemRegistration { get; set; } = false;
 
         private bool IsNewestVersion(string actionName, int version)
         {
@@ -65,7 +63,7 @@ namespace Stateflows.Actions.Registration
                 Delegate = actionDelegate,
                 VisitingAction = VisitingActionAsync
             };
-            
+
             if (!Actions.TryAdd(key, actionModel))
             {
                 throw new ActionDefinitionException($"Action '{actionName}' with version '{version}' is already registered", new ActionClass(actionName));
@@ -78,7 +76,13 @@ namespace Stateflows.Actions.Registration
 
             return;
 
-            Task VisitingActionAsync(IActionVisitor v) => v.ActionAddedAsync(actionName, version);
+            Task VisitingActionAsync(IActionVisitor v)
+            {
+                // Assign to local variable to avoid value being overriden when invoking lambda function at a later stage
+                var localIsSystemRegistration = IsSystemRegistration;
+
+                return v.ActionAddedAsync(actionName, version, localIsSystemRegistration);
+            }
         }
 
         [DebuggerHidden]
@@ -101,7 +105,7 @@ namespace Stateflows.Actions.Registration
                 ActionsContextHolder.BehaviorContext.Value = context.Behavior;
                 ActionsContextHolder.ExecutionContext.Value = context;
                 ContextValues.GlobalValuesHolder.Value = context.Behavior.Values;
-                
+
                 try
                 {
                     var instance = (IAction)await StateflowsActivator.CreateModelElementInstanceAsync(
@@ -109,7 +113,7 @@ namespace Stateflows.Actions.Registration
                         actionType,
                         "action"
                     );
-                    
+
                     await instance.ExecuteAsync(context.CancellationToken);
                 }
                 finally
@@ -120,12 +124,16 @@ namespace Stateflows.Actions.Registration
             };
 
             var method = ActionTypeAddedAsyncMethod.MakeGenericMethod(actionType);
+
+            // Assign to local variable to avoid value being overriden when invoking lambda function at a later stage
+            var localIsSystemRegistration = IsSystemRegistration;
+
             Func<IActionVisitor, Task> visitingAction = async v =>
             {
-                await v.ActionAddedAsync(actionName, version);
+                await v.ActionAddedAsync(actionName, version, localIsSystemRegistration);
                 await (Task)method.Invoke(v, [actionName, version]);
             };
-            
+
             var actionModel = new ActionModel()
             {
                 Name = actionName,
@@ -154,7 +162,7 @@ namespace Stateflows.Actions.Registration
             {
                 action.VisitingAction(visitor);
             }
-            
+
             return Task.CompletedTask;
         }
 
@@ -162,16 +170,16 @@ namespace Stateflows.Actions.Registration
         [DebuggerHidden]
         public void AddInterceptor(ActionInterceptorFactoryAsync interceptorFactoryAsync)
             => GlobalInterceptorFactories.Add(interceptorFactoryAsync);
-        
+
         [DebuggerHidden]
         public void AddInterceptor<TInterceptor>()
             where TInterceptor : class, IActionInterceptor
             => AddInterceptor(async serviceProvider => await StateflowsActivator.CreateModelElementInstanceAsync<TInterceptor>(serviceProvider));
-        
+
         [DebuggerHidden]
         public void AddExceptionHandler(ActionExceptionHandlerFactoryAsync exceptionHandlerFactoryAsync)
             => GlobalExceptionHandlerFactories.Add(exceptionHandlerFactoryAsync);
-        
+
         [DebuggerHidden]
         public void AddExceptionHandler<TExceptionHandler>()
             where TExceptionHandler : class, IActionExceptionHandler

@@ -1,17 +1,18 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
-using System.Diagnostics;
-using System.Collections.Generic;
 using Stateflows.Common.Extensions;
+using Stateflows.Common.Interfaces;
 using Stateflows.StateMachines.Attributes;
 using Stateflows.StateMachines.Registration.Interfaces;
 
 namespace Stateflows.StateMachines.Registration.Builders
 {
-    internal class StateMachinesBuilder(IStateMachinesRegister register, bool systemRegistrations)
-        : IStateMachinesBuilder
+    internal class StateMachinesBuilder(IStateMachinesRegister register, bool systemRegistrations) : IStateMachinesBuilder
     {
+
         [DebuggerHidden]
         public IStateMachinesBuilder AddFromAssembly(Assembly assembly)
         {
@@ -54,6 +55,18 @@ namespace Stateflows.StateMachines.Registration.Builders
         [DebuggerHidden]
         public IStateMachinesBuilder AddStateMachine(string stateMachineName, int version, StateMachineBuildAction buildAction)
         {
+            if (register is IIsSystemRegistration registration)
+            {
+                // Register is a singleton, modify IsSystemRegistration only for the duration of the AddAction call
+                var valueBefore = registration.IsSystemRegistration;
+                registration.IsSystemRegistration = systemRegistrations;
+
+                register.AddStateMachine(stateMachineName, version, buildAction);
+                registration.IsSystemRegistration = valueBefore;
+
+                return this;
+            }
+
             register.AddStateMachine(stateMachineName, version, buildAction);
 
             return this;
@@ -63,6 +76,18 @@ namespace Stateflows.StateMachines.Registration.Builders
         public IStateMachinesBuilder AddStateMachine<TStateMachine>(string stateMachineName = null, int version = 1)
             where TStateMachine : class, IStateMachine
         {
+            if (register is IIsSystemRegistration registration)
+            {
+                // Register is a singleton, modify IsSystemRegistration only for the duration of the AddAction call
+                var valueBefore = registration.IsSystemRegistration;
+                registration.IsSystemRegistration = systemRegistrations;
+
+                register.AddStateMachine<TStateMachine>(stateMachineName ?? StateMachine<TStateMachine>.Name, version);
+                registration.IsSystemRegistration = valueBefore;
+
+                return this;
+            }
+
             register.AddStateMachine<TStateMachine>(stateMachineName ?? StateMachine<TStateMachine>.Name, version);
 
             return this;
@@ -90,7 +115,7 @@ namespace Stateflows.StateMachines.Registration.Builders
 
             return this;
         }
-        
+
         [DebuggerHidden]
         public IStateMachinesBuilder AddInterceptor(StateMachineInterceptorFactoryAsync interceptorFactoryAsync)
         {
@@ -115,7 +140,7 @@ namespace Stateflows.StateMachines.Registration.Builders
 
             return this;
         }
-        
+
         [DebuggerHidden]
         public IStateMachinesBuilder AddExceptionHandler(StateMachineExceptionHandlerFactoryAsync exceptionHandlerFactoryAsync)
         {
@@ -140,7 +165,7 @@ namespace Stateflows.StateMachines.Registration.Builders
 
             return this;
         }
-        
+
         [DebuggerHidden]
         public IStateMachinesBuilder AddObserver(StateMachineObserverFactoryAsync observerFactoryAsync)
         {

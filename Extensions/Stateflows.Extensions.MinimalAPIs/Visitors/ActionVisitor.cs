@@ -1,11 +1,11 @@
 ﻿using System.Text.Json;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Routing;
 using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Routing;
 using Microsoft.Net.Http.Headers;
-using Stateflows.Common;
 using Stateflows.Actions;
+using Stateflows.Common;
 using Stateflows.Common.Extensions;
 using Stateflows.Common.Interfaces;
 
@@ -17,10 +17,9 @@ internal class ActionVisitor(IEndpointRouteBuilder routeBuilder, Interceptor int
     public IEndpointRouteBuilder RouteBuilder => routeBuilder;
     public Dictionary<string, List<(HateoasLink, BehaviorStatus[])>> HateoasLinks { get; set; } = new();
 
-    public override Task ActionAddedAsync(string actionName, int actionVersion)
+    public override Task ActionAddedAsync(string actionName, int actionVersion, bool isSystemRegistration = false)
     {
         RegisterStandardEndpoints(actionName, routeBuilder);
-        
         return Task.CompletedTask;
     }
 
@@ -30,7 +29,7 @@ internal class ActionVisitor(IEndpointRouteBuilder routeBuilder, Interceptor int
     private void RegisterStandardEndpoints(string actionName, IEndpointRouteBuilder action)
     {
         var behaviorClass = new ActionClass(actionName);
-        
+
         var method = HttpMethods.Get;
         var route = $"/{actionName}";
         if (interceptor.BeforeGetInstancesEndpointDefinition(behaviorClass, ref method, ref route))
@@ -66,9 +65,9 @@ internal class ActionVisitor(IEndpointRouteBuilder routeBuilder, Interceptor int
                         if (stream)
                         {
                             httpContext.Response.Headers.Append(HeaderNames.ContentType, "text/event-stream");
-                            
+
                             await using var watcher = await behavior.WatchAsync(
-                                [ Event<BehaviorInfo>.Name ],
+                                [Event<BehaviorInfo>.Name],
                                 async eventHolder => await httpContext.WriteEventAsync(eventHolder)
                             );
 
@@ -97,7 +96,7 @@ internal class ActionVisitor(IEndpointRouteBuilder routeBuilder, Interceptor int
             .WithTags($"{BehaviorType.Action} {actionName}");
 
             interceptor.AfterEventEndpointDefinition<BehaviorInfoRequest>(behaviorClass, method, route, routeHandlerBuilder);
-            
+
             HateoasLinks.AddLink(
                 behaviorClass.Name,
                 new HateoasLink()
@@ -131,9 +130,9 @@ internal class ActionVisitor(IEndpointRouteBuilder routeBuilder, Interceptor int
                         if (stream)
                         {
                             period ??= TimeSpan.FromSeconds(0);
-                            
+
                             httpContext.Response.Headers.Append(HeaderNames.ContentType, "text/event-stream");
-                            
+
                             await using var watcher = await behavior.WatchAsync(
                                 names,
                                 async eventHolder => await httpContext.WriteEventAsync(eventHolder),
@@ -161,9 +160,9 @@ internal class ActionVisitor(IEndpointRouteBuilder routeBuilder, Interceptor int
                     return Results.NotFound();
                 })
                 .WithTags($"{BehaviorType.Action} {actionName}");
-            
+
             interceptor.AfterEventEndpointDefinition<NotificationsRequest>(behaviorClass, method, route, routeHandlerBuilder);
-            
+
             HateoasLinks.AddLink(
                 behaviorClass.Name,
                 new HateoasLink()
@@ -194,14 +193,14 @@ internal class ActionVisitor(IEndpointRouteBuilder routeBuilder, Interceptor int
                         var behaviorInfo = (await behavior.GetStatusAsync([new NoImplicitInitialization()])).Response;
                         return sendResult.ToResult([], behaviorInfo, HateoasLinks);
                     }
-                    
+
                     return Results.NotFound();
                 }
             )
             .WithTags($"{BehaviorType.Action} {actionName}");
-            
+
             interceptor.AfterEventEndpointDefinition<Finalize>(behaviorClass, method, route, routeHandlerBuilder);
-            
+
             HateoasLinks.AddLink(
                 behaviorClass.Name,
                 new HateoasLink()
@@ -232,14 +231,14 @@ internal class ActionVisitor(IEndpointRouteBuilder routeBuilder, Interceptor int
                         var behaviorInfo = (await behavior.GetStatusAsync([new NoImplicitInitialization()])).Response;
                         return sendResult.ToResult([], behaviorInfo, HateoasLinks);
                     }
-                    
+
                     return Results.NotFound();
                 }
             )
             .WithTags($"{BehaviorType.Action} {actionName}");
-            
+
             interceptor.AfterEventEndpointDefinition<Reset>(behaviorClass, method, route, routeHandlerBuilder);
-            
+
             HateoasLinks.AddLink(
                 behaviorClass.Name,
                 new HateoasLink()
@@ -259,13 +258,13 @@ internal class ActionVisitor(IEndpointRouteBuilder routeBuilder, Interceptor int
         if (typeof(IActionEndpoints).IsAssignableFrom(actionType))
         {
             var endpointsBuilder = new EndpointsBuilder(routeBuilder, this, interceptor, new ActionClass(actionName));
-            
-            actionType.CallStaticMethod(nameof(IActionEndpoints.RegisterEndpoints), [ typeof(IEndpointsBuilder) ], [ endpointsBuilder ]);
-            
+
+            actionType.CallStaticMethod(nameof(IActionEndpoints.RegisterEndpoints), [typeof(IEndpointsBuilder)], [endpointsBuilder]);
+
             // var action = (IActionEndpoints)StateflowsActivator.CreateUninitializedInstance<TAction>();
             // action.RegisterEndpoints(endpointsBuilder);
         }
-        
+
         return Task.CompletedTask;
     }
 }

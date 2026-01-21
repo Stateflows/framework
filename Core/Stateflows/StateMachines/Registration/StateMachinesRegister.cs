@@ -1,6 +1,6 @@
 ﻿using System;
-using System.Diagnostics;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
@@ -9,14 +9,14 @@ using Stateflows.Common.Interfaces;
 using Stateflows.Common.Registration.Builders;
 using Stateflows.StateMachines.Context;
 using Stateflows.StateMachines.Context.Classes;
-using Stateflows.StateMachines.Models;
 using Stateflows.StateMachines.Exceptions;
+using Stateflows.StateMachines.Models;
 using Stateflows.StateMachines.Registration.Builders;
 using Stateflows.StateMachines.Registration.Interfaces;
 
 namespace Stateflows.StateMachines.Registration
 {
-    internal class StateMachinesRegister(StateflowsBuilder stateflowsBuilder) : IStateMachinesRegister
+    internal class StateMachinesRegister(StateflowsBuilder stateflowsBuilder) : IStateMachinesRegister, IIsSystemRegistration
     {
         public readonly List<StateMachineExceptionHandlerFactoryAsync> GlobalExceptionHandlerFactories = [];
 
@@ -31,6 +31,8 @@ namespace Stateflows.StateMachines.Registration
         private readonly MethodInfo StateMachineTypeAddedAsyncMethod =
             typeof(IStateMachineVisitor).GetMethod(nameof(IStateMachineVisitor.StateMachineTypeAddedAsync));
 
+        public bool IsSystemRegistration { get; set; } = false;
+
         private static void RegisterStateMachine(Type stateMachineType, StateMachineElementsBuilder stateMachineElementsBuilder)
         {
             // Try to invoke a static RegisterEndpoints(EndpointsBuilder) on the concrete type
@@ -38,12 +40,12 @@ namespace Stateflows.StateMachines.Registration
                 nameof(IStateMachine.Build),
                 BindingFlags.Public | BindingFlags.Static,
                 binder: null,
-                types: [ typeof(StateMachineElementsBuilder) ],
+                types: [typeof(StateMachineElementsBuilder)],
                 modifiers: null
             );
 
             // static method found -> invoke without creating an instance
-            staticBuildMethod.Invoke(null, [ stateMachineElementsBuilder ]);
+            staticBuildMethod.Invoke(null, [stateMachineElementsBuilder]);
         }
 
         private bool IsNewestVersion(string stateMachineName, int version)
@@ -81,8 +83,11 @@ namespace Stateflows.StateMachines.Registration
             var builder = new StateMachineElementsBuilder(stateMachineName, version, stateflowsBuilder);
             buildAction(builder);
             builder.Graph.Build();
-            
-            builder.Graph.VisitingTasks.Add(v => v.StateMachineAddedAsync(stateMachineName, version));
+
+            // Assign to local variable to avoid value being overriden when invoking lambda function at a later stage
+            var localIsSystemRegistration = IsSystemRegistration;
+
+            builder.Graph.VisitingTasks.Add(v => v.StateMachineAddedAsync(stateMachineName, version, localIsSystemRegistration));
 
             StateMachines.Add(key, builder.Graph);
 
@@ -102,24 +107,27 @@ namespace Stateflows.StateMachines.Registration
             {
                 throw new StateMachineDefinitionException($"State machine '{stateMachineName}' with version '{version}' is already registered", new StateMachineClass(stateMachineName));
             }
-            
+
             var builder = new StateMachineElementsBuilder(stateMachineName, version, stateflowsBuilder)
-                {
-                    Graph =
+            {
+                Graph =
                     {
                         StateMachineType = stateMachineType
                     }
-                };
+            };
             RegisterStateMachine(stateMachineType, builder);
             builder.Graph.Build();
 
             var method = StateMachineTypeAddedAsyncMethod.MakeGenericMethod(stateMachineType);
 
+            // Assign to local variable to avoid value being overriden when invoking lambda function at a later stage
+            var localIsSystemRegistration = IsSystemRegistration;
+
             builder.Graph.VisitingTasks.AddRange([
-                v => v.StateMachineAddedAsync(stateMachineName, version),
+                v => v.StateMachineAddedAsync(stateMachineName, version, localIsSystemRegistration),
                 v => (Task)method.Invoke(v, [ stateMachineName, version ])
             ]);
-            
+
             StateMachines.Add(key, builder.Graph);
 
             if (IsNewestVersion(stateMachineName, version))
@@ -136,7 +144,7 @@ namespace Stateflows.StateMachines.Registration
         [DebuggerHidden]
         public void AddInterceptor(StateMachineInterceptorFactory interceptorFactory)
             => GlobalInterceptorFactories.Add((serviceProvider, context) => Task.FromResult(interceptorFactory(serviceProvider, context)));
-        
+
         [DebuggerHidden]
         public void AddInterceptor(StateMachineInterceptorFactoryAsync interceptorFactoryAsync)
             => GlobalInterceptorFactories.Add(interceptorFactoryAsync);
@@ -144,14 +152,15 @@ namespace Stateflows.StateMachines.Registration
         [DebuggerHidden]
         public void AddInterceptor<TInterceptor>()
             where TInterceptor : class, IStateMachineInterceptor
-            =>  GlobalInterceptorFactories.Add(
-                async (serviceProvider, context) => {
+            => GlobalInterceptorFactories.Add(
+                async (serviceProvider, context) =>
+                {
                     ContextValues.GlobalValuesHolder.Value = context.Behavior.Values;
                     ContextValues.StateValuesHolder.Value = null;
                     ContextValues.ParentStateValuesHolder.Value = null;
                     ContextValues.SourceStateValuesHolder.Value = null;
                     ContextValues.TargetStateValuesHolder.Value = null;
-    
+
                     StateMachinesContextHolder.StateContext.Value = null;
                     StateMachinesContextHolder.TransitionContext.Value = null;
                     StateMachinesContextHolder.BehaviorContext.Value = context.Behavior;
@@ -160,7 +169,7 @@ namespace Stateflows.StateMachines.Registration
                         StateMachinesContextHolder.StateMachineContext.Value = ((BaseContext)context).StateMachine;
                     }
                     StateMachinesContextHolder.ExecutionContext.Value = context;
-                    
+
                     return await StateflowsActivator.CreateModelElementInstanceAsync<TInterceptor>(serviceProvider, "interceptor");
                 }
             );
@@ -168,7 +177,7 @@ namespace Stateflows.StateMachines.Registration
         [DebuggerHidden]
         public void AddExceptionHandler(StateMachineExceptionHandlerFactory exceptionHandlerFactory)
             => GlobalExceptionHandlerFactories.Add((serviceProvider, context) => Task.FromResult(exceptionHandlerFactory(serviceProvider, context)));
-        
+
         [DebuggerHidden]
         public void AddExceptionHandler(StateMachineExceptionHandlerFactoryAsync exceptionHandlerFactoryAsync)
             => GlobalExceptionHandlerFactories.Add(exceptionHandlerFactoryAsync);
@@ -176,14 +185,15 @@ namespace Stateflows.StateMachines.Registration
         [DebuggerHidden]
         public void AddExceptionHandler<TExceptionHandler>()
             where TExceptionHandler : class, IStateMachineExceptionHandler
-            =>  GlobalExceptionHandlerFactories.Add(
-                async (serviceProvider, context) => {
+            => GlobalExceptionHandlerFactories.Add(
+                async (serviceProvider, context) =>
+                {
                     ContextValues.GlobalValuesHolder.Value = context.Behavior.Values;
                     ContextValues.StateValuesHolder.Value = null;
                     ContextValues.ParentStateValuesHolder.Value = null;
                     ContextValues.SourceStateValuesHolder.Value = null;
                     ContextValues.TargetStateValuesHolder.Value = null;
-    
+
                     StateMachinesContextHolder.StateContext.Value = null;
                     StateMachinesContextHolder.TransitionContext.Value = null;
                     StateMachinesContextHolder.BehaviorContext.Value = context.Behavior;
@@ -192,7 +202,7 @@ namespace Stateflows.StateMachines.Registration
                         StateMachinesContextHolder.StateMachineContext.Value = ((BaseContext)context).StateMachine;
                     }
                     StateMachinesContextHolder.ExecutionContext.Value = context;
-                    
+
                     return await StateflowsActivator.CreateModelElementInstanceAsync<TExceptionHandler>(serviceProvider, "exception handler");
                 }
             );
@@ -200,7 +210,7 @@ namespace Stateflows.StateMachines.Registration
         [DebuggerHidden]
         public void AddObserver(StateMachineObserverFactory observerFactory)
             => GlobalObserverFactories.Add((serviceProvider, context) => Task.FromResult(observerFactory(serviceProvider, context)));
-        
+
         [DebuggerHidden]
         public void AddObserver(StateMachineObserverFactoryAsync observerFactoryAsync)
             => GlobalObserverFactories.Add(observerFactoryAsync);
@@ -208,14 +218,15 @@ namespace Stateflows.StateMachines.Registration
         [DebuggerHidden]
         public void AddObserver<TObserver>()
             where TObserver : class, IStateMachineObserver
-            =>  GlobalObserverFactories.Add(
-                async (serviceProvider, context) => {
+            => GlobalObserverFactories.Add(
+                async (serviceProvider, context) =>
+                {
                     ContextValues.GlobalValuesHolder.Value = context.Behavior.Values;
                     ContextValues.StateValuesHolder.Value = null;
                     ContextValues.ParentStateValuesHolder.Value = null;
                     ContextValues.SourceStateValuesHolder.Value = null;
                     ContextValues.TargetStateValuesHolder.Value = null;
-    
+
                     StateMachinesContextHolder.StateContext.Value = null;
                     StateMachinesContextHolder.TransitionContext.Value = null;
                     StateMachinesContextHolder.BehaviorContext.Value = context.Behavior;
@@ -224,7 +235,7 @@ namespace Stateflows.StateMachines.Registration
                         StateMachinesContextHolder.StateMachineContext.Value = ((BaseContext)context).StateMachine;
                     }
                     StateMachinesContextHolder.ExecutionContext.Value = context;
-                    
+
                     return await StateflowsActivator.CreateModelElementInstanceAsync<TObserver>(serviceProvider, "observer");
                 }
             );
@@ -235,7 +246,7 @@ namespace Stateflows.StateMachines.Registration
                 .Where((item, _) => !item.Key.EndsWith(".current"))
                 .Select(item => item.Value)
                 .SelectMany(graph => graph.VisitingTasks);
-            
+
             foreach (var task in tasks)
             {
                 await task(visitor);
@@ -248,7 +259,7 @@ namespace Stateflows.StateMachines.Registration
                 .Where(item => item.Key == $"{stateMachineName}.{version}")
                 .Select(item => item.Value)
                 .SelectMany(graph => graph.VisitingTasks);
-            
+
             foreach (var task in tasks)
             {
                 await task(visitor);

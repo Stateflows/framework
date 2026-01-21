@@ -6,7 +6,7 @@ namespace Stateflows.Activities
 {
     public interface IActivityVisitor
     {
-        Task ActivityAddedAsync(string activityName, int activityVersion);
+        Task ActivityAddedAsync(string activityName, int activityVersion, bool isSystemRegistration = false);
 
         Task ActivityTypeAddedAsync<TActivity>(string activityName, int activityVersion)
             where TActivity : class, IActivity;

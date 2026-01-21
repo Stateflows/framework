@@ -1,5 +1,4 @@
-﻿using Stateflows.Common.Classes;
-using Stateflows.Common.Extensions;
+﻿using Stateflows.Common.Extensions;
 using Stateflows.StateMachines;
 
 namespace Stateflows.Extensions.MinimalAPIs;
@@ -12,10 +11,25 @@ internal class StateMachineConfigurationVisitor(MinimalAPIsBuilder minimalApisBu
         if (typeof(IStateMachineEndpointsConfiguration).IsAssignableFrom(stateMachineType))
         {
             minimalApisBuilder.CurrentClass = new StateMachineClass(stateMachineName);
-            stateMachineType.CallStaticMethod(nameof(IStateMachineEndpointsConfiguration.ConfigureEndpoints), [ typeof(IBehaviorClassEndpointsConfiguration) ], [ minimalApisBuilder ]);
+            stateMachineType.CallStaticMethod(nameof(IStateMachineEndpointsConfiguration.ConfigureEndpoints), [typeof(IBehaviorClassEndpointsConfiguration)], [minimalApisBuilder]);
             minimalApisBuilder.CurrentClass = null;
         }
-        
+
         return Task.CompletedTask;
+    }
+
+    public override Task StateMachineAddedAsync(string stateMachineName, int stateMachineVersion, bool isSystemRegistration = false)
+    {
+        if (isSystemRegistration)
+        {
+            minimalApisBuilder.ConfigureStateMachines(b =>
+                b.ConfigureStateMachine(
+                    stateMachineName,
+                    b => b.Disable()
+                )
+            );
+        }
+
+        return base.StateMachineAddedAsync(stateMachineName, stateMachineVersion, isSystemRegistration);
     }
 }

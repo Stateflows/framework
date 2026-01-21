@@ -1,24 +1,16 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
-using System.Diagnostics;
-using System.Collections.Generic;
-using Stateflows.Common.Extensions;
 using Stateflows.Actions.Attributes;
+using Stateflows.Common.Extensions;
+using Stateflows.Common.Interfaces;
 
 namespace Stateflows.Actions.Registration.Builders
 {
-    internal class ActionsBuilder : IActionsBuilder
+    internal class ActionsBuilder(ActionsRegister register, bool systemRegistrations) : IActionsBuilder
     {
-        private readonly ActionsRegister Register;
-        private readonly bool SystemRegistrations;
-
-        public ActionsBuilder(ActionsRegister register, bool systemRegistrations)
-        {
-            Register = register;
-            SystemRegistrations = systemRegistrations;
-        }
-
         [DebuggerHidden]
         public IActionsBuilder AddFromAssembly(Assembly assembly)
         {
@@ -27,7 +19,7 @@ namespace Stateflows.Actions.Registration.Builders
                 if (typeof(IAction).IsAssignableFrom(@type))
                 {
                     var attribute = @type.GetCustomAttributes(typeof(ActionBehaviorAttribute)).FirstOrDefault() as ActionBehaviorAttribute;
-                    Register.AddAction(attribute?.Name ?? @type.FullName, attribute?.Version ?? 1, @type);
+                    register.AddAction(attribute?.Name ?? @type.FullName, attribute?.Version ?? 1, @type);
                 }
             });
 
@@ -57,7 +49,19 @@ namespace Stateflows.Actions.Registration.Builders
         [DebuggerHidden]
         public IActionsBuilder AddAction(string actionName, int version, ActionDelegateAsync actionDelegate, bool reentrant = true)
         {
-            Register.AddAction(actionName, version, actionDelegate, reentrant);
+            if (register is IIsSystemRegistration registration)
+            {
+                // Register is a singleton, modify IsSystemRegistration only for the duration of the AddAction call
+                var beforeValue = registration.IsSystemRegistration;
+                registration.IsSystemRegistration = systemRegistrations;
+
+                register.AddAction(actionName, version, actionDelegate, reentrant);
+                registration.IsSystemRegistration = beforeValue;
+
+                return this;
+            }
+
+            register.AddAction(actionName, version, actionDelegate, reentrant);
 
             return this;
         }
@@ -66,7 +70,19 @@ namespace Stateflows.Actions.Registration.Builders
         public IActionsBuilder AddAction<TAction>(string actionName = null, int version = 1, bool reentrant = true)
             where TAction : class, IAction
         {
-            Register.AddAction<TAction>(actionName ?? Action<TAction>.Name, version, reentrant);
+            if (register is IIsSystemRegistration registration)
+            {
+                // Register is a singleton, modify IsSystemRegistration only for the duration of the AddAction call
+                var beforeValue = registration.IsSystemRegistration;
+                registration.IsSystemRegistration = systemRegistrations;
+
+                register.AddAction<TAction>(actionName ?? Action<TAction>.Name, version, reentrant);
+                registration.IsSystemRegistration = beforeValue;
+
+                return this;
+            }
+
+            register.AddAction<TAction>(actionName ?? Action<TAction>.Name, version, reentrant);
 
             return this;
         }
@@ -86,33 +102,33 @@ namespace Stateflows.Actions.Registration.Builders
         public IActionsBuilder AddInterceptor<TInterceptor>()
             where TInterceptor : class, IActionInterceptor
         {
-            Register.AddInterceptor<TInterceptor>();
-        
+            register.AddInterceptor<TInterceptor>();
+
             return this;
         }
-        
+
         [DebuggerHidden]
         public IActionsBuilder AddInterceptor(ActionInterceptorFactoryAsync interceptorFactoryAsync)
         {
-            Register.AddInterceptor(interceptorFactoryAsync);
-        
+            register.AddInterceptor(interceptorFactoryAsync);
+
             return this;
         }
-        
+
         [DebuggerHidden]
         public IActionsBuilder AddExceptionHandler<TExceptionHandler>()
             where TExceptionHandler : class, IActionExceptionHandler
         {
-            Register.AddExceptionHandler<TExceptionHandler>();
-        
+            register.AddExceptionHandler<TExceptionHandler>();
+
             return this;
         }
-        
+
         [DebuggerHidden]
         public IActionsBuilder AddExceptionHandler(ActionExceptionHandlerFactoryAsync exceptionHandlerFactoryAsync)
         {
-            Register.AddExceptionHandler(exceptionHandlerFactoryAsync);
-        
+            register.AddExceptionHandler(exceptionHandlerFactoryAsync);
+
             return this;
         }
         #endregion
