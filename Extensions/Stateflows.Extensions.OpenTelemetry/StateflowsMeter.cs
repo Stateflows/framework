@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics.Metrics;
 using System.Threading;
@@ -10,8 +11,8 @@ namespace Stateflows.Extensions.OpenTelemetry;
 public class StateflowsMeter : IHostedService
 {
     public static Meter Meter = new("Stateflows", "1.0.0");
-    public static IDictionary<string, Counter<long>> ExecutionCounters = new Dictionary<string, Counter<long>>();
-    public static IDictionary<string, Histogram<double>> ExecutionDurations = new Dictionary<string, Histogram<double>>();
+    public static IDictionary<string, Counter<long>> ExecutionCounters = new ConcurrentDictionary<string, Counter<long>>();
+    public static IDictionary<string, Histogram<double>> ExecutionDurations = new ConcurrentDictionary<string, Histogram<double>>();
     public static IReadOnlyDictionary<BehaviorClass, IStateflowsResource> ResourcesByBehaviorClass;
     
     public StateflowsMeter(IStateflowsTelemetry stateflowsTelemetry)

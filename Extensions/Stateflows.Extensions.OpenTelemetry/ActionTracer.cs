@@ -11,15 +11,8 @@ using Stateflows.Extensions.OpenTelemetry.Headers;
 
 namespace Stateflows.Extensions.OpenTelemetry
 {
-    public class ActionTracer : IActionInterceptor, IActionExceptionHandler
+    public class ActionTracer(ILogger<ActivityTracer> logger) : IActionInterceptor, IActionExceptionHandler
     {
-        
-        private readonly ILogger<ActivityTracer> Logger;
-        public ActionTracer(ILogger<ActivityTracer> logger)
-        {
-            Logger = logger;
-        }
-
         private bool Skip = false;
         
         private TracingActivity? EventProcessingActivity;
@@ -57,7 +50,7 @@ namespace Stateflows.Extensions.OpenTelemetry
                 EventProcessingActivity.AddTag("ActionId", $"{context.Behavior.ActualId.Name.ToShortName()}:{context.Behavior.ActualId.InstanceText}");
                 EventProcessingActivity.AddTag("Event", context.Event.GetType().GetEventName().ToShortName());
 
-                Logger.LogTrace(
+                logger.LogTrace(
                     message: "Action '{ActionId}' received event '{Event}', processing",
                     $"{context.Behavior.ActualId.Name.ToShortName()}:{context.Behavior.ActualId.InstanceText}",
                     context.Event.GetType().GetEventName().ToShortName()
@@ -84,7 +77,7 @@ namespace Stateflows.Extensions.OpenTelemetry
         {
             if (exception == null!)
             {
-                Logger.LogTrace(
+                logger.LogTrace(
                     message: "Action '{ActionId}' processed event '{Event}' with result '{EventStatus}'",
                     $"{context.Behavior.ActualId.Name.ToShortName()}:{context.Behavior.ActualId.InstanceText}",
                     context.ExecutionTrigger.GetType().GetEventName().ToShortName(),
@@ -93,7 +86,7 @@ namespace Stateflows.Extensions.OpenTelemetry
             }
             else
             {
-                Logger.LogError(
+                logger.LogError(
                     message: "Action '{ActionId}' failed to process event '{Event}'",
                     exception: exception,
                     args: new object[]
@@ -128,7 +121,7 @@ namespace Stateflows.Extensions.OpenTelemetry
         {
             if (exception == null!)
             {
-                Logger.LogTrace(
+                logger.LogTrace(
                     message: "Action '{ActionId}' processed event '{Event}' with result '{EventStatus}'",
                     $"{context.Behavior.ActualId.Name.ToShortName()}:{context.Behavior.ActualId.InstanceText}",
                     context.ExecutionTrigger.GetType().GetEventName().ToShortName(),
@@ -137,7 +130,7 @@ namespace Stateflows.Extensions.OpenTelemetry
             }
             else
             {
-                Logger.LogError(
+                logger.LogError(
                     message: "Action '{ActionId}' failed to process event '{Event}'",
                     exception: exception,
                     args: new object[]

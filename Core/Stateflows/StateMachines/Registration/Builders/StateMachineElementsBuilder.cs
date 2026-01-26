@@ -30,7 +30,7 @@ namespace Stateflows.StateMachines.Registration.Builders
     {
         public Graph Graph { get; }
 
-        BehaviorClass IBehaviorBuilder.BehaviorClass => new BehaviorClass(Constants.StateMachine, Graph.Name);
+        BehaviorClass IBehaviorBuilder.BehaviorClass => new(Constants.StateMachine, Graph.Name);
 
         int IBehaviorBuilder.BehaviorVersion => Graph.Version;
 
@@ -283,7 +283,6 @@ namespace Stateflows.StateMachines.Registration.Builders
         public IInitializedStateMachineElementsBuilder AddExceptionHandler<TExceptionHandler>()
             where TExceptionHandler : class, IStateMachineExceptionHandler
         {
-           
             AddExceptionHandler(async (serviceProvider, context) =>
             {
                 ContextValues.GlobalValuesHolder.Value = context.Behavior.Values;
@@ -313,9 +312,6 @@ namespace Stateflows.StateMachines.Registration.Builders
 
         IOverridenStateMachineElementsBuilder IStateMachineUtils<IOverridenStateMachineElementsBuilder>.AddObserver<TObserver>()
             => AddObserver<TObserver>() as IOverridenStateMachineElementsBuilder;
-
-        // public IInitializedStateMachineElementsBuilder AddExceptionHandler(StateMachineExceptionHandlerFactory exceptionHandlerFactory)
-        //     => AddExceptionHandler((serviceProvider, context) => Task.FromResult(exceptionHandlerFactory(serviceProvider, context)));
 
         public IInitializedStateMachineElementsBuilder AddExceptionHandler(StateMachineExceptionHandlerFactoryAsync exceptionHandlerFactoryAsync)
         {
@@ -364,9 +360,6 @@ namespace Stateflows.StateMachines.Registration.Builders
 
             return this;
         }
-
-        // public IInitializedStateMachineElementsBuilder AddInterceptor(StateMachineInterceptorFactory interceptorFactory)
-        //     => AddInterceptor((serviceProvider, context) => Task.FromResult(interceptorFactory(serviceProvider, context)));
         
         public IInitializedStateMachineElementsBuilder AddInterceptor(StateMachineInterceptorFactoryAsync interceptorFactoryAsync)
         {
@@ -400,9 +393,6 @@ namespace Stateflows.StateMachines.Registration.Builders
 
             return this;
         }
-
-        // public IInitializedStateMachineElementsBuilder AddObserver(StateMachineObserverFactory observerFactory)
-        //     => AddObserver((serviceProvider, context) => Task.FromResult(observerFactory(serviceProvider, context)));
         
         public IInitializedStateMachineElementsBuilder AddObserver(StateMachineObserverFactoryAsync observerFactoryAsync)
         {
@@ -471,8 +461,6 @@ namespace Stateflows.StateMachines.Registration.Builders
         {
             Graph.BaseStateMachineName = StateMachine<TStateMachine>.Name;
             TStateMachine.Build(this);
-            // var sm = StateflowsActivator.CreateUninitializedInstance(typeof(TStateMachine)) as IStateMachine;
-            // sm.Build(this);
             
             foreach (var vertex in Graph.AllVertices.Values)
             {

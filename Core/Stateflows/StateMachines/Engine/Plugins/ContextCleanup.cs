@@ -9,7 +9,7 @@ namespace Stateflows.StateMachines.Engine
 {
     internal class ContextCleanup : StateMachinePlugin
     {
-        private readonly List<Vertex> ExitedStates = new List<Vertex>();
+        private readonly List<Vertex> ExitedStates = [];
 
         public override void AfterStateExit(IStateActionContext context)
         {
@@ -25,7 +25,6 @@ namespace Stateflows.StateMachines.Engine
         {
             if (context.Target != null)
             {
-                // var ctx = ((IRootContext)context).Context;
                 foreach (var vertexName in ExitedStates.Select(v => v.Name))
                 {
                     if (vertexName != context.Target.Name)
@@ -34,8 +33,6 @@ namespace Stateflows.StateMachines.Engine
                         {
                             stateContext.Values.ClearAsync().GetAwaiter().GetResult();
                         }
-                        
-                        // ctx.ClearStateValues(vertexName);
                     }
                 }
                 ExitedStates.Clear();

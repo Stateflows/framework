@@ -12,14 +12,8 @@ using Stateflows.Extensions.OpenTelemetry.Headers;
 
 namespace Stateflows.Extensions.OpenTelemetry
 {
-    public class ActivityTracer : IActivityObserver, IActivityInterceptor, IActivityExceptionHandler
+    public class ActivityTracer(ILogger<ActivityTracer> logger) : IActivityObserver, IActivityInterceptor, IActivityExceptionHandler
     {
-        private readonly ILogger<ActivityTracer> Logger;
-        public ActivityTracer(ILogger<ActivityTracer> logger)
-        {
-            Logger = logger;
-        }
-
         private bool Skip = false;
         
         private TracingActivity? EventProcessingActivity;
@@ -50,7 +44,7 @@ namespace Stateflows.Extensions.OpenTelemetry
                 EventProcessingActivity.AddTag("ActivityId", $"{context.Behavior.ActualId.Name.ToShortName()}:{context.Behavior.ActualId.InstanceText}");
                 EventProcessingActivity.AddTag("Event", context.Event.GetType().GetEventName().ToShortName());
 
-                Logger.LogTrace(
+                logger.LogTrace(
                     message: "Activity '{ActivityId}' received event '{Event}', processing",
                     $"{context.Behavior.ActualId.Name.ToShortName()}:{context.Behavior.ActualId.InstanceText}",
                     context.Event.GetType().GetEventName().ToShortName()
@@ -88,7 +82,7 @@ namespace Stateflows.Extensions.OpenTelemetry
         {
             if (exception == null!)
             {
-                Logger.LogTrace(
+                logger.LogTrace(
                     message: "Activity '{ActivityId}' processed event '{Event}' with result '{EventStatus}'",
                     $"{context.Behavior.ActualId.Name.ToShortName()}:{context.Behavior.ActualId.InstanceText}",
                     context.ExecutionTrigger.GetType().GetEventName().ToShortName(),
@@ -97,7 +91,7 @@ namespace Stateflows.Extensions.OpenTelemetry
             }
             else
             {
-                Logger.LogError(
+                logger.LogError(
                     message: "Activity '{ActivityId}' failed to process event '{Event}'",
                     exception: exception,
                     args: new object[]

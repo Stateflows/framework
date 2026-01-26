@@ -1,8 +1,7 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
+using Stateflows.Common.Registration.Interfaces;
 using Stateflows.Actions;
 using Stateflows.Activities;
-using Stateflows.Common;
-using Stateflows.Common.Registration.Interfaces;
 using Stateflows.StateMachines;
 
 namespace Stateflows.Extensions.OpenTelemetry

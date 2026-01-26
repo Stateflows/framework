@@ -60,8 +60,6 @@ namespace Stateflows.StateMachines.Registration.Interfaces
     public delegate void OverridenDefaultTransitionBuildAction(IOverridenDefaultTransitionBuilder builder);
 
     public delegate void DefaultTransitionEffectBuildAction(IDefaultTransitionEffectBuilder builder);
-    
-    public delegate void OverridenDefaultTransitionEffectBuildAction(IOverridenDefaultTransitionEffectBuilder builder);
 
     public delegate void ElseTransitionBuildAction<TEvent>(IElseTransitionBuilder<TEvent> builder);
 
@@ -74,8 +72,6 @@ namespace Stateflows.StateMachines.Registration.Interfaces
     public delegate void ElseDefaultTransitionBuildAction(IElseDefaultTransitionBuilder builder);
 
     public delegate void OverridenElseDefaultTransitionBuildAction(IElseDefaultTransitionBuilder builder);
-
-    // public delegate void EmbeddedBehaviorBuildAction(IEmbeddedBehaviorBuilder builder);
 
     public delegate void ForwardedEventBuildAction<TEvent>(IForwardedEventBuilder<TEvent> builder);
 
