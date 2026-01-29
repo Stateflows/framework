@@ -70,6 +70,15 @@ namespace Stateflows.Activities.Engine
                 return result;
             }
 
+            var embedding = (BehaviorEmbedding?)eventHolder.Headers.Values.FirstOrDefault(h => h is BehaviorEmbedding);
+            if (embedding != null)
+            {
+                stateflowsContext.ContextOwnerId = embedding.OwnerId;
+                stateflowsContext.ContextParentId = embedding.ParentId;
+            }
+
+            stateflowsContext.StateflowsValues = (await ValueStorage.LoadAsync(stateflowsContext.ContextOwnerId ?? stateflowsContext.Id)).ToDictionary();
+
             using var executor = new Executor(Register, graph, serviceProvider);
 
             var context = new RootContext(stateflowsContext);
@@ -103,7 +112,7 @@ namespace Stateflows.Activities.Engine
                                     responseResult?.Status == EventStatus.Invalid ||
                                     (
                                         responseResult?.Status == EventStatus.Omitted &&
-                                        !ev.Headers.Any(h => h is ForcedExecution)
+                                        !ev.Headers.Values.Any(h => h is ForcedExecution)
                                     )
                                 )
                                 {
@@ -167,6 +176,7 @@ namespace Stateflows.Activities.Engine
 
                 stateflowsContext = executor.Dehydrate().Context;
 
+                await ValueStorage.SaveAsync(stateflowsContext.ContextOwnerId ?? stateflowsContext.Id, stateflowsContext.StateflowsValues);
                 await Storage.DehydrateAsync(stateflowsContext);
             }
 
@@ -224,7 +234,7 @@ namespace Stateflows.Activities.Engine
                 {
                     var noImplicitInitialization =
                         eventHolder.PayloadType.GetCustomAttributes<NoImplicitInitializationAttribute>().Any() ||
-                        eventHolder.Headers.Any(h => h is NoImplicitInitialization);
+                        eventHolder.Headers.Values.Any(h => h is NoImplicitInitialization);
 
                     if (!executor.Initialized && !noImplicitInitialization)
                     {

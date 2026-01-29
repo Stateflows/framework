@@ -30,17 +30,18 @@ namespace Stateflows.Common.Context.Classes
         public BehaviorContext(StateflowsContext context, IServiceProvider serviceProvider)
             : base(context, serviceProvider)
         {
-            Values = new ValuesStorage(
-                string.Empty,
-                Context.ContextOwnerId ?? Context.Id,
-                ServiceProvider.GetRequiredService<IStateflowsLock>(),
-                ServiceProvider.GetRequiredService<IStateflowsValueStorage>()
-            );
+            // Values = new ValuesStorage(
+            //     string.Empty,
+            //     Context.ContextOwnerId ?? Context.Id,
+            //     ServiceProvider.GetRequiredService<IStateflowsLock>(),
+            //     ServiceProvider.GetRequiredService<IStateflowsValueStorage>()
+            // );
+            Values = new StateflowsValuesCollection(context.StateflowsValues);
         }
 
         public IContextValues Values { get; }
 
-        public void Send<TEvent>(TEvent @event, IEnumerable<EventHeader> headers = null)
+        public void Send<TEvent>(TEvent @event, IDictionary<string, EventHeader> headers = null)
         {
             var locator = ServiceProvider.GetService<IBehaviorLocator>();
             if (locator.TryLocateBehavior(Context.ContextParentId ?? Id, out var behavior))
@@ -49,9 +50,9 @@ namespace Stateflows.Common.Context.Classes
             }
         }
 
-        public void Publish<TNotification>(TNotification notification, IEnumerable<EventHeader> headers = null)
+        public void Publish<TNotification>(TNotification notification, IDictionary<string, EventHeader> headers = null)
         {
-            var strictOwnershipHeader = headers?.OfType<StrictOwnership>().FirstOrDefault();
+            var strictOwnershipHeader = headers?.Values.OfType<StrictOwnership>().FirstOrDefault();
             var strictOwnershipAttribute = typeof(TNotification).GetCustomAttribute<StrictOwnershipAttribute>();
             var id = strictOwnershipHeader != null || strictOwnershipAttribute != null
                 ? Id

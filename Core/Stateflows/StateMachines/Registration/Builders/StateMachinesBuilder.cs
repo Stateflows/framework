@@ -10,7 +10,7 @@ using Stateflows.StateMachines.Registration.Interfaces;
 
 namespace Stateflows.StateMachines.Registration.Builders
 {
-    internal class StateMachinesBuilder(IStateMachinesRegister register, bool systemRegistrations) : IStateMachinesBuilder
+    internal class StateMachinesBuilder(IStateMachinesRegister register, BehaviorClass? ownerClass = null, BehaviorClass? parentClass = null) : IStateMachinesBuilder
     {
 
         [DebuggerHidden]
@@ -55,14 +55,18 @@ namespace Stateflows.StateMachines.Registration.Builders
         [DebuggerHidden]
         public IStateMachinesBuilder AddStateMachine(string stateMachineName, int version, StateMachineBuildAction buildAction)
         {
-            if (register is IIsSystemRegistration registration)
+            if (register is IOwnedRegistration registration)
             {
                 // Register is a singleton, modify IsSystemRegistration only for the duration of the AddAction call
-                var valueBefore = registration.IsSystemRegistration;
-                registration.IsSystemRegistration = systemRegistrations;
+                var originalOwnerClass = registration.OwnerClass;
+                var originalParentClass = registration.ParentClass;
+                registration.OwnerClass = ownerClass;
+                registration.ParentClass = parentClass;
 
                 register.AddStateMachine(stateMachineName, version, buildAction);
-                registration.IsSystemRegistration = valueBefore;
+                
+                registration.OwnerClass = originalOwnerClass;
+                registration.ParentClass = originalParentClass;
 
                 return this;
             }
@@ -76,14 +80,18 @@ namespace Stateflows.StateMachines.Registration.Builders
         public IStateMachinesBuilder AddStateMachine<TStateMachine>(string stateMachineName = null, int version = 1, StateMachineUtilsBuildAction buildAction = null)
             where TStateMachine : class, IStateMachine
         {
-            if (register is IIsSystemRegistration registration)
+            if (register is IOwnedRegistration registration)
             {
                 // Register is a singleton, modify IsSystemRegistration only for the duration of the AddAction call
-                var valueBefore = registration.IsSystemRegistration;
-                registration.IsSystemRegistration = systemRegistrations;
+                var originalOwnerClass = registration.OwnerClass;
+                var originalParentClass = registration.ParentClass;
+                registration.OwnerClass = ownerClass;
+                registration.ParentClass = parentClass;
 
                 register.AddStateMachine<TStateMachine>(stateMachineName ?? StateMachine<TStateMachine>.Name, version, buildAction);
-                registration.IsSystemRegistration = valueBefore;
+                
+                registration.OwnerClass = originalOwnerClass;
+                registration.ParentClass = originalParentClass;
 
                 return this;
             }

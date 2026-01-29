@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Threading.Tasks;
 using Stateflows.Common;
 using Stateflows.StateMachines.Context.Interfaces;
 
@@ -14,7 +13,7 @@ namespace Stateflows.StateMachines.Engine
             this.locator = locator;
         }
         
-        private bool HandleException(StateMachineId stateMachineId, Exception exception, IEnumerable<EventHeader> headers)
+        private bool HandleException(StateMachineId stateMachineId, Exception exception, IDictionary<string, EventHeader> headers)
         {
             if (locator.TryLocateStateMachine(stateMachineId, out var stateMachine))
             {

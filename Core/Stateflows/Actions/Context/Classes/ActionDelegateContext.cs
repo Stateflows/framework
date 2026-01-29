@@ -30,7 +30,7 @@ namespace Stateflows.Actions.Context.Classes
 
         public object ExecutionTrigger => RootContext.EventHolder.BoxedPayload;
         public Guid ExecutionTriggerId => RootContext.EventHolder.Id;
-        public List<EventHeader> Headers => RootContext.EventHolder.Headers;
+        public Dictionary<string, EventHeader> Headers => RootContext.EventHolder.Headers;
         public IBehaviorContext Behavior => this;
 
         public void Clear()

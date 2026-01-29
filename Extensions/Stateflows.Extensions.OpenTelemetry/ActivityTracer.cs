@@ -21,13 +21,13 @@ namespace Stateflows.Extensions.OpenTelemetry
         {
             var noTracing =
                 context.Event!.GetType().GetCustomAttributes<NoTracingAttribute>().Any() ||
-                context.Headers.Any(h => h is NoTracing);
+                context.Headers.Values.Any(h => h is NoTracing);
             
             Skip = noTracing;
             
             if (!noTracing)
             {
-                var header = context.Headers.FirstOrDefault(h => h is ActivityHeader);
+                var header = context.Headers.Values.FirstOrDefault(h => h is ActivityHeader);
                 if (header is ActivityHeader activityHeader)
                 {
                     EventProcessingActivity = StateMachineTracer.Source.StartActivity(
@@ -121,7 +121,7 @@ namespace Stateflows.Extensions.OpenTelemetry
             
             if (EventProcessingActivity == null)
             {
-                var header = context.Headers.FirstOrDefault(h => h is ActivityHeader);
+                var header = context.Headers.Values.FirstOrDefault(h => h is ActivityHeader);
                 if (header is ActivityHeader activityHeader)
                 {
                     InitializerActivity = StateMachineTracer.Source.StartActivity(

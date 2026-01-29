@@ -33,12 +33,13 @@ namespace Stateflows.StateMachines.Context.Classes
         public StateMachineContext(RootContext context) : base(context)
         {
             // Values = new ContextValuesCollection(context.GlobalValues);
-            Values = new ValuesStorage(
-                string.Empty,
-                Context.Context.ContextOwnerId ?? Context.Id,
-                Context.Executor.ServiceProvider.GetRequiredService<IStateflowsLock>(),
-                Context.Executor.ServiceProvider.GetRequiredService<IStateflowsValueStorage>()
-            );
+            // Values = new ValuesStorage(
+            //     string.Empty,
+            //     Context.Context.ContextOwnerId ?? Context.Id,
+            //     Context.Executor.ServiceProvider.GetRequiredService<IStateflowsLock>(),
+            //     Context.Executor.ServiceProvider.GetRequiredService<IStateflowsValueStorage>()
+            // );
+            Values = new StateflowsValuesCollection(context.Context.StateflowsValues);
         }
 
         public Task<IStateMachineInspection> GetInspectionAsync()
@@ -63,12 +64,12 @@ namespace Stateflows.StateMachines.Context.Classes
             return false;
         }
 
-        public void Send<TEvent>(TEvent @event, IEnumerable<EventHeader> headers = null)
+        public void Send<TEvent>(TEvent @event, IDictionary<string, EventHeader> headers = null)
             => _ = Context.SendAsync(@event, headers);
 
-        public void Publish<TNotification>(TNotification notification, IEnumerable<EventHeader> headers = null)
+        public void Publish<TNotification>(TNotification notification, IDictionary<string, EventHeader> headers = null)
         {
-            var strictOwnershipHeader = headers?.OfType<StrictOwnership>().FirstOrDefault();
+            var strictOwnershipHeader = headers?.Values.OfType<StrictOwnership>().FirstOrDefault();
             var strictOwnershipAttribute = typeof(TNotification).GetCustomAttribute<StrictOwnershipAttribute>();
             var id = strictOwnershipHeader != null || strictOwnershipAttribute != null
                 ? (BehaviorId)Id

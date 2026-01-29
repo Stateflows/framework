@@ -15,7 +15,7 @@ using Stateflows.Actions.Registration.Interfaces;
 
 namespace Stateflows.Actions.Registration
 {
-    internal class ActionsRegister : IActionsRegister, IIsSystemRegistration
+    internal class ActionsRegister : IActionsRegister, IOwnedRegistration
     {
         public readonly List<ActionExceptionHandlerFactoryAsync> GlobalExceptionHandlerFactories = [];
 
@@ -30,7 +30,8 @@ namespace Stateflows.Actions.Registration
 
         private readonly Dictionary<string, int> CurrentVersions = new();
 
-        public bool IsSystemRegistration { get; set; } = false;
+        public BehaviorClass? OwnerClass { get; set; }
+        public BehaviorClass? ParentClass { get; set; }
 
         private bool IsNewestVersion(string actionName, int version)
         {
@@ -65,6 +66,8 @@ namespace Stateflows.Actions.Registration
                 Version = version,
                 Delegate = actionDelegate,
                 VisitingAction = VisitingActionAsync,
+                OwnerClass = OwnerClass,
+                ParentClass = ParentClass,
             };
             
             buildAction?.Invoke(new ActionBuilder(actionModel));
@@ -84,9 +87,9 @@ namespace Stateflows.Actions.Registration
             Task VisitingActionAsync(IActionVisitor v)
             {
                 // Assign to local variable to avoid value being overriden when invoking lambda function at a later stage
-                var localIsSystemRegistration = IsSystemRegistration;
+                var ownerClass = OwnerClass;
 
-                return v.ActionAddedAsync(actionName, version, localIsSystemRegistration);
+                return v.ActionAddedAsync(actionName, version, ownerClass);
             }
         }
 
@@ -131,11 +134,11 @@ namespace Stateflows.Actions.Registration
             var method = ActionTypeAddedAsyncMethod.MakeGenericMethod(actionType);
 
             // Assign to local variable to avoid value being overriden when invoking lambda function at a later stage
-            var localIsSystemRegistration = IsSystemRegistration;
+            var ownerClass = OwnerClass;
 
             Func<IActionVisitor, Task> visitingAction = async v =>
             {
-                await v.ActionAddedAsync(actionName, version, localIsSystemRegistration);
+                await v.ActionAddedAsync(actionName, version, ownerClass);
                 await (Task)method.Invoke(v, [actionName, version]);
             };
 

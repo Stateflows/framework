@@ -17,7 +17,7 @@ internal class ActionVisitor(IEndpointRouteBuilder routeBuilder, Interceptor int
     public IEndpointRouteBuilder RouteBuilder => routeBuilder;
     public Dictionary<string, List<(HateoasLink, BehaviorStatus[])>> HateoasLinks { get; set; } = new();
 
-    public override Task ActionAddedAsync(string actionName, int actionVersion, bool isSystemRegistration = false)
+    public override Task ActionAddedAsync(string actionName, int actionVersion, BehaviorClass? ownerClass = null, BehaviorClass? parentClass = null)
     {
         RegisterStandardEndpoints(actionName, routeBuilder);
         return Task.CompletedTask;
@@ -80,10 +80,11 @@ internal class ActionVisitor(IEndpointRouteBuilder routeBuilder, Interceptor int
                         }
                         else
                         {
-                            var requestResult =
-                                await behavior.GetStatusAsync(implicitInitialization
+                            var requestResult = await behavior.GetStatusAsync(
+                                implicitInitialization
                                     ? []
-                                    : [new NoImplicitInitialization()]);
+                                    : new Dictionary<string, EventHeader> { { nameof(NoImplicitInitialization), new NoImplicitInitialization() } }
+                            );
                             // workaround for return code 200 regardless behavior actual status
                             requestResult.Status = EventStatus.Consumed;
                             return requestResult.ToResult([], requestResult.Response, HateoasLinks);
@@ -151,7 +152,7 @@ internal class ActionVisitor(IEndpointRouteBuilder routeBuilder, Interceptor int
                             period ??= TimeSpan.FromSeconds(60);
                             var notifications = (await behavior.GetNotificationsAsync(names, DateTime.Now - period))
                                 .ToArray();
-                            var behaviorInfo = (await behavior.GetStatusAsync([new NoImplicitInitialization()]))
+                            var behaviorInfo = (await behavior.GetStatusAsync(new Dictionary<string, EventHeader>() { { nameof(NoImplicitInitialization), new NoImplicitInitialization() } }))
                                 .Response;
                             var sendResult = new SendResult(EventStatus.Consumed, new EventValidation(true));
                             return sendResult.ToResult(notifications, behaviorInfo, HateoasLinks);
@@ -190,7 +191,7 @@ internal class ActionVisitor(IEndpointRouteBuilder routeBuilder, Interceptor int
                     if (locator.TryLocateAction(new ActionId(actionName, instance), out var behavior))
                     {
                         var sendResult = await behavior.FinalizeAsync();
-                        var behaviorInfo = (await behavior.GetStatusAsync([new NoImplicitInitialization()])).Response;
+                        var behaviorInfo = (await behavior.GetStatusAsync(new Dictionary<string, EventHeader>() { { nameof(NoImplicitInitialization), new NoImplicitInitialization() } })).Response;
                         return sendResult.ToResult([], behaviorInfo, HateoasLinks);
                     }
 
@@ -228,7 +229,7 @@ internal class ActionVisitor(IEndpointRouteBuilder routeBuilder, Interceptor int
                     if (locator.TryLocateAction(new ActionId(actionName, instance), out var behavior))
                     {
                         var sendResult = await behavior.ResetAsync();
-                        var behaviorInfo = (await behavior.GetStatusAsync([new NoImplicitInitialization()])).Response;
+                        var behaviorInfo = (await behavior.GetStatusAsync(new Dictionary<string, EventHeader>() { { nameof(NoImplicitInitialization), new NoImplicitInitialization() } })).Response;
                         return sendResult.ToResult([], behaviorInfo, HateoasLinks);
                     }
 

@@ -369,7 +369,7 @@ namespace Stateflows.StateMachines.Registration.Builders
             where TStateMachine : class, IStateMachine
         {
             var submachineName = $"{Vertex.Graph.Name}.{Vertex.Name}.submachine";
-            Vertex.Graph.StateflowsBuilder.AddStateMachines(b => b.AddStateMachine<TStateMachine>(submachineName, buildAction: buildAction), true);
+            Vertex.Graph.StateflowsBuilder.AddStateMachines(b => b.AddStateMachine<TStateMachine>(submachineName, buildAction: buildAction), Vertex.Graph.OwnerClass ?? Vertex.Graph.Class, Vertex.Graph.Class);
             
             Vertex.BehaviorType = BehaviorType.StateMachine;
             Vertex.BehaviorName = submachineName;
@@ -382,7 +382,7 @@ namespace Stateflows.StateMachines.Registration.Builders
         private StateBuilder AddSubmachine(StateMachineBuildAction stateMachineBuildAction)
         {
             var submachineName = $"{Vertex.Graph.Name}.{Vertex.Name}.submachine";
-            Vertex.Graph.StateflowsBuilder.AddStateMachines(b => b.AddStateMachine(submachineName, stateMachineBuildAction), true);
+            Vertex.Graph.StateflowsBuilder.AddStateMachines(b => b.AddStateMachine(submachineName, stateMachineBuildAction), Vertex.Graph.OwnerClass ?? Vertex.Graph.Class, Vertex.Graph.Class);
             
             Vertex.BehaviorType = BehaviorType.StateMachine;
             Vertex.BehaviorName = submachineName;
@@ -401,7 +401,7 @@ namespace Stateflows.StateMachines.Registration.Builders
             where TActivity : class, IActivity
         {
             var doActivityName = GetDoActivityName();
-            Vertex.Graph.StateflowsBuilder.AddActivities(b => b.AddActivity<TActivity>(doActivityName, buildAction: buildAction), true);
+            Vertex.Graph.StateflowsBuilder.AddActivities(b => b.AddActivity<TActivity>(doActivityName, buildAction: buildAction), Vertex.Graph.OwnerClass ?? Vertex.Graph.Class, Vertex.Graph.Class);
             
             Vertex.BehaviorType = BehaviorType.Activity;
             Vertex.BehaviorName = doActivityName;
@@ -414,7 +414,7 @@ namespace Stateflows.StateMachines.Registration.Builders
         private StateBuilder AddDoActivity(ReactiveActivityBuildAction activityBuildAction)
         {
             var doActivityName = GetDoActivityName();
-            Vertex.Graph.StateflowsBuilder.AddActivities(b => b.AddActivity(doActivityName, activityBuildAction), true);
+            Vertex.Graph.StateflowsBuilder.AddActivities(b => b.AddActivity(doActivityName, activityBuildAction), Vertex.Graph.OwnerClass ?? Vertex.Graph.Class, Vertex.Graph.Class);
             
             Vertex.BehaviorType = BehaviorType.Activity;
             Vertex.BehaviorName = doActivityName;
@@ -433,7 +433,7 @@ namespace Stateflows.StateMachines.Registration.Builders
             where TAction : class, IAction
         {
             var doActionName = GetDoActionName();
-            Vertex.Graph.StateflowsBuilder.AddActions(b => b.AddAction<TAction>(doActionName, buildAction: buildAction), true);
+            Vertex.Graph.StateflowsBuilder.AddActions(b => b.AddAction<TAction>(doActionName, buildAction: buildAction), Vertex.Graph.OwnerClass ?? Vertex.Graph.Class, Vertex.Graph.Class);
             
             Vertex.BehaviorType = BehaviorType.Action;
             Vertex.BehaviorName = doActionName;
@@ -446,7 +446,7 @@ namespace Stateflows.StateMachines.Registration.Builders
         private StateBuilder AddDoAction(ActionDelegateAsync actionDelegate, ActionBuildAction buildAction = null)
         {
             var doActionName = GetDoActionName();
-            Vertex.Graph.StateflowsBuilder.AddActions(b => b.AddAction(doActionName, actionDelegate), true);
+            Vertex.Graph.StateflowsBuilder.AddActions(b => b.AddAction(doActionName, actionDelegate), Vertex.Graph.OwnerClass ?? Vertex.Graph.Class, Vertex.Graph.Class);
             
             Vertex.BehaviorType = BehaviorType.Action;
             Vertex.BehaviorName = doActionName;

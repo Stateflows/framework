@@ -36,7 +36,7 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         {
             var vertex = ((IVertexBuilder)this).Vertex;
             var activityName = $"{vertex.Graph.Name}.{vertex.Name}.onEntry.{vertex.Entry.Actions.Count}";
-            vertex.Graph.StateflowsBuilder.AddActivities(b => b.AddActivity<TActivity>(activityName, buildAction: buildAction));
+            vertex.Graph.StateflowsBuilder.AddActivities(b => b.AddActivity<TActivity>(activityName, buildAction: buildAction), vertex.Graph.OwnerClass ?? vertex.Graph.Class, vertex.Graph.Class);
             return AddOnEntry(c => StateMachineActivityExtensions.RunStateActivityAsync(Constants.Entry, c, activityName));
         }
 
@@ -48,7 +48,7 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         {
             var vertex = ((IVertexBuilder)this).Vertex;
             var activityName = $"{vertex.Graph.Name}.{vertex.Name}.onEntry.{vertex.Entry.Actions.Count}";
-            vertex.Graph.StateflowsBuilder.AddActivities(b => b.AddActivity(activityName, activityBuildAction));
+            vertex.Graph.StateflowsBuilder.AddActivities(b => b.AddActivity(activityName, activityBuildAction), vertex.Graph.OwnerClass ?? vertex.Graph.Class, vertex.Graph.Class);
             return AddOnEntry(c => StateMachineActivityExtensions.RunStateActivityAsync(Constants.Entry, c, activityName));
         }
         #endregion
@@ -65,7 +65,7 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         {
             var vertex = ((IVertexBuilder)this).Vertex;
             var actionName = $"{vertex.Graph.Name}.{vertex.Name}.onEntry.{vertex.Entry.Actions.Count}";
-            vertex.Graph.StateflowsBuilder.AddActions(b => b.AddAction<TAction>(actionName, buildAction: buildAction));
+            vertex.Graph.StateflowsBuilder.AddActions(b => b.AddAction<TAction>(actionName, buildAction: buildAction), vertex.Graph.OwnerClass ?? vertex.Graph.Class, vertex.Graph.Class);
             return AddOnEntry(c => StateMachineActionExtensions.RunStateActionAsync(Constants.Entry, c, actionName));
         }
         
@@ -78,7 +78,7 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         {
             var vertex = ((IVertexBuilder)this).Vertex;
             var actionName = $"{vertex.Graph.Name}.{vertex.Name}.onEntry.{vertex.Entry.Actions.Count}";
-            vertex.Graph.StateflowsBuilder.AddActions(b => b.AddAction(actionName, actionDelegateAsync, buildAction: buildAction));
+            vertex.Graph.StateflowsBuilder.AddActions(b => b.AddAction(actionName, actionDelegateAsync, buildAction: buildAction), vertex.Graph.OwnerClass ?? vertex.Graph.Class, vertex.Graph.Class);
             return AddOnEntry(c => StateMachineActionExtensions.RunStateActionAsync(Constants.Entry, c, actionName));
         }
         #endregion

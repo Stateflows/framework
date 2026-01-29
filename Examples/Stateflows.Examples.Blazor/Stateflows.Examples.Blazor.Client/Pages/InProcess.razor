@@ -110,7 +110,7 @@
         }
     }
 
-    private Task Approve(RoleHeader roleHeader) => stateMachineBehavior.SendAsync(new Approve(), [ roleHeader ]);
+    private Task Approve(RoleHeader roleHeader) => stateMachineBehavior.SendAsync(new Approve(), new Dictionary<string, EventHeader> { { "X-Role", roleHeader } });
 
     private Task Pay() => stateMachineBehavior.SendAsync(new PaymentBooked { Amount = 500 });
 

@@ -4,7 +4,9 @@ using System.Threading.Tasks;
 using Stateflows.Common;
 using Stateflows.Common.Models;
 using Stateflows.Common.Classes;
+using Stateflows.Common.Utilities;
 using Stateflows.Common.Exceptions;
+using Stateflows.Common.Registration;
 using Stateflows.Common.Registration.Builders;
 using Stateflows.Activities.Models;
 using Stateflows.Activities.Context.Classes;
@@ -12,8 +14,6 @@ using Stateflows.Activities.Context.Interfaces;
 using Stateflows.Activities.Registration.Interfaces;
 using Stateflows.Activities.Registration.Interfaces.Base;
 using Stateflows.Activities.Registration.Interfaces.Internal;
-using Stateflows.Common.Registration;
-using Stateflows.Common.Utilities;
 
 namespace Stateflows.Activities.Registration.Builders
 {
@@ -29,10 +29,10 @@ namespace Stateflows.Activities.Registration.Builders
             set => Node = value;
         }
 
-        public ActivityBuilder(string name, int version, Node parentNode, StateflowsBuilder stateflowsBuilder)
+        public ActivityBuilder(string name, int version, Node parentNode, StateflowsBuilder stateflowsBuilder, BehaviorClass? ownerClass, BehaviorClass? parentClass)
             : base(parentNode)
         {
-            Graph = new Graph(name, version, stateflowsBuilder);
+            Graph = new Graph(name, version, stateflowsBuilder, ownerClass, parentClass);
         }
 
         private IActivityBuilder AddInitializer(Type initializerType, string initializerName, ActivityPredicateAsync initializerAction)

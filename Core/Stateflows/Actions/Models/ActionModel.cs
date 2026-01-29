@@ -12,6 +12,9 @@ namespace Stateflows.Actions.Models
         public string Name { get; set; }
         public int Version { get; set; }
         
+        public BehaviorClass? ParentClass { get; set; }
+        public BehaviorClass? OwnerClass { get; set; }
+        
         public bool IsStateless { get; set; }
         public ActionDelegateAsync Delegate { get; set; }
         public Func<IActionVisitor, Task> VisitingAction { get; set; }

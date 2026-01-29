@@ -39,22 +39,23 @@ namespace Stateflows.Activities.Context.Classes
         public ActivityContext(RootContext context, NodeScope nodeScope)
             : base(context, nodeScope)
         {
-            Values = new ValuesStorage(
-                string.Empty,
-                Context.Context.ContextOwnerId ?? Context.Id,
-                Context.Executor.NodeScope.ServiceProvider.GetRequiredService<IStateflowsLock>(),
-                Context.Executor.NodeScope.ServiceProvider.GetRequiredService<IStateflowsValueStorage>()
-            );
+            // Values = new ValuesStorage(
+            //     string.Empty,
+            //     Context.Context.ContextOwnerId ?? Context.Id,
+            //     Context.Executor.NodeScope.ServiceProvider.GetRequiredService<IStateflowsLock>(),
+            //     Context.Executor.NodeScope.ServiceProvider.GetRequiredService<IStateflowsValueStorage>()
+            // );
+            Values = new StateflowsValuesCollection(context.Context.StateflowsValues);
         }
 
         public IContextValues Values { get; }
 
-        public void Send<TEvent>(TEvent @event, IEnumerable<EventHeader> headers = null)
+        public void Send<TEvent>(TEvent @event, IDictionary<string, EventHeader> headers = null)
             => _ = Context.SendAsync(@event, headers);
 
-        public void Publish<TNotification>(TNotification notification, IEnumerable<EventHeader> headers = null)
+        public void Publish<TNotification>(TNotification notification, IDictionary<string, EventHeader> headers = null)
         {
-            var strictOwnershipHeader = headers?.OfType<StrictOwnership>().FirstOrDefault();
+            var strictOwnershipHeader = headers?.Values.OfType<StrictOwnership>().FirstOrDefault();
             var strictOwnershipAttribute = typeof(TNotification).GetCustomAttribute<StrictOwnershipAttribute>();
             var id = strictOwnershipHeader != null || strictOwnershipAttribute != null
                 ? (BehaviorId)Id

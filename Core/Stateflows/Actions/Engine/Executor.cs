@@ -229,7 +229,7 @@ namespace Stateflows.Actions.Engine
 
         private static void HandleGuardRequest<TEvent>(EventHolder<TEvent> eventHolder, ActionDelegateContext context)
         {
-            var guardRequest = context.Headers.OfType<TransitionGuardRequest>().FirstOrDefault();
+            var guardRequest = context.Headers.Values.OfType<TransitionGuardRequest>().FirstOrDefault();
             if (guardRequest != null)
             {
                 var output = context.OutputTokens.OfType<TokenHolder<bool>>().FirstOrDefault()?.Payload ?? false;
@@ -237,14 +237,17 @@ namespace Stateflows.Actions.Engine
                 if (output)
                 {
                     var headers = context.Headers
-                        .Where(h => !(h is TransitionGuardRequest))
+                        .Where(h => h.Value is not TransitionGuardRequest)
                         .Append(
-                            new TransitionGuardResponse()
-                            {
-                                GuardIdentifier = guardRequest.GuardIdentifier
-                            }
+                            new KeyValuePair<string, EventHeader>(
+                                nameof(TransitionGuardResponse),
+                                new TransitionGuardResponse
+                                {
+                                    GuardIdentifier = guardRequest.GuardIdentifier
+                                }
+                            )
                         )
-                        .ToArray();
+                        .ToDictionary();
 
                     context.Send(eventHolder.Payload, headers);
                 }
@@ -296,7 +299,7 @@ namespace Stateflows.Actions.Engine
             }
         }
 
-        [DebuggerHidden]
+        // [DebuggerHidden]
         private async Task InvokeActionAsync(ActionDelegateContext context)
         {
             try

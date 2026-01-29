@@ -62,7 +62,7 @@ internal class StateMachineVisitor(
         return Task.CompletedTask;
     }
 
-    public override Task StateMachineAddedAsync(string stateMachineName, int stateMachineVersion, bool isSystemRegistration = false)
+    public override Task StateMachineAddedAsync(string stateMachineName, int stateMachineVersion, BehaviorClass? ownerClass = null, BehaviorClass? parentClass = null)
     {
         RegisterStandardEndpoints(stateMachineName);
         RegisterRemainingEndpoints(stateMachineName);
@@ -192,7 +192,7 @@ internal class StateMachineVisitor(
                             var result =
                                 await behavior.GetStatusAsync(implicitInitialization
                                     ? []
-                                    : [new NoImplicitInitialization()]);
+                                    : new Dictionary<string, EventHeader>() { { nameof(NoImplicitInitialization), new NoImplicitInitialization() } });
                             // workaround for return code 200 regardless behavior actual status
                             result.Status = EventStatus.Consumed;
                             return result.ToResult([], result.Response, HateoasLinks);
@@ -260,7 +260,7 @@ internal class StateMachineVisitor(
                             period ??= TimeSpan.FromSeconds(60);
 
                             var notifications = (await behavior.GetNotificationsAsync(names, DateTime.Now - period.Value)).ToArray();
-                            var behaviorInfo = (await behavior.GetStatusAsync([new NoImplicitInitialization()])).Response;
+                            var behaviorInfo = (await behavior.GetStatusAsync(new Dictionary<string, EventHeader>() { { nameof(NoImplicitInitialization), new NoImplicitInitialization() } })).Response;
 
                             var sendResult = new SendResult(EventStatus.Consumed, new EventValidation(true));
                             return sendResult.ToResult(notifications, behaviorInfo, HateoasLinks);
@@ -302,13 +302,13 @@ internal class StateMachineVisitor(
                     {
                         // var compoundResult = await behavior.SendCompoundAsync(b => b
                         //     .Add(new Finalize())
-                        //     .Add(new StateMachineInfoRequest(), [new NoImplicitInitialization()])
+                        //     .Add(new StateMachineInfoRequest(), new Dictionary<string, EventHeader>() { { nameof(NoImplicitInitialization), new NoImplicitInitialization() } })
                         // );
                         //
                         // var result = compoundResult.Response.Results.First();
                         // var behaviorInfo = ((EventHolder<StateMachineInfo>)compoundResult.Response.Results.Last().Response).Payload;
                         var sendResult = await behavior.FinalizeAsync();
-                        var behaviorInfo = (await behavior.GetStatusAsync([new NoImplicitInitialization()])).Response;
+                        var behaviorInfo = (await behavior.GetStatusAsync(new Dictionary<string, EventHeader>() { { nameof(NoImplicitInitialization), new NoImplicitInitialization() } })).Response;
                         return sendResult.ToResult([], behaviorInfo, HateoasLinks);
                     }
 
@@ -347,13 +347,13 @@ internal class StateMachineVisitor(
                     {
                         // var compoundResult = await behavior.SendCompoundAsync(b => b
                         //     .Add(new Reset())
-                        //     .Add(new StateMachineInfoRequest(), [new NoImplicitInitialization()])
+                        //     .Add(new StateMachineInfoRequest(), new Dictionary<string, EventHeader>() { { nameof(NoImplicitInitialization), new NoImplicitInitialization() } })
                         // );
                         //
                         // var result = compoundResult.Response.Results.First();
                         // var behaviorInfo = ((EventHolder<StateMachineInfo>)compoundResult.Response.Results.Last().Response).Payload;
                         var sendResult = await behavior.ResetAsync();
-                        var behaviorInfo = (await behavior.GetStatusAsync([new NoImplicitInitialization()])).Response;
+                        var behaviorInfo = (await behavior.GetStatusAsync(new Dictionary<string, EventHeader>() { { nameof(NoImplicitInitialization), new NoImplicitInitialization() } })).Response;
                         return sendResult.ToResult([], behaviorInfo, HateoasLinks);
                     }
 

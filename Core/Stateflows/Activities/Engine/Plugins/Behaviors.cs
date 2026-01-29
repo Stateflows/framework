@@ -14,10 +14,10 @@ internal class Behaviors : ActivityPlugin
         {
             if (eventStatus == EventStatus.NotConsumed)
             {
-                var headers = context.Headers.ToList();
-                if (!headers.Any(h => h is NoForwarding))
+                var headers = context.Headers.ToDictionary();
+                if (!headers.Values.Any(h => h is NoForwarding))
                 {
-                    headers.Add(new NoForwarding());
+                    headers.Add(nameof(NoForwarding), new NoForwarding());
                 }
 
                 context.Behavior.Send(context.Event, headers);

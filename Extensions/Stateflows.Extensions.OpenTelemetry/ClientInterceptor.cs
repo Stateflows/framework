@@ -10,7 +10,7 @@ namespace Stateflows.Extensions.OpenTelemetry
         {
             if (Activity.Current != null)
             {
-                eventHolder.Headers.Add(new ActivityHeader() { Activity = Activity.Current });
+                eventHolder.Headers.Add(nameof(ActivityHeader), new ActivityHeader() { Activity = Activity.Current });
             }
 
             return true;

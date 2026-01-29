@@ -40,7 +40,7 @@ namespace Stateflows.StateMachines.Engine
             ValueStorage = ServiceProvider.GetRequiredService<IStateflowsValueStorage>();
         }
 
-        [DebuggerHidden]
+        //[DebuggerHidden]
         private Task<EventStatus> TryHandleEventAsync<TEvent>(EventContext<TEvent> context)
         {
             var eventHandler = EventHandlers.FirstOrDefault(h => h.EventType.IsInstanceOfType(context.Event));
@@ -50,7 +50,7 @@ namespace Stateflows.StateMachines.Engine
                 : Task.FromResult(EventStatus.NotConsumed);
         }
         
-        [DebuggerHidden]
+        //[DebuggerHidden]
         public async Task<EventStatus> ProcessEventAsync<TEvent>(BehaviorId id, EventHolder<TEvent> eventHolder, List<Exception> exceptions)
         {
             try
@@ -71,6 +71,15 @@ namespace Stateflows.StateMachines.Engine
                 {
                     return result;
                 }
+
+                var embedding = (BehaviorEmbedding?)eventHolder.Headers.Values.FirstOrDefault(h => h is BehaviorEmbedding);
+                if (embedding != null)
+                {
+                    stateflowsContext.ContextOwnerId = embedding.OwnerId;
+                    stateflowsContext.ContextParentId = embedding.ParentId;
+                }
+
+                stateflowsContext.StateflowsValues = (await ValueStorage.LoadAsync(stateflowsContext.ContextOwnerId ?? stateflowsContext.Id)).ToDictionary();
 
                 using var executor = new Executor(Register, graph, serviceProvider, stateflowsContext, eventHolder);
                 
@@ -103,7 +112,7 @@ namespace Stateflows.StateMachines.Engine
                                         responseResult?.Status == EventStatus.Invalid ||
                                         (
                                             responseResult?.Status == EventStatus.Omitted &&
-                                            !ev.Headers.Any(h => h is ForcedExecution)
+                                            !ev.Headers.Values.Any(h => h is ForcedExecution)
                                         )
                                     )
                                     {
@@ -191,7 +200,9 @@ namespace Stateflows.StateMachines.Engine
                 }
 
                 // out of try-finally to make sure that context won't be saved when execution fails
-                await Storage.DehydrateAsync(executor.Context.Context);
+                var ctx = executor.Context.Context;
+                await ValueStorage.SaveAsync(ctx.ContextOwnerId ?? ctx.Id, ctx.StateflowsValues);
+                await Storage.DehydrateAsync(ctx);
 
                 return result;
             }
@@ -245,7 +256,7 @@ namespace Stateflows.StateMachines.Engine
         Task<EventStatus> IStateflowsProcessor.ExecuteBehaviorAsync<TEvent>(EventHolder<TEvent> eventHolder, EventStatus result, IStateflowsExecutor stateflowsExecutor)
             => ExecuteBehaviorAsync(eventHolder, result, stateflowsExecutor as Executor);
 
-        [DebuggerHidden]
+        //[DebuggerHidden]
         private async Task<EventStatus> ExecuteBehaviorAsync<TEvent>(
             EventHolder<TEvent> eventHolder,
             EventStatus result,
@@ -268,7 +279,7 @@ namespace Stateflows.StateMachines.Engine
                 {
                     var noImplicitInitialization =
                         eventHolder.PayloadType.GetCustomAttributes<NoImplicitInitializationAttribute>().Any() ||
-                        eventHolder.Headers.Any(h => h is NoImplicitInitialization);
+                        eventHolder.Headers.Values.Any(h => h is NoImplicitInitialization);
                     
                     if (!executor.Initialized && !typeof(Exception).IsAssignableFrom(eventHolder.PayloadType))
                     {

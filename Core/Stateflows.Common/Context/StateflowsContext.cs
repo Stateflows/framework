@@ -122,11 +122,23 @@ namespace Stateflows.Common.Context
             => Values.Count != 0;
 
         public Dictionary<string, object> Values { get; } = [];
-        public BehaviorId? ContextOwnerId { get; set; } = null;
-        public BehaviorId? ContextParentId { get; set; } = null;
+        public BehaviorId? ContextOwnerId { get; set; }
+        public BehaviorId? ContextParentId { get; set; }
         
         [Newtonsoft.Json.JsonIgnore]
         [JsonIgnore]
         public Dictionary<string, object> RuntimeMetadata { get; } = [];
+
+        [Newtonsoft.Json.JsonIgnore] [JsonIgnore]
+        public Dictionary<string, StateflowsValue> stateflowsValues;
+
+        public Dictionary<string, StateflowsValue>? StateflowsValues
+        {
+            get => stateflowsValues;
+            set
+            {
+                stateflowsValues = value;
+            }
+        }
     }
 }

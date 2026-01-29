@@ -42,7 +42,7 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
             }
             activityName += $".effect.{edge.Effects.Actions.Count}";
             
-            vertex.Graph.StateflowsBuilder.AddActivities(b => b.AddActivity<TActivity>(activityName, buildAction: buildAction));
+            vertex.Graph.StateflowsBuilder.AddActivities(b => b.AddActivity<TActivity>(activityName, buildAction: buildAction), vertex.Graph.OwnerClass ?? vertex.Graph.Class, vertex.Graph.Class);
             return AddEffect(c => StateMachineActivityExtensions.RunEffectActivity(c, activityName));
         }
 
@@ -61,7 +61,7 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
             }
             activityName += $".effect.{edge.Effects.Actions.Count}";
             
-            vertex.Graph.StateflowsBuilder.AddActivities(b => b.AddActivity(activityName, activityBuildAction));
+            vertex.Graph.StateflowsBuilder.AddActivities(b => b.AddActivity(activityName, activityBuildAction), vertex.Graph.OwnerClass ?? vertex.Graph.Class, vertex.Graph.Class);
             return AddEffect(c => StateMachineActivityExtensions.RunEffectActivity(c, activityName));
         }
         
@@ -83,7 +83,7 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
             }
             actionName += $".effect.{edge.Effects.Actions.Count}";
             
-            vertex.Graph.StateflowsBuilder.AddActions(b => b.AddAction<TAction>(actionName, buildAction: buildAction));
+            vertex.Graph.StateflowsBuilder.AddActions(b => b.AddAction<TAction>(actionName, buildAction: buildAction), vertex.Graph.OwnerClass ?? vertex.Graph.Class, vertex.Graph.Class);
             return AddEffect(c => StateMachineActionExtensions.RunEffectActionAsync(c, actionName));
         }
 
@@ -103,7 +103,7 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
             }
             actionName += $".effect.{edge.Effects.Actions.Count}";
             
-            vertex.Graph.StateflowsBuilder.AddActions(b => b.AddAction(actionName, actionDelegate, buildAction: buildAction));
+            vertex.Graph.StateflowsBuilder.AddActions(b => b.AddAction(actionName, actionDelegate, buildAction: buildAction), vertex.Graph.OwnerClass ?? vertex.Graph.Class, vertex.Graph.Class);
             return AddEffect(c => StateMachineActionExtensions.RunEffectActionAsync(c, actionName));
         }
         

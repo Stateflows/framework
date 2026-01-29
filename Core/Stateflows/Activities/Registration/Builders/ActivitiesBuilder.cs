@@ -10,10 +10,8 @@ using Stateflows.Common.Interfaces;
 
 namespace Stateflows.Activities.Registration.Builders
 {
-    internal class ActivitiesBuilder(ActivitiesRegister register, bool systemRegistrations) : IActivitiesBuilder
+    internal class ActivitiesBuilder(ActivitiesRegister register, BehaviorClass? ownerClass = null, BehaviorClass? parentClass = null) : IActivitiesBuilder
     {
-        private readonly bool SystemRegistrations = systemRegistrations;
-
         [DebuggerHidden]
         public IActivitiesBuilder AddFromAssembly(Assembly assembly)
         {
@@ -26,14 +24,14 @@ namespace Stateflows.Activities.Registration.Builders
 
                 var attribute = @type.GetCustomAttributes(typeof(ActivityBehaviorAttribute)).FirstOrDefault() as ActivityBehaviorAttribute;
 
-                if (register is IIsSystemRegistration registration)
+                if (register is IOwnedRegistration registration)
                 {
                     // Register is a singleton, modify IsSystemRegistration only for the duration of the AddAction call
-                    var valueBefore = registration.IsSystemRegistration;
-                    registration.IsSystemRegistration = systemRegistrations;
+                    var valueBefore = registration.OwnerClass;
+                    registration.OwnerClass = ownerClass;
 
                     register.AddActivity(attribute?.Name ?? @type.FullName, attribute?.Version ?? 1, @type);
-                    registration.IsSystemRegistration = valueBefore;
+                    registration.OwnerClass = valueBefore;
 
                     return;
                 }
@@ -67,14 +65,18 @@ namespace Stateflows.Activities.Registration.Builders
         [DebuggerHidden]
         public IActivitiesBuilder AddActivity(string activityName, int version, ReactiveActivityBuildAction buildAction)
         {
-            if (register is IIsSystemRegistration registration)
+            if (register is IOwnedRegistration registration)
             {
                 // Register is a singleton, modify IsSystemRegistration only for the duration of the AddAction call
-                var valueBefore = registration.IsSystemRegistration;
-                registration.IsSystemRegistration = systemRegistrations;
+                var originalOwnerClass = registration.OwnerClass;
+                var originalParentClass = registration.ParentClass;
+                registration.OwnerClass = ownerClass;
+                registration.ParentClass = parentClass;
 
                 register.AddActivity(activityName, version, buildAction);
-                registration.IsSystemRegistration = valueBefore;
+                
+                registration.OwnerClass = originalOwnerClass;
+                registration.ParentClass = originalParentClass;
 
                 return this;
             }
@@ -88,14 +90,18 @@ namespace Stateflows.Activities.Registration.Builders
         public IActivitiesBuilder AddActivity<TActivity>(string activityName = null, int version = 1, ActivityUtilsBuildAction buildAction = null)
             where TActivity : class, IActivity
         {
-            if (register is IIsSystemRegistration registration)
+            if (register is IOwnedRegistration registration)
             {
                 // Register is a singleton, modify IsSystemRegistration only for the duration of the AddAction call
-                var valueBefore = registration.IsSystemRegistration;
-                registration.IsSystemRegistration = systemRegistrations;
+                var originalOwnerClass = registration.OwnerClass;
+                var originalParentClass = registration.ParentClass;
+                registration.OwnerClass = ownerClass;
+                registration.ParentClass = parentClass;
 
                 register.AddActivity<TActivity>(activityName ?? Activity<TActivity>.Name, version, buildAction);
-                registration.IsSystemRegistration = valueBefore;
+                
+                registration.OwnerClass = originalOwnerClass;
+                registration.ParentClass = originalParentClass;
 
                 return this;
             }

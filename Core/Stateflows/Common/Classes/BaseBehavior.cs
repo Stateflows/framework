@@ -54,7 +54,7 @@ namespace Stateflows.Common.Classes
         protected abstract Task<ExecutionToken> ProcessEventAsync(BehaviorId id, EventHolder eventHolder);
 
         [DebuggerHidden]
-        public async Task<SendResult> SendAsync<TEvent>(TEvent @event, IEnumerable<EventHeader> headers = null)
+        public async Task<SendResult> SendAsync<TEvent>(TEvent @event, IDictionary<string, EventHeader> headers = null)
         {
             var eventHolder = @event.ToTypedEventHolder(headers);
             var executionToken = await ProcessEventAsync(Id, eventHolder);
@@ -71,7 +71,7 @@ namespace Stateflows.Common.Classes
         }
 
         [DebuggerHidden]
-        public async Task<RequestResult<TResponse>> RequestAsync<TResponse>(IRequest<TResponse> request, IEnumerable<EventHeader> headers = null)
+        public async Task<RequestResult<TResponse>> RequestAsync<TResponse>(IRequest<TResponse> request, IDictionary<string, EventHeader> headers = null)
         {
             var eventHolder = request.ToTypedEventHolder(headers);
             var executionToken = await ProcessEventAsync(Id, eventHolder);

@@ -1,8 +1,8 @@
-﻿using System.Linq;
+﻿using System.Collections.Generic;
+using System.Linq;
 using System.Reflection;
 using Stateflows.Common;
 using Stateflows.Common.Utilities;
-using Stateflows.Common.Extensions;
 using Stateflows.StateMachines.Exceptions;
 using Stateflows.StateMachines.Context.Classes;
 using Stateflows.StateMachines.Context.Interfaces;
@@ -17,15 +17,15 @@ namespace Stateflows.StateMachines.Engine
             {
                 if (eventStatus == EventStatus.NotConsumed)
                 {
-                    var headers = context.Headers.ToList();
+                    var headers = context.Headers.ToDictionary();
                     
                     var noBubblingAttribute = context.Event.GetType().GetCustomAttribute<NoBubblingAttribute>();
-                    if (!headers.Any(h => h is NoBubbling) && noBubblingAttribute == null)
+                    if (!headers.Values.Any(h => h is NoBubbling) && noBubblingAttribute == null)
                     {
                         var noForwardingAttribute = context.Event.GetType().GetCustomAttribute<NoForwardingAttribute>();
-                        if (!headers.Any(h => h is NoForwarding) && noForwardingAttribute == null)
+                        if (!headers.Values.Any(h => h is NoForwarding) && noForwardingAttribute == null)
                         {
-                            headers.Add(new NoForwarding());
+                            headers.Add(nameof(NoForwarding), new NoForwarding());
                         }
 
                         context.Behavior.Send(context.Event, headers);
@@ -53,15 +53,26 @@ namespace Stateflows.StateMachines.Engine
                 {
                     stateValues.BehaviorId = behaviorId;
                     
-                    behavior.SendAsync(((BaseContext)context).Context.Context.GetContextOwnerSetter()).Wait();
-                    
                     var initializationRequest = (
                         vertex.BehaviorInitializationBuilder != null
                             ? vertex.BehaviorInitializationBuilder(context)
                             : new Initialize()
                     ).ToTypedEventHolder();
                     
-                    _ = initializationRequest.SendAsync(behavior);
+                    _ = initializationRequest.SendAsync(
+                        behavior,
+                        new Dictionary<string, EventHeader>
+                        {
+                            {
+                                nameof(BehaviorEmbedding),
+                                new BehaviorEmbedding()
+                                {
+                                    OwnerId = context.Behavior.Id,
+                                    ParentId = context.Behavior.ActualId
+                                }
+                            }
+                        }
+                    );
                 }
                 else
                 {
@@ -94,7 +105,7 @@ namespace Stateflows.StateMachines.Engine
                     context.TryLocateBehavior(stateValues.BehaviorId.Value, out var behavior)
                 )
                 {
-                    behavior.SendAsync(new Finalize()).GetAwaiter().GetResult();
+                    behavior.SendAsync(new Finalize()).Wait();
                     stateValues.BehaviorId = null;
                 }
             }

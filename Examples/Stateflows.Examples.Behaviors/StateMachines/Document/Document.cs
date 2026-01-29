@@ -8,6 +8,7 @@ using Stateflows.Examples.Behaviors.StateMachines.Document.States;
 using Stateflows.Examples.Common.Events;
 using Stateflows.StateMachines;
 using Stateflows.Activities;
+using Stateflows.Extensions.MinimalAPIs;
 using Stateflows.StateMachines.Attributes;
 
 namespace Stateflows.Examples.Behaviors.StateMachines.Document;

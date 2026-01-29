@@ -19,9 +19,9 @@ internal class ActionConfigurationVisitor(MinimalAPIsBuilder minimalApisBuilder)
         return Task.CompletedTask;
     }
 
-    public override Task ActionAddedAsync(string actionName, int actionVersion, bool isSystemRegistration = false)
+    public override Task ActionAddedAsync(string actionName, int actionVersion, BehaviorClass? ownerClass = null, BehaviorClass? parentClass = null)
     {
-        if (isSystemRegistration)
+        if (ownerClass != null)
         {
             minimalApisBuilder.ConfigureActions(b =>
                 b.ConfigureAction(
@@ -31,6 +31,6 @@ internal class ActionConfigurationVisitor(MinimalAPIsBuilder minimalApisBuilder)
             );
         }
 
-        return base.ActionAddedAsync(actionName, actionVersion, isSystemRegistration);
+        return base.ActionAddedAsync(actionName, actionVersion, ownerClass);
     }
 }
