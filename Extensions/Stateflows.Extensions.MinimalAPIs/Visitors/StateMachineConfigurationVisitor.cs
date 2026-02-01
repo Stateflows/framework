@@ -18,7 +18,7 @@ internal class StateMachineConfigurationVisitor(MinimalAPIsBuilder minimalApisBu
         return Task.CompletedTask;
     }
 
-    public override Task StateMachineAddedAsync(string stateMachineName, int stateMachineVersion, bool isSystemRegistration = false)
+    public override Task StateMachineAddedAsync(string stateMachineName, int stateMachineVersion, bool isSystemRegistration = false, bool isDefaultInstance = false)
     {
         if (isSystemRegistration)
         {
@@ -30,6 +30,6 @@ internal class StateMachineConfigurationVisitor(MinimalAPIsBuilder minimalApisBu
             );
         }
 
-        return base.StateMachineAddedAsync(stateMachineName, stateMachineVersion, isSystemRegistration);
+        return base.StateMachineAddedAsync(stateMachineName, stateMachineVersion, isSystemRegistration: isSystemRegistration, isDefaultInstance: isDefaultInstance);
     }
 }

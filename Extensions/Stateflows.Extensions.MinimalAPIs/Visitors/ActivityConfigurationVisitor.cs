@@ -18,7 +18,7 @@ internal class ActivityConfigurationVisitor(MinimalAPIsBuilder minimalApisBuilde
         return Task.CompletedTask;
     }
 
-    public override Task ActivityAddedAsync(string activityName, int activityVersion, bool isSystemRegistration = false)
+    public override Task ActivityAddedAsync(string activityName, int activityVersion, bool isSystemRegistration = false, bool isDefaultInstance = false)
     {
         if (isSystemRegistration)
         {
@@ -30,6 +30,6 @@ internal class ActivityConfigurationVisitor(MinimalAPIsBuilder minimalApisBuilde
             );
         }
 
-        return base.ActivityAddedAsync(activityName, activityVersion, isSystemRegistration);
+        return base.ActivityAddedAsync(activityName, activityVersion, isSystemRegistration: isSystemRegistration, isDefaultInstance: isDefaultInstance);
     }
 }

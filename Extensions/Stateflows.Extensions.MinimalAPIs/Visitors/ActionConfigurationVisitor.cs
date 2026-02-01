@@ -19,7 +19,7 @@ internal class ActionConfigurationVisitor(MinimalAPIsBuilder minimalApisBuilder)
         return Task.CompletedTask;
     }
 
-    public override Task ActionAddedAsync(string actionName, int actionVersion, bool isSystemRegistration = false)
+    public override Task ActionAddedAsync(string actionName, int actionVersion, bool isSystemRegistration = false, bool isDefaultInstance = false)
     {
         if (isSystemRegistration)
         {
@@ -31,6 +31,6 @@ internal class ActionConfigurationVisitor(MinimalAPIsBuilder minimalApisBuilder)
             );
         }
 
-        return base.ActionAddedAsync(actionName, actionVersion, isSystemRegistration);
+        return base.ActionAddedAsync(actionName, actionVersion, isSystemRegistration: isSystemRegistration, isDefaultInstance: isDefaultInstance);
     }
 }

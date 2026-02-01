@@ -12,6 +12,7 @@ using Stateflows.Actions.Exceptions;
 using Stateflows.Actions.Context.Classes;
 using Stateflows.Actions.Registration.Builders;
 using Stateflows.Actions.Registration.Interfaces;
+using Stateflows.Common.Initializer;
 
 namespace Stateflows.Actions.Registration
 {
@@ -86,7 +87,10 @@ namespace Stateflows.Actions.Registration
                 // Assign to local variable to avoid value being overriden when invoking lambda function at a later stage
                 var localIsSystemRegistration = IsSystemRegistration;
 
-                return v.ActionAddedAsync(actionName, version, localIsSystemRegistration);
+                var isDefaultInstance = BehaviorClassesInitializations.Instance.DefaultInstanceInitializationTokens
+                    .Any(t => t.BehaviorClass.Type == ActionClass.Type && t.BehaviorClass.Name == actionName);
+
+                return v.ActionAddedAsync(actionName, version, isSystemRegistration: localIsSystemRegistration, isDefaultInstance: isDefaultInstance);
             }
         }
 
@@ -133,9 +137,12 @@ namespace Stateflows.Actions.Registration
             // Assign to local variable to avoid value being overriden when invoking lambda function at a later stage
             var localIsSystemRegistration = IsSystemRegistration;
 
+            var isDefaultInstance = BehaviorClassesInitializations.Instance.DefaultInstanceInitializationTokens
+                .Any(t => t.BehaviorClass.Type == ActionClass.Type && t.BehaviorClass.Name == actionName);
+
             Func<IActionVisitor, Task> visitingAction = async v =>
             {
-                await v.ActionAddedAsync(actionName, version, localIsSystemRegistration);
+                await v.ActionAddedAsync(actionName, version, isSystemRegistration: localIsSystemRegistration, isDefaultInstance: isDefaultInstance);
                 await (Task)method.Invoke(v, [actionName, version]);
             };
 

@@ -14,6 +14,8 @@ using Stateflows.Activities.Registration.Interfaces;
 using Stateflows.Common.Classes;
 using Stateflows.Common.Interfaces;
 using Stateflows.Common.Registration.Builders;
+using Stateflows.Common.Initializer;
+using ActivityClass = Stateflows.ActivityClass;
 
 namespace Stateflows.Activities.Registration
 {
@@ -87,7 +89,10 @@ namespace Stateflows.Activities.Registration
             // Assign to local variable to avoid value being overriden when invoking lambda function at a later stage
             var localIsSystemRegistration = IsSystemRegistration;
 
-            activityBuilder.Graph.VisitingTasks.Add(v => v.ActivityAddedAsync(activityName, version, localIsSystemRegistration));
+            var isDefaultInstance = BehaviorClassesInitializations.Instance.DefaultInstanceInitializationTokens
+                .Any(token => token.BehaviorClass.Type == ActivityClass.Type && token.BehaviorClass.Name == activityName);
+
+            activityBuilder.Graph.VisitingTasks.Add(v => v.ActivityAddedAsync(activityName, version, isSystemRegistration: localIsSystemRegistration, isDefaultInstance: isDefaultInstance));
 
             Activities.Add(key, activityBuilder.Graph);
 
@@ -124,9 +129,12 @@ namespace Stateflows.Activities.Registration
             // Assign to local variable to avoid value being overriden when invoking lambda function at a later stage
             var localIsSystemRegistration = IsSystemRegistration;
 
+            var isDefaultInstance = BehaviorClassesInitializations.Instance.DefaultInstanceInitializationTokens
+                .Any(token => token.BehaviorClass.Type == ActivityClass.Type && token.BehaviorClass.Name == activityName);
+
             activityBuilder.Graph.VisitingTasks.AddRange(
             [
-                v => v.ActivityAddedAsync(activityName, version, localIsSystemRegistration),
+                v => v.ActivityAddedAsync(activityName, version, isSystemRegistration: localIsSystemRegistration, isDefaultInstance: isDefaultInstance),
                 v => (Task)method.Invoke(v, [ activityName, version ])
             ]);
 

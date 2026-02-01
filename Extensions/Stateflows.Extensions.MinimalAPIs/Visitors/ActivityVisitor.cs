@@ -59,10 +59,18 @@ internal class ActivityVisitor(
         return Task.CompletedTask;
     }
 
-    public override Task ActivityAddedAsync(string activityName, int activityVersion, bool isSystemRegistration = false)
+    public override Task ActivityAddedAsync(string activityName, int activityVersion, bool isSystemRegistration = false, bool isDefaultInstance = false)
     {
-        RegisterStandardEndpoints(activityName);
-        RegisterRemainingEndpoints(activityName);
+
+        if (isDefaultInstance)
+        {
+            RegisterDefaultInstanceEndpoints(activityName);
+        }
+        else
+        {
+            RegisterStandardEndpoints(activityName);
+            RegisterRemainingEndpoints(activityName);
+        }
 
         return Task.CompletedTask;
     }
@@ -404,6 +412,157 @@ internal class ActivityVisitor(
                 new HateoasLink()
                 {
                     Rel = "reset",
+                    Href = route,
+                    Method = method
+                },
+                [BehaviorStatus.Initialized, BehaviorStatus.Finalized]
+            );
+        }
+    }
+
+    private void RegisterDefaultInstanceEndpoints(string activityName)
+    {
+        var behaviorClass = new ActivityClass(activityName);
+        const string instance = "";
+
+        var method = HttpMethods.Get;
+        var route = $"/activities/{activityName}";
+        if (interceptor.BeforeGetInstancesEndpointDefinition(behaviorClass, ref method, ref route))
+        {
+            var routeHandlerBuilder = routeBuilder.MapMethods(route, [method], async (IStateflowsStorage storage) =>
+            {
+                BehaviorClass[] actionClasses = [behaviorClass];
+                var contextIds = await storage.GetAllContextIdsAsync(actionClasses);
+                return Results.Ok(contextIds.Select(id => new { Id = id }));
+            })
+            .WithTags($"{BehaviorType.Activity} {activityName}");
+
+            interceptor.AfterGetInstancesEndpointDefinition(behaviorClass, method, route, routeHandlerBuilder);
+        }
+
+        route = $"/activities/{activityName}/status";
+        method = HttpMethods.Get;
+        if (interceptor.BeforeEventEndpointDefinition<ActivityInfoRequest>(behaviorClass, ref method, ref route))
+        {
+            var routeHandlerBuilder = routeBuilder.MapMethods(
+                route,
+                [method],
+                async (
+                    IActivityLocator locator,
+                    HttpContext httpContext,
+                    [FromQuery] bool implicitInitialization = false,
+                    [FromQuery] bool stream = false
+                ) =>
+                {
+                    if (locator.TryLocateActivity(new ActivityId(activityName, instance), out var behavior))
+                    {
+                        if (stream)
+                        {
+                            httpContext.Response.Headers.Append(HeaderNames.ContentType, "text/event-stream");
+
+                            await using var watcher = await behavior.WatchAsync(
+                                [Event<ActivityInfo>.Name],
+                                async eventHolder => await httpContext.WriteEventAsync(eventHolder)
+                            );
+
+                            while (!httpContext.RequestAborted.IsCancellationRequested)
+                            {
+                                await Task.Delay(1000);
+                            }
+
+                            return Results.Empty;
+                        }
+                        else
+                        {
+                            var requestResult =
+                                await behavior.GetStatusAsync(implicitInitialization
+                                    ? []
+                                    : [new NoImplicitInitialization()]);
+                            // workaround for return code 200 regardless behavior actual status
+                            requestResult.Status = EventStatus.Consumed;
+                            return requestResult.ToResult([], requestResult.Response, HateoasLinks);
+                        }
+                    }
+
+                    return Results.NotFound();
+                }
+            )
+            .WithTags($"{BehaviorType.Activity} {activityName}");
+
+            interceptor.AfterEventEndpointDefinition<ActivityInfoRequest>(behaviorClass, method, route, routeHandlerBuilder);
+
+            HateoasLinks.AddLink(
+                behaviorClass.Name,
+                new HateoasLink()
+                {
+                    Rel = "status",
+                    Href = route,
+                    Method = method
+                },
+                [BehaviorStatus.NotInitialized, BehaviorStatus.Initialized, BehaviorStatus.Finalized]
+            );
+        }
+
+        route = $"/activities/{activityName}/notifications";
+        method = HttpMethods.Get;
+        if (interceptor.BeforeEventEndpointDefinition<NotificationsRequest>(behaviorClass, ref method, ref route))
+        {
+            var routeHandlerBuilder = routeBuilder.MapMethods(
+                route,
+                [method],
+                async (
+                    IActivityLocator locator,
+                    HttpContext httpContext,
+                    [FromQuery] string[] names,
+                    [FromQuery] TimeSpan? period,
+                    [FromQuery] bool stream = false
+                ) =>
+                {
+                    if (locator.TryLocateActivity(new ActivityId(activityName, instance), out var behavior))
+                    {
+                        if (stream)
+                        {
+                            period ??= TimeSpan.FromSeconds(0);
+
+                            httpContext.Response.Headers.Append(HeaderNames.ContentType, "text/event-stream");
+
+                            await using var watcher = await behavior.WatchAsync(
+                                names,
+                                async eventHolder => await httpContext.WriteEventAsync(eventHolder),
+                                DateTime.Now - period.Value
+                            );
+
+                            while (!httpContext.RequestAborted.IsCancellationRequested)
+                            {
+                                await Task.Delay(1000);
+                            }
+
+                            return Results.Empty;
+                        }
+                        else
+                        {
+                            period ??= TimeSpan.FromSeconds(60);
+                            var notifications = (await behavior.GetNotificationsAsync(names, DateTime.Now - period))
+                                .ToArray();
+                            var behaviorInfo = (await behavior.GetStatusAsync([new NoImplicitInitialization()]))
+                                .Response;
+                            var sendResult = new SendResult(EventStatus.Consumed, new EventValidation(true));
+                            return sendResult.ToResult(notifications, behaviorInfo, HateoasLinks);
+                        }
+                    }
+
+                    return Results.NotFound();
+                }
+            )
+            .WithTags($"{BehaviorType.Activity} {activityName}");
+
+            interceptor.AfterEventEndpointDefinition<NotificationsRequest>(behaviorClass, method, route, routeHandlerBuilder);
+
+            HateoasLinks.AddLink(
+                behaviorClass.Name,
+                new HateoasLink()
+                {
+                    Rel = "notifications",
                     Href = route,
                     Method = method
                 },
