@@ -84,7 +84,6 @@ namespace Stateflows.Activities
                         .AddSingleton<IActivityEventHandler, ResetHandler>()
                         .AddSingleton<IActivityEventHandler, SubscriptionHandler>()
                         .AddSingleton<IActivityEventHandler, UnsubscriptionHandler>()
-                        .AddSingleton<IActivityEventHandler, SetContextOwnerHandler>()
                         .AddSingleton<IActivityEventHandler, TokensOutputHandler>()
                         .AddSingleton<IActivityEventHandler, TypedTokensOutputHandler>()
                         .AddTransient(_ =>

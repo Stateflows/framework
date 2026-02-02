@@ -30,13 +30,13 @@ namespace Stateflows.Common.Context.Classes
         public BehaviorContext(StateflowsContext context, IServiceProvider serviceProvider)
             : base(context, serviceProvider)
         {
-            // Values = new ValuesStorage(
-            //     string.Empty,
-            //     Context.ContextOwnerId ?? Context.Id,
-            //     ServiceProvider.GetRequiredService<IStateflowsLock>(),
-            //     ServiceProvider.GetRequiredService<IStateflowsValueStorage>()
-            // );
-            Values = new StateflowsValuesCollection(context.StateflowsValues);
+            Values = new ValuesStorage(
+                string.Empty,
+                Context.ContextOwnerId ?? Context.Id,
+                ServiceProvider.GetRequiredService<IStateflowsLock>(),
+                ServiceProvider.GetRequiredService<IStateflowsValueStorage>()
+            );
+            // Values = new StateflowsValuesCollection(context.StateflowsValues);
         }
 
         public IContextValues Values { get; }

@@ -465,6 +465,11 @@ namespace Stateflows.StateMachines.Registration.Builders
             foreach (var vertex in Graph.AllVertices.Values)
             {
                 vertex.OriginStateMachineName ??= Graph.BaseStateMachineName;
+
+                foreach (var deferral in vertex.Deferrals.Values)
+                {
+                    deferral.OriginStateMachineName ??= Graph.BaseStateMachineName;
+                }
             }
             
             foreach (var edge in Graph.AllEdges)

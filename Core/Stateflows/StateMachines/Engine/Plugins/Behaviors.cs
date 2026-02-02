@@ -17,7 +17,9 @@ namespace Stateflows.StateMachines.Engine
             {
                 if (eventStatus == EventStatus.NotConsumed)
                 {
-                    var headers = context.Headers.ToDictionary();
+                    var headers = context.Headers
+                        .Where(p => p.Value is not BehaviorEmbedding)
+                        .ToDictionary();
                     
                     var noBubblingAttribute = context.Event.GetType().GetCustomAttribute<NoBubblingAttribute>();
                     if (!headers.Values.Any(h => h is NoBubbling) && noBubblingAttribute == null)
@@ -25,17 +27,17 @@ namespace Stateflows.StateMachines.Engine
                         var noForwardingAttribute = context.Event.GetType().GetCustomAttribute<NoForwardingAttribute>();
                         if (!headers.Values.Any(h => h is NoForwarding) && noForwardingAttribute == null)
                         {
-                            headers.Add(nameof(NoForwarding), new NoForwarding());
+                            headers[nameof(NoForwarding)] = new NoForwarding();
                         }
 
                         context.Behavior.Send(context.Event, headers);
                     }
                 }
 
-                if (eventStatus == EventStatus.Consumed)
-                {
-                    context.Behavior.Send(new Completion());
-                }
+                // if (eventStatus == EventStatus.Consumed)
+                // {
+                //     context.Behavior.Send(new Completion());
+                // }
             }
         }
 
@@ -70,6 +72,10 @@ namespace Stateflows.StateMachines.Engine
                                     OwnerId = context.Behavior.Id,
                                     ParentId = context.Behavior.ActualId
                                 }
+                            },
+                            {
+                                nameof(ForcedReset),
+                                new ForcedReset()
                             }
                         }
                     );

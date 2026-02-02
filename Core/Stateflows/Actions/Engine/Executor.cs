@@ -126,18 +126,6 @@ namespace Stateflows.Actions.Engine
                     }
                 }
                 else
-                if (eventHolder is EventHolder<SetContextOwner> setContextOwnerHolder)
-                {
-                    ResetBehavior(ResetMode.Full);
-                    
-                    StateflowsContext.Deleted = false;
-
-                    eventContext.RootContext.Context.ContextOwnerId = setContextOwnerHolder.Payload.ContextOwnerId;
-                    eventContext.RootContext.Context.ContextParentId = setContextOwnerHolder.Payload.ContextParentId;
-                    
-                    result = EventStatus.Consumed;
-                }
-                else
                 if (eventHolder is EventHolder<Subscribe> subscribeHolder)
                 {
                     var subscribe = subscribeHolder.Payload;
@@ -238,16 +226,12 @@ namespace Stateflows.Actions.Engine
                 {
                     var headers = context.Headers
                         .Where(h => h.Value is not TransitionGuardRequest)
-                        .Append(
-                            new KeyValuePair<string, EventHeader>(
-                                nameof(TransitionGuardResponse),
-                                new TransitionGuardResponse
-                                {
-                                    GuardIdentifier = guardRequest.GuardIdentifier
-                                }
-                            )
-                        )
                         .ToDictionary();
+
+                    headers[nameof(TransitionGuardResponse)] = new TransitionGuardResponse
+                    {
+                        GuardIdentifier = guardRequest.GuardIdentifier
+                    };
 
                     context.Send(eventHolder.Payload, headers);
                 }

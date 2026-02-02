@@ -5,30 +5,30 @@ namespace Stateflows.Activities.Registration.Interfaces
     public interface IStructuredActivityBuilder :
         IObjectFlowBase<IStructuredActivityBuilder>,
         IControlFlowBase<IStructuredActivityBuilder>,
-        IActivity<IStructuredActivityBuilder>,
+        IActivityBase<IStructuredActivityBuilder>,
         IActivitySpecials<IStructuredActivityBuilder>,
-        IInitial<IStructuredActivityBuilder>,
-        IFinal<IStructuredActivityBuilder>,
-        IInput<IStructuredActivityBuilder>,
-        IOutput<IStructuredActivityBuilder>,
+        IInitialBase<IStructuredActivityBuilder>,
+        IFinalBase<IStructuredActivityBuilder>,
+        IInputBase<IStructuredActivityBuilder>,
+        IOutputBase<IStructuredActivityBuilder>,
         IExceptionHandlerBase<IStructuredActivityBuilder>,
         INodeOptions<IStructuredActivityBuilderWithOptions>,
         IStructuredActivityEvents<IStructuredActivityBuilder>,
-        ISendEvent<IStructuredActivityBuilder>
+        ISendEventBase<IStructuredActivityBuilder>
     { }
 
     public interface IStructuredActivityBuilderWithOptions :
         IObjectFlowBase<IStructuredActivityBuilderWithOptions>,
         IControlFlowBase<IStructuredActivityBuilderWithOptions>,
-        IActivity<IStructuredActivityBuilderWithOptions>,
+        IActivityBase<IStructuredActivityBuilderWithOptions>,
         IActivitySpecials<IStructuredActivityBuilderWithOptions>,
-        IInitial<IStructuredActivityBuilderWithOptions>,
-        IFinal<IStructuredActivityBuilderWithOptions>,
-        IInput<IStructuredActivityBuilderWithOptions>,
-        IOutput<IStructuredActivityBuilderWithOptions>,
+        IInitialBase<IStructuredActivityBuilderWithOptions>,
+        IFinalBase<IStructuredActivityBuilderWithOptions>,
+        IInputBase<IStructuredActivityBuilderWithOptions>,
+        IOutputBase<IStructuredActivityBuilderWithOptions>,
         IExceptionHandlerBase<IStructuredActivityBuilderWithOptions>,
         IStructuredActivityEvents<IStructuredActivityBuilderWithOptions>,
-        ISendEvent<IStructuredActivityBuilderWithOptions>
+        ISendEventBase<IStructuredActivityBuilderWithOptions>
     { }
 
 

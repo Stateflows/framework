@@ -14,7 +14,7 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         /// <typeparam name="TAction">Action class; must implement <see cref="IAction"/> interface</typeparam>
         /// <param name="buildAction">Build action</param>
         [DebuggerHidden]
-        public TReturn AddDoAction<TAction>(ActionBuildAction buildAction = null)
+        public TReturn AddDoAction<TAction>(ActionBuildAction<TAction> buildAction = null)
             where TAction : class, IAction;
 
         /// <summary>

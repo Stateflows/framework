@@ -33,13 +33,13 @@ namespace Stateflows.StateMachines.Context.Classes
         public StateMachineContext(RootContext context) : base(context)
         {
             // Values = new ContextValuesCollection(context.GlobalValues);
-            // Values = new ValuesStorage(
-            //     string.Empty,
-            //     Context.Context.ContextOwnerId ?? Context.Id,
-            //     Context.Executor.ServiceProvider.GetRequiredService<IStateflowsLock>(),
-            //     Context.Executor.ServiceProvider.GetRequiredService<IStateflowsValueStorage>()
-            // );
-            Values = new StateflowsValuesCollection(context.Context.StateflowsValues);
+            Values = new ValuesStorage(
+                string.Empty,
+                Context.Context.ContextOwnerId ?? Context.Id,
+                Context.Executor.ServiceProvider.GetRequiredService<IStateflowsLock>(),
+                Context.Executor.ServiceProvider.GetRequiredService<IStateflowsValueStorage>()
+            );
+            // Values = new StateflowsValuesCollection(context.Context.StateflowsValues);
         }
 
         public Task<IStateMachineInspection> GetInspectionAsync()

@@ -392,11 +392,11 @@ namespace Stateflows.StateMachines.Engine
                         if (locator.TryLocateBehavior(behaviorId, out var behavior))
                         {
                             var headers = eventHolder.Headers.ToDictionary();
-                            headers.Add(nameof(BehaviorEmbedding), new BehaviorEmbedding()
+                            headers[nameof(BehaviorEmbedding)] = new BehaviorEmbedding
                             {
                                 OwnerId = Context.Context.ContextOwnerId ?? Context.Context.Id,
                                 ParentId = Context.Context.Id,
-                            });
+                            };
                             _ = behavior.SendAsync(eventHolder.Payload, headers);
 
                             return EventStatus.Forwarded;

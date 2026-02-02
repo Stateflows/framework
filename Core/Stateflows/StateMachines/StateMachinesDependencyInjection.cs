@@ -101,7 +101,6 @@ namespace Stateflows.StateMachines
                         .AddSingleton<IStateMachineEventHandler, ResetHandler>()
                         .AddSingleton<IStateMachineEventHandler, SubscriptionHandler>()
                         .AddSingleton<IStateMachineEventHandler, UnsubscriptionHandler>()
-                        .AddSingleton<IStateMachineEventHandler, SetContextOwnerHandler>()
                         .AddTransient(_ =>
                             StateMachinesContextHolder.StateMachineContext.Value ??
                             throw new InvalidOperationException(

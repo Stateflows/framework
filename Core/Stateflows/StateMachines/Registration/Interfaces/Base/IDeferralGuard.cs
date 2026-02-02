@@ -12,7 +12,9 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         /// <param name="guardExpression">The guard expression to add.</param>
         TReturn AddGuardExpression(Func<IDeferralGuardBuilder<TEvent>, IDeferralGuardBuilder<TEvent>> guardExpression)
         {
-            var builder = new DeferralGuardBuilder<TEvent>(((IVertexBuilder)this).Vertex);
+            var deferral = (IDeferralBuilder)this;
+            var builder = new DeferralGuardBuilder<TEvent>(deferral.Vertex, deferral.Guards);
+            
             guardExpression.Invoke(builder);
 
             return AddGuard(builder.GetAndGuard());

@@ -161,9 +161,9 @@ namespace Stateflows.Actions.Registration
         }
 
         [DebuggerHidden]
-        public void AddAction<TAction>(string actionName = null, int version = 1, ActionBuildAction buildAction = null)
+        public void AddAction<TAction>(string actionName = null, int version = 1, ActionBuildAction<TAction> buildAction = null)
             where TAction : class, IAction
-            => AddAction(actionName ?? Action<TAction>.Name, version, typeof(TAction), buildAction);
+            => AddAction(actionName ?? Action<TAction>.Name, version, typeof(TAction), b => buildAction?.Invoke(new ActionBuilder<TAction>(((ActionBuilder)b).Model)));
 
         public Task VisitActionsAsync(IActionVisitor visitor)
         {

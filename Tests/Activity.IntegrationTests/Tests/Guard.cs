@@ -3,6 +3,11 @@ using StateMachine.IntegrationTests.Utils;
 
 namespace Activity.IntegrationTests.Tests
 {
+    public struct IntHandler
+    {
+        public int Value;
+    }
+    
     public class IntHolder
     {
         public int Value { get; set; }
@@ -56,7 +61,8 @@ namespace Activity.IntegrationTests.Tests
                         .AddAction(
                             "main",
                             async c => c.OutputRange(Enumerable.Range(0, 100)),
-                            b => b.AddFlow<int, GuardFlow>("check")
+                            b => b
+                                .AddFlow<int, GuardFlow>("check")
                         )
                         .AddAction("check", async c =>
                         {

@@ -23,12 +23,12 @@ namespace Stateflows.Activities.Registration.Interfaces.Base
         public TReturn AddAcceptEventAction<TEvent>(AcceptEventActionDelegateAsync<TEvent> actionAsync, AcceptEventActionBuildAction buildAction = null)
             => AddAcceptEventAction<TEvent>(AcceptEventActionNode<TEvent>.Name, actionAsync, buildAction);
         [DebuggerHidden]
-        public TReturn AddAcceptEventAction<TEvent, TAcceptEventAction>(AcceptEventActionBuildAction buildAction = null)
+        public TReturn AddAcceptEventAction<TEvent, TAcceptEventAction>(AcceptEventActionBuildAction<TEvent, TAcceptEventAction> buildAction = null)
             where TAcceptEventAction : class, IAcceptEventActionNode<TEvent>
             => AddAcceptEventAction<TEvent, TAcceptEventAction>(ActivityNode<TAcceptEventAction>.Name, buildAction);
 
         [DebuggerHidden]
-        public TReturn AddAcceptEventAction<TEvent, TAcceptEventAction>(string actionNodeName, AcceptEventActionBuildAction buildAction = null)
+        public TReturn AddAcceptEventAction<TEvent, TAcceptEventAction>(string actionNodeName, AcceptEventActionBuildAction<TEvent, TAcceptEventAction> buildAction = null)
             where TAcceptEventAction : class, IAcceptEventActionNode<TEvent>
         {
             var result = AddAcceptEventAction<TEvent>(
@@ -44,7 +44,11 @@ namespace Stateflows.Activities.Registration.Interfaces.Base
                     await action.ExecuteAsync(c.Event, c.CancellationToken);
                     ActivityNodeContextAccessor.Context.Value = null;
                 },
-                buildAction
+                b =>
+                {
+                    var nodeBuilder = (NodeBuilder)b;
+                    buildAction?.Invoke(new AcceptEventNodeBuilder<TEvent, TAcceptEventAction>(nodeBuilder.Node, nodeBuilder.ActivityBuilder));
+                }
             );
 
             var graph = ((IGraphBuilder)this).Graph;
@@ -55,32 +59,32 @@ namespace Stateflows.Activities.Registration.Interfaces.Base
         #endregion
         
         #region AddTimeEventAction
-        TReturn AddTimeEventAction<TTimeEvent>(string actionNodeName, TimeEventActionDelegateAsync eventActionAsync, AcceptEventActionBuildAction buildAction = null)
+        TReturn AddTimeEventAction<TTimeEvent>(string actionNodeName, TimeEventActionDelegateAsync eventActionAsync, TimeEventNodeBuildAction buildAction = null)
             where TTimeEvent : TimeEvent, new();
         
         [DebuggerHidden]
-        public TReturn AddTimeEventAction<TTimeEvent>(string actionNodeName, AcceptEventActionBuildAction buildAction)
+        public TReturn AddTimeEventAction<TTimeEvent>(string actionNodeName, TimeEventNodeBuildAction buildAction)
             where TTimeEvent : TimeEvent, new()
             => AddTimeEventAction<TTimeEvent>(actionNodeName, c => Task.CompletedTask, buildAction);
 
         [DebuggerHidden]
-        public TReturn AddTimeEventAction<TTimeEvent>(ActionDelegateAsync actionAsync, AcceptEventActionBuildAction buildAction = null)
+        public TReturn AddTimeEventAction<TTimeEvent>(ActionDelegateAsync actionAsync, TimeEventNodeBuildAction buildAction = null)
             where TTimeEvent : TimeEvent, new()
             => AddTimeEventAction<TTimeEvent>(TimeEventActionNode<TTimeEvent>.Name, c => actionAsync(c), buildAction);
 
         [DebuggerHidden]
-        public TReturn AddTimeEventAction<TTimeEvent>(AcceptEventActionBuildAction buildAction)
+        public TReturn AddTimeEventAction<TTimeEvent>(TimeEventNodeBuildAction buildAction)
             where TTimeEvent : TimeEvent, new()
             => AddTimeEventAction<TTimeEvent>(TimeEventActionNode<TTimeEvent>.Name, c => Task.CompletedTask, buildAction);
         
         [DebuggerHidden]
-        public TReturn AddTimeEventAction<TTimeEvent, TTimeEventAction>(AcceptEventActionBuildAction buildAction = null)
+        public TReturn AddTimeEventAction<TTimeEvent, TTimeEventAction>(TimeEventNodeBuildAction<TTimeEventAction> buildAction = null)
             where TTimeEvent : TimeEvent, new()
             where TTimeEventAction : class, ITimeEventActionNode
             => AddTimeEventAction<TTimeEvent, TTimeEventAction>(ActivityNode<TTimeEventAction>.Name, buildAction);
 
         [DebuggerHidden]
-        public TReturn AddTimeEventAction<TTimeEvent, TTimeEventAction>(string actionNodeName, AcceptEventActionBuildAction buildAction = null)
+        public TReturn AddTimeEventAction<TTimeEvent, TTimeEventAction>(string actionNodeName, TimeEventNodeBuildAction<TTimeEventAction> buildAction = null)
             where TTimeEvent : TimeEvent, new()
             where TTimeEventAction : class, ITimeEventActionNode
             => AddTimeEventAction<TTimeEvent>(
@@ -96,7 +100,11 @@ namespace Stateflows.Activities.Registration.Interfaces.Base
                     await action.ExecuteAsync(c.CancellationToken);
                     ActivityNodeContextAccessor.Context.Value = null;
                 },
-                buildAction
+                b =>
+                {
+                    var nodeBuilder = (NodeBuilder)b;
+                    buildAction?.Invoke(new TimeEventNodeBuilder<TTimeEventAction>(nodeBuilder.Node, nodeBuilder.ActivityBuilder));
+                }
             );
         #endregion
     }

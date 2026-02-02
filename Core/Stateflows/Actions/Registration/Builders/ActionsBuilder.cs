@@ -71,7 +71,7 @@ namespace Stateflows.Actions.Registration.Builders
         }
 
         [DebuggerHidden]
-        public IActionsBuilder AddAction<TAction>(string actionName = null, int version = 1, ActionBuildAction buildAction = null)
+        public IActionsBuilder AddAction<TAction>(string actionName = null, int version = 1, ActionBuildAction<TAction> buildAction = null)
             where TAction : class, IAction
         {
             if (register is IOwnedRegistration registration)
@@ -96,9 +96,14 @@ namespace Stateflows.Actions.Registration.Builders
         }
 
         [DebuggerHidden]
-        public IActionsBuilder AddAction<TAction>(int version, ActionBuildAction buildAction = null)
+        public IActionsBuilder AddAction<TAction>(int version, ActionBuildAction<TAction> buildAction = null)
             where TAction : class, IAction
             => AddAction<TAction>(null, version, buildAction);
+
+        [DebuggerHidden]
+        public IActionsBuilder AddAction<TAction>(ActionBuildAction<TAction> buildAction)
+            where TAction : class, IAction
+            => AddAction<TAction>(1, buildAction);
 
         #region Observability
         [DebuggerHidden]

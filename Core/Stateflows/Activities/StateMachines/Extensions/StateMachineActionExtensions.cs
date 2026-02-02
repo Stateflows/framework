@@ -59,29 +59,25 @@ namespace Stateflows.Activities
 
             var headers = deferralContext.Context.EventHolder.Headers
                 .Where(h => h.Value is not TransitionGuardDelegation)
-                .Append(
-                    new KeyValuePair<string, EventHeader>(
-                        nameof(DeferralGuardRequest),
-                        new DeferralGuardRequest()
-                        {
-                            GuardIdentifier = deferralGuardIdentifier,
-                            StateName = deferralContext.State.Name,
-                        }
-                    )
-                )
-                .Append(
-                    new KeyValuePair<string, EventHeader>(
-                        nameof(BehaviorEmbedding),
-                        new BehaviorEmbedding()
-                        {
-                            OwnerId = context.Behavior.Id,
-                            ParentId = context.Behavior.ActualId
-                        }
-                    )
-                )
                 .ToDictionary();
 
-            deferralContext.Context.EventHolder.Headers.Add(nameof(DeferralGuardDelegation), new DeferralGuardDelegation() { VertexIdentifier = deferralContext.State.Name, EventName = Event<TEvent>.Name});
+            headers[nameof(DeferralGuardRequest)] = new DeferralGuardRequest
+            {
+                GuardIdentifier = deferralGuardIdentifier,
+                StateName = deferralContext.State.Name,
+            };
+
+            headers[nameof(BehaviorEmbedding)] = new BehaviorEmbedding
+            {
+                OwnerId = context.Behavior.Id,
+                ParentId = context.Behavior.ActualId
+            };
+
+            deferralContext.Context.EventHolder.Headers[nameof(DeferralGuardDelegation)] = new DeferralGuardDelegation
+            {
+                VertexIdentifier = deferralContext.State.Name,
+                EventName = Event<TEvent>.Name
+            };
 
             _ = a.SendAsync(context.Event, headers);
             
@@ -107,37 +103,26 @@ namespace Stateflows.Activities
 
             var headers = transitionContext.Context.EventHolder.Headers
                 .Where(h => h.Value is not TransitionGuardDelegation)
-                .Append(
-                    new KeyValuePair<string, EventHeader>(
-                        nameof(TransitionGuardRequest),
-                        new TransitionGuardRequest()
-                        {
-                            GuardIdentifier = edgeGuardIdentifier,
-                            TargetName = transitionContext.Edge.TargetName,
-                            SourceName = transitionContext.Edge.SourceName,
-                            EdgeType = transitionContext.Edge.Type
-                        }
-                    )
-                )
-                .Append(
-                    new KeyValuePair<string, EventHeader>(
-                        nameof(BehaviorEmbedding),
-                        new BehaviorEmbedding()
-                        {
-                            OwnerId = context.Behavior.Id,
-                            ParentId = context.Behavior.ActualId
-                        }
-                    )
-                )
                 .ToDictionary();
 
-            transitionContext.Context.EventHolder.Headers.Add(
-                nameof(TransitionGuardDelegation),
-                new TransitionGuardDelegation()
-                {
-                    EdgeIdentifier = transitionContext.Edge.Identifier
-                }
-            );
+            headers[nameof(TransitionGuardRequest)] = new TransitionGuardRequest
+            {
+                GuardIdentifier = edgeGuardIdentifier,
+                TargetName = transitionContext.Edge.TargetName,
+                SourceName = transitionContext.Edge.SourceName,
+                EdgeType = transitionContext.Edge.Type
+            };
+
+            headers[nameof(BehaviorEmbedding)] = new BehaviorEmbedding
+            {
+                OwnerId = context.Behavior.Id,
+                ParentId = context.Behavior.ActualId
+            };
+            
+            transitionContext.Context.EventHolder.Headers[nameof(TransitionGuardDelegation)] = new TransitionGuardDelegation
+            {
+                EdgeIdentifier = transitionContext.Edge.Identifier
+            };
             
             var ev = StateflowsJsonConverter.Clone(context.Event);
 

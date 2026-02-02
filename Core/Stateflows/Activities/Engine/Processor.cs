@@ -9,6 +9,7 @@ using Stateflows.Common;
 using Stateflows.Common.Interfaces;
 using Stateflows.Activities.Registration;
 using Stateflows.Activities.Context.Classes;
+using Stateflows.Common.Context;
 using Stateflows.Common.Engine;
 using Stateflows.Common.Utilities;
 
@@ -59,7 +60,11 @@ namespace Stateflows.Activities.Engine
             using var serviceScope = ServiceProvider.CreateScope();
             var serviceProvider = serviceScope.ServiceProvider;
 
-            var stateflowsContext = await Storage.HydrateAsync(id);
+            // var stateflowsContext = await Storage.HydrateAsync(id);
+            
+            var stateflowsContext = eventHolder.Headers.Values.Any(h => h is ForcedReset)
+                ? new StateflowsContext(id)
+                : await Storage.HydrateAsync(id);
 
             var key = stateflowsContext.Version != 0
                 ? $"{id.Name}.{stateflowsContext.Version}"

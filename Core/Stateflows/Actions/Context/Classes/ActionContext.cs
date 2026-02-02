@@ -43,13 +43,13 @@ namespace Stateflows.Actions.Context.Classes
             : base(context.Context, serviceProvider)
         {
             RootContext = context;
-            // Values = new ValuesStorage(
-            //     string.Empty,
-            //     RootContext.Context.ContextOwnerId ?? RootContext.Id,
-            //     ServiceProvider.GetRequiredService<IStateflowsLock>(),
-            //     ServiceProvider.GetRequiredService<IStateflowsValueStorage>()
-            // );
-            Values = new StateflowsValuesCollection(context.Context.StateflowsValues);
+            Values = new ValuesStorage(
+                string.Empty,
+                RootContext.Context.ContextOwnerId ?? RootContext.Id,
+                ServiceProvider.GetRequiredService<IStateflowsLock>(),
+                ServiceProvider.GetRequiredService<IStateflowsValueStorage>()
+            );
+            // Values = new StateflowsValuesCollection(context.Context.StateflowsValues);
             if (tokens != null)
             {
                 InputTokens.AddRange(tokens);

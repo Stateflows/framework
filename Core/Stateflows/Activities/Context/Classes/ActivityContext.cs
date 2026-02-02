@@ -39,13 +39,13 @@ namespace Stateflows.Activities.Context.Classes
         public ActivityContext(RootContext context, NodeScope nodeScope)
             : base(context, nodeScope)
         {
-            // Values = new ValuesStorage(
-            //     string.Empty,
-            //     Context.Context.ContextOwnerId ?? Context.Id,
-            //     Context.Executor.NodeScope.ServiceProvider.GetRequiredService<IStateflowsLock>(),
-            //     Context.Executor.NodeScope.ServiceProvider.GetRequiredService<IStateflowsValueStorage>()
-            // );
-            Values = new StateflowsValuesCollection(context.Context.StateflowsValues);
+            Values = new ValuesStorage(
+                string.Empty,
+                Context.Context.ContextOwnerId ?? Context.Id,
+                Context.Executor.NodeScope.ServiceProvider.GetRequiredService<IStateflowsLock>(),
+                Context.Executor.NodeScope.ServiceProvider.GetRequiredService<IStateflowsValueStorage>()
+            );
+            // Values = new StateflowsValuesCollection(context.Context.StateflowsValues);
         }
 
         public IContextValues Values { get; }

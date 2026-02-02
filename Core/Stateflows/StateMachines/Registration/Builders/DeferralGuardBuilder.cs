@@ -1,8 +1,10 @@
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using Stateflows.Common.Models;
 using Stateflows.StateMachines.Models;
 using Stateflows.StateMachines.Context.Interfaces;
+using Stateflows.StateMachines.Interfaces;
 using Stateflows.StateMachines.Registration.Interfaces.Base;
 using Stateflows.StateMachines.Registration.Interfaces.Internal;
 
@@ -10,22 +12,26 @@ namespace Stateflows.StateMachines.Registration.Builders
 {
     internal class DeferralGuardBuilder<TEvent> :
         IDeferralGuardBuilder<TEvent>,
-        IVertexBuilder
+        IDeferralBuilder
     {
-        private readonly List<Func<IDeferralContext<TEvent>, Task<bool>>> Guards = [];
-
-        public Vertex Vertex { get; private set; }
         
-        public DeferralGuardBuilder(Vertex vertex)
+        private List<Func<IDeferralContext<TEvent>, Task<bool>>> GuardsList { get; } = [];
+
+        public Type EventType => typeof(TEvent);
+        public Vertex Vertex { get; private set; }
+        public Logic<StateMachinePredicateAsync> Guards { get; private set; }
+
+        public DeferralGuardBuilder(Vertex vertex, Logic<StateMachinePredicateAsync> guards)
         {
             Vertex = vertex;
+            Guards = guards;
         }
         
         public Func<IDeferralContext<TEvent>, Task<bool>> GetAndGuard()
             => async c =>
             {
                 var result = true;
-                foreach (var guard in Guards)
+                foreach (var guard in GuardsList)
                 {
                     if (await guard(c)) continue;
 
@@ -40,7 +46,7 @@ namespace Stateflows.StateMachines.Registration.Builders
             => async c =>
             {
                 var result = false;
-                foreach (var guard in Guards)
+                foreach (var guard in GuardsList)
                 {
                     if (!await guard(c)) continue;
                     
@@ -53,27 +59,27 @@ namespace Stateflows.StateMachines.Registration.Builders
         
         public IDeferralGuardBuilder<TEvent> AddGuard(params Func<IDeferralContext<TEvent>, Task<bool>>[] guardsAsync)
         {
-            Guards.AddRange(guardsAsync);
+            GuardsList.AddRange(guardsAsync);
 
             return this;
         }
 
         public IDeferralGuardBuilder<TEvent> AddAndExpression(Action<IDeferralGuardBuilder<TEvent>> guardExpression)
         {
-            var builder = new DeferralGuardBuilder<TEvent>(Vertex);
+            var builder = new DeferralGuardBuilder<TEvent>(Vertex, Guards);
             guardExpression.Invoke(builder);
             
-            Guards.Add(builder.GetAndGuard());
+            GuardsList.Add(builder.GetAndGuard());
 
             return this;
         }
 
         public IDeferralGuardBuilder<TEvent> AddOrExpression(Action<IDeferralGuardBuilder<TEvent>> guardExpression)
         {
-            var builder = new DeferralGuardBuilder<TEvent>(Vertex);
+            var builder = new DeferralGuardBuilder<TEvent>(Vertex, Guards);
             guardExpression.Invoke(builder);
             
-            Guards.Add(builder.GetOrGuard());
+            GuardsList.Add(builder.GetOrGuard());
 
             return this;
         }

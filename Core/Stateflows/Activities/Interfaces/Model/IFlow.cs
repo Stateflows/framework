@@ -2,15 +2,14 @@
 
 namespace Stateflows.Activities
 {
-    public interface IEdge
+    public interface IEdge : IActivityElement
     {
         static virtual int Weight => 1;
     }
 
-    public interface IFlow<TToken> : IEdge
-    { }
+    public interface IFlow<in TToken> : IEdge;
 
-    public interface IFlowGuard<TToken> : IFlow<TToken>
+    public interface IFlowGuard<in TToken> : IFlow<TToken>
     {
         Task<bool> GuardAsync(TToken token);
     }
@@ -21,7 +20,9 @@ namespace Stateflows.Activities
             => GuardAsync();
     }
 
-    public interface IFlowTransformation<TToken, TTransformedToken> : IFlow<TToken>
+    public interface IActivityGuard : IFlowGuard;
+
+    public interface IFlowTransformation<in TToken, TTransformedToken> : IFlow<TToken>
     {
         Task<TTransformedToken> TransformAsync(TToken token);
     }

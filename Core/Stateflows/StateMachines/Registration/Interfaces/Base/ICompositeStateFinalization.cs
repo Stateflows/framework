@@ -3,8 +3,11 @@ using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
 using Stateflows.Actions;
+using Stateflows.Actions.Registration.Interfaces;
 using Stateflows.Activities;
 using Stateflows.Activities.Registration.Interfaces;
+using Stateflows.Common.Interfaces;
+using Stateflows.Common.Registration.Builders;
 using Stateflows.StateMachines.Context.Classes;
 using Stateflows.StateMachines.Registration.Interfaces.Internal;
 using ActionBuildAction = Stateflows.Actions.Registration.Interfaces.ActionBuildAction;
@@ -60,7 +63,7 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         /// <param name="buildAction">Build action</param>
         /// <typeparam name="TAction">Action behavior type</typeparam>
         [DebuggerHidden]
-        public TReturn AddOnFinalizeAction<TAction>(ActionBuildAction buildAction = null)
+        public TReturn AddOnFinalizeAction<TAction>(ActionBuildAction<TAction> buildAction = null)
             where TAction : class, IAction
         {
             var vertex = ((IVertexBuilder)this).Vertex;
@@ -99,9 +102,14 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         /// Adds multiple typed finalization handlers to the current state.
         /// </summary>
         /// <typeparam name="TStateFinalization">The type of the first state finalization handler.</typeparam>
-        TReturn AddOnFinalize<TStateFinalization>()
+        TReturn AddOnFinalize<TStateFinalization>(ElementBuildAction<TStateFinalization> buildAction = null)
             where TStateFinalization : class, ICompositeStateFinalization
-            => AddOnFinalize(async c => await (await ((BaseContext)c).Context.Executor.GetStateAsync<TStateFinalization>(c)).OnFinalizeAsync());
+            => AddOnFinalize(async c => 
+            {
+                var state = await ((BaseContext)c).Context.Executor.GetStateAsync<TStateFinalization>(c);
+                buildAction?.Invoke(new ElementBuilder<TStateFinalization>(state));
+                await state.OnFinalizeAsync();
+            });
 
         /// <summary>
         /// Adds multiple typed finalization handlers to the current state.

@@ -2,6 +2,7 @@ using Stateflows.Common;
 using Stateflows.Activities;
 using StateMachine.IntegrationTests.Classes.Events;
 using StateMachine.IntegrationTests.Utils;
+using Deny = Stateflows.Common.Deny;
 
 namespace StateMachine.IntegrationTests.Tests
 {
@@ -257,7 +258,7 @@ namespace StateMachine.IntegrationTests.Tests
 
                 await sm.SendAsync(new OtherEvent());
 
-                await Task.Delay(5000);
+                await Task.Delay(100);
             }
 
             ExecutionSequence.Verify(b => b

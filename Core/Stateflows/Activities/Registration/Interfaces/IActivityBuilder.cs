@@ -4,12 +4,12 @@ namespace Stateflows.Activities;
 
 public interface IActivityBuilder :
     IActivityUtils<IActivityBuilder>,
-    IReactiveActivity<IActivityBuilder>,
+    IReactiveActivityBase<IActivityBuilder>,
     IActivitySpecials<IActivityBuilder>,
     IActivityEvents<IActivityBuilder>,
-    IInitial<IActivityBuilder>,
-    IFinal<IActivityBuilder>,
-    IInput<IActivityBuilder>,
-    IOutput<IActivityBuilder>,
+    IInitialBase<IActivityBuilder>,
+    IFinalBase<IActivityBuilder>,
+    IInputBase<IActivityBuilder>,
+    IOutputBase<IActivityBuilder>,
     IAcceptEvent<IActivityBuilder>,
-    ISendEvent<IActivityBuilder>;
+    ISendEventBase<IActivityBuilder>;

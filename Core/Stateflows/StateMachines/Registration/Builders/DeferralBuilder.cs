@@ -6,21 +6,29 @@ using Stateflows.StateMachines.Context.Interfaces;
 using Stateflows.StateMachines.Interfaces;
 using Stateflows.StateMachines.Models;
 using Stateflows.StateMachines.Registration.Interfaces;
+using Stateflows.StateMachines.Registration.Interfaces.Base;
+using Stateflows.StateMachines.Registration.Interfaces.Internal;
 
 namespace Stateflows.StateMachines.Registration.Builders;
 
-internal class DeferralBuilder<TEvent> : IDeferralBuilder<TEvent>
+internal class DeferralBuilder<TEvent> :
+    IDeferralBuilder<TEvent>,
+    IOverridenDeferralBuilder<TEvent>,
+    IDeferralBuilder
 {
+    public Type EventType => typeof(TEvent);
     public Vertex Vertex { get; }
+    public Logic<StateMachinePredicateAsync> Guards => Logic;
 
     public Graph Graph => Vertex.Graph;
         
-    public DeferralBuilder(Vertex vertex)
+    public DeferralBuilder(Vertex vertex, Logic<StateMachinePredicateAsync>? logic = null)
     {
         Vertex = vertex;
+        Logic = logic ?? new Logic<StateMachinePredicateAsync>(Constants.Deferral);
     }
 
-    public Logic<StateMachinePredicateAsync> Logic { get; } = new(Constants.Deferral);
+    public readonly Logic<StateMachinePredicateAsync> Logic;
     
     public IDeferralBuilder<TEvent> AddGuard(params Func<IDeferralContext<TEvent>, Task<bool>>[] guardsAsync)
     {
@@ -35,4 +43,7 @@ internal class DeferralBuilder<TEvent> : IDeferralBuilder<TEvent>
 
         return this;
     }
+
+    IOverridenDeferralBuilder<TEvent> IBaseDeferralGuard<TEvent, IOverridenDeferralBuilder<TEvent>>.AddGuard(params Func<IDeferralContext<TEvent>, Task<bool>>[] guardsAsync)
+        => AddGuard(guardsAsync) as IOverridenDeferralBuilder<TEvent>;
 }

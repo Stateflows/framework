@@ -4,13 +4,11 @@ using Stateflows.Common.Context.Interfaces;
 
 namespace Stateflows.Common.Context.Classes
 {
-    internal class BehaviorActionContext : BaseContext, IBehaviorActionContext
+    internal class BehaviorActionContext(StateflowsContext context, IServiceProvider serviceProvider) :
+        BaseContext(context, serviceProvider),
+        IBehaviorActionContext
     {
         IBehaviorContext IBehaviorActionContext.Behavior => Behavior;
-
-        public BehaviorActionContext(StateflowsContext context, IServiceProvider serviceProvider)
-            : base(context, serviceProvider)
-        { }
 
         // todo
         public object ExecutionTrigger { get; }

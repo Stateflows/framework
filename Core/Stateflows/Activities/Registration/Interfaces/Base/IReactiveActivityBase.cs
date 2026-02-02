@@ -9,18 +9,18 @@ using Stateflows.Activities.Registration.Interfaces.Internal;
 
 namespace Stateflows.Activities.Registration.Interfaces.Base
 {
-    public interface IReactiveActivity<out TReturn>
+    public interface IReactiveActivityBase<out TReturn>
     {
         #region AddAction
         TReturn AddAction(string actionNodeName, Func<IActionContext, Task> actionAsync, ActionBuildAction buildAction = null);
         
         [DebuggerHidden]
-        public TReturn AddAction<TAction>(TypedActionBuildAction buildAction = null)
+        public TReturn AddAction<TAction>(TypedActionBuildAction<TAction> buildAction = null)
             where TAction : class, IActionNode
             => AddAction<TAction>(ActivityNode<TAction>.Name, buildAction);
 
         [DebuggerHidden]
-        public TReturn AddAction<TAction>(string actionNodeName, TypedActionBuildAction buildAction = null)
+        public TReturn AddAction<TAction>(string actionNodeName, TypedActionBuildAction<TAction> buildAction = null)
             where TAction : class, IActionNode
         {
             var result = AddAction(
@@ -39,8 +39,9 @@ namespace Stateflows.Activities.Registration.Interfaces.Base
                 },
                 b =>
                 {
-                    ((NodeBuilder)b).Node.ScanForDeclaredTypes(typeof(TAction));
-                    buildAction?.Invoke((ITypedActionBuilder)b);
+                    var nodeBuilder = (NodeBuilder)b;
+                    nodeBuilder.Node.ScanForDeclaredTypes(typeof(TAction));
+                    buildAction?.Invoke(new ActionNodeBuilder<TAction>(nodeBuilder.Node, nodeBuilder.ActivityBuilder));
                 }
             );
 

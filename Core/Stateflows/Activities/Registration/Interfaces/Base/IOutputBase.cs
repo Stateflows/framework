@@ -1,7 +1,7 @@
 ﻿namespace Stateflows.Activities.Registration.Interfaces.Base
 {
-    public interface IFinal<out TReturn>
+    public interface IOutputBase<out TReturn>
     {
-        TReturn AddFinal();
+        TReturn AddOutput();
     }
 }

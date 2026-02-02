@@ -2,20 +2,22 @@
 
 namespace Stateflows.StateMachines
 {
-    public interface IOrthogonalState : ICompositeState
-    { }
+    public interface IOrthogonalState : ICompositeState;
 
-    public interface IOrthogonalStateEntry : ICompositeStateEntry
-    { }
+    public interface IOrthogonalStateEntry : ICompositeStateEntry;
     
-    public interface IOrthogonalStateExit : ICompositeStateExit
-    { }
+    public interface IOrthogonalStateExit : ICompositeStateExit;
 
-    public interface IOrthogonalStateInitialization : ICompositeStateInitialization
-    { }
+    public interface IOrthogonalStateInitialization : ICompositeStateInitialization;
 
-    public interface IOrthogonalStateFinalization : ICompositeStateFinalization
-    { }
+    public interface IOrthogonalStateFinalization : ICompositeStateFinalization;
+
+    public interface IOrthogonalStateAction :
+        ICompositeStateAction,
+        IOrthogonalStateEntry,
+        IOrthogonalStateExit,
+        IOrthogonalStateInitialization,
+        IOrthogonalStateFinalization;
 
     public interface IOrthogonalStateDefinition : IOrthogonalState
     {

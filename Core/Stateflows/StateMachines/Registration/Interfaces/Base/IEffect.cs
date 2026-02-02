@@ -3,8 +3,11 @@ using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
 using Stateflows.Actions;
+using Stateflows.Actions.Registration.Interfaces;
 using Stateflows.Activities;
 using Stateflows.Activities.Registration.Interfaces;
+using Stateflows.Common.Interfaces;
+using Stateflows.Common.Registration.Builders;
 using Stateflows.StateMachines.Context.Classes;
 using Stateflows.StateMachines.Context.Interfaces;
 using Stateflows.StateMachines.Registration.Interfaces.Internal;
@@ -71,7 +74,7 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         /// <typeparam name="TAction">Action behavior type</typeparam>
         /// <param name="buildAction">Build action</param>
         [DebuggerHidden]
-        public TReturn AddEffectAction<TAction>(ActionBuildAction buildAction = null)
+        public TReturn AddEffectAction<TAction>(ActionBuildAction<TAction> buildAction = null)
             where TAction : class, IAction
         {
             var edge = ((IEdgeBuilder)this).Edge;
@@ -123,9 +126,14 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         /// Adds a typed effect handler to the current transition.
         /// </summary>
         /// <typeparam name="TEffect">The type of the effect handler.</typeparam>
-        TReturn AddEffect<TEffect>()
+        TReturn AddEffect<TEffect>(ElementBuildAction<TEffect> buildAction = null)
             where TEffect : class, ITransitionEffect<TEvent>
-            => AddEffect(async c => await (await ((BaseContext)c).Context.Executor.GetTransitionEffectAsync<TEffect, TEvent>(c)).EffectAsync(c.Event));
+            => AddEffect(async c => 
+            {
+                var state = await ((BaseContext)c).Context.Executor.GetTransitionEffectAsync<TEffect, TEvent>(c);
+                buildAction?.Invoke(new ElementBuilder<TEffect>(state));
+                await state.EffectAsync(c.Event);
+            });
 
         /// <summary>
         /// Adds multiple typed effect handlers to the current transition.

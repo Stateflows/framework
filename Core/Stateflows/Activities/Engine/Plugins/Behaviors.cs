@@ -14,11 +14,11 @@ internal class Behaviors : ActivityPlugin
         {
             if (eventStatus == EventStatus.NotConsumed)
             {
-                var headers = context.Headers.ToDictionary();
-                if (!headers.Values.Any(h => h is NoForwarding))
-                {
-                    headers.Add(nameof(NoForwarding), new NoForwarding());
-                }
+                var headers = context.Headers
+                    .Where(p => p.Value is not BehaviorEmbedding)
+                    .ToDictionary();
+                
+                headers[nameof(NoForwarding)] = new NoForwarding();
 
                 context.Behavior.Send(context.Event, headers);
             }

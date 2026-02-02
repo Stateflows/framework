@@ -3,8 +3,7 @@ using Stateflows.Common.Extensions;
 
 namespace Stateflows.Activities
 {
-    public interface IActivityNode
-    { }
+    public interface IActivityNode : IActivityElement;
 
     public static class ActivityNode<TActivityNode>
         where TActivityNode : class, IActivityNode

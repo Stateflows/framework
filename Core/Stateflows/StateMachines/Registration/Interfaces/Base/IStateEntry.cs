@@ -3,8 +3,11 @@ using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
 using Stateflows.Actions;
+using Stateflows.Actions.Registration.Interfaces;
 using Stateflows.Activities;
 using Stateflows.Activities.Registration.Interfaces;
+using Stateflows.Common.Interfaces;
+using Stateflows.Common.Registration.Builders;
 using Stateflows.StateMachines.Context.Classes;
 using Stateflows.StateMachines.Registration.Interfaces.Internal;
 using ActionBuildAction = Stateflows.Actions.Registration.Interfaces.ActionBuildAction;
@@ -60,12 +63,12 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         /// <typeparam name="TAction">Action behavior type</typeparam>
         /// <param name="buildAction">Build action</param>
         [DebuggerHidden]
-        public TReturn AddOnEntryAction<TAction>(ActionBuildAction buildAction = null)
+        public TReturn AddOnEntryAction<TAction>(ActionBuildAction<TAction> buildAction = null)
             where TAction : class, IAction
         {
             var vertex = ((IVertexBuilder)this).Vertex;
             var actionName = $"{vertex.Graph.Name}.{vertex.Name}.onEntry.{vertex.Entry.Actions.Count}";
-            vertex.Graph.StateflowsBuilder.AddActions(b => b.AddAction<TAction>(actionName, buildAction: buildAction), vertex.Graph.OwnerClass ?? vertex.Graph.Class, vertex.Graph.Class);
+            vertex.Graph.StateflowsBuilder.AddActions(b => b.AddAction<TAction>(actionName, buildAction: buildAction, version: 1), vertex.Graph.OwnerClass ?? vertex.Graph.Class, vertex.Graph.Class);
             return AddOnEntry(c => StateMachineActionExtensions.RunStateActionAsync(Constants.Entry, c, actionName));
         }
         
@@ -99,9 +102,14 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         /// Adds multiple typed entry handlers to the current state.
         /// </summary>
         /// <typeparam name="TStateEntry">The type of the first state entry handler.</typeparam>
-        TReturn AddOnEntry<TStateEntry>()
+        TReturn AddOnEntry<TStateEntry>(ElementBuildAction<TStateEntry> buildAction = null)
             where TStateEntry : class, IStateEntry
-            => AddOnEntry(async c => await (await ((BaseContext)c).Context.Executor.GetStateAsync<TStateEntry>(c)).OnEntryAsync());
+            => AddOnEntry(async c =>
+            {
+                var state = await ((BaseContext)c).Context.Executor.GetStateAsync<TStateEntry>(c);
+                buildAction?.Invoke(new ElementBuilder<TStateEntry>(state));
+                await state.OnEntryAsync();
+            });
 
         /// <summary>
         /// Adds multiple typed entry handlers to the current state.

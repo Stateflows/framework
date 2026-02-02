@@ -2,6 +2,8 @@
 using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
+using Stateflows.Common.Interfaces;
+using Stateflows.Common.Registration.Builders;
 using Stateflows.StateMachines.Context.Classes;
 using Stateflows.StateMachines.Context.Interfaces;
 
@@ -35,9 +37,14 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         /// Adds a typed effect to the current transition.
         /// </summary>
         /// <typeparam name="TEffect">The type of the effect handler.</typeparam>
-        TReturn AddEffect<TEffect>()
+        TReturn AddEffect<TEffect>(ElementBuildAction<TEffect> buildAction = null)
             where TEffect : class, IDefaultTransitionEffect
-            => AddEffect(async c => await (await ((BaseContext)c).Context.Executor.GetDefaultTransitionEffectAsync<TEffect>(c)).EffectAsync());
+            => AddEffect(async c => 
+            {
+                var state = await ((BaseContext)c).Context.Executor.GetDefaultTransitionEffectAsync<TEffect>(c);
+                buildAction?.Invoke(new ElementBuilder<TEffect>(state));
+                await state.EffectAsync();
+            });
 
         /// <summary>
         /// Adds multiple typed effects to the current transition.

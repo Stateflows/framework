@@ -6,7 +6,7 @@ using Stateflows.Activities.Registration.Interfaces.Internal;
 
 namespace Stateflows.Activities.Registration.Interfaces.Base
 {
-    public interface ISendEvent<out TReturn>
+    public interface ISendEventBase<out TReturn>
     {
         TReturn AddSendEventAction<TEvent>(string actionNodeName, SendEventActionDelegateAsync<TEvent> actionAsync, BehaviorIdSelectorAsync targetSelectorAsync, SendEventActionBuildAction buildAction = null);
         

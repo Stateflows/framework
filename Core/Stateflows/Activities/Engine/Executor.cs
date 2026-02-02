@@ -434,16 +434,12 @@ namespace Stateflows.Activities.Engine
                 {
                     var headers = eventHolder.Headers
                         .Where(h => h.Value is not TransitionGuardRequest)
-                        .Append(
-                            new KeyValuePair<string, EventHeader>(
-                                nameof(TransitionGuardResponse),
-                                new TransitionGuardResponse
-                                {
-                                    GuardIdentifier = guardRequest.GuardIdentifier
-                                }
-                            )
-                        )
                         .ToDictionary();
+                    
+                    headers[nameof(TransitionGuardResponse)] = new TransitionGuardResponse
+                    {
+                        GuardIdentifier = guardRequest.GuardIdentifier
+                    };
 
                     _ = Context.SendAsync(eventHolder.Payload, headers);
                 }

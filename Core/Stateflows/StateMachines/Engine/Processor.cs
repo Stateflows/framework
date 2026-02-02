@@ -7,6 +7,7 @@ using System.ComponentModel.DataAnnotations;
 using System.Diagnostics;
 using Microsoft.Extensions.DependencyInjection;
 using Stateflows.Common;
+using Stateflows.Common.Context;
 using Stateflows.Common.Engine;
 using Stateflows.Common.Exceptions;
 using Stateflows.Common.Interfaces;
@@ -61,7 +62,9 @@ namespace Stateflows.StateMachines.Engine
                 
                 var serviceProvider = serviceScope.ServiceProvider;
 
-                var stateflowsContext = await Storage.HydrateAsync(id);
+                var stateflowsContext = eventHolder.Headers.Values.Any(h => h is ForcedReset)
+                    ? new StateflowsContext(id)
+                    : await Storage.HydrateAsync(id);
 
                 var key = stateflowsContext.Version != 0
                     ? $"{id.Name}.{stateflowsContext.Version}"

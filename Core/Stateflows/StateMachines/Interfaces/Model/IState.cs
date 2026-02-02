@@ -1,15 +1,14 @@
 ﻿using System;
 using System.Threading.Tasks;
 using Stateflows.Common.Extensions;
+using Stateflows.Common.Interfaces;
 using Stateflows.StateMachines.Registration.Interfaces;
 
 namespace Stateflows.StateMachines
 {
-    public interface IVertex
-    { }
+    public interface IVertex : IStateMachineElement;
 
-    public interface IState : IVertex
-    { }
+    public interface IState : IVertex;
 
     public interface IStateEntry : IState
     {
@@ -21,23 +20,31 @@ namespace Stateflows.StateMachines
         Task OnExitAsync();
     }
 
+    public interface IStateAction : IAbstractAction, IStateEntry, IStateExit
+    {
+        Task IStateEntry.OnEntryAsync()
+            => ExecuteAsync();
+
+        Task IStateExit.OnExitAsync()
+            => ExecuteAsync();
+    }
+
     public interface IStateDefinition : IState
     {
         static abstract void Build(IStateBuilder builder);
     }
 
-    public interface IFinalState : IVertex
-    { }
+    public interface IFinalState : IVertex;
 
-    public interface IHistory : IVertex
-    { }
+    public interface IHistory : IVertex;
     
-    public interface IGuard<in TEvent>
-    {
-        Task<bool> GuardAsync(TEvent @event);
-    }
+    public interface IDeferralGuard<in TEvent> : IAbstractGuard<TEvent>;
 
-    public interface IDeferralGuard<in TEvent> : IGuard<TEvent>;
+    public interface IDeferralGuard : IAbstractGuard, IDeferralGuard<object>;
+
+    public interface IStateMachineGuard<in TEvent> : IDeferralGuard<TEvent>, ITransitionGuard<TEvent>;
+    
+    public interface IStateMachineGuard : IDeferralGuard, ITransitionGuard;
 
     public static class State<TState>
         where TState : class, IVertex

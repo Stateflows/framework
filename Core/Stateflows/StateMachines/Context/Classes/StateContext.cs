@@ -23,13 +23,13 @@ namespace Stateflows.StateMachines.Context.Classes
             Vertex = vertex;
             Context = context;
             StateValues = Context.GetStateValues(Name);
-            // Values = new ValuesStorage(
-            //     $"{Constants.State}.{vertex.Identifier}",
-            //     Context.Context.ContextOwnerId ?? Context.Id,
-            //     Context.Executor.ServiceProvider.GetRequiredService<IStateflowsLock>(),
-            //     Context.Executor.ServiceProvider.GetRequiredService<IStateflowsValueStorage>()
-            // );
-            Values = new StateflowsValuesCollection(context.Context.StateflowsValues, $"{Constants.State}.{vertex.Identifier}");
+            Values = new ValuesStorage(
+                $"{Constants.State}.{vertex.Identifier}",
+                Context.Context.ContextOwnerId ?? Context.Id,
+                Context.Executor.ServiceProvider.GetRequiredService<IStateflowsLock>(),
+                Context.Executor.ServiceProvider.GetRequiredService<IStateflowsValueStorage>()
+            );
+            // Values = new StateflowsValuesCollection(context.Context.StateflowsValues, $"{Constants.State}.{vertex.Identifier}");
         }
 
         public IContextValues Values { get; }

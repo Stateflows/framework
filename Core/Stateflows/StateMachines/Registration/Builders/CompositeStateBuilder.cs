@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Diagnostics;
 using System.Threading.Tasks;
+using Stateflows.Common;
 using Stateflows.Common.Registration;
 using Stateflows.StateMachines.Models;
 using Stateflows.StateMachines.Exceptions;
@@ -844,5 +845,40 @@ namespace Stateflows.StateMachines.Registration.Builders
 
         IFinalizedOverridenRegionalizedCompositeStateBuilder ICompositeStateFinalization<IFinalizedOverridenRegionalizedCompositeStateBuilder>.AddOnFinalize(params Func<IStateActionContext, Task>[] actionsAsync)
             => AddOnFinalize(actionsAsync) as IFinalizedOverridenRegionalizedCompositeStateBuilder;
+
+        public IOverridenCompositeStateBuilder UseDeferredEvent<TEvent>(OverridenDeferralBuildAction<TEvent> buildAction = null)
+        {
+            if (typeof(TEvent) == typeof(Completion))
+                throw new DeferralDefinitionException(typeof(TEvent).GetEventName(), "Completion event cannot be deferred.", Vertex.Graph.Class);
+
+            if (typeof(TEvent) == typeof(Finalize))
+                throw new DeferralDefinitionException(typeof(TEvent).GetEventName(), "Exit event cannot be deferred.", Vertex.Graph.Class);
+
+            if (typeof(TEvent).IsSubclassOf(typeof(TimeEvent)))
+                throw new DeferralDefinitionException(typeof(TEvent).GetEventName(), "Time events cannot be deferred.", Vertex.Graph.Class);
+
+            if (
+                !Vertex.Deferrals.TryGetValue(typeof(TEvent).GetEventName(), out var deferralLogic) ||
+                deferralLogic?.OriginStateMachineName == null
+            )
+            {
+                throw new StateMachineOverrideException($"Deferral of event '{Event<TEvent>.Name}' not found in overriden state '{Vertex.Name}'", Vertex.Graph.Class);
+            }
+            
+            var builder = new DeferralBuilder<TEvent>(Vertex, deferralLogic);
+            
+            buildAction?.Invoke(builder);
+
+            return this;
+        }
+
+        IOverridenRegionalizedCompositeStateBuilder IStateUtilsOverrides<IOverridenRegionalizedCompositeStateBuilder>.UseDeferredEvent<TEvent>(OverridenDeferralBuildAction<TEvent> buildAction)
+            => UseDeferredEvent(buildAction) as IOverridenRegionalizedCompositeStateBuilder;
+
+        IFinalizedOverridenCompositeStateBuilder IStateUtilsOverrides<IFinalizedOverridenCompositeStateBuilder>.UseDeferredEvent<TEvent>(OverridenDeferralBuildAction<TEvent> buildAction)
+            => UseDeferredEvent(buildAction) as IFinalizedOverridenCompositeStateBuilder;
+
+        IFinalizedOverridenRegionalizedCompositeStateBuilder IStateUtilsOverrides<IFinalizedOverridenRegionalizedCompositeStateBuilder>.UseDeferredEvent<TEvent>(OverridenDeferralBuildAction<TEvent> buildAction)
+            => UseDeferredEvent(buildAction) as IFinalizedOverridenRegionalizedCompositeStateBuilder;
     }
 }

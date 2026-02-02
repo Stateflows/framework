@@ -52,7 +52,8 @@ namespace Stateflows.Activities.Registration.Interfaces
 
     public delegate void ActionBuildAction(IActionBuilder builder);
 
-    public delegate void TypedActionBuildAction(ITypedActionBuilder builder);
+    public delegate void TypedActionBuildAction<TActionNode>(ITypedActionBuilder<TActionNode> builder)
+        where TActionNode : class, IActionNode;
 
     public delegate void JoinBuildAction(IJoinBuilder builder);
 
@@ -78,9 +79,15 @@ namespace Stateflows.Activities.Registration.Interfaces
 
     public delegate void DataStoreBuildAction(IDataStoreBuilder builder);
 
-    public delegate void TimeEventBuildAction(ITimeEventBuilder builder);
+    public delegate void TimeEventNodeBuildAction(ITimeEventActionBuilder builder);
+
+    public delegate void TimeEventNodeBuildAction<TTimeEventNode>(ITimeEventActionBuilder<TTimeEventNode> builder)
+        where TTimeEventNode : class, ITimeEventActionNode;
 
     public delegate void AcceptEventActionBuildAction(IAcceptEventActionBuilder builder);
+    
+    public delegate void AcceptEventActionBuildAction<TEvent, in TAcceptEventAction>(IAcceptEventActionBuilder<TEvent, TAcceptEventAction> builder)
+        where TAcceptEventAction : class, IAcceptEventActionNode<TEvent>;
 
     public delegate void SendEventActionBuildAction(ISendEventActionBuilder builder);
 

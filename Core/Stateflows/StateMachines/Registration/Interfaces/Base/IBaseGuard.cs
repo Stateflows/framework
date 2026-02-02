@@ -3,8 +3,11 @@ using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
 using Stateflows.Actions;
+using Stateflows.Actions.Registration.Interfaces;
 using Stateflows.Activities;
 using Stateflows.Activities.Registration.Interfaces;
+using Stateflows.Common.Interfaces;
+using Stateflows.Common.Registration.Builders;
 using Stateflows.StateMachines.Context.Classes;
 using Stateflows.StateMachines.Context.Interfaces;
 using Stateflows.StateMachines.Registration.Interfaces.Internal;
@@ -72,7 +75,7 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         /// <typeparam name="TAction">Action behavior type</typeparam>
         /// <param name="buildAction">Build action</param>
         [DebuggerHidden]
-        public TReturn AddGuardAction<TAction>(ActionBuildAction buildAction = null)
+        public TReturn AddGuardAction<TAction>(ActionBuildAction<TAction> buildAction = null)
             where TAction : class, IAction
         {
             var edge = ((IEdgeBuilder)this).Edge;
@@ -125,9 +128,14 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         /// </summary>
         /// <typeparam name="TGuard">The type of the guard handler.</typeparam>
         [DebuggerHidden]
-        TReturn AddGuard<TGuard>()
+        TReturn AddGuard<TGuard>(ElementBuildAction<TGuard> buildAction = null)
             where TGuard : class, ITransitionGuard<TEvent>
-            => AddGuard(async c => await (await ((BaseContext)c).Context.Executor.GetTransitionGuardAsync<TGuard, TEvent>(c)).GuardAsync(c.Event));
+            => AddGuard(async c => 
+            {
+                var state = await ((BaseContext)c).Context.Executor.GetTransitionGuardAsync<TGuard, TEvent>(c);
+                buildAction?.Invoke(new ElementBuilder<TGuard>(state));
+                return await state.GuardAsync(c.Event);
+            });
 
         /// <summary>
         /// Adds a negated function-based guard to the current transition.
@@ -150,8 +158,13 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         /// </summary>
         /// <typeparam name="TGuard">The type of the guard handler.</typeparam>
         [DebuggerHidden]
-        TReturn AddNegatedGuard<TGuard>()
+        TReturn AddNegatedGuard<TGuard>(ElementBuildAction<TGuard> buildAction = null)
             where TGuard : class, ITransitionGuard<TEvent>
-            => AddGuard(async c => !await (await ((BaseContext)c).Context.Executor.GetTransitionGuardAsync<TGuard, TEvent>(c)).GuardAsync(c.Event)!);
+            => AddGuard(async c => 
+            {
+                var state = await ((BaseContext)c).Context.Executor.GetTransitionGuardAsync<TGuard, TEvent>(c);
+                buildAction?.Invoke(new ElementBuilder<TGuard>(state));
+                return !await state.GuardAsync(c.Event);
+            });
     }
 }

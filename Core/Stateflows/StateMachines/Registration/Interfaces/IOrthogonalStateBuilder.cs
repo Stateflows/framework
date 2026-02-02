@@ -8,17 +8,16 @@ namespace Stateflows.StateMachines.Registration.Interfaces
         IOrthogonalStateTypedEvents<IOrthogonalStateBuilder>,
         IStateUtils<IOrthogonalStateBuilder>,
         IRegions<IOrthogonalStateBuilder>,
-        IStateTransitions<IOrthogonalStateBuilder>
-    { }
+        IStateTransitions<IOrthogonalStateBuilder>;
 
     public interface IOverridenOrthogonalStateBuilder :
         IOrthogonalStateExtension<IOverridenOrthogonalStateBuilder>,
         IStateEvents<IOverridenOrthogonalStateBuilder>,
         IOrthogonalStateTypedEvents<IOverridenOrthogonalStateBuilder>,
         IStateUtils<IOverridenOrthogonalStateBuilder>,
+        IStateUtilsOverrides<IOverridenOrthogonalStateBuilder>,
         IRegions<IOverridenOrthogonalStateBuilder>,
         IRegionsOverrides<IOverridenOrthogonalStateBuilder>,
         IStateTransitions<IOverridenOrthogonalStateBuilder>,
-        IStateTransitionsOverrides<IOverridenOrthogonalStateBuilder>
-    { }
+        IStateTransitionsOverrides<IOverridenOrthogonalStateBuilder>;
 }
