@@ -2,7 +2,7 @@
 
 namespace Stateflows.Common
 {
-    public interface IInitializer<TInitializationEvent>
+    public interface IInitializer<in TInitializationEvent>
     {
         Task<bool> OnInitializeAsync(TInitializationEvent initializationEvent);
     }

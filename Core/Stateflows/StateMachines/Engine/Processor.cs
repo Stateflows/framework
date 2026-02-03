@@ -62,7 +62,13 @@ namespace Stateflows.StateMachines.Engine
                 
                 var serviceProvider = serviceScope.ServiceProvider;
 
-                var stateflowsContext = eventHolder.Headers.Values.Any(h => h is ForcedReset)
+                var forcedReset = eventHolder.Headers.Values.Any(h => h is ForcedReset);
+                if (forcedReset)
+                {
+                    await ValueStorage.ClearAsync(id);
+                }
+
+                var stateflowsContext = forcedReset
                     ? new StateflowsContext(id)
                     : await Storage.HydrateAsync(id);
 

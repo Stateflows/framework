@@ -1,4 +1,5 @@
 ﻿using System.Threading.Tasks;
+using Stateflows.Common.Interfaces;
 
 namespace Stateflows.Activities
 {
@@ -9,18 +10,17 @@ namespace Stateflows.Activities
 
     public interface IFlow<in TToken> : IEdge;
 
-    public interface IFlowGuard<in TToken> : IFlow<TToken>
-    {
-        Task<bool> GuardAsync(TToken token);
-    }
+    public interface IFlowGuard<in TToken> : IFlow<TToken>, IAbstractGuard<TToken>;
 
     public interface IFlowGuard : IControlFlowGuard, IFlowGuard<object>
     {
-        Task<bool> IFlowGuard<object>.GuardAsync(object token)
+        Task<bool> IAbstractGuard<object>.GuardAsync(object token)
             => GuardAsync();
     }
 
-    public interface IActivityGuard : IFlowGuard;
+    public interface IActivityGuard : IActivityGuard<object>, IFlowGuard;
+    
+    public interface IActivityGuard<in TToken> : IFlowGuard<TToken>;
 
     public interface IFlowTransformation<in TToken, TTransformedToken> : IFlow<TToken>
     {

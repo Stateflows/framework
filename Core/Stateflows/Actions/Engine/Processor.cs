@@ -63,8 +63,14 @@ namespace Stateflows.Actions.Engine
                         ? StateflowsLock.AquireNoLockAsync(id)
                         : StateflowsLock.AquireLockAsync(id)
                 );
+
+                var forcedReset = eventHolder.Headers.Values.Any(h => h is ForcedReset);
+                if (forcedReset)
+                {
+                    await ValueStorage.ClearAsync(id);
+                }
                 
-                stateflowsContext = action.IsStateless || eventHolder.Headers.Values.Any(h => h is ForcedReset)
+                stateflowsContext = action.IsStateless || forcedReset
                     ? new StateflowsContext(id)
                     : await Storage.HydrateAsync(id);
 

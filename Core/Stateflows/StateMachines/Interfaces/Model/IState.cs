@@ -44,7 +44,7 @@ namespace Stateflows.StateMachines
 
     public interface IStateMachineGuard<in TEvent> : IDeferralGuard<TEvent>, ITransitionGuard<TEvent>;
     
-    public interface IStateMachineGuard : IDeferralGuard, ITransitionGuard;
+    public interface IStateMachineGuard : IStateMachineGuard<object>, IDeferralGuard, ITransitionGuard;
 
     public static class State<TState>
         where TState : class, IVertex
