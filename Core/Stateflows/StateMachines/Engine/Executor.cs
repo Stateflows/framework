@@ -482,7 +482,7 @@ namespace Stateflows.StateMachines.Engine
                     }
                 }
 
-                await valueStorage.SaveAsync(Context.Context.ContextOwnerId ?? Context.Context.Id, Context.Context.StateflowsValues);
+                // await valueStorage.SaveAsync(Context.Context.ContextOwnerId ?? Context.Context.Id, Context.Context.StateflowsValues);
                 
                 if (result == EventStatus.Consumed)
                 {
@@ -510,12 +510,12 @@ namespace Stateflows.StateMachines.Engine
 
         private async Task LoadValuesAsync()
         {
-            Context.Context.StateflowsValues = (await valueStorage.LoadAsync(Context.Context.ContextOwnerId ?? Context.Context.Id)).ToDictionary();
+            // Context.Context.StateflowsValues = (await valueStorage.LoadAsync(Context.Context.ContextOwnerId ?? Context.Context.Id)).ToDictionary();
         }
 
         private async Task SaveValuesAsync()
         {
-            await valueStorage.SaveAsync(Context.Context.ContextOwnerId ?? Context.Context.Id, Context.Context.StateflowsValues);
+            // await valueStorage.SaveAsync(Context.Context.ContextOwnerId ?? Context.Context.Id, Context.Context.StateflowsValues);
         }
 
         private async Task SaveLoadValuesAsync()

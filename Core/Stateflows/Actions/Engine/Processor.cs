@@ -83,7 +83,7 @@ namespace Stateflows.Actions.Engine
 
                 if (!action.IsStateless || stateflowsContext.ContextOwnerId != null)
                 {
-                    stateflowsContext.StateflowsValues = (await ValueStorage.LoadAsync(stateflowsContext.ContextOwnerId ?? stateflowsContext.Id)).ToDictionary();
+                    // stateflowsContext.StateflowsValues = (await ValueStorage.LoadAsync(stateflowsContext.ContextOwnerId ?? stateflowsContext.Id)).ToDictionary();
                 }
 
                 var executor = new Executor(Register, stateflowsContext, serviceProvider, action);
@@ -180,7 +180,7 @@ namespace Stateflows.Actions.Engine
 
                 if (!action.IsStateless || stateflowsContext.ContextOwnerId != null)
                 {
-                    await ValueStorage.SaveAsync(stateflowsContext.ContextOwnerId ?? stateflowsContext.Id, stateflowsContext.StateflowsValues);
+                    // await ValueStorage.SaveAsync(stateflowsContext.ContextOwnerId ?? stateflowsContext.Id, stateflowsContext.StateflowsValues);
                 }
                 
                 if (!action.IsStateless)

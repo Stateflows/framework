@@ -126,7 +126,7 @@ namespace Stateflows.Activities.Registration.Builders
         }
 
         #region IActivityBuilder
-        IActivityBuilder IReactiveActivityBase<IActivityBuilder>.AddAction(string actionNodeName, Func<IActionContext, Task> actionAsync, ActionBuildAction buildAction)
+        IActivityBuilder IActivityActionBase<IActivityBuilder>.AddAction(string actionNodeName, Func<IActionContext, Task> actionAsync, ActionBuildAction buildAction)
             => AddAction(actionNodeName, actionAsync, b => buildAction?.Invoke(b)) as IActivityBuilder;
 
         IActivityBuilder IReactiveActivityBase<IActivityBuilder>.AddStructuredActivity(string actionNodeName, ReactiveStructuredActivityBuildAction buildAction)

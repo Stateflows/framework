@@ -84,13 +84,13 @@ namespace Stateflows.Activities.Registration.Builders
         #endregion
 
         #region IReactiveStructuredActivityBuilder
-        IReactiveStructuredActivityBuilderWithOptions IReactiveActivityBase<IReactiveStructuredActivityBuilderWithOptions>.AddAction(string actionNodeName, Func<IActionContext, Task> actionAsync, ActionBuildAction buildAction)
+        IReactiveStructuredActivityBuilderWithOptions IActivityActionBase<IReactiveStructuredActivityBuilderWithOptions>.AddAction(string actionNodeName, Func<IActionContext, Task> actionAsync, ActionBuildAction buildAction)
             => AddAction(actionNodeName, actionAsync, b => buildAction(b)) as IReactiveStructuredActivityBuilderWithOptions;
 
         IReactiveStructuredActivityBuilderWithOptions IControlFlowBase<IReactiveStructuredActivityBuilderWithOptions>.AddControlFlow(string targetNodeName, ControlFlowBuildAction buildAction)
             => AddControlFlow(targetNodeName, buildAction) as IReactiveStructuredActivityBuilderWithOptions;
 
-        IReactiveStructuredActivityBuilder IReactiveActivityBase<IReactiveStructuredActivityBuilder>.AddAction(string actionNodeName, Func<IActionContext, Task> actionAsync, ActionBuildAction buildAction)
+        IReactiveStructuredActivityBuilder IActivityActionBase<IReactiveStructuredActivityBuilder>.AddAction(string actionNodeName, Func<IActionContext, Task> actionAsync, ActionBuildAction buildAction)
             => AddAction(actionNodeName, actionAsync, b => buildAction?.Invoke(b)) as IReactiveStructuredActivityBuilder;
 
         IReactiveStructuredActivityBuilder IControlFlowBase<IReactiveStructuredActivityBuilder>.AddControlFlow(string targetNodeName, ControlFlowBuildAction buildAction)
@@ -189,13 +189,13 @@ namespace Stateflows.Activities.Registration.Builders
         #endregion
 
         #region IStructuredActivityBuilder
-        IStructuredActivityBuilderWithOptions IActivityBase<IStructuredActivityBuilderWithOptions>.AddAction(string actionNodeName, Func<IActionContext, Task> actionAsync, ActionBuildAction buildAction)
+        IStructuredActivityBuilderWithOptions IActivityActionBase<IStructuredActivityBuilderWithOptions>.AddAction(string actionNodeName, Func<IActionContext, Task> actionAsync, ActionBuildAction buildAction)
             => AddAction(actionNodeName, actionAsync, b => buildAction(b)) as IStructuredActivityBuilderWithOptions;
 
         IStructuredActivityBuilderWithOptions IControlFlowBase<IStructuredActivityBuilderWithOptions>.AddControlFlow(string targetNodeName, ControlFlowBuildAction buildAction)
             => AddControlFlow(targetNodeName, buildAction) as IStructuredActivityBuilderWithOptions;
 
-        IStructuredActivityBuilder IActivityBase<IStructuredActivityBuilder>.AddAction(string actionNodeName, Func<IActionContext, Task> actionAsync, ActionBuildAction buildAction)
+        IStructuredActivityBuilder IActivityActionBase<IStructuredActivityBuilder>.AddAction(string actionNodeName, Func<IActionContext, Task> actionAsync, ActionBuildAction buildAction)
             => AddAction(actionNodeName, actionAsync, b => buildAction?.Invoke(b)) as IStructuredActivityBuilder;
 
         IStructuredActivityBuilder IControlFlowBase<IStructuredActivityBuilder>.AddControlFlow(string targetNodeName, ControlFlowBuildAction buildAction)

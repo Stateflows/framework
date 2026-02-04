@@ -19,6 +19,8 @@ namespace Stateflows.Actions.Models
         public ActionDelegateAsync Delegate { get; set; }
         public Func<IActionVisitor, Task> VisitingAction { get; set; }
 
+        public System.Action<object>? ConfigurationAction { get; set; } = null;
+
         public List<ActionExceptionHandlerFactoryAsync> ExceptionHandlerFactories { get; set; } = [];
         
         public List<ActionInterceptorFactoryAsync> InterceptorFactories { get; set; } = [];

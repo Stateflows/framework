@@ -82,7 +82,7 @@ namespace Stateflows.Activities.Engine
                 stateflowsContext.ContextParentId = embedding.ParentId;
             }
 
-            stateflowsContext.StateflowsValues = (await ValueStorage.LoadAsync(stateflowsContext.ContextOwnerId ?? stateflowsContext.Id)).ToDictionary();
+            // stateflowsContext.StateflowsValues = (await ValueStorage.LoadAsync(stateflowsContext.ContextOwnerId ?? stateflowsContext.Id)).ToDictionary();
 
             using var executor = new Executor(Register, graph, serviceProvider);
 
@@ -181,7 +181,7 @@ namespace Stateflows.Activities.Engine
 
                 stateflowsContext = executor.Dehydrate().Context;
 
-                await ValueStorage.SaveAsync(stateflowsContext.ContextOwnerId ?? stateflowsContext.Id, stateflowsContext.StateflowsValues);
+                // await ValueStorage.SaveAsync(stateflowsContext.ContextOwnerId ?? stateflowsContext.Id, stateflowsContext.StateflowsValues);
                 await Storage.DehydrateAsync(stateflowsContext);
             }
 

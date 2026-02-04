@@ -19,10 +19,10 @@ internal class ActionBuilder(ActionModel model) : IActionBuilder
     }
 
     IActionBuilder IActionObservability<IActionBuilder>.AddInterceptor<TInterceptor>()
-        => AddInterceptor<TInterceptor>() as IActionBuilder;
+        => AddInterceptor<TInterceptor>();
 
     IActionBuilder IActionObservability<IActionBuilder>.AddInterceptor(ActionInterceptorFactoryAsync interceptorFactory)
-        => AddInterceptor(interceptorFactory) as IActionBuilder;
+        => AddInterceptor(interceptorFactory);
 
     public IActionBuilder AddInterceptor<TInterceptor>()
         where TInterceptor : class, IActionInterceptor
@@ -42,10 +42,10 @@ internal class ActionBuilder(ActionModel model) : IActionBuilder
     }
 
     IActionBuilder IActionObservability<IActionBuilder>.AddObserver<TObserver>()
-        => AddObserver<TObserver>() as IActionBuilder;
+        => AddObserver<TObserver>();
 
     IActionBuilder IActionObservability<IActionBuilder>.AddObserver(ActionObserverFactoryAsync observerFactory)
-        => AddObserver(observerFactory) as IActionBuilder;
+        => AddObserver(observerFactory);
 
     public IActionBuilder AddObserver<TObserver>()
         where TObserver : class, IActionObserver
@@ -64,11 +64,11 @@ internal class ActionBuilder(ActionModel model) : IActionBuilder
     }
 
     IActionBuilder IActionObservability<IActionBuilder>.AddExceptionHandler<TExceptionHandler>()
-        => AddExceptionHandler<TExceptionHandler>() as IActionBuilder;
+        => AddExceptionHandler<TExceptionHandler>();
 
     IActionBuilder IActionObservability<IActionBuilder>.AddExceptionHandler(
         ActionExceptionHandlerFactoryAsync exceptionHandlerFactoryAsync)
-        => AddExceptionHandler(exceptionHandlerFactoryAsync) as IActionBuilder;
+        => AddExceptionHandler(exceptionHandlerFactoryAsync);
 
     public IActionBuilder AddExceptionHandler<TExceptionHandler>()
         where TExceptionHandler : class, IActionExceptionHandler
@@ -88,10 +88,10 @@ internal class ActionBuilder(ActionModel model) : IActionBuilder
     }
 
     IActionBuilder IActionUtils<IActionBuilder>.SetIsStateless(bool isStateless)
-        => SetIsStateless(isStateless) as IActionBuilder;
+        => SetIsStateless(isStateless);
 
     IActionBuilder IActionUtils<IActionBuilder>.SetResourceName(string resourceName)
-        => SetResourceName(resourceName) as IActionBuilder;
+        => SetResourceName(resourceName);
 
     public IActionBuilder SetIsStateless(bool isStateless)
     {
@@ -106,7 +106,9 @@ internal class ActionBuilder<TAction>(ActionModel model) : ActionBuilder(model),
 {
     public IActionBuilder<TAction> Configure(System.Action<TAction> action)
     {
-        throw new System.NotImplementedException();
+        model.ConfigurationAction = o => action((TAction)o);
+        
+        return this;
     }
 
     IActionBuilder<TAction> IActionUtils<IActionBuilder<TAction>>.SetResourceName(string resourceName)

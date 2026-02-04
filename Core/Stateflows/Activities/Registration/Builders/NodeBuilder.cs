@@ -203,6 +203,8 @@ namespace Stateflows.Activities.Registration
     {
         public ITypedActionBuilder<TNode> Configure(Action<TNode> action)
         {
+            Node.ConfigurationAction = o => action((TNode)o);
+            
             return this;
         }
         

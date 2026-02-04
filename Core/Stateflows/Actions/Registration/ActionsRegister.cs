@@ -104,7 +104,28 @@ namespace Stateflows.Actions.Registration
                 throw new ActionDefinitionException($"Action '{actionName}' with version '{version}' is already registered", new ActionClass(actionName));
             }
 
-            ActionDelegateAsync actionDelegate = async context =>
+            var method = ActionTypeAddedAsyncMethod.MakeGenericMethod(actionType);
+
+            // Assign to local variable to avoid value being overriden when invoking lambda function at a later stage
+            var ownerClass = OwnerClass;
+
+            Func<IActionVisitor, Task> visitingAction = async v =>
+            {
+                await v.ActionAddedAsync(actionName, version, ownerClass);
+                await (Task)method.Invoke(v, [actionName, version]);
+            };
+
+            var actionModel = new ActionModel()
+            {
+                Name = actionName,
+                Version = version,
+                // Delegate = actionDelegate,
+                VisitingAction = visitingAction,
+            };
+            
+            buildAction?.Invoke(new ActionBuilder(actionModel));
+
+            actionModel.Delegate = async context =>
             {
                 if (((IStateflowsContextProvider)context).Context.ContextOwnerId == null)
                 {
@@ -121,6 +142,8 @@ namespace Stateflows.Actions.Registration
                         actionType,
                         "action"
                     );
+                    
+                    actionModel.ConfigurationAction?.Invoke(instance);
 
                     await instance.ExecuteAsync(context.CancellationToken);
                 }
@@ -130,27 +153,6 @@ namespace Stateflows.Actions.Registration
                     ContextValues.GlobalValuesHolder.Value = null;
                 }
             };
-
-            var method = ActionTypeAddedAsyncMethod.MakeGenericMethod(actionType);
-
-            // Assign to local variable to avoid value being overriden when invoking lambda function at a later stage
-            var ownerClass = OwnerClass;
-
-            Func<IActionVisitor, Task> visitingAction = async v =>
-            {
-                await v.ActionAddedAsync(actionName, version, ownerClass);
-                await (Task)method.Invoke(v, [actionName, version]);
-            };
-
-            var actionModel = new ActionModel()
-            {
-                Name = actionName,
-                Version = version,
-                Delegate = actionDelegate,
-                VisitingAction = visitingAction,
-            };
-            
-            buildAction?.Invoke(new ActionBuilder(actionModel));
 
             Actions.Add(key, actionModel);
 

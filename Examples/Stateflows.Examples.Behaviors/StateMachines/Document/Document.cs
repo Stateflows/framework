@@ -21,6 +21,8 @@ public class Document : IStateMachine
         .AddInitialState<New>(b => b
             .AddTransition<Review, ApprovalPending>(b => b
                 .AddEffect<ReviewEffect>()
+                .AddEffect_ClearScript("Console.WriteLine(JSON.stringify(behaviorContext))")
+                .AddGuard_ClearScript("event.Rating >= 42")
             )
             .AddTransition<AfterOneMinute, ReportAutorejection, Rejected>()
         )

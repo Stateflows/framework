@@ -82,7 +82,7 @@ namespace Stateflows.Actions.Registration.Builders
                 registration.OwnerClass = ownerClass;
                 registration.ParentClass = parentClass;
 
-                register.AddAction<TAction>(actionName ?? Action<TAction>.Name, version, buildAction);
+                register.AddAction(actionName ?? Action<TAction>.Name, version, buildAction);
                 
                 registration.OwnerClass = originalOwnerClass;
                 registration.ParentClass = originalParentClass;
@@ -90,7 +90,7 @@ namespace Stateflows.Actions.Registration.Builders
                 return this;
             }
 
-            register.AddAction<TAction>(actionName ?? Action<TAction>.Name, version, buildAction);
+            register.AddAction(actionName ?? Action<TAction>.Name, version, buildAction);
 
             return this;
         }

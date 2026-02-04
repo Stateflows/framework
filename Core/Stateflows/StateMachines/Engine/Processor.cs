@@ -88,7 +88,7 @@ namespace Stateflows.StateMachines.Engine
                     stateflowsContext.ContextParentId = embedding.ParentId;
                 }
 
-                stateflowsContext.StateflowsValues = (await ValueStorage.LoadAsync(stateflowsContext.ContextOwnerId ?? stateflowsContext.Id)).ToDictionary();
+                // stateflowsContext.StateflowsValues = (await ValueStorage.LoadAsync(stateflowsContext.ContextOwnerId ?? stateflowsContext.Id)).ToDictionary();
 
                 using var executor = new Executor(Register, graph, serviceProvider, stateflowsContext, eventHolder);
                 
@@ -210,7 +210,7 @@ namespace Stateflows.StateMachines.Engine
 
                 // out of try-finally to make sure that context won't be saved when execution fails
                 var ctx = executor.Context.Context;
-                await ValueStorage.SaveAsync(ctx.ContextOwnerId ?? ctx.Id, ctx.StateflowsValues);
+                // await ValueStorage.SaveAsync(ctx.ContextOwnerId ?? ctx.Id, ctx.StateflowsValues);
                 await Storage.DehydrateAsync(ctx);
 
                 return result;

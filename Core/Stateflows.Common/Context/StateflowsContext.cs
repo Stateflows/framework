@@ -128,17 +128,5 @@ namespace Stateflows.Common.Context
         [Newtonsoft.Json.JsonIgnore]
         [JsonIgnore]
         public Dictionary<string, object> RuntimeMetadata { get; } = [];
-
-        [Newtonsoft.Json.JsonIgnore] [JsonIgnore]
-        public Dictionary<string, StateflowsValue> stateflowsValues;
-
-        public Dictionary<string, StateflowsValue>? StateflowsValues
-        {
-            get => stateflowsValues;
-            set
-            {
-                stateflowsValues = value;
-            }
-        }
     }
 }

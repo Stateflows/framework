@@ -12,45 +12,6 @@ namespace Stateflows.Storage.EntityFrameworkCore.Stateflows
     internal class EntityFrameworkCoreValueStorage<TDbContext>(IServiceProvider serviceProvider) : IStateflowsValueStorage
         where TDbContext : DbContext, IStateflowsDbContext_v1
     {
-        public async Task<IReadOnlyDictionary<string, StateflowsValue>> LoadAsync(BehaviorId behaviorId)
-        {
-            await using var scope = serviceProvider.CreateAsyncScope();
-            var dbContextFactory = scope.ServiceProvider.GetService<IDbContextFactory<TDbContext>>() ?? new DbContextFactory<TDbContext>(scope.ServiceProvider);
-            var dbContext = await dbContextFactory.CreateDbContextAsync();
-            
-            var entries = await dbContext.Values_v1
-                .AsNoTracking()
-                .Where(v =>
-                    v.BehaviorType == behaviorId.Type &&
-                    v.BehaviorName == behaviorId.Name &&
-                    v.BehaviorInstance == behaviorId.Instance
-                )
-                .ToArrayAsync();
-            
-            var result = new Dictionary<string, StateflowsValue>();
-            foreach (var entry in entries)
-            {
-                result[entry.Key] = new StateflowsValue()
-                {
-                    Name = entry.Key,
-                    Value = entry.Value,
-                    Version = entry.Version,
-                };
-            }
-
-            return result;
-        }
-
-        public Task SaveAsync(BehaviorId behaviorId, IReadOnlyDictionary<string, StateflowsValue> values)
-        {
-            throw new NotImplementedException();
-        }
-
-        public Task<IReadOnlyDictionary<string, StateflowsValue>> SaveAndLoadAsync(BehaviorId behaviorId, IReadOnlyDictionary<string, StateflowsValue> values)
-        {
-            throw new NotImplementedException();
-        }
-
         public async Task SetAsync<T>(BehaviorId behaviorId, string key, T value)
         {
             await using var scope = serviceProvider.CreateAsyncScope();

@@ -1,15 +1,18 @@
 using Medallion.Threading.SqlServer;
+using Microsoft.ClearScript;
 using Microsoft.EntityFrameworkCore;
 using OpenTelemetry;
 using Scalar.AspNetCore;
 using Stateflows;
+using Stateflows.Actions;
 using Stateflows.StateMachines;
 using Stateflows.Examples.Blazor.Components;
-using Stateflows.Examples.Behaviors.StateMachines.Document;
 using Stateflows.Examples.Behaviors.StateMachines.Document.Interceptors;
 using Stateflows.Examples.Blazor;
 using Stateflows.Extensions.MinimalAPIs;
 using Stateflows.Extensions.OpenTelemetry;
+using Microsoft.ClearScript.V8;
+using Document = Stateflows.Examples.Behaviors.StateMachines.Document.Document;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -19,10 +22,22 @@ builder.Services.AddDbContext<AppDbContext>(options
     => options.UseSqlServer(builder.Configuration.GetConnectionString("Default"))
 );
 
+builder.Host.UseOrleans(static siloBuilder =>
+{
+    siloBuilder.UseLocalhostClustering();
+    siloBuilder.AddMemoryGrainStorage("urls");
+});
+
 // In order to host Stateflows behaviors, Stateflows framework must be registered in the app.
 builder.Services.AddStateflows(b => b
     .AddResource("heavy-work", b => b
         .SetMaxConcurrentBehaviorExecutions(3)
+    )
+    
+    .AddClearScript(_ => Task.FromResult<IScriptEngine>(new V8ScriptEngine()))
+    
+    .AddActions(b => b
+        .AddAction_ClearScript("script", "Console.WriteLine('test');")
     )
         
     // Each type of behavior must be registered explicitly - in this example only State Machines are used.

@@ -58,6 +58,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Stateflows.Examples.Blazor.
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Stateflows.Extensions.MinimalAPIs", "Extensions\Stateflows.Extensions.MinimalAPIs\Stateflows.Extensions.MinimalAPIs.csproj", "{77084AF3-1766-4B4A-855C-44F28B2ECA2E}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Stateflows.Extensions.ClearScript", "Extensions\Stateflows.Extensions.ClearScript\Stateflows.Extensions.ClearScript.csproj", "{8BED1225-2D43-4604-9CF0-6FB9EABA780D}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -140,6 +142,10 @@ Global
 		{77084AF3-1766-4B4A-855C-44F28B2ECA2E}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{77084AF3-1766-4B4A-855C-44F28B2ECA2E}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{77084AF3-1766-4B4A-855C-44F28B2ECA2E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{8BED1225-2D43-4604-9CF0-6FB9EABA780D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8BED1225-2D43-4604-9CF0-6FB9EABA780D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8BED1225-2D43-4604-9CF0-6FB9EABA780D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8BED1225-2D43-4604-9CF0-6FB9EABA780D}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -164,6 +170,7 @@ Global
 		{E4668EBD-51EE-4828-9934-B24CBF5B4901} = {D02BCCCA-7A8D-4AB8-AF36-020DCF92E17C}
 		{3F921C12-CD2C-4071-B91B-A53E200D357F} = {D02BCCCA-7A8D-4AB8-AF36-020DCF92E17C}
 		{77084AF3-1766-4B4A-855C-44F28B2ECA2E} = {580A6B03-79AD-430C-AEF6-80EC6A02FA61}
+		{8BED1225-2D43-4604-9CF0-6FB9EABA780D} = {580A6B03-79AD-430C-AEF6-80EC6A02FA61}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {602A9FD6-5053-42E4-AEAE-2813DF169A3C}

@@ -11,7 +11,6 @@ namespace Stateflows.StateMachines.Registration.Interfaces
         IGuard<TEvent, ITransitionBuilder<TEvent>>
     { }
 
-
     public interface IOverridenTransitionBuilder<TEvent> :
         ITriggeredTransitionUtils<IOverridenTransitionBuilder<TEvent>>,
         ITargetedTransitionUtils<IOverridenTransitionBuilder<TEvent>>,

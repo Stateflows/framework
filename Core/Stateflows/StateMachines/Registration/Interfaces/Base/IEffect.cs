@@ -16,7 +16,7 @@ using ActionDelegateAsync = Stateflows.Actions.Registration.ActionDelegateAsync;
 
 namespace Stateflows.StateMachines.Registration.Interfaces.Base
 {
-    public interface IEffect<TEvent, out TReturn>
+    public interface IEffect<out TEvent, out TReturn>
     {
         /// <summary>
         /// Adds an asynchronous effect function to the current transition.<br/>

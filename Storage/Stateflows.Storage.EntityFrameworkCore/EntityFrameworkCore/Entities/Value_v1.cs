@@ -18,16 +18,13 @@ public class Value_v1
     public string Key { get; set; }
     
     public string Value { get; set; }
-    
-    public int Version { get; set; }
 
     public Value_v1(
         string behaviorType,
         string behaviorName,
         string behaviorInstance,
         string key,
-        string value,
-        int version = 0
+        string value
     )
     {
         BehaviorType = behaviorType;
@@ -35,6 +32,5 @@ public class Value_v1
         BehaviorInstance = behaviorInstance;
         Key = key;
         Value = value;
-        Version = version;
     }
 }

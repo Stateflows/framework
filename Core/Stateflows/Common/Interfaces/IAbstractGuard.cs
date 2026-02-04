@@ -2,15 +2,15 @@ using System.Threading.Tasks;
 
 namespace Stateflows.Common.Interfaces;
 
-public interface IAbstractGuard<in TInput> : IAbstractElement
+public interface IAbstractGuard<in TEvent> : IAbstractElement
 {
-    Task<bool> GuardAsync(TInput input);
+    Task<bool> GuardAsync(TEvent @event);
 }
     
 public interface IAbstractGuard : IAbstractGuard<object>
 {
     Task<bool> GuardAsync();
         
-    Task<bool> IAbstractGuard<object>.GuardAsync(object input)
+    Task<bool> IAbstractGuard<object>.GuardAsync(object @event)
         => GuardAsync();
 }

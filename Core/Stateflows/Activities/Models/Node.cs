@@ -32,6 +32,8 @@ namespace Stateflows.Activities.Models
 
         public int ChunkSize { get; set; }
         public bool Anchored { get; set; } = true;
+        
+        public System.Action<object>? ConfigurationAction { get; set; } = null;
 
         public Logic<ActivityActionAsync> Action { get; } =  new Logic<ActivityActionAsync>(Constants.Action);
 
