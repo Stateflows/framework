@@ -16,9 +16,16 @@ internal class ActionVisitor(IEndpointRouteBuilder routeBuilder, Interceptor int
 {
     public IEndpointRouteBuilder RouteBuilder => routeBuilder;
     public Dictionary<string, List<(HateoasLink, BehaviorStatus[])>> HateoasLinks { get; set; } = new();
+    private BehaviorClass? OwnerClass = null;
 
     public override Task ActionAddedAsync(string actionName, int actionVersion, BehaviorClass? ownerClass = null, BehaviorClass? parentClass = null)
     {
+        OwnerClass = ownerClass;
+        if (OwnerClass != null)
+        {
+            return Task.CompletedTask;
+        }
+
         RegisterStandardEndpoints(actionName, routeBuilder);
         return Task.CompletedTask;
     }
@@ -255,6 +262,11 @@ internal class ActionVisitor(IEndpointRouteBuilder routeBuilder, Interceptor int
 
     public override Task ActionTypeAddedAsync<TAction>(string actionName, int actionVersion)
     {
+        if (OwnerClass != null)
+        {
+            return Task.CompletedTask;
+        }
+
         var actionType = typeof(TAction);
         if (typeof(IActionEndpoints).IsAssignableFrom(actionType))
         {

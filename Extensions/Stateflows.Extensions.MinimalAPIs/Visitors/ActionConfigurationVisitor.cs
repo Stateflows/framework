@@ -6,8 +6,14 @@ namespace Stateflows.Extensions.MinimalAPIs;
 internal class ActionConfigurationVisitor(MinimalAPIsBuilder minimalApisBuilder)
     : Actions.ActionVisitor
 {
+    private BehaviorClass? OwnerClass = null;
     public override Task ActionTypeAddedAsync<TAction>(string actionName, int actionVersion)
     {
+        if (OwnerClass != null)
+        {
+            return Task.CompletedTask;
+        }
+
         var actionType = typeof(TAction);
         if (typeof(IActionEndpointsConfiguration).IsAssignableFrom(actionType))
         {
@@ -21,7 +27,8 @@ internal class ActionConfigurationVisitor(MinimalAPIsBuilder minimalApisBuilder)
 
     public override Task ActionAddedAsync(string actionName, int actionVersion, BehaviorClass? ownerClass = null, BehaviorClass? parentClass = null)
     {
-        if (ownerClass != null)
+        OwnerClass = ownerClass;
+        if (OwnerClass != null)
         {
             minimalApisBuilder.ConfigureActions(b =>
                 b.ConfigureAction(

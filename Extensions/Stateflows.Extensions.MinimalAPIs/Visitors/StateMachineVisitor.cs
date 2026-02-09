@@ -29,6 +29,8 @@ internal class StateMachineVisitor(
 
     private string CurrentStateMachineName = string.Empty;
     private BehaviorStatus[] SupportedStatuses = [];
+    
+    private BehaviorClass? OwnerClass = null;
 
     public void Visit<T>()
     {
@@ -39,6 +41,11 @@ internal class StateMachineVisitor(
 
     public override Task InitializerAddedAsync<TInitializationEvent>(string stateMachineName, int stateMachineVersion)
     {
+        if (OwnerClass != null)
+        {
+            return Task.CompletedTask;
+        }
+
         Initializers[stateMachineName] = true;
 
         CurrentStateMachineName = stateMachineName;
@@ -53,6 +60,11 @@ internal class StateMachineVisitor(
     public override Task TransitionAddedAsync<TEvent>(string stateMachineName, int stateMachineVersion, string sourceVertexName,
         string targetVertexName = null, bool isElse = false)
     {
+        if (OwnerClass != null)
+        {
+            return Task.CompletedTask;
+        }
+
         CurrentStateMachineName = stateMachineName;
         SupportedStatuses = [BehaviorStatus.Initialized];
         typeMapper.VisitMappedTypes<TEvent>(this);
@@ -64,6 +76,13 @@ internal class StateMachineVisitor(
 
     public override Task StateMachineAddedAsync(string stateMachineName, int stateMachineVersion, BehaviorClass? ownerClass = null, BehaviorClass? parentClass = null)
     {
+        OwnerClass = ownerClass;
+        
+        if (OwnerClass != null)
+        {
+            return Task.CompletedTask;
+        }
+        
         RegisterStandardEndpoints(stateMachineName);
         RegisterRemainingEndpoints(stateMachineName);
 
@@ -379,6 +398,11 @@ internal class StateMachineVisitor(
 
     public override Task StateMachineTypeAddedAsync<TStateMachine>(string stateMachineName, int stateMachineVersion)
     {
+        if (OwnerClass != null)
+        {
+            return Task.CompletedTask;
+        }
+
         var stateMachineType = typeof(TStateMachine);
         if (typeof(IStateMachineEndpoints).IsAssignableFrom(stateMachineType))
         {
@@ -406,6 +430,11 @@ internal class StateMachineVisitor(
 
     public override Task VertexTypeAddedAsync<TVertex>(string stateMachineName, int stateMachineVersion, string vertexName)
     {
+        if (OwnerClass != null)
+        {
+            return Task.CompletedTask;
+        }
+
         var vertexType = typeof(TVertex);
         if (typeof(IStateEndpoints).IsAssignableFrom(vertexType))
         {
@@ -424,6 +453,11 @@ internal class StateMachineVisitor(
 
     public override Task CustomEventAddedAsync<TEvent>(string stateMachineName, int stateMachineVersion, BehaviorStatus[] supportedStatuses)
     {
+        if (OwnerClass != null)
+        {
+            return Task.CompletedTask;
+        }
+
         CurrentStateMachineName = stateMachineName;
         SupportedStatuses = supportedStatuses;
         typeMapper.VisitMappedTypes<TEvent>(this);

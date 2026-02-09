@@ -124,7 +124,7 @@ namespace Stateflows.StateMachines.Engine
                 _ => BehaviorStatus.NotInitialized
             };
 
-        //// [DebuggerHidden]
+        [DebuggerHidden]
         public async Task<EventStatus> InitializeAsync<TEvent>(EventHolder<TEvent> eventHolder, bool noImplicitInitialization)
         {
             Debug.Assert(Context != null, $"Context is unavailable. Is state machine '{Graph.Name}' hydrated?");
@@ -169,7 +169,7 @@ namespace Stateflows.StateMachines.Engine
             return EventStatus.NotInitialized;
         }
 
-        //[DebuggerHidden]
+        [DebuggerHidden]
         public async Task<bool> ExitAsync()
         {
             Debug.Assert(Context != null, $"Context is unavailable. Is state machine '{Graph.Name}' hydrated?");
@@ -192,7 +192,7 @@ namespace Stateflows.StateMachines.Engine
             return true;
         }
 
-        //[DebuggerHidden]
+        [DebuggerHidden]
         public void Reset(ResetMode resetMode)
         {
             Debug.Assert(Context != null, $"Context is unavailable. Is state machine '{Graph.Name}' hydrated?");
@@ -213,7 +213,7 @@ namespace Stateflows.StateMachines.Engine
             }
         }
 
-        //[DebuggerHidden]
+        [DebuggerHidden]
         private async Task DoInitializeCascadeAsync(Vertex vertex, bool omitRoot = false)
         {
             if (!Context.StatesTree.Contains(vertex.Identifier))
@@ -286,7 +286,7 @@ namespace Stateflows.StateMachines.Engine
             );
         }
 
-        //[DebuggerHidden]
+        [DebuggerHidden]
         public async Task<EventStatus> ProcessAsync<TEvent>(EventHolder<TEvent> eventHolder)
         {
             var result = EventStatus.Rejected;
@@ -304,7 +304,7 @@ namespace Stateflows.StateMachines.Engine
             return result;
         }
 
-        //[DebuggerHidden]
+        [DebuggerHidden]
         private async Task<bool> TryDeferEventAsync(KeyValuePair<string, Logic<StateMachinePredicateAsync>>[] deferrals, EventHolder eventHolder)
         {
             var matchingDeferrals = deferrals.Where(deferral => deferral.Key == eventHolder.Name);
@@ -321,7 +321,7 @@ namespace Stateflows.StateMachines.Engine
             return false;
         }
 
-        //[DebuggerHidden]
+        [DebuggerHidden]
         private async Task DispatchNextDeferredEvent()
         {
             var deferrals = GetDeferrals();
@@ -346,11 +346,11 @@ namespace Stateflows.StateMachines.Engine
             }
         }
 
-        //[DebuggerHidden]
+        [DebuggerHidden]
         Task<EventStatus> IStateflowsExecutor.DoProcessAsync<TEvent>(EventHolder<TEvent> eventHolder)
             => DoProcessAsync(eventHolder);
 
-        //[DebuggerHidden]
+        [DebuggerHidden]
         private async Task<EventStatus> DoProcessAsync<TEvent>(EventHolder<TEvent> eventHolder)
         {
             Debug.Assert(Context != null, $"Context is not available. Is state machine '{Graph.Name}' hydrated?");
@@ -524,7 +524,7 @@ namespace Stateflows.StateMachines.Engine
             await LoadValuesAsync();
         }
 
-        //[DebuggerHidden]
+        [DebuggerHidden]
         private async Task<bool> DoGuardAsync<TEvent>(Edge edge)
         {
             GuardContext<TEvent> context = null;
@@ -560,7 +560,7 @@ namespace Stateflows.StateMachines.Engine
             }
         }
 
-        //[DebuggerHidden]
+        [DebuggerHidden]
         private async Task DoEffectAsync<TEvent>(Edge edge)
         {
             TransitionContext<TEvent> context = null;
@@ -594,7 +594,7 @@ namespace Stateflows.StateMachines.Engine
             }
         }
 
-        //[DebuggerHidden]
+        [DebuggerHidden]
         private async Task<InitializationStatus> DoInitializeStateMachineAsync(EventHolder eventHolder, bool noImplicitInitialization)
         {
             InitializationStatus result = InitializationStatus.NotInitialized;
@@ -666,7 +666,7 @@ namespace Stateflows.StateMachines.Engine
             return result;
         }
 
-        //[DebuggerHidden]
+        [DebuggerHidden]
         private async Task DoFinalizeStateMachineAsync()
         {
             BeginScope();
@@ -700,7 +700,7 @@ namespace Stateflows.StateMachines.Engine
             }
         }
 
-        //[DebuggerHidden]
+        [DebuggerHidden]
         private async Task DoInitializeStateAsync(Vertex vertex)
         {
             StateActionContext context = null;
@@ -733,7 +733,7 @@ namespace Stateflows.StateMachines.Engine
             }
         }
 
-        //[DebuggerHidden]
+        [DebuggerHidden]
         private async Task DoFinalizeStateAsync(Vertex vertex)
         {
             StateActionContext context = null;
@@ -766,7 +766,7 @@ namespace Stateflows.StateMachines.Engine
             }
         }
         
-        //[DebuggerHidden]
+        [DebuggerHidden]
         private async Task DoEntryAsync(Vertex vertex)
         {
             StateActionContext context = null;
@@ -799,7 +799,7 @@ namespace Stateflows.StateMachines.Engine
             }
         }
 
-        //[DebuggerHidden]
+        [DebuggerHidden]
         private async Task DoExitAsync(Vertex vertex)
         {
             StateActionContext context = null;
@@ -832,7 +832,7 @@ namespace Stateflows.StateMachines.Engine
             }
         }
 
-        //[DebuggerHidden]
+        [DebuggerHidden]
         private async Task DoConsumeAsync<TEvent>(Edge edge, Region[] regionsToOmit = null)
         {
             regionsToOmit ??= [];
@@ -1049,7 +1049,7 @@ namespace Stateflows.StateMachines.Engine
             );
         }
         
-        //[DebuggerHidden]
+        [DebuggerHidden]
         private async Task DoJoinAsync(IEnumerable<Edge> edges, Vertex join)
         {
             var enteringVertices = new List<Vertex>();
@@ -1165,7 +1165,7 @@ namespace Stateflows.StateMachines.Engine
             );
         }
         
-        //[DebuggerHidden]
+        [DebuggerHidden]
         private async Task<bool> DoCompletionAsync()
         {
             var completionEventHolder = new Completion().ToEventHolder();
@@ -1180,7 +1180,7 @@ namespace Stateflows.StateMachines.Engine
             return result == EventStatus.Consumed;
         }
 
-        //[DebuggerHidden]
+        [DebuggerHidden]
         public Task<TDefaultInitializer> GetDefaultInitializerAsync<TDefaultInitializer>(IStateMachineInitializationContext context)
             where TDefaultInitializer : class, IDefaultInitializer
         {
@@ -1202,7 +1202,7 @@ namespace Stateflows.StateMachines.Engine
             return StateflowsActivator.CreateModelElementInstanceAsync<TDefaultInitializer>(ServiceProvider, "default initializer");
         }
 
-        //[DebuggerHidden]
+        [DebuggerHidden]
         public Task<TInitializer> GetInitializerAsync<TInitializer, TInitializationEvent>(IStateMachineInitializationContext<TInitializationEvent> context)
             where TInitializer : class, IInitializer<TInitializationEvent>
         {
@@ -1224,7 +1224,7 @@ namespace Stateflows.StateMachines.Engine
             return StateflowsActivator.CreateModelElementInstanceAsync<TInitializer>(ServiceProvider, "initializer");
         }
 
-        //[DebuggerHidden]
+        [DebuggerHidden]
         public Task<TFinalizer> GetFinalizerAsync<TFinalizer>(IStateMachineActionContext context)
             where TFinalizer : class, IFinalizer
         {
@@ -1246,7 +1246,7 @@ namespace Stateflows.StateMachines.Engine
             return StateflowsActivator.CreateModelElementInstanceAsync<TFinalizer>(ServiceProvider, "finalizer");
         }
 
-        //[DebuggerHidden]
+        [DebuggerHidden]
         public Task<TState> GetStateAsync<TState>(IStateActionContext context)
             where TState : class, IState
         {
@@ -1268,7 +1268,7 @@ namespace Stateflows.StateMachines.Engine
             return StateflowsActivator.CreateModelElementInstanceAsync<TState>(ServiceProvider, "state");
         }
 
-        //[DebuggerHidden]
+        [DebuggerHidden]
         public Task<TTransition> GetTransitionAsync<TTransition, TEvent>(ITransitionContext<TEvent> context)
             where TTransition : class, ITransition<TEvent>
         {
@@ -1290,7 +1290,7 @@ namespace Stateflows.StateMachines.Engine
             return StateflowsActivator.CreateModelElementInstanceAsync<TTransition>(ServiceProvider, "transition");
         }
 
-        //[DebuggerHidden]
+        [DebuggerHidden]
         public Task<TTransitionGuard> GetTransitionGuardAsync<TTransitionGuard, TEvent>(ITransitionContext<TEvent> context)
             where TTransitionGuard : class, ITransitionGuard<TEvent>
 
@@ -1313,7 +1313,7 @@ namespace Stateflows.StateMachines.Engine
             return StateflowsActivator.CreateModelElementInstanceAsync<TTransitionGuard>(ServiceProvider, "transition guard");
         }
 
-        //[DebuggerHidden]
+        [DebuggerHidden]
         public Task<TTransitionGuard> GetDeferralGuardAsync<TTransitionGuard, TEvent>(IDeferralContext<TEvent> context)
             where TTransitionGuard : class, IDeferralGuard<TEvent>
 
@@ -1332,7 +1332,7 @@ namespace Stateflows.StateMachines.Engine
             return StateflowsActivator.CreateModelElementInstanceAsync<TTransitionGuard>(ServiceProvider, "deferral guard");
         }
 
-        //[DebuggerHidden]
+        [DebuggerHidden]
         public Task<TTransitionEffect> GetTransitionEffectAsync<TTransitionEffect, TEvent>(ITransitionContext<TEvent> context)
             where TTransitionEffect : class, ITransitionEffect<TEvent>
 
@@ -1355,7 +1355,7 @@ namespace Stateflows.StateMachines.Engine
             return StateflowsActivator.CreateModelElementInstanceAsync<TTransitionEffect>(ServiceProvider, "transition effect");
         }
 
-        //[DebuggerHidden]
+        [DebuggerHidden]
         public Task<TDefaultTransition> GetDefaultTransitionAsync<TDefaultTransition>(ITransitionContext<Completion> context)
             where TDefaultTransition : class, IDefaultTransition
         {
@@ -1377,7 +1377,7 @@ namespace Stateflows.StateMachines.Engine
             return StateflowsActivator.CreateModelElementInstanceAsync<TDefaultTransition>(ServiceProvider, "default transition");
         }
 
-        //[DebuggerHidden]
+        [DebuggerHidden]
         public Task<TDefaultTransitionGuard> GetDefaultTransitionGuardAsync<TDefaultTransitionGuard>(ITransitionContext<Completion> context)
             where TDefaultTransitionGuard : class, IDefaultTransitionGuard
         {
@@ -1399,7 +1399,7 @@ namespace Stateflows.StateMachines.Engine
             return StateflowsActivator.CreateModelElementInstanceAsync<TDefaultTransitionGuard>(ServiceProvider, "default transition guard");
         }
 
-        //[DebuggerHidden]
+        [DebuggerHidden]
         public Task<TDefaultTransitionEffect> GetDefaultTransitionEffectAsync<TDefaultTransitionEffect>(ITransitionContext<Completion> context)
             where TDefaultTransitionEffect : class, IDefaultTransitionEffect
         {

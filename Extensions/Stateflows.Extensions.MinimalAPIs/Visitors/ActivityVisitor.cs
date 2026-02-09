@@ -30,6 +30,7 @@ internal class ActivityVisitor(
 
     private string CurrentActivityName = string.Empty;
     private BehaviorStatus[] SupportedStatuses = [];
+    private BehaviorClass? OwnerClass = null;
 
     public void Visit<T>()
     {
@@ -40,6 +41,11 @@ internal class ActivityVisitor(
 
     public override Task InitializerAddedAsync<TInitializationEvent>(string activityName, int activityVersion)
     {
+        if (OwnerClass != null)
+        {
+            return Task.CompletedTask;
+        }
+
         Initializers[activityName] = true;
 
         CurrentActivityName = activityName;
@@ -52,6 +58,11 @@ internal class ActivityVisitor(
     public override Task AcceptEventNodeAddedAsync<TEvent>(string activityName, int activityVersion, string nodeName,
         string? parentNodeName = null)
     {
+        if (OwnerClass != null)
+        {
+            return Task.CompletedTask;
+        }
+
         CurrentActivityName = activityName;
         typeMapper.VisitMappedTypes<TEvent>(this);
         CurrentActivityName = string.Empty;
@@ -61,6 +72,12 @@ internal class ActivityVisitor(
 
     public override Task ActivityAddedAsync(string activityName, int activityVersion, BehaviorClass? ownerClass = null, BehaviorClass? parentClass = null)
     {
+        OwnerClass = ownerClass;
+        if (OwnerClass != null)
+        {
+            return Task.CompletedTask;
+        }
+
         RegisterStandardEndpoints(activityName);
         RegisterRemainingEndpoints(activityName);
 
@@ -83,6 +100,11 @@ internal class ActivityVisitor(
 
     public override Task ActivityTypeAddedAsync<TActivity>(string activityName, int activityVersion)
     {
+        if (OwnerClass != null)
+        {
+            return Task.CompletedTask;
+        }
+
         var activityType = typeof(TActivity);
         if (typeof(IActivityEndpoints).IsAssignableFrom(activityType))
         {
@@ -414,6 +436,11 @@ internal class ActivityVisitor(
 
     public override Task NodeTypeAddedAsync<TNode>(string activityName, int activityVersion, string nodeName)
     {
+        if (OwnerClass != null)
+        {
+            return Task.CompletedTask;
+        }
+
         var nodeType = typeof(TNode);
         if (typeof(IStructuredActivityNodeEndpoints).IsAssignableFrom(nodeType))
         {
@@ -436,6 +463,11 @@ internal class ActivityVisitor(
 
     public override Task CustomEventAddedAsync<TEvent>(string activityName, int activityVersion, BehaviorStatus[] supportedStatuses)
     {
+        if (OwnerClass != null)
+        {
+            return Task.CompletedTask;
+        }
+
         CurrentActivityName = activityName;
         typeMapper.VisitMappedTypes<TEvent>(this);
         CurrentActivityName = string.Empty;

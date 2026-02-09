@@ -46,11 +46,7 @@ namespace Stateflows.StateMachines.Registration.Builders
 
         [DebuggerHidden]
         public IStateMachinesBuilder AddStateMachine(string stateMachineName, StateMachineBuildAction buildAction)
-        {
-            register.AddStateMachine(stateMachineName, 1, buildAction);
-
-            return this;
-        }
+            => AddStateMachine(stateMachineName, 1, buildAction);
 
         [DebuggerHidden]
         public IStateMachinesBuilder AddStateMachine(string stateMachineName, int version, StateMachineBuildAction buildAction)

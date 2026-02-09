@@ -60,7 +60,8 @@ namespace Stateflows.Actions.Registration
             var key = $"{actionName}.{version}";
             var currentKey = $"{actionName}.current";
 
-            var actionModel = new ActionModel()
+            ActionModel actionModel = null;
+            actionModel = new ActionModel()
             {
                 Name = actionName,
                 Version = version,
@@ -85,12 +86,7 @@ namespace Stateflows.Actions.Registration
             return;
 
             Task VisitingActionAsync(IActionVisitor v)
-            {
-                // Assign to local variable to avoid value being overriden when invoking lambda function at a later stage
-                var ownerClass = OwnerClass;
-
-                return v.ActionAddedAsync(actionName, version, ownerClass);
-            }
+                => v.ActionAddedAsync(actionName, version, actionModel?.OwnerClass, actionModel?.ParentClass);
         }
 
         [DebuggerHidden]
@@ -108,10 +104,11 @@ namespace Stateflows.Actions.Registration
 
             // Assign to local variable to avoid value being overriden when invoking lambda function at a later stage
             var ownerClass = OwnerClass;
+            var parentClass = ParentClass;
 
             Func<IActionVisitor, Task> visitingAction = async v =>
             {
-                await v.ActionAddedAsync(actionName, version, ownerClass);
+                await v.ActionAddedAsync(actionName, version, ownerClass, parentClass);
                 await (Task)method.Invoke(v, [actionName, version]);
             };
 

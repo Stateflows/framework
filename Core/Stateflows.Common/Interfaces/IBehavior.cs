@@ -11,11 +11,11 @@ namespace Stateflows.Common
     public interface IBehavior : IWatches, IDisposable
     {
         BehaviorId Id { get; }
-
-        Task<SendResult> SendAsync<TEvent>(TEvent @event, IDictionary<string, EventHeader> headers = null);
         
-        Task<RequestResult<TResponseEvent>> RequestAsync<TResponseEvent>(IRequest<TResponseEvent> request, IDictionary<string, EventHeader> headers = null);
-
+        Task<SendResult> SendAsync<TEvent>(TEvent @event, IDictionary<string, EventHeader>? headers = null);
+        
+        Task<RequestResult<TResponseEvent>> RequestAsync<TResponseEvent>(IRequest<TResponseEvent> request, IDictionary<string, EventHeader>? headers = null);
+        
         public Task<RequestResult<CompoundResponse>> SendCompoundAsync(Action<ICompoundRequestBuilder> builderAction, IDictionary<string, EventHeader> headers = null)
         {
             var compound = new CompoundRequest();

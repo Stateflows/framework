@@ -4,7 +4,7 @@ using System.Collections.Generic;
 
 namespace Stateflows.Common.Interfaces
 {
-    internal interface IEventProcessor
+    public interface IEventProcessor
     {
         string BehaviorType { get; }
         

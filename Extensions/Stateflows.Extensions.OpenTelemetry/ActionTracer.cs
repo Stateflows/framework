@@ -39,7 +39,7 @@ namespace Stateflows.Extensions.OpenTelemetry
                     EventProcessingActivity = StateMachineTracer.Source.StartActivity(
                         $"Action '{context.Behavior.ActualId.Name.ToShortName()}:{context.Behavior.ActualId.InstanceText}' processing '{context.Event.GetType().GetEventName().ToShortName()}'",
                         ActivityKind.Internal,
-                        parentContext: activityHeader.Activity.Context
+                        parentContext: activityHeader.ActivityContext
                     );
                 }
                 

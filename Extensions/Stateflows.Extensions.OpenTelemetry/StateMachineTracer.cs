@@ -43,7 +43,7 @@ namespace Stateflows.Extensions.OpenTelemetry
                     EventProcessingActivity = Source.StartActivity(
                         $"State Machine '{context.Behavior.ActualId.Name.ToShortName()}:{context.Behavior.ActualId.InstanceText}' processing {eventName}",
                         ActivityKind.Internal,
-                        parentContext: activityHeader.Activity.Context
+                        parentContext: activityHeader.ActivityContext
                     );
                 }
                 
@@ -221,7 +221,7 @@ namespace Stateflows.Extensions.OpenTelemetry
                     InitializerActivity = Source.StartActivity(
                         $"State Machine '{context.Behavior.ActualId.Name.ToShortName()}:{context.Behavior.ActualId.InstanceText}' initialized{(ImplicitInitialization ? " implicitly" : "")}",
                         ActivityKind.Internal,
-                        parentContext: activityHeader.Activity.Context
+                        parentContext: activityHeader.ActivityContext
                     );
                 }
                 

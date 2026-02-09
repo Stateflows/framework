@@ -84,14 +84,14 @@ namespace Stateflows.Activities.Engine
         public void AfterHydrate(ActivityActionContext context)
         {
             Plugins.RunSafe(p => p.AfterHydrate(context), nameof(AfterHydrate), Logger);
-            GlobalInterceptor.AfterHydrate(context);
+            GlobalInterceptor.AfterHydrateAsync(context).Wait();
             ReverseInterceptors.RunSafe(i => i.AfterHydrate(context), nameof(AfterHydrate), Logger);
         }
 
         public void BeforeDehydrate(ActivityActionContext context)
         {
             Interceptors.RunSafe(i => i.BeforeDehydrate(context), nameof(BeforeDehydrate), Logger);
-            GlobalInterceptor.BeforeDehydrate(context);
+            GlobalInterceptor.BeforeDehydrateAsync(context).Wait();
             Plugins.RunSafe(p => p.BeforeDehydrate(context), nameof(BeforeDehydrate), Logger);
         }
 

@@ -283,7 +283,7 @@ namespace Stateflows.Actions.Engine
             }
         }
 
-        // [DebuggerHidden]
+        [DebuggerHidden]
         private async Task InvokeActionAsync(ActionDelegateContext context)
         {
             try

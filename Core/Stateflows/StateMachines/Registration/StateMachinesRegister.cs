@@ -87,11 +87,9 @@ namespace Stateflows.StateMachines.Registration
             buildAction(builder);
             builder.Graph.Build();
 
-            // Assign to local variable to avoid value being overriden when invoking lambda function at a later stage
-            var ownerClass = OwnerClass;
-            var parentClass = ParentClass;
+            var graph = builder.Graph;
 
-            builder.Graph.VisitingTasks.Add(v => v.StateMachineAddedAsync(stateMachineName, version, ownerClass, parentClass));
+            builder.Graph.VisitingTasks.Add(v => v.StateMachineAddedAsync(stateMachineName, version, graph.OwnerClass, graph.ParentClass));
 
             StateMachines.Add(key, builder.Graph);
 
@@ -127,9 +125,10 @@ namespace Stateflows.StateMachines.Registration
 
             // Assign to local variable to avoid value being overriden when invoking lambda function at a later stage
             var ownerClass = OwnerClass;
+            var parentClass = ParentClass;
 
             builder.Graph.VisitingTasks.AddRange([
-                v => v.StateMachineAddedAsync(stateMachineName, version, ownerClass),
+                v => v.StateMachineAddedAsync(stateMachineName, version, ownerClass, parentClass),
                 v => (Task)method.Invoke(v, [ stateMachineName, version ])
             ]);
 

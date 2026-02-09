@@ -83,8 +83,9 @@ namespace Stateflows.Activities.Registration
 
             // Assign to local variable to avoid value being overriden when invoking lambda function at a later stage
             var ownerClass = OwnerClass;
+            var parentClass = ParentClass;
 
-            activityBuilder.Graph.VisitingTasks.Add(v => v.ActivityAddedAsync(activityName, version, ownerClass));
+            activityBuilder.Graph.VisitingTasks.Add(v => v.ActivityAddedAsync(activityName, version, ownerClass, parentClass));
 
             Activities.Add(key, activityBuilder.Graph);
 

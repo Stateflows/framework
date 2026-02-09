@@ -44,6 +44,7 @@ namespace Stateflows
                     .AddTransient<StartupExecutor>()
                     .AddSingleton<ITenantAccessor, TenantAccessor>()
                     .AddScoped<CommonInterceptor>()
+                    .AddScoped<IStateflowsInterceptor, CommonInterceptor>()
                     .AddScoped<IBehaviorContextProvider, BehaviorContextProvider>()
                     .AddScoped<IStateflowsTenantExecutor, TenantExecutor>()
                     .AddTransient(provider =>
@@ -105,6 +106,11 @@ namespace Stateflows
             if (!services.IsServiceRegistered<IStateflowsEventFilter>())
             {
                 services.AddSingleton<IStateflowsEventFilter, NoOpEventFilter>();
+            }
+
+            if (!services.IsServiceRegistered<IBehaviorFactory>())
+            {
+                services.AddTransient<IBehaviorFactory, BehaviorFactory>();
             }
 
             ActionsDependencyInjection.Build(builder);

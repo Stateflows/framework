@@ -1,5 +1,4 @@
 ﻿namespace Stateflows.Common
 {
-    public abstract class EventHeader
-    { }
+    public abstract class EventHeader;
 }

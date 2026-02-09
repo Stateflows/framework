@@ -5,6 +5,7 @@ namespace Stateflows.Extensions.OpenTelemetry.Headers
 {
     public class ActivityHeader : EventHeader
     {
-        public Activity Activity { get; set; } = null!;
+        // public Activity Activity { get; set; } = null!;
+        public ActivityContext ActivityContext { get; set; }
     }
 }

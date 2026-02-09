@@ -29,6 +29,13 @@ public class Document : IStateMachine
         .AddState<ApprovalPending>(b => b
             .AddTransition<Approve, Approved>()
             .AddTransition<Reject, ReportRejection, Rejected>()
+            .AddSubmachine(b => b
+                .AddInitialState("x", b => b
+                    .AddInternalTransition<PaymentBooked>(b => b
+                        .AddGuard<Deny>()
+                    )
+                )
+            )
         )
         .AddCompositeState<Approved>(b => b
             .AddInitialState<GeneratingInvoice>(b => b

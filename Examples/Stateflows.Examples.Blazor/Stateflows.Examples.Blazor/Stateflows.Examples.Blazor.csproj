@@ -13,7 +13,6 @@
         <PackageReference Include="Microsoft.ClearScript" Version="7.5.0" />
         <PackageReference Include="Microsoft.ClearScript.V8.Native.win-x64" Version="7.5.0" />
         <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="8.0.22" />
-        <PackageReference Include="Microsoft.Orleans.Server" Version="10.0.0" />
         <PackageReference Include="Scalar.AspNetCore" Version="2.8.10" />
         <ProjectReference Include="..\..\..\Extensions\Stateflows.Extensions.ClearScript\Stateflows.Extensions.ClearScript.csproj" />
         <ProjectReference Include="..\..\..\Locks\Stateflows.Locks.DistributedLock\Stateflows.Locks.DistributedLock.csproj" />

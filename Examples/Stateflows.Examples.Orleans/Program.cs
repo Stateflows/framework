@@ -1,32 +1,31 @@
-using Medallion.Threading.SqlServer;
 using Microsoft.ClearScript;
-using Microsoft.EntityFrameworkCore;
+using Microsoft.ClearScript.V8;
 using OpenTelemetry;
 using Scalar.AspNetCore;
 using Stateflows;
 using Stateflows.Actions;
 using Stateflows.StateMachines;
-using Stateflows.Examples.Blazor.Components;
+using Stateflows.Activities;
 using Stateflows.Examples.Behaviors.StateMachines.Document.Interceptors;
-using Stateflows.Examples.Blazor;
 using Stateflows.Extensions.MinimalAPIs;
 using Stateflows.Extensions.OpenTelemetry;
-using Microsoft.ClearScript.V8;
 using Document = Stateflows.Examples.Behaviors.StateMachines.Document.Document;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Uncomment, if you want to use storage:
-//
-builder.Services.AddDbContext<AppDbContext>(options
-    => options.UseSqlServer(builder.Configuration.GetConnectionString("Default"))
-);
+builder.Host.UseOrleans(static siloBuilder =>
+{
+    siloBuilder.UseLocalhostClustering();
+    siloBuilder.AddMemoryGrainStorage("stateflows");
+});
 
 // In order to host Stateflows behaviors, Stateflows framework must be registered in the app.
 builder.Services.AddStateflows(b => b
     .AddResource("heavy-work", b => b
         .SetMaxConcurrentBehaviorExecutions(3)
     )
+    
+    .AddOrleansHosting()
     
     .AddClearScript(_ => Task.FromResult<IScriptEngine>(new V8ScriptEngine()))
     
@@ -49,14 +48,6 @@ builder.Services.AddStateflows(b => b
 
     // Add OpenTelemetry extension to enable tracing and logging.
     .AddOpenTelemetry()
-
-    // Uncomment, if you want to use storage:
-    //
-    // .AddEntityFrameworkCoreStorage<AppDbContext>()
-    
-    .AddDistributedLock(async (serviceProvider, lockKey)
-        => new SqlDistributedLock(lockKey, builder.Configuration.GetConnectionString("Default"))
-    )
 );
 
 builder.Services.AddOpenApi();
@@ -82,40 +73,27 @@ if (OtlpEndpoint != null)
 }
 #endregion
 
-// Add services to the container.
-builder.Services.AddRazorComponents()
-    .AddInteractiveServerComponents()
-    .AddInteractiveWebAssemblyComponents();
-
 var app = builder.Build();
-
-app.MapOpenApi();
-app.MapScalarApiReference();
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
-    app.UseWebAssemblyDebugging();
-}
-else
-{
-    app.UseExceptionHandler("/Error", createScopeForErrors: true);
-    // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
-    app.UseHsts();
+    app.MapOpenApi();
+    app.MapScalarApiReference();
 }
 
 app.UseHttpsRedirection();
 
-app.UseStaticFiles();
-app.UseAntiforgery();
-
-app.MapRazorComponents<App>()
-    .AddInteractiveServerRenderMode()
-    .AddInteractiveWebAssemblyRenderMode()
-    .AddAdditionalAssemblies(typeof(Stateflows.Examples.Blazor.Client._Imports).Assembly);
-
-
-// API interface must be exposed for WebAssembly to interact with Stateflows
 app.MapStateflowsMinimalAPIsEndpoints();
+
+app.MapGet("/doc", async (IStateMachineLocator locator) =>
+{
+    if (locator.TryLocateStateMachine(new StateMachineId("Doc", "x"), out var stateMachine))
+    {
+        return Results.Ok(await stateMachine.GetStatusAsync());
+    }
+    
+    return Results.NotFound();
+});
 
 app.Run();
