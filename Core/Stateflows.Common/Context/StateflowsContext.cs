@@ -122,8 +122,8 @@ namespace Stateflows.Common.Context
             => Values.Count != 0;
 
         public Dictionary<string, object> Values { get; } = [];
-        public BehaviorId? ContextOwnerId { get; set; } = null;
-        public BehaviorId? ContextParentId { get; set; } = null;
+        public BehaviorId? ContextOwnerId { get; set; }
+        public BehaviorId? ContextParentId { get; set; }
         
         [Newtonsoft.Json.JsonIgnore]
         [JsonIgnore]

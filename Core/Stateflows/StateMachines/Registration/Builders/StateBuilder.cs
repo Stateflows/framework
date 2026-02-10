@@ -3,9 +3,11 @@ using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
 using Stateflows.Actions;
+using Stateflows.Actions.Registration.Interfaces;
 using Stateflows.Activities;
 using Stateflows.Activities.Registration.Interfaces;
 using Stateflows.Common;
+using Stateflows.Common.Models;
 using Stateflows.Common.Registration;
 using Stateflows.Common.Utilities;
 using Stateflows.StateMachines.Models;
@@ -369,7 +371,7 @@ namespace Stateflows.StateMachines.Registration.Builders
             where TStateMachine : class, IStateMachine
         {
             var submachineName = $"{Vertex.Graph.Name}.{Vertex.Name}.submachine";
-            Vertex.Graph.StateflowsBuilder.AddStateMachines(b => b.AddStateMachine<TStateMachine>(submachineName, buildAction: buildAction), true);
+            Vertex.Graph.StateflowsBuilder.AddStateMachines(b => b.AddStateMachine<TStateMachine>(submachineName, buildAction: buildAction), Vertex.Graph.OwnerClass ?? Vertex.Graph.Class, Vertex.Graph.Class);
             
             Vertex.BehaviorType = BehaviorType.StateMachine;
             Vertex.BehaviorName = submachineName;
@@ -382,7 +384,7 @@ namespace Stateflows.StateMachines.Registration.Builders
         private StateBuilder AddSubmachine(StateMachineBuildAction stateMachineBuildAction)
         {
             var submachineName = $"{Vertex.Graph.Name}.{Vertex.Name}.submachine";
-            Vertex.Graph.StateflowsBuilder.AddStateMachines(b => b.AddStateMachine(submachineName, stateMachineBuildAction), true);
+            Vertex.Graph.StateflowsBuilder.AddStateMachines(b => b.AddStateMachine(submachineName, stateMachineBuildAction), Vertex.Graph.OwnerClass ?? Vertex.Graph.Class, Vertex.Graph.Class);
             
             Vertex.BehaviorType = BehaviorType.StateMachine;
             Vertex.BehaviorName = submachineName;
@@ -401,7 +403,7 @@ namespace Stateflows.StateMachines.Registration.Builders
             where TActivity : class, IActivity
         {
             var doActivityName = GetDoActivityName();
-            Vertex.Graph.StateflowsBuilder.AddActivities(b => b.AddActivity<TActivity>(doActivityName, buildAction: buildAction), true);
+            Vertex.Graph.StateflowsBuilder.AddActivities(b => b.AddActivity<TActivity>(doActivityName, buildAction: buildAction), Vertex.Graph.OwnerClass ?? Vertex.Graph.Class, Vertex.Graph.Class);
             
             Vertex.BehaviorType = BehaviorType.Activity;
             Vertex.BehaviorName = doActivityName;
@@ -414,7 +416,7 @@ namespace Stateflows.StateMachines.Registration.Builders
         private StateBuilder AddDoActivity(ReactiveActivityBuildAction activityBuildAction)
         {
             var doActivityName = GetDoActivityName();
-            Vertex.Graph.StateflowsBuilder.AddActivities(b => b.AddActivity(doActivityName, activityBuildAction), true);
+            Vertex.Graph.StateflowsBuilder.AddActivities(b => b.AddActivity(doActivityName, activityBuildAction), Vertex.Graph.OwnerClass ?? Vertex.Graph.Class, Vertex.Graph.Class);
             
             Vertex.BehaviorType = BehaviorType.Activity;
             Vertex.BehaviorName = doActivityName;
@@ -429,11 +431,11 @@ namespace Stateflows.StateMachines.Registration.Builders
         private string GetDoActionName()
             => $"{Vertex.Graph.Name}.{Vertex.Name}.doAction";
         
-        private StateBuilder AddDoAction<TAction>(ActionBuildAction buildAction = null)
+        private StateBuilder AddDoAction<TAction>(ActionBuildAction<TAction> buildAction = null)
             where TAction : class, IAction
         {
             var doActionName = GetDoActionName();
-            Vertex.Graph.StateflowsBuilder.AddActions(b => b.AddAction<TAction>(doActionName, buildAction: buildAction), true);
+            Vertex.Graph.StateflowsBuilder.AddActions(b => b.AddAction<TAction>(doActionName, buildAction: buildAction), Vertex.Graph.OwnerClass ?? Vertex.Graph.Class, Vertex.Graph.Class);
             
             Vertex.BehaviorType = BehaviorType.Action;
             Vertex.BehaviorName = doActionName;
@@ -446,7 +448,7 @@ namespace Stateflows.StateMachines.Registration.Builders
         private StateBuilder AddDoAction(ActionDelegateAsync actionDelegate, ActionBuildAction buildAction = null)
         {
             var doActionName = GetDoActionName();
-            Vertex.Graph.StateflowsBuilder.AddActions(b => b.AddAction(doActionName, actionDelegate), true);
+            Vertex.Graph.StateflowsBuilder.AddActions(b => b.AddAction(doActionName, actionDelegate), Vertex.Graph.OwnerClass ?? Vertex.Graph.Class, Vertex.Graph.Class);
             
             Vertex.BehaviorType = BehaviorType.Action;
             Vertex.BehaviorName = doActionName;
@@ -903,7 +905,7 @@ namespace Stateflows.StateMachines.Registration.Builders
             => AddDoActivity(activityBuildAction);
 
         [DebuggerHidden]
-        IBehaviorStateBuilder IStateDoAction<IBehaviorStateBuilder>.AddDoAction<TAction>(ActionBuildAction buildAction)
+        IBehaviorStateBuilder IStateDoAction<IBehaviorStateBuilder>.AddDoAction<TAction>(ActionBuildAction<TAction> buildAction)
             => AddDoAction<TAction>(buildAction);
 
         [DebuggerHidden]
@@ -912,7 +914,7 @@ namespace Stateflows.StateMachines.Registration.Builders
 
         [DebuggerHidden]
         IBehaviorOverridenRegionalizedStateBuilder IStateDoAction<IBehaviorOverridenRegionalizedStateBuilder>.AddDoAction<TAction>(
-            ActionBuildAction buildAction)
+            ActionBuildAction<TAction> buildAction)
             => AddDoAction<TAction>(buildAction);
 
         [DebuggerHidden]
@@ -920,7 +922,7 @@ namespace Stateflows.StateMachines.Registration.Builders
             => AddDoAction(actionDelegate, buildAction);
 
         [DebuggerHidden]
-        IBehaviorOverridenStateBuilder IStateDoAction<IBehaviorOverridenStateBuilder>.AddDoAction<TAction>(ActionBuildAction buildAction)
+        IBehaviorOverridenStateBuilder IStateDoAction<IBehaviorOverridenStateBuilder>.AddDoAction<TAction>(ActionBuildAction<TAction> buildAction)
             => AddDoAction<TAction>(buildAction);
 
         [DebuggerHidden]
@@ -929,5 +931,40 @@ namespace Stateflows.StateMachines.Registration.Builders
 
         public IHistoryBuilder AddTransition(string targetStateName, DefaultTransitionBuildAction transitionBuildAction = null)
             => AddDefaultTransition(targetStateName, transitionBuildAction) as IHistoryBuilder;
+
+        public IOverridenStateBuilder UseDeferredEvent<TEvent>(OverridenDeferralBuildAction<TEvent> buildAction = null)
+        {
+            if (typeof(TEvent) == typeof(Completion))
+                throw new DeferralDefinitionException(typeof(TEvent).GetEventName(), "Completion event cannot be deferred.", Vertex.Graph.Class);
+
+            if (typeof(TEvent) == typeof(Finalize))
+                throw new DeferralDefinitionException(typeof(TEvent).GetEventName(), "Exit event cannot be deferred.", Vertex.Graph.Class);
+
+            if (typeof(TEvent).IsSubclassOf(typeof(TimeEvent)))
+                throw new DeferralDefinitionException(typeof(TEvent).GetEventName(), "Time events cannot be deferred.", Vertex.Graph.Class);
+
+            if (
+                !Vertex.Deferrals.TryGetValue(typeof(TEvent).GetEventName(), out var deferralLogic) ||
+                deferralLogic?.OriginStateMachineName == null
+            )
+            {
+                throw new StateMachineOverrideException($"Deferral of event '{Event<TEvent>.Name}' not found in overriden state '{Vertex.Name}'", Vertex.Graph.Class);
+            }
+            
+            var builder = new DeferralBuilder<TEvent>(Vertex, deferralLogic);
+            
+            buildAction?.Invoke(builder);
+
+            return this;
+        }
+
+        IOverridenRegionalizedStateBuilder IStateUtilsOverrides<IOverridenRegionalizedStateBuilder>.UseDeferredEvent<TEvent>(OverridenDeferralBuildAction<TEvent> buildAction)
+            => UseDeferredEvent(buildAction) as IOverridenRegionalizedStateBuilder;
+
+        IBehaviorOverridenStateBuilder IStateUtilsOverrides<IBehaviorOverridenStateBuilder>.UseDeferredEvent<TEvent>(OverridenDeferralBuildAction<TEvent> buildAction)
+            => UseDeferredEvent(buildAction) as IBehaviorOverridenStateBuilder;
+
+        IBehaviorOverridenRegionalizedStateBuilder IStateUtilsOverrides<IBehaviorOverridenRegionalizedStateBuilder>.UseDeferredEvent<TEvent>(OverridenDeferralBuildAction<TEvent> buildAction)
+            => UseDeferredEvent(buildAction) as IBehaviorOverridenRegionalizedStateBuilder;
     }
 }

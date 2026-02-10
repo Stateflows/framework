@@ -1,10 +1,6 @@
-﻿using System.Threading;
-using System.Threading.Tasks;
+﻿using Stateflows.Common.Interfaces;
 
 namespace Stateflows.Activities
 {
-    public interface ITimeEventActionNode : IActivityNode
-    {
-        Task ExecuteAsync(CancellationToken cancellationToken);
-    }
+    public interface ITimeEventActionNode : IActivityNode, IAbstractAction;
 }

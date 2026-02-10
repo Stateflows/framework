@@ -1,12 +1,8 @@
-﻿using System.Threading.Tasks;
+﻿using Stateflows.Common.Interfaces;
 
 namespace Stateflows.Activities
 {
-    public interface IControlFlow : IEdge
-    { }
+    public interface IControlFlow : IEdge;
 
-    public interface IControlFlowGuard : IControlFlow
-    {
-        Task<bool> GuardAsync();
-    }
+    public interface IControlFlowGuard : IControlFlow, IAbstractGuard;
 }

@@ -10,7 +10,9 @@ public class Invoicing : IActivity
         => builder
             .AddInitial(b => b
                 .AddControlFlow<GenerateInvoices>()
+                .AddControlFlow("js")
             )
+            .AddAction_ClearScript("js", "Console.WriteLine(JSON.stringify(behaviorContext.Id))")
             .AddAction<GenerateInvoices>(b => b
                 .AddFlow<Invoice, SendMail>()
                 .AddFlow<Invoice, SendSMS>()

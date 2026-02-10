@@ -3,8 +3,11 @@ using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
 using Stateflows.Actions;
+using Stateflows.Actions.Registration.Interfaces;
 using Stateflows.Activities;
 using Stateflows.Activities.Registration.Interfaces;
+using Stateflows.Common.Interfaces;
+using Stateflows.Common.Registration.Builders;
 using Stateflows.StateMachines.Context.Classes;
 using Stateflows.StateMachines.Registration.Interfaces.Internal;
 using ActionBuildAction = Stateflows.Actions.Registration.Interfaces.ActionBuildAction;
@@ -36,7 +39,7 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         {
             var vertex = ((IVertexBuilder)this).Vertex;
             var activityName = $"{vertex.Graph.Name}.{vertex.Name}.onInitialize.{vertex.Entry.Actions.Count}";
-            vertex.Graph.StateflowsBuilder.AddActivities(b => b.AddActivity<TActivity>(activityName));
+            vertex.Graph.StateflowsBuilder.AddActivities(b => b.AddActivity<TActivity>(activityName), vertex.Graph.OwnerClass ?? vertex.Graph.Class, vertex.Graph.Class);
             return AddOnInitialize(c => StateMachineActivityExtensions.RunStateActivityAsync(Constants.Initialization, c, activityName));
         }
 
@@ -48,7 +51,7 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         {
             var vertex = ((IVertexBuilder)this).Vertex;
             var activityName = $"{vertex.Graph.Name}.{vertex.Name}.onInitialize.{vertex.Entry.Actions.Count}";
-            vertex.Graph.StateflowsBuilder.AddActivities(b => b.AddActivity(activityName, activityBuildAction));
+            vertex.Graph.StateflowsBuilder.AddActivities(b => b.AddActivity(activityName, activityBuildAction), vertex.Graph.OwnerClass ?? vertex.Graph.Class, vertex.Graph.Class);
             return AddOnInitialize(c => StateMachineActivityExtensions.RunStateActivityAsync(Constants.Initialization, c, activityName));
         }
         #endregion
@@ -60,12 +63,12 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         /// <param name="buildAction">Build action</param>
         /// <typeparam name="TAction">Action behavior type</typeparam>
         [DebuggerHidden]
-        public TReturn AddOnInitializeAction<TAction>(ActionBuildAction buildAction = null)
+        public TReturn AddOnInitializeAction<TAction>(ActionBuildAction<TAction> buildAction = null)
             where TAction : class, IAction
         {
             var vertex = ((IVertexBuilder)this).Vertex;
             var actionName = $"{vertex.Graph.Name}.{vertex.Name}.onInitialize.{vertex.Entry.Actions.Count}";
-            vertex.Graph.StateflowsBuilder.AddActions(b => b.AddAction<TAction>(actionName, buildAction: buildAction));
+            vertex.Graph.StateflowsBuilder.AddActions(b => b.AddAction<TAction>(actionName, buildAction: buildAction), vertex.Graph.OwnerClass ?? vertex.Graph.Class, vertex.Graph.Class);
             return AddOnInitialize(c => StateMachineActionExtensions.RunStateActionAsync(Constants.Initialization, c, actionName));
         }
         
@@ -78,7 +81,7 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         {
             var vertex = ((IVertexBuilder)this).Vertex;
             var actionName = $"{vertex.Graph.Name}.{vertex.Name}.onInitialize.{vertex.Entry.Actions.Count}";
-            vertex.Graph.StateflowsBuilder.AddActions(b => b.AddAction(actionName, actionDelegateAsync, buildAction: buildAction));
+            vertex.Graph.StateflowsBuilder.AddActions(b => b.AddAction(actionName, actionDelegateAsync, buildAction: buildAction), vertex.Graph.OwnerClass ?? vertex.Graph.Class, vertex.Graph.Class);
             return AddOnInitialize(c => StateMachineActionExtensions.RunStateActionAsync(Constants.Initialization, c, actionName));
         }
         #endregion
@@ -99,9 +102,14 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         /// Adds multiple typed initialization handlers to the current state.
         /// </summary>
         /// <typeparam name="TStateInitialization">The type of the first state initialization handler.</typeparam>
-        TReturn AddOnInitialize<TStateInitialization>()
+        TReturn AddOnInitialize<TStateInitialization>(ElementBuildAction<TStateInitialization> buildAction = null)
             where TStateInitialization : class, ICompositeStateInitialization
-            => AddOnInitialize(async c => await (await ((BaseContext)c).Context.Executor.GetStateAsync<TStateInitialization>(c)).OnInitializeAsync());
+            => AddOnInitialize(async c => 
+            {
+                var state = await ((BaseContext)c).Context.Executor.GetStateAsync<TStateInitialization>(c);
+                buildAction?.Invoke(new ElementBuilder<TStateInitialization>(state));
+                await state.OnInitializeAsync();
+            });
 
         /// <summary>
         /// Adds multiple typed initialization handlers to the current state.

@@ -8,7 +8,7 @@ internal class CompletionNotification : StateMachineInterceptor
     public override void AfterProcessEvent<TEvent>(IEventContext<TEvent> context, EventStatus eventStatus)
     {
         var stateflowsContext = ((IRootContext)context).Context.Context;
-        if (stateflowsContext.ContextParentId != null)
+        if (stateflowsContext.ContextParentId != null && eventStatus == EventStatus.Consumed)
         {
             context.Behavior.Send(new Completion());
         }

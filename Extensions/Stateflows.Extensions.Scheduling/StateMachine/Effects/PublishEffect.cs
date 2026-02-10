@@ -36,7 +36,7 @@ namespace Stateflows.Scheduler.StateMachine.Effects
             {
                 s.RemoveAll(s => s.GetTriggerTime(lastCheck) < lastCheck);
                 return s;
-            });
+            }, []);
 
             var allSchedules = await Schedules.GetOrDefaultAsync(new List<Entry>());
             var schedules = allSchedules
@@ -48,12 +48,10 @@ namespace Stateflows.Scheduler.StateMachine.Effects
                 .ToList();
 
             var schedulesByRecipient = schedules
+                .GroupBy(s => s.Recipient)
                 .ToDictionary(
-                    t => t.Recipient,
-                    t => schedules
-                        .Where(s => s.Recipient == t.Recipient)
-                        .Select(s => s.Schedule)
-                        .ToArray()
+                    t => t.Key,
+                    t => t.Select(s => s.Schedule).ToArray()
                 );
 
             foreach (var (behaviorId, recipientSchedules) in schedulesByRecipient)

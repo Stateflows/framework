@@ -7,7 +7,7 @@ namespace Stateflows.StateMachines
 {
     public interface IStateMachineBehavior : IBehavior
     {
-        public new Task<RequestResult<StateMachineInfo>> GetStatusAsync(IEnumerable<EventHeader> headers = null)
+        public new Task<RequestResult<StateMachineInfo>> GetStatusAsync(IDictionary<string, EventHeader> headers = null)
             => RequestAsync(new StateMachineInfoRequest(), headers);
 
         public Task<IWatcher> WatchStatusAsync(Action<StateMachineInfo> handler)

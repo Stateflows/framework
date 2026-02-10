@@ -261,14 +261,14 @@ namespace Stateflows.StateMachines.Engine
         public void AfterHydrate(StateMachineActionContext context)
         {
             ReversePlugins.RunSafe(i => i.AfterHydrate(context), nameof(AfterHydrate), Logger);
-            GlobalInterceptor.AfterHydrate(context);
+            GlobalInterceptor.AfterHydrateAsync(context).Wait();
             ReverseInterceptors.RunSafe(i => i.AfterHydrate(context), nameof(AfterHydrate), Logger);
         }
 
         public void BeforeDehydrate(StateMachineActionContext context)
         {
             Interceptors.RunSafe(i => i.BeforeDehydrate(context), nameof(BeforeDehydrate), Logger);
-            GlobalInterceptor.BeforeDehydrate(context);
+            GlobalInterceptor.BeforeDehydrateAsync(context).Wait();
             Plugins.RunSafe(i => i.BeforeDehydrate(context), nameof(BeforeDehydrate), Logger);
         }
 

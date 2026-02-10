@@ -35,8 +35,6 @@ namespace Stateflows.StateMachines.Models
         public Dictionary<string, Edge> Edges { get; set; } = new Dictionary<string, Edge>();
         public IEnumerable<Edge> OrderedEdges => Edges.Values.OrderBy(edge => edge.IsElse);
         public IEnumerable<Edge> IncomingEdges => Graph.AllEdges.Where(edge => edge.Target == this);
-
-        public List<string> _DeferredEvents { get; set; } = new List<string>();
         public Dictionary<string, Logic<StateMachinePredicateAsync>> Deferrals { get; set; } = new();
         public List<Region> Regions { get; set; } = new List<Region>();
         public Region DefaultRegion
@@ -64,7 +62,7 @@ namespace Stateflows.StateMachines.Models
         public StateActionInitializationBuilder BehaviorInitializationBuilder { get; set; }
         public string BehaviorName { get; set; }
         public string BehaviorType { get; set; }
-        public List<Type> BehaviorEventTypes = [];
+        public readonly List<Type> BehaviorEventTypes = [];
 
         public BehaviorId GetBehaviorId(StateMachineId hostId) => new(BehaviorType, BehaviorName, hostId.Instance);
 

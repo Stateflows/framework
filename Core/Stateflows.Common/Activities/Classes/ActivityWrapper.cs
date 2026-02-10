@@ -20,7 +20,7 @@ namespace Stateflows.Common.Activities.Classes
             Behavior = consumer;
         }
 
-        public Task<RequestResult<TokensOutput>> SendInputAsync(Action<ITokensInput> tokensAction, IEnumerable<EventHeader> headers = null)
+        public Task<RequestResult<TokensOutput>> SendInputAsync(Action<ITokensInput> tokensAction, IDictionary<string, EventHeader> headers = null)
         {
             var stream = new TokensInput();
             tokensAction(stream);
@@ -39,10 +39,10 @@ namespace Stateflows.Common.Activities.Classes
             return RequestAsync(stream);
         }
 
-        public Task<SendResult> SendAsync<TEvent>(TEvent @event, IEnumerable<EventHeader> headers = null)
+        public Task<SendResult> SendAsync<TEvent>(TEvent @event, IDictionary<string, EventHeader> headers = null)
             => Behavior.SendAsync(@event, headers);
 
-        public Task<RequestResult<TResponse>> RequestAsync<TResponse>(IRequest<TResponse> request, IEnumerable<EventHeader> headers = null)
+        public Task<RequestResult<TResponse>> RequestAsync<TResponse>(IRequest<TResponse> request, IDictionary<string, EventHeader> headers = null)
             => Behavior.RequestAsync(request, headers);
 
         public Task<IEnumerable<TNotification>> GetNotificationsAsync<TNotification>(

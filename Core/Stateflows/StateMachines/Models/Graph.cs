@@ -46,15 +46,19 @@ namespace Stateflows.StateMachines.Models
             VertexType.InitialOrthogonalState,
         };
 
-        public Graph(string name, int version, StateflowsBuilder stateflowsBuilder)
+        public Graph(string name, int version, StateflowsBuilder stateflowsBuilder, BehaviorClass? ownerClass, BehaviorClass? parentClass)
         {
             Name = name;
             Version = version;
             StateflowsBuilder = stateflowsBuilder;
             Class = new StateMachineClass(Name);
+            OwnerClass = ownerClass;
+            ParentClass = parentClass;
         }
 
         public StateMachineClass Class { get; }
+        public BehaviorClass? OwnerClass { get; }
+        public BehaviorClass? ParentClass { get; }
         public string BaseStateMachineName { get; set; } = null;
         public string Name { get; }
         public int Version { get; }

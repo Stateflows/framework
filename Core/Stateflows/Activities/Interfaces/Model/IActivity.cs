@@ -4,10 +4,16 @@ using Stateflows.Common.Extensions;
 
 namespace Stateflows.Activities
 {
-    public interface IActivity
+    public interface IActivity : IActivityElement
     {
         static abstract void Build(IActivityBuilder builder);
     }
+
+    public interface IActivityAction :
+        IActionNode,
+        IAcceptEventActionNode,
+        ITimeEventActionNode,
+        IStructuredActivityNodeAction;
 
     public static class Activity<TActivity>
         where TActivity : class, IActivity

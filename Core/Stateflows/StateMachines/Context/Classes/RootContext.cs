@@ -217,7 +217,7 @@ namespace Stateflows.StateMachines.Context.Classes
 
         public EventStatus? ForceStatus { get; set; } = null;
 
-        public async Task SendAsync<TEvent>(TEvent @event, IEnumerable<EventHeader> headers = null)
+        public async Task SendAsync<TEvent>(TEvent @event, IDictionary<string, EventHeader> headers = null)
         {
             var locator = Executor.ServiceProvider.GetService<IBehaviorLocator>();
             if (locator != null && locator.TryLocateBehavior(Context.ContextParentId ?? Id, out var behavior))

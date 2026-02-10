@@ -7,7 +7,7 @@ namespace Stateflows.StateMachines
 {
     public abstract class StateMachineVisitor : IStateMachineVisitor
     {
-        public virtual Task StateMachineAddedAsync(string stateMachineName, int stateMachineVersion, bool isSystemRegistration = false)
+        public virtual Task StateMachineAddedAsync(string stateMachineName, int stateMachineVersion, BehaviorClass? ownerClass = null, BehaviorClass? parentClass = null)
             => Task.CompletedTask;
 
         public virtual Task StateMachineTypeAddedAsync<TStateMachine>(string stateMachineName, int stateMachineVersion)

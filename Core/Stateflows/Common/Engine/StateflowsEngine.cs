@@ -56,7 +56,7 @@ namespace Stateflows.Common
                     token.Validation.IsValid ||
                     (
                         token.EventHolder is EventHolder<CompoundRequest> compoundRequest &&
-                        compoundRequest.Payload.Events.Any(ev => ev.Headers.Any(h => h is ForcedExecution))
+                        compoundRequest.Payload.Events.Any(ev => ev.Headers.Values.Any(h => h is ForcedExecution))
                     )
                 )
                 {

@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Microsoft.Extensions.DependencyInjection;
 using Stateflows.Activities.Classes;
+using Stateflows.Common.Extensions;
 using Stateflows.Common.Interfaces;
 using Stateflows.Common.Initializer;
 using Stateflows.Common.Registration.Builders;
@@ -16,13 +17,12 @@ using Stateflows.Activities.EventHandlers;
 using Stateflows.Activities.Inspection.Interfaces;
 using Stateflows.Activities.Registration.Builders;
 using Stateflows.Activities.Registration.Interfaces;
-using Stateflows.Common.Extensions;
 
 namespace Stateflows.Activities
 {
     public static class ActivitiesDependencyInjection
     {
-        private static readonly Dictionary<IStateflowsBuilder, ActivitiesRegister> Registers = new Dictionary<IStateflowsBuilder, ActivitiesRegister>();
+        private static readonly Dictionary<IStateflowsBuilder, ActivitiesRegister> Registers = new();
 
         internal static void Cleanup(IStateflowsBuilder builder)
         {
@@ -39,13 +39,13 @@ namespace Stateflows.Activities
         [DebuggerHidden]
         public static IStateflowsBuilder AddActivities(this IStateflowsBuilder stateflowsBuilder,
             ActivitiesBuildAction buildAction = null)
-            => AddActivities(stateflowsBuilder, buildAction, false);
+            => AddActivities(stateflowsBuilder, buildAction, null, null);
         
         [DebuggerHidden]
-        internal static IStateflowsBuilder AddActivities(this IStateflowsBuilder stateflowsBuilder, ActivitiesBuildAction buildAction, bool systemRegistrations)
+        internal static IStateflowsBuilder AddActivities(this IStateflowsBuilder stateflowsBuilder, ActivitiesBuildAction buildAction, BehaviorClass? ownerClass, BehaviorClass? parentClass)
         {
             var register = stateflowsBuilder.EnsureActivitiesServices();
-            buildAction?.Invoke(new ActivitiesBuilder(register, systemRegistrations));
+            buildAction?.Invoke(new ActivitiesBuilder(register, ownerClass, parentClass));
 
             return stateflowsBuilder;
         }
@@ -84,8 +84,6 @@ namespace Stateflows.Activities
                         .AddSingleton<IActivityEventHandler, ResetHandler>()
                         .AddSingleton<IActivityEventHandler, SubscriptionHandler>()
                         .AddSingleton<IActivityEventHandler, UnsubscriptionHandler>()
-                        .AddSingleton<IActivityEventHandler, SetGlobalValuesHandler>()
-                        .AddSingleton<IActivityEventHandler, SetContextOwnerHandler>()
                         .AddSingleton<IActivityEventHandler, TokensOutputHandler>()
                         .AddSingleton<IActivityEventHandler, TypedTokensOutputHandler>()
                         .AddTransient(_ =>

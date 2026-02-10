@@ -8,6 +8,7 @@
 
     <ItemGroup>
       <ProjectReference Include="..\..\Core\Stateflows\Stateflows.csproj" />
+      <ProjectReference Include="..\..\Extensions\Stateflows.Extensions.ClearScript\Stateflows.Extensions.ClearScript.csproj" />
       <ProjectReference Include="..\..\Extensions\Stateflows.Extensions.MinimalAPIs\Stateflows.Extensions.MinimalAPIs.csproj" />
       <ProjectReference Include="..\..\Extensions\Stateflows.Extensions.Scheduling\Stateflows.Extensions.Scheduling.csproj" />
       <ProjectReference Include="..\Stateflows.Examples.Common\Stateflows.Examples.Common.csproj" />

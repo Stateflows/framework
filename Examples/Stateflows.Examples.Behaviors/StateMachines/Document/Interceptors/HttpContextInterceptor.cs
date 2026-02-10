@@ -10,17 +10,17 @@ public class HttpContextInterceptor: StateMachineInterceptor
 {
     public override bool BeforeProcessEvent<TEvent>(IEventContext<TEvent> context)
     {
-        var httpContextHeader = (HttpContextHeader?)context.Headers.FirstOrDefault(h => h is HttpContextHeader);
+        var httpContextHeader = (HttpContextHeader?)context.Headers.Values.FirstOrDefault(h => h is HttpContextHeader);
         if (httpContextHeader != null && httpContextHeader.Context.Request.Headers.TryGetValue("X-Role", out var role))
         {
             switch (role)
             {
                 case "Manager":
-                    context.Headers.Add(new Manager());
+                    context.Headers.Add("X-Role", new Manager());
                     break;
                 
                 case "Finance":
-                    context.Headers.Add(new Finance());
+                    context.Headers.Add("X-Role", new Finance());
                     break;
             }
         }

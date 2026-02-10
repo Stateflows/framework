@@ -1,0 +1,3 @@
+namespace Stateflows.Common.Interfaces;
+
+public interface IStateflowsInterceptor : IBehaviorInterceptor, IStateflowsExecutionInterceptor, IStateflowsTenantInterceptor;

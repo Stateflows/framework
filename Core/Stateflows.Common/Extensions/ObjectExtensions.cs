@@ -28,11 +28,11 @@ namespace Stateflows.Common.Utilities
            };
 
         [DebuggerHidden]
-        public static EventHolder<TEvent> ToEventHolder<TEvent>(this TEvent payload, IEnumerable<EventHeader> headers, BehaviorId? senderId = null)
+        public static EventHolder<TEvent> ToEventHolder<TEvent>(this TEvent payload, IDictionary<string, EventHeader> headers, BehaviorId? senderId = null)
            => new EventHolder<TEvent>()
            {
                Payload = payload,
-               Headers = headers?.ToList() ?? new List<EventHeader>(),
+               Headers = headers?.ToDictionary() ?? new Dictionary<string, EventHeader>(),
                SenderId = senderId,
            };
 
@@ -49,10 +49,10 @@ namespace Stateflows.Common.Utilities
         }
 
         [DebuggerHidden]
-        public static EventHolder ToTypedEventHolder<TEvent>(this TEvent payload, IEnumerable<EventHeader> headers, BehaviorId? senderId = null)
+        public static EventHolder ToTypedEventHolder<TEvent>(this TEvent payload, IDictionary<string, EventHeader> headers, BehaviorId? senderId = null)
         {
             var holder = payload.ToTypedEventHolder(senderId);
-            holder.Headers = headers?.ToList() ?? new List<EventHeader>();
+            holder.Headers = headers?.ToDictionary() ?? new Dictionary<string, EventHeader>();
 
             return holder;
         }

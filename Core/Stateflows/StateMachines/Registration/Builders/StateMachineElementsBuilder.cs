@@ -34,9 +34,9 @@ namespace Stateflows.StateMachines.Registration.Builders
 
         int IBehaviorBuilder.BehaviorVersion => Graph.Version;
 
-        public StateMachineElementsBuilder(string name, int version, StateflowsBuilder stateflowsBuilder)
+        public StateMachineElementsBuilder(string name, int version, StateflowsBuilder stateflowsBuilder, BehaviorClass? ownerClass, BehaviorClass? parentClass)
         {
-            Graph = new Graph(name, version, stateflowsBuilder);
+            Graph = new Graph(name, version, stateflowsBuilder, ownerClass, parentClass);
         }
 
         public IInitializedStateMachineElementsBuilder AddDefaultInitializer(Func<IStateMachineInitializationContext, Task<bool>> actionAsync)
@@ -465,6 +465,11 @@ namespace Stateflows.StateMachines.Registration.Builders
             foreach (var vertex in Graph.AllVertices.Values)
             {
                 vertex.OriginStateMachineName ??= Graph.BaseStateMachineName;
+
+                foreach (var deferral in vertex.Deferrals.Values)
+                {
+                    deferral.OriginStateMachineName ??= Graph.BaseStateMachineName;
+                }
             }
             
             foreach (var edge in Graph.AllEdges)

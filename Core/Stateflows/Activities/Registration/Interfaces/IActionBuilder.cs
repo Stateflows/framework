@@ -1,4 +1,5 @@
 ﻿using Stateflows.Activities.Registration.Interfaces.Base;
+using Stateflows.Common.Interfaces;
 
 namespace Stateflows.Activities.Registration.Interfaces;
 
@@ -13,7 +14,9 @@ public interface IActionBuilderWithOptions :
     IControlFlowBase<IActionBuilderWithOptions>,
     IExceptionHandlerBase<IActionBuilderWithOptions>;
 
-public interface ITypedActionBuilder :
-    IObjectFlowBase<ITypedActionBuilder>,
-    IControlFlowBase<ITypedActionBuilder>,
-    IExceptionHandlerBase<ITypedActionBuilder>;
+public interface ITypedActionBuilder<out TAction> :
+    IObjectFlowBase<ITypedActionBuilder<TAction>>,
+    IControlFlowBase<ITypedActionBuilder<TAction>>,
+    IExceptionHandlerBase<ITypedActionBuilder<TAction>>,
+    IElementBuilderBase<TAction, ITypedActionBuilder<TAction>>
+    where TAction : class, IActionNode;

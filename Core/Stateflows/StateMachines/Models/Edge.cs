@@ -61,9 +61,9 @@ namespace Stateflows.StateMachines.Models
 
         public bool IsLocal { get; set; } = true;
 
-        public Logic<StateMachinePredicateAsync> Guards { get; } = new Logic<StateMachinePredicateAsync>(Constants.Guard);
+        public Logic<StateMachinePredicateAsync> Guards { get; } = new(Constants.Guard);
 
-        public Logic<StateMachineActionAsync> Effects { get; } = new Logic<StateMachineActionAsync>(Constants.Effect);
+        public Logic<StateMachineActionAsync> Effects { get; } = new(Constants.Effect);
 
         public string SourceName { get; set; }
         public Vertex Source { get; set; }

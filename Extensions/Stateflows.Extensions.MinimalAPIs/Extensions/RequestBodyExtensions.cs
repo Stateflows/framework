@@ -16,9 +16,9 @@ internal static class RequestBodyExtensions
     {
         var behaviorInfo = behavior.Id.Type switch
         {
-            BehaviorType.StateMachine => (await behavior.RequestAsync(new StateMachineInfoRequest(), [new NoImplicitInitialization()])).Response,
-            BehaviorType.Activity => (await behavior.RequestAsync(new ActivityInfoRequest(), [new NoImplicitInitialization()])).Response,
-            _ => (await behavior.GetStatusAsync([new NoImplicitInitialization()])).Response
+            BehaviorType.StateMachine => (await behavior.RequestAsync(new StateMachineInfoRequest(), new Dictionary<string, EventHeader>() { { nameof(NoImplicitInitialization), new NoImplicitInitialization() } })).Response,
+            BehaviorType.Activity => (await behavior.RequestAsync(new ActivityInfoRequest(), new Dictionary<string, EventHeader>() { { nameof(NoImplicitInitialization), new NoImplicitInitialization() } })).Response,
+            _ => (await behavior.GetStatusAsync(new Dictionary<string, EventHeader>() { { nameof(NoImplicitInitialization), new NoImplicitInitialization() } })).Response
         };
         return behaviorInfo;
     }
@@ -200,7 +200,7 @@ internal static class RequestBodyExtensions
         {
             var compoundResult = await behavior.SendCompoundAsync(b =>
                 {
-                    b.Add(@event, implicitInitialization ? [] : [new NoImplicitInitialization()]);
+                    b.Add(@event, implicitInitialization ? [] : new Dictionary<string, EventHeader>() { { nameof(NoImplicitInitialization), new NoImplicitInitialization() } });
 
                     switch (behavior.Id.Type)
                     {
@@ -208,24 +208,45 @@ internal static class RequestBodyExtensions
                             b.Add(
                                 new StateMachineInfoRequest(),
                                 implicitInitialization
-                                    ? [new ForcedExecution()]
-                                    : [new NoImplicitInitialization(), new ForcedExecution()]
+                                    ? new Dictionary<string, EventHeader>()
+                                        {
+                                            { nameof(ForcedExecution), new ForcedExecution() }
+                                        }
+                                    : new Dictionary<string, EventHeader>()
+                                        {
+                                            { nameof(NoImplicitInitialization), new NoImplicitInitialization() },
+                                            { nameof(ForcedExecution), new ForcedExecution() }
+                                        }
                             );
                             break;
                         case BehaviorType.Activity:
                             b.Add(
                                 new ActivityInfoRequest(),
                                 implicitInitialization
-                                    ? [new ForcedExecution()]
-                                    : [new NoImplicitInitialization(), new ForcedExecution()]
+                                    ? new Dictionary<string, EventHeader>()
+                                        {
+                                            { nameof(ForcedExecution), new ForcedExecution() }
+                                        }
+                                    : new Dictionary<string, EventHeader>()
+                                        {
+                                            { nameof(NoImplicitInitialization), new NoImplicitInitialization() },
+                                            { nameof(ForcedExecution), new ForcedExecution() }
+                                        }
                             );
                             break;
                         case BehaviorType.Action:
                             b.Add(
                                 new BehaviorInfoRequest(),
                                 implicitInitialization
-                                    ? [new ForcedExecution()]
-                                    : [new NoImplicitInitialization(), new ForcedExecution()]
+                                    ? new Dictionary<string, EventHeader>()
+                                        {
+                                            { nameof(ForcedExecution), new ForcedExecution() }
+                                        }
+                                    : new Dictionary<string, EventHeader>()
+                                        {
+                                            { nameof(NoImplicitInitialization), new NoImplicitInitialization() },
+                                            { nameof(ForcedExecution), new ForcedExecution() }
+                                        }
                             );
                             break;
                     }
@@ -264,7 +285,7 @@ internal static class RequestBodyExtensions
         {
             var compoundResult = await behavior.SendCompoundAsync(b =>
                 {
-                    b.Add(request, implicitInitialization ? [] : [new NoImplicitInitialization()]);
+                    b.Add(request, implicitInitialization ? [] : new Dictionary<string, EventHeader>() { { nameof(NoImplicitInitialization), new NoImplicitInitialization() } });
 
                     switch (behavior.Id.Type)
                     {
@@ -272,24 +293,45 @@ internal static class RequestBodyExtensions
                             b.Add(
                                 new StateMachineInfoRequest(),
                                 implicitInitialization
-                                    ? [new ForcedExecution()]
-                                    : [new NoImplicitInitialization(), new ForcedExecution()]
+                                    ? new Dictionary<string, EventHeader>()
+                                        {
+                                            { nameof(ForcedExecution), new ForcedExecution() }
+                                        }
+                                    : new Dictionary<string, EventHeader>()
+                                        {
+                                            { nameof(NoImplicitInitialization), new NoImplicitInitialization() },
+                                            { nameof(ForcedExecution), new ForcedExecution() }
+                                        }
                             );
                             break;
                         case BehaviorType.Activity:
                             b.Add(
                                 new ActivityInfoRequest(),
                                 implicitInitialization
-                                    ? [new ForcedExecution()]
-                                    : [new NoImplicitInitialization(), new ForcedExecution()]
+                                    ? new Dictionary<string, EventHeader>()
+                                        {
+                                            { nameof(ForcedExecution), new ForcedExecution() }
+                                        }
+                                    : new Dictionary<string, EventHeader>()
+                                        {
+                                            { nameof(NoImplicitInitialization), new NoImplicitInitialization() },
+                                            { nameof(ForcedExecution), new ForcedExecution() }
+                                        }
                             );
                             break;
                         case BehaviorType.Action:
                             b.Add(
                                 new BehaviorInfoRequest(),
                                 implicitInitialization
-                                    ? [new ForcedExecution()]
-                                    : [new NoImplicitInitialization(), new ForcedExecution()]
+                                    ? new Dictionary<string, EventHeader>()
+                                        {
+                                            { nameof(ForcedExecution), new ForcedExecution() }
+                                        }
+                                    : new Dictionary<string, EventHeader>()
+                                        {
+                                            { nameof(NoImplicitInitialization), new NoImplicitInitialization() },
+                                            { nameof(ForcedExecution), new ForcedExecution() }
+                                        }
                             );
                             break;
                     }

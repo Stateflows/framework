@@ -5,8 +5,15 @@ namespace Stateflows.Extensions.MinimalAPIs;
 
 internal class ActivityConfigurationVisitor(MinimalAPIsBuilder minimalApisBuilder) : Activities.ActivityVisitor
 {
+    private BehaviorClass? OwnerClass = null;
+    
     public override Task ActivityTypeAddedAsync<TActivity>(string activityName, int activityVersion)
     {
+        if (OwnerClass != null)
+        {
+            return Task.CompletedTask;
+        }
+
         var activityType = typeof(TActivity);
         if (typeof(IActivityEndpointsConfiguration).IsAssignableFrom(activityType))
         {
@@ -18,9 +25,10 @@ internal class ActivityConfigurationVisitor(MinimalAPIsBuilder minimalApisBuilde
         return Task.CompletedTask;
     }
 
-    public override Task ActivityAddedAsync(string activityName, int activityVersion, bool isSystemRegistration = false)
+    public override Task ActivityAddedAsync(string activityName, int activityVersion, BehaviorClass? ownerClass = null, BehaviorClass? parentClass = null)
     {
-        if (isSystemRegistration)
+        OwnerClass = ownerClass;
+        if (OwnerClass != null)
         {
             minimalApisBuilder.ConfigureActivities(b =>
                 b.ConfigureActivity(
@@ -30,6 +38,6 @@ internal class ActivityConfigurationVisitor(MinimalAPIsBuilder minimalApisBuilde
             );
         }
 
-        return base.ActivityAddedAsync(activityName, activityVersion, isSystemRegistration);
+        return base.ActivityAddedAsync(activityName, activityVersion, ownerClass, parentClass);
     }
 }

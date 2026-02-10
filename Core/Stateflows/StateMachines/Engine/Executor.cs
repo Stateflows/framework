@@ -34,18 +34,12 @@ namespace Stateflows.StateMachines.Engine
 
         public IServiceProvider ServiceProvider => ScopesStack.Peek().ServiceProvider;
         
-        private readonly Stack<IServiceScope> ScopesStack = new Stack<IServiceScope>();
+        private readonly Stack<IServiceScope> ScopesStack = new();
 
         private EventStatus EventStatus;
         private bool IsEventStatusOverriden;
         private readonly IStateflowsEventFilter eventFilter;
-
-        public void OverrideEventStatus(EventStatus eventStatus)
-        {
-            EventStatus = eventStatus;
-            IsEventStatusOverriden = true;
-        }
-
+        private readonly IStateflowsValueStorage valueStorage;
         public Executor(StateMachinesRegister register, Graph graph, IServiceProvider serviceProvider, StateflowsContext stateflowsContext, EventHolder @event)
         {
             Register = register;
@@ -58,6 +52,8 @@ namespace Stateflows.StateMachines.Engine
             StateMachinesContextHolder.Inspection.Value = new StateMachineInspection(this, Inspector);
 
             eventFilter = serviceProvider.GetRequiredService<IStateflowsEventFilter>();
+            
+            valueStorage = serviceProvider.GetRequiredService<IStateflowsValueStorage>();
         }
 
         public void Dispose()
@@ -358,6 +354,15 @@ namespace Stateflows.StateMachines.Engine
         private async Task<EventStatus> DoProcessAsync<TEvent>(EventHolder<TEvent> eventHolder)
         {
             Debug.Assert(Context != null, $"Context is not available. Is state machine '{Graph.Name}' hydrated?");
+
+            // if (Context.Context.StateflowsValues != null)
+            // {
+            //     await SaveValuesAsync();
+            // // }
+            //
+            // await LoadValuesAsync();
+            
+            await SaveLoadValuesAsync();
             
             var currentStack = VerticesTree.GetAllNodes_FromTheTop().Select(node => node.Value).ToArray();
 
@@ -378,7 +383,7 @@ namespace Stateflows.StateMachines.Engine
                 {
                     if (
                         vertex.BehaviorEventTypes.Contains(eventHolder.PayloadType) &&
-                        !eventHolder.Headers.Any(h => h is NoForwarding) &&
+                        !eventHolder.Headers.Values.Any(h => h is NoForwarding) &&
                         !eventHolder.PayloadType.GetCustomAttributes<NoForwardingAttribute>().Any()
                     )
                     {
@@ -386,7 +391,13 @@ namespace Stateflows.StateMachines.Engine
                         var behaviorId = vertex.GetBehaviorId(Context.Id);
                         if (locator.TryLocateBehavior(behaviorId, out var behavior))
                         {
-                            _ = behavior.SendAsync(eventHolder.Payload, eventHolder.Headers);
+                            var headers = eventHolder.Headers.ToDictionary();
+                            headers[nameof(BehaviorEmbedding)] = new BehaviorEmbedding
+                            {
+                                OwnerId = Context.Context.ContextOwnerId ?? Context.Context.Id,
+                                ParentId = Context.Context.Id,
+                            };
+                            _ = behavior.SendAsync(eventHolder.Payload, headers);
 
                             return EventStatus.Forwarded;
                         }
@@ -471,6 +482,8 @@ namespace Stateflows.StateMachines.Engine
                     }
                 }
 
+                // await valueStorage.SaveAsync(Context.Context.ContextOwnerId ?? Context.Context.Id, Context.Context.StateflowsValues);
+                
                 if (result == EventStatus.Consumed)
                 {
                     await DoCompletionAsync();
@@ -482,7 +495,7 @@ namespace Stateflows.StateMachines.Engine
                 return EventStatus.Deferred;
             }
             
-            var guardDelegations = Context.EventHolder.Headers.OfType<TransitionGuardDelegation>();
+            var guardDelegations = Context.EventHolder.Headers.Values.OfType<TransitionGuardDelegation>();
             if (guardDelegations.Any())
             {
                 return EventStatus.Forwarded;
@@ -493,6 +506,22 @@ namespace Stateflows.StateMachines.Engine
             await DispatchNextDeferredEvent();
 
             return result;
+        }
+
+        private async Task LoadValuesAsync()
+        {
+            // Context.Context.StateflowsValues = (await valueStorage.LoadAsync(Context.Context.ContextOwnerId ?? Context.Context.Id)).ToDictionary();
+        }
+
+        private async Task SaveValuesAsync()
+        {
+            // await valueStorage.SaveAsync(Context.Context.ContextOwnerId ?? Context.Context.Id, Context.Context.StateflowsValues);
+        }
+
+        private async Task SaveLoadValuesAsync()
+        {
+            await SaveValuesAsync();
+            await LoadValuesAsync();
         }
 
         [DebuggerHidden]

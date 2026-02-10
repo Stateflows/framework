@@ -37,18 +37,13 @@ namespace Stateflows.Actions
 
         [DebuggerHidden]
         public static IStateflowsBuilder AddActions(this IStateflowsBuilder stateflowsBuilder, ActionsBuildAction buildAction = null)
-        {
-            var register = stateflowsBuilder.EnsureActionsServices();
-            buildAction?.Invoke(new ActionsBuilder(register, false));
-
-            return stateflowsBuilder;
-        }
+            => AddActions(stateflowsBuilder, buildAction, null, null);
         
         [DebuggerHidden]
-        internal static IStateflowsBuilder AddActions(this IStateflowsBuilder stateflowsBuilder, ActionsBuildAction buildAction, bool systemRegistrations)
+        internal static IStateflowsBuilder AddActions(this IStateflowsBuilder stateflowsBuilder, ActionsBuildAction buildAction, BehaviorClass? ownerClass, BehaviorClass? parentClass)
         {
             var register = stateflowsBuilder.EnsureActionsServices();
-            buildAction?.Invoke(new ActionsBuilder(register, systemRegistrations));
+            buildAction?.Invoke(new ActionsBuilder(register, ownerClass, parentClass));
 
             return stateflowsBuilder;
         }

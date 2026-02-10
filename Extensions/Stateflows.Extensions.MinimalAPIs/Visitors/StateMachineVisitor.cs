@@ -29,6 +29,8 @@ internal class StateMachineVisitor(
 
     private string CurrentStateMachineName = string.Empty;
     private BehaviorStatus[] SupportedStatuses = [];
+    
+    private BehaviorClass? OwnerClass = null;
 
     public void Visit<T>()
     {
@@ -39,6 +41,11 @@ internal class StateMachineVisitor(
 
     public override Task InitializerAddedAsync<TInitializationEvent>(string stateMachineName, int stateMachineVersion)
     {
+        if (OwnerClass != null)
+        {
+            return Task.CompletedTask;
+        }
+
         Initializers[stateMachineName] = true;
 
         CurrentStateMachineName = stateMachineName;
@@ -53,6 +60,11 @@ internal class StateMachineVisitor(
     public override Task TransitionAddedAsync<TEvent>(string stateMachineName, int stateMachineVersion, string sourceVertexName,
         string targetVertexName = null, bool isElse = false)
     {
+        if (OwnerClass != null)
+        {
+            return Task.CompletedTask;
+        }
+
         CurrentStateMachineName = stateMachineName;
         SupportedStatuses = [BehaviorStatus.Initialized];
         typeMapper.VisitMappedTypes<TEvent>(this);
@@ -62,8 +74,15 @@ internal class StateMachineVisitor(
         return Task.CompletedTask;
     }
 
-    public override Task StateMachineAddedAsync(string stateMachineName, int stateMachineVersion, bool isSystemRegistration = false)
+    public override Task StateMachineAddedAsync(string stateMachineName, int stateMachineVersion, BehaviorClass? ownerClass = null, BehaviorClass? parentClass = null)
     {
+        OwnerClass = ownerClass;
+        
+        if (OwnerClass != null)
+        {
+            return Task.CompletedTask;
+        }
+        
         RegisterStandardEndpoints(stateMachineName);
         RegisterRemainingEndpoints(stateMachineName);
 
@@ -192,7 +211,7 @@ internal class StateMachineVisitor(
                             var result =
                                 await behavior.GetStatusAsync(implicitInitialization
                                     ? []
-                                    : [new NoImplicitInitialization()]);
+                                    : new Dictionary<string, EventHeader>() { { nameof(NoImplicitInitialization), new NoImplicitInitialization() } });
                             // workaround for return code 200 regardless behavior actual status
                             result.Status = EventStatus.Consumed;
                             return result.ToResult([], result.Response, HateoasLinks);
@@ -260,7 +279,7 @@ internal class StateMachineVisitor(
                             period ??= TimeSpan.FromSeconds(60);
 
                             var notifications = (await behavior.GetNotificationsAsync(names, DateTime.Now - period.Value)).ToArray();
-                            var behaviorInfo = (await behavior.GetStatusAsync([new NoImplicitInitialization()])).Response;
+                            var behaviorInfo = (await behavior.GetStatusAsync(new Dictionary<string, EventHeader>() { { nameof(NoImplicitInitialization), new NoImplicitInitialization() } })).Response;
 
                             var sendResult = new SendResult(EventStatus.Consumed, new EventValidation(true));
                             return sendResult.ToResult(notifications, behaviorInfo, HateoasLinks);
@@ -302,13 +321,13 @@ internal class StateMachineVisitor(
                     {
                         // var compoundResult = await behavior.SendCompoundAsync(b => b
                         //     .Add(new Finalize())
-                        //     .Add(new StateMachineInfoRequest(), [new NoImplicitInitialization()])
+                        //     .Add(new StateMachineInfoRequest(), new Dictionary<string, EventHeader>() { { nameof(NoImplicitInitialization), new NoImplicitInitialization() } })
                         // );
                         //
                         // var result = compoundResult.Response.Results.First();
                         // var behaviorInfo = ((EventHolder<StateMachineInfo>)compoundResult.Response.Results.Last().Response).Payload;
                         var sendResult = await behavior.FinalizeAsync();
-                        var behaviorInfo = (await behavior.GetStatusAsync([new NoImplicitInitialization()])).Response;
+                        var behaviorInfo = (await behavior.GetStatusAsync(new Dictionary<string, EventHeader>() { { nameof(NoImplicitInitialization), new NoImplicitInitialization() } })).Response;
                         return sendResult.ToResult([], behaviorInfo, HateoasLinks);
                     }
 
@@ -347,13 +366,13 @@ internal class StateMachineVisitor(
                     {
                         // var compoundResult = await behavior.SendCompoundAsync(b => b
                         //     .Add(new Reset())
-                        //     .Add(new StateMachineInfoRequest(), [new NoImplicitInitialization()])
+                        //     .Add(new StateMachineInfoRequest(), new Dictionary<string, EventHeader>() { { nameof(NoImplicitInitialization), new NoImplicitInitialization() } })
                         // );
                         //
                         // var result = compoundResult.Response.Results.First();
                         // var behaviorInfo = ((EventHolder<StateMachineInfo>)compoundResult.Response.Results.Last().Response).Payload;
                         var sendResult = await behavior.ResetAsync();
-                        var behaviorInfo = (await behavior.GetStatusAsync([new NoImplicitInitialization()])).Response;
+                        var behaviorInfo = (await behavior.GetStatusAsync(new Dictionary<string, EventHeader>() { { nameof(NoImplicitInitialization), new NoImplicitInitialization() } })).Response;
                         return sendResult.ToResult([], behaviorInfo, HateoasLinks);
                     }
 
@@ -379,6 +398,11 @@ internal class StateMachineVisitor(
 
     public override Task StateMachineTypeAddedAsync<TStateMachine>(string stateMachineName, int stateMachineVersion)
     {
+        if (OwnerClass != null)
+        {
+            return Task.CompletedTask;
+        }
+
         var stateMachineType = typeof(TStateMachine);
         if (typeof(IStateMachineEndpoints).IsAssignableFrom(stateMachineType))
         {
@@ -406,6 +430,11 @@ internal class StateMachineVisitor(
 
     public override Task VertexTypeAddedAsync<TVertex>(string stateMachineName, int stateMachineVersion, string vertexName)
     {
+        if (OwnerClass != null)
+        {
+            return Task.CompletedTask;
+        }
+
         var vertexType = typeof(TVertex);
         if (typeof(IStateEndpoints).IsAssignableFrom(vertexType))
         {
@@ -424,6 +453,11 @@ internal class StateMachineVisitor(
 
     public override Task CustomEventAddedAsync<TEvent>(string stateMachineName, int stateMachineVersion, BehaviorStatus[] supportedStatuses)
     {
+        if (OwnerClass != null)
+        {
+            return Task.CompletedTask;
+        }
+
         CurrentStateMachineName = stateMachineName;
         SupportedStatuses = supportedStatuses;
         typeMapper.VisitMappedTypes<TEvent>(this);

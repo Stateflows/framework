@@ -3,8 +3,11 @@ using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
 using Stateflows.Actions;
+using Stateflows.Actions.Registration.Interfaces;
 using Stateflows.Activities;
 using Stateflows.Activities.Registration.Interfaces;
+using Stateflows.Common.Interfaces;
+using Stateflows.Common.Registration.Builders;
 using Stateflows.StateMachines.Context.Classes;
 using Stateflows.StateMachines.Context.Interfaces;
 using Stateflows.StateMachines.Registration.Interfaces.Internal;
@@ -54,7 +57,7 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
             }
             activityName += $".guard.{edge.Guards.Actions.Count}";
             
-            vertex.Graph.StateflowsBuilder.AddActivities(b => b.AddActivity<TActivity>(activityName));
+            vertex.Graph.StateflowsBuilder.AddActivities(b => b.AddActivity<TActivity>(activityName), vertex.Graph.OwnerClass ?? vertex.Graph.Class, vertex.Graph.Class);
             return AddGuard(c => StateMachineActivityExtensions.RunTransitionGuardActivityAsync(edge.Guards.Actions.Count, c, activityName));
         }
 
@@ -73,7 +76,7 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
             }
             activityName += $".guard.{edge.Guards.Actions.Count}";
             
-            vertex.Graph.StateflowsBuilder.AddActivities(b => b.AddActivity(activityName, activityBuildAction));
+            vertex.Graph.StateflowsBuilder.AddActivities(b => b.AddActivity(activityName, activityBuildAction), vertex.Graph.OwnerClass ?? vertex.Graph.Class, vertex.Graph.Class);
             return AddGuard(c => StateMachineActivityExtensions.RunTransitionGuardActivityAsync(edge.Guards.Actions.Count, c, activityName));
         }
 
@@ -82,7 +85,7 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         /// </summary>
         /// <typeparam name="TAction">Action behavior type</typeparam>
         [DebuggerHidden]
-        public TReturn AddGuardAction<TAction>()
+        public TReturn AddGuardAction<TAction>(ActionBuildAction<TAction> buildAction = null)
             where TAction : class, IAction
         {
             var edge = ((IEdgeBuilder)this).Edge;
@@ -94,7 +97,7 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
             }
             actionName += $".guard.{edge.Guards.Actions.Count}";
             
-            vertex.Graph.StateflowsBuilder.AddActions(b => b.AddAction<TAction>(actionName));
+            vertex.Graph.StateflowsBuilder.AddActions(b => b.AddAction<TAction>(actionName, buildAction: buildAction, version: 1), vertex.Graph.OwnerClass ?? vertex.Graph.Class, vertex.Graph.Class);
             return AddGuard(c => StateMachineActionExtensions.RunTransitionGuardActionAsync(edge.Guards.Actions.Count, c, actionName));
         }
 
@@ -114,7 +117,7 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
             }
             actionName += $".guard.{edge.Guards.Actions.Count}";
             
-            vertex.Graph.StateflowsBuilder.AddActions(b => b.AddAction(actionName, actionDelegate, buildAction));
+            vertex.Graph.StateflowsBuilder.AddActions(b => b.AddAction(actionName, actionDelegate, buildAction), vertex.Graph.OwnerClass ?? vertex.Graph.Class, vertex.Graph.Class);
             return AddGuard(c => StateMachineActionExtensions.RunTransitionGuardActionAsync(edge.Guards.Actions.Count, c, actionName));
         }
 
@@ -147,17 +150,27 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         /// </summary>
         /// <typeparam name="TGuard">The type of the guard handler.</typeparam>
         [DebuggerHidden]
-        TReturn AddGuard<TGuard>()
+        TReturn AddGuard<TGuard>(ElementBuildAction<TGuard> buildAction = null)
             where TGuard : class, IDefaultTransitionGuard
-            => AddGuard(async c => await (await ((BaseContext)c).Context.Executor.GetDefaultTransitionGuardAsync<TGuard>(c)).GuardAsync());
+            => AddGuard(async c => 
+            {
+                var transition = await ((BaseContext)c).Context.Executor.GetDefaultTransitionGuardAsync<TGuard>(c);
+                buildAction?.Invoke(new ElementBuilder<TGuard>(transition));
+                return await transition.GuardAsync();
+            });
 
         /// <summary>
         /// Adds a negated typed guard handler to the current transition.
         /// </summary>
         /// <typeparam name="TGuard">The type of the guard handler.</typeparam>
         [DebuggerHidden]
-        TReturn AddNegatedGuard<TGuard>()
+        TReturn AddNegatedGuard<TGuard>(ElementBuildAction<TGuard> buildAction = null)
             where TGuard : class, IDefaultTransitionGuard
-            => AddGuard(async c => !await (await ((BaseContext)c).Context.Executor.GetDefaultTransitionGuardAsync<TGuard>(c)).GuardAsync());
+            => AddGuard(async c =>  
+            {
+                var transition = await ((BaseContext)c).Context.Executor.GetDefaultTransitionGuardAsync<TGuard>(c);
+                buildAction?.Invoke(new ElementBuilder<TGuard>(transition));
+                return !await transition.GuardAsync();
+            });
     }
 }

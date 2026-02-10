@@ -19,18 +19,18 @@ namespace Stateflows.Common.Subscription
         IServiceProvider serviceProvider
     )
     {
-        public async Task PublishAsync<TNotification>(BehaviorId behaviorId, TNotification notificationEvent, IEnumerable<EventHeader> headers = null)
+        public async Task PublishAsync<TNotification>(BehaviorId behaviorId, TNotification notificationEvent, IDictionary<string, EventHeader> headers = null)
         {
             var notificationType = typeof(TNotification);
             var ttlAttribute = notificationType.GetCustomAttribute<TimeToLiveAttribute>();
             var retainAttribute = notificationType.GetCustomAttribute<RetainAttribute>();
-            var headersArray = headers?.ToArray() ?? [];
+            var headersArray = headers?.Values.ToArray() ?? [];
             var eventHolder = new EventHolder<TNotification>()
             {
                 Payload = notificationEvent,
                 SenderId = behaviorId,
                 SentAt = DateTime.Now,
-                Headers = headersArray.ToList(),
+                Headers = headers?.ToDictionary() ?? [],
                 TimeToLive = ttlAttribute?.SecondsToLive ?? headersArray.OfType<TimeToLive>().FirstOrDefault()?.SecondsToLive ?? 0,
                 Retained = retainAttribute != null || headersArray.OfType<Retain>().FirstOrDefault() != null
             };

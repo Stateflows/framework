@@ -39,16 +39,17 @@ namespace Stateflows.Actions.Context.Classes
                 ServiceProvider
             );
 
-        public ActionContext(RootContext rootContext, IServiceProvider serviceProvider, IEnumerable<TokenHolder> tokens)
-            : base(rootContext.Context, serviceProvider)
+        public ActionContext(RootContext context, IServiceProvider serviceProvider, IEnumerable<TokenHolder> tokens)
+            : base(context.Context, serviceProvider)
         {
-            RootContext = rootContext;
+            RootContext = context;
             Values = new ValuesStorage(
                 string.Empty,
                 RootContext.Context.ContextOwnerId ?? RootContext.Id,
                 ServiceProvider.GetRequiredService<IStateflowsLock>(),
                 ServiceProvider.GetRequiredService<IStateflowsValueStorage>()
             );
+            // Values = new StateflowsValuesCollection(context.Context.StateflowsValues);
             if (tokens != null)
             {
                 InputTokens.AddRange(tokens);
@@ -57,12 +58,12 @@ namespace Stateflows.Actions.Context.Classes
 
         public IContextValues Values { get; }
 
-        public void Send<TEvent>(TEvent @event, IEnumerable<EventHeader> headers = null)
+        public void Send<TEvent>(TEvent @event, IDictionary<string, EventHeader> headers = null)
             => _ = RootContext.Send(@event, headers);
 
-        public void Publish<TNotification>(TNotification notification, IEnumerable<EventHeader> headers = null)
+        public void Publish<TNotification>(TNotification notification, IDictionary<string, EventHeader> headers = null)
         {
-            var strictOwnershipHeader = headers?.OfType<StrictOwnership>().FirstOrDefault();
+            var strictOwnershipHeader = headers?.Values.OfType<StrictOwnership>().FirstOrDefault();
             var strictOwnershipAttribute = typeof(TNotification).GetCustomAttribute<StrictOwnershipAttribute>();
             var id = strictOwnershipHeader != null || strictOwnershipAttribute != null
                 ? (BehaviorId)Id

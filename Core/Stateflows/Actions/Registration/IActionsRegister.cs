@@ -17,7 +17,7 @@ namespace Stateflows.Actions
         
         void AddAction(string actionName, int version, Type actionType, ActionBuildAction buildAction = null);
         
-        void AddAction<TAction>(string actionName = null, int version = 1, ActionBuildAction buildAction = null)
+        void AddAction<TAction>(string actionName = null, int version = 1, ActionBuildAction<TAction> buildAction = null)
             where TAction : class, IAction;
 
         Task VisitActionsAsync(IActionVisitor visitor);

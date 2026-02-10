@@ -30,6 +30,7 @@ internal class ActivityVisitor(
 
     private string CurrentActivityName = string.Empty;
     private BehaviorStatus[] SupportedStatuses = [];
+    private BehaviorClass? OwnerClass = null;
 
     public void Visit<T>()
     {
@@ -40,6 +41,11 @@ internal class ActivityVisitor(
 
     public override Task InitializerAddedAsync<TInitializationEvent>(string activityName, int activityVersion)
     {
+        if (OwnerClass != null)
+        {
+            return Task.CompletedTask;
+        }
+
         Initializers[activityName] = true;
 
         CurrentActivityName = activityName;
@@ -52,6 +58,11 @@ internal class ActivityVisitor(
     public override Task AcceptEventNodeAddedAsync<TEvent>(string activityName, int activityVersion, string nodeName,
         string? parentNodeName = null)
     {
+        if (OwnerClass != null)
+        {
+            return Task.CompletedTask;
+        }
+
         CurrentActivityName = activityName;
         typeMapper.VisitMappedTypes<TEvent>(this);
         CurrentActivityName = string.Empty;
@@ -59,8 +70,14 @@ internal class ActivityVisitor(
         return Task.CompletedTask;
     }
 
-    public override Task ActivityAddedAsync(string activityName, int activityVersion, bool isSystemRegistration = false)
+    public override Task ActivityAddedAsync(string activityName, int activityVersion, BehaviorClass? ownerClass = null, BehaviorClass? parentClass = null)
     {
+        OwnerClass = ownerClass;
+        if (OwnerClass != null)
+        {
+            return Task.CompletedTask;
+        }
+
         RegisterStandardEndpoints(activityName);
         RegisterRemainingEndpoints(activityName);
 
@@ -83,6 +100,11 @@ internal class ActivityVisitor(
 
     public override Task ActivityTypeAddedAsync<TActivity>(string activityName, int activityVersion)
     {
+        if (OwnerClass != null)
+        {
+            return Task.CompletedTask;
+        }
+
         var activityType = typeof(TActivity);
         if (typeof(IActivityEndpoints).IsAssignableFrom(activityType))
         {
@@ -224,7 +246,7 @@ internal class ActivityVisitor(
                             var requestResult =
                                 await behavior.GetStatusAsync(implicitInitialization
                                     ? []
-                                    : [new NoImplicitInitialization()]);
+                                    : new Dictionary<string, EventHeader>() { { nameof(NoImplicitInitialization), new NoImplicitInitialization() } });
                             // workaround for return code 200 regardless behavior actual status
                             requestResult.Status = EventStatus.Consumed;
                             return requestResult.ToResult([], requestResult.Response, HateoasLinks);
@@ -292,7 +314,7 @@ internal class ActivityVisitor(
                             period ??= TimeSpan.FromSeconds(60);
                             var notifications = (await behavior.GetNotificationsAsync(names, DateTime.Now - period))
                                 .ToArray();
-                            var behaviorInfo = (await behavior.GetStatusAsync([new NoImplicitInitialization()]))
+                            var behaviorInfo = (await behavior.GetStatusAsync(new Dictionary<string, EventHeader>() { { nameof(NoImplicitInitialization), new NoImplicitInitialization() } }))
                                 .Response;
                             var sendResult = new SendResult(EventStatus.Consumed, new EventValidation(true));
                             return sendResult.ToResult(notifications, behaviorInfo, HateoasLinks);
@@ -334,7 +356,7 @@ internal class ActivityVisitor(
                     {
                         // var compoundResult = await behavior.SendCompoundAsync(b => b
                         //     .Add(new Finalize())
-                        //     .Add(new ActivityInfoRequest(), [new NoImplicitInitialization()])
+                        //     .Add(new ActivityInfoRequest(), new Dictionary<string, EventHeader>() { { nameof(NoImplicitInitialization), new NoImplicitInitialization() } })
                         // );
                         //
                         // var result = compoundResult.Response.Results.First();
@@ -343,7 +365,7 @@ internal class ActivityVisitor(
                         // return result.ToResult([], behaviorInfo, HateoasLinks);
 
                         var sendResult = await behavior.FinalizeAsync();
-                        var behaviorInfo = (await behavior.GetStatusAsync([new NoImplicitInitialization()])).Response;
+                        var behaviorInfo = (await behavior.GetStatusAsync(new Dictionary<string, EventHeader>() { { nameof(NoImplicitInitialization), new NoImplicitInitialization() } })).Response;
                         return sendResult.ToResult([], behaviorInfo, HateoasLinks);
                     }
 
@@ -379,7 +401,7 @@ internal class ActivityVisitor(
                     {
                         // var compoundResult = await behavior.SendCompoundAsync(b => b
                         //     .Add(new Reset())
-                        //     .Add(new BehaviorInfoRequest(), [new NoImplicitInitialization()])
+                        //     .Add(new BehaviorInfoRequest(), new Dictionary<string, EventHeader>() { { nameof(NoImplicitInitialization), new NoImplicitInitialization() } })
                         // );
                         //
                         // var result = compoundResult.Response.Results.First();
@@ -388,7 +410,7 @@ internal class ActivityVisitor(
                         // return result.ToResult([], behaviorInfo, HateoasLinks);
 
                         var sendResult = await behavior.ResetAsync();
-                        var behaviorInfo = (await behavior.GetStatusAsync([new NoImplicitInitialization()])).Response;
+                        var behaviorInfo = (await behavior.GetStatusAsync(new Dictionary<string, EventHeader>() { { nameof(NoImplicitInitialization), new NoImplicitInitialization() } })).Response;
                         return sendResult.ToResult([], behaviorInfo, HateoasLinks);
                     }
 
@@ -414,6 +436,11 @@ internal class ActivityVisitor(
 
     public override Task NodeTypeAddedAsync<TNode>(string activityName, int activityVersion, string nodeName)
     {
+        if (OwnerClass != null)
+        {
+            return Task.CompletedTask;
+        }
+
         var nodeType = typeof(TNode);
         if (typeof(IStructuredActivityNodeEndpoints).IsAssignableFrom(nodeType))
         {
@@ -436,6 +463,11 @@ internal class ActivityVisitor(
 
     public override Task CustomEventAddedAsync<TEvent>(string activityName, int activityVersion, BehaviorStatus[] supportedStatuses)
     {
+        if (OwnerClass != null)
+        {
+            return Task.CompletedTask;
+        }
+
         CurrentActivityName = activityName;
         typeMapper.VisitMappedTypes<TEvent>(this);
         CurrentActivityName = string.Empty;

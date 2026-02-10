@@ -1,6 +1,7 @@
 using Stateflows.Common;
 using StateMachine.IntegrationTests.Classes.Events;
 using StateMachine.IntegrationTests.Utils;
+using Deny = Stateflows.Common.Deny;
 
 namespace StateMachine.IntegrationTests.Tests
 {
@@ -8,6 +9,9 @@ namespace StateMachine.IntegrationTests.Tests
     {
         public static void Build(IStateMachineBuilder builder) => builder
             .AddInitialState("initial", b => b
+                .AddDeferredEvent<SomeEvent>(b => b
+                    .AddGuard<Allow>()
+                )
                 .AddTransition<SomeEvent>("state1")
             )
             .AddState("state1")
@@ -18,6 +22,11 @@ namespace StateMachine.IntegrationTests.Tests
     {
         public static void Build(IStateMachineBuilder builder) => builder
             .UseStateMachine<BaseStateMachine>(b => b
+                .UseState("initial", b => b
+                    .UseDeferredEvent<SomeEvent>(b => b
+                        .AddGuard<Deny>()
+                    )
+                )
                 .UseState("state1", b => b
                     .AddDefaultTransition("state2")
                     .AddTransition<SomeEvent>("orthogonal")
@@ -45,6 +54,11 @@ namespace StateMachine.IntegrationTests.Tests
     {
         public static void Build(IStateMachineBuilder builder) => builder
             .UseStateMachine<BaseStateMachine>(b => b
+                .UseState("initial", b => b
+                    .UseDeferredEvent<SomeEvent>(b => b
+                        .AddGuard<Deny>()
+                    )
+                )
                 .UseState("state1", b => b
                     .MakeOrthogonal(b => b
                         .AddRegion(b => b
@@ -108,6 +122,11 @@ namespace StateMachine.IntegrationTests.Tests
     {
         public static void Build(IStateMachineBuilder builder) => builder
             .UseStateMachine<BaseStateMachine>(b => b
+                .UseState("initial", b => b
+                    .UseDeferredEvent<SomeEvent>(b => b
+                        .AddGuard<Deny>()
+                    )
+                )
                 .UseState("state1", b => b
                     .AddDefaultTransition("state2")
                 )
@@ -138,6 +157,11 @@ namespace StateMachine.IntegrationTests.Tests
 
                     .AddStateMachine("extend", b => b
                         .UseStateMachine<BaseStateMachine>(b => b
+                            .UseState("initial", b => b
+                                .UseDeferredEvent<SomeEvent>(b => b
+                                    .AddGuard<Deny>()
+                                )
+                            )
                             .UseState("state1", b => b
                                 .AddDefaultTransition("state2")
                             )
@@ -147,6 +171,11 @@ namespace StateMachine.IntegrationTests.Tests
 
                     .AddStateMachine("extendedState", b => b
                         .UseStateMachine<BaseStateMachine>(b => b
+                            .UseState("initial", b => b
+                                .UseDeferredEvent<SomeEvent>(b => b
+                                    .AddGuard<Deny>()
+                                )
+                            )
                             .UseState("state1", b => b
                                 .ExtendWith<ExtendingState>()
                             )
@@ -155,6 +184,11 @@ namespace StateMachine.IntegrationTests.Tests
                     
                     .AddStateMachine("cascade", b => b
                         .UseStateMachine<InheritedStateMachine>(b => b
+                            .UseState("initial", b => b
+                                .UseDeferredEvent<SomeEvent>(b => b
+                                    .AddGuard<Deny>()
+                                )
+                            )
                             .UseState("state2", b => b
                                 .AddDefaultTransition("state3")
                             )
@@ -174,12 +208,20 @@ namespace StateMachine.IntegrationTests.Tests
                                     .ChangeTrigger<SomeInheritedEvent>()
                                     .AddGuard(async c => c.Event.AdditionalProperty > 0)
                                 )
+                                .UseDeferredEvent<SomeEvent>(b => b
+                                    .AddGuard<Deny>()
+                                )
                             )
                         )
                     )
                     
                     .AddStateMachine("stateExtend", b => b
                         .UseStateMachine<BaseStateMachine>(b => b
+                            .UseState("initial", b => b
+                                .UseDeferredEvent<SomeEvent>(b => b
+                                    .AddGuard<Deny>()
+                                )
+                            )
                             .UseState("state1", b => b
                                 .AddOnEntry(async c => Entered = true)
                             )
@@ -188,6 +230,11 @@ namespace StateMachine.IntegrationTests.Tests
                     
                     .AddStateMachine("composite", b => b
                         .UseStateMachine<BaseStateMachine>(b => b
+                            .UseState("initial", b => b
+                                .UseDeferredEvent<SomeEvent>(b => b
+                                    .AddGuard<Deny>()
+                                )
+                            )
                             .UseState("state1", b => b
                                 .MakeComposite(b => b
                                     .AddInitialState("composited")

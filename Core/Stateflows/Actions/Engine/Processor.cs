@@ -19,18 +19,21 @@ namespace Stateflows.Actions.Engine
         private readonly ActionsRegister Register;
         private readonly IStateflowsLock StateflowsLock;
         private readonly IStateflowsStorage Storage;
+        private readonly IStateflowsValueStorage ValueStorage;
         private readonly IServiceProvider ServiceProvider;
 
         public Processor(
             ActionsRegister register,
             IStateflowsLock stateflowsLock,
             IStateflowsStorage storage,
+            IStateflowsValueStorage valueStorage,
             IServiceProvider serviceProvider
         )
         {
             Register = register;
             StateflowsLock = stateflowsLock;
             Storage = storage;
+            ValueStorage = valueStorage;
             ServiceProvider = serviceProvider;
         }
 
@@ -61,9 +64,27 @@ namespace Stateflows.Actions.Engine
                         : StateflowsLock.AquireLockAsync(id)
                 );
 
-                stateflowsContext = action.IsStateless
+                var forcedReset = eventHolder.Headers.Values.Any(h => h is ForcedReset);
+                if (forcedReset)
+                {
+                    await ValueStorage.ClearAsync(id);
+                }
+                
+                stateflowsContext = action.IsStateless || forcedReset
                     ? new StateflowsContext(id)
                     : await Storage.HydrateAsync(id);
+
+                var embedding = (BehaviorEmbedding?)eventHolder.Headers.Values.FirstOrDefault(h => h is BehaviorEmbedding);
+                if (embedding != null)
+                {
+                    stateflowsContext.ContextOwnerId = embedding.OwnerId;
+                    stateflowsContext.ContextParentId = embedding.ParentId;
+                }
+
+                if (!action.IsStateless || stateflowsContext.ContextOwnerId != null)
+                {
+                    // stateflowsContext.StateflowsValues = (await ValueStorage.LoadAsync(stateflowsContext.ContextOwnerId ?? stateflowsContext.Id)).ToDictionary();
+                }
 
                 var executor = new Executor(Register, stateflowsContext, serviceProvider, action);
                 
@@ -99,7 +120,7 @@ namespace Stateflows.Actions.Engine
                                 responseResult?.Status == EventStatus.Invalid ||
                                 (
                                     responseResult?.Status == EventStatus.Omitted &&
-                                    !ev.Headers.Any(h => h is ForcedExecution)
+                                    !ev.Headers.Values.Any(h => h is ForcedExecution)
                                 )
                             )
                             {
@@ -157,6 +178,11 @@ namespace Stateflows.Actions.Engine
 
                 // exceptions.AddRange(context.Exceptions);
 
+                if (!action.IsStateless || stateflowsContext.ContextOwnerId != null)
+                {
+                    // await ValueStorage.SaveAsync(stateflowsContext.ContextOwnerId ?? stateflowsContext.Id, stateflowsContext.StateflowsValues);
+                }
+                
                 if (!action.IsStateless)
                 {
                     await Storage.DehydrateAsync(stateflowsContext);

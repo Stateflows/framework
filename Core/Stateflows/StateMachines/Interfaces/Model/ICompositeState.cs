@@ -3,14 +3,11 @@ using Stateflows.StateMachines.Registration.Interfaces;
 
 namespace Stateflows.StateMachines
 {
-    public interface ICompositeState : IState
-    { }
+    public interface ICompositeState : IState;
 
-    public interface ICompositeStateEntry : ICompositeState, IStateEntry
-    { }
+    public interface ICompositeStateEntry : ICompositeState, IStateEntry;
     
-    public interface ICompositeStateExit : ICompositeState, IStateExit
-    { }
+    public interface ICompositeStateExit : ICompositeState, IStateExit;
 
     public interface ICompositeStateInitialization : ICompositeState
     {
@@ -20,6 +17,20 @@ namespace Stateflows.StateMachines
     public interface ICompositeStateFinalization : ICompositeState
     {
         Task OnFinalizeAsync();
+    }
+    
+    public interface ICompositeStateAction :
+        IStateAction,
+        ICompositeStateEntry,
+        ICompositeStateExit,
+        ICompositeStateInitialization,
+        ICompositeStateFinalization
+    {
+        Task ICompositeStateInitialization.OnInitializeAsync()
+            => ExecuteAsync();
+
+        Task ICompositeStateFinalization.OnFinalizeAsync()
+            => ExecuteAsync();
     }
 
     public interface ICompositeStateDefinition : ICompositeState
