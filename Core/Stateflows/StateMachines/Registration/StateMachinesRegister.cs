@@ -93,12 +93,17 @@ namespace Stateflows.StateMachines.Registration
                 .Any(token => token.BehaviorClass.Type == StateMachineClass.Type && token.BehaviorClass.Name == stateMachineName);
 
             builder.Graph.VisitingTasks.Add(v =>
-                v.StateMachineAddedAsync(
+            {
+
+                var hasDefaultInstance = BehaviorClassesInitializations.Instance.DefaultInstanceInitializationTokens
+                    .Any(token => token.BehaviorClass.Type == StateMachineClass.Type && token.BehaviorClass.Name == stateMachineName);
+
+                return v.StateMachineAddedAsync(
                     stateMachineName,
                     version,
                     isSystemRegistration: localIsSystemRegistration,
-                    isDefaultInstance: isDefaultInstance
-            ));
+                    hasDefaultInstance: hasDefaultInstance);
+            });
 
             StateMachines.Add(key, builder.Graph);
 
@@ -135,11 +140,14 @@ namespace Stateflows.StateMachines.Registration
             // Assign to local variable to avoid value being overriden when invoking lambda function at a later stage
             var localIsSystemRegistration = IsSystemRegistration;
 
-            var isDefaultInstance = BehaviorClassesInitializations.Instance.DefaultInstanceInitializationTokens
-                .Any(token => token.BehaviorClass.Type == StateMachineClass.Type && token.BehaviorClass.Name == stateMachineName);
 
             builder.Graph.VisitingTasks.AddRange([
-                v => v.StateMachineAddedAsync(stateMachineName, version, isSystemRegistration: localIsSystemRegistration, isDefaultInstance: isDefaultInstance),
+                v => {
+                    var hasDefaultInstance = BehaviorClassesInitializations.Instance.DefaultInstanceInitializationTokens
+                .Any(token => token.BehaviorClass.Type == StateMachineClass.Type && token.BehaviorClass.Name == stateMachineName);
+
+                    return v.StateMachineAddedAsync(stateMachineName, version, isSystemRegistration: localIsSystemRegistration, hasDefaultInstance: hasDefaultInstance);
+                },
                 v => (Task)method.Invoke(v, [ stateMachineName, version ])
             ]);
 

@@ -62,16 +62,14 @@ internal class StateMachineVisitor(
         return Task.CompletedTask;
     }
 
-    public override Task StateMachineAddedAsync(string stateMachineName, int stateMachineVersion, bool isSystemRegistration = false, bool isDefaultInstance = false)
+    public override Task StateMachineAddedAsync(string stateMachineName, int stateMachineVersion, bool isSystemRegistration = false, bool hasDefaultInstance = false)
     {
-        if (isDefaultInstance)
+        RegisterStandardEndpoints(stateMachineName);
+        RegisterRemainingEndpoints(stateMachineName);
+        
+        if (hasDefaultInstance)
         {
             RegisterDefaultInstanceEndpoints(stateMachineName);
-        }
-        else
-        {
-            RegisterStandardEndpoints(stateMachineName);
-            RegisterRemainingEndpoints(stateMachineName);
         }
 
         return Task.CompletedTask;
