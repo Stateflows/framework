@@ -88,15 +88,20 @@ namespace Stateflows.StateMachines.Registration
             buildAction(builder);
             builder.Graph.Build();
 
-            var graph = builder.Graph;
-
+            // add state machine adding task to visiting tasks before endpoints are being registered
             builder.Graph.VisitingTasks.Add(v =>
             {
                 var hasDefaultInstance = BehaviorClassesInitializations.Instance.DefaultInstanceInitializationTokens
                     .Any(token => token.BehaviorClass.Type == StateMachineClass.Type && token.BehaviorClass.Name == stateMachineName);
 
-                return v.StateMachineAddedAsync(stateMachineName, version, graph.OwnerClass, graph.ParentClass, hasDefaultInstance);
+                return v.StateMachineAddingAsync(stateMachineName, version, hasDefaultInstance);
             });
+
+            builder.Graph.Build();
+
+            var graph = builder.Graph;
+
+            builder.Graph.VisitingTasks.Add(v => v.StateMachineAddedAsync(stateMachineName, version, graph.OwnerClass, graph.ParentClass));
 
             StateMachines.Add(key, builder.Graph);
 
@@ -124,6 +129,16 @@ namespace Stateflows.StateMachines.Registration
                         StateMachineType = stateMachineType
                     }
             };
+
+            // add state machine adding task to visiting tasks before endpoints are being registered
+            builder.Graph.VisitingTasks.Add(v => 
+            {
+                var hasDefaultInstance = BehaviorClassesInitializations.Instance.DefaultInstanceInitializationTokens
+                    .Any(token => token.BehaviorClass.Type == StateMachineClass.Type && token.BehaviorClass.Name == stateMachineName);
+
+                return v.StateMachineAddingAsync(stateMachineName, version, hasDefaultInstance);
+            });
+
             RegisterStateMachine(stateMachineType, builder);
             builder.Graph.Build();
             buildAction?.Invoke(new StateMachineUtilsBuilder(builder.Graph));
@@ -136,12 +151,7 @@ namespace Stateflows.StateMachines.Registration
 
 
             builder.Graph.VisitingTasks.AddRange([
-                v => {
-                    var hasDefaultInstance = BehaviorClassesInitializations.Instance.DefaultInstanceInitializationTokens
-                        .Any(token => token.BehaviorClass.Type == StateMachineClass.Type && token.BehaviorClass.Name == stateMachineName);
-
-                    return v.StateMachineAddedAsync(stateMachineName, version, ownerClass, parentClass, hasDefaultInstance);
-                },
+                v => v.StateMachineAddedAsync(stateMachineName, version, ownerClass, parentClass),
                 v => (Task)method.Invoke(v, [ stateMachineName, version ])
             ]);
 

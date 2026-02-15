@@ -25,7 +25,7 @@ internal class StateMachineConfigurationVisitor(MinimalAPIsBuilder minimalApisBu
         return Task.CompletedTask;
     }
 
-    public override Task StateMachineAddedAsync(string stateMachineName, int stateMachineVersion, BehaviorClass? ownerClass = null, BehaviorClass? parentClass = null, bool hasDefaultInstance = false)
+    public override Task StateMachineAddedAsync(string stateMachineName, int stateMachineVersion, BehaviorClass? ownerClass = null, BehaviorClass? parentClass = null)
     {
         OwnerClass = ownerClass;
         if (OwnerClass != null)
@@ -38,6 +38,6 @@ internal class StateMachineConfigurationVisitor(MinimalAPIsBuilder minimalApisBu
             );
         }
         
-        return base.StateMachineAddedAsync(stateMachineName, stateMachineVersion, ownerClass, parentClass, hasDefaultInstance);
+        return base.StateMachineAddedAsync(stateMachineName, stateMachineVersion, ownerClass, parentClass);
     }
 }

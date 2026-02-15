@@ -31,6 +31,7 @@ internal class StateMachineVisitor(
     private BehaviorStatus[] SupportedStatuses = [];
 
     private BehaviorClass? OwnerClass = null;
+    private bool HasDefaultInstance = false;
 
     public void Visit<T>()
     {
@@ -74,7 +75,13 @@ internal class StateMachineVisitor(
         return Task.CompletedTask;
     }
 
-    public override Task StateMachineAddedAsync(string stateMachineName, int stateMachineVersion, BehaviorClass? ownerClass = null, BehaviorClass? parentClass = null, bool hasDefaultInstance = false)
+    public override Task StateMachineAddingAsync(string stateMachineName, int stateMachineVersion, bool hasDefaultInstance = false)
+    {
+        HasDefaultInstance = hasDefaultInstance;
+        return Task.CompletedTask;
+    }
+
+    public override Task StateMachineAddedAsync(string stateMachineName, int stateMachineVersion, BehaviorClass? ownerClass = null, BehaviorClass? parentClass = null)
     {
         OwnerClass = ownerClass;
 
@@ -86,11 +93,11 @@ internal class StateMachineVisitor(
         RegisterStandardEndpoints(stateMachineName);
         RegisterRemainingEndpoints(stateMachineName);
 
-        if (hasDefaultInstance)
+        if (HasDefaultInstance)
         {
             RegisterDefaultInstanceEndpoints(stateMachineName);
         }
-
+        
         return Task.CompletedTask;
     }
 
@@ -152,7 +159,7 @@ internal class StateMachineVisitor(
 
     private void RegisterEventEndpoint<TEvent>(string stateMachineName, IEndpointRouteBuilder stateMachine)
         => stateMachine.RegisterEventEndpoint<TEvent>(interceptor,
-            BehaviorType.StateMachine, stateMachineName, HateoasLinks);
+            BehaviorType.StateMachine, stateMachineName, HateoasLinks, hasDefaultInstance: HasDefaultInstance);
 
     private void RegisterRequestEndpoint<TRequest, TResponse>(string stateMachineName, IEndpointRouteBuilder stateMachine)
         where TRequest : IRequest<TResponse>
@@ -406,23 +413,8 @@ internal class StateMachineVisitor(
         var behaviorClass = new StateMachineClass(stateMachineName);
         const string instance = "";
 
+        var route = $"/stateMachines/{stateMachineName}/status";
         var method = HttpMethods.Get;
-        var route = $"/stateMachines/{stateMachineName}";
-        if (interceptor.BeforeGetInstancesEndpointDefinition(behaviorClass, ref method, ref route))
-        {
-            var routeHandlerBuilder = routeBuilder.MapMethods(route, [method], async (IStateflowsStorage storage) =>
-            {
-                BehaviorClass[] actionClasses = [new StateMachineClass(stateMachineName)];
-                var contextIds = await storage.GetAllContextIdsAsync(actionClasses);
-                return Results.Ok(contextIds.Select(id => new { Id = id }));
-            })
-            .WithTags($"{BehaviorType.StateMachine} {stateMachineName}");
-
-            interceptor.AfterGetInstancesEndpointDefinition(behaviorClass, method, route, routeHandlerBuilder);
-        }
-
-        route = $"/stateMachines/{stateMachineName}/status";
-        method = HttpMethods.Get;
         if (interceptor.BeforeEventEndpointDefinition<StateMachineInfoRequest>(behaviorClass, ref method, ref route))
         {
             var routeHandlerBuilder = routeBuilder.MapMethods(
@@ -431,7 +423,6 @@ internal class StateMachineVisitor(
                 async (
                     IStateMachineLocator locator,
                     HttpContext httpContext,
-                    [FromQuery] bool implicitInitialization = false,
                     [FromQuery] bool stream = false
                 ) =>
                 {
@@ -456,9 +447,7 @@ internal class StateMachineVisitor(
                         else
                         {
                             var result =
-                                await behavior.GetStatusAsync(implicitInitialization
-                                ? []
-                                : new Dictionary<string, EventHeader>() { { nameof(NoImplicitInitialization), new NoImplicitInitialization() } });
+                                await behavior.GetStatusAsync(new Dictionary<string, EventHeader>() { { nameof(NoImplicitInitialization), new NoImplicitInitialization() } });
                             // workaround for return code 200 regardless behavior actual status
                             result.Status = EventStatus.Consumed;
                             return result.ToResult([], result.Response, HateoasLinks);
