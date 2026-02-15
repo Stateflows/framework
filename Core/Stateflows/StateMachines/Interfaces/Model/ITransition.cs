@@ -1,10 +1,10 @@
 ﻿using System.Threading.Tasks;
+using Stateflows.Common.Interfaces;
 using Stateflows.StateMachines.Registration.Interfaces;
 
 namespace Stateflows.StateMachines
 {
-    public interface IDefaultTransition : ITransition<Completion>
-    { }
+    public interface IDefaultTransition : ITransition<Completion>;
 
     public interface IDefaultTransitionEffect : IDefaultTransition, ITransitionEffect<Completion>
     {
@@ -14,12 +14,12 @@ namespace Stateflows.StateMachines
         Task EffectAsync();
     }
 
-    public interface IDefaultTransitionGuard : IDefaultTransition, ITransitionGuard<Completion>
+    public interface IDefaultTransitionGuard : IAbstractGuard, IDefaultTransition, ITransitionGuard<Completion>
     {
-        Task<bool> IGuard<Completion>.GuardAsync(Completion @event)
+        Task<bool> IAbstractGuard<Completion>.GuardAsync(Completion @event)
             => GuardAsync();
         
-        Task<bool> GuardAsync();
+        // Task<bool> GuardAsync();
     }
 
     public interface IDefaultTransitionDefinition : IDefaultTransition, ITransitionDefinition<Completion>
@@ -30,30 +30,32 @@ namespace Stateflows.StateMachines
         void Build(IDefaultTransitionBuilder builder);
     }
 
-    public interface ITransition<in TEvent> { }
+    public interface ITransition<in TEvent> : IStateMachineElement;
 
     public interface ITransitionEffect<in TEvent> : ITransition<TEvent>
     {
         Task EffectAsync(TEvent @event);
     }
 
-    public interface ITransitionGuard<in TEvent> : ITransition<TEvent>, IGuard<TEvent>;
+    public interface ITransitionGuard<in TEvent> : ITransition<TEvent>, IAbstractGuard<TEvent>;
 
     public interface ITransitionDefinition<TEvent> : ITransition<TEvent>
     {
         void Build(ITransitionBuilder<TEvent> builder);
     }
 
-    public interface ITransitionGuard : IDefaultTransitionGuard, ITransitionGuard<object>
-    {
-        Task<bool> IGuard<object>.GuardAsync(object @event)
-            => GuardAsync();
-    }
+    public interface ITransitionGuard : IDefaultTransitionGuard, ITransitionGuard<object>;
 
     public interface ITransitionEffect : IDefaultTransitionEffect, ITransitionEffect<object>
     {
         Task ITransitionEffect<object>.EffectAsync(object @event)
             => EffectAsync();
+    }
+
+    public interface ITransitionAction : IAbstractAction, ITransitionEffect
+    {
+        Task IDefaultTransitionEffect.EffectAsync()
+            => ExecuteAsync();
     }
 
     public interface ITransitionDefinition : IDefaultTransitionDefinition, ITransitionDefinition<object>

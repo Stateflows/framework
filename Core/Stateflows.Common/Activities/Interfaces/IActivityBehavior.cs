@@ -8,7 +8,7 @@ namespace Stateflows.Activities
 {
     public interface IActivityBehavior : IBehavior, IInputOutput
     {
-        public new Task<RequestResult<ActivityInfo>> GetStatusAsync(IEnumerable<EventHeader> headers = null)
+        public new Task<RequestResult<ActivityInfo>> GetStatusAsync(IDictionary<string, EventHeader> headers = null)
             => RequestAsync(new ActivityInfoRequest(), headers);
 
         public Task<IWatcher> WatchStatusAsync(Action<ActivityInfo> handler)

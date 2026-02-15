@@ -5,6 +5,7 @@ using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
 using Stateflows.Common.Classes;
+using Stateflows.Common.Extensions;
 using Stateflows.Common.Initializer;
 using Stateflows.Common.Interfaces;
 using Stateflows.Common.Registration.Builders;
@@ -18,7 +19,7 @@ using Stateflows.StateMachines.Registration.Interfaces;
 
 namespace Stateflows.StateMachines.Registration
 {
-    internal class StateMachinesRegister(StateflowsBuilder stateflowsBuilder) : IStateMachinesRegister, IIsSystemRegistration
+    internal class StateMachinesRegister(StateflowsBuilder stateflowsBuilder) : IStateMachinesRegister, IOwnedRegistration
     {
         public readonly List<StateMachineExceptionHandlerFactoryAsync> GlobalExceptionHandlerFactories = [];
 
@@ -33,7 +34,8 @@ namespace Stateflows.StateMachines.Registration
         private readonly MethodInfo StateMachineTypeAddedAsyncMethod =
             typeof(IStateMachineVisitor).GetMethod(nameof(IStateMachineVisitor.StateMachineTypeAddedAsync));
 
-        public bool IsSystemRegistration { get; set; } = false;
+        public BehaviorClass? OwnerClass { get; set; }
+        public BehaviorClass? ParentClass { get; set; }
 
         private static void RegisterStateMachine(Type stateMachineType, StateMachineElementsBuilder stateMachineElementsBuilder)
         {
@@ -82,27 +84,18 @@ namespace Stateflows.StateMachines.Registration
                 throw new StateMachineDefinitionException($"State machine '{stateMachineName}' with version '{version}' is already registered", new StateMachineClass(stateMachineName));
             }
 
-            var builder = new StateMachineElementsBuilder(stateMachineName, version, stateflowsBuilder);
+            var builder = new StateMachineElementsBuilder(stateMachineName, version, stateflowsBuilder, OwnerClass, ParentClass);
             buildAction(builder);
             builder.Graph.Build();
 
-            // Assign to local variable to avoid value being overriden when invoking lambda function at a later stage
-            var localIsSystemRegistration = IsSystemRegistration;
-
-            var isDefaultInstance = BehaviorClassesInitializations.Instance.DefaultInstanceInitializationTokens
-                .Any(token => token.BehaviorClass.Type == StateMachineClass.Type && token.BehaviorClass.Name == stateMachineName);
+            var graph = builder.Graph;
 
             builder.Graph.VisitingTasks.Add(v =>
             {
-
                 var hasDefaultInstance = BehaviorClassesInitializations.Instance.DefaultInstanceInitializationTokens
                     .Any(token => token.BehaviorClass.Type == StateMachineClass.Type && token.BehaviorClass.Name == stateMachineName);
 
-                return v.StateMachineAddedAsync(
-                    stateMachineName,
-                    version,
-                    isSystemRegistration: localIsSystemRegistration,
-                    hasDefaultInstance: hasDefaultInstance);
+                return v.StateMachineAddedAsync(stateMachineName, version, graph.OwnerClass, graph.ParentClass, hasDefaultInstance);
             });
 
             StateMachines.Add(key, builder.Graph);
@@ -124,7 +117,7 @@ namespace Stateflows.StateMachines.Registration
                 throw new StateMachineDefinitionException($"State machine '{stateMachineName}' with version '{version}' is already registered", new StateMachineClass(stateMachineName));
             }
 
-            var builder = new StateMachineElementsBuilder(stateMachineName, version, stateflowsBuilder)
+            var builder = new StateMachineElementsBuilder(stateMachineName, version, stateflowsBuilder, OwnerClass, ParentClass)
             {
                 Graph =
                     {
@@ -138,15 +131,16 @@ namespace Stateflows.StateMachines.Registration
             var method = StateMachineTypeAddedAsyncMethod.MakeGenericMethod(stateMachineType);
 
             // Assign to local variable to avoid value being overriden when invoking lambda function at a later stage
-            var localIsSystemRegistration = IsSystemRegistration;
+            var ownerClass = OwnerClass;
+            var parentClass = ParentClass;
 
 
             builder.Graph.VisitingTasks.AddRange([
                 v => {
                     var hasDefaultInstance = BehaviorClassesInitializations.Instance.DefaultInstanceInitializationTokens
-                .Any(token => token.BehaviorClass.Type == StateMachineClass.Type && token.BehaviorClass.Name == stateMachineName);
+                        .Any(token => token.BehaviorClass.Type == StateMachineClass.Type && token.BehaviorClass.Name == stateMachineName);
 
-                    return v.StateMachineAddedAsync(stateMachineName, version, isSystemRegistration: localIsSystemRegistration, hasDefaultInstance: hasDefaultInstance);
+                    return v.StateMachineAddedAsync(stateMachineName, version, ownerClass, parentClass, hasDefaultInstance);
                 },
                 v => (Task)method.Invoke(v, [ stateMachineName, version ])
             ]);

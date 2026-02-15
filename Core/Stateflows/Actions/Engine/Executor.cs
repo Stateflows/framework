@@ -126,18 +126,6 @@ namespace Stateflows.Actions.Engine
                     }
                 }
                 else
-                if (eventHolder is EventHolder<SetContextOwner> setContextOwnerHolder)
-                {
-                    ResetBehavior(ResetMode.Full);
-                    
-                    StateflowsContext.Deleted = false;
-
-                    eventContext.RootContext.Context.ContextOwnerId = setContextOwnerHolder.Payload.ContextOwnerId;
-                    eventContext.RootContext.Context.ContextParentId = setContextOwnerHolder.Payload.ContextParentId;
-                    
-                    result = EventStatus.Consumed;
-                }
-                else
                 if (eventHolder is EventHolder<Subscribe> subscribeHolder)
                 {
                     var subscribe = subscribeHolder.Payload;
@@ -229,7 +217,7 @@ namespace Stateflows.Actions.Engine
 
         private static void HandleGuardRequest<TEvent>(EventHolder<TEvent> eventHolder, ActionDelegateContext context)
         {
-            var guardRequest = context.Headers.OfType<TransitionGuardRequest>().FirstOrDefault();
+            var guardRequest = context.Headers.Values.OfType<TransitionGuardRequest>().FirstOrDefault();
             if (guardRequest != null)
             {
                 var output = context.OutputTokens.OfType<TokenHolder<bool>>().FirstOrDefault()?.Payload ?? false;
@@ -237,14 +225,13 @@ namespace Stateflows.Actions.Engine
                 if (output)
                 {
                     var headers = context.Headers
-                        .Where(h => !(h is TransitionGuardRequest))
-                        .Append(
-                            new TransitionGuardResponse()
-                            {
-                                GuardIdentifier = guardRequest.GuardIdentifier
-                            }
-                        )
-                        .ToArray();
+                        .Where(h => h.Value is not TransitionGuardRequest)
+                        .ToDictionary();
+
+                    headers[nameof(TransitionGuardResponse)] = new TransitionGuardResponse
+                    {
+                        GuardIdentifier = guardRequest.GuardIdentifier
+                    };
 
                     context.Send(eventHolder.Payload, headers);
                 }

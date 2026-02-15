@@ -3,8 +3,12 @@ using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
 using Stateflows.Actions;
+using Stateflows.Actions.Registration.Interfaces;
 using Stateflows.Activities;
 using Stateflows.Activities.Registration.Interfaces;
+using Stateflows.Common;
+using Stateflows.Common.Interfaces;
+using Stateflows.Common.Registration.Builders;
 using Stateflows.StateMachines.Context.Classes;
 using Stateflows.StateMachines.Context.Interfaces;
 using Stateflows.StateMachines.Registration.Interfaces.Internal;
@@ -34,17 +38,12 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         public TReturn AddGuardActivity<TActivity>()
             where TActivity : class, IActivity
         {
-            var edge = ((IEdgeBuilder)this).Edge;
-            var vertex = edge.Source;
-            var activityName = $"{vertex.Graph.Name}.{vertex.Name}.{edge.Trigger}";
-            if (edge.Target != null)
-            {
-                activityName += $".{edge.Target}";
-            }
-            activityName += $".guard.{edge.Guards.Actions.Count}";
+            var deferral = (IDeferralBuilder)this;
+            var vertex = deferral.Vertex;
+            var activityName = $"{vertex.Graph.Name}.{vertex.Name}.{Event.GetName(deferral.EventType)}.deferral.{deferral.Guards.Actions.Count}";
             
-            vertex.Graph.StateflowsBuilder.AddActivities(b => b.AddActivity<TActivity>(activityName));
-            return AddGuard(c => StateMachineActivityExtensions.RunDeferralGuardActivityAsync(edge.Guards.Actions.Count, c, activityName));
+            vertex.Graph.StateflowsBuilder.AddActivities(b => b.AddActivity<TActivity>(activityName), vertex.Graph.OwnerClass ?? vertex.Graph.Class, vertex.Graph.Class);
+            return AddGuard(c => StateMachineActivityExtensions.RunDeferralGuardActivityAsync(deferral.Guards.Actions.Count, c, activityName));
         }
 
         /// <summary>
@@ -53,17 +52,12 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         /// <param name="activityBuildAction">Activity build action</param>
         public TReturn AddGuardActivity(ReactiveActivityBuildAction activityBuildAction)
         {
-            var edge = ((IEdgeBuilder)this).Edge;
-            var vertex = edge.Source;
-            var activityName = $"{vertex.Graph.Name}.{vertex.Name}.{edge.Trigger}";
-            if (edge.Target != null)
-            {
-                activityName += $".{edge.Target}";
-            }
-            activityName += $".guard.{edge.Guards.Actions.Count}";
+            var deferral = (IDeferralBuilder)this;
+            var vertex = deferral.Vertex;
+            var activityName = $"{vertex.Graph.Name}.{vertex.Name}.{Event.GetName(deferral.EventType)}.deferral.{deferral.Guards.Actions.Count}";
             
-            vertex.Graph.StateflowsBuilder.AddActivities(b => b.AddActivity(activityName, activityBuildAction));
-            return AddGuard(c => StateMachineActivityExtensions.RunDeferralGuardActivityAsync(edge.Guards.Actions.Count, c, activityName));
+            vertex.Graph.StateflowsBuilder.AddActivities(b => b.AddActivity(activityName, activityBuildAction), vertex.Graph.OwnerClass ?? vertex.Graph.Class, vertex.Graph.Class);
+            return AddGuard(c => StateMachineActivityExtensions.RunDeferralGuardActivityAsync(deferral.Guards.Actions.Count, c, activityName));
         }
 
         /// <summary>
@@ -71,20 +65,15 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         /// </summary>
         /// <typeparam name="TAction">Action behavior type</typeparam>
         [DebuggerHidden]
-        public TReturn AddGuardAction<TAction>()
+        public TReturn AddGuardAction<TAction>(ActionBuildAction<TAction> buildAction = null)
             where TAction : class, IAction
         {
-            var edge = ((IEdgeBuilder)this).Edge;
-            var vertex = edge.Source;
-            var actionName = $"{vertex.Graph.Name}.{vertex.Name}.{edge.Trigger}";
-            if (edge.Target != null)
-            {
-                actionName += $".{edge.Target}";
-            }
-            actionName += $".guard.{edge.Guards.Actions.Count}";
+            var deferral = (IDeferralBuilder)this;
+            var vertex = deferral.Vertex;
+            var actionName = $"{vertex.Graph.Name}.{vertex.Name}.{Event.GetName(deferral.EventType)}.deferral.{deferral.Guards.Actions.Count}";
             
-            vertex.Graph.StateflowsBuilder.AddActions(b => b.AddAction<TAction>(actionName));
-            return AddGuard(c => StateMachineActionExtensions.RunDeferralGuardActionAsync(edge.Guards.Actions.Count, c, actionName));
+            vertex.Graph.StateflowsBuilder.AddActions(b => b.AddAction<TAction>(actionName, buildAction: buildAction), vertex.Graph.OwnerClass ?? vertex.Graph.Class, vertex.Graph.Class);
+            return AddGuard(c => StateMachineActionExtensions.RunDeferralGuardActionAsync(deferral.Guards.Actions.Count, c, actionName));
         }
 
         /// <summary>
@@ -94,17 +83,12 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         /// <param name="buildAction">Build action</param>
         public TReturn AddGuardAction(ActionDelegateAsync actionDelegate, ActionBuildAction buildAction = null)
         {
-            var edge = ((IEdgeBuilder)this).Edge;
-            var vertex = edge.Source;
-            var actionName = $"{vertex.Graph.Name}.{vertex.Name}.{edge.Trigger}";
-            if (edge.Target != null)
-            {
-                actionName += $".{edge.Target}";
-            }
-            actionName += $".guard.{edge.Guards.Actions.Count}";
+            var deferral = (IDeferralBuilder)this;
+            var vertex = deferral.Vertex;
+            var actionName = $"{vertex.Graph.Name}.{vertex.Name}.{Event.GetName(deferral.EventType)}.deferral.{deferral.Guards.Actions.Count}";
             
-            vertex.Graph.StateflowsBuilder.AddActions(b => b.AddAction(actionName, actionDelegate, buildAction));
-            return AddGuard(c => StateMachineActionExtensions.RunDeferralGuardActionAsync(edge.Guards.Actions.Count, c, actionName));
+            vertex.Graph.StateflowsBuilder.AddActions(b => b.AddAction(actionName, actionDelegate, buildAction), vertex.Graph.OwnerClass ?? vertex.Graph.Class, vertex.Graph.Class);
+            return AddGuard(c => StateMachineActionExtensions.RunDeferralGuardActionAsync(deferral.Guards.Actions.Count, c, actionName));
         }
 
         /// <summary>
@@ -124,9 +108,14 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         /// </summary>
         /// <typeparam name="TGuard">The type of the guard handler.</typeparam>
         [DebuggerHidden]
-        TReturn AddGuard<TGuard>()
+        TReturn AddGuard<TGuard>(ElementBuildAction<TGuard> buildAction = null)
             where TGuard : class, IDeferralGuard<TEvent>
-            => AddGuard(async c => await (await ((BaseContext)c).Context.Executor.GetDeferralGuardAsync<TGuard, TEvent>(c)).GuardAsync(c.Event));
+            => AddGuard(async c => 
+            {
+                var transition = await ((BaseContext)c).Context.Executor.GetDeferralGuardAsync<TGuard, TEvent>(c);
+                buildAction?.Invoke(new ElementBuilder<TGuard>(transition));
+                return await transition.GuardAsync(c.Event);
+            });
 
         /// <summary>
         /// Adds a negated function-based guard to the current transition.
@@ -149,8 +138,13 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         /// </summary>
         /// <typeparam name="TGuard">The type of the guard handler.</typeparam>
         [DebuggerHidden]
-        TReturn AddNegatedGuard<TGuard>()
+        TReturn AddNegatedGuard<TGuard>(ElementBuildAction<TGuard> buildAction = null)
             where TGuard : class, IDeferralGuard<TEvent>
-            => AddGuard(async c => !await (await ((BaseContext)c).Context.Executor.GetDeferralGuardAsync<TGuard, TEvent>(c)).GuardAsync(c.Event)!);
+            => AddGuard(async c => 
+            {
+                var transition = await ((BaseContext)c).Context.Executor.GetDeferralGuardAsync<TGuard, TEvent>(c);
+                buildAction?.Invoke(new ElementBuilder<TGuard>(transition));
+                return !await transition.GuardAsync(c.Event);
+            });
     }
 }

@@ -1,37 +1,32 @@
 ﻿using Stateflows.Activities.Registration.Interfaces.Base;
 
-namespace Stateflows.Activities.Registration.Interfaces
-{
-    public interface IReactiveStructuredActivityBuilder :
-        IObjectFlowBase<IReactiveStructuredActivityBuilder>,
-        IControlFlowBase<IReactiveStructuredActivityBuilder>,
-        IReactiveActivity<IReactiveStructuredActivityBuilder>,
-        IActivitySpecials<IReactiveStructuredActivityBuilder>,
-        IInitial<IReactiveStructuredActivityBuilder>,
-        IFinal<IReactiveStructuredActivityBuilder>,
-        IInput<IReactiveStructuredActivityBuilder>,
-        IOutput<IReactiveStructuredActivityBuilder>,
-        IExceptionHandlerBase<IReactiveStructuredActivityBuilder>,
-        INodeOptions<IReactiveStructuredActivityBuilderWithOptions>,
-        IStructuredActivityEvents<IReactiveStructuredActivityBuilder>,
-        ISendEvent<IReactiveStructuredActivityBuilder>,
-        IAcceptEvent<IReactiveStructuredActivityBuilder>
-    { }
+namespace Stateflows.Activities.Registration.Interfaces;
 
-    public interface IReactiveStructuredActivityBuilderWithOptions :
-        IObjectFlowBase<IReactiveStructuredActivityBuilderWithOptions>,
-        IControlFlowBase<IReactiveStructuredActivityBuilderWithOptions>,
-        IReactiveActivity<IReactiveStructuredActivityBuilderWithOptions>,
-        IActivitySpecials<IReactiveStructuredActivityBuilderWithOptions>,
-        IInitial<IReactiveStructuredActivityBuilderWithOptions>,
-        IFinal<IReactiveStructuredActivityBuilderWithOptions>,
-        IInput<IReactiveStructuredActivityBuilderWithOptions>,
-        IOutput<IReactiveStructuredActivityBuilderWithOptions>,
-        IExceptionHandlerBase<IReactiveStructuredActivityBuilderWithOptions>,
-        IStructuredActivityEvents<IReactiveStructuredActivityBuilderWithOptions>,
-        ISendEvent<IReactiveStructuredActivityBuilderWithOptions>,
-        IAcceptEvent<IReactiveStructuredActivityBuilderWithOptions>
-    { }
+public interface IReactiveStructuredActivityBuilder :
+    IObjectFlowBase<IReactiveStructuredActivityBuilder>,
+    IControlFlowBase<IReactiveStructuredActivityBuilder>,
+    IReactiveActivityBase<IReactiveStructuredActivityBuilder>,
+    IActivitySpecials<IReactiveStructuredActivityBuilder>,
+    IInitialBase<IReactiveStructuredActivityBuilder>,
+    IFinalBase<IReactiveStructuredActivityBuilder>,
+    IInputBase<IReactiveStructuredActivityBuilder>,
+    IOutputBase<IReactiveStructuredActivityBuilder>,
+    IExceptionHandlerBase<IReactiveStructuredActivityBuilder>,
+    INodeOptions<IReactiveStructuredActivityBuilderWithOptions>,
+    IStructuredActivityEvents<IReactiveStructuredActivityBuilder>,
+    ISendEventBase<IReactiveStructuredActivityBuilder>,
+    IAcceptEvent<IReactiveStructuredActivityBuilder>;
 
-
-}
+public interface IReactiveStructuredActivityBuilderWithOptions :
+    IObjectFlowBase<IReactiveStructuredActivityBuilderWithOptions>,
+    IControlFlowBase<IReactiveStructuredActivityBuilderWithOptions>,
+    IReactiveActivityBase<IReactiveStructuredActivityBuilderWithOptions>,
+    IActivitySpecials<IReactiveStructuredActivityBuilderWithOptions>,
+    IInitialBase<IReactiveStructuredActivityBuilderWithOptions>,
+    IFinalBase<IReactiveStructuredActivityBuilderWithOptions>,
+    IInputBase<IReactiveStructuredActivityBuilderWithOptions>,
+    IOutputBase<IReactiveStructuredActivityBuilderWithOptions>,
+    IExceptionHandlerBase<IReactiveStructuredActivityBuilderWithOptions>,
+    IStructuredActivityEvents<IReactiveStructuredActivityBuilderWithOptions>,
+    ISendEventBase<IReactiveStructuredActivityBuilderWithOptions>,
+    IAcceptEvent<IReactiveStructuredActivityBuilderWithOptions>;

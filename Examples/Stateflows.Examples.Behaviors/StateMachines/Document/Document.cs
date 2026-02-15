@@ -8,6 +8,7 @@ using Stateflows.Examples.Behaviors.StateMachines.Document.States;
 using Stateflows.Examples.Common.Events;
 using Stateflows.StateMachines;
 using Stateflows.Activities;
+using Stateflows.Extensions.MinimalAPIs;
 using Stateflows.StateMachines.Attributes;
 
 namespace Stateflows.Examples.Behaviors.StateMachines.Document;
@@ -20,12 +21,21 @@ public class Document : IStateMachine
         .AddInitialState<New>(b => b
             .AddTransition<Review, ApprovalPending>(b => b
                 .AddEffect<ReviewEffect>()
+                .AddEffect_ClearScript("Console.WriteLine(JSON.stringify(behaviorContext))")
+                .AddGuard_ClearScript("event.Rating >= 42")
             )
             .AddTransition<AfterOneMinute, ReportAutorejection, Rejected>()
         )
         .AddState<ApprovalPending>(b => b
             .AddTransition<Approve, Approved>()
             .AddTransition<Reject, ReportRejection, Rejected>()
+            .AddSubmachine(b => b
+                .AddInitialState("x", b => b
+                    .AddInternalTransition<PaymentBooked>(b => b
+                        .AddGuard<Deny>()
+                    )
+                )
+            )
         )
         .AddCompositeState<Approved>(b => b
             .AddInitialState<GeneratingInvoice>(b => b

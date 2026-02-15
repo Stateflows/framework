@@ -84,7 +84,7 @@ internal class StateMachineEndpointFilter(
                 return Results.NotFound();
             }
 
-            var smInfo = await stateMachine.GetStatusAsync([new NoImplicitInitialization()]);
+            var smInfo = await stateMachine.GetStatusAsync(new Dictionary<string, EventHeader>() { { nameof(NoImplicitInitialization), new NoImplicitInitialization() } });
 
             if (smInfo is { Response: not null } &&
                 (

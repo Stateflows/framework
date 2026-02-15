@@ -1,6 +1,7 @@
 using Stateflows.Common;
 using StateMachine.IntegrationTests.Classes.Events;
 using StateMachine.IntegrationTests.Utils;
+using Deny = Stateflows.Common.Deny;
 
 namespace StateMachine.IntegrationTests.Tests
 {
@@ -34,6 +35,13 @@ namespace StateMachine.IntegrationTests.Tests
                         .AddInitialState("state1", b => b
                             .AddDeferredEvent<OtherEvent>(b => b
                                 .AddGuard(c => c.Event.AnswerToLifeUniverseAndEverything == 42)
+                                .AddGuardExpression(b => b
+                                    .AddNegatedGuard<Deny>()
+                                    .AddOrExpression(b => b
+                                        .AddGuard<Deny>()
+                                        .AddGuard(c => true)
+                                    )
+                                )
                             )
                             .AddTransition<OtherEvent>("state2")
                         )

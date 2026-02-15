@@ -6,6 +6,6 @@ namespace Stateflows.Common
     {
         object ExecutionTrigger { get; }
 
-        List<EventHeader> Headers { get; }
+        Dictionary<string, EventHeader> Headers { get; }
     }
 }

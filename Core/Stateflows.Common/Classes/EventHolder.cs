@@ -17,7 +17,7 @@ namespace Stateflows.Common
         public abstract string Name { get; }
 
         [JsonProperty(TypeNameHandling = TypeNameHandling.None)]
-        public List<EventHeader> Headers { get; set; } = [];
+        public Dictionary<string, EventHeader> Headers { get; set; } = [];
         
         public int TimeToLive { get; set; }
         
@@ -45,7 +45,7 @@ namespace Stateflows.Common
 
         public abstract Task<EventStatus> ExecuteBehaviorAsync(IStateflowsProcessor processor, EventStatus result, IStateflowsExecutor stateflowsExecutor);
         
-        public abstract Task<SendResult> SendAsync(IBehavior behavior, IEnumerable<EventHeader> headers = null);
+        public abstract Task<SendResult> SendAsync(IBehavior behavior, IDictionary<string, EventHeader> headers = null);
 
         protected abstract Task<bool> InternalValidateAsync(IStateflowsValidator validator, List<ValidationResult> validationResults);
         
@@ -131,7 +131,7 @@ namespace Stateflows.Common
         public override Task<EventStatus> ExecuteBehaviorAsync(IStateflowsProcessor processor, EventStatus result, IStateflowsExecutor stateflowsExecutor)
             => processor.ExecuteBehaviorAsync(this, result, stateflowsExecutor);
 
-        public override Task<SendResult> SendAsync(IBehavior behavior, IEnumerable<EventHeader> headers = null)
+        public override Task<SendResult> SendAsync(IBehavior behavior, IDictionary<string, EventHeader> headers = null)
             => behavior.SendAsync(Payload, headers);
 
         protected override Task<bool> InternalValidateAsync(IStateflowsValidator validator,

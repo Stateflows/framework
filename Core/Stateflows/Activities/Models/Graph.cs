@@ -19,7 +19,7 @@ namespace Stateflows.Activities.Models
         
         internal readonly StateflowsBuilder StateflowsBuilder = null;
 
-        public Graph(string name, int version, StateflowsBuilder stateflowsBuilder)
+        public Graph(string name, int version, StateflowsBuilder stateflowsBuilder, BehaviorClass? ownerClass, BehaviorClass? parentClass)
         {
             OwnName = name;
             Name = name;
@@ -29,9 +29,13 @@ namespace Stateflows.Activities.Models
             Class = new ActivityClass(Name);
             StateflowsBuilder = stateflowsBuilder;
             Identifier = nameof(Graph);
+            OwnerClass = ownerClass;
+            ParentClass = parentClass;
         }
 
         public ActivityClass Class { get; }
+        public BehaviorClass? ParentClass { get; }
+        public BehaviorClass? OwnerClass { get; }
 
         public int Version { get; }
         public Type ActivityType { get; set; }

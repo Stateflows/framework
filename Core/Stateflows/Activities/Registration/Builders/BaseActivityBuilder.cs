@@ -227,7 +227,7 @@ namespace Stateflows.Activities.Registration
         public BaseActivityBuilder AddTimeEventAction<TTimeEvent>(
             string actionNodeName,
             TimeEventActionDelegateAsync actionAsync,
-            AcceptEventActionBuildAction buildAction = null
+            TimeEventNodeBuildAction buildAction = null
         )
             where TTimeEvent : TimeEvent, new()
             => AddNode(

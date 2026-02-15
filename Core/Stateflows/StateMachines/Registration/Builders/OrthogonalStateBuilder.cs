@@ -401,5 +401,30 @@ namespace Stateflows.StateMachines.Registration.Builders
 
         public string Name => Vertex.Name;
         public VertexType Type => Vertex.Type;
+        public IOverridenOrthogonalStateBuilder UseDeferredEvent<TEvent>(OverridenDeferralBuildAction<TEvent> buildAction = null)
+        {
+            if (typeof(TEvent) == typeof(Completion))
+                throw new DeferralDefinitionException(typeof(TEvent).GetEventName(), "Completion event cannot be deferred.", Vertex.Graph.Class);
+
+            if (typeof(TEvent) == typeof(Finalize))
+                throw new DeferralDefinitionException(typeof(TEvent).GetEventName(), "Exit event cannot be deferred.", Vertex.Graph.Class);
+
+            if (typeof(TEvent).IsSubclassOf(typeof(TimeEvent)))
+                throw new DeferralDefinitionException(typeof(TEvent).GetEventName(), "Time events cannot be deferred.", Vertex.Graph.Class);
+
+            if (
+                !Vertex.Deferrals.TryGetValue(typeof(TEvent).GetEventName(), out var deferralLogic) ||
+                deferralLogic?.OriginStateMachineName == null
+            )
+            {
+                throw new StateMachineOverrideException($"Deferral of event '{Event<TEvent>.Name}' not found in overriden state '{Vertex.Name}'", Vertex.Graph.Class);
+            }
+            
+            var builder = new DeferralBuilder<TEvent>(Vertex, deferralLogic);
+            
+            buildAction?.Invoke(builder);
+
+            return this;
+        }
     }
 }

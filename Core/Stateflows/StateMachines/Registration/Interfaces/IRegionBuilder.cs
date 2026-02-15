@@ -5,26 +5,21 @@ namespace Stateflows.StateMachines.Registration.Interfaces
     public interface IInitializedRegionBuilder :
         IStateMachineElements<IInitializedRegionBuilder>,
         IStateHistory<IInitializedRegionBuilder>,
-        IStateMachineFinal<IFinalizedRegionBuilder>
-    { }
+        IStateMachineFinal<IFinalizedRegionBuilder>;
 
-    public interface IFinalizedRegionBuilder
-    { }
+    public interface IFinalizedRegionBuilder;
 
     public interface IRegionBuilder :
         IStateMachineInitial<IInitializedRegionBuilder>,
         IStateMachineElements<IInitializedRegionBuilder>,
-        IStateHistory<IRegionBuilder>
-    { }
+        IStateHistory<IRegionBuilder>;
 
     public interface IFinalizedOverridenRegionBuilder :
-        IStateMachineOverrides<IFinalizedOverridenRegionBuilder>
-    { }
+        IStateMachineOverrides<IFinalizedOverridenRegionBuilder>;
 
     public interface IOverridenRegionBuilder :
         IStateMachineElements<IOverridenRegionBuilder>,
         IStateHistory<IOverridenRegionBuilder>,
         IStateMachineOverrides<IOverridenRegionBuilder>,
-        IStateMachineFinal<IFinalizedOverridenRegionBuilder>
-    { }
+        IStateMachineFinal<IFinalizedOverridenRegionBuilder>;
 }

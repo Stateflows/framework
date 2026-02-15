@@ -16,7 +16,7 @@ using Stateflows.Common.Initializer;
 
 namespace Stateflows.Actions.Registration
 {
-    internal class ActionsRegister : IActionsRegister, IIsSystemRegistration
+    internal class ActionsRegister : IActionsRegister, IOwnedRegistration
     {
         public readonly List<ActionExceptionHandlerFactoryAsync> GlobalExceptionHandlerFactories = [];
 
@@ -31,7 +31,8 @@ namespace Stateflows.Actions.Registration
 
         private readonly Dictionary<string, int> CurrentVersions = new();
 
-        public bool IsSystemRegistration { get; set; } = false;
+        public BehaviorClass? OwnerClass { get; set; }
+        public BehaviorClass? ParentClass { get; set; }
 
         private bool IsNewestVersion(string actionName, int version)
         {
@@ -60,12 +61,15 @@ namespace Stateflows.Actions.Registration
             var key = $"{actionName}.{version}";
             var currentKey = $"{actionName}.current";
 
-            var actionModel = new ActionModel()
+            ActionModel actionModel = null;
+            actionModel = new ActionModel()
             {
                 Name = actionName,
                 Version = version,
                 Delegate = actionDelegate,
                 VisitingAction = VisitingActionAsync,
+                OwnerClass = OwnerClass,
+                ParentClass = ParentClass,
             };
             
             buildAction?.Invoke(new ActionBuilder(actionModel));
@@ -84,13 +88,10 @@ namespace Stateflows.Actions.Registration
 
             Task VisitingActionAsync(IActionVisitor v)
             {
-                // Assign to local variable to avoid value being overriden when invoking lambda function at a later stage
-                var localIsSystemRegistration = IsSystemRegistration;
-
                 var isDefaultInstance = BehaviorClassesInitializations.Instance.DefaultInstanceInitializationTokens
                     .Any(t => t.BehaviorClass.Type == ActionClass.Type && t.BehaviorClass.Name == actionName);
 
-                return v.ActionAddedAsync(actionName, version, isSystemRegistration: localIsSystemRegistration, isDefaultInstance: isDefaultInstance);
+                return v.ActionAddedAsync(actionName, version, actionModel?.OwnerClass, actionModel?.ParentClass, isDefaultInstance);
             }
         }
 
@@ -105,7 +106,29 @@ namespace Stateflows.Actions.Registration
                 throw new ActionDefinitionException($"Action '{actionName}' with version '{version}' is already registered", new ActionClass(actionName));
             }
 
-            ActionDelegateAsync actionDelegate = async context =>
+            var method = ActionTypeAddedAsyncMethod.MakeGenericMethod(actionType);
+
+            // Assign to local variable to avoid value being overriden when invoking lambda function at a later stage
+            var ownerClass = OwnerClass;
+            var parentClass = ParentClass;
+
+            Func<IActionVisitor, Task> visitingAction = async v =>
+            {
+                await v.ActionAddedAsync(actionName, version, ownerClass, parentClass);
+                await (Task)method.Invoke(v, [actionName, version]);
+            };
+
+            var actionModel = new ActionModel()
+            {
+                Name = actionName,
+                Version = version,
+                // Delegate = actionDelegate,
+                VisitingAction = visitingAction,
+            };
+            
+            buildAction?.Invoke(new ActionBuilder(actionModel));
+
+            actionModel.Delegate = async context =>
             {
                 if (((IStateflowsContextProvider)context).Context.ContextOwnerId == null)
                 {
@@ -122,6 +145,8 @@ namespace Stateflows.Actions.Registration
                         actionType,
                         "action"
                     );
+                    
+                    actionModel.ConfigurationAction?.Invoke(instance);
 
                     await instance.ExecuteAsync(context.CancellationToken);
                 }
@@ -132,30 +157,6 @@ namespace Stateflows.Actions.Registration
                 }
             };
 
-            var method = ActionTypeAddedAsyncMethod.MakeGenericMethod(actionType);
-
-            // Assign to local variable to avoid value being overriden when invoking lambda function at a later stage
-            var localIsSystemRegistration = IsSystemRegistration;
-
-            var isDefaultInstance = BehaviorClassesInitializations.Instance.DefaultInstanceInitializationTokens
-                .Any(t => t.BehaviorClass.Type == ActionClass.Type && t.BehaviorClass.Name == actionName);
-
-            Func<IActionVisitor, Task> visitingAction = async v =>
-            {
-                await v.ActionAddedAsync(actionName, version, isSystemRegistration: localIsSystemRegistration, isDefaultInstance: isDefaultInstance);
-                await (Task)method.Invoke(v, [actionName, version]);
-            };
-
-            var actionModel = new ActionModel()
-            {
-                Name = actionName,
-                Version = version,
-                Delegate = actionDelegate,
-                VisitingAction = visitingAction,
-            };
-            
-            buildAction?.Invoke(new ActionBuilder(actionModel));
-
             Actions.Add(key, actionModel);
 
             if (IsNewestVersion(actionName, version))
@@ -165,9 +166,9 @@ namespace Stateflows.Actions.Registration
         }
 
         [DebuggerHidden]
-        public void AddAction<TAction>(string actionName = null, int version = 1, ActionBuildAction buildAction = null)
+        public void AddAction<TAction>(string actionName = null, int version = 1, ActionBuildAction<TAction> buildAction = null)
             where TAction : class, IAction
-            => AddAction(actionName ?? Action<TAction>.Name, version, typeof(TAction), buildAction);
+            => AddAction(actionName ?? Action<TAction>.Name, version, typeof(TAction), b => buildAction?.Invoke(new ActionBuilder<TAction>(((ActionBuilder)b).Model)));
 
         public Task VisitActionsAsync(IActionVisitor visitor)
         {

@@ -75,5 +75,8 @@ namespace Stateflows
 
         public static implicit operator string(ActionId actionId)
             => StateflowsJsonConverter.SerializeObject(actionId);
+        
+        public ActionId ToId(string instance)
+            => new ActionId(this, instance);
     }
 }

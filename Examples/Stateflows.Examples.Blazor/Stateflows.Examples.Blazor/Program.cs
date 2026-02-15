@@ -1,15 +1,18 @@
 using Medallion.Threading.SqlServer;
+using Microsoft.ClearScript;
 using Microsoft.EntityFrameworkCore;
 using OpenTelemetry;
 using Scalar.AspNetCore;
 using Stateflows;
+using Stateflows.Actions;
 using Stateflows.StateMachines;
 using Stateflows.Examples.Blazor.Components;
-using Stateflows.Examples.Behaviors.StateMachines.Document;
 using Stateflows.Examples.Behaviors.StateMachines.Document.Interceptors;
 using Stateflows.Examples.Blazor;
 using Stateflows.Extensions.MinimalAPIs;
 using Stateflows.Extensions.OpenTelemetry;
+using Microsoft.ClearScript.V8;
+using Document = Stateflows.Examples.Behaviors.StateMachines.Document.Document;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -23,6 +26,12 @@ builder.Services.AddDbContext<AppDbContext>(options
 builder.Services.AddStateflows(b => b
     .AddResource("heavy-work", b => b
         .SetMaxConcurrentBehaviorExecutions(3)
+    )
+    
+    .AddClearScript(_ => Task.FromResult<IScriptEngine>(new V8ScriptEngine()))
+    
+    .AddActions(b => b
+        .AddAction_ClearScript("script", "Console.WriteLine('test');")
     )
         
     // Each type of behavior must be registered explicitly - in this example only State Machines are used.
@@ -43,7 +52,7 @@ builder.Services.AddStateflows(b => b
 
     // Uncomment, if you want to use storage:
     //
-    .AddEntityFrameworkCoreStorage<AppDbContext>()
+    // .AddEntityFrameworkCoreStorage<AppDbContext>()
     
     .AddDistributedLock(async (serviceProvider, lockKey)
         => new SqlDistributedLock(lockKey, builder.Configuration.GetConnectionString("Default"))

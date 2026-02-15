@@ -31,6 +31,6 @@ public class Value_v1
         BehaviorName = behaviorName;
         BehaviorInstance = behaviorInstance;
         Key = key;
-        Value = value;   
+        Value = value;
     }
 }

@@ -1,15 +1,12 @@
 ﻿using System.Reflection;
-using System.Threading;
-using System.Threading.Tasks;
-using Stateflows.Actions.Attributes;
+using Stateflows.Common;
 using Stateflows.Common.Extensions;
+using Stateflows.Common.Interfaces;
+using Stateflows.Actions.Attributes;
 
 namespace Stateflows.Actions
 {
-    public interface IAction
-    {
-        Task ExecuteAsync(CancellationToken cancellationToken);
-    }
+    public interface IAction : IAbstractAction, IAbstractElement;
 
     public static class Action<TAction>
         where TAction : class, IAction

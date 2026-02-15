@@ -6,5 +6,5 @@ namespace Stateflows.Examples.Behaviors.StateMachines.Document.Guards;
 public class IsFinance(IExecutionContext executionContext) : ITransitionGuard
 {
     public Task<bool> GuardAsync()
-        => Task.FromResult(executionContext.Headers.Any(h => h is Finance));
+        => Task.FromResult(executionContext.Headers.Values.Any(h => h is Finance));
 }

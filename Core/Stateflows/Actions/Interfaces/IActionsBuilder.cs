@@ -13,9 +13,11 @@ namespace Stateflows.Actions
         IActionsBuilder AddFromAssemblies(IEnumerable<Assembly> assemblies);
         IActionsBuilder AddAction(string actionName, ActionDelegateAsync actionDelegate, ActionBuildAction buildAction = null);
         IActionsBuilder AddAction(string actionName, int version, ActionDelegateAsync actionDelegate, ActionBuildAction buildAction = null);
-        IActionsBuilder AddAction<TAction>(string actionName = null, int version = 1, ActionBuildAction buildAction = null)
+        IActionsBuilder AddAction<TAction>(string actionName = null, int version = 1, ActionBuildAction<TAction> buildAction = null)
             where TAction : class, IAction;
-        IActionsBuilder AddAction<TAction>(int version, ActionBuildAction buildAction = null)
+        IActionsBuilder AddAction<TAction>(int version, ActionBuildAction<TAction> buildAction = null)
+            where TAction : class, IAction;
+        IActionsBuilder AddAction<TAction>(ActionBuildAction<TAction> buildAction)
             where TAction : class, IAction;
     }
 }

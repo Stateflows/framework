@@ -2,6 +2,5 @@
 {
     public interface ICompositeStateEvents<out TReturn> :
         ICompositeStateInitialization<TReturn>,
-        ICompositeStateFinalization<TReturn>
-    { }
+        ICompositeStateFinalization<TReturn>;
 }

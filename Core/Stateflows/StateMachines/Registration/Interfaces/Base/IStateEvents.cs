@@ -2,6 +2,5 @@
 {
     public interface IStateEvents<out TReturn> :
         IStateEntry<TReturn>,
-        IStateExit<TReturn>
-    { }
+        IStateExit<TReturn>;
 }

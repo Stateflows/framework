@@ -14,8 +14,8 @@ namespace Stateflows.Activities.Registration
     internal class NodeBuilder :
         IActionBuilder,
         IActionBuilderWithOptions,
-        ITypedActionBuilder,
         IAcceptEventActionBuilder,
+        ITimeEventActionBuilder,
         ISendEventActionBuilder,
         IInitialBuilder,
         IInputBuilder,
@@ -117,12 +117,6 @@ namespace Stateflows.Activities.Registration
         IInitialBuilder IControlFlowBase<IInitialBuilder>.AddControlFlow(string targetNodeName, ControlFlowBuildAction buildAction)
             => AddControlFlow(targetNodeName, buildAction) as IInitialBuilder;
 
-        ITypedActionBuilder IObjectFlowBase<ITypedActionBuilder>.AddFlow<TToken>(string targetNodeName, ObjectFlowBuildAction<TToken> buildAction)
-            => AddFlow<TToken>(targetNodeName, buildAction) as ITypedActionBuilder;
-
-        ITypedActionBuilder IControlFlowBase<ITypedActionBuilder>.AddControlFlow(string targetNodeName, ControlFlowBuildAction buildAction)
-            => AddControlFlow(targetNodeName, buildAction) as ITypedActionBuilder;
-
         public IActionBuilderWithOptions AddExceptionHandler<TException>(ExceptionHandlerDelegateAsync<TException> exceptionHandler)
             where TException : Exception
         {
@@ -153,9 +147,6 @@ namespace Stateflows.Activities.Registration
             return this;
         }
 
-        ITypedActionBuilder IExceptionHandlerBase<ITypedActionBuilder>.AddExceptionHandler<TException>(ExceptionHandlerDelegateAsync<TException> exceptionHandler)
-            => AddExceptionHandler<TException>(exceptionHandler) as ITypedActionBuilder;
-
         IActionBuilder IExceptionHandlerBase<IActionBuilder>.AddExceptionHandler<TException>(ExceptionHandlerDelegateAsync<TException> exceptionHandler)
             => AddExceptionHandler<TException>(exceptionHandler) as IActionBuilder;
 
@@ -183,6 +174,15 @@ namespace Stateflows.Activities.Registration
         IAcceptEventActionBuilder IExceptionHandlerBase<IAcceptEventActionBuilder>.AddExceptionHandler<TException>(ExceptionHandlerDelegateAsync<TException> exceptionHandler)
             => AddExceptionHandler<TException>(exceptionHandler) as IAcceptEventActionBuilder;
 
+        ITimeEventActionBuilder IObjectFlowBase<ITimeEventActionBuilder>.AddFlow<TToken>(string targetNodeName, ObjectFlowBuildAction<TToken> buildAction)
+            => AddFlow<TToken>(targetNodeName, buildAction) as ITimeEventActionBuilder;
+
+        ITimeEventActionBuilder IControlFlowBase<ITimeEventActionBuilder>.AddControlFlow(string targetNodeName, ControlFlowBuildAction buildAction)
+            => AddControlFlow(targetNodeName, buildAction) as ITimeEventActionBuilder;
+
+        ITimeEventActionBuilder IExceptionHandlerBase<ITimeEventActionBuilder>.AddExceptionHandler<TException>(ExceptionHandlerDelegateAsync<TException> exceptionHandler)
+            => AddExceptionHandler<TException>(exceptionHandler) as ITimeEventActionBuilder;
+
         ISendEventActionBuilder IControlFlowBase<ISendEventActionBuilder>.AddControlFlow(string targetNodeName, ControlFlowBuildAction buildAction)
             => AddControlFlow(targetNodeName, buildAction) as ISendEventActionBuilder;
 
@@ -194,5 +194,81 @@ namespace Stateflows.Activities.Registration
 
         IDataStoreBuilder IObjectFlowBase<IDataStoreBuilder>.AddFlow<TToken>(string targetNodeName, ObjectFlowBuildAction<TToken> buildAction)
             => AddFlow<TToken>(targetNodeName, buildAction) as IDataStoreBuilder;
+    }
+
+    internal class ActionNodeBuilder<TNode>(Node node, BaseActivityBuilder activityBuilder) :
+        NodeBuilder(node, activityBuilder),
+        ITypedActionBuilder<TNode>
+        where TNode : class, IActionNode
+    {
+        public ITypedActionBuilder<TNode> Configure(Action<TNode> action)
+        {
+            Node.ConfigurationAction = o => action((TNode)o);
+            
+            return this;
+        }
+        
+        ITypedActionBuilder<TNode> IObjectFlowBase<ITypedActionBuilder<TNode>>.AddFlow<TToken>(string targetNodeName,
+            ObjectFlowBuildAction<TToken> buildAction)
+            => AddFlow<TToken>(targetNodeName, buildAction) as ITypedActionBuilder<TNode>;
+
+        ITypedActionBuilder<TNode> IControlFlowBase<ITypedActionBuilder<TNode>>.AddControlFlow(string targetNodeName,
+            ControlFlowBuildAction buildAction)
+            => AddControlFlow(targetNodeName, buildAction) as ITypedActionBuilder<TNode>;
+
+        ITypedActionBuilder<TNode> IExceptionHandlerBase<ITypedActionBuilder<TNode>>.AddExceptionHandler<TException>(
+            ExceptionHandlerDelegateAsync<TException> exceptionHandler)
+            => AddExceptionHandler<TException>(exceptionHandler) as ITypedActionBuilder<TNode>;
+    }
+    
+    internal class AcceptEventNodeBuilder<TEvent, TAcceptEventAction>(Node node, BaseActivityBuilder activityBuilder) :
+        NodeBuilder(node, activityBuilder),
+        IAcceptEventActionBuilder<TEvent, TAcceptEventAction>
+        where TAcceptEventAction : class, IAcceptEventActionNode<TEvent>
+    {
+        public IAcceptEventActionBuilder<TEvent, TAcceptEventAction> Configure(Action<TEvent, TAcceptEventAction> action)
+        {
+            return this;
+        }
+
+        public IAcceptEventActionBuilder<TEvent, TAcceptEventAction> Configure(Action<TAcceptEventAction> action)
+        {
+            throw new NotImplementedException();
+        }
+        
+        IAcceptEventActionBuilder<TEvent, TAcceptEventAction> IObjectFlowBase<IAcceptEventActionBuilder<TEvent, TAcceptEventAction>>.AddFlow<TToken>(string targetNodeName,
+            ObjectFlowBuildAction<TToken> buildAction)
+            => AddFlow<TToken>(targetNodeName, buildAction) as IAcceptEventActionBuilder<TEvent, TAcceptEventAction>;
+
+        IAcceptEventActionBuilder<TEvent, TAcceptEventAction> IControlFlowBase<IAcceptEventActionBuilder<TEvent, TAcceptEventAction>>.AddControlFlow(string targetNodeName,
+            ControlFlowBuildAction buildAction)
+            => AddControlFlow(targetNodeName, buildAction) as IAcceptEventActionBuilder<TEvent, TAcceptEventAction>;
+
+        IAcceptEventActionBuilder<TEvent, TAcceptEventAction> IExceptionHandlerBase<IAcceptEventActionBuilder<TEvent, TAcceptEventAction>>.AddExceptionHandler<TException>(
+            ExceptionHandlerDelegateAsync<TException> exceptionHandler)
+            => AddExceptionHandler<TException>(exceptionHandler) as IAcceptEventActionBuilder<TEvent, TAcceptEventAction>;
+    }
+    
+    internal class TimeEventNodeBuilder<TNode>(Node node, BaseActivityBuilder activityBuilder) :
+        NodeBuilder(node, activityBuilder),
+        ITimeEventActionBuilder<TNode>
+        where TNode : class, ITimeEventActionNode
+    {
+        public ITimeEventActionBuilder<TNode> Configure(Action<TNode> action)
+        {
+            return this;
+        }
+        
+        ITimeEventActionBuilder<TNode> IObjectFlowBase<ITimeEventActionBuilder<TNode>>.AddFlow<TToken>(string targetNodeName,
+            ObjectFlowBuildAction<TToken> buildAction)
+            => AddFlow<TToken>(targetNodeName, buildAction) as ITimeEventActionBuilder<TNode>;
+
+        ITimeEventActionBuilder<TNode> IControlFlowBase<ITimeEventActionBuilder<TNode>>.AddControlFlow(string targetNodeName,
+            ControlFlowBuildAction buildAction)
+            => AddControlFlow(targetNodeName, buildAction) as ITimeEventActionBuilder<TNode>;
+
+        ITimeEventActionBuilder<TNode> IExceptionHandlerBase<ITimeEventActionBuilder<TNode>>.AddExceptionHandler<TException>(
+            ExceptionHandlerDelegateAsync<TException> exceptionHandler)
+            => AddExceptionHandler<TException>(exceptionHandler) as ITimeEventActionBuilder<TNode>;
     }
 }

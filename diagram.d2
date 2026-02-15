@@ -1,0 +1,85 @@
+*.style.border-radius: 15
+*.*.style.border-radius: 15
+*.*.*.style.border-radius: 15
+
+direction: right
+
+server
+# Declares a shape inside of another shape
+server.process
+
+apartment: Apartament {
+  shape: rectangle
+  style.font-size: 20
+}
+
+# Can declare the container and child in same line
+im a parent.im a child.style.stroke-width: 5
+
+im a parent.im a child -> apartment.Bedroom: "AfterFiveMinutes [IsCorrelated] / SendNotifications"
+
+# Since connections can also declare keys, this works too
+classes: {
+  initial: "" {
+    shape: circle
+    width: 26
+    height: 26
+    style.fill: black
+    label: ""
+  }
+  final: "" {
+    shape: circle
+    width: 26
+    height: 26
+    style.double-border: true
+    label: ""
+  }
+  fork: "" {
+    style.fill: black
+    width: 16
+    height: 200
+    style.border-radius: 0
+    label: ""
+  }
+}
+
+apartment.Bedroom: {
+  direction: down
+}
+apartment.Bedroom.initial: "" {
+  class: initial
+}
+apartment.Bedroom.initial -> apartment.Bedroom.Closet
+apartment.Bedroom.Closet -> apartment.Bedroom.Bathroom: "[IsDirty]"
+apartment.Bedroom.Closet -> apartment.Bedroom.Bed: "[IsSleepy]"
+apartment.Bedroom.Bathroom -> fork: Portal
+
+fork: {
+  class: fork
+  style.border-radius: 0
+}
+office."Region #1": ""
+office."Region #2": ""
+office."Region #3": ""
+
+fork -> office."Region #1".Bathroom
+fork -> office."Region #2".Bathroom
+fork -> office."Region #3".Bathroom
+office."Region #1".Bathroom -> office."Region #1".final
+office."Region #2".Bathroom -> office."Region #2".final
+office."Region #3".Bathroom -> office."Region #3".final
+office: "<<orthogonal>>\noffice"
+office.*: {
+  style.stroke-width: 1
+}
+office.grid-gap: 0
+
+office."Region #1".final: "" {
+  class: final
+}
+office."Region #2".final: "" {
+  class: final
+}
+office."Region #3".final: "" {
+  class: final
+}

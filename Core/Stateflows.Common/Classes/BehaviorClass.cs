@@ -35,5 +35,8 @@ namespace Stateflows
 
         public static implicit operator string(BehaviorClass behaviorClass)
             => StateflowsJsonConverter.SerializeObject(behaviorClass);
+        
+        public BehaviorId ToId(string instance)
+            => new BehaviorId(this, instance);
     }
 }

@@ -10,7 +10,7 @@ using Stateflows.Actions.Registration.Interfaces;
 
 namespace Stateflows.Actions.Registration.Builders
 {
-    internal class ActionsBuilder(ActionsRegister register, bool systemRegistrations) : IActionsBuilder
+    internal class ActionsBuilder(ActionsRegister register, BehaviorClass? ownerClass = null, BehaviorClass? parentClass = null) : IActionsBuilder
     {
         [DebuggerHidden]
         public IActionsBuilder AddFromAssembly(Assembly assembly)
@@ -49,14 +49,18 @@ namespace Stateflows.Actions.Registration.Builders
         [DebuggerHidden]
         public IActionsBuilder AddAction(string actionName, int version, ActionDelegateAsync actionDelegate, ActionBuildAction buildAction = null)
         {
-            if (register is IIsSystemRegistration registration)
+            if (register is IOwnedRegistration registration)
             {
                 // Register is a singleton, modify IsSystemRegistration only for the duration of the AddAction call
-                var beforeValue = registration.IsSystemRegistration;
-                registration.IsSystemRegistration = systemRegistrations;
+                var originalOwnerClass = registration.OwnerClass;
+                var originalParentClass = registration.ParentClass;
+                registration.OwnerClass = ownerClass;
+                registration.ParentClass = parentClass;
 
                 register.AddAction(actionName, version, actionDelegate, buildAction);
-                registration.IsSystemRegistration = beforeValue;
+                
+                registration.OwnerClass = originalOwnerClass;
+                registration.ParentClass = originalParentClass;
 
                 return this;
             }
@@ -67,30 +71,39 @@ namespace Stateflows.Actions.Registration.Builders
         }
 
         [DebuggerHidden]
-        public IActionsBuilder AddAction<TAction>(string actionName = null, int version = 1, ActionBuildAction buildAction = null)
+        public IActionsBuilder AddAction<TAction>(string actionName = null, int version = 1, ActionBuildAction<TAction> buildAction = null)
             where TAction : class, IAction
         {
-            if (register is IIsSystemRegistration registration)
+            if (register is IOwnedRegistration registration)
             {
                 // Register is a singleton, modify IsSystemRegistration only for the duration of the AddAction call
-                var beforeValue = registration.IsSystemRegistration;
-                registration.IsSystemRegistration = systemRegistrations;
+                var originalOwnerClass = registration.OwnerClass;
+                var originalParentClass = registration.ParentClass;
+                registration.OwnerClass = ownerClass;
+                registration.ParentClass = parentClass;
 
-                register.AddAction<TAction>(actionName ?? Action<TAction>.Name, version, buildAction);
-                registration.IsSystemRegistration = beforeValue;
+                register.AddAction(actionName ?? Action<TAction>.Name, version, buildAction);
+                
+                registration.OwnerClass = originalOwnerClass;
+                registration.ParentClass = originalParentClass;
 
                 return this;
             }
 
-            register.AddAction<TAction>(actionName ?? Action<TAction>.Name, version, buildAction);
+            register.AddAction(actionName ?? Action<TAction>.Name, version, buildAction);
 
             return this;
         }
 
         [DebuggerHidden]
-        public IActionsBuilder AddAction<TAction>(int version, ActionBuildAction buildAction = null)
+        public IActionsBuilder AddAction<TAction>(int version, ActionBuildAction<TAction> buildAction = null)
             where TAction : class, IAction
             => AddAction<TAction>(null, version, buildAction);
+
+        [DebuggerHidden]
+        public IActionsBuilder AddAction<TAction>(ActionBuildAction<TAction> buildAction)
+            where TAction : class, IAction
+            => AddAction<TAction>(1, buildAction);
 
         #region Observability
         [DebuggerHidden]

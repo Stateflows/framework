@@ -29,6 +29,7 @@ namespace Stateflows.StateMachines.Context.Classes
                 Context.Executor.ServiceProvider.GetRequiredService<IStateflowsLock>(),
                 Context.Executor.ServiceProvider.GetRequiredService<IStateflowsValueStorage>()
             );
+            // Values = new StateflowsValuesCollection(context.Context.StateflowsValues, $"{Constants.State}.{vertex.Identifier}");
         }
 
         public IContextValues Values { get; }

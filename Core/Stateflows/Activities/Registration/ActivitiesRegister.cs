@@ -8,7 +8,6 @@ using Stateflows.Common.Classes;
 using Stateflows.Common.Registration.Builders;
 using Stateflows.Activities.Models;
 using Stateflows.Activities.Exceptions;
-using Stateflows.Activities.Models;
 using Stateflows.Activities.Registration.Builders;
 using Stateflows.Activities.Registration.Interfaces;
 using Stateflows.Common.Classes;
@@ -19,7 +18,7 @@ using ActivityClass = Stateflows.ActivityClass;
 
 namespace Stateflows.Activities.Registration
 {
-    internal class ActivitiesRegister(StateflowsBuilder stateflowsBuilder) : IActivitiesRegister, IIsSystemRegistration
+    internal class ActivitiesRegister(StateflowsBuilder stateflowsBuilder) : IActivitiesRegister, IOwnedRegistration
     {
         public List<ActivityExceptionHandlerFactoryAsync> GlobalExceptionHandlerFactories = [];
 
@@ -27,8 +26,8 @@ namespace Stateflows.Activities.Registration
 
         public List<ActivityObserverFactoryAsync> GlobalObserverFactories = [];
 
-        private readonly StateflowsBuilder stateflowsBuilder = stateflowsBuilder;
-        public bool IsSystemRegistration { get; set; } = false;
+        public BehaviorClass? OwnerClass { get; set; }
+        public BehaviorClass? ParentClass { get; set; }
 
         public readonly Dictionary<string, Graph> Activities = [];
 
@@ -82,17 +81,17 @@ namespace Stateflows.Activities.Registration
                 throw new ActivityDefinitionException($"Activity '{activityName}' with version '{version}' is already registered", new ActivityClass(activityName));
             }
 
-            var activityBuilder = new ActivityBuilder(activityName, version, null, stateflowsBuilder);
+            var activityBuilder = new ActivityBuilder(activityName, version, null, stateflowsBuilder, OwnerClass, ParentClass);
             buildAction(activityBuilder);
             activityBuilder.Graph.Build();
 
             // Assign to local variable to avoid value being overriden when invoking lambda function at a later stage
-            var localIsSystemRegistration = IsSystemRegistration;
+            var ownerClass = OwnerClass;
+            var parentClass = ParentClass;
 
             var isDefaultInstance = BehaviorClassesInitializations.Instance.DefaultInstanceInitializationTokens
                 .Any(token => token.BehaviorClass.Type == ActivityClass.Type && token.BehaviorClass.Name == activityName);
-
-            activityBuilder.Graph.VisitingTasks.Add(v => v.ActivityAddedAsync(activityName, version, isSystemRegistration: localIsSystemRegistration, isDefaultInstance: isDefaultInstance));
+            activityBuilder.Graph.VisitingTasks.Add(v => v.ActivityAddedAsync(activityName, version, ownerClass, parentClass, isDefaultInstance));
 
             Activities.Add(key, activityBuilder.Graph);
 
@@ -113,7 +112,7 @@ namespace Stateflows.Activities.Registration
                 throw new ActivityDefinitionException($"Activity '{activityName}' with version '{version}' is already registered", new ActivityClass(activityName));
             }
 
-            var activityBuilder = new ActivityBuilder(activityName, version, null, stateflowsBuilder)
+            var activityBuilder = new ActivityBuilder(activityName, version, null, stateflowsBuilder, OwnerClass, ParentClass)
             {
                 Graph =
                 {
@@ -127,14 +126,15 @@ namespace Stateflows.Activities.Registration
             var method = ActivityTypeAddedAsyncMethod.MakeGenericMethod(activityType);
 
             // Assign to local variable to avoid value being overriden when invoking lambda function at a later stage
-            var localIsSystemRegistration = IsSystemRegistration;
+            var ownerClass = OwnerClass;
+            var parentClass = ParentClass;
 
             var isDefaultInstance = BehaviorClassesInitializations.Instance.DefaultInstanceInitializationTokens
                 .Any(token => token.BehaviorClass.Type == ActivityClass.Type && token.BehaviorClass.Name == activityName);
 
             activityBuilder.Graph.VisitingTasks.AddRange(
             [
-                v => v.ActivityAddedAsync(activityName, version, isSystemRegistration: localIsSystemRegistration, isDefaultInstance: isDefaultInstance),
+                v => v.ActivityAddedAsync(activityName, version, ownerClass, parentClass, isDefaultInstance),
                 v => (Task)method.Invoke(v, [ activityName, version ])
             ]);
 

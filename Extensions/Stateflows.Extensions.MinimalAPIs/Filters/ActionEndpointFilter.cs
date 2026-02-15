@@ -15,7 +15,7 @@ internal class ActionEndpointFilter(
             
         if (locator.TryLocateAction(new ActionId(actionClass.Name, instance), out var stateMachine))
         {
-            var smInfo = await stateMachine.GetStatusAsync([new NoImplicitInitialization()]);
+            var smInfo = await stateMachine.GetStatusAsync(new Dictionary<string, EventHeader>() { { nameof(NoImplicitInitialization), new NoImplicitInitialization() } });
             if (
                 smInfo?.Response != null &&
                 smInfo.Response.BehaviorStatus == BehaviorStatus.Initialized

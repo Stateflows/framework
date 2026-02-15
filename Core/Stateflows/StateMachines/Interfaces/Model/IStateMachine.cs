@@ -1,13 +1,17 @@
 ﻿using System.Reflection;
+using System.Threading.Tasks;
+using Stateflows.Common.Interfaces;
 using Stateflows.Common.Extensions;
 using Stateflows.StateMachines.Attributes;
 
 namespace Stateflows.StateMachines
 {
-    public interface IStateMachine
+    public interface IStateMachine : IStateMachineElement
     {
         static abstract void Build(IStateMachineBuilder builder);
     }
+
+    public interface IStateMachineAction : IOrthogonalStateAction, ITransitionAction;
 
     public static class StateMachine<TStateMachine>
         where TStateMachine : class, IStateMachine

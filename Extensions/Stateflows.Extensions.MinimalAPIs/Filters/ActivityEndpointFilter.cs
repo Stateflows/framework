@@ -86,7 +86,7 @@ internal class ActivityEndpointFilter(
                 return Results.NotFound();
             }
 
-            var smInfo = await activity.GetStatusAsync([new NoImplicitInitialization()]);
+            var smInfo = await activity.GetStatusAsync(new Dictionary<string, EventHeader>() { { nameof(NoImplicitInitialization), new NoImplicitInitialization() } });
 
             if (smInfo is { Response: not null } &&
                 (

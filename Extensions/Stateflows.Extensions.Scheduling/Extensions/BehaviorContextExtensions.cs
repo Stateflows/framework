@@ -12,7 +12,7 @@ namespace Stateflows
 {
     public static class BehaviorContextExtensions
     {
-        public static Task<(bool Success, Guid ScheduleId)> ScheduleTimeAsync<TEvent>(this IBehaviorContext context, DateTime time, TEvent @event, IEnumerable<EventHeader>? headers = null)
+        public static Task<(bool Success, Guid ScheduleId)> ScheduleTimeAsync<TEvent>(this IBehaviorContext context, DateTime time, TEvent @event, IDictionary<string, EventHeader>? headers = null)
             => ScheduleAsync(context, new ScheduleTime()
             {
                 Time = time,
@@ -20,7 +20,7 @@ namespace Stateflows
                 Recipients = new List<BehaviorId>() { context.Id }
             });
         
-        public static Task<(bool Success, Guid ScheduleId)> ScheduleDelayAsync<TEvent>(this IBehaviorContext context, TimeSpan delay, TEvent @event, IEnumerable<EventHeader>? headers = null)
+        public static Task<(bool Success, Guid ScheduleId)> ScheduleDelayAsync<TEvent>(this IBehaviorContext context, TimeSpan delay, TEvent @event, IDictionary<string, EventHeader>? headers = null)
             => ScheduleAsync(context, new ScheduleDelay()
             {
                 Delay = delay,
@@ -28,7 +28,7 @@ namespace Stateflows
                 Recipients = new List<BehaviorId>() { context.Id }
             });
 
-        public static Task<(bool Success, Guid ScheduleId)> ScheduleIntervalAsync<TEvent>(this IBehaviorContext context, TimeSpan interval, TEvent @event, IEnumerable<EventHeader>? headers = null)
+        public static Task<(bool Success, Guid ScheduleId)> ScheduleIntervalAsync<TEvent>(this IBehaviorContext context, TimeSpan interval, TEvent @event, IDictionary<string, EventHeader>? headers = null)
             => ScheduleAsync(context, new ScheduleInterval()
             {
                 Interval = interval, 
@@ -36,7 +36,7 @@ namespace Stateflows
                 Recipients = new List<BehaviorId>() { context.Id }
             });
 
-        public static Task<(bool Success, Guid ScheduleId)> ScheduleCronAsync<TEvent>(this IBehaviorContext context, string cronExpression, TEvent @event, IEnumerable<EventHeader>? headers = null)
+        public static Task<(bool Success, Guid ScheduleId)> ScheduleCronAsync<TEvent>(this IBehaviorContext context, string cronExpression, TEvent @event, IDictionary<string, EventHeader>? headers = null)
             => ScheduleAsync(context, new ScheduleCron()
             {
                 CronExpressions = new List<string>() { cronExpression }, 

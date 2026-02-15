@@ -26,13 +26,13 @@ namespace Stateflows.Common.Locator
             ServiceProvider = serviceProvider;
         }
 
-        public async Task<SendResult> SendAsync<TEvent>(TEvent @event, IEnumerable<EventHeader> headers = null)
+        public async Task<SendResult> SendAsync<TEvent>(TEvent @event, IDictionary<string, EventHeader> headers = null)
         {
             SendResult result = null;
             var eventHolder = new EventHolder<TEvent>()
             {
                 Payload = @event,
-                Headers = headers?.ToList() ?? new List<EventHeader>()
+                Headers = headers?.ToDictionary() ?? new Dictionary<string, EventHeader>()
             };
 
             if (Interceptor.BeforeDispatchEvent(eventHolder))
@@ -51,7 +51,7 @@ namespace Stateflows.Common.Locator
             return result;
         }
 
-        public async Task<RequestResult<TResponse>> RequestAsync<TResponse>(IRequest<TResponse> request, IEnumerable<EventHeader> headers = null)
+        public async Task<RequestResult<TResponse>> RequestAsync<TResponse>(IRequest<TResponse> request, IDictionary<string, EventHeader> headers = null)
         {
             RequestResult<TResponse> result = null;
             var eventHolder = request.ToTypedEventHolder(headers);

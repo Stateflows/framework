@@ -4,7 +4,9 @@ using System.Threading.Tasks;
 using Stateflows.Common;
 using Stateflows.Common.Models;
 using Stateflows.Common.Classes;
+using Stateflows.Common.Utilities;
 using Stateflows.Common.Exceptions;
+using Stateflows.Common.Registration;
 using Stateflows.Common.Registration.Builders;
 using Stateflows.Activities.Models;
 using Stateflows.Activities.Context.Classes;
@@ -12,8 +14,6 @@ using Stateflows.Activities.Context.Interfaces;
 using Stateflows.Activities.Registration.Interfaces;
 using Stateflows.Activities.Registration.Interfaces.Base;
 using Stateflows.Activities.Registration.Interfaces.Internal;
-using Stateflows.Common.Registration;
-using Stateflows.Common.Utilities;
 
 namespace Stateflows.Activities.Registration.Builders
 {
@@ -29,10 +29,10 @@ namespace Stateflows.Activities.Registration.Builders
             set => Node = value;
         }
 
-        public ActivityBuilder(string name, int version, Node parentNode, StateflowsBuilder stateflowsBuilder)
+        public ActivityBuilder(string name, int version, Node parentNode, StateflowsBuilder stateflowsBuilder, BehaviorClass? ownerClass, BehaviorClass? parentClass)
             : base(parentNode)
         {
-            Graph = new Graph(name, version, stateflowsBuilder);
+            Graph = new Graph(name, version, stateflowsBuilder, ownerClass, parentClass);
         }
 
         private IActivityBuilder AddInitializer(Type initializerType, string initializerName, ActivityPredicateAsync initializerAction)
@@ -126,10 +126,10 @@ namespace Stateflows.Activities.Registration.Builders
         }
 
         #region IActivityBuilder
-        IActivityBuilder IReactiveActivity<IActivityBuilder>.AddAction(string actionNodeName, Func<IActionContext, Task> actionAsync, ActionBuildAction buildAction)
+        IActivityBuilder IActivityActionBase<IActivityBuilder>.AddAction(string actionNodeName, Func<IActionContext, Task> actionAsync, ActionBuildAction buildAction)
             => AddAction(actionNodeName, actionAsync, b => buildAction?.Invoke(b)) as IActivityBuilder;
 
-        IActivityBuilder IReactiveActivity<IActivityBuilder>.AddStructuredActivity(string actionNodeName, ReactiveStructuredActivityBuildAction buildAction)
+        IActivityBuilder IReactiveActivityBase<IActivityBuilder>.AddStructuredActivity(string actionNodeName, ReactiveStructuredActivityBuildAction buildAction)
             => AddStructuredActivity(actionNodeName, buildAction) as IActivityBuilder;
 
         IActivityBuilder IActivityEvents<IActivityBuilder>.AddFinalizer(Func<IActivityActionContext, Task> actionAsync)
@@ -141,31 +141,31 @@ namespace Stateflows.Activities.Registration.Builders
             return result;
         }
 
-        IActivityBuilder IInitial<IActivityBuilder>.AddInitial(InitialBuildAction buildAction)
+        IActivityBuilder IInitialBase<IActivityBuilder>.AddInitial(InitialBuildAction buildAction)
             => AddInitial(buildAction) as IActivityBuilder;
 
-        IActivityBuilder IFinal<IActivityBuilder>.AddFinal()
+        IActivityBuilder IFinalBase<IActivityBuilder>.AddFinal()
             => AddFinal() as IActivityBuilder;
 
-        IActivityBuilder IInput<IActivityBuilder>.AddInput(InputBuildAction buildAction)
+        IActivityBuilder IInputBase<IActivityBuilder>.AddInput(InputBuildAction buildAction)
             => AddInput(buildAction) as IActivityBuilder;
 
-        IActivityBuilder IOutput<IActivityBuilder>.AddOutput()
+        IActivityBuilder IOutputBase<IActivityBuilder>.AddOutput()
             => AddOutput() as IActivityBuilder;
 
-        IActivityBuilder IReactiveActivity<IActivityBuilder>.AddParallelActivity<TParallelizationToken>(string actionNodeName, ParallelActivityBuildAction buildAction, int chunkSize)
+        IActivityBuilder IReactiveActivityBase<IActivityBuilder>.AddParallelActivity<TParallelizationToken>(string actionNodeName, ParallelActivityBuildAction buildAction, int chunkSize)
             => AddParallelActivity<TParallelizationToken>(actionNodeName, buildAction, chunkSize) as IActivityBuilder;
 
-        IActivityBuilder IReactiveActivity<IActivityBuilder>.AddIterativeActivity<TIterationToken>(string actionNodeName, IterativeActivityBuildAction buildAction, int chunkSize)
+        IActivityBuilder IReactiveActivityBase<IActivityBuilder>.AddIterativeActivity<TIterationToken>(string actionNodeName, IterativeActivityBuildAction buildAction, int chunkSize)
             => AddIterativeActivity<TIterationToken>(actionNodeName, buildAction, chunkSize) as IActivityBuilder;
 
         IActivityBuilder IAcceptEvent<IActivityBuilder>.AddAcceptEventAction<TEvent>(string actionNodeName, AcceptEventActionDelegateAsync<TEvent> eventActionAsync, AcceptEventActionBuildAction buildAction)
             => AddAcceptEventAction<TEvent>(actionNodeName, eventActionAsync, buildAction) as IActivityBuilder;
 
-        IActivityBuilder IAcceptEvent<IActivityBuilder>.AddTimeEventAction<TTimeEvent>(string actionNodeName, TimeEventActionDelegateAsync eventActionAsync, AcceptEventActionBuildAction buildAction)
+        IActivityBuilder IAcceptEvent<IActivityBuilder>.AddTimeEventAction<TTimeEvent>(string actionNodeName, TimeEventActionDelegateAsync eventActionAsync, TimeEventNodeBuildAction buildAction)
             => AddTimeEventAction<TTimeEvent>(actionNodeName, eventActionAsync, buildAction) as IActivityBuilder;
 
-        IActivityBuilder ISendEvent<IActivityBuilder>.AddSendEventAction<TEvent>(string actionNodeName, SendEventActionDelegateAsync<TEvent> actionAsync, BehaviorIdSelectorAsync targetSelectorAsync, SendEventActionBuildAction buildAction)
+        IActivityBuilder ISendEventBase<IActivityBuilder>.AddSendEventAction<TEvent>(string actionNodeName, SendEventActionDelegateAsync<TEvent> actionAsync, BehaviorIdSelectorAsync targetSelectorAsync, SendEventActionBuildAction buildAction)
             => AddSendEventAction<TEvent>(actionNodeName, actionAsync, targetSelectorAsync, buildAction) as IActivityBuilder;
         #endregion
 

@@ -3,6 +3,8 @@ using System.Diagnostics;
 using System.Collections.Generic;
 using System.Linq;
 using Microsoft.Extensions.DependencyInjection;
+using Stateflows.Common;
+using Stateflows.Common.Classes;
 using Stateflows.Common.Extensions;
 using Stateflows.Common.Interfaces;
 using Stateflows.Common.Initializer;
@@ -54,14 +56,14 @@ namespace Stateflows.StateMachines
         [DebuggerHidden]
         public static IStateflowsBuilder AddStateMachines(this IStateflowsBuilder stateflowsBuilder,
             StateMachinesBuildAction buildAction = null)
-            => AddStateMachines(stateflowsBuilder, buildAction, false);
+            => AddStateMachines(stateflowsBuilder, buildAction, null, null);
 
         [DebuggerHidden]
         internal static IStateflowsBuilder AddStateMachines(this IStateflowsBuilder stateflowsBuilder,
-            StateMachinesBuildAction buildAction, bool systemRegistrations)
+            StateMachinesBuildAction buildAction, BehaviorClass? ownerClass, BehaviorClass? parentClass)
         {
             var register = stateflowsBuilder.EnsureStateMachinesServices();
-            buildAction?.Invoke(new StateMachinesBuilder(register, systemRegistrations));
+            buildAction?.Invoke(new StateMachinesBuilder(register, ownerClass, parentClass));
 
             return stateflowsBuilder;
         }
@@ -101,8 +103,6 @@ namespace Stateflows.StateMachines
                         .AddSingleton<IStateMachineEventHandler, ResetHandler>()
                         .AddSingleton<IStateMachineEventHandler, SubscriptionHandler>()
                         .AddSingleton<IStateMachineEventHandler, UnsubscriptionHandler>()
-                        .AddSingleton<IStateMachineEventHandler, SetGlobalValuesHandler>()
-                        .AddSingleton<IStateMachineEventHandler, SetContextOwnerHandler>()
                         .AddTransient(_ =>
                             StateMachinesContextHolder.StateMachineContext.Value ??
                             throw new InvalidOperationException(

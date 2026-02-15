@@ -2,9 +2,10 @@
 using Stateflows.Common.Registration.Interfaces;
 using Stateflows.Actions;
 using Stateflows.Activities;
+using Stateflows.Extensions.OpenTelemetry;
 using Stateflows.StateMachines;
 
-namespace Stateflows.Extensions.OpenTelemetry
+namespace Stateflows
 {
     public static class DependencyInjection
     {

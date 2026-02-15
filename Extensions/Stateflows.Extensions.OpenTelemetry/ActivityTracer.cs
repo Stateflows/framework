@@ -21,19 +21,19 @@ namespace Stateflows.Extensions.OpenTelemetry
         {
             var noTracing =
                 context.Event!.GetType().GetCustomAttributes<NoTracingAttribute>().Any() ||
-                context.Headers.Any(h => h is NoTracing);
+                context.Headers.Values.Any(h => h is NoTracing);
             
             Skip = noTracing;
             
             if (!noTracing)
             {
-                var header = context.Headers.FirstOrDefault(h => h is ActivityHeader);
+                var header = context.Headers.Values.FirstOrDefault(h => h is ActivityHeader);
                 if (header is ActivityHeader activityHeader)
                 {
                     EventProcessingActivity = StateMachineTracer.Source.StartActivity(
                         $"Activity '{context.Behavior.ActualId.Name.ToShortName()}:{context.Behavior.ActualId.InstanceText}' processing '{context.Event.GetType().GetEventName().ToShortName()}'",
                         ActivityKind.Internal,
-                        parentContext: activityHeader.Activity.Context
+                        parentContext: activityHeader.ActivityContext
                     );
                 }
                 
@@ -121,13 +121,13 @@ namespace Stateflows.Extensions.OpenTelemetry
             
             if (EventProcessingActivity == null)
             {
-                var header = context.Headers.FirstOrDefault(h => h is ActivityHeader);
+                var header = context.Headers.Values.FirstOrDefault(h => h is ActivityHeader);
                 if (header is ActivityHeader activityHeader)
                 {
                     InitializerActivity = StateMachineTracer.Source.StartActivity(
                         $"Activity '{context.Behavior.ActualId.Name.ToShortName()}:{context.Behavior.ActualId.InstanceText}' initialized{(ImplicitInitialization ? " implicitly" : "")}",
                         ActivityKind.Internal,
-                        parentContext: activityHeader.Activity.Context
+                        parentContext: activityHeader.ActivityContext
                     );
                 }
                 
@@ -607,8 +607,7 @@ namespace Stateflows.Extensions.OpenTelemetry
             {
                 InitializerActivity.Stop();
                 InitializerActivity.SetStatus(ActivityStatusCode.Error);
-                // TODO: change to AddException after upgrade
-                InitializerActivity.SetCustomProperty(nameof(Exception), exception);
+                InitializerActivity.AddException(exception);
             }
 
             StopProcessingActivity(context, EventStatus.Failed, exception);

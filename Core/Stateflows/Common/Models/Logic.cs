@@ -11,8 +11,10 @@ namespace Stateflows.Common.Models
         {
              Name = name;
         }
+        
+        public string OriginStateMachineName { get; set; } = null;
 
-        public List<TDelegate> Actions { get; set; } = new List<TDelegate>();
+        public List<TDelegate> Actions { get; set; } = [];
 
         public bool Any => Actions.Any();
 

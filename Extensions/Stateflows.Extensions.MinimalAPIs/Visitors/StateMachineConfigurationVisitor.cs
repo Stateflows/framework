@@ -5,8 +5,15 @@ namespace Stateflows.Extensions.MinimalAPIs;
 
 internal class StateMachineConfigurationVisitor(MinimalAPIsBuilder minimalApisBuilder) : StateMachines.StateMachineVisitor
 {
+    private BehaviorClass? OwnerClass = null;
+    
     public override Task StateMachineTypeAddedAsync<TStateMachine>(string stateMachineName, int stateMachineVersion)
     {
+        if (OwnerClass != null)
+        {
+            return Task.CompletedTask;
+        }
+        
         var stateMachineType = typeof(TStateMachine);
         if (typeof(IStateMachineEndpointsConfiguration).IsAssignableFrom(stateMachineType))
         {
@@ -18,9 +25,10 @@ internal class StateMachineConfigurationVisitor(MinimalAPIsBuilder minimalApisBu
         return Task.CompletedTask;
     }
 
-    public override Task StateMachineAddedAsync(string stateMachineName, int stateMachineVersion, bool isSystemRegistration = false, bool isDefaultInstance = false)
+    public override Task StateMachineAddedAsync(string stateMachineName, int stateMachineVersion, BehaviorClass? ownerClass = null, BehaviorClass? parentClass = null, bool hasDefaultInstance = false)
     {
-        if (isSystemRegistration)
+        OwnerClass = ownerClass;
+        if (OwnerClass != null)
         {
             minimalApisBuilder.ConfigureStateMachines(b =>
                 b.ConfigureStateMachine(
@@ -29,7 +37,7 @@ internal class StateMachineConfigurationVisitor(MinimalAPIsBuilder minimalApisBu
                 )
             );
         }
-
-        return base.StateMachineAddedAsync(stateMachineName, stateMachineVersion, isSystemRegistration: isSystemRegistration, isDefaultInstance: isDefaultInstance);
+        
+        return base.StateMachineAddedAsync(stateMachineName, stateMachineVersion, ownerClass, parentClass, hasDefaultInstance);
     }
 }

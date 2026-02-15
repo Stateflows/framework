@@ -31,7 +31,7 @@ namespace Stateflows.Actions.Context.Classes
 
         public readonly List<Exception> Exceptions = new List<Exception>();
 
-        public async Task Send<TEvent>(TEvent @event, IEnumerable<EventHeader> headers = null)
+        public async Task Send<TEvent>(TEvent @event, IDictionary<string, EventHeader> headers = null)
         {
             var locator = ServiceProvider.GetService<IBehaviorLocator>();
             if (locator != null && locator.TryLocateBehavior(Context.ContextParentId ?? Id.BehaviorId, out var behavior))
