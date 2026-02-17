@@ -2,7 +2,7 @@ using Stateflows.Common;
 
 namespace Stateflows.Actions;
 
-internal abstract class ConfigurableScriptedAction(
+internal sealed class ConfigurableScriptedAction(
     IServiceProvider serviceProvider,
     IBehaviorContext behaviorContext,
     IExecutionContext commonExecutionContext

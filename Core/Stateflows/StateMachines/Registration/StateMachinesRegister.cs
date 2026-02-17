@@ -84,12 +84,17 @@ namespace Stateflows.StateMachines.Registration
             }
 
             var builder = new StateMachineElementsBuilder(stateMachineName, version, stateflowsBuilder, OwnerClass, ParentClass);
+            
+            // Assign to local variable to avoid value being overriden when invoking lambda function at a later stage
+            var ownerClass = OwnerClass;
+            var parentClass = ParentClass;
+            
+            builder.Graph.VisitingTasks.Add(v => v.StateMachineAddingAsync(stateMachineName, version, ownerClass, parentClass));
+            
             buildAction(builder);
             builder.Graph.Build();
 
-            var graph = builder.Graph;
-
-            builder.Graph.VisitingTasks.Add(v => v.StateMachineAddedAsync(stateMachineName, version, graph.OwnerClass, graph.ParentClass));
+            builder.Graph.VisitingTasks.Add(v => v.StateMachineAddedAsync(stateMachineName, version));
 
             StateMachines.Add(key, builder.Graph);
 
@@ -117,18 +122,21 @@ namespace Stateflows.StateMachines.Registration
                         StateMachineType = stateMachineType
                     }
             };
+            
+            // Assign to local variable to avoid value being overriden when invoking lambda function at a later stage
+            var ownerClass = OwnerClass;
+            var parentClass = ParentClass;
+            
+            builder.Graph.VisitingTasks.Add(v => v.StateMachineAddingAsync(stateMachineName, version, ownerClass, parentClass));
+            
             RegisterStateMachine(stateMachineType, builder);
             builder.Graph.Build();
             buildAction?.Invoke(new StateMachineUtilsBuilder(builder.Graph));
 
             var method = StateMachineTypeAddedAsyncMethod.MakeGenericMethod(stateMachineType);
 
-            // Assign to local variable to avoid value being overriden when invoking lambda function at a later stage
-            var ownerClass = OwnerClass;
-            var parentClass = ParentClass;
-
             builder.Graph.VisitingTasks.AddRange([
-                v => v.StateMachineAddedAsync(stateMachineName, version, ownerClass, parentClass),
+                v => v.StateMachineAddedAsync(stateMachineName, version),
                 v => (Task)method.Invoke(v, [ stateMachineName, version ])
             ]);
 

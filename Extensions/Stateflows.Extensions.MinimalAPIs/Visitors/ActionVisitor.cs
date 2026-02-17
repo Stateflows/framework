@@ -41,9 +41,10 @@ internal class ActionVisitor(IEndpointRouteBuilder routeBuilder, Interceptor int
         var route = $"/{actionName}";
         if (interceptor.BeforeGetInstancesEndpointDefinition(behaviorClass, ref method, ref route))
         {
-            var routeHandlerBuilder = action.MapMethods(route, [method], async (IStateflowsStorage storage) =>
+            var routeHandlerBuilder = action.MapMethods(route, [method], async (IStateflowsStorage storage, ITenantAccessor tenantAccessor) =>
             {
                 BehaviorClass[] actionClasses = [new ActionClass(actionName)];
+                tenantAccessor.CurrentTenantId ??= "host";
                 var contextIds = await storage.GetAllContextIdsAsync(actionClasses);
                 return Results.Ok(contextIds.Select(id => new { Id = id }));
             })

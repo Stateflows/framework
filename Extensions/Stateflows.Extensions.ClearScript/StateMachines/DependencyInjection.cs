@@ -8,16 +8,16 @@ namespace Stateflows.StateMachines;
 public static class DependencyInjection
 {
     public static TReturn AddOnEntry_ClearScript<TReturn>(this IStateEntry<TReturn> builder, string script)
-        => builder.AddOnEntry<ConfigurableClearScriptState>(b => b.AddConfiguration(script));
+        => builder.AddOnEntry<ConfigurableScriptedState>(b => b.AddConfiguration(script));
     
     public static TReturn AddOnExit_ClearScript<TReturn>(this IStateExit<TReturn> builder, string script)
-        => builder.AddOnExit<ConfigurableClearScriptState>(b => b.AddConfiguration(script));
+        => builder.AddOnExit<ConfigurableScriptedState>(b => b.AddConfiguration(script));
     
     public static TReturn AddOnInitialize_ClearScript<TReturn>(this ICompositeStateInitialization<TReturn> builder, string script)
-        => builder.AddOnInitialize<ConfigurableClearScriptState>(b => b.AddConfiguration(script));
+        => builder.AddOnInitialize<ConfigurableScriptedState>(b => b.AddConfiguration(script));
     
     public static TReturn AddOnFinalize_ClearScript<TReturn>(this ICompositeStateFinalization<TReturn> builder, string script)
-        => builder.AddOnFinalize<ConfigurableClearScriptState>(b => b.AddConfiguration(script));
+        => builder.AddOnFinalize<ConfigurableScriptedState>(b => b.AddConfiguration(script));
     
     public static TReturn AddEffect_ClearScript<TEvent, TReturn>(this IEffect<TEvent, TReturn> builder, string script)
         => builder.AddEffect<ConfigurableScriptedTransition<TEvent>>(b => b.AddConfiguration(script));
@@ -35,28 +35,28 @@ public static class DependencyInjection
         => builder.AddGuard<ConfigurableScriptedTransition>(b => b.AddConfiguration(script));
     
     public static TReturn AddOnEntryAction_ClearScript<TReturn>(this IStateEntry<TReturn> builder, string script, ActionBuildAction? buildAction = null)
-        => builder.AddOnEntryAction<ConfigurableClearScriptState>(b =>
+        => builder.AddOnEntryAction<ConfigurableScriptedState>(b =>
         {
             b.AddConfiguration(script);
             buildAction?.Invoke(b);
         });
     
     public static TReturn AddOnExitAction_ClearScript<TReturn>(this IStateExit<TReturn> builder, string script, ActionBuildAction? buildAction = null)
-        => builder.AddOnExitAction<ConfigurableClearScriptState>(b =>
+        => builder.AddOnExitAction<ConfigurableScriptedState>(b =>
         {
             b.AddConfiguration(script);
             buildAction?.Invoke(b);
         });
     
     public static TReturn AddOnInitializeAction_ClearScript<TReturn>(this ICompositeStateInitialization<TReturn> builder, string script, ActionBuildAction? buildAction = null)
-        => builder.AddOnInitializeAction<ConfigurableClearScriptState>(b =>
+        => builder.AddOnInitializeAction<ConfigurableScriptedState>(b =>
         {
             b.AddConfiguration(script);
             buildAction?.Invoke(b);
         });
     
     public static TReturn AddOnFinalizeAction_ClearScript<TReturn>(this ICompositeStateFinalization<TReturn> builder, string script, ActionBuildAction? buildAction = null)
-        => builder.AddOnFinalizeAction<ConfigurableClearScriptState>(b =>
+        => builder.AddOnFinalizeAction<ConfigurableScriptedState>(b =>
         {
             b.AddConfiguration(script);
             buildAction?.Invoke(b);
