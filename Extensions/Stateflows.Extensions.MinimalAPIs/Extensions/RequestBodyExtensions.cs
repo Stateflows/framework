@@ -22,15 +22,15 @@ internal static class RequestBodyExtensions
         };
         return behaviorInfo;
     }
-    
-    public static void RegisterEventEndpoint<TEvent>(this IEndpointRouteBuilder routeBuilder, Interceptor interceptor, string behaviorType, string behaviorName, Dictionary<string, List<(HateoasLink, BehaviorStatus[])>> customHateoasLinks)
+
+    public static void RegisterEventEndpoint<TEvent>(this IEndpointRouteBuilder routeBuilder, Interceptor interceptor, string behaviorType, string behaviorName, Dictionary<string, List<(HateoasLink, BehaviorStatus[])>> customHateoasLinks, bool hasDefaultInstance = false)
     {
         var eventType = typeof(TEvent);
         var eventName = Utils.GetEventName<TEvent>();
         var route = $"/{behaviorType.ToResource()}/{behaviorName}/{{instance}}/{eventName}";
         var method = HttpMethods.Post;
         var behaviorClass = new BehaviorClass(behaviorType, behaviorName);
-        if (interceptor.BeforeEventEndpointDefinition<TEvent>(behaviorClass, ref method, ref route))
+        if (interceptor.BeforeEventEndpointDefinition<TEvent>(behaviorClass, isDefaultInstance: false, ref method, ref route))
         {
             var routeHandlerBuilder = Utils.IsEventEmpty(eventType)
                 ? routeBuilder.MapMethods(
@@ -51,7 +51,7 @@ internal static class RequestBodyExtensions
                         {
                             return authorizationResult;
                         }
-                        
+
                         return locator.TryLocateBehavior(new BehaviorId(behaviorType, behaviorName, instance),
                             out var behavior)
                             ? await payload.SendEndpointAsync(StateflowsActivator.CreateUninitializedInstance<TEvent>(), behavior, implicitInitialization, customHateoasLinks, context)
@@ -86,8 +86,8 @@ internal static class RequestBodyExtensions
 
             routeHandlerBuilder.WithTags($"{behaviorClass.Type} {behaviorClass.Name}");
 
-            interceptor.AfterEventEndpointDefinition<TEvent>(behaviorClass, method, route, routeHandlerBuilder);
-            
+            interceptor.AfterEventEndpointDefinition<TEvent>(behaviorClass, isDefaultInstance: false, method, route, routeHandlerBuilder);
+
             customHateoasLinks.AddLink(
                 behaviorClass.Name,
                 new HateoasLink()
@@ -101,9 +101,90 @@ internal static class RequestBodyExtensions
                 "event"
             );
         }
+
+
+        if (!hasDefaultInstance)
+        {
+            return;
+        }
+
+        if (typeof(TEvent) == typeof(Initialize))
+        {
+            return;
+        }
+
+        var defaultInstanceRoute = $"/{behaviorType.ToResource()}/{behaviorName}/{eventName}";
+        if (interceptor.BeforeEventEndpointDefinition<TEvent>(behaviorClass, isDefaultInstance: true, ref method, ref defaultInstanceRoute))
+        {
+
+            var routeHandlerBuilder = Utils.IsEventEmpty(eventType)
+                ? routeBuilder.MapMethods(
+                    defaultInstanceRoute,
+                    [method],
+                    async (
+                        HttpContext context,
+                        IServiceProvider serviceProvider,
+                        IBehaviorLocator locator,
+                        RequestBody payload
+                    ) =>
+                    {
+                        var (success, authorizationResult) =
+                            await Utils.AuthorizeEventAsync(eventType, serviceProvider, context);
+                        if (!success)
+                        {
+                            return authorizationResult;
+                        }
+
+                        return locator.TryLocateBehavior(new BehaviorId(behaviorType, behaviorName, string.Empty),
+                            out var behavior)
+                            ? await payload.SendEndpointAsync(StateflowsActivator.CreateUninitializedInstance<TEvent>(), behavior, false, customHateoasLinks, context)
+                            : Results.NotFound();
+                    }
+                )
+                : routeBuilder.MapMethods(
+                    defaultInstanceRoute,
+                    [method],
+                    async (
+                        HttpContext context,
+                        IServiceProvider serviceProvider,
+                        IBehaviorLocator locator,
+                        RequestBody<TEvent> payload
+                    ) =>
+                    {
+                        var (success, authorizationResult) =
+                            await Utils.AuthorizeEventAsync(eventType, serviceProvider, context);
+                        if (!success)
+                        {
+                            return authorizationResult;
+                        }
+
+                        return locator.TryLocateBehavior(new BehaviorId(behaviorType, behaviorName, string.Empty),
+                            out var behavior)
+                            ? await payload.SendEndpointAsync(payload.Event, behavior, false, customHateoasLinks, context)
+                            : Results.NotFound();
+                    }
+                );
+
+            routeHandlerBuilder.WithTags($"{behaviorClass.Type} {behaviorClass.Name}");
+
+            interceptor.AfterEventEndpointDefinition<TEvent>(behaviorClass, isDefaultInstance: true, method, defaultInstanceRoute, routeHandlerBuilder);
+
+            customHateoasLinks.AddLink(
+                behaviorClass.Name,
+                new HateoasLink()
+                {
+                    Rel = eventName.ToShortName().ToCamelCase(),
+                    Href = defaultInstanceRoute,
+                    Method = method
+                },
+                [BehaviorStatus.Initialized],
+                eventName,
+                "event"
+            );
+        }
     }
 
-    public static void RegisterRequestEndpoint<TRequest, TResponse>(this IEndpointRouteBuilder routeBuilder, Interceptor interceptor, string behaviorType, string behaviorName, Dictionary<string, List<(HateoasLink, BehaviorStatus[])>> customHateoasLinks)
+    public static void RegisterRequestEndpoint<TRequest, TResponse>(this IEndpointRouteBuilder routeBuilder, Interceptor interceptor, string behaviorType, string behaviorName, Dictionary<string, List<(HateoasLink, BehaviorStatus[])>> customHateoasLinks, bool hasDefaultInstance = false)
         where TRequest : IRequest<TResponse>
     {
         var eventType = typeof(TRequest);
@@ -111,7 +192,7 @@ internal static class RequestBodyExtensions
         var route = $"/{behaviorType.ToResource()}/{behaviorName}/{{instance}}/" + Utils.GetEventName<TRequest>();
         var method = HttpMethods.Post;
         var behaviorClass = new BehaviorClass(behaviorType, behaviorName);
-        if (interceptor.BeforeEventEndpointDefinition<TRequest>(behaviorClass, ref method, ref route))
+        if (interceptor.BeforeEventEndpointDefinition<TRequest>(behaviorClass, isDefaultInstance: false, ref method, ref route))
         {
             var routeHandlerBuilder = Utils.IsEventEmpty(eventType)
                 ? routeBuilder.MapMethods(
@@ -164,8 +245,81 @@ internal static class RequestBodyExtensions
 
             routeHandlerBuilder.WithTags($"{behaviorClass.Type} {behaviorClass.Name}");
 
-            interceptor.AfterEventEndpointDefinition<TRequest>(behaviorClass, method, route, routeHandlerBuilder);
-            
+            interceptor.AfterEventEndpointDefinition<TRequest>(behaviorClass, isDefaultInstance: false, method, route, routeHandlerBuilder);
+
+            customHateoasLinks.AddLink(
+                behaviorClass.Name,
+                new HateoasLink()
+                {
+                    Rel = eventName.ToShortName().ToCamelCase(),
+                    Href = route,
+                    Method = method
+                },
+                [BehaviorStatus.Initialized],
+                eventName,
+                "event"
+            );
+        }
+
+        if (!hasDefaultInstance)
+        {
+            return;
+        }
+
+        if (interceptor.BeforeEventEndpointDefinition<TRequest>(behaviorClass, isDefaultInstance: true, ref method, ref route))
+        {
+            var defaultInstanceRoute = $"/{behaviorType.ToResource()}/{behaviorName}/{Utils.GetEventName<TRequest>()}";
+
+
+            var routeHandlerBuilder = Utils.IsEventEmpty(eventType)
+                ? routeBuilder.MapMethods(
+                    route,
+                    [method],
+                    async (
+                        HttpContext context,
+                        IServiceProvider serviceProvider,
+                        IBehaviorLocator locator,
+                        RequestBody payload
+                    ) =>
+                    {
+                        var (success, authorizationResult) =
+                            await Utils.AuthorizeEventAsync(eventType, serviceProvider, context);
+                        if (!success)
+                        {
+                            return authorizationResult;
+                        }
+
+                        return locator.TryLocateBehavior(new BehaviorId(behaviorType, behaviorName, string.Empty), out var behavior)
+                            ? await payload.RequestEndpointAsync<TRequest, TResponse>(StateflowsActivator.CreateUninitializedInstance<TRequest>(), behavior, false, customHateoasLinks, context)
+                            : Results.NotFound();
+                    }
+                )
+                : routeBuilder.MapMethods(
+                    route,
+                    [method],
+                    async (
+                        HttpContext context,
+                        IServiceProvider serviceProvider,
+                        IBehaviorLocator locator,
+                        RequestBody<TRequest> payload
+                    ) =>
+                    {
+                        var (success, authorizationResult) = await Utils.AuthorizeEventAsync(eventType, serviceProvider, context);
+                        if (!success)
+                        {
+                            return authorizationResult;
+                        }
+
+                        return locator.TryLocateBehavior(new BehaviorId(behaviorType, behaviorName, string.Empty), out var behavior)
+                            ? await payload.RequestEndpointAsync<TRequest, TResponse>(payload.Event, behavior, false, customHateoasLinks, context)
+                            : Results.NotFound();
+                    }
+                );
+
+            routeHandlerBuilder.WithTags($"{behaviorClass.Type} {behaviorClass.Name}");
+
+            interceptor.AfterEventEndpointDefinition<TRequest>(behaviorClass, isDefaultInstance: true, method, route, routeHandlerBuilder);
+
             customHateoasLinks.AddLink(
                 behaviorClass.Name,
                 new HateoasLink()
@@ -180,7 +334,7 @@ internal static class RequestBodyExtensions
             );
         }
     }
-    
+
     private static async Task<IResult?> SendEndpointAsync<TEvent>(this RequestBody payload, TEvent @event, IBehavior behavior,
         bool implicitInitialization, Dictionary<string, List<(HateoasLink, BehaviorStatus[])>> customHateoasLinks, HttpContext context)
     {
@@ -192,7 +346,7 @@ internal static class RequestBodyExtensions
                 EventStatus.Invalid,
                 new EventValidation(false, [new ValidationResult("Event not provided")])
             );
-            
+
             var behaviorInfo = await behavior.GetBehaviorInfo();
             return result.ToResult([], behaviorInfo, customHateoasLinks);
         }
@@ -255,15 +409,15 @@ internal static class RequestBodyExtensions
 
             var result = compoundResult.Response.Results.First();
             var behaviorInfo = (BehaviorInfo)compoundResult.Response.Results.Last().Response.BoxedPayload;
-            
+
             var notifications = payload.RequestedNotifications is { Length: > 0 } && result.Status == EventStatus.Consumed
                 ? (await behavior.GetNotificationsAsync(payload.RequestedNotifications, lastNotificationsCheck)).ToArray()
                 : [];
-            
+
             return result.ToResult(notifications, behaviorInfo, customHateoasLinks);
         }
     }
-    
+
     private static async Task<IResult> RequestEndpointAsync<TRequest, TResponse>(this RequestBody payload, TRequest request, IBehavior behavior,
         bool implicitInitialization, Dictionary<string, List<(HateoasLink, BehaviorStatus[])>> customHateoasLinks, HttpContext context)
         where TRequest : IRequest<TResponse>
@@ -276,9 +430,9 @@ internal static class RequestBodyExtensions
                 EventStatus.Invalid,
                 new EventValidation(false, [new ValidationResult("Event not provided")])
             );
-            
+
             var behaviorInfo = await behavior.GetBehaviorInfo();
-            
+
             return result.ToResult([], behaviorInfo, customHateoasLinks);
         }
         else

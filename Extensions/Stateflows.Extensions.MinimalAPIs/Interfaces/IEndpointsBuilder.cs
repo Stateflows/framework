@@ -1,13 +1,13 @@
-using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Routing;
 
 namespace Stateflows.Extensions.MinimalAPIs;
 
 public interface IEndpointsBuilder
 {
-    RouteHandlerBuilder AddGet(string pattern, Delegate handler);        
-    RouteHandlerBuilder AddPost(string pattern, Delegate handler);        
-    RouteHandlerBuilder AddPatch(string pattern, Delegate handler);        
-    RouteHandlerBuilder AddPut(string pattern, Delegate handler);        
-    RouteHandlerBuilder AddDelete(string pattern, Delegate handler);        
-    RouteHandlerBuilder AddMethods(string pattern, string[] methods, Delegate handler);
+    RouteGroupBuilder AddGet(string pattern, Delegate handler);
+    RouteGroupBuilder AddPost(string pattern, Delegate handler);
+    RouteGroupBuilder AddPatch(string pattern, Delegate handler);
+    RouteGroupBuilder AddPut(string pattern, Delegate handler);
+    RouteGroupBuilder AddDelete(string pattern, Delegate handler);
+    RouteGroupBuilder AddMethods(string pattern, string[] methods, Delegate handler);
 }

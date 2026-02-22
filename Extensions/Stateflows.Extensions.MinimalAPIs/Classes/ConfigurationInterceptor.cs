@@ -1,5 +1,4 @@
 using Microsoft.AspNetCore.Builder;
-using Stateflows.Common;
 
 namespace Stateflows.Extensions.MinimalAPIs;
 
@@ -20,6 +19,7 @@ internal class EndpointConfigurationRule
     public string? BehaviorType { get; init; }
     public BehaviorClass? BehaviorClass { get; init; }
     public Type? Event { get; init; }
+    public bool? IsDefaultInstance { get; init; } = null;
 
     public bool Disable { get; init; } = false;
     public Func<string, string>? RouteUpdater { get; init; }
@@ -29,8 +29,8 @@ internal class EndpointConfigurationRule
 internal class ConfigurationInterceptor(IServiceProvider serviceProvider) : EndpointDefinitionInterceptor
 {
     public List<EndpointConfigurationRule> Rules { get; } = new();
-    
-    public override bool BeforeEventEndpointDefinition<TEvent>(BehaviorClass behaviorClass, ref string method, ref string route)
+
+    public override bool BeforeEventEndpointDefinition<TEvent>(BehaviorClass behaviorClass, bool isDefaultInstance, ref string method, ref string route)
     {
         foreach (var rule in Rules.Where(rule => rule.Kind is EndpointKind.Event or EndpointKind.All))
         {
@@ -38,23 +38,26 @@ internal class ConfigurationInterceptor(IServiceProvider serviceProvider) : Endp
             {
                 if (rule.BehaviorClass == null || rule.BehaviorClass == behaviorClass)
                 {
-                    if (rule.Event == null || rule.Event == typeof(TEvent))
+                    if (rule.IsDefaultInstance == null || rule.IsDefaultInstance == isDefaultInstance)
                     {
-                        if (rule.Disable)
+                        if (rule.Event == null || rule.Event == typeof(TEvent))
                         {
-                            return false;
-                        }
+                            if (rule.Disable)
+                            {
+                                return false;
+                            }
 
-                        route = rule.RouteUpdater?.Invoke(route) ?? route;
+                            route = rule.RouteUpdater?.Invoke(route) ?? route;
+                        }
                     }
                 }
             }
         }
-        
+
         return true;
     }
 
-    public override void AfterEventEndpointDefinition<TEvent>(BehaviorClass behaviorClass, string method, string route,
+    public override void AfterEventEndpointDefinition<TEvent>(BehaviorClass behaviorClass, bool isDefaultInstance, string method, string route,
         IEndpointConventionBuilder routeHandlerBuilder)
     {
         foreach (var rule in Rules.Where(rule => rule.Kind is EndpointKind.Event or EndpointKind.All))
@@ -63,9 +66,12 @@ internal class ConfigurationInterceptor(IServiceProvider serviceProvider) : Endp
             {
                 if (rule.BehaviorClass == null || rule.BehaviorClass == behaviorClass)
                 {
-                    if (rule.Event == null || rule.Event == typeof(TEvent))
+                    if (rule.IsDefaultInstance == null || rule.IsDefaultInstance == isDefaultInstance)
                     {
-                        rule.EndpointConfigurator?.Invoke(routeHandlerBuilder);
+                        if (rule.Event == null || rule.Event == typeof(TEvent))
+                        {
+                            rule.EndpointConfigurator?.Invoke(routeHandlerBuilder);
+                        }
                     }
                 }
             }
@@ -74,7 +80,7 @@ internal class ConfigurationInterceptor(IServiceProvider serviceProvider) : Endp
 
     public override bool BeforeGetClassesEndpointDefinition(string behaviorType, ref string method, ref string route)
     {
-        foreach (var rule in Rules.Where(rule => 
+        foreach (var rule in Rules.Where(rule =>
                 rule.Kind is EndpointKind.GetBehaviorClasses or EndpointKind.All &&
                 (
                     rule.BehaviorType == behaviorType ||
@@ -90,13 +96,13 @@ internal class ConfigurationInterceptor(IServiceProvider serviceProvider) : Endp
 
             route = rule.RouteUpdater?.Invoke(route) ?? route;
         }
-        
+
         return true;
     }
 
     public override void AfterGetClassesEndpointDefinition(string behaviorType, string method, string route, IEndpointConventionBuilder routeHandlerBuilder)
     {
-        foreach (var rule in Rules.Where(rule => 
+        foreach (var rule in Rules.Where(rule =>
                 rule.Kind is EndpointKind.GetBehaviorClasses or EndpointKind.All &&
                 (
                     rule.BehaviorType == behaviorType ||
@@ -120,7 +126,7 @@ internal class ConfigurationInterceptor(IServiceProvider serviceProvider) : Endp
 
             route = rule.RouteUpdater?.Invoke(route) ?? route;
         }
-        
+
         return true;
     }
 
@@ -134,7 +140,7 @@ internal class ConfigurationInterceptor(IServiceProvider serviceProvider) : Endp
 
     public override bool BeforeGetInstancesEndpointDefinition(BehaviorClass behaviorClass, ref string method, ref string route)
     {
-        foreach (var rule in Rules.Where(rule => 
+        foreach (var rule in Rules.Where(rule =>
                      rule.Kind is EndpointKind.GetInstances or EndpointKind.All &&
                      (
                          (rule.BehaviorType == null && rule.BehaviorClass == behaviorClass) ||
@@ -151,13 +157,13 @@ internal class ConfigurationInterceptor(IServiceProvider serviceProvider) : Endp
 
             route = rule.RouteUpdater?.Invoke(route) ?? route;
         }
-        
+
         return true;
     }
 
     public override void AfterGetInstancesEndpointDefinition(BehaviorClass behaviorClass, string method, string route, IEndpointConventionBuilder routeHandlerBuilder)
     {
-        foreach (var rule in Rules.Where(rule => 
+        foreach (var rule in Rules.Where(rule =>
                      rule.Kind is EndpointKind.GetInstances or EndpointKind.All &&
                      (
                          (rule.BehaviorType == null && rule.BehaviorClass == behaviorClass) ||
@@ -176,7 +182,7 @@ internal class ConfigurationInterceptor(IServiceProvider serviceProvider) : Endp
         foreach (var rule in Rules.Where(rule =>
                 rule.Kind is EndpointKind.GetInstances or EndpointKind.All &&
                 (
-                    rule.BehaviorType == behaviorType || 
+                    rule.BehaviorType == behaviorType ||
                     (rule.BehaviorType == null && rule.BehaviorClass == null)
                 )
             )
@@ -189,7 +195,7 @@ internal class ConfigurationInterceptor(IServiceProvider serviceProvider) : Endp
 
             route = rule.RouteUpdater?.Invoke(route) ?? route;
         }
-        
+
         return true;
     }
 
@@ -199,7 +205,7 @@ internal class ConfigurationInterceptor(IServiceProvider serviceProvider) : Endp
         foreach (var rule in Rules.Where(rule =>
                 rule.Kind is EndpointKind.GetInstances or EndpointKind.All &&
                 (
-                    rule.BehaviorType == behaviorType || 
+                    rule.BehaviorType == behaviorType ||
                     (rule.BehaviorType == null && rule.BehaviorClass == null)
                 )
             )
@@ -220,7 +226,7 @@ internal class ConfigurationInterceptor(IServiceProvider serviceProvider) : Endp
 
             route = rule.RouteUpdater?.Invoke(route) ?? route;
         }
-        
+
         return true;
     }
 
@@ -233,7 +239,7 @@ internal class ConfigurationInterceptor(IServiceProvider serviceProvider) : Endp
         }
     }
 
-    public override bool BeforeCustomEndpointDefinition(BehaviorClass behaviorClass, ref string[] methods, ref string route)
+    public override bool BeforeCustomEndpointDefinition(BehaviorClass behaviorClass, bool isDefaultInstance, ref string[] methods, ref string route)
     {
         foreach (var rule in Rules.Where(rule => rule.Kind is EndpointKind.Custom or EndpointKind.All))
         {
@@ -241,12 +247,15 @@ internal class ConfigurationInterceptor(IServiceProvider serviceProvider) : Endp
             {
                 if (rule.BehaviorClass == null || rule.BehaviorClass == behaviorClass)
                 {
-                    if (rule.Disable)
+                    if (rule.IsDefaultInstance == null || rule.IsDefaultInstance == isDefaultInstance)
                     {
-                        return false;
-                    }
+                        if (rule.Disable)
+                        {
+                            return false;
+                        }
 
-                    route = rule.RouteUpdater?.Invoke(route) ?? route;
+                        route = rule.RouteUpdater?.Invoke(route) ?? route;
+                    }
                 }
             }
         }
@@ -254,7 +263,7 @@ internal class ConfigurationInterceptor(IServiceProvider serviceProvider) : Endp
         return true;
     }
 
-    public override void AfterCustomEndpointDefinition(BehaviorClass behaviorClass, string[] methods, string route,
+    public override void AfterCustomEndpointDefinition(BehaviorClass behaviorClass, bool isDefaultInstance, string[] methods, string route,
         IEndpointConventionBuilder routeHandlerBuilder)
     {
         foreach (var rule in Rules.Where(rule => rule.Kind is EndpointKind.Custom or EndpointKind.All))
@@ -263,14 +272,17 @@ internal class ConfigurationInterceptor(IServiceProvider serviceProvider) : Endp
             {
                 if (rule.BehaviorClass == null || rule.BehaviorClass == behaviorClass)
                 {
-                    rule.EndpointConfigurator?.Invoke(routeHandlerBuilder);
+                    if (rule.IsDefaultInstance == null || rule.IsDefaultInstance == isDefaultInstance)
+                    {
+                        rule.EndpointConfigurator?.Invoke(routeHandlerBuilder);
+                    }
                 }
             }
         }
     }
 
     public override IEnumerable<BehaviorClass> FilterBehaviorClasses(IEnumerable<BehaviorClass> behaviorClasses)
-        => behaviorClasses.Where(c => 
+        => behaviorClasses.Where(c =>
             !Rules.Any(rule =>
                 rule.Disable &&
                 rule.Kind is EndpointKind.All &&

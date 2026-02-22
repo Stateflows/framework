@@ -18,6 +18,11 @@ internal class ActionVisitor(IEndpointRouteBuilder routeBuilder, Interceptor int
     public IEndpointRouteBuilder RouteBuilder => routeBuilder;
     public Dictionary<string, List<(HateoasLink, BehaviorStatus[])>> HateoasLinks { get; set; } = new();
     private BehaviorClass? OwnerClass = null;
+    public bool HasDefaultInstance { get; private set; } = false; // TODO HANDLE!!!
+
+
+
+    // TODO ActionAddingAsync seting flag hasDefaultInstance
 
     public override Task ActionAddedAsync(string actionName, int actionVersion, BehaviorClass? ownerClass = null, BehaviorClass? parentClass = null, bool hasDefaultInstance = false)
     {
@@ -60,7 +65,7 @@ internal class ActionVisitor(IEndpointRouteBuilder routeBuilder, Interceptor int
 
         route = $"/{actionName}/{{instance}}/status";
         method = HttpMethods.Get;
-        if (interceptor.BeforeEventEndpointDefinition<BehaviorInfoRequest>(behaviorClass, ref method, ref route))
+        if (interceptor.BeforeEventEndpointDefinition<BehaviorInfoRequest>(behaviorClass, isDefaultInstance: false, ref method, ref route))
         {
             var routeHandlerBuilder = action.MapMethods(
                 route,
@@ -109,7 +114,7 @@ internal class ActionVisitor(IEndpointRouteBuilder routeBuilder, Interceptor int
             )
             .WithTags($"{BehaviorType.Action} {actionName}");
 
-            interceptor.AfterEventEndpointDefinition<BehaviorInfoRequest>(behaviorClass, method, route, routeHandlerBuilder);
+            interceptor.AfterEventEndpointDefinition<BehaviorInfoRequest>(behaviorClass, isDefaultInstance: false, method, route, routeHandlerBuilder);
 
             HateoasLinks.AddLink(
                 behaviorClass.Name,
@@ -125,7 +130,7 @@ internal class ActionVisitor(IEndpointRouteBuilder routeBuilder, Interceptor int
 
         route = $"/{actionName}/{{instance}}/notifications";
         method = HttpMethods.Get;
-        if (interceptor.BeforeEventEndpointDefinition<NotificationsRequest>(behaviorClass, ref method, ref route))
+        if (interceptor.BeforeEventEndpointDefinition<NotificationsRequest>(behaviorClass, isDefaultInstance: false, ref method, ref route))
         {
             var routeHandlerBuilder = action.MapMethods(
                 route,
@@ -175,7 +180,7 @@ internal class ActionVisitor(IEndpointRouteBuilder routeBuilder, Interceptor int
                 })
                 .WithTags($"{BehaviorType.Action} {actionName}");
 
-            interceptor.AfterEventEndpointDefinition<NotificationsRequest>(behaviorClass, method, route, routeHandlerBuilder);
+            interceptor.AfterEventEndpointDefinition<NotificationsRequest>(behaviorClass, isDefaultInstance: false, method, route, routeHandlerBuilder);
 
             HateoasLinks.AddLink(
                 behaviorClass.Name,
@@ -191,7 +196,7 @@ internal class ActionVisitor(IEndpointRouteBuilder routeBuilder, Interceptor int
 
         route = $"/{actionName}/{{instance}}/finalize";
         method = HttpMethods.Post;
-        if (interceptor.BeforeEventEndpointDefinition<Finalize>(behaviorClass, ref method, ref route))
+        if (interceptor.BeforeEventEndpointDefinition<Finalize>(behaviorClass, isDefaultInstance: false, ref method, ref route))
         {
             var routeHandlerBuilder = action.MapMethods(
                 route,
@@ -213,7 +218,7 @@ internal class ActionVisitor(IEndpointRouteBuilder routeBuilder, Interceptor int
             )
             .WithTags($"{BehaviorType.Action} {actionName}");
 
-            interceptor.AfterEventEndpointDefinition<Finalize>(behaviorClass, method, route, routeHandlerBuilder);
+            interceptor.AfterEventEndpointDefinition<Finalize>(behaviorClass, isDefaultInstance: false, method, route, routeHandlerBuilder);
 
             HateoasLinks.AddLink(
                 behaviorClass.Name,
@@ -229,7 +234,7 @@ internal class ActionVisitor(IEndpointRouteBuilder routeBuilder, Interceptor int
 
         route = $"/{actionName}/{{instance}}";
         method = HttpMethods.Delete;
-        if (interceptor.BeforeEventEndpointDefinition<Reset>(behaviorClass, ref method, ref route))
+        if (interceptor.BeforeEventEndpointDefinition<Reset>(behaviorClass, isDefaultInstance: false, ref method, ref route))
         {
             var routeHandlerBuilder = action.MapMethods(
                 route,
@@ -251,7 +256,7 @@ internal class ActionVisitor(IEndpointRouteBuilder routeBuilder, Interceptor int
             )
             .WithTags($"{BehaviorType.Action} {actionName}");
 
-            interceptor.AfterEventEndpointDefinition<Reset>(behaviorClass, method, route, routeHandlerBuilder);
+            interceptor.AfterEventEndpointDefinition<Reset>(behaviorClass, isDefaultInstance: false, method, route, routeHandlerBuilder);
 
             HateoasLinks.AddLink(
                 behaviorClass.Name,
@@ -288,7 +293,7 @@ internal class ActionVisitor(IEndpointRouteBuilder routeBuilder, Interceptor int
 
         route = $"/{actionName}/status";
         method = HttpMethods.Get;
-        if (interceptor.BeforeEventEndpointDefinition<BehaviorInfoRequest>(behaviorClass, ref method, ref route))
+        if (interceptor.BeforeEventEndpointDefinition<BehaviorInfoRequest>(behaviorClass, isDefaultInstance: false, ref method, ref route))
         {
             var routeHandlerBuilder = action.MapMethods(
                 route,
@@ -336,7 +341,7 @@ internal class ActionVisitor(IEndpointRouteBuilder routeBuilder, Interceptor int
             )
             .WithTags($"{BehaviorType.Action} {actionName}");
 
-            interceptor.AfterEventEndpointDefinition<BehaviorInfoRequest>(behaviorClass, method, route, routeHandlerBuilder);
+            interceptor.AfterEventEndpointDefinition<BehaviorInfoRequest>(behaviorClass, isDefaultInstance: false, method, route, routeHandlerBuilder);
 
             HateoasLinks.AddLink(
                 behaviorClass.Name,
@@ -352,7 +357,7 @@ internal class ActionVisitor(IEndpointRouteBuilder routeBuilder, Interceptor int
 
         route = $"/{actionName}/notifications";
         method = HttpMethods.Get;
-        if (interceptor.BeforeEventEndpointDefinition<NotificationsRequest>(behaviorClass, ref method, ref route))
+        if (interceptor.BeforeEventEndpointDefinition<NotificationsRequest>(behaviorClass, isDefaultInstance: false, ref method, ref route))
         {
             var routeHandlerBuilder = action.MapMethods(
                 route,
@@ -401,7 +406,7 @@ internal class ActionVisitor(IEndpointRouteBuilder routeBuilder, Interceptor int
                 })
                 .WithTags($"{BehaviorType.Action} {actionName}");
 
-            interceptor.AfterEventEndpointDefinition<NotificationsRequest>(behaviorClass, method, route, routeHandlerBuilder);
+            interceptor.AfterEventEndpointDefinition<NotificationsRequest>(behaviorClass, isDefaultInstance: false, method, route, routeHandlerBuilder);
 
             HateoasLinks.AddLink(
                 behaviorClass.Name,
@@ -426,7 +431,7 @@ internal class ActionVisitor(IEndpointRouteBuilder routeBuilder, Interceptor int
         var actionType = typeof(TAction);
         if (typeof(IActionEndpoints).IsAssignableFrom(actionType))
         {
-            var endpointsBuilder = new EndpointsBuilder(routeBuilder, this, interceptor, new ActionClass(actionName));
+            var endpointsBuilder = new EndpointsBuilder(routeBuilder, this, interceptor, new ActionClass(actionName), HasDefaultInstance);
 
             actionType.CallStaticMethod(nameof(IActionEndpoints.RegisterEndpoints), [typeof(IEndpointsBuilder)], [endpointsBuilder]);
 
