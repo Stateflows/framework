@@ -26,7 +26,7 @@ internal static class Utils
 
         links.AddRange(
             behaviorInfo.ExpectedEvents.SelectMany(expectedEvent =>
-                hateoasLinks.TryGetValue($"{behaviorInfo.Id.Name}:event:{expectedEvent.ToShortName().ToCamelCase()}", out var eventLinks)
+                hateoasLinks.TryGetValue($"{behaviorInfo.Id.Name}:{(behaviorInfo.Id.Instance == string.Empty ? "default" : "standard")}:event:{expectedEvent.ToShortName().ToCamelCase()}", out var eventLinks)
                     ? eventLinks.ToInstanceLinks(DependencyInjection.ApiRoutePrefix, behaviorInfo)
                     : []
             )
@@ -41,7 +41,7 @@ internal static class Utils
         {
             links.AddRange(
                 stateMachineInfo.CurrentStates.GetAllNodes().SelectMany(node =>
-                    hateoasLinks.TryGetValue($"{behaviorInfo.Id.Name}:node:{node.Value}", out var stateLinks)
+                    hateoasLinks.TryGetValue($"{behaviorInfo.Id.Name}:{(behaviorInfo.Id.Instance == string.Empty ? "default" : "standard")}:node:{node.Value}", out var stateLinks)
                         ? stateLinks.ToInstanceLinks(DependencyInjection.ApiRoutePrefix, behaviorInfo)
                         : []
                 )
@@ -52,7 +52,7 @@ internal static class Utils
         {
             links.AddRange(
                 activityInfo.ActiveNodes.GetAllNodes().SelectMany(node =>
-                    hateoasLinks.TryGetValue($"{behaviorInfo.Id.Name}:node:{node.Value}", out var nodeLinks)
+                    hateoasLinks.TryGetValue($"{behaviorInfo.Id.Name}:{(behaviorInfo.Id.Instance == string.Empty ? "default" : "standard")}:node:{node.Value}", out var nodeLinks)
                         ? nodeLinks.ToInstanceLinks(DependencyInjection.ApiRoutePrefix, behaviorInfo)
                         : []
                 )
