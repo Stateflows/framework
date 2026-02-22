@@ -54,35 +54,35 @@ namespace Stateflows.Common
             var validationResults = new List<ValidationResult>();
             var isValid = true;
 
-            if (this is EventHolder<CompoundRequest> compoundRequestHolder)
-            {
-                var compoundRequest = compoundRequestHolder.Payload;
-                var results = new List<RequestResult>();
-                foreach (var ev in compoundRequest.Events)
-                {
-                    var validation = await ev.ValidateAsync(validators);
-                    var status = validation.IsValid
-                        ? EventStatus.Omitted
-                        : EventStatus.Invalid;
-
-                    if (!validation.IsValid)
-                    {
-                        isValid = false;
-                    }
-
-                    results.Add(new RequestResult(
-                        null,
-                        status,
-                        validation
-                    ));
-                }
-
-                if (!isValid)
-                {
-                    compoundRequest.Respond(new CompoundResponse() { Results = results });
-                }
-            }
-            else
+            // if (this is EventHolder<CompoundRequest> compoundRequestHolder)
+            // {
+            //     var compoundRequest = compoundRequestHolder.Payload;
+            //     var results = new List<RequestResult>();
+            //     foreach (var ev in compoundRequest.Events)
+            //     {
+            //         var validation = await ev.ValidateAsync(validators);
+            //         var status = validation.IsValid
+            //             ? EventStatus.Omitted
+            //             : EventStatus.Invalid;
+            //
+            //         if (!validation.IsValid)
+            //         {
+            //             isValid = false;
+            //         }
+            //
+            //         results.Add(new RequestResult(
+            //             null,
+            //             status,
+            //             validation
+            //         ));
+            //     }
+            //
+            //     if (!isValid)
+            //     {
+            //         compoundRequest.Respond(new CompoundResponse() { Results = results });
+            //     }
+            // }
+            // else
             {
                 if (!PayloadType.IsClass) return new EventValidation(true, validationResults);
                 

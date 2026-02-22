@@ -1322,6 +1322,7 @@ namespace Stateflows.StateMachines.Engine
             ContextValues.StateValuesHolder.Value = context.State.Values;
 
             StateMachinesContextHolder.StateContext.Value = context.State;
+            StateMachinesContextHolder.TransitionContext.Value = null;
             StateMachinesContextHolder.BehaviorContext.Value = context.Behavior;
             if (((IStateflowsContextProvider)context).Context.ContextOwnerId == null)
             {

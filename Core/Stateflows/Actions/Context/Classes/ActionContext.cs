@@ -12,7 +12,6 @@ using Microsoft.Extensions.DependencyInjection;
 using Stateflows.Activities;
 using Stateflows.Common.Context;
 using Stateflows.Common.Context.Classes;
-using Stateflows.Common.Engine;
 using Stateflows.Common.Utilities;
 
 namespace Stateflows.Actions.Context.Classes
@@ -90,8 +89,6 @@ namespace Stateflows.Actions.Context.Classes
             => OutputTokens.AddRange(tokens.Select(token => token.ToTokenHolder()));
 
         public StateflowsContext Context => RootContext.Context;
-
-        internal CancellationTokenSource CancellationTokenSource = new();
         public CancellationToken CancellationToken => CancellationTokenSource.Token;
     }
 }

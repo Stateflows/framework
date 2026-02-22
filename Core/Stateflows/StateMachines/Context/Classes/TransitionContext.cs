@@ -1,10 +1,16 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Threading;
+using Stateflows.Common;
 using Stateflows.StateMachines.Models;
 using Stateflows.StateMachines.Context.Interfaces;
 
 namespace Stateflows.StateMachines.Context.Classes
 {
-    internal class TransitionContext<TEvent> : EventContext<TEvent>, ITransitionContext<TEvent>, IEdgeContext
+    internal class TransitionContext<TEvent> :
+        EventContext<TEvent>,
+        ITransitionContext<TEvent>,
+        IEdgeContext
     {
         public Edge Edge { get; }
 
@@ -18,6 +24,7 @@ namespace Stateflows.StateMachines.Context.Classes
 
         private bool targetStateSet = false;
         private IStateContext targetState = null;
+
         public IStateContext Target
         {
             get
@@ -37,5 +44,7 @@ namespace Stateflows.StateMachines.Context.Classes
         }
 
         public Type TriggerType => Edge.TriggerType;
+
+        object ITransitionContext.Trigger => Event;
     }
 }

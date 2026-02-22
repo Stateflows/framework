@@ -4,7 +4,7 @@ using Stateflows.Common.Utilities;
 
 namespace Stateflows
 {
-    public struct BehaviorId
+    public struct BehaviorId : IEquatable<BehaviorId>
     {
         public BehaviorId(BehaviorClass behaviorClass, string instance)
         {
@@ -51,12 +51,16 @@ namespace Stateflows
             => !id1.Equals(id2);
 
         public readonly override bool Equals(object obj)
-            =>
-                obj is BehaviorId id &&
-                BehaviorClass == id.BehaviorClass &&
-                Instance == id.Instance;
+        {
+            return obj is BehaviorId other && Equals(other);
+        }
 
         public readonly override int GetHashCode()
-            => Tuple.Create(BehaviorClass, Instance).GetHashCode();
+        {
+            return HashCode.Combine(Instance, BehaviorClass);
+        }
+
+        public bool Equals(BehaviorId other)
+            => Instance == other.Instance && BehaviorClass.Equals(other.BehaviorClass);
     }
 }

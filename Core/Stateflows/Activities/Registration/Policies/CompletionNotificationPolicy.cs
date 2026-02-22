@@ -11,7 +11,11 @@ internal class CompletionNotification : ActivityInterceptor
         if (eventStatus == EventStatus.Consumed)
         {
             var stateflowsContext = ((IRootContext)context).Context.Context;
-            if (stateflowsContext.ContextParentId != null)
+            if (
+                stateflowsContext.ContextParentId != null &&
+                stateflowsContext.ContextParentId.Value.Type == BehaviorType.StateMachine &&
+                eventStatus is EventStatus.Consumed or EventStatus.Initialized
+            )
             {
                 context.Behavior.Send(new Completion());
             }

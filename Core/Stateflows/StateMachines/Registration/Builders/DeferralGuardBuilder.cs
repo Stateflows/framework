@@ -57,7 +57,7 @@ namespace Stateflows.StateMachines.Registration.Builders
                 return result;
             };
         
-        public IDeferralGuardBuilder<TEvent> AddGuard(params Func<IDeferralContext<TEvent>, Task<bool>>[] guardsAsync)
+        public IDeferralGuardBuilder<TEvent> AddGuards(params Func<IDeferralContext<TEvent>, Task<bool>>[] guardsAsync)
         {
             GuardsList.AddRange(guardsAsync);
 

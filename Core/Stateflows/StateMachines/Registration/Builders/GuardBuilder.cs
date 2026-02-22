@@ -52,7 +52,7 @@ namespace Stateflows.StateMachines.Registration.Builders
                 return result;
             };
         
-        public IGuardBuilder<TEvent> AddGuard(params Func<ITransitionContext<TEvent>, Task<bool>>[] guardsAsync)
+        public IGuardBuilder<TEvent> AddGuards(params Func<ITransitionContext<TEvent>, Task<bool>>[] guardsAsync)
         {
             Guards.AddRange(guardsAsync);
 
@@ -79,9 +79,9 @@ namespace Stateflows.StateMachines.Registration.Builders
             return this;
         }
 
-        IDefaultGuardBuilder IBaseDefaultGuard<IDefaultGuardBuilder>.AddGuard(
+        IDefaultGuardBuilder IBaseDefaultGuard<IDefaultGuardBuilder>.AddGuards(
             params Func<ITransitionContext<Completion>, Task<bool>>[] guardsAsync)
-            => (this as GuardBuilder<Completion>)!.AddGuard(guardsAsync) as IDefaultGuardBuilder;
+            => (this as GuardBuilder<Completion>)!.AddGuards(guardsAsync) as IDefaultGuardBuilder;
 
         IDefaultGuardBuilder IDefaultGuardBuilder.AddAndExpression(Action<IDefaultGuardBuilder> guardExpression)
             => AddAndExpression(b => guardExpression.Invoke(b as IDefaultGuardBuilder)) as IDefaultGuardBuilder;

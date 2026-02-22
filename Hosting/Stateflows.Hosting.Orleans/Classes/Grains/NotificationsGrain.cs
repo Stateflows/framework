@@ -48,24 +48,24 @@ internal class NotificationsGrain(
 
             foreach (var notification in notifications.Where(n => subscription.Value.Contains(n.Name)))
             {
-                await subscriber.ProcessEventAsync(notification);
+                await subscriber.ProcessEventAsync(notification, CancellationToken.None);
             }
         }
         
     }
 
-    public async Task<OrleansEventHolder[]> GetNotificationsAsync(DateTime? lastNotificationsCheck = null, string[]? notificationNames = null)
+    public Task<OrleansEventHolder[]> GetNotificationsAsync(DateTime? lastNotificationsCheck = null, string[]? notificationNames = null)
     {
         lastNotificationsCheck ??= DateTime.Now;
 
-        return notificationsState.State.Where(n =>
+        return Task.FromResult(notificationsState.State.Where(n =>
                 (notificationNames?.Contains(n.Name) ?? true) &&
                 (
                     n.SentAt.AddSeconds(n.TimeToLive) >= lastNotificationsCheck ||
                     n.Retained
                 )
             )
-            .ToArray();
+            .ToArray());
     }
 
     public async Task AddSubscriptionAsync(OrleansBehaviorId behaviorId, string[] notificationNames)
@@ -74,7 +74,7 @@ internal class NotificationsGrain(
         var justSubscribed = new HashSet<string>();
         if (!subscriptionsState.State.TryGetValue(behaviorGrainKey, out var subscribedNotificationNames))
         {
-            subscribedNotificationNames = new();
+            subscribedNotificationNames = [];
             subscriptionsState.State.Add(behaviorGrainKey, subscribedNotificationNames);
         }
 
@@ -92,7 +92,7 @@ internal class NotificationsGrain(
         
         foreach (var notification in notificationsState.State.Where(n => justSubscribed.Contains(n.Name) && n.Retained))
         {
-            await subscriber.ProcessEventAsync(notification);
+            await subscriber.ProcessEventAsync(notification, CancellationToken.None);
         }
     }
 

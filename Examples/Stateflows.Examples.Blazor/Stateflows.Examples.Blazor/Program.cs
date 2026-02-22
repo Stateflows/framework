@@ -54,9 +54,9 @@ builder.Services.AddStateflows(b => b
     //
     // .AddEntityFrameworkCoreStorage<AppDbContext>()
     
-    .AddDistributedLock(async (serviceProvider, lockKey)
-        => new SqlDistributedLock(lockKey, builder.Configuration.GetConnectionString("Default"))
-    )
+    // .AddDistributedLock(async (serviceProvider, lockKey)
+    //     => new SqlDistributedLock(lockKey, builder.Configuration.GetConnectionString("Default"))
+    // )
 );
 
 builder.Services.AddOpenApi();
@@ -116,6 +116,8 @@ app.MapRazorComponents<App>()
 
 
 // API interface must be exposed for WebAssembly to interact with Stateflows
-app.MapStateflowsMinimalAPIsEndpoints();
+app.MapStateflowsMinimalAPIsEndpoints(b => b
+    .
+);
 
 app.Run();

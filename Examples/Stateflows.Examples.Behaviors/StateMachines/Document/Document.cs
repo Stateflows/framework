@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using Stateflows.Actions;
 using Stateflows.Common;
 using Stateflows.Examples.Behaviors.Activities.Invoicing;
@@ -8,7 +9,6 @@ using Stateflows.Examples.Behaviors.StateMachines.Document.States;
 using Stateflows.Examples.Common.Events;
 using Stateflows.StateMachines;
 using Stateflows.Activities;
-using Stateflows.Extensions.MinimalAPIs;
 using Stateflows.StateMachines.Attributes;
 
 namespace Stateflows.Examples.Behaviors.StateMachines.Document;
@@ -29,12 +29,24 @@ public class Document : IStateMachine
         .AddState<ApprovalPending>(b => b
             .AddTransition<Approve, Approved>()
             .AddTransition<Reject, ReportRejection, Rejected>()
-            .AddSubmachine(b => b
-                .AddInitialState("x", b => b
-                    .AddInternalTransition<PaymentBooked>(b => b
-                        .AddGuard<Deny>()
-                    )
+            .AddDoActivity(b => b
+                .AddInitial(b => b
+                    .AddControlFlow("initial")
                 )
+                .AddAction("initial", async c =>
+                {
+                    foreach (var i in Enumerable.Range(1, 100))
+                    {
+                        if (c.CancellationToken.IsCancellationRequested)
+                        {
+                            Debug.WriteLine("Cancelled!");
+                            break;
+                        }
+
+                        await Task.Delay(1000);
+                        Debug.WriteLine($"Continuing stupid work #{i}");
+                    }
+                })
             )
         )
         .AddCompositeState<Approved>(b => b

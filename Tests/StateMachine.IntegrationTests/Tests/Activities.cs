@@ -23,6 +23,7 @@ namespace StateMachine.IntegrationTests.Tests
         public bool EffectRun = false;
         public bool EntryRun = false;
         public bool ExitRun = false;
+        public int Counter = 0;
 
         [TestInitialize]
         public override void Initialize()
@@ -98,56 +99,60 @@ namespace StateMachine.IntegrationTests.Tests
                             )
                         )
                     )
+                    .AddStateMachine("doActivityCancellation", b => b
+                        .AddInitialState("initial", b => b
+                            .AddDoActivity(b => b
+                                .AddAcceptEventAction<SomeEvent>(async c =>
+                                {
+                                    foreach (var i in Enumerable.Range(1, 100))
+                                    {
+                                        if (c.CancellationToken.IsCancellationRequested)
+                                        {
+                                            break;
+                                        }
+                                    
+                                        await Task.Delay(100);
+
+                                        Counter++;
+                                    }
+                                })
+                            )
+                            .AddTransition<OtherEvent>("second")
+                        )
+                        .AddState("second")
+                    )
                 )   
-                .AddActivities(b => b
-                    .AddActivity("guard", b => b
-                        .AddAcceptEventAction<SomeEvent>(
-                            async c =>
-                            {
-                                GuardRun = true;
-                                var (success, value) = await c.Behavior.Values.TryGetAsync<bool>("value");
-                                if (success)
-                                {
-                                    Debug.WriteLine($"value: {value}");
-                                    c.Output(value);
-                                }
-                                else
-                                {
-                                    Debug.WriteLine($"value: not available");
-                                }
-                            },
-                            b => b.AddFlow<bool, OutputNode>()
-                        )
-                        .AddOutput()
-                    )
-                    .AddActivity("effect", b => b
-                        .AddInput(b => b
-                            .AddFlow<SomeEvent>("main")
-                        )
-                        .AddAction("main", async c =>
-                        {
-                            EffectRun = true;
-                        })
-                    )
-                    // .AddActivity("entry", b => b
-                    //     .AddInitial(b => b
-                    //         .AddControlFlow("main")
-                    //     )
-                    //     .AddAction("main", async c =>
-                    //     {
-                    //         EntryRun = true;
-                    //     })
-                    // )
-                    // .AddActivity("exit", b => b
-                    //     .AddInitial(b => b
-                    //         .AddControlFlow("main")
-                    //     )
-                    //     .AddAction("main", async c =>
-                    //     {
-                    //         ExitRun = true;
-                    //     })
-                    // )
-                )
+                // .AddActivities(b => b
+                //     .AddActivity("guard", b => b
+                //         .AddAcceptEventAction<SomeEvent>(
+                //             async c =>
+                //             {
+                //                 GuardRun = true;
+                //                 var (success, value) = await c.Behavior.Values.TryGetAsync<bool>("value");
+                //                 if (success)
+                //                 {
+                //                     Debug.WriteLine($"value: {value}");
+                //                     c.Output(value);
+                //                 }
+                //                 else
+                //                 {
+                //                     Debug.WriteLine($"value: not available");
+                //                 }
+                //             },
+                //             b => b.AddFlow<bool, OutputNode>()
+                //         )
+                //         .AddOutput()
+                //     )
+                //     .AddActivity("effect", b => b
+                //         .AddInput(b => b
+                //             .AddFlow<SomeEvent>("main")
+                //         )
+                //         .AddAction("main", async c =>
+                //         {
+                //             EffectRun = true;
+                //         })
+                //     )
+                // )
                 ;
         }
 
@@ -211,6 +216,27 @@ namespace StateMachine.IntegrationTests.Tests
             Assert.AreEqual(false, EffectRun);
             Assert.AreEqual(false, EntryRun);
             Assert.AreEqual(false, ExitRun);
+        }
+
+        [TestMethod]
+        public async Task ActivityCancellation()
+        {
+            bool notificationDelivered = false;
+        
+            if (StateMachineLocator.TryLocateStateMachine(new StateMachineId("doActivityCancellation", "x"), out var sm))
+            {
+                await sm.SendAsync(new Initialize());
+                
+                await sm.SendAsync(new SomeEvent());
+                
+                await Task.Delay(100);
+                
+                await sm.SendAsync(new OtherEvent());
+            }
+            
+            await Task.Delay(100);
+            
+            Assert.IsTrue(Counter < 5);
         }
     }
 }

@@ -1,21 +1,24 @@
 using System.Diagnostics;
 using StateMachine.IntegrationTests.Utils;
 using Stateflows.Actions;
+using Stateflows.Actions.Registration.Interfaces;
 using Stateflows.Activities;
 using Stateflows.Common;
 using Stateflows.Common.Attributes;
 
 namespace Action.IntegrationTests.Tests
 {
-    public class TypedAction : IAction
+    public class TypedAction : IAction, IActionConfiguration
     {
         public Task ExecuteAsync(CancellationToken cancellationToken)
         {
             Typed.TypedExecuted = true;
-            Debug.WriteLine("xxxxxxxxxxxxx");
 
             return Task.CompletedTask;
         }
+
+        public static void Configure(IActionBuilder builder)
+            => builder.SetResourceName("heavy");
     }
     
     public class ValueAction : IAction
@@ -66,6 +69,7 @@ namespace Action.IntegrationTests.Tests
         protected override void InitializeStateflows(IStateflowsBuilder builder)
         {
             builder
+                .AddResource("heavy", b => b.SetMaxConcurrentBehaviorExecutions(1))
                 .AddActions(b => b
                     .AddAction<TypedAction>()
                     .AddAction<InputAction>()

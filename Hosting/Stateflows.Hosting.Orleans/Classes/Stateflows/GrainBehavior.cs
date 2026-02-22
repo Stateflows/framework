@@ -14,6 +14,8 @@ public class GrainBehavior(string tenantId, BehaviorId behaviorId, IClusterClien
     private IBehaviorGrain BehaviorGrain => behaviorGrain ??= client.GetGrain<IBehaviorGrain>(GrainKey);
     private INotificationsGrain? notificationsGrain;
     private INotificationsGrain NotificationsGrain => notificationsGrain ??= client.GetGrain<INotificationsGrain>(GrainKey);
+    private ICancellationGrain? cancellationGrain;
+    private ICancellationGrain CancellationGrain => cancellationGrain ??= client.GetGrain<ICancellationGrain>(GrainKey);
     
     public void Dispose()
     {
@@ -25,8 +27,12 @@ public class GrainBehavior(string tenantId, BehaviorId behaviorId, IClusterClien
         // var serializedEventHolder = StateflowsJsonConverter.SerializePolymorphicObject(@event.ToEventHolder(headers));
         // var serializedResult = await Grain.ProcessAsync(serializedEventHolder);
         // var result = StateflowsJsonConverter.DeserializeObject<RequestResult>(serializedResult);
+        if (@event is Finalize { Mode: FinalizationMode.Immediate })
+        {
+            await CancellationGrain.RequestCancellationAsync();
+        }
         
-        var result = await BehaviorGrain.ProcessEventAsync(@event.ToEventHolder(headers));
+        var result = await BehaviorGrain.ProcessEventAsync(@event.ToEventHolder(headers), CancellationToken.None);
         return new SendResult(result.Status, result.Validation);
     }
 
@@ -36,7 +42,7 @@ public class GrainBehavior(string tenantId, BehaviorId behaviorId, IClusterClien
         // var serializedResult = await Grain.ProcessAsync(serializedEventHolder);
         // var result = StateflowsJsonConverter.DeserializeObject<RequestResult>(serializedResult);
         
-        var result = await BehaviorGrain.ProcessEventAsync(request.ToEventHolder(headers));
+        var result = await BehaviorGrain.ProcessEventAsync(request.ToEventHolder(headers), CancellationToken.None);
         var response = ((EventHolder?)result.Response) is EventHolder<TResponseEvent> responseEventHolder
             ? responseEventHolder
             : default;

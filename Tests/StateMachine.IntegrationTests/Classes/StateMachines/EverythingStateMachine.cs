@@ -135,8 +135,8 @@ namespace StateMachine.IntegrationTests.Classes.StateMachines
                     )
 
                     .AddTransition<SomeEvent, State2>(b => b
-                        .AddGuard(c => true)
-                        .AddGuard(c => Task.FromResult(true))
+                        .AddGuard(() => true)
+                        .AddGuard(() => Task.FromResult(true))
 
                         .AddEffect(c => { })
                         .AddEffect(c => Task.CompletedTask)
@@ -148,8 +148,8 @@ namespace StateMachine.IntegrationTests.Classes.StateMachines
                     )
 
                     .AddInternalTransition<SomeEvent>(b => b
-                        .AddGuard(c => true)
-                        .AddGuard(c => Task.FromResult(true))
+                        .AddGuard(() => true)
+                        .AddGuard(() => Task.FromResult(true))
 
                         .AddEffect(c => { })
                         .AddEffect(c => Task.CompletedTask)
@@ -161,8 +161,8 @@ namespace StateMachine.IntegrationTests.Classes.StateMachines
                     )
 
                     .AddDefaultTransition<State2>(b => b
-                        .AddGuard(c => true)
-                        .AddGuard(c => Task.FromResult(true))
+                        .AddGuard(() => true)
+                        .AddGuard(() => Task.FromResult(true))
 
                         .AddEffect(c => { })
                         .AddEffect(c => Task.CompletedTask)
@@ -217,8 +217,8 @@ namespace StateMachine.IntegrationTests.Classes.StateMachines
                     )
 
                     .AddTransition<SomeEvent, State2>(b => b
-                        .AddGuard(c => true)
-                        .AddGuard(c => Task.FromResult(true))
+                        .AddGuard(() => true)
+                        .AddGuard(() => Task.FromResult(true))
 
                         .AddEffect(c => { })
                         .AddEffect(c => Task.CompletedTask)
@@ -230,8 +230,8 @@ namespace StateMachine.IntegrationTests.Classes.StateMachines
                     )
 
                     .AddInternalTransition<SomeEvent>(b => b
-                        .AddGuard(c => true)
-                        .AddGuard(c => Task.FromResult(true))
+                        .AddGuard(() => true)
+                        .AddGuard(() => Task.FromResult(true))
 
                         .AddEffect(c => { })
                         .AddEffect(c => Task.CompletedTask)
@@ -243,8 +243,8 @@ namespace StateMachine.IntegrationTests.Classes.StateMachines
                     )
 
                     .AddDefaultTransition<State2>(b => b
-                        .AddGuard(c => true)
-                        .AddGuard(c => Task.FromResult(true))
+                        .AddGuard(() => true)
+                        .AddGuard(() => Task.FromResult(true))
 
                         .AddEffect(c => { })
                         .AddEffect(c => Task.CompletedTask)
@@ -299,8 +299,8 @@ namespace StateMachine.IntegrationTests.Classes.StateMachines
                     )
 
                     .AddTransition<SomeEvent, State2>(b => b
-                        .AddGuard(c => true)
-                        .AddGuard(c => Task.FromResult(true))
+                        .AddGuard(() => true)
+                        .AddGuard(() => Task.FromResult(true))
 
                         .AddEffect(c => { })
                         .AddEffect(c => Task.CompletedTask)
@@ -312,8 +312,8 @@ namespace StateMachine.IntegrationTests.Classes.StateMachines
                     )
 
                     .AddInternalTransition<SomeEvent>(b => b
-                        .AddGuard(c => true)
-                        .AddGuard(c => Task.FromResult(true))
+                        .AddGuard(() => true)
+                        .AddGuard(() => Task.FromResult(true))
 
                         .AddEffect(c => { })
                         .AddEffect(c => Task.CompletedTask)
@@ -325,8 +325,8 @@ namespace StateMachine.IntegrationTests.Classes.StateMachines
                     )
 
                     .AddDefaultTransition<State2>(b => b
-                        .AddGuard(c => true)
-                        .AddGuard(c => Task.FromResult(true))
+                        .AddGuard(() => true)
+                        .AddGuard(() => Task.FromResult(true))
 
                         .AddEffect(c => { })
                         .AddEffect(c => Task.CompletedTask)
@@ -370,8 +370,8 @@ namespace StateMachine.IntegrationTests.Classes.StateMachines
                     //.AddElseDefaultTransition<EffectedTransition>(State<FinalState>.Name)
 
                     .AddTransition<SomeEvent, State2>(b => b
-                        .AddGuard(c => true)
-                        .AddGuard(c => Task.FromResult(true))
+                        .AddGuard(() => true)
+                        .AddGuard(() => Task.FromResult(true))
 
                         .AddEffect(c => { })
                         .AddEffect(c => Task.CompletedTask)
@@ -383,8 +383,8 @@ namespace StateMachine.IntegrationTests.Classes.StateMachines
                     )
 
                     .AddInternalTransition<SomeEvent>(b => b
-                        .AddGuard(c => true)
-                        .AddGuard(c => Task.FromResult(true))
+                        .AddGuard(() => true)
+                        .AddGuard(() => Task.FromResult(true))
 
                         .AddEffect(c => { })
                         .AddEffect(c => Task.CompletedTask)
@@ -396,8 +396,8 @@ namespace StateMachine.IntegrationTests.Classes.StateMachines
                     )
 
                     .AddDefaultTransition<State2>(b => b
-                        .AddGuard(c => true)
-                        .AddGuard(c => Task.FromResult(true))
+                        .AddGuard(() => true)
+                        .AddGuard(() => Task.FromResult(true))
 
                         .AddEffect(c => { })
                         .AddEffect(c => Task.CompletedTask)
@@ -426,8 +426,8 @@ namespace StateMachine.IntegrationTests.Classes.StateMachines
                     //.AddElseDefaultTransition<EffectedTransition>(State<FinalState>.Name)
 
                     .AddTransition<SomeEvent, State2>(b => b
-                        .AddGuard(c => true)
-                        .AddGuard(c => Task.FromResult(true))
+                        .AddGuard(() => true)
+                        .AddGuard(() => Task.FromResult(true))
 
                         .AddEffect(c => { })
                         .AddEffect(c => Task.CompletedTask)
@@ -439,8 +439,8 @@ namespace StateMachine.IntegrationTests.Classes.StateMachines
                     )
 
                     .AddInternalTransition<SomeEvent>(b => b
-                        .AddGuard(c => true)
-                        .AddGuard(c => Task.FromResult(true))
+                        .AddGuard(() => true)
+                        .AddGuard(() => Task.FromResult(true))
 
                         .AddEffect(c => { })
                         .AddEffect(c => Task.CompletedTask)
@@ -452,8 +452,8 @@ namespace StateMachine.IntegrationTests.Classes.StateMachines
                     )
 
                     .AddDefaultTransition<State2>(b => b
-                        .AddGuard(c => true)
-                        .AddGuard(c => Task.FromResult(true))
+                        .AddGuard(() => true)
+                        .AddGuard(() => Task.FromResult(true))
 
                         .AddEffect(c => { })
                         .AddEffect(c => Task.CompletedTask)
@@ -494,8 +494,8 @@ namespace StateMachine.IntegrationTests.Classes.StateMachines
                     //.AddElseDefaultTransition<EffectedTransition>(State<FinalState>.Name)
 
                     .AddTransition<SomeEvent, State2>(b => b
-                        .AddGuard(c => true)
-                        .AddGuard(c => Task.FromResult(true))
+                        .AddGuard(() => true)
+                        .AddGuard(() => Task.FromResult(true))
 
                         .AddEffect(c => { })
                         .AddEffect(c => Task.CompletedTask)
@@ -507,8 +507,8 @@ namespace StateMachine.IntegrationTests.Classes.StateMachines
                     )
 
                     .AddInternalTransition<SomeEvent>(b => b
-                        .AddGuard(c => true)
-                        .AddGuard(c => Task.FromResult(true))
+                        .AddGuard(() => true)
+                        .AddGuard(() => Task.FromResult(true))
 
                         .AddEffect(c => { })
                         .AddEffect(c => Task.CompletedTask)
@@ -520,8 +520,8 @@ namespace StateMachine.IntegrationTests.Classes.StateMachines
                     )
 
                     .AddDefaultTransition<State2>(b => b
-                        .AddGuard(c => true)
-                        .AddGuard(c => Task.FromResult(true))
+                        .AddGuard(() => true)
+                        .AddGuard(() => Task.FromResult(true))
 
                         .AddEffect(c => { })
                         .AddEffect(c => Task.CompletedTask)
@@ -565,8 +565,8 @@ namespace StateMachine.IntegrationTests.Classes.StateMachines
                     //.AddElseDefaultTransition<EffectedTransition>(State<FinalState>.Name)
 
                     .AddTransition<SomeEvent, State2>(b => b
-                        .AddGuard(c => true)
-                        .AddGuard(c => Task.FromResult(true))
+                        .AddGuard(() => true)
+                        .AddGuard(() => Task.FromResult(true))
 
                         .AddEffect(c => { })
                         .AddEffect(c => Task.CompletedTask)
@@ -578,8 +578,8 @@ namespace StateMachine.IntegrationTests.Classes.StateMachines
                     )
 
                     .AddInternalTransition<SomeEvent>(b => b
-                        .AddGuard(c => true)
-                        .AddGuard(c => Task.FromResult(true))
+                        .AddGuard(() => true)
+                        .AddGuard(() => Task.FromResult(true))
 
                         .AddEffect(c => { })
                         .AddEffect(c => Task.CompletedTask)
@@ -591,8 +591,8 @@ namespace StateMachine.IntegrationTests.Classes.StateMachines
                     )
 
                     .AddDefaultTransition<State2>(b => b
-                        .AddGuard(c => true)
-                        .AddGuard(c => Task.FromResult(true))
+                        .AddGuard(() => true)
+                        .AddGuard(() => Task.FromResult(true))
 
                         .AddEffect(c => { })
                         .AddEffect(c => Task.CompletedTask)
@@ -621,8 +621,8 @@ namespace StateMachine.IntegrationTests.Classes.StateMachines
                     //.AddElseDefaultTransition<EffectedTransition>(State<FinalState>.Name)
 
                     .AddTransition<SomeEvent, State2>(b => b
-                        .AddGuard(c => true)
-                        .AddGuard(c => Task.FromResult(true))
+                        .AddGuard(() => true)
+                        .AddGuard(() => Task.FromResult(true))
 
                         .AddEffect(c => { })
                         .AddEffect(c => Task.CompletedTask)
@@ -634,8 +634,8 @@ namespace StateMachine.IntegrationTests.Classes.StateMachines
                     )
 
                     .AddInternalTransition<SomeEvent>(b => b
-                        .AddGuard(c => true)
-                        .AddGuard(c => Task.FromResult(true))
+                        .AddGuard(() => true)
+                        .AddGuard(() => Task.FromResult(true))
 
                         .AddEffect(c => { })
                         .AddEffect(c => Task.CompletedTask)
@@ -647,8 +647,8 @@ namespace StateMachine.IntegrationTests.Classes.StateMachines
                     )
 
                     .AddDefaultTransition<State2>(b => b
-                        .AddGuard(c => true)
-                        .AddGuard(c => Task.FromResult(true))
+                        .AddGuard(() => true)
+                        .AddGuard(() => Task.FromResult(true))
 
                         .AddEffect(c => { })
                         .AddEffect(c => Task.CompletedTask)

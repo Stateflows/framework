@@ -22,14 +22,6 @@ internal class Behaviors : ActivityPlugin
 
                 context.Behavior.Send(context.Event, headers);
             }
-
-            if (
-                context.Behavior.Id.Type == BehaviorType.StateMachine && 
-                eventStatus is EventStatus.Consumed or EventStatus.Initialized
-            )
-            {
-                context.Behavior.Send(new Completion());
-            }
         }
     }
 }

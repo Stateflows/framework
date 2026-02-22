@@ -1,6 +1,4 @@
 using System.Reflection;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
 using Stateflows.Interfaces;
 using Stateflows.Common;
 using Stateflows.Common.Utilities;
@@ -16,6 +14,7 @@ internal class BehaviorGrain(
     IStateflowsTenantExecutor tenantExecutor
 ) : Grain, IBehaviorGrain, IRemindable, IStateflowsExecutor
 {
+    private IGrainTimer? Timer;
     private string? TenantId;
     private BehaviorId BehaviorId;
     private readonly Dictionary<string, IEventProcessor> Processors = processors.ToDictionary(p => p.BehaviorType, p => p);
@@ -27,6 +26,13 @@ internal class BehaviorGrain(
             var tenantBehaviorId = StateflowsJsonConverter.DeserializeObject<TenantBehaviorId>(this.GetGrainId().Key.ToString());
             TenantId = tenantBehaviorId.TenantId;
             BehaviorId = tenantBehaviorId.BehaviorId;
+            
+            Timer = this.RegisterGrainTimer(
+                static (state, ct) => state.CancelAsync(),
+                this,
+                dueTime: TimeSpan.Zero,
+                period: TimeSpan.FromMinutes(1)
+            );
         }
         catch (Exception e)
         {
@@ -37,7 +43,18 @@ internal class BehaviorGrain(
         return base.OnActivateAsync(cancellationToken);
     }
 
-    public async Task<OrleansRequestResult> ProcessEventAsync(OrleansEventHolder orleansEventHolder)
+    public async Task CancelAsync()
+    {
+        if (Common.Context.Classes.BaseContext.Instances.TryGetValue(BehaviorId, out var contexts))
+        {
+            foreach (var context in contexts)
+            {
+                await context.CancellationTokenSource.CancelAsync();
+            }
+        }
+    }
+
+    public async Task<OrleansRequestResult> ProcessEventAsync(OrleansEventHolder orleansEventHolder, CancellationToken cancellationToken)
     {
         var status = EventStatus.Invalid;
         var responses = new Dictionary<object, EventHolder>();
@@ -51,11 +68,11 @@ internal class BehaviorGrain(
             try
             {
                 if (
-                    validation.IsValid ||
+                    validation.IsValid/* ||
                     (
                         eventHolder is EventHolder<CompoundRequest> compoundRequest &&
                         compoundRequest.Payload.Events.Any(ev => ev.Headers.Values.Any(h => h is ForcedExecution))
-                    )
+                    )*/
                 )
                 {
                     status = await eventHolder.DoProcessAsync(this);

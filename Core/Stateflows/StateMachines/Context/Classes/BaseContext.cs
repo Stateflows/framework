@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Threading;
 using Microsoft.Extensions.DependencyInjection;
 using Stateflows.Common;
 using Stateflows.Common.Context;
@@ -32,5 +33,7 @@ namespace Stateflows.StateMachines.Context.Classes
             => BehaviorLocator.TryLocateBehavior(id, out behavior);
 
         StateflowsContext IStateflowsContextProvider.Context => Context.Context;
+        
+        public CancellationToken CancellationToken => CancellationToken.None;
     }
 }

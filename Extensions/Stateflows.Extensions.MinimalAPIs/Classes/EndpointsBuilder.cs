@@ -49,6 +49,8 @@ internal class EndpointsBuilder(
             );
         }
 
+        var group = routeBuilder.MapGroup("");
+
         var endpoint = routeBuilder
                 .MapMethods(
                     route,

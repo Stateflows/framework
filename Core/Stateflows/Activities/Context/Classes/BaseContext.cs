@@ -9,18 +9,21 @@ using Stateflows.Activities.Engine;
 
 namespace Stateflows.Activities.Context.Classes
 {
-    internal class BaseContext : IStateflowsContextProvider, IBehaviorLocator
+    internal class BaseContext : Stateflows.Common.Context.Classes.BaseContext, IStateflowsContextProvider, IBehaviorLocator
     {
         public BaseContext(RootContext context, NodeScope nodeScope)
+            : base(context.Context, nodeScope.ServiceProvider)
         {
             Context = context;
             NodeScope = nodeScope;
         }
 
         public BaseContext(BaseContext context)
+            : base(context.Context.Context, context.ServiceProvider)
         {
             Context = context.Context;
             NodeScope = context.NodeScope;
+            CancellationTokenSource = NodeScope.CancellationTokenSource;
         }
 
         public IServiceProvider ServiceProvider
@@ -33,8 +36,6 @@ namespace Stateflows.Activities.Context.Classes
         public object ExecutionTrigger => Context.ExecutionTriggerHolder.BoxedPayload;
         public Guid ExecutionTriggerId => Context.ExecutionTriggerHolder.Id;
         public Dictionary<string, EventHeader> Headers => Context.ExecutionTriggerHolder.Headers;
-
-        public CancellationToken CancellationToken => NodeScope.CancellationToken;
 
         private ActivityContext activity;
         public ActivityContext Activity

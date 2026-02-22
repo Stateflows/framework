@@ -4,5 +4,5 @@ namespace Stateflows.Interfaces;
 internal interface IBehaviorGrain : IGrainWithStringKey
 {
     [Alias("ProcessEventAsync")]
-    Task<OrleansRequestResult> ProcessEventAsync(OrleansEventHolder eventHolder);
+    Task<OrleansRequestResult> ProcessEventAsync(OrleansEventHolder eventHolder, CancellationToken cancellationToken);
 }

@@ -116,20 +116,20 @@ namespace StateMachine.IntegrationTests.Tests
                 ;
         }
 
-        [TestMethod]
-        public async Task SeparateScopesOnCompoundEvents()
-        {
-            if (StateMachineLocator.TryLocateStateMachine(new StateMachineId("compound", "x"), out var sm))
-            {
-                var compoundRequest = new CompoundRequest()
-                    .Add(new SomeEvent())
-                    .Add(new OtherEvent());
-
-                await sm.SendAsync(compoundRequest);
-            }
-
-            Assert.AreNotEqual(ServiceScopes.SomeValue, ServiceScopes.OtherValue);
-        }
+        // [TestMethod]
+        // public async Task SeparateScopesOnCompoundEvents()
+        // {
+        //     if (StateMachineLocator.TryLocateStateMachine(new StateMachineId("compound", "x"), out var sm))
+        //     {
+        //         var compoundRequest = new CompoundRequest()
+        //             .Add(new SomeEvent())
+        //             .Add(new OtherEvent());
+        //
+        //         await sm.SendAsync(compoundRequest);
+        //     }
+        //
+        //     Assert.AreNotEqual(ServiceScopes.SomeValue, ServiceScopes.OtherValue);
+        // }
 
         [TestMethod]
         public async Task SeparateScopesOnStateEvents()

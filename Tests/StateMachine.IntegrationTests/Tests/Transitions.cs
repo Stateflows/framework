@@ -1,6 +1,8 @@
 using Stateflows.Common;
+using Stateflows.StateMachines.Context.Interfaces;
 using StateMachine.IntegrationTests.Classes.Events;
 using StateMachine.IntegrationTests.Utils;
+using IExecutionContext = Stateflows.StateMachines.IExecutionContext;
 
 namespace StateMachine.IntegrationTests.Tests
 {
@@ -51,8 +53,12 @@ namespace StateMachine.IntegrationTests.Tests
                     .AddStateMachine("guarded", b => b
                         .AddInitialState("state1", b => b
                             .AddTransition<OtherEvent>("state2", b => b
+                                .AddEffect(c => c.Behavior.Id.GetType())
                                 .AddGuard(c => c.Event.AnswerToLifeUniverseAndEverything == 42)
                                 .AddGuard(Guards.Source.Namespace("x").Value("x").IsSet)
+                                .AddGuard(c => c.Event.AnswerToLifeUniverseAndEverything == 42)
+                                .AddGuard(async c => c.Event.AnswerToLifeUniverseAndEverything == 42)
+                                .AddGuard((IExecutionContext c) => (c.ExecutionTrigger as OtherEvent).AnswerToLifeUniverseAndEverything == 42)
                             )
                         )
                         .AddState("state2")

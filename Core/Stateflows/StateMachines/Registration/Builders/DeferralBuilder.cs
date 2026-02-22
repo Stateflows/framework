@@ -30,7 +30,7 @@ internal class DeferralBuilder<TEvent> :
 
     public readonly Logic<StateMachinePredicateAsync> Logic;
     
-    public IDeferralBuilder<TEvent> AddGuard(params Func<IDeferralContext<TEvent>, Task<bool>>[] guardsAsync)
+    public IDeferralBuilder<TEvent> AddGuards(params Func<IDeferralContext<TEvent>, Task<bool>>[] guardsAsync)
     {
         foreach (var guardAsync in guardsAsync)
         {
@@ -44,6 +44,6 @@ internal class DeferralBuilder<TEvent> :
         return this;
     }
 
-    IOverridenDeferralBuilder<TEvent> IBaseDeferralGuard<TEvent, IOverridenDeferralBuilder<TEvent>>.AddGuard(params Func<IDeferralContext<TEvent>, Task<bool>>[] guardsAsync)
-        => AddGuard(guardsAsync) as IOverridenDeferralBuilder<TEvent>;
+    IOverridenDeferralBuilder<TEvent> IBaseDeferralGuard<TEvent, IOverridenDeferralBuilder<TEvent>>.AddGuards(params Func<IDeferralContext<TEvent>, Task<bool>>[] guardsAsync)
+        => AddGuards(guardsAsync) as IOverridenDeferralBuilder<TEvent>;
 }
