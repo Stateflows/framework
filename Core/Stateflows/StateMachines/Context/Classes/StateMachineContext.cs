@@ -18,28 +18,19 @@ namespace Stateflows.StateMachines.Context.Classes
         public BehaviorId ActualId => Context.Id;
 
         public StateMachineId Id => Context.Id;
-
-        private BehaviorSubscriber subscriber;
-        private BehaviorSubscriber Subscriber
-            => subscriber ??= new BehaviorSubscriber(
-                Id,
-                Context.Context,
-                this,
-                ServiceProvider.GetRequiredService<INotificationsHub>(),
-                ServiceProvider.GetRequiredService<CommonInterceptor>(),
-                ServiceProvider
-            );
-
+        
+        private IStateflowsSubscriber subscriber;
+        private IStateflowsSubscriber Subscriber
+            => subscriber ??= ServiceProvider.GetRequiredService<IStateflowsSubscriber>();
+        
         public StateMachineContext(RootContext context) : base(context)
         {
-            // Values = new ContextValuesCollection(context.GlobalValues);
             Values = new ValuesStorage(
                 string.Empty,
                 Context.Context.ContextOwnerId ?? Context.Id,
                 Context.Executor.ServiceProvider.GetRequiredService<IStateflowsLock>(),
                 Context.Executor.ServiceProvider.GetRequiredService<IStateflowsValueStorage>()
             );
-            // Values = new StateflowsValuesCollection(context.Context.StateflowsValues);
         }
 
         public Task<IStateMachineInspection> GetInspectionAsync()
@@ -69,24 +60,17 @@ namespace Stateflows.StateMachines.Context.Classes
 
         public void Publish<TNotification>(TNotification notification, IDictionary<string, EventHeader> headers = null)
         {
-            var strictOwnershipHeader = headers?.Values.OfType<StrictOwnership>().FirstOrDefault();
-            var strictOwnershipAttribute = typeof(TNotification).GetCustomAttribute<StrictOwnershipAttribute>();
-            var id = strictOwnershipHeader != null || strictOwnershipAttribute != null
-                ? (BehaviorId)Id
-                : Context.Context.ContextOwnerId ?? Id;
-            
-            Subscriber.PublishAsync(id, notification, headers).GetAwaiter().GetResult();
+            Subscriber.PublishAsync(notification, Context.Context, headers).GetAwaiter().GetResult();
         }
 
         public bool IsEmbedded => Context.Context.ContextOwnerId != null;
-        // => Subscriber.PublishAsync(Context.Context.ContextOwnerId ?? Id, notification, headers).GetAwaiter().GetResult();
 
         public IServiceProvider ServiceProvider => Context.Executor.ServiceProvider;
 
         public Task<SendResult> SubscribeAsync<TNotification>(BehaviorId behaviorId)
-            => Subscriber.SubscribeAsync<TNotification>(behaviorId);
+            => Subscriber.SubscribeAsync<TNotification>(Context.Context.ContextParentId ?? Context.Context.Id, behaviorId);
 
         public Task<SendResult> UnsubscribeAsync<TNotification>(BehaviorId behaviorId)
-            => Subscriber.UnsubscribeAsync<TNotification>(behaviorId);
+            => Subscriber.UnsubscribeAsync<TNotification>(Context.Context.ContextParentId ?? Context.Context.Id, behaviorId);
     }
 }

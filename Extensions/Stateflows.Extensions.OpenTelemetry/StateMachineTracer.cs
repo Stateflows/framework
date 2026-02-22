@@ -118,14 +118,14 @@ namespace Stateflows.Extensions.OpenTelemetry
 
                 if (
                     (
-                        (
+                        /*(
                             context.ExecutionTrigger is CompoundRequest compoundRequest &&
                             compoundRequest.Events.All(e => e.BoxedPayload != (object)context.Event)
                         ) ||
                         (
-                            context.ExecutionTrigger is not CompoundRequest &&
+                            context.ExecutionTrigger is not CompoundRequest &&*/
                             context.ExecutionTrigger != (object)context.Event
-                        )
+                        // )
                     ) &&
                     GuardActivity != null
                 )

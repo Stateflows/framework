@@ -1,10 +1,12 @@
 using Stateflows.Common;
+using Stateflows.StateMachines.Context.Interfaces;
 using StateMachine.IntegrationTests.Classes.Events;
 using StateMachine.IntegrationTests.Utils;
+using IExecutionContext = Stateflows.StateMachines.IExecutionContext;
 
 namespace StateMachine.IntegrationTests.Tests
 {
-    public class Condition1 : ITransitionGuard<SomeEvent>
+    public class Condition1(ITransitionContext transitionContext, IBehaviorContext behaviorContext, IStateMachineContext stateMachineContext, IExecutionContext executionContext) : ITransitionGuard<SomeEvent>
     {
         public async Task<bool> GuardAsync(SomeEvent @event)
             => !string.IsNullOrEmpty(@event.TheresSomethingHappeningHere);

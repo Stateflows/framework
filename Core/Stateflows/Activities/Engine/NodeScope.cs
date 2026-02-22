@@ -28,7 +28,7 @@ namespace Stateflows.Activities.Engine
             => Scope.ServiceProvider;
 
         private CancellationTokenSource cancellationTokenSource = null;
-        private CancellationTokenSource CancellationTokenSource
+        internal CancellationTokenSource CancellationTokenSource
             => cancellationTokenSource ??= BaseNodeScope != null
                 ? CancellationTokenSource.CreateLinkedTokenSource(BaseNodeScope.CancellationToken)
                 : new CancellationTokenSource();

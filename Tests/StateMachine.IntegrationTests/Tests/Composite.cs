@@ -97,7 +97,7 @@ namespace StateMachine.IntegrationTests.Tests
 
                         .AddInitialState<StateA>(b => b
                             .AddTransition<OtherEvent>(State<StateB>.Name, b => b
-                                .AddGuard(async c => true)
+                                .AddGuard(async () => true)
                             )
                         )
                         .AddState<StateB>()

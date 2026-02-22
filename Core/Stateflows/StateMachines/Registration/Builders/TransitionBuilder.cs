@@ -52,7 +52,7 @@ namespace Stateflows.StateMachines.Registration.Builders
             Vertex = edge.Source;
         }
 
-        public ITransitionBuilder<TEvent> AddGuard(params Func<ITransitionContext<TEvent>, Task<bool>>[] guardsAsync)
+        public ITransitionBuilder<TEvent> AddGuards(params Func<ITransitionContext<TEvent>, Task<bool>>[] guardsAsync)
         {
             foreach (var guardAsync in guardsAsync)
             {
@@ -130,8 +130,8 @@ namespace Stateflows.StateMachines.Registration.Builders
         IInternalTransitionBuilder<TEvent> IEffect<TEvent, IInternalTransitionBuilder<TEvent>>.AddEffect(params Func<ITransitionContext<TEvent>, Task>[] effectsAsync)
             => AddEffect(effectsAsync) as IInternalTransitionBuilder<TEvent>;
 
-        IInternalTransitionBuilder<TEvent> IBaseGuard<TEvent, IInternalTransitionBuilder<TEvent>>.AddGuard(params Func<ITransitionContext<TEvent>, Task<bool>>[] guardsAsync)
-            => AddGuard(guardsAsync) as IInternalTransitionBuilder<TEvent>;
+        IInternalTransitionBuilder<TEvent> IBaseGuard<TEvent, IInternalTransitionBuilder<TEvent>>.AddGuards(params Func<ITransitionContext<TEvent>, Task<bool>>[] guardsAsync)
+            => AddGuards(guardsAsync) as IInternalTransitionBuilder<TEvent>;
 
         IElseTransitionBuilder<TEvent> IEffect<TEvent, IElseTransitionBuilder<TEvent>>.AddEffect(params Func<ITransitionContext<TEvent>, Task>[] effectsAsync)
             => AddEffect(effectsAsync) as IElseTransitionBuilder<TEvent>;
@@ -148,11 +148,11 @@ namespace Stateflows.StateMachines.Registration.Builders
         IElseDefaultTransitionBuilder IDefaultEffect<IElseDefaultTransitionBuilder>.AddEffect(params Func<ITransitionContext<Completion>, Task>[] effectsAsync)
             => (this as TransitionBuilder<Completion>)!.AddEffect(effectsAsync) as IElseDefaultTransitionBuilder;
 
-        IDefaultTransitionBuilder IBaseDefaultGuard<IDefaultTransitionBuilder>.AddGuard(params Func<ITransitionContext<Completion>, Task<bool>>[] guardsAsync)
-            => (this as TransitionBuilder<Completion>)!.AddGuard(guardsAsync) as IDefaultTransitionBuilder;
+        IDefaultTransitionBuilder IBaseDefaultGuard<IDefaultTransitionBuilder>.AddGuards(params Func<ITransitionContext<Completion>, Task<bool>>[] guardsAsync)
+            => (this as TransitionBuilder<Completion>)!.AddGuards(guardsAsync) as IDefaultTransitionBuilder;
 
-        IForwardedEventBuilder<TEvent> IBaseGuard<TEvent, IForwardedEventBuilder<TEvent>>.AddGuard(params Func<ITransitionContext<TEvent>, Task<bool>>[] guardsAsync)
-            => AddGuard(guardsAsync) as IForwardedEventBuilder<TEvent>;
+        IForwardedEventBuilder<TEvent> IBaseGuard<TEvent, IForwardedEventBuilder<TEvent>>.AddGuards(params Func<ITransitionContext<TEvent>, Task<bool>>[] guardsAsync)
+            => AddGuards(guardsAsync) as IForwardedEventBuilder<TEvent>;
 
         public ITransitionBuilder<TEvent> SetIsLocal(bool isLocal)
         {
@@ -184,9 +184,9 @@ namespace Stateflows.StateMachines.Registration.Builders
             params Func<ITransitionContext<TEvent>, Task>[] effectsAsync)
             => AddEffect(effectsAsync) as IOverridenTransitionBuilder<TEvent>;
 
-        IOverridenTransitionBuilder<TEvent> IBaseGuard<TEvent, IOverridenTransitionBuilder<TEvent>>.AddGuard(
+        IOverridenTransitionBuilder<TEvent> IBaseGuard<TEvent, IOverridenTransitionBuilder<TEvent>>.AddGuards(
             params Func<ITransitionContext<TEvent>, Task<bool>>[] guardsAsync)
-            => AddGuard(guardsAsync) as IOverridenTransitionBuilder<TEvent>;
+            => AddGuards(guardsAsync) as IOverridenTransitionBuilder<TEvent>;
 
         IOverridenElseTransitionBuilder<TEvent> ITargetedTransitionUtils<IOverridenElseTransitionBuilder<TEvent>>.SetIsLocal(
             bool isLocal)
@@ -201,8 +201,8 @@ namespace Stateflows.StateMachines.Registration.Builders
             => AddEffect(effectsAsync) as IOverridenInternalTransitionBuilder<TEvent>;
 
         IOverridenInternalTransitionBuilder<TEvent> IBaseGuard<TEvent, IOverridenInternalTransitionBuilder<TEvent>>.
-            AddGuard(params Func<ITransitionContext<TEvent>, Task<bool>>[] guardsAsync)
-            => AddGuard(guardsAsync) as IOverridenInternalTransitionBuilder<TEvent>;
+            AddGuards(params Func<ITransitionContext<TEvent>, Task<bool>>[] guardsAsync)
+            => AddGuards(guardsAsync) as IOverridenInternalTransitionBuilder<TEvent>;
 
         IOverridenElseInternalTransitionBuilder<TEvent>
             ITargetedTransitionUtils<IOverridenElseInternalTransitionBuilder<TEvent>>.SetIsLocal(bool isLocal)
@@ -217,8 +217,8 @@ namespace Stateflows.StateMachines.Registration.Builders
         IOverridenDefaultTransitionBuilder IDefaultEffect<IOverridenDefaultTransitionBuilder>.AddEffect(params Func<ITransitionContext<Completion>, Task>[] effectsAsync)
             => (this as TransitionBuilder<Completion>)!.AddEffect(effectsAsync) as IOverridenDefaultTransitionBuilder;
 
-        IOverridenDefaultTransitionBuilder IBaseDefaultGuard<IOverridenDefaultTransitionBuilder>.AddGuard(params Func<ITransitionContext<Completion>, Task<bool>>[] guardsAsync)
-            => (this as TransitionBuilder<Completion>)!.AddGuard(guardsAsync) as IOverridenDefaultTransitionBuilder;
+        IOverridenDefaultTransitionBuilder IBaseDefaultGuard<IOverridenDefaultTransitionBuilder>.AddGuards(params Func<ITransitionContext<Completion>, Task<bool>>[] guardsAsync)
+            => (this as TransitionBuilder<Completion>)!.AddGuards(guardsAsync) as IOverridenDefaultTransitionBuilder;
 
         IOverridenDefaultTransitionEffectBuilder ITargetedTransitionUtils<IOverridenDefaultTransitionEffectBuilder>.SetIsLocal(
             bool isLocal)

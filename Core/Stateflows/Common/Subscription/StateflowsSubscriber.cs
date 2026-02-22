@@ -10,17 +10,22 @@ using Stateflows.Common.Interfaces;
 
 namespace Stateflows.Common.Subscription
 {
-    internal class BehaviorSubscriber(
-        BehaviorId subscriberBehaviorId,
-        StateflowsContext context,
+    internal class StateflowsSubscriber(
         IBehaviorLocator behaviorLocator,
         INotificationsHub notificationsHub,
         CommonInterceptor commonInterceptor,
         IServiceProvider serviceProvider
-    )
+    ) : IStateflowsSubscriber
     {
-        public async Task PublishAsync<TNotification>(BehaviorId behaviorId, TNotification notificationEvent, IDictionary<string, EventHeader> headers = null)
+        public async Task PublishAsync<TNotification>(TNotification notificationEvent, StateflowsContext senderContext,
+            IDictionary<string, EventHeader> headers = null)
         {
+            var strictOwnershipHeader = headers?.Values.OfType<StrictOwnership>().FirstOrDefault();
+            var strictOwnershipAttribute = typeof(TNotification).GetCustomAttribute<StrictOwnershipAttribute>();
+            var id = strictOwnershipHeader != null || strictOwnershipAttribute != null
+                ? senderContext.Id
+                : senderContext.ContextOwnerId ?? senderContext.Id;
+            
             var notificationType = typeof(TNotification);
             var ttlAttribute = notificationType.GetCustomAttribute<TimeToLiveAttribute>();
             var retainAttribute = notificationType.GetCustomAttribute<RetainAttribute>();
@@ -28,16 +33,16 @@ namespace Stateflows.Common.Subscription
             var eventHolder = new EventHolder<TNotification>()
             {
                 Payload = notificationEvent,
-                SenderId = behaviorId,
+                SenderId = id,
                 SentAt = DateTime.Now,
                 Headers = headers?.ToDictionary() ?? [],
                 TimeToLive = ttlAttribute?.SecondsToLive ?? headersArray.OfType<TimeToLive>().FirstOrDefault()?.SecondsToLive ?? 0,
                 Retained = retainAttribute != null || headersArray.OfType<Retain>().FirstOrDefault() != null
             };
 
-            await commonInterceptor.NotificationPublishedAsync(new BehaviorActionContext(context, serviceProvider), notificationEvent);
+            await commonInterceptor.NotificationPublishedAsync(new BehaviorActionContext(senderContext, serviceProvider), notificationEvent);
 
-            if (context.Subscribers.TryGetValue(Event<TNotification>.Name, out var behaviorIds))
+            if (senderContext.Subscribers.TryGetValue(Event<TNotification>.Name, out var behaviorIds))
             {
                 _ = Task.WhenAll(
                     behaviorIds.Select(
@@ -51,14 +56,14 @@ namespace Stateflows.Common.Subscription
             await notificationsHub.PublishAsync(eventHolder);
         }
 
-        public Task<SendResult> SubscribeAsync<TNotification>(BehaviorId behaviorId)
+        public Task<SendResult> SubscribeAsync<TNotification>(BehaviorId subscriberBehaviorId, BehaviorId subscribedBehaviorId)
         {
             var request = new Subscribe() { BehaviorId = subscriberBehaviorId };
 
             request.NotificationNames.Add(typeof(TNotification).GetEventName());
 
             return behaviorLocator.TryLocateBehavior(
-                behaviorId,
+                subscribedBehaviorId,
                 out var behavior
             )
                 ? behavior.SendAsync(request)
@@ -67,14 +72,14 @@ namespace Stateflows.Common.Subscription
                 );
         }
 
-        public Task<SendResult> UnsubscribeAsync<TNotification>(BehaviorId behaviorId)
+        public Task<SendResult> UnsubscribeAsync<TNotification>(BehaviorId subscriberBehaviorId, BehaviorId subscribedBehaviorId)
         {
             var request = new Unsubscribe() { BehaviorId = subscriberBehaviorId };
 
             request.NotificationNames.Add(typeof(TNotification).GetEventName());
 
             return behaviorLocator.TryLocateBehavior(
-                behaviorId,
+                subscribedBehaviorId,
                 out var behavior
             )
                 ? behavior.SendAsync(request)

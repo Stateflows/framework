@@ -39,6 +39,7 @@ namespace Stateflows
                     .AddHostedService(provider => provider.GetRequiredService<StateflowsService>())
                     .AddSingleton<IStateflowsTelemetry>(provider => provider.GetRequiredService<StateflowsService>())
                     .AddSingleton<INotificationsHub, NotificationsHub>()
+                    .AddScoped<IStateflowsSubscriber, StateflowsSubscriber>()
                     .AddHostedService<Scheduler>()
                     .AddTransient<ScheduleExecutor>()
                     .AddTransient<StartupExecutor>()

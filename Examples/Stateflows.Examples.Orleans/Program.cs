@@ -17,6 +17,7 @@ builder.Host.UseOrleans(static siloBuilder =>
 {
     siloBuilder.UseLocalhostClustering();
     siloBuilder.AddMemoryGrainStorage("stateflows");
+    siloBuilder.UseInMemoryReminderService();
 });
 
 // In order to host Stateflows behaviors, Stateflows framework must be registered in the app.

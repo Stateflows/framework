@@ -352,64 +352,67 @@ internal static class RequestBodyExtensions
         }
         else
         {
-            var compoundResult = await behavior.SendCompoundAsync(b =>
-                {
-                    b.Add(@event, implicitInitialization ? [] : new Dictionary<string, EventHeader>() { { nameof(NoImplicitInitialization), new NoImplicitInitialization() } });
+            // var compoundResult = await behavior.SendCompoundAsync(b =>
+            //     {
+            //         b.Add(@event, implicitInitialization ? [] : new Dictionary<string, EventHeader>() { { nameof(NoImplicitInitialization), new NoImplicitInitialization() } });
+            //
+            //         switch (behavior.Id.Type)
+            //         {
+            //             case BehaviorType.StateMachine:
+            //                 b.Add(
+            //                     new StateMachineInfoRequest(),
+            //                     implicitInitialization
+            //                         ? new Dictionary<string, EventHeader>()
+            //                             {
+            //                                 { nameof(ForcedExecution), new ForcedExecution() }
+            //                             }
+            //                         : new Dictionary<string, EventHeader>()
+            //                             {
+            //                                 { nameof(NoImplicitInitialization), new NoImplicitInitialization() },
+            //                                 { nameof(ForcedExecution), new ForcedExecution() }
+            //                             }
+            //                 );
+            //                 break;
+            //             case BehaviorType.Activity:
+            //                 b.Add(
+            //                     new ActivityInfoRequest(),
+            //                     implicitInitialization
+            //                         ? new Dictionary<string, EventHeader>()
+            //                             {
+            //                                 { nameof(ForcedExecution), new ForcedExecution() }
+            //                             }
+            //                         : new Dictionary<string, EventHeader>()
+            //                             {
+            //                                 { nameof(NoImplicitInitialization), new NoImplicitInitialization() },
+            //                                 { nameof(ForcedExecution), new ForcedExecution() }
+            //                             }
+            //                 );
+            //                 break;
+            //             case BehaviorType.Action:
+            //                 b.Add(
+            //                     new BehaviorInfoRequest(),
+            //                     implicitInitialization
+            //                         ? new Dictionary<string, EventHeader>()
+            //                             {
+            //                                 { nameof(ForcedExecution), new ForcedExecution() }
+            //                             }
+            //                         : new Dictionary<string, EventHeader>()
+            //                             {
+            //                                 { nameof(NoImplicitInitialization), new NoImplicitInitialization() },
+            //                                 { nameof(ForcedExecution), new ForcedExecution() }
+            //                             }
+            //                 );
+            //                 break;
+            //         }
+            //     }
+            // );
 
-                    switch (behavior.Id.Type)
-                    {
-                        case BehaviorType.StateMachine:
-                            b.Add(
-                                new StateMachineInfoRequest(),
-                                implicitInitialization
-                                    ? new Dictionary<string, EventHeader>()
-                                        {
-                                            { nameof(ForcedExecution), new ForcedExecution() }
-                                        }
-                                    : new Dictionary<string, EventHeader>()
-                                        {
-                                            { nameof(NoImplicitInitialization), new NoImplicitInitialization() },
-                                            { nameof(ForcedExecution), new ForcedExecution() }
-                                        }
-                            );
-                            break;
-                        case BehaviorType.Activity:
-                            b.Add(
-                                new ActivityInfoRequest(),
-                                implicitInitialization
-                                    ? new Dictionary<string, EventHeader>()
-                                        {
-                                            { nameof(ForcedExecution), new ForcedExecution() }
-                                        }
-                                    : new Dictionary<string, EventHeader>()
-                                        {
-                                            { nameof(NoImplicitInitialization), new NoImplicitInitialization() },
-                                            { nameof(ForcedExecution), new ForcedExecution() }
-                                        }
-                            );
-                            break;
-                        case BehaviorType.Action:
-                            b.Add(
-                                new BehaviorInfoRequest(),
-                                implicitInitialization
-                                    ? new Dictionary<string, EventHeader>()
-                                        {
-                                            { nameof(ForcedExecution), new ForcedExecution() }
-                                        }
-                                    : new Dictionary<string, EventHeader>()
-                                        {
-                                            { nameof(NoImplicitInitialization), new NoImplicitInitialization() },
-                                            { nameof(ForcedExecution), new ForcedExecution() }
-                                        }
-                            );
-                            break;
-                    }
-                }
-            );
-
-            var result = compoundResult.Response.Results.First();
-            var behaviorInfo = (BehaviorInfo)compoundResult.Response.Results.Last().Response.BoxedPayload;
-
+            // var result = compoundResult.Response.Results.First();
+            // var behaviorInfo = (BehaviorInfo)compoundResult.Response.Results.Last().Response.BoxedPayload;
+            
+            var result = await behavior.SendAsync(@event, implicitInitialization ? [] : new Dictionary<string, EventHeader>() { { nameof(NoImplicitInitialization), new NoImplicitInitialization() } });
+            var behaviorInfo = await behavior.GetBehaviorInfo();
+            
             var notifications = payload.RequestedNotifications is { Length: > 0 } && result.Status == EventStatus.Consumed
                 ? (await behavior.GetNotificationsAsync(payload.RequestedNotifications, lastNotificationsCheck)).ToArray()
                 : [];
@@ -437,64 +440,67 @@ internal static class RequestBodyExtensions
         }
         else
         {
-            var compoundResult = await behavior.SendCompoundAsync(b =>
-                {
-                    b.Add(request, implicitInitialization ? [] : new Dictionary<string, EventHeader>() { { nameof(NoImplicitInitialization), new NoImplicitInitialization() } });
+            // var compoundResult = await behavior.SendCompoundAsync(b =>
+            //     {
+            //         b.Add(request, implicitInitialization ? [] : new Dictionary<string, EventHeader>() { { nameof(NoImplicitInitialization), new NoImplicitInitialization() } });
+            //
+            //         switch (behavior.Id.Type)
+            //         {
+            //             case BehaviorType.StateMachine:
+            //                 b.Add(
+            //                     new StateMachineInfoRequest(),
+            //                     implicitInitialization
+            //                         ? new Dictionary<string, EventHeader>()
+            //                             {
+            //                                 { nameof(ForcedExecution), new ForcedExecution() }
+            //                             }
+            //                         : new Dictionary<string, EventHeader>()
+            //                             {
+            //                                 { nameof(NoImplicitInitialization), new NoImplicitInitialization() },
+            //                                 { nameof(ForcedExecution), new ForcedExecution() }
+            //                             }
+            //                 );
+            //                 break;
+            //             case BehaviorType.Activity:
+            //                 b.Add(
+            //                     new ActivityInfoRequest(),
+            //                     implicitInitialization
+            //                         ? new Dictionary<string, EventHeader>()
+            //                             {
+            //                                 { nameof(ForcedExecution), new ForcedExecution() }
+            //                             }
+            //                         : new Dictionary<string, EventHeader>()
+            //                             {
+            //                                 { nameof(NoImplicitInitialization), new NoImplicitInitialization() },
+            //                                 { nameof(ForcedExecution), new ForcedExecution() }
+            //                             }
+            //                 );
+            //                 break;
+            //             case BehaviorType.Action:
+            //                 b.Add(
+            //                     new BehaviorInfoRequest(),
+            //                     implicitInitialization
+            //                         ? new Dictionary<string, EventHeader>()
+            //                             {
+            //                                 { nameof(ForcedExecution), new ForcedExecution() }
+            //                             }
+            //                         : new Dictionary<string, EventHeader>()
+            //                             {
+            //                                 { nameof(NoImplicitInitialization), new NoImplicitInitialization() },
+            //                                 { nameof(ForcedExecution), new ForcedExecution() }
+            //                             }
+            //                 );
+            //                 break;
+            //         }
+            //     }
+            // );
 
-                    switch (behavior.Id.Type)
-                    {
-                        case BehaviorType.StateMachine:
-                            b.Add(
-                                new StateMachineInfoRequest(),
-                                implicitInitialization
-                                    ? new Dictionary<string, EventHeader>()
-                                        {
-                                            { nameof(ForcedExecution), new ForcedExecution() }
-                                        }
-                                    : new Dictionary<string, EventHeader>()
-                                        {
-                                            { nameof(NoImplicitInitialization), new NoImplicitInitialization() },
-                                            { nameof(ForcedExecution), new ForcedExecution() }
-                                        }
-                            );
-                            break;
-                        case BehaviorType.Activity:
-                            b.Add(
-                                new ActivityInfoRequest(),
-                                implicitInitialization
-                                    ? new Dictionary<string, EventHeader>()
-                                        {
-                                            { nameof(ForcedExecution), new ForcedExecution() }
-                                        }
-                                    : new Dictionary<string, EventHeader>()
-                                        {
-                                            { nameof(NoImplicitInitialization), new NoImplicitInitialization() },
-                                            { nameof(ForcedExecution), new ForcedExecution() }
-                                        }
-                            );
-                            break;
-                        case BehaviorType.Action:
-                            b.Add(
-                                new BehaviorInfoRequest(),
-                                implicitInitialization
-                                    ? new Dictionary<string, EventHeader>()
-                                        {
-                                            { nameof(ForcedExecution), new ForcedExecution() }
-                                        }
-                                    : new Dictionary<string, EventHeader>()
-                                        {
-                                            { nameof(NoImplicitInitialization), new NoImplicitInitialization() },
-                                            { nameof(ForcedExecution), new ForcedExecution() }
-                                        }
-                            );
-                            break;
-                    }
-                }
-            );
-
-            var result = compoundResult.Response.Results.First();
-            var requestResult = new RequestResult<TResponse>(result);
-            var behaviorInfo = (BehaviorInfo)compoundResult.Response.Results.Last().Response.BoxedPayload;
+            // var result = compoundResult.Response.Results.First();
+            // var requestResult = new RequestResult<TResponse>(result);
+            // var behaviorInfo = (BehaviorInfo)compoundResult.Response.Results.Last().Response.BoxedPayload;
+            
+            var requestResult = await behavior.SendAsync(request, implicitInitialization ? [] : new Dictionary<string, EventHeader>() { { nameof(NoImplicitInitialization), new NoImplicitInitialization() } });
+            var behaviorInfo = await behavior.GetBehaviorInfo();
 
             var notifications =
                 payload.RequestedNotifications is { Length: > 0 } && requestResult.Status == EventStatus.Consumed

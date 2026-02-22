@@ -15,7 +15,7 @@ namespace StateMachine.IntegrationTests.Classes.StateMachines
                         .AddGuard(Guards.Deny)
                     )
                     .AddDefaultTransition<ValueState2>(b => b
-                        .AddGuard(
+                        .AddGuards(
                             Guards.Allow,
                             Guards.Source.Namespace("counter").Value("x").IsNotSet,
                             Guards.Source.Value("counter").IsEqualTo(1),

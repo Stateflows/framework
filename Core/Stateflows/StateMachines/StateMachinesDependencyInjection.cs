@@ -13,6 +13,8 @@ using Stateflows.Common.Registration.Interfaces;
 using Stateflows.StateMachines.Engine;
 using Stateflows.StateMachines.Classes;
 using Stateflows.StateMachines.Context;
+using Stateflows.StateMachines.Context.Classes;
+using Stateflows.StateMachines.Context.Interfaces;
 using Stateflows.StateMachines.Registration;
 using Stateflows.StateMachines.EventHandlers;
 using Stateflows.StateMachines.Registration.Builders;

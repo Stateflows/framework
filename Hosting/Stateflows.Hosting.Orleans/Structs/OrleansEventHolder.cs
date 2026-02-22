@@ -7,22 +7,28 @@ namespace Stateflows;
 [Alias("Stateflows.OrleansEventHolder")]
 public struct OrleansEventHolder
 {
+    [Id(0)]
+    public Guid Id { get; set; }
+    
     [Id(1)]
-    public string Payload { get; set; }
+    public string Name { get; set; }
     
     [Id(2)]
+    public string Payload { get; set; }
+    
+    [Id(3)]
     public Dictionary<string, string> Headers { get; set; }
         
-    [Id(3)]
+    [Id(4)]
     public int TimeToLive { get; set; }
         
-    [Id(4)]
+    [Id(5)]
     public bool Retained { get; set; }
 
-    [Id(5)]
+    [Id(6)]
     public DateTime SentAt { get; set; }
 
-    [Id(6)]
+    [Id(7)]
     public OrleansBehaviorId? SenderId { get; set; }
     
     public static implicit operator EventHolder(OrleansEventHolder orleansEventHolder)
@@ -32,6 +38,7 @@ public struct OrleansEventHolder
             p => p.Key,
             p => (EventHeader)StateflowsJsonConverter.DeserializeObject(p.Value)
         ));
+        result.Id = orleansEventHolder.Id;
         result.Retained = orleansEventHolder.Retained;
         result.SenderId = orleansEventHolder.SenderId;
         result.SentAt = orleansEventHolder.SentAt;
@@ -48,6 +55,8 @@ public struct OrleansEventHolder
                 p => p.Key,
                 p => StateflowsJsonConverter.SerializePolymorphicObject(p.Value)
             ),
+            Id = eventHolder.Id,
+            Name = eventHolder.Name,
             Retained = eventHolder.Retained,
             SenderId = eventHolder.SenderId,
             SentAt = eventHolder.SentAt,

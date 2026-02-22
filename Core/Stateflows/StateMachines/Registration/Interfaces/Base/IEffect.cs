@@ -6,6 +6,7 @@ using Stateflows.Actions;
 using Stateflows.Actions.Registration.Interfaces;
 using Stateflows.Activities;
 using Stateflows.Activities.Registration.Interfaces;
+using Stateflows.Common.Classes;
 using Stateflows.Common.Interfaces;
 using Stateflows.Common.Registration.Builders;
 using Stateflows.StateMachines.Context.Classes;
@@ -27,6 +28,16 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         /// </summary>
         /// <param name="effectsAsync">Asynchronous effect functions</param>
         TReturn AddEffect(params Func<ITransitionContext<TEvent>, Task>[] effectsAsync);
+
+        TReturn AddEffect(Delegate effectDelegate)
+            => AddEffect(c => effectDelegate.InvokeDelegateActionAsync(
+                StateflowsActivator.ResolveParameterValueFactories(
+                    c.Behavior.ServiceProvider,
+                    null,
+                    "transition effect",
+                    effectDelegate.Method.GetParameters()
+                )
+            ));
 
         /// <summary>
         /// Registers Activity behavior as effect

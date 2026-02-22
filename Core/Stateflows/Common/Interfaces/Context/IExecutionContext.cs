@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Threading;
 
 namespace Stateflows.Common
 {
@@ -7,5 +8,7 @@ namespace Stateflows.Common
         object ExecutionTrigger { get; }
 
         Dictionary<string, EventHeader> Headers { get; }
+        
+        CancellationToken CancellationToken { get; }
     }
 }

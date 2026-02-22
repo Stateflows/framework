@@ -85,23 +85,23 @@ namespace Stateflows.StateMachines.Registration
             }
 
             var builder = new StateMachineElementsBuilder(stateMachineName, version, stateflowsBuilder, OwnerClass, ParentClass);
-            buildAction(builder);
-            builder.Graph.Build();
 
-            // add state machine adding task to visiting tasks before endpoints are being registered
+            // Assign to local variable to avoid value being overriden when invoking lambda function at a later stage
+            var ownerClass = OwnerClass;
+            var parentClass = ParentClass;
+
             builder.Graph.VisitingTasks.Add(v =>
             {
                 var hasDefaultInstance = BehaviorClassesInitializations.Instance.DefaultInstanceInitializationTokens
                     .Any(token => token.BehaviorClass.Type == StateMachineClass.Type && token.BehaviorClass.Name == stateMachineName);
 
-                return v.StateMachineAddingAsync(stateMachineName, version, hasDefaultInstance);
+                return v.StateMachineAddingAsync(stateMachineName, version, ownerClass, parentClass, hasDefaultInstance);
             });
 
+            buildAction(builder);
             builder.Graph.Build();
 
-            var graph = builder.Graph;
-
-            builder.Graph.VisitingTasks.Add(v => v.StateMachineAddedAsync(stateMachineName, version, graph.OwnerClass, graph.ParentClass));
+            builder.Graph.VisitingTasks.Add(v => v.StateMachineAddedAsync(stateMachineName, version));
 
             StateMachines.Add(key, builder.Graph);
 
@@ -129,29 +129,27 @@ namespace Stateflows.StateMachines.Registration
                         StateMachineType = stateMachineType
                     }
             };
-
-            // add state machine adding task to visiting tasks before endpoints are being registered
-            builder.Graph.VisitingTasks.Add(v => 
+            
+            // Assign to local variable to avoid value being overriden when invoking lambda function at a later stage
+            var ownerClass = OwnerClass;
+            var parentClass = ParentClass;
+            
+            builder.Graph.VisitingTasks.Add(v =>
             {
                 var hasDefaultInstance = BehaviorClassesInitializations.Instance.DefaultInstanceInitializationTokens
                     .Any(token => token.BehaviorClass.Type == StateMachineClass.Type && token.BehaviorClass.Name == stateMachineName);
 
-                return v.StateMachineAddingAsync(stateMachineName, version, hasDefaultInstance);
+                return v.StateMachineAddingAsync(stateMachineName, version, ownerClass, parentClass, hasDefaultInstance);
             });
-
+            
             RegisterStateMachine(stateMachineType, builder);
             builder.Graph.Build();
             buildAction?.Invoke(new StateMachineUtilsBuilder(builder.Graph));
 
             var method = StateMachineTypeAddedAsyncMethod.MakeGenericMethod(stateMachineType);
 
-            // Assign to local variable to avoid value being overriden when invoking lambda function at a later stage
-            var ownerClass = OwnerClass;
-            var parentClass = ParentClass;
-
-
             builder.Graph.VisitingTasks.AddRange([
-                v => v.StateMachineAddedAsync(stateMachineName, version, ownerClass, parentClass),
+                v => v.StateMachineAddedAsync(stateMachineName, version),
                 v => (Task)method.Invoke(v, [ stateMachineName, version ])
             ]);
 

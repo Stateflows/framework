@@ -5,9 +5,7 @@ using System.Reflection;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using Stateflows.Common.Classes;
-using Stateflows.Common.Engine;
 using Stateflows.Common.Interfaces;
-using Stateflows.Common.Subscription;
 
 namespace Stateflows.Common.Context.Classes
 {
@@ -15,17 +13,10 @@ namespace Stateflows.Common.Context.Classes
     {
         public BehaviorId Id => Context.Id;
         public BehaviorId ActualId => Context.Id;
-
-        private BehaviorSubscriber subscriber;
-        private BehaviorSubscriber Subscriber
-            => subscriber ??= new BehaviorSubscriber(
-                Id,
-                Context,
-                this,
-                ServiceProvider.GetRequiredService<INotificationsHub>(),
-                ServiceProvider.GetRequiredService<CommonInterceptor>(),
-                ServiceProvider
-            );
+        
+        private IStateflowsSubscriber subscriber;
+        private IStateflowsSubscriber Subscriber
+            => subscriber ??= ServiceProvider.GetRequiredService<IStateflowsSubscriber>();
 
         public BehaviorContext(StateflowsContext context, IServiceProvider serviceProvider)
             : base(context, serviceProvider)
@@ -36,7 +27,6 @@ namespace Stateflows.Common.Context.Classes
                 ServiceProvider.GetRequiredService<IStateflowsLock>(),
                 ServiceProvider.GetRequiredService<IStateflowsValueStorage>()
             );
-            // Values = new StateflowsValuesCollection(context.StateflowsValues);
         }
 
         public IContextValues Values { get; }
@@ -58,16 +48,16 @@ namespace Stateflows.Common.Context.Classes
                 ? Id
                 : Context.ContextOwnerId ?? Id;
             
-            Subscriber.PublishAsync(id, notification, headers).GetAwaiter().GetResult();
+            _ = Subscriber.PublishAsync(notification, Context, headers);
         }
 
         
         public bool IsEmbedded => Context.ContextOwnerId != null;
 
         public Task<SendResult> SubscribeAsync<TNotification>(BehaviorId behaviorId)
-            => _ = Subscriber.SubscribeAsync<TNotification>(behaviorId);
+            => _ = Subscriber.SubscribeAsync<TNotification>(Context.ContextOwnerId ?? Id, behaviorId);
 
         public Task<SendResult> UnsubscribeAsync<TNotification>(BehaviorId behaviorId)
-            => _ = Subscriber.UnsubscribeAsync<TNotification>(behaviorId);
+            => _ = Subscriber.UnsubscribeAsync<TNotification>(Context.ContextOwnerId ?? Id, behaviorId);
     }
 }

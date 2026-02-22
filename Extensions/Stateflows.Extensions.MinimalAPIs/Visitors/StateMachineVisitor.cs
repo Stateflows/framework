@@ -75,16 +75,17 @@ internal class StateMachineVisitor(
         return Task.CompletedTask;
     }
 
-    public override Task StateMachineAddingAsync(string stateMachineName, int stateMachineVersion, bool hasDefaultInstance = false)
+    public override Task StateMachineAddingAsync(string stateMachineName, int stateMachineVersion, BehaviorClass? ownerClass = null,
+        BehaviorClass? parentClass = null, bool hasDefaultInstance = false)
     {
+        OwnerClass = ownerClass;
         HasDefaultInstance = hasDefaultInstance;
+
         return Task.CompletedTask;
     }
 
-    public override Task StateMachineAddedAsync(string stateMachineName, int stateMachineVersion, BehaviorClass? ownerClass = null, BehaviorClass? parentClass = null)
+    public override Task StateMachineAddedAsync(string stateMachineName, int stateMachineVersion)
     {
-        OwnerClass = ownerClass;
-
         if (OwnerClass != null)
         {
             return Task.CompletedTask;
@@ -174,9 +175,10 @@ internal class StateMachineVisitor(
         var route = $"/stateMachines/{stateMachineName}";
         if (interceptor.BeforeGetInstancesEndpointDefinition(behaviorClass, ref method, ref route))
         {
-            var routeHandlerBuilder = routeBuilder.MapMethods(route, [method], async (IStateflowsStorage storage) =>
+            var routeHandlerBuilder = routeBuilder.MapMethods(route, [method], async (IStateflowsStorage storage, ITenantAccessor tenantAccessor) =>
             {
                 BehaviorClass[] actionClasses = [new StateMachineClass(stateMachineName)];
+                tenantAccessor.CurrentTenantId ??= "host";
                 var contextIds = await storage.GetAllContextIdsAsync(actionClasses);
                 return Results.Ok(contextIds.Select(id => new { Id = id }));
             })

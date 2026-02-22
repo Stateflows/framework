@@ -208,9 +208,10 @@ internal class ActivityVisitor(
         var route = $"/activities/{activityName}";
         if (interceptor.BeforeGetInstancesEndpointDefinition(behaviorClass, ref method, ref route))
         {
-            var routeHandlerBuilder = routeBuilder.MapMethods(route, [method], async (IStateflowsStorage storage) =>
+            var routeHandlerBuilder = routeBuilder.MapMethods(route, [method], async (IStateflowsStorage storage, ITenantAccessor tenantAccessor) =>
             {
                 BehaviorClass[] actionClasses = [behaviorClass];
+                tenantAccessor.CurrentTenantId ??= "host";
                 var contextIds = await storage.GetAllContextIdsAsync(actionClasses);
                 return Results.Ok(contextIds.Select(id => new { Id = id }));
             })

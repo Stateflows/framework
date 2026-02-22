@@ -53,11 +53,11 @@ namespace Stateflows.Common
             try
             {
                 if (
-                    token.Validation.IsValid ||
+                    token.Validation.IsValid/* ||
                     (
                         token.EventHolder is EventHolder<CompoundRequest> compoundRequest &&
                         compoundRequest.Payload.Events.Any(ev => ev.Headers.Values.Any(h => h is ForcedExecution))
-                    )
+                    )*/
                 )
                 {
                     status = await token.EventHolder.ProcessEventAsync(this, token.TargetId, token.Exceptions, token.Responses);
@@ -117,17 +117,17 @@ namespace Stateflows.Common
                         responseHolder.SenderId = id;
                         responseHolder.SentAt = DateTime.Now;
 
-                        if (eventHolder is EventHolder<CompoundRequest> compoundRequestHolder)
-                        {
-                            foreach (var subResponseHolder in compoundRequestHolder.Payload.Events
-                                         .Select(subEventHolder => subEventHolder.GetResponseHolder())
-                                         .Where(subResponseHolder => subResponseHolder != null)
-                            )
-                            {
-                                subResponseHolder.SenderId = id;
-                                subResponseHolder.SentAt = DateTime.Now;
-                            }
-                        }
+                        // if (eventHolder is EventHolder<CompoundRequest> compoundRequestHolder)
+                        // {
+                        //     foreach (var subResponseHolder in compoundRequestHolder.Payload.Events
+                        //                  .Select(subEventHolder => subEventHolder.GetResponseHolder())
+                        //                  .Where(subResponseHolder => subResponseHolder != null)
+                        //     )
+                        //     {
+                        //         subResponseHolder.SenderId = id;
+                        //         subResponseHolder.SentAt = DateTime.Now;
+                        //     }
+                        // }
                     }
                 }
             }
