@@ -7,7 +7,9 @@ namespace Stateflows.Activities
 {
     public interface IActivityVisitor
     {
-        Task ActivityAddedAsync(string activityName, int activityVersion, BehaviorClass? behaviorClass = null, BehaviorClass? parentClass = null, bool isDefaultInstance = false);
+        Task ActivityAddingAsync(string activityName, int activityVersion, bool hasDefaultInstance = false);
+
+        Task ActivityAddedAsync(string activityName, int activityVersion, BehaviorClass? behaviorClass = null, BehaviorClass? parentClass = null);
 
         Task ActivityTypeAddedAsync<TActivity>(string activityName, int activityVersion)
             where TActivity : class, IActivity;
@@ -49,7 +51,7 @@ namespace Stateflows.Activities
             where TFlowTransformation : class, IFlowTransformation<TToken, TTransformedToken>;
         
         Task CustomEventAddedAsync<TEvent>(string activityName, int activityVersion, BehaviorStatus[] supportedStatuses);
-        
+
         // Task TransformationFlowAddedAsync<TToken, TTransformedToken>(string activityName, int activityVersion, string sourceNodeName, string targetNodeName);
         //
         // Task ElseFlowAddedAsync<TToken>(string activityName, int activityVersion, string sourceNodeName, string targetNodeName);

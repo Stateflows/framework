@@ -82,6 +82,14 @@ namespace Stateflows.Activities.Registration
             }
 
             var activityBuilder = new ActivityBuilder(activityName, version, null, stateflowsBuilder, OwnerClass, ParentClass);
+
+            activityBuilder.Graph.VisitingTasks.Add(v =>
+            {
+                var hasDefaultInstance = BehaviorClassesInitializations.Instance.DefaultInstanceInitializationTokens
+                    .Any(token => token.BehaviorClass.Type == ActivityClass.Type && token.BehaviorClass.Name == activityName);
+                return v.ActivityAddingAsync(activityName, version, hasDefaultInstance);
+            });
+
             buildAction(activityBuilder);
             activityBuilder.Graph.Build();
 
@@ -89,9 +97,7 @@ namespace Stateflows.Activities.Registration
             var ownerClass = OwnerClass;
             var parentClass = ParentClass;
 
-            var isDefaultInstance = BehaviorClassesInitializations.Instance.DefaultInstanceInitializationTokens
-                .Any(token => token.BehaviorClass.Type == ActivityClass.Type && token.BehaviorClass.Name == activityName);
-            activityBuilder.Graph.VisitingTasks.Add(v => v.ActivityAddedAsync(activityName, version, ownerClass, parentClass, isDefaultInstance));
+            activityBuilder.Graph.VisitingTasks.Add(v => v.ActivityAddedAsync(activityName, version, ownerClass, parentClass));
 
             Activities.Add(key, activityBuilder.Graph);
 
@@ -119,6 +125,14 @@ namespace Stateflows.Activities.Registration
                     ActivityType = activityType
                 }
             };
+
+            activityBuilder.Graph.VisitingTasks.Add(v =>
+            {
+                var hasDefaultInstance = BehaviorClassesInitializations.Instance.DefaultInstanceInitializationTokens
+                    .Any(token => token.BehaviorClass.Type == ActivityClass.Type && token.BehaviorClass.Name == activityName);
+                return v.ActivityAddingAsync(activityName, version, hasDefaultInstance);
+            });
+
             RegisterActivity(activityType, activityBuilder);
             activityBuilder.Graph.Build();
             buildAction?.Invoke(new ActivityUtilsBuilder(activityBuilder.Graph));
@@ -129,12 +143,9 @@ namespace Stateflows.Activities.Registration
             var ownerClass = OwnerClass;
             var parentClass = ParentClass;
 
-            var isDefaultInstance = BehaviorClassesInitializations.Instance.DefaultInstanceInitializationTokens
-                .Any(token => token.BehaviorClass.Type == ActivityClass.Type && token.BehaviorClass.Name == activityName);
-
             activityBuilder.Graph.VisitingTasks.AddRange(
             [
-                v => v.ActivityAddedAsync(activityName, version, ownerClass, parentClass, isDefaultInstance),
+                v => v.ActivityAddedAsync(activityName, version, ownerClass, parentClass),
                 v => (Task)method.Invoke(v, [ activityName, version ])
             ]);
 
