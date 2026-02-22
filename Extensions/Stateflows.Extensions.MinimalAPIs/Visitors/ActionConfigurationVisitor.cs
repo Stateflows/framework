@@ -25,7 +25,7 @@ internal class ActionConfigurationVisitor(MinimalAPIsBuilder minimalApisBuilder)
         return Task.CompletedTask;
     }
 
-    public override Task ActionAddedAsync(string actionName, int actionVersion, BehaviorClass? ownerClass = null, BehaviorClass? parentClass = null, bool hasDefaultInstance = false)
+    public override Task ActionAddedAsync(string actionName, int actionVersion, BehaviorClass? ownerClass = null, BehaviorClass? parentClass = null)
     {
         OwnerClass = ownerClass;
         if (OwnerClass != null)
@@ -38,6 +38,6 @@ internal class ActionConfigurationVisitor(MinimalAPIsBuilder minimalApisBuilder)
             );
         }
 
-        return base.ActionAddedAsync(actionName, actionVersion, ownerClass, parentClass, hasDefaultInstance);
+        return base.ActionAddedAsync(actionName, actionVersion, ownerClass, parentClass);
     }
 }

@@ -4,15 +4,15 @@ using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
-using Stateflows.Common.Classes;
-using Stateflows.Common.Interfaces;
-using Stateflows.Actions.Models;
 using Stateflows.Actions.Context;
-using Stateflows.Actions.Exceptions;
 using Stateflows.Actions.Context.Classes;
+using Stateflows.Actions.Exceptions;
+using Stateflows.Actions.Models;
 using Stateflows.Actions.Registration.Builders;
 using Stateflows.Actions.Registration.Interfaces;
+using Stateflows.Common.Classes;
 using Stateflows.Common.Initializer;
+using Stateflows.Common.Interfaces;
 
 namespace Stateflows.Actions.Registration
 {
@@ -21,7 +21,7 @@ namespace Stateflows.Actions.Registration
         public readonly List<ActionExceptionHandlerFactoryAsync> GlobalExceptionHandlerFactories = [];
 
         public readonly List<ActionInterceptorFactoryAsync> GlobalInterceptorFactories = [];
-        
+
         public readonly List<ActionObserverFactoryAsync> GlobalObserverFactories = [];
 
         private readonly MethodInfo ActionTypeAddedAsyncMethod =
@@ -62,18 +62,28 @@ namespace Stateflows.Actions.Registration
             var currentKey = $"{actionName}.current";
 
             ActionModel actionModel = null;
+
+            Func<IActionVisitor, Task> visitingAction = async v =>
+            {
+                var hasDefaultInstance = BehaviorClassesInitializations.Instance.DefaultInstanceInitializationTokens
+                    .Any(t => t.BehaviorClass.Type == ActionClass.Type && t.BehaviorClass.Name == actionName);
+
+                await v.ActionAddingAsync(actionName, version, hasDefaultInstance);
+                await v.ActionAddedAsync(actionName, version, actionModel?.OwnerClass, actionModel?.ParentClass);
+            };
+
             actionModel = new ActionModel()
             {
                 Name = actionName,
                 Version = version,
                 Delegate = actionDelegate,
-                VisitingAction = VisitingActionAsync,
+                VisitingAction = visitingAction,
                 OwnerClass = OwnerClass,
                 ParentClass = ParentClass,
             };
-            
+
             buildAction?.Invoke(new ActionBuilder(actionModel));
-            
+
             if (!Actions.TryAdd(key, actionModel))
             {
                 throw new ActionDefinitionException($"Action '{actionName}' with version '{version}' is already registered", new ActionClass(actionName));
@@ -85,14 +95,6 @@ namespace Stateflows.Actions.Registration
             }
 
             return;
-
-            Task VisitingActionAsync(IActionVisitor v)
-            {
-                var isDefaultInstance = BehaviorClassesInitializations.Instance.DefaultInstanceInitializationTokens
-                    .Any(t => t.BehaviorClass.Type == ActionClass.Type && t.BehaviorClass.Name == actionName);
-
-                return v.ActionAddedAsync(actionName, version, actionModel?.OwnerClass, actionModel?.ParentClass, isDefaultInstance);
-            }
         }
 
         [DebuggerHidden]
@@ -114,6 +116,10 @@ namespace Stateflows.Actions.Registration
 
             Func<IActionVisitor, Task> visitingAction = async v =>
             {
+                var hasDefaultInstance = BehaviorClassesInitializations.Instance.DefaultInstanceInitializationTokens
+                    .Any(t => t.BehaviorClass.Type == ActionClass.Type && t.BehaviorClass.Name == actionName);
+
+                await v.ActionAddingAsync(actionName, version, hasDefaultInstance);
                 await v.ActionAddedAsync(actionName, version, ownerClass, parentClass);
                 await (Task)method.Invoke(v, [actionName, version]);
             };
@@ -125,7 +131,7 @@ namespace Stateflows.Actions.Registration
                 // Delegate = actionDelegate,
                 VisitingAction = visitingAction,
             };
-            
+
             buildAction?.Invoke(new ActionBuilder(actionModel));
 
             actionModel.Delegate = async context =>
@@ -145,7 +151,7 @@ namespace Stateflows.Actions.Registration
                         actionType,
                         "action"
                     );
-                    
+
                     actionModel.ConfigurationAction?.Invoke(instance);
 
                     await instance.ExecuteAsync(context.CancellationToken);
@@ -193,12 +199,12 @@ namespace Stateflows.Actions.Registration
         [DebuggerHidden]
         public void AddObserver(ActionObserverFactoryAsync observerFactoryAsync)
             => GlobalObserverFactories.Add(observerFactoryAsync);
-        
+
         [DebuggerHidden]
         public void AddObserver<TObserver>()
             where TObserver : class, IActionObserver
             => AddObserver(async serviceProvider => await StateflowsActivator.CreateModelElementInstanceAsync<TObserver>(serviceProvider));
-        
+
         [DebuggerHidden]
         public void AddExceptionHandler(ActionExceptionHandlerFactoryAsync exceptionHandlerFactoryAsync)
             => GlobalExceptionHandlerFactories.Add(exceptionHandlerFactoryAsync);
