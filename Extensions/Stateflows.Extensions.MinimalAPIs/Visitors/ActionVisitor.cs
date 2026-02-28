@@ -50,7 +50,7 @@ internal class ActionVisitor(IEndpointRouteBuilder routeBuilder, Interceptor int
         var behaviorClass = new ActionClass(actionName);
 
         var method = HttpMethods.Get;
-        var route = $"/{actionName}";
+        var route = $"/actions/{actionName}";
         if (interceptor.BeforeGetInstancesEndpointDefinition(behaviorClass, ref method, ref route))
         {
             var routeHandlerBuilder = action.MapMethods(route, [method], async (IStateflowsStorage storage, ITenantAccessor tenantAccessor) =>
@@ -65,7 +65,7 @@ internal class ActionVisitor(IEndpointRouteBuilder routeBuilder, Interceptor int
             interceptor.AfterGetInstancesEndpointDefinition(behaviorClass, method, route, routeHandlerBuilder);
         }
 
-        route = $"/{actionName}/{{instance}}/status";
+        route = $"/actions/{actionName}/{{instance}}/status";
         method = HttpMethods.Get;
         if (interceptor.BeforeEventEndpointDefinition<BehaviorInfoRequest>(behaviorClass, isDefaultInstance: false, ref method, ref route))
         {
@@ -130,7 +130,7 @@ internal class ActionVisitor(IEndpointRouteBuilder routeBuilder, Interceptor int
             );
         }
 
-        route = $"/{actionName}/{{instance}}/notifications";
+        route = $"/actions/{actionName}/{{instance}}/notifications";
         method = HttpMethods.Get;
         if (interceptor.BeforeEventEndpointDefinition<NotificationsRequest>(behaviorClass, isDefaultInstance: false, ref method, ref route))
         {
@@ -196,7 +196,7 @@ internal class ActionVisitor(IEndpointRouteBuilder routeBuilder, Interceptor int
             );
         }
 
-        route = $"/{actionName}/{{instance}}/finalize";
+        route = $"/actions/{actionName}/{{instance}}/finalize";
         method = HttpMethods.Post;
         if (interceptor.BeforeEventEndpointDefinition<Finalize>(behaviorClass, isDefaultInstance: false, ref method, ref route))
         {
@@ -234,7 +234,7 @@ internal class ActionVisitor(IEndpointRouteBuilder routeBuilder, Interceptor int
             );
         }
 
-        route = $"/{actionName}/{{instance}}";
+        route = $"/actions/{actionName}/{{instance}}";
         method = HttpMethods.Delete;
         if (interceptor.BeforeEventEndpointDefinition<Reset>(behaviorClass, isDefaultInstance: false, ref method, ref route))
         {
@@ -271,6 +271,44 @@ internal class ActionVisitor(IEndpointRouteBuilder routeBuilder, Interceptor int
                 [BehaviorStatus.Initialized, BehaviorStatus.Finalized]
             );
         }
+
+        route = $"/actions/{actionName}/{{instance}}/initialize";
+        method = HttpMethods.Post;
+        if (interceptor.BeforeEventEndpointDefinition<Initialize>(behaviorClass, isDefaultInstance: false, ref method, ref route))
+        {
+            var routeHandlerBuilder = action.MapMethods(
+                    route,
+                    [method],
+                    async (
+                        string instance,
+                        IActionLocator locator
+                    ) =>
+                    {
+                        if (locator.TryLocateAction(new ActionId(actionName, instance), out var behavior))
+                        {
+                            var sendResult = await behavior.SendAsync(new Initialize());
+                            var behaviorInfo = (await behavior.GetStatusAsync(new Dictionary<string, EventHeader>() { { nameof(NoImplicitInitialization), new NoImplicitInitialization() } })).Response;
+                            return sendResult.ToResult([], behaviorInfo, HateoasLinks);
+                        }
+
+                        return Results.NotFound();
+                    }
+                )
+                .WithTags($"{BehaviorType.Action} {actionName}");
+
+            interceptor.AfterEventEndpointDefinition<Initialize>(behaviorClass, isDefaultInstance: false, method, route, routeHandlerBuilder);
+
+            HateoasLinks.AddLink(
+                behaviorClass.Name,
+                new HateoasLink()
+                {
+                    Rel = "initialize",
+                    Href = route,
+                    Method = method
+                },
+                [BehaviorStatus.NotInitialized, BehaviorStatus.Unknown]
+            );
+        }
     }
 
     private void RegisterDefaultInstanceEndpoints(string actionName, IEndpointRouteBuilder action)
@@ -279,7 +317,7 @@ internal class ActionVisitor(IEndpointRouteBuilder routeBuilder, Interceptor int
         const string instance = "";
 
         var method = HttpMethods.Get;
-        var route = $"/{actionName}";
+        var route = $"/actions/{actionName}";
         if (interceptor.BeforeGetInstancesEndpointDefinition(behaviorClass, ref method, ref route))
         {
             var routeHandlerBuilder = action.MapMethods(route, [method], async (IStateflowsStorage storage) =>
@@ -293,7 +331,7 @@ internal class ActionVisitor(IEndpointRouteBuilder routeBuilder, Interceptor int
             interceptor.AfterGetInstancesEndpointDefinition(behaviorClass, method, route, routeHandlerBuilder);
         }
 
-        route = $"/{actionName}/status";
+        route = $"/actions/{actionName}/status";
         method = HttpMethods.Get;
         if (interceptor.BeforeEventEndpointDefinition<BehaviorInfoRequest>(behaviorClass, isDefaultInstance: true, ref method, ref route))
         {
@@ -357,7 +395,7 @@ internal class ActionVisitor(IEndpointRouteBuilder routeBuilder, Interceptor int
             );
         }
 
-        route = $"/{actionName}/notifications";
+        route = $"/actions/{actionName}/notifications";
         method = HttpMethods.Get;
         if (interceptor.BeforeEventEndpointDefinition<NotificationsRequest>(behaviorClass, isDefaultInstance: true, ref method, ref route))
         {
@@ -436,9 +474,6 @@ internal class ActionVisitor(IEndpointRouteBuilder routeBuilder, Interceptor int
             var endpointsBuilder = new EndpointsBuilder(routeBuilder, this, interceptor, new ActionClass(actionName), HasDefaultInstance);
 
             actionType.CallStaticMethod(nameof(IActionEndpoints.RegisterEndpoints), [typeof(IEndpointsBuilder)], [endpointsBuilder]);
-
-            // var action = (IActionEndpoints)StateflowsActivator.CreateUninitializedInstance<TAction>();
-            // action.RegisterEndpoints(endpointsBuilder);
         }
 
         return Task.CompletedTask;

@@ -39,7 +39,7 @@ namespace Stateflows
                     .AddHostedService(provider => provider.GetRequiredService<StateflowsService>())
                     .AddSingleton<IStateflowsTelemetry>(provider => provider.GetRequiredService<StateflowsService>())
                     .AddSingleton<INotificationsHub, NotificationsHub>()
-                    .AddScoped<IStateflowsSubscriber, StateflowsSubscriber>()
+                    // .AddScoped<IStateflowsSubscriber, StateflowsSubscriber>()
                     .AddHostedService<Scheduler>()
                     .AddTransient<ScheduleExecutor>()
                     .AddTransient<StartupExecutor>()
@@ -112,6 +112,11 @@ namespace Stateflows
             if (!services.IsServiceRegistered<IBehaviorFactory>())
             {
                 services.AddTransient<IBehaviorFactory, BehaviorFactory>();
+            }
+
+            if (!services.IsServiceRegistered<IStateflowsSubscriber>())
+            {
+                services.AddScoped<IStateflowsSubscriber, StateflowsSubscriber>();
             }
 
             ActionsDependencyInjection.Build(builder);

@@ -67,15 +67,9 @@ internal class BehaviorGrain(
         {
             try
             {
-                if (
-                    validation.IsValid/* ||
-                    (
-                        eventHolder is EventHolder<CompoundRequest> compoundRequest &&
-                        compoundRequest.Payload.Events.Any(ev => ev.Headers.Values.Any(h => h is ForcedExecution))
-                    )*/
-                )
+                if (validation.IsValid)
                 {
-                    status = await eventHolder.DoProcessAsync(this);
+                    status = await eventHolder.ExecuteAsync(this);
                 }
 
                 status = validation.IsValid
@@ -89,21 +83,6 @@ internal class BehaviorGrain(
         });
 
         var result = new RequestResult(eventHolder.GetResponseHolder(), status, validation);
-
-        if (result.Response != null)
-        {
-            var notificationType = result.Response.PayloadType;
-            var ttlAttribute = notificationType.GetCustomAttribute<TimeToLiveAttribute>();
-            var retainAttribute = notificationType.GetCustomAttribute<RetainAttribute>();
-            var notification = (OrleansEventHolder)result.Response;
-            notification.SenderId = BehaviorId;
-            notification.SentAt = DateTime.Now;
-            notification.Retained = retainAttribute != null;
-            notification.TimeToLive = ttlAttribute?.SecondsToLive ?? 0;
-            
-            var notificationsGrain = grainFactory.GetGrain<INotificationsGrain>(this.GetGrainId().Key.ToString());
-            await notificationsGrain.PublishAsync([notification]);
-        }
         
         ResponseHolder.ClearResponses();
 

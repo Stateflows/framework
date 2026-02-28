@@ -18,9 +18,10 @@ namespace Stateflows.Common.Classes
             Values = values;
         }
 
-        private void InternalSet<T>(string key, T value)
+        private T InternalSet<T>(string key, T value)
         {
             Values[key] = StateflowsJsonConverter.SerializePolymorphicObject(value);
+            return value;
         }
 
         public void Set<T>(string key, T value)
@@ -31,14 +32,12 @@ namespace Stateflows.Common.Classes
             }
         }
 
-        public Task SetAsync<T>(string key, T value)
+        public Task<T> SetAsync<T>(string key, T value)
         {
             lock (Values)
             {
-                InternalSet(key, value);
+                return Task.FromResult(InternalSet(key, value));
             }
-
-            return Task.CompletedTask;
         }
         
         public Task<bool> IsSetAsync(string key)
@@ -130,7 +129,7 @@ namespace Stateflows.Common.Classes
             return Task.FromResult(result);
         }
 
-        public Task UpdateAsync<T>(string key, Func<T, T> valueUpdater, T defaultValue = default)
+        public Task<T> UpdateAsync<T>(string key, Func<T, T> valueUpdater, T defaultValue = default)
         {
             lock (Values)
             {
@@ -138,10 +137,8 @@ namespace Stateflows.Common.Classes
 
                 value = valueUpdater(value);
 
-                InternalSet(key, value);
+                return Task.FromResult(InternalSet(key, value));
             }
-
-            return Task.CompletedTask;
         }
 
         public Task RemoveAsync(string key)

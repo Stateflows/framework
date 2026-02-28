@@ -1,4 +1,6 @@
 using System.Diagnostics;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Http.HttpResults;
 using Stateflows.Actions;
 using Stateflows.Common;
 using Stateflows.Examples.Behaviors.Activities.Invoicing;
@@ -9,9 +11,27 @@ using Stateflows.Examples.Behaviors.StateMachines.Document.States;
 using Stateflows.Examples.Common.Events;
 using Stateflows.StateMachines;
 using Stateflows.Activities;
+using Stateflows.Extensions.MinimalAPIs;
 using Stateflows.StateMachines.Attributes;
+using IExecutionContext = Stateflows.Common.IExecutionContext;
 
 namespace Stateflows.Examples.Behaviors.StateMachines.Document;
+
+public class UniversalAction(IBehaviorContext bc, IExecutionContext ec) : IActionElement
+{
+    public Task ExecuteAsync(CancellationToken cancellationToken = default)
+    {
+        Trace.WriteLine("UniversalAction called");
+        
+        return Task.CompletedTask;
+    }
+}
+
+// public class ReviewingAgent : IAgent
+// {
+//     public string GuardPrompt => "Check external API via MCP if I can proceed with my process";
+//     public string SystemPrompt => "Generate review/summary for my document, i'm gonna provide feedback in loop until satisfied";
+// }
 
 [StateMachineBehavior]
 public class Document : IStateMachine
@@ -19,20 +39,25 @@ public class Document : IStateMachine
     public static void Build(IStateMachineBuilder builder) => builder
         .AddInterceptor<HttpContextInterceptor>()
         .AddInitialState<New>(b => b
-            .AddTransition<Review, ApprovalPending>(b => b
-                .AddEffect<ReviewEffect>()
-                .AddEffect_ClearScript("Console.WriteLine(JSON.stringify(behaviorContext))")
-                .AddGuard_ClearScript("event.Rating >= 42")
-            )
+            .AddOnEntry<UniversalAction>()
+            .AddOnExit<UniversalAction>()
+            // .AddDoAgent<ReviewingAgent>()
+            .AddTransition<Review, ApprovalPending>()
             .AddTransition<AfterOneMinute, ReportAutorejection, Rejected>()
+            .AddDoAction<UniversalAction>()
         )
         .AddState<ApprovalPending>(b => b
             .AddTransition<Approve, Approved>()
             .AddTransition<Reject, ReportRejection, Rejected>()
+            .AddEndpoints(b => b
+                .AddGet("approvalRules", () => Results.Ok("Just do it"))
+            )
             .AddDoActivity(b => b
                 .AddInitial(b => b
                     .AddControlFlow("initial")
+                    .AddControlFlow<UniversalAction>()
                 )
+                .AddAction<UniversalAction>()
                 .AddAction("initial", async c =>
                 {
                     foreach (var i in Enumerable.Range(1, 100))

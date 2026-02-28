@@ -8,7 +8,6 @@ public interface IActionBuilder :
     IActionObservability<IActionBuilder>;
 
 public interface IActionBuilder<out TAction> :
-    IActionBuilder,
     IActionUtils<IActionBuilder<TAction>>,
     IActionObservability<IActionBuilder<TAction>>,
     IElementBuilderBase<TAction, IActionBuilder<TAction>>

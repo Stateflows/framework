@@ -16,13 +16,6 @@ namespace Stateflows.Common
         
         Task<RequestResult<TResponseEvent>> RequestAsync<TResponseEvent>(IRequest<TResponseEvent> request, IDictionary<string, EventHeader>? headers = null);
         
-        // public Task<RequestResult<CompoundResponse>> SendCompoundAsync(Action<ICompoundRequestBuilder> builderAction, IDictionary<string, EventHeader> headers = null)
-        // {
-        //     var compound = new CompoundRequest();
-        //     builderAction(compound);
-        //     return RequestAsync(compound, headers);
-        // }
-
         public Task<SendResult> ResetAsync(ResetMode resetMode = ResetMode.Full, IDictionary<string, EventHeader> headers = null)
             => SendAsync(new Reset { Mode = resetMode }, headers);
 

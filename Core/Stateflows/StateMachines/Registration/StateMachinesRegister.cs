@@ -189,10 +189,7 @@ namespace Stateflows.StateMachines.Registration
                     StateMachinesContextHolder.StateContext.Value = null;
                     StateMachinesContextHolder.TransitionContext.Value = null;
                     StateMachinesContextHolder.BehaviorContext.Value = context.Behavior;
-                    if (((IStateflowsContextProvider)context).Context.ContextOwnerId == null)
-                    {
-                        StateMachinesContextHolder.StateMachineContext.Value = ((BaseContext)context).StateMachine;
-                    }
+                    StateMachinesContextHolder.StateMachineContext.Value = ((BaseContext)context).StateMachine;
                     StateMachinesContextHolder.ExecutionContext.Value = context;
 
                     return await StateflowsActivator.CreateModelElementInstanceAsync<TInterceptor>(serviceProvider, "interceptor");
@@ -222,10 +219,7 @@ namespace Stateflows.StateMachines.Registration
                     StateMachinesContextHolder.StateContext.Value = null;
                     StateMachinesContextHolder.TransitionContext.Value = null;
                     StateMachinesContextHolder.BehaviorContext.Value = context.Behavior;
-                    if (((IStateflowsContextProvider)context).Context.ContextOwnerId == null)
-                    {
-                        StateMachinesContextHolder.StateMachineContext.Value = ((BaseContext)context).StateMachine;
-                    }
+                    StateMachinesContextHolder.StateMachineContext.Value = ((BaseContext)context).StateMachine;
                     StateMachinesContextHolder.ExecutionContext.Value = context;
 
                     return await StateflowsActivator.CreateModelElementInstanceAsync<TExceptionHandler>(serviceProvider, "exception handler");
@@ -255,10 +249,7 @@ namespace Stateflows.StateMachines.Registration
                     StateMachinesContextHolder.StateContext.Value = null;
                     StateMachinesContextHolder.TransitionContext.Value = null;
                     StateMachinesContextHolder.BehaviorContext.Value = context.Behavior;
-                    if (((IStateflowsContextProvider)context).Context.ContextOwnerId == null)
-                    {
-                        StateMachinesContextHolder.StateMachineContext.Value = ((BaseContext)context).StateMachine;
-                    }
+                    StateMachinesContextHolder.StateMachineContext.Value = ((BaseContext)context).StateMachine;
                     StateMachinesContextHolder.ExecutionContext.Value = context;
 
                     return await StateflowsActivator.CreateModelElementInstanceAsync<TObserver>(serviceProvider, "observer");

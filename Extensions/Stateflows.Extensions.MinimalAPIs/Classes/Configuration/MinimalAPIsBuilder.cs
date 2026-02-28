@@ -28,7 +28,7 @@ internal class MinimalAPIsBuilder(IServiceProvider serviceProvider) :
         {
             if (interceptor == null)
             {
-                interceptor = new ConfigurationInterceptor(serviceProvider);
+                interceptor = new ConfigurationInterceptor();
                 interceptorFactories.Add(_ => interceptor);
             }
 

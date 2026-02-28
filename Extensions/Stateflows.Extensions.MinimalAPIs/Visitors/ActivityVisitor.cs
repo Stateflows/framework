@@ -29,7 +29,6 @@ internal class ActivityVisitor(
     )!;
 
     private string CurrentActivityName = string.Empty;
-    private BehaviorStatus[] SupportedStatuses = [];
     private BehaviorClass? OwnerClass = null;
 
     public bool HasDefaultInstance { get; private set; } = false;
@@ -98,20 +97,6 @@ internal class ActivityVisitor(
         return Task.CompletedTask;
     }
 
-    // private static void RegisterEndpoints<TEndpointsOwner>(EndpointsBuilder endpointsBuilder)
-    // {
-    //     var activityType = typeof(TEndpointsOwner);
-    //     var staticRegister = activityType.GetMethod(
-    //         nameof(IActivityEndpoints.RegisterEndpoints),
-    //         BindingFlags.Public | BindingFlags.Static,
-    //         binder: null,
-    //         types: [ typeof(EndpointsBuilder) ],
-    //         modifiers: null
-    //     );
-    //
-    //     staticRegister.Invoke(null, [ endpointsBuilder ]);
-    // }
-
     public override Task ActivityTypeAddedAsync<TActivity>(string activityName, int activityVersion)
     {
         if (OwnerClass != null)
@@ -135,16 +120,15 @@ internal class ActivityVisitor(
         return Task.CompletedTask;
     }
 
-    private void RegisterEventEndpoint<TEvent>(string activityName, IEndpointRouteBuilder activity)
-        => activity.RegisterEventEndpoint<TEvent>(interceptor,
-            BehaviorType.Activity, activityName, HateoasLinks);
+    private void RegisterEventEndpoint<TEvent>(string activityName, IEndpointRouteBuilder activity, BehaviorStatus[]? supportedStatuses = null)
+        => activity.RegisterEventEndpoint<TEvent>(interceptor, BehaviorType.Activity, activityName, HateoasLinks, supportedStatuses: supportedStatuses);
 
-    private void RegisterRequestEndpoint<TRequest, TResponse>(string activityName, IEndpointRouteBuilder activity)
+    private void RegisterRequestEndpoint<TRequest, TResponse>(string activityName, IEndpointRouteBuilder activity, BehaviorStatus[]? supportedStatuses = null)
         where TRequest : IRequest<TResponse>
         => activity.RegisterRequestEndpoint<TRequest, TResponse>(interceptor,
-            BehaviorType.Activity, activityName, HateoasLinks);
+            BehaviorType.Activity, activityName, HateoasLinks, supportedStatuses: supportedStatuses);
 
-    private void RegisterEventEndpoint<TEvent>(string activityName)
+    private void RegisterEventEndpoint<TEvent>(string activityName, BehaviorStatus[]? supportedStatuses = null)
     {
         var eventType = typeof(TEvent);
         if (
@@ -158,7 +142,7 @@ internal class ActivityVisitor(
 
         if (!Triggers.TryGetValue(activityName, out var triggers))
         {
-            triggers = new List<Type>();
+            triggers = [];
             Triggers.Add(activityName, triggers);
         }
 
@@ -179,13 +163,13 @@ internal class ActivityVisitor(
                     this,
                     BindingFlags.Instance | BindingFlags.NonPublic,
                     null,
-                    [activityName, routeBuilder],
+                    [activityName, routeBuilder, supportedStatuses],
                     null
                 );
             }
             else
             {
-                RegisterEventEndpoint<TEvent>(activityName, routeBuilder);
+                RegisterEventEndpoint<TEvent>(activityName, routeBuilder, supportedStatuses);
             }
         }
     }
@@ -197,7 +181,7 @@ internal class ActivityVisitor(
             return;
         }
 
-        RegisterEventEndpoint<Initialize>(activityName);
+        RegisterEventEndpoint<Initialize>(activityName, [BehaviorStatus.NotInitialized]);
     }
 
     private static string GetEventName<TEvent>()

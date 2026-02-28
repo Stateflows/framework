@@ -92,10 +92,7 @@ namespace Stateflows.Activities.Engine
 
             ActivitiesContextHolder.NodeContext.Value = null;
             ActivitiesContextHolder.FlowContext.Value = null;
-            if (((IStateflowsContextProvider)context).Context.ContextOwnerId == null)
-            {
-                ActivitiesContextHolder.ActivityContext.Value = (IActivityContext)context.Behavior;
-            }
+            ActivitiesContextHolder.ActivityContext.Value = (IActivityContext)context.Behavior;
             ActivitiesContextHolder.BehaviorContext.Value = context.Behavior;
             ActivitiesContextHolder.ExecutionContext.Value = context;
             ActivitiesContextHolder.ExceptionContext.Value = null;
@@ -115,10 +112,7 @@ namespace Stateflows.Activities.Engine
 
             ActivitiesContextHolder.NodeContext.Value = null;
             ActivitiesContextHolder.FlowContext.Value = null;
-            if (((IStateflowsContextProvider)context).Context.ContextOwnerId == null)
-            {
-                ActivitiesContextHolder.ActivityContext.Value = (IActivityContext)context.Behavior;
-            }
+            ActivitiesContextHolder.ActivityContext.Value = (IActivityContext)context.Behavior;
             ActivitiesContextHolder.BehaviorContext.Value = context.Behavior;
             ActivitiesContextHolder.ExecutionContext.Value = context;
             ActivitiesContextHolder.ExceptionContext.Value = null;
@@ -138,10 +132,7 @@ namespace Stateflows.Activities.Engine
 
             ActivitiesContextHolder.NodeContext.Value = null;
             ActivitiesContextHolder.FlowContext.Value = null;
-            if (((IStateflowsContextProvider)context).Context.ContextOwnerId == null)
-            {
-                ActivitiesContextHolder.ActivityContext.Value = (IActivityContext)context.Behavior;
-            }
+            ActivitiesContextHolder.ActivityContext.Value = (IActivityContext)context.Behavior;
             ActivitiesContextHolder.BehaviorContext.Value = context.Behavior;
             ActivitiesContextHolder.ExecutionContext.Value = context;
             ActivitiesContextHolder.ExceptionContext.Value = null;
@@ -161,10 +152,7 @@ namespace Stateflows.Activities.Engine
 
             ActivitiesContextHolder.NodeContext.Value = context.Node;
             ActivitiesContextHolder.FlowContext.Value = null;
-            if (((IStateflowsContextProvider)context).Context.ContextOwnerId == null)
-            {
-                ActivitiesContextHolder.ActivityContext.Value = (IActivityContext)context.Behavior;
-            }
+            ActivitiesContextHolder.ActivityContext.Value = (IActivityContext)context.Behavior;
             ActivitiesContextHolder.BehaviorContext.Value = context.Behavior;
             ActivitiesContextHolder.ExecutionContext.Value = context;
             ActivitiesContextHolder.ExceptionContext.Value = null;
@@ -185,10 +173,7 @@ namespace Stateflows.Activities.Engine
 
             ActivitiesContextHolder.NodeContext.Value = context.Node;
             ActivitiesContextHolder.FlowContext.Value = null;
-            if (((IStateflowsContextProvider)context).Context.ContextOwnerId == null)
-            {
-                ActivitiesContextHolder.ActivityContext.Value = (IActivityContext)context.Behavior;
-            }
+            ActivitiesContextHolder.ActivityContext.Value = (IActivityContext)context.Behavior;
             ActivitiesContextHolder.BehaviorContext.Value = context.Behavior;
             ActivitiesContextHolder.ExecutionContext.Value = context;
             ActivitiesContextHolder.ExceptionContext.Value = null;
@@ -208,10 +193,7 @@ namespace Stateflows.Activities.Engine
 
             ActivitiesContextHolder.NodeContext.Value = context.Node;
             ActivitiesContextHolder.FlowContext.Value = null;
-            if (((IStateflowsContextProvider)context).Context.ContextOwnerId == null)
-            {
-                ActivitiesContextHolder.ActivityContext.Value = (IActivityContext)context.Behavior;
-            }
+            ActivitiesContextHolder.ActivityContext.Value = (IActivityContext)context.Behavior;
             ActivitiesContextHolder.BehaviorContext.Value = context.Behavior;
             ActivitiesContextHolder.ExecutionContext.Value = context;
             ActivitiesContextHolder.ExceptionContext.Value = null;
@@ -231,10 +213,7 @@ namespace Stateflows.Activities.Engine
 
             ActivitiesContextHolder.NodeContext.Value = context.Node;
             ActivitiesContextHolder.FlowContext.Value = null;
-            if (((IStateflowsContextProvider)context).Context.ContextOwnerId == null)
-            {
-                ActivitiesContextHolder.ActivityContext.Value = (IActivityContext)context.Behavior;
-            }
+            ActivitiesContextHolder.ActivityContext.Value = (IActivityContext)context.Behavior;
             ActivitiesContextHolder.BehaviorContext.Value = context.Behavior;
             ActivitiesContextHolder.ExecutionContext.Value = context;
             ActivitiesContextHolder.ExceptionContext.Value = null;
@@ -254,10 +233,7 @@ namespace Stateflows.Activities.Engine
 
             ActivitiesContextHolder.NodeContext.Value = context.Node;
             ActivitiesContextHolder.FlowContext.Value = null;
-            if (((IStateflowsContextProvider)context).Context.ContextOwnerId == null)
-            {
-                ActivitiesContextHolder.ActivityContext.Value = (IActivityContext)context.Behavior;
-            }
+            ActivitiesContextHolder.ActivityContext.Value = (IActivityContext)context.Behavior;
             ActivitiesContextHolder.BehaviorContext.Value = context.Behavior;
             ActivitiesContextHolder.ExecutionContext.Value = context;
             ActivitiesContextHolder.ExceptionContext.Value = null;
@@ -278,10 +254,7 @@ namespace Stateflows.Activities.Engine
 
             ActivitiesContextHolder.NodeContext.Value = context.Node;
             ActivitiesContextHolder.FlowContext.Value = null;
-            if (((IStateflowsContextProvider)context).Context.ContextOwnerId == null)
-            {
-                ActivitiesContextHolder.ActivityContext.Value = (IActivityContext)context.Behavior;
-            }
+            ActivitiesContextHolder.ActivityContext.Value = (IActivityContext)context.Behavior;
             ActivitiesContextHolder.BehaviorContext.Value = context.Behavior;
             ActivitiesContextHolder.ExecutionContext.Value = context;
             ActivitiesContextHolder.ExceptionContext.Value = context;
@@ -301,10 +274,7 @@ namespace Stateflows.Activities.Engine
 
             ActivitiesContextHolder.NodeContext.Value = null;
             ActivitiesContextHolder.FlowContext.Value = context;
-            if (((IStateflowsContextProvider)context).Context.ContextOwnerId == null)
-            {
-                ActivitiesContextHolder.ActivityContext.Value = (IActivityContext)context.Behavior;
-            }
+            ActivitiesContextHolder.ActivityContext.Value = (IActivityContext)context.Behavior;
             ActivitiesContextHolder.BehaviorContext.Value = context.Behavior;
             ActivitiesContextHolder.ExecutionContext.Value = context;
             ActivitiesContextHolder.ExceptionContext.Value = null;

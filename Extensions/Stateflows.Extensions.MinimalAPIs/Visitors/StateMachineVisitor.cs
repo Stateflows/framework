@@ -102,7 +102,7 @@ internal class StateMachineVisitor(
         return Task.CompletedTask;
     }
 
-    private void RegisterEventEndpoint<TEvent>(string stateMachineName)
+    private void RegisterEventEndpoint<TEvent>(string stateMachineName, BehaviorStatus[]? supportedStatuses = null)
     {
         var eventType = typeof(TEvent);
         if (
@@ -137,13 +137,13 @@ internal class StateMachineVisitor(
                     this,
                     BindingFlags.Instance | BindingFlags.NonPublic,
                     null,
-                    [stateMachineName, routeBuilder],
+                    [stateMachineName, routeBuilder, supportedStatuses],
                     null
                 );
             }
             else
             {
-                RegisterEventEndpoint<TEvent>(stateMachineName, routeBuilder);
+                RegisterEventEndpoint<TEvent>(stateMachineName, routeBuilder, supportedStatuses);
             }
         }
     }
@@ -155,17 +155,17 @@ internal class StateMachineVisitor(
             return;
         }
 
-        RegisterEventEndpoint<Initialize>(stateMachineName);
+        RegisterEventEndpoint<Initialize>(stateMachineName, [BehaviorStatus.NotInitialized]);
     }
 
-    private void RegisterEventEndpoint<TEvent>(string stateMachineName, IEndpointRouteBuilder stateMachine)
+    private void RegisterEventEndpoint<TEvent>(string stateMachineName, IEndpointRouteBuilder stateMachine, BehaviorStatus[]? supportedStatuses = null)
         => stateMachine.RegisterEventEndpoint<TEvent>(interceptor,
-            BehaviorType.StateMachine, stateMachineName, HateoasLinks, hasDefaultInstance: HasDefaultInstance);
+            BehaviorType.StateMachine, stateMachineName, HateoasLinks, HasDefaultInstance, supportedStatuses);
 
-    private void RegisterRequestEndpoint<TRequest, TResponse>(string stateMachineName, IEndpointRouteBuilder stateMachine)
+    private void RegisterRequestEndpoint<TRequest, TResponse>(string stateMachineName, IEndpointRouteBuilder stateMachine, BehaviorStatus[]? supportedStatuses = null)
         where TRequest : IRequest<TResponse>
         => stateMachine.RegisterRequestEndpoint<TRequest, TResponse>(interceptor,
-            BehaviorType.StateMachine, stateMachineName, HateoasLinks, HasDefaultInstance);
+            BehaviorType.StateMachine, stateMachineName, HateoasLinks, HasDefaultInstance, supportedStatuses);
 
     private void RegisterStandardEndpoints(string stateMachineName)
     {

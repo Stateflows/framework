@@ -330,6 +330,8 @@ namespace Stateflows.Activities.Engine
                         Context.Context.Deleted = true;
                     }
                 }
+                
+                StateHasChanged = true;
             }
         }
 

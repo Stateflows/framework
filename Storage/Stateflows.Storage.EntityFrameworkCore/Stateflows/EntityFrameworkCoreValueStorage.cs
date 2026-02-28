@@ -12,7 +12,7 @@ namespace Stateflows.Storage.EntityFrameworkCore.Stateflows
     internal class EntityFrameworkCoreValueStorage<TDbContext>(IServiceProvider serviceProvider) : IStateflowsValueStorage
         where TDbContext : DbContext, IStateflowsDbContext_v1
     {
-        public async Task SetAsync<T>(BehaviorId behaviorId, string key, T value)
+        public async Task<T> SetAsync<T>(BehaviorId behaviorId, string key, T value)
         {
             await using var scope = serviceProvider.CreateAsyncScope();
             var dbContextFactory = scope.ServiceProvider.GetService<IDbContextFactory<TDbContext>>() ?? new DbContextFactory<TDbContext>(scope.ServiceProvider);
@@ -37,6 +37,8 @@ namespace Stateflows.Storage.EntityFrameworkCore.Stateflows
             await dbContext.SaveChangesAsync();
                 
             dbContext.ChangeTracker.Clear();
+
+            return value;
         }
 
         public async Task<bool> IsSetAsync(BehaviorId behaviorId, string key)
@@ -143,7 +145,7 @@ namespace Stateflows.Storage.EntityFrameworkCore.Stateflows
             return result;
         }
 
-        public async Task UpdateAsync<T>(BehaviorId behaviorId, string key, Func<T, T> valueUpdater, T defaultValue = default)
+        public async Task<T> UpdateAsync<T>(BehaviorId behaviorId, string key, Func<T, T> valueUpdater, T defaultValue = default)
         {
             var result = defaultValue;
             
@@ -186,8 +188,10 @@ namespace Stateflows.Storage.EntityFrameworkCore.Stateflows
                 : StateflowsJsonConverter.SerializePolymorphicObject(result);
 
             await dbContext.SaveChangesAsync();
-                
+
             dbContext.ChangeTracker.Clear();
+
+            return result;
         }
 
         public async Task RemoveAsync(BehaviorId behaviorId, string key)

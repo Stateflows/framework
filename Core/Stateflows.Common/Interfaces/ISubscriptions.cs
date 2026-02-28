@@ -10,13 +10,13 @@ namespace Stateflows.Common
         /// </summary>
         /// <typeparam name="TNotification">Subscribed notification type</typeparam>
         /// <param name="behaviorId">Identifier of a behavior being subscribed to</param>
-        Task<SendResult> SubscribeAsync<TNotification>(BehaviorId behaviorId);
+        Task SubscribeAsync<TNotification>(BehaviorId behaviorId);
 
         /// <summary>
         /// Unsubscribes for notifications from given behavior (by sending <see cref="Unsubscribe"/> to it).
         /// </summary>
         /// <typeparam name="TNotification">Unsubscribed notification type</typeparam>
         /// <param name="behaviorId">Identifier of a behavior being unsubscribed to</param>
-        Task<SendResult> UnsubscribeAsync<TNotification>(BehaviorId behaviorId);
+        Task UnsubscribeAsync<TNotification>(BehaviorId behaviorId);
     }
 }

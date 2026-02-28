@@ -136,10 +136,7 @@ namespace Stateflows.Actions.Registration
 
             actionModel.Delegate = async context =>
             {
-                if (((IStateflowsContextProvider)context).Context.ContextOwnerId == null)
-                {
-                    ActionsContextHolder.ActionContext.Value = (IActionContext)context.Behavior;
-                }
+                ActionsContextHolder.ActionContext.Value = (IActionContext)context.Behavior;
                 ActionsContextHolder.BehaviorContext.Value = context.Behavior;
                 ActionsContextHolder.ExecutionContext.Value = context;
                 ContextValues.GlobalValuesHolder.Value = context.Behavior.Values;

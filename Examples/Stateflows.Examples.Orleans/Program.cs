@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using Microsoft.ClearScript;
 using Microsoft.ClearScript.V8;
 using OpenTelemetry;
@@ -6,6 +7,8 @@ using Stateflows;
 using Stateflows.Actions;
 using Stateflows.StateMachines;
 using Stateflows.Activities;
+using Stateflows.Common;
+using Stateflows.Common.Utilities;
 using Stateflows.Examples.Behaviors.StateMachines.Document.Interceptors;
 using Stateflows.Extensions.MinimalAPIs;
 using Stateflows.Extensions.OpenTelemetry;
@@ -13,12 +16,12 @@ using Document = Stateflows.Examples.Behaviors.StateMachines.Document.Document;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Host.UseOrleans(static siloBuilder =>
-{
-    siloBuilder.UseLocalhostClustering();
-    siloBuilder.AddMemoryGrainStorage("stateflows");
-    siloBuilder.UseInMemoryReminderService();
-});
+builder.Host.UseOrleans(static b => b
+    .UseLocalhostClustering()
+    .AddMemoryGrainStorage("stateflows")
+    .AddMemoryGrainStorage("stateflows")
+    .UseInMemoryReminderService()
+);
 
 // In order to host Stateflows behaviors, Stateflows framework must be registered in the app.
 builder.Services.AddStateflows(b => b
@@ -32,6 +35,11 @@ builder.Services.AddStateflows(b => b
     
     .AddActions(b => b
         .AddAction_ClearScript("script", "Console.WriteLine('test');")
+        .AddAction("serialize", async c =>
+        {
+            var h = new TokenHolder<int> { Payload = 42 };
+            Debug.WriteLine(StateflowsJsonConverter.SerializePolymorphicObject(h));
+        })
     )
         
     // Each type of behavior must be registered explicitly - in this example only State Machines are used.
@@ -85,7 +93,16 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
-app.MapStateflowsMinimalAPIsEndpoints();
+app.MapStateflowsMinimalAPIsEndpoints(b => b
+    .SetApiRoutePrefix("sf")
+    .ConfigureAllEndpoints(b => b
+        .UpdateRoute(route => route
+            .Replace("stateMachines/", "")
+            .Replace("actions/", "")
+            .Replace("activities/", "")
+        )
+    )
+);
 
 app.MapGet("/doc", async (IStateMachineLocator locator) =>
 {

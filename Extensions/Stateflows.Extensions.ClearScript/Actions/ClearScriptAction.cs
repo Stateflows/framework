@@ -5,8 +5,9 @@ namespace Stateflows.Actions;
 public abstract class ClearScriptAction(
     IServiceProvider serviceProvider,
     IBehaviorContext behaviorContext,
+    IActionContext actionContext,
     IExecutionContext commonExecutionContext
-) : ScriptedAction(serviceProvider, behaviorContext, commonExecutionContext),
+) : ScriptedAction(serviceProvider, behaviorContext, actionContext, commonExecutionContext),
     IAction
 {
     public virtual string ActionScript => "";

@@ -67,10 +67,10 @@ namespace Stateflows.StateMachines.Context.Classes
 
         public IServiceProvider ServiceProvider => Context.Executor.ServiceProvider;
 
-        public Task<SendResult> SubscribeAsync<TNotification>(BehaviorId behaviorId)
+        public Task SubscribeAsync<TNotification>(BehaviorId behaviorId)
             => Subscriber.SubscribeAsync<TNotification>(Context.Context.ContextParentId ?? Context.Context.Id, behaviorId);
 
-        public Task<SendResult> UnsubscribeAsync<TNotification>(BehaviorId behaviorId)
+        public Task UnsubscribeAsync<TNotification>(BehaviorId behaviorId)
             => Subscriber.UnsubscribeAsync<TNotification>(Context.Context.ContextParentId ?? Context.Context.Id, behaviorId);
     }
 }

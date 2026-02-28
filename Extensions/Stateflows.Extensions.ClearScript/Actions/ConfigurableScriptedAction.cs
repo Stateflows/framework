@@ -2,17 +2,18 @@ using Stateflows.Common;
 
 namespace Stateflows.Actions;
 
-internal sealed class ConfigurableScriptedAction(
+public sealed class ConfigurableScriptedAction(
     IServiceProvider serviceProvider,
     IBehaviorContext behaviorContext,
-    IExecutionContext commonExecutionContext
-) : ScriptedAction(serviceProvider, behaviorContext, commonExecutionContext),
+    IActionContext actionContext,
+    IExecutionContext executionContext
+) : ScriptedAction(serviceProvider, behaviorContext, actionContext, executionContext),
     IConfigurable<string>,
     IActionElement
 {
     public async Task ExecuteAsync(CancellationToken cancellationToken = default)
     {
-        using var engine = await GetEngineAsync(); 
+        using var engine = await GetEngineAsync();
         engine.Execute(script);
     }
 

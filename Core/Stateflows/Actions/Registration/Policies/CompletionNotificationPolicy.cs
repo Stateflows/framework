@@ -29,4 +29,8 @@ public static class CompletionNotificationPolicy
 {
     public static IActionBuilder AddCompletionNotificationPolicy(this IActionBuilder builder)
         => builder.AddInterceptor(_ => new CompletionNotification());
+    
+    public static IActionBuilder<TAction> AddCompletionNotificationPolicy<TAction>(this IActionBuilder<TAction> builder)
+        where TAction : class, IAction
+        => builder.AddInterceptor(_ => new CompletionNotification());
 }

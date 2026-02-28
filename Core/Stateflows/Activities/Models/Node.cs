@@ -1,15 +1,13 @@
 ﻿using System;
 using System.Linq;
-using System.Reflection;
 using System.Threading.Tasks;
 using System.Collections.Generic;
-using Stateflows.Utils;
 using Stateflows.Common;
 using Stateflows.Common.Models;
+using Stateflows.Common.Utilities;
 using Stateflows.Activities.Registration;
 using Stateflows.Activities.Context.Classes;
 using Stateflows.Activities.Exceptions;
-using Stateflows.Common.Utilities;
 
 namespace Stateflows.Activities.Models
 {
@@ -254,11 +252,10 @@ namespace Stateflows.Activities.Models
                     context.Context,
                     currentScope,
                     handler,
-                    new TokenHolder[]
-                    {
+                    [
                         exception.ToExceptionHolder(),
                         new NodeReferenceToken() { Node = this }.ToTokenHolder(),
-                    }
+                    ]
                 );
 
                 await handler.Action.WhenAll(exceptionContext);

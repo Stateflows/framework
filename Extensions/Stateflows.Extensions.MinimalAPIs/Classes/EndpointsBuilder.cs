@@ -19,10 +19,11 @@ internal class EndpointsBuilder(
 
     private RouteGroupBuilder AddEndpoint(string pattern, string[] methods, Delegate handler)
     {
+        var instanceHandler = handler;
         var route = $"/{behaviorClass.Type.ToResource()}/{behaviorClass.Name}/{{instance}}{pattern}";
         var endpointEnabled = interceptor.BeforeCustomEndpointDefinition(behaviorClass, isDefaultInstance: false, ref methods, ref route);
 
-        var requireContext = handler.Method.GetParameters().Any(parameter =>
+        var requireContext = instanceHandler.Method.GetParameters().Any(parameter =>
             parameter.ParameterType == typeof(IBehaviorEndpointContext) ||
             parameter.ParameterType == typeof(IStateEndpointContext) ||
             parameter.ParameterType == typeof(IStateMachineEndpointContext) ||
@@ -32,7 +33,7 @@ internal class EndpointsBuilder(
 
         if (!endpointEnabled)
         {
-            handler = () => Results.NotFound();
+            instanceHandler = () => Results.NotFound();
         }
         else
         {
@@ -46,7 +47,7 @@ internal class EndpointsBuilder(
                 },
                 [BehaviorStatus.Initialized],
                 scopeName ?? "",
-                string.IsNullOrEmpty(scopeName) ? "" : "node"
+                string.IsNullOrEmpty(scopeName) ? "standard" : "standard:node"
             );
         }
         var group = routeBuilder.MapGroup("");
@@ -55,7 +56,7 @@ internal class EndpointsBuilder(
                 .MapMethods(
                     route,
                     methods,
-                    handler
+                    instanceHandler
                 )
                 .WithMetadata(new EndpointMetadata()
                 {
@@ -87,10 +88,11 @@ internal class EndpointsBuilder(
 
         if (hasDefaultInstance)
         {
+            var defaultHandler = handler;
             route = $"/{behaviorClass.Type.ToResource()}/{behaviorClass.Name}/{pattern}";
             endpointEnabled = interceptor.BeforeCustomEndpointDefinition(behaviorClass, isDefaultInstance: true, ref methods, ref route);
 
-            requireContext = handler.Method.GetParameters().Any(parameter =>
+            requireContext = defaultHandler.Method.GetParameters().Any(parameter =>
                 parameter.ParameterType == typeof(IBehaviorEndpointContext) ||
                 parameter.ParameterType == typeof(IStateEndpointContext) ||
                 parameter.ParameterType == typeof(IStateMachineEndpointContext) ||
@@ -100,7 +102,7 @@ internal class EndpointsBuilder(
 
             if (!endpointEnabled)
             {
-                handler = () => Results.NotFound();
+                defaultHandler = () => Results.NotFound();
             }
             else
             {
@@ -114,7 +116,7 @@ internal class EndpointsBuilder(
                     },
                     [BehaviorStatus.Initialized],
                     scopeName ?? "",
-                    string.IsNullOrEmpty(scopeName) ? "" : "node"
+                    string.IsNullOrEmpty(scopeName) ? "default" : "default:node"
                 );
             }
 
@@ -122,7 +124,7 @@ internal class EndpointsBuilder(
                     .MapMethods(
                         route,
                         methods,
-                        handler
+                        defaultHandler
                     )
                     .WithMetadata(new EndpointMetadata()
                     {

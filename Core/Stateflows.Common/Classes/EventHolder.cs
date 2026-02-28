@@ -2,8 +2,6 @@
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Diagnostics;
-using System.Linq;
-using System.Reflection;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
 using Stateflows.Common.Interfaces;
@@ -39,13 +37,13 @@ namespace Stateflows.Common
 
         protected abstract Type GetPayloadType();
 
-        public abstract Task<EventStatus> DoProcessAsync(IStateflowsExecutor executor);
+        public abstract Task<EventStatus> ExecuteAsync(IStateflowsExecutor executor);
 
         public abstract Task<EventStatus> ProcessEventAsync(IStateflowsEngine engine, BehaviorId id, List<Exception> exceptions, Dictionary<object, EventHolder> responses);
-
-        public abstract Task<EventStatus> ExecuteBehaviorAsync(IStateflowsProcessor processor, EventStatus result, IStateflowsExecutor stateflowsExecutor);
         
         public abstract Task<SendResult> SendAsync(IBehavior behavior, IDictionary<string, EventHeader> headers = null);
+
+        public abstract Task NotifyAsync(ITypedNotificationHandler handler);
 
         protected abstract Task<bool> InternalValidateAsync(IStateflowsValidator validator, List<ValidationResult> validationResults);
         
@@ -53,45 +51,14 @@ namespace Stateflows.Common
         {
             var validationResults = new List<ValidationResult>();
             var isValid = true;
-
-            // if (this is EventHolder<CompoundRequest> compoundRequestHolder)
-            // {
-            //     var compoundRequest = compoundRequestHolder.Payload;
-            //     var results = new List<RequestResult>();
-            //     foreach (var ev in compoundRequest.Events)
-            //     {
-            //         var validation = await ev.ValidateAsync(validators);
-            //         var status = validation.IsValid
-            //             ? EventStatus.Omitted
-            //             : EventStatus.Invalid;
-            //
-            //         if (!validation.IsValid)
-            //         {
-            //             isValid = false;
-            //         }
-            //
-            //         results.Add(new RequestResult(
-            //             null,
-            //             status,
-            //             validation
-            //         ));
-            //     }
-            //
-            //     if (!isValid)
-            //     {
-            //         compoundRequest.Respond(new CompoundResponse() { Results = results });
-            //     }
-            // }
-            // else
+            
+            if (!PayloadType.IsClass) return new EventValidation(true, validationResults);
+            
+            foreach (var validator in validators)
             {
-                if (!PayloadType.IsClass) return new EventValidation(true, validationResults);
-                
-                foreach (var validator in validators)
+                if (!await InternalValidateAsync(validator, validationResults))
                 {
-                    if (!await InternalValidateAsync(validator, validationResults))
-                    {
-                        isValid = false;
-                    }
+                    isValid = false;
                 }
             }
 
@@ -120,19 +87,18 @@ namespace Stateflows.Common
             => Id.GetHashCode();
 
         [DebuggerHidden]
-        public override Task<EventStatus> DoProcessAsync(IStateflowsExecutor executor)
+        public override Task<EventStatus> ExecuteAsync(IStateflowsExecutor executor)
             => executor.DoProcessAsync(this);
 
         [DebuggerHidden]
         public override Task<EventStatus> ProcessEventAsync(IStateflowsEngine engine, BehaviorId id, List<Exception> exceptions, Dictionary<object, EventHolder> responses)
             => engine.ProcessEventAsync(id, this, exceptions, responses);
 
-        [DebuggerHidden]
-        public override Task<EventStatus> ExecuteBehaviorAsync(IStateflowsProcessor processor, EventStatus result, IStateflowsExecutor stateflowsExecutor)
-            => processor.ExecuteBehaviorAsync(this, result, stateflowsExecutor);
-
         public override Task<SendResult> SendAsync(IBehavior behavior, IDictionary<string, EventHeader> headers = null)
             => behavior.SendAsync(Payload, headers);
+
+        public override Task NotifyAsync(ITypedNotificationHandler handler)
+            => handler.HandleNotificationAsync(this);
 
         protected override Task<bool> InternalValidateAsync(IStateflowsValidator validator,
             List<ValidationResult> validationResults)

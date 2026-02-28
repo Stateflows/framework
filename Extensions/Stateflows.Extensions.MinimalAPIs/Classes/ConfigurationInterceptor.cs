@@ -26,9 +26,9 @@ internal class EndpointConfigurationRule
     public Action<IEndpointConventionBuilder>? EndpointConfigurator { get; init; }
 }
 
-internal class ConfigurationInterceptor(IServiceProvider serviceProvider) : EndpointDefinitionInterceptor
+internal class ConfigurationInterceptor : EndpointDefinitionInterceptor
 {
-    public List<EndpointConfigurationRule> Rules { get; } = new();
+    public readonly List<EndpointConfigurationRule> Rules = [];
 
     public override bool BeforeEventEndpointDefinition<TEvent>(BehaviorClass behaviorClass, bool isDefaultInstance, ref string method, ref string route)
     {

@@ -210,6 +210,8 @@ namespace Stateflows.StateMachines.Engine
                         Context.Context.Deleted = true;
                     }
                 }
+                
+                StateHasChanged = true;
             }
         }
 
@@ -338,7 +340,7 @@ namespace Stateflows.StateMachines.Engine
 
                 RebuildVerticesTree();
 
-                await eventHolder.DoProcessAsync(this);
+                await eventHolder.ExecuteAsync(this);
 
                 Context.ClearEvent();
 
@@ -1193,11 +1195,9 @@ namespace Stateflows.StateMachines.Engine
             StateMachinesContextHolder.StateContext.Value = null;
             StateMachinesContextHolder.TransitionContext.Value = null;
             StateMachinesContextHolder.BehaviorContext.Value = context.Behavior;
-            if (((IStateflowsContextProvider)context).Context.ContextOwnerId == null)
-            {
-                StateMachinesContextHolder.StateMachineContext.Value = ((BaseContext)context).StateMachine;
-            }
+            StateMachinesContextHolder.StateMachineContext.Value = ((BaseContext)context).StateMachine;
             StateMachinesContextHolder.ExecutionContext.Value = context;
+            StateMachinesContextHolder.CommonExecutionContext.Value = context;
 
             return StateflowsActivator.CreateModelElementInstanceAsync<TDefaultInitializer>(ServiceProvider, "default initializer");
         }
@@ -1215,11 +1215,9 @@ namespace Stateflows.StateMachines.Engine
             StateMachinesContextHolder.StateContext.Value = null;
             StateMachinesContextHolder.TransitionContext.Value = null;
             StateMachinesContextHolder.BehaviorContext.Value = context.Behavior;
-            if (((IStateflowsContextProvider)context).Context.ContextOwnerId == null)
-            {
-                StateMachinesContextHolder.StateMachineContext.Value = ((BaseContext)context).StateMachine;
-            }
+            StateMachinesContextHolder.StateMachineContext.Value = ((BaseContext)context).StateMachine;
             StateMachinesContextHolder.ExecutionContext.Value = context;
+            StateMachinesContextHolder.CommonExecutionContext.Value = context;
 
             return StateflowsActivator.CreateModelElementInstanceAsync<TInitializer>(ServiceProvider, "initializer");
         }
@@ -1237,11 +1235,9 @@ namespace Stateflows.StateMachines.Engine
             StateMachinesContextHolder.StateContext.Value = null;
             StateMachinesContextHolder.TransitionContext.Value = null;
             StateMachinesContextHolder.BehaviorContext.Value = context.Behavior;
-            if (((IStateflowsContextProvider)context).Context.ContextOwnerId == null)
-            {
-                StateMachinesContextHolder.StateMachineContext.Value = ((BaseContext)context).StateMachine;
-            }
+            StateMachinesContextHolder.StateMachineContext.Value = ((BaseContext)context).StateMachine;
             StateMachinesContextHolder.ExecutionContext.Value = context;
+            StateMachinesContextHolder.CommonExecutionContext.Value = context;
 
             return StateflowsActivator.CreateModelElementInstanceAsync<TFinalizer>(ServiceProvider, "finalizer");
         }
@@ -1259,11 +1255,9 @@ namespace Stateflows.StateMachines.Engine
             StateMachinesContextHolder.StateContext.Value = context.State;
             StateMachinesContextHolder.TransitionContext.Value = null;
             StateMachinesContextHolder.BehaviorContext.Value = context.Behavior;
-            if (((IStateflowsContextProvider)context).Context.ContextOwnerId == null)
-            {
-                StateMachinesContextHolder.StateMachineContext.Value = ((BaseContext)context).StateMachine;
-            }
+            StateMachinesContextHolder.StateMachineContext.Value = ((BaseContext)context).StateMachine;
             StateMachinesContextHolder.ExecutionContext.Value = context;
+            StateMachinesContextHolder.CommonExecutionContext.Value = context;
 
             return StateflowsActivator.CreateModelElementInstanceAsync<TState>(ServiceProvider, "state");
         }
@@ -1281,11 +1275,9 @@ namespace Stateflows.StateMachines.Engine
             StateMachinesContextHolder.StateContext.Value = null;
             StateMachinesContextHolder.TransitionContext.Value = context;
             StateMachinesContextHolder.BehaviorContext.Value = context.Behavior;
-            if (((IStateflowsContextProvider)context).Context.ContextOwnerId == null)
-            {
-                StateMachinesContextHolder.StateMachineContext.Value = ((BaseContext)context).StateMachine;
-            }
+            StateMachinesContextHolder.StateMachineContext.Value = ((BaseContext)context).StateMachine;
             StateMachinesContextHolder.ExecutionContext.Value = context;
+            StateMachinesContextHolder.CommonExecutionContext.Value = context;
 
             return StateflowsActivator.CreateModelElementInstanceAsync<TTransition>(ServiceProvider, "transition");
         }
@@ -1304,11 +1296,9 @@ namespace Stateflows.StateMachines.Engine
             StateMachinesContextHolder.StateContext.Value = null;
             StateMachinesContextHolder.TransitionContext.Value = context;
             StateMachinesContextHolder.BehaviorContext.Value = context.Behavior;
-            if (((IStateflowsContextProvider)context).Context.ContextOwnerId == null)
-            {
-                StateMachinesContextHolder.StateMachineContext.Value = ((BaseContext)context).StateMachine;
-            }
+            StateMachinesContextHolder.StateMachineContext.Value = ((BaseContext)context).StateMachine;
             StateMachinesContextHolder.ExecutionContext.Value = context;
+            StateMachinesContextHolder.CommonExecutionContext.Value = context;
 
             return StateflowsActivator.CreateModelElementInstanceAsync<TTransitionGuard>(ServiceProvider, "transition guard");
         }
@@ -1324,11 +1314,9 @@ namespace Stateflows.StateMachines.Engine
             StateMachinesContextHolder.StateContext.Value = context.State;
             StateMachinesContextHolder.TransitionContext.Value = null;
             StateMachinesContextHolder.BehaviorContext.Value = context.Behavior;
-            if (((IStateflowsContextProvider)context).Context.ContextOwnerId == null)
-            {
-                StateMachinesContextHolder.StateMachineContext.Value = ((BaseContext)context).StateMachine;
-            }
+            StateMachinesContextHolder.StateMachineContext.Value = ((BaseContext)context).StateMachine;
             StateMachinesContextHolder.ExecutionContext.Value = context;
+            StateMachinesContextHolder.CommonExecutionContext.Value = context;
 
             return StateflowsActivator.CreateModelElementInstanceAsync<TTransitionGuard>(ServiceProvider, "deferral guard");
         }
@@ -1347,11 +1335,9 @@ namespace Stateflows.StateMachines.Engine
             StateMachinesContextHolder.StateContext.Value = null;
             StateMachinesContextHolder.TransitionContext.Value = context;
             StateMachinesContextHolder.BehaviorContext.Value = context.Behavior;
-            if (((IStateflowsContextProvider)context).Context.ContextOwnerId == null)
-            {
-                StateMachinesContextHolder.StateMachineContext.Value = ((BaseContext)context).StateMachine;
-            }
+            StateMachinesContextHolder.StateMachineContext.Value = ((BaseContext)context).StateMachine;
             StateMachinesContextHolder.ExecutionContext.Value = context;
+            StateMachinesContextHolder.CommonExecutionContext.Value = context;
 
             return StateflowsActivator.CreateModelElementInstanceAsync<TTransitionEffect>(ServiceProvider, "transition effect");
         }
@@ -1369,11 +1355,9 @@ namespace Stateflows.StateMachines.Engine
             StateMachinesContextHolder.StateContext.Value = null;
             StateMachinesContextHolder.TransitionContext.Value = context;
             StateMachinesContextHolder.BehaviorContext.Value = context.Behavior;
-            if (((IStateflowsContextProvider)context).Context.ContextOwnerId == null)
-            {
-                StateMachinesContextHolder.StateMachineContext.Value = ((BaseContext)context).StateMachine;
-            }
+            StateMachinesContextHolder.StateMachineContext.Value = ((BaseContext)context).StateMachine;
             StateMachinesContextHolder.ExecutionContext.Value = context;
+            StateMachinesContextHolder.CommonExecutionContext.Value = context;
 
             return StateflowsActivator.CreateModelElementInstanceAsync<TDefaultTransition>(ServiceProvider, "default transition");
         }
@@ -1391,11 +1375,9 @@ namespace Stateflows.StateMachines.Engine
             StateMachinesContextHolder.StateContext.Value = null;
             StateMachinesContextHolder.TransitionContext.Value = context;
             StateMachinesContextHolder.BehaviorContext.Value = context.Behavior;
-            if (((IStateflowsContextProvider)context).Context.ContextOwnerId == null)
-            {
-                StateMachinesContextHolder.StateMachineContext.Value = ((BaseContext)context).StateMachine;
-            }
+            StateMachinesContextHolder.StateMachineContext.Value = ((BaseContext)context).StateMachine;
             StateMachinesContextHolder.ExecutionContext.Value = context;
+            StateMachinesContextHolder.CommonExecutionContext.Value = context;
 
             return StateflowsActivator.CreateModelElementInstanceAsync<TDefaultTransitionGuard>(ServiceProvider, "default transition guard");
         }
@@ -1413,11 +1395,9 @@ namespace Stateflows.StateMachines.Engine
             StateMachinesContextHolder.StateContext.Value = null;
             StateMachinesContextHolder.TransitionContext.Value = context;
             StateMachinesContextHolder.BehaviorContext.Value = context.Behavior;
-            if (((IStateflowsContextProvider)context).Context.ContextOwnerId == null)
-            {
-                StateMachinesContextHolder.StateMachineContext.Value = ((BaseContext)context).StateMachine;
-            }
+            StateMachinesContextHolder.StateMachineContext.Value = ((BaseContext)context).StateMachine;
             StateMachinesContextHolder.ExecutionContext.Value = context;
+            StateMachinesContextHolder.CommonExecutionContext.Value = context;
 
             return StateflowsActivator.CreateModelElementInstanceAsync<TDefaultTransitionEffect>(ServiceProvider, "default transition effect");
         }

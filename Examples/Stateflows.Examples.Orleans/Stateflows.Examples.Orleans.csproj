@@ -12,6 +12,7 @@
         <PackageReference Include="Microsoft.ClearScript.V8.Native.win-x64" Version="7.5.0" />
         <PackageReference Include="Microsoft.Orleans.Reminders" Version="10.0.1" />
         <PackageReference Include="Microsoft.Orleans.Server" Version="10.0.1" />
+        <PackageReference Include="Microsoft.Orleans.Streaming" Version="10.0.1" />
         <PackageReference Include="Scalar.AspNetCore" Version="2.8.10" />
     </ItemGroup>
 

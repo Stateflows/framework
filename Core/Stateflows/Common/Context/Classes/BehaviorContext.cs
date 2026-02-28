@@ -54,10 +54,10 @@ namespace Stateflows.Common.Context.Classes
         
         public bool IsEmbedded => Context.ContextOwnerId != null;
 
-        public Task<SendResult> SubscribeAsync<TNotification>(BehaviorId behaviorId)
+        public Task SubscribeAsync<TNotification>(BehaviorId behaviorId)
             => _ = Subscriber.SubscribeAsync<TNotification>(Context.ContextOwnerId ?? Id, behaviorId);
 
-        public Task<SendResult> UnsubscribeAsync<TNotification>(BehaviorId behaviorId)
+        public Task UnsubscribeAsync<TNotification>(BehaviorId behaviorId)
             => _ = Subscriber.UnsubscribeAsync<TNotification>(Context.ContextOwnerId ?? Id, behaviorId);
     }
 }

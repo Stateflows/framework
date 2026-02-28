@@ -145,7 +145,6 @@ namespace Stateflows.StateMachines.Engine
                 return;
             }
             
-            // Trace.WriteLine($"⦗→s⦘ State Machine '{stateflowsContext.Id.Name}:{stateflowsContext.Id.Instance}': state has changed, emitting");
             var notification = new StateMachineInfo()
             {
                 Id = executor.Context.Id,

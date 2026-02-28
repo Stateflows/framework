@@ -66,10 +66,10 @@ namespace Stateflows.Actions.Context.Classes
 
         public bool IsEmbedded => Context.ContextOwnerId != null;
 
-        public Task<SendResult> SubscribeAsync<TNotification>(BehaviorId behaviorId)
+        public Task SubscribeAsync<TNotification>(BehaviorId behaviorId)
             => Subscriber.SubscribeAsync<TNotification>(Context.ContextParentId ?? Id, behaviorId);
 
-        public Task<SendResult> UnsubscribeAsync<TNotification>(BehaviorId behaviorId)
+        public Task UnsubscribeAsync<TNotification>(BehaviorId behaviorId)
             => Subscriber.UnsubscribeAsync<TNotification>(Context.ContextParentId ?? Id, behaviorId);
 
         private IBehaviorLocator behaviorLocator;

@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
@@ -108,6 +107,20 @@ namespace Stateflows.Actions.Engine
                     }
                 }
                 else
+                if (eventHolder is EventHolder<BehaviorInfoRequest> behaviorInfoRequest)
+                {
+                    behaviorInfoRequest.Payload.Respond(new BehaviorInfo()
+                    {
+                        Id = StateflowsContext.ContextOwnerId ?? StateflowsContext.Id,
+                        BehaviorStatus = StateflowsContext.Status,
+                        ExpectedEvents = StateflowsContext.Status switch
+                        {
+                            BehaviorStatus.NotInitialized => [Event<Initialize>.Name],
+                            _ => []
+                        }
+                    });
+                }
+                else
                 if (eventHolder is EventHolder<Subscribe> subscribeHolder)
                 {
                     var subscribe = subscribeHolder.Payload;
@@ -127,7 +140,14 @@ namespace Stateflows.Actions.Engine
                 }
                 else if (eventHolder is EventHolder<Initialize>)
                 {
-                    using var context = new ActionDelegateContext(StateflowsContext, this, eventHolder, ServiceProvider, new List<TokenHolder>() { eventHolder.Payload.ToTokenHolder() });
+                    using var context = new ActionDelegateContext(
+                        StateflowsContext,
+                        this,
+                        eventHolder,
+                        ServiceProvider,
+                        [eventHolder.Payload.ToTokenHolder()]
+                    );
+                    
                     try
                     {
                         InputTokens.TokensHolder.Value = context.InputTokens.ToList();
@@ -303,6 +323,8 @@ namespace Stateflows.Actions.Engine
                     StateflowsContext.Deleted = true;
                 }
             }
+
+            StateflowsContext.Status = BehaviorStatus.NotInitialized;
         }
     }
 }

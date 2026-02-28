@@ -56,7 +56,7 @@ namespace Stateflows.Common.Subscription
             await notificationsHub.PublishAsync(eventHolder);
         }
 
-        public Task<SendResult> SubscribeAsync<TNotification>(BehaviorId subscriberBehaviorId, BehaviorId subscribedBehaviorId)
+        public Task SubscribeAsync<TNotification>(BehaviorId subscriberBehaviorId, BehaviorId subscribedBehaviorId)
         {
             var request = new Subscribe() { BehaviorId = subscriberBehaviorId };
 
@@ -72,7 +72,7 @@ namespace Stateflows.Common.Subscription
                 );
         }
 
-        public Task<SendResult> UnsubscribeAsync<TNotification>(BehaviorId subscriberBehaviorId, BehaviorId subscribedBehaviorId)
+        public Task UnsubscribeAsync<TNotification>(BehaviorId subscriberBehaviorId, BehaviorId subscribedBehaviorId)
         {
             var request = new Unsubscribe() { BehaviorId = subscriberBehaviorId };
 

@@ -80,7 +80,7 @@ namespace Stateflows.Actions.Registration.Builders
                 var originalBuildAction = buildAction;
                 buildAction = b =>
                 {
-                    actionType.CallStaticMethod(nameof(IActionConfiguration.Configure), [typeof(IActionBuilder<TAction>)], [b]);
+                    actionType.CallStaticMethod(nameof(IActionConfiguration.Configure), [typeof(IActionBuilder)], [b]);
                     originalBuildAction?.Invoke(b);
                 };
             }

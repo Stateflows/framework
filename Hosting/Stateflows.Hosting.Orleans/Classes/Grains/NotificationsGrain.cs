@@ -127,7 +127,7 @@ internal class NotificationsGrain(
         var justSubscribed = WatchesManager.Watch(observer, notificationNames);
         
         await observer.NotifyAsync(notificationsState.State
-            .Where(n =>justSubscribed.Contains(n.Name) && n.Retained)
+            .Where(n => justSubscribed.Contains(n.Name) && n.Retained)
             .ToArray()
         );
     }

@@ -23,8 +23,17 @@ internal static class RequestBodyExtensions
         return behaviorInfo;
     }
 
-    public static void RegisterEventEndpoint<TEvent>(this IEndpointRouteBuilder routeBuilder, Interceptor interceptor, string behaviorType, string behaviorName, Dictionary<string, List<(HateoasLink, BehaviorStatus[])>> customHateoasLinks, bool hasDefaultInstance = false)
+    public static void RegisterEventEndpoint<TEvent>(
+        this IEndpointRouteBuilder routeBuilder,
+        Interceptor interceptor,
+        string behaviorType,
+        string behaviorName,
+        Dictionary<string, List<(HateoasLink, BehaviorStatus[])>> customHateoasLinks,
+        bool hasDefaultInstance = false,
+        BehaviorStatus[]? supportedStatuses = null
+    )
     {
+        supportedStatuses ??= [BehaviorStatus.Initialized];
         var eventType = typeof(TEvent);
         var eventName = Utils.GetEventName<TEvent>();
         var route = $"/{behaviorType.ToResource()}/{behaviorName}/{{instance}}/{eventName}";
@@ -96,12 +105,11 @@ internal static class RequestBodyExtensions
                     Href = route,
                     Method = method
                 },
-                [BehaviorStatus.Initialized],
+                supportedStatuses,
                 eventName,
-                "event"
+                "standard:event"
             );
         }
-
 
         if (!hasDefaultInstance)
         {
@@ -116,7 +124,6 @@ internal static class RequestBodyExtensions
         var defaultInstanceRoute = $"/{behaviorType.ToResource()}/{behaviorName}/{eventName}";
         if (interceptor.BeforeEventEndpointDefinition<TEvent>(behaviorClass, isDefaultInstance: true, ref method, ref defaultInstanceRoute))
         {
-
             var routeHandlerBuilder = Utils.IsEventEmpty(eventType)
                 ? routeBuilder.MapMethods(
                     defaultInstanceRoute,
@@ -151,8 +158,7 @@ internal static class RequestBodyExtensions
                         RequestBody<TEvent> payload
                     ) =>
                     {
-                        var (success, authorizationResult) =
-                            await Utils.AuthorizeEventAsync(eventType, serviceProvider, context);
+                        var (success, authorizationResult) = await Utils.AuthorizeEventAsync(eventType, serviceProvider, context);
                         if (!success)
                         {
                             return authorizationResult;
@@ -179,14 +185,23 @@ internal static class RequestBodyExtensions
                 },
                 [BehaviorStatus.Initialized],
                 eventName,
-                "event"
+                "default:event"
             );
         }
     }
 
-    public static void RegisterRequestEndpoint<TRequest, TResponse>(this IEndpointRouteBuilder routeBuilder, Interceptor interceptor, string behaviorType, string behaviorName, Dictionary<string, List<(HateoasLink, BehaviorStatus[])>> customHateoasLinks, bool hasDefaultInstance = false)
+    public static void RegisterRequestEndpoint<TRequest, TResponse>(
+        this IEndpointRouteBuilder routeBuilder,
+        Interceptor interceptor,
+        string behaviorType,
+        string behaviorName,
+        Dictionary<string, List<(HateoasLink, BehaviorStatus[])>> customHateoasLinks,
+        bool hasDefaultInstance = false,
+        BehaviorStatus[]? supportedStatuses = null
+    )
         where TRequest : IRequest<TResponse>
     {
+        supportedStatuses ??= [BehaviorStatus.Initialized];
         var eventType = typeof(TRequest);
         var eventName = Utils.GetEventName<TRequest>();
         var route = $"/{behaviorType.ToResource()}/{behaviorName}/{{instance}}/" + Utils.GetEventName<TRequest>();
@@ -255,9 +270,9 @@ internal static class RequestBodyExtensions
                     Href = route,
                     Method = method
                 },
-                [BehaviorStatus.Initialized],
+                supportedStatuses,
                 eventName,
-                "event"
+                "standard:event"
             );
         }
 
@@ -270,10 +285,9 @@ internal static class RequestBodyExtensions
         {
             var defaultInstanceRoute = $"/{behaviorType.ToResource()}/{behaviorName}/{Utils.GetEventName<TRequest>()}";
 
-
             var routeHandlerBuilder = Utils.IsEventEmpty(eventType)
                 ? routeBuilder.MapMethods(
-                    route,
+                    defaultInstanceRoute,
                     [method],
                     async (
                         HttpContext context,
@@ -330,7 +344,7 @@ internal static class RequestBodyExtensions
                 },
                 [BehaviorStatus.Initialized],
                 eventName,
-                "event"
+                "default:event"
             );
         }
     }
