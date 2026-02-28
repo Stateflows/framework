@@ -26,7 +26,7 @@ internal static class Utils
 
         links.AddRange(
             behaviorInfo.ExpectedEvents.SelectMany(expectedEvent =>
-                hateoasLinks.TryGetValue($"{behaviorInfo.Id.Name}:event:{expectedEvent.ToShortName().ToCamelCase()}", out var eventLinks)
+                hateoasLinks.TryGetValue($"{behaviorInfo.Id.Name}:{(behaviorInfo.Id.Instance == string.Empty ? "default" : "standard")}:event:{expectedEvent.ToShortName().ToCamelCase()}", out var eventLinks)
                     ? eventLinks.ToInstanceLinks(DependencyInjection.ApiRoutePrefix, behaviorInfo)
                     : []
             )
@@ -37,22 +37,22 @@ internal static class Utils
             links.AddRange(globalLinks.ToInstanceLinks(DependencyInjection.ApiRoutePrefix, behaviorInfo));
         }
         
-        if (behaviorInfo is StateMachineInfo stateMachineInfo)
+        if (behaviorInfo is StateMachineInfo { CurrentStates: not null } stateMachineInfo)
         {
             links.AddRange(
                 stateMachineInfo.CurrentStates.GetAllNodes().SelectMany(node =>
-                    hateoasLinks.TryGetValue($"{behaviorInfo.Id.Name}:node:{node.Value}", out var stateLinks)
+                    hateoasLinks.TryGetValue($"{behaviorInfo.Id.Name}:{(behaviorInfo.Id.Instance == string.Empty ? "default" : "standard")}:node:{node.Value}", out var stateLinks)
                         ? stateLinks.ToInstanceLinks(DependencyInjection.ApiRoutePrefix, behaviorInfo)
                         : []
                 )
             );
         }
         
-        if (behaviorInfo is ActivityInfo activityInfo)
+        if (behaviorInfo is ActivityInfo { ActiveNodes: not null } activityInfo)
         {
             links.AddRange(
                 activityInfo.ActiveNodes.GetAllNodes().SelectMany(node =>
-                    hateoasLinks.TryGetValue($"{behaviorInfo.Id.Name}:node:{node.Value}", out var nodeLinks)
+                    hateoasLinks.TryGetValue($"{behaviorInfo.Id.Name}:{(behaviorInfo.Id.Instance == string.Empty ? "default" : "standard")}:node:{node.Value}", out var nodeLinks)
                         ? nodeLinks.ToInstanceLinks(DependencyInjection.ApiRoutePrefix, behaviorInfo)
                         : []
                 )
@@ -75,10 +75,18 @@ internal static class Utils
         switch (behaviorInfo)
         {
             case StateMachineInfo stateMachineInfo:
-                metadata.Add(nameof(stateMachineInfo.CurrentStates).ToCamelCase(), stateMachineInfo.CurrentStates);
+                if (stateMachineInfo.CurrentStates != null)
+                {
+                    metadata.Add(nameof(stateMachineInfo.CurrentStates).ToCamelCase(), stateMachineInfo.CurrentStates);
+                }
+
                 break;
             case ActivityInfo activityInfo:
-                metadata.Add(nameof(activityInfo.ActiveNodes).ToCamelCase(), activityInfo.ActiveNodes);
+                if (activityInfo.ActiveNodes != null)
+                {
+                    metadata.Add(nameof(activityInfo.ActiveNodes).ToCamelCase(), activityInfo.ActiveNodes);
+                }
+
                 break;
         }
 

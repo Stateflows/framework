@@ -1,4 +1,5 @@
 ﻿using System;
+using Stateflows.Common;
 using Stateflows.Common.Extensions;
 
 namespace Stateflows.Activities

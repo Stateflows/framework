@@ -6,7 +6,7 @@ using Stateflows.Common.Utilities;
 
 namespace Stateflows
 {
-    public struct ActivityId
+    public struct ActivityId : IEquatable<ActivityId>
     {
         public ActivityId(string name, string instance)
         {
@@ -62,18 +62,22 @@ namespace Stateflows
             => new ActivityId(behaviorId);
 
         public readonly override bool Equals(object obj)
-            =>
-                obj is ActivityId id &&
-                Name == id.Name &&
-                Instance == id.Instance;
+        {
+            return obj is ActivityId other && Equals(other);
+        }
 
         public readonly override int GetHashCode()
-            => Tuple.Create(Name, Instance).GetHashCode();
+        {
+            return HashCode.Combine(Name, Instance);
+        }
 
         public readonly override string ToString()
             => StateflowsJsonConverter.SerializeObject(this);
 
         public static implicit operator string(ActivityId activityId)
             => StateflowsJsonConverter.SerializeObject(activityId);
+
+        public bool Equals(ActivityId other)
+            => Name == other.Name && Instance == other.Instance;
     }
 }

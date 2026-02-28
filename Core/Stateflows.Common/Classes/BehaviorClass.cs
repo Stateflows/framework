@@ -3,7 +3,7 @@ using Stateflows.Common.Utilities;
 
 namespace Stateflows
 {
-    public struct BehaviorClass
+    public struct BehaviorClass : IEquatable<BehaviorClass>
     {
         public BehaviorClass(string type, string name)
         {
@@ -22,13 +22,14 @@ namespace Stateflows
             => !class1.Equals(class2);
 
         public readonly override bool Equals(object obj)
-            =>
-                obj is BehaviorClass @class &&
-                Type == @class.Type &&
-                Name == @class.Name;
+        {
+            return obj is BehaviorClass other && Equals(other);
+        }
 
         public readonly override int GetHashCode()
-            => Tuple.Create(Type, Name).GetHashCode();
+        {
+            return HashCode.Combine(Type, Name);
+        }
 
         public readonly override string ToString()
             => StateflowsJsonConverter.SerializeObject(this);
@@ -38,5 +39,8 @@ namespace Stateflows
         
         public BehaviorId ToId(string instance)
             => new BehaviorId(this, instance);
+
+        public bool Equals(BehaviorClass other)
+            => Type == other.Type && Name == other.Name;
     }
 }

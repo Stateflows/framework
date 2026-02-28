@@ -29,8 +29,9 @@ internal class ActivityVisitor(
     )!;
 
     private string CurrentActivityName = string.Empty;
-    private BehaviorStatus[] SupportedStatuses = [];
     private BehaviorClass? OwnerClass = null;
+
+    public bool HasDefaultInstance { get; private set; } = false;
 
     public void Visit<T>()
     {
@@ -70,6 +71,13 @@ internal class ActivityVisitor(
         return Task.CompletedTask;
     }
 
+    public override Task ActivityAddingAsync(string activityName, int activityVersion, bool hasDefaultInstance = false)
+    {
+        HasDefaultInstance = hasDefaultInstance;
+
+        return Task.CompletedTask;
+    }
+
     public override Task ActivityAddedAsync(string activityName, int activityVersion, BehaviorClass? ownerClass = null, BehaviorClass? parentClass = null)
     {
         OwnerClass = ownerClass;
@@ -81,22 +89,13 @@ internal class ActivityVisitor(
         RegisterStandardEndpoints(activityName);
         RegisterRemainingEndpoints(activityName);
 
+        if (HasDefaultInstance)
+        {
+            RegisterDefaultInstanceEndpoints(activityName);
+        }
+
         return Task.CompletedTask;
     }
-
-    // private static void RegisterEndpoints<TEndpointsOwner>(EndpointsBuilder endpointsBuilder)
-    // {
-    //     var activityType = typeof(TEndpointsOwner);
-    //     var staticRegister = activityType.GetMethod(
-    //         nameof(IActivityEndpoints.RegisterEndpoints),
-    //         BindingFlags.Public | BindingFlags.Static,
-    //         binder: null,
-    //         types: [ typeof(EndpointsBuilder) ],
-    //         modifiers: null
-    //     );
-    //
-    //     staticRegister.Invoke(null, [ endpointsBuilder ]);
-    // }
 
     public override Task ActivityTypeAddedAsync<TActivity>(string activityName, int activityVersion)
     {
@@ -108,7 +107,7 @@ internal class ActivityVisitor(
         var activityType = typeof(TActivity);
         if (typeof(IActivityEndpoints).IsAssignableFrom(activityType))
         {
-            var endpointsBuilder = new EndpointsBuilder(routeBuilder, this, interceptor, new ActivityClass(activityName));
+            var endpointsBuilder = new EndpointsBuilder(routeBuilder, this, interceptor, new ActivityClass(activityName), HasDefaultInstance);
 
             activityType.CallStaticMethod(nameof(IActivityEndpoints.RegisterEndpoints), [typeof(IEndpointsBuilder)], [endpointsBuilder]);
 
@@ -121,16 +120,15 @@ internal class ActivityVisitor(
         return Task.CompletedTask;
     }
 
-    private void RegisterEventEndpoint<TEvent>(string activityName, IEndpointRouteBuilder activity)
-        => activity.RegisterEventEndpoint<TEvent>(interceptor,
-            BehaviorType.Activity, activityName, HateoasLinks);
+    private void RegisterEventEndpoint<TEvent>(string activityName, IEndpointRouteBuilder activity, BehaviorStatus[]? supportedStatuses = null)
+        => activity.RegisterEventEndpoint<TEvent>(interceptor, BehaviorType.Activity, activityName, HateoasLinks, supportedStatuses: supportedStatuses);
 
-    private void RegisterRequestEndpoint<TRequest, TResponse>(string activityName, IEndpointRouteBuilder activity)
+    private void RegisterRequestEndpoint<TRequest, TResponse>(string activityName, IEndpointRouteBuilder activity, BehaviorStatus[]? supportedStatuses = null)
         where TRequest : IRequest<TResponse>
         => activity.RegisterRequestEndpoint<TRequest, TResponse>(interceptor,
-            BehaviorType.Activity, activityName, HateoasLinks);
+            BehaviorType.Activity, activityName, HateoasLinks, supportedStatuses: supportedStatuses);
 
-    private void RegisterEventEndpoint<TEvent>(string activityName)
+    private void RegisterEventEndpoint<TEvent>(string activityName, BehaviorStatus[]? supportedStatuses = null)
     {
         var eventType = typeof(TEvent);
         if (
@@ -144,7 +142,7 @@ internal class ActivityVisitor(
 
         if (!Triggers.TryGetValue(activityName, out var triggers))
         {
-            triggers = new List<Type>();
+            triggers = [];
             Triggers.Add(activityName, triggers);
         }
 
@@ -165,13 +163,13 @@ internal class ActivityVisitor(
                     this,
                     BindingFlags.Instance | BindingFlags.NonPublic,
                     null,
-                    [activityName, routeBuilder],
+                    [activityName, routeBuilder, supportedStatuses],
                     null
                 );
             }
             else
             {
-                RegisterEventEndpoint<TEvent>(activityName, routeBuilder);
+                RegisterEventEndpoint<TEvent>(activityName, routeBuilder, supportedStatuses);
             }
         }
     }
@@ -183,7 +181,7 @@ internal class ActivityVisitor(
             return;
         }
 
-        RegisterEventEndpoint<Initialize>(activityName);
+        RegisterEventEndpoint<Initialize>(activityName, [BehaviorStatus.NotInitialized]);
     }
 
     private static string GetEventName<TEvent>()
@@ -197,9 +195,10 @@ internal class ActivityVisitor(
         var route = $"/activities/{activityName}";
         if (interceptor.BeforeGetInstancesEndpointDefinition(behaviorClass, ref method, ref route))
         {
-            var routeHandlerBuilder = routeBuilder.MapMethods(route, [method], async (IStateflowsStorage storage) =>
+            var routeHandlerBuilder = routeBuilder.MapMethods(route, [method], async (IStateflowsStorage storage, ITenantAccessor tenantAccessor) =>
             {
                 BehaviorClass[] actionClasses = [behaviorClass];
+                tenantAccessor.CurrentTenantId ??= "host";
                 var contextIds = await storage.GetAllContextIdsAsync(actionClasses);
                 return Results.Ok(contextIds.Select(id => new { Id = id }));
             })
@@ -210,7 +209,7 @@ internal class ActivityVisitor(
 
         route = $"/activities/{activityName}/{{instance}}/status";
         method = HttpMethods.Get;
-        if (interceptor.BeforeEventEndpointDefinition<ActivityInfoRequest>(behaviorClass, ref method, ref route))
+        if (interceptor.BeforeEventEndpointDefinition<ActivityInfoRequest>(behaviorClass, isDefaultInstance: false, ref method, ref route))
         {
             var routeHandlerBuilder = routeBuilder.MapMethods(
                 route,
@@ -258,7 +257,7 @@ internal class ActivityVisitor(
             )
             .WithTags($"{BehaviorType.Activity} {activityName}");
 
-            interceptor.AfterEventEndpointDefinition<ActivityInfoRequest>(behaviorClass, method, route, routeHandlerBuilder);
+            interceptor.AfterEventEndpointDefinition<ActivityInfoRequest>(behaviorClass, isDefaultInstance: false, method, route, routeHandlerBuilder);
 
             HateoasLinks.AddLink(
                 behaviorClass.Name,
@@ -274,7 +273,7 @@ internal class ActivityVisitor(
 
         route = $"/activities/{activityName}/{{instance}}/notifications";
         method = HttpMethods.Get;
-        if (interceptor.BeforeEventEndpointDefinition<NotificationsRequest>(behaviorClass, ref method, ref route))
+        if (interceptor.BeforeEventEndpointDefinition<NotificationsRequest>(behaviorClass, isDefaultInstance: false, ref method, ref route))
         {
             var routeHandlerBuilder = routeBuilder.MapMethods(
                 route,
@@ -326,7 +325,7 @@ internal class ActivityVisitor(
             )
             .WithTags($"{BehaviorType.Activity} {activityName}");
 
-            interceptor.AfterEventEndpointDefinition<NotificationsRequest>(behaviorClass, method, route, routeHandlerBuilder);
+            interceptor.AfterEventEndpointDefinition<NotificationsRequest>(behaviorClass, isDefaultInstance: false, method, route, routeHandlerBuilder);
 
             HateoasLinks.AddLink(
                 behaviorClass.Name,
@@ -342,7 +341,7 @@ internal class ActivityVisitor(
 
         route = $"/activities/{activityName}/{{instance}}/finalize";
         method = HttpMethods.Post;
-        if (interceptor.BeforeEventEndpointDefinition<Finalize>(behaviorClass, ref method, ref route))
+        if (interceptor.BeforeEventEndpointDefinition<Finalize>(behaviorClass, isDefaultInstance: false, ref method, ref route))
         {
             var routeHandlerBuilder = routeBuilder.MapMethods(
                 route,
@@ -374,7 +373,7 @@ internal class ActivityVisitor(
             )
             .WithTags($"{BehaviorType.Activity} {activityName}");
 
-            interceptor.AfterEventEndpointDefinition<Finalize>(behaviorClass, method, route, routeHandlerBuilder);
+            interceptor.AfterEventEndpointDefinition<Finalize>(behaviorClass, isDefaultInstance: false, method, route, routeHandlerBuilder);
 
             HateoasLinks.AddLink(
                 behaviorClass.Name,
@@ -390,7 +389,7 @@ internal class ActivityVisitor(
 
         route = $"/activities/{activityName}/{{instance}}";
         method = HttpMethods.Delete;
-        if (interceptor.BeforeEventEndpointDefinition<Reset>(behaviorClass, ref method, ref route))
+        if (interceptor.BeforeEventEndpointDefinition<Reset>(behaviorClass, isDefaultInstance: false, ref method, ref route))
         {
             var routeHandlerBuilder = routeBuilder.MapMethods(
                 route,
@@ -419,13 +418,164 @@ internal class ActivityVisitor(
             )
             .WithTags($"{BehaviorType.Activity} {activityName}");
 
-            interceptor.AfterEventEndpointDefinition<Reset>(behaviorClass, method, route, routeHandlerBuilder);
+            interceptor.AfterEventEndpointDefinition<Reset>(behaviorClass, isDefaultInstance: false, method, route, routeHandlerBuilder);
 
             HateoasLinks.AddLink(
                 behaviorClass.Name,
                 new HateoasLink()
                 {
                     Rel = "reset",
+                    Href = route,
+                    Method = method
+                },
+                [BehaviorStatus.Initialized, BehaviorStatus.Finalized]
+            );
+        }
+    }
+
+    private void RegisterDefaultInstanceEndpoints(string activityName)
+    {
+        var behaviorClass = new ActivityClass(activityName);
+        const string instance = "";
+
+        var method = HttpMethods.Get;
+        var route = $"/activities/{activityName}";
+        if (interceptor.BeforeGetInstancesEndpointDefinition(behaviorClass, ref method, ref route))
+        {
+            var routeHandlerBuilder = routeBuilder.MapMethods(route, [method], async (IStateflowsStorage storage) =>
+            {
+                BehaviorClass[] actionClasses = [behaviorClass];
+                var contextIds = await storage.GetAllContextIdsAsync(actionClasses);
+                return Results.Ok(contextIds.Select(id => new { Id = id }));
+            })
+            .WithTags($"{BehaviorType.Activity} {activityName}");
+
+            interceptor.AfterGetInstancesEndpointDefinition(behaviorClass, method, route, routeHandlerBuilder);
+        }
+
+        route = $"/activities/{activityName}/status";
+        method = HttpMethods.Get;
+        if (interceptor.BeforeEventEndpointDefinition<ActivityInfoRequest>(behaviorClass, isDefaultInstance: true, ref method, ref route))
+        {
+            var routeHandlerBuilder = routeBuilder.MapMethods(
+                route,
+                [method],
+                async (
+                    IActivityLocator locator,
+                    HttpContext httpContext,
+                    [FromQuery] bool implicitInitialization = false,
+                    [FromQuery] bool stream = false
+                ) =>
+                {
+                    if (locator.TryLocateActivity(new ActivityId(activityName, instance), out var behavior))
+                    {
+                        if (stream)
+                        {
+                            httpContext.Response.Headers.Append(HeaderNames.ContentType, "text/event-stream");
+
+                            await using var watcher = await behavior.WatchAsync(
+                                [Event<ActivityInfo>.Name],
+                                async eventHolder => await httpContext.WriteEventAsync(eventHolder)
+                            );
+
+                            while (!httpContext.RequestAborted.IsCancellationRequested)
+                            {
+                                await Task.Delay(1000);
+                            }
+
+                            return Results.Empty;
+                        }
+                        else
+                        {
+                            var requestResult =
+                                await behavior.GetStatusAsync(implicitInitialization
+                                    ? []
+                                    : new Dictionary<string, EventHeader>() { { nameof(NoImplicitInitialization), new NoImplicitInitialization() } });
+                            // workaround for return code 200 regardless behavior actual status
+                            requestResult.Status = EventStatus.Consumed;
+                            return requestResult.ToResult([], requestResult.Response, HateoasLinks);
+                        }
+                    }
+
+                    return Results.NotFound();
+                }
+            )
+            .WithTags($"{BehaviorType.Activity} {activityName}");
+
+            interceptor.AfterEventEndpointDefinition<ActivityInfoRequest>(behaviorClass, isDefaultInstance: true, method, route, routeHandlerBuilder);
+
+            HateoasLinks.AddLink(
+                behaviorClass.Name,
+                new HateoasLink()
+                {
+                    Rel = "status",
+                    Href = route,
+                    Method = method
+                },
+                [BehaviorStatus.NotInitialized, BehaviorStatus.Initialized, BehaviorStatus.Finalized]
+            );
+        }
+
+        route = $"/activities/{activityName}/notifications";
+        method = HttpMethods.Get;
+        if (interceptor.BeforeEventEndpointDefinition<NotificationsRequest>(behaviorClass, isDefaultInstance: true, ref method, ref route))
+        {
+            var routeHandlerBuilder = routeBuilder.MapMethods(
+                route,
+                [method],
+                async (
+                    IActivityLocator locator,
+                    HttpContext httpContext,
+                    [FromQuery] string[] names,
+                    [FromQuery] TimeSpan? period,
+                    [FromQuery] bool stream = false
+                ) =>
+                {
+                    if (locator.TryLocateActivity(new ActivityId(activityName, instance), out var behavior))
+                    {
+                        if (stream)
+                        {
+                            period ??= TimeSpan.FromSeconds(0);
+
+                            httpContext.Response.Headers.Append(HeaderNames.ContentType, "text/event-stream");
+
+                            await using var watcher = await behavior.WatchAsync(
+                                names,
+                                async eventHolder => await httpContext.WriteEventAsync(eventHolder),
+                                DateTime.Now - period.Value
+                            );
+
+                            while (!httpContext.RequestAborted.IsCancellationRequested)
+                            {
+                                await Task.Delay(1000);
+                            }
+
+                            return Results.Empty;
+                        }
+                        else
+                        {
+                            period ??= TimeSpan.FromSeconds(60);
+                            var notifications = (await behavior.GetNotificationsAsync(names, DateTime.Now - period))
+                                .ToArray();
+                            var behaviorInfo = (await behavior.GetStatusAsync(new Dictionary<string, EventHeader>() { { nameof(NoImplicitInitialization), new NoImplicitInitialization() } }))
+                                .Response;
+                            var sendResult = new SendResult(EventStatus.Consumed, new EventValidation(true));
+                            return sendResult.ToResult(notifications, behaviorInfo, HateoasLinks);
+                        }
+                    }
+
+                    return Results.NotFound();
+                }
+            )
+            .WithTags($"{BehaviorType.Activity} {activityName}");
+
+            interceptor.AfterEventEndpointDefinition<NotificationsRequest>(behaviorClass, isDefaultInstance: true, method, route, routeHandlerBuilder);
+
+            HateoasLinks.AddLink(
+                behaviorClass.Name,
+                new HateoasLink()
+                {
+                    Rel = "notifications",
                     Href = route,
                     Method = method
                 },
@@ -448,7 +598,7 @@ internal class ActivityVisitor(
 
             DependencyInjection.ActivityEndpointBuilders.Add(visitor =>
             {
-                var endpointsBuilder = new EndpointsBuilder(routeBuilder, visitor, interceptor, behaviorClass, nodeName);
+                var endpointsBuilder = new EndpointsBuilder(routeBuilder, visitor, interceptor, behaviorClass, HasDefaultInstance, nodeName);
 
                 nodeType.CallStaticMethod(nameof(IStructuredActivityNodeEndpoints.RegisterEndpoints), [typeof(IEndpointsBuilder)], [endpointsBuilder]);
                 // RegisterEndpoints<TNode>(endpointsBuilder);

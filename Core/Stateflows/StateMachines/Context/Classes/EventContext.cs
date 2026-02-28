@@ -43,6 +43,8 @@ namespace Stateflows.StateMachines.Context.Classes
         public Guid EventId => Context.EventHolder.Id;
 
         public override Dictionary<string, EventHeader> Headers => Context.EventHolder.Headers;
+        
+        IDictionary<string, EventHeader> IEventContext<TEvent>.EventHeaders => Context.EventHolder.Headers;
 
         public IReadOnlyTree<IStateContext> CurrentStates => StateMachine.CurrentStates;
         public bool TryGetStateContext(string stateName, out IStateContext stateContext)

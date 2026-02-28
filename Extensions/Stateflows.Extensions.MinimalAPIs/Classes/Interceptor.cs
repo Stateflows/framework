@@ -8,11 +8,11 @@ internal class Interceptor(IEnumerable<IEndpointDefinitionInterceptor> intercept
     public override IEnumerable<BehaviorClass> FilterBehaviorClasses(IEnumerable<BehaviorClass> behaviorClasses)
         => interceptors.Aggregate(behaviorClasses, (current, interceptor) => interceptor.FilterBehaviorClasses(current));
 
-    public override bool BeforeEventEndpointDefinition<TEvent>(BehaviorClass behaviorClass, ref string method, ref string route)
+    public override bool BeforeEventEndpointDefinition<TEvent>(BehaviorClass behaviorClass, bool isDefaultInstance, ref string method, ref string route)
     {
         foreach (var interceptor in interceptors)
         {
-            if (!interceptor.BeforeEventEndpointDefinition<TEvent>(behaviorClass, ref method, ref route))
+            if (!interceptor.BeforeEventEndpointDefinition<TEvent>(behaviorClass, isDefaultInstance, ref method, ref route))
             {
                 return false;
             }
@@ -21,11 +21,11 @@ internal class Interceptor(IEnumerable<IEndpointDefinitionInterceptor> intercept
         return true;
     }
 
-    public override void AfterEventEndpointDefinition<TEvent>(BehaviorClass behaviorClass, string method, string route, IEndpointConventionBuilder routeHandlerBuilder)
+    public override void AfterEventEndpointDefinition<TEvent>(BehaviorClass behaviorClass, bool isDefaultInstance, string method, string route, IEndpointConventionBuilder routeHandlerBuilder)
     {
         foreach (var interceptor in interceptors.Reverse())
         {
-            interceptor.AfterEventEndpointDefinition<TEvent>(behaviorClass, method, route, routeHandlerBuilder);
+            interceptor.AfterEventEndpointDefinition<TEvent>(behaviorClass, isDefaultInstance, method, route, routeHandlerBuilder);
         }
     }
 
@@ -137,11 +137,11 @@ internal class Interceptor(IEnumerable<IEndpointDefinitionInterceptor> intercept
         }
     }
 
-    public override bool BeforeCustomEndpointDefinition(BehaviorClass behaviorClass, ref string[] methods, ref string route)
+    public override bool BeforeCustomEndpointDefinition(BehaviorClass behaviorClass, bool isDefaultInstance, ref string[] methods, ref string route)
     {
         foreach (var interceptor in interceptors)
         {
-            if (!interceptor.BeforeCustomEndpointDefinition(behaviorClass, ref methods, ref route))
+            if (!interceptor.BeforeCustomEndpointDefinition(behaviorClass, isDefaultInstance, ref methods, ref route))
             {
                 return false;
             }
@@ -150,12 +150,12 @@ internal class Interceptor(IEnumerable<IEndpointDefinitionInterceptor> intercept
         return true;
     }
 
-    public override void AfterCustomEndpointDefinition(BehaviorClass behaviorClass, string[] methods, string route,
+    public override void AfterCustomEndpointDefinition(BehaviorClass behaviorClass, bool isDefaultInstance, string[] methods, string route,
         IEndpointConventionBuilder routeHandlerBuilder)
     {
         foreach (var interceptor in interceptors.Reverse())
         {
-            interceptor.AfterCustomEndpointDefinition(behaviorClass, methods, route, routeHandlerBuilder);
+            interceptor.AfterCustomEndpointDefinition(behaviorClass, isDefaultInstance, methods, route, routeHandlerBuilder);
         }
     }
 }

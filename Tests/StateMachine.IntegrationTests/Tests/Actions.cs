@@ -39,6 +39,7 @@ namespace StateMachine.IntegrationTests.Tests
         public bool EffectRun = false;
         public bool EntryRun = false;
         public bool ExitRun = false;
+        public int Counter = 0;
 
         [TestInitialize]
         public override void Initialize()
@@ -111,6 +112,26 @@ namespace StateMachine.IntegrationTests.Tests
                             .AddTransition<SomeEvent>("third")
                         )
                         .AddState("third")
+                    )
+                    .AddStateMachine("doActionCancellation", b => b
+                        .AddInitialState("initial", b => b
+                            .AddDoAction(async c =>
+                            {
+                                foreach (var i in Enumerable.Range(1, 100))
+                                {
+                                    if (c.CancellationToken.IsCancellationRequested)
+                                    {
+                                        break;
+                                    }
+                                    
+                                    await Task.Delay(100);
+
+                                    Counter++;
+                                }
+                            })
+                            .AddTransition<SomeEvent>("second")
+                        )
+                        .AddState("second")
                     )
                 )
                 .AddActions(b => b
@@ -251,6 +272,25 @@ namespace StateMachine.IntegrationTests.Tests
             }
             
             Assert.IsTrue(notificationDelivered);
+        }
+
+        [TestMethod]
+        public async Task ActionCancellation()
+        {
+            bool notificationDelivered = false;
+        
+            if (StateMachineLocator.TryLocateStateMachine(new StateMachineId("doActionCancellation", "x"), out var sm))
+            {
+                await sm.SendAsync(new Initialize());
+                
+                await Task.Delay(100);
+                
+                await sm.SendAsync(new SomeEvent());
+            }
+            
+            await Task.Delay(100);
+            
+            Assert.IsTrue(Counter < 5);
         }
     }
 }

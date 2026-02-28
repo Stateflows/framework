@@ -86,6 +86,11 @@ namespace Stateflows.Actions
                             ActionsContextHolder.ExecutionContext.Value ??
                             throw new InvalidOperationException($"No service for type '{typeof(IExecutionContext).FullName}' is available in this context.")
                         )
+                        .AddTransient(_ =>
+                            ActionsContextHolder.ActionContext.Value ??
+                            throw new InvalidOperationException(
+                                $"No service for type '{typeof(IActionContext).FullName}' is available in this context.")
+                        )
                         ;
                 }
 

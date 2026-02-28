@@ -6,7 +6,7 @@ namespace Stateflows.Common.Interfaces
 {
     public interface IStateflowsValueStorage : IDisposable
     {
-        Task SetAsync<T>(BehaviorId behaviorId, string key, T value);
+        Task<T> SetAsync<T>(BehaviorId behaviorId, string key, T value);
 
         Task<bool> IsSetAsync(BehaviorId behaviorId, string key);
 
@@ -16,7 +16,7 @@ namespace Stateflows.Common.Interfaces
 
         Task<T> GetOrDefaultAsync<T>(BehaviorId behaviorId, string key, T defaultValue = default);
 
-        Task UpdateAsync<T>(BehaviorId behaviorId, string key, Func<T, T> valueUpdater, T defaultValue = default);
+        Task<T> UpdateAsync<T>(BehaviorId behaviorId, string key, Func<T, T> valueUpdater, T defaultValue = default);
 
         Task RemoveAsync(BehaviorId behaviorId, string key);
 

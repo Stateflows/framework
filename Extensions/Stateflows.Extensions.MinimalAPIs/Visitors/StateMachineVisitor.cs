@@ -29,8 +29,9 @@ internal class StateMachineVisitor(
 
     private string CurrentStateMachineName = string.Empty;
     private BehaviorStatus[] SupportedStatuses = [];
-    
+
     private BehaviorClass? OwnerClass = null;
+    public bool HasDefaultInstance { get; private set; } = false;
 
     public void Visit<T>()
     {
@@ -74,22 +75,34 @@ internal class StateMachineVisitor(
         return Task.CompletedTask;
     }
 
-    public override Task StateMachineAddedAsync(string stateMachineName, int stateMachineVersion, BehaviorClass? ownerClass = null, BehaviorClass? parentClass = null)
+    public override Task StateMachineAddingAsync(string stateMachineName, int stateMachineVersion, BehaviorClass? ownerClass = null,
+        BehaviorClass? parentClass = null, bool hasDefaultInstance = false)
     {
         OwnerClass = ownerClass;
-        
-        if (OwnerClass != null)
-        {
-            return Task.CompletedTask;
-        }
-        
-        RegisterStandardEndpoints(stateMachineName);
-        RegisterRemainingEndpoints(stateMachineName);
+        HasDefaultInstance = hasDefaultInstance;
 
         return Task.CompletedTask;
     }
 
-    private void RegisterEventEndpoint<TEvent>(string stateMachineName)
+    public override Task StateMachineAddedAsync(string stateMachineName, int stateMachineVersion)
+    {
+        if (OwnerClass != null)
+        {
+            return Task.CompletedTask;
+        }
+
+        RegisterStandardEndpoints(stateMachineName);
+        RegisterRemainingEndpoints(stateMachineName);
+
+        if (HasDefaultInstance)
+        {
+            RegisterDefaultInstanceEndpoints(stateMachineName);
+        }
+        
+        return Task.CompletedTask;
+    }
+
+    private void RegisterEventEndpoint<TEvent>(string stateMachineName, BehaviorStatus[]? supportedStatuses = null)
     {
         var eventType = typeof(TEvent);
         if (
@@ -124,13 +137,13 @@ internal class StateMachineVisitor(
                     this,
                     BindingFlags.Instance | BindingFlags.NonPublic,
                     null,
-                    [stateMachineName, routeBuilder],
+                    [stateMachineName, routeBuilder, supportedStatuses],
                     null
                 );
             }
             else
             {
-                RegisterEventEndpoint<TEvent>(stateMachineName, routeBuilder);
+                RegisterEventEndpoint<TEvent>(stateMachineName, routeBuilder, supportedStatuses);
             }
         }
     }
@@ -142,17 +155,17 @@ internal class StateMachineVisitor(
             return;
         }
 
-        RegisterEventEndpoint<Initialize>(stateMachineName);
+        RegisterEventEndpoint<Initialize>(stateMachineName, [BehaviorStatus.NotInitialized]);
     }
 
-    private void RegisterEventEndpoint<TEvent>(string stateMachineName, IEndpointRouteBuilder stateMachine)
+    private void RegisterEventEndpoint<TEvent>(string stateMachineName, IEndpointRouteBuilder stateMachine, BehaviorStatus[]? supportedStatuses = null)
         => stateMachine.RegisterEventEndpoint<TEvent>(interceptor,
-            BehaviorType.StateMachine, stateMachineName, HateoasLinks);
+            BehaviorType.StateMachine, stateMachineName, HateoasLinks, HasDefaultInstance, supportedStatuses);
 
-    private void RegisterRequestEndpoint<TRequest, TResponse>(string stateMachineName, IEndpointRouteBuilder stateMachine)
+    private void RegisterRequestEndpoint<TRequest, TResponse>(string stateMachineName, IEndpointRouteBuilder stateMachine, BehaviorStatus[]? supportedStatuses = null)
         where TRequest : IRequest<TResponse>
         => stateMachine.RegisterRequestEndpoint<TRequest, TResponse>(interceptor,
-            BehaviorType.StateMachine, stateMachineName, HateoasLinks);
+            BehaviorType.StateMachine, stateMachineName, HateoasLinks, HasDefaultInstance, supportedStatuses);
 
     private void RegisterStandardEndpoints(string stateMachineName)
     {
@@ -162,9 +175,10 @@ internal class StateMachineVisitor(
         var route = $"/stateMachines/{stateMachineName}";
         if (interceptor.BeforeGetInstancesEndpointDefinition(behaviorClass, ref method, ref route))
         {
-            var routeHandlerBuilder = routeBuilder.MapMethods(route, [method], async (IStateflowsStorage storage) =>
+            var routeHandlerBuilder = routeBuilder.MapMethods(route, [method], async (IStateflowsStorage storage, ITenantAccessor tenantAccessor) =>
             {
                 BehaviorClass[] actionClasses = [new StateMachineClass(stateMachineName)];
+                tenantAccessor.CurrentTenantId ??= "host";
                 var contextIds = await storage.GetAllContextIdsAsync(actionClasses);
                 return Results.Ok(contextIds.Select(id => new { Id = id }));
             })
@@ -175,7 +189,7 @@ internal class StateMachineVisitor(
 
         route = $"/stateMachines/{stateMachineName}/{{instance}}/status";
         method = HttpMethods.Get;
-        if (interceptor.BeforeEventEndpointDefinition<StateMachineInfoRequest>(behaviorClass, ref method, ref route))
+        if (interceptor.BeforeEventEndpointDefinition<StateMachineInfoRequest>(behaviorClass, isDefaultInstance: false, ref method, ref route))
         {
             var routeHandlerBuilder = routeBuilder.MapMethods(
                 route,
@@ -223,7 +237,7 @@ internal class StateMachineVisitor(
             )
             .WithTags($"{BehaviorType.StateMachine} {stateMachineName}");
 
-            interceptor.AfterEventEndpointDefinition<StateMachineInfoRequest>(behaviorClass, method, route, routeHandlerBuilder);
+            interceptor.AfterEventEndpointDefinition<StateMachineInfoRequest>(behaviorClass, isDefaultInstance: false, method, route, routeHandlerBuilder);
 
             HateoasLinks.AddLink(
                 behaviorClass.Name,
@@ -239,7 +253,7 @@ internal class StateMachineVisitor(
 
         route = $"/stateMachines/{stateMachineName}/{{instance}}/notifications";
         method = HttpMethods.Get;
-        if (interceptor.BeforeEventEndpointDefinition<NotificationsRequest>(behaviorClass, ref method, ref route))
+        if (interceptor.BeforeEventEndpointDefinition<NotificationsRequest>(behaviorClass, isDefaultInstance: false, ref method, ref route))
         {
             var routeHandlerBuilder = routeBuilder.MapMethods(
                 route,
@@ -291,7 +305,7 @@ internal class StateMachineVisitor(
             )
             .WithTags($"{BehaviorType.StateMachine} {stateMachineName}");
 
-            interceptor.AfterEventEndpointDefinition<NotificationsRequest>(behaviorClass, method, route, routeHandlerBuilder);
+            interceptor.AfterEventEndpointDefinition<NotificationsRequest>(behaviorClass, isDefaultInstance: false, method, route, routeHandlerBuilder);
 
             HateoasLinks.AddLink(
                 behaviorClass.Name,
@@ -307,7 +321,7 @@ internal class StateMachineVisitor(
 
         route = $"/stateMachines/{stateMachineName}/{{instance}}/finalize";
         method = HttpMethods.Post;
-        if (interceptor.BeforeEventEndpointDefinition<Finalize>(behaviorClass, ref method, ref route))
+        if (interceptor.BeforeEventEndpointDefinition<Finalize>(behaviorClass, isDefaultInstance: false, ref method, ref route))
         {
             var routeHandlerBuilder = routeBuilder.MapMethods(
                 route,
@@ -336,7 +350,7 @@ internal class StateMachineVisitor(
             )
             .WithTags($"{BehaviorType.StateMachine} {stateMachineName}");
 
-            interceptor.AfterEventEndpointDefinition<Finalize>(behaviorClass, method, route, routeHandlerBuilder);
+            interceptor.AfterEventEndpointDefinition<Finalize>(behaviorClass, isDefaultInstance: false, method, route, routeHandlerBuilder);
 
             HateoasLinks.AddLink(
                 behaviorClass.Name,
@@ -352,7 +366,7 @@ internal class StateMachineVisitor(
 
         route = $"/stateMachines/{stateMachineName}/{{instance}}";
         method = HttpMethods.Delete;
-        if (interceptor.BeforeEventEndpointDefinition<Reset>(behaviorClass, ref method, ref route))
+        if (interceptor.BeforeEventEndpointDefinition<Reset>(behaviorClass, isDefaultInstance: false, ref method, ref route))
         {
             var routeHandlerBuilder = routeBuilder.MapMethods(
                 route,
@@ -381,7 +395,7 @@ internal class StateMachineVisitor(
             )
             .WithTags($"{BehaviorType.StateMachine} {stateMachineName}");
 
-            interceptor.AfterEventEndpointDefinition<Reset>(behaviorClass, method, route, routeHandlerBuilder);
+            interceptor.AfterEventEndpointDefinition<Reset>(behaviorClass, isDefaultInstance: false, method, route, routeHandlerBuilder);
 
             HateoasLinks.AddLink(
                 behaviorClass.Name,
@@ -396,6 +410,138 @@ internal class StateMachineVisitor(
         }
     }
 
+    private void RegisterDefaultInstanceEndpoints(string stateMachineName)
+    {
+        var behaviorClass = new StateMachineClass(stateMachineName);
+        const string instance = "";
+
+        var route = $"/stateMachines/{stateMachineName}/status";
+        var method = HttpMethods.Get;
+        if (interceptor.BeforeEventEndpointDefinition<StateMachineInfoRequest>(behaviorClass, isDefaultInstance: true, ref method, ref route))
+        {
+            var routeHandlerBuilder = routeBuilder.MapMethods(
+                route,
+                [method],
+                async (
+                    IStateMachineLocator locator,
+                    HttpContext httpContext,
+                    [FromQuery] bool stream = false
+                ) =>
+                {
+                    if (locator.TryLocateStateMachine(new StateMachineId(stateMachineName, instance), out var behavior))
+                    {
+                        if (stream)
+                        {
+                            httpContext.Response.Headers.Append(HeaderNames.ContentType, "text/event-stream");
+
+                            await using var watcher = await behavior.WatchAsync(
+                                [Event<StateMachineInfo>.Name],
+                                async eventHolder => await httpContext.WriteEventAsync(eventHolder)
+                            );
+
+                            while (!httpContext.RequestAborted.IsCancellationRequested)
+                            {
+                                await Task.Delay(1000);
+                            }
+
+                            return Results.Empty;
+                        }
+                        else
+                        {
+                            var result =
+                                await behavior.GetStatusAsync(new Dictionary<string, EventHeader>() { { nameof(NoImplicitInitialization), new NoImplicitInitialization() } });
+                            // workaround for return code 200 regardless behavior actual status
+                            result.Status = EventStatus.Consumed;
+                            return result.ToResult([], result.Response, HateoasLinks);
+                        }
+                    }
+
+                    return Results.NotFound();
+                }
+            )
+            .WithTags($"{BehaviorType.StateMachine} {stateMachineName}");
+
+            interceptor.AfterEventEndpointDefinition<StateMachineInfoRequest>(behaviorClass, isDefaultInstance: true, method, route, routeHandlerBuilder);
+
+            HateoasLinks.AddLink(
+                behaviorClass.Name,
+                new HateoasLink()
+                {
+                    Rel = "status",
+                    Href = route,
+                    Method = method
+                },
+                [BehaviorStatus.NotInitialized, BehaviorStatus.Initialized, BehaviorStatus.Finalized]
+            );
+        }
+
+        route = $"/stateMachines/{stateMachineName}/notifications";
+        method = HttpMethods.Get;
+        if (interceptor.BeforeEventEndpointDefinition<NotificationsRequest>(behaviorClass, isDefaultInstance: true, ref method, ref route))
+        {
+            var routeHandlerBuilder = routeBuilder.MapMethods(
+                route,
+                [method],
+                async (
+                    IStateMachineLocator locator,
+                    HttpContext httpContext,
+                    [FromQuery] string[] names,
+                    [FromQuery] TimeSpan? period,
+                    [FromQuery] bool stream = false
+                ) =>
+                {
+                    if (locator.TryLocateStateMachine(new StateMachineId(stateMachineName, instance), out var behavior))
+                    {
+                        if (stream)
+                        {
+                            period ??= TimeSpan.FromSeconds(0);
+
+                            httpContext.Response.Headers.Append(HeaderNames.ContentType, "text/event-stream");
+
+                            await using var watcher = await behavior.WatchAsync(
+                                names,
+                                async eventHolder => await httpContext.WriteEventAsync(eventHolder),
+                                DateTime.Now - period.Value
+                            );
+
+                            while (!httpContext.RequestAborted.IsCancellationRequested)
+                            {
+                                await Task.Delay(1000);
+                            }
+
+                            return Results.Empty;
+                        }
+                        else
+                        {
+                            period ??= TimeSpan.FromSeconds(60);
+
+                            var notifications = (await behavior.GetNotificationsAsync(names, DateTime.Now - period.Value)).ToArray();
+                            var behaviorInfo = (await behavior.GetStatusAsync(new Dictionary<string, EventHeader>() { { nameof(NoImplicitInitialization), new NoImplicitInitialization() } })).Response;
+
+                            var sendResult = new SendResult(EventStatus.Consumed, new EventValidation(true));
+                            return sendResult.ToResult(notifications, behaviorInfo, HateoasLinks);
+                        }
+                    }
+
+                    return Results.NotFound();
+                }
+            )
+            .WithTags($"{BehaviorType.StateMachine} {stateMachineName}");
+
+            interceptor.AfterEventEndpointDefinition<NotificationsRequest>(behaviorClass, isDefaultInstance: true, method, route, routeHandlerBuilder);
+
+            HateoasLinks.AddLink(
+                behaviorClass.Name,
+                new HateoasLink()
+                {
+                    Rel = "notifications",
+                    Href = route,
+                    Method = method
+                },
+                [BehaviorStatus.Initialized, BehaviorStatus.Finalized]
+            );
+        }
+    }
     public override Task StateMachineTypeAddedAsync<TStateMachine>(string stateMachineName, int stateMachineVersion)
     {
         if (OwnerClass != null)
@@ -406,7 +552,7 @@ internal class StateMachineVisitor(
         var stateMachineType = typeof(TStateMachine);
         if (typeof(IStateMachineEndpoints).IsAssignableFrom(stateMachineType))
         {
-            var endpointsBuilder = new EndpointsBuilder(routeBuilder, this, interceptor, new StateMachineClass(stateMachineName));
+            var endpointsBuilder = new EndpointsBuilder(routeBuilder, this, interceptor, new StateMachineClass(stateMachineName), HasDefaultInstance);
 
             stateMachineType.CallStaticMethod(nameof(IStateMachineEndpoints.RegisterEndpoints), [typeof(IEndpointsBuilder)], [endpointsBuilder]);
         }
@@ -442,7 +588,7 @@ internal class StateMachineVisitor(
 
             DependencyInjection.StateMachineEndpointBuilders.Add(visitor =>
             {
-                var endpointsBuilder = new EndpointsBuilder(routeBuilder, visitor, interceptor, behaviorClass, vertexName);
+                var endpointsBuilder = new EndpointsBuilder(routeBuilder, visitor, interceptor, behaviorClass, HasDefaultInstance, vertexName);
 
                 vertexType.CallStaticMethod(nameof(IStateEndpoints.RegisterEndpoints), [typeof(IEndpointsBuilder)], [endpointsBuilder]);
             });

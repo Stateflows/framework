@@ -12,7 +12,8 @@
     let notificationsSource = null;
 
     function baseUrl(instance) {
-        return `/stateflows/stateMachines/${encodeURIComponent(machineName)}/${encodeURIComponent(instance)}`;
+        //return `/stateflows/stateMachines/${encodeURIComponent(machineName)}/${encodeURIComponent(instance)}`;
+        return `https://localhost:7107/sf/${encodeURIComponent(machineName)}/${encodeURIComponent(instance)}`;
     }
 
     function setElementText(id, text) {

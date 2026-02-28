@@ -11,17 +11,19 @@ internal class EndpointsBuilder(
     IBehaviorClassVisitor visitor,
     Interceptor interceptor,
     BehaviorClass behaviorClass,
+    bool hasDefaultInstance,
     string? scopeName = null
 ) : IEndpointsBuilder
 {
     public List<HateoasLink> Links { get; set; } = new();
-    
-    private RouteHandlerBuilder AddEndpoint(string pattern, string[] methods, Delegate handler)
-    {
-        var route = $"/{behaviorClass.Type.ToResource()}/{behaviorClass.Name}/{{instance}}{pattern}";
-        var endpointEnabled = interceptor.BeforeCustomEndpointDefinition(behaviorClass, ref methods, ref route);
 
-        var requireContext = handler.Method.GetParameters().Any(parameter =>
+    private RouteGroupBuilder AddEndpoint(string pattern, string[] methods, Delegate handler)
+    {
+        var instanceHandler = handler;
+        var route = $"/{behaviorClass.Type.ToResource()}/{behaviorClass.Name}/{{instance}}{pattern}";
+        var endpointEnabled = interceptor.BeforeCustomEndpointDefinition(behaviorClass, isDefaultInstance: false, ref methods, ref route);
+
+        var requireContext = instanceHandler.Method.GetParameters().Any(parameter =>
             parameter.ParameterType == typeof(IBehaviorEndpointContext) ||
             parameter.ParameterType == typeof(IStateEndpointContext) ||
             parameter.ParameterType == typeof(IStateMachineEndpointContext) ||
@@ -31,7 +33,7 @@ internal class EndpointsBuilder(
 
         if (!endpointEnabled)
         {
-            handler = () => Results.NotFound();
+            instanceHandler = () => Results.NotFound();
         }
         else
         {
@@ -45,15 +47,16 @@ internal class EndpointsBuilder(
                 },
                 [BehaviorStatus.Initialized],
                 scopeName ?? "",
-                string.IsNullOrEmpty(scopeName) ? "" : "node"
+                string.IsNullOrEmpty(scopeName) ? "standard" : "standard:node"
             );
         }
+        var group = routeBuilder.MapGroup("");
 
-        var endpoint = routeBuilder
+        var endpoint = group
                 .MapMethods(
                     route,
                     methods,
-                    handler
+                    instanceHandler
                 )
                 .WithMetadata(new EndpointMetadata()
                 {
@@ -80,27 +83,96 @@ internal class EndpointsBuilder(
                 _ => endpoint
             };
 
-            interceptor.AfterCustomEndpointDefinition(behaviorClass, methods, route, endpoint);
+            interceptor.AfterCustomEndpointDefinition(behaviorClass, hasDefaultInstance, methods, route, endpoint);
         }
 
-        return endpoint;
+        if (hasDefaultInstance)
+        {
+            var defaultHandler = handler;
+            route = $"/{behaviorClass.Type.ToResource()}/{behaviorClass.Name}/{pattern}";
+            endpointEnabled = interceptor.BeforeCustomEndpointDefinition(behaviorClass, isDefaultInstance: true, ref methods, ref route);
+
+            requireContext = defaultHandler.Method.GetParameters().Any(parameter =>
+                parameter.ParameterType == typeof(IBehaviorEndpointContext) ||
+                parameter.ParameterType == typeof(IStateEndpointContext) ||
+                parameter.ParameterType == typeof(IStateMachineEndpointContext) ||
+                parameter.ParameterType == typeof(IActivityNodeEndpointContext) ||
+                parameter.ParameterType == typeof(IActivityEndpointContext)
+            );
+
+            if (!endpointEnabled)
+            {
+                defaultHandler = () => Results.NotFound();
+            }
+            else
+            {
+                visitor.HateoasLinks.AddLink(
+                    behaviorClass.Name,
+                    new HateoasLink()
+                    {
+                        Rel = "custom",
+                        Href = route,
+                        Method = string.Join(',', methods)
+                    },
+                    [BehaviorStatus.Initialized],
+                    scopeName ?? "",
+                    string.IsNullOrEmpty(scopeName) ? "default" : "default:node"
+                );
+            }
+
+            endpoint = group
+                    .MapMethods(
+                        route,
+                        methods,
+                        defaultHandler
+                    )
+                    .WithMetadata(new EndpointMetadata()
+                    {
+                        BehaviorClass = behaviorClass,
+                        Pattern = pattern,
+                        RequireContext = requireContext,
+                        ScopeName = scopeName,
+                        HateoasLinks = visitor.HateoasLinks
+                    })
+                    .WithTags($"{behaviorClass.Type} {behaviorClass.Name}")
+                ;
+
+            if (!endpointEnabled)
+            {
+                endpoint.ExcludeFromDescription();
+            }
+            else
+            {
+                endpoint = behaviorClass.Type switch
+                {
+                    BehaviorType.Action => endpoint.AddEndpointFilter<ActionEndpointFilter>(),
+                    BehaviorType.Activity => endpoint.AddEndpointFilter<ActivityEndpointFilter>(),
+                    BehaviorType.StateMachine => endpoint.AddEndpointFilter<StateMachineEndpointFilter>(),
+                    _ => endpoint
+                };
+
+                interceptor.AfterCustomEndpointDefinition(behaviorClass, hasDefaultInstance, methods, route, endpoint);
+            }
+        }
+
+        return group;
     }
-    
-    public RouteHandlerBuilder AddGet(string pattern, Delegate handler)
+
+    public RouteGroupBuilder AddGet(string pattern, Delegate handler)
         => AddEndpoint(pattern, [HttpMethod.Get.Method], handler);
 
-    public RouteHandlerBuilder AddPost(string pattern, Delegate handler)
-        => AddEndpoint(pattern, [HttpMethod.Post.Method], handler); 
+    public RouteGroupBuilder AddPost(string pattern, Delegate handler)
+        => AddEndpoint(pattern, [HttpMethod.Post.Method], handler);
 
-    public RouteHandlerBuilder AddPatch(string pattern, Delegate handler)
-        => AddEndpoint(pattern, [HttpMethod.Patch.Method], handler); 
+    public RouteGroupBuilder AddPatch(string pattern, Delegate handler)
+        => AddEndpoint(pattern, [HttpMethod.Patch.Method], handler);
 
-    public RouteHandlerBuilder AddPut(string pattern, Delegate handler)
-        => AddEndpoint(pattern, [HttpMethod.Put.Method], handler); 
+    public RouteGroupBuilder AddPut(string pattern, Delegate handler)
+        => AddEndpoint(pattern, [HttpMethod.Put.Method], handler);
 
-    public RouteHandlerBuilder AddDelete(string pattern, Delegate handler)
-        => AddEndpoint(pattern, [HttpMethod.Delete.Method], handler); 
+    public RouteGroupBuilder AddDelete(string pattern, Delegate handler)
+        => AddEndpoint(pattern, [HttpMethod.Delete.Method], handler);
 
-    public RouteHandlerBuilder AddMethods(string pattern, string[] methods, Delegate handler)
-        => AddEndpoint(pattern, methods, handler); 
+    public RouteGroupBuilder AddMethods(string pattern, string[] methods, Delegate handler)
+        => AddEndpoint(pattern, methods, handler);
 }

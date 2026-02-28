@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using Stateflows.Common;
 
 namespace Stateflows.Activities.Interfaces
 {

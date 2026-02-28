@@ -1,8 +1,8 @@
 ﻿using System;
 using System.Threading.Tasks;
 using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations;
 using System.Linq;
+using System.Reflection;
 using Microsoft.Extensions.DependencyInjection;
 using Stateflows.Actions.Context.Classes;
 using Stateflows.Common;
@@ -74,6 +74,11 @@ namespace Stateflows.Actions.Engine
                     ? new StateflowsContext(id)
                     : await Storage.HydrateAsync(id);
 
+                if (stateflowsContext.Status == BehaviorStatus.Unknown)
+                {
+                    stateflowsContext.Status = BehaviorStatus.NotInitialized;
+                }
+
                 var embedding = (BehaviorEmbedding?)eventHolder.Headers.Values.FirstOrDefault(h => h is BehaviorEmbedding);
                 if (embedding != null)
                 {
@@ -90,8 +95,11 @@ namespace Stateflows.Actions.Engine
                 
                 await executor.HydrateAsync(eventHolder);
                 
+                var noImplicitInitialization =
+                    eventHolder.PayloadType.GetCustomAttributes<NoImplicitInitializationAttribute>().Any() ||
+                    eventHolder.Headers.Values.Any(h => h is NoImplicitInitialization);
                 
-                if (stateflowsContext.Status != BehaviorStatus.Initialized)
+                if (stateflowsContext.Status is BehaviorStatus.NotInitialized or BehaviorStatus.Unknown && !noImplicitInitialization)
                 {
                     stateflowsContext.Status = BehaviorStatus.Initialized;
 
@@ -100,69 +108,17 @@ namespace Stateflows.Actions.Engine
                     inspector.BeforeActionInitialize(context);
                     inspector.AfterActionInitialize(context);
                 }
-                
-                if (eventHolder is EventHolder<CompoundRequest> compoundRequestHolder)
-                {
-                    var compoundRequest = compoundRequestHolder.Payload;
-                    var compoundResponse = compoundRequest.GetResponse();
-                    result = EventStatus.Consumed;
-                    var results = new List<RequestResult>();
-                    var i = -1;
-                    foreach (var ev in compoundRequest.Events)
-                    {
-                        i++;
-                                
-                        RequestResult responseResult = null;
-                        if (compoundResponse != null)
-                        {
-                            responseResult = ((List<RequestResult>)compoundResponse.Results)[i];
-                            if (
-                                responseResult?.Status == EventStatus.Invalid ||
-                                (
-                                    responseResult?.Status == EventStatus.Omitted &&
-                                    !ev.Headers.Values.Any(h => h is ForcedExecution)
-                                )
-                            )
-                            {
-                                continue;
-                            }
-                        }
 
-                        ev.Headers.AddRange(compoundRequestHolder.Headers);
-
-                        var status = await ev.ExecuteBehaviorAsync(this, result, executor);
-
-                        if (responseResult != null)
-                        {
-                            responseResult.Status = status;
-                            responseResult.Response = ev.IsRequest()
-                                ? ev.GetResponseHolder()
-                                : null;
-                            responseResult.Validation = new EventValidation(true, new List<ValidationResult>());
-                        }
-                        else
-                        {
-                            results.Add(new RequestResult(
-                                ev.GetResponseHolder(),
-                                status,
-                                new EventValidation(true, new List<ValidationResult>())
-                            ));
-                        }
-                    }
-
-                    if (!compoundRequest.IsRespondedTo())
-                    {
-                        compoundRequest.Respond(new CompoundResponse()
-                        {
-                            Results = results
-                        });
-                    }
-                }
-                else
+                if (
+                    stateflowsContext.Status == BehaviorStatus.Initialized ||
+                    eventHolder is EventHolder<BehaviorInfoRequest> ||
+                    eventHolder is EventHolder<Finalize> ||
+                    eventHolder is EventHolder<Reset>
+                )
                 {
                     result = await ExecuteBehaviorAsync(eventHolder, result, executor);
                 }
-                
+
                 await executor.DehydrateAsync(eventHolder);
             }
             finally
@@ -172,7 +128,7 @@ namespace Stateflows.Actions.Engine
                     stateflowsContext.Version = action.Version;
                 }
 
-                stateflowsContext.Status = BehaviorStatus.Initialized;
+                // stateflowsContext.Status = BehaviorStatus.Initialized;
 
                 stateflowsContext.LastExecutedAt = DateTime.Now;
 
@@ -194,9 +150,9 @@ namespace Stateflows.Actions.Engine
 
         public Task CancelProcessingAsync(BehaviorId id)
         {
-            lock (ActionDelegateContext.Instances)
+            lock (Common.Context.Classes.BaseContext.Instances)
             {
-                if (ActionDelegateContext.Instances.TryGetValue(id, out var contextList))
+                if (Common.Context.Classes.BaseContext.Instances.TryGetValue(id, out var contextList))
                 {
                     foreach (var context in contextList)
                     {

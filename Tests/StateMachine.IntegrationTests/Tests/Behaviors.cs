@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using Stateflows.Common;
 using Stateflows.Activities;
 using StateMachine.IntegrationTests.Classes.Events;
@@ -6,17 +7,13 @@ using Deny = Stateflows.Common.Deny;
 
 namespace StateMachine.IntegrationTests.Tests
 {
-    public class TypedAcceptEventAction : IAcceptEventActionNode<SomeEvent>
+    public class TypedAcceptEventAction(IBehaviorContext context, IActivityContext activityContext) : IAcceptEventActionNode<SomeEvent>
     {
-        private readonly IBehaviorContext Context;
-        public TypedAcceptEventAction(IBehaviorContext context)
-        {
-            Context = context;
-        }
         public async Task ExecuteAsync(SomeEvent @event, CancellationToken cancellationToken)
         {
-            Behaviors.eventConsumed = await Context.Values.TryGetAsync<bool>("boolValue") is (true, true);
-            Context.Send(new SomeNotification());
+            Behaviors.eventConsumed = await context.Values.TryGetAsync<bool>("boolValue") is (true, true);
+            Debug.WriteLine(activityContext.ActualId.Name);
+            context.Send(new SomeNotification());
         }
     }
 
@@ -267,11 +264,9 @@ namespace StateMachine.IntegrationTests.Tests
                 .StateEntry("stateA")
                 .StateExit("stateA")
                 .StateEntry("stateB")
+                .StateEntry("state2")
                 .StateExit("stateB")
                 .StateMachineFinalize()
-                
-                .StateEntry("state2")
-            
                 .StateExit("state2")
                 .StateEntry("state1")
                 .StateEntry("stateA")
@@ -310,15 +305,18 @@ namespace StateMachine.IntegrationTests.Tests
                 .TransitionGuard(Event<SomeEvent>.Name, "stateA", "stateB")
                 .TransitionGuard(Event<SomeEvent>.Name, "state1", "state2")
                 
-                .StateExit("stateX")
-                .StateMachineFinalize()
-                .StateExit("stateA")
-                .StateMachineFinalize()
-                .StateExit("state1")
-
                 .TransitionEffect(Event<SomeEvent>.Name, "state1", "state2")
                 
                 .StateEntry("state2")
+            );
+            ExecutionSequence.Verify(b => b
+                .StateExit("state1")
+                .StateExit("stateA")
+                .StateExit("stateX")
+            );
+            ExecutionSequence.Verify(b => b
+                .StateMachineFinalize()
+                .StateMachineFinalize()
             );
             Assert.IsTrue(initialized);
             Assert.AreEqual(EventStatus.Forwarded, someStatus1);

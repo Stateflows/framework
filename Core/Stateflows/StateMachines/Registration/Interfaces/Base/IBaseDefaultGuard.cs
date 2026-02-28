@@ -6,6 +6,7 @@ using Stateflows.Actions;
 using Stateflows.Actions.Registration.Interfaces;
 using Stateflows.Activities;
 using Stateflows.Activities.Registration.Interfaces;
+using Stateflows.Common.Classes;
 using Stateflows.Common.Interfaces;
 using Stateflows.Common.Registration.Builders;
 using Stateflows.StateMachines.Context.Classes;
@@ -25,9 +26,32 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         ///     // function logic here; transition context is available via c parameter
         /// }</code>
         /// </summary>
-        /// <param name="guardsAsync">The asynchronous guard functions.</param>
-        TReturn AddGuard(params Func<ITransitionContext<Completion>, Task<bool>>[] guardsAsync);
+        /// <param name="guardAsync">The asynchronous guard function.</param>
+        TReturn AddGuard(Func<ITransitionContext<Completion>, Task<bool>> guardAsync)
+            => AddGuards(guardAsync);
+        
+        TReturn AddGuards(params Func<ITransitionContext<Completion>, Task<bool>>[] guardsAsync);
+        
+        [DebuggerHidden]
+        public TReturn AddGuards(params Func<ITransitionContext<Completion>, bool>[] guards)
+            => AddGuards(guards.Select(guard => guard.ToAsync()).ToArray());
 
+        TReturn AddGuard(Delegate guardDelegate)
+            => AddGuard(c => guardDelegate.InvokeDelegatePredicateAsync(
+                StateflowsActivator.ResolveParameterValueFactories(
+                    c.Behavior.ServiceProvider,
+                    null,
+                    "transition guard",
+                    guardDelegate.Method.GetParameters()
+                )
+            ));
+
+        // TReturn AddGuard(Func<bool> guard)
+        //     => AddGuard(c => guard.Invoke());
+        //
+        // TReturn AddGuard(Func<Task<bool>> guardAsync)
+        //     => AddGuard(c => guardAsync.Invoke());
+        
         /// <summary>
         /// Adds a function-based guard to the current transition.<br/>
         /// Use the following pattern to implement function:
@@ -35,17 +59,17 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         ///     // function logic here; transition context is available via c parameter
         /// }</code>
         /// </summary>
-        /// <param name="guards">The guard functions.</param>
+        /// <param name="guard">The guard function.</param>
         [DebuggerHidden]
-        public TReturn AddGuard(params Func<ITransitionContext<Completion>, bool>[] guards)
-            => AddGuard(guards.Select(guard => guard.ToAsync()).ToArray());
+        public TReturn AddGuard(Func<ITransitionContext<Completion>, bool> guard)
+            => AddGuards(guard.ToAsync());
 
         /// <summary>
         /// Adds activity behavior as guard
         /// </summary>
         /// <typeparam name="TActivity">Activity behavior type</typeparam>
         [DebuggerHidden]
-        public TReturn AddGuardActivity<TActivity>()
+        public TReturn AddGuardActivity<TActivity>(ActivityUtilsBuildAction buildAction = null)
             where TActivity : class, IActivity
         {
             var edge = ((IEdgeBuilder)this).Edge;
@@ -57,7 +81,7 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
             }
             activityName += $".guard.{edge.Guards.Actions.Count}";
             
-            vertex.Graph.StateflowsBuilder.AddActivities(b => b.AddActivity<TActivity>(activityName), vertex.Graph.OwnerClass ?? vertex.Graph.Class, vertex.Graph.Class);
+            vertex.Graph.StateflowsBuilder.AddActivities(b => b.AddActivity<TActivity>(activityName, buildAction: buildAction), vertex.Graph.OwnerClass ?? vertex.Graph.Class, vertex.Graph.Class);
             return AddGuard(c => StateMachineActivityExtensions.RunTransitionGuardActivityAsync(edge.Guards.Actions.Count, c, activityName));
         }
 
@@ -128,10 +152,13 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         ///     // function logic here; transition context is available via c parameter
         /// }</code>
         /// </summary>
-        /// <param name="guardsAsync">The asynchronous guard functions.</param>
+        /// <param name="guardAsync">The asynchronous guard function.</param>
         [DebuggerHidden]
-        TReturn AddNegatedGuard(params Func<ITransitionContext<Completion>, Task<bool>>[] guardsAsync)
-            => AddGuard(guardsAsync.Select<Func<ITransitionContext<Completion>, Task<bool>>, Func<ITransitionContext<Completion>, Task<bool>>>(guardAsync => async c => !await guardAsync.Invoke(c)).ToArray());
+        TReturn AddNegatedGuard(Func<ITransitionContext<Completion>, Task<bool>> guardAsync)
+            => AddNegatedGuards(guardAsync);
+        
+        TReturn AddNegatedGuards(params Func<ITransitionContext<Completion>, Task<bool>>[] guardsAsync)
+            => AddGuards(guardsAsync.Select<Func<ITransitionContext<Completion>, Task<bool>>, Func<ITransitionContext<Completion>, Task<bool>>>(guardAsync => async c => !await guardAsync.Invoke(c)).ToArray());
 
         /// <summary>
         /// Adds a negated function-based guard to the current transition.<br/>
@@ -140,10 +167,13 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         ///     // function logic here; transition context is available via c parameter
         /// }</code>
         /// </summary>
-        /// <param name="guards">The guard functions.</param>
+        /// <param name="guard">The guard function.</param>
         [DebuggerHidden]
-        public TReturn AddNegatedGuard(params Func<ITransitionContext<Completion>, bool>[] guards)
-            => AddNegatedGuard(guards.Select(guard => guard.ToAsync()).ToArray());
+        public TReturn AddNegatedGuard(Func<ITransitionContext<Completion>, bool> guard)
+            => AddNegatedGuards(guard);
+        
+        public TReturn AddNegatedGuards(params Func<ITransitionContext<Completion>, bool>[] guards)
+            => AddNegatedGuards(guards.Select(guard => guard.ToAsync()).ToArray());
 
         /// <summary>
         /// Adds a typed guard handler to the current transition.

@@ -6,6 +6,7 @@ using System.Reflection;
 using System.Threading.Tasks;
 using Stateflows.Common.Classes;
 using Stateflows.Common.Extensions;
+using Stateflows.Common.Initializer;
 using Stateflows.Common.Interfaces;
 using Stateflows.Common.Registration.Builders;
 using Stateflows.StateMachine.Registration.Builders;
@@ -84,12 +85,23 @@ namespace Stateflows.StateMachines.Registration
             }
 
             var builder = new StateMachineElementsBuilder(stateMachineName, version, stateflowsBuilder, OwnerClass, ParentClass);
+
+            // Assign to local variable to avoid value being overriden when invoking lambda function at a later stage
+            var ownerClass = OwnerClass;
+            var parentClass = ParentClass;
+
+            builder.Graph.VisitingTasks.Add(v =>
+            {
+                var hasDefaultInstance = BehaviorClassesInitializations.Instance.DefaultInstanceInitializationTokens
+                    .Any(token => token.BehaviorClass.Type == StateMachineClass.Type && token.BehaviorClass.Name == stateMachineName);
+
+                return v.StateMachineAddingAsync(stateMachineName, version, ownerClass, parentClass, hasDefaultInstance);
+            });
+
             buildAction(builder);
             builder.Graph.Build();
 
-            var graph = builder.Graph;
-
-            builder.Graph.VisitingTasks.Add(v => v.StateMachineAddedAsync(stateMachineName, version, graph.OwnerClass, graph.ParentClass));
+            builder.Graph.VisitingTasks.Add(v => v.StateMachineAddedAsync(stateMachineName, version));
 
             StateMachines.Add(key, builder.Graph);
 
@@ -117,18 +129,27 @@ namespace Stateflows.StateMachines.Registration
                         StateMachineType = stateMachineType
                     }
             };
+            
+            // Assign to local variable to avoid value being overriden when invoking lambda function at a later stage
+            var ownerClass = OwnerClass;
+            var parentClass = ParentClass;
+            
+            builder.Graph.VisitingTasks.Add(v =>
+            {
+                var hasDefaultInstance = BehaviorClassesInitializations.Instance.DefaultInstanceInitializationTokens
+                    .Any(token => token.BehaviorClass.Type == StateMachineClass.Type && token.BehaviorClass.Name == stateMachineName);
+
+                return v.StateMachineAddingAsync(stateMachineName, version, ownerClass, parentClass, hasDefaultInstance);
+            });
+            
             RegisterStateMachine(stateMachineType, builder);
             builder.Graph.Build();
             buildAction?.Invoke(new StateMachineUtilsBuilder(builder.Graph));
 
             var method = StateMachineTypeAddedAsyncMethod.MakeGenericMethod(stateMachineType);
 
-            // Assign to local variable to avoid value being overriden when invoking lambda function at a later stage
-            var ownerClass = OwnerClass;
-            var parentClass = ParentClass;
-
             builder.Graph.VisitingTasks.AddRange([
-                v => v.StateMachineAddedAsync(stateMachineName, version, ownerClass, parentClass),
+                v => v.StateMachineAddedAsync(stateMachineName, version),
                 v => (Task)method.Invoke(v, [ stateMachineName, version ])
             ]);
 
@@ -168,10 +189,7 @@ namespace Stateflows.StateMachines.Registration
                     StateMachinesContextHolder.StateContext.Value = null;
                     StateMachinesContextHolder.TransitionContext.Value = null;
                     StateMachinesContextHolder.BehaviorContext.Value = context.Behavior;
-                    if (((IStateflowsContextProvider)context).Context.ContextOwnerId == null)
-                    {
-                        StateMachinesContextHolder.StateMachineContext.Value = ((BaseContext)context).StateMachine;
-                    }
+                    StateMachinesContextHolder.StateMachineContext.Value = ((BaseContext)context).StateMachine;
                     StateMachinesContextHolder.ExecutionContext.Value = context;
 
                     return await StateflowsActivator.CreateModelElementInstanceAsync<TInterceptor>(serviceProvider, "interceptor");
@@ -201,10 +219,7 @@ namespace Stateflows.StateMachines.Registration
                     StateMachinesContextHolder.StateContext.Value = null;
                     StateMachinesContextHolder.TransitionContext.Value = null;
                     StateMachinesContextHolder.BehaviorContext.Value = context.Behavior;
-                    if (((IStateflowsContextProvider)context).Context.ContextOwnerId == null)
-                    {
-                        StateMachinesContextHolder.StateMachineContext.Value = ((BaseContext)context).StateMachine;
-                    }
+                    StateMachinesContextHolder.StateMachineContext.Value = ((BaseContext)context).StateMachine;
                     StateMachinesContextHolder.ExecutionContext.Value = context;
 
                     return await StateflowsActivator.CreateModelElementInstanceAsync<TExceptionHandler>(serviceProvider, "exception handler");
@@ -234,10 +249,7 @@ namespace Stateflows.StateMachines.Registration
                     StateMachinesContextHolder.StateContext.Value = null;
                     StateMachinesContextHolder.TransitionContext.Value = null;
                     StateMachinesContextHolder.BehaviorContext.Value = context.Behavior;
-                    if (((IStateflowsContextProvider)context).Context.ContextOwnerId == null)
-                    {
-                        StateMachinesContextHolder.StateMachineContext.Value = ((BaseContext)context).StateMachine;
-                    }
+                    StateMachinesContextHolder.StateMachineContext.Value = ((BaseContext)context).StateMachine;
                     StateMachinesContextHolder.ExecutionContext.Value = context;
 
                     return await StateflowsActivator.CreateModelElementInstanceAsync<TObserver>(serviceProvider, "observer");

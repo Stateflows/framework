@@ -32,5 +32,9 @@ namespace Stateflows.Actions
     {
         public static IActionBuilder AddFinalizationResetPolicy(this IActionBuilder builder, ResetMode resetMode = ResetMode.Full)
             => builder.AddObserver(_ => new ResetObserver(resetMode));
+    
+        public static IActionBuilder<TAction> AddFinalizationResetPolicy<TAction>(this IActionBuilder<TAction> builder, ResetMode resetMode = ResetMode.Full)
+            where TAction : class, IAction
+            => builder.AddObserver(_ => new ResetObserver(resetMode));
     }
 }

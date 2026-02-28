@@ -37,23 +37,23 @@ namespace Stateflows.Common.Storage
             return behaviorValues;
         }
         
-        public Task SetAsync<T>(BehaviorId behaviorId, string key, T value)
+        public Task<T> SetAsync<T>(BehaviorId behaviorId, string key, T value)
         {
             lock (Values)
             {
                 var behaviorValues = GetBehaviorValues(behaviorId);
 
-                InternalSet(key, value, behaviorValues);
+                return InternalSet(key, value, behaviorValues);
             }
-            
-            return Task.CompletedTask;
         }
 
-        private static void InternalSet<T>(string key, T value, Dictionary<string, string> behaviorValues)
+        private static Task<T> InternalSet<T>(string key, T value, Dictionary<string, string> behaviorValues)
         {
             behaviorValues[key] = typeof(T) == typeof(Guid)
                 ? ((Guid)(object)value).ToString()
                 : StateflowsJsonConverter.SerializePolymorphicObject(value);
+
+            return Task.FromResult(value);
         }
 
         public Task<bool> IsSetAsync(BehaviorId behaviorId, string key)
@@ -156,7 +156,7 @@ namespace Stateflows.Common.Storage
             return defaultValue;
         }
 
-        public Task UpdateAsync<T>(BehaviorId behaviorId, string key, Func<T, T> valueUpdater, T defaultValue = default)
+        public Task<T> UpdateAsync<T>(BehaviorId behaviorId, string key, Func<T, T> valueUpdater, T defaultValue = default)
         {
             lock (Values)
             {
@@ -166,10 +166,8 @@ namespace Stateflows.Common.Storage
 
                 value = valueUpdater(value);
 
-                InternalSet(key, value, behaviorValues);
+                return InternalSet(key, value, behaviorValues);
             }
-
-            return Task.CompletedTask;
         }
 
         public Task RemoveAsync(BehaviorId behaviorId, string key)

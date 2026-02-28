@@ -29,11 +29,11 @@ namespace Stateflows.Common.Classes
         private string GetKey(string key)
             => $"{Scope}.{key}";
         
-        public async Task SetAsync<T>(string key, T value)
+        public async Task<T> SetAsync<T>(string key, T value)
         {
             await using (await Lock.AquireLockAsync(BehaviorId, Scope, LockTimeout))
             {
-                await Storage.SetAsync(BehaviorId, GetKey(key), value);
+                return await Storage.SetAsync(BehaviorId, GetKey(key), value);
             }
         }
 
@@ -69,11 +69,11 @@ namespace Stateflows.Common.Classes
             }
         }
 
-        public async Task UpdateAsync<T>(string key, Func<T, T> valueUpdater, T defaultValue = default)
+        public async Task<T> UpdateAsync<T>(string key, Func<T, T> valueUpdater, T defaultValue = default)
         {
             await using (await Lock.AquireLockAsync(BehaviorId, Scope, LockTimeout))
             {
-                await Storage.UpdateAsync<T>(BehaviorId, GetKey(key), valueUpdater, defaultValue);
+                return await Storage.UpdateAsync<T>(BehaviorId, GetKey(key), valueUpdater, defaultValue);
             }
         }
 

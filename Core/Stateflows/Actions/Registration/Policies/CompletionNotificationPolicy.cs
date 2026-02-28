@@ -13,7 +13,11 @@ internal class CompletionNotification : ActionInterceptor
         if (eventStatus == EventStatus.Consumed)
         {
             var stateflowsContext = ((BaseContext)context).Context;
-            if (stateflowsContext.ContextParentId != null)
+            if (
+                stateflowsContext.ContextParentId != null &&
+                stateflowsContext.ContextParentId.Value.Type == BehaviorType.StateMachine &&
+                eventStatus is EventStatus.Consumed or EventStatus.Initialized
+            )
             {
                 context.Behavior.Send(new Completion());
             }
@@ -24,5 +28,9 @@ internal class CompletionNotification : ActionInterceptor
 public static class CompletionNotificationPolicy
 {
     public static IActionBuilder AddCompletionNotificationPolicy(this IActionBuilder builder)
+        => builder.AddInterceptor(_ => new CompletionNotification());
+    
+    public static IActionBuilder<TAction> AddCompletionNotificationPolicy<TAction>(this IActionBuilder<TAction> builder)
+        where TAction : class, IAction
         => builder.AddInterceptor(_ => new CompletionNotification());
 }

@@ -5,12 +5,16 @@ using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
 using Stateflows.Common.Classes;
-using Stateflows.Common.Interfaces;
 using Stateflows.Common.Registration.Builders;
 using Stateflows.Activities.Models;
 using Stateflows.Activities.Exceptions;
 using Stateflows.Activities.Registration.Builders;
 using Stateflows.Activities.Registration.Interfaces;
+using Stateflows.Common.Classes;
+using Stateflows.Common.Interfaces;
+using Stateflows.Common.Registration.Builders;
+using Stateflows.Common.Initializer;
+using ActivityClass = Stateflows.ActivityClass;
 
 namespace Stateflows.Activities.Registration
 {
@@ -78,6 +82,14 @@ namespace Stateflows.Activities.Registration
             }
 
             var activityBuilder = new ActivityBuilder(activityName, version, null, stateflowsBuilder, OwnerClass, ParentClass);
+
+            activityBuilder.Graph.VisitingTasks.Add(v =>
+            {
+                var hasDefaultInstance = BehaviorClassesInitializations.Instance.DefaultInstanceInitializationTokens
+                    .Any(token => token.BehaviorClass.Type == ActivityClass.Type && token.BehaviorClass.Name == activityName);
+                return v.ActivityAddingAsync(activityName, version, hasDefaultInstance);
+            });
+
             buildAction(activityBuilder);
             activityBuilder.Graph.Build();
 
@@ -113,6 +125,14 @@ namespace Stateflows.Activities.Registration
                     ActivityType = activityType
                 }
             };
+
+            activityBuilder.Graph.VisitingTasks.Add(v =>
+            {
+                var hasDefaultInstance = BehaviorClassesInitializations.Instance.DefaultInstanceInitializationTokens
+                    .Any(token => token.BehaviorClass.Type == ActivityClass.Type && token.BehaviorClass.Name == activityName);
+                return v.ActivityAddingAsync(activityName, version, hasDefaultInstance);
+            });
+
             RegisterActivity(activityType, activityBuilder);
             activityBuilder.Graph.Build();
             buildAction?.Invoke(new ActivityUtilsBuilder(activityBuilder.Graph));

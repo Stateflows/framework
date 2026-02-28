@@ -5,8 +5,7 @@ namespace Stateflows.Common.Interfaces
 {
     public interface IContextValues
     {
-        // Task<IContextValues> GetBatch
-        Task SetAsync<T>(string key, T value);
+        Task<T> SetAsync<T>(string key, T value);
 
         Task<bool> IsSetAsync(string key);
 
@@ -16,7 +15,7 @@ namespace Stateflows.Common.Interfaces
 
         Task<T> GetOrDefaultAsync<T>(string key, T defaultValue = default);
 
-        Task UpdateAsync<T>(string key, Func<T, T> valueUpdater, T defaultValue = default);
+        Task<T> UpdateAsync<T>(string key, Func<T, T> valueUpdater, T defaultValue = default);
 
         Task RemoveAsync(string key);
         

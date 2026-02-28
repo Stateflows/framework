@@ -22,15 +22,24 @@ internal static class RequestBodyExtensions
         };
         return behaviorInfo;
     }
-    
-    public static void RegisterEventEndpoint<TEvent>(this IEndpointRouteBuilder routeBuilder, Interceptor interceptor, string behaviorType, string behaviorName, Dictionary<string, List<(HateoasLink, BehaviorStatus[])>> customHateoasLinks)
+
+    public static void RegisterEventEndpoint<TEvent>(
+        this IEndpointRouteBuilder routeBuilder,
+        Interceptor interceptor,
+        string behaviorType,
+        string behaviorName,
+        Dictionary<string, List<(HateoasLink, BehaviorStatus[])>> customHateoasLinks,
+        bool hasDefaultInstance = false,
+        BehaviorStatus[]? supportedStatuses = null
+    )
     {
+        supportedStatuses ??= [BehaviorStatus.Initialized];
         var eventType = typeof(TEvent);
         var eventName = Utils.GetEventName<TEvent>();
         var route = $"/{behaviorType.ToResource()}/{behaviorName}/{{instance}}/{eventName}";
         var method = HttpMethods.Post;
         var behaviorClass = new BehaviorClass(behaviorType, behaviorName);
-        if (interceptor.BeforeEventEndpointDefinition<TEvent>(behaviorClass, ref method, ref route))
+        if (interceptor.BeforeEventEndpointDefinition<TEvent>(behaviorClass, isDefaultInstance: false, ref method, ref route))
         {
             var routeHandlerBuilder = Utils.IsEventEmpty(eventType)
                 ? routeBuilder.MapMethods(
@@ -51,7 +60,7 @@ internal static class RequestBodyExtensions
                         {
                             return authorizationResult;
                         }
-                        
+
                         return locator.TryLocateBehavior(new BehaviorId(behaviorType, behaviorName, instance),
                             out var behavior)
                             ? await payload.SendEndpointAsync(StateflowsActivator.CreateUninitializedInstance<TEvent>(), behavior, implicitInitialization, customHateoasLinks, context)
@@ -86,8 +95,8 @@ internal static class RequestBodyExtensions
 
             routeHandlerBuilder.WithTags($"{behaviorClass.Type} {behaviorClass.Name}");
 
-            interceptor.AfterEventEndpointDefinition<TEvent>(behaviorClass, method, route, routeHandlerBuilder);
-            
+            interceptor.AfterEventEndpointDefinition<TEvent>(behaviorClass, isDefaultInstance: false, method, route, routeHandlerBuilder);
+
             customHateoasLinks.AddLink(
                 behaviorClass.Name,
                 new HateoasLink()
@@ -96,22 +105,109 @@ internal static class RequestBodyExtensions
                     Href = route,
                     Method = method
                 },
+                supportedStatuses,
+                eventName,
+                "standard:event"
+            );
+        }
+
+        if (!hasDefaultInstance)
+        {
+            return;
+        }
+
+        if (typeof(TEvent) == typeof(Initialize))
+        {
+            return;
+        }
+
+        var defaultInstanceRoute = $"/{behaviorType.ToResource()}/{behaviorName}/{eventName}";
+        if (interceptor.BeforeEventEndpointDefinition<TEvent>(behaviorClass, isDefaultInstance: true, ref method, ref defaultInstanceRoute))
+        {
+            var routeHandlerBuilder = Utils.IsEventEmpty(eventType)
+                ? routeBuilder.MapMethods(
+                    defaultInstanceRoute,
+                    [method],
+                    async (
+                        HttpContext context,
+                        IServiceProvider serviceProvider,
+                        IBehaviorLocator locator,
+                        RequestBody payload
+                    ) =>
+                    {
+                        var (success, authorizationResult) =
+                            await Utils.AuthorizeEventAsync(eventType, serviceProvider, context);
+                        if (!success)
+                        {
+                            return authorizationResult;
+                        }
+
+                        return locator.TryLocateBehavior(new BehaviorId(behaviorType, behaviorName, string.Empty),
+                            out var behavior)
+                            ? await payload.SendEndpointAsync(StateflowsActivator.CreateUninitializedInstance<TEvent>(), behavior, false, customHateoasLinks, context)
+                            : Results.NotFound();
+                    }
+                )
+                : routeBuilder.MapMethods(
+                    defaultInstanceRoute,
+                    [method],
+                    async (
+                        HttpContext context,
+                        IServiceProvider serviceProvider,
+                        IBehaviorLocator locator,
+                        RequestBody<TEvent> payload
+                    ) =>
+                    {
+                        var (success, authorizationResult) = await Utils.AuthorizeEventAsync(eventType, serviceProvider, context);
+                        if (!success)
+                        {
+                            return authorizationResult;
+                        }
+
+                        return locator.TryLocateBehavior(new BehaviorId(behaviorType, behaviorName, string.Empty),
+                            out var behavior)
+                            ? await payload.SendEndpointAsync(payload.Event, behavior, false, customHateoasLinks, context)
+                            : Results.NotFound();
+                    }
+                );
+
+            routeHandlerBuilder.WithTags($"{behaviorClass.Type} {behaviorClass.Name}");
+
+            interceptor.AfterEventEndpointDefinition<TEvent>(behaviorClass, isDefaultInstance: true, method, defaultInstanceRoute, routeHandlerBuilder);
+
+            customHateoasLinks.AddLink(
+                behaviorClass.Name,
+                new HateoasLink()
+                {
+                    Rel = eventName.ToShortName().ToCamelCase(),
+                    Href = defaultInstanceRoute,
+                    Method = method
+                },
                 [BehaviorStatus.Initialized],
                 eventName,
-                "event"
+                "default:event"
             );
         }
     }
 
-    public static void RegisterRequestEndpoint<TRequest, TResponse>(this IEndpointRouteBuilder routeBuilder, Interceptor interceptor, string behaviorType, string behaviorName, Dictionary<string, List<(HateoasLink, BehaviorStatus[])>> customHateoasLinks)
+    public static void RegisterRequestEndpoint<TRequest, TResponse>(
+        this IEndpointRouteBuilder routeBuilder,
+        Interceptor interceptor,
+        string behaviorType,
+        string behaviorName,
+        Dictionary<string, List<(HateoasLink, BehaviorStatus[])>> customHateoasLinks,
+        bool hasDefaultInstance = false,
+        BehaviorStatus[]? supportedStatuses = null
+    )
         where TRequest : IRequest<TResponse>
     {
+        supportedStatuses ??= [BehaviorStatus.Initialized];
         var eventType = typeof(TRequest);
         var eventName = Utils.GetEventName<TRequest>();
         var route = $"/{behaviorType.ToResource()}/{behaviorName}/{{instance}}/" + Utils.GetEventName<TRequest>();
         var method = HttpMethods.Post;
         var behaviorClass = new BehaviorClass(behaviorType, behaviorName);
-        if (interceptor.BeforeEventEndpointDefinition<TRequest>(behaviorClass, ref method, ref route))
+        if (interceptor.BeforeEventEndpointDefinition<TRequest>(behaviorClass, isDefaultInstance: false, ref method, ref route))
         {
             var routeHandlerBuilder = Utils.IsEventEmpty(eventType)
                 ? routeBuilder.MapMethods(
@@ -164,8 +260,80 @@ internal static class RequestBodyExtensions
 
             routeHandlerBuilder.WithTags($"{behaviorClass.Type} {behaviorClass.Name}");
 
-            interceptor.AfterEventEndpointDefinition<TRequest>(behaviorClass, method, route, routeHandlerBuilder);
-            
+            interceptor.AfterEventEndpointDefinition<TRequest>(behaviorClass, isDefaultInstance: false, method, route, routeHandlerBuilder);
+
+            customHateoasLinks.AddLink(
+                behaviorClass.Name,
+                new HateoasLink()
+                {
+                    Rel = eventName.ToShortName().ToCamelCase(),
+                    Href = route,
+                    Method = method
+                },
+                supportedStatuses,
+                eventName,
+                "standard:event"
+            );
+        }
+
+        if (!hasDefaultInstance)
+        {
+            return;
+        }
+
+        if (interceptor.BeforeEventEndpointDefinition<TRequest>(behaviorClass, isDefaultInstance: true, ref method, ref route))
+        {
+            var defaultInstanceRoute = $"/{behaviorType.ToResource()}/{behaviorName}/{Utils.GetEventName<TRequest>()}";
+
+            var routeHandlerBuilder = Utils.IsEventEmpty(eventType)
+                ? routeBuilder.MapMethods(
+                    defaultInstanceRoute,
+                    [method],
+                    async (
+                        HttpContext context,
+                        IServiceProvider serviceProvider,
+                        IBehaviorLocator locator,
+                        RequestBody payload
+                    ) =>
+                    {
+                        var (success, authorizationResult) =
+                            await Utils.AuthorizeEventAsync(eventType, serviceProvider, context);
+                        if (!success)
+                        {
+                            return authorizationResult;
+                        }
+
+                        return locator.TryLocateBehavior(new BehaviorId(behaviorType, behaviorName, string.Empty), out var behavior)
+                            ? await payload.RequestEndpointAsync<TRequest, TResponse>(StateflowsActivator.CreateUninitializedInstance<TRequest>(), behavior, false, customHateoasLinks, context)
+                            : Results.NotFound();
+                    }
+                )
+                : routeBuilder.MapMethods(
+                    route,
+                    [method],
+                    async (
+                        HttpContext context,
+                        IServiceProvider serviceProvider,
+                        IBehaviorLocator locator,
+                        RequestBody<TRequest> payload
+                    ) =>
+                    {
+                        var (success, authorizationResult) = await Utils.AuthorizeEventAsync(eventType, serviceProvider, context);
+                        if (!success)
+                        {
+                            return authorizationResult;
+                        }
+
+                        return locator.TryLocateBehavior(new BehaviorId(behaviorType, behaviorName, string.Empty), out var behavior)
+                            ? await payload.RequestEndpointAsync<TRequest, TResponse>(payload.Event, behavior, false, customHateoasLinks, context)
+                            : Results.NotFound();
+                    }
+                );
+
+            routeHandlerBuilder.WithTags($"{behaviorClass.Type} {behaviorClass.Name}");
+
+            interceptor.AfterEventEndpointDefinition<TRequest>(behaviorClass, isDefaultInstance: true, method, route, routeHandlerBuilder);
+
             customHateoasLinks.AddLink(
                 behaviorClass.Name,
                 new HateoasLink()
@@ -176,11 +344,11 @@ internal static class RequestBodyExtensions
                 },
                 [BehaviorStatus.Initialized],
                 eventName,
-                "event"
+                "default:event"
             );
         }
     }
-    
+
     private static async Task<IResult?> SendEndpointAsync<TEvent>(this RequestBody payload, TEvent @event, IBehavior behavior,
         bool implicitInitialization, Dictionary<string, List<(HateoasLink, BehaviorStatus[])>> customHateoasLinks, HttpContext context)
     {
@@ -192,78 +360,81 @@ internal static class RequestBodyExtensions
                 EventStatus.Invalid,
                 new EventValidation(false, [new ValidationResult("Event not provided")])
             );
-            
+
             var behaviorInfo = await behavior.GetBehaviorInfo();
             return result.ToResult([], behaviorInfo, customHateoasLinks);
         }
         else
         {
-            var compoundResult = await behavior.SendCompoundAsync(b =>
-                {
-                    b.Add(@event, implicitInitialization ? [] : new Dictionary<string, EventHeader>() { { nameof(NoImplicitInitialization), new NoImplicitInitialization() } });
+            // var compoundResult = await behavior.SendCompoundAsync(b =>
+            //     {
+            //         b.Add(@event, implicitInitialization ? [] : new Dictionary<string, EventHeader>() { { nameof(NoImplicitInitialization), new NoImplicitInitialization() } });
+            //
+            //         switch (behavior.Id.Type)
+            //         {
+            //             case BehaviorType.StateMachine:
+            //                 b.Add(
+            //                     new StateMachineInfoRequest(),
+            //                     implicitInitialization
+            //                         ? new Dictionary<string, EventHeader>()
+            //                             {
+            //                                 { nameof(ForcedExecution), new ForcedExecution() }
+            //                             }
+            //                         : new Dictionary<string, EventHeader>()
+            //                             {
+            //                                 { nameof(NoImplicitInitialization), new NoImplicitInitialization() },
+            //                                 { nameof(ForcedExecution), new ForcedExecution() }
+            //                             }
+            //                 );
+            //                 break;
+            //             case BehaviorType.Activity:
+            //                 b.Add(
+            //                     new ActivityInfoRequest(),
+            //                     implicitInitialization
+            //                         ? new Dictionary<string, EventHeader>()
+            //                             {
+            //                                 { nameof(ForcedExecution), new ForcedExecution() }
+            //                             }
+            //                         : new Dictionary<string, EventHeader>()
+            //                             {
+            //                                 { nameof(NoImplicitInitialization), new NoImplicitInitialization() },
+            //                                 { nameof(ForcedExecution), new ForcedExecution() }
+            //                             }
+            //                 );
+            //                 break;
+            //             case BehaviorType.Action:
+            //                 b.Add(
+            //                     new BehaviorInfoRequest(),
+            //                     implicitInitialization
+            //                         ? new Dictionary<string, EventHeader>()
+            //                             {
+            //                                 { nameof(ForcedExecution), new ForcedExecution() }
+            //                             }
+            //                         : new Dictionary<string, EventHeader>()
+            //                             {
+            //                                 { nameof(NoImplicitInitialization), new NoImplicitInitialization() },
+            //                                 { nameof(ForcedExecution), new ForcedExecution() }
+            //                             }
+            //                 );
+            //                 break;
+            //         }
+            //     }
+            // );
 
-                    switch (behavior.Id.Type)
-                    {
-                        case BehaviorType.StateMachine:
-                            b.Add(
-                                new StateMachineInfoRequest(),
-                                implicitInitialization
-                                    ? new Dictionary<string, EventHeader>()
-                                        {
-                                            { nameof(ForcedExecution), new ForcedExecution() }
-                                        }
-                                    : new Dictionary<string, EventHeader>()
-                                        {
-                                            { nameof(NoImplicitInitialization), new NoImplicitInitialization() },
-                                            { nameof(ForcedExecution), new ForcedExecution() }
-                                        }
-                            );
-                            break;
-                        case BehaviorType.Activity:
-                            b.Add(
-                                new ActivityInfoRequest(),
-                                implicitInitialization
-                                    ? new Dictionary<string, EventHeader>()
-                                        {
-                                            { nameof(ForcedExecution), new ForcedExecution() }
-                                        }
-                                    : new Dictionary<string, EventHeader>()
-                                        {
-                                            { nameof(NoImplicitInitialization), new NoImplicitInitialization() },
-                                            { nameof(ForcedExecution), new ForcedExecution() }
-                                        }
-                            );
-                            break;
-                        case BehaviorType.Action:
-                            b.Add(
-                                new BehaviorInfoRequest(),
-                                implicitInitialization
-                                    ? new Dictionary<string, EventHeader>()
-                                        {
-                                            { nameof(ForcedExecution), new ForcedExecution() }
-                                        }
-                                    : new Dictionary<string, EventHeader>()
-                                        {
-                                            { nameof(NoImplicitInitialization), new NoImplicitInitialization() },
-                                            { nameof(ForcedExecution), new ForcedExecution() }
-                                        }
-                            );
-                            break;
-                    }
-                }
-            );
-
-            var result = compoundResult.Response.Results.First();
-            var behaviorInfo = (BehaviorInfo)compoundResult.Response.Results.Last().Response.BoxedPayload;
+            // var result = compoundResult.Response.Results.First();
+            // var behaviorInfo = (BehaviorInfo)compoundResult.Response.Results.Last().Response.BoxedPayload;
+            
+            var result = await behavior.SendAsync(@event, implicitInitialization ? [] : new Dictionary<string, EventHeader>() { { nameof(NoImplicitInitialization), new NoImplicitInitialization() } });
+            var behaviorInfo = await behavior.GetBehaviorInfo();
             
             var notifications = payload.RequestedNotifications is { Length: > 0 } && result.Status == EventStatus.Consumed
                 ? (await behavior.GetNotificationsAsync(payload.RequestedNotifications, lastNotificationsCheck)).ToArray()
                 : [];
-            
+
             return result.ToResult(notifications, behaviorInfo, customHateoasLinks);
         }
     }
-    
+
     private static async Task<IResult> RequestEndpointAsync<TRequest, TResponse>(this RequestBody payload, TRequest request, IBehavior behavior,
         bool implicitInitialization, Dictionary<string, List<(HateoasLink, BehaviorStatus[])>> customHateoasLinks, HttpContext context)
         where TRequest : IRequest<TResponse>
@@ -276,71 +447,74 @@ internal static class RequestBodyExtensions
                 EventStatus.Invalid,
                 new EventValidation(false, [new ValidationResult("Event not provided")])
             );
-            
+
             var behaviorInfo = await behavior.GetBehaviorInfo();
-            
+
             return result.ToResult([], behaviorInfo, customHateoasLinks);
         }
         else
         {
-            var compoundResult = await behavior.SendCompoundAsync(b =>
-                {
-                    b.Add(request, implicitInitialization ? [] : new Dictionary<string, EventHeader>() { { nameof(NoImplicitInitialization), new NoImplicitInitialization() } });
+            // var compoundResult = await behavior.SendCompoundAsync(b =>
+            //     {
+            //         b.Add(request, implicitInitialization ? [] : new Dictionary<string, EventHeader>() { { nameof(NoImplicitInitialization), new NoImplicitInitialization() } });
+            //
+            //         switch (behavior.Id.Type)
+            //         {
+            //             case BehaviorType.StateMachine:
+            //                 b.Add(
+            //                     new StateMachineInfoRequest(),
+            //                     implicitInitialization
+            //                         ? new Dictionary<string, EventHeader>()
+            //                             {
+            //                                 { nameof(ForcedExecution), new ForcedExecution() }
+            //                             }
+            //                         : new Dictionary<string, EventHeader>()
+            //                             {
+            //                                 { nameof(NoImplicitInitialization), new NoImplicitInitialization() },
+            //                                 { nameof(ForcedExecution), new ForcedExecution() }
+            //                             }
+            //                 );
+            //                 break;
+            //             case BehaviorType.Activity:
+            //                 b.Add(
+            //                     new ActivityInfoRequest(),
+            //                     implicitInitialization
+            //                         ? new Dictionary<string, EventHeader>()
+            //                             {
+            //                                 { nameof(ForcedExecution), new ForcedExecution() }
+            //                             }
+            //                         : new Dictionary<string, EventHeader>()
+            //                             {
+            //                                 { nameof(NoImplicitInitialization), new NoImplicitInitialization() },
+            //                                 { nameof(ForcedExecution), new ForcedExecution() }
+            //                             }
+            //                 );
+            //                 break;
+            //             case BehaviorType.Action:
+            //                 b.Add(
+            //                     new BehaviorInfoRequest(),
+            //                     implicitInitialization
+            //                         ? new Dictionary<string, EventHeader>()
+            //                             {
+            //                                 { nameof(ForcedExecution), new ForcedExecution() }
+            //                             }
+            //                         : new Dictionary<string, EventHeader>()
+            //                             {
+            //                                 { nameof(NoImplicitInitialization), new NoImplicitInitialization() },
+            //                                 { nameof(ForcedExecution), new ForcedExecution() }
+            //                             }
+            //                 );
+            //                 break;
+            //         }
+            //     }
+            // );
 
-                    switch (behavior.Id.Type)
-                    {
-                        case BehaviorType.StateMachine:
-                            b.Add(
-                                new StateMachineInfoRequest(),
-                                implicitInitialization
-                                    ? new Dictionary<string, EventHeader>()
-                                        {
-                                            { nameof(ForcedExecution), new ForcedExecution() }
-                                        }
-                                    : new Dictionary<string, EventHeader>()
-                                        {
-                                            { nameof(NoImplicitInitialization), new NoImplicitInitialization() },
-                                            { nameof(ForcedExecution), new ForcedExecution() }
-                                        }
-                            );
-                            break;
-                        case BehaviorType.Activity:
-                            b.Add(
-                                new ActivityInfoRequest(),
-                                implicitInitialization
-                                    ? new Dictionary<string, EventHeader>()
-                                        {
-                                            { nameof(ForcedExecution), new ForcedExecution() }
-                                        }
-                                    : new Dictionary<string, EventHeader>()
-                                        {
-                                            { nameof(NoImplicitInitialization), new NoImplicitInitialization() },
-                                            { nameof(ForcedExecution), new ForcedExecution() }
-                                        }
-                            );
-                            break;
-                        case BehaviorType.Action:
-                            b.Add(
-                                new BehaviorInfoRequest(),
-                                implicitInitialization
-                                    ? new Dictionary<string, EventHeader>()
-                                        {
-                                            { nameof(ForcedExecution), new ForcedExecution() }
-                                        }
-                                    : new Dictionary<string, EventHeader>()
-                                        {
-                                            { nameof(NoImplicitInitialization), new NoImplicitInitialization() },
-                                            { nameof(ForcedExecution), new ForcedExecution() }
-                                        }
-                            );
-                            break;
-                    }
-                }
-            );
-
-            var result = compoundResult.Response.Results.First();
-            var requestResult = new RequestResult<TResponse>(result);
-            var behaviorInfo = (BehaviorInfo)compoundResult.Response.Results.Last().Response.BoxedPayload;
+            // var result = compoundResult.Response.Results.First();
+            // var requestResult = new RequestResult<TResponse>(result);
+            // var behaviorInfo = (BehaviorInfo)compoundResult.Response.Results.Last().Response.BoxedPayload;
+            
+            var requestResult = await behavior.SendAsync(request, implicitInitialization ? [] : new Dictionary<string, EventHeader>() { { nameof(NoImplicitInitialization), new NoImplicitInitialization() } });
+            var behaviorInfo = await behavior.GetBehaviorInfo();
 
             var notifications =
                 payload.RequestedNotifications is { Length: > 0 } && requestResult.Status == EventStatus.Consumed

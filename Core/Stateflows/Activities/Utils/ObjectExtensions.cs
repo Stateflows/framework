@@ -7,7 +7,7 @@ namespace Stateflows.Common
     {
         internal static ExceptionHolder<TException> ToExceptionHolder<TException>(this TException payload)
             where TException : Exception
-           => new ExceptionHolder<TException>() { Exception = payload };
+           => new() { Exception = payload };
 
         internal static TokenHolder ToExceptionHolder<TException>(this TException payload, Type exceptionType)
             where TException : Exception

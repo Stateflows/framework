@@ -25,7 +25,9 @@ public struct OrleansRequestResult
     public static implicit operator OrleansRequestResult(RequestResult requestResult)
         => new OrleansRequestResult()
         {
-            Response = requestResult.Response,
+            Response = requestResult.Response == null
+                ? (OrleansEventHolder?)null
+                : (OrleansEventHolder)requestResult.Response,
             Status = requestResult.Status,
             Validation = requestResult.Validation,
         };

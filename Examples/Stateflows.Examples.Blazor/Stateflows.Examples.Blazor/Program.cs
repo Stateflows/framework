@@ -1,4 +1,4 @@
-using Medallion.Threading.SqlServer;
+using System.Diagnostics;
 using Microsoft.ClearScript;
 using Microsoft.EntityFrameworkCore;
 using OpenTelemetry;
@@ -10,8 +10,9 @@ using Stateflows.Examples.Blazor.Components;
 using Stateflows.Examples.Behaviors.StateMachines.Document.Interceptors;
 using Stateflows.Examples.Blazor;
 using Stateflows.Extensions.MinimalAPIs;
-using Stateflows.Extensions.OpenTelemetry;
 using Microsoft.ClearScript.V8;
+using Stateflows.Common;
+using Stateflows.Common.Utilities;
 using Document = Stateflows.Examples.Behaviors.StateMachines.Document.Document;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -32,6 +33,11 @@ builder.Services.AddStateflows(b => b
     
     .AddActions(b => b
         .AddAction_ClearScript("script", "Console.WriteLine('test');")
+        .AddAction("serialize", async c =>
+        {
+            var h = new TokenHolder<int> { Payload = 42 };
+            Debug.WriteLine(StateflowsJsonConverter.SerializePolymorphicObject(h));
+        })
     )
         
     // Each type of behavior must be registered explicitly - in this example only State Machines are used.
@@ -41,6 +47,8 @@ builder.Services.AddStateflows(b => b
         // If no name is provided, full name of class would be used as a behavior class name.
         .AddStateMachine<Document>("Doc")
     )
+    
+    .AddDefaultInstance(new StateMachineClass("Doc"))
     
     .AddInterceptor<InfoEnhanceInterceptor>()
     
@@ -52,11 +60,11 @@ builder.Services.AddStateflows(b => b
 
     // Uncomment, if you want to use storage:
     //
-    // .AddEntityFrameworkCoreStorage<AppDbContext>()
+    .AddEntityFrameworkCoreStorage<AppDbContext>()
     
-    .AddDistributedLock(async (serviceProvider, lockKey)
-        => new SqlDistributedLock(lockKey, builder.Configuration.GetConnectionString("Default"))
-    )
+    // .AddDistributedLock(async (serviceProvider, lockKey)
+    //     => new SqlDistributedLock(lockKey, builder.Configuration.GetConnectionString("Default"))
+    // )
 );
 
 builder.Services.AddOpenApi();
@@ -116,6 +124,14 @@ app.MapRazorComponents<App>()
 
 
 // API interface must be exposed for WebAssembly to interact with Stateflows
-app.MapStateflowsMinimalAPIsEndpoints();
+app.MapStateflowsMinimalAPIsEndpoints(b => b
+    .ConfigureStateMachines(b => b
+        .ConfigureStateMachine("Doc", b => b
+            .ConfigureDefaultInstance(b => b
+                .Disable()
+            )
+        )
+    )
+);
 
 app.Run();

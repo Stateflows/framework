@@ -17,8 +17,8 @@ namespace Stateflows.Common.Classes
         private readonly INotificationsHub notificationsHub;
         private readonly IStateflowsTenantProvider tenantProvider;
         private readonly ITenantAccessor tenantAccessor;
-        private readonly Dictionary<string, List<Action<EventHolder>>> handlers = new Dictionary<string, List<Action<EventHolder>>>();
-        private readonly Dictionary<IWatcher, Action<EventHolder>> handlersByWatcher = new Dictionary<IWatcher, Action<EventHolder>>();
+        private readonly Dictionary<string, List<Action<EventHolder>>> handlers = new();
+        private readonly Dictionary<IWatcher, Action<EventHolder>> handlersByWatcher = new();
 
         public BaseBehavior(IServiceProvider serviceProvider, BehaviorId id, INotificationsHub notificationsHub)
         {

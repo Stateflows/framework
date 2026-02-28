@@ -22,4 +22,8 @@ public static class FinalizedNotificationPolicy
 {
     public static IActionBuilder AddFinalizedNotificationPolicy(this IActionBuilder builder)
         => builder.AddObserver(_ => new FinalizedNotification());
+    
+    public static IActionBuilder<TAction> AddFinalizedNotificationPolicy<TAction>(this IActionBuilder<TAction> builder)
+        where TAction : class, IAction
+        => builder.AddObserver(_ => new FinalizedNotification());
 }

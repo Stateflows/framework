@@ -23,7 +23,7 @@ namespace Stateflows.Common.Classes
 
         private void Dispose(bool disposing)
         {
-            unwatcher.UnwatchAsync(this).GetAwaiter().GetResult();
+            unwatcher.UnwatchAsync(this).Wait();
         }
 
         ~Watcher()

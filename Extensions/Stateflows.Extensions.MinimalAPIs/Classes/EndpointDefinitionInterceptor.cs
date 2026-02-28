@@ -1,5 +1,4 @@
 using Microsoft.AspNetCore.Builder;
-using Stateflows.Common;
 
 namespace Stateflows.Extensions.MinimalAPIs;
 
@@ -8,10 +7,10 @@ public abstract class EndpointDefinitionInterceptor : IEndpointDefinitionInterce
     public virtual IEnumerable<BehaviorClass> FilterBehaviorClasses(IEnumerable<BehaviorClass> behaviorClasses)
         => behaviorClasses;
 
-    public virtual bool BeforeEventEndpointDefinition<TEvent>(BehaviorClass behaviorClass, ref string method, ref string route)
+    public virtual bool BeforeEventEndpointDefinition<TEvent>(BehaviorClass behaviorClass, bool isDefaultInstance, ref string method, ref string route)
         => true;
 
-    public virtual void AfterEventEndpointDefinition<TEvent>(BehaviorClass behaviorClass, string method, string route,
+    public virtual void AfterEventEndpointDefinition<TEvent>(BehaviorClass behaviorClass, bool isDefaultInstance, string method, string route,
         IEndpointConventionBuilder routeHandlerBuilder)
     { }
 
@@ -49,11 +48,11 @@ public abstract class EndpointDefinitionInterceptor : IEndpointDefinitionInterce
         IEndpointConventionBuilder routeHandlerBuilder)
     { }
 
-    public virtual bool BeforeCustomEndpointDefinition(BehaviorClass behaviorClass, ref string[] methods,
+    public virtual bool BeforeCustomEndpointDefinition(BehaviorClass behaviorClass, bool isDefaultInstance, ref string[] methods,
         ref string route)
         => true;
 
-    public virtual void AfterCustomEndpointDefinition(BehaviorClass behaviorClass, string[] methods, string route,
+    public virtual void AfterCustomEndpointDefinition(BehaviorClass behaviorClass, bool isDefaultInstance, string[] methods, string route,
         IEndpointConventionBuilder routeHandlerBuilder)
     { }
 }

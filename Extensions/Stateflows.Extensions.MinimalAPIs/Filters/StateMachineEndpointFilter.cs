@@ -18,7 +18,7 @@ internal class StateMachineEndpointFilter(
             return Results.NotFound();
         }
         
-        var instance = (string)context.HttpContext.Request.RouteValues["instance"]!;
+        var instance = context.HttpContext.Request.RouteValues["instance"] as string ?? string.Empty;
         
         if (metadata.RequireContext)
         {

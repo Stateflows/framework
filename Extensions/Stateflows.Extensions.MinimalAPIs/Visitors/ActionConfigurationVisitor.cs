@@ -38,6 +38,6 @@ internal class ActionConfigurationVisitor(MinimalAPIsBuilder minimalApisBuilder)
             );
         }
 
-        return base.ActionAddedAsync(actionName, actionVersion, ownerClass);
+        return base.ActionAddedAsync(actionName, actionVersion, ownerClass, parentClass);
     }
 }

@@ -2,7 +2,7 @@ using Stateflows.Common;
 
 namespace Stateflows.StateMachines;
 
-internal abstract class ConfigurableScriptedState(
+public sealed class ConfigurableScriptedState(
     IServiceProvider serviceProvider,
     IBehaviorContext behaviorContext,
     Common.IExecutionContext commonExecutionContext,

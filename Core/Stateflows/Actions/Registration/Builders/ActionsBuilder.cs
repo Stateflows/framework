@@ -74,6 +74,17 @@ namespace Stateflows.Actions.Registration.Builders
         public IActionsBuilder AddAction<TAction>(string actionName = null, int version = 1, ActionBuildAction<TAction> buildAction = null)
             where TAction : class, IAction
         {
+            var actionType = typeof(TAction);
+            if (typeof(IActionConfiguration).IsAssignableFrom(actionType))
+            {
+                var originalBuildAction = buildAction;
+                buildAction = b =>
+                {
+                    actionType.CallStaticMethod(nameof(IActionConfiguration.Configure), [typeof(IActionBuilder)], [b]);
+                    originalBuildAction?.Invoke(b);
+                };
+            }
+            
             if (register is IOwnedRegistration registration)
             {
                 // Register is a singleton, modify IsSystemRegistration only for the duration of the AddAction call

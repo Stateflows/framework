@@ -39,7 +39,7 @@ internal class ConfigurableScriptedTransition(
     }
 }
 
-internal class ConfigurableScriptedTransition<TEvent>(
+internal sealed class ConfigurableScriptedTransition<TEvent>(
     IServiceProvider serviceProvider,
     IBehaviorContext behaviorContext,
     IExecutionContext commonExecutionContext,

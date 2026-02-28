@@ -5,6 +5,9 @@ namespace Stateflows.Actions
 {
     public abstract class ActionVisitor : IActionVisitor
     {
+        public virtual Task ActionAddingAsync(string actionName, int actionVersion, bool hasDefaultInstance = false)
+            => Task.CompletedTask;
+
         public virtual Task ActionAddedAsync(string actionName, int actionVersion, BehaviorClass? ownerClass = null, BehaviorClass? parentClass = null)
             => Task.CompletedTask;
 

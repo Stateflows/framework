@@ -18,5 +18,8 @@ namespace Stateflows.StateMachines
         }
         
         public IReadOnlyTree<string> CurrentStates { get; set; }
+
+        public bool ShouldSerializeCurrentStates()
+            => CurrentStates is { Root: not null };
     }
 }

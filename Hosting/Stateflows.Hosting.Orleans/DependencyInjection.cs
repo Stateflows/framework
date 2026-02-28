@@ -8,7 +8,9 @@ public static class DependencyInjection
 {
     public static IStateflowsBuilder AddOrleansHosting(this IStateflowsBuilder builder)
     {
-        builder.ServiceCollection.AddTransient<IBehaviorFactory, GrainBehaviorFactory>();
+        builder.ServiceCollection
+            .AddTransient<IBehaviorFactory, GrainBehaviorFactory>()
+            .AddTransient<IStateflowsSubscriber, GrainSubscriber>();
 
         return builder;
     }

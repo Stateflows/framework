@@ -111,7 +111,7 @@ namespace Stateflows.StateMachines.Engine
                     context.TryLocateBehavior(stateValues.BehaviorId.Value, out var behavior)
                 )
                 {
-                    behavior.SendAsync(new Finalize()).Wait();
+                    behavior.SendAsync(new Finalize());
                     stateValues.BehaviorId = null;
                 }
             }

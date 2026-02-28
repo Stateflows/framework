@@ -18,5 +18,8 @@ namespace Stateflows.Activities
         }
         
         public IReadOnlyTree<string> ActiveNodes { get; set; }
+
+        public bool ShouldSerializeCurrentStates()
+            => ActiveNodes is { Root: not null };
     }
 }

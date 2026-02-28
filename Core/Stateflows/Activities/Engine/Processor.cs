@@ -98,64 +98,64 @@ namespace Stateflows.Activities.Engine
                 }
                 else
                 {
-                    if (eventHolder is EventHolder<CompoundRequest> compoundRequestHolder)
-                    {
-                        var compoundRequest = compoundRequestHolder.Payload;
-                        var compoundResponse = compoundRequest.GetResponse();
-                        result = EventStatus.Consumed;
-                        var results = new List<RequestResult>();
-                        var i = -1;
-                        foreach (var ev in compoundRequest.Events)
-                        {
-                            i++;
-                                
-                            RequestResult responseResult = null;
-                            if (compoundResponse != null)
-                            {
-                                responseResult = ((List<RequestResult>)compoundResponse.Results)[i];
-                                if (
-                                    responseResult?.Status == EventStatus.Invalid ||
-                                    (
-                                        responseResult?.Status == EventStatus.Omitted &&
-                                        !ev.Headers.Values.Any(h => h is ForcedExecution)
-                                    )
-                                )
-                                {
-                                    continue;
-                                }
-                            }
-
-                            ev.Headers.AddRange(eventHolder.Headers);
-
-                            var status = await ev.ExecuteBehaviorAsync(this, result, executor);
-
-                            if (responseResult != null)
-                            {
-                                responseResult.Status = status;
-                                responseResult.Response = ev.IsRequest()
-                                    ? ev.GetResponseHolder()
-                                    : null;
-                                responseResult.Validation = new EventValidation(true, new List<ValidationResult>());
-                            }
-                            else
-                            {
-                                results.Add(new RequestResult(
-                                    ev.GetResponseHolder(),
-                                    status,
-                                    new EventValidation(true, new List<ValidationResult>())
-                                ));
-                            }
-                        }
-
-                        if (!compoundRequest.IsRespondedTo())
-                        {
-                            compoundRequest.Respond(new CompoundResponse()
-                            {
-                                Results = results
-                            });
-                        }
-                    }
-                    else
+                    // if (eventHolder is EventHolder<CompoundRequest> compoundRequestHolder)
+                    // {
+                    //     var compoundRequest = compoundRequestHolder.Payload;
+                    //     var compoundResponse = compoundRequest.GetResponse();
+                    //     result = EventStatus.Consumed;
+                    //     var results = new List<RequestResult>();
+                    //     var i = -1;
+                    //     foreach (var ev in compoundRequest.Events)
+                    //     {
+                    //         i++;
+                    //             
+                    //         RequestResult responseResult = null;
+                    //         if (compoundResponse != null)
+                    //         {
+                    //             responseResult = ((List<RequestResult>)compoundResponse.Results)[i];
+                    //             if (
+                    //                 responseResult?.Status == EventStatus.Invalid ||
+                    //                 (
+                    //                     responseResult?.Status == EventStatus.Omitted &&
+                    //                     !ev.Headers.Values.Any(h => h is ForcedExecution)
+                    //                 )
+                    //             )
+                    //             {
+                    //                 continue;
+                    //             }
+                    //         }
+                    //
+                    //         ev.Headers.AddRange(eventHolder.Headers);
+                    //
+                    //         var status = await ev.ExecuteBehaviorAsync(this, result, executor);
+                    //
+                    //         if (responseResult != null)
+                    //         {
+                    //             responseResult.Status = status;
+                    //             responseResult.Response = ev.IsRequest()
+                    //                 ? ev.GetResponseHolder()
+                    //                 : null;
+                    //             responseResult.Validation = new EventValidation(true, new List<ValidationResult>());
+                    //         }
+                    //         else
+                    //         {
+                    //             results.Add(new RequestResult(
+                    //                 ev.GetResponseHolder(),
+                    //                 status,
+                    //                 new EventValidation(true, new List<ValidationResult>())
+                    //             ));
+                    //         }
+                    //     }
+                    //
+                    //     if (!compoundRequest.IsRespondedTo())
+                    //     {
+                    //         compoundRequest.Respond(new CompoundResponse()
+                    //         {
+                    //             Results = results
+                    //         });
+                    //     }
+                    // }
+                    // else
                     {
                         result = await ExecuteBehaviorAsync(eventHolder, result, executor);
                     }
@@ -189,7 +189,20 @@ namespace Stateflows.Activities.Engine
         }
 
         public Task CancelProcessingAsync(BehaviorId id)
-            => Task.CompletedTask;
+        {
+            lock (Common.Context.Classes.BaseContext.Instances)
+            {
+                if (Common.Context.Classes.BaseContext.Instances.TryGetValue(id, out var contextList))
+                {
+                    foreach (var context in contextList)
+                    {
+                        context.CancellationTokenSource.Cancel();
+                    }
+                }
+            }
+            
+            return Task.CompletedTask;
+        }
 
         private async Task<bool> TryCancelAsync<TEvent>(BehaviorId id, EventHolder<TEvent> eventHolder, EventStatus result, Executor executor)
         {

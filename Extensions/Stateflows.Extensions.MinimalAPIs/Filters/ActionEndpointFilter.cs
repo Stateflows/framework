@@ -11,7 +11,7 @@ internal class ActionEndpointFilter(
     public async ValueTask<object?> InvokeAsync(EndpointFilterInvocationContext context, EndpointFilterDelegate next)
     {
         var actionClass = (BehaviorClass)context.HttpContext.Items["Stateflows::Behavior::Class"]!;
-        var instance = (string)context.HttpContext.Request.RouteValues["instance"]!;
+        var instance = context.HttpContext.Request.RouteValues["instance"] as string ?? string.Empty;
             
         if (locator.TryLocateAction(new ActionId(actionClass.Name, instance), out var stateMachine))
         {

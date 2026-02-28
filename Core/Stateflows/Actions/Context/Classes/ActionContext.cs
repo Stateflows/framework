@@ -12,7 +12,6 @@ using Microsoft.Extensions.DependencyInjection;
 using Stateflows.Activities;
 using Stateflows.Common.Context;
 using Stateflows.Common.Context.Classes;
-using Stateflows.Common.Engine;
 using Stateflows.Common.Utilities;
 
 namespace Stateflows.Actions.Context.Classes
@@ -27,17 +26,10 @@ namespace Stateflows.Actions.Context.Classes
         public List<TokenHolder> InputTokens { get; } = [];
 
         public ActionId Id => RootContext.Id;
-
-        private BehaviorSubscriber subscriber;
-        private BehaviorSubscriber Subscriber
-            => subscriber ??= new BehaviorSubscriber(
-                Id,
-                RootContext.Context,
-                this,
-                ServiceProvider.GetRequiredService<INotificationsHub>(),
-                ServiceProvider.GetRequiredService<CommonInterceptor>(),
-                ServiceProvider
-            );
+        
+        private IStateflowsSubscriber subscriber;
+        private IStateflowsSubscriber Subscriber
+            => subscriber ??= ServiceProvider.GetRequiredService<IStateflowsSubscriber>();
 
         public ActionContext(RootContext context, IServiceProvider serviceProvider, IEnumerable<TokenHolder> tokens)
             : base(context.Context, serviceProvider)
@@ -49,7 +41,7 @@ namespace Stateflows.Actions.Context.Classes
                 ServiceProvider.GetRequiredService<IStateflowsLock>(),
                 ServiceProvider.GetRequiredService<IStateflowsValueStorage>()
             );
-            // Values = new StateflowsValuesCollection(context.Context.StateflowsValues);
+            
             if (tokens != null)
             {
                 InputTokens.AddRange(tokens);
@@ -69,16 +61,16 @@ namespace Stateflows.Actions.Context.Classes
                 ? (BehaviorId)Id
                 : RootContext.Context.ContextOwnerId ?? Id;
             
-            Subscriber.PublishAsync(id, notification, headers).GetAwaiter().GetResult();
+            Subscriber.PublishAsync(notification, Context, headers).GetAwaiter().GetResult();
         }
 
         public bool IsEmbedded => Context.ContextOwnerId != null;
 
-        public Task<SendResult> SubscribeAsync<TNotification>(BehaviorId behaviorId)
-            => Subscriber.SubscribeAsync<TNotification>(behaviorId);
+        public Task SubscribeAsync<TNotification>(BehaviorId behaviorId)
+            => Subscriber.SubscribeAsync<TNotification>(Context.ContextParentId ?? Id, behaviorId);
 
-        public Task<SendResult> UnsubscribeAsync<TNotification>(BehaviorId behaviorId)
-            => Subscriber.UnsubscribeAsync<TNotification>(behaviorId);
+        public Task UnsubscribeAsync<TNotification>(BehaviorId behaviorId)
+            => Subscriber.UnsubscribeAsync<TNotification>(Context.ContextParentId ?? Id, behaviorId);
 
         private IBehaviorLocator behaviorLocator;
         private IBehaviorLocator BehaviorLocator
@@ -97,8 +89,6 @@ namespace Stateflows.Actions.Context.Classes
             => OutputTokens.AddRange(tokens.Select(token => token.ToTokenHolder()));
 
         public StateflowsContext Context => RootContext.Context;
-
-        internal CancellationTokenSource CancellationTokenSource = new();
         public CancellationToken CancellationToken => CancellationTokenSource.Token;
     }
 }

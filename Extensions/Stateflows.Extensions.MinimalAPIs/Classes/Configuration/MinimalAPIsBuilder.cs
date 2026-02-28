@@ -1,8 +1,7 @@
 using Microsoft.AspNetCore.Builder;
-using Microsoft.Extensions.DependencyInjection;
-using Stateflows.Common;
 using Stateflows.Common.Classes;
 using Stateflows.Extensions.MinimalAPIs.Interfaces;
+using Stateflows.Extensions.MinimalAPIs.Interfaces.Configuration;
 
 namespace Stateflows.Extensions.MinimalAPIs;
 
@@ -12,7 +11,8 @@ internal class MinimalAPIsBuilder(IServiceProvider serviceProvider) :
     IEndpointConfiguration,
     IStateMachinesEndpointsConfiguration,
     IActivitiesEndpointsConfiguration,
-    IActionsEndpointsConfiguration
+    IActionsEndpointsConfiguration,
+    IBehaviorInstanceEndpointsConfiguration
 {
     private readonly List<Func<IServiceProvider, IEndpointDefinitionInterceptor>> interceptorFactories = [];
     private ConfigurationInterceptor? interceptor = null;
@@ -20,6 +20,7 @@ internal class MinimalAPIsBuilder(IServiceProvider serviceProvider) :
     public BehaviorClass? CurrentClass = null;
     public Type? CurrentEvent = null;
     public EndpointKind CurrentKind = EndpointKind.All;
+    public bool? CurrentIsDefaultInstance = null;
 
     private ConfigurationInterceptor Interceptor
     {
@@ -27,7 +28,7 @@ internal class MinimalAPIsBuilder(IServiceProvider serviceProvider) :
         {
             if (interceptor == null)
             {
-                interceptor = new ConfigurationInterceptor(serviceProvider);
+                interceptor = new ConfigurationInterceptor();
                 interceptorFactories.Add(_ => interceptor);
             }
 
@@ -51,13 +52,14 @@ internal class MinimalAPIsBuilder(IServiceProvider serviceProvider) :
         return this;
     }
 
-    public IMinimalAPIsBuilder ConfigureAllEndpoints(Action<IEndpointConfiguration> configureEndpointAction)
+    private MinimalAPIsBuilder ConfigureAllEndpoints(Action<IEndpointConfiguration> configureEndpointAction)
     {
         CurrentKind = EndpointKind.All;
         CurrentType = null;
         CurrentClass = null;
         CurrentEvent = null;
-        
+        CurrentIsDefaultInstance = null;
+
         configureEndpointAction.Invoke(this);
 
         return this;
@@ -78,20 +80,21 @@ internal class MinimalAPIsBuilder(IServiceProvider serviceProvider) :
         CurrentType = behaviorType;
         CurrentClass = null;
         CurrentEvent = null;
-        
+        CurrentIsDefaultInstance = null;
+
         configureEndpointAction.Invoke(this);
 
         return this;
     }
 
     IStateMachinesEndpointsConfiguration IBaseBehaviorTypeEndpointsConfiguration<IStateMachinesEndpointsConfiguration>.ConfigureAllEndpoints(Action<IEndpointConfiguration> configureEndpointAction)
-        => ConfigureAllEndpoints(BehaviorType.StateMachine, configureEndpointAction);        
+        => ConfigureAllEndpoints(BehaviorType.StateMachine, configureEndpointAction);
 
     IActivitiesEndpointsConfiguration IBaseBehaviorTypeEndpointsConfiguration<IActivitiesEndpointsConfiguration>.ConfigureAllEndpoints(Action<IEndpointConfiguration> configureEndpointAction)
-        => ConfigureAllEndpoints(BehaviorType.Activity, configureEndpointAction);    
+        => ConfigureAllEndpoints(BehaviorType.Activity, configureEndpointAction);
 
     IActionsEndpointsConfiguration IBaseBehaviorTypeEndpointsConfiguration<IActionsEndpointsConfiguration>.ConfigureAllEndpoints(Action<IEndpointConfiguration> configureEndpointAction)
-        => ConfigureAllEndpoints(BehaviorType.Action, configureEndpointAction);    
+        => ConfigureAllEndpoints(BehaviorType.Action, configureEndpointAction);
 
     IStateMachinesEndpointsConfiguration IBaseBehaviorTypeEndpointsConfiguration<IStateMachinesEndpointsConfiguration>.ConfigureGetInstancesEndpoint(Action<IEndpointConfiguration> configureEndpointAction)
         => ConfigureGetInstancesEndpoint(BehaviorType.StateMachine, configureEndpointAction);
@@ -104,9 +107,9 @@ internal class MinimalAPIsBuilder(IServiceProvider serviceProvider) :
     {
         CurrentKind = EndpointKind.Custom;
         CurrentEvent = null;
-        
+
         configureEndpointAction.Invoke(this);
-    
+
         return this;
     }
 
@@ -120,7 +123,7 @@ internal class MinimalAPIsBuilder(IServiceProvider serviceProvider) :
     {
         CurrentKind = EndpointKind.GetInstances;
         CurrentEvent = null;
-        
+
         configureEndpointAction.Invoke(this);
 
         return this;
@@ -144,7 +147,8 @@ internal class MinimalAPIsBuilder(IServiceProvider serviceProvider) :
                 BehaviorType = CurrentType,
                 BehaviorClass = CurrentClass,
                 Event = CurrentEvent,
-                Disable = true
+                Disable = true,
+                IsDefaultInstance = CurrentIsDefaultInstance,
             }
         );
     }
@@ -158,7 +162,8 @@ internal class MinimalAPIsBuilder(IServiceProvider serviceProvider) :
                 BehaviorType = CurrentType,
                 BehaviorClass = CurrentClass,
                 Event = CurrentEvent,
-                RouteUpdater = routeUpdater
+                RouteUpdater = routeUpdater,
+                IsDefaultInstance = CurrentIsDefaultInstance,
             }
         );
 
@@ -174,7 +179,8 @@ internal class MinimalAPIsBuilder(IServiceProvider serviceProvider) :
                 BehaviorType = CurrentType,
                 BehaviorClass = CurrentClass,
                 Event = CurrentEvent,
-                EndpointConfigurator = routeHandlerBuilderAction
+                EndpointConfigurator = routeHandlerBuilderAction,
+                IsDefaultInstance = CurrentIsDefaultInstance,
             }
         );
 
@@ -186,9 +192,9 @@ internal class MinimalAPIsBuilder(IServiceProvider serviceProvider) :
         CurrentKind = EndpointKind.GetInstances;
         CurrentType = behaviorType;
         CurrentEvent = null;
-        
+
         configureEndpointAction.Invoke(this);
-        
+
         CurrentType = null;
 
         return this;
@@ -198,7 +204,7 @@ internal class MinimalAPIsBuilder(IServiceProvider serviceProvider) :
     {
         CurrentKind = EndpointKind.All;
         CurrentEvent = null;
-        
+
         configureEndpointAction.Invoke(this);
 
         return this;
@@ -210,7 +216,8 @@ internal class MinimalAPIsBuilder(IServiceProvider serviceProvider) :
         CurrentType = null;
         CurrentClass = null;
         CurrentEvent = null;
-        
+        CurrentIsDefaultInstance = null;
+
         configureEndpointAction.Invoke(this);
 
         return this;
@@ -222,7 +229,8 @@ internal class MinimalAPIsBuilder(IServiceProvider serviceProvider) :
         CurrentType = behaviorType;
         CurrentClass = null;
         CurrentEvent = null;
-        
+        CurrentIsDefaultInstance = null;
+
         configureEndpointAction.Invoke(this);
 
         CurrentType = null;
@@ -236,7 +244,8 @@ internal class MinimalAPIsBuilder(IServiceProvider serviceProvider) :
         CurrentType = null;
         CurrentClass = null;
         CurrentEvent = null;
-        
+        CurrentIsDefaultInstance = null;
+
         configureEndpointAction.Invoke(this);
 
         return this;
@@ -248,7 +257,8 @@ internal class MinimalAPIsBuilder(IServiceProvider serviceProvider) :
         CurrentType = null;
         CurrentClass = null;
         CurrentEvent = null;
-        
+        CurrentIsDefaultInstance = null;
+
         configureEndpointAction.Invoke(this);
 
         return this;
@@ -260,37 +270,40 @@ internal class MinimalAPIsBuilder(IServiceProvider serviceProvider) :
         CurrentType = BehaviorType.StateMachine;
         CurrentClass = null;
         CurrentEvent = null;
-        
+        CurrentIsDefaultInstance = null;
+
         configureBehaviorClassAction.Invoke(this);
-        
+
         CurrentClass = null;
 
         return this;
     }
-    
+
     public IMinimalAPIsBuilder ConfigureActivities(Action<IActivitiesEndpointsConfiguration> configureBehaviorClassAction)
     {
         CurrentKind = EndpointKind.All;
         CurrentType = BehaviorType.Activity;
         CurrentClass = null;
         CurrentEvent = null;
-        
+        CurrentIsDefaultInstance = null;
+
         configureBehaviorClassAction.Invoke(this);
-        
+
         CurrentClass = null;
 
         return this;
     }
-    
+
     public IMinimalAPIsBuilder ConfigureActions(Action<IActionsEndpointsConfiguration> configureBehaviorClassAction)
     {
         CurrentKind = EndpointKind.All;
         CurrentType = BehaviorType.Action;
         CurrentClass = null;
         CurrentEvent = null;
-        
+        CurrentIsDefaultInstance = null;
+
         configureBehaviorClassAction.Invoke(this);
-        
+
         CurrentClass = null;
 
         return this;
@@ -319,14 +332,15 @@ internal class MinimalAPIsBuilder(IServiceProvider serviceProvider) :
     IActionsEndpointsConfiguration IEventsConfiguration<IActionsEndpointsConfiguration>.ConfigureAllEventEndpoints(
         Action<IEndpointConfiguration> configureEndpointAction)
         => ConfigureAllEventEndpoints(configureEndpointAction);
-    
+
     public MinimalAPIsBuilder ConfigureAllEventEndpoints(Action<IEndpointConfiguration> configureEndpointAction)
     {
         CurrentKind = EndpointKind.Event;
         CurrentType = null;
         CurrentClass = null;
         CurrentEvent = null;
-        
+        CurrentIsDefaultInstance = null;
+
         configureEndpointAction.Invoke(this);
 
         return this;
@@ -336,9 +350,9 @@ internal class MinimalAPIsBuilder(IServiceProvider serviceProvider) :
     {
         CurrentKind = EndpointKind.Event;
         CurrentEvent = typeof(TEvent);
-        
+
         configureEndpointAction.Invoke(this);
-        
+
         CurrentEvent = null;
 
         return this;
@@ -348,7 +362,7 @@ internal class MinimalAPIsBuilder(IServiceProvider serviceProvider) :
     {
         CurrentKind = EndpointKind.Event;
         CurrentEvent = null;
-        
+
         configureEndpointAction.Invoke(this);
 
         return this;
@@ -360,9 +374,10 @@ internal class MinimalAPIsBuilder(IServiceProvider serviceProvider) :
         CurrentType = null;
         CurrentClass = null;
         CurrentEvent = typeof(TEvent);
-        
+        CurrentIsDefaultInstance = null;
+
         configureEndpointAction.Invoke(this);
-        
+
         CurrentEvent = null;
 
         return this;
@@ -374,9 +389,10 @@ internal class MinimalAPIsBuilder(IServiceProvider serviceProvider) :
         CurrentType = behaviorType;
         CurrentClass = null;
         CurrentEvent = typeof(TEvent);
-        
+        CurrentIsDefaultInstance = null;
+
         configureEndpointAction.Invoke(this);
-        
+
         CurrentEvent = null;
 
         return this;
@@ -388,9 +404,10 @@ internal class MinimalAPIsBuilder(IServiceProvider serviceProvider) :
         CurrentType = null;
         CurrentClass = behaviorClass;
         CurrentEvent = null;
-        
+        CurrentIsDefaultInstance = null;
+
         configureBehaviorClassAction.Invoke(this);
-        
+
         CurrentClass = null;
 
         return this;
@@ -404,4 +421,31 @@ internal class MinimalAPIsBuilder(IServiceProvider serviceProvider) :
 
     public IActionsEndpointsConfiguration ConfigureAction(ActionClass actionClass, Action<IBehaviorClassEndpointsConfiguration> configureBehaviorClassAction)
         => ConfigureBehaviorClass(actionClass, configureBehaviorClassAction);
+
+    public IBehaviorClassEndpointsConfiguration ConfigureDefaultInstance(Action<IBehaviorInstanceEndpointsConfiguration> configureInstanceAction)
+    {
+        CurrentIsDefaultInstance = true;
+        configureInstanceAction.Invoke(this);
+        CurrentIsDefaultInstance = null;
+        
+        return this;
+    }
+
+    public IBehaviorClassEndpointsConfiguration ConfigureStandardInstances(Action<IBehaviorInstanceEndpointsConfiguration> configureInstanceAction)
+    {
+        CurrentIsDefaultInstance = false;
+        configureInstanceAction.Invoke(this);
+        CurrentIsDefaultInstance = null;
+        
+        return this;
+    }
+
+    IBehaviorInstanceEndpointsConfiguration IBehaviorInstanceEndpointsConfiguration.ConfigureAllEndpoints(Action<IEndpointConfiguration> configureEndpointAction)
+        => ConfigureAllEndpoints(configureEndpointAction);
+
+    IBehaviorInstanceEndpointsConfiguration IBehaviorInstanceEndpointsConfiguration.ConfigureCustomEndpoints(Action<IEndpointConfiguration> configureEndpointAction)
+        => ConfigureCustomEndpoints(configureEndpointAction);
+
+    IMinimalAPIsBuilder IMinimalAPIsBuilder.ConfigureAllEndpoints(Action<IEndpointConfiguration> configureEndpointAction)
+        => ConfigureAllEndpoints(configureEndpointAction);
 }

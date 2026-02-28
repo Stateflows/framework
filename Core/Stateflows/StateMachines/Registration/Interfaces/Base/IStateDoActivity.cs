@@ -21,7 +21,6 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         /// Embedded Activity will be initialized on state entry and finalized on state exit. Every event accepted by embedded Activity will be sent to it first and retransmitted to embedding State Machine in case of rejection by embedded one.
         /// </summary>
         /// <param name="activityBuildAction">Activity build action</param>
-        /// <param name="buildAction">Build action</param>
         public TReturn AddDoActivity(ReactiveActivityBuildAction activityBuildAction);
     }
 }

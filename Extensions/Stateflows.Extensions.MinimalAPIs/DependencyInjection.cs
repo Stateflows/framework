@@ -37,7 +37,7 @@ public static class DependencyInjection
         var stateName = ((IStateBuilderInfo)stateBuilder).Name;
         StateMachineEndpointBuilders.Add(visitor =>
         {
-            var builder = new EndpointsBuilder(visitor.RouteBuilder, visitor, visitor.Interceptor, stateMachineClass, stateName);
+            var builder = new EndpointsBuilder(visitor.RouteBuilder, visitor, visitor.Interceptor, stateMachineClass, visitor.HasDefaultInstance, stateName);
             endpointsBuilder(builder);
         });
         
@@ -54,7 +54,7 @@ public static class DependencyInjection
         var stateMachineClass = ((IBehaviorBuilder)stateMachineBuilder).BehaviorClass;
         StateMachineEndpointBuilders.Add(visitor =>
         {
-            var builder = new EndpointsBuilder(visitor.RouteBuilder, visitor, visitor.Interceptor, stateMachineClass);
+            var builder = new EndpointsBuilder(visitor.RouteBuilder, visitor, visitor.Interceptor, stateMachineClass, visitor.HasDefaultInstance);
             endpointsBuilder(builder);
         });
 
@@ -71,7 +71,7 @@ public static class DependencyInjection
         var activityClass = ((IBehaviorBuilder)activityBuilder).BehaviorClass;
         ActivityEndpointBuilders.Add(visitor =>
         {
-            var builder = new EndpointsBuilder(visitor.RouteBuilder, visitor, visitor.Interceptor, activityClass);
+            var builder = new EndpointsBuilder(visitor.RouteBuilder, visitor, visitor.Interceptor, activityClass, visitor.HasDefaultInstance);
             endpointsBuilder(builder);
         });
 
@@ -90,7 +90,7 @@ public static class DependencyInjection
         var nodeName = ((INodeBuilder)structuredActivityBuilder).Name;
         ActivityEndpointBuilders.Add(visitor =>
         {
-            var builder = new EndpointsBuilder(visitor.RouteBuilder, visitor, visitor.Interceptor, activityClass, nodeName);
+            var builder = new EndpointsBuilder(visitor.RouteBuilder, visitor, visitor.Interceptor, activityClass, visitor.HasDefaultInstance, nodeName);
             endpointsBuilder(builder);
         });
 
@@ -139,8 +139,9 @@ public static class DependencyInjection
             var endpointRouteBuilder = root.MapMethods(
                 route,
                 [method],
-                async (IBehaviorClassesProvider provider, IStateflowsStorage storage) =>
+                async (IBehaviorClassesProvider provider, IStateflowsStorage storage, ITenantAccessor tenantAccessor) =>
                 {
+                    tenantAccessor.CurrentTenantId ??= "host";
                     var behaviorClasses = Interceptor.FilterBehaviorClasses(provider.AllBehaviorClasses)
                         .ToArray();
                     var contextIds = await storage.GetAllContextIdsAsync(behaviorClasses);
@@ -221,8 +222,9 @@ public static class DependencyInjection
                 var endpointRouteBuilder = root.MapMethods(
                     route,
                     [method],
-                    async (IBehaviorClassesProvider provider, IStateflowsStorage storage) =>
+                    async (IBehaviorClassesProvider provider, IStateflowsStorage storage, ITenantAccessor tenantAccessor) =>
                     {
+                        tenantAccessor.CurrentTenantId ??= "host";
                         var activityClasses = interceptor.FilterBehaviorClasses(provider.AllBehaviorClasses
                             .Where(c => c.Type == ActivityClass.Type))
                             .ToArray();
@@ -283,8 +285,9 @@ public static class DependencyInjection
                 var endpointRouteBuilder = root.MapMethods(
                     route,
                     [method],
-                    async (IBehaviorClassesProvider provider, IStateflowsStorage storage) =>
+                    async (IBehaviorClassesProvider provider, IStateflowsStorage storage, ITenantAccessor tenantAccessor) =>
                     {
+                        tenantAccessor.CurrentTenantId ??= "host";
                         var actionClasses = interceptor.FilterBehaviorClasses(provider.AllBehaviorClasses
                             .Where(c => c.Type == ActionClass.Type))
                             .ToArray();
@@ -336,8 +339,9 @@ public static class DependencyInjection
                 var endpointRouteBuilder = root.MapMethods(
                     route,
                     [method],
-                    async (IBehaviorClassesProvider provider, IStateflowsStorage storage) =>
+                    async (IBehaviorClassesProvider provider, IStateflowsStorage storage, ITenantAccessor tenantAccessor) =>
                     {
+                        tenantAccessor.CurrentTenantId ??= "host";
                         var actionClasses = interceptor.FilterBehaviorClasses(provider.AllBehaviorClasses
                             .Where(c => c.Type == StateMachineClass.Type))
                             .ToArray();
