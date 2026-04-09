@@ -513,7 +513,7 @@ internal static class RequestBodyExtensions
             // var requestResult = new RequestResult<TResponse>(result);
             // var behaviorInfo = (BehaviorInfo)compoundResult.Response.Results.Last().Response.BoxedPayload;
             
-            var requestResult = await behavior.SendAsync(request, implicitInitialization ? [] : new Dictionary<string, EventHeader>() { { nameof(NoImplicitInitialization), new NoImplicitInitialization() } });
+            var requestResult = await behavior.RequestAsync(request, implicitInitialization ? [] : new Dictionary<string, EventHeader>() { { nameof(NoImplicitInitialization), new NoImplicitInitialization() } });
             var behaviorInfo = await behavior.GetBehaviorInfo();
 
             var notifications =
