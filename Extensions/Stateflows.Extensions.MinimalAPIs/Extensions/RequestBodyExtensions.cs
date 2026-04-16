@@ -3,9 +3,12 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Routing;
+using Microsoft.Net.Http.Headers;
 using Stateflows.Activities;
 using Stateflows.Common;
 using Stateflows.Common.Classes;
+using Stateflows.Common.Extensions;
+using Stateflows.Extensions.MinimalAPIs.Attributes;
 using Stateflows.StateMachines;
 
 namespace Stateflows.Extensions.MinimalAPIs;
@@ -33,9 +36,10 @@ internal static class RequestBodyExtensions
         BehaviorStatus[]? supportedStatuses = null
     )
     {
-        supportedStatuses ??= [BehaviorStatus.Initialized];
         var eventType = typeof(TEvent);
         var eventName = Utils.GetEventName<TEvent>();
+        var watchedNotificationTypes = GetWatchedNotificationTypes(eventType);
+        supportedStatuses ??= [BehaviorStatus.Initialized];
         var route = $"/{behaviorType.ToResource()}/{behaviorName}/{{instance}}/{eventName}";
         var method = HttpMethods.Post;
         var behaviorClass = new BehaviorClass(behaviorType, behaviorName);
@@ -50,8 +54,10 @@ internal static class RequestBodyExtensions
                         IServiceProvider serviceProvider,
                         string instance,
                         IBehaviorLocator locator,
+                        HttpContext httpContext,
                         RequestBody payload,
-                        [FromQuery] bool implicitInitialization = true
+                        [FromQuery] bool implicitInitialization = true,
+                        [FromQuery] bool stream = false
                     ) =>
                     {
                         var (success, authorizationResult) =
@@ -61,10 +67,28 @@ internal static class RequestBodyExtensions
                             return authorizationResult;
                         }
 
-                        return locator.TryLocateBehavior(new BehaviorId(behaviorType, behaviorName, instance),
-                            out var behavior)
-                            ? await payload.SendEndpointAsync(StateflowsActivator.CreateUninitializedInstance<TEvent>(), behavior, implicitInitialization, customHateoasLinks, context)
-                            : Results.NotFound();
+                        if (!locator.TryLocateBehavior(new BehaviorId(behaviorType, behaviorName, instance),
+                                out var behavior))
+                        {
+                            return Results.NotFound();
+                        }
+
+                        MergeNotificationNames(watchedNotificationTypes, payload);
+
+                        var replayNotificationsSince = DateTime.Now;
+                        
+                        var processingTask = payload.SendEndpointAsync(
+                            StateflowsActivator.CreateUninitializedInstance<TEvent>(), behavior, implicitInitialization,
+                            customHateoasLinks, context);
+
+                        if (stream)
+                        {
+                            await SSENotificationsWatchAsync(httpContext, behavior, payload, replayNotificationsSince);
+
+                            return Results.Empty;
+                        }
+
+                        return await processingTask;
                     }
                 )
                 : routeBuilder.MapMethods(
@@ -75,8 +99,10 @@ internal static class RequestBodyExtensions
                         IServiceProvider serviceProvider,
                         string instance,
                         IBehaviorLocator locator,
+                        HttpContext httpContext,
                         RequestBody<TEvent> payload,
-                        [FromQuery] bool implicitInitialization = true
+                        [FromQuery] bool implicitInitialization = true,
+                        [FromQuery] bool stream = false
                     ) =>
                     {
                         var (success, authorizationResult) =
@@ -86,10 +112,27 @@ internal static class RequestBodyExtensions
                             return authorizationResult;
                         }
 
-                        return locator.TryLocateBehavior(new BehaviorId(behaviorType, behaviorName, instance),
-                            out var behavior)
-                            ? await payload.SendEndpointAsync(payload.Event, behavior, implicitInitialization, customHateoasLinks, context)
-                            : Results.NotFound();
+                        if (!locator.TryLocateBehavior(new BehaviorId(behaviorType, behaviorName, instance),
+                                out var behavior))
+                        {
+                            return Results.NotFound();
+                        }
+
+                        MergeNotificationNames(watchedNotificationTypes, payload);
+
+                        var replayNotificationsSince = DateTime.Now;
+
+                        var processingTask = payload.SendEndpointAsync(payload.Event, behavior, implicitInitialization,
+                            customHateoasLinks, context);
+
+                        if (stream)
+                        {
+                            await SSENotificationsWatchAsync(httpContext, behavior, payload, replayNotificationsSince);
+
+                            return Results.Empty;
+                        }
+
+                        return await processingTask;
                     }
                 );
 
@@ -132,7 +175,9 @@ internal static class RequestBodyExtensions
                         HttpContext context,
                         IServiceProvider serviceProvider,
                         IBehaviorLocator locator,
-                        RequestBody payload
+                        HttpContext httpContext,
+                        RequestBody payload,
+                        [FromQuery] bool stream = false
                     ) =>
                     {
                         var (success, authorizationResult) =
@@ -142,10 +187,28 @@ internal static class RequestBodyExtensions
                             return authorizationResult;
                         }
 
-                        return locator.TryLocateBehavior(new BehaviorId(behaviorType, behaviorName, string.Empty),
-                            out var behavior)
-                            ? await payload.SendEndpointAsync(StateflowsActivator.CreateUninitializedInstance<TEvent>(), behavior, false, customHateoasLinks, context)
-                            : Results.NotFound();
+                        if (!locator.TryLocateBehavior(new BehaviorId(behaviorType, behaviorName, string.Empty),
+                                out var behavior))
+                        {
+                            return Results.NotFound();
+                        }
+
+                        MergeNotificationNames(watchedNotificationTypes, payload);
+
+                        var replayNotificationsSince = DateTime.Now;
+
+                        var processingTask = payload.SendEndpointAsync(
+                            StateflowsActivator.CreateUninitializedInstance<TEvent>(), behavior, true,
+                            customHateoasLinks, context);
+
+                        if (stream)
+                        {
+                            await SSENotificationsWatchAsync(httpContext, behavior, payload, replayNotificationsSince);
+
+                            return Results.Empty;
+                        }
+
+                        return await processingTask;
                     }
                 )
                 : routeBuilder.MapMethods(
@@ -155,7 +218,9 @@ internal static class RequestBodyExtensions
                         HttpContext context,
                         IServiceProvider serviceProvider,
                         IBehaviorLocator locator,
-                        RequestBody<TEvent> payload
+                        HttpContext httpContext,
+                        RequestBody<TEvent> payload,
+                        [FromQuery] bool stream = false
                     ) =>
                     {
                         var (success, authorizationResult) = await Utils.AuthorizeEventAsync(eventType, serviceProvider, context);
@@ -164,10 +229,27 @@ internal static class RequestBodyExtensions
                             return authorizationResult;
                         }
 
-                        return locator.TryLocateBehavior(new BehaviorId(behaviorType, behaviorName, string.Empty),
-                            out var behavior)
-                            ? await payload.SendEndpointAsync(payload.Event, behavior, false, customHateoasLinks, context)
-                            : Results.NotFound();
+                        if (!locator.TryLocateBehavior(new BehaviorId(behaviorType, behaviorName, string.Empty),
+                                out var behavior))
+                        {
+                            return Results.NotFound();
+                        }
+
+                        MergeNotificationNames(watchedNotificationTypes, payload);
+
+                        var replayNotificationsSince = DateTime.Now;
+
+                        var processingTask = payload.SendEndpointAsync(payload.Event, behavior, true,
+                            customHateoasLinks, context);
+
+                        if (stream)
+                        {
+                            await SSENotificationsWatchAsync(httpContext, behavior, payload, replayNotificationsSince);
+
+                            return Results.Empty;
+                        }
+
+                        return await processingTask;
                     }
                 );
 
@@ -190,6 +272,36 @@ internal static class RequestBodyExtensions
         }
     }
 
+    private static void MergeNotificationNames(string[] watchedNotificationTypes, RequestBody payload)
+    {
+        if (watchedNotificationTypes.Any())
+        {
+            payload.RequestedNotifications = (
+                payload.RequestedNotifications != null
+                    ? [
+                        ..payload.RequestedNotifications,
+                        ..watchedNotificationTypes
+                    ]
+                    : watchedNotificationTypes
+            );
+        }
+    }
+
+    private static string[] GetWatchedNotificationTypes(Type eventType)
+    {
+        var notificationWatchType = typeof(NotificationWatchAttribute<>);
+        var watchedNotificationTypes = eventType
+            .GetCustomAttributes(true)
+            .Where(a =>
+            {
+                var t = a.GetType();
+                return t.IsGenericType && t.IsSubclassOfRawGeneric(notificationWatchType);
+            })
+            .Select(a => a.GetType().GetGenericArguments().First().GetReadableName(TypedElements.Events))
+            .ToArray();
+        return watchedNotificationTypes;
+    }
+
     public static void RegisterRequestEndpoint<TRequest, TResponse>(
         this IEndpointRouteBuilder routeBuilder,
         Interceptor interceptor,
@@ -204,6 +316,7 @@ internal static class RequestBodyExtensions
         supportedStatuses ??= [BehaviorStatus.Initialized];
         var eventType = typeof(TRequest);
         var eventName = Utils.GetEventName<TRequest>();
+        var watchedNotificationTypes = GetWatchedNotificationTypes(eventType);
         var route = $"/{behaviorType.ToResource()}/{behaviorName}/{{instance}}/" + Utils.GetEventName<TRequest>();
         var method = HttpMethods.Post;
         var behaviorClass = new BehaviorClass(behaviorType, behaviorName);
@@ -218,8 +331,10 @@ internal static class RequestBodyExtensions
                         IServiceProvider serviceProvider,
                         string instance,
                         IBehaviorLocator locator,
+                        HttpContext httpContext,
                         RequestBody payload,
-                        [FromQuery] bool implicitInitialization = true
+                        [FromQuery] bool implicitInitialization = true,
+                        [FromQuery] bool stream = false
                     ) =>
                     {
                         var (success, authorizationResult) =
@@ -229,9 +344,29 @@ internal static class RequestBodyExtensions
                             return authorizationResult;
                         }
 
-                        return locator.TryLocateBehavior(new BehaviorId(behaviorType, behaviorName, instance), out var behavior)
-                            ? await payload.RequestEndpointAsync<TRequest, TResponse>(StateflowsActivator.CreateUninitializedInstance<TRequest>(), behavior, implicitInitialization, customHateoasLinks, context)
-                            : Results.NotFound();
+                        if (!locator.TryLocateBehavior(new BehaviorId(behaviorType, behaviorName, instance),
+                                out var behavior))
+                        {
+                            return Results.NotFound();
+                        }
+
+                        MergeNotificationNames(watchedNotificationTypes, payload);
+
+                        var replayNotificationsSince = DateTime.Now;
+                        
+                        var processingTask = payload.RequestEndpointAsync<TRequest, TResponse>(
+                            StateflowsActivator.CreateUninitializedInstance<TRequest>(), behavior,
+                            implicitInitialization, customHateoasLinks, context
+                        );
+
+                        if (stream)
+                        {
+                            await SSENotificationsWatchAsync(httpContext, behavior, payload, replayNotificationsSince);
+
+                            return Results.Empty;
+                        }
+
+                        return await processingTask;
                     }
                 )
                 : routeBuilder.MapMethods(
@@ -242,8 +377,10 @@ internal static class RequestBodyExtensions
                         IServiceProvider serviceProvider,
                         string instance,
                         IBehaviorLocator locator,
+                        HttpContext httpContext,
                         RequestBody<TRequest> payload,
-                        [FromQuery] bool implicitInitialization = true
+                        [FromQuery] bool implicitInitialization = true,
+                        [FromQuery] bool stream = false
                     ) =>
                     {
                         var (success, authorizationResult) = await Utils.AuthorizeEventAsync(eventType, serviceProvider, context);
@@ -252,9 +389,27 @@ internal static class RequestBodyExtensions
                             return authorizationResult;
                         }
 
-                        return locator.TryLocateBehavior(new BehaviorId(behaviorType, behaviorName, instance), out var behavior)
-                            ? await payload.RequestEndpointAsync<TRequest, TResponse>(payload.Event, behavior, implicitInitialization, customHateoasLinks, context)
-                            : Results.NotFound();
+                        if (!locator.TryLocateBehavior(new BehaviorId(behaviorType, behaviorName, instance),
+                                out var behavior))
+                        {
+                            return Results.NotFound();
+                        }
+
+                        MergeNotificationNames(watchedNotificationTypes, payload);
+
+                        var replayNotificationsSince = DateTime.Now;
+
+                        var processingTask = payload.RequestEndpointAsync<TRequest, TResponse>(payload.Event, behavior,
+                            implicitInitialization, customHateoasLinks, context);
+
+                        if (stream)
+                        {
+                            await SSENotificationsWatchAsync(httpContext, behavior, payload, replayNotificationsSince);
+
+                            return Results.Empty;
+                        }
+
+                        return await processingTask;
                     }
                 );
 
@@ -293,7 +448,9 @@ internal static class RequestBodyExtensions
                         HttpContext context,
                         IServiceProvider serviceProvider,
                         IBehaviorLocator locator,
-                        RequestBody payload
+                        HttpContext httpContext,
+                        RequestBody payload,
+                        [FromQuery] bool stream = false
                     ) =>
                     {
                         var (success, authorizationResult) =
@@ -303,9 +460,27 @@ internal static class RequestBodyExtensions
                             return authorizationResult;
                         }
 
-                        return locator.TryLocateBehavior(new BehaviorId(behaviorType, behaviorName, string.Empty), out var behavior)
-                            ? await payload.RequestEndpointAsync<TRequest, TResponse>(StateflowsActivator.CreateUninitializedInstance<TRequest>(), behavior, false, customHateoasLinks, context)
-                            : Results.NotFound();
+                        if (!locator.TryLocateBehavior(new BehaviorId(behaviorType, behaviorName, string.Empty), out var behavior))
+                        {
+                            return Results.NotFound();
+                        }
+
+                        MergeNotificationNames(watchedNotificationTypes, payload);
+
+                        var replayNotificationsSince = DateTime.Now;
+
+                        var processingTask = payload.RequestEndpointAsync<TRequest, TResponse>(
+                            StateflowsActivator.CreateUninitializedInstance<TRequest>(), behavior, true,
+                            customHateoasLinks, context);
+
+                        if (stream)
+                        {
+                            await SSENotificationsWatchAsync(httpContext, behavior, payload, replayNotificationsSince);
+
+                            return Results.Empty;
+                        }
+
+                        return await processingTask;
                     }
                 )
                 : routeBuilder.MapMethods(
@@ -315,7 +490,9 @@ internal static class RequestBodyExtensions
                         HttpContext context,
                         IServiceProvider serviceProvider,
                         IBehaviorLocator locator,
-                        RequestBody<TRequest> payload
+                        HttpContext httpContext,
+                        RequestBody<TRequest> payload,
+                        [FromQuery] bool stream = false
                     ) =>
                     {
                         var (success, authorizationResult) = await Utils.AuthorizeEventAsync(eventType, serviceProvider, context);
@@ -324,9 +501,26 @@ internal static class RequestBodyExtensions
                             return authorizationResult;
                         }
 
-                        return locator.TryLocateBehavior(new BehaviorId(behaviorType, behaviorName, string.Empty), out var behavior)
-                            ? await payload.RequestEndpointAsync<TRequest, TResponse>(payload.Event, behavior, false, customHateoasLinks, context)
-                            : Results.NotFound();
+                        if (!locator.TryLocateBehavior(new BehaviorId(behaviorType, behaviorName, string.Empty),
+                                out var behavior))
+                        {
+                            return Results.NotFound();
+                        }
+
+                        MergeNotificationNames(watchedNotificationTypes, payload);
+
+                        var replayNotificationsSince = DateTime.Now;
+
+                        var processingTask = payload.RequestEndpointAsync<TRequest, TResponse>(payload.Event, behavior, true, customHateoasLinks, context);
+
+                        if (stream)
+                        {
+                            await SSENotificationsWatchAsync(httpContext, behavior, payload, replayNotificationsSince);
+
+                            return Results.Empty;
+                        }
+
+                        return await processingTask;
                     }
                 );
 
@@ -349,6 +543,22 @@ internal static class RequestBodyExtensions
         }
     }
 
+    private static async Task SSENotificationsWatchAsync(HttpContext httpContext, IBehavior behavior, RequestBody payload, DateTime replayNotificationsSince)
+    {
+        httpContext.Response.Headers.Append(HeaderNames.ContentType, "text/event-stream");
+
+        await using var watcher = await behavior.WatchAsync(
+            payload.RequestedNotifications,
+            async eventHolder => await httpContext.WriteEventAsync(eventHolder),
+            replayNotificationsSince
+        );
+
+        while (!httpContext.RequestAborted.IsCancellationRequested)
+        {
+            await Task.Delay(1000);
+        }
+    }
+
     private static async Task<IResult?> SendEndpointAsync<TEvent>(this RequestBody payload, TEvent @event, IBehavior behavior,
         bool implicitInitialization, Dictionary<string, List<(HateoasLink, BehaviorStatus[])>> customHateoasLinks, HttpContext context)
     {
@@ -366,64 +576,6 @@ internal static class RequestBodyExtensions
         }
         else
         {
-            // var compoundResult = await behavior.SendCompoundAsync(b =>
-            //     {
-            //         b.Add(@event, implicitInitialization ? [] : new Dictionary<string, EventHeader>() { { nameof(NoImplicitInitialization), new NoImplicitInitialization() } });
-            //
-            //         switch (behavior.Id.Type)
-            //         {
-            //             case BehaviorType.StateMachine:
-            //                 b.Add(
-            //                     new StateMachineInfoRequest(),
-            //                     implicitInitialization
-            //                         ? new Dictionary<string, EventHeader>()
-            //                             {
-            //                                 { nameof(ForcedExecution), new ForcedExecution() }
-            //                             }
-            //                         : new Dictionary<string, EventHeader>()
-            //                             {
-            //                                 { nameof(NoImplicitInitialization), new NoImplicitInitialization() },
-            //                                 { nameof(ForcedExecution), new ForcedExecution() }
-            //                             }
-            //                 );
-            //                 break;
-            //             case BehaviorType.Activity:
-            //                 b.Add(
-            //                     new ActivityInfoRequest(),
-            //                     implicitInitialization
-            //                         ? new Dictionary<string, EventHeader>()
-            //                             {
-            //                                 { nameof(ForcedExecution), new ForcedExecution() }
-            //                             }
-            //                         : new Dictionary<string, EventHeader>()
-            //                             {
-            //                                 { nameof(NoImplicitInitialization), new NoImplicitInitialization() },
-            //                                 { nameof(ForcedExecution), new ForcedExecution() }
-            //                             }
-            //                 );
-            //                 break;
-            //             case BehaviorType.Action:
-            //                 b.Add(
-            //                     new BehaviorInfoRequest(),
-            //                     implicitInitialization
-            //                         ? new Dictionary<string, EventHeader>()
-            //                             {
-            //                                 { nameof(ForcedExecution), new ForcedExecution() }
-            //                             }
-            //                         : new Dictionary<string, EventHeader>()
-            //                             {
-            //                                 { nameof(NoImplicitInitialization), new NoImplicitInitialization() },
-            //                                 { nameof(ForcedExecution), new ForcedExecution() }
-            //                             }
-            //                 );
-            //                 break;
-            //         }
-            //     }
-            // );
-
-            // var result = compoundResult.Response.Results.First();
-            // var behaviorInfo = (BehaviorInfo)compoundResult.Response.Results.Last().Response.BoxedPayload;
-            
             var result = await behavior.SendAsync(@event, implicitInitialization ? [] : new Dictionary<string, EventHeader>() { { nameof(NoImplicitInitialization), new NoImplicitInitialization() } });
             var behaviorInfo = await behavior.GetBehaviorInfo();
             
@@ -454,73 +606,12 @@ internal static class RequestBodyExtensions
         }
         else
         {
-            // var compoundResult = await behavior.SendCompoundAsync(b =>
-            //     {
-            //         b.Add(request, implicitInitialization ? [] : new Dictionary<string, EventHeader>() { { nameof(NoImplicitInitialization), new NoImplicitInitialization() } });
-            //
-            //         switch (behavior.Id.Type)
-            //         {
-            //             case BehaviorType.StateMachine:
-            //                 b.Add(
-            //                     new StateMachineInfoRequest(),
-            //                     implicitInitialization
-            //                         ? new Dictionary<string, EventHeader>()
-            //                             {
-            //                                 { nameof(ForcedExecution), new ForcedExecution() }
-            //                             }
-            //                         : new Dictionary<string, EventHeader>()
-            //                             {
-            //                                 { nameof(NoImplicitInitialization), new NoImplicitInitialization() },
-            //                                 { nameof(ForcedExecution), new ForcedExecution() }
-            //                             }
-            //                 );
-            //                 break;
-            //             case BehaviorType.Activity:
-            //                 b.Add(
-            //                     new ActivityInfoRequest(),
-            //                     implicitInitialization
-            //                         ? new Dictionary<string, EventHeader>()
-            //                             {
-            //                                 { nameof(ForcedExecution), new ForcedExecution() }
-            //                             }
-            //                         : new Dictionary<string, EventHeader>()
-            //                             {
-            //                                 { nameof(NoImplicitInitialization), new NoImplicitInitialization() },
-            //                                 { nameof(ForcedExecution), new ForcedExecution() }
-            //                             }
-            //                 );
-            //                 break;
-            //             case BehaviorType.Action:
-            //                 b.Add(
-            //                     new BehaviorInfoRequest(),
-            //                     implicitInitialization
-            //                         ? new Dictionary<string, EventHeader>()
-            //                             {
-            //                                 { nameof(ForcedExecution), new ForcedExecution() }
-            //                             }
-            //                         : new Dictionary<string, EventHeader>()
-            //                             {
-            //                                 { nameof(NoImplicitInitialization), new NoImplicitInitialization() },
-            //                                 { nameof(ForcedExecution), new ForcedExecution() }
-            //                             }
-            //                 );
-            //                 break;
-            //         }
-            //     }
-            // );
-
-            // var result = compoundResult.Response.Results.First();
-            // var requestResult = new RequestResult<TResponse>(result);
-            // var behaviorInfo = (BehaviorInfo)compoundResult.Response.Results.Last().Response.BoxedPayload;
-            
             var requestResult = await behavior.RequestAsync(request, implicitInitialization ? [] : new Dictionary<string, EventHeader>() { { nameof(NoImplicitInitialization), new NoImplicitInitialization() } });
             var behaviorInfo = await behavior.GetBehaviorInfo();
 
-            var notifications =
-                payload.RequestedNotifications is { Length: > 0 } && requestResult.Status == EventStatus.Consumed
-                    ? (await behavior.GetNotificationsAsync(payload.RequestedNotifications, lastNotificationsCheck))
-                    .ToArray()
-                    : [];
+            var notifications = payload.RequestedNotifications is { Length: > 0 } && requestResult.Status == EventStatus.Consumed
+                ? (await behavior.GetNotificationsAsync(payload.RequestedNotifications, lastNotificationsCheck)).ToArray()
+                : [];
 
             return requestResult.ToResult(notifications, behaviorInfo, customHateoasLinks);
         }

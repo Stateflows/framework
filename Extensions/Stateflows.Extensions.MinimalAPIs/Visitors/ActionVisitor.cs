@@ -19,15 +19,15 @@ internal class ActionVisitor(IEndpointRouteBuilder routeBuilder, Interceptor int
     private BehaviorClass? OwnerClass = null;
     public bool HasDefaultInstance { get; private set; } = false;
 
-    public override Task ActionAddingAsync(string actionName, int actionVersion, bool hasDefaultInstance = false)
+    public override Task ActionAddingAsync(string actionName, int actionVersion, BehaviorClass? ownerClass = null, BehaviorClass? parentClass = null, bool hasDefaultInstance = false)
     {
+        OwnerClass = ownerClass;
         HasDefaultInstance = hasDefaultInstance;
         return Task.CompletedTask;
     }
 
-    public override Task ActionAddedAsync(string actionName, int actionVersion, BehaviorClass? ownerClass = null, BehaviorClass? parentClass = null)
+    public override Task ActionAddedAsync(string actionName, int actionVersion)
     {
-        OwnerClass = ownerClass;
         if (OwnerClass != null)
         {
             return Task.CompletedTask;

@@ -10,11 +10,8 @@ using Stateflows.Activities.Models;
 using Stateflows.Activities.Exceptions;
 using Stateflows.Activities.Registration.Builders;
 using Stateflows.Activities.Registration.Interfaces;
-using Stateflows.Common.Classes;
 using Stateflows.Common.Interfaces;
-using Stateflows.Common.Registration.Builders;
 using Stateflows.Common.Initializer;
-using ActivityClass = Stateflows.ActivityClass;
 
 namespace Stateflows.Activities.Registration
 {
@@ -83,21 +80,21 @@ namespace Stateflows.Activities.Registration
 
             var activityBuilder = new ActivityBuilder(activityName, version, null, stateflowsBuilder, OwnerClass, ParentClass);
 
+            // Assign to local variable to avoid value being overriden when invoking lambda function at a later stage
+            var ownerClass = OwnerClass;
+            var parentClass = ParentClass;
+
             activityBuilder.Graph.VisitingTasks.Add(v =>
             {
                 var hasDefaultInstance = BehaviorClassesInitializations.Instance.DefaultInstanceInitializationTokens
                     .Any(token => token.BehaviorClass.Type == ActivityClass.Type && token.BehaviorClass.Name == activityName);
-                return v.ActivityAddingAsync(activityName, version, hasDefaultInstance);
+                return v.ActivityAddingAsync(activityName, version, ownerClass, parentClass, hasDefaultInstance);
             });
 
             buildAction(activityBuilder);
             activityBuilder.Graph.Build();
 
-            // Assign to local variable to avoid value being overriden when invoking lambda function at a later stage
-            var ownerClass = OwnerClass;
-            var parentClass = ParentClass;
-
-            activityBuilder.Graph.VisitingTasks.Add(v => v.ActivityAddedAsync(activityName, version, ownerClass, parentClass));
+            activityBuilder.Graph.VisitingTasks.Add(v => v.ActivityAddedAsync(activityName, version));
 
             Activities.Add(key, activityBuilder.Graph);
 
@@ -126,11 +123,15 @@ namespace Stateflows.Activities.Registration
                 }
             };
 
+            // Assign to local variable to avoid value being overriden when invoking lambda function at a later stage
+            var ownerClass = OwnerClass;
+            var parentClass = ParentClass;
+
             activityBuilder.Graph.VisitingTasks.Add(v =>
             {
                 var hasDefaultInstance = BehaviorClassesInitializations.Instance.DefaultInstanceInitializationTokens
                     .Any(token => token.BehaviorClass.Type == ActivityClass.Type && token.BehaviorClass.Name == activityName);
-                return v.ActivityAddingAsync(activityName, version, hasDefaultInstance);
+                return v.ActivityAddingAsync(activityName, version, ownerClass, parentClass, hasDefaultInstance);
             });
 
             RegisterActivity(activityType, activityBuilder);
@@ -139,13 +140,9 @@ namespace Stateflows.Activities.Registration
 
             var method = ActivityTypeAddedAsyncMethod.MakeGenericMethod(activityType);
 
-            // Assign to local variable to avoid value being overriden when invoking lambda function at a later stage
-            var ownerClass = OwnerClass;
-            var parentClass = ParentClass;
-
             activityBuilder.Graph.VisitingTasks.AddRange(
             [
-                v => v.ActivityAddedAsync(activityName, version, ownerClass, parentClass),
+                v => v.ActivityAddedAsync(activityName, version),
                 v => (Task)method.Invoke(v, [ activityName, version ])
             ]);
 

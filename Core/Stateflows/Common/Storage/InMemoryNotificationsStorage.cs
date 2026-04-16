@@ -29,7 +29,7 @@ namespace Stateflows.Common.Storage
 
                 if (!tenantNotifications.TryGetValue(behaviorId, out var behaviorNotifications))
                 {
-                    behaviorNotifications = new List<EventHolder>();
+                    behaviorNotifications = [];
                     tenantNotifications.Add(behaviorId, behaviorNotifications);
                 }
                 
@@ -51,7 +51,7 @@ namespace Stateflows.Common.Storage
 
                 if (tenantNotifications.TryGetValue(behaviorId, out var behaviorNotifications))
                 {
-                    return Task.FromResult(behaviorNotifications.Where(n => notificationNames.Contains(n.Name)));
+                    return Task.FromResult(behaviorNotifications.Where(n => notificationNames.Contains(n.Name) && n.SentAt >= lastNotificationCheck));
                 }
             }
             

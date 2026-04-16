@@ -11,17 +11,20 @@ using Stateflows.Examples.Behaviors.StateMachines.Document.Interceptors;
 using Stateflows.Examples.Blazor;
 using Stateflows.Extensions.MinimalAPIs;
 using Microsoft.ClearScript.V8;
+using Stateflows.Activities;
 using Stateflows.Common;
 using Stateflows.Common.Utilities;
+using Stateflows.Examples.Behaviors.Activities.Test;
+using Stateflows.Examples.Common.Events;
 using Document = Stateflows.Examples.Behaviors.StateMachines.Document.Document;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Uncomment, if you want to use storage:
 //
-builder.Services.AddDbContext<AppDbContext>(options
-    => options.UseSqlServer(builder.Configuration.GetConnectionString("Default"))
-);
+// builder.Services.AddDbContext<AppDbContext>(options
+//     => options.UseSqlServer(builder.Configuration.GetConnectionString("Default"))
+// );
 
 // In order to host Stateflows behaviors, Stateflows framework must be registered in the app.
 builder.Services.AddStateflows(b => b
@@ -48,7 +51,12 @@ builder.Services.AddStateflows(b => b
         .AddStateMachine<Document>("Doc")
     )
     
+    .AddActivities(b => b
+        .AddActivity<Test>(nameof(Test))
+    )
+    
     .AddDefaultInstance(new StateMachineClass("Doc"))
+    .AddDefaultInstance(new ActivityClass(nameof(Test)))
     
     .AddInterceptor<InfoEnhanceInterceptor>()
     
@@ -60,7 +68,7 @@ builder.Services.AddStateflows(b => b
 
     // Uncomment, if you want to use storage:
     //
-    .AddEntityFrameworkCoreStorage<AppDbContext>()
+    // .AddEntityFrameworkCoreStorage<AppDbContext>()
     
     // .AddDistributedLock(async (serviceProvider, lockKey)
     //     => new SqlDistributedLock(lockKey, builder.Configuration.GetConnectionString("Default"))
@@ -125,6 +133,13 @@ app.MapRazorComponents<App>()
 
 // API interface must be exposed for WebAssembly to interact with Stateflows
 app.MapStateflowsMinimalAPIsEndpoints(b => b
+    .ConfigureActivities(b => b
+        .ConfigureActivity(nameof(Test), b => b
+            .ConfigureStandardInstances(b => b
+                .Disable()
+            )
+        )
+    )
     .ConfigureStateMachines(b => b
         .ConfigureStateMachine("Doc", b => b
             .ConfigureDefaultInstance(b => b

@@ -68,8 +68,8 @@ namespace Stateflows.Actions.Registration
                 var hasDefaultInstance = BehaviorClassesInitializations.Instance.DefaultInstanceInitializationTokens
                     .Any(t => t.BehaviorClass.Type == ActionClass.Type && t.BehaviorClass.Name == actionName);
 
-                await v.ActionAddingAsync(actionName, version, hasDefaultInstance);
-                await v.ActionAddedAsync(actionName, version, actionModel?.OwnerClass, actionModel?.ParentClass);
+                await v.ActionAddingAsync(actionName, version, actionModel?.OwnerClass, actionModel?.ParentClass, hasDefaultInstance);
+                await v.ActionAddedAsync(actionName, version);
             };
 
             actionModel = new ActionModel()
@@ -119,8 +119,8 @@ namespace Stateflows.Actions.Registration
                 var hasDefaultInstance = BehaviorClassesInitializations.Instance.DefaultInstanceInitializationTokens
                     .Any(t => t.BehaviorClass.Type == ActionClass.Type && t.BehaviorClass.Name == actionName);
 
-                await v.ActionAddingAsync(actionName, version, hasDefaultInstance);
-                await v.ActionAddedAsync(actionName, version, ownerClass, parentClass);
+                await v.ActionAddingAsync(actionName, version, ownerClass, parentClass, hasDefaultInstance);
+                await v.ActionAddedAsync(actionName, version);
                 await (Task)method.Invoke(v, [actionName, version]);
             };
 

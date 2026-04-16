@@ -71,16 +71,16 @@ internal class ActivityVisitor(
         return Task.CompletedTask;
     }
 
-    public override Task ActivityAddingAsync(string activityName, int activityVersion, bool hasDefaultInstance = false)
+    public override Task ActivityAddingAsync(string activityName, int activityVersion, BehaviorClass? ownerClass = null, BehaviorClass? parentClass = null, bool hasDefaultInstance = false)
     {
         HasDefaultInstance = hasDefaultInstance;
+        OwnerClass = ownerClass;
 
         return Task.CompletedTask;
     }
 
-    public override Task ActivityAddedAsync(string activityName, int activityVersion, BehaviorClass? ownerClass = null, BehaviorClass? parentClass = null)
+    public override Task ActivityAddedAsync(string activityName, int activityVersion)
     {
-        OwnerClass = ownerClass;
         if (OwnerClass != null)
         {
             return Task.CompletedTask;
@@ -121,12 +121,11 @@ internal class ActivityVisitor(
     }
 
     private void RegisterEventEndpoint<TEvent>(string activityName, IEndpointRouteBuilder activity, BehaviorStatus[]? supportedStatuses = null)
-        => activity.RegisterEventEndpoint<TEvent>(interceptor, BehaviorType.Activity, activityName, HateoasLinks, supportedStatuses: supportedStatuses);
+        => activity.RegisterEventEndpoint<TEvent>(interceptor, BehaviorType.Activity, activityName, HateoasLinks, HasDefaultInstance, supportedStatuses);
 
     private void RegisterRequestEndpoint<TRequest, TResponse>(string activityName, IEndpointRouteBuilder activity, BehaviorStatus[]? supportedStatuses = null)
         where TRequest : IRequest<TResponse>
-        => activity.RegisterRequestEndpoint<TRequest, TResponse>(interceptor,
-            BehaviorType.Activity, activityName, HateoasLinks, supportedStatuses: supportedStatuses);
+        => activity.RegisterRequestEndpoint<TRequest, TResponse>(interceptor, BehaviorType.Activity, activityName, HateoasLinks, HasDefaultInstance, supportedStatuses);
 
     private void RegisterEventEndpoint<TEvent>(string activityName, BehaviorStatus[]? supportedStatuses = null)
     {

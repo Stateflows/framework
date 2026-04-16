@@ -159,13 +159,11 @@ internal class StateMachineVisitor(
     }
 
     private void RegisterEventEndpoint<TEvent>(string stateMachineName, IEndpointRouteBuilder stateMachine, BehaviorStatus[]? supportedStatuses = null)
-        => stateMachine.RegisterEventEndpoint<TEvent>(interceptor,
-            BehaviorType.StateMachine, stateMachineName, HateoasLinks, HasDefaultInstance, supportedStatuses);
+        => stateMachine.RegisterEventEndpoint<TEvent>(interceptor, BehaviorType.StateMachine, stateMachineName, HateoasLinks, HasDefaultInstance, supportedStatuses);
 
     private void RegisterRequestEndpoint<TRequest, TResponse>(string stateMachineName, IEndpointRouteBuilder stateMachine, BehaviorStatus[]? supportedStatuses = null)
         where TRequest : IRequest<TResponse>
-        => stateMachine.RegisterRequestEndpoint<TRequest, TResponse>(interceptor,
-            BehaviorType.StateMachine, stateMachineName, HateoasLinks, HasDefaultInstance, supportedStatuses);
+        => stateMachine.RegisterRequestEndpoint<TRequest, TResponse>(interceptor, BehaviorType.StateMachine, stateMachineName, HateoasLinks, HasDefaultInstance, supportedStatuses);
 
     private void RegisterStandardEndpoints(string stateMachineName)
     {
