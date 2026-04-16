@@ -1,15 +1,13 @@
 ﻿using System.Threading.Tasks;
-using Stateflows.Activities;
 using Stateflows.Common;
-using Stateflows.Common.Classes;
 
 namespace Stateflows.Activities
 {
     public interface IActivityVisitor
     {
-        Task ActivityAddingAsync(string activityName, int activityVersion, bool hasDefaultInstance = false);
+        Task ActivityAddingAsync(string activityName, int activityVersion, BehaviorClass? ownerClass = null, BehaviorClass? parentClass = null, bool hasDefaultInstance = false);
 
-        Task ActivityAddedAsync(string activityName, int activityVersion, BehaviorClass? behaviorClass = null, BehaviorClass? parentClass = null);
+        Task ActivityAddedAsync(string activityName, int activityVersion);
 
         Task ActivityTypeAddedAsync<TActivity>(string activityName, int activityVersion)
             where TActivity : class, IActivity;

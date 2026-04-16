@@ -39,12 +39,10 @@ public class Document : IStateMachine
     public static void Build(IStateMachineBuilder builder) => builder
         .AddInterceptor<HttpContextInterceptor>()
         .AddInitialState<New>(b => b
-            .AddOnEntry<UniversalAction>()
-            .AddOnExit<UniversalAction>()
-            // .AddDoAgent<ReviewingAgent>()
-            .AddTransition<Review, ApprovalPending>()
+            .AddTransition<Review, ApprovalPending>(b => b
+                .AddEffect(async c => c.Event.Respond(new ReviewResponse() { Summary = $"{c.Event.Content}: {c.Event.Rating}"}))
+            )
             .AddTransition<AfterOneMinute, ReportAutorejection, Rejected>()
-            .AddDoAction<UniversalAction>()
         )
         .AddState<ApprovalPending>(b => b
             .AddTransition<Approve, Approved>()
@@ -55,9 +53,7 @@ public class Document : IStateMachine
             .AddDoActivity(b => b
                 .AddInitial(b => b
                     .AddControlFlow("initial")
-                    .AddControlFlow<UniversalAction>()
                 )
-                .AddAction<UniversalAction>()
                 .AddAction("initial", async c =>
                 {
                     foreach (var i in Enumerable.Range(1, 100))
