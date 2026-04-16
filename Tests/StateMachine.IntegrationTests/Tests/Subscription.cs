@@ -105,11 +105,11 @@ namespace StateMachine.IntegrationTests.Tests
 
             if (StateMachineLocator.TryLocateStateMachine(new StateMachineId("subscribee", "z"), out var subscribee))
             {
-                await subscribee.SendAsync(new Initialize());
-                
                 _ = subscribee.WatchStatusAsync(n => currentState = n.CurrentStates.Value);
 
                 _ = subscribee.WatchStatusAsync(n => currentStatus = n.BehaviorStatus);
+                
+                await subscribee.SendAsync(new Initialize());
             }
             
             Assert.AreEqual("state1", currentState);
@@ -124,13 +124,13 @@ namespace StateMachine.IntegrationTests.Tests
 
             if (StateMachineLocator.TryLocateStateMachine(new StateMachineId("subscribee", "z"), out var subscribee))
             {
-                await subscribee.SendAsync(new SomeEvent());
-                
                 _ = subscribee.WatchStatusAsync(n =>
                 {
                     currentState = n.CurrentStates.Value;
                     currentStatus = n.BehaviorStatus;
                 });
+                
+                await subscribee.SendAsync(new SomeEvent());
             }
             
             Assert.AreEqual("state2", currentState);
