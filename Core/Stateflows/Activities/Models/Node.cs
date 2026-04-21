@@ -258,7 +258,7 @@ namespace Stateflows.Activities.Models
                     ]
                 );
 
-                await handler.Action.WhenAll(exceptionContext);
+                await handler.Action.IterateOverAsync(exceptionContext);
 
                 return true;
             }

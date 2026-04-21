@@ -235,11 +235,18 @@ namespace Stateflows.StateMachines.Engine
                 }
             }
 
-            await Task.WhenAll(vertex.Regions
+            var regionInitializationTasks = vertex
+                .Regions
                 .Where(region => VerticesTree.GetAllNodes_ParentsFirst().All(v => v.Value.ParentRegion != region))
                 .Where(region => region.InitialVertex != null)
                 .Select(region => DoInitializeCascadeAsync(region.InitialVertex))
-            );
+                .ToArray()
+            ;
+
+            foreach (var task in regionInitializationTasks)
+            {
+                await task;
+            }
 
             Context.StatesTree.Sort((v1, v2) =>
             {
@@ -312,7 +319,7 @@ namespace Stateflows.StateMachines.Engine
             var matchingDeferrals = deferrals.Where(deferral => deferral.Key == eventHolder.Name);
             foreach (var deferral in matchingDeferrals)
             {
-                if (await deferral.Value.WhenAll(Context))
+                if (await deferral.Value.IterateOverAsync(Context))
                 {
                     Context.DeferredEvents.Add(eventHolder);
                     
@@ -538,7 +545,7 @@ namespace Stateflows.StateMachines.Engine
 
                 Inspector.BeforeTransitionGuard(context);
 
-                var result = await edge.Guards.WhenAll(Context);
+                var result = await edge.Guards.IterateOverAsync(Context);
 
                 Inspector.AfterTransitionGuard(context, result);
                 
@@ -574,7 +581,7 @@ namespace Stateflows.StateMachines.Engine
 
                 Inspector.BeforeEffect(context);
 
-                await edge.Effects.WhenAll(Context);
+                await edge.Effects.IterateOverAsync(Context);
 
                 Inspector.AfterEffect(context);
             }
@@ -616,7 +623,7 @@ namespace Stateflows.StateMachines.Engine
                 
                 try
                 {
-                    result = await initializer.WhenAll(Context)
+                    result = await initializer.IterateOverAsync(Context)
                         ? initializer == Graph.DefaultInitializer
                             ? InitializationStatus.InitializedImplicitly
                             : InitializationStatus.InitializedExplicitly
@@ -678,7 +685,7 @@ namespace Stateflows.StateMachines.Engine
 
             try
             {
-                await Graph.Finalize.WhenAll(Context);
+                await Graph.Finalize.IterateOverAsync(Context);
 
                 Inspector.AfterStateMachineFinalize(context);
             }
@@ -713,7 +720,7 @@ namespace Stateflows.StateMachines.Engine
                 context = new StateActionContext(Context, vertex, Constants.Initialize);
                 Inspector.BeforeStateInitialize(context);
 
-                await vertex.Initialize.WhenAll(Context);
+                await vertex.Initialize.IterateOverAsync(Context);
 
                 Inspector.AfterStateInitialize(context);
             }
@@ -746,7 +753,7 @@ namespace Stateflows.StateMachines.Engine
                 context = new StateActionContext(Context, vertex, Constants.Finalize);
                 Inspector.BeforeStateFinalize(context);
 
-                await vertex.Finalize.WhenAll(Context);
+                await vertex.Finalize.IterateOverAsync(Context);
 
                 Inspector.AfterStateFinalize(context);
             }
@@ -779,7 +786,7 @@ namespace Stateflows.StateMachines.Engine
                 context = new StateActionContext(Context, vertex, Constants.Finalize);
                 Inspector.BeforeStateEntry(context);
 
-                await vertex.Entry.WhenAll(Context);
+                await vertex.Entry.IterateOverAsync(Context);
 
                 Inspector.AfterStateEntry(context);
             }
@@ -812,7 +819,7 @@ namespace Stateflows.StateMachines.Engine
                 context = new StateActionContext(Context, vertex, Constants.Finalize);
                 Inspector.BeforeStateExit(context);
 
-                await vertex.Exit.WhenAll(Context);
+                await vertex.Exit.IterateOverAsync(Context);
 
                 Inspector.AfterStateExit(context);
             }
@@ -1045,10 +1052,15 @@ namespace Stateflows.StateMachines.Engine
                 }
             }
             
-            await Task.WhenAll(regions
+            var regionInitializationTasks = regions
                 .Where(region => region.InitialVertex != null)
                 .Select(region => DoInitializeCascadeAsync(region.InitialVertex))
-            );
+                .ToArray();
+
+            foreach (var task in regionInitializationTasks)
+            {
+                await task;
+            }
         }
         
         [DebuggerHidden]
@@ -1161,10 +1173,15 @@ namespace Stateflows.StateMachines.Engine
                 }
             }
             
-            await Task.WhenAll(regions
+            var regionInitializationTask = regions
                 .Where(region => region.InitialVertex != null)
                 .Select(region => DoInitializeCascadeAsync(region.InitialVertex))
-            );
+                .ToArray();
+
+            foreach (var task in regionInitializationTask)
+            {
+                await task;
+            }
         }
         
         [DebuggerHidden]

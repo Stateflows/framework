@@ -1,5 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using Stateflows.Common;
+using Stateflows.Extensions.MinimalAPIs.Attributes;
 
 namespace Stateflows.Examples.Common.Events;
 

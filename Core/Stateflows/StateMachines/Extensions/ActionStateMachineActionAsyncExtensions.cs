@@ -8,7 +8,12 @@ namespace Stateflows.StateMachines
 {
     internal static class ActionStateMachineActionAsyncExtensions
     {
-        public static Task WhenAll(this Logic<StateMachineActionAsync> action, RootContext context)
-            => Task.WhenAll(action.Actions.Select(a => a(context)));
+        public static async Task IterateOverAsync(this Logic<StateMachineActionAsync> action, RootContext context)
+        {
+            foreach (var task in action.Actions.Select(a => a(context)))
+            {
+                await task;
+            }
+        }
     }
 }

@@ -96,9 +96,9 @@ namespace Stateflows.Common.Extensions
                 .ToArray();
 
             var result = defaultResult;
-            Task.WhenAll(tasks);
             foreach (var task in tasks)
             {
+                task.Wait();
                 if (!task.Result)
                 {
                     result = false;

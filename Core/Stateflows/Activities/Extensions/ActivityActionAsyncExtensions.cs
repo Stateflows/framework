@@ -8,10 +8,20 @@ namespace Stateflows.Activities
 {
     internal static class ActivityActionAsyncExtensions
     {
-        public static Task WhenAll(this Logic<ActivityActionAsync> action, Context.Interfaces.IActionContext context)
-            => Task.WhenAll(action.Actions.Select(a => a(context)));
+        public static async Task IterateOverAsync(this Logic<ActivityActionAsync> action, Context.Interfaces.IActionContext context)
+        {
+            foreach (var task in action.Actions.Select(a => a(context)))
+            {
+                await task;
+            }
+        }
 
-        public static Task WhenAll(this Logic<ActivityEventActionAsync> action, BaseContext context)
-            => Task.WhenAll(action.Actions.Select(a => a(context)));
+        public static async Task IterateOverAsync(this Logic<ActivityEventActionAsync> action, BaseContext context)
+        {
+            foreach (var task in action.Actions.Select(a => a(context)))
+            {
+                await task;
+            }
+        }
     }
 }

@@ -537,10 +537,10 @@ namespace Stateflows.Activities.Engine
 
             Inspector.BeforeActivityFinalize(context);
 
-            await Graph.Finalize.WhenAll(context);
+            await Graph.Finalize.IterateOverAsync(context);
             try
             {
-                await Graph.Finalize.WhenAll(context);
+                await Graph.Finalize.IterateOverAsync(context);
             }
             catch (Exception e)
             {
@@ -654,7 +654,7 @@ namespace Stateflows.Activities.Engine
         {
             Inspector.BeforeNodeInitialize(context);
 
-            await node.Initialize.WhenAll(context);
+            await node.Initialize.IterateOverAsync(context);
 
             Inspector.AfterNodeInitialize(context);
         }
@@ -663,7 +663,7 @@ namespace Stateflows.Activities.Engine
         {
             Inspector.BeforeNodeFinalize(context);
 
-            await node.Finalize.WhenAll(context);
+            await node.Finalize.IterateOverAsync(context);
 
             Inspector.AfterNodeFinalize(context);
         }
@@ -763,7 +763,7 @@ namespace Stateflows.Activities.Engine
             {
                 try
                 {
-                    result = await initializer.WhenAll(context)
+                    result = await initializer.IterateOverAsync(context)
                         ? initializer == Graph.DefaultInitializer
                             ? InitializationStatus.InitializedImplicitly
                             : InitializationStatus.InitializedExplicitly
@@ -860,7 +860,7 @@ namespace Stateflows.Activities.Engine
                     }
                 );
 
-                await handler.Action.WhenAll(exceptionContext);
+                await handler.Action.IterateOverAsync(exceptionContext);
 
                 if (node.ExceptionHandlers.Contains(handler))
                 {
@@ -998,7 +998,7 @@ namespace Stateflows.Activities.Engine
 
                 try
                 {
-                    await node.Action.WhenAll(actionContext);
+                    await node.Action.IterateOverAsync(actionContext);
                 }
                 catch (Exception e)
                 {

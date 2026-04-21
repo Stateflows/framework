@@ -1,5 +1,4 @@
-﻿using System.Linq;
-using System.Threading.Tasks;
+﻿using System.Threading.Tasks;
 using Stateflows.Common.Models;
 using Stateflows.StateMachines.Interfaces;
 using Stateflows.StateMachines.Context.Classes;
@@ -8,7 +7,7 @@ namespace Stateflows.StateMachines
 {
     internal static class ActionStateMachinePredicateAsyncExtensions
     {
-        public static async Task<bool> WhenAll(this Logic<StateMachinePredicateAsync> action, RootContext context)
+        public static async Task<bool> IterateOverAsync(this Logic<StateMachinePredicateAsync> action, RootContext context)
         {
             var hit = true;
             foreach (var handler in action.Actions)
