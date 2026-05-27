@@ -137,11 +137,20 @@ internal static class Utils
     internal static string GetEventName<TEvent>()
         => Event<TEvent>.Name.ToShortName().ToCamelCase();
 
-    internal static bool IsEventEmpty(Type eventType) =>
-        eventType.GetFields(BindingFlags.Instance | BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.DeclaredOnly).Length == 0 &&
-        eventType.GetProperties(BindingFlags.Instance | BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.DeclaredOnly).Length == 0 &&
-        eventType.GetMethods(BindingFlags.Instance | BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.DeclaredOnly).All(m => m.IsSpecialName) &&
-        eventType.GetEvents(BindingFlags.Instance | BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.DeclaredOnly).Length == 0;
+    internal static bool IsEventEmpty(Type eventType)
+    {
+        var type = eventType;
+        while (type != null && type != typeof(object))
+        {
+            const BindingFlags flags = BindingFlags.Instance | BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.DeclaredOnly;
+            if (type.GetFields(flags).Length != 0) return false;
+            if (type.GetProperties(flags).Length != 0) return false;
+            if (type.GetMethods(flags).Any(m => !m.IsSpecialName)) return false;
+            if (type.GetEvents(flags).Length != 0) return false;
+            type = type.BaseType;
+        }
+        return true;
+    }
 
     internal static async Task<(bool Success, IResult? Result)> AuthorizeEventAsync(Type eventType, IServiceProvider serviceProvider, HttpContext context)
     {

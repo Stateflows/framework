@@ -9,6 +9,7 @@ using Stateflows.Common;
 using Stateflows.Common.Classes;
 using Stateflows.Common.Extensions;
 using Stateflows.Extensions.MinimalAPIs.Attributes;
+using Stateflows.Extensions.MinimalAPIs.Headers;
 using Stateflows.StateMachines;
 
 namespace Stateflows.Extensions.MinimalAPIs;
@@ -576,7 +577,19 @@ internal static class RequestBodyExtensions
         }
         else
         {
-            var result = await behavior.SendAsync(@event, implicitInitialization ? [] : new Dictionary<string, EventHeader>() { { nameof(NoImplicitInitialization), new NoImplicitInitialization() } });
+            var result = await behavior.SendAsync(
+                @event,
+                implicitInitialization
+                    ? new Dictionary<string, EventHeader>
+                    {
+                        { nameof(HttpContextHeader), new HttpContextHeader() { Context = context } }
+                    }
+                    : new Dictionary<string, EventHeader>
+                    {
+                        { nameof(NoImplicitInitialization), new NoImplicitInitialization() },
+                        { nameof(HttpContextHeader), new HttpContextHeader() { Context = context } }
+                    }
+            );
             var behaviorInfo = await behavior.GetBehaviorInfo();
             
             var notifications = payload.RequestedNotifications is { Length: > 0 } && result.Status == EventStatus.Consumed
@@ -606,7 +619,19 @@ internal static class RequestBodyExtensions
         }
         else
         {
-            var requestResult = await behavior.RequestAsync(request, implicitInitialization ? [] : new Dictionary<string, EventHeader>() { { nameof(NoImplicitInitialization), new NoImplicitInitialization() } });
+            var requestResult = await behavior.RequestAsync(
+                request,
+                implicitInitialization
+                    ? new Dictionary<string, EventHeader>
+                    {
+                        { nameof(HttpContextHeader), new HttpContextHeader() { Context = context } }
+                    }
+                    : new Dictionary<string, EventHeader>
+                    {
+                        { nameof(NoImplicitInitialization), new NoImplicitInitialization() },
+                        { nameof(HttpContextHeader), new HttpContextHeader() { Context = context } }
+                    }
+            );
             var behaviorInfo = await behavior.GetBehaviorInfo();
 
             var notifications = payload.RequestedNotifications is { Length: > 0 } && requestResult.Status == EventStatus.Consumed

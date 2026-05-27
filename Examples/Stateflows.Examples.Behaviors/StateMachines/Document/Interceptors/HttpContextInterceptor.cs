@@ -1,4 +1,3 @@
-using Stateflows.Common;
 using Stateflows.Examples.Common.Headers;
 using Stateflows.Extensions.MinimalAPIs.Headers;
 using Stateflows.StateMachines;
@@ -11,7 +10,7 @@ public class HttpContextInterceptor: StateMachineInterceptor
     public override bool BeforeProcessEvent<TEvent>(IEventContext<TEvent> context)
     {
         var httpContextHeader = (HttpContextHeader?)context.Headers.Values.FirstOrDefault(h => h is HttpContextHeader);
-        if (httpContextHeader != null && httpContextHeader.Context.Request.Headers.TryGetValue("X-Role", out var role))
+        if (httpContextHeader != null && httpContextHeader.Headers.TryGetValue("X-Role", out var role))
         {
             switch (role)
             {

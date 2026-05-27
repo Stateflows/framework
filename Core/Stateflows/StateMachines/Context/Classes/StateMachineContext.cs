@@ -1,14 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Reflection;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using Stateflows.Common;
 using Stateflows.Common.Classes;
-using Stateflows.Common.Engine;
 using Stateflows.Common.Interfaces;
-using Stateflows.Common.Subscription;
 
 namespace Stateflows.StateMachines.Context.Classes
 {
@@ -65,7 +61,8 @@ namespace Stateflows.StateMachines.Context.Classes
 
         public bool IsEmbedded => Context.Context.ContextOwnerId != null;
 
-        public IServiceProvider ServiceProvider => Context.Executor.ServiceProvider;
+        public IServiceProvider? serviceProvider = null;
+        public IServiceProvider ServiceProvider => serviceProvider ?? Context.Executor.ServiceProvider;
 
         public Task SubscribeAsync<TNotification>(BehaviorId behaviorId)
             => Subscriber.SubscribeAsync<TNotification>(Context.Context.ContextParentId ?? Context.Context.Id, behaviorId);

@@ -8,7 +8,6 @@ using Stateflows.Common.Classes;
 using Stateflows.Activities.Models;
 using Stateflows.Activities.Context;
 using Stateflows.Activities.Context.Interfaces;
-using Stateflows.Common.Interfaces;
 
 namespace Stateflows.Activities.Engine
 {

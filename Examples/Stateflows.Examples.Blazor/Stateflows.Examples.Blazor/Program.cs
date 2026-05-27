@@ -26,8 +26,13 @@ var builder = WebApplication.CreateBuilder(args);
 //     => options.UseSqlServer(builder.Configuration.GetConnectionString("Default"))
 // );
 
+builder.Services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
+
 // In order to host Stateflows behaviors, Stateflows framework must be registered in the app.
 builder.Services.AddStateflows(b => b
+            
+    .UseFullNamesFor(TypedElements.None)
+            
     .AddResource("heavy-work", b => b
         .SetMaxConcurrentBehaviorExecutions(3)
     )
