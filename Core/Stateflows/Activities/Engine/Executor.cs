@@ -504,13 +504,30 @@ namespace Stateflows.Activities.Engine
                 var tokenTypes = output.Select(t => t.PayloadType).Distinct();
                 var tokensOutputType = typeof(TokensOutput<>);
                 var tokensOutputs = tokenTypes
+                    .SelectMany(type =>
+                    {
+                        // Walk the inheritance chain so subscribers to base types also receive the notification
+                        var types = new List<Type>();
+                        var t = type;
+                        while (t != null && t != typeof(object))
+                        {
+                            types.Add(t);
+                            t = t.BaseType;
+                        }
+                        foreach (var iface in type.GetInterfaces())
+                        {
+                            types.Add(iface);
+                        }
+                        return types.Distinct();
+                    })
+                    .Distinct()
                     .Select(type =>
                     {
                         var tokensOutputGenericType = tokensOutputType.MakeGenericType(type);
-                        var tokensOutput = (TokensTransferEvent)Activator.CreateInstance(tokensOutputGenericType);
-                        tokensOutput.Tokens = output.Where(t => t.PayloadType == type).ToList();
+                        var typedTokensOutput = (TokensTransferEvent)Activator.CreateInstance(tokensOutputGenericType);
+                        typedTokensOutput.Tokens = output.Where(t => type.IsAssignableFrom(t.PayloadType)).ToList();
 
-                        return tokensOutput.ToTypedEventHolder(Context.Id);
+                        return typedTokensOutput.ToTypedEventHolder(Context.Id);
                     })
                     .ToList();
 
@@ -1058,13 +1075,11 @@ namespace Stateflows.Activities.Engine
 
                     ReportNodeExecuted(node, outputTokens.Where(t => t is TokenHolder<ControlToken>).ToArray(), Context);
 
-                    var tokenNames = outputTokens.Select(token => token.Name).Distinct().ToArray();
-
                     var nodes = (
                         await Task.WhenAll(
                             node.Edges
                                 .Where(edge => edge.Target.Type == NodeType.Output || outputTokens.Any(t => t is TokenHolder<ControlToken>))
-                                .Where(edge => tokenNames.Contains(edge.TokenType.GetTokenName()) || edge.Weight == 0)
+                                .Where(edge => outputTokens.Any(t => edge.TokenType.IsAssignableFrom(t.PayloadType)) || edge.Weight == 0)
                                 .OrderBy(edge => edge.IsElse)
                                 .Select(async edge =>
                                     (
@@ -1279,7 +1294,7 @@ namespace Stateflows.Activities.Engine
             
             var edgeTokenName = edge.TokenType.GetTokenName();
 
-            IEnumerable<TokenHolder> originalTokens = context.OutputTokens.Where(t => t.Name == edgeTokenName).ToArray();
+            IEnumerable<TokenHolder> originalTokens = context.OutputTokens.Where(t => edge.TokenType.IsAssignableFrom(t.PayloadType)).ToArray();
 
             flowContext.TokenCount = stream.Tokens.Count;
             flowContext.SourceTokenCount = originalTokens.Count();

@@ -139,7 +139,7 @@ namespace Stateflows.Activities.Models
                     var incomingTokens = node.GetIncomingTokenTypes();
                     var outgoingTokens = node.GetOutgoingTokenTypes();
 
-                    var undeclaredOutgoingTokens = outgoingTokens.Where(t => !incomingTokens.Contains(t));
+                    var undeclaredOutgoingTokens = outgoingTokens.Where(t => !incomingTokens.Any(incoming => incoming.IsAssignableFrom(t)));
 
                     if (undeclaredOutgoingTokens.Any())
                     {
@@ -152,9 +152,19 @@ namespace Stateflows.Activities.Models
                     var incomingTokens = node.GetIncomingTokenTypes();
                     var outgoingTokens = node.GetOutgoingTokenTypes();
 
-                    var undeclaredIncomingTokens = incomingTokens.Where(t => !node.InputTokenTypes.Contains(t) && !node.OptionalInputTokenTypes.Contains(t));
-                    var undeclaredOutgoingTokens = outgoingTokens.Where(t => !node.OutputTokenTypes.Contains(t));
-                    var unsatisfiedIncomingTokens = node.InputTokenTypes.Where(t => !incomingTokens.Contains(t));
+                    // An incoming edge type 't' is acceptable if any declared input type is either a subtype of t
+                    // (i.e., declared.IsAssignableFrom(t) — declared is at least as specific as edge type) OR
+                    // a supertype of or equal to t but only when t is a supertype (t.IsAssignableFrom(declared) —
+                    // the edge carries a broader type whose actual runtime value may be of the declared subtype).
+                    var undeclaredIncomingTokens = incomingTokens.Where(t =>
+                        !node.InputTokenTypes.Any(declared => declared.IsAssignableFrom(t) || t.IsAssignableFrom(declared)) &&
+                        !node.OptionalInputTokenTypes.Any(declared => declared.IsAssignableFrom(t) || t.IsAssignableFrom(declared)));
+                    // An outgoing edge type 't' is acceptable if any declared output type is a subtype of t
+                    // (declared.IsAssignableFrom(t) — standard exact/subtype match) OR a supertype of t
+                    // (t.IsAssignableFrom(declared) — producer declares a subtype, edge carries the base type).
+                    var undeclaredOutgoingTokens = outgoingTokens.Where(t => !node.OutputTokenTypes.Any(declared => declared.IsAssignableFrom(t) || t.IsAssignableFrom(declared)));
+                    // For required inputs, also allow the edge type to be a supertype of the declared type.
+                    var unsatisfiedIncomingTokens = node.InputTokenTypes.Where(t => !incomingTokens.Any(incoming => t.IsAssignableFrom(incoming)/* || incoming.IsAssignableFrom(t)*/));
 
                     if (undeclaredIncomingTokens.Any())
                     {
