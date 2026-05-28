@@ -32,13 +32,13 @@ namespace Stateflows.Activities.Context.Classes
             => OutputTokens.AddRange(tokens.ToTokenHolders());
 
         public void PassTokensOfTypeOn<TToken>()
-            => OutputTokens.AddRange(InputTokens.OfType<TokenHolder<TToken>>());
+            => OutputTokens.AddRange(InputTokens.OfTokenType<TToken>());
 
         public void PassAllTokensOn()
             => OutputTokens.AddRange(InputTokens);
 
         public IEnumerable<TToken> GetTokensOfType<TToken>()
-            => InputTokens.OfType<TokenHolder<TToken>>().ToTokens().ToArray();
+            => InputTokens.ToTokensOfType<TToken>().ToArray();
 
         public IEnumerable<object> GetAllTokens()
             => InputTokens.ToBoxedTokens().ToArray();

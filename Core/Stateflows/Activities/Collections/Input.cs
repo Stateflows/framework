@@ -3,6 +3,7 @@ using System.Threading;
 using System.Collections;
 using System.Collections.Generic;
 using Stateflows.Common;
+using Stateflows.Utils;
 
 namespace Stateflows.Activities;
 
@@ -23,9 +24,7 @@ public static class InputTokens
 internal class InputTokens<TToken> : IInputTokens<TToken>
 {
     internal IEnumerable<TToken> Tokens
-        => InputTokens.Tokens
-            .Where(t => t.PayloadType != null && typeof(TToken).IsAssignableFrom(t.PayloadType))
-            .Select(t => (TToken)t.BoxedPayload);
+        => InputTokens.Tokens.ToTokensOfType<TToken>();
     
     public IEnumerator<TToken> GetEnumerator()
         => Tokens.GetEnumerator();
@@ -40,10 +39,7 @@ internal class InputTokens<TToken> : IInputTokens<TToken>
 internal class InputToken<TToken> : IInputToken<TToken>
 {
     public TToken Token
-        => InputTokens.Tokens
-            .Where(t => t.PayloadType != null && typeof(TToken).IsAssignableFrom(t.PayloadType))
-            .Select(t => (TToken)t.BoxedPayload)
-            .First();
+        => InputTokens.Tokens.ToTokensOfType<TToken>().First();
 
     public void PassOn()
         => new OutputTokens<TToken>().Add(Token);
@@ -52,9 +48,7 @@ internal class InputToken<TToken> : IInputToken<TToken>
 internal class OptionalInputTokens<TToken> : IOptionalInputTokens<TToken>
 {
     internal IEnumerable<TToken> Tokens
-        => InputTokens.Tokens
-            .Where(t => t.PayloadType != null && typeof(TToken).IsAssignableFrom(t.PayloadType))
-            .Select(t => (TToken)t.BoxedPayload);
+        => InputTokens.Tokens.ToTokensOfType<TToken>();
 
     public IEnumerator<TToken> GetEnumerator()
         => Tokens.GetEnumerator();
@@ -69,13 +63,10 @@ internal class OptionalInputTokens<TToken> : IOptionalInputTokens<TToken>
 internal class OptionalInputToken<TToken> : IOptionalInputToken<TToken>
 {
     public bool IsAvailable
-        => InputTokens.Tokens.Any(t => t.PayloadType != null && typeof(TToken).IsAssignableFrom(t.PayloadType));
+        => InputTokens.Tokens.OfTokenType<TToken>().Any();
     
     public TToken TokenOrDefault
-        => InputTokens.Tokens
-            .Where(t => t.PayloadType != null && typeof(TToken).IsAssignableFrom(t.PayloadType))
-            .Select(t => (TToken)t.BoxedPayload)
-            .FirstOrDefault();
+        => InputTokens.Tokens.ToTokensOfType<TToken>().FirstOrDefault();
 
     public void PassOn()
         => new OutputTokens<TToken>().Add(TokenOrDefault);

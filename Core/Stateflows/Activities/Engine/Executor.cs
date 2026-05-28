@@ -501,7 +501,7 @@ namespace Stateflows.Activities.Engine
                 var tokensOutput = new TokensOutput() { Tokens = output.ToList() };
                 var tokensOutputHolder = tokensOutput.ToEventHolder(Context.Id);
 
-                var tokenTypes = output.Select(t => t.PayloadType).Distinct();
+                var tokenTypes = output.Select(t => t.GetEffectivePayloadType()).Distinct();
                 var tokensOutputType = typeof(TokensOutput<>);
                 var tokensOutputs = tokenTypes
                     .SelectMany(type =>
@@ -525,7 +525,7 @@ namespace Stateflows.Activities.Engine
                     {
                         var tokensOutputGenericType = tokensOutputType.MakeGenericType(type);
                         var typedTokensOutput = (TokensTransferEvent)Activator.CreateInstance(tokensOutputGenericType);
-                        typedTokensOutput.Tokens = output.Where(t => type.IsAssignableFrom(t.PayloadType)).ToList();
+                        typedTokensOutput.Tokens = output.Where(t => type.IsAssignableFrom(t.GetEffectivePayloadType())).ToList();
 
                         return typedTokensOutput.ToTypedEventHolder(Context.Id);
                     })
@@ -623,7 +623,7 @@ namespace Stateflows.Activities.Engine
 
         public async Task<IEnumerable<TokenHolder>> DoExecuteParallelNodeAsync<TToken>(Node node, Edge edge, NodeScope nodeScope, IEnumerable<TokenHolder> input = null)
         {
-            var typedInput = input.OfType<TokenHolder<TToken>>().ToArray();
+            var typedInput = input.OfTokenType<TToken>().ToArray();
 
             var restOfInput = input.Except(typedInput).ToArray();
 
@@ -687,7 +687,7 @@ namespace Stateflows.Activities.Engine
 
         public async Task<IEnumerable<TokenHolder>> DoExecuteIterativeNodeAsync<TToken>(ActionContext context)
         {
-            var typedInput = context.InputTokens.OfType<TokenHolder<TToken>>().ToArray();
+            var typedInput = context.InputTokens.OfTokenType<TToken>().ToArray();
 
             var restOfInput = context.InputTokens.Except(typedInput).ToArray();
 
