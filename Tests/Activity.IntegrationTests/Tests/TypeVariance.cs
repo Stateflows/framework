@@ -256,6 +256,17 @@ namespace Activity.IntegrationTests.Tests
                     )
                     .AddAction<IAnimalConsumer>()
                 )
+
+                // Scenario 12: class-based DogProducer → Dog-typed edge → AnimalConsumer
+                .AddActivity("class-producer-dog-on-dog-edge-to-animal-consumer", b => b
+                    .AddInitial(b => b
+                        .AddControlFlow<DogProducer>()
+                    )
+                    .AddAction<DogProducer>(b => b
+                        .AddFlow<Dog, AnimalConsumer>()
+                    )
+                    .AddAction<AnimalConsumer>()
+                )
             );
         }
 
@@ -379,6 +390,17 @@ namespace Activity.IntegrationTests.Tests
 
             Assert.AreEqual(1, ConsumedIAnimals.Count, "Dog should flow on Animal edge and be received by IAnimalConsumer");
             Assert.AreEqual("Bruno", ConsumedIAnimals[0]);
+        }
+
+        [TestMethod]
+        public async Task DogFlowsOnDogTypedEdgeToAnimalConsumer()
+        {
+            if (ActivityLocator.TryLocateActivity(new ActivityId("class-producer-dog-on-dog-edge-to-animal-consumer", "x"), out var a))
+                await a.SendAsync(new Initialize());
+
+            Assert.AreEqual(1, ConsumedAnimals.Count, "Exactly one Animal-typed token should arrive");
+            Assert.IsInstanceOfType<Dog>(ConsumedAnimals[0]);
+            Assert.AreEqual("Bruno", ConsumedAnimals[0].Name);
         }
     }
 
