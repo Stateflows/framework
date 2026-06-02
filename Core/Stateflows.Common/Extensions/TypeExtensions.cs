@@ -19,10 +19,13 @@ namespace Stateflows.Common.Extensions
 
         public static string GetReadableName(this Type type, TypedElements elementType)
         {
-            var attribute = type.GetCustomAttribute<EventAttribute>(true);
-            if (attribute != null)
+            if (elementType == TypedElements.Events)
             {
-                return attribute.Name;
+                var attribute = type.GetCustomAttribute<EventAttribute>(true);
+                if (attribute != null)
+                {
+                    return attribute.Name;
+                }
             }
 
             string result;
@@ -40,10 +43,7 @@ namespace Stateflows.Common.Extensions
                     : genericTypeDefinition.Name;
                 
                 var typeName = baseName.Split('`').First();
-                var typeNames = string.Join(", ", type.GetGenericArguments().Select(t => StateflowsSettings.FullNames.HasFlag(elementType)
-                    ? t.FullName
-                    : t.Name
-                ));
+                var typeNames = string.Join(", ", type.GetGenericArguments().Select(t => t.GetReadableName(elementType)));
                 result = $"{typeName}<{typeNames}>";
             }
 

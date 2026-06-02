@@ -20,7 +20,8 @@ namespace Stateflows.Activities.EventHandlers
                 var tokenType = eventType.GetGenericArguments().First();
                 
                 var result = context.Behavior.GetExecutor().Context.ActivityOutputTokens
-                    .Where(tokenHolder => tokenHolder.PayloadType == tokenType).ToArray();
+                    .Where(tokenHolder => tokenType.IsAssignableFrom(tokenHolder.BoxedPayload?.GetType() ?? tokenHolder.PayloadType))
+                    .ToArray();
 
                 var responseType = typeof(TokensOutput<>).MakeGenericType(tokenType);
                 var response = Activator.CreateInstance(responseType) as TokensOutputEvent;

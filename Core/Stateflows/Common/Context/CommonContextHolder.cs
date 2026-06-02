@@ -1,5 +1,4 @@
 ﻿using System.Threading;
-using Stateflows.Common.Context.Interfaces;
 
 namespace Stateflows.Common.Context
 {

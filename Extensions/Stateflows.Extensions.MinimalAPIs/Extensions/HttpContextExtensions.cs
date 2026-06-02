@@ -12,7 +12,7 @@ public static class HttpContextExtensions
         await httpContext.Response.WriteAsync($"event: {eventHolder.Name}\n");
         await httpContext.Response.WriteAsync($"data: ");
         await httpContext.Response.Body.WriteAsync(
-            Encoding.UTF8.GetBytes(StateflowsJsonConverter.SerializeObject(eventHolder))
+            Encoding.UTF8.GetBytes(StateflowsJsonConverter.SerializeObject(eventHolder, true))
         );
         await httpContext.Response.WriteAsync($"\n\n");
         await httpContext.Response.Body.FlushAsync();

@@ -2,7 +2,7 @@
 
 namespace Stateflows.Activities
 {
-    public interface IDecisionBuilder<TToken> :
+    public interface IDecisionBuilder<out TToken> :
         IDecisionFlowBase<TToken, IDecisionBuilder<TToken>>,
         IElseDecisionFlowBase<TToken, IDecisionBuilder<TToken>>
     { }

@@ -41,7 +41,7 @@ namespace Stateflows.Activities.Registration.Interfaces.Base
         TReturn AddElseFlow<TToken>(string targetNodeName, ElseObjectFlowBuildAction<TToken> buildAction = null);
     }
 
-    public interface IDecisionFlowBase<TToken, out TReturn>
+    public interface IDecisionFlowBase<out TToken, out TReturn>
     {
         TReturn AddFlow(string targetNodeName, ObjectFlowBuildAction<TToken> buildAction = null);
 
@@ -74,7 +74,7 @@ namespace Stateflows.Activities.Registration.Interfaces.Base
             => AddFlow<TTransformedToken, TTransformationFlow>(ActivityNode<TTargetNode>.Name);
     }
 
-    public interface IElseDecisionFlowBase<TToken, out TReturn>
+    public interface IElseDecisionFlowBase<out TToken, out TReturn>
     {
         TReturn AddElseFlow(string targetNodeName, ElseObjectFlowBuildAction<TToken> buildAction = null);
 

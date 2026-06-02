@@ -16,7 +16,7 @@ namespace Stateflows.Activities
             => TokensHolder.Value ??= new List<TokenHolder>();
 
         public static List<TToken> GetAllOfType<TToken>()
-            => Tokens.OfType<TokenHolder<TToken>>().ToTokens().ToList();
+            => Tokens.ToTokensOfType<TToken>().ToList();
 
         public static List<object> GetAll()
             => Tokens.ToBoxedTokens().ToList();
@@ -30,7 +30,7 @@ namespace Stateflows.Activities
     internal class OutputTokens<TToken> : IOutputTokens<TToken>
     {
         private List<TToken> GetTokens()
-            => OutputTokens.Tokens.OfType<TokenHolder<TToken>>().ToTokens().ToList();
+            => OutputTokens.Tokens.ToTokensOfType<TToken>().ToList();
 
         public int Count => GetTokens().Count;
 

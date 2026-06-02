@@ -8,7 +8,7 @@ public interface IAcceptEventActionBuilder :
     IControlFlowBase<IAcceptEventActionBuilder>,
     IExceptionHandlerBase<IAcceptEventActionBuilder>;
 
-public interface IAcceptEventActionBuilder<TEvent, out TAcceptEventAction> :
+public interface IAcceptEventActionBuilder<in TEvent, out TAcceptEventAction> :
     IObjectFlowBase<IAcceptEventActionBuilder<TEvent, TAcceptEventAction>>,
     IControlFlowBase<IAcceptEventActionBuilder<TEvent, TAcceptEventAction>>,
     IExceptionHandlerBase<IAcceptEventActionBuilder<TEvent, TAcceptEventAction>>,

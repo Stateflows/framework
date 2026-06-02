@@ -5,7 +5,7 @@ using Stateflows.Activities.Context.Interfaces;
 
 namespace Stateflows.Activities.Registration.Interfaces
 {
-    public interface IObjectFlowBuilder<TToken> :
+    public interface IObjectFlowBuilder<out TToken> :
         IFlowWeight<IObjectFlowBuilderWithWeight<TToken>>,
         IObjectFlowGuardBuilderBase<TToken, IObjectFlowBuilder<TToken>>
     {
@@ -18,7 +18,7 @@ namespace Stateflows.Activities.Registration.Interfaces
             );
     }
 
-    public interface IObjectFlowBuilderWithWeight<TToken> :
+    public interface IObjectFlowBuilderWithWeight<out TToken> :
         IObjectFlowGuardBuilderBase<TToken, IObjectFlowBuilderWithWeight<TToken>>
     {
         IObjectFlowBuilderWithWeight<TTransformedToken> AddTransformation<TTransformedToken>(TransformationDelegateAsync<TToken, TTransformedToken> transformationAsync);
@@ -30,7 +30,7 @@ namespace Stateflows.Activities.Registration.Interfaces
             );
     }
 
-    public interface IElseObjectFlowBuilderWithWeight<TToken>
+    public interface IElseObjectFlowBuilderWithWeight<out TToken>
     {
         IElseObjectFlowBuilderWithWeight<TTransformedToken> AddTransformation<TTransformedToken>(TransformationDelegateAsync<TToken, TTransformedToken> transformationAsync);
 
@@ -41,7 +41,7 @@ namespace Stateflows.Activities.Registration.Interfaces
             );
     }
 
-    public interface IElseObjectFlowBuilder<TToken> :
+    public interface IElseObjectFlowBuilder<out TToken> :
         IFlowWeight<IElseObjectFlowBuilderWithWeight<TToken>>
     {
         IElseObjectFlowBuilder<TTransformedToken> AddTransformation<TTransformedToken>(TransformationDelegateAsync<TToken, TTransformedToken> transformationAsync);
@@ -53,7 +53,7 @@ namespace Stateflows.Activities.Registration.Interfaces
             );
     }
 
-    public interface IObjectFlowGuardBuilderBase<TToken, out TReturn>
+    public interface IObjectFlowGuardBuilderBase<out TToken, out TReturn>
     {
         TReturn AddGuard(params Func<IGuardContext<TToken>, Task<bool>>[]  guardAsync);
         

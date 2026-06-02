@@ -41,6 +41,29 @@ namespace StateMachine.IntegrationTests.Tests
         }
     }
 
+    public class ScopeStateEvents : IStateEntry, IStateExit
+    {
+        private readonly Service service;
+        public ScopeStateEvents(Service service)
+        {
+            this.service = service;
+        }
+
+        public Task OnEntryAsync()
+        {
+            ServiceScopes.OnEntryValue = service.Value;
+
+            return Task.CompletedTask;
+        }
+
+        public Task OnExitAsync()
+        {
+            ServiceScopes.OnExitValue = service.Value;
+
+            return Task.CompletedTask;
+        }
+    }
+
     public class Some : ITransitionEffect<SomeEvent>
     {
         private readonly Service service;
@@ -79,7 +102,9 @@ namespace StateMachine.IntegrationTests.Tests
         public static string SomeValue = string.Empty;
         public static string OtherValue = string.Empty;
         public static string EntryValue = string.Empty;
+        public static string OnEntryValue = string.Empty;
         public static string ExitValue = string.Empty;
+        public static string OnExitValue = string.Empty;
 
         [TestInitialize]
         public override void Initialize()
@@ -106,6 +131,8 @@ namespace StateMachine.IntegrationTests.Tests
 
                     .AddStateMachine("state", b => b
                         .AddInitialState<ScopeState>(b => b
+                            .AddOnEntry<ScopeStateEvents>()
+                            .AddOnExit<ScopeStateEvents>()
                             .AddDefaultTransition("state2")
                         )
                         .AddState("state2")
@@ -139,7 +166,7 @@ namespace StateMachine.IntegrationTests.Tests
                 await sm.SendAsync(new Initialize());
             }
 
-            Assert.AreNotEqual(ServiceScopes.EntryValue, ServiceScopes.ExitValue);
+            Assert.AreNotEqual(EntryValue, ExitValue, OnEntryValue, OnExitValue);
         }
     }
 }
