@@ -1,7 +1,6 @@
 ﻿using System.Linq;
 using System.Collections;
 using System.Collections.Generic;
-using Stateflows.Common;
 
 namespace Stateflows.Activities
 {
@@ -62,10 +61,10 @@ namespace Stateflows.Activities
     internal class OptionalInputOutputToken<TToken> : BaseInputOutputTokens<TToken>, IOptionalInputToken<TToken>
     {
         public bool IsAvailable
-            => InputTokens.Tokens.OfType<TokenHolder<TToken>>().Any();
+            => InputTokens.Tokens.Any();
         
         public TToken TokenOrDefault
-            => InputTokens.Tokens.OfType<TokenHolder<TToken>>().Select(t => t.Payload).FirstOrDefault();
+            => InputTokens.Tokens.FirstOrDefault();
 
         public void PassOn()
             => OutputTokens.Add(TokenOrDefault);

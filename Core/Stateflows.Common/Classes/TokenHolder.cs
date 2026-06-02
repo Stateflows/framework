@@ -12,8 +12,9 @@ public abstract class TokenHolder
     protected string name;
     public virtual string Name => name ??= GetType().GetTokenName();
     
+    private object boxedPayload;
     [JsonIgnore]
-    public object BoxedPayload { get; }
+    public object BoxedPayload => boxedPayload ??= GetBoxedPayload();
 
     protected abstract object GetBoxedPayload();
 
