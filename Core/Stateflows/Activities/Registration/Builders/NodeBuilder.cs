@@ -3,38 +3,47 @@ using System.Linq;
 using System.Threading.Tasks;
 using Stateflows.Activities.Models;
 using Stateflows.Activities.Context.Classes;
+using Stateflows.Activities.Exceptions;
 using Stateflows.Activities.Registration.Builders;
 using Stateflows.Activities.Registration.Interfaces;
 using Stateflows.Activities.Registration.Interfaces.Base;
 using Stateflows.Common;
+using Stateflows.Common.Interfaces;
 
 namespace Stateflows.Activities.Registration
 {
-    internal class NodeBuilder :
+    internal class NodeBuilder(Node node, BaseActivityBuilder activityBuilder) :
         IActionBuilder,
+        IOverridenActionBuilder,
         IActionBuilderWithOptions,
-        IAcceptEventActionBuilder,
+        IOverridenActionBuilderWithOptions,
+        // IAcceptEventActionBuilder,
         ITimeEventActionBuilder,
+        IOverridenTimeEventActionBuilder,
         ISendEventActionBuilder,
+        IOverridenSendEventActionBuilder,
+        IPublishEventActionBuilder,
+        IOverridenPublishEventActionBuilder,
         IInitialBuilder,
+        IOverridenInitialBuilder,
         IInputBuilder,
+        IOverridenInputBuilder,
         IMergeBuilder,
+        IOverridenMergeBuilder,
         IJoinBuilder,
+        IOverridenJoinBuilder,
         IForkBuilder,
+        IOverridenForkBuilder,
         IDecisionBuilder,
-        IDataStoreBuilder
+        IOverridenDecisionBuilder,
+        IDataStoreBuilder,
+        IOverridenDataStoreBuilder
     {
-        public Node Node { get; }
+        public Node Node { get; } = node;
 
         public Graph Graph => Node.Graph;
 
-        public BaseActivityBuilder ActivityBuilder { get; }
-
-        public NodeBuilder(Node node, BaseActivityBuilder activityBuilder)
-        {
-            Node = node;
-            ActivityBuilder = activityBuilder;
-        }
+        public BaseActivityBuilder ActivityBuilder { get; } = activityBuilder;
 
         public IActionBuilder AddControlFlow(string targetNodeName, ControlFlowBuildAction buildAction = null)
         {
@@ -164,14 +173,14 @@ namespace Stateflows.Activities.Registration
         IForkBuilder IControlFlowBase<IForkBuilder>.AddControlFlow(string targetNodeName, ControlFlowBuildAction buildAction)
             => AddControlFlow(targetNodeName, buildAction) as IForkBuilder;
 
-        IAcceptEventActionBuilder IObjectFlowBase<IAcceptEventActionBuilder>.AddFlow<TToken>(string targetNodeName, ObjectFlowBuildAction<TToken> buildAction)
-            => AddFlow<TToken>(targetNodeName, buildAction) as IAcceptEventActionBuilder;
-
-        IAcceptEventActionBuilder IControlFlowBase<IAcceptEventActionBuilder>.AddControlFlow(string targetNodeName, ControlFlowBuildAction buildAction)
-            => AddControlFlow(targetNodeName, buildAction) as IAcceptEventActionBuilder;
-
-        IAcceptEventActionBuilder IExceptionHandlerBase<IAcceptEventActionBuilder>.AddExceptionHandler<TException>(ExceptionHandlerDelegateAsync<TException> exceptionHandler)
-            => AddExceptionHandler<TException>(exceptionHandler) as IAcceptEventActionBuilder;
+        // IAcceptEventActionBuilder IObjectFlowBase<IAcceptEventActionBuilder>.AddFlow<TToken>(string targetNodeName, ObjectFlowBuildAction<TToken> buildAction)
+        //     => AddFlow<TToken>(targetNodeName, buildAction) as IAcceptEventActionBuilder;
+        //
+        // IAcceptEventActionBuilder IControlFlowBase<IAcceptEventActionBuilder>.AddControlFlow(string targetNodeName, ControlFlowBuildAction buildAction)
+        //     => AddControlFlow(targetNodeName, buildAction) as IAcceptEventActionBuilder;
+        //
+        // IAcceptEventActionBuilder IExceptionHandlerBase<IAcceptEventActionBuilder>.AddExceptionHandler<TException>(ExceptionHandlerDelegateAsync<TException> exceptionHandler)
+        //     => AddExceptionHandler<TException>(exceptionHandler) as IAcceptEventActionBuilder;
 
         ITimeEventActionBuilder IObjectFlowBase<ITimeEventActionBuilder>.AddFlow<TToken>(string targetNodeName, ObjectFlowBuildAction<TToken> buildAction)
             => AddFlow<TToken>(targetNodeName, buildAction) as ITimeEventActionBuilder;
@@ -193,11 +202,148 @@ namespace Stateflows.Activities.Registration
 
         IDataStoreBuilder IObjectFlowBase<IDataStoreBuilder>.AddFlow<TToken>(string targetNodeName, ObjectFlowBuildAction<TToken> buildAction)
             => AddFlow<TToken>(targetNodeName, buildAction) as IDataStoreBuilder;
+
+        IOverridenInitialBuilder IControlFlowBase<IOverridenInitialBuilder>.AddControlFlow(string targetNodeName, ControlFlowBuildAction buildAction)
+            => AddControlFlow(targetNodeName, buildAction) as IOverridenInitialBuilder;
+
+        IOverridenInputBuilder IObjectFlowBase<IOverridenInputBuilder>.AddFlow<TToken>(string targetNodeName, ObjectFlowBuildAction<TToken> buildAction)
+            => AddFlow<TToken>(targetNodeName, buildAction) as IOverridenInputBuilder;
+
+        IOverridenForkBuilder IObjectFlowBase<IOverridenForkBuilder>.AddFlow<TToken>(string targetNodeName,
+            ObjectFlowBuildAction<TToken> buildAction)
+            => AddFlow<TToken>(targetNodeName, buildAction) as IOverridenForkBuilder;
+
+        IOverridenForkBuilder IControlFlowBase<IOverridenForkBuilder>.AddControlFlow(string targetNodeName, ControlFlowBuildAction buildAction)
+            => AddControlFlow(targetNodeName, buildAction) as IOverridenForkBuilder;
+
+        protected NodeBuilder UseFlow<TToken>(string targetNodeName, ObjectFlowBuildAction<TToken> buildAction)
+        {
+            var edge = Node.Edges.FirstOrDefault(edge =>
+                edge.TargetName == targetNodeName &&
+                edge.TokenType == typeof(TToken) &&
+                !edge.IsElse
+            );
+            
+            if (edge?.OriginActivityName == null)
+            {
+                throw new ActivityOverrideException($"Flow targeting '{targetNodeName}' not found in overriden node '{Node.Name}'", Node.Graph.Class);
+            }
+            
+            buildAction(new FlowBuilder<TToken>(edge));
+
+            return this;
+        }
+
+        protected NodeBuilder UseElseFlow<TToken>(string targetNodeName, ElseObjectFlowBuildAction<TToken> buildAction)
+        {
+            var edge = Node.Edges.FirstOrDefault(edge =>
+                edge.TargetName == targetNodeName &&
+                edge.TokenType == typeof(TToken) &&
+                edge.IsElse
+            );
+            
+            if (edge?.OriginActivityName == null)
+            {
+                throw new ActivityOverrideException($"Else flow targeting '{targetNodeName}' not found in overriden node '{Node.Name}'", Node.Graph.Class);
+            }
+            
+            buildAction(new FlowBuilder<TToken>(edge));
+
+            return this;
+        }
+
+        protected NodeBuilder UseControlFlow(string targetNodeName, ControlFlowBuildAction buildAction)
+            => UseFlow<ControlToken>(targetNodeName, b => buildAction(b as IControlFlowBuilder));
+
+        protected NodeBuilder UseElseControlFlow(string targetNodeName, ControlFlowBuildAction buildAction)
+            => UseElseFlow<ControlToken>(targetNodeName, b => buildAction(b as IControlFlowBuilder));
+
+        IOverridenInitialBuilder IOverridenControlFlowBase<IOverridenInitialBuilder>.UseControlFlow(string targetNodeName, ControlFlowBuildAction buildAction)
+            => UseControlFlow(targetNodeName, buildAction);
+
+        IOverridenInputBuilder IOverridenObjectFlowBase<IOverridenInputBuilder>.UseFlow<TToken>(string targetNodeName, ObjectFlowBuildAction<TToken> buildAction)
+            => UseFlow(targetNodeName, buildAction);
+
+        void IOverridenObjectFlowBase.UseFlow<TToken>(string targetNodeName, ObjectFlowBuildAction<TToken> buildAction)
+            => UseFlow<TToken>(targetNodeName, buildAction);
+
+        void IOverridenControlFlowBase.UseControlFlow(string targetNodeName, ControlFlowBuildAction buildAction)
+            => UseControlFlow(targetNodeName, buildAction);
+
+        IOverridenForkBuilder IOverridenObjectFlowBase<IOverridenForkBuilder>.UseFlow<TToken>(string targetNodeName, ObjectFlowBuildAction<TToken> buildAction)
+            => UseFlow<TToken>(targetNodeName, buildAction);
+
+        IOverridenForkBuilder IOverridenControlFlowBase<IOverridenForkBuilder>.UseControlFlow(string targetNodeName, ControlFlowBuildAction buildAction)
+            => UseControlFlow(targetNodeName, buildAction);
+
+        IPublishEventActionBuilder IControlFlowBase<IPublishEventActionBuilder>.AddControlFlow(string targetNodeName, ControlFlowBuildAction buildAction)
+            => AddControlFlow(targetNodeName, buildAction) as IPublishEventActionBuilder;
+
+        IOverridenActionBuilder IObjectFlowBase<IOverridenActionBuilder>.AddFlow<TToken>(string targetNodeName, ObjectFlowBuildAction<TToken> buildAction)
+            => AddFlow(targetNodeName, buildAction) as IOverridenActionBuilder;
+
+        IOverridenActionBuilder IControlFlowBase<IOverridenActionBuilder>.AddControlFlow(string targetNodeName, ControlFlowBuildAction buildAction)
+            => AddControlFlow(targetNodeName, buildAction) as IOverridenActionBuilder;
+
+        IOverridenActionBuilder IExceptionHandlerBase<IOverridenActionBuilder>.AddExceptionHandler<TException>(ExceptionHandlerDelegateAsync<TException> exceptionHandler)
+            => AddExceptionHandler<TException>(exceptionHandler) as IOverridenActionBuilder;
+
+        IOverridenActionBuilderWithOptions INodeOptions<IOverridenActionBuilderWithOptions>.SetOptions(NodeOptions nodeOptions)
+            => SetOptions(nodeOptions) as IOverridenActionBuilderWithOptions;
+
+        IOverridenActionBuilderWithOptions IObjectFlowBase<IOverridenActionBuilderWithOptions>.AddFlow<TToken>(string targetNodeName, ObjectFlowBuildAction<TToken> buildAction)
+            => AddFlow(targetNodeName, buildAction) as IOverridenActionBuilderWithOptions;
+
+        IOverridenActionBuilderWithOptions IControlFlowBase<IOverridenActionBuilderWithOptions>.AddControlFlow(string targetNodeName, ControlFlowBuildAction buildAction)
+            => AddControlFlow(targetNodeName, buildAction) as IOverridenActionBuilderWithOptions;
+
+        IOverridenActionBuilderWithOptions IExceptionHandlerBase<IOverridenActionBuilderWithOptions>.AddExceptionHandler<TException>(ExceptionHandlerDelegateAsync<TException> exceptionHandler)
+            => AddExceptionHandler(exceptionHandler) as IOverridenActionBuilderWithOptions;
+
+        IOverridenTimeEventActionBuilder IObjectFlowBase<IOverridenTimeEventActionBuilder>.AddFlow<TToken>(string targetNodeName, ObjectFlowBuildAction<TToken> buildAction)
+            => AddFlow(targetNodeName, buildAction) as IOverridenTimeEventActionBuilder;
+
+        IOverridenTimeEventActionBuilder IOverridenObjectFlowBase<IOverridenTimeEventActionBuilder>.UseFlow<TToken>(string targetNodeName, ObjectFlowBuildAction<TToken> buildAction)
+            => UseFlow(targetNodeName, buildAction) as IOverridenTimeEventActionBuilder;
+
+        IOverridenTimeEventActionBuilder IControlFlowBase<IOverridenTimeEventActionBuilder>.AddControlFlow(string targetNodeName, ControlFlowBuildAction buildAction)
+            => AddControlFlow(targetNodeName, buildAction) as IOverridenTimeEventActionBuilder;
+
+        IOverridenTimeEventActionBuilder IOverridenControlFlowBase<IOverridenTimeEventActionBuilder>.UseControlFlow(string targetNodeName, ControlFlowBuildAction buildAction)
+            => UseControlFlow(targetNodeName, buildAction) as IOverridenTimeEventActionBuilder;
+
+        IOverridenTimeEventActionBuilder IExceptionHandlerBase<IOverridenTimeEventActionBuilder>.AddExceptionHandler<TException>(ExceptionHandlerDelegateAsync<TException> exceptionHandler)
+            => AddExceptionHandler(exceptionHandler) as IOverridenTimeEventActionBuilder;
+
+        IOverridenSendEventActionBuilder IControlFlowBase<IOverridenSendEventActionBuilder>.AddControlFlow(string targetNodeName, ControlFlowBuildAction buildAction)
+            => AddControlFlow(targetNodeName, buildAction) as IOverridenSendEventActionBuilder;
+
+        IOverridenSendEventActionBuilder IOverridenControlFlowBase<IOverridenSendEventActionBuilder>.UseControlFlow(string targetNodeName, ControlFlowBuildAction buildAction)
+            => UseControlFlow(targetNodeName, buildAction) as IOverridenSendEventActionBuilder;
+
+        IOverridenDecisionBuilder IOverridenDecisionFlowBase<IOverridenDecisionBuilder>.UseFlow(string targetNodeName, ControlFlowBuildAction buildAction)
+            => UseControlFlow(targetNodeName, b => buildAction(b as IControlFlowBuilder)) as IOverridenDecisionBuilder;
+
+        IOverridenDecisionBuilder IOverridenElseDecisionFlowBase<IOverridenDecisionBuilder>.UseElseFlow(string targetNodeName, ElseControlFlowBuildAction buildAction)
+            => UseElseControlFlow(targetNodeName, b => buildAction(b as IElseControlFlowBuilder)) as IOverridenDecisionBuilder;
+
+        IOverridenDataStoreBuilder IObjectFlowBase<IOverridenDataStoreBuilder>.AddFlow<TToken>(string targetNodeName, ObjectFlowBuildAction<TToken> buildAction)
+            => AddFlow(targetNodeName, buildAction) as IOverridenDataStoreBuilder;
+
+        IOverridenDataStoreBuilder IOverridenObjectFlowBase<IOverridenDataStoreBuilder>.UseFlow<TToken>(string targetNodeName, ObjectFlowBuildAction<TToken> buildAction)
+            => UseFlow(targetNodeName, buildAction) as IOverridenDataStoreBuilder;
+
+        IOverridenPublishEventActionBuilder IControlFlowBase<IOverridenPublishEventActionBuilder>.AddControlFlow(string targetNodeName, ControlFlowBuildAction buildAction)
+            => AddControlFlow(targetNodeName, buildAction) as IOverridenPublishEventActionBuilder;
+
+        IOverridenPublishEventActionBuilder IOverridenControlFlowBase<IOverridenPublishEventActionBuilder>.UseControlFlow(string targetNodeName, ControlFlowBuildAction buildAction)
+            => UseControlFlow(targetNodeName, buildAction) as IOverridenPublishEventActionBuilder;
     }
 
     internal class ActionNodeBuilder<TNode>(Node node, BaseActivityBuilder activityBuilder) :
         NodeBuilder(node, activityBuilder),
-        ITypedActionBuilder<TNode>
+        ITypedActionBuilder<TNode>,
+        IOverridenTypedActionBuilder<TNode>
         where TNode : class, IActionNode
     {
         public ITypedActionBuilder<TNode> Configure(Action<TNode> action)
@@ -218,43 +364,30 @@ namespace Stateflows.Activities.Registration
         ITypedActionBuilder<TNode> IExceptionHandlerBase<ITypedActionBuilder<TNode>>.AddExceptionHandler<TException>(
             ExceptionHandlerDelegateAsync<TException> exceptionHandler)
             => AddExceptionHandler<TException>(exceptionHandler) as ITypedActionBuilder<TNode>;
-    }
-    
-    internal class AcceptEventNodeBuilder<TEvent, TAcceptEventAction>(Node node, BaseActivityBuilder activityBuilder) :
-        NodeBuilder(node, activityBuilder),
-        IAcceptEventActionBuilder<TEvent, TAcceptEventAction>
-        where TAcceptEventAction : class, IAcceptEventActionNode<TEvent>
-    {
-        public IAcceptEventActionBuilder<TEvent, TAcceptEventAction> Configure(Action<TEvent, TAcceptEventAction> action)
-        {
-            return this;
-        }
 
-        public IAcceptEventActionBuilder<TEvent, TAcceptEventAction> Configure(Action<TAcceptEventAction> action)
-        {
-            throw new NotImplementedException();
-        }
-        
-        IAcceptEventActionBuilder<TEvent, TAcceptEventAction> IObjectFlowBase<IAcceptEventActionBuilder<TEvent, TAcceptEventAction>>.AddFlow<TToken>(string targetNodeName,
-            ObjectFlowBuildAction<TToken> buildAction)
-            => AddFlow<TToken>(targetNodeName, buildAction) as IAcceptEventActionBuilder<TEvent, TAcceptEventAction>;
+        IOverridenTypedActionBuilder<TNode> IObjectFlowBase<IOverridenTypedActionBuilder<TNode>>.AddFlow<TToken>(string targetNodeName, ObjectFlowBuildAction<TToken> buildAction)
+            => AddFlow(targetNodeName, buildAction) as IOverridenTypedActionBuilder<TNode>;
 
-        IAcceptEventActionBuilder<TEvent, TAcceptEventAction> IControlFlowBase<IAcceptEventActionBuilder<TEvent, TAcceptEventAction>>.AddControlFlow(string targetNodeName,
-            ControlFlowBuildAction buildAction)
-            => AddControlFlow(targetNodeName, buildAction) as IAcceptEventActionBuilder<TEvent, TAcceptEventAction>;
+        IOverridenTypedActionBuilder<TNode> IControlFlowBase<IOverridenTypedActionBuilder<TNode>>.AddControlFlow(string targetNodeName, ControlFlowBuildAction buildAction)
+            => AddControlFlow(targetNodeName, buildAction) as IOverridenTypedActionBuilder<TNode>;
 
-        IAcceptEventActionBuilder<TEvent, TAcceptEventAction> IExceptionHandlerBase<IAcceptEventActionBuilder<TEvent, TAcceptEventAction>>.AddExceptionHandler<TException>(
-            ExceptionHandlerDelegateAsync<TException> exceptionHandler)
-            => AddExceptionHandler<TException>(exceptionHandler) as IAcceptEventActionBuilder<TEvent, TAcceptEventAction>;
+        IOverridenTypedActionBuilder<TNode> IExceptionHandlerBase<IOverridenTypedActionBuilder<TNode>>.AddExceptionHandler<TException>(ExceptionHandlerDelegateAsync<TException> exceptionHandler)
+            => AddExceptionHandler<TException>(exceptionHandler) as IOverridenTypedActionBuilder<TNode>;
+
+        IOverridenTypedActionBuilder<TNode> IElementBuilderBase<TNode, IOverridenTypedActionBuilder<TNode>>.Configure(Action<TNode> action)
+            => Configure(action) as IOverridenTypedActionBuilder<TNode>;
     }
     
     internal class TimeEventNodeBuilder<TNode>(Node node, BaseActivityBuilder activityBuilder) :
         NodeBuilder(node, activityBuilder),
-        ITimeEventActionBuilder<TNode>
+        ITimeEventActionBuilder<TNode>,
+        IOverridenTimeEventActionBuilder<TNode>
         where TNode : class, ITimeEventActionNode
     {
         public ITimeEventActionBuilder<TNode> Configure(Action<TNode> action)
         {
+            Node.ConfigurationAction = o => action((TNode)o);
+
             return this;
         }
         
@@ -269,5 +402,23 @@ namespace Stateflows.Activities.Registration
         ITimeEventActionBuilder<TNode> IExceptionHandlerBase<ITimeEventActionBuilder<TNode>>.AddExceptionHandler<TException>(
             ExceptionHandlerDelegateAsync<TException> exceptionHandler)
             => AddExceptionHandler<TException>(exceptionHandler) as ITimeEventActionBuilder<TNode>;
+
+        IOverridenTimeEventActionBuilder<TNode> IObjectFlowBase<IOverridenTimeEventActionBuilder<TNode>>.AddFlow<TToken>(string targetNodeName, ObjectFlowBuildAction<TToken> buildAction)
+            => AddFlow(targetNodeName, buildAction) as IOverridenTimeEventActionBuilder<TNode>;
+
+        IOverridenTimeEventActionBuilder<TNode> IControlFlowBase<IOverridenTimeEventActionBuilder<TNode>>.AddControlFlow(string targetNodeName, ControlFlowBuildAction buildAction)
+            => AddControlFlow(targetNodeName, buildAction) as IOverridenTimeEventActionBuilder<TNode>;
+
+        IOverridenTimeEventActionBuilder<TNode> IExceptionHandlerBase<IOverridenTimeEventActionBuilder<TNode>>.AddExceptionHandler<TException>(ExceptionHandlerDelegateAsync<TException> exceptionHandler)
+            => AddExceptionHandler(exceptionHandler) as IOverridenTimeEventActionBuilder<TNode>;
+
+        IOverridenTimeEventActionBuilder<TNode> IElementBuilderBase<TNode, IOverridenTimeEventActionBuilder<TNode>>.Configure(Action<TNode> action)
+            => Configure(action) as IOverridenTimeEventActionBuilder<TNode>;
+
+        IOverridenTimeEventActionBuilder<TNode> IOverridenObjectFlowBase<IOverridenTimeEventActionBuilder<TNode>>.UseFlow<TToken>(string targetNodeName, ObjectFlowBuildAction<TToken> buildAction)
+            => UseFlow<TToken>(targetNodeName, buildAction) as IOverridenTimeEventActionBuilder<TNode>;
+
+        IOverridenTimeEventActionBuilder<TNode> IOverridenControlFlowBase<IOverridenTimeEventActionBuilder<TNode>>.UseControlFlow(string targetNodeName, ControlFlowBuildAction buildAction)
+            => UseControlFlow(targetNodeName, buildAction) as IOverridenTimeEventActionBuilder<TNode>;
     }
 }

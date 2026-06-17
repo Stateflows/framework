@@ -15,7 +15,8 @@ public interface IReactiveStructuredActivityBuilder :
     INodeOptions<IReactiveStructuredActivityBuilderWithOptions>,
     IStructuredActivityEvents<IReactiveStructuredActivityBuilder>,
     ISendEventBase<IReactiveStructuredActivityBuilder>,
-    IAcceptEvent<IReactiveStructuredActivityBuilder>;
+    IPublishEventBase<IReactiveStructuredActivityBuilder>,
+    IAcceptEventBase<IReactiveStructuredActivityBuilder>;
 
 public interface IReactiveStructuredActivityBuilderWithOptions :
     IObjectFlowBase<IReactiveStructuredActivityBuilderWithOptions>,
@@ -29,4 +30,46 @@ public interface IReactiveStructuredActivityBuilderWithOptions :
     IExceptionHandlerBase<IReactiveStructuredActivityBuilderWithOptions>,
     IStructuredActivityEvents<IReactiveStructuredActivityBuilderWithOptions>,
     ISendEventBase<IReactiveStructuredActivityBuilderWithOptions>,
-    IAcceptEvent<IReactiveStructuredActivityBuilderWithOptions>;
+    IPublishEventBase<IReactiveStructuredActivityBuilderWithOptions>,
+    IAcceptEventBase<IReactiveStructuredActivityBuilderWithOptions>;
+
+public interface IOverridenReactiveStructuredActivityBuilder :
+    IObjectFlowBase<IOverridenReactiveStructuredActivityBuilder>,
+    IControlFlowBase<IOverridenReactiveStructuredActivityBuilder>,
+    IReactiveActivityBase<IOverridenReactiveStructuredActivityBuilder>,
+    IReactiveActivityOverrides<IOverridenReactiveStructuredActivityBuilder>,
+    IActivitySpecials<IOverridenReactiveStructuredActivityBuilder>,
+    IInitialBase<IOverridenReactiveStructuredActivityBuilder>,
+    IFinalBase<IOverridenReactiveStructuredActivityBuilder>,
+    IInputBase<IOverridenReactiveStructuredActivityBuilder>,
+    IOutputBase<IOverridenReactiveStructuredActivityBuilder>,
+    IExceptionHandlerBase<IOverridenReactiveStructuredActivityBuilder>,
+    INodeOptions<IOverridenReactiveStructuredActivityBuilderWithOptions>,
+    IStructuredActivityEvents<IOverridenReactiveStructuredActivityBuilder>,
+    ISendEventBase<IOverridenReactiveStructuredActivityBuilder>,
+    ISendEventOverrides<IOverridenReactiveStructuredActivityBuilder>,
+    IPublishEventBase<IOverridenReactiveStructuredActivityBuilder>,
+    IPublishEventOverrides<IOverridenReactiveStructuredActivityBuilder>,
+    IAcceptEventBase<IOverridenReactiveStructuredActivityBuilder>,
+    IAcceptEventOverrides<IOverridenReactiveStructuredActivityBuilder>,
+    IActivitySpecialsOverrides<IOverridenReactiveStructuredActivityBuilder>;
+
+public interface IOverridenReactiveStructuredActivityBuilderWithOptions :
+    IObjectFlowBase<IOverridenReactiveStructuredActivityBuilderWithOptions>,
+    IControlFlowBase<IOverridenReactiveStructuredActivityBuilderWithOptions>,
+    IReactiveActivityBase<IOverridenReactiveStructuredActivityBuilderWithOptions>,
+    IReactiveActivityOverrides<IOverridenReactiveStructuredActivityBuilderWithOptions>,
+    IActivitySpecials<IOverridenReactiveStructuredActivityBuilderWithOptions>,
+    IInitialBase<IOverridenReactiveStructuredActivityBuilderWithOptions>,
+    IFinalBase<IOverridenReactiveStructuredActivityBuilderWithOptions>,
+    IInputBase<IOverridenReactiveStructuredActivityBuilderWithOptions>,
+    IOutputBase<IOverridenReactiveStructuredActivityBuilderWithOptions>,
+    IExceptionHandlerBase<IOverridenReactiveStructuredActivityBuilderWithOptions>,
+    IStructuredActivityEvents<IOverridenReactiveStructuredActivityBuilderWithOptions>,
+    ISendEventBase<IOverridenReactiveStructuredActivityBuilderWithOptions>,
+    ISendEventOverrides<IOverridenReactiveStructuredActivityBuilderWithOptions>,
+    IPublishEventBase<IOverridenReactiveStructuredActivityBuilderWithOptions>,
+    IPublishEventOverrides<IOverridenReactiveStructuredActivityBuilderWithOptions>,
+    IAcceptEventBase<IOverridenReactiveStructuredActivityBuilderWithOptions>,
+    IAcceptEventOverrides<IOverridenReactiveStructuredActivityBuilderWithOptions>,
+    IActivitySpecialsOverrides<IOverridenReactiveStructuredActivityBuilderWithOptions>;

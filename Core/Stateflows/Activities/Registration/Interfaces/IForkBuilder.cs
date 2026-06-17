@@ -2,6 +2,11 @@
 
 namespace Stateflows.Activities.Registration.Interfaces
 {
-    public interface IForkBuilder : IObjectFlowBase<IForkBuilder>, IControlFlowBase<IForkBuilder>
-    { }
+    public interface IForkBuilder : IObjectFlowBase<IForkBuilder>, IControlFlowBase<IForkBuilder>;
+    
+    public interface IOverridenForkBuilder :
+        IObjectFlowBase<IOverridenForkBuilder>,
+        IOverridenObjectFlowBase<IOverridenForkBuilder>,
+        IControlFlowBase<IOverridenForkBuilder>,
+        IOverridenControlFlowBase<IOverridenForkBuilder>;
 }

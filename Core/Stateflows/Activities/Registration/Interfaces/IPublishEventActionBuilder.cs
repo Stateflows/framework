@@ -3,3 +3,7 @@
 namespace Stateflows.Activities.Registration.Interfaces;
 
 public interface IPublishEventActionBuilder : IControlFlowBase<IPublishEventActionBuilder>;
+
+public interface IOverridenPublishEventActionBuilder :
+    IControlFlowBase<IOverridenPublishEventActionBuilder>,
+    IOverridenControlFlowBase<IOverridenPublishEventActionBuilder>;

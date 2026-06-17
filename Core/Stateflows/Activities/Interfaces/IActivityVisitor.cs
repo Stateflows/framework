@@ -32,6 +32,11 @@ namespace Stateflows.Activities
         
         Task SendEventNodeTypeAddedAsync<TEvent, TSendEventAction>(string activityName, int activityVersion, string nodeName)
             where TSendEventAction : class, ISendEventActionNode<TEvent>;
+        
+        Task PublishEventNodeAddedAsync<TEvent>(string activityName, int activityVersion, string nodeName, string parentNodeName = null);
+        
+        Task PublishEventNodeTypeAddedAsync<TEvent, TPublishEventAction>(string activityName, int activityVersion, string nodeName)
+            where TPublishEventAction : class, IPublishEventActionNode<TEvent>;
 
         Task ControlFlowAddedAsync(string activityName, int activityVersion, string sourceNodeName, string targetNodeName, bool isElse = false);
 

@@ -3,6 +3,7 @@ using System.Linq;
 using Microsoft.Extensions.DependencyInjection;
 using Stateflows.Actions;
 using Stateflows.Activities;
+using Stateflows.Entities;
 using Stateflows.Common;
 using Stateflows.Common.Cache;
 using Stateflows.Common.Classes;
@@ -121,6 +122,7 @@ namespace Stateflows
 
             ActionsDependencyInjection.Build(builder);
             ActivitiesDependencyInjection.Build(builder);
+            EntitiesDependencyInjection.Build(builder);
             StateMachinesDependencyInjection.Build(builder);
 
             return services;

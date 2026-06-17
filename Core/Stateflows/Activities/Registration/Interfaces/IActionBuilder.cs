@@ -20,3 +20,21 @@ public interface ITypedActionBuilder<out TAction> :
     IExceptionHandlerBase<ITypedActionBuilder<TAction>>,
     IElementBuilderBase<TAction, ITypedActionBuilder<TAction>>
     where TAction : class, IActionNode;
+
+public interface IOverridenActionBuilder :
+    IObjectFlowBase<IOverridenActionBuilder>,
+    IControlFlowBase<IOverridenActionBuilder>,
+    IExceptionHandlerBase<IOverridenActionBuilder>,
+    INodeOptions<IOverridenActionBuilderWithOptions>;
+
+public interface IOverridenActionBuilderWithOptions : 
+    IObjectFlowBase<IOverridenActionBuilderWithOptions>,
+    IControlFlowBase<IOverridenActionBuilderWithOptions>,
+    IExceptionHandlerBase<IOverridenActionBuilderWithOptions>;
+
+public interface IOverridenTypedActionBuilder<out TAction> :
+    IObjectFlowBase<IOverridenTypedActionBuilder<TAction>>,
+    IControlFlowBase<IOverridenTypedActionBuilder<TAction>>,
+    IExceptionHandlerBase<IOverridenTypedActionBuilder<TAction>>,
+    IElementBuilderBase<TAction, IOverridenTypedActionBuilder<TAction>>
+    where TAction : class, IActionNode;

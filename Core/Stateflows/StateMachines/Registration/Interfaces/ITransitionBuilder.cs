@@ -8,8 +8,7 @@ namespace Stateflows.StateMachines.Registration.Interfaces
         ITriggeredTransitionUtils<ITransitionBuilder<TEvent>>,
         ITargetedTransitionUtils<ITransitionBuilder<TEvent>>,
         IEffect<TEvent, ITransitionBuilder<TEvent>>,
-        IGuard<TEvent, ITransitionBuilder<TEvent>>
-    { }
+        IGuard<TEvent, ITransitionBuilder<TEvent>>;
 
     public interface IOverridenTransitionBuilder<TEvent> :
         ITriggeredTransitionUtils<IOverridenTransitionBuilder<TEvent>>,

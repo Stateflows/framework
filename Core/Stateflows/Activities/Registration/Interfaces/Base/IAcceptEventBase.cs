@@ -2,26 +2,28 @@
 using System.Threading.Tasks;
 using Stateflows.Common;
 using Stateflows.Activities.Context.Classes;
+using Stateflows.Activities.Registration.Builders;
 using Stateflows.Activities.Registration.Interfaces.Internal;
 
 namespace Stateflows.Activities.Registration.Interfaces.Base
 {
-    public interface IAcceptEvent<out TReturn>
+    public interface IAcceptEventBase<out TReturn>
     {
         #region AddAcceptEventAction
-        TReturn AddAcceptEventAction<TEvent>(string actionNodeName, AcceptEventActionDelegateAsync<TEvent> eventActionAsync, AcceptEventActionBuildAction buildAction = null);
+        TReturn AddAcceptEventAction<TEvent>(string actionNodeName, AcceptEventActionDelegateAsync<TEvent> eventActionAsync, AcceptEventActionBuildAction<TEvent> buildAction = null);
         
         [DebuggerHidden]
-        public TReturn AddAcceptEventAction<TEvent>(string actionNodeName, AcceptEventActionBuildAction buildAction)
+        public TReturn AddAcceptEventAction<TEvent>(string actionNodeName, AcceptEventActionBuildAction<TEvent> buildAction)
             => AddAcceptEventAction<TEvent>(actionNodeName, c => Task.CompletedTask, buildAction);
 
         [DebuggerHidden]
-        public TReturn AddAcceptEventAction<TEvent>(AcceptEventActionBuildAction buildAction)
+        public TReturn AddAcceptEventAction<TEvent>(AcceptEventActionBuildAction<TEvent> buildAction)
             => AddAcceptEventAction<TEvent>(AcceptEventActionNode<TEvent>.Name, c => Task.CompletedTask, buildAction);
 
         [DebuggerHidden]
-        public TReturn AddAcceptEventAction<TEvent>(AcceptEventActionDelegateAsync<TEvent> actionAsync, AcceptEventActionBuildAction buildAction = null)
+        public TReturn AddAcceptEventAction<TEvent>(AcceptEventActionDelegateAsync<TEvent> actionAsync, AcceptEventActionBuildAction<TEvent> buildAction = null)
             => AddAcceptEventAction<TEvent>(AcceptEventActionNode<TEvent>.Name, actionAsync, buildAction);
+        
         [DebuggerHidden]
         public TReturn AddAcceptEventAction<TEvent, TAcceptEventAction>(AcceptEventActionBuildAction<TEvent, TAcceptEventAction> buildAction = null)
             where TAcceptEventAction : class, IAcceptEventActionNode<TEvent>

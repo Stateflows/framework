@@ -30,6 +30,16 @@ namespace Stateflows.Activities.Registration.Interfaces.Base
             where TTargetNode : class, IActivityNode
             => AddControlFlow<TFlow>(ActivityNode<TTargetNode>.Name, buildAction);
     }
+    
+    public interface IOverridenControlFlowBase<out TReturn>
+    {
+        TReturn UseControlFlow(string targetNodeName, ControlFlowBuildAction buildAction);
+        
+        [DebuggerHidden]
+        public TReturn UseControlFlow<TTargetNode>(ControlFlowBuildAction buildAction)
+            where TTargetNode : class, IActivityNode
+            => UseControlFlow(ActivityNode<TTargetNode>.Name, buildAction);
+    }
 
     public interface IElseControlFlowBase<out TReturn>
     {
@@ -83,6 +93,16 @@ namespace Stateflows.Activities.Registration.Interfaces.Base
             => AddFlow<TFlow>(ActivityNode<TTargetNode>.Name, buildAction);
     }
 
+    public interface IOverridenDecisionFlowBase<out TReturn>
+    {
+        TReturn UseFlow(string targetNodeName, ControlFlowBuildAction buildAction);
+        
+        [DebuggerHidden]
+        public TReturn UseFlow<TTargetNode>(ControlFlowBuildAction buildAction = null)
+            where TTargetNode : class, IActivityNode
+            => UseFlow(ActivityNode<TTargetNode>.Name, buildAction);
+    }
+
     public interface IElseDecisionFlowBase<out TReturn>
     {
         TReturn AddElseFlow(string targetNodeName, ElseControlFlowBuildAction buildAction = null);
@@ -105,6 +125,16 @@ namespace Stateflows.Activities.Registration.Interfaces.Base
             where TFlow : class, IControlFlow
             where TTargetNode : class, IActivityNode
             => AddElseFlow<TFlow>(ActivityNode<TTargetNode>.Name, buildAction);
+    }
+
+    public interface IOverridenElseDecisionFlowBase<out TReturn>
+    {
+        TReturn UseElseFlow(string targetNodeName, ElseControlFlowBuildAction buildAction = null);
+        
+        [DebuggerHidden]
+        public TReturn UseElseFlow<TTargetNode>(ElseControlFlowBuildAction buildAction = null)
+            where TTargetNode : class, IActivityNode
+            => UseElseFlow(ActivityNode<TTargetNode>.Name, buildAction);
     }
 
     public interface IControlFlowBase
@@ -133,5 +163,15 @@ namespace Stateflows.Activities.Registration.Interfaces.Base
             where TFlow : class, IControlFlow
             where TTargetNode : class, IActivityNode
             => AddControlFlow<TFlow>(ActivityNode<TTargetNode>.Name, buildAction);
+    }
+
+    public interface IOverridenControlFlowBase
+    {
+        void UseControlFlow(string targetNodeName, ControlFlowBuildAction buildAction = null);
+        
+        [DebuggerHidden]
+        public void UseControlFlow<TTargetNode>(ControlFlowBuildAction buildAction = null)
+            where TTargetNode : class, IActivityNode
+            => UseControlFlow(ActivityNode<TTargetNode>.Name, buildAction);
     }
 }

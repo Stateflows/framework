@@ -221,6 +221,26 @@ namespace Stateflows.Activities.Engine
         }
 
         [DebuggerHidden]
+        public Task<TPublishEventAction> GetPublishEventActionAsync<TEvent, TPublishEventAction>(IActionContext context)
+            where TPublishEventAction : class, IPublishEventActionNode<TEvent>
+        {
+            ContextValues.GlobalValuesHolder.Value = context.Behavior.Values;
+            ContextValues.StateValuesHolder.Value = null;
+            ContextValues.ParentStateValuesHolder.Value = null;
+            ContextValues.SourceStateValuesHolder.Value = null;
+            ContextValues.TargetStateValuesHolder.Value = null;
+
+            ActivitiesContextHolder.NodeContext.Value = context.Node;
+            ActivitiesContextHolder.FlowContext.Value = null;
+            ActivitiesContextHolder.ActivityContext.Value = (IActivityContext)context.Behavior;
+            ActivitiesContextHolder.BehaviorContext.Value = context.Behavior;
+            ActivitiesContextHolder.ExecutionContext.Value = context;
+            ActivitiesContextHolder.ExceptionContext.Value = null;
+
+            return StateflowsActivator.CreateModelElementInstanceAsync<TPublishEventAction>(ServiceProvider, "send event action");
+        }
+
+        [DebuggerHidden]
         public Task<TStructuredActivity> GetStructuredActivityAsync<TStructuredActivity>(IActionContext context)
             where TStructuredActivity : class, IStructuredActivityNode
         {

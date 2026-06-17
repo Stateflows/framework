@@ -37,19 +37,19 @@ namespace Stateflows.StateMachines.Registration
         public BehaviorClass? OwnerClass { get; set; }
         public BehaviorClass? ParentClass { get; set; }
 
-        private static void RegisterStateMachine(Type stateMachineType, StateMachineElementsBuilder stateMachineElementsBuilder)
+        private static void RegisterStateMachine(Type stateMachineType, StateMachineBuilder stateMachineBuilder)
         {
             // Try to invoke a static RegisterEndpoints(EndpointsBuilder) on the concrete type
             var staticBuildMethod = stateMachineType.GetMethod(
                 nameof(IStateMachine.Build),
                 BindingFlags.Public | BindingFlags.Static,
                 binder: null,
-                types: [typeof(StateMachineElementsBuilder)],
+                types: [typeof(StateMachineBuilder)],
                 modifiers: null
             );
 
             // static method found -> invoke without creating an instance
-            staticBuildMethod.Invoke(null, [stateMachineElementsBuilder]);
+            staticBuildMethod.Invoke(null, [stateMachineBuilder]);
         }
 
         private bool IsNewestVersion(string stateMachineName, int version)
@@ -84,7 +84,7 @@ namespace Stateflows.StateMachines.Registration
                 throw new StateMachineDefinitionException($"State machine '{stateMachineName}' with version '{version}' is already registered", new StateMachineClass(stateMachineName));
             }
 
-            var builder = new StateMachineElementsBuilder(stateMachineName, version, stateflowsBuilder, OwnerClass, ParentClass);
+            var builder = new StateMachineBuilder(stateMachineName, version, stateflowsBuilder, OwnerClass, ParentClass);
 
             // Assign to local variable to avoid value being overriden when invoking lambda function at a later stage
             var ownerClass = OwnerClass;
@@ -122,7 +122,7 @@ namespace Stateflows.StateMachines.Registration
                 throw new StateMachineDefinitionException($"State machine '{stateMachineName}' with version '{version}' is already registered", new StateMachineClass(stateMachineName));
             }
 
-            var builder = new StateMachineElementsBuilder(stateMachineName, version, stateflowsBuilder, OwnerClass, ParentClass)
+            var builder = new StateMachineBuilder(stateMachineName, version, stateflowsBuilder, OwnerClass, ParentClass)
             {
                 Graph =
                     {

@@ -63,6 +63,8 @@
             throw new ApplicationException("State Machine not found");
         }
 
+        stateMachineBehavior.SendAsync(42);
+
         #region watchers
         
         plantUmlWatcher = await stateMachineBehavior.WatchPlantUmlAsync(

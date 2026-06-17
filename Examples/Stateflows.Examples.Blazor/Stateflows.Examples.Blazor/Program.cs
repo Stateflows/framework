@@ -1,4 +1,8 @@
+using System.ComponentModel.DataAnnotations;
 using System.Diagnostics;
+using System.Runtime.CompilerServices;
+using Microsoft.AspNetCore.Http.HttpResults;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.ClearScript;
 using Microsoft.EntityFrameworkCore;
 using OpenTelemetry;
@@ -27,6 +31,8 @@ var builder = WebApplication.CreateBuilder(args);
 // );
 
 builder.Services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
+
+builder.Services.AddValidation();
 
 // In order to host Stateflows behaviors, Stateflows framework must be registered in the app.
 builder.Services.AddStateflows(b => b

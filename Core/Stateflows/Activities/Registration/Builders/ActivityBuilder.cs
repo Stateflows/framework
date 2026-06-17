@@ -20,6 +20,7 @@ namespace Stateflows.Activities.Registration.Builders
     internal class ActivityBuilder :
         BaseActivityBuilder,
         IActivityBuilder,
+        IOverridenActivityBuilder,
         IGraphBuilder,
         IBehaviorBuilder
     {
@@ -35,20 +36,20 @@ namespace Stateflows.Activities.Registration.Builders
             Graph = new Graph(name, version, stateflowsBuilder, ownerClass, parentClass);
         }
 
-        private IActivityBuilder AddInitializer(Type initializerType, string initializerName, ActivityPredicateAsync initializerAction)
-        {
-            if (!Graph.Initializers.TryGetValue(initializerName, out var initializer))
-            {
-                initializer = new Logic<ActivityPredicateAsync>(Constants.Initialize);
-
-                Graph.Initializers.Add(initializerName, initializer);
-                Graph.InitializerTypes.Add(initializerType);
-            }
-
-            initializer.Actions.Add(initializerAction);
-
-            return this;
-        }
+        // private IActivityBuilder AddInitializer(Type initializerType, string initializerName, ActivityPredicateAsync initializerAction)
+        // {
+        //     if (!Graph.Initializers.TryGetValue(initializerName, out var initializer))
+        //     {
+        //         initializer = new Logic<ActivityPredicateAsync>(Constants.Initialize);
+        //
+        //         Graph.Initializers.Add(initializerName, initializer);
+        //         Graph.InitializerTypes.Add(initializerType);
+        //     }
+        //
+        //     initializer.Actions.Add(initializerAction);
+        //
+        //     return this;
+        // }
 
         public IActivityBuilder AddDefaultInitializer(Func<IActivityInitializationContext, Task<bool>> actionAsync)
         {
@@ -68,6 +69,15 @@ namespace Stateflows.Activities.Registration.Builders
 
             return this;
         }
+
+        IOverridenActivityBuilder IActivityEvents<IOverridenActivityBuilder>.AddInitializer<TInitializationEvent>(Func<IActivityInitializationContext<TInitializationEvent>, Task<bool>> actionAsync)
+            => AddInitializer<TInitializationEvent>(actionAsync) as IOverridenActivityBuilder;
+
+        IOverridenActivityBuilder IActivityEvents<IOverridenActivityBuilder>.AddFinalizer(Func<IActivityActionContext, Task> actionAsync)
+            => AddFinalizer(actionAsync);
+
+        IOverridenActivityBuilder IActivityEvents<IOverridenActivityBuilder>.AddDefaultInitializer(Func<IActivityInitializationContext, Task<bool>> actionAsync)
+            => AddDefaultInitializer(actionAsync) as IOverridenActivityBuilder;
 
         public IActivityBuilder AddInitializer<TInitializationEvent>(Func<IActivityInitializationContext<TInitializationEvent>, Task<bool>> actionAsync)
         {
@@ -132,9 +142,20 @@ namespace Stateflows.Activities.Registration.Builders
         IActivityBuilder IReactiveActivityBase<IActivityBuilder>.AddStructuredActivity(string actionNodeName, ReactiveStructuredActivityBuildAction buildAction)
             => AddStructuredActivity(actionNodeName, buildAction) as IActivityBuilder;
 
+        IOverridenActivityBuilder IReactiveActivityBase<IOverridenActivityBuilder>.AddParallelActivity<TParallelizationToken>(string actionNodeName,
+            ParallelActivityBuildAction buildAction, int chunkSize)
+            => AddParallelActivity<TParallelizationToken>(actionNodeName, buildAction, chunkSize) as IOverridenActivityBuilder;
+
+        IOverridenActivityBuilder IReactiveActivityBase<IOverridenActivityBuilder>.AddIterativeActivity<TToken>(string actionNodeName, IterativeActivityBuildAction buildAction,
+            int chunkSize)
+            => AddIterativeActivity<TToken>(actionNodeName, buildAction, chunkSize) as IOverridenActivityBuilder;
+
         IActivityBuilder IActivityEvents<IActivityBuilder>.AddFinalizer(Func<IActivityActionContext, Task> actionAsync)
+            => AddFinalizer(actionAsync);
+        
+        private ActivityBuilder AddFinalizer(Func<IActivityActionContext, Task> actionAsync)
         {
-            var result = AddOnFinalize(actionAsync) as IActivityBuilder;
+            var result = AddOnFinalize(actionAsync) as ActivityBuilder;
             
             Graph.VisitingTasks.Add(v => v.FinalizerAddedAsync(Graph.Name, Graph.Version));
 
@@ -153,16 +174,28 @@ namespace Stateflows.Activities.Registration.Builders
         IActivityBuilder IOutputBase<IActivityBuilder>.AddOutput()
             => AddOutput() as IActivityBuilder;
 
+        IOverridenActivityBuilder IReactiveActivityBase<IOverridenActivityBuilder>.AddStructuredActivity(string actionNodeName,
+            ReactiveStructuredActivityBuildAction buildAction)
+            => AddStructuredActivity(actionNodeName, buildAction) as IOverridenActivityBuilder;
+
         IActivityBuilder IReactiveActivityBase<IActivityBuilder>.AddParallelActivity<TParallelizationToken>(string actionNodeName, ParallelActivityBuildAction buildAction, int chunkSize)
             => AddParallelActivity<TParallelizationToken>(actionNodeName, buildAction, chunkSize) as IActivityBuilder;
 
         IActivityBuilder IReactiveActivityBase<IActivityBuilder>.AddIterativeActivity<TIterationToken>(string actionNodeName, IterativeActivityBuildAction buildAction, int chunkSize)
             => AddIterativeActivity<TIterationToken>(actionNodeName, buildAction, chunkSize) as IActivityBuilder;
 
-        IActivityBuilder IAcceptEvent<IActivityBuilder>.AddAcceptEventAction<TEvent>(string actionNodeName, AcceptEventActionDelegateAsync<TEvent> eventActionAsync, AcceptEventActionBuildAction buildAction)
+        IActivityBuilder IAcceptEventBase<IActivityBuilder>.AddAcceptEventAction<TEvent>(string actionNodeName, AcceptEventActionDelegateAsync<TEvent> eventActionAsync, AcceptEventActionBuildAction<TEvent> buildAction)
             => AddAcceptEventAction<TEvent>(actionNodeName, eventActionAsync, buildAction) as IActivityBuilder;
 
-        IActivityBuilder IAcceptEvent<IActivityBuilder>.AddTimeEventAction<TTimeEvent>(string actionNodeName, TimeEventActionDelegateAsync eventActionAsync, TimeEventNodeBuildAction buildAction)
+        IOverridenActivityBuilder IAcceptEventBase<IOverridenActivityBuilder>.AddTimeEventAction<TTimeEvent>(string actionNodeName,
+            TimeEventActionDelegateAsync eventActionAsync, TimeEventNodeBuildAction buildAction)
+            => AddTimeEventAction<TTimeEvent>(actionNodeName, eventActionAsync, buildAction) as IOverridenActivityBuilder;
+
+        IOverridenActivityBuilder IAcceptEventBase<IOverridenActivityBuilder>.AddAcceptEventAction<TEvent>(string actionNodeName,
+            AcceptEventActionDelegateAsync<TEvent> eventActionAsync, AcceptEventActionBuildAction<TEvent> buildAction)
+            => AddAcceptEventAction<TEvent>(actionNodeName, eventActionAsync, buildAction) as IOverridenActivityBuilder;
+
+        IActivityBuilder IAcceptEventBase<IActivityBuilder>.AddTimeEventAction<TTimeEvent>(string actionNodeName, TimeEventActionDelegateAsync eventActionAsync, TimeEventNodeBuildAction buildAction)
             => AddTimeEventAction<TTimeEvent>(actionNodeName, eventActionAsync, buildAction) as IActivityBuilder;
 
         IActivityBuilder ISendEventBase<IActivityBuilder>.AddSendEventAction<TEvent>(string actionNodeName, SendEventActionDelegateAsync<TEvent> actionAsync, BehaviorIdSelectorAsync targetSelectorAsync, SendEventActionBuildAction buildAction)
@@ -178,6 +211,12 @@ namespace Stateflows.Activities.Registration.Builders
             return this;
         }
 
+        IOverridenActivityBuilder IActivityUtils<IOverridenActivityBuilder>.SetResourceName(string resourceName)
+            => SetResourceName(resourceName) as IOverridenActivityBuilder;
+
+        IOverridenActivityBuilder IActivityUtils<IOverridenActivityBuilder>.AddExceptionHandler<TExceptionHandler>()
+            => AddExceptionHandler<TExceptionHandler>() as  IOverridenActivityBuilder;
+
         public IActivityBuilder SetResourceName(string resourceName)
         {
             Graph.ResourceName = resourceName;
@@ -185,12 +224,18 @@ namespace Stateflows.Activities.Registration.Builders
             return this;
         }
 
+        IOverridenActivityBuilder IActivityUtils<IOverridenActivityBuilder>.AddExceptionHandler(ActivityExceptionHandlerFactoryAsync exceptionHandlerFactory)
+            => AddExceptionHandler(exceptionHandlerFactory) as IOverridenActivityBuilder;
+
         public IActivityBuilder AddExceptionHandler(ActivityExceptionHandlerFactory exceptionHandlerFactory)
         {
             Graph.ExceptionHandlerFactories.Add(serviceProvider => Task.FromResult(exceptionHandlerFactory(serviceProvider)));
 
             return this;
         }
+
+        IOverridenActivityBuilder IActivityUtils<IOverridenActivityBuilder>.AddObserver<TObserver>()
+            => AddObserver<TObserver>() as IOverridenActivityBuilder;
 
         public IActivityBuilder AddExceptionHandler(ActivityExceptionHandlerFactoryAsync exceptionHandlerFactoryAsync)
         {
@@ -206,6 +251,15 @@ namespace Stateflows.Activities.Registration.Builders
 
             return this;
         }
+
+        IOverridenActivityBuilder IActivityUtils<IOverridenActivityBuilder>.AddObserver(ActivityObserverFactoryAsync observerFactory)
+            => AddObserver(observerFactory) as IOverridenActivityBuilder;
+
+        IOverridenActivityBuilder IActivityUtils<IOverridenActivityBuilder>.AddInterceptor(ActivityInterceptorFactoryAsync interceptorFactory)
+            => AddInterceptor(interceptorFactory) as IOverridenActivityBuilder;
+
+        IOverridenActivityBuilder IActivityUtils<IOverridenActivityBuilder>.AddInterceptor<TInterceptor>()
+            => AddInterceptor<TInterceptor>() as IOverridenActivityBuilder;
 
         public IActivityBuilder AddInterceptor(ActivityInterceptorFactory interceptorFactory)
         {
@@ -246,5 +300,115 @@ namespace Stateflows.Activities.Registration.Builders
 
         public BehaviorClass BehaviorClass => Graph.Class;
         public int BehaviorVersion => Graph.Version;
+        public IOverridenActivityBuilder UseActivity<TActivity>(OverridenActivityBuildAction buildAction)
+            where TActivity : class, IActivity
+        {
+            Graph.BaseActivityName = Activity<TActivity>.Name;
+            TActivity.Build(this);
+            
+            foreach (var node in Graph.AllNodes.Values)
+            {
+                node.OriginActivityName ??= Graph.BaseActivityName;
+            }
+            
+            foreach (var edge in Graph.AllEdgesList)
+            {
+                edge.OriginActivityName ??= Graph.BaseActivityName;
+            }
+            
+            buildAction?.Invoke(this);
+
+            return this;
+        }
+
+        IOverridenActivityBuilder IActivityActionBase<IOverridenActivityBuilder>.AddAction(string actionNodeName, Func<IActionContext, Task> actionAsync, ActionBuildAction buildAction)
+            => AddAction(actionNodeName, actionAsync, b => buildAction?.Invoke(b)) as IOverridenActivityBuilder;
+
+        IOverridenActivityBuilder IInitialBase<IOverridenActivityBuilder>.AddInitial(InitialBuildAction buildAction)
+            => AddInitial(buildAction) as IOverridenActivityBuilder;
+
+        IOverridenActivityBuilder IFinalBase<IOverridenActivityBuilder>.AddFinal()
+            => AddFinal() as IOverridenActivityBuilder;
+
+        IOverridenActivityBuilder IInputBase<IOverridenActivityBuilder>.AddInput(InputBuildAction buildAction)
+            => AddInput(buildAction) as IOverridenActivityBuilder;
+
+        IOverridenActivityBuilder IOutputBase<IOverridenActivityBuilder>.AddOutput()
+            => AddOutput() as IOverridenActivityBuilder;
+
+        IOverridenActivityBuilder ISendEventBase<IOverridenActivityBuilder>.AddSendEventAction<TEvent>(string actionNodeName, SendEventActionDelegateAsync<TEvent> actionAsync,
+            BehaviorIdSelectorAsync targetSelectorAsync, SendEventActionBuildAction buildAction)
+            => AddSendEventAction<TEvent>(actionNodeName, actionAsync, targetSelectorAsync, buildAction) as IOverridenActivityBuilder;
+
+        IOverridenActivityBuilder IActivitySpecialsOverrides<IOverridenActivityBuilder>.UseInitial(OverridenInitialBuildAction buildAction)
+            => UseInitial(buildAction) as IOverridenActivityBuilder;
+
+        IOverridenActivityBuilder IActivitySpecialsOverrides<IOverridenActivityBuilder>.UseInput(OverridenInputBuildAction buildAction)
+            => UseInput(buildAction) as IOverridenActivityBuilder;
+
+        IOverridenActivityBuilder IActivitySpecialsOverrides<IOverridenActivityBuilder>.UseJoin(string joinNodeName, OverridenJoinBuildAction buildAction)
+            => UseJoin(joinNodeName, buildAction) as IOverridenActivityBuilder;
+
+        IOverridenActivityBuilder IActivitySpecialsOverrides<IOverridenActivityBuilder>.UseFork(string forkNodeName, OverridenForkBuildAction buildAction)
+            => UseFork(forkNodeName, buildAction) as IOverridenActivityBuilder;
+
+        IOverridenActivityBuilder IActivitySpecialsOverrides<IOverridenActivityBuilder>.UseMerge(string mergeNodeName, OverridenMergeBuildAction buildAction)
+            => UseMerge(mergeNodeName, buildAction) as IOverridenActivityBuilder;
+
+        IOverridenActivityBuilder IActivitySpecialsOverrides<IOverridenActivityBuilder>.UseControlDecision(string decisionNodeName, OverridenDecisionBuildAction buildAction)
+            => UseControlDecision(decisionNodeName, buildAction) as IOverridenActivityBuilder;
+
+        IOverridenActivityBuilder IActivitySpecialsOverrides<IOverridenActivityBuilder>.UseDecision<TToken>(string decisionNodeName, OverridenDecisionBuildAction<TToken> decisionBuildAction)
+            => UseDecision(decisionNodeName, decisionBuildAction) as IOverridenActivityBuilder;
+
+        IOverridenActivityBuilder IActivitySpecialsOverrides<IOverridenActivityBuilder>.UseDataStore(string dataStoreNodeName, OverridenDataStoreBuildAction buildAction)
+            => UseDataStore(dataStoreNodeName, buildAction) as IOverridenActivityBuilder;
+
+        // public IOverridenActivityBuilder UseAcceptEventAction<TEvent>(string actionNodeName,
+        //     OverridenAcceptEventActionBuildAction<TEvent> buildAction)
+        //     => UseAcceptEventAction<TEvent>(actionNodeName, buildAction);
+
+        // public IOverridenActivityBuilder UseTimeEventAction<TTimeEvent>(string actionNodeName,
+        //     OverridenTimeEventNodeBuildAction buildAction) where TTimeEvent : TimeEvent, new()
+        //     => UseTimeEventAction<TTimeEvent>(actionNodeName, buildAction);
+
+        IOverridenActivityBuilder IPublishEventBase<IOverridenActivityBuilder>.AddPublishEventAction<TEvent>(string actionNodeName,
+            PublishEventActionDelegateAsync<TEvent> actionAsync, PublishEventActionBuildAction buildAction)
+            => AddPublishEventAction<TEvent>(actionNodeName, actionAsync, buildAction) as IOverridenActivityBuilder;
+
+        IOverridenActivityBuilder IReactiveActivityOverrides<IOverridenActivityBuilder>.UseParallelActivity<TParallelizationToken>(string actionNodeName,
+            OverridenParallelActivityBuildAction buildAction)
+            => UseParallelActivity<TParallelizationToken>(actionNodeName, buildAction) as IOverridenActivityBuilder;
+
+        IOverridenActivityBuilder IReactiveActivityOverrides<IOverridenActivityBuilder>.UseIterativeActivity<TToken>(string actionNodeName,
+            OverridenIterativeActivityBuildAction buildAction)
+            => UseIterativeActivity<TToken>(actionNodeName, buildAction) as IOverridenActivityBuilder;
+
+        IOverridenActivityBuilder IReactiveActivityOverrides<IOverridenActivityBuilder>.UseStructuredActivity(string structuredActivityNodeName,
+            OverridenReactiveStructuredActivityBuildAction buildAction)
+            => UseStructuredActivity(structuredActivityNodeName, b => buildAction?.Invoke(b as IOverridenReactiveStructuredActivityBuilder)) as IOverridenActivityBuilder;
+
+        IOverridenActivityBuilder IActivityActionOverrides<IOverridenActivityBuilder>.UseAction(string actionNodeName, OverridenActionBuildAction buildAction)
+            => UseAction(actionNodeName, buildAction) as IOverridenActivityBuilder;
+
+        IActivityBuilder IPublishEventBase<IActivityBuilder>.AddPublishEventAction<TEvent>(string actionNodeName,
+            PublishEventActionDelegateAsync<TEvent> actionAsync,
+            PublishEventActionBuildAction buildAction)
+            => AddPublishEventAction<TEvent>(actionNodeName, actionAsync, buildAction) as IActivityBuilder;
+
+        IOverridenActivityBuilder ISendEventOverrides<IOverridenActivityBuilder>.UseSendEventAction<TEvent>(string actionNodeName, OverridenSendEventActionBuildAction buildAction)
+            => UseSendEventAction<TEvent>(actionNodeName, buildAction) as IOverridenActivityBuilder;
+
+        IOverridenActivityBuilder IPublishEventOverrides<IOverridenActivityBuilder>.UsePublishEventAction<TEvent>(string actionNodeName,
+            OverridenPublishEventActionBuildAction buildAction)
+            => UsePublishEventAction<TEvent>(actionNodeName, buildAction) as IOverridenActivityBuilder;
+
+        IOverridenActivityBuilder IAcceptEventOverrides<IOverridenActivityBuilder>.UseAcceptEventAction<TEvent>(string actionNodeName,
+            OverridenAcceptEventActionBuildAction<TEvent> buildAction)
+            => UseAcceptEventAction<TEvent>(actionNodeName, buildAction) as IOverridenActivityBuilder;
+
+        IOverridenActivityBuilder IAcceptEventOverrides<IOverridenActivityBuilder>.UseTimeEventAction<TTimeEvent>(string actionNodeName,
+            OverridenTimeEventNodeBuildAction buildAction)
+            => UseTimeEventAction<TTimeEvent>(actionNodeName, buildAction) as IOverridenActivityBuilder;
     }
 }

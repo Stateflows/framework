@@ -47,28 +47,6 @@ public class Document : IStateMachine
         .AddState<ApprovalPending>(b => b
             .AddTransition<Approve, Approved>()
             .AddTransition<Reject, ReportRejection, Rejected>()
-            .AddEndpoints(b => b
-                .AddGet("approvalRules", () => Results.Ok("Just do it"))
-            )
-            .AddDoActivity(b => b
-                .AddInitial(b => b
-                    .AddControlFlow("initial")
-                )
-                .AddAction("initial", async c =>
-                {
-                    foreach (var i in Enumerable.Range(1, 100))
-                    {
-                        if (c.CancellationToken.IsCancellationRequested)
-                        {
-                            Debug.WriteLine("Cancelled!");
-                            break;
-                        }
-
-                        await Task.Delay(1000);
-                        Debug.WriteLine($"Continuing stupid work #{i}");
-                    }
-                })
-            )
         )
         .AddCompositeState<Approved>(b => b
             .AddInitialState<GeneratingInvoice>(b => b
