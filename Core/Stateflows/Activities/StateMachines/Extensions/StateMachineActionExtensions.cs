@@ -30,8 +30,10 @@ namespace Stateflows.Activities
                         nameof(BehaviorEmbedding),
                         new BehaviorEmbedding()
                         {
-                            OwnerId = context.Behavior.Id,
-                            ParentId = context.Behavior.ActualId
+                            OwnerId = context.TryGetOwnerBehaviorContext(out var ownerBehavior)
+                                ? ownerBehavior.Id
+                                : context.Behavior.Id,
+                            ParentId = context.Behavior.Id
                         }
                     }
                 }
@@ -69,8 +71,10 @@ namespace Stateflows.Activities
 
             headers[nameof(BehaviorEmbedding)] = new BehaviorEmbedding
             {
-                OwnerId = context.Behavior.Id,
-                ParentId = context.Behavior.ActualId
+                OwnerId = context.TryGetOwnerBehaviorContext(out var ownerBehavior)
+                    ? ownerBehavior.Id
+                    : context.Behavior.Id,
+                ParentId = context.Behavior.Id
             };
 
             deferralContext.Context.EventHolder.Headers[nameof(DeferralGuardDelegation)] = new DeferralGuardDelegation
@@ -115,8 +119,10 @@ namespace Stateflows.Activities
 
             headers[nameof(BehaviorEmbedding)] = new BehaviorEmbedding
             {
-                OwnerId = context.Behavior.Id,
-                ParentId = context.Behavior.ActualId
+                OwnerId = context.TryGetOwnerBehaviorContext(out var ownerBehavior)
+                    ? ownerBehavior.Id
+                    : context.Behavior.Id,
+                ParentId = context.Behavior.Id
             };
             
             transitionContext.Context.EventHolder.Headers[nameof(TransitionGuardDelegation)] = new TransitionGuardDelegation
@@ -149,8 +155,10 @@ namespace Stateflows.Activities
                         nameof(BehaviorEmbedding),
                         new BehaviorEmbedding()
                         {
-                            OwnerId = context.Behavior.Id,
-                            ParentId = context.Behavior.ActualId
+                            OwnerId = context.TryGetOwnerBehaviorContext(out var ownerBehavior)
+                                ? ownerBehavior.Id
+                                : context.Behavior.Id,
+                            ParentId = context.Behavior.Id
                         }
                     }
                 }

@@ -17,7 +17,9 @@ namespace Stateflows.StateMachines.Models
 {
     internal class Graph
     {
-        internal string? ResourceName = null;
+        internal string? ResourceName { get; set; } = null;
+        
+        internal string? EntityName { get; set; }
 
         internal readonly List<Func<IStateMachineVisitor, Task>> VisitingTasks = new List<Func<IStateMachineVisitor, Task>>();
         
@@ -66,9 +68,9 @@ namespace Stateflows.StateMachines.Models
         public bool PolymorphicTriggers { get; set; }
         public string InitialVertexName { get; set; }
         public Vertex InitialVertex { get; set; }
-        public readonly Dictionary<string, Vertex> Vertices = new Dictionary<string, Vertex>();
-        public Dictionary<string, Vertex> AllVertices { get; set; } = new Dictionary<string, Vertex>();
-        public readonly List<Edge> AllEdges = new List<Edge>();
+        public Dictionary<string, Vertex> Vertices { get; } = new Dictionary<string, Vertex>();
+        public Dictionary<string, Vertex> AllVertices { get; } = new Dictionary<string, Vertex>();
+        public List<Edge> AllEdges { get; } = new List<Edge>();
 
         public readonly Dictionary<string, Logic<StateMachinePredicateAsync>> Initializers = new Dictionary<string, Logic<StateMachinePredicateAsync>>();
         public readonly List<Type> InitializerTypes = new List<Type>();

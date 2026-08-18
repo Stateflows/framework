@@ -30,7 +30,6 @@ namespace Stateflows.StateMachines.Registration.Builders
         IOverridenDefaultTransitionEffectBuilder,
         IOverridenElseDefaultTransitionBuilder,
         IBehaviorBuilder,
-        IForwardedEventBuilder<TEvent>,
         IEdgeBuilder,
         IVertexBuilder
     {
@@ -151,8 +150,8 @@ namespace Stateflows.StateMachines.Registration.Builders
         IDefaultTransitionBuilder IBaseDefaultGuard<IDefaultTransitionBuilder>.AddGuards(params Func<ITransitionContext<Completion>, Task<bool>>[] guardsAsync)
             => (this as TransitionBuilder<Completion>)!.AddGuards(guardsAsync) as IDefaultTransitionBuilder;
 
-        IForwardedEventBuilder<TEvent> IBaseGuard<TEvent, IForwardedEventBuilder<TEvent>>.AddGuards(params Func<ITransitionContext<TEvent>, Task<bool>>[] guardsAsync)
-            => AddGuards(guardsAsync) as IForwardedEventBuilder<TEvent>;
+        // IForwardedEventBuilder<TEvent> IBaseGuard<TEvent, IForwardedEventBuilder<TEvent>>.AddGuards(params Func<ITransitionContext<TEvent>, Task<bool>>[] guardsAsync)
+        //     => AddGuards(guardsAsync) as IForwardedEventBuilder<TEvent>;
 
         public ITransitionBuilder<TEvent> SetIsLocal(bool isLocal)
         {

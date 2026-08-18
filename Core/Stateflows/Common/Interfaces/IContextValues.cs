@@ -11,11 +11,11 @@ namespace Stateflows.Common.Interfaces
 
         Task<bool> HasAnyPrefixedAsync(string prefix);
 
-        Task<(bool Success, T Value)> TryGetAsync<T>(string key);
+        Task<(bool Success, T? Value)> TryGetAsync<T>(string key);
 
-        Task<T> GetOrDefaultAsync<T>(string key, T defaultValue = default);
+        Task<T?> GetOrDefaultAsync<T>(string key, T? defaultValue = default);
 
-        Task<T> UpdateAsync<T>(string key, Func<T, T> valueUpdater, T defaultValue = default);
+        Task<T?> UpdateAsync<T>(string key, Func<T?, T?> valueUpdater, T? defaultValue = default);
 
         Task RemoveAsync(string key);
         

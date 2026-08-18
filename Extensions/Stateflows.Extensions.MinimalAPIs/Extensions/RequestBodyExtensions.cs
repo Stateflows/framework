@@ -75,21 +75,19 @@ internal static class RequestBodyExtensions
                         }
 
                         MergeNotificationNames(watchedNotificationTypes, payload);
-
-                        var replayNotificationsSince = DateTime.Now;
                         
-                        var processingTask = payload.SendEndpointAsync(
+                        var processingAction = () => payload.SendEndpointAsync(
                             StateflowsActivator.CreateUninitializedInstance<TEvent>(), behavior, implicitInitialization,
                             customHateoasLinks, context);
 
                         if (stream)
                         {
-                            await SSENotificationsWatchAsync(httpContext, behavior, payload, replayNotificationsSince);
+                            await SSENotificationsWatchAsync(httpContext, behavior, payload, processingAction);
 
                             return Results.Empty;
                         }
 
-                        return await processingTask;
+                        return await processingAction();
                     }
                 )
                 : routeBuilder.MapMethods(
@@ -120,20 +118,17 @@ internal static class RequestBodyExtensions
                         }
 
                         MergeNotificationNames(watchedNotificationTypes, payload);
-
-                        var replayNotificationsSince = DateTime.Now;
-
-                        var processingTask = payload.SendEndpointAsync(payload.Event, behavior, implicitInitialization,
+                        var processingAction = () => payload.SendEndpointAsync(payload.Event, behavior, implicitInitialization,
                             customHateoasLinks, context);
 
                         if (stream)
                         {
-                            await SSENotificationsWatchAsync(httpContext, behavior, payload, replayNotificationsSince);
+                            await SSENotificationsWatchAsync(httpContext, behavior, payload, processingAction);
 
                             return Results.Empty;
                         }
 
-                        return await processingTask;
+                        return await processingAction();
                     }
                 );
 
@@ -196,20 +191,18 @@ internal static class RequestBodyExtensions
 
                         MergeNotificationNames(watchedNotificationTypes, payload);
 
-                        var replayNotificationsSince = DateTime.Now;
-
-                        var processingTask = payload.SendEndpointAsync(
+                        var processingAction = () => payload.SendEndpointAsync(
                             StateflowsActivator.CreateUninitializedInstance<TEvent>(), behavior, true,
                             customHateoasLinks, context);
 
                         if (stream)
                         {
-                            await SSENotificationsWatchAsync(httpContext, behavior, payload, replayNotificationsSince);
+                            await SSENotificationsWatchAsync(httpContext, behavior, payload, processingAction);
 
                             return Results.Empty;
                         }
 
-                        return await processingTask;
+                        return await processingAction();
                     }
                 )
                 : routeBuilder.MapMethods(
@@ -238,19 +231,17 @@ internal static class RequestBodyExtensions
 
                         MergeNotificationNames(watchedNotificationTypes, payload);
 
-                        var replayNotificationsSince = DateTime.Now;
-
-                        var processingTask = payload.SendEndpointAsync(payload.Event, behavior, true,
+                        var processingAction = () => payload.SendEndpointAsync(payload.Event, behavior, true,
                             customHateoasLinks, context);
 
                         if (stream)
                         {
-                            await SSENotificationsWatchAsync(httpContext, behavior, payload, replayNotificationsSince);
+                            await SSENotificationsWatchAsync(httpContext, behavior, payload, processingAction);
 
                             return Results.Empty;
                         }
 
-                        return await processingTask;
+                        return await processingAction();
                     }
                 );
 
@@ -299,6 +290,7 @@ internal static class RequestBodyExtensions
                 return t.IsGenericType && t.IsSubclassOfRawGeneric(notificationWatchType);
             })
             .Select(a => a.GetType().GetGenericArguments().First().GetReadableName(TypedElements.Events))
+            .Distinct()
             .ToArray();
         return watchedNotificationTypes;
     }
@@ -352,22 +344,20 @@ internal static class RequestBodyExtensions
                         }
 
                         MergeNotificationNames(watchedNotificationTypes, payload);
-
-                        var replayNotificationsSince = DateTime.Now;
                         
-                        var processingTask = payload.RequestEndpointAsync<TRequest, TResponse>(
+                        var processingAction = () => payload.RequestEndpointAsync<TRequest, TResponse>(
                             StateflowsActivator.CreateUninitializedInstance<TRequest>(), behavior,
                             implicitInitialization, customHateoasLinks, context
                         );
 
                         if (stream)
                         {
-                            await SSENotificationsWatchAsync(httpContext, behavior, payload, replayNotificationsSince);
+                            await SSENotificationsWatchAsync(httpContext, behavior, payload, processingAction);
 
                             return Results.Empty;
                         }
 
-                        return await processingTask;
+                        return await processingAction();
                     }
                 )
                 : routeBuilder.MapMethods(
@@ -398,19 +388,17 @@ internal static class RequestBodyExtensions
 
                         MergeNotificationNames(watchedNotificationTypes, payload);
 
-                        var replayNotificationsSince = DateTime.Now;
-
-                        var processingTask = payload.RequestEndpointAsync<TRequest, TResponse>(payload.Event, behavior,
+                        var processingAction = () => payload.RequestEndpointAsync<TRequest, TResponse>(payload.Event, behavior,
                             implicitInitialization, customHateoasLinks, context);
 
                         if (stream)
                         {
-                            await SSENotificationsWatchAsync(httpContext, behavior, payload, replayNotificationsSince);
+                            await SSENotificationsWatchAsync(httpContext, behavior, payload, processingAction);
 
                             return Results.Empty;
                         }
 
-                        return await processingTask;
+                        return await processingAction();
                     }
                 );
 
@@ -468,20 +456,18 @@ internal static class RequestBodyExtensions
 
                         MergeNotificationNames(watchedNotificationTypes, payload);
 
-                        var replayNotificationsSince = DateTime.Now;
-
-                        var processingTask = payload.RequestEndpointAsync<TRequest, TResponse>(
+                        var processingAction = () => payload.RequestEndpointAsync<TRequest, TResponse>(
                             StateflowsActivator.CreateUninitializedInstance<TRequest>(), behavior, true,
                             customHateoasLinks, context);
 
                         if (stream)
                         {
-                            await SSENotificationsWatchAsync(httpContext, behavior, payload, replayNotificationsSince);
+                            await SSENotificationsWatchAsync(httpContext, behavior, payload, processingAction);
 
                             return Results.Empty;
                         }
 
-                        return await processingTask;
+                        return await processingAction();
                     }
                 )
                 : routeBuilder.MapMethods(
@@ -510,18 +496,16 @@ internal static class RequestBodyExtensions
 
                         MergeNotificationNames(watchedNotificationTypes, payload);
 
-                        var replayNotificationsSince = DateTime.Now;
-
-                        var processingTask = payload.RequestEndpointAsync<TRequest, TResponse>(payload.Event, behavior, true, customHateoasLinks, context);
+                        var processingAction = () => payload.RequestEndpointAsync<TRequest, TResponse>(payload.Event, behavior, true, customHateoasLinks, context);
 
                         if (stream)
                         {
-                            await SSENotificationsWatchAsync(httpContext, behavior, payload, replayNotificationsSince);
+                            await SSENotificationsWatchAsync(httpContext, behavior, payload, processingAction);
 
                             return Results.Empty;
                         }
 
-                        return await processingTask;
+                        return await processingAction();
                     }
                 );
 
@@ -544,26 +528,33 @@ internal static class RequestBodyExtensions
         }
     }
 
-    private static async Task SSENotificationsWatchAsync(HttpContext httpContext, IBehavior behavior, RequestBody payload, DateTime replayNotificationsSince)
+    private static async Task SSENotificationsWatchAsync(HttpContext httpContext, IBehavior behavior, RequestBody payload, Func<Task> processingAction)
     {
         httpContext.Response.Headers.Append(HeaderNames.ContentType, "text/event-stream");
 
         await using var watcher = await behavior.WatchAsync(
             payload.RequestedNotifications,
-            async eventHolder => await httpContext.WriteEventAsync(eventHolder),
-            replayNotificationsSince
+            async eventHolder => await httpContext.WriteEventAsync(eventHolder)
         );
+
+        var processingTask = processingAction();
 
         while (!httpContext.RequestAborted.IsCancellationRequested)
         {
             await Task.Delay(1000);
         }
+
+        await processingTask;
     }
 
     private static async Task<IResult?> SendEndpointAsync<TEvent>(this RequestBody payload, TEvent @event, IBehavior behavior,
         bool implicitInitialization, Dictionary<string, List<(HateoasLink, BehaviorStatus[])>> customHateoasLinks, HttpContext context)
     {
-        var lastNotificationsCheck = DateTime.Now;
+        var notifications = new List<EventHolder>();
+        await behavior.WatchAsync(
+            payload.RequestedNotifications,
+            notifications.Add
+        );
 
         if (EqualityComparer<TEvent>.Default.Equals(@event, default))
         {
@@ -592,9 +583,9 @@ internal static class RequestBodyExtensions
             );
             var behaviorInfo = await behavior.GetBehaviorInfo();
             
-            var notifications = payload.RequestedNotifications is { Length: > 0 } && result.Status == EventStatus.Consumed
-                ? (await behavior.GetNotificationsAsync(payload.RequestedNotifications, lastNotificationsCheck)).ToArray()
-                : [];
+            // var notifications = payload.RequestedNotifications is { Length: > 0 } && result.Status == EventStatus.Consumed
+            //     ? (await behavior.GetNotificationsAsync(payload.RequestedNotifications, lastNotificationsCheck)).ToArray()
+            //     : [];
 
             return result.ToResult(notifications, behaviorInfo, customHateoasLinks);
         }
@@ -604,7 +595,11 @@ internal static class RequestBodyExtensions
         bool implicitInitialization, Dictionary<string, List<(HateoasLink, BehaviorStatus[])>> customHateoasLinks, HttpContext context)
         where TRequest : IRequest<TResponse>
     {
-        var lastNotificationsCheck = DateTime.Now;
+        var notifications = new List<EventHolder>();
+        await behavior.WatchAsync(
+            payload.RequestedNotifications,
+            notifications.Add
+        );
 
         if (EqualityComparer<TRequest>.Default.Equals(request, default))
         {
@@ -634,9 +629,9 @@ internal static class RequestBodyExtensions
             );
             var behaviorInfo = await behavior.GetBehaviorInfo();
 
-            var notifications = payload.RequestedNotifications is { Length: > 0 } && requestResult.Status == EventStatus.Consumed
-                ? (await behavior.GetNotificationsAsync(payload.RequestedNotifications, lastNotificationsCheck)).ToArray()
-                : [];
+            // var notifications = payload.RequestedNotifications is { Length: > 0 } && requestResult.Status == EventStatus.Consumed
+            //     ? (await behavior.GetNotificationsAsync(payload.RequestedNotifications, lastNotificationsCheck)).ToArray()
+            //     : [];
 
             return requestResult.ToResult(notifications, behaviorInfo, customHateoasLinks);
         }

@@ -4,6 +4,7 @@ using System.Reflection;
 using System.Threading.Tasks;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
+using System.Diagnostics;
 using Microsoft.Extensions.DependencyInjection;
 using Stateflows.Common;
 using Stateflows.Common.Interfaces;
@@ -15,35 +16,20 @@ using Stateflows.Common.Utilities;
 
 namespace Stateflows.Activities.Engine
 {
-    internal class Processor : IEventProcessor, IStateflowsProcessor
+    internal class Processor(
+        ActivitiesRegister register,
+        IEnumerable<IActivityEventHandler> eventHandlers,
+        IStateflowsStorage storage,
+        IStateflowsValueStorage valueStorage,
+        IServiceProvider provider
+    ) : IEventProcessor, IStateflowsProcessor
     {
         string IEventProcessor.BehaviorType => BehaviorType.Activity;
 
-        private readonly ActivitiesRegister Register;
-        private readonly IEnumerable<IActivityEventHandler> EventHandlers;
-        private readonly IServiceProvider ServiceProvider;
-        private readonly IStateflowsStorage Storage;
-        private readonly IStateflowsValueStorage ValueStorage;
-
-        public Processor(
-            ActivitiesRegister register,
-            IEnumerable<IActivityEventHandler> eventHandlers,
-            IStateflowsStorage storage,
-            IStateflowsValueStorage valueStorage,
-            IServiceProvider serviceProvider
-        )
-        {
-            Register = register;
-            ServiceProvider = serviceProvider;
-            Storage = storage;
-            EventHandlers = eventHandlers;
-            ValueStorage = valueStorage;
-        }
-
         private Task<EventStatus> TryHandleEventAsync<TEvent>(EventContext<TEvent> context)
         {
-            var eventHandler = EventHandlers.FirstOrDefault(h => 
-                h.EventType.IsGenericType && context.Event.GetType().IsGenericType
+            var eventHandler = eventHandlers.FirstOrDefault(h => 
+                h.EventType.IsGenericType && (context.Event?.GetType().IsGenericType ?? false)
                     ? context.Event.GetType().GetGenericTypeDefinition() == h.EventType
                     : h.EventType.IsInstanceOfType(context.Event)
             );
@@ -57,20 +43,20 @@ namespace Stateflows.Activities.Engine
         {
             var result = EventStatus.Undelivered;
 
-            using var serviceScope = ServiceProvider.CreateScope();
+            using var serviceScope = provider.CreateScope();
             var serviceProvider = serviceScope.ServiceProvider;
-
-            // var stateflowsContext = await Storage.HydrateAsync(id);
             
             var stateflowsContext = eventHolder.Headers.Values.Any(h => h is ForcedReset)
                 ? new StateflowsContext(id)
-                : await Storage.HydrateAsync(id);
+                : await storage.HydrateAsync(id);
+
+            stateflowsContext.ExecutionTriggerHolder = eventHolder;
 
             var key = stateflowsContext.Version != 0
                 ? $"{id.Name}.{stateflowsContext.Version}"
                 : $"{id.Name}.current";
 
-            if (!Register.Activities.TryGetValue(key, out var graph))
+            if (!register.Activities.TryGetValue(key, out var graph))
             {
                 return result;
             }
@@ -82,9 +68,7 @@ namespace Stateflows.Activities.Engine
                 stateflowsContext.ContextParentId = embedding.ParentId;
             }
 
-            // stateflowsContext.StateflowsValues = (await ValueStorage.LoadAsync(stateflowsContext.ContextOwnerId ?? stateflowsContext.Id)).ToDictionary();
-
-            using var executor = new Executor(Register, graph, serviceProvider);
+            using var executor = new Executor(register, graph, serviceProvider);
 
             var context = new RootContext(stateflowsContext);
 
@@ -92,74 +76,9 @@ namespace Stateflows.Activities.Engine
 
             try
             {
-                if (await TryCancelAsync(id, eventHolder, result, executor))
-                {
-                    result = EventStatus.Cancelled;
-                }
-                else
-                {
-                    // if (eventHolder is EventHolder<CompoundRequest> compoundRequestHolder)
-                    // {
-                    //     var compoundRequest = compoundRequestHolder.Payload;
-                    //     var compoundResponse = compoundRequest.GetResponse();
-                    //     result = EventStatus.Consumed;
-                    //     var results = new List<RequestResult>();
-                    //     var i = -1;
-                    //     foreach (var ev in compoundRequest.Events)
-                    //     {
-                    //         i++;
-                    //             
-                    //         RequestResult responseResult = null;
-                    //         if (compoundResponse != null)
-                    //         {
-                    //             responseResult = ((List<RequestResult>)compoundResponse.Results)[i];
-                    //             if (
-                    //                 responseResult?.Status == EventStatus.Invalid ||
-                    //                 (
-                    //                     responseResult?.Status == EventStatus.Omitted &&
-                    //                     !ev.Headers.Values.Any(h => h is ForcedExecution)
-                    //                 )
-                    //             )
-                    //             {
-                    //                 continue;
-                    //             }
-                    //         }
-                    //
-                    //         ev.Headers.AddRange(eventHolder.Headers);
-                    //
-                    //         var status = await ev.ExecuteBehaviorAsync(this, result, executor);
-                    //
-                    //         if (responseResult != null)
-                    //         {
-                    //             responseResult.Status = status;
-                    //             responseResult.Response = ev.IsRequest()
-                    //                 ? ev.GetResponseHolder()
-                    //                 : null;
-                    //             responseResult.Validation = new EventValidation(true, new List<ValidationResult>());
-                    //         }
-                    //         else
-                    //         {
-                    //             results.Add(new RequestResult(
-                    //                 ev.GetResponseHolder(),
-                    //                 status,
-                    //                 new EventValidation(true, new List<ValidationResult>())
-                    //             ));
-                    //         }
-                    //     }
-                    //
-                    //     if (!compoundRequest.IsRespondedTo())
-                    //     {
-                    //         compoundRequest.Respond(new CompoundResponse()
-                    //         {
-                    //             Results = results
-                    //         });
-                    //     }
-                    // }
-                    // else
-                    {
-                        result = await ExecuteBehaviorAsync(eventHolder, result, executor);
-                    }
-                }
+                result = await TryCancelAsync(id, eventHolder, result, executor)
+                    ? EventStatus.Cancelled
+                    : await ExecuteBehaviorAsync(eventHolder, result, executor);
 
                 if (await TryCancelAsync(id, eventHolder, result, executor))
                 {
@@ -181,8 +100,7 @@ namespace Stateflows.Activities.Engine
 
                 stateflowsContext = executor.Dehydrate().Context;
 
-                // await ValueStorage.SaveAsync(stateflowsContext.ContextOwnerId ?? stateflowsContext.Id, stateflowsContext.StateflowsValues);
-                await Storage.DehydrateAsync(stateflowsContext);
+                await storage.DehydrateAsync(stateflowsContext);
             }
 
             return result;
@@ -211,10 +129,10 @@ namespace Stateflows.Activities.Engine
                 return false;
             }
             
-            var forceFinalize = await ValueStorage.GetOrDefaultAsync(id, CommonValues.ForceFinalizeKey, false);
+            var forceFinalize = await valueStorage.GetOrDefaultAsync(id, CommonValues.ForceFinalizeKey, false);
             if (forceFinalize)
             {
-                await ValueStorage.RemoveAsync(id, CommonValues.ForceFinalizeKey);
+                await valueStorage.RemoveAsync(id, CommonValues.ForceFinalizeKey);
                 
                 try
                 {
@@ -263,7 +181,7 @@ namespace Stateflows.Activities.Engine
                                 : null
                         );
                     }
-                    
+
                     if (result != EventStatus.Initialized)
                     {
                         var handlingResult = await TryHandleEventAsync(eventContext);

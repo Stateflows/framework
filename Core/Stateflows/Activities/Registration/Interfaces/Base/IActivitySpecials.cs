@@ -81,7 +81,8 @@ namespace Stateflows.Activities.Registration.Interfaces.Base
                         c.PassAllTokensOn();
                         return Task.CompletedTask;
                     },
-                    b => buildAction(b.SetOptions(NodeOptions.DecisionDefault) as IDecisionBuilder)
+                    b => buildAction(b.SetOptions(NodeOptions.DecisionDefault) as IDecisionBuilder),
+                    typeof(ControlToken)
                 ) as TReturn;
 
         [DebuggerHidden]
@@ -101,7 +102,8 @@ namespace Stateflows.Activities.Registration.Interfaces.Base
                         c.PassAllTokensOn();
                         return Task.CompletedTask;
                     },
-                    b => decisionBuildAction(new DecisionBuilder<TToken>(b.SetOptions(NodeOptions.DecisionDefault) as NodeBuilder))
+                    b => decisionBuildAction(new DecisionBuilder<TToken>(b.SetOptions(NodeOptions.DecisionDefault) as NodeBuilder)),
+                    typeof(TToken)
                 ) as TReturn;
 
         [DebuggerHidden]

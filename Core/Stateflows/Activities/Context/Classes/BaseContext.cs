@@ -34,9 +34,9 @@ namespace Stateflows.Activities.Context.Classes
 
         public object ExecutionTrigger => Context.ExecutionTriggerHolder.BoxedPayload;
         public Guid ExecutionTriggerId => Context.ExecutionTriggerHolder.Id;
-        public Dictionary<string, EventHeader> Headers => Context.ExecutionTriggerHolder.Headers;
+        public IDictionary<string, EventHeader> Headers => Context.ExecutionTriggerHolder.Headers;
 
-        private ActivityContext activity;
+        private ActivityContext? activity;
         public ActivityContext Activity
             => activity ??= new ActivityContext(Context, NodeScope);
 

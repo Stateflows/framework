@@ -4,6 +4,7 @@ using System.Threading;
 using Microsoft.Extensions.DependencyInjection;
 using Stateflows.Common;
 using Stateflows.Common.Context;
+using Stateflows.Common.Context.Classes;
 using Stateflows.Common.Interfaces;
 
 namespace Stateflows.StateMachines.Context.Classes
@@ -19,14 +20,17 @@ namespace Stateflows.StateMachines.Context.Classes
 
         public object ExecutionTrigger => Context.ExecutionTriggerHolder.BoxedPayload;
         public Guid ExecutionTriggerId => Context.ExecutionTriggerHolder.Id;
-        public virtual Dictionary<string, EventHeader> Headers => Context.ExecutionTriggerHolder.Headers;
+        public virtual IDictionary<string, EventHeader> Headers => Context.ExecutionTriggerHolder.Headers;
 
         public IEnumerable<IExecutionStep> ExecutionSteps => Context.ExecutionSteps;
 
-        private StateMachineContext stateMachine;
+        private StateMachineContext? stateMachine;
         public StateMachineContext StateMachine => stateMachine ??= new StateMachineContext(Context);
 
-        private IBehaviorLocator behaviorLocator;
+        private BehaviorContext? behavior;
+        internal BehaviorContext Behavior => behavior ??= new BehaviorContext(Context.Context, StateMachine.ServiceProvider);
+
+        private IBehaviorLocator? behaviorLocator;
         private IBehaviorLocator BehaviorLocator => behaviorLocator ??= Context.Executor.ServiceProvider.GetService<IBehaviorLocator>();
 
         public bool TryLocateBehavior(BehaviorId id, out IBehavior behavior)

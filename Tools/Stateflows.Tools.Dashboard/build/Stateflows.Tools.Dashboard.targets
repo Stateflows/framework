@@ -1,0 +1,32 @@
+<Project>
+  <!--
+    This file is automatically imported by NuGet into every project that references
+    the Stateflows.Tools.Dashboard package.
+
+    It copies the pre-built Angular dashboard SPA files from the NuGet package cache
+    into the consuming project's output directory under Dashboard/, so that
+    UseStateflowsDashboard() can serve them at runtime without any manual steps.
+  -->
+
+  <PropertyGroup>
+    <!-- Path to the static SPA files inside the NuGet package layout -->
+    <_StateflowsDashboardSpaDir>$(MSBuildThisFileDirectory)..\staticfiles\Dashboard\</_StateflowsDashboardSpaDir>
+  </PropertyGroup>
+
+  <Target Name="CopyStateflowsDashboardSpaFiles"
+          AfterTargets="Build"
+          Condition="Exists('$(_StateflowsDashboardSpaDir)')">
+
+    <ItemGroup>
+      <_StateflowsDashboardFiles Include="$(_StateflowsDashboardSpaDir)**\*" />
+    </ItemGroup>
+
+    <Copy SourceFiles="@(_StateflowsDashboardFiles)"
+          DestinationFiles="@(_StateflowsDashboardFiles->'$(OutDir)Dashboard\%(RecursiveDir)%(Filename)%(Extension)')"
+          SkipUnchangedFiles="true" />
+
+    <Message Text="Stateflows Dashboard: copied SPA files to $(OutDir)Dashboard\" Importance="normal" />
+  </Target>
+
+</Project>
+

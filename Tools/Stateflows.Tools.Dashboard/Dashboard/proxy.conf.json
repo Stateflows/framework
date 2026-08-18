@@ -1,0 +1,7 @@
+{
+  "/stateflows-dashboard": {
+    "target": "https://localhost:7291",
+    "secure": false,
+    "changeOrigin": true
+  }
+}

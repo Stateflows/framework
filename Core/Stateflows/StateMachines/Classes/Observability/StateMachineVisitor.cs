@@ -7,8 +7,7 @@ namespace Stateflows.StateMachines
 {
     public abstract class StateMachineVisitor : IStateMachineVisitor
     {
-        public virtual Task StateMachineAddingAsync(string stateMachineName, int stateMachineVersion, BehaviorClass? ownerClass = null,
-            BehaviorClass? parentClass = null, bool hasDefaultInstance = false)
+        public virtual Task StateMachineAddingAsync(string stateMachineName, int stateMachineVersion, bool hasDefaultInstance = false)
             => Task.CompletedTask;
 
         public virtual Task StateMachineAddedAsync(string stateMachineName, int stateMachineVersion)
@@ -44,8 +43,24 @@ namespace Stateflows.StateMachines
         public virtual Task CustomEventAddedAsync<TEvent>(string stateMachineName, int stateMachineVersion, BehaviorStatus[] supportedStatuses)
             => Task.CompletedTask;
 
-        public Task BehaviorEmbeddedAsync(string stateMachineName, int stateMachineVersion, string vertexName, string behaviorName,
+        public virtual Task DoBehaviorAddedAsync(string stateMachineName, int stateMachineVersion, string stateName, string behaviorName,
             string behaviorType, IEnumerable<Type> eventTypes)
+            => Task.CompletedTask;
+
+        public virtual Task OnEntryBehaviorAddedAsync(string stateMachineName, int stateMachineVersion, string stateName, string behaviorName,
+            string behaviorType)
+            => Task.CompletedTask;
+
+        public virtual Task OnExitBehaviorAddedAsync(string stateMachineName, int stateMachineVersion, string stateName, string behaviorName,
+            string behaviorType)
+            => Task.CompletedTask;
+
+        public virtual Task GuardBehaviorAddedAsync<TEvent>(string stateMachineName, int stateMachineVersion, string sourceVertexName,
+            string? targetVertexName, bool isElse, string behaviorName, string behaviorType)
+            => Task.CompletedTask;
+
+        public virtual Task EffectBehaviorAddedAsync<TEvent>(string stateMachineName, int stateMachineVersion, string sourceVertexName,
+            string? targetVertexName, bool isElse, string behaviorName, string behaviorType)
             => Task.CompletedTask;
     }
 }

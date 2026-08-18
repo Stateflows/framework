@@ -14,8 +14,9 @@ public enum TypedElements
     Events = 32,
     Tokens = 64,
     Exceptions = 128,
-    All = StateMachines | StateMachineStates | Activities | ActivityNodes | Actions | Events | Tokens | Exceptions,
-    Behaviors = StateMachines | Activities | Actions,
+    Entities = 256,
+    All = StateMachines | StateMachineStates | Activities | ActivityNodes | Actions | Events | Tokens | Exceptions | Entities,
+    Behaviors = StateMachines | Activities | Actions | Entities,
     ModelElements = StateMachineStates | ActivityNodes,
     Deliverables = Events | Tokens | Exceptions,
 }

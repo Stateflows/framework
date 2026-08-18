@@ -9,18 +9,16 @@ using Stateflows.Common.Extensions;
 
 namespace Stateflows.Common.Classes
 {
-    internal class ContextValuesCollection : IContextValues
+    internal class ContextValuesCollection(Dictionary<string, string> values) : IContextValues
     {
-        public Dictionary<string, string> Values { get; }
-
-        public ContextValuesCollection(Dictionary<string, string> values)
-        {
-            Values = values;
-        }
+        private Dictionary<string, string> Values { get; } = values;
 
         private T InternalSet<T>(string key, T value)
         {
-            Values[key] = StateflowsJsonConverter.SerializePolymorphicObject(value);
+            Values[key] = typeof(T) == typeof(Guid) && value is not null
+                ? ((Guid)(object)value).ToString()
+                : StateflowsJsonConverter.SerializePolymorphicObject(value);
+
             return value;
         }
 
@@ -52,9 +50,9 @@ namespace Stateflows.Common.Classes
             return Task.FromResult(result);
         }
         
-        public Task<(bool Success, T Value)> TryGetAsync<T>(string key)
+        public Task<(bool Success, T? Value)> TryGetAsync<T>(string key)
         {
-            (bool Success, T Value) result = (false, default);
+            (bool Success, T? Value) result = (false, default);
 
             lock (Values)
             {
@@ -70,7 +68,9 @@ namespace Stateflows.Common.Classes
                         ? ParseStringToEnum<T>(data)
                         : type == typeof(Guid)
                             ? Guid.Parse(data)
-                            : StateflowsJsonConverter.DeserializeObject(data);
+                            : type == typeof(Guid)
+                                ? Guid.Parse(data)
+                                : StateflowsJsonConverter.DeserializeObject(data);
 
                 if (type.IsNullable() && deserializedData is null)
                 {
@@ -89,7 +89,7 @@ namespace Stateflows.Common.Classes
             return Task.FromResult(result);
         }
 
-        private T InternalGetOrDefault<T>(string key, T defaultValue)
+        private T? InternalGetOrDefault<T>(string key, T? defaultValue)
         {
             if (!Values.TryGetValue(key, out var data))
             {
@@ -118,9 +118,9 @@ namespace Stateflows.Common.Classes
             return defaultValue;
         }
 
-        public Task<T> GetOrDefaultAsync<T>(string key, T defaultValue = default)
+        public Task<T?> GetOrDefaultAsync<T>(string key, T? defaultValue = default)
         {
-            T result;
+            T? result;
             lock (Values)
             {
                 result = InternalGetOrDefault(key, defaultValue);
@@ -129,7 +129,7 @@ namespace Stateflows.Common.Classes
             return Task.FromResult(result);
         }
 
-        public Task<T> UpdateAsync<T>(string key, Func<T, T> valueUpdater, T defaultValue = default)
+        public Task<T?> UpdateAsync<T>(string key, Func<T?, T?> valueUpdater, T? defaultValue = default)
         {
             lock (Values)
             {
@@ -186,7 +186,7 @@ namespace Stateflows.Common.Classes
         public static T ParseStringToEnum<T>(string value)
             => (T)(object)JToken.Parse(value).Value<int>();
 
-        public static T ParseStringToTypedValue<T>(string value)
+        public static T? ParseStringToTypedValue<T>(string value)
             => typeof(T) == typeof(string)
                 ? JToken.Parse($"\"{value}\"").Value<T>()
                 : JToken.Parse(value).Value<T>();

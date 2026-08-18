@@ -3,5 +3,6 @@
     internal abstract class Element
     {
         public abstract string Identifier { get; set; }
+        public string? OriginActivityName { get; set; }
     }
 }

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using Stateflows.Common;
 using Stateflows.StateMachines.Context.Interfaces;
 
@@ -17,7 +18,7 @@ namespace Stateflows.StateMachines.Engine
         {
             if (locator.TryLocateStateMachine(stateMachineId, out var stateMachine))
             {
-                _ = stateMachine.SendAsync(exception, headers);
+                _ = stateMachine.SendAsync(exception, headers.ToDictionary());
             }
 
             return true;

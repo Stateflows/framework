@@ -1,4 +1,8 @@
+using System.ComponentModel.DataAnnotations;
 using System.Diagnostics;
+using System.Runtime.CompilerServices;
+using Microsoft.AspNetCore.Http.HttpResults;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.ClearScript;
 using Microsoft.EntityFrameworkCore;
 using OpenTelemetry;
@@ -15,7 +19,6 @@ using Stateflows.Activities;
 using Stateflows.Common;
 using Stateflows.Common.Utilities;
 using Stateflows.Examples.Behaviors.Activities.Test;
-using Stateflows.Examples.Common.Events;
 using Document = Stateflows.Examples.Behaviors.StateMachines.Document.Document;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -27,6 +30,8 @@ var builder = WebApplication.CreateBuilder(args);
 // );
 
 builder.Services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
+
+builder.Services.AddScoped<IServ, Serv>();
 
 // In order to host Stateflows behaviors, Stateflows framework must be registered in the app.
 builder.Services.AddStateflows(b => b
@@ -65,11 +70,15 @@ builder.Services.AddStateflows(b => b
     
     .AddInterceptor<InfoEnhanceInterceptor>()
     
+    .AddInterceptor<TestInterceptor>()
+    
     // Add PlantUML extension to enable State Machines and Activities visualizations.
     .AddPlantUml()
 
     // Add OpenTelemetry extension to enable tracing and logging.
     .AddOpenTelemetry()
+    
+    // .AddDashboard()
 
     // Uncomment, if you want to use storage:
     //
@@ -79,6 +88,8 @@ builder.Services.AddStateflows(b => b
     //     => new SqlDistributedLock(lockKey, builder.Configuration.GetConnectionString("Default"))
     // )
 );
+
+builder.Services.AddCors();
 
 builder.Services.AddOpenApi();
 
@@ -109,6 +120,8 @@ builder.Services.AddRazorComponents()
     .AddInteractiveWebAssemblyComponents();
 
 var app = builder.Build();
+
+app.UseCors();
 
 app.MapOpenApi();
 app.MapScalarApiReference();
@@ -153,5 +166,7 @@ app.MapStateflowsMinimalAPIsEndpoints(b => b
         )
     )
 );
+
+// app.UseStateflowsDashboard();
 
 app.Run();

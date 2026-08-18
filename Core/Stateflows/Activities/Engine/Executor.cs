@@ -20,7 +20,6 @@ using Stateflows.Activities.Registration;
 using Stateflows.Activities.Context.Classes;
 using Stateflows.Activities.Inspection.Classes;
 using Stateflows.Common.Engine;
-using Stateflows.StateMachines;
 using Stateflows.StateMachines.Extensions;
 using Stateflows.StateMachines.Models;
 using Edge = Stateflows.Activities.Models.Edge;
@@ -192,15 +191,11 @@ namespace Stateflows.Activities.Engine
             RebuildNodesTree();
 
             await Inspector.BuildAsync();
-            
-            Inspector.AfterHydrate(new ActivityActionContext(Context, NodeScope.CreateChildScope()));
         }
 
         public RootContext Dehydrate()
         {
             Debug.Assert(Context != null, $"Context is unavailable. Is activity '{Graph.Name}' already dehydrated?");
-
-            Inspector.BeforeDehydrate(new ActivityActionContext(Context, NodeScope.CreateChildScope()));
 
             NodeScope.Dispose();
 
@@ -239,10 +234,7 @@ namespace Stateflows.Activities.Engine
                 var context = new ActivityInitializationContext<TEvent>(Context, NodeScope, eventHolder, null);
                 var result = await DoInitializeActivityAsync(context);
 
-                if (
-                    result == InitializationStatus.InitializedImplicitly ||
-                    result == InitializationStatus.InitializedExplicitly
-                )
+                if (result is InitializationStatus.InitializedImplicitly or InitializationStatus.InitializedExplicitly)
                 {
                     Context.Initialized = true;
 
@@ -1079,7 +1071,7 @@ namespace Stateflows.Activities.Engine
                         await Task.WhenAll(
                             node.Edges
                                 .Where(edge => edge.Target.Type == NodeType.Output || outputTokens.Any(t => t is TokenHolder<ControlToken>))
-                                .Where(edge => outputTokens.Any(t => edge.TokenType.IsAssignableFrom(t.PayloadType)) || edge.Weight == 0)
+                                .Where(edge => outputTokens.Any(t => edge.TokenType.IsAssignableFrom(t.ActualPayloadType)) || edge.Weight == 0)
                                 .OrderBy(edge => edge.IsElse)
                                 .Select(async edge =>
                                     (
@@ -1294,7 +1286,7 @@ namespace Stateflows.Activities.Engine
             
             var edgeTokenName = edge.TokenType.GetTokenName();
 
-            IEnumerable<TokenHolder> originalTokens = context.OutputTokens.Where(t => edge.TokenType.IsAssignableFrom(t.PayloadType)).ToArray();
+            IEnumerable<TokenHolder> originalTokens = context.OutputTokens.Where(t => edge.TokenType.IsAssignableFrom(t.ActualPayloadType)).ToArray();
 
             flowContext.TokenCount = stream.Tokens.Count;
             flowContext.SourceTokenCount = originalTokens.Count();

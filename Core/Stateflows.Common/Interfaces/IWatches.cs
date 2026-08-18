@@ -14,9 +14,9 @@ namespace Stateflows.Common.Interfaces
         /// </summary>
         /// <typeparam name="TNotification">Notification type</typeparam>
         /// <param name="handler">Notification handler</param>
-        /// <param name="replayNotificatonsSince">Notifications published after the date will be replayed</param>
+        /// <param name="replayNotificationsSince">Notifications published after the date will be replayed</param>
         /// <returns>Task that produces IDisposable unwatcher</returns>
-        Task<IWatcher> WatchAsync<TNotification>(Action<TNotification> handler, DateTime? replayNotificatonsSince = null);
+        Task<IWatcher> WatchAsync<TNotification>(Action<TNotification> handler, DateTime? replayNotificationsSince = null);
 
         /// <summary>
         /// Watches for notifications from behavior.<br/>
@@ -24,10 +24,10 @@ namespace Stateflows.Common.Interfaces
         /// </summary>
         /// <typeparam name="TNotification">Notification type</typeparam>
         /// <param name="asyncHandler">Async notification handler</param>
-        /// <param name="replayNotificatonsSince">Notifications published after the date will be replayed</param>
+        /// <param name="replayNotificationsSince">Notifications published after the date will be replayed</param>
         /// <returns>Task that produces IDisposable unwatcher</returns>
-        Task<IWatcher> WatchAsync<TNotification>(Func<TNotification, Task> asyncHandler, DateTime? replayNotificatonsSince = null)
-            => WatchAsync<TNotification>(handler: n => _ = asyncHandler(n), replayNotificatonsSince);
+        Task<IWatcher> WatchAsync<TNotification>(Func<TNotification, Task> asyncHandler, DateTime? replayNotificationsSince = null)
+            => WatchAsync<TNotification>(handler: n => _ = asyncHandler(n), replayNotificationsSince);
         
         /// <summary>
         /// Watches for notifications from behavior.<br/>
@@ -35,9 +35,9 @@ namespace Stateflows.Common.Interfaces
         /// </summary>
         /// <param name="notificationNames">Names of watched notifications</param>
         /// <param name="handler">Notification handler</param>
-        /// <param name="replayNotificatonsSince">Notifications published after the date will be replayed</param>
+        /// <param name="replayNotificationsSince">Notifications published after the date will be replayed</param>
         /// <returns>Task that produces IDisposable unwatcher</returns>
-        Task<IWatcher> WatchAsync(string[] notificationNames, Action<EventHolder> handler, DateTime? replayNotificatonsSince = null);
+        Task<IWatcher> WatchAsync(string[] notificationNames, Action<EventHolder> handler, DateTime? replayNotificationsSince = null);
         
         /// <summary>
         /// Watches for notifications from behavior.<br/>
@@ -45,18 +45,18 @@ namespace Stateflows.Common.Interfaces
         /// </summary>
         /// <param name="notificationNames">Names of watched notifications</param>
         /// <param name="asyncHandler">Async notification handler</param>
-        /// <param name="replayNotificatonsSince">Notifications published after the date will be replayed</param>
+        /// <param name="replayNotificationsSince">Notifications published after the date will be replayed</param>
         /// <returns>Task that produces IDisposable unwatcher</returns>
-        Task<IWatcher> WatchAsync(string[] notificationNames, Func<EventHolder, Task> asyncHandler, DateTime? replayNotificatonsSince = null)
-            => WatchAsync(notificationNames, handler: n => _ = asyncHandler(n), replayNotificatonsSince);
+        Task<IWatcher> WatchAsync(string[] notificationNames, Func<EventHolder, Task> asyncHandler, DateTime? replayNotificationsSince = null)
+            => WatchAsync(notificationNames, handler: n => _ = asyncHandler(n), replayNotificationsSince);
 
         /// <summary>
         /// Waits for the next notification from behavior.
         /// </summary>
-        /// <param name="replayNotificatonsSince">Notifications published after the date will be replayed</param>
+        /// <param name="replayNotificationsSince">Notifications published after the date will be replayed</param>
         /// <typeparam name="TNotification">Notification type</typeparam>
         /// <returns>Task that awaits for next notification of given type</returns>
-        public async Task<TNotification> NextAsync<TNotification>(DateTime? replayNotificatonsSince = null)
+        public async Task<TNotification> NextAsync<TNotification>(DateTime? replayNotificationsSince = null)
         {
             var waitHandle = new EventWaitHandle(false, EventResetMode.ManualReset);
             var notification = default(TNotification);
@@ -64,7 +64,7 @@ namespace Stateflows.Common.Interfaces
             {
                 notification = n;
                 waitHandle.Set();
-            }, replayNotificatonsSince);
+            }, replayNotificationsSince);
 
             await waitHandle.WaitOneAsync();
             
@@ -74,15 +74,15 @@ namespace Stateflows.Common.Interfaces
         /// <summary>
         /// Streams notifications from behavior.
         /// </summary>
-        /// <param name="replayNotificatonsSince">Notifications published after the date will be replayed</param>
+        /// <param name="replayNotificationsSince">Notifications published after the date will be replayed</param>
         /// <param name="cancellationToken">Stream cancellation token</param>
         /// <typeparam name="TNotification">Notification type</typeparam>
         /// <returns>IAsyncEnumerable stream of notifications</returns>
-        public async IAsyncEnumerable<TNotification> StreamAsync<TNotification>(DateTime? replayNotificatonsSince = null, CancellationToken cancellationToken = default)
+        public async IAsyncEnumerable<TNotification> StreamAsync<TNotification>(DateTime? replayNotificationsSince = null, CancellationToken cancellationToken = default)
         {
             while (!cancellationToken.IsCancellationRequested)
             {
-                yield return await NextAsync<TNotification>(replayNotificatonsSince);
+                yield return await NextAsync<TNotification>(replayNotificationsSince);
             }
         }
 

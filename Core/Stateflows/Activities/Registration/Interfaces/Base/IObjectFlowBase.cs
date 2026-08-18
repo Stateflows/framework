@@ -35,6 +35,15 @@ namespace Stateflows.Activities.Registration.Interfaces.Base
             where TTargetNode : class, IActivityNode
             => AddFlow<TToken, TTransformedToken, TTransformationFlow>(ActivityNode<TTargetNode>.Name);
     }
+    
+    public interface IOverridenObjectFlowBase<out TReturn>
+    {
+        TReturn UseFlow<TToken>(string targetNodeName, ObjectFlowBuildAction<TToken> buildAction = null);
+
+        TReturn UseFlow<TToken, TTargetNode>(ObjectFlowBuildAction<TToken> buildAction = null)
+            where TTargetNode : class, IActivityNode
+            => UseFlow(ActivityNode<TTargetNode>.Name, buildAction);
+    }
 
     public interface IElseObjectFlowBase<out TReturn>
     {
@@ -74,6 +83,15 @@ namespace Stateflows.Activities.Registration.Interfaces.Base
             => AddFlow<TTransformedToken, TTransformationFlow>(ActivityNode<TTargetNode>.Name);
     }
 
+    public interface IOverridenDecisionFlowBase<out TToken, out TReturn>
+    {
+        TReturn UseFlow(string targetNodeName, ObjectFlowBuildAction<TToken> buildAction = null);
+
+        TReturn UseFlow<TTargetNode>(ObjectFlowBuildAction<TToken> buildAction = null)
+            where TTargetNode : class, IActivityNode
+            => UseFlow(ActivityNode<TTargetNode>.Name, buildAction);
+    }
+
     public interface IElseDecisionFlowBase<out TToken, out TReturn>
     {
         TReturn AddElseFlow(string targetNodeName, ElseObjectFlowBuildAction<TToken> buildAction = null);
@@ -93,6 +111,15 @@ namespace Stateflows.Activities.Registration.Interfaces.Base
             where TElseTransformationFlow : class, IFlowTransformation<TToken, TTransformedToken>
             where TTargetNode : class, IActivityNode
             => AddElseFlow<TTransformedToken, TElseTransformationFlow>(ActivityNode<TTargetNode>.Name);
+    }
+
+    public interface IOverridenElseDecisionFlowBase<out TToken, out TReturn>
+    {
+        TReturn UseElseFlow(string targetNodeName, ElseObjectFlowBuildAction<TToken> buildAction = null);
+
+        TReturn UseElseFlow<TTargetNode>(ObjectFlowBuildAction<TToken> buildAction = null)
+            where TTargetNode : class, IActivityNode
+            => UseElseFlow(ActivityNode<TTargetNode>.Name, b => buildAction?.Invoke(b as IObjectFlowBuilder<TToken>));
     }
 
     public interface IObjectFlowBase
@@ -139,5 +166,15 @@ namespace Stateflows.Activities.Registration.Interfaces.Base
             where TTransformationFlow : class, IFlowTransformation<TToken, TTransformedToken>
             where TTargetNode : class, IActivityNode
             => AddFlow<TToken, TTransformedToken, TTransformationFlow>(ActivityNode<TTargetNode>.Name, buildAction);
+    }
+
+    public interface IOverridenObjectFlowBase
+    {
+        void UseFlow<TToken>(string targetNodeName, ObjectFlowBuildAction<TToken> buildAction = null);
+        
+        [DebuggerHidden]
+        public void UseFlow<TToken, TTargetNode>(ObjectFlowBuildAction<TToken> buildAction = null)
+            where TTargetNode : class, IActivityNode
+            => UseFlow<TToken>(ActivityNode<TTargetNode>.Name, buildAction);
     }
 }

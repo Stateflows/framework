@@ -48,6 +48,14 @@ namespace Stateflows.Activities
             where TSendEventAction : class, ISendEventActionNode<TEvent>
             => Task.CompletedTask;
 
+        public virtual Task PublishEventNodeAddedAsync<TEvent>(string activityName, int activityVersion, string nodeName,
+            string parentNodeName = null)
+            => Task.CompletedTask;
+
+        public virtual Task PublishEventNodeTypeAddedAsync<TEvent, TPublishEventAction>(string activityName, int activityVersion,
+            string nodeName) where TPublishEventAction : class, IPublishEventActionNode<TEvent>
+            => Task.CompletedTask;
+
         public virtual Task ControlFlowAddedAsync(string activityName, int activityVersion, string sourceNodeName, string targetNodeName, bool isElse = false)
             => Task.CompletedTask;
 

@@ -1,0 +1,44 @@
+{
+  "name": "stateflows-dashboard",
+  "version": "1.0.0",
+  "scripts": {
+    "ng": "ng",
+    "start": "ng serve",
+    "start:blazor": "ng serve  --proxy-config proxy.conf.json",
+    "build": "ng build",
+    "build:prod": "ng build --configuration production",
+    "watch": "ng build --watch --configuration development",
+    "test": "ng test"
+  },
+  "private": true,
+  "dependencies": {
+    "@angular/animations": "^22.0.6",
+    "@angular/cdk": "^22.0.4",
+    "@angular/common": "^22.0.6",
+    "@angular/compiler": "^22.0.6",
+    "@angular/core": "^22.0.6",
+    "@angular/forms": "^22.0.6",
+    "@angular/platform-browser": "^22.0.6",
+    "@angular/platform-browser-dynamic": "^22.0.6",
+    "@angular/router": "^22.0.6",
+    "@primeng/themes": "^21.0.4",
+    "primeicons": "^7.0.0",
+    "primeng": "^21.1.9",
+    "rxjs": "~7.8.2",
+    "tslib": "^2.3.0",
+    "zone.js": "~0.16.2"
+  },
+  "devDependencies": {
+    "@angular-devkit/build-angular": "^22.0.6",
+    "@angular/cli": "^22.0.6",
+    "@angular/compiler-cli": "^22.0.6",
+    "@types/jasmine": "~5.1.0",
+    "jasmine-core": "~5.4.0",
+    "karma": "~6.4.0",
+    "karma-chrome-launcher": "~3.2.0",
+    "karma-coverage": "~2.2.0",
+    "karma-jasmine": "~5.1.0",
+    "karma-jasmine-html-reporter": "~2.1.0",
+    "typescript": "~6.0.3"
+  }
+}

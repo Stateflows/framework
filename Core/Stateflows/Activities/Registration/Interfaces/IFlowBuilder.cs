@@ -367,18 +367,14 @@ namespace Stateflows.Activities.Registration.Interfaces
 
     public interface IControlFlowBuilder :
         IControlFlowBuilderBase<IControlFlowBuilderWithWeight>,
-        IFlowWeight<IControlFlowBuilderWithWeight>
-    { }
+        IFlowWeight<IControlFlowBuilderWithWeight>;
 
     public interface IControlFlowBuilderWithWeight : 
-        IControlFlowBuilderBase<IControlFlowBuilderWithWeight>
-    { }
+        IControlFlowBuilderBase<IControlFlowBuilderWithWeight>;
 
-    public interface IElseControlFlowBuilder : IFlowWeight
-    { }
+    public interface IElseControlFlowBuilder : IFlowWeight;
 
-    public interface IElseControlFlowBuilderWithWeight
-    { }
+    public interface IElseControlFlowBuilderWithWeight;
 
     public interface IFlowWeight<out TReturn>
     {

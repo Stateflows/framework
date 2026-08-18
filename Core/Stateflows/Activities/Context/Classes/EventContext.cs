@@ -11,6 +11,22 @@ namespace Stateflows.Activities.Context.Classes
     internal class EventContext<TEvent> : BaseContext, IEventContext<TEvent>, Common.Context.Interfaces.IEventContext<TEvent>, IRootContext, IStateflowsEventContext<TEvent>
     {
         IBehaviorContext IBehaviorActionContext.Behavior => Activity;
+        public bool TryGetParentBehaviorContext(out IParentBehaviorContext parentBehaviorContext)
+        {
+            parentBehaviorContext = Behavior.Context.ContextParentId.HasValue
+                ? Behavior
+                : null;
+            
+            return parentBehaviorContext != null;
+        }
+        public bool TryGetOwnerBehaviorContext(out IOwnerBehaviorContext ownerBehaviorContext)
+        {
+            ownerBehaviorContext = Behavior.Context.ContextOwnerId.HasValue
+                ? Behavior
+                : null;
+            
+            return ownerBehaviorContext != null;
+        }
 
         public EventContext(RootContext context, NodeScope nodeScope)
             : base(context, nodeScope)

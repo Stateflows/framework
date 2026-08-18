@@ -7,17 +7,12 @@ using Stateflows.StateMachines.Context.Interfaces;
 
 namespace Stateflows.StateMachines.Context.Classes
 {
-    internal class TransitionContext<TEvent> :
-        EventContext<TEvent>,
+    internal class TransitionContext<TEvent>(RootContext context, Edge edge) :
+        EventContext<TEvent>(context),
         ITransitionContext<TEvent>,
         IEdgeContext
     {
-        public Edge Edge { get; }
-
-        public TransitionContext(RootContext context, Edge edge) : base(context)
-        {
-            Edge = edge;
-        }
+        public Edge Edge { get; } = edge;
 
         private IStateContext sourceState = null;
         public IStateContext Source => sourceState ??= new StateContext(Edge.Source, Context);

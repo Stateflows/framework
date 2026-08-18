@@ -7,7 +7,6 @@ using Microsoft.Extensions.DependencyInjection;
 using Stateflows.Common;
 using Stateflows.Common.Engine;
 using Stateflows.Common.Extensions;
-using Stateflows.Common.Context.Classes;
 using Stateflows.StateMachines.Models;
 using Stateflows.StateMachines.Extensions;
 using Stateflows.StateMachines.Registration;
@@ -52,7 +51,7 @@ namespace Stateflows.StateMachines.Engine
             
             ExceptionHandlers = await Task.WhenAll(ExceptionHandlerFactories.Select(t => t(Executor.ServiceProvider, context)));
 
-            Plugins = Executor.ServiceProvider.GetService<IEnumerable<IStateMachinePlugin>>().ToArray();
+            Plugins = Executor.ServiceProvider.GetRequiredService<IEnumerable<IStateMachinePlugin>>().ToArray();
             ReversePlugins = Plugins.Reverse().ToArray();
         }
 
@@ -64,8 +63,8 @@ namespace Stateflows.StateMachines.Engine
 
         public IDictionary<Edge, TransitionInspection> InspectionTransitions { get; } = new Dictionary<Edge, TransitionInspection>();
 
-        private IStateMachineInspection inspection;
-        public IStateMachineInspection Inspection => inspection ??= new StateMachineInspection(Executor, this);
+        // private IStateMachineInspection inspection;
+        // public IStateMachineInspection Inspection => inspection ??= new StateMachineInspection(Executor, this);
 
         private readonly List<StateMachineExceptionHandlerFactoryAsync> ExceptionHandlerFactories = [];
 
@@ -256,20 +255,6 @@ namespace Stateflows.StateMachines.Engine
             {
                 ((ActionInspection)stateInspection.Effect).Active = false;
             }
-        }
-
-        public void AfterHydrate(StateMachineActionContext context)
-        {
-            ReversePlugins.RunSafe(i => i.AfterHydrate(context), nameof(AfterHydrate), Logger);
-            GlobalInterceptor.AfterHydrateAsync(context).Wait();
-            ReverseInterceptors.RunSafe(i => i.AfterHydrate(context), nameof(AfterHydrate), Logger);
-        }
-
-        public void BeforeDehydrate(StateMachineActionContext context)
-        {
-            Interceptors.RunSafe(i => i.BeforeDehydrate(context), nameof(BeforeDehydrate), Logger);
-            GlobalInterceptor.BeforeDehydrateAsync(context).Wait();
-            Plugins.RunSafe(i => i.BeforeDehydrate(context), nameof(BeforeDehydrate), Logger);
         }
 
         public bool BeforeProcessEvent<TEvent>(Context.Classes.EventContext<TEvent> context, Common.Context.Classes.EventContext<TEvent> commonContext)

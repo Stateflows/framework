@@ -3,7 +3,6 @@ using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
 using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations;
 using System.Diagnostics;
 using Microsoft.Extensions.DependencyInjection;
 using Stateflows.Common;
@@ -17,34 +16,20 @@ using Stateflows.StateMachines.Context.Classes;
 
 namespace Stateflows.StateMachines.Engine
 {
-    internal class Processor : IEventProcessor, IStateflowsProcessor
+    internal class Processor(
+        StateMachinesRegister register,
+        IEnumerable<IStateMachineEventHandler> eventHandlers,
+        IStateflowsStorage storage,
+        IStateflowsValueStorage valueStorage,
+        IServiceProvider provider
+    ) : IEventProcessor, IStateflowsProcessor
     {
         public string BehaviorType => Constants.StateMachine;
-
-        private readonly StateMachinesRegister Register;
-        private readonly IEnumerable<IStateMachineEventHandler> EventHandlers;
-        private readonly IStateflowsStorage Storage;
-        private readonly IServiceProvider ServiceProvider;
-        private readonly IStateflowsValueStorage ValueStorage;
-
-        public Processor(
-            StateMachinesRegister register,
-            IEnumerable<IStateMachineEventHandler> eventHandlers,
-            IStateflowsStorage storage,
-            IServiceProvider serviceProvider
-        )
-        {
-            Register = register;
-            EventHandlers = eventHandlers;
-            Storage = storage;
-            ServiceProvider = serviceProvider;
-            ValueStorage = ServiceProvider.GetRequiredService<IStateflowsValueStorage>();
-        }
 
         [DebuggerHidden]
         private Task<EventStatus> TryHandleEventAsync<TEvent>(EventContext<TEvent> context)
         {
-            var eventHandler = EventHandlers.FirstOrDefault(h => h.EventType.IsInstanceOfType(context.Event));
+            var eventHandler = eventHandlers.FirstOrDefault(h => h.EventType.IsInstanceOfType(context.Event));
 
             return eventHandler != null
                 ? eventHandler.TryHandleEventAsync<TEvent>(context)
@@ -58,25 +43,27 @@ namespace Stateflows.StateMachines.Engine
             {
                 var result = EventStatus.Undelivered;
 
-                using var serviceScope = ServiceProvider.CreateScope();
+                using var serviceScope = provider.CreateScope();
                 
                 var serviceProvider = serviceScope.ServiceProvider;
 
                 var forcedReset = eventHolder.Headers.Values.Any(h => h is ForcedReset);
                 if (forcedReset)
                 {
-                    await ValueStorage.ClearAsync(id);
+                    await valueStorage.ClearAsync(id);
                 }
 
                 var stateflowsContext = forcedReset
                     ? new StateflowsContext(id)
-                    : await Storage.HydrateAsync(id);
+                    : await storage.HydrateAsync(id);
+
+                stateflowsContext.ExecutionTriggerHolder = eventHolder;
 
                 var key = stateflowsContext.Version != 0
                     ? $"{id.Name}.{stateflowsContext.Version}"
                     : $"{id.Name}.current";
 
-                if (!Register.StateMachines.TryGetValue(key, out var graph))
+                if (!register.StateMachines.TryGetValue(key, out var graph))
                 {
                     return result;
                 }
@@ -88,9 +75,7 @@ namespace Stateflows.StateMachines.Engine
                     stateflowsContext.ContextParentId = embedding.ParentId;
                 }
 
-                // stateflowsContext.StateflowsValues = (await ValueStorage.LoadAsync(stateflowsContext.ContextOwnerId ?? stateflowsContext.Id)).ToDictionary();
-
-                using var executor = new Executor(Register, graph, serviceProvider, stateflowsContext, eventHolder);
+                using var executor = new Executor(register, graph, serviceProvider, stateflowsContext, eventHolder);
                 
                 await executor.HydrateAsync();
 
@@ -137,9 +122,7 @@ namespace Stateflows.StateMachines.Engine
                 }
 
                 // out of try-finally to make sure that context won't be saved when execution fails
-                var ctx = executor.Context.Context;
-                // await ValueStorage.SaveAsync(ctx.ContextOwnerId ?? ctx.Id, ctx.StateflowsValues);
-                await Storage.DehydrateAsync(ctx);
+                await storage.DehydrateAsync(executor.Context.Context);
 
                 return result;
             }
@@ -164,10 +147,10 @@ namespace Stateflows.StateMachines.Engine
                 return false;
             }
             
-            var forceFinalize = await ValueStorage.GetOrDefaultAsync(id, CommonValues.ForceFinalizeKey, false);
+            var forceFinalize = await valueStorage.GetOrDefaultAsync(id, CommonValues.ForceFinalizeKey, false);
             if (forceFinalize)
             {
-                await ValueStorage.RemoveAsync(id, CommonValues.ForceFinalizeKey);
+                await valueStorage.RemoveAsync(id, CommonValues.ForceFinalizeKey);
                 
                 executor.BeginScope();
                 try
@@ -182,7 +165,7 @@ namespace Stateflows.StateMachines.Engine
                     executor.EndScope();
                 }
 
-                Debug.WriteLine($"Forcefuly quit processing in {id.Name}");
+                Debug.WriteLine($"Forcefully quit processing in {id.Name}");
                 
                 return true;
             }
@@ -200,7 +183,6 @@ namespace Stateflows.StateMachines.Engine
             Executor executor
         )
         {
-            // Trace.WriteLine($"⦗→s⦘ State Machine '{executor.Context.Id.Name}:{executor.Context.Id.Instance}': resetting StateHasChanged flag");
             executor.StateHasChanged = false;
             
             var eventContext = new EventContext<TEvent>(executor.Context);

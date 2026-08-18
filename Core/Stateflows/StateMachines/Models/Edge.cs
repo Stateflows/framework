@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Linq;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using Stateflows.Common;
 using Stateflows.Common.Models;
 using Stateflows.StateMachines.Interfaces;
@@ -60,6 +61,8 @@ namespace Stateflows.StateMachines.Models
         public bool IsElse { get; set; }
 
         public bool IsLocal { get; set; } = true;
+
+        public Func<IStateMachineVisitor, Task>? VisitingTask { get; set; } = null;
 
         public Logic<StateMachinePredicateAsync> Guards { get; } = new(Constants.Guard);
 

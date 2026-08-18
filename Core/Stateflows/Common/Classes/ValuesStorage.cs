@@ -53,7 +53,7 @@ namespace Stateflows.Common.Classes
             }
         }
 
-        public async Task<(bool Success, T Value)> TryGetAsync<T>(string key)
+        public async Task<(bool Success, T? Value)> TryGetAsync<T>(string key)
         {
             await using (await Lock.AquireLockAsync(BehaviorId, Scope, LockTimeout))
             {
@@ -61,7 +61,7 @@ namespace Stateflows.Common.Classes
             }
         }
 
-        public async Task<T> GetOrDefaultAsync<T>(string key, T defaultValue = default)
+        public async Task<T?> GetOrDefaultAsync<T>(string key, T? defaultValue = default)
         {
             await using (await Lock.AquireLockAsync(BehaviorId, Scope, LockTimeout))
             {
@@ -69,7 +69,7 @@ namespace Stateflows.Common.Classes
             }
         }
 
-        public async Task<T> UpdateAsync<T>(string key, Func<T, T> valueUpdater, T defaultValue = default)
+        public async Task<T?> UpdateAsync<T>(string key, Func<T?, T?> valueUpdater, T? defaultValue = default)
         {
             await using (await Lock.AquireLockAsync(BehaviorId, Scope, LockTimeout))
             {

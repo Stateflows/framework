@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using Stateflows.Common;
 using Stateflows.Common.Context;
-using Stateflows.Activities;
 using Stateflows.Actions.Context.Interfaces;
 using Stateflows.Actions.Engine;
 
@@ -19,5 +18,21 @@ namespace Stateflows.Actions.Context.Classes
         public Guid ExecutionTriggerId => RootContext.EventHolder.Id;
         public Dictionary<string, EventHeader> Headers => RootContext.EventHolder.Headers;
         public IBehaviorContext Behavior => this;
+        public bool TryGetParentBehaviorContext(out IParentBehaviorContext parentBehaviorContext)
+        {
+            parentBehaviorContext = Context.ContextParentId.HasValue
+                ? this
+                : null;
+            
+            return parentBehaviorContext != null;
+        }
+        public bool TryGetOwnerBehaviorContext(out IOwnerBehaviorContext ownerBehaviorContext)
+        {
+            ownerBehaviorContext = Context.ContextParentId.HasValue
+                ? this
+                : null;
+            
+            return ownerBehaviorContext != null;
+        }
     }
 }

@@ -3,17 +3,11 @@ using Stateflows.Common.Utilities;
 
 namespace Stateflows
 {
-    public struct BehaviorClass : IEquatable<BehaviorClass>
+    public struct BehaviorClass(string type, string name) : IEquatable<BehaviorClass>
     {
-        public BehaviorClass(string type, string name)
-        {
-            Type = type;
-            Name = name;
-        }
+        public string Type { get; set; } = type;
 
-        public string Type { get; set; }
-
-        public string Name { get; set; }
+        public string Name { get; set; } = name;
 
         public static bool operator ==(BehaviorClass class1, BehaviorClass class2)
             => class1.Equals(class2);

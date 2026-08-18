@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
@@ -258,11 +259,101 @@ namespace Stateflows.Common.Classes
                     continue;
                 }
                 
+                var fieldAttribute = parameter.GetCustomAttribute<FromFieldAttribute>();
+                if (fieldAttribute != null)
+                {
+                    var task = (Task)(fieldAttribute.Scope switch
+                    {
+                        EntityScope.Self =>
+                            LocalTryGetAsyncMethod
+                                .MakeGenericMethod(parameter.ParameterType)
+                                .Invoke(serviceProvider.GetService<IBehaviorContext>(), [ fieldAttribute.Name ?? parameter.Name, new Dictionary<string, EventHeader>() ]),
+                        
+                        EntityScope.Parent =>
+                            ParentTryGetAsyncMethod
+                                .MakeGenericMethod(parameter.ParameterType)
+                                .Invoke(serviceProvider.GetService<IParentBehaviorContext>(), [ fieldAttribute.Name ?? parameter.Name, new Dictionary<string, EventHeader>() ]),
+                        
+                        EntityScope.Owner =>
+                            OwnerTryGetAsyncMethod
+                                .MakeGenericMethod(parameter.ParameterType)
+                                .Invoke(serviceProvider.GetService<IOwnerBehaviorContext>(), [ fieldAttribute.Name ?? parameter.Name, new Dictionary<string, EventHeader>() ]),
+                    });
+                    
+                    await task;
+                    var result = task.GetType().GetProperty(nameof(Task<object>.Result))!.GetValue(task, null);
+                    var success = (bool)result.GetType().GetField("Item1").GetValue(result);
+                    if (fieldAttribute.Required && !parameter.IsOptional && !parameter.IsNullable() && !success)
+                    {
+                        var message = $"{
+                            fieldAttribute.Scope switch {
+                                EntityScope.Self => "Behavior",
+                                EntityScope.Parent => "Parent",
+                                EntityScope.Owner => "Owner"
+                            }
+                        } entity projection with type '{parameter.ParameterType.GetReadableName(TypedElements.Events)}' could not be obtained (required by constructor parameter '{parameter.Name}' of {serviceKind} '{serviceType.Name}')";
+
+                        throw new InvalidOperationException(message);
+                    }
+
+                    parameterValues[i] = result.GetType().GetField("Item2").GetValue(result);
+                    continue;
+                }
+                
+                var projectionAttribute = parameter.GetCustomAttribute<FromProjectionAttribute>();
+                if (projectionAttribute != null)
+                {
+                    var task = (Task)(projectionAttribute.Scope switch
+                    {
+                        EntityScope.Self =>
+                            LocalTryGetProjectionAsyncMethod
+                                .MakeGenericMethod(parameter.ParameterType)
+                                .Invoke(serviceProvider.GetService<IBehaviorContext>(), [ new Dictionary<string, EventHeader>() ]),
+                        
+                        EntityScope.Parent =>
+                            ParentTryGetProjectionAsyncMethod
+                                .MakeGenericMethod(parameter.ParameterType)
+                                .Invoke(serviceProvider.GetService<IParentBehaviorContext>(), [ new Dictionary<string, EventHeader>() ]),
+                        
+                        EntityScope.Owner =>
+                            OwnerTryGetProjectionAsyncMethod
+                                .MakeGenericMethod(parameter.ParameterType)
+                                .Invoke(serviceProvider.GetService<IOwnerBehaviorContext>(), [ new Dictionary<string, EventHeader>() ]),
+                    });
+                    
+                    await task;
+                    var result = task.GetType().GetProperty(nameof(Task<object>.Result))!.GetValue(task, null);
+                    var success = (bool)result.GetType().GetField("Item1").GetValue(result);
+                    if (projectionAttribute.Required && !parameter.IsOptional && !parameter.IsNullable() && !success)
+                    {
+                        var message = $"{
+                            projectionAttribute.Scope switch {
+                                EntityScope.Self => "Behavior",
+                                EntityScope.Parent => "Parent",
+                                EntityScope.Owner => "Owner"
+                            }
+                        } entity projection with type '{parameter.ParameterType.GetReadableName(TypedElements.Events)}' could not be obtained (required by constructor parameter '{parameter.Name}' of {serviceKind} '{serviceType.Name}')";
+
+                        throw new InvalidOperationException(message);
+                    }
+
+                    parameterValues[i] = result.GetType().GetField("Item2").GetValue(result);
+                    continue;
+                }
+                
                 parameterValues[i] = serviceProvider.GetRequiredService(parameter.ParameterType);
             }
 
             return parameterValues;
         }
+        
+        private static readonly MethodInfo LocalTryGetProjectionAsyncMethod = typeof(IEntityOperations<IBehaviorContext>).GetMethod(nameof(IEntityOperations<IBehaviorContext>.TryGetProjectionAsync));
+        private static readonly MethodInfo ParentTryGetProjectionAsyncMethod = typeof(IEntityOperations<IParentBehaviorContext>).GetMethod(nameof(IEntityOperations<IParentBehaviorContext>.TryGetProjectionAsync));
+        private static readonly MethodInfo OwnerTryGetProjectionAsyncMethod = typeof(IEntityOperations<IOwnerBehaviorContext>).GetMethod(nameof(IEntityOperations<IOwnerBehaviorContext>.TryGetProjectionAsync));
+
+        private static readonly MethodInfo LocalTryGetAsyncMethod = typeof(IEntityOperations<IBehaviorContext>).GetMethod(nameof(IEntityOperations<IBehaviorContext>.TryGetAsync));
+        private static readonly MethodInfo ParentTryGetAsyncMethod = typeof(IEntityOperations<IParentBehaviorContext>).GetMethod(nameof(IEntityOperations<IParentBehaviorContext>.TryGetAsync));
+        private static readonly MethodInfo OwnerTryGetAsyncMethod = typeof(IEntityOperations<IOwnerBehaviorContext>).GetMethod(nameof(IEntityOperations<IOwnerBehaviorContext>.TryGetAsync));
 
         /// <summary>
         /// Creates lightweight factories for constructor parameter values. Factories are simple and fast to create
@@ -453,7 +544,7 @@ namespace Stateflows.Common.Classes
             var tryGetMethod = typeof(IContextValues).GetMethod(nameof(IContextValues.TryGetAsync));
             var method = tryGetMethod!.MakeGenericMethod(parameter.ParameterType);
 
-            var isRequired = valueAttribute.Required && !parameter.IsOptional;
+            var isRequired = valueAttribute.Required && !parameter.IsOptional && !parameter.IsNullable();
 
             return async () =>
             {
@@ -559,7 +650,7 @@ namespace Stateflows.Common.Classes
             await task;
             var result = task.GetType().GetProperty(nameof(Task<object>.Result))!.GetValue(task, null);
             var success = (bool)result.GetType().GetField("Item1").GetValue(result);
-            if (valueAttribute.Required && !parameter.IsOptional && !success)
+            if (valueAttribute.Required && !parameter.IsOptional && !parameter.IsNullable() && !success)
             {
                 var message = valueName == parameter.Name
                     ? $"Context value '{valueName}' not found (required by {serviceKind} '{serviceType.Name}')"

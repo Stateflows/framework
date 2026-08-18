@@ -1,31 +1,25 @@
 using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Diagnostics;
+using System.Collections.Generic;
 using Microsoft.Extensions.Hosting;
 using Stateflows.Common.Classes;
 using Stateflows.Common.Engine.Interfaces;
 
 namespace Stateflows.Common
 {
-    internal class StateflowsService : IHostedService, IStateflowsTelemetry
+    internal class StateflowsService(StateflowsEngine stateflowsEngine) :
+        IHostedService,
+        IStateflowsTelemetry
     {
-        public StateflowsService(StateflowsEngine stateflowsEngine)
-        {
-            StateflowsEngine = stateflowsEngine;
-        }
-
-        private readonly StateflowsEngine StateflowsEngine;
-        
         private readonly CancellationTokenSource CancellationTokenSource = new();
 
         public async ValueTask<ExecutionToken> EnqueueEventAsync(BehaviorId id, EventHolder eventHolder, IServiceProvider serviceProvider)
         {
             var token = new ExecutionToken(id, eventHolder, serviceProvider);
 
-            var resource = StateflowsEngine.StateflowsBuilder.ResourcesByBehaviorClass[id.BehaviorClass];
+            var resource = stateflowsEngine.StateflowsBuilder.ResourcesByBehaviorClass[id.BehaviorClass];
             
             await resource.WriteAsync(token);
             
@@ -43,7 +37,7 @@ namespace Stateflows.Common
         [DebuggerHidden]
         private Task ExecutionTaskAsync(CancellationToken cancellationToken)
         {
-            foreach (var resourceName in StateflowsEngine.StateflowsBuilder.ResourceNames.Values)
+            foreach (var resourceName in stateflowsEngine.StateflowsBuilder.ResourceNames.Values)
             {
                 _ = Task.Run(
                     async () =>
@@ -57,7 +51,7 @@ namespace Stateflows.Common
                                 {
                                     try
                                     {
-                                        await StateflowsEngine.HandleEventAsync(token);
+                                        await stateflowsEngine.HandleEventAsync(token);
                                     }
                                     finally
                                     {
@@ -82,7 +76,7 @@ namespace Stateflows.Common
             return Task.CompletedTask;
         }
 
-        public IEnumerable<IStateflowsResource> Resources => StateflowsEngine.StateflowsBuilder.ResourceNames.Values;
+        public IEnumerable<IStateflowsResource> Resources => stateflowsEngine.StateflowsBuilder.ResourceNames.Values;
 
         private Dictionary<BehaviorClass, IStateflowsResource> resourcesByBehaviorClass;
         public IReadOnlyDictionary<BehaviorClass, IStateflowsResource> ResourcesByBehaviorClass
@@ -92,7 +86,7 @@ namespace Stateflows.Common
                 if (resourcesByBehaviorClass == null)
                 {
                     resourcesByBehaviorClass = new Dictionary<BehaviorClass, IStateflowsResource>();
-                    foreach (var pair in  StateflowsEngine.StateflowsBuilder.ResourcesByBehaviorClass)
+                    foreach (var pair in  stateflowsEngine.StateflowsBuilder.ResourcesByBehaviorClass)
                     {
                         resourcesByBehaviorClass[pair.Key] = pair.Value;
                     }

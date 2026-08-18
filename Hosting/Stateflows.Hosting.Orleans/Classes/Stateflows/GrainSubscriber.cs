@@ -9,7 +9,7 @@ namespace Stateflows;
 
 public class GrainSubscriber(IClusterClient client, IStateflowsTenantProvider tenantProvider) : IStateflowsSubscriber
 {
-    private async Task<INotificationsGrain> GetNotificationsGrain(BehaviorId behaviorId)
+    private async Task<ISubscriptionsGrain> GetSubscriptionsGrain(BehaviorId behaviorId)
     {
         var tenantId = await tenantProvider.GetCurrentTenantIdAsync();
         var id = StateflowsJsonConverter.SerializeObject(
@@ -19,34 +19,33 @@ public class GrainSubscriber(IClusterClient client, IStateflowsTenantProvider te
                 BehaviorId = behaviorId
             }
         );
-        var notificationsGrain = client.GetGrain<INotificationsGrain>(id);
+        var notificationsGrain = client.GetGrain<ISubscriptionsGrain>(id);
         return notificationsGrain;
     }
     
-    public async Task PublishAsync<TNotification>(TNotification notificationEvent, StateflowsContext senderContext,
-        IDictionary<string, EventHeader> headers = null)
+    public async Task PublishAsync<TNotification>(BehaviorId publisherBehaviorId, TNotification notificationEvent, StateflowsContext senderContext, IDictionary<string, EventHeader>? headers = null)
     {
         var notificationType = typeof(TNotification);
         var ttlAttribute = notificationType.GetCustomAttribute<TimeToLiveAttribute>();
         var retainAttribute = notificationType.GetCustomAttribute<RetainAttribute>();
-        var notification = (OrleansEventHolder)notificationEvent.ToEventHolder(headers, senderContext.ContextOwnerId ?? senderContext.Id);
+        var notification = (OrleansEventHolder)notificationEvent.ToEventHolder(headers, senderContext.Id);
         notification.SentAt = DateTime.Now;
         notification.Retained = retainAttribute != null;
         notification.TimeToLive = ttlAttribute?.SecondsToLive ?? 0;
 
-        var notificationsGrain = await GetNotificationsGrain(senderContext.ContextOwnerId ?? senderContext.Id);
+        var notificationsGrain = await GetSubscriptionsGrain(senderContext.Id);
         _ = notificationsGrain.PublishAsync([notification]);
     }
 
     public async Task SubscribeAsync<TNotification>(BehaviorId subscriberBehaviorId, BehaviorId subscribedBehaviorId)
     {
-        var notificationsGrain = await GetNotificationsGrain(subscribedBehaviorId);
+        var notificationsGrain = await GetSubscriptionsGrain(subscribedBehaviorId);
         await notificationsGrain.AddSubscriptionAsync(subscriberBehaviorId, [Event<TNotification>.Name]);
     }
 
     public async Task UnsubscribeAsync<TNotification>(BehaviorId subscriberBehaviorId, BehaviorId subscribedBehaviorId)
     {
-        var notificationsGrain = await GetNotificationsGrain(subscribedBehaviorId);
+        var notificationsGrain = await GetSubscriptionsGrain(subscribedBehaviorId);
         await notificationsGrain.RemoveSubscriptionAsync(subscriberBehaviorId, [Event<TNotification>.Name]);
     }
 }

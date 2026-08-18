@@ -3,10 +3,21 @@ using Stateflows.Common.Interfaces;
 
 namespace Stateflows.Activities.Registration.Interfaces;
 
-public interface IAcceptEventActionBuilder :
-    IObjectFlowBase<IAcceptEventActionBuilder>,
-    IControlFlowBase<IAcceptEventActionBuilder>,
-    IExceptionHandlerBase<IAcceptEventActionBuilder>;
+public interface IAcceptEventActionBuilder<TEvent> :
+    IObjectFlowBase<IAcceptEventActionBuilder<TEvent>>,
+    IControlFlowBase<IAcceptEventActionBuilder<TEvent>>,
+    IExceptionHandlerBase<IAcceptEventActionBuilder<TEvent>>;
+
+public interface IOverridenAcceptEventActionBuilder<in TEvent> :
+    IObjectFlowBase<IOverridenAcceptEventActionBuilder<TEvent>>,
+    IOverridenObjectFlowBase<IOverridenAcceptEventActionBuilder<TEvent>>,
+    IControlFlowBase<IOverridenAcceptEventActionBuilder<TEvent>>,
+    IOverridenControlFlowBase<IOverridenAcceptEventActionBuilder<TEvent>>,
+    IExceptionHandlerBase<IOverridenAcceptEventActionBuilder<TEvent>>
+{
+    IOverridenAcceptEventActionBuilder<TAcceptedEvent> ChangeAcceptedEvent<TAcceptedEvent>()
+        where TAcceptedEvent : TEvent;
+}
 
 public interface IAcceptEventActionBuilder<in TEvent, out TAcceptEventAction> :
     IObjectFlowBase<IAcceptEventActionBuilder<TEvent, TAcceptEventAction>>,
@@ -14,3 +25,16 @@ public interface IAcceptEventActionBuilder<in TEvent, out TAcceptEventAction> :
     IExceptionHandlerBase<IAcceptEventActionBuilder<TEvent, TAcceptEventAction>>,
     IElementBuilderBase<TAcceptEventAction, IAcceptEventActionBuilder<TEvent, TAcceptEventAction>>
     where TAcceptEventAction : class, IAcceptEventActionNode<TEvent>;
+
+public interface IOverridenAcceptEventActionBuilder<in TEvent, out TAcceptEventAction> :
+    IObjectFlowBase<IOverridenAcceptEventActionBuilder<TEvent, TAcceptEventAction>>,
+    IOverridenObjectFlowBase<IOverridenAcceptEventActionBuilder<TEvent, TAcceptEventAction>>,
+    IControlFlowBase<IOverridenAcceptEventActionBuilder<TEvent, TAcceptEventAction>>,
+    IOverridenControlFlowBase<IOverridenAcceptEventActionBuilder<TEvent, TAcceptEventAction>>,
+    IExceptionHandlerBase<IOverridenAcceptEventActionBuilder<TEvent, TAcceptEventAction>>,
+    IElementBuilderBase<TAcceptEventAction, IOverridenAcceptEventActionBuilder<TEvent, TAcceptEventAction>>
+    where TAcceptEventAction : class, IAcceptEventActionNode<TEvent>
+{
+    IOverridenAcceptEventActionBuilder<TAcceptedEvent> ChangeAcceptedEvent<TAcceptedEvent>()
+        where TAcceptedEvent : TEvent;
+}

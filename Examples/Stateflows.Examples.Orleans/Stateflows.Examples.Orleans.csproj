@@ -7,7 +7,7 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.0.2"/>
+        <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.0.2" />
         <PackageReference Include="Microsoft.ClearScript" Version="7.5.0" />
         <PackageReference Include="Microsoft.ClearScript.V8.Native.win-x64" Version="7.5.0" />
         <PackageReference Include="Microsoft.Orleans.Reminders" Version="10.0.1" />
@@ -19,7 +19,7 @@
     <ItemGroup>
       <ProjectReference Include="..\..\Extensions\Stateflows.Extensions.OpenTelemetry\Stateflows.Extensions.OpenTelemetry.csproj" />
       <ProjectReference Include="..\..\Extensions\Stateflows.Extensions.PlantUml\Stateflows.Extensions.PlantUml.csproj" />
-      <ProjectReference Include="..\..\Hosting\Stateflows.Hosting.Orleans\Stateflows.Hosting.Orleans.csproj" />
+      <ProjectReference Include="..\..\Hosting\Stateflows.Hosting.Orleans\Stateflows.Runtimes.Orleans.csproj" />
       <ProjectReference Include="..\Stateflows.Examples.Behaviors\Stateflows.Examples.Behaviors.csproj" />
     </ItemGroup>
 

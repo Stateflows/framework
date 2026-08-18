@@ -88,7 +88,6 @@ namespace Stateflows.Common
                 await processor.CancelProcessingAsync(id);
             }
 
-            // todo: check for reentrant flag in action definition
             await using var lockHandle = await (
                 id.Type == BehaviorType.Action
                     ? Lock.AquireNoLockAsync(id)

@@ -13,6 +13,7 @@
         Join,
         Merge,
         SendEventAction,
+        PublishEventAction,
         AcceptEventAction,
         TimeEventAction,
         StructuredActivity,

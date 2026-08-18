@@ -16,6 +16,7 @@
     <PackageOutputPath>..\..\NuGet</PackageOutputPath>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <LangVersion>12</LangVersion>
+    <Nullable>enable</Nullable>
   </PropertyGroup>
 
   <ItemGroup>

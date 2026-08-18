@@ -2,6 +2,7 @@ using Stateflows.Activities;
 using StateMachine.IntegrationTests.Utils;
 using System.Diagnostics;
 using Stateflows.Common;
+using Stateflows.Entities.Attributes;
 using StateMachine.IntegrationTests.Classes.Events;
 
 namespace StateMachine.IntegrationTests.Tests
@@ -39,10 +40,11 @@ namespace StateMachine.IntegrationTests.Tests
                 .AddStateMachines(b => b
                     .AddStateMachine("extended", b => b
                         .AddExecutionSequenceObserver()
+                        .AddEntity<ExtendedState<bool>>()
                         .AddInitializer<BoolInit>(async c =>
                         {
                             Debug.WriteLine($"InitializationEvent.Value: {c.InitializationEvent.Value}");
-                            await c.Behavior.Values.SetAsync("value", c.InitializationEvent.Value);
+                            await c.Behavior.TryMutateAsync(c.InitializationEvent.Value);
                             return true;
                         })
                         .AddInitialState("stateA", b => b
@@ -51,16 +53,19 @@ namespace StateMachine.IntegrationTests.Tests
                                     .AddAcceptEventAction<SomeEvent>(
                                         async c =>
                                         {
-                                            GuardRun = true;
-                                            var (success, value) = await c.Behavior.Values.TryGetAsync<bool>("value");
-                                            if (success)
+                                            if (c.TryGetParentBehaviorContext(out var parentBehaviorContext))
                                             {
-                                                Debug.WriteLine($"value: {value}");
-                                                c.Output(value);
-                                            }
-                                            else
-                                            {
-                                                Debug.WriteLine($"value: not available");
+                                                GuardRun = true;
+                                                var (success, value) = await parentBehaviorContext.TryGetProjectionAsync<bool>();
+                                                if (success)
+                                                {
+                                                    Debug.WriteLine($"value: {value}");
+                                                    c.Output(value);
+                                                }
+                                                else
+                                                {
+                                                    Debug.WriteLine($"value: not available");
+                                                }
                                             }
                                         },
                                         b => b.AddFlow<bool, OutputNode>()

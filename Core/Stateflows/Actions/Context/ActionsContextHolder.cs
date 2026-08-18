@@ -8,6 +8,8 @@ namespace Stateflows.Actions.Context
     {
         public static AsyncLocal<IExecutionContext> ExecutionContext => CommonContextHolder.ExecutionContext;
         public static AsyncLocal<IBehaviorContext> BehaviorContext => CommonContextHolder.BehaviorContext;
+        public static AsyncLocal<Common.IParentBehaviorContext> ParentBehaviorContext => CommonContextHolder.ParentBehaviorContext;
+        public static AsyncLocal<Common.IOwnerBehaviorContext> OwnerBehaviorContext => CommonContextHolder.OwnerBehaviorContext;
         public static AsyncLocal<IActionContext> ActionContext = new ();
     }
 }

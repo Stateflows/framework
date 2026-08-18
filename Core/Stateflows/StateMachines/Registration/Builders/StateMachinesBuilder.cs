@@ -22,7 +22,13 @@ namespace Stateflows.StateMachines.Registration.Builders
                     typeof(IStateMachine).IsAssignableFrom(type) &&
                     type.GetCustomAttributes(typeof(StateMachineBehaviorAttribute)).FirstOrDefault() is StateMachineBehaviorAttribute attribute)
                 {
-                    register.AddStateMachine(attribute.Name ?? type.FullName, attribute.Version, type);
+                    register.AddStateMachine(attribute.Name ?? type.FullName, attribute.Version, type, b =>
+                    {
+                        if (attribute.ResourceName != null)
+                        {
+                            b.SetResourceName(attribute.ResourceName);
+                        }
+                    });
                 }
             });
 

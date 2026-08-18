@@ -3,6 +3,7 @@ using System.Linq;
 using Microsoft.Extensions.DependencyInjection;
 using Stateflows.Actions;
 using Stateflows.Activities;
+using Stateflows.Entities;
 using Stateflows.Common;
 using Stateflows.Common.Cache;
 using Stateflows.Common.Classes;
@@ -21,7 +22,6 @@ using Stateflows.Common.Registration.Builders;
 using Stateflows.Common.Registration.Interfaces;
 using Stateflows.Common.Utilities;
 using Stateflows.StateMachines;
-using Stateflows.StateMachines.Engine;
 using IExecutionContext = Stateflows.Common.IExecutionContext;
 
 namespace Stateflows
@@ -55,6 +55,14 @@ namespace Stateflows
                     .AddTransient(provider =>
                         CommonContextHolder.BehaviorContext.Value ??
                         throw new InvalidOperationException($"No service for type '{typeof(IBehaviorContext).FullName}' is available in this context.")
+                    )
+                    .AddTransient(provider =>
+                        CommonContextHolder.ParentBehaviorContext.Value ??
+                        throw new InvalidOperationException($"No service for type '{typeof(IParentBehaviorContext).FullName}' is available in this context.")
+                    )
+                    .AddTransient(provider =>
+                        CommonContextHolder.OwnerBehaviorContext.Value ??
+                        throw new InvalidOperationException($"No service for type '{typeof(IOwnerBehaviorContext).FullName}' is available in this context.")
                     )
                     ;
             }
@@ -121,6 +129,7 @@ namespace Stateflows
 
             ActionsDependencyInjection.Build(builder);
             ActivitiesDependencyInjection.Build(builder);
+            EntitiesDependencyInjection.Build(builder);
             StateMachinesDependencyInjection.Build(builder);
 
             return services;

@@ -12,5 +12,7 @@ namespace Stateflows.StateMachines.Context
         public static readonly AsyncLocal<IStateMachineInspection> Inspection = new ();
         public static AsyncLocal<Common.IExecutionContext> CommonExecutionContext => CommonContextHolder.ExecutionContext;
         public static AsyncLocal<Common.IBehaviorContext> BehaviorContext => CommonContextHolder.BehaviorContext;
+        public static AsyncLocal<Common.IParentBehaviorContext> ParentBehaviorContext => CommonContextHolder.ParentBehaviorContext;
+        public static AsyncLocal<Common.IOwnerBehaviorContext> OwnerBehaviorContext => CommonContextHolder.OwnerBehaviorContext;
     }
 }

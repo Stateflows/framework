@@ -5,7 +5,6 @@ using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
 using Stateflows.Common.Classes;
-using Stateflows.Common.Extensions;
 using Stateflows.Common.Initializer;
 using Stateflows.Common.Interfaces;
 using Stateflows.Common.Registration.Builders;
@@ -37,19 +36,19 @@ namespace Stateflows.StateMachines.Registration
         public BehaviorClass? OwnerClass { get; set; }
         public BehaviorClass? ParentClass { get; set; }
 
-        private static void RegisterStateMachine(Type stateMachineType, StateMachineElementsBuilder stateMachineElementsBuilder)
+        private static void RegisterStateMachine(Type stateMachineType, StateMachineBuilder stateMachineBuilder)
         {
             // Try to invoke a static RegisterEndpoints(EndpointsBuilder) on the concrete type
             var staticBuildMethod = stateMachineType.GetMethod(
                 nameof(IStateMachine.Build),
                 BindingFlags.Public | BindingFlags.Static,
                 binder: null,
-                types: [typeof(StateMachineElementsBuilder)],
+                types: [typeof(StateMachineBuilder)],
                 modifiers: null
             );
 
             // static method found -> invoke without creating an instance
-            staticBuildMethod.Invoke(null, [stateMachineElementsBuilder]);
+            staticBuildMethod.Invoke(null, [stateMachineBuilder]);
         }
 
         private bool IsNewestVersion(string stateMachineName, int version)
@@ -84,18 +83,18 @@ namespace Stateflows.StateMachines.Registration
                 throw new StateMachineDefinitionException($"State machine '{stateMachineName}' with version '{version}' is already registered", new StateMachineClass(stateMachineName));
             }
 
-            var builder = new StateMachineElementsBuilder(stateMachineName, version, stateflowsBuilder, OwnerClass, ParentClass);
+            var builder = new StateMachineBuilder(stateMachineName, version, stateflowsBuilder, OwnerClass, ParentClass);
 
             // Assign to local variable to avoid value being overriden when invoking lambda function at a later stage
             var ownerClass = OwnerClass;
             var parentClass = ParentClass;
-
+            
             builder.Graph.VisitingTasks.Add(v =>
             {
                 var hasDefaultInstance = BehaviorClassesInitializations.Instance.DefaultInstanceInitializationTokens
                     .Any(token => token.BehaviorClass.Type == StateMachineClass.Type && token.BehaviorClass.Name == stateMachineName);
 
-                return v.StateMachineAddingAsync(stateMachineName, version, ownerClass, parentClass, hasDefaultInstance);
+                return v.StateMachineAddingAsync(stateMachineName, version, hasDefaultInstance);
             });
 
             buildAction(builder);
@@ -122,7 +121,7 @@ namespace Stateflows.StateMachines.Registration
                 throw new StateMachineDefinitionException($"State machine '{stateMachineName}' with version '{version}' is already registered", new StateMachineClass(stateMachineName));
             }
 
-            var builder = new StateMachineElementsBuilder(stateMachineName, version, stateflowsBuilder, OwnerClass, ParentClass)
+            var builder = new StateMachineBuilder(stateMachineName, version, stateflowsBuilder, OwnerClass, ParentClass)
             {
                 Graph =
                     {
@@ -139,7 +138,7 @@ namespace Stateflows.StateMachines.Registration
                 var hasDefaultInstance = BehaviorClassesInitializations.Instance.DefaultInstanceInitializationTokens
                     .Any(token => token.BehaviorClass.Type == StateMachineClass.Type && token.BehaviorClass.Name == stateMachineName);
 
-                return v.StateMachineAddingAsync(stateMachineName, version, ownerClass, parentClass, hasDefaultInstance);
+                return v.StateMachineAddingAsync(stateMachineName, version, hasDefaultInstance);
             });
             
             RegisterStateMachine(stateMachineType, builder);
@@ -189,6 +188,12 @@ namespace Stateflows.StateMachines.Registration
                     StateMachinesContextHolder.StateContext.Value = null;
                     StateMachinesContextHolder.TransitionContext.Value = null;
                     StateMachinesContextHolder.BehaviorContext.Value = context.Behavior;
+                    StateMachinesContextHolder.ParentBehaviorContext.Value = context.TryGetParentBehaviorContext(out var parentBehaviorContext)
+                        ? parentBehaviorContext
+                        : null;
+                    StateMachinesContextHolder.OwnerBehaviorContext.Value = context.TryGetOwnerBehaviorContext(out var ownerBehaviorContext)
+                        ? ownerBehaviorContext
+                        : null;
                     StateMachinesContextHolder.StateMachineContext.Value = ((BaseContext)context).StateMachine;
                     StateMachinesContextHolder.ExecutionContext.Value = context;
 
@@ -219,6 +224,12 @@ namespace Stateflows.StateMachines.Registration
                     StateMachinesContextHolder.StateContext.Value = null;
                     StateMachinesContextHolder.TransitionContext.Value = null;
                     StateMachinesContextHolder.BehaviorContext.Value = context.Behavior;
+                    StateMachinesContextHolder.ParentBehaviorContext.Value = context.TryGetParentBehaviorContext(out var parentBehaviorContext)
+                        ? parentBehaviorContext
+                        : null;
+                    StateMachinesContextHolder.OwnerBehaviorContext.Value = context.TryGetOwnerBehaviorContext(out var ownerBehaviorContext)
+                        ? ownerBehaviorContext
+                        : null;
                     StateMachinesContextHolder.StateMachineContext.Value = ((BaseContext)context).StateMachine;
                     StateMachinesContextHolder.ExecutionContext.Value = context;
 
@@ -249,6 +260,12 @@ namespace Stateflows.StateMachines.Registration
                     StateMachinesContextHolder.StateContext.Value = null;
                     StateMachinesContextHolder.TransitionContext.Value = null;
                     StateMachinesContextHolder.BehaviorContext.Value = context.Behavior;
+                    StateMachinesContextHolder.ParentBehaviorContext.Value = context.TryGetParentBehaviorContext(out var parentBehaviorContext)
+                        ? parentBehaviorContext
+                        : null;
+                    StateMachinesContextHolder.OwnerBehaviorContext.Value = context.TryGetOwnerBehaviorContext(out var ownerBehaviorContext)
+                        ? ownerBehaviorContext
+                        : null;
                     StateMachinesContextHolder.StateMachineContext.Value = ((BaseContext)context).StateMachine;
                     StateMachinesContextHolder.ExecutionContext.Value = context;
 
@@ -259,7 +276,7 @@ namespace Stateflows.StateMachines.Registration
         public async Task VisitStateMachinesAsync(IStateMachineVisitor visitor)
         {
             var tasks = StateMachines
-                .Where((item, _) => !item.Key.EndsWith(".current"))
+                .Where((item, _) => !item.Key.EndsWith(".current") && item.Value.ParentClass is null)
                 .Select(item => item.Value)
                 .SelectMany(graph => graph.VisitingTasks);
 

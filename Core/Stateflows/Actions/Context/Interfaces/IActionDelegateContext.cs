@@ -10,6 +10,8 @@ namespace Stateflows.Actions.Context.Interfaces
         /// Information about current behavior
         /// </summary>
         IBehaviorContext Behavior { get; }
+        bool TryGetParentBehaviorContext(out IParentBehaviorContext parentBehaviorContext);
+        bool TryGetOwnerBehaviorContext(out IOwnerBehaviorContext ownerBehaviorContext);
 
         /// <summary>
         /// Cancellation token handling activity execution interruptions, f.e. triggered by FinalNode

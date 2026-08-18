@@ -13,7 +13,7 @@ namespace Stateflows.Activities.Models
 {
     internal class Graph : Node
     {
-        internal string ResourceName = null;
+        internal string? ResourceName { get; set; }= null;
         
         internal readonly List<Func<IActivityVisitor, Task>> VisitingTasks = new List<Func<IActivityVisitor, Task>>();
         
@@ -36,6 +36,7 @@ namespace Stateflows.Activities.Models
         public ActivityClass Class { get; }
         public BehaviorClass? ParentClass { get; }
         public BehaviorClass? OwnerClass { get; }
+        public string? BaseActivityName { get; set; }
 
         public int Version { get; }
         public Type ActivityType { get; set; }
@@ -43,8 +44,8 @@ namespace Stateflows.Activities.Models
         private bool Built { get; set; } = false;
         public readonly Dictionary<string, Node> AllNodes = [];
         public readonly Dictionary<string, Node> AllNamedNodes = [];
-        public readonly List<Edge> AllEdgesList = [];
-        public readonly Dictionary<string, Edge> AllEdges = [];
+        public List<Edge> AllEdgesList { get; } = [];
+        public Dictionary<string, Edge> AllEdges { get; } = [];
 
         public readonly Dictionary<string, Logic<ActivityPredicateAsync>> Initializers = [];
         public readonly List<Type> InitializerTypes = [];

@@ -93,6 +93,12 @@ namespace Stateflows.Activities.Engine
             ActivitiesContextHolder.FlowContext.Value = null;
             ActivitiesContextHolder.ActivityContext.Value = (IActivityContext)context.Behavior;
             ActivitiesContextHolder.BehaviorContext.Value = context.Behavior;
+            ActivitiesContextHolder.ParentBehaviorContext.Value = context.TryGetParentBehaviorContext(out var parentBehaviorContext)
+                ? parentBehaviorContext
+                : null;
+            ActivitiesContextHolder.OwnerBehaviorContext.Value = context.TryGetOwnerBehaviorContext(out var ownerBehaviorContext)
+                ? ownerBehaviorContext
+                : null;
             ActivitiesContextHolder.ExecutionContext.Value = context;
             ActivitiesContextHolder.ExceptionContext.Value = null;
 
@@ -113,6 +119,12 @@ namespace Stateflows.Activities.Engine
             ActivitiesContextHolder.FlowContext.Value = null;
             ActivitiesContextHolder.ActivityContext.Value = (IActivityContext)context.Behavior;
             ActivitiesContextHolder.BehaviorContext.Value = context.Behavior;
+            ActivitiesContextHolder.ParentBehaviorContext.Value = context.TryGetParentBehaviorContext(out var parentBehaviorContext)
+                ? parentBehaviorContext
+                : null;
+            ActivitiesContextHolder.OwnerBehaviorContext.Value = context.TryGetOwnerBehaviorContext(out var ownerBehaviorContext)
+                ? ownerBehaviorContext
+                : null;
             ActivitiesContextHolder.ExecutionContext.Value = context;
             ActivitiesContextHolder.ExceptionContext.Value = null;
 
@@ -133,6 +145,12 @@ namespace Stateflows.Activities.Engine
             ActivitiesContextHolder.FlowContext.Value = null;
             ActivitiesContextHolder.ActivityContext.Value = (IActivityContext)context.Behavior;
             ActivitiesContextHolder.BehaviorContext.Value = context.Behavior;
+            ActivitiesContextHolder.ParentBehaviorContext.Value = context.TryGetParentBehaviorContext(out var parentBehaviorContext)
+                ? parentBehaviorContext
+                : null;
+            ActivitiesContextHolder.OwnerBehaviorContext.Value = context.TryGetOwnerBehaviorContext(out var ownerBehaviorContext)
+                ? ownerBehaviorContext
+                : null;
             ActivitiesContextHolder.ExecutionContext.Value = context;
             ActivitiesContextHolder.ExceptionContext.Value = null;
 
@@ -153,6 +171,12 @@ namespace Stateflows.Activities.Engine
             ActivitiesContextHolder.FlowContext.Value = null;
             ActivitiesContextHolder.ActivityContext.Value = (IActivityContext)context.Behavior;
             ActivitiesContextHolder.BehaviorContext.Value = context.Behavior;
+            ActivitiesContextHolder.ParentBehaviorContext.Value = context.TryGetParentBehaviorContext(out var parentBehaviorContext)
+                ? parentBehaviorContext
+                : null;
+            ActivitiesContextHolder.OwnerBehaviorContext.Value = context.TryGetOwnerBehaviorContext(out var ownerBehaviorContext)
+                ? ownerBehaviorContext
+                : null;
             ActivitiesContextHolder.ExecutionContext.Value = context;
             ActivitiesContextHolder.ExceptionContext.Value = null;
 
@@ -174,6 +198,12 @@ namespace Stateflows.Activities.Engine
             ActivitiesContextHolder.FlowContext.Value = null;
             ActivitiesContextHolder.ActivityContext.Value = (IActivityContext)context.Behavior;
             ActivitiesContextHolder.BehaviorContext.Value = context.Behavior;
+            ActivitiesContextHolder.ParentBehaviorContext.Value = context.TryGetParentBehaviorContext(out var parentBehaviorContext)
+                ? parentBehaviorContext
+                : null;
+            ActivitiesContextHolder.OwnerBehaviorContext.Value = context.TryGetOwnerBehaviorContext(out var ownerBehaviorContext)
+                ? ownerBehaviorContext
+                : null;
             ActivitiesContextHolder.ExecutionContext.Value = context;
             ActivitiesContextHolder.ExceptionContext.Value = null;
 
@@ -194,6 +224,12 @@ namespace Stateflows.Activities.Engine
             ActivitiesContextHolder.FlowContext.Value = null;
             ActivitiesContextHolder.ActivityContext.Value = (IActivityContext)context.Behavior;
             ActivitiesContextHolder.BehaviorContext.Value = context.Behavior;
+            ActivitiesContextHolder.ParentBehaviorContext.Value = context.TryGetParentBehaviorContext(out var parentBehaviorContext)
+                ? parentBehaviorContext
+                : null;
+            ActivitiesContextHolder.OwnerBehaviorContext.Value = context.TryGetOwnerBehaviorContext(out var ownerBehaviorContext)
+                ? ownerBehaviorContext
+                : null;
             ActivitiesContextHolder.ExecutionContext.Value = context;
             ActivitiesContextHolder.ExceptionContext.Value = null;
 
@@ -214,10 +250,42 @@ namespace Stateflows.Activities.Engine
             ActivitiesContextHolder.FlowContext.Value = null;
             ActivitiesContextHolder.ActivityContext.Value = (IActivityContext)context.Behavior;
             ActivitiesContextHolder.BehaviorContext.Value = context.Behavior;
+            ActivitiesContextHolder.ParentBehaviorContext.Value = context.TryGetParentBehaviorContext(out var parentBehaviorContext)
+                ? parentBehaviorContext
+                : null;
+            ActivitiesContextHolder.OwnerBehaviorContext.Value = context.TryGetOwnerBehaviorContext(out var ownerBehaviorContext)
+                ? ownerBehaviorContext
+                : null;
             ActivitiesContextHolder.ExecutionContext.Value = context;
             ActivitiesContextHolder.ExceptionContext.Value = null;
 
             return StateflowsActivator.CreateModelElementInstanceAsync<TSendEventAction>(ServiceProvider, "send event action");
+        }
+
+        [DebuggerHidden]
+        public Task<TPublishEventAction> GetPublishEventActionAsync<TEvent, TPublishEventAction>(IActionContext context)
+            where TPublishEventAction : class, IPublishEventActionNode<TEvent>
+        {
+            ContextValues.GlobalValuesHolder.Value = context.Behavior.Values;
+            ContextValues.StateValuesHolder.Value = null;
+            ContextValues.ParentStateValuesHolder.Value = null;
+            ContextValues.SourceStateValuesHolder.Value = null;
+            ContextValues.TargetStateValuesHolder.Value = null;
+
+            ActivitiesContextHolder.NodeContext.Value = context.Node;
+            ActivitiesContextHolder.FlowContext.Value = null;
+            ActivitiesContextHolder.ActivityContext.Value = (IActivityContext)context.Behavior;
+            ActivitiesContextHolder.BehaviorContext.Value = context.Behavior;
+            ActivitiesContextHolder.ParentBehaviorContext.Value = context.TryGetParentBehaviorContext(out var parentBehaviorContext)
+                ? parentBehaviorContext
+                : null;
+            ActivitiesContextHolder.OwnerBehaviorContext.Value = context.TryGetOwnerBehaviorContext(out var ownerBehaviorContext)
+                ? ownerBehaviorContext
+                : null;
+            ActivitiesContextHolder.ExecutionContext.Value = context;
+            ActivitiesContextHolder.ExceptionContext.Value = null;
+
+            return StateflowsActivator.CreateModelElementInstanceAsync<TPublishEventAction>(ServiceProvider, "send event action");
         }
 
         [DebuggerHidden]
@@ -234,6 +302,12 @@ namespace Stateflows.Activities.Engine
             ActivitiesContextHolder.FlowContext.Value = null;
             ActivitiesContextHolder.ActivityContext.Value = (IActivityContext)context.Behavior;
             ActivitiesContextHolder.BehaviorContext.Value = context.Behavior;
+            ActivitiesContextHolder.ParentBehaviorContext.Value = context.TryGetParentBehaviorContext(out var parentBehaviorContext)
+                ? parentBehaviorContext
+                : null;
+            ActivitiesContextHolder.OwnerBehaviorContext.Value = context.TryGetOwnerBehaviorContext(out var ownerBehaviorContext)
+                ? ownerBehaviorContext
+                : null;
             ActivitiesContextHolder.ExecutionContext.Value = context;
             ActivitiesContextHolder.ExceptionContext.Value = null;
 
@@ -255,6 +329,12 @@ namespace Stateflows.Activities.Engine
             ActivitiesContextHolder.FlowContext.Value = null;
             ActivitiesContextHolder.ActivityContext.Value = (IActivityContext)context.Behavior;
             ActivitiesContextHolder.BehaviorContext.Value = context.Behavior;
+            ActivitiesContextHolder.ParentBehaviorContext.Value = context.TryGetParentBehaviorContext(out var parentBehaviorContext)
+                ? parentBehaviorContext
+                : null;
+            ActivitiesContextHolder.OwnerBehaviorContext.Value = context.TryGetOwnerBehaviorContext(out var ownerBehaviorContext)
+                ? ownerBehaviorContext
+                : null;
             ActivitiesContextHolder.ExecutionContext.Value = context;
             ActivitiesContextHolder.ExceptionContext.Value = context;
 
@@ -275,6 +355,12 @@ namespace Stateflows.Activities.Engine
             ActivitiesContextHolder.FlowContext.Value = context;
             ActivitiesContextHolder.ActivityContext.Value = (IActivityContext)context.Behavior;
             ActivitiesContextHolder.BehaviorContext.Value = context.Behavior;
+            ActivitiesContextHolder.ParentBehaviorContext.Value = context.TryGetParentBehaviorContext(out var parentBehaviorContext)
+                ? parentBehaviorContext
+                : null;
+            ActivitiesContextHolder.OwnerBehaviorContext.Value = context.TryGetOwnerBehaviorContext(out var ownerBehaviorContext)
+                ? ownerBehaviorContext
+                : null;
             ActivitiesContextHolder.ExecutionContext.Value = context;
             ActivitiesContextHolder.ExceptionContext.Value = null;
 

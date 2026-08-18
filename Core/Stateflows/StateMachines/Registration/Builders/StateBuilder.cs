@@ -7,7 +7,6 @@ using Stateflows.Actions.Registration.Interfaces;
 using Stateflows.Activities;
 using Stateflows.Activities.Registration.Interfaces;
 using Stateflows.Common;
-using Stateflows.Common.Models;
 using Stateflows.Common.Registration;
 using Stateflows.Common.Utilities;
 using Stateflows.StateMachines.Models;
@@ -20,6 +19,8 @@ using ActionBuildAction = Stateflows.Actions.Registration.Interfaces.ActionBuild
 using ActionDelegateAsync = Stateflows.Actions.Registration.ActionDelegateAsync;
 using IForkBuilder = Stateflows.StateMachines.Registration.Interfaces.IForkBuilder;
 using IJoinBuilder = Stateflows.StateMachines.Registration.Interfaces.IJoinBuilder;
+using IOverridenForkBuilder = Stateflows.StateMachines.Registration.Interfaces.IOverridenForkBuilder;
+using IOverridenJoinBuilder = Stateflows.StateMachines.Registration.Interfaces.IOverridenJoinBuilder;
 
 namespace Stateflows.StateMachines.Registration.Builders
 {
@@ -202,8 +203,17 @@ namespace Stateflows.StateMachines.Registration.Builders
             Vertex.Graph.AllEdges.Add(edge);
 
             transitionBuildAction?.Invoke(new TransitionBuilder<TEvent>(edge));
+
+            edge.VisitingTask = visitor => visitor.TransitionAddedAsync<TEvent>(
+                Vertex.Graph.Name,
+                Vertex.Graph.Version,
+                edge.SourceName,
+                targetStateName == Constants.DefaultTransitionTarget
+                    ? edge.TargetName
+                    : null
+            );
             
-            Vertex.Graph.VisitingTasks.Add(visitor => visitor.TransitionAddedAsync<TEvent>(Vertex.Graph.Name, Vertex.Graph.Version, edge.SourceName, targetStateName == Constants.DefaultTransitionTarget ? edge.TargetName : null));
+            Vertex.Graph.VisitingTasks.Add(edge.VisitingTask);
 
             return this;
         }

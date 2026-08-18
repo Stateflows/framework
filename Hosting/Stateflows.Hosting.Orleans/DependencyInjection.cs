@@ -1,16 +1,22 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using Stateflows.Common.Interfaces;
 using Stateflows.Common.Registration.Interfaces;
+using Stateflows.Filters;
 
 namespace Stateflows;
 
 public static class DependencyInjection
 {
-    public static IStateflowsBuilder AddOrleansHosting(this IStateflowsBuilder builder)
+    public static ISiloBuilder AddStateflows(this ISiloBuilder builder, Action<IStateflowsBuilder> buildAction)
     {
-        builder.ServiceCollection
+        builder
+            .AddIncomingGrainCallFilter<ValidationFilter>()
+            .AddIncomingGrainCallFilter<ResourceFilter>()
+            .Services
             .AddTransient<IBehaviorFactory, GrainBehaviorFactory>()
-            .AddTransient<IStateflowsSubscriber, GrainSubscriber>();
+            .AddTransient<IStateflowsSubscriber, GrainSubscriber>()
+            .AddStateflows(buildAction);
+            ;
 
         return builder;
     }

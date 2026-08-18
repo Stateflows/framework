@@ -216,11 +216,11 @@ namespace Stateflows.Activities.Context.Classes
         private List<string> activatedNodes = null;
 
         public List<string> ActivatedNodes
-            => activatedNodes ??= new List<string>();
+            => activatedNodes ??= [];
 
         private List<string> pendingNodes = null;
         public List<string> PendingNodes
-            => pendingNodes ??= new List<string>();
+            => pendingNodes ??= [];
 
         private Dictionary<string, int> flowTokensCount = null;
         public Dictionary<string, int> FlowTokensCount
@@ -250,7 +250,7 @@ namespace Stateflows.Activities.Context.Classes
         private List<string> activatedFlows = null;
 
         public List<string> ActivatedFlows
-            => activatedFlows ??= new List<string>();
+            => activatedFlows ??= [];
 
         private Dictionary<string, Guid> nodeThreads = null;
         public Dictionary<string, Guid> NodeThreads
@@ -328,10 +328,10 @@ namespace Stateflows.Activities.Context.Classes
         }
 
         [JsonIgnore]
-        internal LockedList<Node> NodesToExecute { get; set; } = new LockedList<Node>();
+        internal LockedList<Node> NodesToExecute { get; set; } = [];
 
         [JsonIgnore]
-        private Dictionary<Guid, List<Node>> TerminatedNodes { get; set; } = new Dictionary<Guid, List<Node>>();
+        private Dictionary<Guid, List<Node>> TerminatedNodes { get; set; } = [];
 
         internal bool IsTerminated(Node node, Guid threadId)
         {
@@ -387,7 +387,7 @@ namespace Stateflows.Activities.Context.Classes
             set => Context.Values[Constants.ForceConsumed] = value;
         }
 
-        private readonly Stack<EventHolder> EventsStack = new Stack<EventHolder>();
+        private readonly Stack<EventHolder> EventsStack = [];
 
         public void SetEvent(EventHolder eventHolder)
         {
@@ -407,7 +407,7 @@ namespace Stateflows.Activities.Context.Classes
             ? EventsStack.Last()
             : null;
 
-        public readonly List<Exception> Exceptions = new List<Exception>();
+        public readonly List<Exception> Exceptions = [];
 
         internal Node NodeOfOrigin { get; set; }
 

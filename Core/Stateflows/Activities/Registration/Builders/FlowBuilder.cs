@@ -9,8 +9,6 @@ using Stateflows.Activities.Context.Interfaces;
 using Stateflows.Activities.Registration.Interfaces;
 using Stateflows.Common;
 using Stateflows.Common.Exceptions;
-using Microsoft.Extensions.DependencyInjection;
-using Stateflows.Actions.Engine;
 using Stateflows.Common.Utilities;
 
 namespace Stateflows.Activities.Registration.Builders
@@ -41,16 +39,18 @@ namespace Stateflows.Activities.Registration.Builders
 
                 logic.Actions.Add(async (context, inspector) =>
                 {
-                    if (!(context.Token is TokenHolder<TToken> token)) return default;
+                    var tokenHolder = context.Token;
+                    
+                    if (tokenHolder?.BoxedPayload is not TToken token) return default;
 
-                    var flowContext = new TokenFlowContext<TToken>(context, token.Payload);
+                    var flowContext = new TokenFlowContext<TToken>(context, token);
                     
                     try
                     {
                         inspector.BeforeFlowGuard(flowContext);
 
                         var result = await guardAsync(flowContext)
-                            ? token
+                            ? tokenHolder
                             : default;
 
                         inspector.AfterFlowGuard(flowContext, result != default);
@@ -91,9 +91,11 @@ namespace Stateflows.Activities.Registration.Builders
 
             logic.Actions.Add(async (context, inspector) =>
             {
-                if (!(context.Token is TokenHolder<TToken> token)) return default;
+                var tokenHolder = context.Token;
+                
+                if (tokenHolder?.BoxedPayload is not TToken token) return default;
 
-                var flowContext = new TokenFlowContext<TToken>(context, token.Payload);
+                var flowContext = new TokenFlowContext<TToken>(context, token);
                 
                 try
                 {
@@ -102,7 +104,7 @@ namespace Stateflows.Activities.Registration.Builders
                     var transformedToken = (await transformationAsync(flowContext))
                         .ToTokenHolder();
                     
-                    inspector.AfterFlowTransform(new TokenFlowContext<TToken, TTransformedToken>(context, token.Payload, transformedToken.Payload));
+                    inspector.AfterFlowTransform(new TokenFlowContext<TToken, TTransformedToken>(context, token, transformedToken.Payload));
 
                     return transformedToken;
                 }

@@ -1,7 +1,6 @@
 ﻿using System.Threading;
 using System.Collections.Generic;
 using Stateflows.Common.Interfaces;
-using Stateflows.Common.Lock;
 
 namespace Stateflows.Common.Classes
 {
@@ -16,7 +15,7 @@ namespace Stateflows.Common.Classes
             TargetStateValuesHolder.Value = null;
         }
         
-        internal static readonly AsyncLocal<IContextValues> GlobalValuesHolder = new AsyncLocal<IContextValues>();
+        internal static readonly AsyncLocal<IContextValues> GlobalValuesHolder = new();
         internal static bool AreGlobalValuesAvailable
             => GlobalValuesHolder.Value != null;
         public static void InitializeGlobalValues()
@@ -26,7 +25,7 @@ namespace Stateflows.Common.Classes
         public static IContextValues GlobalValues
             => GlobalValuesHolder.Value;// ??= new ContextValuesCollection(new Dictionary<string, string>());
 
-        internal static readonly AsyncLocal<IContextValues> StateValuesHolder = new AsyncLocal<IContextValues>();
+        internal static readonly AsyncLocal<IContextValues> StateValuesHolder = new();
         internal static bool AreStateValuesAvailable
             => StateValuesHolder.Value != null;
         public static void InitializeStateValues()
@@ -36,7 +35,7 @@ namespace Stateflows.Common.Classes
         public static IContextValues StateValues
             => StateValuesHolder.Value;// ??= new ContextValuesCollection(new Dictionary<string, string>());
 
-        internal static readonly AsyncLocal<IContextValues> ParentStateValuesHolder = new AsyncLocal<IContextValues>();
+        internal static readonly AsyncLocal<IContextValues> ParentStateValuesHolder = new();
         internal static bool AreParentStateValuesAvailable
             => ParentStateValuesHolder.Value != null;
         public static void InitializeParentStateValues()
@@ -46,7 +45,7 @@ namespace Stateflows.Common.Classes
         public static IContextValues ParentStateValues
             => ParentStateValuesHolder.Value;// ??= new ContextValuesCollection(new Dictionary<string, string>());
 
-        internal static readonly AsyncLocal<IContextValues> SourceStateValuesHolder = new AsyncLocal<IContextValues>();
+        internal static readonly AsyncLocal<IContextValues> SourceStateValuesHolder = new();
         internal static bool AreSourceStateValuesAvailable
             => SourceStateValuesHolder.Value != null;
         public static void InitializeSourceStateValues()
@@ -56,7 +55,7 @@ namespace Stateflows.Common.Classes
         public static IContextValues SourceStateValues
             => SourceStateValuesHolder.Value;// ??= new ContextValuesCollection(new Dictionary<string, string>());
 
-        internal static readonly AsyncLocal<IContextValues> TargetStateValuesHolder = new AsyncLocal<IContextValues>();
+        internal static readonly AsyncLocal<IContextValues> TargetStateValuesHolder = new();
         internal static bool AreTargetStateValuesAvailable
             => TargetStateValuesHolder.Value != null;
         public static void InitializeTargetStateValues()

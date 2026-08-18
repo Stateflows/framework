@@ -1,0 +1,74 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>net8.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+        <Version>$(STATEFLOWS_VERSION)</Version>
+        <Title>Dashboard web UI for Stateflows framework</Title>
+        <Authors>Stateflows</Authors>
+        <PackageProjectUrl>https://www.stateflows.net</PackageProjectUrl>
+        <PackageIcon>stateflows-logo-1024.png</PackageIcon>
+        <PackageReadmeFile>README.md</PackageReadmeFile>
+        <RepositoryUrl>https://github.com/Stateflows/framework</RepositoryUrl>
+        <RepositoryType>git</RepositoryType>
+        <PackageTags>Stateflows;state-machine;activity;workflow;dashboard;angular;spa</PackageTags>
+        <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
+        <PackageLicenseFile>LICENSE</PackageLicenseFile>
+        <PackageOutputPath>..\..\NuGet</PackageOutputPath>
+        <LangVersion>12</LangVersion>
+        <RootNamespace>Stateflows</RootNamespace>
+        <!-- Relative path from this .csproj to the Angular browser build output -->
+        <DashboardDistPath>$(MSBuildProjectDirectory)\Dashboard\dist\stateflows-dashboard\browser</DashboardDistPath>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <FrameworkReference Include="Microsoft.AspNetCore.App" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\..\Extensions\Stateflows.Extensions.MinimalAPIs\Stateflows.Extensions.MinimalAPIs.csproj" />
+    </ItemGroup>
+
+    <!--
+        ── PROJECT REFERENCE + NUGET PACKAGE consumers ──────────────────────────────
+        Single Content ItemGroup handles both cases:
+        - CopyToOutputDirectory propagates files through project references automatically.
+        - Pack=true + PackagePath ships the files inside staticfiles/Dashboard/ in the
+          NuGet package; the .targets file (below) copies them to $(OutDir)Dashboard/.
+    -->
+    <ItemGroup Condition="Exists('$(DashboardDistPath)')">
+        <Content Include="$(DashboardDistPath)\**\*">
+            <Link>Dashboard\%(RecursiveDir)%(Filename)%(Extension)</Link>
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+            <Pack>true</Pack>
+            <PackagePath>staticfiles\Dashboard\%(RecursiveDir)%(Filename)%(Extension)</PackagePath>
+            <Visible>false</Visible>
+        </Content>
+    </ItemGroup>
+
+    <ItemGroup>
+        <!-- build/*.targets is the standard NuGet extension point: auto-imported into every consumer -->
+        <None Include="$(MSBuildProjectDirectory)\build\Stateflows.Tools.Dashboard.targets">
+            <Pack>true</Pack>
+            <PackagePath>build\Stateflows.Tools.Dashboard.targets</PackagePath>
+        </None>
+    </ItemGroup>
+
+    <!-- Package metadata assets -->
+    <ItemGroup>
+        <None Include="..\..\LICENSE">
+            <Pack>True</Pack>
+            <PackagePath>\</PackagePath>
+        </None>
+        <None Include="README.md">
+            <Pack>True</Pack>
+            <PackagePath>\</PackagePath>
+        </None>
+        <None Include="..\..\stateflows-logo-1024.png">
+            <Pack>True</Pack>
+            <PackagePath>\</PackagePath>
+        </None>
+    </ItemGroup>
+
+</Project>

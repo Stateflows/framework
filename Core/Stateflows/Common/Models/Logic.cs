@@ -12,7 +12,7 @@ namespace Stateflows.Common.Models
              Name = name;
         }
         
-        public string OriginStateMachineName { get; set; } = null;
+        public string? OriginStateMachineName { get; set; }
 
         public List<TDelegate> Actions { get; set; } = [];
 

@@ -39,14 +39,14 @@ namespace Stateflows.Common.Context
         public bool ShouldSerializePendingTimeEvents()
             => PendingTimeEvents.Any();
 
-        public Dictionary<Guid, TimeEvent> PendingTimeEvents { get; set; } = new Dictionary<Guid, TimeEvent>();
+        public Dictionary<Guid, TimeEvent> PendingTimeEvents { get; set; } = [];
 
         public bool ShouldSerializePendingStartupEvents()
             => PendingStartupEvents.Count != 0;
 
-        public Dictionary<Guid, Startup> PendingStartupEvents { get; set; } = new Dictionary<Guid, Startup>();
+        public Dictionary<Guid, Startup> PendingStartupEvents { get; set; } = [];
 
-        public Dictionary<BehaviorId, List<string>> Subscriptions { get; set; } = new Dictionary<BehaviorId, List<string>>();
+        public Dictionary<BehaviorId, List<string>> Subscriptions { get; set; } = [];
 
         public bool AddSubscription(BehaviorId subscribeeBehaviorId, string eventName)
         {
@@ -81,7 +81,7 @@ namespace Stateflows.Common.Context
             return false;
         }
 
-        public Dictionary<string, List<BehaviorId>> Subscribers { get; set; } = new Dictionary<string, List<BehaviorId>>();
+        public Dictionary<string, List<BehaviorId>> Subscribers { get; set; } = [];
 
         public bool AddSubscribers(BehaviorId subscriberBehaviorId, IEnumerable<string> notificationNames)
         {
@@ -122,11 +122,21 @@ namespace Stateflows.Common.Context
             => Values.Count != 0;
 
         public Dictionary<string, object> Values { get; } = [];
+        
+        // public bool ShouldSerializeGlobalValues()
+        //     => GlobalValues.Count != 0;
+
+        public Dictionary<string, string> GlobalValues { get; } = [];
+        
         public BehaviorId? ContextOwnerId { get; set; }
         public BehaviorId? ContextParentId { get; set; }
         
         [Newtonsoft.Json.JsonIgnore]
         [JsonIgnore]
         public Dictionary<string, object> RuntimeMetadata { get; } = [];
+
+        [Newtonsoft.Json.JsonIgnore]
+        [JsonIgnore]
+        public EventHolder? ExecutionTriggerHolder { get; set; } = null;
     }
 }

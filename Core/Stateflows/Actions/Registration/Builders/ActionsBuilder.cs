@@ -20,7 +20,13 @@ namespace Stateflows.Actions.Registration.Builders
                 if (typeof(IAction).IsAssignableFrom(@type))
                 {
                     var attribute = @type.GetCustomAttributes(typeof(ActionBehaviorAttribute)).FirstOrDefault() as ActionBehaviorAttribute;
-                    register.AddAction(attribute?.Name ?? @type.FullName, attribute?.Version ?? 1, @type);
+                    register.AddAction(attribute?.Name ?? @type.FullName, attribute?.Version ?? 1, @type, b =>
+                    {
+                        if (attribute?.ResourceName != null)
+                        {
+                            b.SetResourceName(attribute.ResourceName);
+                        }
+                    });
                 }
             });
 

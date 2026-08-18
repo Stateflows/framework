@@ -36,7 +36,7 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         ///     . // Use . to see available builder methods
         /// </code></param>
         [DebuggerHidden]
-        public TReturn UseState<TState>(OverridenStateBuildAction stateBuildAction = null)
+        public TReturn UseState<TState>(OverridenStateBuildAction stateBuildAction)
             where TState : class, IState
             => UseState(State<TState>.Name, stateBuildAction);
         #endregion

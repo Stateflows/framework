@@ -3,9 +3,7 @@
 namespace Stateflows.Common.Attributes
 {
     [AttributeUsage(AttributeTargets.Parameter, AllowMultiple = false)]
-    public sealed class GlobalNamespaceAttribute : ValueSetAttribute
-    {
-        public GlobalNamespaceAttribute(string? name = null) : base(name)
-        { }
-    }
+    public class GlobalNamespaceAttribute(string? name = null) : ValueSetAttribute(name);
+
+    public sealed class FromGlobalNamespaceAttribute(string? name = null) : GlobalNamespaceAttribute(name);
 }

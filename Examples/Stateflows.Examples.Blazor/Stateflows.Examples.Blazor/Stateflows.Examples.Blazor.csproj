@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk.Web">
 
     <PropertyGroup>
-        <TargetFramework>net10.0</TargetFramework>
+        <TargetFramework>net9.0</TargetFramework>
         <Nullable>enable</Nullable>
         <ImplicitUsings>enable</ImplicitUsings>
         <LangVersion>default</LangVersion>
@@ -17,6 +17,7 @@
         <ProjectReference Include="..\..\..\Extensions\Stateflows.Extensions.ClearScript\Stateflows.Extensions.ClearScript.csproj" />
         <ProjectReference Include="..\..\..\Locks\Stateflows.Locks.DistributedLock\Stateflows.Locks.DistributedLock.csproj" />
         <ProjectReference Include="..\..\..\Storage\Stateflows.Storage.EntityFrameworkCore\Stateflows.Storage.EntityFrameworkCore.csproj" />
+        <ProjectReference Include="..\..\..\Tools\Stateflows.Tools.Dashboard\Stateflows.Tools.Dashboard.csproj" />
         <ProjectReference Include="..\..\Stateflows.Examples.Behaviors\Stateflows.Examples.Behaviors.csproj" />
         <ProjectReference Include="..\Stateflows.Examples.Blazor.Client\Stateflows.Examples.Blazor.Client.csproj"/>
         <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.Server" Version="9.0.4" />
@@ -34,5 +35,6 @@
         <CopyToOutputDirectory>Always</CopyToOutputDirectory>
       </Content>
     </ItemGroup>
+
 
 </Project>

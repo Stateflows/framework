@@ -12,24 +12,25 @@ namespace Stateflows.Activities.Registration.Interfaces
         IInputBase<IStructuredActivityBuilder>,
         IOutputBase<IStructuredActivityBuilder>,
         IExceptionHandlerBase<IStructuredActivityBuilder>,
-        INodeOptions<IStructuredActivityBuilderWithOptions>,
+        INodeOptions<IStructuredActivityBuilder>,
         IStructuredActivityEvents<IStructuredActivityBuilder>,
-        ISendEventBase<IStructuredActivityBuilder>
-    { }
+        ISendEventBase<IStructuredActivityBuilder>;
 
-    public interface IStructuredActivityBuilderWithOptions :
-        IObjectFlowBase<IStructuredActivityBuilderWithOptions>,
-        IControlFlowBase<IStructuredActivityBuilderWithOptions>,
-        IActivityBase<IStructuredActivityBuilderWithOptions>,
-        IActivitySpecials<IStructuredActivityBuilderWithOptions>,
-        IInitialBase<IStructuredActivityBuilderWithOptions>,
-        IFinalBase<IStructuredActivityBuilderWithOptions>,
-        IInputBase<IStructuredActivityBuilderWithOptions>,
-        IOutputBase<IStructuredActivityBuilderWithOptions>,
-        IExceptionHandlerBase<IStructuredActivityBuilderWithOptions>,
-        IStructuredActivityEvents<IStructuredActivityBuilderWithOptions>,
-        ISendEventBase<IStructuredActivityBuilderWithOptions>
-    { }
-
+    public interface IOverridenStructuredActivityBuilder :
+        IObjectFlowBase<IOverridenStructuredActivityBuilder>,
+        IControlFlowBase<IOverridenStructuredActivityBuilder>,
+        IActivityBase<IOverridenStructuredActivityBuilder>,
+        IActivityOverrides<IOverridenStructuredActivityBuilder>,
+        IActivitySpecials<IOverridenStructuredActivityBuilder>,
+        IInitialBase<IOverridenStructuredActivityBuilder>,
+        IFinalBase<IOverridenStructuredActivityBuilder>,
+        IInputBase<IOverridenStructuredActivityBuilder>,
+        IOutputBase<IOverridenStructuredActivityBuilder>,
+        IExceptionHandlerBase<IOverridenStructuredActivityBuilder>,
+        INodeOptions<IOverridenStructuredActivityBuilder>,
+        IStructuredActivityEvents<IOverridenStructuredActivityBuilder>,
+        ISendEventBase<IOverridenStructuredActivityBuilder>,
+        ISendEventOverrides<IOverridenStructuredActivityBuilder>,
+        IActivitySpecialsOverrides<IOverridenStructuredActivityBuilder>;
 
 }

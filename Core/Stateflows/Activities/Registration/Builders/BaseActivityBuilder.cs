@@ -2,8 +2,8 @@
 using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
-using Microsoft.Extensions.DependencyInjection;
 using Stateflows.Common;
+using Stateflows.Common.Utilities;
 using Stateflows.Common.Exceptions;
 using Stateflows.Activities.Enums;
 using Stateflows.Activities.Models;
@@ -14,7 +14,6 @@ using Stateflows.Activities.Context.Interfaces;
 using Stateflows.Activities.Registration.Builders;
 using Stateflows.Activities.Registration.Interfaces;
 using Stateflows.Activities.Registration.Interfaces.Internal;
-using Stateflows.Common.Utilities;
 
 namespace Stateflows.Activities.Registration
 {
@@ -22,15 +21,15 @@ namespace Stateflows.Activities.Registration
     {
         public Graph Graph => Node as Graph ?? Node.Graph;
 
-        public Node Node { get; set; }
+        internal Node Node { get; set; }
 
-        public BaseActivityBuilder(Node parentNode)
+        internal BaseActivityBuilder(Node parentNode)
         {
             Node = parentNode;
         }
 
         [DebuggerHidden]
-        public BaseActivityBuilder AddNode(NodeType type, string nodeName, Func<IActionContext, Task> actionAsync, NodeBuildAction buildAction = null, Type exceptionOrEventType = null, int chunkSize = 1)
+        internal BaseActivityBuilder AddNode(NodeType type, string nodeName, Func<IActionContext, Task> actionAsync, NodeBuildAction buildAction = null, Type exceptionOrEventType = null, int chunkSize = 1)
         {
             var ownName = nodeName;
             if (Node.Type != NodeType.Activity)
@@ -51,6 +50,8 @@ namespace Stateflows.Activities.Registration
                 NodeType.IterativeActivity,
                 NodeType.AcceptEventAction,
                 NodeType.TimeEventAction,
+                NodeType.SendEventAction,
+                NodeType.PublishEventAction,
                 NodeType.Output,
                 NodeType.Final,
                 NodeType.DataStore
@@ -91,7 +92,8 @@ namespace Stateflows.Activities.Registration
                 Anchored = type != NodeType.ParallelActivity && Node.Anchored,
                 Identifier = !(Node is null)
                     ? $"{type}:{Node.Name}:{nodeName}"
-                    : $"{type}:{nodeName}"
+                    : $"{type}:{nodeName}",
+                EventType = exceptionOrEventType
             };
 
             if (type == NodeType.ExceptionHandler)
@@ -174,17 +176,18 @@ namespace Stateflows.Activities.Registration
             return this;
         }
 
-        public BaseActivityBuilder AddAction(string actionNodeName, Func<IActionContext, Task> actionAsync, NodeBuildAction buildAction = null)
-            => AddNode(NodeType.Action, actionNodeName, actionAsync, buildAction);
+        internal BaseActivityBuilder AddAction(string actionNodeName, Func<IActionContext, Task> actionAsync, NodeBuildAction buildAction = null, Type exceptionOrEventType = null)
+            => AddNode(NodeType.Action, actionNodeName, actionAsync, buildAction, exceptionOrEventType);
 
-        public BaseActivityBuilder AddSendEventAction<TEvent>(
+        internal BaseActivityBuilder AddSendEventAction<TEvent>(
             string actionNodeName,
             SendEventActionDelegateAsync<TEvent> actionAsync,
             BehaviorIdSelectorAsync targetSelectorAsync,
             SendEventActionBuildAction buildAction = null
         )
         {
-            var result = AddAction(
+            var result = AddNode(
+                NodeType.SendEventAction,
                 actionNodeName,
                 async c =>
                 {
@@ -195,7 +198,8 @@ namespace Stateflows.Activities.Registration
                         await behavior.SendAsync(@event);
                     }
                 },
-                b => buildAction?.Invoke(b)
+                b => buildAction?.Invoke(b),
+                typeof(TEvent)
             );
 
             var graph = ((IGraphBuilder)this).Graph;
@@ -204,27 +208,56 @@ namespace Stateflows.Activities.Registration
             return result;
         }
 
-        public BaseActivityBuilder AddAcceptEventAction<TEvent>(
+        internal BaseActivityBuilder AddPublishEventAction<TEvent>(
+            string actionNodeName,
+            PublishEventActionDelegateAsync<TEvent> actionAsync,
+            PublishEventActionBuildAction buildAction = null
+        )
+        {
+            var result = AddNode(
+                NodeType.PublishEventAction,
+                actionNodeName,
+                async c =>
+                {
+                    var @event = await actionAsync(c);
+                    c.Behavior.Publish(@event);
+                },
+                b => buildAction?.Invoke(b),
+                typeof(TEvent)
+            );
+
+            var graph = ((IGraphBuilder)this).Graph;
+            graph.VisitingTasks.Add(visitor => visitor.SendEventNodeAddedAsync<TEvent>(graph.Name, graph.Version, actionNodeName));
+
+            return result;
+        }
+
+        internal BaseActivityBuilder AddAcceptEventAction<TEvent>(
             string actionNodeName,
             AcceptEventActionDelegateAsync<TEvent> actionAsync,
-            AcceptEventActionBuildAction buildAction = null
+            AcceptEventActionBuildAction<TEvent> buildAction = null
         )
         {
             var result = AddNode(
                 NodeType.AcceptEventAction,
                 actionNodeName,
                 c => actionAsync(new AcceptEventActionContext<TEvent>(c as ActionContext)),
-                b => buildAction?.Invoke(b),
+                b => buildAction?.Invoke(new AcceptEventNodeBuilder<TEvent>(b.Node, b.ActivityBuilder)),
                 typeof(TEvent)
             );
 
-            var graph = ((IGraphBuilder)this).Graph;
-            graph.VisitingTasks.Add(visitor => visitor.AcceptEventNodeAddedAsync<TEvent>(graph.Name, graph.Version, actionNodeName));
+            var node = result.Node.Nodes.Values.FirstOrDefault(n => n.Name == actionNodeName);
+            if (node is not null)
+            {
+                var graph = ((IGraphBuilder)this).Graph;
+                node.VisitingTask = visitor => visitor.AcceptEventNodeAddedAsync<TEvent>(graph.Name, graph.Version, actionNodeName);
+                graph.VisitingTasks.Add(node.VisitingTask);
+            }
 
             return result;
         }
 
-        public BaseActivityBuilder AddTimeEventAction<TTimeEvent>(
+        internal BaseActivityBuilder AddTimeEventAction<TTimeEvent>(
             string actionNodeName,
             TimeEventActionDelegateAsync actionAsync,
             TimeEventNodeBuildAction buildAction = null
@@ -238,7 +271,7 @@ namespace Stateflows.Activities.Registration
                 typeof(TTimeEvent)
             );
 
-        public BaseActivityBuilder AddInitial(InitialBuildAction buildAction)
+        internal BaseActivityBuilder AddInitial(InitialBuildAction buildAction)
             => AddNode(
                 NodeType.Initial,
                 $"{nameof(NodeType.Initial)}Node",
@@ -246,7 +279,7 @@ namespace Stateflows.Activities.Registration
                 b => buildAction(b)
             );
 
-        public BaseActivityBuilder AddFinal()
+        internal BaseActivityBuilder AddFinal()
             => AddNode(
                 NodeType.Final,
                 FinalNode.Name,
@@ -258,7 +291,7 @@ namespace Stateflows.Activities.Registration
                 b => b.SetOptions(NodeOptions.ControlNodeDefault)
             );
 
-        public BaseActivityBuilder AddInput(InputBuildAction buildAction)
+        internal BaseActivityBuilder AddInput(InputBuildAction buildAction)
             => AddNode(
                 NodeType.Input,
                 $"{nameof(NodeType.Input)}Node",
@@ -270,7 +303,7 @@ namespace Stateflows.Activities.Registration
                 b => buildAction(b)
             );
 
-        public BaseActivityBuilder AddOutput()
+        internal BaseActivityBuilder AddOutput()
             => AddNode(
                 NodeType.Output,
                 OutputNode.Name,
@@ -282,7 +315,7 @@ namespace Stateflows.Activities.Registration
                 b => b.SetOptions(NodeOptions.None)
             );
 
-        public BaseActivityBuilder AddStructuredActivity(string structuredActivityNodeName, ReactiveStructuredActivityBuildAction buildAction = null)
+        internal BaseActivityBuilder AddStructuredActivity(string structuredActivityNodeName, ReactiveStructuredActivityBuildAction buildAction = null)
             => AddNode(
                 NodeType.StructuredActivity,
                 structuredActivityNodeName,
@@ -309,7 +342,7 @@ namespace Stateflows.Activities.Registration
                 b => buildAction?.Invoke(new StructuredActivityBuilder(b.Node, this))
             );
 
-        public BaseActivityBuilder AddParallelActivity<TToken>(string parallelActivityNodeName, ParallelActivityBuildAction buildAction = null, int chunkSize = 1)
+        internal BaseActivityBuilder AddParallelActivity<TToken>(string parallelActivityNodeName, ParallelActivityBuildAction buildAction = null, int chunkSize = 1)
             => AddNode(
                 NodeType.ParallelActivity,
                 parallelActivityNodeName,
@@ -333,11 +366,11 @@ namespace Stateflows.Activities.Registration
                     await executor.DoFinalizeNodeAsync(node, c as ActionContext);
                 },
                 b => buildAction?.Invoke(new StructuredActivityBuilder(b.Node, this)),
-                null,
+                typeof(TToken),
                 chunkSize
             );
 
-        public BaseActivityBuilder AddIterativeActivity<TToken>(string parallelActivityNodeName, IterativeActivityBuildAction buildAction = null, int chunkSize = 1)
+        internal BaseActivityBuilder AddIterativeActivity<TToken>(string parallelActivityNodeName, IterativeActivityBuildAction buildAction = null, int chunkSize = 1)
             => AddNode(
                 NodeType.IterativeActivity,
                 parallelActivityNodeName,
@@ -352,11 +385,11 @@ namespace Stateflows.Activities.Registration
                     await executor.DoFinalizeNodeAsync(node, c as ActionContext);
                 },
                 b => buildAction?.Invoke(new StructuredActivityBuilder(b.Node, this)),
-                null,
+                typeof(TToken),
                 chunkSize
             );
 
-        public BaseActivityBuilder AddOnFinalize(Func<IActivityNodeContext, Task> actionAsync)
+        internal BaseActivityBuilder AddOnFinalize(Func<IActivityNodeContext, Task> actionAsync)
         {
             actionAsync.ThrowIfNull(nameof(actionAsync));
 
@@ -393,7 +426,7 @@ namespace Stateflows.Activities.Registration
             return this;
         }
 
-        public BaseActivityBuilder AddOnInitialize(Func<IActivityNodeContext, Task> actionAsync)
+        internal BaseActivityBuilder AddOnInitialize(Func<IActivityNodeContext, Task> actionAsync)
         {
             actionAsync.ThrowIfNull(nameof(actionAsync));
 
@@ -426,6 +459,270 @@ namespace Stateflows.Activities.Registration
                     }
                 }
             });
+
+            return this;
+        }
+        public BaseActivityBuilder UseAction(string actionNodeName, OverridenActionBuildAction buildAction = null)
+        {
+            var fullActionNodeName = Node.Type != NodeType.Activity
+                ? $"{Node.Name}.{actionNodeName}"
+                : actionNodeName;
+            
+            if (
+                !Node.Nodes.TryGetValue($"{NodeType.Action}:{Node.Name}:{fullActionNodeName}", out var node) ||
+                node.Type != NodeType.Action || 
+                node.OriginActivityName == null
+            )
+            {
+                throw new ActivityOverrideException($"Action '{actionNodeName}' not found in overriden activity", Graph.Class);
+            }
+            
+            buildAction?.Invoke(new NodeBuilder(node, this));
+
+            return this;
+        }
+
+        internal BaseActivityBuilder UseStructuredActivity(string structuredActivityNodeName, OverridenStructuredActivityBuildAction buildAction)
+        {
+            if (
+                !Node.Nodes.TryGetValue($"{NodeType.StructuredActivity}:{Node.Name}:{structuredActivityNodeName}", out var node) ||
+                node.Type != NodeType.StructuredActivity || 
+                node.OriginActivityName == null
+            )
+            {
+                throw new ActivityOverrideException($"Structured activity '{structuredActivityNodeName}' not found in overriden activity", Graph.Class);
+            }
+            
+            buildAction?.Invoke(new StructuredActivityBuilder(node, this));
+
+            return this;
+        }
+        
+        internal BaseActivityBuilder UseParallelActivity<TParallelizationToken>(string parallelActivityNodeName,
+            OverridenParallelActivityBuildAction buildAction)
+        {
+            if (
+                !Node.Nodes.TryGetValue($"{NodeType.ParallelActivity}:{Node.Name}:{parallelActivityNodeName}", out var node) ||
+                node.Type != NodeType.ParallelActivity ||
+                node.EventType != typeof(TParallelizationToken) ||
+                node.OriginActivityName == null
+            )
+            {
+                throw new ActivityOverrideException($"Parallel activity '{parallelActivityNodeName}' not found in overriden activity", Graph.Class);
+            }
+            
+            buildAction?.Invoke(new StructuredActivityBuilder(node, this));
+
+            return this;
+        }
+
+        internal BaseActivityBuilder UseIterativeActivity<TIterationToken>(string iterativeActivityNodeName, OverridenIterativeActivityBuildAction buildAction)
+        {
+            if (
+                !Node.Nodes.TryGetValue($"{NodeType.IterativeActivity}:{Node.Name}:{iterativeActivityNodeName}", out var node) ||
+                node.Type != NodeType.IterativeActivity ||
+                node.EventType != typeof(TIterationToken) ||
+                node.OriginActivityName == null
+            )
+            {
+                throw new ActivityOverrideException($"Parallel activity '{iterativeActivityNodeName}' not found in overriden activity", Graph.Class);
+            }
+            
+            buildAction?.Invoke(new StructuredActivityBuilder(node, this));
+
+            return this;
+        }
+        
+        internal BaseActivityBuilder UseInitial(OverridenInitialBuildAction buildAction)
+        {
+            var node = Node.Nodes.Values.FirstOrDefault(node => node.Type == NodeType.Initial);
+            if (node?.OriginActivityName == null)
+            {
+                throw new ActivityOverrideException($"Initial not found in overriden activity", Graph.Class);
+            }
+            
+            buildAction?.Invoke(new NodeBuilder(node, this));
+
+            return this;
+        }
+
+        internal BaseActivityBuilder UseInput(OverridenInputBuildAction buildAction)
+        {
+            var node = Node.Nodes.Values.FirstOrDefault(node => node.Type == NodeType.Input);
+            if (node?.OriginActivityName == null)
+            {
+                throw new ActivityOverrideException($"Input not found in overriden activity", Graph.Class);
+            }
+            
+            buildAction?.Invoke(new NodeBuilder(node, this));
+
+            return this;
+        }
+
+        internal BaseActivityBuilder UseAcceptEventAction<TEvent>(string actionNodeName,
+            OverridenAcceptEventActionBuildAction<TEvent> buildAction)
+        {
+            if (
+                !Node.Nodes.TryGetValue($"{NodeType.AcceptEventAction}:{Node.Name}:{actionNodeName}", out var node) ||
+                node.Type != NodeType.AcceptEventAction ||
+                node.EventType != typeof(TEvent) ||
+                node.OriginActivityName == null
+            )
+            {
+                throw new ActivityOverrideException($"Accept event action '{actionNodeName}' not found in overriden activity", Graph.Class);
+            }
+            
+            buildAction?.Invoke(new AcceptEventNodeBuilder<TEvent>(node, this));
+
+            return this;
+        }
+
+        internal BaseActivityBuilder UseTimeEventAction<TTimeEvent>(string actionNodeName,
+            OverridenTimeEventNodeBuildAction buildAction) where TTimeEvent : TimeEvent, new()
+        {
+            if (
+                !Node.Nodes.TryGetValue($"{NodeType.TimeEventAction}:{Node.Name}:{actionNodeName}", out var node) ||
+                node.Type != NodeType.TimeEventAction ||
+                node.EventType != typeof(TTimeEvent) ||
+                node.OriginActivityName == null
+            )
+            {
+                throw new ActivityOverrideException($"Time event action '{actionNodeName}' not found in overriden activity", Graph.Class);
+            }
+            
+            buildAction?.Invoke(new NodeBuilder(node, this));
+
+            return this;
+        }
+
+        internal BaseActivityBuilder UseJoin(string joinNodeName, OverridenJoinBuildAction buildAction)
+        {
+            if (
+                !Node.Nodes.TryGetValue($"{NodeType.Join}:{Node.Name}:{joinNodeName}", out var node) ||
+                node.Type != NodeType.Join ||
+                node.OriginActivityName == null
+            )
+            {
+                throw new ActivityOverrideException($"Join '{joinNodeName}' not found in overriden activity", Graph.Class);
+            }
+            
+            buildAction?.Invoke(new NodeBuilder(node, this));
+
+            return this;
+        }
+
+        internal BaseActivityBuilder UseFork(string forkNodeName, OverridenForkBuildAction buildAction)
+        {
+            if (
+                !Node.Nodes.TryGetValue($"{NodeType.Fork}:{Node.Name}:{forkNodeName}", out var node) ||
+                node.Type != NodeType.Fork ||
+                node.OriginActivityName == null
+            )
+            {
+                throw new ActivityOverrideException($"Fork '{forkNodeName}' not found in overriden activity", Graph.Class);
+            }
+            
+            buildAction?.Invoke(new NodeBuilder(node, this));
+
+            return this;
+        }
+
+        internal BaseActivityBuilder UseMerge(string mergeNodeName, OverridenMergeBuildAction buildAction)
+        {
+            if (
+                !Node.Nodes.TryGetValue($"{NodeType.Merge}:{Node.Name}:{mergeNodeName}", out var node) ||
+                node.Type != NodeType.Merge ||
+                node.OriginActivityName == null
+            )
+            {
+                throw new ActivityOverrideException($"Merge '{mergeNodeName}' not found in overriden activity", Graph.Class);
+            }
+            
+            buildAction?.Invoke(new NodeBuilder(node, this));
+
+            return this;
+        }
+
+        internal BaseActivityBuilder UseControlDecision(string decisionNodeName, OverridenDecisionBuildAction buildAction)
+        {
+            if (
+                !Node.Nodes.TryGetValue($"{NodeType.Decision}:{Node.Name}:{decisionNodeName}", out var node) ||
+                node.Type != NodeType.Decision ||
+                node.EventType != typeof(ControlToken) ||
+                node.OriginActivityName == null
+            )
+            {
+                throw new ActivityOverrideException($"Control decision '{decisionNodeName}' not found in overriden activity", Graph.Class);
+            }
+            
+            buildAction?.Invoke(new NodeBuilder(node, this));
+
+            return this;
+        }
+
+        internal BaseActivityBuilder UseDecision<TToken>(string decisionNodeName, OverridenDecisionBuildAction<TToken> decisionBuildAction)
+        {
+            if (
+                !Node.Nodes.TryGetValue($"{NodeType.Decision}:{Node.Name}:{decisionNodeName}", out var node) ||
+                node.Type != NodeType.Decision ||
+                node.EventType != typeof(TToken) ||
+                node.OriginActivityName == null
+            )
+            {
+                throw new ActivityOverrideException($"Decision '{decisionNodeName}' not found in overriden activity", Graph.Class);
+            }
+            
+            decisionBuildAction?.Invoke(new DecisionBuilder<TToken>(new NodeBuilder(node, this)));
+
+            return this;
+        }
+
+        internal BaseActivityBuilder UseDataStore(string dataStoreNodeName, OverridenDataStoreBuildAction buildAction)
+        {
+            if (
+                !Node.Nodes.TryGetValue($"{NodeType.DataStore}:{Node.Name}:{dataStoreNodeName}", out var node) ||
+                node.Type != NodeType.DataStore ||
+                node.OriginActivityName == null
+            )
+            {
+                throw new ActivityOverrideException($"Data store '{dataStoreNodeName}' not found in overriden activity", Graph.Class);
+            }
+            
+            buildAction?.Invoke(new NodeBuilder(node, this));
+
+            return this;
+        }
+
+        internal BaseActivityBuilder UseSendEventAction<TEvent>(string actionNodeName, OverridenSendEventActionBuildAction buildAction)
+        {
+            if (
+                !Node.Nodes.TryGetValue($"{NodeType.SendEventAction}:{Node.Name}:{actionNodeName}", out var node) ||
+                node.Type != NodeType.SendEventAction ||
+                node.EventType != typeof(TEvent) ||
+                node.OriginActivityName == null
+            )
+            {
+                throw new ActivityOverrideException($"Send event action '{actionNodeName}' not found in overriden activity", Graph.Class);
+            }
+            
+            buildAction?.Invoke(new NodeBuilder(node, this));
+
+            return this;
+        }
+
+        internal BaseActivityBuilder UsePublishEventAction<TEvent>(string actionNodeName, OverridenPublishEventActionBuildAction buildAction)
+        {
+            if (
+                !Node.Nodes.TryGetValue($"{NodeType.PublishEventAction}:{Node.Name}:{actionNodeName}", out var node) ||
+                node.Type != NodeType.PublishEventAction ||
+                node.EventType != typeof(TEvent) ||
+                node.OriginActivityName == null
+            )
+            {
+                throw new ActivityOverrideException($"Publish event action '{actionNodeName}' not found in overriden activity", Graph.Class);
+            }
+            
+            buildAction?.Invoke(new NodeBuilder(node, this));
 
             return this;
         }

@@ -16,10 +16,11 @@ internal class CompletionNotification : ActionInterceptor
             if (
                 stateflowsContext.ContextParentId != null &&
                 stateflowsContext.ContextParentId.Value.Type == BehaviorType.StateMachine &&
-                eventStatus is EventStatus.Consumed or EventStatus.Initialized
+                eventStatus is EventStatus.Consumed or EventStatus.Initialized &&
+                context.TryGetParentBehaviorContext(out var parentBehaviorContext)
             )
             {
-                context.Behavior.Send(new Completion());
+                parentBehaviorContext.Send(new Completion());
             }
         }
     }

@@ -1,10 +1,9 @@
+using System;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Threading.Channels;
 using Stateflows.Common.Classes;
 using Stateflows.Common.Registration.Interfaces;
-using System;
-using System.Diagnostics;
 using Stateflows.Common.Engine.Interfaces;
 
 namespace Stateflows.Common.Registration.Builders;
@@ -15,21 +14,21 @@ internal class Resource : IStateflowsResource
     public Resource(string name, int? maxConcurrentBehaviorExecutions = null)
     {
         Name = name;
-        if (maxConcurrentBehaviorExecutions != null)
-        {
-            var maxConcurrency = maxConcurrentBehaviorExecutions.Value > 0
-                 ? maxConcurrentBehaviorExecutions.Value
-                 : Environment.ProcessorCount;
 
-            ConcurrencySemaphore = new SemaphoreSlim(maxConcurrency, maxConcurrency);
-        }
+        if (maxConcurrentBehaviorExecutions == null) return;
+        
+        MaxConcurrentBehaviorExecutions = (maxConcurrentBehaviorExecutions ?? 0) > 0
+            ? maxConcurrentBehaviorExecutions!.Value
+            : Environment.ProcessorCount;
+
+        ConcurrencySemaphore = new SemaphoreSlim(MaxConcurrentBehaviorExecutions, MaxConcurrentBehaviorExecutions);
     }
     
     private int behaviorExecutionCounter = 0;
     
     private Channel<ExecutionToken> EventChannel { get; } = Channel.CreateUnbounded<ExecutionToken>();
 
-    private readonly SemaphoreSlim ConcurrencySemaphore = null;
+    private readonly SemaphoreSlim? ConcurrencySemaphore;
 
     public async Task WriteAsync(ExecutionToken executionToken, CancellationToken cancellationToken = default)
     {
@@ -56,6 +55,25 @@ internal class Resource : IStateflowsResource
 
         return Task.CompletedTask;
     }
+
+    public async ValueTask<IDisposable?> AcquireAsync(CancellationToken? cancellationToken)
+    {
+        if (ConcurrencySemaphore != null)
+        {
+            await ConcurrencySemaphore.WaitAsync(cancellationToken ?? CancellationToken.None).ConfigureAwait(false);
+        }
+        
+        return new Releaser(ConcurrencySemaphore);
+    }
+
+    private sealed class Releaser(SemaphoreSlim? semaphore) : IDisposable
+    {
+        private SemaphoreSlim? semaphore = semaphore;
+        public void Dispose()
+            => Interlocked.Exchange(ref semaphore, null)?.Release();
+    }
+
+    public int MaxConcurrentBehaviorExecutions { get; } = -1;
 
     public int EventQueueLength => EventChannel.Reader.Count;
     

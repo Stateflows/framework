@@ -2,10 +2,8 @@
 
 namespace Stateflows.Activities
 {
-    public interface ISendEventActionNode<TEvent> : IActivityNode
+    public interface ISendEventActionNode<TEvent> : IEventActionNode<TEvent>
     {
-        Task<TEvent> GenerateEventAsync();
-
         Task<BehaviorId> SelectTargetAsync();
     }
 }

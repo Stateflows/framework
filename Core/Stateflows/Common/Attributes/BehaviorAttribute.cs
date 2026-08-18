@@ -2,17 +2,13 @@
 
 namespace Stateflows.Common.Attributes
 {
-    [AttributeUsage(AttributeTargets.Class, AllowMultiple = false)]
-    public abstract class BehaviorAttribute : Attribute
+    [AttributeUsage(AttributeTargets.Class)]
+    public abstract class BehaviorAttribute(string? name = null, int version = 1, string? resourceName = null) : Attribute
     {
-        public string Name { get; private set; }
+        public string? Name { get; init; } = name;
 
-        public int Version { get; private set; }
+        public int Version { get; init; } = version;
 
-        protected BehaviorAttribute(string name, int version = 1)
-        {
-            Name = name;
-            Version = version;
-        }
+        public string? ResourceName { get; init; } = resourceName;
     }
 }

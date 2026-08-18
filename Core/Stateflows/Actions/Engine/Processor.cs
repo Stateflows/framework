@@ -12,46 +12,31 @@ using Stateflows.Common.Context;
 
 namespace Stateflows.Actions.Engine
 {
-    internal class Processor : IEventProcessor, IStateflowsProcessor
+    internal class Processor(
+        ActionsRegister register,
+        IStateflowsLock stateflowsLock,
+        IStateflowsStorage storage,
+        IStateflowsValueStorage valueStorage,
+        IServiceProvider provider
+    ) : IEventProcessor, IStateflowsProcessor
     {
         string IEventProcessor.BehaviorType => BehaviorType.Action;
-
-        private readonly ActionsRegister Register;
-        private readonly IStateflowsLock StateflowsLock;
-        private readonly IStateflowsStorage Storage;
-        private readonly IStateflowsValueStorage ValueStorage;
-        private readonly IServiceProvider ServiceProvider;
-
-        public Processor(
-            ActionsRegister register,
-            IStateflowsLock stateflowsLock,
-            IStateflowsStorage storage,
-            IStateflowsValueStorage valueStorage,
-            IServiceProvider serviceProvider
-        )
-        {
-            Register = register;
-            StateflowsLock = stateflowsLock;
-            Storage = storage;
-            ValueStorage = valueStorage;
-            ServiceProvider = serviceProvider;
-        }
 
         public async Task<EventStatus> ProcessEventAsync<TEvent>(BehaviorId id, EventHolder<TEvent> eventHolder, List<Exception> exceptions)
         {
             var result = EventStatus.Undelivered;
 
-            using var serviceScope = ServiceProvider.CreateScope();
+            using var serviceScope = provider.CreateScope();
             
             var serviceProvider = serviceScope.ServiceProvider;
 
-            var stateflowsContext = await Storage.HydrateAsync(id);
+            var stateflowsContext = await storage.HydrateAsync(id);
             
             var key = stateflowsContext.Version != 0
                 ? $"{id.Name}.{stateflowsContext.Version}"
                 : $"{id.Name}.current";
 
-            if (!Register.Actions.TryGetValue(key, out var action))
+            if (!register.Actions.TryGetValue(key, out var action))
             {
                 return result;
             }
@@ -60,19 +45,21 @@ namespace Stateflows.Actions.Engine
             {
                 await using var lockHandle = await (
                     action.IsStateless
-                        ? StateflowsLock.AquireNoLockAsync(id)
-                        : StateflowsLock.AquireLockAsync(id)
+                        ? stateflowsLock.AquireNoLockAsync(id)
+                        : stateflowsLock.AquireLockAsync(id)
                 );
 
                 var forcedReset = eventHolder.Headers.Values.Any(h => h is ForcedReset);
                 if (forcedReset)
                 {
-                    await ValueStorage.ClearAsync(id);
+                    await valueStorage.ClearAsync(id);
                 }
                 
                 stateflowsContext = action.IsStateless || forcedReset
                     ? new StateflowsContext(id)
-                    : await Storage.HydrateAsync(id);
+                    : await storage.HydrateAsync(id);
+
+                stateflowsContext.ExecutionTriggerHolder = eventHolder;
 
                 if (stateflowsContext.Status == BehaviorStatus.Unknown)
                 {
@@ -86,12 +73,7 @@ namespace Stateflows.Actions.Engine
                     stateflowsContext.ContextParentId = embedding.ParentId;
                 }
 
-                if (!action.IsStateless || stateflowsContext.ContextOwnerId != null)
-                {
-                    // stateflowsContext.StateflowsValues = (await ValueStorage.LoadAsync(stateflowsContext.ContextOwnerId ?? stateflowsContext.Id)).ToDictionary();
-                }
-
-                var executor = new Executor(Register, stateflowsContext, serviceProvider, action);
+                var executor = new Executor(register, stateflowsContext, serviceProvider, action);
                 
                 await executor.HydrateAsync(eventHolder);
                 
@@ -128,20 +110,11 @@ namespace Stateflows.Actions.Engine
                     stateflowsContext.Version = action.Version;
                 }
 
-                // stateflowsContext.Status = BehaviorStatus.Initialized;
-
                 stateflowsContext.LastExecutedAt = DateTime.Now;
-
-                // exceptions.AddRange(context.Exceptions);
-
-                if (!action.IsStateless || stateflowsContext.ContextOwnerId != null)
-                {
-                    // await ValueStorage.SaveAsync(stateflowsContext.ContextOwnerId ?? stateflowsContext.Id, stateflowsContext.StateflowsValues);
-                }
                 
                 if (!action.IsStateless)
                 {
-                    await Storage.DehydrateAsync(stateflowsContext);
+                    await storage.DehydrateAsync(stateflowsContext);
                 }
             }
 
