@@ -35,10 +35,6 @@
         /// </summary>
         NotConsumed,
         /// <summary>
-        /// Event was omitted because other events in CompoundRequest were invalid
-        /// </summary>
-        Omitted,
-        /// <summary>
         /// Event caused unhandled exception in behavior
         /// </summary>
         Failed,

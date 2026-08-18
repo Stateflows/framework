@@ -5,10 +5,10 @@ namespace Stateflows.Activities.Registration.Interfaces.Base;
 public interface IActivityActionOverrides<out TReturn>
 {
     #region UseAction
-    TReturn UseAction(string actionNodeName, OverridenActionBuildAction buildAction = null);
+    TReturn UseAction(string actionNodeName, OverridenActionBuildAction buildAction);
         
     [DebuggerHidden]
-    public TReturn UseAction<TAction>(OverridenTypedActionBuildAction<TAction> buildAction = null)
+    public TReturn UseAction<TAction>(OverridenTypedActionBuildAction<TAction> buildAction)
         where TAction : class, IActionNode
         => UseAction(ActivityNode<TAction>.Name, b =>
         {

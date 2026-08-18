@@ -15,7 +15,7 @@ internal class EndpointsBuilder(
     string? scopeName = null
 ) : IEndpointsBuilder
 {
-    public List<HateoasLink> Links { get; set; } = new();
+    public List<HateoasLink> Links { get; set; } = [];
 
     private RouteGroupBuilder AddEndpoint(string pattern, string[] methods, Delegate handler)
     {

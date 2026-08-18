@@ -7,8 +7,8 @@ namespace Stateflows.Activities.Registration.Interfaces.Base
         TReturn UseSendEventAction<TEvent>(string actionNodeName, OverridenSendEventActionBuildAction buildAction);
         
         [DebuggerHidden]
-        TReturn UseSendEventAction<TEvent, TAcceptEventAction>(OverridenSendEventActionBuildAction buildAction)
-            where TAcceptEventAction : class, IAcceptEventActionNode<TEvent>
-            => UseSendEventAction<TEvent>(ActivityNode<TAcceptEventAction>.Name, buildAction);
+        TReturn UseSendEventAction<TEvent, TSendEventAction>(OverridenSendEventActionBuildAction buildAction)
+            where TSendEventAction : class, ISendEventActionNode<TEvent>
+            => UseSendEventAction<TEvent>(ActivityNode<TSendEventAction>.Name, buildAction);
     }
 }

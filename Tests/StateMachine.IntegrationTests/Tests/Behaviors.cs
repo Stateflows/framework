@@ -1,18 +1,17 @@
-using System.Diagnostics;
 using Stateflows.Common;
 using Stateflows.Activities;
+using Stateflows.Common.Attributes;
 using StateMachine.IntegrationTests.Classes.Events;
 using StateMachine.IntegrationTests.Utils;
 using Deny = Stateflows.Common.Deny;
 
 namespace StateMachine.IntegrationTests.Tests
 {
-    public class TypedAcceptEventAction(IBehaviorContext context, IActivityContext activityContext) : IAcceptEventActionNode<SomeEvent>
+    public class TypedAcceptEventAction(IBehaviorContext context, [FromProjection(EntityScope.Owner)] bool value, IParentBehaviorContext parentContext, IActivityContext activityContext) : IAcceptEventActionNode<SomeEvent>
     {
         public async Task ExecuteAsync(SomeEvent @event, CancellationToken cancellationToken)
         {
-            Behaviors.eventConsumed = await context.Values.TryGetAsync<bool>("boolValue") is (true, true);
-            Debug.WriteLine(activityContext.ActualId.Name);
+            Behaviors.eventConsumed = value;// await parentContext.TryGetProjectionAsync<bool>() is (true, true);
             context.Send(new SomeNotification());
         }
     }
@@ -88,12 +87,36 @@ namespace StateMachine.IntegrationTests.Tests
 
                     .AddStateMachine("doActivity", b => b
                         .AddExecutionSequenceObserver()
+                        .AddEntity<ExtendedState<bool>>()
                         .AddInitialState("state1", b => b
-                            .AddOnEntry(c => c.Behavior.Values.SetAsync("boolValue", true))
+                            .AddOnEntry(c => c.Behavior.TryMutateAsync(true))
                             .AddDoActivity(b => b
                                 .AddAcceptEventAction<SomeEvent, TypedAcceptEventAction>()
                             )
                             .AddTransition<SomeNotification>("state2")
+                        )
+                        .AddState("state2")
+                    )
+
+                    .AddStateMachine("doActivityWithEntitySubscriptions", b => b
+                        .AddExecutionSequenceObserver()
+                        .AddEntity<ExtendedState<bool>>()
+                        .AddInitialState("state1", b => b
+                            .AddProjectionSubscription<bool>()
+                            .AddDoAction(async c =>
+                            {
+                                if (c.TryGetOwnerBehaviorContext(out var ownerBehavior))
+                                {
+                                    await ownerBehavior.TryMutateAsync(true);
+                                }
+                            })
+                            .AddTransition<bool>("state2", b => b
+                                .AddGuard(async c =>
+                                {
+                                    var (success, value) = await c.Behavior.TryGetProjectionAsync<bool>();
+                                    return value;
+                                })
+                            )
                         )
                         .AddState("state2")
                     )
@@ -147,7 +170,10 @@ namespace StateMachine.IntegrationTests.Tests
                                         async c =>
                                         {
                                             eventConsumed = true;
-                                            c.Behavior.Send(new SomeNotification());
+                                            if (c.TryGetOwnerBehaviorContext(out var ownerBehavior))
+                                            {
+                                                ownerBehavior.Send(new SomeNotification());
+                                            }
                                         }
                                     )
                                 )
@@ -351,6 +377,29 @@ namespace StateMachine.IntegrationTests.Tests
             Assert.AreEqual("state2", currentState1);
         }
 
+        [TestMethod]
+        public async Task DoActivityWithEntitySubscriptions()
+        {
+            var initialized = false;
+            string currentState1 = "";
+
+            if (StateMachineLocator.TryLocateStateMachine(new StateMachineId("doActivityWithEntitySubscriptions", "x"), out var sm))
+            {
+                initialized = (await sm.SendAsync(new Initialize())).Status == EventStatus.Initialized;
+
+                await Task.Delay(1200);
+
+                currentState1 = (await sm.GetStatusAsync()).Response.CurrentStates.Value;
+            }
+
+            ExecutionSequence.Verify(b => b
+                .StateEntry("state1")
+                .StateEntry("state2")
+            );
+            Assert.IsTrue(initialized);
+            Assert.AreEqual("state2", currentState1);
+        }
+        
         [TestMethod]
         public async Task RepeatedDoActivity()
         {

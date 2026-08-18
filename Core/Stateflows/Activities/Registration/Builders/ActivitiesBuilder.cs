@@ -30,13 +30,25 @@ namespace Stateflows.Activities.Registration.Builders
                     var valueBefore = registration.OwnerClass;
                     registration.OwnerClass = ownerClass;
 
-                    register.AddActivity(attribute?.Name ?? @type.FullName, attribute?.Version ?? 1, @type);
+                    register.AddActivity(attribute?.Name ?? @type.FullName, attribute?.Version ?? 1, @type, b =>
+                    {
+                        if (attribute?.ResourceName != null)
+                        {
+                            b.SetResourceName(attribute.ResourceName);
+                        }
+                    });
                     registration.OwnerClass = valueBefore;
 
                     return;
                 }
 
-                register.AddActivity(attribute?.Name ?? @type.FullName, attribute?.Version ?? 1, @type);
+                register.AddActivity(attribute?.Name ?? @type.FullName, attribute?.Version ?? 1, @type, b =>
+                {
+                    if (attribute?.ResourceName != null)
+                    {
+                        b.SetResourceName(attribute.ResourceName);
+                    }
+                });
             });
 
             return this;

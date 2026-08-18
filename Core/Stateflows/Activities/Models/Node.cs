@@ -30,6 +30,8 @@ namespace Stateflows.Activities.Models
 
         public int ChunkSize { get; set; }
         public bool Anchored { get; set; } = true;
+
+        internal Func<IActivityVisitor, Task>? VisitingTask { get; set; } = null;
         
         public System.Action<object>? ConfigurationAction { get; set; } = null;
 

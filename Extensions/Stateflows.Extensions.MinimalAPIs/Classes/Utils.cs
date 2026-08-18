@@ -101,7 +101,10 @@ internal static class Utils
     private static IEnumerable<HateoasLink> ToInstanceLinks(this IEnumerable<(HateoasLink, BehaviorStatus[])> links, string routePrefix, BehaviorInfo behaviorInfo)
         => links
             .Where(link => link.Item2.Contains(behaviorInfo.BehaviorStatus))
-            .Select(link => link.Item1 with { Href = $"/{routePrefix}{link.Item1.Href}" });
+            .Select(link => link.Item1 with
+            {
+                Href = $"/{routePrefix}{link.Item1.Href.Replace("{instance}", behaviorInfo.Id.Instance)}"
+            });
     
     public static IResult ToResult<TResponse>(this RequestResult<TResponse> result, IEnumerable<EventHolder> notifications, BehaviorInfo behaviorInfo, Dictionary<string, List<(HateoasLink, BehaviorStatus[])>> customHateoasLinks)
     {
@@ -128,7 +131,6 @@ internal static class Utils
             EventStatus.Deferred => Results.Content(jsonResult, "application/json", statusCode: 202), // 202 accepted
             EventStatus.Consumed => Results.Content(jsonResult, "application/json", statusCode: 200),
             EventStatus.NotConsumed => Results.Content(jsonResult, "application/json", statusCode: 409),
-            EventStatus.Omitted => Results.Content(jsonResult, "application/json", statusCode: 200),
             EventStatus.Failed => Results.Content(jsonResult, "application/json", statusCode: 500), // 500 server error
             EventStatus.Forwarded => Results.Content(jsonResult, "application/json", statusCode: 202), // 202 accepted
             _ => Results.Content(jsonResult, "application/json", statusCode: 500), // 500 server error

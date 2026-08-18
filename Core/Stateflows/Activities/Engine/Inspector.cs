@@ -55,10 +55,6 @@ namespace Stateflows.Activities.Engine
         public IDictionary<Node, NodeInspection> InspectionNodes { get; } = new Dictionary<Node, NodeInspection>();
         public IDictionary<Edge, FlowInspection> InspectionFlows { get; } = new Dictionary<Edge, FlowInspection>();
 
-        private IActivityInspection inspection;
-
-        public IActivityInspection Inspection => inspection ??= new ActivityInspection(Executor, this);
-
         private readonly List<ActivityExceptionHandlerFactoryAsync> ExceptionHandlerFactories = [];
 
         private readonly List<ActivityInterceptorFactoryAsync> InterceptorFactories = [];
@@ -73,27 +69,13 @@ namespace Stateflows.Activities.Engine
 
         private IActivityExceptionHandler[] ExceptionHandlers;
 
-        private IEnumerable<IActivityPlugin> plugins;
+        private IEnumerable<IActivityPlugin>? plugins;
         public IEnumerable<IActivityPlugin> Plugins
-            => plugins ??= Executor.NodeScope.ServiceProvider.GetService<IEnumerable<IActivityPlugin>>();
+            => plugins ??= Executor.NodeScope.ServiceProvider.GetRequiredService<IEnumerable<IActivityPlugin>>();
 
-        private AcceptEvents acceptEventsPlugin;
+        private AcceptEvents? acceptEventsPlugin;
         public AcceptEvents AcceptEventsPlugin
-            => acceptEventsPlugin ??= Executor.NodeScope.ServiceProvider.GetService<AcceptEvents>();
-
-        public void AfterHydrate(ActivityActionContext context)
-        {
-            Plugins.RunSafe(p => p.AfterHydrate(context), nameof(AfterHydrate), Logger);
-            GlobalInterceptor.AfterHydrateAsync(context).Wait();
-            ReverseInterceptors.RunSafe(i => i.AfterHydrate(context), nameof(AfterHydrate), Logger);
-        }
-
-        public void BeforeDehydrate(ActivityActionContext context)
-        {
-            Interceptors.RunSafe(i => i.BeforeDehydrate(context), nameof(BeforeDehydrate), Logger);
-            GlobalInterceptor.BeforeDehydrateAsync(context).Wait();
-            Plugins.RunSafe(p => p.BeforeDehydrate(context), nameof(BeforeDehydrate), Logger);
-        }
+            => acceptEventsPlugin ??= Executor.NodeScope.ServiceProvider.GetRequiredService<AcceptEvents>();
 
         public bool BeforeProcessEvent<TEvent>(EventContext<TEvent> context)
         {

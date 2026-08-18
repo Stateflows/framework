@@ -1,4 +1,5 @@
 ﻿using System;
+using System.IO.Pipes;
 using Newtonsoft.Json;
 using Stateflows.Common;
 using Stateflows.Common.Extensions;
@@ -17,12 +18,16 @@ public abstract class TokenHolder
     public object BoxedPayload => boxedPayload ??= GetBoxedPayload();
 
     protected abstract object GetBoxedPayload();
-
     
     [JsonIgnore]
     public Type PayloadType => GetPayloadType();
 
     protected abstract Type GetPayloadType();
+    
+    [JsonIgnore]
+    public Type ActualPayloadType => GetActualPayloadType();
+
+    protected abstract Type GetActualPayloadType();
 }
 
 public class TokenHolder<TToken> : TokenHolder
@@ -41,6 +46,9 @@ public class TokenHolder<TToken> : TokenHolder
 
     protected override Type GetPayloadType()
         => typeof(TToken);
+
+    protected override Type GetActualPayloadType()
+        => BoxedPayload?.GetType() ?? typeof(TToken);
 
     public override bool Equals(object obj)
         => obj is TokenHolder holder && holder.Id == Id;

@@ -3,11 +3,8 @@ using Stateflows.Common.Attributes;
 
 namespace Stateflows.Entities.Attributes
 {
-    [AttributeUsage(AttributeTargets.Class, AllowMultiple = false)]
-    public class EntityBehaviorAttribute : BehaviorAttribute
-    {
-        public EntityBehaviorAttribute(string name = null, int version = 1) : base(name, version)
-        { }
-    }
+    [AttributeUsage(AttributeTargets.Class)]
+    public class EntityBehaviorAttribute(string? name = null, int version = 1, string? resourceName = null)
+        : BehaviorAttribute(name, version, resourceName);
 }
 

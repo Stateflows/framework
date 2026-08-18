@@ -1,28 +1,27 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Stateflows.Common.Context.Classes;
+using Stateflows.Entities.Attributes;
 using Stateflows.Entities.Engine;
+using Stateflows.Entities.Enums;
 using Stateflows.Entities.Registration.Interfaces;
 
 namespace Stateflows.Entities.Models
 {
     internal abstract class EntityModel
     {
+        public string? ResourceName = null;
+        
         public abstract Type TemplateType { get; }
         
         public Dictionary<string, FieldModel> Fields { get; } = [];
 
         public Dictionary<Type, MutationModel> Mutations { get; } = [];
 
-        public Delegate DefaultInitializer { get; set; }
-
-        public Action<Dictionary<string, object>> DefaultInitializerInvoke { get; set; }
+        public List<Action<Dictionary<string, object>>> DefaultInitializerInvoke { get; set; } = [];
 
         public Dictionary<Type, InitializerModel> Initializers { get; } = [];
-
-        public Delegate DefaultProjection { get; set; }
-
-        public Action<Dictionary<string, object>> DefaultProjectionInvoke { get; set; }
 
         public Dictionary<Type, ProjectionModel> Projections { get; } = [];
     }
@@ -32,28 +31,26 @@ namespace Stateflows.Entities.Models
         public override Type TemplateType => typeof(TTemplate);
     }
 
-    internal abstract class FieldModel(EntityModel entityModel, string name)
+    internal abstract class FieldModel(EntityModel entityModel, string name, FieldAccess access)
     {
         protected readonly EntityModel EntityModel = entityModel;
 
         public string Name => name;
+
+        public bool HasDefaultValue { get; set; }
+
+        public object? DefaultValue { get; set; }
         
         public abstract bool IsComputed { get; }
 
         public abstract void Compute(Dictionary<string, object> values);
 
         public abstract Type ValueType { get; }
-
-        public List<Delegate> Observations { get; } = [];
-
-        /// <summary>
-        /// Internal triggers added automatically when another field's computation depends on this field.
-        /// Each trigger recomputes the dependent computed field by writing its result back into context.Values.
-        /// </summary>
-        public Dictionary<string, Action<Dictionary<string, object>>> ComputationTriggers { get; } = [];
+        
+        public FieldAccess Access { get; set; } = access;
     }
 
-    internal class FieldModel<TTemplate, TField>(EntityModel entityModel, string name) : FieldModel(entityModel, name)
+    internal class FieldModel<TTemplate, TField>(EntityModel entityModel, string name, FieldAccess access) : FieldModel(entityModel, name, access)
         where TTemplate : class
     {
         public FieldComputation<TTemplate, TField>? Computation { get; set; }
@@ -68,23 +65,11 @@ namespace Stateflows.Entities.Models
             {
                 return;
             }
-            
-            foreach (var entityModelField in EntityModel.Fields.Values.Where(entityModelField => entityModelField != this))
-            {
-                entityModelField.ComputationTriggers.Remove(Name);
-            }
-            
+
             var (proxy, entity) = EntityProxy<TTemplate>.Create(values, EntityModel);
             var result = Computation(entity);
             values[Name.GetFieldKey()] = result;
-            
-            foreach (var entityModelField in EntityModel.Fields.Values.Where(entityModelField =>
-                         proxy.ReadFields.Contains(entityModelField.Name) &&
-                         entityModelField != this
-                ))
-            {
-                entityModelField.ComputationTriggers[Name] = Compute;
-            }
+            EntityContextValues.SetFieldDependencies(values, Name, proxy.ReadFields.Where(fieldName => fieldName != Name));
         }
     }
 
@@ -94,7 +79,7 @@ namespace Stateflows.Entities.Models
 
         public Delegate MutationAction { get; set; }
         
-        public Action<Dictionary<string, object>, object> Invoke { get; set; }
+        public Action<Dictionary<string, object>, BehaviorContext, object> Invoke { get; set; }
     }
 
     internal class InitializerModel
@@ -112,6 +97,8 @@ namespace Stateflows.Entities.Models
 
         public Delegate ProjectionAction { get; set; }
 
-        public Func<Dictionary<string, object>, object> Invoke { get; set; }
+        public Func<Dictionary<string, object>, BehaviorContext, object> Invoke { get; set; }
+
+        public PublishScope PublishScope { get; set; } = PublishScope.None;
     }
 }

@@ -2,15 +2,9 @@
 #nullable enable
 namespace Stateflows.Common.Attributes
 {
-    public abstract class ValueAttribute : Attribute
+    public abstract class ValueAttribute(string? name = null, bool required = true) : Attribute
     {
-        public string? Name { get; set; }
-        public bool Required { get; set; }
-
-        public ValueAttribute(string? name = null, bool required = true)
-        {
-            Name = name;
-            Required = required;
-        }
+        public string? Name { get; init; } = name;
+        public bool Required { get; init; } = required;
     }
 }

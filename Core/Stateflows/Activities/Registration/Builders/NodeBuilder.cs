@@ -15,9 +15,6 @@ namespace Stateflows.Activities.Registration
     internal class NodeBuilder(Node node, BaseActivityBuilder activityBuilder) :
         IActionBuilder,
         IOverridenActionBuilder,
-        IActionBuilderWithOptions,
-        IOverridenActionBuilderWithOptions,
-        // IAcceptEventActionBuilder,
         ITimeEventActionBuilder,
         IOverridenTimeEventActionBuilder,
         ISendEventActionBuilder,
@@ -67,8 +64,6 @@ namespace Stateflows.Activities.Registration
         {
             var result = AddFlowInternal<TToken>(targetNodeName, false, buildAction);
             
-            Graph.VisitingTasks.Add(v => v.FinalizerAddedAsync(Graph.Name, Graph.Version));
-            
             Graph.VisitingTasks.Add(v => v.FlowAddedAsync<TToken>(Graph.Name, Graph.Version, Node.Name, targetNodeName, false));
             
             return result;
@@ -109,23 +104,27 @@ namespace Stateflows.Activities.Registration
             return this;
         }
 
-        public IActionBuilderWithOptions SetOptions(NodeOptions nodeOptions)
+        public IActionBuilder SetOptions(NodeOptions nodeOptions)
         {
             Node.Options = nodeOptions;
 
             return this;
         }
 
-        IActionBuilderWithOptions IControlFlowBase<IActionBuilderWithOptions>.AddControlFlow(string targetNodeName, ControlFlowBuildAction buildAction)
-            => AddControlFlow(targetNodeName, buildAction) as IActionBuilderWithOptions;
+        IOverridenActionBuilder INodeOptions<IOverridenActionBuilder>.UpdateOptions(Func<NodeOptions, NodeOptions> nodeOptionsUpdater)
+            => UpdateOptions(nodeOptionsUpdater) as IOverridenActionBuilder;
 
-        IActionBuilderWithOptions IObjectFlowBase<IActionBuilderWithOptions>.AddFlow<TToken>(string targetNodeName, ObjectFlowBuildAction<TToken> buildAction)
-            => AddFlow<TToken>(targetNodeName, buildAction) as IActionBuilderWithOptions;
+        public IActionBuilder UpdateOptions(Func<NodeOptions, NodeOptions> nodeOptionsUpdater)
+        {
+            Node.Options = nodeOptionsUpdater(Node.Options);
+
+            return this;
+        }
 
         IInitialBuilder IControlFlowBase<IInitialBuilder>.AddControlFlow(string targetNodeName, ControlFlowBuildAction buildAction)
             => AddControlFlow(targetNodeName, buildAction) as IInitialBuilder;
 
-        public IActionBuilderWithOptions AddExceptionHandler<TException>(ExceptionHandlerDelegateAsync<TException> exceptionHandler)
+        public IActionBuilder AddExceptionHandler<TException>(ExceptionHandlerDelegateAsync<TException> exceptionHandler)
             where TException : Exception
         {
             var targetNodeName = $"{Node.Name}.{typeof(TException).FullName}.ExceptionHandler";
@@ -172,15 +171,6 @@ namespace Stateflows.Activities.Registration
 
         IForkBuilder IControlFlowBase<IForkBuilder>.AddControlFlow(string targetNodeName, ControlFlowBuildAction buildAction)
             => AddControlFlow(targetNodeName, buildAction) as IForkBuilder;
-
-        // IAcceptEventActionBuilder IObjectFlowBase<IAcceptEventActionBuilder>.AddFlow<TToken>(string targetNodeName, ObjectFlowBuildAction<TToken> buildAction)
-        //     => AddFlow<TToken>(targetNodeName, buildAction) as IAcceptEventActionBuilder;
-        //
-        // IAcceptEventActionBuilder IControlFlowBase<IAcceptEventActionBuilder>.AddControlFlow(string targetNodeName, ControlFlowBuildAction buildAction)
-        //     => AddControlFlow(targetNodeName, buildAction) as IAcceptEventActionBuilder;
-        //
-        // IAcceptEventActionBuilder IExceptionHandlerBase<IAcceptEventActionBuilder>.AddExceptionHandler<TException>(ExceptionHandlerDelegateAsync<TException> exceptionHandler)
-        //     => AddExceptionHandler<TException>(exceptionHandler) as IAcceptEventActionBuilder;
 
         ITimeEventActionBuilder IObjectFlowBase<ITimeEventActionBuilder>.AddFlow<TToken>(string targetNodeName, ObjectFlowBuildAction<TToken> buildAction)
             => AddFlow<TToken>(targetNodeName, buildAction) as ITimeEventActionBuilder;
@@ -288,18 +278,6 @@ namespace Stateflows.Activities.Registration
         IOverridenActionBuilder IExceptionHandlerBase<IOverridenActionBuilder>.AddExceptionHandler<TException>(ExceptionHandlerDelegateAsync<TException> exceptionHandler)
             => AddExceptionHandler<TException>(exceptionHandler) as IOverridenActionBuilder;
 
-        IOverridenActionBuilderWithOptions INodeOptions<IOverridenActionBuilderWithOptions>.SetOptions(NodeOptions nodeOptions)
-            => SetOptions(nodeOptions) as IOverridenActionBuilderWithOptions;
-
-        IOverridenActionBuilderWithOptions IObjectFlowBase<IOverridenActionBuilderWithOptions>.AddFlow<TToken>(string targetNodeName, ObjectFlowBuildAction<TToken> buildAction)
-            => AddFlow(targetNodeName, buildAction) as IOverridenActionBuilderWithOptions;
-
-        IOverridenActionBuilderWithOptions IControlFlowBase<IOverridenActionBuilderWithOptions>.AddControlFlow(string targetNodeName, ControlFlowBuildAction buildAction)
-            => AddControlFlow(targetNodeName, buildAction) as IOverridenActionBuilderWithOptions;
-
-        IOverridenActionBuilderWithOptions IExceptionHandlerBase<IOverridenActionBuilderWithOptions>.AddExceptionHandler<TException>(ExceptionHandlerDelegateAsync<TException> exceptionHandler)
-            => AddExceptionHandler(exceptionHandler) as IOverridenActionBuilderWithOptions;
-
         IOverridenTimeEventActionBuilder IObjectFlowBase<IOverridenTimeEventActionBuilder>.AddFlow<TToken>(string targetNodeName, ObjectFlowBuildAction<TToken> buildAction)
             => AddFlow(targetNodeName, buildAction) as IOverridenTimeEventActionBuilder;
 
@@ -338,6 +316,9 @@ namespace Stateflows.Activities.Registration
 
         IOverridenPublishEventActionBuilder IOverridenControlFlowBase<IOverridenPublishEventActionBuilder>.UseControlFlow(string targetNodeName, ControlFlowBuildAction buildAction)
             => UseControlFlow(targetNodeName, buildAction) as IOverridenPublishEventActionBuilder;
+
+        IOverridenActionBuilder INodeOptions<IOverridenActionBuilder>.SetOptions(NodeOptions nodeOptions)
+            => SetOptions(nodeOptions) as IOverridenActionBuilder;
     }
 
     internal class ActionNodeBuilder<TNode>(Node node, BaseActivityBuilder activityBuilder) :
@@ -376,6 +357,18 @@ namespace Stateflows.Activities.Registration
 
         IOverridenTypedActionBuilder<TNode> IElementBuilderBase<TNode, IOverridenTypedActionBuilder<TNode>>.Configure(Action<TNode> action)
             => Configure(action) as IOverridenTypedActionBuilder<TNode>;
+
+        ITypedActionBuilder<TNode> INodeOptions<ITypedActionBuilder<TNode>>.SetOptions(NodeOptions nodeOptions)
+            => SetOptions(nodeOptions) as ITypedActionBuilder<TNode>;
+
+        IOverridenTypedActionBuilder<TNode> INodeOptions<IOverridenTypedActionBuilder<TNode>>.UpdateOptions(Func<NodeOptions, NodeOptions> nodeOptionsUpdater)
+            => UpdateOptions(nodeOptionsUpdater) as IOverridenTypedActionBuilder<TNode>;
+
+        ITypedActionBuilder<TNode> INodeOptions<ITypedActionBuilder<TNode>>.UpdateOptions(Func<NodeOptions, NodeOptions> nodeOptionsUpdater)
+            => UpdateOptions(nodeOptionsUpdater) as ITypedActionBuilder<TNode>;
+
+        IOverridenTypedActionBuilder<TNode> INodeOptions<IOverridenTypedActionBuilder<TNode>>.SetOptions(NodeOptions nodeOptions)
+            => SetOptions(nodeOptions) as IOverridenTypedActionBuilder<TNode>;
     }
     
     internal class TimeEventNodeBuilder<TNode>(Node node, BaseActivityBuilder activityBuilder) :

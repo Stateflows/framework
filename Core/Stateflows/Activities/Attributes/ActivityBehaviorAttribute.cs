@@ -3,10 +3,7 @@ using Stateflows.Common.Attributes;
 
 namespace Stateflows.Activities.Attributes
 {
-    [AttributeUsage(AttributeTargets.Class, AllowMultiple = false)]
-    public class ActivityBehaviorAttribute : BehaviorAttribute
-    {
-        public ActivityBehaviorAttribute(string name = null, int version = 1) : base(name, version)
-        { }
-    }
+    [AttributeUsage(AttributeTargets.Class)]
+    public class ActivityBehaviorAttribute(string? name = null, int version = 1, string? resourceName = null)
+        : BehaviorAttribute(name, version, resourceName);
 }

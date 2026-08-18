@@ -2,7 +2,7 @@
 
 namespace Stateflows.Common
 {
-    public interface ISubscriptions
+    public interface ISubscriptions<TReturn>
     {
         /// <summary>
         /// Subscribes for notifications from given behavior (by sending <see cref="Subscribe"/> to it).<br/>

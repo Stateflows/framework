@@ -60,7 +60,7 @@ public sealed class TokensOutput : TokensOutputEvent, ITokensOutput
 
     public IEnumerable<TToken> GetOfType<TToken>()
         => Tokens
-            .Where(holder => typeof(TToken).IsAssignableFrom(holder.BoxedPayload?.GetType() ?? holder.PayloadType))
+            .Where(holder => typeof(TToken).IsAssignableFrom(holder.ActualPayloadType))
             .Select(holder => (TToken)holder.BoxedPayload);
 }
 
@@ -88,6 +88,6 @@ public sealed class TokensOutput<TToken> : TokensOutputEvent, ITokensOutput<TTok
 
     public IEnumerable<TToken> GetAll()
         => Tokens
-            .Where(holder => typeof(TToken).IsAssignableFrom(holder.BoxedPayload?.GetType() ?? holder.PayloadType))
+            .Where(holder => typeof(TToken).IsAssignableFrom(holder.ActualPayloadType))
             .Select(holder => (TToken)holder.BoxedPayload);
 }

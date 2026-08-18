@@ -27,7 +27,7 @@ public class GrainBehavior(string tenantId, BehaviorId behaviorId, IClusterClien
                     notificationNames = handlers.Keys.Distinct().ToArray();
                 }
                 
-                await NotificationsGrain.AddWatchAsync(ObserverReference, notificationNames);
+                await SubscriptionsGrain.AddWatchAsync(ObserverReference, notificationNames);
             };
         }
 
@@ -50,10 +50,10 @@ public class GrainBehavior(string tenantId, BehaviorId behaviorId, IClusterClien
     private string GrainKey => grainKey ??= StateflowsJsonConverter.SerializeObject(TenantBehaviorId);
     private IBehaviorGrain? behaviorGrain;
     private IBehaviorGrain BehaviorGrain => behaviorGrain ??= client.GetGrain<IBehaviorGrain>(GrainKey);
-    private INotificationsGrain? notificationsGrain;
-    private INotificationsGrain NotificationsGrain => notificationsGrain ??= client.GetGrain<INotificationsGrain>(GrainKey);
-    private ICancellationGrain? cancellationGrain;
-    private ICancellationGrain CancellationGrain => cancellationGrain ??= client.GetGrain<ICancellationGrain>(GrainKey);
+    private ISubscriptionsGrain? subscriptionsGrain;
+    private ISubscriptionsGrain SubscriptionsGrain => subscriptionsGrain ??= client.GetGrain<ISubscriptionsGrain>(GrainKey);
+    private ISignalsGrain? cancellationGrain;
+    private ISignalsGrain SignalsGrain => cancellationGrain ??= client.GetGrain<ISignalsGrain>(GrainKey);
     private readonly Dictionary<string, List<Action<EventHolder>>> handlers = new();
     private readonly Dictionary<IWatcher, Action<EventHolder>> handlersByWatcher = new();
 
@@ -69,7 +69,7 @@ public class GrainBehavior(string tenantId, BehaviorId behaviorId, IClusterClien
         // var result = StateflowsJsonConverter.DeserializeObject<RequestResult>(serializedResult);
         if (@event is Finalize { Mode: FinalizationMode.Immediate })
         {
-            await CancellationGrain.RequestCancellationAsync();
+            await SignalsGrain.EnableSignalAsync(Signals.Cancel);
         }
         
         var result = await BehaviorGrain.ProcessEventAsync(@event.ToEventHolder(headers), CancellationToken.None);
@@ -90,9 +90,9 @@ public class GrainBehavior(string tenantId, BehaviorId behaviorId, IClusterClien
         return new RequestResult<TResponseEvent>(response, result.Status, result.Validation);
     }
 
-    public async Task<IWatcher> WatchAsync<TNotification>(Action<TNotification> handler, DateTime? replayNotificatonsSince = null)
+    public async Task<IWatcher> WatchAsync<TNotification>(Action<TNotification> handler, DateTime? replayNotificationsSince = null)
     {
-        await NotificationsGrain.AddWatchAsync(ObserverReference, [Event<TNotification>.Name]);
+        await SubscriptionsGrain.AddWatchAsync(ObserverReference, [Event<TNotification>.Name]);
         
         var watcher = new Watcher(this);
         lock (handlers)
@@ -114,9 +114,9 @@ public class GrainBehavior(string tenantId, BehaviorId behaviorId, IClusterClien
         return watcher;
     }
 
-    public async Task<IWatcher> WatchAsync(string[] notificationNames, Action<EventHolder> handler, DateTime? replayNotificatonsSince = null)
+    public async Task<IWatcher> WatchAsync(string[] notificationNames, Action<EventHolder> handler, DateTime? replayNotificationsSince = null)
     {
-        await NotificationsGrain.AddWatchAsync(ObserverReference, notificationNames);
+        await SubscriptionsGrain.AddWatchAsync(ObserverReference, notificationNames);
         
         var watcher = new Watcher(this);
         lock (handlers)
@@ -141,15 +141,15 @@ public class GrainBehavior(string tenantId, BehaviorId behaviorId, IClusterClien
 
     public BehaviorId Id => behaviorId;
     
-    public async Task<IEnumerable<TNotification>> GetNotificationsAsync<TNotification>(DateTime? lastNotificationsCheck = null)
-        => (await NotificationsGrain.GetNotificationsAsync(lastNotificationsCheck, [Event<TNotification>.Name]))
-            .Select(h => StateflowsJsonConverter.DeserializeObject<TNotification>(h.Payload))
-            .ToArray();
-
-    public async Task<IEnumerable<EventHolder>> GetNotificationsAsync(string[] notificationNames, DateTime? lastNotificationsCheck = null)
-        => (await NotificationsGrain.GetNotificationsAsync(lastNotificationsCheck, notificationNames))
-            .Select(h => (EventHolder)h)
-            .ToArray();
+    // public async Task<IEnumerable<TNotification>> GetNotificationsAsync<TNotification>(DateTime? lastNotificationsCheck = null)
+    //     => (await SubscriptionsGrain.GetNotificationsAsync(lastNotificationsCheck, [Event<TNotification>.Name]))
+    //         .Select(h => StateflowsJsonConverter.DeserializeObject<TNotification>(h.Payload))
+    //         .ToArray();
+    //
+    // public async Task<IEnumerable<EventHolder>> GetNotificationsAsync(string[] notificationNames, DateTime? lastNotificationsCheck = null)
+    //     => (await SubscriptionsGrain.GetNotificationsAsync(lastNotificationsCheck, notificationNames))
+    //         .Select(h => (EventHolder)h)
+    //         .ToArray();
 
     public async Task NotifyAsync(OrleansEventHolder[] notifications)
     {
@@ -201,6 +201,6 @@ public class GrainBehavior(string tenantId, BehaviorId behaviorId, IClusterClien
             }
         }
         
-        await NotificationsGrain.RemoveWatchAsync(ObserverReference, notificationNames.ToArray());
+        await SubscriptionsGrain.RemoveWatchAsync(ObserverReference, notificationNames.ToArray());
     }
 }

@@ -1,0 +1,13 @@
+# Angular build outputs
+dist/
+node_modules/
+.angular/
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+

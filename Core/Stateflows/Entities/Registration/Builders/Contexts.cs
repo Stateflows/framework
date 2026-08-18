@@ -1,15 +1,5 @@
 namespace Stateflows.Entities.Registration.Builders
 {
-    internal class FieldComputationContext<TTemplate, TField> : IFieldComputationContext<TTemplate, TField>
-    {
-        public TTemplate Entity { get; }
-    }
-
-    internal class FieldObservationContext<TField> : IFieldObservationContext<TField>
-    {
-        public TField Value => default;
-    }
-
     internal class MutationContext<TTemplate, TMutation>(TTemplate entity, TMutation mutationEvent) : IMutationContext<TTemplate, TMutation>
     {
         public TTemplate Entity => entity;

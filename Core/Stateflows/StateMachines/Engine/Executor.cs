@@ -103,11 +103,12 @@ namespace Stateflows.StateMachines.Engine
 
             await Inspector.BuildAsync(context);
 
-            Inspector.AfterHydrate(context);
+            // Inspector.AfterHydrate(context);
         }
 
         public void Dehydrate()
-            => Inspector.BeforeDehydrate(new StateMachineActionContext(Context));
+        { }
+        // => Inspector.BeforeDehydrate(new StateMachineActionContext(Context));
 
         public bool Initialized
             => VerticesTree.HasValue || Context.Finalized;
@@ -1215,6 +1216,12 @@ namespace Stateflows.StateMachines.Engine
             StateMachinesContextHolder.StateContext.Value = null;
             StateMachinesContextHolder.TransitionContext.Value = null;
             StateMachinesContextHolder.BehaviorContext.Value = context.Behavior;
+            StateMachinesContextHolder.ParentBehaviorContext.Value = context.TryGetParentBehaviorContext(out var parentBehaviorContext)
+                ? parentBehaviorContext
+                : null;
+            StateMachinesContextHolder.OwnerBehaviorContext.Value = context.TryGetOwnerBehaviorContext(out var ownerBehaviorContext)
+                ? ownerBehaviorContext
+                : null;
             StateMachinesContextHolder.StateMachineContext.Value = ((BaseContext)context).StateMachine;
             StateMachinesContextHolder.ExecutionContext.Value = context;
             StateMachinesContextHolder.CommonExecutionContext.Value = context;
@@ -1240,6 +1247,12 @@ namespace Stateflows.StateMachines.Engine
             StateMachinesContextHolder.StateContext.Value = null;
             StateMachinesContextHolder.TransitionContext.Value = null;
             StateMachinesContextHolder.BehaviorContext.Value = context.Behavior;
+            StateMachinesContextHolder.ParentBehaviorContext.Value = context.TryGetParentBehaviorContext(out var parentBehaviorContext)
+                ? parentBehaviorContext
+                : null;
+            StateMachinesContextHolder.OwnerBehaviorContext.Value = context.TryGetOwnerBehaviorContext(out var ownerBehaviorContext)
+                ? ownerBehaviorContext
+                : null;
             StateMachinesContextHolder.StateMachineContext.Value = ((BaseContext)context).StateMachine;
             StateMachinesContextHolder.ExecutionContext.Value = context;
             StateMachinesContextHolder.CommonExecutionContext.Value = context;
@@ -1265,6 +1278,12 @@ namespace Stateflows.StateMachines.Engine
             StateMachinesContextHolder.StateContext.Value = null;
             StateMachinesContextHolder.TransitionContext.Value = null;
             StateMachinesContextHolder.BehaviorContext.Value = context.Behavior;
+            StateMachinesContextHolder.ParentBehaviorContext.Value = context.TryGetParentBehaviorContext(out var parentBehaviorContext)
+                ? parentBehaviorContext
+                : null;
+            StateMachinesContextHolder.OwnerBehaviorContext.Value = context.TryGetOwnerBehaviorContext(out var ownerBehaviorContext)
+                ? ownerBehaviorContext
+                : null;
             StateMachinesContextHolder.StateMachineContext.Value = ((BaseContext)context).StateMachine;
             StateMachinesContextHolder.ExecutionContext.Value = context;
             StateMachinesContextHolder.CommonExecutionContext.Value = context;
@@ -1290,6 +1309,12 @@ namespace Stateflows.StateMachines.Engine
             StateMachinesContextHolder.StateContext.Value = context.State;
             StateMachinesContextHolder.TransitionContext.Value = null;
             StateMachinesContextHolder.BehaviorContext.Value = context.Behavior;
+            StateMachinesContextHolder.ParentBehaviorContext.Value = context.TryGetParentBehaviorContext(out var parentBehaviorContext)
+                ? parentBehaviorContext
+                : null;
+            StateMachinesContextHolder.OwnerBehaviorContext.Value = context.TryGetOwnerBehaviorContext(out var ownerBehaviorContext)
+                ? ownerBehaviorContext
+                : null;
             StateMachinesContextHolder.StateMachineContext.Value = ((BaseContext)context).StateMachine;
             StateMachinesContextHolder.ExecutionContext.Value = context;
             StateMachinesContextHolder.CommonExecutionContext.Value = context;
@@ -1315,6 +1340,12 @@ namespace Stateflows.StateMachines.Engine
             StateMachinesContextHolder.StateContext.Value = null;
             StateMachinesContextHolder.TransitionContext.Value = context;
             StateMachinesContextHolder.BehaviorContext.Value = context.Behavior;
+            StateMachinesContextHolder.ParentBehaviorContext.Value = context.TryGetParentBehaviorContext(out var parentBehaviorContext)
+                ? parentBehaviorContext
+                : null;
+            StateMachinesContextHolder.OwnerBehaviorContext.Value = context.TryGetOwnerBehaviorContext(out var ownerBehaviorContext)
+                ? ownerBehaviorContext
+                : null;
             StateMachinesContextHolder.StateMachineContext.Value = ((BaseContext)context).StateMachine;
             StateMachinesContextHolder.ExecutionContext.Value = context;
             StateMachinesContextHolder.CommonExecutionContext.Value = context;
@@ -1340,6 +1371,12 @@ namespace Stateflows.StateMachines.Engine
             StateMachinesContextHolder.StateContext.Value = null;
             StateMachinesContextHolder.TransitionContext.Value = context;
             StateMachinesContextHolder.BehaviorContext.Value = context.Behavior;
+            StateMachinesContextHolder.ParentBehaviorContext.Value = context.TryGetParentBehaviorContext(out var parentBehaviorContext)
+                ? parentBehaviorContext
+                : null;
+            StateMachinesContextHolder.OwnerBehaviorContext.Value = context.TryGetOwnerBehaviorContext(out var ownerBehaviorContext)
+                ? ownerBehaviorContext
+                : null;
             StateMachinesContextHolder.StateMachineContext.Value = ((BaseContext)context).StateMachine;
             StateMachinesContextHolder.ExecutionContext.Value = context;
             StateMachinesContextHolder.CommonExecutionContext.Value = context;
@@ -1362,6 +1399,12 @@ namespace Stateflows.StateMachines.Engine
             StateMachinesContextHolder.StateContext.Value = context.State;
             StateMachinesContextHolder.TransitionContext.Value = null;
             StateMachinesContextHolder.BehaviorContext.Value = context.Behavior;
+            StateMachinesContextHolder.ParentBehaviorContext.Value = context.TryGetParentBehaviorContext(out var parentBehaviorContext)
+                ? parentBehaviorContext
+                : null;
+            StateMachinesContextHolder.OwnerBehaviorContext.Value = context.TryGetOwnerBehaviorContext(out var ownerBehaviorContext)
+                ? ownerBehaviorContext
+                : null;
             StateMachinesContextHolder.StateMachineContext.Value = ((BaseContext)context).StateMachine;
             StateMachinesContextHolder.ExecutionContext.Value = context;
             StateMachinesContextHolder.CommonExecutionContext.Value = context;
@@ -1387,6 +1430,12 @@ namespace Stateflows.StateMachines.Engine
             StateMachinesContextHolder.StateContext.Value = null;
             StateMachinesContextHolder.TransitionContext.Value = context;
             StateMachinesContextHolder.BehaviorContext.Value = context.Behavior;
+            StateMachinesContextHolder.ParentBehaviorContext.Value = context.TryGetParentBehaviorContext(out var parentBehaviorContext)
+                ? parentBehaviorContext
+                : null;
+            StateMachinesContextHolder.OwnerBehaviorContext.Value = context.TryGetOwnerBehaviorContext(out var ownerBehaviorContext)
+                ? ownerBehaviorContext
+                : null;
             StateMachinesContextHolder.StateMachineContext.Value = ((BaseContext)context).StateMachine;
             StateMachinesContextHolder.ExecutionContext.Value = context;
             StateMachinesContextHolder.CommonExecutionContext.Value = context;
@@ -1412,6 +1461,12 @@ namespace Stateflows.StateMachines.Engine
             StateMachinesContextHolder.StateContext.Value = null;
             StateMachinesContextHolder.TransitionContext.Value = context;
             StateMachinesContextHolder.BehaviorContext.Value = context.Behavior;
+            StateMachinesContextHolder.ParentBehaviorContext.Value = context.TryGetParentBehaviorContext(out var parentBehaviorContext)
+                ? parentBehaviorContext
+                : null;
+            StateMachinesContextHolder.OwnerBehaviorContext.Value = context.TryGetOwnerBehaviorContext(out var ownerBehaviorContext)
+                ? ownerBehaviorContext
+                : null;
             StateMachinesContextHolder.StateMachineContext.Value = ((BaseContext)context).StateMachine;
             StateMachinesContextHolder.ExecutionContext.Value = context;
             StateMachinesContextHolder.CommonExecutionContext.Value = context;
@@ -1437,6 +1492,12 @@ namespace Stateflows.StateMachines.Engine
             StateMachinesContextHolder.StateContext.Value = null;
             StateMachinesContextHolder.TransitionContext.Value = context;
             StateMachinesContextHolder.BehaviorContext.Value = context.Behavior;
+            StateMachinesContextHolder.ParentBehaviorContext.Value = context.TryGetParentBehaviorContext(out var parentBehaviorContext)
+                ? parentBehaviorContext
+                : null;
+            StateMachinesContextHolder.OwnerBehaviorContext.Value = context.TryGetOwnerBehaviorContext(out var ownerBehaviorContext)
+                ? ownerBehaviorContext
+                : null;
             StateMachinesContextHolder.StateMachineContext.Value = ((BaseContext)context).StateMachine;
             StateMachinesContextHolder.ExecutionContext.Value = context;
             StateMachinesContextHolder.CommonExecutionContext.Value = context;
@@ -1462,6 +1523,12 @@ namespace Stateflows.StateMachines.Engine
             StateMachinesContextHolder.StateContext.Value = null;
             StateMachinesContextHolder.TransitionContext.Value = context;
             StateMachinesContextHolder.BehaviorContext.Value = context.Behavior;
+            StateMachinesContextHolder.ParentBehaviorContext.Value = context.TryGetParentBehaviorContext(out var parentBehaviorContext)
+                ? parentBehaviorContext
+                : null;
+            StateMachinesContextHolder.OwnerBehaviorContext.Value = context.TryGetOwnerBehaviorContext(out var ownerBehaviorContext)
+                ? ownerBehaviorContext
+                : null;
             StateMachinesContextHolder.StateMachineContext.Value = ((BaseContext)context).StateMachine;
             StateMachinesContextHolder.ExecutionContext.Value = context;
             StateMachinesContextHolder.CommonExecutionContext.Value = context;

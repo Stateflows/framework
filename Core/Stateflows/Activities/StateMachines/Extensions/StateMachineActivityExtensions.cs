@@ -30,8 +30,10 @@ namespace Stateflows.Activities
                         nameof(BehaviorEmbedding),
                         new BehaviorEmbedding()
                         {
-                            OwnerId = context.Behavior.Id,
-                            ParentId = context.Behavior.ActualId
+                            OwnerId = context.TryGetOwnerBehaviorContext(out var ownerBehavior)
+                                ? ownerBehavior.Id
+                                : context.Behavior.Id,
+                            ParentId = context.Behavior.Id
                         }
                     }
                 }
@@ -69,8 +71,10 @@ namespace Stateflows.Activities
 
             headers[nameof(BehaviorEmbedding)] = new BehaviorEmbedding
             {
-                OwnerId = context.Behavior.Id,
-                ParentId = context.Behavior.ActualId
+                OwnerId = context.TryGetOwnerBehaviorContext(out var ownerBehavior)
+                    ? ownerBehavior.Id
+                    : context.Behavior.Id,
+                ParentId = context.Behavior.Id
             };
             
             var ev = StateflowsJsonConverter.Clone(context.Event);
@@ -117,8 +121,10 @@ namespace Stateflows.Activities
 
             headers[nameof(BehaviorEmbedding)] = new BehaviorEmbedding
             {
-                OwnerId = context.Behavior.Id,
-                ParentId = context.Behavior.ActualId
+                OwnerId = context.TryGetOwnerBehaviorContext(out var ownerBehavior)
+                    ? ownerBehavior.Id
+                    : context.Behavior.Id,
+                ParentId = context.Behavior.Id
             };
             
             var ev = StateflowsJsonConverter.Clone(context.Event);
@@ -143,19 +149,23 @@ namespace Stateflows.Activities
 
             var ev = StateflowsJsonConverter.Clone(context.Event);
 
-            _ = a.SendAsync(
-                new TokensInput().Add(ev),
-                new Dictionary<string, EventHeader>
+            var headers = new Dictionary<string, EventHeader>
+            {
                 {
+                    nameof(BehaviorEmbedding),
+                    new BehaviorEmbedding()
                     {
-                        nameof(BehaviorEmbedding),
-                        new BehaviorEmbedding()
-                        {
-                            OwnerId = context.Behavior.Id,
-                            ParentId = context.Behavior.ActualId
-                        }
+                        OwnerId = context.TryGetOwnerBehaviorContext(out var ownerBehavior)
+                            ? ownerBehavior.Id
+                            : context.Behavior.Id,
+                        ParentId = context.Behavior.Id
                     }
                 }
+            };
+            
+            _ = a.SendAsync(
+                new TokensInput().Add(ev),
+                headers
             );
             
             return Task.CompletedTask;

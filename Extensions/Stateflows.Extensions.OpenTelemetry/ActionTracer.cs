@@ -17,11 +17,11 @@ namespace Stateflows.Extensions.OpenTelemetry
         
         private TracingActivity? EventProcessingActivity;
         
-        public void AfterHydrate(IActionDelegateContext context)
-        { }
-        
-        public void BeforeDehydrate(IActionDelegateContext context)
-        { }
+        // public void AfterHydrate(IActionDelegateContext context)
+        // { }
+        //
+        // public void BeforeDehydrate(IActionDelegateContext context)
+        // { }
         
         public bool BeforeProcessEvent<TEvent>(IEventContext<TEvent> context)
         {
@@ -37,22 +37,22 @@ namespace Stateflows.Extensions.OpenTelemetry
                 if (header is ActivityHeader activityHeader)
                 {
                     EventProcessingActivity = StateMachineTracer.Source.StartActivity(
-                        $"Action '{context.Behavior.ActualId.Name.ToShortName()}:{context.Behavior.ActualId.InstanceText}' processing '{context.Event.GetType().GetEventName().ToShortName()}'",
+                        $"Action '{context.Behavior.Id.Name.ToShortName()}:{context.Behavior.Id.InstanceText}' processing '{context.Event.GetType().GetEventName().ToShortName()}'",
                         ActivityKind.Internal,
                         parentContext: activityHeader.ActivityContext
                     );
                 }
                 
                 EventProcessingActivity ??= StateMachineTracer.Source.StartActivity(
-                    $"Action '{context.Behavior.ActualId.Name.ToShortName()}:{context.Behavior.ActualId.InstanceText}' processing '{context.Event.GetType().GetEventName().ToShortName()}'"
+                    $"Action '{context.Behavior.Id.Name.ToShortName()}:{context.Behavior.Id.InstanceText}' processing '{context.Event.GetType().GetEventName().ToShortName()}'"
                 );
                 
-                EventProcessingActivity.AddTag("ActionId", $"{context.Behavior.ActualId.Name.ToShortName()}:{context.Behavior.ActualId.InstanceText}");
+                EventProcessingActivity.AddTag("ActionId", $"{context.Behavior.Id.Name.ToShortName()}:{context.Behavior.Id.InstanceText}");
                 EventProcessingActivity.AddTag("Event", context.Event.GetType().GetEventName().ToShortName());
 
                 logger.LogTrace(
                     message: "Action '{ActionId}' received event '{Event}', processing",
-                    $"{context.Behavior.ActualId.Name.ToShortName()}:{context.Behavior.ActualId.InstanceText}",
+                    $"{context.Behavior.Id.Name.ToShortName()}:{context.Behavior.Id.InstanceText}",
                     context.Event.GetType().GetEventName().ToShortName()
                 );
             }
@@ -79,7 +79,7 @@ namespace Stateflows.Extensions.OpenTelemetry
             {
                 logger.LogTrace(
                     message: "Action '{ActionId}' processed event '{Event}' with result '{EventStatus}'",
-                    $"{context.Behavior.ActualId.Name.ToShortName()}:{context.Behavior.ActualId.InstanceText}",
+                    $"{context.Behavior.Id.Name.ToShortName()}:{context.Behavior.Id.InstanceText}",
                     context.ExecutionTrigger.GetType().GetEventName().ToShortName(),
                     eventStatus
                 );
@@ -91,7 +91,7 @@ namespace Stateflows.Extensions.OpenTelemetry
                     exception: exception,
                     args: new object[]
                     {
-                        $"{context.Behavior.ActualId.Name.ToShortName()}:{context.Behavior.ActualId.InstanceText}",
+                        $"{context.Behavior.Id.Name.ToShortName()}:{context.Behavior.Id.InstanceText}",
                         context.ExecutionTrigger.GetType().GetEventName().ToShortName()
                     }
                 );
@@ -123,7 +123,7 @@ namespace Stateflows.Extensions.OpenTelemetry
             {
                 logger.LogTrace(
                     message: "Action '{ActionId}' processed event '{Event}' with result '{EventStatus}'",
-                    $"{context.Behavior.ActualId.Name.ToShortName()}:{context.Behavior.ActualId.InstanceText}",
+                    $"{context.Behavior.Id.Name.ToShortName()}:{context.Behavior.Id.InstanceText}",
                     context.ExecutionTrigger.GetType().GetEventName().ToShortName(),
                     eventStatus
                 );
@@ -135,7 +135,7 @@ namespace Stateflows.Extensions.OpenTelemetry
                     exception: exception,
                     args: new object[]
                     {
-                        $"{context.Behavior.ActualId.Name.ToShortName()}:{context.Behavior.ActualId.InstanceText}",
+                        $"{context.Behavior.Id.Name.ToShortName()}:{context.Behavior.Id.InstanceText}",
                         context.ExecutionTrigger.GetType().GetEventName().ToShortName()
                     }
                 );

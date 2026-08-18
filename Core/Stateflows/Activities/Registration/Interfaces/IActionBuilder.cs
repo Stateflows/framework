@@ -7,34 +7,26 @@ public interface IActionBuilder :
     IObjectFlowBase<IActionBuilder>,
     IControlFlowBase<IActionBuilder>,
     IExceptionHandlerBase<IActionBuilder>,
-    INodeOptions<IActionBuilderWithOptions>;
-
-public interface IActionBuilderWithOptions : 
-    IObjectFlowBase<IActionBuilderWithOptions>,
-    IControlFlowBase<IActionBuilderWithOptions>,
-    IExceptionHandlerBase<IActionBuilderWithOptions>;
+    INodeOptions<IActionBuilder>;
 
 public interface ITypedActionBuilder<out TAction> :
     IObjectFlowBase<ITypedActionBuilder<TAction>>,
     IControlFlowBase<ITypedActionBuilder<TAction>>,
     IExceptionHandlerBase<ITypedActionBuilder<TAction>>,
-    IElementBuilderBase<TAction, ITypedActionBuilder<TAction>>
+    IElementBuilderBase<TAction, ITypedActionBuilder<TAction>>,
+    INodeOptions<ITypedActionBuilder<TAction>>
     where TAction : class, IActionNode;
 
 public interface IOverridenActionBuilder :
     IObjectFlowBase<IOverridenActionBuilder>,
     IControlFlowBase<IOverridenActionBuilder>,
     IExceptionHandlerBase<IOverridenActionBuilder>,
-    INodeOptions<IOverridenActionBuilderWithOptions>;
-
-public interface IOverridenActionBuilderWithOptions : 
-    IObjectFlowBase<IOverridenActionBuilderWithOptions>,
-    IControlFlowBase<IOverridenActionBuilderWithOptions>,
-    IExceptionHandlerBase<IOverridenActionBuilderWithOptions>;
+    INodeOptions<IOverridenActionBuilder>;
 
 public interface IOverridenTypedActionBuilder<out TAction> :
     IObjectFlowBase<IOverridenTypedActionBuilder<TAction>>,
     IControlFlowBase<IOverridenTypedActionBuilder<TAction>>,
     IExceptionHandlerBase<IOverridenTypedActionBuilder<TAction>>,
-    IElementBuilderBase<TAction, IOverridenTypedActionBuilder<TAction>>
+    IElementBuilderBase<TAction, IOverridenTypedActionBuilder<TAction>>,
+    INodeOptions<IOverridenTypedActionBuilder<TAction>>
     where TAction : class, IActionNode;

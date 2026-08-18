@@ -3,6 +3,8 @@ using System.Diagnostics;
 using Stateflows.Actions;
 using Stateflows.Common;
 using Stateflows.Common.Attributes;
+using Stateflows.Entities.Attributes;
+using Stateflows.Entities.Enums;
 using StateMachine.IntegrationTests.Classes.Events;
 
 namespace StateMachine.IntegrationTests.Tests
@@ -31,6 +33,19 @@ namespace StateMachine.IntegrationTests.Tests
             return Task.CompletedTask;
         }
     }
+
+    public class ProjectionGuard([FromProjection] SomeEvent? boolInit) : ITransitionGuard
+    {
+        public Task<bool> GuardAsync()
+            => Task.FromResult(boolInit?.InitializationSuccessful ?? false);
+    }
+
+    public interface ExtendedState<T>
+    {
+        [Field] public T Value { get; set; }
+        [Mutation] public void Set(T value) => Value = value;
+        [Projection(PublishScope.Self)] public T ValueProjection => Value;
+    }
     
     [TestClass]
     public class Actions : StateflowsTestClass
@@ -55,26 +70,30 @@ namespace StateMachine.IntegrationTests.Tests
                 .AddStateMachines(b => b
                     .AddStateMachine("extended", b => b
                         .AddExecutionSequenceObserver()
+                        .AddEntity<ExtendedState<BoolInit>>()
                         .AddInitializer<BoolInit>(async c =>
                         {
                             Debug.WriteLine($"InitializationEvent.Value: {c.InitializationEvent.Value}");
-                            await c.Behavior.Values.SetAsync("value", c.InitializationEvent.Value);
+                            await c.Behavior.TryMutateAsync(c.InitializationEvent);
                             return true;
                         })
                         .AddInitialState("stateA", b => b
                             .AddTransition<SomeEvent>("stateB", b => b
                                 .AddGuardAction(async c =>
                                 {
-                                    GuardRun = true;
-                                    var (success, value) = await c.Behavior.Values.TryGetAsync<bool>("value");
-                                    if (success)
+                                    if (c.TryGetOwnerBehaviorContext(out var ownerContext))
                                     {
-                                        Debug.WriteLine($"value: {value}");
-                                        c.Output(value);
-                                    }
-                                    else
-                                    {
-                                        Debug.WriteLine($"value: not available");
+                                        GuardRun = true;
+                                        var (success, value) = await ownerContext.TryGetProjectionAsync<BoolInit>();
+                                        if (success)
+                                        {
+                                            Debug.WriteLine($"value: {value}");
+                                            c.Output(value.Value);
+                                        }
+                                        else
+                                        {
+                                            Debug.WriteLine($"value: not available");
+                                        }
                                     }
                                 })
                                 .AddEffectAction(async c => EffectRun = true)
@@ -88,7 +107,11 @@ namespace StateMachine.IntegrationTests.Tests
                     .AddStateMachine("subscription", b => b
                         .AddExecutionSequenceObserver()
                         .AddInitialState("initial", b => b
-                            .AddOnEntryAction(async c => c.Behavior.Send(new SomeEvent()))
+                            .AddOnEntryAction(async c =>
+                            {
+                                if (c.TryGetParentBehaviorContext(out var parentBehaviorContext))
+                                    parentBehaviorContext.Send(new SomeEvent());
+                            })
                             .AddTransition<SomeEvent>("final")
                         )
                         .AddFinalState("final")
@@ -98,7 +121,8 @@ namespace StateMachine.IntegrationTests.Tests
                         .AddInitialState("initial", b => b
                             .AddOnEntryAction(async c =>
                             {
-                                c.Behavior.Publish(new SomeEvent() { TheresSomethingHappeningHere = "42" });
+                                if (c.TryGetOwnerBehaviorContext(out var ownerContext))
+                                    ownerContext.Publish(new SomeEvent() { TheresSomethingHappeningHere = "42" });
                             })
                         )
                     )

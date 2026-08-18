@@ -1,6 +1,8 @@
 namespace Stateflows.Examples.Common.Events;
 
-public class Approve
+public class BaseApprove;
+
+public class Approve : BaseApprove
 {
-    
-}
+    public string Data { get; set; }
+};

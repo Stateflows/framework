@@ -31,6 +31,9 @@ namespace Stateflows.Activities
         protected override Type GetPayloadType()
             => typeof(TException);
 
+        protected override Type GetActualPayloadType()
+            => Exception.GetType();
+
         public override bool Equals(object obj)
             => obj is ExceptionHolder token && token.Id == Id;
 

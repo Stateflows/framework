@@ -2,6 +2,7 @@ using System;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Collections.Generic;
+using System.Diagnostics;
 using Stateflows.Common;
 using Stateflows.Common.Interfaces;
 using Stateflows.Entities.Registration;
@@ -10,17 +11,20 @@ namespace Stateflows.Entities.Engine
 {
     internal class Processor(
         EntitiesRegister register,
-        IStateflowsStorage storage
+        IStateflowsStorage storage,
+        IServiceProvider serviceProvider
     ) : IEventProcessor
     {
         public string BehaviorType => global::Stateflows.BehaviorType.Entity;
 
-        // [DebuggerHidden]
+        [DebuggerHidden]
         public async Task<EventStatus> ProcessEventAsync<TEvent>(BehaviorId id, EventHolder<TEvent> eventHolder, List<Exception> exceptions)
         {
             try
             {
                 var stateflowsContext = await storage.HydrateAsync(id);
+
+                stateflowsContext.ExecutionTriggerHolder = eventHolder;
 
                 var key = stateflowsContext.Version != 0
                     ? $"{id.Name}.{stateflowsContext.Version}"
@@ -38,20 +42,32 @@ namespace Stateflows.Entities.Engine
                     stateflowsContext.ContextParentId = embedding.ParentId;
                 }
 
-                var executor = new Executor(registration, stateflowsContext);
+                var executor = new Executor(registration, stateflowsContext, serviceProvider);
 
                 var result = executor.TryInitialize(eventHolder.Payload);
 
                 stateflowsContext.Status = executor.BehaviorStatus;
+            
+                if (stateflowsContext.Status != BehaviorStatus.Initialized)
+                {
+                    executor.EnsureInitialized();
+                    stateflowsContext.Status = executor.BehaviorStatus;
+                }
 
-                if (result == EventStatus.Initialized)
+                if (result != EventStatus.Initialized)
+                {
+                    result = executor.DoProcessAsync(eventHolder);
+                    if (result == EventStatus.Consumed)
+                    {
+                        stateflowsContext.Status = BehaviorStatus.Initialized;
+                    }
+                }
+                
+                if (stateflowsContext.Status == BehaviorStatus.Initialized)
                 {
                     stateflowsContext.Version = registration.Version;
                 }
-                else
-                {
-                    result = executor.DoProcessAsync(eventHolder);
-                }
+
 
                 stateflowsContext.LastExecutedAt = DateTime.Now;
 

@@ -1,6 +1,6 @@
 namespace Activity.IntegrationTests.Classes.Events;
 
-public class SomeInheritedEvent : SomeEvent
-{
-    
-}
+
+public interface IInherited;
+
+public class SomeInheritedEvent : SomeEvent, IInherited;

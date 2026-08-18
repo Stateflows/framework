@@ -31,22 +31,22 @@ namespace Stateflows.Extensions.OpenTelemetry
                 if (header is ActivityHeader activityHeader)
                 {
                     EventProcessingActivity = StateMachineTracer.Source.StartActivity(
-                        $"Activity '{context.Behavior.ActualId.Name.ToShortName()}:{context.Behavior.ActualId.InstanceText}' processing '{context.Event.GetType().GetEventName().ToShortName()}'",
+                        $"Activity '{context.Behavior.Id.Name.ToShortName()}:{context.Behavior.Id.InstanceText}' processing '{context.Event.GetType().GetEventName().ToShortName()}'",
                         ActivityKind.Internal,
                         parentContext: activityHeader.ActivityContext
                     );
                 }
                 
                 EventProcessingActivity ??= StateMachineTracer.Source.StartActivity(
-                    $"Activity '{context.Behavior.ActualId.Name.ToShortName()}:{context.Behavior.ActualId.InstanceText}' processing '{context.Event.GetType().GetEventName().ToShortName()}'"
+                    $"Activity '{context.Behavior.Id.Name.ToShortName()}:{context.Behavior.Id.InstanceText}' processing '{context.Event.GetType().GetEventName().ToShortName()}'"
                 );
                 
-                EventProcessingActivity.AddTag("ActivityId", $"{context.Behavior.ActualId.Name.ToShortName()}:{context.Behavior.ActualId.InstanceText}");
+                EventProcessingActivity.AddTag("ActivityId", $"{context.Behavior.Id.Name.ToShortName()}:{context.Behavior.Id.InstanceText}");
                 EventProcessingActivity.AddTag("Event", context.Event.GetType().GetEventName().ToShortName());
 
                 logger.LogTrace(
                     message: "Activity '{ActivityId}' received event '{Event}', processing",
-                    $"{context.Behavior.ActualId.Name.ToShortName()}:{context.Behavior.ActualId.InstanceText}",
+                    $"{context.Behavior.Id.Name.ToShortName()}:{context.Behavior.Id.InstanceText}",
                     context.Event.GetType().GetEventName().ToShortName()
                 );
             }
@@ -84,7 +84,7 @@ namespace Stateflows.Extensions.OpenTelemetry
             {
                 logger.LogTrace(
                     message: "Activity '{ActivityId}' processed event '{Event}' with result '{EventStatus}'",
-                    $"{context.Behavior.ActualId.Name.ToShortName()}:{context.Behavior.ActualId.InstanceText}",
+                    $"{context.Behavior.Id.Name.ToShortName()}:{context.Behavior.Id.InstanceText}",
                     context.ExecutionTrigger.GetType().GetEventName().ToShortName(),
                     eventStatus
                 );
@@ -96,7 +96,7 @@ namespace Stateflows.Extensions.OpenTelemetry
                     exception: exception,
                     args: new object[]
                     {
-                        $"{context.Behavior.ActualId.Name.ToShortName()}:{context.Behavior.ActualId.InstanceText}",
+                        $"{context.Behavior.Id.Name.ToShortName()}:{context.Behavior.Id.InstanceText}",
                         context.ExecutionTrigger.GetType().GetEventName().ToShortName()
                     }
                 );
@@ -125,14 +125,14 @@ namespace Stateflows.Extensions.OpenTelemetry
                 if (header is ActivityHeader activityHeader)
                 {
                     InitializerActivity = StateMachineTracer.Source.StartActivity(
-                        $"Activity '{context.Behavior.ActualId.Name.ToShortName()}:{context.Behavior.ActualId.InstanceText}' initialized{(ImplicitInitialization ? " implicitly" : "")}",
+                        $"Activity '{context.Behavior.Id.Name.ToShortName()}:{context.Behavior.Id.InstanceText}' initialized{(ImplicitInitialization ? " implicitly" : "")}",
                         ActivityKind.Internal,
                         parentContext: activityHeader.ActivityContext
                     );
                 }
                 
                 InitializerActivity ??= StateMachineTracer.Source.StartActivity(
-                    $"Activity '{context.Behavior.ActualId.Name.ToShortName()}:{context.Behavior.ActualId.InstanceText}' initialized{(ImplicitInitialization ? " implicitly" : "")}"
+                    $"Activity '{context.Behavior.Id.Name.ToShortName()}:{context.Behavior.Id.InstanceText}' initialized{(ImplicitInitialization ? " implicitly" : "")}"
                 );
                 
                 EventProcessingActivity = InitializerActivity;
@@ -153,7 +153,7 @@ namespace Stateflows.Extensions.OpenTelemetry
                 if (!initialized)
                 {
                     InitializerActivity.DisplayName =
-                        $"Activity '{context.Behavior.ActualId.Name.ToShortName()}:{context.Behavior.ActualId.InstanceText}' not initialized";
+                        $"Activity '{context.Behavior.Id.Name.ToShortName()}:{context.Behavior.Id.InstanceText}' not initialized";
                 }
 
                 InitializerActivity.Stop();
@@ -168,14 +168,14 @@ namespace Stateflows.Extensions.OpenTelemetry
             if (EventProcessingActivity != null)
             {
                 FinalizerActivity = StateMachineTracer.Source.StartActivity(
-                    $"Activity '{context.Behavior.ActualId.Name.ToShortName()}:{context.Behavior.ActualId.InstanceText}' finalized",
+                    $"Activity '{context.Behavior.Id.Name.ToShortName()}:{context.Behavior.Id.InstanceText}' finalized",
                     ActivityKind.Internal,
                     EventProcessingActivity.Context
                 );
             }
 
             FinalizerActivity ??= StateMachineTracer.Source.StartActivity(
-                $"Activity '{context.Behavior.ActualId.Name.ToShortName()}:{context.Behavior.ActualId.InstanceText}' finalized"
+                $"Activity '{context.Behavior.Id.Name.ToShortName()}:{context.Behavior.Id.InstanceText}' finalized"
             );
         }
 
@@ -593,11 +593,11 @@ namespace Stateflows.Extensions.OpenTelemetry
         public void AfterFlowTransform<TToken, TTransformedToken>(ITransformationContext<TToken, TTransformedToken> context)
         { }
 
-        public void AfterHydrate(IActivityActionContext context)
-        { }
-
-        public void BeforeDehydrate(IActivityActionContext context)
-        { }
+        // public void AfterHydrate(IActivityActionContext context)
+        // { }
+        //
+        // public void BeforeDehydrate(IActivityActionContext context)
+        // { }
 
         public bool OnActivityInitializationException(IActivityInitializationContext context, Exception exception)
         {

@@ -30,7 +30,10 @@ namespace Stateflows.StateMachines.Engine
                             headers[nameof(NoForwarding)] = new NoForwarding();
                         }
 
-                        context.Behavior.Send(context.Event, headers);
+                        if (context.TryGetParentBehaviorContext(out var parentBehaviorContext))
+                        {
+                            parentBehaviorContext.Send(context.Event, headers);
+                        };
                     }
                 }
 
@@ -69,8 +72,10 @@ namespace Stateflows.StateMachines.Engine
                                 nameof(BehaviorEmbedding),
                                 new BehaviorEmbedding()
                                 {
-                                    OwnerId = context.Behavior.Id,
-                                    ParentId = context.Behavior.ActualId
+                                    OwnerId = context.TryGetOwnerBehaviorContext(out var ownerBehavior)
+                                        ? ownerBehavior.Id
+                                        : context.Behavior.Id,
+                                    ParentId = context.Behavior.Id
                                 }
                             },
                             {
@@ -111,7 +116,7 @@ namespace Stateflows.StateMachines.Engine
                     context.TryLocateBehavior(stateValues.BehaviorId.Value, out var behavior)
                 )
                 {
-                    behavior.SendAsync(new Finalize());
+                    _ = behavior.SendAsync(new Finalize());
                     stateValues.BehaviorId = null;
                 }
             }

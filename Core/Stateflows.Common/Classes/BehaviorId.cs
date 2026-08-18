@@ -56,9 +56,7 @@ namespace Stateflows
         }
 
         public readonly override int GetHashCode()
-        {
-            return HashCode.Combine(Instance, BehaviorClass);
-        }
+            => HashCode.Combine(Instance, BehaviorClass);
 
         public bool Equals(BehaviorId other)
             => Instance == other.Instance && BehaviorClass.Equals(other.BehaviorClass);

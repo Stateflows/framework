@@ -6,7 +6,7 @@ namespace Stateflows.Entities
 {
     public interface IEntityBehavior : IBehavior
     {
-        public async Task<(bool Success, TProjection Projection)> TryGetProjection<TProjection>(
+        public async Task<(bool Success, TProjection Projection)> TryGetProjectionAsync<TProjection>(
             IDictionary<string, EventHeader> headers = null)
         {
             var response = await RequestAsync(new ProjectionRequest<TProjection>(), headers);
@@ -15,12 +15,17 @@ namespace Stateflows.Entities
                 : (false, default);
         }
 
-        public async Task<(bool Success, TFieldValue FieldValue)> TryGetFieldValue<TFieldValue>(string fieldName,
-            IDictionary<string, EventHeader> headers = null)
+        public async Task<bool> TrySetAsync<T>(string fieldName, T fieldValue, IDictionary<string, EventHeader> headers = null)
         {
-            var response = await RequestAsync(new FieldValueRequest<TFieldValue>() { FieldName = fieldName }, headers);
+            var result = await SendAsync(new FieldState<T> { Name = fieldName, Value = fieldValue }, headers);
+            return result.Status == EventStatus.Consumed;
+        }
+
+        public async Task<(bool Success, T FieldValue)> TryGetAsync<T>(string fieldName, IDictionary<string, EventHeader> headers = null)
+        {
+            var response = await RequestAsync(new FieldStateRequest<T> { Name = fieldName }, headers);
             return response.Status == EventStatus.Consumed && response.Response != null
-                ? (true, response.Response)
+                ? (true, response.Response.Value)
                 : (false, default);
         }
     }

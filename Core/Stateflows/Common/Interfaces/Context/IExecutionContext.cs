@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Threading;
 
 namespace Stateflows.Common
@@ -6,8 +7,10 @@ namespace Stateflows.Common
     public interface IExecutionContext
     {
         object ExecutionTrigger { get; }
+        
+        Guid ExecutionTriggerId { get; }
 
-        Dictionary<string, EventHeader> Headers { get; }
+        IDictionary<string, EventHeader> Headers { get; }
         
         CancellationToken CancellationToken { get; }
     }

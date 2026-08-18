@@ -14,6 +14,7 @@ namespace StateMachine.IntegrationTests.Tests
     public class Initialization : StateflowsTestClass
     {
         private bool? StateEntered = null;
+        private bool? TransitionEffectEntered = null;
         private bool? InitializerCalled = null;
         private bool InitializationSuccessful = true;
         public static string Value = "boo";
@@ -45,6 +46,10 @@ namespace StateMachine.IntegrationTests.Tests
                         })
                         .AddInitialState("state1", b => b
                             .AddOnEntry(c => StateEntered = true)
+                        
+                            .AddInternalTransition<SomeEvent>(b => b
+                                .AddEffect(c => TransitionEffectEntered = true)
+                            )
                         )
                     )
 
@@ -146,12 +151,14 @@ namespace StateMachine.IntegrationTests.Tests
             if (StateMachineLocator.TryLocateStateMachine(new StateMachineId("explicit", "x"), out var sm))
             {
                 status = (await sm.SendAsync(new SomeEvent() { InitializationSuccessful = true })).Status;
+                await sm.SendAsync(new SomeEvent());
                 currentState = (await sm.GetStatusAsync()).Response.CurrentStates.Value ?? string.Empty;
             }
 
             Assert.IsTrue(InitializerCalled);
             Assert.AreEqual(EventStatus.Initialized, status);
             Assert.IsTrue(StateEntered);
+            Assert.IsTrue(TransitionEffectEntered);
             Assert.AreEqual("state1", currentState);
         }
 

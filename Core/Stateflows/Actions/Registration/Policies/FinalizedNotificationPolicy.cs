@@ -11,9 +11,12 @@ internal class FinalizedNotification : ActionObserver
     public override void AfterActionFinalize(IActionDelegateContext context)
     {
         var stateflowsContext = ((BaseContext)context).Context;
-        if (stateflowsContext.ContextParentId != null)
+        if (
+            stateflowsContext.ContextParentId != null &&
+            context.TryGetParentBehaviorContext(out var parentBehaviorContext)
+        )
         {
-            context.Behavior.Send(new DoActionFinalized());
+            parentBehaviorContext.Send(new DoActionFinalized());
         }
     }
 }

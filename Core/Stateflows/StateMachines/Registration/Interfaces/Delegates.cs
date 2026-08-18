@@ -75,8 +75,6 @@ namespace Stateflows.StateMachines.Registration.Interfaces
 
     public delegate void OverridenElseDefaultTransitionBuildAction(IElseDefaultTransitionBuilder builder);
 
-    public delegate void ForwardedEventBuildAction<TEvent>(IForwardedEventBuilder<TEvent> builder);
-
     public delegate IStateMachineObserver StateMachineObserverFactory(IServiceProvider serviceProvider, IStateMachineActionContext context);
     public delegate Task<IStateMachineObserver> StateMachineObserverFactoryAsync(IServiceProvider serviceProvider, IStateMachineActionContext context);
 

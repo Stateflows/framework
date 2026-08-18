@@ -1,5 +1,4 @@
 using System;
-using System.Threading.Tasks;
 using Stateflows.Common;
 using Stateflows.StateMachines.Context.Interfaces;
 
@@ -7,12 +6,6 @@ namespace Stateflows.StateMachines
 {
     internal abstract class StateMachinePlugin : IStateMachinePlugin
     {
-        public virtual void AfterHydrate(IStateMachineActionContext context)
-        { }
-
-        public virtual void BeforeDehydrate(IStateMachineActionContext context)
-        { }
-
         public virtual bool BeforeProcessEvent<TEvent>(IEventContext<TEvent> context)
             => true;
 

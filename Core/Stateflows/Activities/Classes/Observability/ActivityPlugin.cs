@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Threading.Tasks;
 using Stateflows.Common;
 using Stateflows.Activities.Context.Interfaces;
 
@@ -7,10 +6,6 @@ namespace Stateflows.Activities
 {
     internal abstract class ActivityPlugin : IActivityPlugin
     {
-        public virtual void AfterHydrate(IActivityActionContext context) {}
-
-        public virtual void BeforeDehydrate(IActivityActionContext context) {}
-
         public virtual bool BeforeProcessEvent<TEvent>(IEventContext<TEvent> context)
             => true;
 

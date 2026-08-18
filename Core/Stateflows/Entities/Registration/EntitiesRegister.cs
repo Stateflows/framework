@@ -5,13 +5,14 @@ using System.Diagnostics;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Stateflows.Common.Interfaces;
+using Stateflows.Common.Registration.Builders;
 using Stateflows.Entities.Models;
 using Stateflows.Entities.Registration.Builders;
 using Stateflows.Entities.Registration.Interfaces;
 
 namespace Stateflows.Entities.Registration
 {
-    internal class EntitiesRegister : IEntitiesRegister, IOwnedRegistration
+    internal class EntitiesRegister(StateflowsBuilder stateflowsBuilder) : IEntitiesRegister, IOwnedRegistration
     {
         public readonly Dictionary<string, EntityRegistration> Entities = [];
 
@@ -78,15 +79,20 @@ namespace Stateflows.Entities.Registration
                 OwnerClass = OwnerClass,
                 ParentClass = ParentClass,
                 Model = new EntityModel<TTemplate>(),
+                StateflowsBuilder = stateflowsBuilder
             };
+
+            entityRegistration.VisitingTasks.Add(async visitor =>
+            {
+                await visitor.EntityAddingAsync<TTemplate>(entityName, version, entityRegistration.OwnerClass, entityRegistration.ParentClass);
+            });
 
             buildAction?.Invoke(new EntityBuilder<TTemplate>(entityRegistration));
 
-            entityRegistration.VisitingAction = async visitor =>
+            entityRegistration.VisitingTasks.Add(async visitor =>
             {
-                await visitor.EntityAddingAsync<TTemplate>(entityName, version, entityRegistration.OwnerClass, entityRegistration.ParentClass);
                 await visitor.EntityAddedAsync<TTemplate>(entityName, version);
-            };
+            });
 
             Entities.Add(key, entityRegistration);
 
@@ -97,7 +103,7 @@ namespace Stateflows.Entities.Registration
         }
 
         [DebuggerHidden]
-        public void AddEntity<TTemplate>(string entityName, int version, Type entityType, EntityBuildAction<TTemplate> buildAction = null)
+        public void AddEntity<TTemplate>(string entityName, int version, Type entityType, EntityBuildAction<TTemplate>? buildAction = null)
             where TTemplate : class
         {
             if (!typeof(IEntity<TTemplate>).IsAssignableFrom(entityType))
@@ -123,18 +129,22 @@ namespace Stateflows.Entities.Registration
                 Model = new EntityModel<TTemplate>(),
             };
 
+            entityRegistration.VisitingTasks.Add(async visitor =>
+            {
+                await visitor.EntityAddingAsync<TTemplate>(entityName, version, entityRegistration.OwnerClass, entityRegistration.ParentClass);
+            });
+            
             var builder = new EntityBuilder<TTemplate>(entityRegistration);
             RegisterEntity(entityType, builder);
             buildAction?.Invoke(builder);
 
             var method = EntityTypeAddedAsyncMethod.MakeGenericMethod(typeof(TTemplate), entityType);
 
-            entityRegistration.VisitingAction = async visitor =>
+            entityRegistration.VisitingTasks.Add(async visitor =>
             {
-                await visitor.EntityAddingAsync<TTemplate>(entityName, version, entityRegistration.OwnerClass, entityRegistration.ParentClass);
                 await visitor.EntityAddedAsync<TTemplate>(entityName, version);
                 await (Task)method.Invoke(visitor, [entityName, version]);
-            };
+            });
 
             Entities.Add(key, entityRegistration);
 
@@ -145,25 +155,45 @@ namespace Stateflows.Entities.Registration
         }
 
         [DebuggerHidden]
-        public void AddEntity<TTemplate, TEntity>(string entityName = null, int version = 1, EntityBuildAction<TTemplate> buildAction = null)
+        public void AddEntity<TTemplate, TEntity>(string? entityName = null, int version = 1, EntityBuildAction<TTemplate>? buildAction = null)
             where TTemplate : class
             where TEntity : class, IEntity<TTemplate>
             => AddEntity(entityName ?? Entity<TTemplate, TEntity>.Name, version, typeof(TEntity), buildAction);
 
         public async Task VisitEntitiesAsync(IEntityVisitor visitor)
         {
-            foreach (var entity in Entities.Where(item => !item.Key.EndsWith(".current")).Select(item => item.Value))
+            var tasks = Entities
+                .Where((item, index) => !item.Key.EndsWith(".current"))
+                .Select(item => item.Value)
+                .SelectMany(graph => graph.VisitingTasks);
+
+            foreach (var task in tasks)
             {
-                await entity.VisitingAction(visitor);
+                await task(visitor);
             }
+            
+            // foreach (var entity in Entities.Where(item => !item.Key.EndsWith(".current")).Select(item => item.Value))
+            // {
+            //     await entity.VisitingTasks(visitor);
+            // }
         }
 
         public async Task VisitEntityAsync(string entityName, int version, IEntityVisitor visitor)
         {
-            foreach (var entity in Entities.Where(item => item.Key == $"{entityName}.{version}").Select(item => item.Value))
+            var tasks = Entities
+                .Where((item, index) => item.Key == $"{entityName}.{version}")
+                .Select(item => item.Value)
+                .SelectMany(graph => graph.VisitingTasks);
+
+            foreach (var task in tasks)
             {
-                await entity.VisitingAction(visitor);
+                await task(visitor);
             }
+            
+            // foreach (var entity in Entities.Where(item => item.Key == $"{entityName}.{version}").Select(item => item.Value))
+            // {
+            //     await entity.VisitingTasks(visitor);
+            // }
         }
     }
 }

@@ -34,6 +34,22 @@ namespace Stateflows.Activities.Context.Classes
         }
         
         IBehaviorContext IBehaviorActionContext.Behavior => Activity;
+        public bool TryGetParentBehaviorContext(out IParentBehaviorContext parentBehaviorContext)
+        {
+            parentBehaviorContext = Behavior.Context.ContextParentId.HasValue
+                ? Behavior
+                : null;
+            
+            return parentBehaviorContext != null;
+        }
+        public bool TryGetOwnerBehaviorContext(out IOwnerBehaviorContext ownerBehaviorContext)
+        {
+            ownerBehaviorContext = Behavior.Context.ContextOwnerId.HasValue
+                ? Behavior
+                : null;
+            
+            return ownerBehaviorContext != null;
+        }
 
         public List<TokenHolder> InputTokens;
 

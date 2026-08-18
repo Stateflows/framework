@@ -246,8 +246,13 @@ namespace Stateflows.Activities.Registration
                 typeof(TEvent)
             );
 
-            var graph = ((IGraphBuilder)this).Graph;
-            graph.VisitingTasks.Add(visitor => visitor.AcceptEventNodeAddedAsync<TEvent>(graph.Name, graph.Version, actionNodeName));
+            var node = result.Node.Nodes.Values.FirstOrDefault(n => n.Name == actionNodeName);
+            if (node is not null)
+            {
+                var graph = ((IGraphBuilder)this).Graph;
+                node.VisitingTask = visitor => visitor.AcceptEventNodeAddedAsync<TEvent>(graph.Name, graph.Version, actionNodeName);
+                graph.VisitingTasks.Add(node.VisitingTask);
+            }
 
             return result;
         }

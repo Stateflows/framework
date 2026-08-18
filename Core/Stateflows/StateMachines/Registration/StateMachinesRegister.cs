@@ -5,7 +5,6 @@ using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
 using Stateflows.Common.Classes;
-using Stateflows.Common.Extensions;
 using Stateflows.Common.Initializer;
 using Stateflows.Common.Interfaces;
 using Stateflows.Common.Registration.Builders;
@@ -89,13 +88,13 @@ namespace Stateflows.StateMachines.Registration
             // Assign to local variable to avoid value being overriden when invoking lambda function at a later stage
             var ownerClass = OwnerClass;
             var parentClass = ParentClass;
-
+            
             builder.Graph.VisitingTasks.Add(v =>
             {
                 var hasDefaultInstance = BehaviorClassesInitializations.Instance.DefaultInstanceInitializationTokens
                     .Any(token => token.BehaviorClass.Type == StateMachineClass.Type && token.BehaviorClass.Name == stateMachineName);
 
-                return v.StateMachineAddingAsync(stateMachineName, version, ownerClass, parentClass, hasDefaultInstance);
+                return v.StateMachineAddingAsync(stateMachineName, version, hasDefaultInstance);
             });
 
             buildAction(builder);
@@ -139,7 +138,7 @@ namespace Stateflows.StateMachines.Registration
                 var hasDefaultInstance = BehaviorClassesInitializations.Instance.DefaultInstanceInitializationTokens
                     .Any(token => token.BehaviorClass.Type == StateMachineClass.Type && token.BehaviorClass.Name == stateMachineName);
 
-                return v.StateMachineAddingAsync(stateMachineName, version, ownerClass, parentClass, hasDefaultInstance);
+                return v.StateMachineAddingAsync(stateMachineName, version, hasDefaultInstance);
             });
             
             RegisterStateMachine(stateMachineType, builder);
@@ -189,6 +188,12 @@ namespace Stateflows.StateMachines.Registration
                     StateMachinesContextHolder.StateContext.Value = null;
                     StateMachinesContextHolder.TransitionContext.Value = null;
                     StateMachinesContextHolder.BehaviorContext.Value = context.Behavior;
+                    StateMachinesContextHolder.ParentBehaviorContext.Value = context.TryGetParentBehaviorContext(out var parentBehaviorContext)
+                        ? parentBehaviorContext
+                        : null;
+                    StateMachinesContextHolder.OwnerBehaviorContext.Value = context.TryGetOwnerBehaviorContext(out var ownerBehaviorContext)
+                        ? ownerBehaviorContext
+                        : null;
                     StateMachinesContextHolder.StateMachineContext.Value = ((BaseContext)context).StateMachine;
                     StateMachinesContextHolder.ExecutionContext.Value = context;
 
@@ -219,6 +224,12 @@ namespace Stateflows.StateMachines.Registration
                     StateMachinesContextHolder.StateContext.Value = null;
                     StateMachinesContextHolder.TransitionContext.Value = null;
                     StateMachinesContextHolder.BehaviorContext.Value = context.Behavior;
+                    StateMachinesContextHolder.ParentBehaviorContext.Value = context.TryGetParentBehaviorContext(out var parentBehaviorContext)
+                        ? parentBehaviorContext
+                        : null;
+                    StateMachinesContextHolder.OwnerBehaviorContext.Value = context.TryGetOwnerBehaviorContext(out var ownerBehaviorContext)
+                        ? ownerBehaviorContext
+                        : null;
                     StateMachinesContextHolder.StateMachineContext.Value = ((BaseContext)context).StateMachine;
                     StateMachinesContextHolder.ExecutionContext.Value = context;
 
@@ -249,6 +260,12 @@ namespace Stateflows.StateMachines.Registration
                     StateMachinesContextHolder.StateContext.Value = null;
                     StateMachinesContextHolder.TransitionContext.Value = null;
                     StateMachinesContextHolder.BehaviorContext.Value = context.Behavior;
+                    StateMachinesContextHolder.ParentBehaviorContext.Value = context.TryGetParentBehaviorContext(out var parentBehaviorContext)
+                        ? parentBehaviorContext
+                        : null;
+                    StateMachinesContextHolder.OwnerBehaviorContext.Value = context.TryGetOwnerBehaviorContext(out var ownerBehaviorContext)
+                        ? ownerBehaviorContext
+                        : null;
                     StateMachinesContextHolder.StateMachineContext.Value = ((BaseContext)context).StateMachine;
                     StateMachinesContextHolder.ExecutionContext.Value = context;
 
@@ -259,7 +276,7 @@ namespace Stateflows.StateMachines.Registration
         public async Task VisitStateMachinesAsync(IStateMachineVisitor visitor)
         {
             var tasks = StateMachines
-                .Where((item, _) => !item.Key.EndsWith(".current"))
+                .Where((item, _) => !item.Key.EndsWith(".current") && item.Value.ParentClass is null)
                 .Select(item => item.Value)
                 .SelectMany(graph => graph.VisitingTasks);
 

@@ -12,7 +12,6 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         /// </summary>
         /// <typeparam name="TActivity">Activity class; must implement <see cref="IActivity"/> interface</typeparam>
         /// <param name="buildAction">Build action</param>
-        [DebuggerHidden]
         public TReturn AddDoActivity<TActivity>(ActivityUtilsBuildAction buildAction = null)
             where TActivity : class, IActivity;
 

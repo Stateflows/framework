@@ -12,6 +12,8 @@ namespace Stateflows.Activities.Context
         public static readonly AsyncLocal<IFlowContext> FlowContext = new();
         public static AsyncLocal<IExecutionContext> ExecutionContext => CommonContextHolder.ExecutionContext;
         public static AsyncLocal<IBehaviorContext> BehaviorContext => CommonContextHolder.BehaviorContext;
+        public static AsyncLocal<Common.IParentBehaviorContext> ParentBehaviorContext => CommonContextHolder.ParentBehaviorContext;
+        public static AsyncLocal<Common.IOwnerBehaviorContext> OwnerBehaviorContext => CommonContextHolder.OwnerBehaviorContext;
         public static readonly AsyncLocal<IActivityInspection> Inspection = new();
         public static readonly AsyncLocal<IExceptionContext> ExceptionContext = new();
     }

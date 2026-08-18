@@ -10,6 +10,7 @@ using Stateflows.Entities.Engine;
 using Stateflows.Entities.Registration;
 using Stateflows.Entities.Registration.Builders;
 using Stateflows.Entities.Registration.Interfaces;
+using Stateflows.StateMachines;
 
 namespace Stateflows.Entities
 {
@@ -72,7 +73,7 @@ namespace Stateflows.Entities
             {
                 if (!Registers.TryGetValue(stateflowsBuilder, out var register))
                 {
-                    register = new EntitiesRegister();
+                    register = new EntitiesRegister((StateflowsBuilder)stateflowsBuilder);
                     Registers.Add(stateflowsBuilder, register);
 
                     stateflowsBuilder

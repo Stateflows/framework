@@ -16,11 +16,11 @@ public class MetricsInterceptor : BehaviorInterceptor
     private Stopwatch _stopwatch;
     private static double _lastDuration;
 
-    public override Task AfterHydrateAsync(IBehaviorActionContext context)
-        => Task.CompletedTask;
-
-    public override Task BeforeDehydrateAsync(IBehaviorActionContext context)
-        => Task.CompletedTask;
+    // public override Task AfterHydrateAsync(IBehaviorActionContext context)
+    //     => Task.CompletedTask;
+    //
+    // public override Task BeforeDehydrateAsync(IBehaviorActionContext context)
+    //     => Task.CompletedTask;
 
     public override bool BeforeProcessEvent<TEvent>(IEventContext<TEvent> context)
     {
@@ -43,15 +43,15 @@ public class MetricsInterceptor : BehaviorInterceptor
         }
 
         var eventName = Event.GetName(context.Event.GetType());
-        var resourceName = StateflowsMeter.ResourcesByBehaviorClass[context.Behavior.ActualId.BehaviorClass].Name;
+        var resourceName = StateflowsMeter.ResourcesByBehaviorClass[context.Behavior.Id.BehaviorClass].Name;
         
         if (StateflowsMeter.ExecutionDurations.TryGetValue(resourceName, out var histogram))
         {
             histogram.Record(
                 _stopwatch.Elapsed.TotalMilliseconds,
-                new KeyValuePair<string, object?>("behavior.class", context.Behavior.ActualId.BehaviorClass),
-                new KeyValuePair<string, object?>("behavior.id", context.Behavior.ActualId),
-                new KeyValuePair<string, object?>("behavior.id.instance", context.Behavior.ActualId.Instance),
+                new KeyValuePair<string, object?>("behavior.class", context.Behavior.Id.BehaviorClass),
+                new KeyValuePair<string, object?>("behavior.id", context.Behavior.Id),
+                new KeyValuePair<string, object?>("behavior.id.instance", context.Behavior.Id.Instance),
                 new KeyValuePair<string, object?>("event.name", eventName),
                 new KeyValuePair<string, object?>("event.status", Enum.GetName(eventStatus))
             );
@@ -61,9 +61,9 @@ public class MetricsInterceptor : BehaviorInterceptor
         {
             counter.Add(
                 1,
-                new KeyValuePair<string, object?>("behavior.class", context.Behavior.ActualId.BehaviorClass),
-                new KeyValuePair<string, object?>("behavior.id", context.Behavior.ActualId),
-                new KeyValuePair<string, object?>("behavior.id.instance", context.Behavior.ActualId.Instance),
+                new KeyValuePair<string, object?>("behavior.class", context.Behavior.Id.BehaviorClass),
+                new KeyValuePair<string, object?>("behavior.id", context.Behavior.Id),
+                new KeyValuePair<string, object?>("behavior.id.instance", context.Behavior.Id.Instance),
                 new KeyValuePair<string, object?>("event.name", eventName),
                 new KeyValuePair<string, object?>("event.status", Enum.GetName(eventStatus))
             );

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using Stateflows.Activities.Models;
 using Stateflows.Activities.Registration.Interfaces;
 using Stateflows.Activities.Registration.Interfaces.Base;
@@ -34,6 +35,25 @@ namespace Stateflows.Activities.Registration.Builders
 
         IOverridenAcceptEventActionBuilder<TEvent> IOverridenControlFlowBase<IOverridenAcceptEventActionBuilder<TEvent>>.UseControlFlow(string targetNodeName, ControlFlowBuildAction buildAction)
             => UseControlFlow(targetNodeName, buildAction) as IOverridenAcceptEventActionBuilder<TEvent>;
+
+        public IOverridenAcceptEventActionBuilder<TAcceptedEvent> ChangeAcceptedEvent<TAcceptedEvent>()
+            where TAcceptedEvent : TEvent
+        {
+            Node.EventType = typeof(TAcceptedEvent);
+            Node.ActualEventTypes = Graph.StateflowsBuilder.TypeMapper.GetMappedTypes(Node.EventType).ToHashSet();
+
+            var result = new AcceptEventNodeBuilder<TAcceptedEvent>(Node, activityBuilder);
+            
+            if (Node.VisitingTask is not null)
+            {
+                var graph = Node.Graph;
+                var index = graph.VisitingTasks.IndexOf(Node.VisitingTask);
+                Node.VisitingTask = visitor => visitor.AcceptEventNodeAddedAsync<TAcceptedEvent>(graph.Name, graph.Version, Node.Name);
+                graph.VisitingTasks[index] = Node.VisitingTask;
+            }
+
+            return result;
+        }
     }
     
     internal class AcceptEventNodeBuilder<TEvent, TAcceptEventAction>(Node node, BaseActivityBuilder activityBuilder) :
@@ -49,7 +69,7 @@ namespace Stateflows.Activities.Registration.Builders
 
         public IAcceptEventActionBuilder<TEvent, TAcceptEventAction> Configure(Action<TAcceptEventAction> action)
         {
-            throw new NotImplementedException();
+            return this;
         }
         
         IAcceptEventActionBuilder<TEvent, TAcceptEventAction> IObjectFlowBase<IAcceptEventActionBuilder<TEvent, TAcceptEventAction>>.AddFlow<TToken>(string targetNodeName,
@@ -81,5 +101,24 @@ namespace Stateflows.Activities.Registration.Builders
 
         IOverridenAcceptEventActionBuilder<TEvent, TAcceptEventAction> IOverridenControlFlowBase<IOverridenAcceptEventActionBuilder<TEvent, TAcceptEventAction>>.UseControlFlow(string targetNodeName, ControlFlowBuildAction buildAction)
             => UseControlFlow(targetNodeName, buildAction) as IOverridenAcceptEventActionBuilder<TEvent, TAcceptEventAction>;
+
+        public IOverridenAcceptEventActionBuilder<TAcceptedEvent> ChangeAcceptedEvent<TAcceptedEvent>()
+            where TAcceptedEvent : TEvent
+        {
+            Node.EventType = typeof(TAcceptedEvent);
+            Node.ActualEventTypes = Graph.StateflowsBuilder.TypeMapper.GetMappedTypes(Node.EventType).ToHashSet();
+
+            var result = new AcceptEventNodeBuilder<TAcceptedEvent>(Node, activityBuilder);
+            
+            if (Node.VisitingTask is not null)
+            {
+                var graph = Node.Graph;
+                var index = graph.VisitingTasks.IndexOf(Node.VisitingTask);
+                Node.VisitingTask = visitor => visitor.AcceptEventNodeAddedAsync<TAcceptedEvent>(graph.Name, graph.Version, Node.Name);
+                graph.VisitingTasks[index] = Node.VisitingTask;
+            }
+
+            return result;
+        }
     }
 }

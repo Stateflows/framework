@@ -1,8 +1,6 @@
 using System.Linq;
-using System.Threading.Tasks;
-using Stateflows.Activities.Context.Interfaces;
 using Stateflows.Common;
-using Stateflows.StateMachines;
+using Stateflows.Activities.Context.Interfaces;
 
 namespace Stateflows.Activities.Engine;
 
@@ -20,7 +18,10 @@ internal class Behaviors : ActivityPlugin
                 
                 headers[nameof(NoForwarding)] = new NoForwarding();
 
-                context.Behavior.Send(context.Event, headers);
+                if (context.TryGetParentBehaviorContext(out var parentBehaviorContext))
+                {
+                    parentBehaviorContext.Send(context.Event, headers);
+                };
             }
         }
     }

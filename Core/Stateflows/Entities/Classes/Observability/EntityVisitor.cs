@@ -1,4 +1,5 @@
 using System.Threading.Tasks;
+using Stateflows.Entities.Enums;
 
 namespace Stateflows.Entities
 {
@@ -15,6 +16,18 @@ namespace Stateflows.Entities
         public virtual Task EntityTypeAddedAsync<TTemplate, TEntity>(string entityName, int entityVersion)
             where TTemplate : class
             where TEntity : class, IEntity<TTemplate>
+            => Task.CompletedTask;
+
+        public virtual Task FieldAddedAsync<TEntityTemplate, TField>(string entityName, int entityVersion, string fieldName, TField defaultValue, bool computed)
+            where TEntityTemplate : class
+            => Task.CompletedTask;
+
+        public virtual Task MutationAddedAsync<TEntityTemplate, TMutationEvent>(string entityName, int entityVersion)
+            where TEntityTemplate : class
+            => Task.CompletedTask;
+
+        public virtual Task ProjectionAddedAsync<TEntityTemplate, TProjectionTemplate>(string entityName, int entityVersion, PublishScope publishScope)
+            where TEntityTemplate : class
             => Task.CompletedTask;
     }
 }

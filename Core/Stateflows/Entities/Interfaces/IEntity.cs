@@ -4,15 +4,15 @@ using Stateflows.Entities.Attributes;
 
 namespace Stateflows.Entities
 {
-    public interface IEntity<TTemplate>
-        where TTemplate : class
+    public interface IEntity<TEntityTemplate>
+        where TEntityTemplate : class
     {
-        static abstract void Build(IEntityBuilder<TTemplate> builder);
+        static abstract void Build(IEntityBuilder<TEntityTemplate> builder);
     }
 
-    public static class Entity<TTemplate, TEntity>
-        where TTemplate : class
-        where TEntity : class, IEntity<TTemplate>
+    public static class Entity<TEntityTemplate, TEntity>
+        where TEntityTemplate : class
+        where TEntity : class, IEntity<TEntityTemplate>
     {
         public static string Name
         {

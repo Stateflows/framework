@@ -16,15 +16,7 @@ public interface IOverridenAcceptEventActionBuilder<in TEvent> :
     IExceptionHandlerBase<IOverridenAcceptEventActionBuilder<TEvent>>
 {
     IOverridenAcceptEventActionBuilder<TAcceptedEvent> ChangeAcceptedEvent<TAcceptedEvent>()
-        where TAcceptedEvent : TEvent
-    {
-        return null;
-        // var builder = (TransitionBuilder<TEvent>)this;
-        // builder.Edge.TriggerType = typeof(TTrigger);
-        // builder.Edge.Trigger = typeof(TTrigger).GetEventName();
-        //     
-        // return new TransitionBuilder<TTrigger>(builder.Edge);
-    }
+        where TAcceptedEvent : TEvent;
 }
 
 public interface IAcceptEventActionBuilder<in TEvent, out TAcceptEventAction> :
@@ -43,14 +35,6 @@ public interface IOverridenAcceptEventActionBuilder<in TEvent, out TAcceptEventA
     IElementBuilderBase<TAcceptEventAction, IOverridenAcceptEventActionBuilder<TEvent, TAcceptEventAction>>
     where TAcceptEventAction : class, IAcceptEventActionNode<TEvent>
 {
-    IOverridenAcceptEventActionBuilder<TEvent, TAcceptEventAction> ChangeAcceptedEvent<TAcceptedEvent>()
-        where TAcceptedEvent : TEvent
-    {
-        return null;
-        // var builder = (TransitionBuilder<TEvent>)this;
-        // builder.Edge.TriggerType = typeof(TTrigger);
-        // builder.Edge.Trigger = typeof(TTrigger).GetEventName();
-        //     
-        // return new TransitionBuilder<TTrigger>(builder.Edge);
-    }
+    IOverridenAcceptEventActionBuilder<TAcceptedEvent> ChangeAcceptedEvent<TAcceptedEvent>()
+        where TAcceptedEvent : TEvent;
 }

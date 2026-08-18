@@ -5,15 +5,15 @@ namespace Stateflows.Extensions.MinimalAPIs;
 
 internal class StateMachineConfigurationVisitor(MinimalAPIsBuilder minimalApisBuilder) : StateMachines.StateMachineVisitor
 {
-    private BehaviorClass? OwnerClass = null;
+    // private BehaviorClass? OwnerClass = null;
     private bool HasDefaultInstance = false;
     
     public override Task StateMachineTypeAddedAsync<TStateMachine>(string stateMachineName, int stateMachineVersion)
     {
-        if (OwnerClass != null)
-        {
-            return Task.CompletedTask;
-        }
+        // if (OwnerClass != null)
+        // {
+        //     return Task.CompletedTask;
+        // }
         
         var stateMachineType = typeof(TStateMachine);
         if (typeof(IStateMachineEndpointsConfiguration).IsAssignableFrom(stateMachineType))
@@ -26,26 +26,25 @@ internal class StateMachineConfigurationVisitor(MinimalAPIsBuilder minimalApisBu
         return Task.CompletedTask;
     }
 
-    public override Task StateMachineAddingAsync(string stateMachineName, int stateMachineVersion, BehaviorClass? ownerClass = null,
-        BehaviorClass? parentClass = null, bool hasDefaultInstance = false)
+    public override Task StateMachineAddingAsync(string stateMachineName, int stateMachineVersion, bool hasDefaultInstance = false)
     {
-        OwnerClass = ownerClass;
+        // OwnerClass = ownerClass;
         HasDefaultInstance = hasDefaultInstance;
         return Task.CompletedTask;
     }
 
-    public override Task StateMachineAddedAsync(string stateMachineName, int stateMachineVersion)
-    {
-        if (OwnerClass != null)
-        {
-            minimalApisBuilder.ConfigureStateMachines(b =>
-                b.ConfigureStateMachine(
-                    stateMachineName,
-                    b => b.Disable()
-                )
-            );
-        }
-        
-        return base.StateMachineAddedAsync(stateMachineName, stateMachineVersion);
-    }
+    // public override Task StateMachineAddedAsync(string stateMachineName, int stateMachineVersion)
+    // {
+    //     // if (OwnerClass != null)
+    //     // {
+    //     //     minimalApisBuilder.ConfigureStateMachines(b =>
+    //     //         b.ConfigureStateMachine(
+    //     //             stateMachineName,
+    //     //             b => b.Disable()
+    //     //         )
+    //     //     );
+    //     // }
+    //     
+    //     return base.StateMachineAddedAsync(stateMachineName, stateMachineVersion);
+    // }
 }

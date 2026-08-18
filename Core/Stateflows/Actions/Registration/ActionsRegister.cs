@@ -138,6 +138,12 @@ namespace Stateflows.Actions.Registration
             {
                 ActionsContextHolder.ActionContext.Value = (IActionContext)context.Behavior;
                 ActionsContextHolder.BehaviorContext.Value = context.Behavior;
+                ActionsContextHolder.ParentBehaviorContext.Value = context.TryGetParentBehaviorContext(out var parentBehaviorContext)
+                    ? parentBehaviorContext
+                    : null;
+                ActionsContextHolder.OwnerBehaviorContext.Value = context.TryGetOwnerBehaviorContext(out var ownerBehaviorContext)
+                    ? ownerBehaviorContext
+                    : null;
                 ActionsContextHolder.ExecutionContext.Value = context;
                 ContextValues.GlobalValuesHolder.Value = context.Behavior.Values;
 

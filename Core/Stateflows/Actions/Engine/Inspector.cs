@@ -10,7 +10,6 @@ using Stateflows.Common.Extensions;
 using Stateflows.Actions.Context.Classes;
 using Stateflows.Actions.Context.Interfaces;
 using Stateflows.Actions.Registration;
-using Stateflows.Common.Context.Classes;
 
 namespace Stateflows.Actions.Engine
 {
@@ -64,64 +63,33 @@ namespace Stateflows.Actions.Engine
 
         private IActionExceptionHandler[] ExceptionHandlers;
 
-        // private IEnumerable<IActionPlugin> plugins;
-        // public IEnumerable<IActionPlugin> Plugins
-        //     => plugins ??= Executor.ServiceProvider.GetService<IEnumerable<IActionPlugin>>();
-
-        public void AfterHydrate(ActionDelegateContext context)
+        public bool BeforeProcessEvent<TEvent>(EventContext<TEvent> context)
         {
-            // await Plugins.RunSafe(p => p.AfterHydrateAsync(context), nameof(AfterHydrate), Logger);
-            GlobalInterceptor.AfterHydrateAsync(context).Wait();
-            ReverseInterceptors.RunSafe(i => i.AfterHydrate(context), nameof(AfterHydrate), Logger);
-        }
-
-        public void BeforeDehydrate(ActionDelegateContext context)
-        {
-            Interceptors.RunSafe(i => i.BeforeDehydrate(context), nameof(BeforeDehydrate), Logger);
-            GlobalInterceptor.BeforeDehydrateAsync(context).Wait();
-            // await Plugins.RunSafe(p => p.BeforeDehydrateAsync(context), nameof(BeforeDehydrate), Logger);
-        }
-
-        public bool BeforeProcessEvent<TEvent>(Context.Classes.EventContext<TEvent> context)
-        {
-            // var plugin = await Plugins.RunSafe(i => i.BeforeProcessEventAsync(context), nameof(BeforeProcessEvent), Logger);
-            // var global = await GlobalInterceptor.BeforeProcessEvent(
-            //     new Common.Context.Classes.EventContext<TEvent>(context.RootContext.Context, Executor.ServiceProvider, context.Event)
-            // );
             var global = GlobalInterceptor.BeforeProcessEvent(context);
             var local = Interceptors.RunSafe(i => i.BeforeProcessEvent(context), nameof(BeforeProcessEvent), Logger);
 
-            return global && local/* && plugin*/;
+            return global && local;
         }
 
-        public void AfterProcessEvent<TEvent>(Context.Classes.EventContext<TEvent> context, EventStatus eventStatus)
+        public void AfterProcessEvent<TEvent>(EventContext<TEvent> context, EventStatus eventStatus)
         {
-            Interceptors.RunSafe(i => i.AfterProcessEvent(context, eventStatus), nameof(AfterProcessEvent), Logger);
+            ReverseInterceptors.RunSafe(i => i.AfterProcessEvent(context, eventStatus), nameof(AfterProcessEvent), Logger);
             GlobalInterceptor.AfterProcessEvent(context, eventStatus);
-            // await Plugins.RunSafe(p => p.AfterProcessEventAsync(context), nameof(AfterProcessEvent), Logger);
         }
         
         public bool OnActionException(ActionDelegateContext context, Exception exception)
             => ExceptionHandlers.RunSafe(h => h.OnActionException(context, exception), nameof(OnActionException), Logger, false);
 
         public void BeforeActionInitialize(IActionDelegateContext context)
-        {
-            Observers.RunSafe(i => i.BeforeActionInitialize(context), nameof(BeforeActionInitialize), Logger);
-        }
+            => Observers.RunSafe(i => i.BeforeActionInitialize(context), nameof(BeforeActionInitialize), Logger);
 
         public void AfterActionInitialize(IActionDelegateContext context)
-        {
-            ReverseObservers.RunSafe(i => i.AfterActionInitialize(context), nameof(AfterActionInitialize), Logger);
-        }
+            => ReverseObservers.RunSafe(i => i.AfterActionInitialize(context), nameof(AfterActionInitialize), Logger);
 
         public void BeforeActionFinalize(IActionDelegateContext context)
-        {
-            Observers.RunSafe(i => i.BeforeActionFinalize(context), nameof(BeforeActionFinalize), Logger);
-        }
+            => Observers.RunSafe(i => i.BeforeActionFinalize(context), nameof(BeforeActionFinalize), Logger);
 
         public void AfterActionFinalize(IActionDelegateContext context)
-        {
-            ReverseObservers.RunSafe(i => i.AfterActionFinalize(context), nameof(AfterActionFinalize), Logger);
-        }
+            => ReverseObservers.RunSafe(i => i.AfterActionFinalize(context), nameof(AfterActionFinalize), Logger);
     }
 }

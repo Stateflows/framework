@@ -6,7 +6,7 @@ namespace Stateflows.Examples.Behaviors.StateMachines.Document.Interceptors;
 
 public class InfoEnhanceInterceptor : BehaviorInterceptor
 {
-    public override async Task NotificationPublishedAsync<TNotification>(IBehaviorActionContext context, TNotification notification)
+    public override async Task NotificationPublishedAsync<TNotification>(IBehaviorActionContext context, TNotification notification, IDictionary<string, EventHeader> headers)
     {
         if (notification is StateMachineInfo stateMachineInfo)
         {

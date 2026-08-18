@@ -25,6 +25,21 @@
     </ItemGroup>
 
     <ItemGroup>
+        <None Include="..\..\LICENSE">
+            <Pack>True</Pack>
+            <PackagePath>\</PackagePath>
+        </None>
+        <None Include="..\..\README.md">
+            <Pack>True</Pack>
+            <PackagePath>\</PackagePath>
+        </None>
+        <None Include="..\..\stateflows-logo-1024.png">
+            <Pack>True</Pack>
+            <PackagePath>\</PackagePath>
+        </None>
+    </ItemGroup>
+
+    <ItemGroup>
       <PackageReference Include="Microsoft.Orleans.Reminders" Version="10.0.1" />
       <PackageReference Include="Microsoft.Orleans.Sdk" Version="10.0.1" />
       <PackageReference Include="Microsoft.Orleans.Server" Version="10.0.1" />

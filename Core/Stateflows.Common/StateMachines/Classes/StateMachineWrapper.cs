@@ -28,19 +28,21 @@ namespace Stateflows.Common.StateMachines.Classes
         public Task<RequestResult<TResponse>> RequestAsync<TResponse>(IRequest<TResponse> request, IDictionary<string, EventHeader> headers = null)
             => Behavior.RequestAsync(request, headers);
 
+        [Obsolete("Use WatchStatusAsync instead.")]
         public Task<IEnumerable<TNotification>> GetNotificationsAsync<TNotification>(
             DateTime? lastNotificationsCheck = null)
             => Behavior.GetNotificationsAsync<TNotification>(lastNotificationsCheck);
-
+        
+        [Obsolete("Use WatchStatusAsync instead.")]
         public Task<IEnumerable<EventHolder>> GetNotificationsAsync(string[] notificationNames,
             DateTime? lastNotificationsCheck = null)
             => Behavior.GetNotificationsAsync(notificationNames, lastNotificationsCheck);
 
-        public Task<IWatcher> WatchAsync<TNotification>(Action<TNotification> handler, DateTime? replayNotificatonsSince = null)
-            => Behavior.WatchAsync(handler, replayNotificatonsSince);
+        public Task<IWatcher> WatchAsync<TNotification>(Action<TNotification> handler, DateTime? replayNotificationsSince = null)
+            => Behavior.WatchAsync(handler, replayNotificationsSince);
 
-        public Task<IWatcher> WatchAsync(string[] notificationNames, Action<EventHolder> handler, DateTime? replayNotificatonsSince = null)
-            => Behavior.WatchAsync(notificationNames, handler, replayNotificatonsSince);
+        public Task<IWatcher> WatchAsync(string[] notificationNames, Action<EventHolder> handler, DateTime? replayNotificationsSince = null)
+            => Behavior.WatchAsync(notificationNames, handler, replayNotificationsSince);
 
         public void Dispose()
         {

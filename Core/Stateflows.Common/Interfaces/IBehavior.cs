@@ -31,8 +31,10 @@ namespace Stateflows.Common
         public Task<IWatcher> WatchStatusAsync(Func<BehaviorInfo, Task> asyncHandler)
             => WatchStatusAsync(handler: n => _ = asyncHandler(n));
 
+        [Obsolete("Use WatchStatusAsync instead.")]
         public Task<IEnumerable<TNotification>> GetNotificationsAsync<TNotification>(DateTime? lastNotificationsCheck = null);
-
+        
+        [Obsolete("Use WatchStatusAsync instead.")]
         public Task<IEnumerable<EventHolder>> GetNotificationsAsync(string[] notificationNames, DateTime? lastNotificationsCheck = null);
     }
 }

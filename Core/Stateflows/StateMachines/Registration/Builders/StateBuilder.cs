@@ -203,8 +203,17 @@ namespace Stateflows.StateMachines.Registration.Builders
             Vertex.Graph.AllEdges.Add(edge);
 
             transitionBuildAction?.Invoke(new TransitionBuilder<TEvent>(edge));
+
+            edge.VisitingTask = visitor => visitor.TransitionAddedAsync<TEvent>(
+                Vertex.Graph.Name,
+                Vertex.Graph.Version,
+                edge.SourceName,
+                targetStateName == Constants.DefaultTransitionTarget
+                    ? edge.TargetName
+                    : null
+            );
             
-            Vertex.Graph.VisitingTasks.Add(visitor => visitor.TransitionAddedAsync<TEvent>(Vertex.Graph.Name, Vertex.Graph.Version, edge.SourceName, targetStateName == Constants.DefaultTransitionTarget ? edge.TargetName : null));
+            Vertex.Graph.VisitingTasks.Add(edge.VisitingTask);
 
             return this;
         }

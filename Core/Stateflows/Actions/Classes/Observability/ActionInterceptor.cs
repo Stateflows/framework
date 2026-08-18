@@ -5,10 +5,6 @@ namespace Stateflows.Actions;
 
 public abstract class ActionInterceptor : IActionInterceptor
 {
-    public virtual void AfterHydrate(IActionDelegateContext context) {}
-
-    public virtual void BeforeDehydrate(IActionDelegateContext context) {}
-
     public virtual bool BeforeProcessEvent<TEvent>(IEventContext<TEvent> context)
         => true;
 

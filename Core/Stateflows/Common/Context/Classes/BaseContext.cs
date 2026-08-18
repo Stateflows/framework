@@ -30,8 +30,14 @@ namespace Stateflows.Common.Context.Classes
 
         public IServiceProvider ServiceProvider { get; }
 
-        private BehaviorContext behavior;
+        private BehaviorContext? behavior;
         internal BehaviorContext Behavior => behavior ??= new BehaviorContext(Context, ServiceProvider);
+
+        // private BehaviorContext? parentBehavior;
+        // internal BehaviorContext ParentBehavior => parentBehavior ??= new BehaviorContext(Context, ServiceProvider);
+        //
+        // private BehaviorContext? ownerBehavior;
+        // internal BehaviorContext OwnerBehavior => ownerBehavior ??= new BehaviorContext(Context, ServiceProvider);
 
         private IBehaviorLocator behaviorLocator;
         private IBehaviorLocator BehaviorLocator => behaviorLocator ??= ServiceProvider.GetService<IBehaviorLocator>();

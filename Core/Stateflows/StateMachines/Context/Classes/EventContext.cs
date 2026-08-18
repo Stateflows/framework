@@ -51,5 +51,21 @@ namespace Stateflows.StateMachines.Context.Classes
             => StateMachine.TryGetStateContext(stateName, out stateContext);
 
         public IBehaviorContext Behavior => StateMachine;
+        public bool TryGetParentBehaviorContext(out IParentBehaviorContext parentBehaviorContext)
+        {
+            parentBehaviorContext = StateMachine.Context.Context.ContextParentId.HasValue
+                ? StateMachine.Behavior
+                : null;
+            
+            return parentBehaviorContext != null;
+        }
+        public bool TryGetOwnerBehaviorContext(out IOwnerBehaviorContext ownerBehaviorContext)
+        {
+            ownerBehaviorContext = StateMachine.Context.Context.ContextParentId.HasValue
+                ? StateMachine.Behavior
+                : null;
+            
+            return ownerBehaviorContext != null;
+        }
     }
 }

@@ -2,5 +2,5 @@
 
 namespace Stateflows.Entities
 {
-    public sealed class ProjectionRequest<TProjection> : IRequest<TProjection>;
+    public class ProjectionRequest<TProjection> : IRequest<TProjection>;
 }

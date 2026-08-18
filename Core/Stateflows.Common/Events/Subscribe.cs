@@ -9,6 +9,6 @@ namespace Stateflows.Common
         public BehaviorId BehaviorId { get; set; }
 
         [JsonProperty(TypeNameHandling = TypeNameHandling.None)]
-        public List<string> NotificationNames { get; set; } = new List<string>();
+        public List<string> NotificationNames { get; set; } = [];
     }
 }

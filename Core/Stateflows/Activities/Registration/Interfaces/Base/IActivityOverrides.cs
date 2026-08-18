@@ -8,7 +8,7 @@ namespace Stateflows.Activities.Registration.Interfaces.Base
         TReturn UseStructuredActivity(string actionNodeName, OverridenStructuredActivityBuildAction buildAction);
         
         [DebuggerHidden]
-        public TReturn UseStructuredActivity<TStructuredActivity>(OverridenStructuredActivityBuildAction buildAction = null)
+        public TReturn UseStructuredActivity<TStructuredActivity>(OverridenStructuredActivityBuildAction buildAction)
             where TStructuredActivity : class, IStructuredActivityNode
             => UseStructuredActivity(ActivityNode<TStructuredActivity>.Name, buildAction);
         #endregion
@@ -17,16 +17,24 @@ namespace Stateflows.Activities.Registration.Interfaces.Base
         TReturn UseParallelActivity<TParallelizationToken>(string actionNodeName, OverridenParallelActivityBuildAction buildAction);
         
         [DebuggerHidden]
-        public TReturn UseParallelActivity<TParallelizationToken, TStructuredActivity>(OverridenParallelActivityBuildAction buildAction = null)
+        public TReturn UseParallelActivity<TParallelizationToken>(OverridenParallelActivityBuildAction buildAction)
+            => UseParallelActivity<TParallelizationToken>(ParallelActivityNode<TParallelizationToken>.Name, buildAction);
+        
+        [DebuggerHidden]
+        public TReturn UseParallelActivity<TParallelizationToken, TStructuredActivity>(OverridenParallelActivityBuildAction buildAction)
             where TStructuredActivity : class, IStructuredActivityNode
             => UseParallelActivity<TParallelizationToken>(ActivityNode<TStructuredActivity>.Name, buildAction);
         #endregion
         
         #region UseIterativeActivity
-        TReturn UseIterativeActivity<TToken>(string actionNodeName, OverridenIterativeActivityBuildAction buildAction);
+        TReturn UseIterativeActivity<TIterationToken>(string actionNodeName, OverridenIterativeActivityBuildAction buildAction);
         
         [DebuggerHidden]
-        public TReturn UseIterativeActivity<TIterationToken, TIterativeActivity>(OverridenIterativeActivityBuildAction buildAction = null)
+        public TReturn UseIterativeActivity<TIterationToken>(OverridenIterativeActivityBuildAction buildAction)
+            => UseIterativeActivity<TIterationToken>(IterativeActivityNode<TIterationToken>.Name, buildAction);
+        
+        [DebuggerHidden]
+        public TReturn UseIterativeActivity<TIterationToken, TIterativeActivity>(OverridenIterativeActivityBuildAction buildAction)
             where TIterativeActivity : class, IStructuredActivityNode
             => UseIterativeActivity<TIterationToken>(ActivityNode<TIterativeActivity>.Name, buildAction);
         #endregion

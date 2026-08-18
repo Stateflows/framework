@@ -94,7 +94,7 @@ namespace Stateflows.Common.Classes
             return result;
         }
         
-        public async Task<IWatcher> WatchAsync<TNotification>(Action<TNotification> handler, DateTime? replayNotificatonsSince = null)
+        public async Task<IWatcher> WatchAsync<TNotification>(Action<TNotification> handler, DateTime? replayNotificationsSince = null)
         {
             var watcher = new Watcher(this);
             lock (handlers)
@@ -112,7 +112,7 @@ namespace Stateflows.Common.Classes
             }
 
             tenantAccessor.CurrentTenantId = await tenantProvider.GetCurrentTenantIdAsync();
-            var lastNotificationCheck = replayNotificatonsSince ?? DateTime.Now;
+            var lastNotificationCheck = replayNotificationsSince ?? DateTime.Now;
             var pendingNotifications = await notificationsHub.GetNotificationsAsync<TNotification>(
                 Id,
                 lastNotificationCheck
@@ -126,7 +126,7 @@ namespace Stateflows.Common.Classes
             return watcher;
         }
 
-        public async Task<IWatcher> WatchAsync(string[] notificationNames, Action<EventHolder> handler, DateTime? replayNotificatonsSince = null)
+        public async Task<IWatcher> WatchAsync(string[] notificationNames, Action<EventHolder> handler, DateTime? replayNotificationsSince = null)
         {
             var watcher = new Watcher(this);
             lock (handlers)
@@ -146,7 +146,7 @@ namespace Stateflows.Common.Classes
             }
 
             tenantAccessor.CurrentTenantId = await tenantProvider.GetCurrentTenantIdAsync();
-            var lastNotificationCheck = replayNotificatonsSince ?? DateTime.Now;
+            var lastNotificationCheck = replayNotificationsSince ?? DateTime.Now;
             var pendingNotifications = await notificationsHub.GetNotificationsAsync(
                 Id,
                 notificationNames,
@@ -184,6 +184,7 @@ namespace Stateflows.Common.Classes
             return Task.CompletedTask;
         }
 
+        [Obsolete("Use WatchStatusAsync instead.")]
         public async Task<IEnumerable<TNotification>> GetNotificationsAsync<TNotification>(
             DateTime? lastNotificationsCheck = null)
         {
@@ -194,6 +195,7 @@ namespace Stateflows.Common.Classes
             );
         }
 
+        [Obsolete("Use WatchStatusAsync instead.")]
         public async Task<IEnumerable<EventHolder>> GetNotificationsAsync(string[] notificationNames,
             DateTime? lastNotificationsCheck = null)
         {

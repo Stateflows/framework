@@ -17,30 +17,32 @@ namespace Stateflows.Common.Subscription
         IServiceProvider serviceProvider
     ) : IStateflowsSubscriber
     {
-        public async Task PublishAsync<TNotification>(TNotification notificationEvent, StateflowsContext senderContext,
-            IDictionary<string, EventHeader> headers = null)
+        public async Task PublishAsync<TNotification>(BehaviorId publisherBehaviorId, TNotification notificationEvent, StateflowsContext senderContext,
+            IDictionary<string, EventHeader>? headers = null)
         {
-            var strictOwnershipHeader = headers?.Values.OfType<StrictOwnership>().FirstOrDefault();
-            var strictOwnershipAttribute = typeof(TNotification).GetCustomAttribute<StrictOwnershipAttribute>();
-            var id = strictOwnershipHeader != null || strictOwnershipAttribute != null
-                ? senderContext.Id
-                : senderContext.ContextOwnerId ?? senderContext.Id;
-            
             var notificationType = typeof(TNotification);
             var ttlAttribute = notificationType.GetCustomAttribute<TimeToLiveAttribute>();
             var retainAttribute = notificationType.GetCustomAttribute<RetainAttribute>();
+            headers = headers?.ToDictionary() ?? [];
             var headersArray = headers?.Values.ToArray() ?? [];
             var eventHolder = new EventHolder<TNotification>()
             {
                 Payload = notificationEvent,
-                SenderId = id,
+                SenderId = publisherBehaviorId,
                 SentAt = DateTime.Now,
-                Headers = headers?.ToDictionary() ?? [],
+                Headers = headers as Dictionary<string, EventHeader>,
                 TimeToLive = ttlAttribute?.SecondsToLive ?? headersArray.OfType<TimeToLive>().FirstOrDefault()?.SecondsToLive ?? 0,
                 Retained = retainAttribute != null || headersArray.OfType<Retain>().FirstOrDefault() != null
             };
 
-            await commonInterceptor.NotificationPublishedAsync(new BehaviorActionContext(senderContext, serviceProvider), notificationEvent);
+            var context = new BehaviorActionContext(senderContext, serviceProvider)
+            {
+                Headers = senderContext.ExecutionTriggerHolder!.Headers,
+                ExecutionTrigger = senderContext.ExecutionTriggerHolder!.BoxedPayload,
+                ExecutionTriggerId = senderContext.ExecutionTriggerHolder!.Id
+            };
+            
+            await commonInterceptor.NotificationPublishedAsync(context, notificationEvent, headers!);
 
             if (senderContext.Subscribers.TryGetValue(Event<TNotification>.Name, out var behaviorIds))
             {

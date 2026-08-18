@@ -1,0 +1,28 @@
+/* Stateflows Dashboard global styles */
+@import "primeicons/primeicons.css";
+
+*, *::before, *::after { box-sizing: border-box; }
+
+:root {
+  --sf-brand:          #0089BF;
+  --sf-brand-dark:     #006d99;
+  --sf-sidebar-bg:     #152229;
+  --sf-sidebar-width:  220px;
+  --sf-bg:             #f4f7fa;
+  --sf-surface:        #ffffff;
+  --sf-border:         #e2e8f0;
+  --sf-text:           #1e293b;
+  --sf-text-muted:     #64748b;
+  --sf-success:        #22c55e;
+  --sf-warning:        #f59e0b;
+  --sf-error:          #ef4444;
+}
+
+html, body {
+  height: 100%;
+  margin: 0;
+  font-family: 'Inter', 'Segoe UI', system-ui, sans-serif;
+  font-size: 14px;
+  color: var(--sf-text);
+  background: var(--sf-bg);
+}

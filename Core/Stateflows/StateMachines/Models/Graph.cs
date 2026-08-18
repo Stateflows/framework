@@ -17,7 +17,9 @@ namespace Stateflows.StateMachines.Models
 {
     internal class Graph
     {
-        internal string? ResourceName = null;
+        internal string? ResourceName { get; set; } = null;
+        
+        internal string? EntityName { get; set; }
 
         internal readonly List<Func<IStateMachineVisitor, Task>> VisitingTasks = new List<Func<IStateMachineVisitor, Task>>();
         

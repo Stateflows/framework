@@ -7,10 +7,9 @@ internal class FinalizedNotification : ActivityObserver
 {
     public override void AfterActivityFinalize(IActivityFinalizationContext context)
     {
-        var stateflowsContext = ((IRootContext)context).Context.Context;
-        if (stateflowsContext.ContextParentId != null)
+        if (context.TryGetParentBehaviorContext(out var parentBehaviorContext))
         {
-            context.Behavior.Send(new DoActivityFinalized());
+            parentBehaviorContext.Send(new DoActivityFinalized());
         }
     }
 }

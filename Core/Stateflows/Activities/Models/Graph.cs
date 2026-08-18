@@ -13,7 +13,7 @@ namespace Stateflows.Activities.Models
 {
     internal class Graph : Node
     {
-        internal string ResourceName = null;
+        internal string? ResourceName { get; set; }= null;
         
         internal readonly List<Func<IActivityVisitor, Task>> VisitingTasks = new List<Func<IActivityVisitor, Task>>();
         
@@ -55,7 +55,7 @@ namespace Stateflows.Activities.Models
         public readonly List<ActivityInterceptorFactoryAsync> InterceptorFactories = [];
         public readonly List<ActivityObserverFactoryAsync> ObserverFactories = [];
 
-        // [DebuggerHidden]
+        [DebuggerHidden]
         public void Build()
         {
             if (Built)

@@ -1,4 +1,3 @@
-using System.Diagnostics;
 using StateMachine.IntegrationTests.Utils;
 using Stateflows.Actions;
 using Stateflows.Actions.Registration.Interfaces;

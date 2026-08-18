@@ -4,11 +4,16 @@ using Stateflows.Extensions.MinimalAPIs.Attributes;
 
 namespace Stateflows.Examples.Common.Events;
 
-public class Review : IRequest<ReviewResponse>
+public class BaseReview : IRequest<ReviewResponse>
 {
     [MinLength(8)]
     public string Content { get; set; }
     public int Rating { get; set; } = 42;
+}
+
+public class Review : BaseReview
+{
+    public bool Recommended { get; set; }
 }
 
 public class ReviewResponse

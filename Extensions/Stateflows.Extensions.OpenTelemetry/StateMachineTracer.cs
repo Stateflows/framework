@@ -41,22 +41,22 @@ namespace Stateflows.Extensions.OpenTelemetry
                 if (header is ActivityHeader activityHeader)
                 {
                     EventProcessingActivity = Source.StartActivity(
-                        $"State Machine '{context.Behavior.ActualId.Name.ToShortName()}:{context.Behavior.ActualId.InstanceText}' processing {eventName}",
+                        $"State Machine '{context.Behavior.Id.Name.ToShortName()}:{context.Behavior.Id.InstanceText}' processing {eventName}",
                         ActivityKind.Internal,
                         parentContext: activityHeader.ActivityContext
                     );
                 }
                 
                 EventProcessingActivity ??= Source.StartActivity(
-                    $"State Machine '{context.Behavior.ActualId.Name.ToShortName()}:{context.Behavior.ActualId.InstanceText}' processing {eventName}"
+                    $"State Machine '{context.Behavior.Id.Name.ToShortName()}:{context.Behavior.Id.InstanceText}' processing {eventName}"
                 );
                 
-                EventProcessingActivity.AddTag("StateMachineId", $"{context.Behavior.ActualId.Name.ToShortName()}:{context.Behavior.ActualId.InstanceText}");
+                EventProcessingActivity.AddTag("StateMachineId", $"{context.Behavior.Id.Name.ToShortName()}:{context.Behavior.Id.InstanceText}");
                 EventProcessingActivity.AddTag("Event", eventName);
                 
                 Logger.LogTrace(
                     message: "State Machine '{StateMachineId}' received event '{Event}', processing",
-                    $"{context.Behavior.ActualId.Name.ToShortName()}:{context.Behavior.ActualId.InstanceText}",
+                    $"{context.Behavior.Id.Name.ToShortName()}:{context.Behavior.Id.InstanceText}",
                     eventName
                 );
             }
@@ -66,7 +66,7 @@ namespace Stateflows.Extensions.OpenTelemetry
 
         public void AfterProcessEvent<TEvent>(IEventContext<TEvent> context, EventStatus eventStatus)
         {
-            if (context.Behavior.ActualId.Type != BehaviorType.StateMachine)
+            if (context.Behavior.Id.Type != BehaviorType.StateMachine)
             {
                 return;
             }
@@ -219,14 +219,14 @@ namespace Stateflows.Extensions.OpenTelemetry
                 if (header is ActivityHeader activityHeader)
                 {
                     InitializerActivity = Source.StartActivity(
-                        $"State Machine '{context.Behavior.ActualId.Name.ToShortName()}:{context.Behavior.ActualId.InstanceText}' initialized{(ImplicitInitialization ? " implicitly" : "")}",
+                        $"State Machine '{context.Behavior.Id.Name.ToShortName()}:{context.Behavior.Id.InstanceText}' initialized{(ImplicitInitialization ? " implicitly" : "")}",
                         ActivityKind.Internal,
                         parentContext: activityHeader.ActivityContext
                     );
                 }
                 
                 InitializerActivity ??= Source.StartActivity(
-                    $"State Machine '{context.Behavior.ActualId.Name.ToShortName()}:{context.Behavior.ActualId.InstanceText}' initialized{(ImplicitInitialization ? " implicitly" : "")}"
+                    $"State Machine '{context.Behavior.Id.Name.ToShortName()}:{context.Behavior.Id.InstanceText}' initialized{(ImplicitInitialization ? " implicitly" : "")}"
                 );
                 
                 EventProcessingActivity = InitializerActivity;
@@ -246,7 +246,7 @@ namespace Stateflows.Extensions.OpenTelemetry
                 if (!initialized)
                 {
                     InitializerActivity.DisplayName =
-                        $"Activity '{context.Behavior.ActualId.Name.ToShortName()}:{context.Behavior.ActualId.InstanceText}' not initialized";
+                        $"Activity '{context.Behavior.Id.Name.ToShortName()}:{context.Behavior.Id.InstanceText}' not initialized";
                 }
 
                 InitializerActivity.Stop();
@@ -459,7 +459,7 @@ namespace Stateflows.Extensions.OpenTelemetry
             {
                 Logger.LogTrace(
                     message: "State Machine '{StateMachineId}' processed event '{Event}' with result '{EventStatus}'",
-                    $"{context.Behavior.ActualId.Name.ToShortName()}:{context.Behavior.ActualId.InstanceText}",
+                    $"{context.Behavior.Id.Name.ToShortName()}:{context.Behavior.Id.InstanceText}",
                     eventName,
                     eventStatus
                 );
@@ -471,7 +471,7 @@ namespace Stateflows.Extensions.OpenTelemetry
                     exception: exception,
                     args:
                     [
-                        $"{context.Behavior.ActualId.Name.ToShortName()}:{context.Behavior.ActualId.InstanceText}",
+                        $"{context.Behavior.Id.Name.ToShortName()}:{context.Behavior.Id.InstanceText}",
                         eventName
                     ]
                 );
@@ -499,10 +499,10 @@ namespace Stateflows.Extensions.OpenTelemetry
             }
         }
 
-        public void AfterHydrate(IStateMachineActionContext context)
-        { }
-
-        public void BeforeDehydrate(IStateMachineActionContext context)
-        { }
+        // public void AfterHydrate(IStateMachineActionContext context)
+        // { }
+        //
+        // public void BeforeDehydrate(IStateMachineActionContext context)
+        // { }
     }
 }

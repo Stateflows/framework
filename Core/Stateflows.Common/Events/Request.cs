@@ -1,8 +1,5 @@
 ﻿using System.Threading;
 using System.Collections.Generic;
-using System.Reflection;
-using System.Threading.Tasks;
-using Stateflows.Common.Classes;
 
 namespace Stateflows.Common
 {
@@ -72,6 +69,5 @@ namespace Stateflows.Common
         }
     }
 
-    public interface IRequest<in TResponse>
-    { }
+    public interface IRequest<in TResponse>;
 }

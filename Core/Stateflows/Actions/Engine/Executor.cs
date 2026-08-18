@@ -1,6 +1,7 @@
 using System;
 using System.Diagnostics;
 using System.Linq;
+using System.Runtime;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -56,7 +57,7 @@ namespace Stateflows.Actions.Engine
             
             using var serviceScope = ServiceProvider.CreateScope();
             using var context = new ActionDelegateContext(StateflowsContext, this, eventHolder, serviceScope.ServiceProvider);
-            inspector.AfterHydrate(context);
+            // inspector.AfterHydrate(context);
         }
 
         public async Task DehydrateAsync(EventHolder eventHolder)
@@ -65,7 +66,7 @@ namespace Stateflows.Actions.Engine
 
             using var scope = ServiceProvider.CreateScope();
             using var context = new ActionDelegateContext(StateflowsContext, this, eventHolder, scope.ServiceProvider);
-            inspector.BeforeDehydrate(context);
+            // inspector.BeforeDehydrate(context);
         }
         
         public async Task<EventStatus> DoProcessAsync<TEvent>(EventHolder<TEvent> eventHolder)
@@ -111,7 +112,7 @@ namespace Stateflows.Actions.Engine
                 {
                     behaviorInfoRequest.Payload.Respond(new BehaviorInfo()
                     {
-                        Id = StateflowsContext.ContextOwnerId ?? StateflowsContext.Id,
+                        Id = StateflowsContext.Id,
                         BehaviorStatus = StateflowsContext.Status,
                         ExpectedEvents = StateflowsContext.Status switch
                         {
@@ -220,7 +221,7 @@ namespace Stateflows.Actions.Engine
             {
                 var output = context.OutputTokens.OfType<TokenHolder<bool>>().FirstOrDefault()?.Payload ?? false;
 
-                if (output)
+                if (output && context.TryGetParentBehaviorContext(out var parentBehaviorContext))
                 {
                     var headers = context.Headers
                         .Where(h => h.Value is not TransitionGuardRequest)
@@ -231,7 +232,7 @@ namespace Stateflows.Actions.Engine
                         GuardIdentifier = guardRequest.GuardIdentifier
                     };
 
-                    context.Send(eventHolder.Payload, headers);
+                    parentBehaviorContext.Send(eventHolder.Payload, headers);
                 }
                         
                 var behaviorId = context.RootContext.Context.ContextOwnerId.Value;

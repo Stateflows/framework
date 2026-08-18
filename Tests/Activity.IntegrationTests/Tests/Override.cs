@@ -141,15 +141,14 @@ namespace Activity.IntegrationTests.Tests
     public class ActivityWithAcceptEvent : IActivity
     {
         public static bool AcceptEventExecuted = false;
+        public static bool TestActionExecuted = false;
         
         public static void Build(IActivityBuilder builder) => builder
             .AddInitial(b => b
-                .AddControlFlow("accept")
+                .AddControlFlow<SomeEventAcceptEventAction>()
                 .AddControlFlow("final")
             )
-            .AddAcceptEventAction<SomeEvent>(
-                "accept",
-                async c => AcceptEventExecuted = true,
+            .AddAcceptEventAction<SomeEvent, SomeEventAcceptEventAction>(
                 b => b.AddControlFlow("final")
             )
             .AddAction("final", async c => { })
@@ -232,6 +231,29 @@ namespace Activity.IntegrationTests.Tests
             .AddInitial(b => b.AddControlFlow("action1"))
             .AddAction("action1", async c => ExecutionCount++)
         ;
+    }
+    
+    public class TestAction(IInputTokens<IInherited> input) : IActionNode
+    {
+        public async Task ExecuteAsync(CancellationToken cancellationToken = default)
+            => ActivityWithAcceptEvent.TestActionExecuted = true;
+    }
+
+    public class SomeEventAcceptEventAction(
+        IOutputTokens<int> intOutput,
+        IOutputTokens<BaseEvent> someEventOutput
+    ) : IAcceptEventActionNode<BaseEvent>
+    {
+        public Task ExecuteAsync(BaseEvent @event, CancellationToken cancellationToken)
+        {
+            ActivityWithAcceptEvent.AcceptEventExecuted = true;
+
+            intOutput.Add(42);
+            
+            someEventOutput.Add(@event);
+            
+            return Task.CompletedTask;
+        }
     }
 
     #endregion
@@ -344,11 +366,43 @@ namespace Activity.IntegrationTests.Tests
                     // UseActivity + UseAcceptEventAction tests
                     .AddActivity("overrideAcceptEvent", b => b
                         .UseActivity<ActivityWithAcceptEvent>(b => b
-                            .UseAcceptEventAction<SomeEvent>("accept", b => b
+                            .UseAcceptEventAction<SomeEvent, SomeEventAcceptEventAction>(b => b
                                 .UseControlFlow("final", b => b
                                     .AddGuard(Guards.Allow)
                                 )
+                                .AddFlow<int>("x")
                             )
+                            .AddAction("x", async c =>
+                            {
+                                var tokens = c.GetTokensOfType<int>();
+                                if (tokens.Count() == 1 && tokens.FirstOrDefault() != 42)
+                                {
+                                    throw new InvalidOperationException("Token not received");
+                                }
+                                else
+                                {
+                                    c.Behavior.Publish(tokens.FirstOrDefault());
+                                }
+                            })
+                        )
+                    )
+
+                    // UseActivity + UseAcceptEventAction + ChangeAcceptedEvent + tests
+                    .AddActivity("changeAcceptEvent", b => b
+                        .UseActivity<ActivityWithAcceptEvent>(b => b
+                            .UseAcceptEventAction<SomeEvent, SomeEventAcceptEventAction>(b => b
+                                .ChangeAcceptedEvent<SomeInheritedEvent>()
+                                .AddFlow<SomeInheritedEvent, TestAction>(b => b
+                                    .AddGuard(async c => c.Token is not null)
+                                    // .AddTransformation(async c => c.Token as SomeInheritedEvent)
+                                )
+                                .AddFlow<int, MergeNode>()
+                            )
+                            .AddAction<TestAction>()
+                            .AddMerge(b => b
+                                .AddFlow<int, FinalNode>()
+                            )
+                            .AddFinal()
                         )
                     )
 
@@ -547,15 +601,42 @@ namespace Activity.IntegrationTests.Tests
         public async Task UseAcceptEventActionOverride()
         {
             ActivityWithAcceptEvent.AcceptEventExecuted = false;
+            var counter = 0;
             
             if (ActivityLocator.TryLocateActivity(new ActivityId("overrideAcceptEvent", "x"), out var a))
             {
+                await using var watcher = await a.WatchAsync<int>(t => counter++);
                 await a.SendAsync(new Initialize());
+                await a.SendAsync(new SomeEvent());
             }
 
             // Even without sending event, activity should complete
             // The override should work without errors
             Assert.IsNotNull(a);
+            Assert.AreEqual(1, counter);
+        }
+
+        [TestMethod]
+        public async Task ChangeAcceptEventActionOverride()
+        {
+            ActivityWithAcceptEvent.AcceptEventExecuted = false;
+            ActivityWithAcceptEvent.TestActionExecuted = false;
+            SendResult? result1 = null;
+            SendResult? result2 = null;
+            
+            if (ActivityLocator.TryLocateActivity(new ActivityId("changeAcceptEvent", "x"), out var a))
+            {
+                result1 = await a.SendAsync(new SomeEvent());
+                result2 = await a.SendAsync(new SomeInheritedEvent());
+            }
+
+            // Even without sending event, activity should complete
+            // The override should work without errors
+            Assert.IsNotNull(a);
+            
+            Assert.AreEqual(EventStatus.NotConsumed, result1?.Status);
+            Assert.AreEqual(EventStatus.Consumed, result2?.Status);
+            Assert.IsTrue(ActivityWithAcceptEvent.TestActionExecuted);
         }
 
         [TestMethod]

@@ -8,6 +8,7 @@ public class BaseGetData
 }
 
 [NotificationWatch<List<Dictionary<string, DataNotification>>>]
+[NotificationWatch<string>]
 public class GetData : BaseGetData
 {
     public DateTime From { get; set; }
