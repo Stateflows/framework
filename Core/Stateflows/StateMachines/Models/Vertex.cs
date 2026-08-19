@@ -64,6 +64,8 @@ namespace Stateflows.StateMachines.Models
         public string BehaviorType { get; set; }
         public readonly List<Type> BehaviorEventTypes = [];
 
+        public Dictionary<string, object> Metadata { get; } = [];
+
         public BehaviorId GetBehaviorId(StateMachineId hostId) => new(BehaviorType, BehaviorName, hostId.Instance);
 
         public bool IsChildOf(Vertex vertex)

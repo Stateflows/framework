@@ -73,6 +73,8 @@ namespace Stateflows.StateMachines.Models
         public string TargetName { get; set; }
         public Vertex Target { get; set; }
 
+        public Dictionary<string, object> Metadata { get; } = [];
+
         public IEnumerable<Edge> GetActualEdges()
             => Target?.Type == VertexType.Junction
                 ? Target.Edges.Values.Select(MergeWith).ToArray()

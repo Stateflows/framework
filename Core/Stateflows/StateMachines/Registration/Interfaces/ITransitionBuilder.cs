@@ -1,17 +1,20 @@
 ﻿using System.Diagnostics;
 using Stateflows.Common;
+using Stateflows.Common.Interfaces;
 using Stateflows.StateMachines.Registration.Builders;
 using Stateflows.StateMachines.Registration.Interfaces.Base;
 
 namespace Stateflows.StateMachines.Registration.Interfaces
 {
     public interface ITransitionBuilder<TEvent> :
+        IElementMetadataBuilder<ITransitionBuilder<TEvent>>,
         ITriggeredTransitionUtils<ITransitionBuilder<TEvent>>,
         ITargetedTransitionUtils<ITransitionBuilder<TEvent>>,
         IEffect<TEvent, ITransitionBuilder<TEvent>>,
         IGuard<TEvent, ITransitionBuilder<TEvent>>;
 
     public interface IOverridenTransitionBuilder<TEvent> :
+        IElementMetadataBuilder<IOverridenTransitionBuilder<TEvent>>,
         ITriggeredTransitionUtils<IOverridenTransitionBuilder<TEvent>>,
         ITargetedTransitionUtils<IOverridenTransitionBuilder<TEvent>>,
         IEffect<TEvent, IOverridenTransitionBuilder<TEvent>>,

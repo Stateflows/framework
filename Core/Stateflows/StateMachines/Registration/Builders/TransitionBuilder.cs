@@ -2,6 +2,7 @@
 using System.Linq;
 using System.Threading.Tasks;
 using System.Collections.Generic;
+using Stateflows.Common.Interfaces;
 using Stateflows.Common.Registration;
 using Stateflows.Common.Utilities;
 using Stateflows.StateMachines.Models;
@@ -31,7 +32,9 @@ namespace Stateflows.StateMachines.Registration.Builders
         IOverridenElseDefaultTransitionBuilder,
         IBehaviorBuilder,
         IEdgeBuilder,
-        IVertexBuilder
+        IVertexBuilder,
+        IMetadataBuilder,
+        IParentMetadataBuilder
     {
         public Edge Edge { get; private set; }
         public Vertex Vertex { get; private set; }
@@ -232,5 +235,39 @@ namespace Stateflows.StateMachines.Registration.Builders
 
         IOverridenElseDefaultTransitionBuilder IDefaultEffect<IOverridenElseDefaultTransitionBuilder>.AddEffect(params Func<ITransitionContext<Completion>, Task>[] effectsAsync)
             => (this as TransitionBuilder<Completion>)!.AddEffect(effectsAsync) as IOverridenElseDefaultTransitionBuilder;
+
+        private TransitionBuilder<TEvent> AddMetadata(string key, object value)
+        {
+            Edge.Metadata.Add(key, value);
+
+            return this;
+        }
+
+        ITransitionBuilder<TEvent> IElementMetadataBuilder<ITransitionBuilder<TEvent>>.AddMetadata(string key, object value)
+            => AddMetadata(key, value);
+
+        IInternalTransitionBuilder<TEvent> IElementMetadataBuilder<IInternalTransitionBuilder<TEvent>>.AddMetadata(string key, object value)
+            => AddMetadata(key, value);
+
+        IDefaultTransitionBuilder IElementMetadataBuilder<IDefaultTransitionBuilder>.AddMetadata(string key, object value)
+            => AddMetadata(key, value);
+
+        IDefaultTransitionEffectBuilder IElementMetadataBuilder<IDefaultTransitionEffectBuilder>.AddMetadata(string key, object value)
+            => AddMetadata(key, value);
+
+        IOverridenTransitionBuilder<TEvent> IElementMetadataBuilder<IOverridenTransitionBuilder<TEvent>>.AddMetadata(string key, object value)
+            => AddMetadata(key, value);
+
+        IOverridenInternalTransitionBuilder<TEvent> IElementMetadataBuilder<IOverridenInternalTransitionBuilder<TEvent>>.AddMetadata(string key, object value)
+            => AddMetadata(key, value);
+
+        IOverridenDefaultTransitionBuilder IElementMetadataBuilder<IOverridenDefaultTransitionBuilder>.AddMetadata(string key, object value)
+            => AddMetadata(key, value);
+
+        IOverridenDefaultTransitionEffectBuilder IElementMetadataBuilder<IOverridenDefaultTransitionEffectBuilder>.AddMetadata(string key, object value)
+            => AddMetadata(key, value);
+
+        public Dictionary<string, object> Metadata => Edge.Metadata;
+        public Dictionary<string, object> ParentMetadata => Edge.Source.Metadata;
     }
 }

@@ -11,6 +11,7 @@ using Stateflows.Common.Context;
 using Stateflows.Common.Context.Classes;
 using Stateflows.Common.Utilities;
 using Stateflows.Entities;
+using Stateflows.Utils;
 
 namespace Stateflows.Actions.Context.Classes
 {
@@ -221,5 +222,12 @@ namespace Stateflows.Actions.Context.Classes
 
         void ISends<IOwnerBehaviorContext>.Send<TEvent>(TEvent @event, IDictionary<string, EventHeader> headers)
             => Send<TEvent>(Context.ContextOwnerId!.Value, @event, headers);
+
+        public void PassTokensOfTypeOn<TToken>()
+            => OutputTokens.AddRange(InputTokens.OfTokenType<TToken>());
+
+        public void PassAllTokensOn()
+            => OutputTokens.AddRange(InputTokens);
+
     }
 }

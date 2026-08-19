@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
@@ -7,6 +8,7 @@ using Stateflows.Actions.Registration.Interfaces;
 using Stateflows.Activities;
 using Stateflows.Activities.Registration.Interfaces;
 using Stateflows.Common;
+using Stateflows.Common.Interfaces;
 using Stateflows.Common.Registration;
 using Stateflows.Common.Utilities;
 using Stateflows.StateMachines.Models;
@@ -43,7 +45,8 @@ namespace Stateflows.StateMachines.Registration.Builders
         IStateBuilderInfo,
         IBehaviorBuilder,
         IGraphBuilder,
-        IVertexBuilder
+        IVertexBuilder,
+        IMetadataBuilder
     {
         public Vertex Vertex { get; }
 
@@ -976,5 +979,7 @@ namespace Stateflows.StateMachines.Registration.Builders
 
         IBehaviorOverridenRegionalizedStateBuilder IStateUtilsOverrides<IBehaviorOverridenRegionalizedStateBuilder>.UseDeferredEvent<TEvent>(OverridenDeferralBuildAction<TEvent> buildAction)
             => UseDeferredEvent(buildAction) as IBehaviorOverridenRegionalizedStateBuilder;
+
+        public Dictionary<string, object> Metadata => Vertex.Metadata;
     }
 }
