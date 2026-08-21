@@ -11,6 +11,13 @@ internal class ActionBuilder(ActionModel model) : IActionBuilder
 {
     public ActionModel Model => model;
     
+    public IActionBuilder SetCustomBehaviorClassType(string behaviorClassType)
+    {
+        model.BehaviorClassType = behaviorClassType;
+
+        return this;
+    }
+    
     public IActionBuilder AddInterceptor(ActionInterceptorFactoryAsync interceptorFactory)
     {
         model.InterceptorFactories.Add(interceptorFactory);
@@ -116,6 +123,13 @@ internal class ActionBuilder<TAction>(ActionModel model) : ActionBuilder(model),
 
     IActionBuilder<TAction> IActionUtils<IActionBuilder<TAction>>.SetIsStateless(bool isStateless)
         => SetIsStateless(isStateless) as IActionBuilder<TAction>;
+
+    public IActionBuilder<TAction> SetCustomBehaviorClassType(string behaviorClassType)
+    {
+        model.BehaviorClassType = behaviorClassType;
+
+        return this;
+    }
 
     IActionBuilder<TAction> IActionObservability<IActionBuilder<TAction>>.AddInterceptor(ActionInterceptorFactoryAsync interceptorFactory)
         => AddInterceptor(interceptorFactory) as IActionBuilder<TAction>;

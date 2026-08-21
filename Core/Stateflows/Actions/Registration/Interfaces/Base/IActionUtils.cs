@@ -4,4 +4,5 @@ public interface IActionUtils<out TReturn>
 {
     TReturn SetResourceName(string resourceName);
     TReturn SetIsStateless(bool isStateless);
+    TReturn SetCustomBehaviorClassType(string behaviorClassType);
 }

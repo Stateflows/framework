@@ -11,5 +11,8 @@ namespace Stateflows.Common
 
         public static string ToCamelCase(this string value)
             => System.Text.Json.JsonNamingPolicy.CamelCase.ConvertName(value);
+        
+        public static string ToSnakeCase(this string value)
+            => System.Text.Json.JsonNamingPolicy.SnakeCaseLower.ConvertName(value.Replace('.', '_').Replace('-', '_'));
     }
 }

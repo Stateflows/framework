@@ -10,6 +10,7 @@ namespace Stateflows.Actions.Models
     {
         internal string ResourceName { get; set; } = null;
         public string Name { get; set; }
+        public string BehaviorClassType { get; set; } = BehaviorType.Action;
         public int Version { get; set; }
         
         public BehaviorClass? ParentClass { get; set; }
