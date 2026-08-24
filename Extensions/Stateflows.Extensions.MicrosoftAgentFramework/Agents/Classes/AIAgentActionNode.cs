@@ -1,3 +1,4 @@
+using System.Text.Json;
 using Microsoft.Extensions.AI;
 using Stateflows.Activities;
 using Stateflows.Activities.Context.Interfaces;
@@ -14,10 +15,15 @@ public class AIAgentActionNode(IActivityContext activityContext, IInput input, I
     public async Task ExecuteAsync(CancellationToken cancellationToken = default)
     {
         const string agentThreadKey = "system::agentThread";
-        var agentThread = await activityContext.Values.GetOrDefaultAsync(agentThreadKey, new ChatHistoryAgentThread());
+        // var agentThread = await activityContext.Values.GetOrDefaultAsync(agentThreadKey, new ChatHistoryAgentThread());
         // var kernelBuilder = Kernel.CreateBuilder();
         // kernelBuilder.Services.AddSingleton<IFunctionInvocationFilter, ApprovalFilterExample>();
         var agent = await AIAgentFactoryAsync(activityContext.ServiceProvider);
+        var session = await agent.CreateSessionAsync(cancellationToken: cancellationToken);
+        
+        var sessionDataString = await activityContext.Values.GetOrDefaultAsync(agentThreadKey, string.Empty);
+        var sessionData = JsonElement.Parse(sessionDataString ?? string.Empty);
+        await agent.DeserializeSessionAsync(sessionData, cancellationToken: cancellationToken);
         
         var responseStream = input.HasTokensOfType<string>()
             ? agent.RunStreamingAsync(input.GetTokensOfType<string>().First(), cancellationToken: cancellationToken)
@@ -29,8 +35,12 @@ public class AIAgentActionNode(IActivityContext activityContext, IInput input, I
         {
             activityContext.Publish(response);
         }
+        
+        sessionData = await agent.SerializeSessionAsync(session, cancellationToken: cancellationToken);
+        sessionDataString = sessionData.GetString();
+        await activityContext.Values.SetAsync(agentThreadKey, sessionDataString);
                 
-        await activityContext.Values.SetAsync(agentThreadKey, agentThread);
+        // await activityContext.Values.SetAsync(agentThreadKey, agentThread);
     }
 
     protected virtual AIAgentFactoryAsync AIAgentFactoryAsync { get; private set; } = null!;

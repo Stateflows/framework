@@ -1,5 +1,6 @@
 using System.Reflection;
 using Microsoft.Extensions.AI;
+using Stateflows.Common;
 using Stateflows.Common.Interfaces;
 using Stateflows.MAF.AIAgents.Registration;
 using Stateflows.MAF.AIAgents.Classes;
@@ -10,10 +11,10 @@ namespace Stateflows.MAF.AIAgents.Extensions;
 
 public static class StateBuilderExtensions
 {
-    public static IStateBuilder AddDoAgent(this IStateBuilder stateBuilder, AIAgentFactory aiAgentFactory, AgentBuildAction? buildAction = null)
+    public static IBehaviorStateBuilder AddDoAgent(this IStateBuilder stateBuilder, AIAgentFactory aiAgentFactory, AgentBuildAction? buildAction = null)
         => AddDoAgent(stateBuilder, sp => Task.FromResult(aiAgentFactory(sp)), buildAction);
     
-    public static IStateBuilder AddDoAgent(this IStateBuilder stateBuilder, AIAgentFactoryAsync aiAgentFactoryAsync, AgentBuildAction? buildAction = null)
+    public static IBehaviorStateBuilder AddDoAgent(this IStateBuilder stateBuilder, AIAgentFactoryAsync aiAgentFactoryAsync, AgentBuildAction? buildAction = null)
         => stateBuilder.AddDoAction<AIAgentAction>(b =>
         {
             b.AddConfiguration(aiAgentFactoryAsync);
@@ -26,7 +27,7 @@ public static class StateBuilderExtensions
         where TTokenConsumerAgent : class, ITokenConsumerAiAgent<TToken>
         => TTokenConsumerAgent.FormatTokenAsync(iaiAgentContext, token);
     
-    public static IStateBuilder AddDoAgent<TAgent>(this IStateBuilder stateBuilder, AgentBuildAction? buildAction = null)
+    public static IBehaviorStateBuilder AddDoAgent<TAgent>(this IStateBuilder stateBuilder, AgentBuildAction? buildAction = null)
         where TAgent : class, IAIAgent
         => stateBuilder.AddDoAction<AIAgentAction<TAgent>>(b =>
         {

@@ -34,7 +34,9 @@ namespace Stateflows.Common
             TenantProvider = ServiceProvider.GetRequiredService<IStateflowsTenantProvider>();
             ValueStorage = ServiceProvider.GetRequiredService<IStateflowsValueStorage>();
             Validators = ServiceProvider.GetRequiredService<IEnumerable<IStateflowsValidator>>().ToArray();
-            Processors = ServiceProvider.GetRequiredService<IEnumerable<IEventProcessor>>().ToDictionary(p => p.BehaviorType, p => p);
+            Processors = ServiceProvider.GetRequiredService<IEnumerable<IEventProcessor>>()
+                .SelectMany(p => p.BehaviorTypes.Select(t => new { BehaviorTypes = t, Processor = p }))
+                .ToDictionary(p => p.BehaviorTypes, p => p.Processor);
         }
 
         [DebuggerHidden]

@@ -15,7 +15,7 @@ namespace Stateflows.Entities.Engine
         IServiceProvider serviceProvider
     ) : IEventProcessor
     {
-        public string BehaviorType => global::Stateflows.BehaviorType.Entity;
+        public string[] BehaviorTypes => [ BehaviorType.Entity ];
 
         [DebuggerHidden]
         public async Task<EventStatus> ProcessEventAsync<TEvent>(BehaviorId id, EventHolder<TEvent> eventHolder, List<Exception> exceptions)

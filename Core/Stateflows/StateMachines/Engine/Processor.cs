@@ -24,7 +24,7 @@ namespace Stateflows.StateMachines.Engine
         IServiceProvider provider
     ) : IEventProcessor, IStateflowsProcessor
     {
-        public string BehaviorType => Constants.StateMachine;
+        public string[] BehaviorTypes => [ Constants.StateMachine ];
 
         [DebuggerHidden]
         private Task<EventStatus> TryHandleEventAsync<TEvent>(EventContext<TEvent> context)

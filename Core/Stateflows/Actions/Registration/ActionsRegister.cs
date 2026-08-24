@@ -33,6 +33,10 @@ namespace Stateflows.Actions.Registration
 
         private readonly Dictionary<string, int> CurrentVersions = new();
 
+        private string[]? supportedClassTypes = null;
+        internal string[] SupportedClassTypes
+            => supportedClassTypes ??= Actions.Values.Select(f => f.BehaviorClassType).Distinct().ToArray();
+
         public BehaviorClass? OwnerClass { get; set; }
         public BehaviorClass? ParentClass { get; set; }
 

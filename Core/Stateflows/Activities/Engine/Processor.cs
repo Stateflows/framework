@@ -3,8 +3,6 @@ using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
 using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations;
-using System.Diagnostics;
 using Microsoft.Extensions.DependencyInjection;
 using Stateflows.Common;
 using Stateflows.Common.Interfaces;
@@ -24,7 +22,7 @@ namespace Stateflows.Activities.Engine
         IServiceProvider provider
     ) : IEventProcessor, IStateflowsProcessor
     {
-        string IEventProcessor.BehaviorType => BehaviorType.Activity;
+        public string[] BehaviorTypes => [ BehaviorType.Activity ];
 
         private Task<EventStatus> TryHandleEventAsync<TEvent>(EventContext<TEvent> context)
         {

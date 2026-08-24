@@ -20,7 +20,7 @@ namespace Stateflows.Actions.Engine
         IServiceProvider provider
     ) : IEventProcessor, IStateflowsProcessor
     {
-        string IEventProcessor.BehaviorType => BehaviorType.Action;
+        public string[] BehaviorTypes => register.SupportedClassTypes;
 
         public async Task<EventStatus> ProcessEventAsync<TEvent>(BehaviorId id, EventHolder<TEvent> eventHolder, List<Exception> exceptions)
         {

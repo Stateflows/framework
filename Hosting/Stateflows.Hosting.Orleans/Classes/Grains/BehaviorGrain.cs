@@ -16,7 +16,7 @@ internal class BehaviorGrain(
     private IGrainTimer? Timer;
     private string? TenantId;
     private BehaviorId BehaviorId;
-    private readonly Dictionary<string, IEventProcessor> Processors = processors.ToDictionary(p => p.BehaviorType, p => p);
+    private readonly Dictionary<string, IEventProcessor> Processors = processors.ToDictionary(p => p.BehaviorTypes, p => p);
     private readonly IStateflowsValidator[] Validators = validators.ToArray();
     public override Task OnActivateAsync(CancellationToken cancellationToken)
     {

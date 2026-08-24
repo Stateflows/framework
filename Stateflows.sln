@@ -76,6 +76,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Stateflows.Extensions.Micro
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Stateflows.Extensions.MicrosoftAgentFramework.Common", "Extensions\Stateflows.Extensions.MicrosoftAgentFramework.Common\Stateflows.Extensions.MicrosoftAgentFramework.Common.csproj", "{A1312FDB-4591-4B7C-8665-9EB4A5F50139}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AIAgent.IntegrationTests", "Tests\AIAgent.IntegrationTests\AIAgent.IntegrationTests.csproj", "{44416E9D-1A47-4824-91EF-A11AB9815169}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -186,6 +188,10 @@ Global
 		{A1312FDB-4591-4B7C-8665-9EB4A5F50139}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{A1312FDB-4591-4B7C-8665-9EB4A5F50139}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{A1312FDB-4591-4B7C-8665-9EB4A5F50139}.Release|Any CPU.Build.0 = Release|Any CPU
+		{44416E9D-1A47-4824-91EF-A11AB9815169}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{44416E9D-1A47-4824-91EF-A11AB9815169}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{44416E9D-1A47-4824-91EF-A11AB9815169}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{44416E9D-1A47-4824-91EF-A11AB9815169}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -217,6 +223,7 @@ Global
 		{AAAA869E-6CC0-4795-AC7E-152765C3FB47} = {6DF754BF-A3C8-4620-B012-8FF57337EC50}
 		{F558FF1C-02A3-40F3-B173-C59F226675B8} = {580A6B03-79AD-430C-AEF6-80EC6A02FA61}
 		{A1312FDB-4591-4B7C-8665-9EB4A5F50139} = {580A6B03-79AD-430C-AEF6-80EC6A02FA61}
+		{44416E9D-1A47-4824-91EF-A11AB9815169} = {76D44611-8D90-4E93-BA44-AAB939A742AE}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {602A9FD6-5053-42E4-AEAE-2813DF169A3C}
