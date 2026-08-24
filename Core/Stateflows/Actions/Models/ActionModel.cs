@@ -28,6 +28,11 @@ namespace Stateflows.Actions.Models
         
         public List<ActionObserverFactoryAsync> ObserverFactories { get; set; } = [];
 
+        public List<Type> ConsumedEventTypes { get; } = [];
+        public List<Type> ProducedEventTypes { get; } = [];
+        public List<Type> ConsumedTokenTypes { get; } = [];
+        public List<Type> ProducedTokenTypes { get; } = [];
+
         internal void Build(StateflowsBuilder stateflowsBuilder)
         {
             if (stateflowsBuilder.ResourceNames.TryGetValue(ResourceName ?? string.Empty, out var resourceName))

@@ -18,8 +18,9 @@ internal class ActionVisitor(IEndpointRouteBuilder routeBuilder, Interceptor int
     public Dictionary<string, List<(HateoasLink, BehaviorStatus[])>> HateoasLinks { get; set; } = new();
     private BehaviorClass? OwnerClass = null;
     public bool HasDefaultInstance { get; private set; } = false;
-
-    public override Task ActionAddingAsync(string actionName, int actionVersion, BehaviorClass? ownerClass = null, BehaviorClass? parentClass = null, bool hasDefaultInstance = false)
+    
+    public override Task ActionAddingAsync(string actionName, int actionVersion, string? behaviorClassType = null,
+        BehaviorClass? ownerClass = null, BehaviorClass? parentClass = null, bool hasDefaultInstance = false)
     {
         OwnerClass = ownerClass;
         HasDefaultInstance = hasDefaultInstance;
@@ -107,7 +108,7 @@ internal class ActionVisitor(IEndpointRouteBuilder routeBuilder, Interceptor int
                             );
                             // workaround for return code 200 regardless behavior actual status
                             requestResult.Status = EventStatus.Consumed;
-                            return requestResult.ToResult([], requestResult.Response, HateoasLinks);
+                            return requestResult.ToResult(method ?? "[no method]", route ?? "[no path]", [], requestResult.Response, HateoasLinks);
                         }
                     }
 
@@ -175,7 +176,7 @@ internal class ActionVisitor(IEndpointRouteBuilder routeBuilder, Interceptor int
                             var behaviorInfo = (await behavior.GetStatusAsync(new Dictionary<string, EventHeader>() { { nameof(NoImplicitInitialization), new NoImplicitInitialization() } }))
                                 .Response;
                             var sendResult = new SendResult(EventStatus.Consumed, new EventValidation(true));
-                            return sendResult.ToResult(notifications, behaviorInfo, HateoasLinks);
+                            return sendResult.ToResult(method ?? "[no method]", route ?? "[no path]", notifications, behaviorInfo, HateoasLinks);
                         }
                     }
                     return Results.NotFound();
@@ -212,7 +213,7 @@ internal class ActionVisitor(IEndpointRouteBuilder routeBuilder, Interceptor int
                     {
                         var sendResult = await behavior.FinalizeAsync();
                         var behaviorInfo = (await behavior.GetStatusAsync(new Dictionary<string, EventHeader>() { { nameof(NoImplicitInitialization), new NoImplicitInitialization() } })).Response;
-                        return sendResult.ToResult([], behaviorInfo, HateoasLinks);
+                        return sendResult.ToResult(method ?? "[no method]", route ?? "[no path]", [], behaviorInfo, HateoasLinks);
                     }
 
                     return Results.NotFound();
@@ -250,7 +251,7 @@ internal class ActionVisitor(IEndpointRouteBuilder routeBuilder, Interceptor int
                     {
                         var sendResult = await behavior.ResetAsync();
                         var behaviorInfo = (await behavior.GetStatusAsync(new Dictionary<string, EventHeader>() { { nameof(NoImplicitInitialization), new NoImplicitInitialization() } })).Response;
-                        return sendResult.ToResult([], behaviorInfo, HateoasLinks);
+                        return sendResult.ToResult(method ?? "[no method]", route ?? "[no path]", [], behaviorInfo, HateoasLinks);
                     }
 
                     return Results.NotFound();
@@ -288,7 +289,7 @@ internal class ActionVisitor(IEndpointRouteBuilder routeBuilder, Interceptor int
                         {
                             var sendResult = await behavior.SendAsync(new Initialize());
                             var behaviorInfo = (await behavior.GetStatusAsync(new Dictionary<string, EventHeader>() { { nameof(NoImplicitInitialization), new NoImplicitInitialization() } })).Response;
-                            return sendResult.ToResult([], behaviorInfo, HateoasLinks);
+                            return sendResult.ToResult(method ?? "[no method]", route ?? "[no path]", [], behaviorInfo, HateoasLinks);
                         }
 
                         return Results.NotFound();
@@ -372,7 +373,7 @@ internal class ActionVisitor(IEndpointRouteBuilder routeBuilder, Interceptor int
                             );
                             // workaround for return code 200 regardless behavior actual status
                             requestResult.Status = EventStatus.Consumed;
-                            return requestResult.ToResult([], requestResult.Response, HateoasLinks);
+                            return requestResult.ToResult(method ?? "[no method]", route ?? "[no path]", [], requestResult.Response, HateoasLinks);
                         }
                     }
 
@@ -439,7 +440,7 @@ internal class ActionVisitor(IEndpointRouteBuilder routeBuilder, Interceptor int
                             var behaviorInfo = (await behavior.GetStatusAsync(new Dictionary<string, EventHeader>() { { nameof(NoImplicitInitialization), new NoImplicitInitialization() } }))
                                 .Response;
                             var sendResult = new SendResult(EventStatus.Consumed, new EventValidation(true));
-                            return sendResult.ToResult(notifications, behaviorInfo, HateoasLinks);
+                            return sendResult.ToResult(method ?? "[no method]", route ?? "[no path]", notifications, behaviorInfo, HateoasLinks);
                         }
                     }
                     return Results.NotFound();

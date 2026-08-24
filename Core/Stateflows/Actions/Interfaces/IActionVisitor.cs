@@ -5,7 +5,7 @@ namespace Stateflows.Actions
 {
     public interface IActionVisitor
     {
-        Task ActionAddingAsync(string actionName, int actionVersion, BehaviorClass? ownerClass = null, BehaviorClass? parentClass = null, bool hasDefaultInstance = false);
+        Task ActionAddingAsync(string actionName, int actionVersion, string? behaviorClassType = null, BehaviorClass? ownerClass = null, BehaviorClass? parentClass = null, bool hasDefaultInstance = false);
 
         Task ActionAddedAsync(string actionName, int actionVersion);
         

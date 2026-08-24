@@ -10,6 +10,7 @@ using Stateflows.Actions.Exceptions;
 using Stateflows.Actions.Models;
 using Stateflows.Actions.Registration.Builders;
 using Stateflows.Actions.Registration.Interfaces;
+using Stateflows.Common;
 using Stateflows.Common.Classes;
 using Stateflows.Common.Initializer;
 using Stateflows.Common.Interfaces;
@@ -24,8 +25,9 @@ namespace Stateflows.Actions.Registration
 
         public readonly List<ActionObserverFactoryAsync> GlobalObserverFactories = [];
 
-        private readonly MethodInfo ActionTypeAddedAsyncMethod =
-            typeof(IActionVisitor).GetMethod(nameof(IActionVisitor.ActionTypeAddedAsync));
+        private readonly MethodInfo ActionTypeAddedAsyncMethod = typeof(IActionVisitor).GetMethod(nameof(IActionVisitor.ActionTypeAddedAsync));
+
+        private readonly MethodInfo CustomEventAddedAsyncMethod = typeof(IActionVisitor).GetMethod(nameof(IActionVisitor.CustomEventAddedAsync));
 
         public readonly Dictionary<string, ActionModel> Actions = new();
 
@@ -68,8 +70,16 @@ namespace Stateflows.Actions.Registration
                 var hasDefaultInstance = BehaviorClassesInitializations.Instance.DefaultInstanceInitializationTokens
                     .Any(t => t.BehaviorClass.Type == ActionClass.Type && t.BehaviorClass.Name == actionName);
 
-                await v.ActionAddingAsync(actionName, version, actionModel?.OwnerClass, actionModel?.ParentClass, hasDefaultInstance);
+                await v.ActionAddingAsync(actionName, version, actionModel.BehaviorClassType, actionModel?.OwnerClass, actionModel?.ParentClass, hasDefaultInstance);
                 await v.ActionAddedAsync(actionName, version);
+                var eventTypes = new List<Type>();
+                eventTypes.AddRange(actionModel.ConsumedEventTypes);
+                eventTypes.AddRange(actionModel.ConsumedTokenTypes);
+                var methods = eventTypes.Select(t => CustomEventAddedAsyncMethod.MakeGenericMethod(t)).ToArray();
+                foreach (var method in methods)
+                {
+                    await (Task)method.Invoke(v, [actionName, version, new[] { BehaviorStatus.Initialized }]);
+                }
             };
 
             actionModel = new ActionModel()
@@ -114,17 +124,37 @@ namespace Stateflows.Actions.Registration
             var ownerClass = OwnerClass;
             var parentClass = ParentClass;
 
+            // Func<IActionVisitor, Task> visitingAction = async v =>
+            // {
+            //     var hasDefaultInstance = BehaviorClassesInitializations.Instance.DefaultInstanceInitializationTokens
+            //         .Any(t => t.BehaviorClass.Type == ActionClass.Type && t.BehaviorClass.Name == actionName);
+            //
+            //     await v.ActionAddingAsync(actionName, version, ownerClass, parentClass, hasDefaultInstance);
+            //     await v.ActionAddedAsync(actionName, version);
+            //     await (Task)method.Invoke(v, [actionName, version]);
+            // };
+            
+            ActionModel actionModel = null;
+            
             Func<IActionVisitor, Task> visitingAction = async v =>
             {
                 var hasDefaultInstance = BehaviorClassesInitializations.Instance.DefaultInstanceInitializationTokens
-                    .Any(t => t.BehaviorClass.Type == ActionClass.Type && t.BehaviorClass.Name == actionName);
+                    .Any(t => t.BehaviorClass.Type == actionModel.BehaviorClassType && t.BehaviorClass.Name == actionName);
 
-                await v.ActionAddingAsync(actionName, version, ownerClass, parentClass, hasDefaultInstance);
+                await v.ActionAddingAsync(actionName, version, actionModel.BehaviorClassType, actionModel?.OwnerClass, actionModel?.ParentClass, hasDefaultInstance);
                 await v.ActionAddedAsync(actionName, version);
-                await (Task)method.Invoke(v, [actionName, version]);
+                await (Task)ActionTypeAddedAsyncMethod.Invoke(v, [actionName, version]);
+                var eventTypes = new List<Type>();
+                eventTypes.AddRange(actionModel.ConsumedEventTypes);
+                eventTypes.AddRange(actionModel.ConsumedTokenTypes);
+                var methods = eventTypes.Select(t => CustomEventAddedAsyncMethod.MakeGenericMethod(t)).ToArray();
+                foreach (var method in methods)
+                {
+                    await (Task)method.Invoke(v, [actionName, version, new[] { BehaviorStatus.Initialized }]);
+                }
             };
 
-            var actionModel = new ActionModel()
+            actionModel = new ActionModel()
             {
                 Name = actionName,
                 Version = version,

@@ -38,7 +38,9 @@ internal class ActivityVisitor(
         RegisterEventEndpoint<T>(CurrentActivityName);
     }
 
-    public Dictionary<string, List<(HateoasLink, BehaviorStatus[])>> HateoasLinks { get; set; } = new();
+    public static Dictionary<string, List<(HateoasLink, BehaviorStatus[])>> HateoasLinks { get; } = new();
+
+    Dictionary<string, List<(HateoasLink, BehaviorStatus[])>> IBehaviorClassVisitor.HateoasLinks => HateoasLinks;
 
     public override Task InitializerAddedAsync<TInitializationEvent>(string activityName, int activityVersion)
     {
@@ -247,7 +249,7 @@ internal class ActivityVisitor(
                                     : new Dictionary<string, EventHeader>() { { nameof(NoImplicitInitialization), new NoImplicitInitialization() } });
                             // workaround for return code 200 regardless behavior actual status
                             requestResult.Status = EventStatus.Consumed;
-                            return requestResult.ToResult([], requestResult.Response, HateoasLinks);
+                            return requestResult.ToResult(method ?? "[no method]", route ?? "[no path]", [], requestResult.Response, HateoasLinks);
                         }
                     }
 
@@ -315,7 +317,7 @@ internal class ActivityVisitor(
                             var behaviorInfo = (await behavior.GetStatusAsync(new Dictionary<string, EventHeader>() { { nameof(NoImplicitInitialization), new NoImplicitInitialization() } }))
                                 .Response;
                             var sendResult = new SendResult(EventStatus.Consumed, new EventValidation(true));
-                            return sendResult.ToResult(notifications, behaviorInfo, HateoasLinks);
+                            return sendResult.ToResult(method ?? "[no method]", route ?? "[no path]", notifications, behaviorInfo, HateoasLinks);
                         }
                     }
 
@@ -360,11 +362,11 @@ internal class ActivityVisitor(
                         // var result = compoundResult.Response.Results.First();
                         // var behaviorInfo = ((EventHolder<ActivityInfo>)compoundResult.Response.Results.Last().Response).Payload;
                         //
-                        // return result.ToResult([], behaviorInfo, HateoasLinks);
+                        // return result.ToResult(method ?? "[no method]", route ?? "[no path]", [], behaviorInfo, HateoasLinks);
 
                         var sendResult = await behavior.FinalizeAsync();
                         var behaviorInfo = (await behavior.GetStatusAsync(new Dictionary<string, EventHeader>() { { nameof(NoImplicitInitialization), new NoImplicitInitialization() } })).Response;
-                        return sendResult.ToResult([], behaviorInfo, HateoasLinks);
+                        return sendResult.ToResult(method ?? "[no method]", route ?? "[no path]", [], behaviorInfo, HateoasLinks);
                     }
 
                     return Results.NotFound();
@@ -405,11 +407,11 @@ internal class ActivityVisitor(
                         // var result = compoundResult.Response.Results.First();
                         // var behaviorInfo = ((EventHolder<BehaviorInfo>)compoundResult.Response.Results.Last().Response).Payload;
                         //
-                        // return result.ToResult([], behaviorInfo, HateoasLinks);
+                        // return result.ToResult(method ?? "[no method]", route ?? "[no path]", [], behaviorInfo, HateoasLinks);
 
                         var sendResult = await behavior.ResetAsync();
                         var behaviorInfo = (await behavior.GetStatusAsync(new Dictionary<string, EventHeader>() { { nameof(NoImplicitInitialization), new NoImplicitInitialization() } })).Response;
-                        return sendResult.ToResult([], behaviorInfo, HateoasLinks);
+                        return sendResult.ToResult(method ?? "[no method]", route ?? "[no path]", [], behaviorInfo, HateoasLinks);
                     }
 
                     return Results.NotFound();
@@ -492,7 +494,7 @@ internal class ActivityVisitor(
                                     : new Dictionary<string, EventHeader>() { { nameof(NoImplicitInitialization), new NoImplicitInitialization() } });
                             // workaround for return code 200 regardless behavior actual status
                             requestResult.Status = EventStatus.Consumed;
-                            return requestResult.ToResult([], requestResult.Response, HateoasLinks);
+                            return requestResult.ToResult(method ?? "[no method]", route ?? "[no path]", [], requestResult.Response, HateoasLinks);
                         }
                     }
 
@@ -559,7 +561,7 @@ internal class ActivityVisitor(
                             var behaviorInfo = (await behavior.GetStatusAsync(new Dictionary<string, EventHeader>() { { nameof(NoImplicitInitialization), new NoImplicitInitialization() } }))
                                 .Response;
                             var sendResult = new SendResult(EventStatus.Consumed, new EventValidation(true));
-                            return sendResult.ToResult(notifications, behaviorInfo, HateoasLinks);
+                            return sendResult.ToResult(method ?? "[no method]", route ?? "[no path]", notifications, behaviorInfo, HateoasLinks);
                         }
                     }
 

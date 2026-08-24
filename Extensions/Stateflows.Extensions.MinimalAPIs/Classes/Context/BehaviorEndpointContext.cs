@@ -51,7 +51,7 @@ public class BehaviorEndpointContext : IBehaviorEndpointContext
         var behaviorInfo = GetBehaviorInfo();
         var metadata = behaviorInfo.ToMetadata();
         
-        return new EndpointResponse(behaviorInfo.ToHateoasLinks(HateoasLinks), metadata);
+        return new EndpointResponse(behaviorInfo.ToHateoasLinks("", "", HateoasLinks), metadata);
     }
 
     public EndpointResponse<T> Response<T>(T result)
@@ -59,6 +59,6 @@ public class BehaviorEndpointContext : IBehaviorEndpointContext
         var behaviorInfo = GetBehaviorInfo();
         var metadata = behaviorInfo.ToMetadata();
         
-        return new EndpointResponse<T>(result, behaviorInfo.ToHateoasLinks(HateoasLinks), metadata);
+        return new EndpointResponse<T>(result, behaviorInfo.ToHateoasLinks("", "", HateoasLinks), metadata);
     }
 }

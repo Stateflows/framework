@@ -5,6 +5,7 @@ using Stateflows.Utils;
 using Stateflows.Activities.Engine;
 using Stateflows.Activities.Models;
 using Stateflows.Activities.Context.Interfaces;
+using Stateflows.Common;
 
 namespace Stateflows.Activities.Context.Classes
 {
@@ -24,5 +25,12 @@ namespace Stateflows.Activities.Context.Classes
                 .SelectMany(stream => stream.Tokens)
                 .ToTokensOfType<TToken>()
                 .ToArray();
+        
+        public bool HasTokensOfType<TToken>()
+            => Context
+                .GetNodeStreams(Node, ThreadId, true)
+                .SelectMany(stream => stream.Tokens)
+                .OfType<TokenHolder<TToken>>()
+                .Any();
     }
 }

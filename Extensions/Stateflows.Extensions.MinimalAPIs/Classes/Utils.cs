@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Reflection;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
@@ -20,10 +21,24 @@ internal static class Utils
             _ => throw new ArgumentOutOfRangeException()
         };
     
-    internal static IEnumerable<HateoasLink> ToHateoasLinks(this BehaviorInfo behaviorInfo, Dictionary<string, List<(HateoasLink, BehaviorStatus[])>> hateoasLinks)
+    internal static IEnumerable<HateoasLink> ToHateoasLinks(this BehaviorInfo behaviorInfo, string method, string path, Dictionary<string, List<(HateoasLink, BehaviorStatus[])>> hateoasLinks)
     {
         var links = new List<HateoasLink>();
 
+        if (behaviorInfo is null)
+        {
+            Debug.WriteLine($"~~~> {method} {path} - ToHateoasLinks(): BehaviorInfo is null, returning empty links.");
+            
+            return links; 
+        }
+        
+        if (hateoasLinks is null)
+        {
+            Debug.WriteLine($"~~~> {method} {path} - ToHateoasLinks(): HateoasLinks dictionary is null, returning empty links.");
+            
+            return links;
+        }
+        
         links.AddRange(
             behaviorInfo.ExpectedEvents.SelectMany(expectedEvent =>
                 hateoasLinks.TryGetValue($"{behaviorInfo.Id.Name}:{(behaviorInfo.Id.Instance == string.Empty ? "default" : "standard")}:event:{expectedEvent.ToShortName().ToCamelCase()}", out var eventLinks)
@@ -106,16 +121,16 @@ internal static class Utils
                 Href = $"/{routePrefix}{link.Item1.Href.Replace("{instance}", behaviorInfo.Id.Instance)}"
             });
     
-    public static IResult ToResult<TResponse>(this RequestResult<TResponse> result, IEnumerable<EventHolder> notifications, BehaviorInfo behaviorInfo, Dictionary<string, List<(HateoasLink, BehaviorStatus[])>> customHateoasLinks)
+    public static IResult ToResult<TResponse>(this RequestResult<TResponse> result, string method, string path, IEnumerable<EventHolder> notifications, BehaviorInfo behaviorInfo, Dictionary<string, List<(HateoasLink, BehaviorStatus[])>> customHateoasLinks)
     {
-        var response = new ResponseBody<TResponse>(result, notifications, behaviorInfo.ToHateoasLinks(customHateoasLinks), behaviorInfo.ToMetadata());
+        var response = new ResponseBody<TResponse>(result, notifications, behaviorInfo.ToHateoasLinks(method, path, customHateoasLinks), behaviorInfo.ToMetadata());
         var jsonResult = StateflowsJsonConverter.SerializeObject(response, true);
         return jsonResult.ToResult(result.Status);
     }
     
-    public static IResult ToResult(this SendResult result, IEnumerable<EventHolder> notifications, BehaviorInfo behaviorInfo, Dictionary<string, List<(HateoasLink, BehaviorStatus[])>> customHateoasLinks)
+    public static IResult ToResult(this SendResult result, string method, string path, IEnumerable<EventHolder> notifications, BehaviorInfo behaviorInfo, Dictionary<string, List<(HateoasLink, BehaviorStatus[])>> customHateoasLinks)
     {
-        var response = new ResponseBody(result, notifications, behaviorInfo.ToHateoasLinks(customHateoasLinks), behaviorInfo.ToMetadata());
+        var response = new ResponseBody(result, notifications, behaviorInfo.ToHateoasLinks(method, path, customHateoasLinks), behaviorInfo.ToMetadata());
         var jsonResult = StateflowsJsonConverter.SerializeObject(response, true);
         return jsonResult.ToResult(result.Status);
     }

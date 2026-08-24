@@ -65,6 +65,9 @@ namespace Stateflows.Actions.Context.Classes
 
         public IEnumerable<TToken> GetTokensOfType<TToken>()
             => InputTokens.OfType<TokenHolder<TToken>>().Select(tokenHolder => tokenHolder.Payload);
+        
+        public bool HasTokensOfType<TToken>()
+            => InputTokens.OfType<TokenHolder<TToken>>().Any();
 
         public void Output<TToken>(TToken token)
             => OutputTokens.Add(token.ToTokenHolder());

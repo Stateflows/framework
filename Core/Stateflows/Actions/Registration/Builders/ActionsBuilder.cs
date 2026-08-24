@@ -7,6 +7,7 @@ using Stateflows.Actions.Attributes;
 using Stateflows.Common.Extensions;
 using Stateflows.Common.Interfaces;
 using Stateflows.Actions.Registration.Interfaces;
+using Stateflows.Actions.Registration.Interfaces.Base;
 
 namespace Stateflows.Actions.Registration.Builders
 {
@@ -87,6 +88,26 @@ namespace Stateflows.Actions.Registration.Builders
                 buildAction = b =>
                 {
                     actionType.CallStaticMethod(nameof(IActionConfiguration.Configure), [typeof(IActionBuilder)], [b]);
+                    originalBuildAction?.Invoke(b);
+                };
+            }
+
+            var consumedEvents = actionType
+                .GetInterfaces()
+                .Where(i => i.IsGenericType && i.GetGenericTypeDefinition() == typeof(IEventConsumer<>))
+                .Select(i => i.GetGenericArguments().First())
+                .ToArray();
+            
+            if (consumedEvents.Any())
+            {
+                var customEventAddedAsyncMethod = typeof(IActionUtils<IActionBuilder<TAction>>).GetMethod(nameof(IActionUtils<IActionBuilder<TAction>>.AddConsumedEvent))!;
+                var originalBuildAction = buildAction;
+                buildAction = b =>
+                {
+                    _ = consumedEvents
+                        .Select(eventType => (IActionBuilder<TAction>)customEventAddedAsyncMethod.MakeGenericMethod(eventType).Invoke(b, []))
+                        .ToArray();
+                    
                     originalBuildAction?.Invoke(b);
                 };
             }

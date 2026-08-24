@@ -38,7 +38,9 @@ internal class StateMachineVisitor(
         RegisterEventEndpoint<T>(CurrentStateMachineName);
     }
 
-    public Dictionary<string, List<(HateoasLink, BehaviorStatus[])>> HateoasLinks { get; set; } = new();
+    public static Dictionary<string, List<(HateoasLink, BehaviorStatus[])>> HateoasLinks { get; } = new();
+
+    Dictionary<string, List<(HateoasLink, BehaviorStatus[])>> IBehaviorClassVisitor.HateoasLinks => HateoasLinks;
 
     public override Task InitializerAddedAsync<TInitializationEvent>(string stateMachineName, int stateMachineVersion)
     {
@@ -225,7 +227,7 @@ internal class StateMachineVisitor(
                                     : new Dictionary<string, EventHeader>() { { nameof(NoImplicitInitialization), new NoImplicitInitialization() } });
                             // workaround for return code 200 regardless behavior actual status
                             result.Status = EventStatus.Consumed;
-                            return result.ToResult([], result.Response, HateoasLinks);
+                            return result.ToResult(method ?? "[no method]", route ?? "[no path]", [], result.Response, HateoasLinks);
                         }
                     }
 
@@ -293,7 +295,7 @@ internal class StateMachineVisitor(
                             var behaviorInfo = (await behavior.GetStatusAsync(new Dictionary<string, EventHeader>() { { nameof(NoImplicitInitialization), new NoImplicitInitialization() } })).Response;
                         
                             var sendResult = new SendResult(EventStatus.Consumed, new EventValidation(true));
-                            return sendResult.ToResult(notifications, behaviorInfo, HateoasLinks);
+                            return sendResult.ToResult(method ?? "[no method]", route ?? "[no path]", notifications, behaviorInfo, HateoasLinks);
                         }
                     }
 
@@ -339,7 +341,7 @@ internal class StateMachineVisitor(
                         // var behaviorInfo = ((EventHolder<StateMachineInfo>)compoundResult.Response.Results.Last().Response).Payload;
                         var sendResult = await behavior.FinalizeAsync();
                         var behaviorInfo = (await behavior.GetStatusAsync(new Dictionary<string, EventHeader>() { { nameof(NoImplicitInitialization), new NoImplicitInitialization() } })).Response;
-                        return sendResult.ToResult([], behaviorInfo, HateoasLinks);
+                        return sendResult.ToResult(method ?? "[no method]", route ?? "[no path]", [], behaviorInfo, HateoasLinks);
                     }
 
                     return Results.NotFound();
@@ -384,7 +386,7 @@ internal class StateMachineVisitor(
                         // var behaviorInfo = ((EventHolder<StateMachineInfo>)compoundResult.Response.Results.Last().Response).Payload;
                         var sendResult = await behavior.ResetAsync();
                         var behaviorInfo = (await behavior.GetStatusAsync(new Dictionary<string, EventHeader>() { { nameof(NoImplicitInitialization), new NoImplicitInitialization() } })).Response;
-                        return sendResult.ToResult([], behaviorInfo, HateoasLinks);
+                        return sendResult.ToResult(method ?? "[no method]", route ?? "[no path]", [], behaviorInfo, HateoasLinks);
                     }
 
                     return Results.NotFound();
@@ -449,7 +451,7 @@ internal class StateMachineVisitor(
                                 await behavior.GetStatusAsync(new Dictionary<string, EventHeader>() { { nameof(NoImplicitInitialization), new NoImplicitInitialization() } });
                             // workaround for return code 200 regardless behavior actual status
                             result.Status = EventStatus.Consumed;
-                            return result.ToResult([], result.Response, HateoasLinks);
+                            return result.ToResult(method ?? "[no method]", route ?? "[no path]", [], result.Response, HateoasLinks);
                         }
                     }
 
@@ -516,7 +518,7 @@ internal class StateMachineVisitor(
                             var behaviorInfo = (await behavior.GetStatusAsync(new Dictionary<string, EventHeader>() { { nameof(NoImplicitInitialization), new NoImplicitInitialization() } })).Response;
                         
                             var sendResult = new SendResult(EventStatus.Consumed, new EventValidation(true));
-                            return sendResult.ToResult(notifications, behaviorInfo, HateoasLinks);
+                            return sendResult.ToResult(method ?? "[no method]", route ?? "[no path]", notifications, behaviorInfo, HateoasLinks);
                         }
                     }
 

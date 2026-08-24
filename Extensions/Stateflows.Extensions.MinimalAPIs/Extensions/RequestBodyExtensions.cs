@@ -76,7 +76,7 @@ internal static class RequestBodyExtensions
 
                         MergeNotificationNames(watchedNotificationTypes, payload);
                         
-                        var processingAction = () => payload.SendEndpointAsync(
+                        var processingAction = () => payload.SendEndpointAsync(method, route,
                             StateflowsActivator.CreateUninitializedInstance<TEvent>(), behavior, implicitInitialization,
                             customHateoasLinks, context);
 
@@ -118,7 +118,8 @@ internal static class RequestBodyExtensions
                         }
 
                         MergeNotificationNames(watchedNotificationTypes, payload);
-                        var processingAction = () => payload.SendEndpointAsync(payload.Event, behavior, implicitInitialization,
+                        
+                        var processingAction = () => payload.SendEndpointAsync(method, route, payload.Event, behavior, implicitInitialization,
                             customHateoasLinks, context);
 
                         if (stream)
@@ -191,7 +192,7 @@ internal static class RequestBodyExtensions
 
                         MergeNotificationNames(watchedNotificationTypes, payload);
 
-                        var processingAction = () => payload.SendEndpointAsync(
+                        var processingAction = () => payload.SendEndpointAsync(method, route,
                             StateflowsActivator.CreateUninitializedInstance<TEvent>(), behavior, true,
                             customHateoasLinks, context);
 
@@ -231,7 +232,7 @@ internal static class RequestBodyExtensions
 
                         MergeNotificationNames(watchedNotificationTypes, payload);
 
-                        var processingAction = () => payload.SendEndpointAsync(payload.Event, behavior, true,
+                        var processingAction = () => payload.SendEndpointAsync(method, route, payload.Event, behavior, true,
                             customHateoasLinks, context);
 
                         if (stream)
@@ -346,7 +347,7 @@ internal static class RequestBodyExtensions
                         MergeNotificationNames(watchedNotificationTypes, payload);
                         
                         var processingAction = () => payload.RequestEndpointAsync<TRequest, TResponse>(
-                            StateflowsActivator.CreateUninitializedInstance<TRequest>(), behavior,
+                            method, route, StateflowsActivator.CreateUninitializedInstance<TRequest>(), behavior,
                             implicitInitialization, customHateoasLinks, context
                         );
 
@@ -388,7 +389,7 @@ internal static class RequestBodyExtensions
 
                         MergeNotificationNames(watchedNotificationTypes, payload);
 
-                        var processingAction = () => payload.RequestEndpointAsync<TRequest, TResponse>(payload.Event, behavior,
+                        var processingAction = () => payload.RequestEndpointAsync<TRequest, TResponse>(method, route, payload.Event, behavior,
                             implicitInitialization, customHateoasLinks, context);
 
                         if (stream)
@@ -457,7 +458,7 @@ internal static class RequestBodyExtensions
                         MergeNotificationNames(watchedNotificationTypes, payload);
 
                         var processingAction = () => payload.RequestEndpointAsync<TRequest, TResponse>(
-                            StateflowsActivator.CreateUninitializedInstance<TRequest>(), behavior, true,
+                            method, route, StateflowsActivator.CreateUninitializedInstance<TRequest>(), behavior, true,
                             customHateoasLinks, context);
 
                         if (stream)
@@ -496,7 +497,7 @@ internal static class RequestBodyExtensions
 
                         MergeNotificationNames(watchedNotificationTypes, payload);
 
-                        var processingAction = () => payload.RequestEndpointAsync<TRequest, TResponse>(payload.Event, behavior, true, customHateoasLinks, context);
+                        var processingAction = () => payload.RequestEndpointAsync<TRequest, TResponse>(method, route, payload.Event, behavior, true, customHateoasLinks, context);
 
                         if (stream)
                         {
@@ -547,7 +548,7 @@ internal static class RequestBodyExtensions
         await processingTask;
     }
 
-    private static async Task<IResult?> SendEndpointAsync<TEvent>(this RequestBody payload, TEvent @event, IBehavior behavior,
+    private static async Task<IResult?> SendEndpointAsync<TEvent>(this RequestBody payload, string method, string path, TEvent @event, IBehavior behavior,
         bool implicitInitialization, Dictionary<string, List<(HateoasLink, BehaviorStatus[])>> customHateoasLinks, HttpContext context)
     {
         var notifications = new List<EventHolder>();
@@ -564,7 +565,7 @@ internal static class RequestBodyExtensions
             );
 
             var behaviorInfo = await behavior.GetBehaviorInfo();
-            return result.ToResult([], behaviorInfo, customHateoasLinks);
+            return result.ToResult(method ?? "[no method]", path ?? "[no path]", [], behaviorInfo, customHateoasLinks);
         }
         else
         {
@@ -587,11 +588,11 @@ internal static class RequestBodyExtensions
             //     ? (await behavior.GetNotificationsAsync(payload.RequestedNotifications, lastNotificationsCheck)).ToArray()
             //     : [];
 
-            return result.ToResult(notifications, behaviorInfo, customHateoasLinks);
+            return result.ToResult(method ?? "[no method]", path ?? "[no path]", notifications, behaviorInfo, customHateoasLinks);
         }
     }
 
-    private static async Task<IResult> RequestEndpointAsync<TRequest, TResponse>(this RequestBody payload, TRequest request, IBehavior behavior,
+    private static async Task<IResult> RequestEndpointAsync<TRequest, TResponse>(this RequestBody payload, string method, string path, TRequest request, IBehavior behavior,
         bool implicitInitialization, Dictionary<string, List<(HateoasLink, BehaviorStatus[])>> customHateoasLinks, HttpContext context)
         where TRequest : IRequest<TResponse>
     {
@@ -610,7 +611,7 @@ internal static class RequestBodyExtensions
 
             var behaviorInfo = await behavior.GetBehaviorInfo();
 
-            return result.ToResult([], behaviorInfo, customHateoasLinks);
+            return result.ToResult(method ?? "[no method]", path ?? "[no path]", [], behaviorInfo, customHateoasLinks);
         }
         else
         {
@@ -633,7 +634,7 @@ internal static class RequestBodyExtensions
             //     ? (await behavior.GetNotificationsAsync(payload.RequestedNotifications, lastNotificationsCheck)).ToArray()
             //     : [];
 
-            return requestResult.ToResult(notifications, behaviorInfo, customHateoasLinks);
+            return requestResult.ToResult(method ?? "[no method]", path ?? "[no path]", notifications, behaviorInfo, customHateoasLinks);
         }
     }
 }

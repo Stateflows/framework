@@ -41,6 +41,9 @@ internal class AIAgentContext(IBehaviorContext functionContext, IInput input, IO
     public IEnumerable<TToken> GetTokensOfType<TToken>()
         => input.GetTokensOfType<TToken>();
 
+    public bool HasTokensOfType<TToken>()
+        => input.HasTokensOfType<TToken>();
+
     public void Output<TToken>(TToken token)
     {
         output.Output(token);
