@@ -3,7 +3,7 @@ using Stateflows.Common.Interfaces;
 
 namespace Stateflows.MAF.AIAgents.Classes
 {
-    internal class AgentWrapper(IBehavior consumer) : IAIAgentBehavior, IInjectionScope
+    internal class AIAgentWrapper(IBehavior consumer) : IAIAgentBehavior, IInjectionScope
     {
         BehaviorId IBehavior.Id => Behavior.Id;
 
@@ -61,7 +61,7 @@ namespace Stateflows.MAF.AIAgents.Classes
         protected virtual void Dispose(bool disposing)
             => Behavior.Dispose();
 
-        ~AgentWrapper()
+        ~AIAgentWrapper()
             => Dispose(false);
     }
 }

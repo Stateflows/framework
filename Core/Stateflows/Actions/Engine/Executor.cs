@@ -75,7 +75,7 @@ namespace Stateflows.Actions.Engine
             
             var inspector = await GetInspectorAsync();
             
-            Trace.WriteLine($"⦗→s⦘ Action '{StateflowsContext.Id.Name}:{StateflowsContext.Id.Instance}': received event '{Event.GetName(eventHolder.PayloadType)}', processing");
+            Trace.WriteLine($"⦗→s⦘ {StateflowsContext.Id.Type} '{StateflowsContext.Id.Name}:{StateflowsContext.Id.Instance}': received event '{Event.GetName(eventHolder.PayloadType)}', processing");
 
             var eventContext = new EventContext<TEvent>(StateflowsContext, this, eventHolder, ServiceProvider);
             this.inspector.BeforeProcessEvent(eventContext);
@@ -93,7 +93,7 @@ namespace Stateflows.Actions.Engine
 
                         InputTokens.TokensHolder.Value = null;
                     
-                        Trace.WriteLine($"⦗→s⦘ Action '{StateflowsContext.Id.Name}:{StateflowsContext.Id.Instance}': executed");
+                        Trace.WriteLine($"⦗→s⦘ {StateflowsContext.Id.Type} '{StateflowsContext.Id.Name}:{StateflowsContext.Id.Instance}': executed");
                     
                         var tokensOutput = new TokensOutput()
                         {
@@ -157,7 +157,7 @@ namespace Stateflows.Actions.Engine
 
                         InputTokens.TokensHolder.Value = null;
                     
-                        Trace.WriteLine($"⦗→s⦘ Action '{StateflowsContext.Id.Name}:{StateflowsContext.Id.Instance}': executed");
+                        Trace.WriteLine($"⦗→s⦘ {StateflowsContext.Id.Type} '{StateflowsContext.Id.Name}:{StateflowsContext.Id.Instance}': executed");
                     }
                     finally
                     {
@@ -189,7 +189,7 @@ namespace Stateflows.Actions.Engine
 
                         InputTokens.TokensHolder.Value = null;
                     
-                        Trace.WriteLine($"⦗→s⦘ Action '{StateflowsContext.Id.Name}:{StateflowsContext.Id.Instance}': executed");
+                        Trace.WriteLine($"⦗→s⦘ {StateflowsContext.Id.Type} '{StateflowsContext.Id.Name}:{StateflowsContext.Id.Instance}': executed");
 
                         HandleGuardRequest(eventHolder, context);
                     }
@@ -209,7 +209,7 @@ namespace Stateflows.Actions.Engine
                 inspector.AfterProcessEvent(eventContext, result);
             }
             
-            Trace.WriteLine($"⦗→s⦘ Action '{StateflowsContext.Id.Name}:{StateflowsContext.Id.Instance}': processed event '{Event.GetName(eventHolder.PayloadType)}' with result '{result}'");
+            Trace.WriteLine($"⦗→s⦘ {StateflowsContext.Id.Type} '{StateflowsContext.Id.Name}:{StateflowsContext.Id.Instance}': processed event '{Event.GetName(eventHolder.PayloadType)}' with result '{result}'");
 
             return result;
         }
@@ -291,7 +291,7 @@ namespace Stateflows.Actions.Engine
             }
             catch (Exception e)
             {
-                Trace.WriteLine($"⦗→s⦘ Action '{StateflowsContext.Id.Name}:{StateflowsContext.Id.Instance}': exception '{e.GetType().FullName}' thrown with message '{e.Message}'");
+                Trace.WriteLine($"⦗→s⦘ {StateflowsContext.Id.Type} '{StateflowsContext.Id.Name}:{StateflowsContext.Id.Instance}': exception '{e.GetType().FullName}' thrown with message '{e.Message}'");
                 if (!inspector.OnActionException(context, e))
                 {
                     throw;

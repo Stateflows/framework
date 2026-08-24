@@ -33,8 +33,6 @@ internal class AIAgentAction(
         
         // var chatHistory = await actionContext.Values.GetOrDefaultAsync(agentThreadKey, new ChatHistory());
 
-        var agentContext = new AIAgentContext(actionContext, actionContext, actionContext);
-        
         // if (Metadata.Metadata.TryGetValue(AIAgentConstants.Transitions, out var agenticTransitionsObj))
         // {
         //     var agenticTransitions = agenticTransitionsObj as List<Dictionary<string, object>>;
@@ -74,8 +72,11 @@ internal class AIAgentAction(
         var session = await agent.CreateSessionAsync(cancellationToken: cancellationToken);
         
         var sessionDataString = await actionContext.Values.GetOrDefaultAsync(agentThreadKey, string.Empty);
-        var sessionData = JsonElement.Parse(sessionDataString ?? string.Empty);
-        await agent.DeserializeSessionAsync(sessionData, cancellationToken: cancellationToken);
+        if (!string.IsNullOrWhiteSpace(sessionDataString))
+        {
+            var sessionData = JsonElement.Parse(sessionDataString);
+            await agent.DeserializeSessionAsync(sessionData, cancellationToken: cancellationToken);
+        }
 
         List<ChatMessage> chatMessages = [];
         // chatMessages.AddRange(
@@ -111,7 +112,7 @@ internal class AIAgentAction(
             new ChatMessage
             {
                 Role = ChatRole.User,
-                Contents = [ new TextContent($"There is the inquiry about the statement: {t.Message}") ]
+                Contents = [ new TextContent($"There is the inquiry about the statement: {GetInquiryText(t.Message)}") ]
             }
         ));
         
@@ -133,7 +134,7 @@ internal class AIAgentAction(
 
         if (chatMessages.Any())
         {
-            Debug.WriteLine($">>> user: {chatMessages.First().Contents.First()}");
+            Debug.WriteLine($">>> user: {chatMessages.First().Contents?.FirstOrDefault()}");
         }
 
         if (cancellationToken.IsCancellationRequested)
@@ -152,9 +153,8 @@ internal class AIAgentAction(
                 actionContext.Publish(response);
             }
             
-            sessionData = await agent.SerializeSessionAsync(session, cancellationToken: cancellationToken);
-            sessionDataString = sessionData.GetString();
-            await actionContext.Values.SetAsync(agentThreadKey, sessionDataString);
+            var sessionData = await agent.SerializeSessionAsync(session, cancellationToken: cancellationToken);
+            await actionContext.Values.SetAsync(agentThreadKey, sessionData.GetRawText());
         }
         catch (TaskCanceledException)
         {
@@ -165,6 +165,11 @@ internal class AIAgentAction(
             Debug.WriteLine("AIAgent execution was cancelled.");
         }
     }
+
+    private static string GetInquiryText(ChatMessage message)
+        => string.IsNullOrWhiteSpace(message.Text)
+            ? message.ToString()
+            : message.Text;
 
     protected virtual AIAgentFactoryAsync AIAgentFactoryAsync { get; private set; } = null!;
 

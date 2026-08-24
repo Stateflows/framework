@@ -8,6 +8,6 @@ namespace Stateflows.MAF.AIAgents
         /// <summary>
         /// Identifier of current Action behavior
         /// </summary>
-        new AgentId Id { get; }
+        new AIAgentId Id { get; }
     }
 }

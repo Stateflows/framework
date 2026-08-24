@@ -6,6 +6,6 @@ namespace Stateflows.MAF.AIAgents
     {
         IBehaviorLocator Locator { get; }
 
-        bool TryLocateAgent(AgentId id, out IAIAgentBehavior activity);
+        bool TryLocateAIAgent(AIAgentId id, out IAIAgentBehavior activity);
     }
 }

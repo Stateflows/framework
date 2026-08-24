@@ -19,7 +19,7 @@ namespace Stateflows.MAF.AIAgents.Registration.Builders
         }
 
         [DebuggerHidden]
-        public AIAgents.IAIAgentsBuilder AddFromAssembly(Assembly assembly)
+        public IAIAgentsBuilder AddFromAssembly(Assembly assembly)
         {
             assembly.GetAttributedTypes<AIAgentBehaviorAttribute>().ToList().ForEach(@type =>
             {
@@ -34,7 +34,7 @@ namespace Stateflows.MAF.AIAgents.Registration.Builders
         }
 
         [DebuggerHidden]
-        public AIAgents.IAIAgentsBuilder AddFromAssemblies(IEnumerable<Assembly> assemblies)
+        public IAIAgentsBuilder AddFromAssemblies(IEnumerable<Assembly> assemblies)
         {
             foreach (var assembly in assemblies)
             {
@@ -46,15 +46,15 @@ namespace Stateflows.MAF.AIAgents.Registration.Builders
 
 
         [DebuggerHidden]
-        public AIAgents.IAIAgentsBuilder AddFromLoadedAssemblies()
+        public IAIAgentsBuilder AddFromLoadedAssemblies()
             => AddFromAssemblies(AppDomain.CurrentDomain.GetAssemblies());
 
         [DebuggerHidden]
-        public AIAgents.IAIAgentsBuilder AddAIAgent(string agentName, AIAgentFactoryAsync aiAgentFactoryAsync, AgentBuildAction? agentBuildAction = null)
+        public IAIAgentsBuilder AddAIAgent(string agentName, AIAgentFactoryAsync aiAgentFactoryAsync, AgentBuildAction? agentBuildAction = null)
             => AddAIAgent(agentName, 1, aiAgentFactoryAsync, agentBuildAction);
 
         [DebuggerHidden]
-        public AIAgents.IAIAgentsBuilder AddAIAgent(string agentName, int version, AIAgentFactoryAsync aiAgentFactoryAsync, AgentBuildAction? agentBuildAction = null)
+        public IAIAgentsBuilder AddAIAgent(string agentName, int version, AIAgentFactoryAsync aiAgentFactoryAsync, AgentBuildAction? agentBuildAction = null)
         {
             ActionsBuilder.AddAction<AIAgentAction>(agentName, version, b => b
                 .AddConfiguration(aiAgentFactoryAsync)
@@ -65,13 +65,15 @@ namespace Stateflows.MAF.AIAgents.Registration.Builders
         }
 
         [DebuggerHidden]
-        public AIAgents.IAIAgentsBuilder AddAIAgent<TAgent>(string? agentName = null, int version = 1, AgentBuildAction? agentBuildAction = null)
+        public IAIAgentsBuilder AddAIAgent<TAgent>(string? agentName = null, int version = 1, AgentBuildAction? agentBuildAction = null)
             where TAgent : class, IAIAgent
         {
             ActionsBuilder.AddAction<AIAgentAction<TAgent>>(
                 agentName,
                 version,
-                b => b.AddConfiguration(agentBuildAction)
+                b => b
+                    .AddConfiguration(agentBuildAction)
+                    .SetCustomBehaviorClassType(MAFBehaviorType.AIAgent)
             );
 
             return this;

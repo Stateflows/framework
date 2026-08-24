@@ -10,7 +10,7 @@ namespace Stateflows.Actions.Context.Classes
 {
     internal class RootContext
     {
-        public ActionId Id { get; }
+        public BehaviorId Id { get; }
 
         internal StateflowsContext Context { get; set; }
 
@@ -22,19 +22,19 @@ namespace Stateflows.Actions.Context.Classes
             Executor = executor;
             EventHolder = eventHolder;
             ServiceProvider = serviceProvider;
-            Id = new ActionId(Context.Id);
+            Id = Context.Id;
         }
 
         public Executor Executor { get; set; }
         
         public EventHolder EventHolder { get; set; }
 
-        public readonly List<Exception> Exceptions = new List<Exception>();
+        public readonly List<Exception> Exceptions = [];
 
         public async Task Send<TEvent>(TEvent @event, IDictionary<string, EventHeader> headers = null)
         {
             var locator = ServiceProvider.GetService<IBehaviorLocator>();
-            if (locator != null && locator.TryLocateBehavior(Context.ContextParentId ?? Id.BehaviorId, out var behavior))
+            if (locator != null && locator.TryLocateBehavior(Context.ContextParentId ?? Id, out var behavior))
             {
                 await behavior.SendAsync(@event, headers);
             }

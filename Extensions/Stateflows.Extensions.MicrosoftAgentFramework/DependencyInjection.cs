@@ -1,5 +1,5 @@
 ﻿namespace Stateflows.Extensions.MicrosoftAgentFramework;
 
-public class DependencyInjection
+public static class DependencyInjection
 {
 }

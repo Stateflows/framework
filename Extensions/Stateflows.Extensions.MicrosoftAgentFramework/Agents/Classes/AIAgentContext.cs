@@ -15,7 +15,7 @@ internal class AIAgentContext(IBehaviorContext functionContext, IInput input, IO
 
     BehaviorId IBehaviorContext.Id => ((IBehaviorContext)functionContext).Id;
 
-    AgentId IAIAgentContext.Id => new(functionContext.Id);
+    AIAgentId IAIAgentContext.Id => new(functionContext.Id);
 
     public IContextValues Values => functionContext.Values;
 

@@ -39,7 +39,7 @@ namespace Stateflows.Common
                 .ToDictionary(p => p.BehaviorTypes, p => p.Processor);
         }
 
-        [DebuggerHidden]
+        // [DebuggerHidden]
         public async Task HandleEventAsync(ExecutionToken token)
         {
             await Task.Delay(1);
@@ -72,7 +72,7 @@ namespace Stateflows.Common
             }
         }
 
-        [DebuggerHidden]
+        // [DebuggerHidden]
         async Task<EventStatus> IStateflowsEngine.ProcessEventAsync<TEvent>(BehaviorId id, EventHolder<TEvent> eventHolder, List<Exception> exceptions, Dictionary<object, EventHolder> responses)
         {
             var result = EventStatus.Undelivered;
@@ -91,7 +91,7 @@ namespace Stateflows.Common
             }
 
             await using var lockHandle = await (
-                id.Type == BehaviorType.Action
+                id.Type is not BehaviorType.Activity and not BehaviorType.Entity and not  BehaviorType.StateMachine
                     ? Lock.AquireNoLockAsync(id)
                     : Lock.AquireLockAsync(id)
             );

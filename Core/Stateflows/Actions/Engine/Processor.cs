@@ -103,6 +103,11 @@ namespace Stateflows.Actions.Engine
 
                 await executor.DehydrateAsync(eventHolder);
             }
+            catch (Exception ex)
+            {
+                exceptions.Add(ex);
+                result = EventStatus.Failed;
+            }
             finally
             {
                 if (stateflowsContext.Status == BehaviorStatus.Initialized)

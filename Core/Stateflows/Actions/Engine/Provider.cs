@@ -1,11 +1,11 @@
 ﻿using System;
-using System.Linq;
 using System.Collections.Generic;
+using System.Linq;
+using Stateflows.Actions.Registration;
 using Stateflows.Common;
 using Stateflows.Common.Classes;
-using Stateflows.Common.Utilities;
 using Stateflows.Common.Interfaces;
-using Stateflows.Actions.Registration;
+using Stateflows.Common.Utilities;
 
 namespace Stateflows.Actions.Service
 {
@@ -30,7 +30,7 @@ namespace Stateflows.Actions.Service
 
         public bool TryProvideBehavior(BehaviorId id, out IBehavior behavior)
         {
-            behavior = id.Type == BehaviorType.Action && Register.Actions.ContainsKey($"{id.Name}.current")
+            behavior = Register.SupportedClassTypes.Contains(id.Type) && Register.Actions.ContainsKey($"{id.Name}.current")
                 ? new Behavior(Service, ServiceProvider, id)
                 : null;
 
@@ -38,6 +38,6 @@ namespace Stateflows.Actions.Service
         }
 
         public IEnumerable<BehaviorClass> BehaviorClasses
-            => Register.Actions.Values.Select(a => new BehaviorClass(BehaviorType.Action, a.Name));
+            => Register.Actions.Values.Select(a => new BehaviorClass(a.BehaviorClassType, a.Name));
     }
 }

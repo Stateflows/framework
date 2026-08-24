@@ -11,10 +11,10 @@ namespace Stateflows.MAF.AIAgents.Extensions;
 
 public static class StateBuilderExtensions
 {
-    public static IBehaviorStateBuilder AddDoAgent(this IStateBuilder stateBuilder, AIAgentFactory aiAgentFactory, AgentBuildAction? buildAction = null)
-        => AddDoAgent(stateBuilder, sp => Task.FromResult(aiAgentFactory(sp)), buildAction);
+    public static IBehaviorStateBuilder AddDoAIAgent(this IStateBuilder stateBuilder, AIAgentFactory aiAgentFactory, AgentBuildAction? buildAction = null)
+        => AddDoAIAgent(stateBuilder, sp => Task.FromResult(aiAgentFactory(sp)), buildAction);
     
-    public static IBehaviorStateBuilder AddDoAgent(this IStateBuilder stateBuilder, AIAgentFactoryAsync aiAgentFactoryAsync, AgentBuildAction? buildAction = null)
+    public static IBehaviorStateBuilder AddDoAIAgent(this IStateBuilder stateBuilder, AIAgentFactoryAsync aiAgentFactoryAsync, AgentBuildAction? buildAction = null)
         => stateBuilder.AddDoAction<AIAgentAction>(b =>
         {
             b.AddConfiguration(aiAgentFactoryAsync);
@@ -27,7 +27,7 @@ public static class StateBuilderExtensions
         where TTokenConsumerAgent : class, ITokenConsumerAiAgent<TToken>
         => TTokenConsumerAgent.FormatTokenAsync(iaiAgentContext, token);
     
-    public static IBehaviorStateBuilder AddDoAgent<TAgent>(this IStateBuilder stateBuilder, AgentBuildAction? buildAction = null)
+    public static IBehaviorStateBuilder AddDoAIAgent<TAgent>(this IStateBuilder stateBuilder, AgentBuildAction? buildAction = null)
         where TAgent : class, IAIAgent
         => stateBuilder.AddDoAction<AIAgentAction<TAgent>>(b =>
         {
@@ -60,85 +60,85 @@ public static class StateBuilderExtensions
             b.SetCustomBehaviorClassType(MAFBehaviorType.AIAgent);
         });
     
-    public static IOverridenRegionalizedStateBuilder AddDoAgent(this IOverridenRegionalizedStateBuilder stateBuilder, AIAgentFactory aiAgentFactory, AgentBuildAction? buildAction = null)
-        => AddDoAgent((IStateBuilder)stateBuilder, aiAgentFactory, buildAction) as IOverridenRegionalizedStateBuilder;
+    public static IOverridenRegionalizedStateBuilder AddDoAIAgent(this IOverridenRegionalizedStateBuilder stateBuilder, AIAgentFactory aiAgentFactory, AgentBuildAction? buildAction = null)
+        => AddDoAIAgent((IStateBuilder)stateBuilder, aiAgentFactory, buildAction) as IOverridenRegionalizedStateBuilder;
     
-    public static IOverridenRegionalizedStateBuilder AddDoAgent(this IOverridenRegionalizedStateBuilder stateBuilder, AIAgentFactoryAsync aiAgentFactoryAsync, AgentBuildAction? buildAction = null)
-        => AddDoAgent((IStateBuilder)stateBuilder, aiAgentFactoryAsync, buildAction) as IOverridenRegionalizedStateBuilder;
+    public static IOverridenRegionalizedStateBuilder AddDoAIAgent(this IOverridenRegionalizedStateBuilder stateBuilder, AIAgentFactoryAsync aiAgentFactoryAsync, AgentBuildAction? buildAction = null)
+        => AddDoAIAgent((IStateBuilder)stateBuilder, aiAgentFactoryAsync, buildAction) as IOverridenRegionalizedStateBuilder;
     
-    public static IOverridenRegionalizedStateBuilder AddDoAgent<TAgent>(this IOverridenRegionalizedStateBuilder stateBuilder, AgentBuildAction? buildAction = null)
+    public static IOverridenRegionalizedStateBuilder AddDoAIAgent<TAgent>(this IOverridenRegionalizedStateBuilder stateBuilder, AgentBuildAction? buildAction = null)
         where TAgent : class, IAIAgent
-        => AddDoAgent<TAgent>((IStateBuilder)stateBuilder, buildAction) as IOverridenRegionalizedStateBuilder;
+        => AddDoAIAgent<TAgent>((IStateBuilder)stateBuilder, buildAction) as IOverridenRegionalizedStateBuilder;
     
-    public static IInitializedCompositeStateBuilder AddDoAgent(this IInitializedCompositeStateBuilder stateBuilder, AIAgentFactory aiAgentFactory, AgentBuildAction? buildAction = null)
-        => AddDoAgent((IStateBuilder)stateBuilder, aiAgentFactory, buildAction) as IInitializedCompositeStateBuilder;
+    public static IInitializedCompositeStateBuilder AddDoAIAgent(this IInitializedCompositeStateBuilder stateBuilder, AIAgentFactory aiAgentFactory, AgentBuildAction? buildAction = null)
+        => AddDoAIAgent((IStateBuilder)stateBuilder, aiAgentFactory, buildAction) as IInitializedCompositeStateBuilder;
     
-    public static IInitializedCompositeStateBuilder AddDoAgent(this IInitializedCompositeStateBuilder stateBuilder, AIAgentFactoryAsync aiAgentFactoryAsync, AgentBuildAction? buildAction = null)
-        => AddDoAgent((IStateBuilder)stateBuilder, aiAgentFactoryAsync, buildAction) as IInitializedCompositeStateBuilder;
+    public static IInitializedCompositeStateBuilder AddDoAIAgent(this IInitializedCompositeStateBuilder stateBuilder, AIAgentFactoryAsync aiAgentFactoryAsync, AgentBuildAction? buildAction = null)
+        => AddDoAIAgent((IStateBuilder)stateBuilder, aiAgentFactoryAsync, buildAction) as IInitializedCompositeStateBuilder;
     
-    public static IInitializedCompositeStateBuilder AddDoAgent<TAgent>(this IInitializedCompositeStateBuilder stateBuilder, AgentBuildAction? buildAction = null)
+    public static IInitializedCompositeStateBuilder AddDoAIAgent<TAgent>(this IInitializedCompositeStateBuilder stateBuilder, AgentBuildAction? buildAction = null)
         where TAgent : class, IAIAgent
-        => AddDoAgent<TAgent>((IStateBuilder)stateBuilder, buildAction) as IInitializedCompositeStateBuilder;
+        => AddDoAIAgent<TAgent>((IStateBuilder)stateBuilder, buildAction) as IInitializedCompositeStateBuilder;
     
-    public static IFinalizedCompositeStateBuilder AddDoAgent(this IFinalizedCompositeStateBuilder stateBuilder, AIAgentFactory aiAgentFactory, AgentBuildAction? buildAction = null)
-        => AddDoAgent((IStateBuilder)stateBuilder, aiAgentFactory, buildAction) as IFinalizedCompositeStateBuilder;
+    public static IFinalizedCompositeStateBuilder AddDoAIAgent(this IFinalizedCompositeStateBuilder stateBuilder, AIAgentFactory aiAgentFactory, AgentBuildAction? buildAction = null)
+        => AddDoAIAgent((IStateBuilder)stateBuilder, aiAgentFactory, buildAction) as IFinalizedCompositeStateBuilder;
     
-    public static IFinalizedCompositeStateBuilder AddDoAgent(this IFinalizedCompositeStateBuilder stateBuilder, AIAgentFactoryAsync aiAgentFactoryAsync, AgentBuildAction? buildAction = null)
-        => AddDoAgent((IStateBuilder)stateBuilder, aiAgentFactoryAsync, buildAction) as IFinalizedCompositeStateBuilder;
+    public static IFinalizedCompositeStateBuilder AddDoAIAgent(this IFinalizedCompositeStateBuilder stateBuilder, AIAgentFactoryAsync aiAgentFactoryAsync, AgentBuildAction? buildAction = null)
+        => AddDoAIAgent((IStateBuilder)stateBuilder, aiAgentFactoryAsync, buildAction) as IFinalizedCompositeStateBuilder;
     
-    public static IFinalizedCompositeStateBuilder AddDoAgent<TAgent>(this IFinalizedCompositeStateBuilder stateBuilder, AgentBuildAction? buildAction = null)
+    public static IFinalizedCompositeStateBuilder AddDoAIAgent<TAgent>(this IFinalizedCompositeStateBuilder stateBuilder, AgentBuildAction? buildAction = null)
         where TAgent : class, IAIAgent
-        => AddDoAgent<TAgent>((IStateBuilder)stateBuilder, buildAction) as IFinalizedCompositeStateBuilder;
+        => AddDoAIAgent<TAgent>((IStateBuilder)stateBuilder, buildAction) as IFinalizedCompositeStateBuilder;
     
-    public static ICompositeStateBuilder AddDoAgent(this ICompositeStateBuilder stateBuilder, AIAgentFactory aiAgentFactory, AgentBuildAction? buildAction = null)
-        => AddDoAgent((IStateBuilder)stateBuilder, aiAgentFactory, buildAction) as ICompositeStateBuilder;
+    public static ICompositeStateBuilder AddDoAIAgent(this ICompositeStateBuilder stateBuilder, AIAgentFactory aiAgentFactory, AgentBuildAction? buildAction = null)
+        => AddDoAIAgent((IStateBuilder)stateBuilder, aiAgentFactory, buildAction) as ICompositeStateBuilder;
     
-    public static ICompositeStateBuilder AddDoAgent(this ICompositeStateBuilder stateBuilder, AIAgentFactoryAsync aiAgentFactoryAsync, AgentBuildAction? buildAction = null)
-        => AddDoAgent((IStateBuilder)stateBuilder, aiAgentFactoryAsync, buildAction) as ICompositeStateBuilder;
+    public static ICompositeStateBuilder AddDoAIAgent(this ICompositeStateBuilder stateBuilder, AIAgentFactoryAsync aiAgentFactoryAsync, AgentBuildAction? buildAction = null)
+        => AddDoAIAgent((IStateBuilder)stateBuilder, aiAgentFactoryAsync, buildAction) as ICompositeStateBuilder;
     
-    public static ICompositeStateBuilder AddDoAgent<TAgent>(this ICompositeStateBuilder stateBuilder, AgentBuildAction? buildAction = null)
+    public static ICompositeStateBuilder AddDoAIAgent<TAgent>(this ICompositeStateBuilder stateBuilder, AgentBuildAction? buildAction = null)
         where TAgent : class, IAIAgent
-        => AddDoAgent<TAgent>((IStateBuilder)stateBuilder, buildAction) as ICompositeStateBuilder;
+        => AddDoAIAgent<TAgent>((IStateBuilder)stateBuilder, buildAction) as ICompositeStateBuilder;
     
-    public static IFinalizedOverridenCompositeStateBuilder AddDoAgent(this IFinalizedOverridenCompositeStateBuilder stateBuilder, AIAgentFactory aiAgentFactory, AgentBuildAction? buildAction = null)
-        => AddDoAgent((IStateBuilder)stateBuilder, aiAgentFactory, buildAction) as IFinalizedOverridenCompositeStateBuilder;
+    public static IFinalizedOverridenCompositeStateBuilder AddDoAIAgent(this IFinalizedOverridenCompositeStateBuilder stateBuilder, AIAgentFactory aiAgentFactory, AgentBuildAction? buildAction = null)
+        => AddDoAIAgent((IStateBuilder)stateBuilder, aiAgentFactory, buildAction) as IFinalizedOverridenCompositeStateBuilder;
     
-    public static IFinalizedOverridenCompositeStateBuilder AddDoAgent(this IFinalizedOverridenCompositeStateBuilder stateBuilder, AIAgentFactoryAsync aiAgentFactoryAsync, AgentBuildAction? buildAction = null)
-        => AddDoAgent((IStateBuilder)stateBuilder, aiAgentFactoryAsync, buildAction) as IFinalizedOverridenCompositeStateBuilder;
+    public static IFinalizedOverridenCompositeStateBuilder AddDoAIAgent(this IFinalizedOverridenCompositeStateBuilder stateBuilder, AIAgentFactoryAsync aiAgentFactoryAsync, AgentBuildAction? buildAction = null)
+        => AddDoAIAgent((IStateBuilder)stateBuilder, aiAgentFactoryAsync, buildAction) as IFinalizedOverridenCompositeStateBuilder;
     
-    public static IFinalizedOverridenCompositeStateBuilder AddDoAgent<TAgent>(this IFinalizedOverridenCompositeStateBuilder stateBuilder, AgentBuildAction? buildAction = null)
+    public static IFinalizedOverridenCompositeStateBuilder AddDoAIAgent<TAgent>(this IFinalizedOverridenCompositeStateBuilder stateBuilder, AgentBuildAction? buildAction = null)
         where TAgent : class, IAIAgent
-        => AddDoAgent<TAgent>((IStateBuilder)stateBuilder, buildAction) as IFinalizedOverridenCompositeStateBuilder;
+        => AddDoAIAgent<TAgent>((IStateBuilder)stateBuilder, buildAction) as IFinalizedOverridenCompositeStateBuilder;
     
-    public static IFinalizedOverridenRegionalizedCompositeStateBuilder AddDoAgent(this IFinalizedOverridenRegionalizedCompositeStateBuilder stateBuilder, AIAgentFactory aiAgentFactory, AgentBuildAction? buildAction = null)
-        => AddDoAgent((IStateBuilder)stateBuilder, aiAgentFactory, buildAction) as IFinalizedOverridenRegionalizedCompositeStateBuilder;
+    public static IFinalizedOverridenRegionalizedCompositeStateBuilder AddDoAIAgent(this IFinalizedOverridenRegionalizedCompositeStateBuilder stateBuilder, AIAgentFactory aiAgentFactory, AgentBuildAction? buildAction = null)
+        => AddDoAIAgent((IStateBuilder)stateBuilder, aiAgentFactory, buildAction) as IFinalizedOverridenRegionalizedCompositeStateBuilder;
     
-    public static IFinalizedOverridenRegionalizedCompositeStateBuilder AddDoAgent(this IFinalizedOverridenRegionalizedCompositeStateBuilder stateBuilder, AIAgentFactoryAsync aiAgentFactoryAsync, AgentBuildAction? buildAction = null)
-        => AddDoAgent((IStateBuilder)stateBuilder, aiAgentFactoryAsync, buildAction) as IFinalizedOverridenRegionalizedCompositeStateBuilder;
+    public static IFinalizedOverridenRegionalizedCompositeStateBuilder AddDoAIAgent(this IFinalizedOverridenRegionalizedCompositeStateBuilder stateBuilder, AIAgentFactoryAsync aiAgentFactoryAsync, AgentBuildAction? buildAction = null)
+        => AddDoAIAgent((IStateBuilder)stateBuilder, aiAgentFactoryAsync, buildAction) as IFinalizedOverridenRegionalizedCompositeStateBuilder;
     
-    public static IFinalizedOverridenRegionalizedCompositeStateBuilder AddDoAgent<TAgent>(this IFinalizedOverridenRegionalizedCompositeStateBuilder stateBuilder, AgentBuildAction? buildAction = null)
+    public static IFinalizedOverridenRegionalizedCompositeStateBuilder AddDoAIAgent<TAgent>(this IFinalizedOverridenRegionalizedCompositeStateBuilder stateBuilder, AgentBuildAction? buildAction = null)
         where TAgent : class, IAIAgent
-        => AddDoAgent<TAgent>((IStateBuilder)stateBuilder, buildAction) as IFinalizedOverridenRegionalizedCompositeStateBuilder;
+        => AddDoAIAgent<TAgent>((IStateBuilder)stateBuilder, buildAction) as IFinalizedOverridenRegionalizedCompositeStateBuilder;
     
-    public static IOverridenCompositeStateBuilder AddDoAgent(this IOverridenCompositeStateBuilder stateBuilder, AIAgentFactory aiAgentFactory, AgentBuildAction? buildAction = null)
-        => AddDoAgent((IStateBuilder)stateBuilder, aiAgentFactory, buildAction) as IOverridenCompositeStateBuilder;
+    public static IOverridenCompositeStateBuilder AddDoAIAgent(this IOverridenCompositeStateBuilder stateBuilder, AIAgentFactory aiAgentFactory, AgentBuildAction? buildAction = null)
+        => AddDoAIAgent((IStateBuilder)stateBuilder, aiAgentFactory, buildAction) as IOverridenCompositeStateBuilder;
     
-    public static IOverridenCompositeStateBuilder AddDoAgent(this IOverridenCompositeStateBuilder stateBuilder, AIAgentFactoryAsync aiAgentFactoryAsync, AgentBuildAction? buildAction = null)
-        => AddDoAgent((IStateBuilder)stateBuilder, aiAgentFactoryAsync, buildAction) as IOverridenCompositeStateBuilder;
+    public static IOverridenCompositeStateBuilder AddDoAIAgent(this IOverridenCompositeStateBuilder stateBuilder, AIAgentFactoryAsync aiAgentFactoryAsync, AgentBuildAction? buildAction = null)
+        => AddDoAIAgent((IStateBuilder)stateBuilder, aiAgentFactoryAsync, buildAction) as IOverridenCompositeStateBuilder;
     
-    public static IOverridenCompositeStateBuilder AddDoAgent<TAgent>(this IOverridenCompositeStateBuilder stateBuilder, AgentBuildAction? buildAction = null)
+    public static IOverridenCompositeStateBuilder AddDoAIAgent<TAgent>(this IOverridenCompositeStateBuilder stateBuilder, AgentBuildAction? buildAction = null)
         where TAgent : class, IAIAgent
-        => AddDoAgent<TAgent>((IStateBuilder)stateBuilder, buildAction) as IOverridenCompositeStateBuilder;
+        => AddDoAIAgent<TAgent>((IStateBuilder)stateBuilder, buildAction) as IOverridenCompositeStateBuilder;
     
-    public static IOverridenRegionalizedCompositeStateBuilder AddDoAgent(this IOverridenRegionalizedCompositeStateBuilder stateBuilder, AIAgentFactory aiAgentFactory, AgentBuildAction? buildAction = null)
-        => AddDoAgent((IStateBuilder)stateBuilder, aiAgentFactory, buildAction) as IOverridenRegionalizedCompositeStateBuilder;
+    public static IOverridenRegionalizedCompositeStateBuilder AddDoAIAgent(this IOverridenRegionalizedCompositeStateBuilder stateBuilder, AIAgentFactory aiAgentFactory, AgentBuildAction? buildAction = null)
+        => AddDoAIAgent((IStateBuilder)stateBuilder, aiAgentFactory, buildAction) as IOverridenRegionalizedCompositeStateBuilder;
     
-    public static IOverridenRegionalizedCompositeStateBuilder AddDoAgent(this IOverridenRegionalizedCompositeStateBuilder stateBuilder, AIAgentFactoryAsync aiAgentFactoryAsync, AgentBuildAction? buildAction = null)
-        => AddDoAgent((IStateBuilder)stateBuilder, aiAgentFactoryAsync, buildAction) as IOverridenRegionalizedCompositeStateBuilder;
+    public static IOverridenRegionalizedCompositeStateBuilder AddDoAIAgent(this IOverridenRegionalizedCompositeStateBuilder stateBuilder, AIAgentFactoryAsync aiAgentFactoryAsync, AgentBuildAction? buildAction = null)
+        => AddDoAIAgent((IStateBuilder)stateBuilder, aiAgentFactoryAsync, buildAction) as IOverridenRegionalizedCompositeStateBuilder;
     
-    public static IOverridenRegionalizedCompositeStateBuilder AddDoAgent<TAgent>(this IOverridenRegionalizedCompositeStateBuilder stateBuilder, AgentBuildAction? buildAction = null)
+    public static IOverridenRegionalizedCompositeStateBuilder AddDoAIAgent<TAgent>(this IOverridenRegionalizedCompositeStateBuilder stateBuilder, AgentBuildAction? buildAction = null)
         where TAgent : class, IAIAgent
-        => AddDoAgent<TAgent>((IStateBuilder)stateBuilder, buildAction) as IOverridenRegionalizedCompositeStateBuilder;
+        => AddDoAIAgent<TAgent>((IStateBuilder)stateBuilder, buildAction) as IOverridenRegionalizedCompositeStateBuilder;
     
     private static DefaultTransitionBuildAction PrepareAgenticTransition(string targetStateName, string description, DefaultTransitionBuildAction? buildAction = null)
         => b =>

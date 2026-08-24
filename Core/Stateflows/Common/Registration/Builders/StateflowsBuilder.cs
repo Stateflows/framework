@@ -15,7 +15,7 @@ namespace Stateflows.Common.Registration.Builders
         
         internal readonly Dictionary<string, Resource> ResourceNames = [];
         
-        internal readonly Dictionary<BehaviorClass, Resource> ResourcesByBehaviorClass = [];
+        internal Dictionary<BehaviorClass, Resource> ResourcesByBehaviorClass { get; set; } = [];
 
         public IServiceCollection ServiceCollection { get; }
 

@@ -151,7 +151,9 @@ internal class ActionBuilder<TAction>(ActionModel model) : ActionBuilder(model),
 
     public IActionBuilder<TAction> SetCustomBehaviorClassType(string behaviorClassType)
     {
-        throw new System.NotImplementedException();
+        Model.BehaviorClassType = behaviorClassType;
+
+        return this;
     }
 
     IActionBuilder<TAction> IActionUtils<IActionBuilder<TAction>>.SetIsStateless(bool isStateless)

@@ -1,7 +1,11 @@
 using System.ComponentModel;
 using System.Diagnostics;
+using Azure.AI.Projects;
+using Azure.Identity;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.HttpResults;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
 using Stateflows.Actions;
 using Stateflows.Common;
 using Stateflows.Examples.Behaviors.Activities.Invoicing;
@@ -16,6 +20,7 @@ using Stateflows.Entities;
 using Stateflows.Entities.Attributes;
 using Stateflows.Entities.Enums;
 using Stateflows.Extensions.MinimalAPIs;
+using Stateflows.MAF.AIAgents.Extensions;
 using Stateflows.StateMachines.Attributes;
 using IExecutionContext = Stateflows.Common.IExecutionContext;
 
@@ -42,6 +47,19 @@ public class BaseDocument : IStateMachine
     public static void Build(IStateMachineBuilder builder) => builder
         .AddInitialState<New>(b => b
             .AddProjectionSubscription<int>()
+            .AddDoAIAgent(sp =>
+            {
+                var Configuration = sp.GetRequiredService<IConfiguration>();
+                var ProjectClient = new AIProjectClient(
+                    new Uri(Configuration["Foundry:Endpoint"]!),
+                    new AzureCliCredential()
+                );
+                
+                return ProjectClient.AsAIAgent(
+                   model: Configuration["Foundry:Model"]!,
+                   instructions: "You are a helpful tech support assistant."
+               );
+            })
             .AddTransition<BaseReview, ApprovalPending>(b => b
                 .AddEffect(async c => c.Event.Respond(new ReviewResponse()
                     { Summary = $"{c.Event.Content}: {c.Event.Rating}" }))

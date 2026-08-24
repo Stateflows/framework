@@ -6,10 +6,10 @@ namespace Stateflows
 {
     public static class IBehaviorLocatorAgentExtensions
     {
-        public static bool TryLocateAgent(this IBehaviorLocator locator, AgentId id, out IAIAgentBehavior action)
+        public static bool TryLocateAIAgent(this IBehaviorLocator locator, AIAgentId id, out IAIAgentBehavior action)
             => (
                 action = locator.TryLocateBehavior(id.BehaviorId, out var behavior)
-                    ? new AgentWrapper(behavior)
+                    ? new AIAgentWrapper(behavior)
                     : null
             ) != null;
     }

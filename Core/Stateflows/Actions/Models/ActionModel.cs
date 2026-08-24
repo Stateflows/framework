@@ -37,7 +37,7 @@ namespace Stateflows.Actions.Models
         {
             if (stateflowsBuilder.ResourceNames.TryGetValue(ResourceName ?? string.Empty, out var resourceName))
             {
-                stateflowsBuilder.ResourcesByBehaviorClass[new BehaviorClass(BehaviorType.Action, Name)] = resourceName;
+                stateflowsBuilder.ResourcesByBehaviorClass[new BehaviorClass(BehaviorClassType, Name)] = resourceName;
             }
             else
             {

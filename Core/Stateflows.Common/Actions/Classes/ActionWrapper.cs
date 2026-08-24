@@ -3,23 +3,17 @@ using System.Linq;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Stateflows.Actions;
-using Stateflows.Activities;
 using Stateflows.Common.Interfaces;
 
 namespace Stateflows.Common.Actions.Classes
 {
-    internal class ActionWrapper : IActionBehavior, IInjectionScope
+    internal class ActionWrapper(IBehavior consumer) : IActionBehavior, IInjectionScope
     {
         BehaviorId IBehavior.Id => Behavior.Id;
 
         public IServiceProvider ServiceProvider => (Behavior as IInjectionScope)?.ServiceProvider;
         
-        private IBehavior Behavior { get; }
-
-        public ActionWrapper(IBehavior consumer)
-        {
-            Behavior = consumer;
-        }
+        private IBehavior Behavior { get; } = consumer;
 
         public Task<RequestResult<TokensOutput>> SendInputAsync(Action<ITokensInput> tokensAction, IDictionary<string, EventHeader> headers = null)
         {

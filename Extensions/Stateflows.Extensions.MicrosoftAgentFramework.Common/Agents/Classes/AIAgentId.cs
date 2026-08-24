@@ -4,15 +4,15 @@ using Stateflows.Common.Utilities;
 
 namespace Stateflows
 {
-    public struct AgentId
+    public struct AIAgentId
     {
-        public AgentId(string name, string instance)
+        public AIAgentId(string name, string instance)
         {
             Name = name;
             Instance = instance;
         }
 
-        public AgentId(BehaviorId id)
+        public AIAgentId(BehaviorId id)
         {
             if (id.Type != MAFBehaviorType.AIAgent)
             {
@@ -35,34 +35,34 @@ namespace Stateflows
         
         [Newtonsoft.Json.JsonIgnore]
         [JsonIgnore]
-        public readonly AgentClass AgentClass => new(Name);
+        public readonly AIAgentClass AiAgentClass => new(Name);
 
         
         [Newtonsoft.Json.JsonIgnore]
         [JsonIgnore]
         public readonly BehaviorId BehaviorId => new(MAFBehaviorType.AIAgent, Name, Instance);
 
-        public static bool operator ==(AgentId id1, AgentId id2)
+        public static bool operator ==(AIAgentId id1, AIAgentId id2)
             => id1.Equals(id2);
 
-        public static bool operator !=(AgentId id1, AgentId id2)
+        public static bool operator !=(AIAgentId id1, AIAgentId id2)
             => !id1.Equals(id2);
 
-        public static bool operator ==(AgentId id1, BehaviorId id2)
+        public static bool operator ==(AIAgentId id1, BehaviorId id2)
             => id1.BehaviorId == id2;
 
-        public static bool operator !=(AgentId id1, BehaviorId id2)
+        public static bool operator !=(AIAgentId id1, BehaviorId id2)
             => id1.BehaviorId != id2;
 
-        public static implicit operator BehaviorId(AgentId agentId)
-            => agentId.BehaviorId;
+        public static implicit operator BehaviorId(AIAgentId aiAgentId)
+            => aiAgentId.BehaviorId;
 
-        public static implicit operator AgentId(BehaviorId behaviorId)
+        public static implicit operator AIAgentId(BehaviorId behaviorId)
             => new(behaviorId);
 
         public readonly override bool Equals(object? obj)
             =>
-                obj is AgentId id &&
+                obj is AIAgentId id &&
                 Name == id.Name &&
                 Instance == id.Instance;
 
@@ -72,7 +72,7 @@ namespace Stateflows
         public readonly override string ToString()
             => StateflowsJsonConverter.SerializeObject(this);
 
-        public static implicit operator string(AgentId agentId)
-            => StateflowsJsonConverter.SerializeObject(agentId);
+        public static implicit operator string(AIAgentId aiAgentId)
+            => StateflowsJsonConverter.SerializeObject(aiAgentId);
     }
 }

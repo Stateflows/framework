@@ -16,6 +16,8 @@
     </ItemGroup>
 
     <ItemGroup>
+      <ProjectReference Include="..\..\Core\Stateflows.Testing\Stateflows.Testing.csproj" />
+      <ProjectReference Include="..\..\Core\Stateflows\Stateflows.csproj" />
       <ProjectReference Include="..\..\Extensions\Stateflows.Extensions.MicrosoftAgentFramework\Stateflows.Extensions.MicrosoftAgentFramework.csproj" />
     </ItemGroup>
 

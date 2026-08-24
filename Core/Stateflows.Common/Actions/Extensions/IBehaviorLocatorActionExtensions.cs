@@ -5,9 +5,9 @@ namespace Stateflows.Actions
 {
     public static class IBehaviorLocatorActionExtensions
     {
-        public static bool TryLocateAction(this IBehaviorLocator locator, ActionId id, out IActionBehavior action)
+        public static bool TryLocateAction(this IBehaviorLocator locator, ActionId id, out IActionBehavior iaiAgent)
             => (
-                action = locator.TryLocateBehavior(id.BehaviorId, out var behavior)
+                iaiAgent = locator.TryLocateBehavior(id.BehaviorId, out var behavior)
                     ? new ActionWrapper(behavior)
                     : null
             ) != null;
