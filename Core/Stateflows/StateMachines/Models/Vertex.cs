@@ -62,7 +62,7 @@ namespace Stateflows.StateMachines.Models
         public StateActionInitializationBuilder BehaviorInitializationBuilder { get; set; }
         public string BehaviorName { get; set; }
         public string BehaviorType { get; set; }
-        public readonly List<Type> BehaviorEventTypes = [];
+        public List<Type> BehaviorEventTypes { get; set; } = [];
 
         public Dictionary<string, object> Metadata { get; } = [];
 

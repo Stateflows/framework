@@ -50,11 +50,11 @@ namespace Stateflows.MAF.AIAgents.Registration.Builders
             => AddFromAssemblies(AppDomain.CurrentDomain.GetAssemblies());
 
         [DebuggerHidden]
-        public IAIAgentsBuilder AddAIAgent(string agentName, AIAgentFactoryAsync aiAgentFactoryAsync, AgentBuildAction? agentBuildAction = null)
+        public IAIAgentsBuilder AddAIAgent(string agentName, AIAgentFactoryAsync aiAgentFactoryAsync, AIAgentBuildAction? agentBuildAction = null)
             => AddAIAgent(agentName, 1, aiAgentFactoryAsync, agentBuildAction);
 
         [DebuggerHidden]
-        public IAIAgentsBuilder AddAIAgent(string agentName, int version, AIAgentFactoryAsync aiAgentFactoryAsync, AgentBuildAction? agentBuildAction = null)
+        public IAIAgentsBuilder AddAIAgent(string agentName, int version, AIAgentFactoryAsync aiAgentFactoryAsync, AIAgentBuildAction? agentBuildAction = null)
         {
             ActionsBuilder.AddAction<AIAgentAction>(agentName, version, b => b
                 .AddConfiguration(aiAgentFactoryAsync)
@@ -65,7 +65,7 @@ namespace Stateflows.MAF.AIAgents.Registration.Builders
         }
 
         [DebuggerHidden]
-        public IAIAgentsBuilder AddAIAgent<TAgent>(string? agentName = null, int version = 1, AgentBuildAction? agentBuildAction = null)
+        public IAIAgentsBuilder AddAIAgent<TAgent>(string? agentName = null, int version = 1, AIAgentBuildAction? agentBuildAction = null)
             where TAgent : class, IAIAgent
         {
             ActionsBuilder.AddAction<AIAgentAction<TAgent>>(

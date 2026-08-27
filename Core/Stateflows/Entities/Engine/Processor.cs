@@ -17,7 +17,7 @@ namespace Stateflows.Entities.Engine
     {
         public string[] BehaviorTypes => [ BehaviorType.Entity ];
 
-        [DebuggerHidden]
+        // [DebuggerHidden]
         public async Task<EventStatus> ProcessEventAsync<TEvent>(BehaviorId id, EventHolder<TEvent> eventHolder, List<Exception> exceptions)
         {
             try

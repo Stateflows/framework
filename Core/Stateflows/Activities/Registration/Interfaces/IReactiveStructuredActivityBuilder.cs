@@ -1,10 +1,16 @@
 ﻿using Stateflows.Activities.Registration.Interfaces.Base;
 
-namespace Stateflows.Activities.Registration.Interfaces;
+namespace Stateflows.Activities;
 
-public interface IReactiveStructuredActivityBuilder :
+public interface IReactiveStructuredActivityExternalsBuilder :
     IObjectFlowBase<IReactiveStructuredActivityBuilder>,
     IControlFlowBase<IReactiveStructuredActivityBuilder>,
+    INodeOptions<IReactiveStructuredActivityBuilder>;
+
+public interface IReactiveStructuredActivityBuilder :
+    IReactiveStructuredActivityExternalsBuilder,
+    // IObjectFlowBase<IReactiveStructuredActivityBuilder>,
+    // IControlFlowBase<IReactiveStructuredActivityBuilder>,
     IReactiveActivityBase<IReactiveStructuredActivityBuilder>,
     IActivitySpecials<IReactiveStructuredActivityBuilder>,
     IInitialBase<IReactiveStructuredActivityBuilder>,
@@ -12,15 +18,21 @@ public interface IReactiveStructuredActivityBuilder :
     IInputBase<IReactiveStructuredActivityBuilder>,
     IOutputBase<IReactiveStructuredActivityBuilder>,
     IExceptionHandlerBase<IReactiveStructuredActivityBuilder>,
-    INodeOptions<IReactiveStructuredActivityBuilder>,
+    // INodeOptions<IReactiveStructuredActivityBuilder>,
     IStructuredActivityEvents<IReactiveStructuredActivityBuilder>,
     ISendEventBase<IReactiveStructuredActivityBuilder>,
     IPublishEventBase<IReactiveStructuredActivityBuilder>,
     IAcceptEventBase<IReactiveStructuredActivityBuilder>;
 
-public interface IOverridenReactiveStructuredActivityBuilder :
+public interface IOverridenReactiveStructuredActivityExternalsBuilder :
     IObjectFlowBase<IOverridenReactiveStructuredActivityBuilder>,
     IControlFlowBase<IOverridenReactiveStructuredActivityBuilder>,
+    INodeOptions<IOverridenReactiveStructuredActivityBuilder>;
+
+public interface IOverridenReactiveStructuredActivityBuilder :
+    IOverridenReactiveStructuredActivityExternalsBuilder,
+    // IObjectFlowBase<IOverridenReactiveStructuredActivityBuilder>,
+    // IControlFlowBase<IOverridenReactiveStructuredActivityBuilder>,
     IReactiveActivityBase<IOverridenReactiveStructuredActivityBuilder>,
     IReactiveActivityOverrides<IOverridenReactiveStructuredActivityBuilder>,
     IActivitySpecials<IOverridenReactiveStructuredActivityBuilder>,
@@ -29,7 +41,7 @@ public interface IOverridenReactiveStructuredActivityBuilder :
     IInputBase<IOverridenReactiveStructuredActivityBuilder>,
     IOutputBase<IOverridenReactiveStructuredActivityBuilder>,
     IExceptionHandlerBase<IOverridenReactiveStructuredActivityBuilder>,
-    INodeOptions<IOverridenReactiveStructuredActivityBuilder>,
+    // INodeOptions<IOverridenReactiveStructuredActivityBuilder>,
     IStructuredActivityEvents<IOverridenReactiveStructuredActivityBuilder>,
     ISendEventBase<IOverridenReactiveStructuredActivityBuilder>,
     ISendEventOverrides<IOverridenReactiveStructuredActivityBuilder>,

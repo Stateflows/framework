@@ -61,7 +61,14 @@ namespace Stateflows.Entities.Engine
             
             foreach (var defaultInitializer in registration.Model.DefaultInitializerInvoke)
             {
-                defaultInitializer.Invoke(context.Values);
+                try
+                {
+                    defaultInitializer.Invoke(context.Values);
+                }
+                catch (Exception ex)
+                {
+                    Trace.WriteLine($"⦗→s⦘ Entity '{context.Id.Name}:{context.Id.Instance}': default initializer threw exception: {ex}");
+                }
             }
             
             context.Status = BehaviorStatus.Initialized;
@@ -73,11 +80,28 @@ namespace Stateflows.Entities.Engine
         {
             var oldValues = GetTrackedFieldValuesSnapshot();
 
-            registration.Model.Fields.Values.Where(f => f.IsComputed).ToList().ForEach(f => f.Compute(context.Values));
+            foreach (var field in registration.Model.Fields.Values.Where(f => f.IsComputed).ToList())
+            {
+                try
+                {
+                    field.Compute(context.Values);
+                }
+                catch (Exception ex)
+                {
+                    Trace.WriteLine($"⦗→s⦘ Entity '{context.Id.Name}:{context.Id.Instance}': computed field '{field.Name}' threw exception: {ex}");
+                }
+            }
 
             var newValues = GetTrackedFieldValuesSnapshot();
             var changedFieldNames = GetChangedFieldNames(oldValues, newValues);
-            EntityContextValues.StabilizeComputedFields(registration.Model, context.Values, changedFieldNames);
+            try
+            {
+                EntityContextValues.StabilizeComputedFields(registration.Model, context.Values, changedFieldNames);
+            }
+            catch (Exception ex)
+            {
+                Trace.WriteLine($"⦗→s⦘ Entity '{context.Id.Name}:{context.Id.Instance}': computed field stabilization threw exception: {ex}");
+            }
         }
 
         public void InitializeProjectionValues()
@@ -85,11 +109,18 @@ namespace Stateflows.Entities.Engine
             var behaviorContext = new BehaviorContext(context, serviceProvider);
             foreach (var projection in registration.Model.Projections.Values)
             {
-                projection.Invoke(context.Values, behaviorContext);
+                try
+                {
+                    projection.Invoke(context.Values, behaviorContext);
+                }
+                catch (Exception ex)
+                {
+                    Trace.WriteLine($"⦗→s⦘ Entity '{context.Id.Name}:{context.Id.Instance}': projection '{projection.ProjectionType.Name}' threw exception: {ex}");
+                }
             }
         }
 
-        [DebuggerHidden]
+        // [DebuggerHidden]
         public EventStatus TryInitialize<TEvent>(TEvent @event)
         {
             if (Initialized)
@@ -97,18 +128,42 @@ namespace Stateflows.Entities.Engine
 
             if (@event is Initialize)
             {
-                EnsureInitialized();
+                try
+                {
+                    EnsureInitialized();
+                }
+                catch (Exception ex)
+                {
+                    Trace.WriteLine($"⦗→s⦘ Entity '{context.Id.Name}:{context.Id.Instance}': initialization threw exception: {ex}");
+                    // Ensure initialized state is set even on exception
+                    if (context.Status != BehaviorStatus.Initialized)
+                    {
+                        context.Status = BehaviorStatus.Initialized;
+                    }
+                }
                 return EventStatus.Initialized;
             }
 
             var eventType = typeof(TEvent);
             if (registration.Model.Initializers.TryGetValue(eventType, out var initModel) && initModel.Invoke != null)
             {
-                InitializeStoredFieldValues();
-                initModel.Invoke(context.Values, @event);
-                context.Status = BehaviorStatus.Initialized;
-                InitializeComputedFieldValues();
-                InitializeProjectionValues();
+                try
+                {
+                    InitializeStoredFieldValues();
+                    initModel.Invoke(context.Values, @event);
+                    context.Status = BehaviorStatus.Initialized;
+                    InitializeComputedFieldValues();
+                    InitializeProjectionValues();
+                }
+                catch (Exception ex)
+                {
+                    Trace.WriteLine($"⦗→s⦘ Entity '{context.Id.Name}:{context.Id.Instance}': initializer for '{Event.GetName(eventType)}' threw exception: {ex}");
+                    // Ensure initialized state is set even on exception
+                    if (context.Status != BehaviorStatus.Initialized)
+                    {
+                        context.Status = BehaviorStatus.Initialized;
+                    }
+                }
                 return EventStatus.Initialized;
             }
 
@@ -143,8 +198,22 @@ namespace Stateflows.Entities.Engine
             if (registration.Model.Mutations.TryGetValue(eventType, out var mutationModel) && mutationModel != null)
             {   
                 Trace.WriteLine($"⦗→s⦘ Entity '{context.Id.Name}:{context.Id.Instance}': mutation '{Event.GetName(eventType)}' received, processing");
-                mutationModel.Invoke(context.Values, behaviorContext, eventHolder.Payload);
-                
+                var mutationSucceeded = true;
+                try
+                {
+                    mutationModel.Invoke(context.Values, behaviorContext, eventHolder.Payload);
+                }
+                catch (Exception ex)
+                {
+                    mutationSucceeded = false;
+                    Trace.WriteLine($"⦗→s⦘ Entity '{context.Id.Name}:{context.Id.Instance}': mutation '{Event.GetName(eventType)}' threw exception: {ex}");
+                }
+
+                if (mutationSucceeded)
+                {
+                    Trace.WriteLine($"⦗→s⦘ Entity '{context.Id.Name}:{context.Id.Instance}': mutation '{Event.GetName(eventType)}' processed successfully");
+                }
+                 
                 return EventStatus.Consumed;
             }
             else
@@ -154,8 +223,18 @@ namespace Stateflows.Entities.Engine
                 Trace.WriteLine($"⦗→s⦘ Entity '{context.Id.Name}:{context.Id.Instance}': projection '{Event.GetName(projectionType)}' request received, processing");
                 if (registration.Model.Projections.TryGetValue(projectionType, out var projectionModel) && projectionModel != null)
                 {
-                    var projection = projectionModel.Invoke(context.Values, behaviorContext);
-                    eventHolder.Respond(projection.ToTypedEventHolder());
+                    try
+                    {
+                        var projection = projectionModel.Invoke(context.Values, behaviorContext);
+                        eventHolder.Respond(projection.ToTypedEventHolder());
+                        Trace.WriteLine($"⦗→s⦘ Entity '{context.Id.Name}:{context.Id.Instance}': projection '{Event.GetName(projectionType)}' request processed successfully");
+                    }
+                    catch (Exception ex)
+                    {
+                        Trace.WriteLine($"⦗→s⦘ Entity '{context.Id.Name}:{context.Id.Instance}': projection '{Event.GetName(projectionType)}' threw exception: {ex}");
+                        // Respond with null to indicate error
+                        eventHolder.Respond(((object?)null).ToTypedEventHolder());
+                    }
                     
                     return EventStatus.Consumed;
                 }
@@ -181,8 +260,16 @@ namespace Stateflows.Entities.Engine
                 if (!field.Access.HasFlag(FieldAccess.Set))
                     return EventStatus.Rejected;
 
-                context.Values[field.Name.GetFieldKey()] = value!;
-                InitializeComputedFieldValues();
+                try
+                {
+                    context.Values[field.Name.GetFieldKey()] = value!;
+                    InitializeComputedFieldValues();
+                    Trace.WriteLine($"⦗→s⦘ Entity '{context.Id.Name}:{context.Id.Instance}': FieldState write for field '{name}' processed successfully");
+                }
+                catch (Exception ex)
+                {
+                    Trace.WriteLine($"⦗→s⦘ Entity '{context.Id.Name}:{context.Id.Instance}': FieldState write for field '{name}' threw exception: {ex}");
+                }
 
                 return EventStatus.Consumed;
             }
@@ -220,6 +307,7 @@ namespace Stateflows.Entities.Engine
                 responseType.GetProperty(nameof(FieldState<object>.Value))!.SetValue(response, fieldValue);
 
                 eventHolder.Respond(response.ToTypedEventHolder());
+                Trace.WriteLine($"⦗→s⦘ Entity '{context.Id.Name}:{context.Id.Instance}': FieldStateRequest read for field '{name}' processed successfully");
 
                 return EventStatus.Consumed;
             }

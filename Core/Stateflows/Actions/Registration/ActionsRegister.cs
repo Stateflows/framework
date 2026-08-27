@@ -147,7 +147,7 @@ namespace Stateflows.Actions.Registration
 
                 await v.ActionAddingAsync(actionName, version, actionModel.BehaviorClassType, actionModel?.OwnerClass, actionModel?.ParentClass, hasDefaultInstance);
                 await v.ActionAddedAsync(actionName, version);
-                await (Task)ActionTypeAddedAsyncMethod.Invoke(v, [actionName, version]);
+                await (Task)ActionTypeAddedAsyncMethod.MakeGenericMethod(actionType).Invoke(v, [actionName, version]);
                 var eventTypes = new List<Type>();
                 eventTypes.AddRange(actionModel.ConsumedEventTypes);
                 eventTypes.AddRange(actionModel.ConsumedTokenTypes);
@@ -164,6 +164,8 @@ namespace Stateflows.Actions.Registration
                 Version = version,
                 // Delegate = actionDelegate,
                 VisitingAction = visitingAction,
+                OwnerClass = ownerClass,
+                ParentClass = parentClass,
             };
 
             buildAction?.Invoke(new ActionBuilder(actionModel));
@@ -189,7 +191,10 @@ namespace Stateflows.Actions.Registration
                         "action"
                     );
 
-                    actionModel.ConfigurationAction?.Invoke(instance);
+                    foreach (var configAction in actionModel.ConfigurationActions)
+                    {
+                        configAction.Invoke(instance);
+                    }
 
                     await instance.ExecuteAsync(context.CancellationToken);
                 }
@@ -213,14 +218,22 @@ namespace Stateflows.Actions.Registration
             where TAction : class, IAction
             => AddAction(actionName ?? Action<TAction>.Name, version, typeof(TAction), b => buildAction?.Invoke(new ActionBuilder<TAction>(((ActionBuilder)b).Model)));
 
-        public Task VisitActionsAsync(IActionVisitor visitor)
+        public async Task VisitActionsAsync(IActionVisitor visitor)
         {
             foreach (var action in Actions.Where(kv => kv.Key.EndsWith(".current")).Select(kv => kv.Value))
             {
-                action.VisitingAction(visitor);
+                await action.VisitingAction(visitor);
             }
+        }
 
-            return Task.CompletedTask;
+        public async Task VisitActionAsync(string activityName, int version, IActionVisitor visitor)
+        {
+            foreach (var action in Actions
+                         .Where(item => item.Key == $"{activityName}.{version}")
+                         .Select(item => item.Value))
+            {
+                await action.VisitingAction(visitor);
+            }
         }
 
         #region Observability

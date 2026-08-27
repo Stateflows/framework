@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Routing;
+using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Net.Http.Headers;
 using Stateflows.Actions;
 using Stateflows.Common;
@@ -18,12 +19,14 @@ internal class ActionVisitor(IEndpointRouteBuilder routeBuilder, Interceptor int
     public Dictionary<string, List<(HateoasLink, BehaviorStatus[])>> HateoasLinks { get; set; } = new();
     private BehaviorClass? OwnerClass = null;
     public bool HasDefaultInstance { get; private set; } = false;
+    public string BehaviorClassType { get; private set; }
     
     public override Task ActionAddingAsync(string actionName, int actionVersion, string? behaviorClassType = null,
         BehaviorClass? ownerClass = null, BehaviorClass? parentClass = null, bool hasDefaultInstance = false)
     {
         OwnerClass = ownerClass;
         HasDefaultInstance = hasDefaultInstance;
+        BehaviorClassType = behaviorClassType ?? BehaviorType.Action;
         return Task.CompletedTask;
     }
 
@@ -34,11 +37,11 @@ internal class ActionVisitor(IEndpointRouteBuilder routeBuilder, Interceptor int
             return Task.CompletedTask;
         }
 
-        RegisterStandardEndpoints(actionName, routeBuilder);
+        RegisterStandardEndpoints(actionName, BehaviorClassType, routeBuilder);
 
         if (HasDefaultInstance)
         {
-            RegisterDefaultInstanceEndpoints(actionName, routeBuilder);
+            RegisterDefaultInstanceEndpoints(actionName, BehaviorClassType, routeBuilder);
         }
         return Task.CompletedTask;
     }
@@ -46,12 +49,12 @@ internal class ActionVisitor(IEndpointRouteBuilder routeBuilder, Interceptor int
     private static string GetEventName<TEvent>()
         => JsonNamingPolicy.CamelCase.ConvertName(Event<TEvent>.Name.ToShortName());
 
-    private void RegisterStandardEndpoints(string actionName, IEndpointRouteBuilder action)
+    private void RegisterStandardEndpoints(string actionName, string behaviorClassType, IEndpointRouteBuilder action)
     {
         var behaviorClass = new ActionClass(actionName);
 
         var method = HttpMethods.Get;
-        var route = $"/actions/{actionName}";
+        var route = $"/{behaviorClassType.ToCamelCase()}s/{actionName}";
         if (interceptor.BeforeGetInstancesEndpointDefinition(behaviorClass, ref method, ref route))
         {
             var routeHandlerBuilder = action.MapMethods(route, [method], async (IStateflowsStorage storage, ITenantAccessor tenantAccessor) =>
@@ -61,12 +64,12 @@ internal class ActionVisitor(IEndpointRouteBuilder routeBuilder, Interceptor int
                 var contextIds = await storage.GetAllContextIdsAsync(actionClasses);
                 return Results.Ok(contextIds.Select(id => new { Id = id }));
             })
-            .WithTags($"{BehaviorType.Action} {actionName}");
+            .WithTags($"{behaviorClassType} {actionName}");
 
             interceptor.AfterGetInstancesEndpointDefinition(behaviorClass, method, route, routeHandlerBuilder);
         }
 
-        route = $"/actions/{actionName}/{{instance}}/status";
+        route = $"/{behaviorClassType.ToCamelCase()}s/{actionName}/{{instance}}/status";
         method = HttpMethods.Get;
         if (interceptor.BeforeEventEndpointDefinition<BehaviorInfoRequest>(behaviorClass, isDefaultInstance: false, ref method, ref route))
         {
@@ -75,13 +78,13 @@ internal class ActionVisitor(IEndpointRouteBuilder routeBuilder, Interceptor int
                 [method],
                 async (
                     string instance,
-                    IActionLocator locator,
+                    IBehaviorLocator locator,
                     HttpContext httpContext,
                     [FromQuery] bool implicitInitialization = false,
                     [FromQuery] bool stream = false
                 ) =>
                 {
-                    if (locator.TryLocateAction(new ActionId(actionName, instance), out var behavior))
+                    if (locator.TryLocateBehavior(new BehaviorId(behaviorClassType, actionName, instance), out var behavior))
                     {
                         if (stream)
                         {
@@ -115,7 +118,7 @@ internal class ActionVisitor(IEndpointRouteBuilder routeBuilder, Interceptor int
                     return Results.NotFound();
                 }
             )
-            .WithTags($"{BehaviorType.Action} {actionName}");
+            .WithTags($"{behaviorClassType} {actionName}");
 
             interceptor.AfterEventEndpointDefinition<BehaviorInfoRequest>(behaviorClass, isDefaultInstance: false, method, route, routeHandlerBuilder);
 
@@ -131,7 +134,7 @@ internal class ActionVisitor(IEndpointRouteBuilder routeBuilder, Interceptor int
             );
         }
 
-        route = $"/actions/{actionName}/{{instance}}/notifications";
+        route = $"/{behaviorClassType.ToCamelCase()}s/{actionName}/{{instance}}/notifications";
         method = HttpMethods.Get;
         if (interceptor.BeforeEventEndpointDefinition<NotificationsRequest>(behaviorClass, isDefaultInstance: false, ref method, ref route))
         {
@@ -140,14 +143,14 @@ internal class ActionVisitor(IEndpointRouteBuilder routeBuilder, Interceptor int
                 [method],
                 async (
                     string instance,
-                    IActionLocator locator,
+                    IBehaviorLocator locator,
                     HttpContext httpContext,
                     [FromQuery] string[] names,
                     [FromQuery] TimeSpan? period,
                     [FromQuery] bool stream = false
                 ) =>
                 {
-                    if (locator.TryLocateAction(new ActionId(actionName, instance), out var behavior))
+                    if (locator.TryLocateBehavior(new BehaviorId(behaviorClassType, actionName, instance), out var behavior))
                     {
                         if (stream)
                         {
@@ -181,7 +184,7 @@ internal class ActionVisitor(IEndpointRouteBuilder routeBuilder, Interceptor int
                     }
                     return Results.NotFound();
                 })
-                .WithTags($"{BehaviorType.Action} {actionName}");
+                .WithTags($"{behaviorClassType} {actionName}");
 
             interceptor.AfterEventEndpointDefinition<NotificationsRequest>(behaviorClass, isDefaultInstance: false, method, route, routeHandlerBuilder);
 
@@ -197,7 +200,7 @@ internal class ActionVisitor(IEndpointRouteBuilder routeBuilder, Interceptor int
             );
         }
 
-        route = $"/actions/{actionName}/{{instance}}/finalize";
+        route = $"/{behaviorClassType.ToCamelCase()}s/{actionName}/{{instance}}/finalize";
         method = HttpMethods.Post;
         if (interceptor.BeforeEventEndpointDefinition<Finalize>(behaviorClass, isDefaultInstance: false, ref method, ref route))
         {
@@ -206,10 +209,10 @@ internal class ActionVisitor(IEndpointRouteBuilder routeBuilder, Interceptor int
                 [method],
                 async (
                     string instance,
-                    IActionLocator locator
+                    IBehaviorLocator locator
                 ) =>
                 {
-                    if (locator.TryLocateAction(new ActionId(actionName, instance), out var behavior))
+                    if (locator.TryLocateBehavior(new BehaviorId(behaviorClassType, actionName, instance), out var behavior))
                     {
                         var sendResult = await behavior.FinalizeAsync();
                         var behaviorInfo = (await behavior.GetStatusAsync(new Dictionary<string, EventHeader>() { { nameof(NoImplicitInitialization), new NoImplicitInitialization() } })).Response;
@@ -219,7 +222,7 @@ internal class ActionVisitor(IEndpointRouteBuilder routeBuilder, Interceptor int
                     return Results.NotFound();
                 }
             )
-            .WithTags($"{BehaviorType.Action} {actionName}");
+            .WithTags($"{behaviorClassType} {actionName}");
 
             interceptor.AfterEventEndpointDefinition<Finalize>(behaviorClass, isDefaultInstance: false, method, route, routeHandlerBuilder);
 
@@ -235,7 +238,7 @@ internal class ActionVisitor(IEndpointRouteBuilder routeBuilder, Interceptor int
             );
         }
 
-        route = $"/actions/{actionName}/{{instance}}";
+        route = $"/{behaviorClassType.ToCamelCase()}s/{actionName}/{{instance}}";
         method = HttpMethods.Delete;
         if (interceptor.BeforeEventEndpointDefinition<Reset>(behaviorClass, isDefaultInstance: false, ref method, ref route))
         {
@@ -244,10 +247,10 @@ internal class ActionVisitor(IEndpointRouteBuilder routeBuilder, Interceptor int
                 [method],
                 async (
                     string instance,
-                    IActionLocator locator
+                    IBehaviorLocator locator
                 ) =>
                 {
-                    if (locator.TryLocateAction(new ActionId(actionName, instance), out var behavior))
+                    if (locator.TryLocateBehavior(new BehaviorId(behaviorClassType, actionName, instance), out var behavior))
                     {
                         var sendResult = await behavior.ResetAsync();
                         var behaviorInfo = (await behavior.GetStatusAsync(new Dictionary<string, EventHeader>() { { nameof(NoImplicitInitialization), new NoImplicitInitialization() } })).Response;
@@ -257,7 +260,7 @@ internal class ActionVisitor(IEndpointRouteBuilder routeBuilder, Interceptor int
                     return Results.NotFound();
                 }
             )
-            .WithTags($"{BehaviorType.Action} {actionName}");
+            .WithTags($"{behaviorClassType} {actionName}");
 
             interceptor.AfterEventEndpointDefinition<Reset>(behaviorClass, isDefaultInstance: false, method, route, routeHandlerBuilder);
 
@@ -273,7 +276,7 @@ internal class ActionVisitor(IEndpointRouteBuilder routeBuilder, Interceptor int
             );
         }
 
-        route = $"/actions/{actionName}/{{instance}}/initialize";
+        route = $"/{behaviorClassType.ToCamelCase()}s/{actionName}/{{instance}}/initialize";
         method = HttpMethods.Post;
         if (interceptor.BeforeEventEndpointDefinition<Initialize>(behaviorClass, isDefaultInstance: false, ref method, ref route))
         {
@@ -282,10 +285,10 @@ internal class ActionVisitor(IEndpointRouteBuilder routeBuilder, Interceptor int
                     [method],
                     async (
                         string instance,
-                        IActionLocator locator
+                        IBehaviorLocator locator
                     ) =>
                     {
-                        if (locator.TryLocateAction(new ActionId(actionName, instance), out var behavior))
+                        if (locator.TryLocateBehavior(new BehaviorId(behaviorClassType, actionName, instance), out var behavior))
                         {
                             var sendResult = await behavior.SendAsync(new Initialize());
                             var behaviorInfo = (await behavior.GetStatusAsync(new Dictionary<string, EventHeader>() { { nameof(NoImplicitInitialization), new NoImplicitInitialization() } })).Response;
@@ -295,7 +298,7 @@ internal class ActionVisitor(IEndpointRouteBuilder routeBuilder, Interceptor int
                         return Results.NotFound();
                     }
                 )
-                .WithTags($"{BehaviorType.Action} {actionName}");
+                .WithTags($"{BehaviorClassType} {actionName}");
 
             interceptor.AfterEventEndpointDefinition<Initialize>(behaviorClass, isDefaultInstance: false, method, route, routeHandlerBuilder);
 
@@ -312,13 +315,13 @@ internal class ActionVisitor(IEndpointRouteBuilder routeBuilder, Interceptor int
         }
     }
 
-    private void RegisterDefaultInstanceEndpoints(string actionName, IEndpointRouteBuilder action)
+    private void RegisterDefaultInstanceEndpoints(string actionName, string behaviorClassType, IEndpointRouteBuilder action)
     {
         var behaviorClass = new ActionClass(actionName);
         const string instance = "";
 
         var method = HttpMethods.Get;
-        var route = $"/actions/{actionName}";
+        var route = $"/{behaviorClassType.ToCamelCase()}s/{actionName}";
         if (interceptor.BeforeGetInstancesEndpointDefinition(behaviorClass, ref method, ref route))
         {
             var routeHandlerBuilder = action.MapMethods(route, [method], async (IStateflowsStorage storage) =>
@@ -327,12 +330,12 @@ internal class ActionVisitor(IEndpointRouteBuilder routeBuilder, Interceptor int
                 var contextIds = await storage.GetAllContextIdsAsync(actionClasses);
                 return Results.Ok(contextIds.Select(id => new { Id = id }));
             })
-            .WithTags($"{BehaviorType.Action} {actionName}");
+            .WithTags($"{BehaviorClassType} {actionName}");
 
             interceptor.AfterGetInstancesEndpointDefinition(behaviorClass, method, route, routeHandlerBuilder);
         }
 
-        route = $"/actions/{actionName}/status";
+        route = $"/{behaviorClassType.ToCamelCase()}s/{actionName}/status";
         method = HttpMethods.Get;
         if (interceptor.BeforeEventEndpointDefinition<BehaviorInfoRequest>(behaviorClass, isDefaultInstance: true, ref method, ref route))
         {
@@ -340,13 +343,13 @@ internal class ActionVisitor(IEndpointRouteBuilder routeBuilder, Interceptor int
                 route,
                 [method],
                 async (
-                    IActionLocator locator,
+                    IBehaviorLocator locator,
                     HttpContext httpContext,
                     [FromQuery] bool implicitInitialization = false,
                     [FromQuery] bool stream = false
                 ) =>
                 {
-                    if (locator.TryLocateAction(new ActionId(actionName, instance), out var behavior))
+                    if (locator.TryLocateBehavior(new BehaviorId(behaviorClassType, actionName, instance), out var behavior))
                     {
                         if (stream)
                         {
@@ -380,7 +383,7 @@ internal class ActionVisitor(IEndpointRouteBuilder routeBuilder, Interceptor int
                     return Results.NotFound();
                 }
             )
-            .WithTags($"{BehaviorType.Action} {actionName}");
+            .WithTags($"{BehaviorClassType} {actionName}");
 
             interceptor.AfterEventEndpointDefinition<BehaviorInfoRequest>(behaviorClass, isDefaultInstance: true, method, route, routeHandlerBuilder);
 
@@ -396,7 +399,7 @@ internal class ActionVisitor(IEndpointRouteBuilder routeBuilder, Interceptor int
             );
         }
 
-        route = $"/actions/{actionName}/notifications";
+        route = $"/{behaviorClassType.ToCamelCase()}s/{actionName}/notifications";
         method = HttpMethods.Get;
         if (interceptor.BeforeEventEndpointDefinition<NotificationsRequest>(behaviorClass, isDefaultInstance: true, ref method, ref route))
         {
@@ -404,14 +407,14 @@ internal class ActionVisitor(IEndpointRouteBuilder routeBuilder, Interceptor int
                 route,
                 [method],
                 async (
-                    IActionLocator locator,
+                    IBehaviorLocator locator,
                     HttpContext httpContext,
                     [FromQuery] string[] names,
                     [FromQuery] TimeSpan? period,
                     [FromQuery] bool stream = false
                 ) =>
                 {
-                    if (locator.TryLocateAction(new ActionId(actionName, instance), out var behavior))
+                    if (locator.TryLocateBehavior(new BehaviorId(behaviorClassType, actionName, instance), out var behavior))
                     {
                         if (stream)
                         {
@@ -445,7 +448,7 @@ internal class ActionVisitor(IEndpointRouteBuilder routeBuilder, Interceptor int
                     }
                     return Results.NotFound();
                 })
-                .WithTags($"{BehaviorType.Action} {actionName}");
+                .WithTags($"{BehaviorClassType} {actionName}");
 
             interceptor.AfterEventEndpointDefinition<NotificationsRequest>(behaviorClass, isDefaultInstance: true, method, route, routeHandlerBuilder);
 

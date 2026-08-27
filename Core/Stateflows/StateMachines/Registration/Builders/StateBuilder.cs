@@ -410,7 +410,7 @@ namespace Stateflows.StateMachines.Registration.Builders
         #region DoActivity
         [DebuggerHidden]
         private string GetDoActivityName()
-            => $"{Vertex.Graph.Name}.{Vertex.Name}.doActivity";
+            => $"{Vertex.Graph.Name}.{Vertex.Name}.do";
         
         private StateBuilder AddDoActivity<TActivity>(ActivityUtilsBuildAction buildAction = null)
             where TActivity : class, IActivity
@@ -442,17 +442,28 @@ namespace Stateflows.StateMachines.Registration.Builders
         #region DoAction
         [DebuggerHidden]
         private string GetDoActionName()
-            => $"{Vertex.Graph.Name}.{Vertex.Name}.doAction";
+            => $"{Vertex.Graph.Name}.{Vertex.Name}.do";
         
         private StateBuilder AddDoAction<TAction>(ActionBuildAction<TAction> buildAction = null)
             where TAction : class, IAction
         {
             var doActionName = GetDoActionName();
-            Vertex.Graph.StateflowsBuilder.AddActions(b => b.AddAction<TAction>(doActionName, buildAction: buildAction), Vertex.Graph.OwnerClass ?? Vertex.Graph.Class, Vertex.Graph.Class);
+            var register = Vertex.Graph.StateflowsBuilder
+                .AddActions(b => b
+                    .AddAction<TAction>(doActionName, buildAction: buildAction),
+                    Vertex.Graph.OwnerClass ?? Vertex.Graph.Class,
+                    Vertex.Graph.Class
+                )
+                .ActionsRegister;
             
-            Vertex.BehaviorType = BehaviorType.Action;
-            Vertex.BehaviorName = doActionName;
-            // // Vertex.BehaviorInitializationBuilder = initializationBuilder;
+            var currentKey = $"{doActionName}.current";
+            if (register.Actions.TryGetValue(currentKey, out var action))
+            {
+                Vertex.BehaviorType = action.BehaviorClassType;
+                Vertex.BehaviorName = doActionName;
+            }
+            
+            Graph.VisitingTasks.Add(visitor => visitor.DoBehaviorAddedAsync(Graph.Name, Graph.Version, Vertex.Name, doActionName, action.BehaviorClassType, action.ConsumedEventTypes));
             
             return this;
         }
@@ -461,11 +472,20 @@ namespace Stateflows.StateMachines.Registration.Builders
         private StateBuilder AddDoAction(ActionDelegateAsync actionDelegate, ActionBuildAction buildAction = null)
         {
             var doActionName = GetDoActionName();
-            Vertex.Graph.StateflowsBuilder.AddActions(b => b.AddAction(doActionName, actionDelegate), Vertex.Graph.OwnerClass ?? Vertex.Graph.Class, Vertex.Graph.Class);
+            var register = Vertex.Graph.StateflowsBuilder
+                .AddActions(b => b
+                    .AddAction(doActionName, actionDelegate),
+                    Vertex.Graph.OwnerClass ?? Vertex.Graph.Class,
+                    Vertex.Graph.Class
+                )
+                .ActionsRegister;
             
-            Vertex.BehaviorType = BehaviorType.Action;
-            Vertex.BehaviorName = doActionName;
-            // Vertex.BehaviorInitializationBuilder = initializationBuilder;
+            var currentKey = $"{doActionName}.current";
+            if (register.Actions.TryGetValue(currentKey, out var action))
+            {
+                Vertex.BehaviorType = action.BehaviorClassType;
+                Vertex.BehaviorName = doActionName;
+            }
             
             return this;
         }

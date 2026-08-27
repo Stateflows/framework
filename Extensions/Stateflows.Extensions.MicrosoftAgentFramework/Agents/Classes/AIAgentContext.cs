@@ -24,9 +24,9 @@ internal class AIAgentContext(IBehaviorContext functionContext, IInput input, IO
         functionContext.Send(@event, headers);
     }
 
-    public void Publish<TNotification>(TNotification notification, IDictionary<string, EventHeader>? headers = null)
+    public void PublishRange<TNotification>(IEnumerable<TNotification> notifications, IDictionary<string, EventHeader>? headers = null)
     {
-        functionContext.Publish(notification, headers);
+        functionContext.PublishRange(notifications, headers);
     }
 
     public bool IsEmbedded => functionContext.IsEmbedded;

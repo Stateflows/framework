@@ -8,9 +8,9 @@ namespace Stateflows.MAF.AIAgents
         IAIAgentsBuilder AddFromAssembly(Assembly assembly);
         IAIAgentsBuilder AddFromAssemblies(IEnumerable<Assembly> assemblies);
         IAIAgentsBuilder AddFromLoadedAssemblies();
-        IAIAgentsBuilder AddAIAgent(string agentName, AIAgentFactoryAsync aiAgentFactoryAsync, AgentBuildAction? agentBuildAction = null);
-        IAIAgentsBuilder AddAIAgent(string agentName, int version, AIAgentFactoryAsync aiAgentFactoryAsync, AgentBuildAction? agentBuildAction = null);
-        IAIAgentsBuilder AddAIAgent<TAgent>(string? agentName = null, int version = 1, AgentBuildAction? agentBuildAction = null)
+        IAIAgentsBuilder AddAIAgent(string agentName, AIAgentFactoryAsync aiAgentFactoryAsync, AIAgentBuildAction? agentBuildAction = null);
+        IAIAgentsBuilder AddAIAgent(string agentName, int version, AIAgentFactoryAsync aiAgentFactoryAsync, AIAgentBuildAction? agentBuildAction = null);
+        IAIAgentsBuilder AddAIAgent<TAgent>(string? agentName = null, int version = 1, AIAgentBuildAction? agentBuildAction = null)
             where TAgent : class, IAIAgent;
 
         // IAgentsBuilder AddInterceptor<TInterceptor>()

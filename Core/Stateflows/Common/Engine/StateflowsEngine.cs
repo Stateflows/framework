@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Linq;
-using System.Diagnostics;
 using System.Threading.Tasks;
 using System.Collections.Generic;
 using Microsoft.Extensions.DependencyInjection;
@@ -91,7 +90,7 @@ namespace Stateflows.Common
             }
 
             await using var lockHandle = await (
-                id.Type is not BehaviorType.Activity and not BehaviorType.Entity and not  BehaviorType.StateMachine
+                id.Type is not BehaviorType.Activity and not BehaviorType.Entity and not BehaviorType.StateMachine
                     ? Lock.AquireNoLockAsync(id)
                     : Lock.AquireLockAsync(id)
             );

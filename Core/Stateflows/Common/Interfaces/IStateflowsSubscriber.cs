@@ -6,7 +6,7 @@ namespace Stateflows.Common.Interfaces;
 
 public interface IStateflowsSubscriber
 {
-    Task PublishAsync<TNotification>(BehaviorId publisherBehaviorId, TNotification notificationEvent, StateflowsContext senderContext, IDictionary<string, EventHeader>? headers = null);
+    Task PublishRangeAsync<TNotification>(BehaviorId publisherBehaviorId, IEnumerable<TNotification> notificationEvents, StateflowsContext senderContext, IDictionary<string, EventHeader>? headers = null);
     Task SubscribeAsync<TNotification>(BehaviorId subscriberBehaviorId, BehaviorId subscribedBehaviorId);
     Task UnsubscribeAsync<TNotification>(BehaviorId subscriberBehaviorId, BehaviorId subscribedBehaviorId);
 }

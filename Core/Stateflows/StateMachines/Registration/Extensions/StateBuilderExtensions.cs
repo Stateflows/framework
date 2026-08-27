@@ -94,16 +94,25 @@ public static class StateBuilderExtensions
 
     private class SubscriptionsObserver<TProjectionTemplate>(EntityScope scope) : StateMachineObserver
     {
-        public override void AfterStateMachineInitialize(IStateMachineInitializationContext context, bool implicitInitialization, bool initialized)
+        public override void BeforeStateMachineInitialize(IStateMachineInitializationContext context, bool implicitInitialization)
         {
-            if (!initialized) return;
-            
             var behaviorId = GetBehaviorId(context, scope);
             if (behaviorId.HasValue)
             {
-                context.Behavior.SubscribeAsync<TProjectionTemplate>(GetEntityId(behaviorId.Value));
+                context.Behavior.SubscribeAsync<TProjectionTemplate>(GetEntityId(behaviorId.Value)).GetAwaiter().GetResult();
             }
         }
+
+        // public override void AfterStateMachineInitialize(IStateMachineInitializationContext context, bool implicitInitialization, bool initialized)
+        // {
+        //     if (!initialized) return;
+        //     
+        //     var behaviorId = GetBehaviorId(context, scope);
+        //     if (behaviorId.HasValue)
+        //     {
+        //         context.Behavior.SubscribeAsync<TProjectionTemplate>(GetEntityId(behaviorId.Value));
+        //     }
+        // }
     }
     
     private static StateMachineBuilder AddProjectionSubscription<TProjectionTemplate>(this StateMachineBuilder builder, EntityScope scope = EntityScope.Self)

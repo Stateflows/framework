@@ -17,45 +17,50 @@ namespace Stateflows.Common.Subscription
         IServiceProvider serviceProvider
     ) : IStateflowsSubscriber
     {
-        public async Task PublishAsync<TNotification>(BehaviorId publisherBehaviorId, TNotification notificationEvent, StateflowsContext senderContext,
+        public async Task PublishRangeAsync<TNotification>(BehaviorId publisherBehaviorId, IEnumerable<TNotification> notificationEvents, StateflowsContext senderContext,
             IDictionary<string, EventHeader>? headers = null)
         {
             var notificationType = typeof(TNotification);
             var ttlAttribute = notificationType.GetCustomAttribute<TimeToLiveAttribute>();
             var retainAttribute = notificationType.GetCustomAttribute<RetainAttribute>();
-            headers = headers?.ToDictionary() ?? [];
             var headersArray = headers?.Values.ToArray() ?? [];
-            var eventHolder = new EventHolder<TNotification>()
-            {
-                Payload = notificationEvent,
-                SenderId = publisherBehaviorId,
-                SentAt = DateTime.Now,
-                Headers = headers as Dictionary<string, EventHeader>,
-                TimeToLive = ttlAttribute?.SecondsToLive ?? headersArray.OfType<TimeToLive>().FirstOrDefault()?.SecondsToLive ?? 0,
-                Retained = retainAttribute != null || headersArray.OfType<Retain>().FirstOrDefault() != null
-            };
-
-            var context = new BehaviorActionContext(senderContext, serviceProvider)
-            {
-                Headers = senderContext.ExecutionTriggerHolder!.Headers,
-                ExecutionTrigger = senderContext.ExecutionTriggerHolder!.BoxedPayload,
-                ExecutionTriggerId = senderContext.ExecutionTriggerHolder!.Id
-            };
             
-            await commonInterceptor.NotificationPublishedAsync(context, notificationEvent, headers!);
-
-            if (senderContext.Subscribers.TryGetValue(Event<TNotification>.Name, out var behaviorIds))
+            foreach (var notificationEvent in notificationEvents)
             {
-                _ = Task.WhenAll(
-                    behaviorIds.Select(
-                        id => behaviorLocator.TryLocateBehavior(id, out var behavior)
+                var notificationHeaders = headers?.ToDictionary() ?? [];
+
+                var eventHolder = new EventHolder<TNotification>()
+                {
+                    Payload = notificationEvent,
+                    SenderId = publisherBehaviorId,
+                    SentAt = DateTime.Now,
+                    Headers = notificationHeaders,
+                    TimeToLive = ttlAttribute?.SecondsToLive ??
+                                 headersArray.OfType<TimeToLive>().FirstOrDefault()?.SecondsToLive ?? 0,
+                    Retained = retainAttribute != null || headersArray.OfType<Retain>().FirstOrDefault() != null
+                };
+
+                var context = new BehaviorActionContext(senderContext, serviceProvider)
+                {
+                    Headers = senderContext.ExecutionTriggerHolder!.Headers,
+                    ExecutionTrigger = senderContext.ExecutionTriggerHolder!.BoxedPayload,
+                    ExecutionTriggerId = senderContext.ExecutionTriggerHolder!.Id
+                };
+
+                await commonInterceptor.NotificationPublishedAsync(context, notificationEvent, notificationHeaders);
+
+                if (senderContext.Subscribers.TryGetValue(Event<TNotification>.Name, out var behaviorIds))
+                {
+                    _ = Task.WhenAll(
+                        behaviorIds.Select(id => behaviorLocator.TryLocateBehavior(id, out var behavior)
                             ? behavior.SendAsync(notificationEvent)
                             : Task.CompletedTask
-                    )
-                );
-            }
+                        )
+                    );
+                }
 
-            await notificationsHub.PublishAsync(eventHolder);
+                await notificationsHub.PublishAsync(eventHolder);
+            }
         }
 
         public Task SubscribeAsync<TNotification>(BehaviorId subscriberBehaviorId, BehaviorId subscribedBehaviorId)

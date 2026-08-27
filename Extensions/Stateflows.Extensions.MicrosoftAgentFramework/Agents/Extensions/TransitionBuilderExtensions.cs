@@ -7,7 +7,7 @@ namespace Stateflows.MAF.AIAgents.Extensions;
 
 public static class TransitionBuilderExtensions
 {
-    public static ITransitionBuilder<TEvent> AddAgenticEffect<TEvent>(this ITransitionBuilder<TEvent> transitionBuilder,
+    internal static ITransitionBuilder<TEvent> AddAgenticEffect<TEvent>(this ITransitionBuilder<TEvent> transitionBuilder,
         Func<TEvent, AIContent> aiContentFactory)
         => transitionBuilder.AddEffect(c => c.Behavior.Send(new ChatMessage()
             {
@@ -16,7 +16,7 @@ public static class TransitionBuilderExtensions
             }
         ));
 
-    public static IInternalTransitionBuilder<TEvent> AddAgenticEffect<TEvent>(
+    internal static IInternalTransitionBuilder<TEvent> AddAgenticEffect<TEvent>(
         this IInternalTransitionBuilder<TEvent> transitionBuilder,
         Func<ITransitionContext<TEvent>, AIContent> aiContentFactory)
         => transitionBuilder.AddEffect(c => c.Behavior.Send(new ChatMessage()
@@ -26,12 +26,12 @@ public static class TransitionBuilderExtensions
             }
         ));
 
-    public static IInternalTransitionBuilder<TEvent> AddAgenticEffect<TEvent>(
+    internal static IInternalTransitionBuilder<TEvent> AddAgenticEffect<TEvent>(
         this IInternalTransitionBuilder<TEvent> transitionBuilder,
         Func<ITransitionContext<TEvent>, ChatMessage> chatMessageFactory)
         => transitionBuilder.AddEffect(c => c.Behavior.Send(chatMessageFactory(c)));
 
-    public static ITransitionBuilder<TEvent> AddAgenticGuard<TEvent>(this ITransitionBuilder<TEvent> transitionBuilder,
+    internal static ITransitionBuilder<TEvent> AddAgenticGuard<TEvent>(this ITransitionBuilder<TEvent> transitionBuilder,
         Func<TEvent, AIContent> aiContentFactory)
         => transitionBuilder.AddGuard(c =>
         {
@@ -55,7 +55,7 @@ public static class TransitionBuilderExtensions
             return false;
         });
 
-    public static IInternalTransitionBuilder<TEvent> AddAgenticGuard<TEvent>(
+    internal static IInternalTransitionBuilder<TEvent> AddAgenticGuard<TEvent>(
         this IInternalTransitionBuilder<TEvent> transitionBuilder,
         Func<TEvent, AIContent> aiContentFactory)
         => transitionBuilder.AddGuard(c =>

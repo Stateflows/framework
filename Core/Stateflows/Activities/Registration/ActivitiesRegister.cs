@@ -172,7 +172,7 @@ namespace Stateflows.Activities.Registration
             }
         }
 
-        public async Task VisitActivitiesAsync(string activityName, int version, IActivityVisitor visitor)
+        public async Task VisitActivityAsync(string activityName, int version, IActivityVisitor visitor)
         {
             var tasks = Activities
                 .Where(item => item.Key == $"{activityName}.{version}")

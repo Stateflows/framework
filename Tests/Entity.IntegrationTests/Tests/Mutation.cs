@@ -9,6 +9,10 @@ namespace Entity.IntegrationTests.Tests
     public record MutationEvent(string StringValue);
     
     public record FlagSwitchingEvent(bool Flag);
+
+    public record InheritedMutationSetBaseEvent(string Value);
+
+    public record InheritedMutationSetSuffixEvent(string Value);
     
     public interface IMutationEntityTemplate
     {
@@ -87,12 +91,56 @@ namespace Entity.IntegrationTests.Tests
         }
     }
 
+    public interface IInheritedMutationEntityTemplateBase
+    {
+        [Field]
+        string BaseValue { get; set; }
+
+        [Mutation]
+        void SetBase(InheritedMutationSetBaseEvent mutation)
+        {
+            BaseValue = mutation.Value;
+        }
+    }
+
+    public interface IInheritedMutationEntityTemplate : IInheritedMutationEntityTemplateBase
+    {
+        [Field]
+        string Suffix { get; set; }
+
+        [Field]
+        string CombinedValue => $"{BaseValue}:{Suffix}";
+
+        [Mutation]
+        void SetSuffix(InheritedMutationSetSuffixEvent mutation)
+        {
+            Suffix = mutation.Value;
+        }
+
+        [Projection(PublishScope = PublishScope.Self)]
+        InheritedMutationProjection Snapshot => new()
+        {
+            BaseValue = BaseValue,
+            Suffix = Suffix,
+            CombinedValue = CombinedValue,
+        };
+    }
+
     public record MutationEntityTemplate
     {
         public string? String { get; set; }
         public int Int { get; set; }
         public int ComputedInt { get; set; }
         public int DerivedInt { get; set; }
+    }
+
+    public record InheritedMutationProjection
+    {
+        public string? BaseValue { get; set; }
+
+        public string? Suffix { get; set; }
+
+        public string? CombinedValue { get; set; }
     }
 
     [TestClass]
@@ -115,6 +163,13 @@ namespace Entity.IntegrationTests.Tests
                         {
                             context.Entity.StringValue = string.Empty;
                             context.Entity.ProbeAccessRestrictions();
+                        })
+                    )
+                    .AddEntity<IInheritedMutationEntityTemplate>("inheritedMutation", b => b
+                        .AddDefaultInitializer(context =>
+                        {
+                            context.Entity.BaseValue = "seed";
+                            context.Entity.Suffix = "0";
                         })
                     )
                 )
@@ -231,6 +286,57 @@ namespace Entity.IntegrationTests.Tests
             Assert.AreEqual("Lorem ipsum", fieldValue1);
             Assert.IsNotNull(fieldValue2);
             Assert.AreEqual(11, fieldValue2);
+        }
+
+        [TestMethod]
+        public async Task InheritedTemplate_BaseAndDerivedMutations_AreConsumed()
+        {
+            var initStatus = EventStatus.Undelivered;
+            var baseStatus = EventStatus.Undelivered;
+            var suffixStatus = EventStatus.Undelivered;
+            string? baseValue = null;
+            string? suffixValue = null;
+
+            if (TryLocateEntity("inheritedMutation", "x", out var entity))
+            {
+                initStatus = (await entity.SendAsync(new Initialize())).Status;
+                baseStatus = (await entity.SendAsync(new InheritedMutationSetBaseEvent("left"))).Status;
+                suffixStatus = (await entity.SendAsync(new InheritedMutationSetSuffixEvent("right"))).Status;
+
+                var context = await HydrateContextAsync("inheritedMutation", "x");
+                baseValue = context.Values.TryGetValue("$field:BaseValue", out var baseObject) ? baseObject as string : null;
+                suffixValue = context.Values.TryGetValue("$field:Suffix", out var suffixObject) ? suffixObject as string : null;
+            }
+
+            Assert.AreEqual(EventStatus.Initialized, initStatus);
+            Assert.AreEqual(EventStatus.Consumed, baseStatus);
+            Assert.AreEqual(EventStatus.Consumed, suffixStatus);
+            Assert.AreEqual("left", baseValue);
+            Assert.AreEqual("right", suffixValue);
+        }
+
+        [TestMethod]
+        public async Task InheritedTemplate_Projection_ReflectsMutationChanges()
+        {
+            var baseStatus = EventStatus.Undelivered;
+            var suffixStatus = EventStatus.Undelivered;
+            var success = false;
+            InheritedMutationProjection? projection = null;
+
+            if (TryLocateEntity("inheritedMutation", "projection", out var entity))
+            {
+                baseStatus = (await entity.SendAsync(new InheritedMutationSetBaseEvent("alpha"))).Status;
+                suffixStatus = (await entity.SendAsync(new InheritedMutationSetSuffixEvent("beta"))).Status;
+                (success, projection) = await entity.TryGetProjectionAsync<InheritedMutationProjection>();
+            }
+
+            Assert.AreEqual(EventStatus.Consumed, baseStatus);
+            Assert.AreEqual(EventStatus.Consumed, suffixStatus);
+            Assert.IsTrue(success);
+            Assert.IsNotNull(projection);
+            Assert.AreEqual("alpha", projection.BaseValue);
+            Assert.AreEqual("beta", projection.Suffix);
+            Assert.AreEqual("alpha:beta", projection.CombinedValue);
         }
     }
 }

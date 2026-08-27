@@ -10,7 +10,10 @@ public interface IPublishes<TReturn>
     /// <typeparam name="TNotification">Type of notification</typeparam>
     /// <param name="notification">Notification event instance</param>
     /// <param name="headers">Notification event headers</param>
-    void Publish<TNotification>(TNotification notification, IDictionary<string, EventHeader> headers = null);
+    void Publish<TNotification>(TNotification notification, IDictionary<string, EventHeader> headers = null)
+        => PublishRange([ notification ], headers);
+    
+    void PublishRange<TNotification>(IEnumerable<TNotification> notifications, IDictionary<string, EventHeader> headers = null);
 
     /// <summary>
     /// Publishes timed notification to all subscribers and watchers of current behavior
@@ -29,6 +32,17 @@ public interface IPublishes<TReturn>
 
         Publish(notification, headersList);
     }
+    
+    void PublishRangeTimed<TNotification>(IEnumerable<TNotification> notifications, int timeToLiveInSeconds = 60, IDictionary<string, EventHeader> headers = null)
+    {
+        var headersList = new Dictionary<string, EventHeader>() { { nameof(TimeToLive), new TimeToLive(timeToLiveInSeconds) } };
+        if (headers != null)
+        {
+            headersList.AddRange(headers);
+        }
+
+        PublishRange(notifications, headersList);
+    }
 
     /// <summary>
     /// Publishes retained notification to all subscribers and watchers of current behavior
@@ -45,5 +59,16 @@ public interface IPublishes<TReturn>
         }
 
         Publish(notification, headersList);
+    }
+    
+    void PublishRangeRetained<TNotification>(IEnumerable<TNotification> notifications, IDictionary<string, EventHeader> headers = null)
+    {
+        var headersList = new Dictionary<string, EventHeader>() { { nameof(Retain), new Retain() } };
+        if (headers != null)
+        {
+            headersList.AddRange(headers);
+        }
+
+        PublishRange(notifications, headersList);
     }
 }

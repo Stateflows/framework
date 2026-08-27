@@ -7,6 +7,18 @@ namespace Stateflows.MAF.AIAgents.Registration;
 
 internal class AIAgentBuilder(IActionBuilder<AIAgentAction> actionBuilder) : IAIAgentBuilder
 {
+    public IAIAgentBuilder SetName(string name)
+    {
+        actionBuilder.Configure(f => f.Name = name);
+        return this;
+    }
+
+    public IAIAgentBuilder SetDescription(string description)
+    {
+        actionBuilder.Configure(f => f.Description = description);
+        return this;
+    }
+
     public IAIAgentBuilder SetInitialPrompt(string initialPrompt)
     {
         actionBuilder.Configure(f => f.InitialPrompt = initialPrompt);

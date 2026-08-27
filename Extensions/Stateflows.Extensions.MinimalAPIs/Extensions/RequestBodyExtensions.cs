@@ -472,7 +472,7 @@ internal static class RequestBodyExtensions
                     }
                 )
                 : routeBuilder.MapMethods(
-                    route,
+                    defaultInstanceRoute,
                     [method],
                     async (
                         HttpContext context,
@@ -533,8 +533,11 @@ internal static class RequestBodyExtensions
     {
         httpContext.Response.Headers.Append(HeaderNames.ContentType, "text/event-stream");
 
+        var n = payload.RequestedNotifications?.ToList() ?? [];
+        n.Add("String");
+        
         await using var watcher = await behavior.WatchAsync(
-            payload.RequestedNotifications,
+            n.ToArray(),
             async eventHolder => await httpContext.WriteEventAsync(eventHolder)
         );
 

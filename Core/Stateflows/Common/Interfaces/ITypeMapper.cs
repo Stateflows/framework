@@ -13,5 +13,7 @@ namespace Stateflows.Common.Interfaces
         IEnumerable<Type> GetMappedTypes(Type type);
 
         void VisitMappedTypes<T>(ITypeVisitor typeVisitor);
+        
+        void VisitMappedTypes(Type type, ITypeVisitor typeVisitor);
     }
 }

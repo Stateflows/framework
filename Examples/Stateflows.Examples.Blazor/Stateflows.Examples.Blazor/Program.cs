@@ -65,7 +65,7 @@ builder.Services.AddStateflows(b => b
         .AddActivity<Test>(nameof(Test))
     )
     
-    .AddDefaultInstance(new StateMachineClass("Doc"))
+    // .AddDefaultInstance(new StateMachineClass("Doc"))
     .AddDefaultInstance(new ActivityClass(nameof(Test)))
     
     .AddInterceptor<InfoEnhanceInterceptor>()
@@ -158,13 +158,13 @@ app.MapStateflowsMinimalAPIsEndpoints(b => b
             )
         )
     )
-    .ConfigureStateMachines(b => b
-        .ConfigureStateMachine("Doc", b => b
-            .ConfigureDefaultInstance(b => b
-                .Disable()
-            )
-        )
-    )
+    // .ConfigureStateMachines(b => b
+    //     .ConfigureStateMachine("Doc", b => b
+    //         .ConfigureDefaultInstance(b => b
+    //             .Disable()
+    //         )
+    //     )
+    // )
 );
 
 // app.UseStateflowsDashboard();

@@ -3,6 +3,7 @@ using System.Linq;
 using System.Diagnostics;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using Stateflows.Actions;
 using Stateflows.Activities;
 using Stateflows.Common;
 using Stateflows.Common.Models;
@@ -87,7 +88,7 @@ namespace Stateflows.StateMachines.Models
 
         public List<BehaviorClass> RequiredBehaviors = new();
 
-        [DebuggerHidden]
+        //[DebuggerHidden]
         public void Validate(IEnumerable<BehaviorClass> behaviorClasses)
         {
             var missingBehaviorClasses = RequiredBehaviors.Where(bc => !behaviorClasses.Contains(bc)).ToList();
@@ -98,7 +99,7 @@ namespace Stateflows.StateMachines.Models
             }
         }
 
-        [DebuggerHidden]
+        //[DebuggerHidden]
         public void Build()
         {
             if (StateflowsBuilder.ResourceNames.TryGetValue(ResourceName ?? string.Empty, out var resourceName))
@@ -177,13 +178,13 @@ namespace Stateflows.StateMachines.Models
                 {
                     switch (vertex.BehaviorType)
                     {
-                        case BehaviorType.Action:
-                            break;
+                        // case BehaviorType.Action:
+                        //     break;
                         
                         case BehaviorType.Activity:
                             var activitiesRegister = StateflowsBuilder.EnsureActivitiesServices();
                             var doActivityVisitor = new DoActivityVisitor(StateflowsBuilder.TypeMapper);
-                            activitiesRegister.VisitActivitiesAsync(vertex.BehaviorName, 1, doActivityVisitor).Wait();
+                            activitiesRegister.VisitActivityAsync(vertex.BehaviorName, 1, doActivityVisitor).Wait();
                             vertex.BehaviorEventTypes.AddRange(doActivityVisitor.EventTypes);
 
                             break;
@@ -193,6 +194,14 @@ namespace Stateflows.StateMachines.Models
                             var submachineVisitor = new SubmachineVisitor(StateflowsBuilder.TypeMapper);
                             stateMachinesRegister.VisitStateMachineAsync(vertex.BehaviorName, 1, submachineVisitor).Wait();
                             vertex.BehaviorEventTypes.AddRange(submachineVisitor.EventTypes);
+                            
+                            break;
+                        
+                        default:
+                            var actionsRegister = StateflowsBuilder.EnsureActionsServices();
+                            var doActionVisitor = new DoActionVisitor(StateflowsBuilder.TypeMapper);
+                            actionsRegister.VisitActionAsync(vertex.BehaviorName, 1, doActionVisitor).Wait();
+                            vertex.BehaviorEventTypes.AddRange(doActionVisitor.EventTypes);
                             
                             break;
                     }

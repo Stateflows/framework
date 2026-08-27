@@ -5,95 +5,133 @@ using Stateflows.Extensions.MicrosoftAgentFramework.AIAgents.Classes;
 using Stateflows.MAF.AIAgents.Registration;
 using System.Diagnostics;
 using System.Text.Json;
+using Microsoft.Agents.AI;
 using Microsoft.Extensions.AI;
+using Microsoft.Extensions.DependencyInjection;
 using Stateflows.Actions;
 using Stateflows.Extensions.MicrosoftAgentFramework.Agents.Classes;
+using Stateflows.MAF.AIAgents.Events;
 
 namespace Stateflows.MAF.AIAgents.Classes;
 
 internal class AIAgentAction(
+    IServiceProvider serviceProvider,
     IActionContext actionContext,
     IBehaviorContext behaviorContext,
     IExecutionContext executionContext) : IAction,
     IConfigurable<AIAgentFactoryAsync>,
-    IConfigurable<AgentBuildAction?>,
-    IConfigurable<IMetadataBuilder>
+    IConfigurable<AIAgentBuildAction?>,
+    IConfigurable<IMetadataBuilder>,
     // IEventConsumer<string>,
     // IEventConsumer<ChatMessage>,
-    // IEventConsumer<AgenticChatMessage>,
+    IEventConsumer<AgenticMessage>,
     // IEventConsumer<AgenticChatInquiry>,
-    // IEventProducer<AgenticChatMessage>
+    IEventProducer<AgenticMessage>
+    // IEventProducer<AgentResponseUpdate>
 {
     public Dictionary<Type, ChatMessageConverterHolder> EventFormatters { get; } = new();
     public Dictionary<Type, ChatMessageConverterHolder> TokenFormatters { get; } = new();
+    public string? Name { get; set; }
+    public string? Description { get; set; }
     public string? InitialPrompt { get; set; }
+
+    private IOwnerBehaviorContext? _ownerBehaviorContext = null;
+    private bool _ownerBehaviorContextSet = false;
+    private IOwnerBehaviorContext? OwnerBehaviorContext
+    {
+        get
+        {
+            if (!_ownerBehaviorContextSet)
+            {
+                try
+                {
+                    _ownerBehaviorContext ??= serviceProvider.GetService<IOwnerBehaviorContext>();
+                }
+                catch (Exception) { }
+                finally
+                {
+                    _ownerBehaviorContextSet = true;
+                }
+            }
+
+            return _ownerBehaviorContext;
+        }
+    }
+
     public virtual async Task ExecuteAsync(CancellationToken cancellationToken = default)
     {
-        const string agentThreadKey = "system::agentThread";
+        const string sessionDataKey = "system::aiAgentSession";
         
-        // var chatHistory = await actionContext.Values.GetOrDefaultAsync(agentThreadKey, new ChatHistory());
+        var tools = new List<AITool>();
 
-        // if (Metadata.Metadata.TryGetValue(AIAgentConstants.Transitions, out var agenticTransitionsObj))
-        // {
-        //     var agenticTransitions = agenticTransitionsObj as List<Dictionary<string, object>>;
-        //     if (agenticTransitions.Any())
-        //     {
-        //         kernelBuilder.Plugins.AddFromFunctions(
-        //             AIAgentConstants.AgenticWorkflowDecision,
-        //             agenticTransitions.Select(agenticTransition =>
-        //                 KernelFunctionFactory.CreateFromMethod(
-        //                     method: () => actionContext.Values.SetAsync(AIAgentConstants.GuardKey, agenticTransition.GetValueOrDefault(AIAgentConstants.GuardValue) as string),
-        //                     functionName: agenticTransition.GetValueOrDefault(AIAgentConstants.TransitionName) as string,
-        //                     description: agenticTransition.GetValueOrDefault(AIAgentConstants.TransitionDescription) as string
-        //                 )
-        //             )
-        //         );
-        //     }
-        // }
+        if (Metadata is not null && Metadata.Metadata.TryGetValue(AIAgentConstants.Transitions, out var agenticTransitionsObj))
+        {
+            var agenticTransitions = agenticTransitionsObj as List<Dictionary<string, object>> ?? [];
+            if (agenticTransitions.Any())
+            {
+                tools.AddRange(agenticTransitions
+                    .Select(agenticTransition =>
+                        AIFunctionFactory.Create(
+                            () => OwnerBehaviorContext?.Send(new AgenticDecision()
+                            {
+                                DecisionMarker = agenticTransition.GetValueOrDefault(AIAgentConstants.GuardValue) as string
+                            }),
+                            // () => actionContext.Values.SetAsync(AIAgentConstants.GuardKey, agenticTransition.GetValueOrDefault(AIAgentConstants.GuardValue) as string),
+                            new AIFunctionFactoryOptions()
+                            {
+                                Name = agenticTransition.GetValueOrDefault(AIAgentConstants.TransitionName) as string,
+                                Description = agenticTransition.GetValueOrDefault(AIAgentConstants.TransitionDescription) as string
+                            }
+                        )
+                    )
+                );
+            }
+        }
 
-        // if (actionContext.HasTokensOfType<AgenticChatInquiry>())
-        // {
-        //     var inquiry = actionContext.GetTokensOfType<AgenticChatInquiry>().First();
-        //     var headers = inquiry.GuardTriggerHolder.Headers;
-        //     headers[nameof(TransitionGuardInquiryAcceptance)] = new TransitionGuardInquiryAcceptance();
-        //     kernelBuilder.Plugins.AddFromFunctions(
-        //         AIAgentConstants.AgenticInquiryTools,
-        //         [
-        //             KernelFunctionFactory.CreateFromMethod(
-        //                 method: () => actionContext.GetType().GetMethod("Send").MakeGenericMethod(inquiry.GuardTriggerHolder.PayloadType).Invoke(actionContext, [inquiry.GuardTriggerHolder.BoxedPayload, headers]),
-        //                 functionName: AIAgentConstants.AgenticInquiryAcceptance,
-        //                 description: $"Call it if this statement is true: {inquiry.Message.Text}"
-        //             )
-        //         ]
-        //     );
-        // }
+        if (actionContext.HasTokensOfType<AgenticChatInquiry>())
+        {
+            var inquiry = actionContext.GetTokensOfType<AgenticChatInquiry>().First();
+            var headers = inquiry.GuardTriggerHolder.Headers;
+            headers[nameof(TransitionGuardInquiryAcceptance)] = new TransitionGuardInquiryAcceptance();
+
+            tools.Add(AIFunctionFactory.Create(() => OwnerBehaviorContext is not null
+                    ? OwnerBehaviorContext!.GetType().GetMethod("Send").MakeGenericMethod(inquiry.GuardTriggerHolder.PayloadType).Invoke(actionContext, [inquiry.GuardTriggerHolder.BoxedPayload, headers])
+                    : Task.CompletedTask,
+                new AIFunctionFactoryOptions()
+                {
+                    Name = AIAgentConstants.AgenticInquiryAcceptance,
+                    Description = $"Call it if this statement is true: {inquiry.Message.Text}"
+                }
+            ));
+        }
         
-        var agent = await AIAgentFactoryAsync(actionContext.ServiceProvider);
+        var agent = await AIAgentFactoryAsync(actionContext.ServiceProvider, tools.ToArray());
         var session = await agent.CreateSessionAsync(cancellationToken: cancellationToken);
+
+        var sessionLoaded = false;
+        var sessionDataString = string.Empty;
+        if (OwnerBehaviorContext is not null)
+        {
+            (sessionLoaded, sessionDataString) = await OwnerBehaviorContext.TryGetAsync<string>(nameof(IAIAgentSessionEntity.AIAgentSessionData));
+        }
+        if (!sessionLoaded)
+        {
+            sessionDataString = await actionContext.Values.GetOrDefaultAsync(sessionDataKey, string.Empty);
+        }
         
-        var sessionDataString = await actionContext.Values.GetOrDefaultAsync(agentThreadKey, string.Empty);
         if (!string.IsNullOrWhiteSpace(sessionDataString))
         {
             var sessionData = JsonElement.Parse(sessionDataString);
             await agent.DeserializeSessionAsync(sessionData, cancellationToken: cancellationToken);
+            
+            sessionLoaded = true;
+        }
+        else
+        {
+            sessionLoaded = false;
         }
 
         List<ChatMessage> chatMessages = [];
-        // chatMessages.AddRange(
-        //     TokenFormatters.Values.SelectMany(async formatter => await formatter.ConvertAsync(agentContext))
-        //     actionContext.GetTokens()
-        //         .Where(t => TokenFormatters.ContainsKey(t.GetType()))
-        //         .Select(t => TokenFormatters[t.GetType()](agentContext, t))
-        //         .Select(async s => 
-        //             new ChatMessage
-        //             {
-        //                 Role = ChatRole.User,
-        //                 Contents = [ (await s).Content ],
-        //             }
-        //         )
-        //         .Select(c => c.Result)
-        //         .ToArray()
-        // );
         
         chatMessages.AddRange(
             actionContext.GetTokensOfType<string>()
@@ -106,35 +144,42 @@ internal class AIAgentAction(
                 )
         );
         
-        chatMessages.AddRange(actionContext.GetTokensOfType<ChatMessage>());
+        // chatMessages.AddRange(actionContext.GetTokensOfType<ChatMessage>());
         
-        chatMessages.AddRange(actionContext.GetTokensOfType<AgenticChatInquiry>().Select(t =>
-            new ChatMessage
-            {
-                Role = ChatRole.User,
-                Contents = [ new TextContent($"There is the inquiry about the statement: {GetInquiryText(t.Message)}") ]
-            }
-        ));
+        // chatMessages.AddRange(actionContext.GetTokensOfType<AgenticChatInquiry>().Select(t =>
+        //     new ChatMessage
+        //     {
+        //         Role = ChatRole.User,
+        //         Contents = [ new TextContent($"There is the inquiry about the statement: {GetInquiryText(t.Message)}") ]
+        //     }
+        // ));
         
-        chatMessages.AddRange(actionContext.GetTokensOfType<AgenticChatMessage>().Select(t => t.Message));
+        chatMessages.AddRange(actionContext
+            .GetTokensOfType<AgenticMessage>()
+            .Select(t => t.ToChatMessage())
+        );
 
-        if (!chatMessages.Any() && InitialPrompt != null)
+        if (InitialPrompt != null && actionContext.HasTokensOfType<Initialize>())
         {
             chatMessages.Add(
                 new ChatMessage
                 {
-                    Role = ChatRole.User,
-                    AuthorName = "User",
+                    Role = ChatRole.System,
+                    AuthorName = "System",
                     Contents = [ new TextContent(InitialPrompt) ]
                 }
             );
         }
-        
-        // chatHistory.AddRange(chatMessages);
 
         if (chatMessages.Any())
         {
-            Debug.WriteLine($">>> user: {chatMessages.First().Contents?.FirstOrDefault()}");
+            foreach (var chatMessage in chatMessages)
+            {
+                foreach (var chatMessageContent in chatMessage.Contents)
+                {
+                    Debug.WriteLine($">>> user: {chatMessageContent}");
+                }
+            }
         }
 
         if (cancellationToken.IsCancellationRequested)
@@ -142,19 +187,42 @@ internal class AIAgentAction(
             return;
         }
 
-        var responseStream = agent.RunStreamingAsync(chatMessages, cancellationToken: cancellationToken);
+        var response = await (
+            chatMessages.Any()
+                ? agent.RunAsync(chatMessages, session)
+                : agent.RunAsync(session)
+        );
 
         try
         {
-            await foreach (var response in responseStream)
+            Debug.WriteLine($">>> agent: '{response.Text}'");
+
+            if (OwnerBehaviorContext is not null)
             {
-                Debug.WriteLine($">>> agent: '{response.Text}'");
+                OwnerBehaviorContext.PublishRange(response.Messages
+                    .Select(AgenticMessage.FromChatMessage)
+                    .ToArray()
+                );
                 
+                // OwnerBehaviorContext.Publish(response);
+                // OwnerBehaviorContext.Publish(response.Text);
+            }
+            else
+            {
                 actionContext.Publish(response);
             }
             
             var sessionData = await agent.SerializeSessionAsync(session, cancellationToken: cancellationToken);
-            await actionContext.Values.SetAsync(agentThreadKey, sessionData.GetRawText());
+            var sessionSaved = false;
+            if (OwnerBehaviorContext is not null)
+            {
+                sessionSaved = await OwnerBehaviorContext.TrySetAsync(nameof(IAIAgentSessionEntity.AIAgentSessionData), sessionData.GetRawText());
+            }
+
+            if (!sessionSaved)
+            {
+                await actionContext.Values.SetAsync(sessionDataKey, sessionData.GetRawText());
+            }
         }
         catch (TaskCanceledException)
         {
@@ -178,9 +246,9 @@ internal class AIAgentAction(
         set => AIAgentFactoryAsync = value;
     }
 
-    protected AgentBuildAction? AgentBuildAction { get; private set; }
+    protected AIAgentBuildAction? AgentBuildAction { get; private set; }
 
-    AgentBuildAction? IConfigurable<AgentBuildAction?>.Configuration
+    AIAgentBuildAction? IConfigurable<AIAgentBuildAction?>.Configuration
     {
         set => AgentBuildAction = value;
     }
@@ -194,14 +262,15 @@ internal class AIAgentAction(
 }
 
 internal class AIAgentAction<TAgent>(
+    IServiceProvider serviceProvider,
     IActionContext actionContext,
     IBehaviorContext behaviorContext,
     IExecutionContext executionContext
-) : AIAgentAction(actionContext, behaviorContext, executionContext)
+) : AIAgentAction(serviceProvider, actionContext, behaviorContext, executionContext)
     where TAgent : class, IAIAgent
 {
     protected override AIAgentFactoryAsync AIAgentFactoryAsync
-        => async serviceProvider =>
+        => async (serviceProvider, tools) =>
         {
             var agentContext = new AIAgentContext(actionContext, actionContext, actionContext);
             var agentBehavior = await StateflowsActivator.CreateModelElementInstanceAsync<TAgent>(actionContext.ServiceProvider);
@@ -209,7 +278,7 @@ internal class AIAgentAction<TAgent>(
             {
                 InitialPrompt = agentBehavior.InitialPrompt;
             }
-            var agent = await agentBehavior.BuildAgentAsync(agentContext);
+            var agent = await agentBehavior.BuildAgentAsync(agentContext, tools);
 
             return agent;
         };

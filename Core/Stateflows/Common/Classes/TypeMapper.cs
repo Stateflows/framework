@@ -30,11 +30,14 @@ namespace Stateflows.Common.Classes
         private MethodInfo VisitMethod = typeof(ITypeVisitor).GetMethod(nameof(ITypeVisitor.Visit));
 
         public void VisitMappedTypes<T>(ITypeVisitor typeVisitor)
+            => VisitMappedTypes(typeof(T), typeVisitor);
+
+        public void VisitMappedTypes(Type type, ITypeVisitor typeVisitor)
         {
-            var types = GetMappedTypes(typeof(T));
-            foreach (var type in types)
+            var mappedTypes = GetMappedTypes(type);
+            foreach (var mappedType in mappedTypes)
             {
-                VisitMethod.MakeGenericMethod(type).Invoke(typeVisitor, Array.Empty<object>());
+                VisitMethod.MakeGenericMethod(mappedType).Invoke(typeVisitor, Array.Empty<object>());
             }
         }
     }

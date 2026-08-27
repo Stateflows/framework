@@ -1,6 +1,8 @@
 using Stateflows.Activities;
 using Stateflows.Examples.Behaviors.Activities.Invoicing.ActionNodes;
 using Stateflows.Examples.Behaviors.Activities.Invoicing.Tokens;
+using Stateflows.Examples.Behaviors.StateMachines.Document;
+using Stateflows.MAF.AIAgents.Extensions;
 
 namespace Stateflows.Examples.Behaviors.Activities.Invoicing;
 
@@ -18,6 +20,7 @@ public class Invoicing : IActivity
                 .AddControlFlow("js")
             )
             .AddAction_ClearScript("js", "Console.WriteLine(JSON.stringify(behaviorContext.Id))")
+            // .AddAgenticActivity<ReviewerAgent>()
             .AddAction<GenerateInvoices>(b => b
                 .AddFlow<Invoice, SendMail>()
                 .AddFlow<Invoice, SendSMS>()

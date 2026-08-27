@@ -611,4 +611,19 @@ internal class StateMachineVisitor(
 
         return Task.CompletedTask;
     }
+
+    public override Task DoBehaviorAddedAsync(string stateMachineName, int stateMachineVersion, string stateName, string behaviorName,
+        string behaviorType, IEnumerable<Type> eventTypes)
+    {
+        CurrentStateMachineName = stateMachineName;
+        SupportedStatuses = [ BehaviorStatus.Initialized ];
+        foreach (var eventType in eventTypes)
+        {
+            typeMapper.VisitMappedTypes(eventType, this);
+        }
+        CurrentStateMachineName = string.Empty;
+        SupportedStatuses = [];
+
+        return Task.CompletedTask;
+    }
 }

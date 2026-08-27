@@ -61,6 +61,27 @@ namespace Entity.IntegrationTests.Tests
         int DoubleReadOnly => ReadOnly * 2;
     }
 
+    public interface IInheritedFieldAccessEntityTemplateBase
+    {
+        [Field(FieldAccess.Get | FieldAccess.Set)]
+        string BaseReadWrite { get; set; }
+
+        [Field(FieldAccess.Get)]
+        int BaseReadOnly { get; set; }
+
+        [Field]
+        string BaseNoAccess { get; set; }
+    }
+
+    public interface IInheritedFieldAccessEntityTemplate : IInheritedFieldAccessEntityTemplateBase
+    {
+        [Field(FieldAccess.Get | FieldAccess.Set)]
+        string DerivedReadWrite { get; set; }
+
+        [Field(FieldAccess.Get)]
+        string Combined => $"{BaseReadWrite}:{DerivedReadWrite}";
+    }
+
     [TestClass]
     public class FieldStateTests : StateflowsTestClass
     {
@@ -88,6 +109,15 @@ namespace Entity.IntegrationTests.Tests
                         {
                             ctx.Entity.BaseValue = 3;
                             ctx.Entity.Label = "hi";
+                        })
+                    )
+                    .AddEntity<IInheritedFieldAccessEntityTemplate>("inheritedFieldAccessEntity", entity => entity
+                        .AddDefaultInitializer(ctx =>
+                        {
+                            ctx.Entity.BaseReadWrite = "base";
+                            ctx.Entity.BaseReadOnly = 10;
+                            ctx.Entity.BaseNoAccess = "hidden";
+                            ctx.Entity.DerivedReadWrite = "derived";
                         })
                     )
                 );
@@ -455,6 +485,80 @@ namespace Entity.IntegrationTests.Tests
             }
 
             Assert.IsFalse(setSuccess);
+        }
+
+        // ── Inherited field templates ─────────────────────────────────────────────
+
+        [TestMethod]
+        public async Task InheritedFieldTemplate_TryGet_ReadsBaseAndDerivedFields()
+        {
+            var baseSuccess = false;
+            var derivedSuccess = false;
+            var combinedSuccess = false;
+            string? baseValue = null;
+            string? derivedValue = null;
+            string? combinedValue = null;
+
+            if (TryLocateEntity("inheritedFieldAccessEntity", "get-inherited", out var entity))
+            {
+                (baseSuccess, baseValue) = await entity.TryGetAsync<string>(nameof(IInheritedFieldAccessEntityTemplateBase.BaseReadWrite));
+                (derivedSuccess, derivedValue) = await entity.TryGetAsync<string>(nameof(IInheritedFieldAccessEntityTemplate.DerivedReadWrite));
+                (combinedSuccess, combinedValue) = await entity.TryGetAsync<string>(nameof(IInheritedFieldAccessEntityTemplate.Combined));
+            }
+
+            Assert.IsTrue(baseSuccess);
+            Assert.IsTrue(derivedSuccess);
+            Assert.IsTrue(combinedSuccess);
+            Assert.AreEqual("base", baseValue);
+            Assert.AreEqual("derived", derivedValue);
+            Assert.AreEqual("base:derived", combinedValue);
+        }
+
+        [TestMethod]
+        public async Task InheritedFieldTemplate_TrySet_UpdatesBaseAndDerivedFields()
+        {
+            var setBaseSuccess = false;
+            var setDerivedSuccess = false;
+            var getBaseSuccess = false;
+            var getDerivedSuccess = false;
+            var getCombinedSuccess = false;
+            string? baseValue = null;
+            string? derivedValue = null;
+            string? combinedValue = null;
+
+            if (TryLocateEntity("inheritedFieldAccessEntity", "set-inherited", out var entity))
+            {
+                setBaseSuccess = await entity.TrySetAsync(nameof(IInheritedFieldAccessEntityTemplateBase.BaseReadWrite), "left");
+                setDerivedSuccess = await entity.TrySetAsync(nameof(IInheritedFieldAccessEntityTemplate.DerivedReadWrite), "right");
+                (getBaseSuccess, baseValue) = await entity.TryGetAsync<string>(nameof(IInheritedFieldAccessEntityTemplateBase.BaseReadWrite));
+                (getDerivedSuccess, derivedValue) = await entity.TryGetAsync<string>(nameof(IInheritedFieldAccessEntityTemplate.DerivedReadWrite));
+                (getCombinedSuccess, combinedValue) = await entity.TryGetAsync<string>(nameof(IInheritedFieldAccessEntityTemplate.Combined));
+            }
+
+            Assert.IsTrue(setBaseSuccess);
+            Assert.IsTrue(setDerivedSuccess);
+            Assert.IsTrue(getBaseSuccess);
+            Assert.IsTrue(getDerivedSuccess);
+            Assert.IsTrue(getCombinedSuccess);
+            Assert.AreEqual("left", baseValue);
+            Assert.AreEqual("right", derivedValue);
+            Assert.AreEqual("left:right", combinedValue);
+        }
+
+        [TestMethod]
+        public async Task InheritedFieldTemplate_AccessRestrictions_FromBaseAreRespected()
+        {
+            var getNoAccessSuccess = false;
+            var setReadOnlySuccess = false;
+
+            if (TryLocateEntity("inheritedFieldAccessEntity", "access-inherited", out var entity))
+            {
+                (getNoAccessSuccess, _) = await entity.TryGetAsync<string>(nameof(IInheritedFieldAccessEntityTemplateBase.BaseNoAccess));
+                setReadOnlySuccess = await entity.TrySetAsync(nameof(IInheritedFieldAccessEntityTemplateBase.BaseReadOnly), 99);
+            }
+
+            Assert.IsFalse(getNoAccessSuccess);
+            Assert.IsFalse(setReadOnlySuccess);
         }
     }
 }

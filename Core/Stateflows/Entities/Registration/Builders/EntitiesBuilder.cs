@@ -37,6 +37,9 @@ namespace Stateflows.Entities.Registration.Builders
         private static readonly MethodInfo RegisterMutationMethod = typeof(EntitiesBuilder)
             .GetMethod(nameof(RegisterMutation), BindingFlags.Static | BindingFlags.NonPublic)!;
 
+        private static readonly MethodInfo RegisterDefaultInitializerMethod = typeof(EntitiesBuilder)
+            .GetMethod(nameof(RegisterDefaultInitializer), BindingFlags.Static | BindingFlags.NonPublic)!;
+
         private static readonly MethodInfo AutoAnalyzeTemplateMethod = typeof(EntitiesBuilder)
             .GetMethod(nameof(AutoAnalyzeTemplate), BindingFlags.Static | BindingFlags.NonPublic)!;
 
@@ -59,6 +62,8 @@ namespace Stateflows.Entities.Registration.Builders
             public List<PropertyInfo> Projections { get; } = [];
 
             public List<MethodInfo> Mutations { get; } = [];
+
+            public List<MethodInfo> DefaultInitializers { get; } = [];
         }
 
         private static EntityBuildAction<TTemplate> AutoAnalyzeTemplate<TTemplate>(EntityBuildAction<TTemplate> buildAction)
@@ -104,6 +109,13 @@ namespace Stateflows.Entities.Registration.Builders
             {
                 RegisterMutationMethod
                     .MakeGenericMethod(typeof(TTemplate), method.GetParameters()[0].ParameterType)
+                    .Invoke(null, [builder, method]);
+            }
+
+            foreach (var method in analysis.DefaultInitializers.OrderBy(method => method.Name))
+            {
+                RegisterDefaultInitializerMethod
+                    .MakeGenericMethod(typeof(TTemplate))
                     .Invoke(null, [builder, method]);
             }
         }
@@ -219,34 +231,66 @@ namespace Stateflows.Entities.Registration.Builders
 
             foreach (var method in allInterfaceTypes.SelectMany(t => t.GetMethods()).Where(method => !method.IsSpecialName).Distinct())
             {
-                if (method.GetCustomAttribute<MutationAttribute>() == null)
+                var hasMutationAttribute = method.GetCustomAttribute<MutationAttribute>() != null;
+                var hasDefaultInitializerAttribute = method.GetCustomAttribute<DefaultInitializerAttribute>() != null;
+                if (!hasMutationAttribute && !hasDefaultInitializerAttribute)
                 {
                     continue;
                 }
 
-                if (method.ReturnType != typeof(void))
+                if (hasMutationAttribute)
                 {
-                    throw new InvalidOperationException(
-                        $"Mutation method '{templateType.FullName}.{method.Name}' must return void."
-                    );
+                    if (method.ReturnType != typeof(void))
+                    {
+                        throw new InvalidOperationException(
+                            $"Mutation method '{templateType.FullName}.{method.Name}' must return void."
+                        );
+                    }
+
+                    var parameters = method.GetParameters();
+                    if (parameters.Length != 1 || parameters[0].ParameterType.IsByRef)
+                    {
+                        throw new InvalidOperationException(
+                            $"Mutation method '{templateType.FullName}.{method.Name}' must declare exactly one non-byref parameter."
+                        );
+                    }
+
+                    if (!DefaultInterfaceImplementationInvoker.HasDefaultImplementation(method))
+                    {
+                        throw new InvalidOperationException(
+                            $"Mutation method '{templateType.FullName}.{method.Name}' must provide a default implementation."
+                        );
+                    }
+
+                    analysis.Mutations.Add(method);
                 }
 
-                var parameters = method.GetParameters();
-                if (parameters.Length != 1 || parameters[0].ParameterType.IsByRef)
+                if (hasDefaultInitializerAttribute)
                 {
-                    throw new InvalidOperationException(
-                        $"Mutation method '{templateType.FullName}.{method.Name}' must declare exactly one non-byref parameter."
-                    );
-                }
+                    if (method.ReturnType != typeof(void))
+                    {
+                        throw new InvalidOperationException(
+                            $"Default initializer method '{templateType.FullName}.{method.Name}' must return void."
+                        );
+                    }
 
-                if (!DefaultInterfaceImplementationInvoker.HasDefaultImplementation(method))
-                {
-                    throw new InvalidOperationException(
-                        $"Mutation method '{templateType.FullName}.{method.Name}' must provide a default implementation."
-                    );
-                }
+                    var parameters = method.GetParameters();
+                    if (parameters.Length != 0)
+                    {
+                        throw new InvalidOperationException(
+                            $"Default initializer method '{templateType.FullName}.{method.Name}' must declare no parameters."
+                        );
+                    }
 
-                analysis.Mutations.Add(method);
+                    if (!DefaultInterfaceImplementationInvoker.HasDefaultImplementation(method))
+                    {
+                        throw new InvalidOperationException(
+                            $"Default initializer method '{templateType.FullName}.{method.Name}' must provide a default implementation."
+                        );
+                    }
+
+                    analysis.DefaultInitializers.Add(method);
+                }
             }
 
             var duplicateProjectionType = analysis.Projections
@@ -319,6 +363,12 @@ namespace Stateflows.Entities.Registration.Builders
             where TTemplate : class
             => builder.AddMutation<TMutation>(
                 context => DefaultInterfaceImplementationInvoker.Invoke(context.Entity, method, [context.MutationEvent])
+            );
+
+        private static void RegisterDefaultInitializer<TTemplate>(IEntityBuilder<TTemplate> builder, MethodInfo method)
+            where TTemplate : class
+            => builder.AddDefaultInitializer(
+                context => DefaultInterfaceImplementationInvoker.Invoke(context.Entity, method, [])
             );
 
         private static Expression<Func<TTemplate, TField>> CreateFieldSelector<TTemplate, TField>(PropertyInfo property)
@@ -478,5 +528,4 @@ namespace Stateflows.Entities.Registration.Builders
             => AddEntity<TTemplate, TEntity>(null, version, buildAction);
     }
 }
-
 

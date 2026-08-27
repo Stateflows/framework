@@ -28,8 +28,8 @@ namespace Stateflows.Common.Context.Classes
         }
 
         // todo
-        public object ExecutionTrigger { get; init; }
+        public virtual object ExecutionTrigger { get; init; }
         public Guid ExecutionTriggerId { get; init; }
-        public IDictionary<string, EventHeader> Headers { get; init; }
+        public virtual IDictionary<string, EventHeader> Headers { get; init; }
     }
 }

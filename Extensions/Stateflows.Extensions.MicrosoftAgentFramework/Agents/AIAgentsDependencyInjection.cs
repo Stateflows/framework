@@ -25,7 +25,7 @@ namespace Stateflows.MAF.AIAgents
         [DebuggerHidden]
         public static IStateflowsBuilder AddDefaultInstance<TAgent>(this IStateflowsBuilder stateflowsBuilder, DefaultInstanceInitializationRequestFactoryAsync initializationRequestFactoryAsync = null)
             where TAgent : class, IAIAgent
-            => stateflowsBuilder.AddDefaultInstance(new AIAgentClass(Agent<TAgent>.Name).BehaviorClass, initializationRequestFactoryAsync);
+            => stateflowsBuilder.AddDefaultInstance(new AIAgentClass(AIAgent<TAgent>.Name).BehaviorClass, initializationRequestFactoryAsync);
 
         private static IStateflowsBuilder EnsureAgentsServices(this IStateflowsBuilder stateflowsBuilder)
         {

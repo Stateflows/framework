@@ -37,15 +37,15 @@ namespace Stateflows.Actions
 
         [DebuggerHidden]
         public static IStateflowsBuilder AddActions(this IStateflowsBuilder stateflowsBuilder, ActionsBuildAction buildAction = null)
-            => AddActions(stateflowsBuilder, buildAction, null, null);
+            => AddActions(stateflowsBuilder, buildAction, null, null).StateflowsBuilder;
         
         [DebuggerHidden]
-        internal static IStateflowsBuilder AddActions(this IStateflowsBuilder stateflowsBuilder, ActionsBuildAction buildAction, BehaviorClass? ownerClass, BehaviorClass? parentClass)
+        internal static (ActionsRegister ActionsRegister, IStateflowsBuilder StateflowsBuilder) AddActions(this IStateflowsBuilder stateflowsBuilder, ActionsBuildAction buildAction, BehaviorClass? ownerClass, BehaviorClass? parentClass)
         {
             var register = stateflowsBuilder.EnsureActionsServices();
             buildAction?.Invoke(new ActionsBuilder(register, ownerClass, parentClass));
 
-            return stateflowsBuilder;
+            return (register, stateflowsBuilder);
         }
 
         [DebuggerHidden]
@@ -53,7 +53,7 @@ namespace Stateflows.Actions
             where TAction : class, IAction
             => stateflowsBuilder.AddDefaultInstance(new StateMachineClass(Action<TAction>.Name).BehaviorClass, initializationRequestFactoryAsync);
 
-        private static ActionsRegister EnsureActionsServices(this IStateflowsBuilder stateflowsBuilder)
+        internal static ActionsRegister EnsureActionsServices(this IStateflowsBuilder stateflowsBuilder)
         {
             lock (Registers)
             {

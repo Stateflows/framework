@@ -141,7 +141,7 @@ internal class ActionBuilder<TAction>(ActionModel model) : ActionBuilder(model),
 {
     public IActionBuilder<TAction> Configure(System.Action<TAction> action)
     {
-        model.ConfigurationAction = o => action((TAction)o);
+        model.ConfigurationActions.Add(o => action((TAction)o));
         
         return this;
     }

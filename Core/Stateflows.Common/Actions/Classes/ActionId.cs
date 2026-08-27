@@ -15,7 +15,7 @@ namespace Stateflows
 
         public ActionId(BehaviorId id)
         {
-            if (id.Type != BehaviorType.Action)
+            if (id.Type is BehaviorType.Activity or BehaviorType.Entity or BehaviorType.StateMachine)
             {
                 throw new StateflowsDefinitionException("BehaviorId doesn't represent Action");
             }

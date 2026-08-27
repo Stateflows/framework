@@ -14,9 +14,9 @@ namespace Stateflows.Actions.Context.Classes
             : base(new RootContext(context, executor, eventHolder, serviceProvider), serviceProvider, inputTokens)
         { }
 
-        public object ExecutionTrigger => RootContext.EventHolder.BoxedPayload;
+        public override object ExecutionTrigger => RootContext.EventHolder.BoxedPayload;
         public Guid ExecutionTriggerId => RootContext.EventHolder.Id;
-        public Dictionary<string, EventHeader> Headers => RootContext.EventHolder.Headers;
+        public override Dictionary<string, EventHeader> Headers => RootContext.EventHolder.Headers;
         public IBehaviorContext Behavior => this;
         public bool TryGetParentBehaviorContext(out IParentBehaviorContext parentBehaviorContext)
         {

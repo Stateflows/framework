@@ -1,12 +1,13 @@
 ﻿using Microsoft.Agents.AI;
+using Microsoft.Extensions.AI;
 
 namespace Stateflows.MAF.AIAgents.Registration;
 
-public delegate void AgentBuildAction(IAIAgentBuilder builder);
+public delegate void AIAgentBuildAction(IAIAgentBuilder builder);
 
-public delegate Task<AIAgent> AIAgentFactoryAsync(IServiceProvider serviceProvider);
+public delegate Task<AIAgent> AIAgentFactoryAsync(IServiceProvider serviceProvider, AITool[] frameworkTools);
 
-public delegate AIAgent AIAgentFactory(IServiceProvider serviceProvider);
+public delegate AIAgent AIAgentFactory(IServiceProvider serviceProvider, AITool[] frameworkTools);
 
 // public delegate Task<AgentThread> AgentThreadFactoryAsync(ChatHistory chatHistory);
 //

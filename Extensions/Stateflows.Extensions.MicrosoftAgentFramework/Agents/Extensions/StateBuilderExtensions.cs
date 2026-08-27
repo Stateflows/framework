@@ -1,20 +1,25 @@
 using System.Reflection;
 using Microsoft.Extensions.AI;
 using Stateflows.Common;
+using Stateflows.Common.Exceptions;
+using Stateflows.Common.Extensions;
 using Stateflows.Common.Interfaces;
+using Stateflows.Extensions.MicrosoftAgentFramework.Agents.Classes;
 using Stateflows.MAF.AIAgents.Registration;
 using Stateflows.MAF.AIAgents.Classes;
+using Stateflows.MAF.AIAgents.Events;
 using Stateflows.StateMachines;
+using Stateflows.StateMachines.Context.Interfaces;
 using Stateflows.StateMachines.Registration.Interfaces;
 
 namespace Stateflows.MAF.AIAgents.Extensions;
 
 public static class StateBuilderExtensions
 {
-    public static IBehaviorStateBuilder AddDoAIAgent(this IStateBuilder stateBuilder, AIAgentFactory aiAgentFactory, AgentBuildAction? buildAction = null)
-        => AddDoAIAgent(stateBuilder, sp => Task.FromResult(aiAgentFactory(sp)), buildAction);
+    internal static IBehaviorStateBuilder AddDoAIAgent(this IStateBuilder stateBuilder, AIAgentFactory aiAgentFactory, AIAgentBuildAction? buildAction = null)
+        => AddDoAIAgent(stateBuilder, (sp, tools) => Task.FromResult(aiAgentFactory(sp, tools)), buildAction);
     
-    public static IBehaviorStateBuilder AddDoAIAgent(this IStateBuilder stateBuilder, AIAgentFactoryAsync aiAgentFactoryAsync, AgentBuildAction? buildAction = null)
+    internal static IBehaviorStateBuilder AddDoAIAgent(this IStateBuilder stateBuilder, AIAgentFactoryAsync aiAgentFactoryAsync, AIAgentBuildAction? buildAction = null)
         => stateBuilder.AddDoAction<AIAgentAction>(b =>
         {
             b.AddConfiguration(aiAgentFactoryAsync);
@@ -24,25 +29,25 @@ public static class StateBuilderExtensions
         });
     
     private static Task<ChatMessage> FormatTokenAsync<TTokenConsumerAgent, TToken>(IAIAgentContext iaiAgentContext, TToken token)
-        where TTokenConsumerAgent : class, ITokenConsumerAiAgent<TToken>
+        where TTokenConsumerAgent : class, ITokenConsumerAIAgent<TToken>
         => TTokenConsumerAgent.FormatTokenAsync(iaiAgentContext, token);
     
-    public static IBehaviorStateBuilder AddDoAIAgent<TAgent>(this IStateBuilder stateBuilder, AgentBuildAction? buildAction = null)
-        where TAgent : class, IAIAgent
-        => stateBuilder.AddDoAction<AIAgentAction<TAgent>>(b =>
+    internal static IBehaviorStateBuilder AddDoAIAgent<TAIAgent>(this IStateBuilder stateBuilder, AIAgentBuildAction? buildAction = null)
+        where TAIAgent : class, IAIAgent
+        => stateBuilder.AddDoAction<AIAgentAction<TAIAgent>>(b =>
         {
-            var agentType = typeof(TAgent);
+            var agentType = typeof(TAIAgent);
             var consumedTypes = agentType
                 .GetInterfaces()
                 .Where(
                     i => i.IsGenericType && (
-                        i.GetGenericTypeDefinition() == typeof(ITokenConsumerAiAgent<>) || 
+                        i.GetGenericTypeDefinition() == typeof(ITokenConsumerAIAgent<>) || 
                         i.GetGenericTypeDefinition() == typeof(IEventConsumerAIAgent<>)
                     )
                 )
                 .Select(i => i.GetGenericArguments().First())
                 .ToArray();
-
+    
             b.AddConfiguration((IMetadataBuilder)stateBuilder);
             var agentBuilder = new AIAgentBuilder(b);
             buildAction?.Invoke(agentBuilder);
@@ -53,94 +58,14 @@ public static class StateBuilderExtensions
                     {
                         var formatTokenAsyncMethod = typeof(StateBuilderExtensions).GetMethod(nameof(FormatTokenAsync), BindingFlags.Static | BindingFlags.NonPublic);
                         return (Task<ChatMessage>)formatTokenAsyncMethod
-                            .MakeGenericMethod(typeof(TAgent), consumedTokenType).Invoke(null, [c, t]);
+                            .MakeGenericMethod(typeof(TAIAgent), consumedTokenType).Invoke(null, [c, t]);
                     }
                 ]);
             }
             b.SetCustomBehaviorClassType(MAFBehaviorType.AIAgent);
         });
     
-    public static IOverridenRegionalizedStateBuilder AddDoAIAgent(this IOverridenRegionalizedStateBuilder stateBuilder, AIAgentFactory aiAgentFactory, AgentBuildAction? buildAction = null)
-        => AddDoAIAgent((IStateBuilder)stateBuilder, aiAgentFactory, buildAction) as IOverridenRegionalizedStateBuilder;
-    
-    public static IOverridenRegionalizedStateBuilder AddDoAIAgent(this IOverridenRegionalizedStateBuilder stateBuilder, AIAgentFactoryAsync aiAgentFactoryAsync, AgentBuildAction? buildAction = null)
-        => AddDoAIAgent((IStateBuilder)stateBuilder, aiAgentFactoryAsync, buildAction) as IOverridenRegionalizedStateBuilder;
-    
-    public static IOverridenRegionalizedStateBuilder AddDoAIAgent<TAgent>(this IOverridenRegionalizedStateBuilder stateBuilder, AgentBuildAction? buildAction = null)
-        where TAgent : class, IAIAgent
-        => AddDoAIAgent<TAgent>((IStateBuilder)stateBuilder, buildAction) as IOverridenRegionalizedStateBuilder;
-    
-    public static IInitializedCompositeStateBuilder AddDoAIAgent(this IInitializedCompositeStateBuilder stateBuilder, AIAgentFactory aiAgentFactory, AgentBuildAction? buildAction = null)
-        => AddDoAIAgent((IStateBuilder)stateBuilder, aiAgentFactory, buildAction) as IInitializedCompositeStateBuilder;
-    
-    public static IInitializedCompositeStateBuilder AddDoAIAgent(this IInitializedCompositeStateBuilder stateBuilder, AIAgentFactoryAsync aiAgentFactoryAsync, AgentBuildAction? buildAction = null)
-        => AddDoAIAgent((IStateBuilder)stateBuilder, aiAgentFactoryAsync, buildAction) as IInitializedCompositeStateBuilder;
-    
-    public static IInitializedCompositeStateBuilder AddDoAIAgent<TAgent>(this IInitializedCompositeStateBuilder stateBuilder, AgentBuildAction? buildAction = null)
-        where TAgent : class, IAIAgent
-        => AddDoAIAgent<TAgent>((IStateBuilder)stateBuilder, buildAction) as IInitializedCompositeStateBuilder;
-    
-    public static IFinalizedCompositeStateBuilder AddDoAIAgent(this IFinalizedCompositeStateBuilder stateBuilder, AIAgentFactory aiAgentFactory, AgentBuildAction? buildAction = null)
-        => AddDoAIAgent((IStateBuilder)stateBuilder, aiAgentFactory, buildAction) as IFinalizedCompositeStateBuilder;
-    
-    public static IFinalizedCompositeStateBuilder AddDoAIAgent(this IFinalizedCompositeStateBuilder stateBuilder, AIAgentFactoryAsync aiAgentFactoryAsync, AgentBuildAction? buildAction = null)
-        => AddDoAIAgent((IStateBuilder)stateBuilder, aiAgentFactoryAsync, buildAction) as IFinalizedCompositeStateBuilder;
-    
-    public static IFinalizedCompositeStateBuilder AddDoAIAgent<TAgent>(this IFinalizedCompositeStateBuilder stateBuilder, AgentBuildAction? buildAction = null)
-        where TAgent : class, IAIAgent
-        => AddDoAIAgent<TAgent>((IStateBuilder)stateBuilder, buildAction) as IFinalizedCompositeStateBuilder;
-    
-    public static ICompositeStateBuilder AddDoAIAgent(this ICompositeStateBuilder stateBuilder, AIAgentFactory aiAgentFactory, AgentBuildAction? buildAction = null)
-        => AddDoAIAgent((IStateBuilder)stateBuilder, aiAgentFactory, buildAction) as ICompositeStateBuilder;
-    
-    public static ICompositeStateBuilder AddDoAIAgent(this ICompositeStateBuilder stateBuilder, AIAgentFactoryAsync aiAgentFactoryAsync, AgentBuildAction? buildAction = null)
-        => AddDoAIAgent((IStateBuilder)stateBuilder, aiAgentFactoryAsync, buildAction) as ICompositeStateBuilder;
-    
-    public static ICompositeStateBuilder AddDoAIAgent<TAgent>(this ICompositeStateBuilder stateBuilder, AgentBuildAction? buildAction = null)
-        where TAgent : class, IAIAgent
-        => AddDoAIAgent<TAgent>((IStateBuilder)stateBuilder, buildAction) as ICompositeStateBuilder;
-    
-    public static IFinalizedOverridenCompositeStateBuilder AddDoAIAgent(this IFinalizedOverridenCompositeStateBuilder stateBuilder, AIAgentFactory aiAgentFactory, AgentBuildAction? buildAction = null)
-        => AddDoAIAgent((IStateBuilder)stateBuilder, aiAgentFactory, buildAction) as IFinalizedOverridenCompositeStateBuilder;
-    
-    public static IFinalizedOverridenCompositeStateBuilder AddDoAIAgent(this IFinalizedOverridenCompositeStateBuilder stateBuilder, AIAgentFactoryAsync aiAgentFactoryAsync, AgentBuildAction? buildAction = null)
-        => AddDoAIAgent((IStateBuilder)stateBuilder, aiAgentFactoryAsync, buildAction) as IFinalizedOverridenCompositeStateBuilder;
-    
-    public static IFinalizedOverridenCompositeStateBuilder AddDoAIAgent<TAgent>(this IFinalizedOverridenCompositeStateBuilder stateBuilder, AgentBuildAction? buildAction = null)
-        where TAgent : class, IAIAgent
-        => AddDoAIAgent<TAgent>((IStateBuilder)stateBuilder, buildAction) as IFinalizedOverridenCompositeStateBuilder;
-    
-    public static IFinalizedOverridenRegionalizedCompositeStateBuilder AddDoAIAgent(this IFinalizedOverridenRegionalizedCompositeStateBuilder stateBuilder, AIAgentFactory aiAgentFactory, AgentBuildAction? buildAction = null)
-        => AddDoAIAgent((IStateBuilder)stateBuilder, aiAgentFactory, buildAction) as IFinalizedOverridenRegionalizedCompositeStateBuilder;
-    
-    public static IFinalizedOverridenRegionalizedCompositeStateBuilder AddDoAIAgent(this IFinalizedOverridenRegionalizedCompositeStateBuilder stateBuilder, AIAgentFactoryAsync aiAgentFactoryAsync, AgentBuildAction? buildAction = null)
-        => AddDoAIAgent((IStateBuilder)stateBuilder, aiAgentFactoryAsync, buildAction) as IFinalizedOverridenRegionalizedCompositeStateBuilder;
-    
-    public static IFinalizedOverridenRegionalizedCompositeStateBuilder AddDoAIAgent<TAgent>(this IFinalizedOverridenRegionalizedCompositeStateBuilder stateBuilder, AgentBuildAction? buildAction = null)
-        where TAgent : class, IAIAgent
-        => AddDoAIAgent<TAgent>((IStateBuilder)stateBuilder, buildAction) as IFinalizedOverridenRegionalizedCompositeStateBuilder;
-    
-    public static IOverridenCompositeStateBuilder AddDoAIAgent(this IOverridenCompositeStateBuilder stateBuilder, AIAgentFactory aiAgentFactory, AgentBuildAction? buildAction = null)
-        => AddDoAIAgent((IStateBuilder)stateBuilder, aiAgentFactory, buildAction) as IOverridenCompositeStateBuilder;
-    
-    public static IOverridenCompositeStateBuilder AddDoAIAgent(this IOverridenCompositeStateBuilder stateBuilder, AIAgentFactoryAsync aiAgentFactoryAsync, AgentBuildAction? buildAction = null)
-        => AddDoAIAgent((IStateBuilder)stateBuilder, aiAgentFactoryAsync, buildAction) as IOverridenCompositeStateBuilder;
-    
-    public static IOverridenCompositeStateBuilder AddDoAIAgent<TAgent>(this IOverridenCompositeStateBuilder stateBuilder, AgentBuildAction? buildAction = null)
-        where TAgent : class, IAIAgent
-        => AddDoAIAgent<TAgent>((IStateBuilder)stateBuilder, buildAction) as IOverridenCompositeStateBuilder;
-    
-    public static IOverridenRegionalizedCompositeStateBuilder AddDoAIAgent(this IOverridenRegionalizedCompositeStateBuilder stateBuilder, AIAgentFactory aiAgentFactory, AgentBuildAction? buildAction = null)
-        => AddDoAIAgent((IStateBuilder)stateBuilder, aiAgentFactory, buildAction) as IOverridenRegionalizedCompositeStateBuilder;
-    
-    public static IOverridenRegionalizedCompositeStateBuilder AddDoAIAgent(this IOverridenRegionalizedCompositeStateBuilder stateBuilder, AIAgentFactoryAsync aiAgentFactoryAsync, AgentBuildAction? buildAction = null)
-        => AddDoAIAgent((IStateBuilder)stateBuilder, aiAgentFactoryAsync, buildAction) as IOverridenRegionalizedCompositeStateBuilder;
-    
-    public static IOverridenRegionalizedCompositeStateBuilder AddDoAIAgent<TAgent>(this IOverridenRegionalizedCompositeStateBuilder stateBuilder, AgentBuildAction? buildAction = null)
-        where TAgent : class, IAIAgent
-        => AddDoAIAgent<TAgent>((IStateBuilder)stateBuilder, buildAction) as IOverridenRegionalizedCompositeStateBuilder;
-    
-    private static DefaultTransitionBuildAction PrepareAgenticTransition(string targetStateName, string description, DefaultTransitionBuildAction? buildAction = null)
+    private static TransitionBuildAction<AgenticDecision> PrepareAgenticTransition(string targetStateName, string description, DefaultTransitionBuildAction? buildAction = null)
         => b =>
         {
             var stateMetadata = ((IParentMetadataBuilder)b).ParentMetadata;
@@ -162,81 +87,46 @@ public static class StateBuilderExtensions
             var marker = Guid.NewGuid().ToString();
             b
                 .AddMetadata(AIAgentConstants.ExtensionMode, AIAgentConstants.AgenticTransition)
-                .AddMetadata(AIAgentConstants.TransitionName, $"go_to_{targetStateName.Split('.').Last().ToSnakeCase()}_{Random.Shared.Next(1000, 9999)}")
+                .AddMetadata(AIAgentConstants.TransitionName, $"go_to_{targetStateName.Split('.').Last().ToSnakeCase().Replace('<', '_').Replace('>', '_')}_{Random.Shared.Next(1000, 9999)}")
                 .AddMetadata(AIAgentConstants.TransitionDescription, description)
                 .AddMetadata(AIAgentConstants.GuardValue, marker)
-                .AddGuard(Guards.Global.Value(AIAgentConstants.GuardKey).IsEqualTo(marker));
+                .AddGuard(c => c.Event.DecisionMarker == marker);
+                // .AddGuard(Guards.Global.Value(AIAgentConstants.GuardKey).IsEqualTo(marker));
 
-            buildAction?.Invoke(b);
+            buildAction?.Invoke(b as IDefaultTransitionBuilder);
         };
 
-    public static IStateBuilder AddAgenticTransition(this IStateBuilder stateBuilder, string targetStateName, string prompt, DefaultTransitionBuildAction? transitionBuildAction = null)
-        => stateBuilder.AddDefaultTransition(targetStateName, PrepareAgenticTransition(targetStateName, prompt, transitionBuildAction));
+    public static IAgenticStateBuilder AddAgenticTransition(this IAgenticStateBuilder stateBuilder, string targetStateName, string prompt, DefaultTransitionBuildAction? transitionBuildAction = null)
+        => new AgenticStateBuilder(stateBuilder.AddTransition<AgenticDecision>(targetStateName, PrepareAgenticTransition(targetStateName, prompt, transitionBuildAction)));
     
-    public static IStateBuilder AddAgenticTransition<TTargetState>(this IStateBuilder stateBuilder, string prompt, DefaultTransitionBuildAction? transitionBuildAction = null)
+    public static IAgenticStateBuilder AddAgenticTransition<TTargetState>(this IAgenticStateBuilder stateBuilder, string prompt, DefaultTransitionBuildAction? transitionBuildAction = null)
         where TTargetState : class, IVertex
-        => stateBuilder.AddDefaultTransition<TTargetState>(PrepareAgenticTransition(State<TTargetState>.Name, prompt, transitionBuildAction));
+        => new AgenticStateBuilder(stateBuilder.AddTransition<AgenticDecision, TTargetState>(PrepareAgenticTransition(State<TTargetState>.Name, prompt, transitionBuildAction)));
     
-    public static IOverridenStateBuilder AddAgenticTransition(this IOverridenStateBuilder stateBuilder, string targetStateName, string prompt, DefaultTransitionBuildAction? transitionBuildAction = null)
-        => stateBuilder.AddDefaultTransition(targetStateName, PrepareAgenticTransition(targetStateName, prompt, transitionBuildAction));
-    
-    public static IOverridenStateBuilder AddAgenticTransition<TTargetState>(this IOverridenStateBuilder stateBuilder, string prompt, DefaultTransitionBuildAction? transitionBuildAction = null)
-        where TTargetState : class, IVertex
-        => stateBuilder.AddDefaultTransition<TTargetState>(PrepareAgenticTransition(State<TTargetState>.Name, prompt, transitionBuildAction));
-    
-    public static IOverridenRegionalizedStateBuilder AddAgenticTransition(this IOverridenRegionalizedStateBuilder stateBuilder, string targetStateName, string prompt, DefaultTransitionBuildAction? transitionBuildAction = null)
-        => stateBuilder.AddDefaultTransition(targetStateName, PrepareAgenticTransition(targetStateName, prompt, transitionBuildAction));
-    
-    public static IOverridenRegionalizedStateBuilder AddAgenticTransition<TTargetState>(this IOverridenRegionalizedStateBuilder stateBuilder, string prompt, DefaultTransitionBuildAction? transitionBuildAction = null)
-        where TTargetState : class, IVertex
-        => stateBuilder.AddDefaultTransition<TTargetState>(PrepareAgenticTransition(State<TTargetState>.Name, prompt, transitionBuildAction));
-    
-    public static IInitializedCompositeStateBuilder AddAgenticTransition(this IInitializedCompositeStateBuilder stateBuilder, string targetStateName, string prompt, DefaultTransitionBuildAction? transitionBuildAction = null)
-        => stateBuilder.AddDefaultTransition(targetStateName, PrepareAgenticTransition(targetStateName, prompt, transitionBuildAction));
-    
-    public static IInitializedCompositeStateBuilder AddAgenticTransition<TTargetState>(this IInitializedCompositeStateBuilder stateBuilder, string prompt, DefaultTransitionBuildAction? transitionBuildAction = null)
-        where TTargetState : class, IVertex
-        => stateBuilder.AddDefaultTransition<TTargetState>(PrepareAgenticTransition(State<TTargetState>.Name, prompt, transitionBuildAction));   
-    
-    public static IFinalizedCompositeStateBuilder AddAgenticTransition(this IFinalizedCompositeStateBuilder stateBuilder, string targetStateName, string prompt, DefaultTransitionBuildAction? transitionBuildAction = null)
-        => stateBuilder.AddDefaultTransition(targetStateName, PrepareAgenticTransition(targetStateName, prompt, transitionBuildAction));
-    
-    public static IFinalizedCompositeStateBuilder AddAgenticTransition<TTargetState>(this IFinalizedCompositeStateBuilder stateBuilder, string prompt, DefaultTransitionBuildAction? transitionBuildAction = null)
-        where TTargetState : class, IVertex
-        => stateBuilder.AddDefaultTransition<TTargetState>(PrepareAgenticTransition(State<TTargetState>.Name, prompt, transitionBuildAction));   
-    
-    public static ICompositeStateBuilder AddAgenticTransition(this ICompositeStateBuilder stateBuilder, string targetStateName, string prompt, DefaultTransitionBuildAction? transitionBuildAction = null)
-        => stateBuilder.AddDefaultTransition(targetStateName, PrepareAgenticTransition(targetStateName, prompt, transitionBuildAction));
-    
-    public static ICompositeStateBuilder AddAgenticTransition<TTargetState>(this ICompositeStateBuilder stateBuilder, string prompt, DefaultTransitionBuildAction? transitionBuildAction = null)
-        where TTargetState : class, IVertex
-        => stateBuilder.AddDefaultTransition<TTargetState>(PrepareAgenticTransition(State<TTargetState>.Name, prompt, transitionBuildAction));   
-    
-    public static IFinalizedOverridenCompositeStateBuilder AddAgenticTransition(this IFinalizedOverridenCompositeStateBuilder stateBuilder, string targetStateName, string prompt, DefaultTransitionBuildAction? transitionBuildAction = null)
-        => stateBuilder.AddDefaultTransition(targetStateName, PrepareAgenticTransition(targetStateName, prompt, transitionBuildAction));
-    
-    public static IFinalizedOverridenCompositeStateBuilder AddAgenticTransition<TTargetState>(this IFinalizedOverridenCompositeStateBuilder stateBuilder, string prompt, DefaultTransitionBuildAction? transitionBuildAction = null)
-        where TTargetState : class, IVertex
-        => stateBuilder.AddDefaultTransition<TTargetState>(PrepareAgenticTransition(State<TTargetState>.Name, prompt, transitionBuildAction));   
-    
-    public static IFinalizedOverridenRegionalizedCompositeStateBuilder AddAgenticTransition(this IFinalizedOverridenRegionalizedCompositeStateBuilder stateBuilder, string targetStateName, string prompt, DefaultTransitionBuildAction? transitionBuildAction = null)
-        => stateBuilder.AddDefaultTransition(targetStateName, PrepareAgenticTransition(targetStateName, prompt, transitionBuildAction));
-    
-    public static IFinalizedOverridenRegionalizedCompositeStateBuilder AddAgenticTransition<TTargetState>(this IFinalizedOverridenRegionalizedCompositeStateBuilder stateBuilder, string prompt, DefaultTransitionBuildAction? transitionBuildAction = null)
-        where TTargetState : class, IVertex
-        => stateBuilder.AddDefaultTransition<TTargetState>(PrepareAgenticTransition(State<TTargetState>.Name, prompt, transitionBuildAction));   
-    
-    public static IOverridenCompositeStateBuilder AddAgenticTransition(this IOverridenCompositeStateBuilder stateBuilder, string targetStateName, string prompt, DefaultTransitionBuildAction? transitionBuildAction = null)
-        => stateBuilder.AddDefaultTransition(targetStateName, PrepareAgenticTransition(targetStateName, prompt, transitionBuildAction));
-    
-    public static IOverridenCompositeStateBuilder AddAgenticTransition<TTargetState>(this IOverridenCompositeStateBuilder stateBuilder, string prompt, DefaultTransitionBuildAction? transitionBuildAction = null)
-        where TTargetState : class, IVertex
-        => stateBuilder.AddDefaultTransition<TTargetState>(PrepareAgenticTransition(State<TTargetState>.Name, prompt, transitionBuildAction));   
-    
-    public static IOverridenRegionalizedCompositeStateBuilder AddAgenticTransition(this IOverridenRegionalizedCompositeStateBuilder stateBuilder, string targetStateName, string prompt, DefaultTransitionBuildAction? transitionBuildAction = null)
-        => stateBuilder.AddDefaultTransition(targetStateName, PrepareAgenticTransition(targetStateName, prompt, transitionBuildAction));
-    
-    public static IOverridenRegionalizedCompositeStateBuilder AddAgenticTransition<TTargetState>(this IOverridenRegionalizedCompositeStateBuilder stateBuilder, string prompt, DefaultTransitionBuildAction? transitionBuildAction = null)
-        where TTargetState : class, IVertex
-        => stateBuilder.AddDefaultTransition<TTargetState>(PrepareAgenticTransition(State<TTargetState>.Name, prompt, transitionBuildAction));
+    public static IAgenticStateBuilder AddAgenticHandoff<TTargetAgent>(this IAgenticStateBuilder stateBuilder, string prompt, DefaultTransitionBuildAction? transitionBuildAction = null)
+        where TTargetAgent : class, IAIAgent
+        => new AgenticStateBuilder(stateBuilder.AddTransition<AgenticDecision, AgenticState<TTargetAgent>>(PrepareAgenticTransition(State<AgenticState<TTargetAgent>>.Name, prompt, transitionBuildAction)));
+
+    public static IAgenticStateBuilder AddAgenticReaction<TEvent>(this IAgenticStateBuilder stateBuilder, Func<IEventContext<TEvent>, ChatMessage> chatMessageFactory, InternalTransitionBuildAction<TEvent>? transitionBuildAction = null)
+        => new AgenticStateBuilder(stateBuilder.AddInternalTransition<TEvent>(b =>
+        {
+            b.AddEffect(c => c.Behavior.Send(chatMessageFactory(c)));
+            
+            transitionBuildAction?.Invoke(b);
+        }));
+        
+    // public static IAgenticStateBuilder AddAgentGuardedTransition<TEvent>(this IAgenticStateBuilder stateBuilder, string targetStateName, string prompt, DefaultTransitionBuildAction? transitionBuildAction = null)
+    //     => new AgenticStateBuilder(stateBuilder.AddTransition<TEvent>(targetStateName, PrepareAgenticTransition(targetStateName, prompt, transitionBuildAction)));
+    //
+    // public static IAgenticStateBuilder AddAgentGuardedTransition<TEvent, TTargetState>(this IAgenticStateBuilder stateBuilder, string prompt, DefaultTransitionBuildAction? transitionBuildAction = null)
+    //     where TTargetState : class
+    // {
+    //     if (!typeof(TTargetState).GetInterfaces().Any(i => i == typeof(IVertex) || i == typeof(IAIAgent)))
+    //     {
+    //         throw new StateflowsDefinitionException($"Type {typeof(TTargetState).FullName} must implement either {nameof(IVertex)} or {nameof(IAIAgent)} to be used as a target state in an agentic transition.");
+    //     }
+    //     
+    //     var stateName = typeof(TTargetState).GetReadableName(TypedElements.StateMachineStates);
+    //     return new AgenticStateBuilder(stateBuilder.AddTransition<TEvent>(stateName, PrepareAgenticTransition(stateName, prompt, transitionBuildAction)));
+    // }
 }

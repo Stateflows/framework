@@ -42,17 +42,17 @@ namespace Stateflows.Common.Context.Classes
         
         public bool IsEmbedded => Context.ContextOwnerId != null;
 
-        private void Publish<TNotification>(BehaviorId behaviorId, TNotification notification, IDictionary<string, EventHeader> headers = null)
-            => Subscriber.PublishAsync(behaviorId, notification, Context, headers).Wait();
+        private void PublishRange<TNotification>(BehaviorId behaviorId, IEnumerable<TNotification> notifications, IDictionary<string, EventHeader> headers = null)
+            => Subscriber.PublishRangeAsync(behaviorId, notifications, Context, headers).Wait();
 
-        void IPublishes<IBehaviorContext>.Publish<TNotification>(TNotification notification, IDictionary<string, EventHeader> headers)
-            => Publish(Id, notification, headers);
+        void IPublishes<IBehaviorContext>.PublishRange<TNotification>(IEnumerable<TNotification> notifications, IDictionary<string, EventHeader> headers)
+            => PublishRange(Id, notifications, headers);
 
-        void IPublishes<IParentBehaviorContext>.Publish<TNotification>(TNotification notification, IDictionary<string, EventHeader> headers)
-            => Publish(Context.ContextParentId!.Value, notification, headers);
+        void IPublishes<IParentBehaviorContext>.PublishRange<TNotification>(IEnumerable<TNotification> notifications, IDictionary<string, EventHeader> headers)
+            => PublishRange(Context.ContextParentId!.Value, notifications, headers);
 
-        void IPublishes<IOwnerBehaviorContext>.Publish<TNotification>(TNotification notification, IDictionary<string, EventHeader> headers)
-            => Publish(Context.ContextOwnerId!.Value, notification, headers);
+        void IPublishes<IOwnerBehaviorContext>.PublishRange<TNotification>(IEnumerable<TNotification> notifications, IDictionary<string, EventHeader> headers)
+            => PublishRange(Context.ContextOwnerId!.Value, notifications, headers);
 
         private async Task<bool> TrySetAsync<T>(BehaviorId behaviorId, string fieldName, T fieldValue, IDictionary<string, EventHeader> headers)
         {

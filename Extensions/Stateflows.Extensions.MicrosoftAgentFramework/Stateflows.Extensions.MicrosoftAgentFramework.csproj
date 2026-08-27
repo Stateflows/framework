@@ -9,6 +9,7 @@
     <ItemGroup>
       <ProjectReference Include="..\..\Core\Stateflows\Stateflows.csproj" />
       <ProjectReference Include="..\Stateflows.Extensions.MicrosoftAgentFramework.Common\Stateflows.Extensions.MicrosoftAgentFramework.Common.csproj" />
+      <ProjectReference Include="..\Stateflows.Extensions.MinimalAPIs.Common\Stateflows.Extensions.MinimalAPIs.Common.csproj" />
     </ItemGroup>
 
 </Project>

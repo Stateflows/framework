@@ -108,7 +108,7 @@ public sealed class TestBehaviorAgent : IAIAgent
     public string? Template => null;
     public string? InitialPrompt => null;
 
-    public Task<Microsoft.Agents.AI.AIAgent> BuildAgentAsync(IAIAgentContext aiAgentContext)
+    public Task<Microsoft.Agents.AI.AIAgent> BuildAgentAsync(IAIAgentContext aiAgentContext, AITool[] frameworkTools)
         => Task.FromResult<Microsoft.Agents.AI.AIAgent>(SharedTestAIAgent.Instance);
 }
 

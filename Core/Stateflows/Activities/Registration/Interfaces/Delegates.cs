@@ -74,8 +74,12 @@ namespace Stateflows.Activities.Registration.Interfaces
     public delegate void OverridenInputBuildAction(IOverridenInputBuilder builder);
 
     public delegate void ReactiveStructuredActivityBuildAction(IReactiveStructuredActivityBuilder builder);
+
+    public delegate void ReactiveStructuredActivityExternalsBuildAction(IReactiveStructuredActivityExternalsBuilder builder);
     
     public delegate void OverridenReactiveStructuredActivityBuildAction(IOverridenReactiveStructuredActivityBuilder builder);
+    
+    public delegate void OverridenReactiveStructuredActivityExternalsBuildAction(IOverridenReactiveStructuredActivityExternalsBuilder builder);
 
     public delegate void StructuredActivityBuildAction(IStructuredActivityBuilder builder);
     

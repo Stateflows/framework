@@ -20,7 +20,7 @@ namespace Stateflows.Actions.Models
         public ActionDelegateAsync Delegate { get; set; }
         public Func<IActionVisitor, Task> VisitingAction { get; set; }
 
-        public System.Action<object>? ConfigurationAction { get; set; } = null;
+        public List<System.Action<object>> ConfigurationActions { get; set; } = [];
 
         public List<ActionExceptionHandlerFactoryAsync> ExceptionHandlerFactories { get; set; } = [];
         

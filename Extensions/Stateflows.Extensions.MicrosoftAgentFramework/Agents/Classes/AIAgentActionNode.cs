@@ -1,4 +1,4 @@
-using System.Text.Json;
+using Microsoft.Agents.AI;
 using Microsoft.Extensions.AI;
 using Stateflows.Activities;
 using Stateflows.Activities.Context.Interfaces;
@@ -10,35 +10,43 @@ using Stateflows.MAF.AIAgents.Registration;
 
 namespace Stateflows.MAF.AIAgents.Classes;
 
-public class AIAgentActionNode(IActivityContext activityContext, IInput input, IOutput output) : IActionNode, IConfigurable<AIAgentFactoryAsync>, IConfigurable<AgentBuildAction?>
+public class AIAgentActionNode(
+    IActivityContext activityContext,
+    IOutputTokens<AgentResponse> agentResponses,
+    IInputTokens<ChatMessage> chatMessages,
+    IInputTokens<string> stringMessages
+) : IActionNode,
+    IConfigurable<AIAgentFactoryAsync>,
+    IConfigurable<AIAgentBuildAction?>
 {
     public async Task ExecuteAsync(CancellationToken cancellationToken = default)
     {
-        const string agentThreadKey = "system::agentThread";
+        // const string agentThreadKey = "system::agentThread";
         // var agentThread = await activityContext.Values.GetOrDefaultAsync(agentThreadKey, new ChatHistoryAgentThread());
         // var kernelBuilder = Kernel.CreateBuilder();
         // kernelBuilder.Services.AddSingleton<IFunctionInvocationFilter, ApprovalFilterExample>();
-        var agent = await AIAgentFactoryAsync(activityContext.ServiceProvider);
-        var session = await agent.CreateSessionAsync(cancellationToken: cancellationToken);
+        var agent = await AIAgentFactoryAsync(activityContext.ServiceProvider, []);
+        // var session = await agent.CreateSessionAsync(cancellationToken: cancellationToken);
         
-        var sessionDataString = await activityContext.Values.GetOrDefaultAsync(agentThreadKey, string.Empty);
-        var sessionData = JsonElement.Parse(sessionDataString ?? string.Empty);
-        await agent.DeserializeSessionAsync(sessionData, cancellationToken: cancellationToken);
+        // var sessionDataString = await activityContext.Values.GetOrDefaultAsync(agentThreadKey, string.Empty);
+        // var sessionData = JsonElement.Parse(sessionDataString ?? string.Empty);
+        // await agent.DeserializeSessionAsync(sessionData, cancellationToken: cancellationToken);
         
-        var responseStream = input.HasTokensOfType<string>()
-            ? agent.RunStreamingAsync(input.GetTokensOfType<string>().First(), cancellationToken: cancellationToken)
-            : input.HasTokensOfType<ChatMessage>()
-                ? agent.RunStreamingAsync(input.GetTokensOfType<ChatMessage>().ToArray(), cancellationToken: cancellationToken)
-                : agent.RunStreamingAsync(cancellationToken: cancellationToken);
+        var response = chatMessages.Any()
+            ? await agent.RunAsync(chatMessages.ToArray())
+            : stringMessages.Any()
+                ? await agent.RunAsync(stringMessages.Select(s => new ChatMessage(ChatRole.User, s)).ToArray())
+                : await agent.RunAsync();
                 
-        await foreach (var response in responseStream.WithCancellation(cancellationToken))
+        // await foreach (var response in responseStream.WithCancellation(cancellationToken))
         {
-            activityContext.Publish(response);
+            agentResponses.Add(response);
+            // activityContext.Publish(response);
         }
         
-        sessionData = await agent.SerializeSessionAsync(session, cancellationToken: cancellationToken);
-        sessionDataString = sessionData.GetString();
-        await activityContext.Values.SetAsync(agentThreadKey, sessionDataString);
+        // sessionData = await agent.SerializeSessionAsync(session, cancellationToken: cancellationToken);
+        // sessionDataString = sessionData.GetString();
+        // await activityContext.Values.SetAsync(agentThreadKey, sessionDataString);
                 
         // await activityContext.Values.SetAsync(agentThreadKey, agentThread);
     }
@@ -53,25 +61,32 @@ public class AIAgentActionNode(IActivityContext activityContext, IInput input, I
         set => AIAgentFactoryAsync = value;
     }
 
-    protected virtual AgentBuildAction? AgentBuildAction { get; private set; }
-    AgentBuildAction? IConfigurable<AgentBuildAction?>.Configuration
+    protected virtual AIAgentBuildAction? AgentBuildAction { get; private set; }
+    AIAgentBuildAction? IConfigurable<AIAgentBuildAction?>.Configuration
     {
         set => AgentBuildAction = value;
     }
 }
 
-public class AIAgentActionNode<TAgent>(IActivityContext activityContext, IInput input, IOutput output)
-    : AIAgentActionNode(activityContext, input, output),
+public class AIAgentActionNode<TAgent>(
+    IActivityContext activityContext, 
+    IOutputTokens<AgentResponse> agentResponses,
+    IInputTokens<ChatMessage> chatMessages,
+    IInputTokens<string> stringMessages,
+    IInput input,
+    IOutput output
+)
+    : AIAgentActionNode(activityContext, agentResponses, chatMessages, stringMessages),
     ITokenConsumer<string>,
-    ITokenConsumer<AgenticChatMessage>
+    ITokenConsumer<ChatMessage>
     where TAgent : class, IAIAgent
 {
     protected override AIAgentFactoryAsync AIAgentFactoryAsync
-        => async _ =>
+        => async (_, tools) =>
         {
             var agentContext = new AIAgentContext(activityContext, input, output);
             var agentBehavior = await StateflowsActivator.CreateModelElementInstanceAsync<TAgent>(activityContext.ServiceProvider);
-            var agent = await agentBehavior.BuildAgentAsync(agentContext);
+            var agent = await agentBehavior.BuildAgentAsync(agentContext, tools);
 
             return agent;
         };

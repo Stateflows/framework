@@ -3,19 +3,17 @@ using Microsoft.Agents.AI;
 using Microsoft.Extensions.AI;
 using Stateflows.Common.Classes;
 using Stateflows.Common.Extensions;
+using Stateflows.StateMachines;
 
 namespace Stateflows.MAF.AIAgents
 {
     public interface IAIAgent
     {
-        string? Name { get; }
-        string? Description { get; }
-        string? Instructions { get; }
-        string? Arguments { get; }
-        string? Template { get; }
-        string? InitialPrompt { get; }
+        string? Name => null;
+        string? Description => null;
+        string? InitialPrompt => null;
 
-        Task<AIAgent> BuildAgentAsync(IAIAgentContext aiAgentContext);
+        Task<AIAgent> BuildAgentAsync(IAIAgentContext aiAgentContext, AITool[] frameworkTools);
     }
 
     public interface IEventConsumerAIAgent<in TEvent> : IAIAgent
@@ -23,7 +21,7 @@ namespace Stateflows.MAF.AIAgents
         static abstract Task<ChatMessage> FormatEventAsync(IAIAgentContext aiAgentContext, TEvent @event);
     }
 
-    public interface ITokenConsumerAiAgent<in TToken> : IAIAgent
+    public interface ITokenConsumerAIAgent<in TToken> : IAIAgent
     {
         static abstract Task<ChatMessage> FormatTokenAsync(IAIAgentContext aiAgentContext, TToken token);
     }
@@ -33,7 +31,7 @@ namespace Stateflows.MAF.AIAgents
         void Configure(IAIAgentBuilder builder);
     }
 
-    public interface IAiAgent<TAIAgent> : IAIAgent
+    public interface IAIAgent<TAIAgent> : IAIAgent
         where TAIAgent : AIAgent, new()
     {
         Task<AIAgent> BuildAgentAsync(IAIAgentContext aiAgentContext)
@@ -53,14 +51,14 @@ namespace Stateflows.MAF.AIAgents
     //         });
     // }
 
-    public static class Agent<TAgent>
-        where TAgent : class, IAIAgent
+    public static class AIAgent<TAIAgent>
+        where TAIAgent : class, IAIAgent
     {
         public static string Name
         {
             get
             {
-                var agentType = typeof(TAgent);
+                var agentType = typeof(TAIAgent);
                 var attribute = agentType.GetCustomAttribute<AIAgentBehaviorAttribute>();
                 return attribute is { Name: not null }
                     ? attribute.Name
@@ -73,5 +71,13 @@ namespace Stateflows.MAF.AIAgents
 
         public static BehaviorId ToId(string instance)
             => new(ToClass(), instance);
+    }
+
+    public sealed class AgenticState<TAIAgent> : IState
+        where TAIAgent : class, IAIAgent;
+    
+    public static class AgenticState
+    {
+        public static string GetName(Type aiAgentType) => State.GetName(typeof(AgenticState<>).MakeGenericType(aiAgentType));
     }
 }

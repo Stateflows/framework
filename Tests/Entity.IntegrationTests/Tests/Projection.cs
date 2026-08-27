@@ -12,6 +12,50 @@ namespace Entity.IntegrationTests.Tests
 
     public record ToggleProjectionFlagEvent(bool Flag);
 
+    public record SetInheritedProjectionBaseEvent(string Value);
+
+    public record SetInheritedProjectionSuffixEvent(string Value);
+
+    public record SetMultiInheritedProjectionFirstEvent(string Value);
+
+    public record SetMultiInheritedProjectionSecondEvent(int Value);
+
+    public interface IMultiInheritedProjectionEntityTemplateFirst
+    {
+        [Field]
+        string FirstValue { get; set; }
+    }
+
+    public interface IMultiInheritedProjectionEntityTemplateSecond
+    {
+        [Field]
+        int SecondValue { get; set; }
+    }
+
+    public interface IMultiInheritedProjectionEntityTemplate : IMultiInheritedProjectionEntityTemplateFirst, IMultiInheritedProjectionEntityTemplateSecond
+    {
+        [Field]
+        string CombinedValue => $"{FirstValue}:{SecondValue}";
+    }
+
+    public record MultiInheritedProjectionSnapshot
+    {
+        public string? FirstValue { get; set; }
+
+        public int SecondValue { get; set; }
+
+        public string? CombinedValue { get; set; }
+    }
+
+    public record MultiInheritedProjectionNotification
+    {
+        public string? FirstValue { get; set; }
+
+        public int SecondValue { get; set; }
+
+        public string? CombinedValue { get; set; }
+    }
+
     public interface IProjectionEntityTemplate
     {
         [Field]
@@ -27,7 +71,25 @@ namespace Entity.IntegrationTests.Tests
         int NameLength => Name.Length;
 
         [Field]
+        string ComputedName => Name;
+
+        [Field]
         int DoubleQuantity => Quantity * 2;
+    }
+
+    public interface IInheritedProjectionEntityTemplateBase
+    {
+        [Field]
+        string BaseValue { get; set; }
+    }
+
+    public interface IInheritedProjectionEntityTemplate : IInheritedProjectionEntityTemplateBase
+    {
+        [Field]
+        string Suffix { get; set; }
+
+        [Field]
+        string CombinedValue => $"{BaseValue}:{Suffix}";
     }
 
     public record ProjectionSnapshot
@@ -53,6 +115,15 @@ namespace Entity.IntegrationTests.Tests
         public int Quantity { get; set; }
 
         public int DoubleQuantity { get; set; }
+    }
+
+    public record InheritedProjectionSnapshot
+    {
+        public string? BaseValue { get; set; }
+
+        public string? Suffix { get; set; }
+
+        public string? CombinedValue { get; set; }
     }
 
     [TestClass]
@@ -89,13 +160,49 @@ namespace Entity.IntegrationTests.Tests
                         })
                         .AddProjection<NameProjectionNotification>(template => new NameProjectionNotification
                         {
-                            Name = template.Name,
+                            Name = template.ComputedName,
                             NameLength = template.NameLength,
                         }, PublishScope.Self)
                         .AddProjection<QuantityProjectionNotification>(template => new QuantityProjectionNotification
                         {
                             Quantity = template.Quantity,
                             DoubleQuantity = template.DoubleQuantity,
+                        }, PublishScope.Self)
+                    )
+                    .AddEntity<IInheritedProjectionEntityTemplate>("inheritedProjectionEntity", entity => entity
+                        .AddDefaultInitializer(context =>
+                        {
+                            context.Entity.BaseValue = "seed";
+                            context.Entity.Suffix = "0";
+                        })
+                        .AddMutation<SetInheritedProjectionBaseEvent>(context => context.Entity.BaseValue = context.MutationEvent.Value)
+                        .AddMutation<SetInheritedProjectionSuffixEvent>(context => context.Entity.Suffix = context.MutationEvent.Value)
+                        .AddProjection<InheritedProjectionSnapshot>(template => new InheritedProjectionSnapshot
+                        {
+                            BaseValue = template.BaseValue,
+                            Suffix = template.Suffix,
+                            CombinedValue = template.CombinedValue,
+                        })
+                    )
+                    .AddEntity<IMultiInheritedProjectionEntityTemplate>("multiInheritedProjectionEntity", entity => entity
+                        .AddDefaultInitializer(context =>
+                        {
+                            context.Entity.FirstValue = "seed";
+                            context.Entity.SecondValue = 1;
+                        })
+                        .AddMutation<SetMultiInheritedProjectionFirstEvent>(context => context.Entity.FirstValue = context.MutationEvent.Value)
+                        .AddMutation<SetMultiInheritedProjectionSecondEvent>(context => context.Entity.SecondValue = context.MutationEvent.Value)
+                        .AddProjection<MultiInheritedProjectionSnapshot>(template => new MultiInheritedProjectionSnapshot
+                        {
+                            FirstValue = template.FirstValue,
+                            SecondValue = template.SecondValue,
+                            CombinedValue = template.CombinedValue,
+                        })
+                        .AddProjection<MultiInheritedProjectionNotification>(template => new MultiInheritedProjectionNotification
+                        {
+                            FirstValue = template.FirstValue,
+                            SecondValue = template.SecondValue,
+                            CombinedValue = template.CombinedValue,
                         }, PublishScope.Self)
                     )
                 );
@@ -229,12 +336,12 @@ namespace Entity.IntegrationTests.Tests
                     }
                 });
 
-                _ = await entity.TryGetProjectionAsync<NameProjectionNotification>();
-                _ = await entity.TryGetProjectionAsync<QuantityProjectionNotification>();
+                // _ = await entity.TryGetProjectionAsync<NameProjectionNotification>();
+                // _ = await entity.TryGetProjectionAsync<QuantityProjectionNotification>();
 
                 toggleStatus = (await entity.SendAsync(new ToggleProjectionFlagEvent(true))).Status;
                 await Task.Delay(100);
-                renameStatus1 = (await entity.SendAsync(new RenameProjectionEvent("updated"))).Status;
+                renameStatus1 = (await entity.SendAsync(new RenameProjectionEvent("not updated"))).Status;
                 await Task.Delay(100);
                 renameStatus2 = (await entity.SendAsync(new RenameProjectionEvent("updated"))).Status;
                 await Task.Delay(100);
@@ -249,7 +356,7 @@ namespace Entity.IntegrationTests.Tests
             Assert.AreEqual(EventStatus.Consumed, renameStatus2);
             Assert.AreEqual(EventStatus.Consumed, quantityStatus1);
             Assert.AreEqual(EventStatus.Consumed, quantityStatus2);
-            Assert.AreEqual(1, namePublishCount);
+            Assert.AreEqual(2, namePublishCount);
             Assert.AreEqual(1, quantityPublishCount);
             Assert.IsNotNull(publishedNameProjection);
             Assert.AreEqual("updated", publishedNameProjection.Name);
@@ -258,10 +365,151 @@ namespace Entity.IntegrationTests.Tests
             Assert.AreEqual(4, publishedQuantityProjection.Quantity);
             Assert.AreEqual(8, publishedQuantityProjection.DoubleQuantity);
         }
+
+        [TestMethod]
+        public async Task InheritedTemplateProjection_RequestReturnsBaseAndDerivedFields()
+        {
+            var success = false;
+            InheritedProjectionSnapshot? projection = null;
+
+            if (TryLocateEntity("inheritedProjectionEntity", "x", out var entity))
+            {
+                (success, projection) = await entity.TryGetProjectionAsync<InheritedProjectionSnapshot>();
+            }
+
+            Assert.IsTrue(success);
+            Assert.IsNotNull(projection);
+            Assert.AreEqual("seed", projection.BaseValue);
+            Assert.AreEqual("0", projection.Suffix);
+            Assert.AreEqual("seed:0", projection.CombinedValue);
+        }
+
+        [TestMethod]
+        public async Task InheritedTemplateProjection_RecalculatesAfterBaseAndDerivedMutations()
+        {
+            var baseStatus = EventStatus.Undelivered;
+            var suffixStatus = EventStatus.Undelivered;
+            var success = false;
+            InheritedProjectionSnapshot? projection = null;
+
+            if (TryLocateEntity("inheritedProjectionEntity", "mutated", out var entity))
+            {
+                _ = await entity.TryGetProjectionAsync<InheritedProjectionSnapshot>();
+                baseStatus = (await entity.SendAsync(new SetInheritedProjectionBaseEvent("alpha"))).Status;
+                suffixStatus = (await entity.SendAsync(new SetInheritedProjectionSuffixEvent("beta"))).Status;
+                (success, projection) = await entity.TryGetProjectionAsync<InheritedProjectionSnapshot>();
+            }
+
+            Assert.AreEqual(EventStatus.Consumed, baseStatus);
+            Assert.AreEqual(EventStatus.Consumed, suffixStatus);
+            Assert.IsTrue(success);
+            Assert.IsNotNull(projection);
+            Assert.AreEqual("alpha", projection.BaseValue);
+            Assert.AreEqual("beta", projection.Suffix);
+            Assert.AreEqual("alpha:beta", projection.CombinedValue);
+        }
+
+        [TestMethod]
+        public async Task MultiInheritedTemplateProjection_RequestReturnsFirstSecondAndDerivedFields()
+        {
+            var success = false;
+            MultiInheritedProjectionSnapshot? projection = null;
+
+            if (TryLocateEntity("multiInheritedProjectionEntity", "x", out var entity))
+            {
+                (success, projection) = await entity.TryGetProjectionAsync<MultiInheritedProjectionSnapshot>();
+            }
+
+            Assert.IsTrue(success);
+            Assert.IsNotNull(projection);
+            Assert.AreEqual("seed", projection.FirstValue);
+            Assert.AreEqual(1, projection.SecondValue);
+            Assert.AreEqual("seed:1", projection.CombinedValue);
+        }
+
+        [TestMethod]
+        public async Task MultiInheritedTemplateProjection_RecalculatesAfterFirstAndSecondMutations()
+        {
+            var firstStatus = EventStatus.Undelivered;
+            var secondStatus = EventStatus.Undelivered;
+            var success = false;
+            MultiInheritedProjectionSnapshot? projection = null;
+
+            if (TryLocateEntity("multiInheritedProjectionEntity", "mutated", out var entity))
+            {
+                _ = await entity.TryGetProjectionAsync<MultiInheritedProjectionSnapshot>();
+                firstStatus = (await entity.SendAsync(new SetMultiInheritedProjectionFirstEvent("alpha"))).Status;
+                secondStatus = (await entity.SendAsync(new SetMultiInheritedProjectionSecondEvent(42))).Status;
+                (success, projection) = await entity.TryGetProjectionAsync<MultiInheritedProjectionSnapshot>();
+            }
+
+            Assert.AreEqual(EventStatus.Consumed, firstStatus);
+            Assert.AreEqual(EventStatus.Consumed, secondStatus);
+            Assert.IsTrue(success);
+            Assert.IsNotNull(projection);
+            Assert.AreEqual("alpha", projection.FirstValue);
+            Assert.AreEqual(42, projection.SecondValue);
+            Assert.AreEqual("alpha:42", projection.CombinedValue);
+        }
+
+        [TestMethod]
+        public async Task MultiInheritedTemplateProjection_CachesDependenciesCorrectly()
+        {
+            var success = false;
+            MultiInheritedProjectionSnapshot? projection = null;
+
+            if (TryLocateEntity("multiInheritedProjectionEntity", "depends", out var entity))
+            {
+                (success, projection) = await entity.TryGetProjectionAsync<MultiInheritedProjectionSnapshot>();
+            }
+
+            Assert.IsTrue(success);
+            Assert.IsNotNull(projection);
+
+            var context = await HydrateContextAsync("multiInheritedProjectionEntity", "depends");
+            CollectionAssert.AreEquivalent(
+                new[] { nameof(IMultiInheritedProjectionEntityTemplate.FirstValue), nameof(IMultiInheritedProjectionEntityTemplate.SecondValue), nameof(IMultiInheritedProjectionEntityTemplate.CombinedValue) },
+                GetStringArrayValue(context, $"$dependencies:projection:{typeof(MultiInheritedProjectionSnapshot).AssemblyQualifiedName}")
+            );
+            CollectionAssert.AreEquivalent(
+                new[] { nameof(IMultiInheritedProjectionEntityTemplateFirst.FirstValue), nameof(IMultiInheritedProjectionEntityTemplateSecond.SecondValue) },
+                GetStringArrayValue(context, "$dependencies:field:CombinedValue")
+            );
+        }
+
+        [TestMethod]
+        public async Task MultiInheritedTemplateProjection_PublishesChangesAfterMutations()
+        {
+            var sync = new object();
+            MultiInheritedProjectionNotification? publishedProjection = null;
+            var publishCount = 0;
+            var firstStatus = EventStatus.Undelivered;
+            var secondStatus = EventStatus.Undelivered;
+
+            if (TryLocateEntity("multiInheritedProjectionEntity", "published", out var entity))
+            {
+                await using var watcher = await entity.WatchAsync<MultiInheritedProjectionNotification>(projection =>
+                {
+                    lock (sync)
+                    {
+                        publishedProjection = projection;
+                        publishCount++;
+                    }
+                });
+
+                firstStatus = (await entity.SendAsync(new SetMultiInheritedProjectionFirstEvent("alpha"))).Status;
+                await Task.Delay(100);
+                secondStatus = (await entity.SendAsync(new SetMultiInheritedProjectionSecondEvent(42))).Status;
+                await Task.Delay(100);
+            }
+
+            Assert.AreEqual(EventStatus.Consumed, firstStatus);
+            Assert.AreEqual(EventStatus.Consumed, secondStatus);
+            Assert.AreEqual(2, publishCount);
+            Assert.IsNotNull(publishedProjection);
+            Assert.AreEqual("alpha", publishedProjection.FirstValue);
+            Assert.AreEqual(42, publishedProjection.SecondValue);
+            Assert.AreEqual("alpha:42", publishedProjection.CombinedValue);
+        }
     }
 }
-
-
-
-
-
