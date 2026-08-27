@@ -187,6 +187,11 @@ internal class AIAgentAction(
             return;
         }
 
+        if (!chatMessages.Any())
+        {
+            return;
+        }
+
         var response = await (
             chatMessages.Any()
                 ? agent.RunAsync(chatMessages, session)
