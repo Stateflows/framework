@@ -18,8 +18,11 @@ using Stateflows.Examples.Behaviors.StateMachines.Document.States;
 using Stateflows.Examples.Common.Events;
 using Stateflows.StateMachines;
 using Stateflows.Activities;
+using Stateflows.Entities;
 using Stateflows.Entities.Attributes;
 using Stateflows.Entities.Enums;
+using Stateflows.Extensions.MicrosoftAgentFramework.Agents.Enums;
+using Stateflows.MAF;
 using Stateflows.MAF.AIAgents;
 using Stateflows.MAF.AIAgents.Extensions;
 using Stateflows.StateMachines.Attributes;
@@ -36,12 +39,6 @@ public class UniversalAction(IBehaviorContext bc, IExecutionContext ec) : IActio
         return Task.CompletedTask;
     }
 }
-
-// public class ReviewingAgent : IAgent
-// {
-//     public string GuardPrompt => "Check external API via MCP if I can proceed with my process";
-//     public string SystemPrompt => "Generate review/summary for my document, i'm gonna provide feedback in loop until satisfied";
-// }
 
 public static class DocumentManager
 {
@@ -60,7 +57,7 @@ public class ReviewerAgent(IConfiguration configuration) : IAIAgent
                 
         return ProjectClient.AsAIAgent(
             model: configuration["Foundry:Model"]!,
-            instructions: "You are a helpful assistant in the area of literature.",
+            instructions: "You are a helpful assistant in the area of literature. The topic of conversation is the document that you can read and analyse. You use English language when talking with user, you don't translate anything.",
             tools: [
                 ..frameworkTools,
                 AIFunctionFactory.Create(
@@ -88,7 +85,7 @@ public class TranslatorAgent(IConfiguration configuration) : IAIAgent
                 
         return ProjectClient.AsAIAgent(
             model: configuration["Foundry:Model"]!,
-            instructions: "You are a translation agent.",
+            instructions: "You are a translation agent, you translate to English language. You work on the document that you can read.",
             tools: [
                 ..frameworkTools,
                 AIFunctionFactory.Create(
@@ -107,32 +104,31 @@ public class TranslatorAgent(IConfiguration configuration) : IAIAgent
 public class BaseDocument : IStateMachine
 {
     public static void Build(IStateMachineBuilder builder) => builder
-        .AddProjectionSubscription<string>()
+        .AddProjectionSubscription<string>("x")
         
-        .AddInitialState<New>(b => b
-            .AddTransition<BaseReview, ApprovalPending>(b => b
+        // .AddInitialState("xxx")
+        
+        .AddInitialCompositeState<New>(b => b
+            .AddInitialAgenticState<ReviewerAgent>(b => b
+                .AddAgenticTransition<Rejected>("Move here if user dislikes document")
+                .AddAgenticTransition<Approved>("Move here if user likes document")
+    
+                // .AddAgenticHandoff<TranslatorAgent>("Move here if user wants a translation")
+                
+                // .AddAgenticReaction<string>(c => new AgenticMessage() { Role = AgenticRole.User, Contents = [ new AgenticContent() {Type = AgenticContentType.Text, Payload = c.Event} ] })
+            )
+    
+            .AddAgenticState<TranslatorAgent>(b => b
+                // .AddAgenticHandoff<ReviewerAgent>("Move here if user expresses like or dislike towards the document")
+    
+                .AddAgenticReaction<string>(c => new AgenticMessage() { Role = AgenticRole.User, Contents = [ new AgenticContent() {Type = AgenticContentType.Text, Payload = c.Event} ] })
+            )
+            .AddTransition<Review, ApprovalPending>(b => b
                 .AddEffect(async c => c.Event.Respond(new ReviewResponse()
                     { Summary = $"{c.Event.Content}: {c.Event.Rating}" }))
             )
+        
             .AddTransition<AfterOneMinute, ReportAutorejection, Rejected>()
-            .AddDefaultTransition<AgenticState<ReviewerAgent>>()
-        
-            .AddDoAction<UniversalAction>()
-        )
-        
-        .AddAgenticState<ReviewerAgent>(b => b
-                .AddAgenticTransition<Rejected>("Move here if user likes document")
-                .AddAgenticTransition<Approved>("Move here if user dislikes document")
-            
-                .AddAgenticHandoff<TranslatorAgent>("Move here if user wants to translate document.")
-            
-            // .AddAgenticReaction<string>(c => new ChatMessage(ChatRole.User, [ new TextContent($"Received event: {c.Event}") ]))
-        )
-        
-        .AddAgenticState<TranslatorAgent>(b => b
-                .AddAgenticHandoff<TranslatorAgent>("Move here if user expresses like or dislike towards the document.")
-            
-            // .AddAgenticReaction<string>(c => new ChatMessage(ChatRole.User, [ new TextContent($"Received event: {c.Event}") ]))
         )
     ;
 }
@@ -161,6 +157,12 @@ public class Document : IStateMachine
     
     public interface PatientIdsEntity
     {
+        [DefaultInitializer]
+        public void Initializer()
+        {
+            PatientIds = [];
+        }
+        
         [Field]
         public List<string> PatientIds { get; set; }
         
@@ -187,7 +189,7 @@ public class Document : IStateMachine
             => new PatientIdsCompleted() { Completed = PatientIdsComplete };
     }
     
-    private interface Entity : IAIAgentSessionEntity, PatientIdsEntity
+    internal interface Entity : AIAgentSessionEntity, PatientIdsEntity
     {
         [Field, DefaultValue(42)] int ProcessId { get; set; }
         [Field] string FirstName { get; set; }
@@ -208,22 +210,11 @@ public class Document : IStateMachine
     
     public static void Build(IStateMachineBuilder builder) => builder
         .AddEntity<Entity>()
-        .AddProjectionSubscription<PatientIdsCompleted>()
+        .AddProjectionSubscription<Entity, PatientIdsCompleted>()
+        .SetPropertiesProjection<Entity, PatientIdsCompleted>()
         
         .AddInterceptor<HttpContextInterceptor>()
-        .UseStateMachine<BaseDocument>(b => b
-            .UseState<New>(b => b
-                .UseTransition<BaseReview, ApprovalPending>(b => b
-                    .ChangeTrigger<Review>()
-                    .AddEffect(c => c.Behavior.TryMutateAsync(c.Event.Content))
-                    .AddEffect(c => c.Behavior.TryMutateAsync(new PatientIdsResponse()
-                    {
-                        CorrelationId = "",
-                        PatientIds = ["a", "b", "c"],
-                        PatientIdsTotal = 3
-                    }))
-                )
-            )
+        .UseStateMachine<BaseDocument>(b => { }
         )
         // .AddInitialState<New>(b => b
         //     .AddProjectionSubscription<int>()
@@ -246,7 +237,7 @@ public class Document : IStateMachine
                 .AddDefaultTransition<Paid>(b => b
                     .AddGuard(async c =>
                     {
-                        var (success, fullName) = await c.Behavior.TryGetProjectionAsync<string>();
+                        var (success, fullName) = await c.Behavior.TryGetProjectionAsync<string>(Entity<Entity>.Name);
                         
                         return success && fullName == "Jane Doe";
                     })

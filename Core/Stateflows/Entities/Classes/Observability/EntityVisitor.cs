@@ -18,16 +18,16 @@ namespace Stateflows.Entities
             where TEntity : class, IEntity<TTemplate>
             => Task.CompletedTask;
 
-        public virtual Task FieldAddedAsync<TEntityTemplate, TField>(string entityName, int entityVersion, string fieldName, TField defaultValue, bool computed)
-            where TEntityTemplate : class
+        public virtual Task FieldAddedAsync<TTemplate, TField>(string entityName, int entityVersion, string fieldName, TField defaultValue, bool computed)
+            where TTemplate : class
             => Task.CompletedTask;
 
-        public virtual Task MutationAddedAsync<TEntityTemplate, TMutationEvent>(string entityName, int entityVersion)
-            where TEntityTemplate : class
+        public virtual Task MutationAddedAsync<TTemplate, TMutationEvent>(string entityName, int entityVersion)
+            where TTemplate : class
             => Task.CompletedTask;
 
-        public virtual Task ProjectionAddedAsync<TEntityTemplate, TProjectionTemplate>(string entityName, int entityVersion, PublishScope publishScope)
-            where TEntityTemplate : class
+        public virtual Task ProjectionAddedAsync<TTemplate, TProjectionTemplate>(string entityName, int entityVersion, PublishScope publishScope)
+            where TTemplate : class
             => Task.CompletedTask;
     }
 }

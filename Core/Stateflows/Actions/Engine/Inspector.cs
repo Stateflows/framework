@@ -75,6 +75,16 @@ namespace Stateflows.Actions.Engine
         {
             ReverseInterceptors.RunSafe(i => i.AfterProcessEvent(context, eventStatus), nameof(AfterProcessEvent), Logger);
             GlobalInterceptor.AfterProcessEvent(context, eventStatus);
+
+            if (context.RootContext.EventHolder.IsRespondedTo())
+            {
+                GlobalInterceptor
+                    .RequestResponded(
+                        context,
+                        context.RootContext.EventHolder,
+                        context.RootContext.EventHolder.GetResponseHolder()
+                    );
+            }
         }
         
         public bool OnActionException(ActionDelegateContext context, Exception exception)

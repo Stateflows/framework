@@ -11,7 +11,7 @@ using Stateflows.Activities.Context.Interfaces;
 
 namespace Stateflows.Activities.Engine
 {
-    internal class NodeScope : IDisposable
+    internal class NodeScope : IAsyncDisposable
     {
         public readonly NodeScope BaseNodeScope = null;
 
@@ -19,9 +19,9 @@ namespace Stateflows.Activities.Engine
         private IServiceProvider BaseServiceProvider
             => baseServiceProvider ??= BaseNodeScope.ServiceProvider;
 
-        private IServiceScope scope = null;
-        private IServiceScope Scope
-            => scope ??= BaseServiceProvider.CreateScope();
+        private AsyncServiceScope? scope = null;
+        private AsyncServiceScope Scope
+            => scope ??= BaseServiceProvider.CreateAsyncScope();
 
         public IServiceProvider ServiceProvider
             => Scope.ServiceProvider;
@@ -41,7 +41,7 @@ namespace Stateflows.Activities.Engine
 
         public Node Node { get; private set; }
         
-        public Edge Edge { get; private set; }
+        public Edge? Edge { get; private set; }
 
         public void Terminate()
         {
@@ -66,7 +66,7 @@ namespace Stateflows.Activities.Engine
             ThreadId = threadId;
         }
 
-        private NodeScope(NodeScope nodeScope, Node node, Edge edge, Guid threadId)
+        private NodeScope(NodeScope nodeScope, Node node, Edge? edge, Guid threadId)
         {
             BaseNodeScope = nodeScope;
             Node = node;
@@ -74,9 +74,9 @@ namespace Stateflows.Activities.Engine
             ThreadId = threadId;
         }
 
-        public NodeScope ChildScope { get; private set; }
+        public NodeScope? ChildScope { get; private set; }
 
-        public NodeScope CreateChildScope(Node node = null, Edge edge = null, Guid? threadId = null)
+        public NodeScope CreateChildScope(Node? node = null, Edge? edge = null, Guid? threadId = null)
             => ChildScope = new NodeScope(this, node ?? Node, edge, threadId ?? ThreadId);
 
         [DebuggerHidden]
@@ -387,16 +387,23 @@ namespace Stateflows.Activities.Engine
             where TTransformationFlow : class, IFlowTransformation<TToken, TTransformedToken>
             => GetFlowInternalAsync<TTransformationFlow>(context, "object transformation flow");
         
-        public void Dispose()
+        public async ValueTask DisposeAsync()
         {
-            Dispose(true);
+            await DisposeAsync(true);
             GC.SuppressFinalize(this);
         }
 
-        protected virtual void Dispose(bool disposing)
+        protected virtual async ValueTask DisposeAsync(bool disposing)
         {
-            scope?.Dispose();
-            ChildScope?.Dispose();
+            if (scope is not null)
+            {
+                await scope.Value.DisposeAsync();
+            }
+
+            if (ChildScope is not null)
+            {
+                await ChildScope.DisposeAsync();
+            }
         }
     }
 }

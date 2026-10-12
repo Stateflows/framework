@@ -91,6 +91,16 @@ namespace Stateflows.Activities.Engine
             ReverseInterceptors.RunSafe(i => i.AfterProcessEvent(context, eventStatus), nameof(AfterProcessEvent), Logger);
             GlobalInterceptor.AfterProcessEvent(context, eventStatus);
             Plugins.RunSafe(p => p.AfterProcessEvent(context, eventStatus), nameof(AfterProcessEvent), Logger);
+
+            if (context.Context.EventHolder.IsRespondedTo())
+            {
+                GlobalInterceptor
+                    .RequestResponded(
+                        context,
+                        context.Context.EventHolder,
+                        context.Context.EventHolder.GetResponseHolder()
+                    );
+            }
         }
 
         public void BeforeActivityInitialize(IActivityInitializationContext context, bool implicitInitialization)

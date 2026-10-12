@@ -14,7 +14,7 @@ public static class DependencyInjection
         return builder;
     }
     
-    public static IServiceCollection AddMicrosoftAgentFrameworkServices(this IServiceCollection serviceCollection)
+    private static IServiceCollection AddMicrosoftAgentFrameworkServices(this IServiceCollection serviceCollection)
     {
         serviceCollection.AddScoped<IAIAgentLocator, AIAgentLocator>();
 

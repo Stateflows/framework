@@ -265,19 +265,19 @@ namespace Stateflows.Common.Classes
                     var task = (Task)(fieldAttribute.Scope switch
                     {
                         EntityScope.Self =>
-                            LocalTryGetAsyncMethod
+                            LocalTryGetFieldAsyncMethod
                                 .MakeGenericMethod(parameter.ParameterType)
-                                .Invoke(serviceProvider.GetService<IBehaviorContext>(), [ fieldAttribute.Name ?? parameter.Name, new Dictionary<string, EventHeader>() ]),
+                                .Invoke(serviceProvider.GetService<IBehaviorContext>(), [ fieldAttribute.EntityName, fieldAttribute.FieldName ?? parameter.Name, new Dictionary<string, EventHeader>() ]),
                         
                         EntityScope.Parent =>
-                            ParentTryGetAsyncMethod
+                            ParentTryGetFieldAsyncMethod
                                 .MakeGenericMethod(parameter.ParameterType)
-                                .Invoke(serviceProvider.GetService<IParentBehaviorContext>(), [ fieldAttribute.Name ?? parameter.Name, new Dictionary<string, EventHeader>() ]),
+                                .Invoke(serviceProvider.GetService<IParentBehaviorContext>(), [ fieldAttribute.EntityName, fieldAttribute.FieldName ?? parameter.Name, new Dictionary<string, EventHeader>() ]),
                         
                         EntityScope.Owner =>
-                            OwnerTryGetAsyncMethod
+                            OwnerTryGetFieldAsyncMethod
                                 .MakeGenericMethod(parameter.ParameterType)
-                                .Invoke(serviceProvider.GetService<IOwnerBehaviorContext>(), [ fieldAttribute.Name ?? parameter.Name, new Dictionary<string, EventHeader>() ]),
+                                .Invoke(serviceProvider.GetService<IOwnerBehaviorContext>(), [ fieldAttribute.EntityName, fieldAttribute.FieldName ?? parameter.Name, new Dictionary<string, EventHeader>() ]),
                     });
                     
                     await task;
@@ -308,17 +308,17 @@ namespace Stateflows.Common.Classes
                         EntityScope.Self =>
                             LocalTryGetProjectionAsyncMethod
                                 .MakeGenericMethod(parameter.ParameterType)
-                                .Invoke(serviceProvider.GetService<IBehaviorContext>(), [ new Dictionary<string, EventHeader>() ]),
+                                .Invoke(serviceProvider.GetService<IBehaviorContext>(), [ projectionAttribute.EntityName, new Dictionary<string, EventHeader>() ]),
                         
                         EntityScope.Parent =>
                             ParentTryGetProjectionAsyncMethod
                                 .MakeGenericMethod(parameter.ParameterType)
-                                .Invoke(serviceProvider.GetService<IParentBehaviorContext>(), [ new Dictionary<string, EventHeader>() ]),
+                                .Invoke(serviceProvider.GetService<IParentBehaviorContext>(), [ projectionAttribute.EntityName, new Dictionary<string, EventHeader>() ]),
                         
                         EntityScope.Owner =>
                             OwnerTryGetProjectionAsyncMethod
                                 .MakeGenericMethod(parameter.ParameterType)
-                                .Invoke(serviceProvider.GetService<IOwnerBehaviorContext>(), [ new Dictionary<string, EventHeader>() ]),
+                                .Invoke(serviceProvider.GetService<IOwnerBehaviorContext>(), [ projectionAttribute.EntityName, new Dictionary<string, EventHeader>() ]),
                     });
                     
                     await task;
@@ -347,13 +347,44 @@ namespace Stateflows.Common.Classes
             return parameterValues;
         }
         
-        private static readonly MethodInfo LocalTryGetProjectionAsyncMethod = typeof(IEntityOperations<IBehaviorContext>).GetMethod(nameof(IEntityOperations<IBehaviorContext>.TryGetProjectionAsync));
-        private static readonly MethodInfo ParentTryGetProjectionAsyncMethod = typeof(IEntityOperations<IParentBehaviorContext>).GetMethod(nameof(IEntityOperations<IParentBehaviorContext>.TryGetProjectionAsync));
-        private static readonly MethodInfo OwnerTryGetProjectionAsyncMethod = typeof(IEntityOperations<IOwnerBehaviorContext>).GetMethod(nameof(IEntityOperations<IOwnerBehaviorContext>.TryGetProjectionAsync));
+        private static readonly MethodInfo LocalTryGetProjectionAsyncMethod = typeof(IEntityOperations<IBehaviorContext>).GetMethods()
+            .First(m =>
+                m.Name == nameof(IEntityOperations<IBehaviorContext>.TryGetProjectionAsync) &&
+                m.GetParameters().Any(p => p.Name == "entityName")
+            );
+        
+        private static readonly MethodInfo ParentTryGetProjectionAsyncMethod = typeof(IEntityOperations<IParentBehaviorContext>).GetMethods()
+            .First(m => 
+                m.Name == nameof(IEntityOperations<IParentBehaviorContext>.TryGetProjectionAsync) &&
+                m.GetParameters().Any(p => p.Name == "entityName")
+            );
+        
+        private static readonly MethodInfo OwnerTryGetProjectionAsyncMethod = typeof(IEntityOperations<IOwnerBehaviorContext>).GetMethods()
+            .First(m => 
+                m.Name == nameof(IEntityOperations<IOwnerBehaviorContext>.TryGetProjectionAsync) &&
+                m.GetParameters().Any(p => p.Name == "entityName")
+            );
+        private static readonly MethodInfo LocalTryGetFieldAsyncMethod = typeof(IEntityOperations<IBehaviorContext>).GetMethods()
+            .First(m =>
+                m.Name == nameof(IEntityOperations<IBehaviorContext>.TryGetFieldAsync) &&
+                m.GetParameters().Any(p => p.Name == "entityName")
+            );
+        
+        private static readonly MethodInfo ParentTryGetFieldAsyncMethod = typeof(IEntityOperations<IParentBehaviorContext>).GetMethods()
+            .First(m => 
+                m.Name == nameof(IEntityOperations<IParentBehaviorContext>.TryGetFieldAsync) &&
+                m.GetParameters().Any(p => p.Name == "entityName")
+            );
+        
+        private static readonly MethodInfo OwnerTryGetFieldAsyncMethod = typeof(IEntityOperations<IOwnerBehaviorContext>).GetMethods()
+            .First(m => 
+                m.Name == nameof(IEntityOperations<IOwnerBehaviorContext>.TryGetFieldAsync) &&
+                m.GetParameters().Any(p => p.Name == "entityName")
+            );
 
-        private static readonly MethodInfo LocalTryGetAsyncMethod = typeof(IEntityOperations<IBehaviorContext>).GetMethod(nameof(IEntityOperations<IBehaviorContext>.TryGetAsync));
-        private static readonly MethodInfo ParentTryGetAsyncMethod = typeof(IEntityOperations<IParentBehaviorContext>).GetMethod(nameof(IEntityOperations<IParentBehaviorContext>.TryGetAsync));
-        private static readonly MethodInfo OwnerTryGetAsyncMethod = typeof(IEntityOperations<IOwnerBehaviorContext>).GetMethod(nameof(IEntityOperations<IOwnerBehaviorContext>.TryGetAsync));
+        // private static readonly MethodInfo LocalTryGetAsyncMethod = typeof(IEntityOperations<IBehaviorContext>).GetMethod(nameof(IEntityOperations<IBehaviorContext>.TryGetFieldAsync));
+        // private static readonly MethodInfo ParentTryGetAsyncMethod = typeof(IEntityOperations<IParentBehaviorContext>).GetMethod(nameof(IEntityOperations<IParentBehaviorContext>.TryGetFieldAsync));
+        // private static readonly MethodInfo OwnerTryGetAsyncMethod = typeof(IEntityOperations<IOwnerBehaviorContext>).GetMethod(nameof(IEntityOperations<IOwnerBehaviorContext>.TryGetFieldAsync));
 
         /// <summary>
         /// Creates lightweight factories for constructor parameter values. Factories are simple and fast to create

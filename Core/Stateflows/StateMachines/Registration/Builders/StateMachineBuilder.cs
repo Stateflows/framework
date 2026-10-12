@@ -1,11 +1,13 @@
 ﻿using System;
 using System.Diagnostics;
 using System.Threading.Tasks;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Stateflows.Common;
 using Stateflows.Common.Classes;
 using Stateflows.Common.Models;
 using Stateflows.Common.Registration;
 using Stateflows.Common.Registration.Builders;
+using Stateflows.Common.Registration.Interfaces;
 using Stateflows.Common.Utilities;
 using Stateflows.Entities;
 using Stateflows.Entities.Registration.Interfaces;
@@ -27,11 +29,6 @@ namespace Stateflows.StateMachines.Registration.Builders
         IFinalizedOverridenStateMachineBuilder,
         IOverridenStateMachineBuilder,
         IBehaviorBuilder,
-        IInitializedStateMachineWithEntityBuilder,
-        IFinalizedStateMachineWithEntityBuilder,
-        IStateMachineWithEntityBuilder,
-        IOverridenStateMachineWithEntityBuilder,
-        IFinalizedOverridenStateMachineWithEntityBuilder,
         IGraphBuilder
     {
         public Graph Graph { get; }
@@ -59,53 +56,6 @@ namespace Stateflows.StateMachines.Registration.Builders
 
             return this;
         }
-
-        IFinalizedOverridenStateMachineWithEntityBuilder
-            IStateMachineEvents<IFinalizedOverridenStateMachineWithEntityBuilder>.AddInitializer<TInitializationEvent>(
-                Func<IStateMachineInitializationContext<TInitializationEvent>, Task<bool>> actionAsync)
-            => AddInitializer(actionAsync) as IFinalizedOverridenStateMachineWithEntityBuilder;
-
-        IFinalizedOverridenStateMachineWithEntityBuilder IStateMachineEvents<IFinalizedOverridenStateMachineWithEntityBuilder>.AddFinalizer(Func<IStateMachineActionContext, Task> actionAsync)
-            => AddFinalizer(actionAsync) as IFinalizedOverridenStateMachineWithEntityBuilder;
-
-        IFinalizedOverridenStateMachineWithEntityBuilder IStateMachineEvents<IFinalizedOverridenStateMachineWithEntityBuilder>.AddDefaultInitializer(Func<IStateMachineInitializationContext, Task<bool>> actionAsync)
-            => AddDefaultInitializer(actionAsync) as IFinalizedOverridenStateMachineWithEntityBuilder;
-
-        IOverridenStateMachineWithEntityBuilder IStateMachineEvents<IOverridenStateMachineWithEntityBuilder>.AddInitializer<TInitializationEvent>(Func<IStateMachineInitializationContext<TInitializationEvent>, Task<bool>> actionAsync)
-            => AddInitializer(actionAsync) as IOverridenStateMachineWithEntityBuilder;
-
-        IOverridenStateMachineWithEntityBuilder IStateMachineEvents<IOverridenStateMachineWithEntityBuilder>.AddFinalizer(Func<IStateMachineActionContext, Task> actionAsync)
-            => AddFinalizer(actionAsync) as IOverridenStateMachineWithEntityBuilder;
-
-        IOverridenStateMachineWithEntityBuilder IStateMachineEvents<IOverridenStateMachineWithEntityBuilder>.AddDefaultInitializer(Func<IStateMachineInitializationContext, Task<bool>> actionAsync)
-            => AddDefaultInitializer(actionAsync) as IOverridenStateMachineWithEntityBuilder;
-
-        IStateMachineWithEntityBuilder IStateMachineEvents<IStateMachineWithEntityBuilder>.AddInitializer<TInitializationEvent>(Func<IStateMachineInitializationContext<TInitializationEvent>, Task<bool>> actionAsync)
-            => AddInitializer(actionAsync) as IStateMachineWithEntityBuilder;
-
-        IStateMachineWithEntityBuilder IStateMachineEvents<IStateMachineWithEntityBuilder>.AddFinalizer(Func<IStateMachineActionContext, Task> actionAsync)
-            => AddFinalizer(actionAsync) as IStateMachineWithEntityBuilder;
-
-        IStateMachineWithEntityBuilder IStateMachineEvents<IStateMachineWithEntityBuilder>.AddDefaultInitializer(Func<IStateMachineInitializationContext, Task<bool>> actionAsync)
-            => AddDefaultInitializer(actionAsync) as IStateMachineWithEntityBuilder;
-
-        IFinalizedStateMachineWithEntityBuilder IStateMachineEvents<IFinalizedStateMachineWithEntityBuilder>.AddInitializer<TInitializationEvent>(Func<IStateMachineInitializationContext<TInitializationEvent>, Task<bool>> actionAsync)
-            => AddInitializer(actionAsync) as IFinalizedStateMachineWithEntityBuilder;
-
-        IFinalizedStateMachineWithEntityBuilder IStateMachineEvents<IFinalizedStateMachineWithEntityBuilder>.AddFinalizer(Func<IStateMachineActionContext, Task> actionAsync)
-            => AddFinalizer(actionAsync) as IFinalizedStateMachineWithEntityBuilder;
-
-        IFinalizedStateMachineWithEntityBuilder IStateMachineEvents<IFinalizedStateMachineWithEntityBuilder>.AddDefaultInitializer(Func<IStateMachineInitializationContext, Task<bool>> actionAsync)
-            => AddDefaultInitializer(actionAsync) as IFinalizedStateMachineWithEntityBuilder;
-
-        IInitializedStateMachineWithEntityBuilder IStateMachineEvents<IInitializedStateMachineWithEntityBuilder>.AddInitializer<TInitializationEvent>(Func<IStateMachineInitializationContext<TInitializationEvent>, Task<bool>> actionAsync)
-            => AddInitializer(actionAsync) as IInitializedStateMachineWithEntityBuilder;
-
-        IInitializedStateMachineWithEntityBuilder IStateMachineEvents<IInitializedStateMachineWithEntityBuilder>.AddFinalizer(Func<IStateMachineActionContext, Task> actionAsync)
-            => AddFinalizer(actionAsync) as IInitializedStateMachineWithEntityBuilder;
-
-        IInitializedStateMachineWithEntityBuilder IStateMachineEvents<IInitializedStateMachineWithEntityBuilder>.AddDefaultInitializer(Func<IStateMachineInitializationContext, Task<bool>> actionAsync)
-            => AddDefaultInitializer(actionAsync) as IInitializedStateMachineWithEntityBuilder;
 
         IFinalizedOverridenStateMachineBuilder IStateMachineEvents<IFinalizedOverridenStateMachineBuilder>.
             AddInitializer<TInitializationEvent>(
@@ -200,39 +150,6 @@ namespace Stateflows.StateMachines.Registration.Builders
         public IInitializedStateMachineBuilder AddState(string stateName, StateBuildAction stateBuildAction = null)
             => AddVertex(stateName, VertexType.State, vertex => stateBuildAction?.Invoke(new StateBuilder(vertex)));
 
-        IFinalizedOverridenStateMachineWithEntityBuilder IStateMachineElements<IFinalizedOverridenStateMachineWithEntityBuilder>.AddCompositeState(string compositeStateName,
-            CompositeStateBuildAction compositeStateBuildAction)
-            => AddCompositeState(compositeStateName, compositeStateBuildAction) as IFinalizedOverridenStateMachineWithEntityBuilder; 
-
-        IFinalizedOverridenStateMachineWithEntityBuilder IStateMachineElements<IFinalizedOverridenStateMachineWithEntityBuilder>.AddOrthogonalState(string orthogonalStateName,
-            OrthogonalStateBuildAction orthogonalStateBuildAction)
-            => AddOrthogonalState(orthogonalStateName, orthogonalStateBuildAction) as IFinalizedOverridenStateMachineWithEntityBuilder;
-
-        IFinalizedOverridenStateMachineWithEntityBuilder IStateMachineElements<IFinalizedOverridenStateMachineWithEntityBuilder>.AddState(string stateName, StateBuildAction stateBuildAction)
-            => AddState(stateName, stateBuildAction) as IFinalizedOverridenStateMachineWithEntityBuilder;
-
-        IOverridenStateMachineWithEntityBuilder IStateMachineElements<IOverridenStateMachineWithEntityBuilder>.AddCompositeState(string compositeStateName,
-            CompositeStateBuildAction compositeStateBuildAction)
-            => AddCompositeState(compositeStateName, compositeStateBuildAction) as IOverridenStateMachineWithEntityBuilder;
-
-        IOverridenStateMachineWithEntityBuilder IStateMachineElements<IOverridenStateMachineWithEntityBuilder>.AddOrthogonalState(string orthogonalStateName,
-            OrthogonalStateBuildAction orthogonalStateBuildAction)
-            => AddOrthogonalState(orthogonalStateName, orthogonalStateBuildAction) as IOverridenStateMachineWithEntityBuilder;
-
-        IOverridenStateMachineWithEntityBuilder IStateMachineElements<IOverridenStateMachineWithEntityBuilder>.AddState(string stateName, StateBuildAction stateBuildAction)
-            => AddState(stateName, stateBuildAction) as IOverridenStateMachineWithEntityBuilder;
-
-        IInitializedStateMachineWithEntityBuilder IStateMachineElements<IInitializedStateMachineWithEntityBuilder>.AddCompositeState(string compositeStateName,
-            CompositeStateBuildAction compositeStateBuildAction)
-            => AddCompositeState(compositeStateName, compositeStateBuildAction) as IInitializedStateMachineWithEntityBuilder;
-
-        IInitializedStateMachineWithEntityBuilder IStateMachineElements<IInitializedStateMachineWithEntityBuilder>.AddOrthogonalState(string orthogonalStateName,
-            OrthogonalStateBuildAction orthogonalStateBuildAction)
-            => AddOrthogonalState(orthogonalStateName, orthogonalStateBuildAction) as IInitializedStateMachineWithEntityBuilder;
-
-        IInitializedStateMachineWithEntityBuilder IStateMachineElements<IInitializedStateMachineWithEntityBuilder>.AddState(string stateName, StateBuildAction stateBuildAction)
-            => AddState(stateName, stateBuildAction) as IInitializedStateMachineWithEntityBuilder;
-
         IFinalizedOverridenStateMachineBuilder IStateMachineElements<IFinalizedOverridenStateMachineBuilder>.AddCompositeState(
             string compositeStateName,
             CompositeStateBuildAction compositeStateBuildAction)
@@ -247,42 +164,6 @@ namespace Stateflows.StateMachines.Registration.Builders
 
         IFinalizedOverridenStateMachineBuilder IStateMachineElements<IFinalizedOverridenStateMachineBuilder>.AddJunction(string junctionName, JunctionBuildAction junctionBuildAction)
             => AddJunction(junctionName, junctionBuildAction) as IFinalizedOverridenStateMachineBuilder;
-
-        IFinalizedOverridenStateMachineWithEntityBuilder IStateMachineElements<IFinalizedOverridenStateMachineWithEntityBuilder>.AddChoice(string choiceName, ChoiceBuildAction choiceBuildAction)
-            => AddChoice(choiceName, choiceBuildAction) as IFinalizedOverridenStateMachineWithEntityBuilder;
-
-        IFinalizedOverridenStateMachineWithEntityBuilder IStateMachineElements<IFinalizedOverridenStateMachineWithEntityBuilder>.AddFork(string forkName, ForkBuildAction forkBuildAction)
-            => AddFork(forkName, forkBuildAction) as IFinalizedOverridenStateMachineWithEntityBuilder;
-
-        IFinalizedOverridenStateMachineWithEntityBuilder IStateMachineElements<IFinalizedOverridenStateMachineWithEntityBuilder>.AddJoin(string joinName, JoinBuildAction joinBuildAction)
-            => AddJoin(joinName, joinBuildAction) as IFinalizedOverridenStateMachineWithEntityBuilder;
-
-        IFinalizedOverridenStateMachineWithEntityBuilder IStateMachineElements<IFinalizedOverridenStateMachineWithEntityBuilder>.AddJunction(string junctionName, JunctionBuildAction junctionBuildAction)
-            => AddJunction(junctionName, junctionBuildAction) as IFinalizedOverridenStateMachineWithEntityBuilder;
-
-        IOverridenStateMachineWithEntityBuilder IStateMachineElements<IOverridenStateMachineWithEntityBuilder>.AddChoice(string choiceName, ChoiceBuildAction choiceBuildAction)
-            => AddChoice(choiceName, choiceBuildAction) as IOverridenStateMachineWithEntityBuilder;
-
-        IOverridenStateMachineWithEntityBuilder IStateMachineElements<IOverridenStateMachineWithEntityBuilder>.AddFork(string forkName, ForkBuildAction forkBuildAction)
-            => AddFork(forkName, forkBuildAction) as IOverridenStateMachineWithEntityBuilder;
-
-        IOverridenStateMachineWithEntityBuilder IStateMachineElements<IOverridenStateMachineWithEntityBuilder>.AddJoin(string joinName, JoinBuildAction joinBuildAction)
-            => AddJoin(joinName, joinBuildAction) as IOverridenStateMachineWithEntityBuilder;
-
-        IOverridenStateMachineWithEntityBuilder IStateMachineElements<IOverridenStateMachineWithEntityBuilder>.AddJunction(string junctionName, JunctionBuildAction junctionBuildAction)
-            => AddJunction(junctionName, junctionBuildAction) as IOverridenStateMachineWithEntityBuilder;
-
-        IInitializedStateMachineWithEntityBuilder IStateMachineElements<IInitializedStateMachineWithEntityBuilder>.AddChoice(string choiceName, ChoiceBuildAction choiceBuildAction)
-            => AddChoice(choiceName, choiceBuildAction) as IInitializedStateMachineWithEntityBuilder;
-
-        IInitializedStateMachineWithEntityBuilder IStateMachineElements<IInitializedStateMachineWithEntityBuilder>.AddFork(string forkName, ForkBuildAction forkBuildAction)
-            => AddFork(forkName, forkBuildAction) as IInitializedStateMachineWithEntityBuilder;
-
-        IInitializedStateMachineWithEntityBuilder IStateMachineElements<IInitializedStateMachineWithEntityBuilder>.AddJoin(string joinName, JoinBuildAction joinBuildAction)
-            => AddJoin(joinName, joinBuildAction) as IInitializedStateMachineWithEntityBuilder;
-
-        IInitializedStateMachineWithEntityBuilder IStateMachineElements<IInitializedStateMachineWithEntityBuilder>.AddJunction(string junctionName, JunctionBuildAction junctionBuildAction)
-            => AddJunction(junctionName, junctionBuildAction) as IInitializedStateMachineWithEntityBuilder;
 
         IFinalizedOverridenStateMachineBuilder IStateMachineElements<IFinalizedOverridenStateMachineBuilder>.AddChoice(string choiceName, ChoiceBuildAction choiceBuildAction)
             => AddChoice(choiceName, choiceBuildAction) as IFinalizedOverridenStateMachineBuilder;
@@ -371,43 +252,43 @@ namespace Stateflows.StateMachines.Registration.Builders
             AddObserver<TObserver>()
             => AddObserver<TObserver>() as IFinalizedOverridenStateMachineBuilder;
 
-        IFinalizedOverridenStateMachineWithEntityBuilder IStateMachineUtils<IFinalizedOverridenStateMachineWithEntityBuilder>.AddExceptionHandler(
-            StateMachineExceptionHandlerFactoryAsync exceptionHandlerFactoryAsync)
-            => AddExceptionHandler(exceptionHandlerFactoryAsync) as IFinalizedOverridenStateMachineWithEntityBuilder;
-
-        IFinalizedOverridenStateMachineWithEntityBuilder IStateMachineUtils<IFinalizedOverridenStateMachineWithEntityBuilder>.AddObserver<TObserver>()
-            => AddObserver<TObserver>() as IFinalizedOverridenStateMachineWithEntityBuilder;
-
-        IOverridenStateMachineWithEntityBuilder IStateMachineUtils<IOverridenStateMachineWithEntityBuilder>.AddExceptionHandler(
-            StateMachineExceptionHandlerFactoryAsync exceptionHandlerFactoryAsync)
-            => AddExceptionHandler(exceptionHandlerFactoryAsync) as IOverridenStateMachineWithEntityBuilder;
-
-        IOverridenStateMachineWithEntityBuilder IStateMachineUtils<IOverridenStateMachineWithEntityBuilder>.
-            AddObserver<TObserver>()
-            => AddObserver<TObserver>() as IOverridenStateMachineWithEntityBuilder;
-
-        IStateMachineWithEntityBuilder IStateMachineUtils<IStateMachineWithEntityBuilder>.AddExceptionHandler(
-            StateMachineExceptionHandlerFactoryAsync exceptionHandlerFactoryAsync)
-            => AddExceptionHandler(exceptionHandlerFactoryAsync) as IStateMachineWithEntityBuilder;
-
-        IStateMachineWithEntityBuilder IStateMachineUtils<IStateMachineWithEntityBuilder>.AddObserver<TObserver>()
-            => AddObserver<TObserver>() as IStateMachineWithEntityBuilder;
-
-        IFinalizedStateMachineWithEntityBuilder IStateMachineUtils<IFinalizedStateMachineWithEntityBuilder>.AddExceptionHandler(
-            StateMachineExceptionHandlerFactoryAsync exceptionHandlerFactoryAsync)
-            => AddExceptionHandler(exceptionHandlerFactoryAsync) as IFinalizedStateMachineWithEntityBuilder;
-
-        IFinalizedStateMachineWithEntityBuilder IStateMachineUtils<IFinalizedStateMachineWithEntityBuilder>.
-            AddObserver<TObserver>()
-            => AddObserver<TObserver>() as IFinalizedStateMachineWithEntityBuilder;
-
-        IInitializedStateMachineWithEntityBuilder IStateMachineUtils<IInitializedStateMachineWithEntityBuilder>.AddExceptionHandler(
-            StateMachineExceptionHandlerFactoryAsync exceptionHandlerFactoryAsync)
-            => AddExceptionHandler(exceptionHandlerFactoryAsync) as IInitializedStateMachineWithEntityBuilder;
-
-        IInitializedStateMachineWithEntityBuilder IStateMachineUtils<IInitializedStateMachineWithEntityBuilder>.
-            AddObserver<TObserver>()
-            => AddObserver<TObserver>() as IInitializedStateMachineWithEntityBuilder;
+        // IFinalizedOverridenStateMachineWithEntityBuilder IStateMachineUtils<IFinalizedOverridenStateMachineWithEntityBuilder>.AddExceptionHandler(
+        //     StateMachineExceptionHandlerFactoryAsync exceptionHandlerFactoryAsync)
+        //     => AddExceptionHandler(exceptionHandlerFactoryAsync) as IFinalizedOverridenStateMachineWithEntityBuilder;
+        //
+        // IFinalizedOverridenStateMachineWithEntityBuilder IStateMachineUtils<IFinalizedOverridenStateMachineWithEntityBuilder>.AddObserver<TObserver>()
+        //     => AddObserver<TObserver>() as IFinalizedOverridenStateMachineWithEntityBuilder;
+        //
+        // IOverridenStateMachineWithEntityBuilder IStateMachineUtils<IOverridenStateMachineWithEntityBuilder>.AddExceptionHandler(
+        //     StateMachineExceptionHandlerFactoryAsync exceptionHandlerFactoryAsync)
+        //     => AddExceptionHandler(exceptionHandlerFactoryAsync) as IOverridenStateMachineWithEntityBuilder;
+        //
+        // IOverridenStateMachineWithEntityBuilder IStateMachineUtils<IOverridenStateMachineWithEntityBuilder>.
+        //     AddObserver<TObserver>()
+        //     => AddObserver<TObserver>() as IOverridenStateMachineWithEntityBuilder;
+        //
+        // IStateMachineWithEntityBuilder IStateMachineUtils<IStateMachineWithEntityBuilder>.AddExceptionHandler(
+        //     StateMachineExceptionHandlerFactoryAsync exceptionHandlerFactoryAsync)
+        //     => AddExceptionHandler(exceptionHandlerFactoryAsync) as IStateMachineWithEntityBuilder;
+        //
+        // IStateMachineWithEntityBuilder IStateMachineUtils<IStateMachineWithEntityBuilder>.AddObserver<TObserver>()
+        //     => AddObserver<TObserver>() as IStateMachineWithEntityBuilder;
+        //
+        // IFinalizedStateMachineWithEntityBuilder IStateMachineUtils<IFinalizedStateMachineWithEntityBuilder>.AddExceptionHandler(
+        //     StateMachineExceptionHandlerFactoryAsync exceptionHandlerFactoryAsync)
+        //     => AddExceptionHandler(exceptionHandlerFactoryAsync) as IFinalizedStateMachineWithEntityBuilder;
+        //
+        // IFinalizedStateMachineWithEntityBuilder IStateMachineUtils<IFinalizedStateMachineWithEntityBuilder>.
+        //     AddObserver<TObserver>()
+        //     => AddObserver<TObserver>() as IFinalizedStateMachineWithEntityBuilder;
+        //
+        // IInitializedStateMachineWithEntityBuilder IStateMachineUtils<IInitializedStateMachineWithEntityBuilder>.AddExceptionHandler(
+        //     StateMachineExceptionHandlerFactoryAsync exceptionHandlerFactoryAsync)
+        //     => AddExceptionHandler(exceptionHandlerFactoryAsync) as IInitializedStateMachineWithEntityBuilder;
+        //
+        // IInitializedStateMachineWithEntityBuilder IStateMachineUtils<IInitializedStateMachineWithEntityBuilder>.
+        //     AddObserver<TObserver>()
+        //     => AddObserver<TObserver>() as IInitializedStateMachineWithEntityBuilder;
 
         IFinalizedOverridenStateMachineBuilder IStateMachineUtils<IFinalizedOverridenStateMachineBuilder>.AddExceptionHandler(StateMachineExceptionHandlerFactoryAsync exceptionHandlerFactoryAsync)
             => AddExceptionHandler(exceptionHandlerFactoryAsync) as IFinalizedOverridenStateMachineBuilder;
@@ -415,40 +296,40 @@ namespace Stateflows.StateMachines.Registration.Builders
         IFinalizedOverridenStateMachineBuilder IStateMachineUtils<IFinalizedOverridenStateMachineBuilder>.AddExceptionHandler<TExceptionHandler>()
             => AddExceptionHandler<TExceptionHandler>() as IFinalizedOverridenStateMachineBuilder;
 
-        IFinalizedOverridenStateMachineWithEntityBuilder IStateMachineUtils<IFinalizedOverridenStateMachineWithEntityBuilder>.SetResourceName(string resourceName)
-            => SetResourceName(resourceName) as IFinalizedOverridenStateMachineWithEntityBuilder;
-
-        IFinalizedOverridenStateMachineWithEntityBuilder
-            IStateMachineUtils<IFinalizedOverridenStateMachineWithEntityBuilder>.
-            AddExceptionHandler<TExceptionHandler>()
-            => AddExceptionHandler<TExceptionHandler>() as IFinalizedOverridenStateMachineWithEntityBuilder;
-
-        IOverridenStateMachineWithEntityBuilder IStateMachineUtils<IOverridenStateMachineWithEntityBuilder>.SetResourceName(string resourceName)
-            => SetResourceName(resourceName) as IOverridenStateMachineWithEntityBuilder;
-
-        IOverridenStateMachineWithEntityBuilder IStateMachineUtils<IOverridenStateMachineWithEntityBuilder>.
-            AddExceptionHandler<TExceptionHandler>()
-            => AddExceptionHandler<TExceptionHandler>() as IOverridenStateMachineWithEntityBuilder;
-
-        IStateMachineWithEntityBuilder IStateMachineUtils<IStateMachineWithEntityBuilder>.SetResourceName(string resourceName)
-            => SetResourceName(resourceName) as IStateMachineWithEntityBuilder;
-
-        IStateMachineWithEntityBuilder IStateMachineUtils<IStateMachineWithEntityBuilder>.AddExceptionHandler<
-            TExceptionHandler>()
-            => AddExceptionHandler<TExceptionHandler>() as IStateMachineWithEntityBuilder;
-
-        IFinalizedStateMachineWithEntityBuilder IStateMachineUtils<IFinalizedStateMachineWithEntityBuilder>.SetResourceName(string resourceName)
-            => SetResourceName(resourceName) as IFinalizedStateMachineWithEntityBuilder;
-
-        IFinalizedStateMachineWithEntityBuilder IStateMachineUtils<IFinalizedStateMachineWithEntityBuilder>.
-            AddExceptionHandler<TExceptionHandler>()
-            => AddExceptionHandler<TExceptionHandler>() as IFinalizedStateMachineWithEntityBuilder;
-
-        IInitializedStateMachineWithEntityBuilder IStateMachineUtils<IInitializedStateMachineWithEntityBuilder>.SetResourceName(string resourceName)
-            => SetResourceName(resourceName) as IInitializedStateMachineWithEntityBuilder;
-
-        IInitializedStateMachineWithEntityBuilder IStateMachineUtils<IInitializedStateMachineWithEntityBuilder>.AddExceptionHandler<TExceptionHandler>()
-            => AddExceptionHandler<TExceptionHandler>() as IInitializedStateMachineWithEntityBuilder;
+        // IFinalizedOverridenStateMachineWithEntityBuilder IStateMachineUtils<IFinalizedOverridenStateMachineWithEntityBuilder>.SetResourceName(string resourceName)
+        //     => SetResourceName(resourceName) as IFinalizedOverridenStateMachineWithEntityBuilder;
+        //
+        // IFinalizedOverridenStateMachineWithEntityBuilder
+        //     IStateMachineUtils<IFinalizedOverridenStateMachineWithEntityBuilder>.
+        //     AddExceptionHandler<TExceptionHandler>()
+        //     => AddExceptionHandler<TExceptionHandler>() as IFinalizedOverridenStateMachineWithEntityBuilder;
+        //
+        // IOverridenStateMachineWithEntityBuilder IStateMachineUtils<IOverridenStateMachineWithEntityBuilder>.SetResourceName(string resourceName)
+        //     => SetResourceName(resourceName) as IOverridenStateMachineWithEntityBuilder;
+        //
+        // IOverridenStateMachineWithEntityBuilder IStateMachineUtils<IOverridenStateMachineWithEntityBuilder>.
+        //     AddExceptionHandler<TExceptionHandler>()
+        //     => AddExceptionHandler<TExceptionHandler>() as IOverridenStateMachineWithEntityBuilder;
+        //
+        // IStateMachineWithEntityBuilder IStateMachineUtils<IStateMachineWithEntityBuilder>.SetResourceName(string resourceName)
+        //     => SetResourceName(resourceName) as IStateMachineWithEntityBuilder;
+        //
+        // IStateMachineWithEntityBuilder IStateMachineUtils<IStateMachineWithEntityBuilder>.AddExceptionHandler<
+        //     TExceptionHandler>()
+        //     => AddExceptionHandler<TExceptionHandler>() as IStateMachineWithEntityBuilder;
+        //
+        // IFinalizedStateMachineWithEntityBuilder IStateMachineUtils<IFinalizedStateMachineWithEntityBuilder>.SetResourceName(string resourceName)
+        //     => SetResourceName(resourceName) as IFinalizedStateMachineWithEntityBuilder;
+        //
+        // IFinalizedStateMachineWithEntityBuilder IStateMachineUtils<IFinalizedStateMachineWithEntityBuilder>.
+        //     AddExceptionHandler<TExceptionHandler>()
+        //     => AddExceptionHandler<TExceptionHandler>() as IFinalizedStateMachineWithEntityBuilder;
+        //
+        // IInitializedStateMachineWithEntityBuilder IStateMachineUtils<IInitializedStateMachineWithEntityBuilder>.SetResourceName(string resourceName)
+        //     => SetResourceName(resourceName) as IInitializedStateMachineWithEntityBuilder;
+        //
+        // IInitializedStateMachineWithEntityBuilder IStateMachineUtils<IInitializedStateMachineWithEntityBuilder>.AddExceptionHandler<TExceptionHandler>()
+        //     => AddExceptionHandler<TExceptionHandler>() as IInitializedStateMachineWithEntityBuilder;
 
         IOverridenStateMachineBuilder IStateMachineUtils<IOverridenStateMachineBuilder>.SetResourceName(string resourceName)
             => SetResourceName(resourceName) as IOverridenStateMachineBuilder;
@@ -504,47 +385,47 @@ namespace Stateflows.StateMachines.Registration.Builders
             return this;
         }
 
-        IFinalizedStateMachineWithEntityBuilder IStateMachineUtils<IFinalizedStateMachineWithEntityBuilder>.AddInterceptor(StateMachineInterceptorFactoryAsync interceptorFactoryAsync)
-            => AddInterceptor(interceptorFactoryAsync) as IFinalizedStateMachineWithEntityBuilder;
-
-        IStateMachineWithEntityBuilder IStateMachineUtils<IStateMachineWithEntityBuilder>.AddInterceptor(StateMachineInterceptorFactoryAsync interceptorFactoryAsync)
-            => AddInterceptor(interceptorFactoryAsync) as IStateMachineWithEntityBuilder;
-
-        IOverridenStateMachineWithEntityBuilder IStateMachineUtils<IOverridenStateMachineWithEntityBuilder>.AddInterceptor(StateMachineInterceptorFactoryAsync interceptorFactoryAsync)
-            => AddInterceptor(interceptorFactoryAsync) as IOverridenStateMachineWithEntityBuilder;
-
-        IFinalizedOverridenStateMachineWithEntityBuilder IStateMachineUtils<IFinalizedOverridenStateMachineWithEntityBuilder>.AddInterceptor(StateMachineInterceptorFactoryAsync interceptorFactoryAsync)
-            => AddInterceptor(interceptorFactoryAsync) as IFinalizedOverridenStateMachineWithEntityBuilder;
-
-        IInitializedStateMachineWithEntityBuilder IStateMachineUtils<IInitializedStateMachineWithEntityBuilder>.AddInterceptor<TInterceptor>()
-            => AddInterceptor<TInterceptor>() as IInitializedStateMachineWithEntityBuilder;
-
-        IFinalizedOverridenStateMachineWithEntityBuilder IStateMachineUtils<IFinalizedOverridenStateMachineWithEntityBuilder>.AddObserver(StateMachineObserverFactoryAsync observerFactoryAsync)
-            => AddObserver(observerFactoryAsync) as IFinalizedOverridenStateMachineWithEntityBuilder;
-
-        IFinalizedOverridenStateMachineWithEntityBuilder IStateMachineUtils<IFinalizedOverridenStateMachineWithEntityBuilder>.AddInterceptor<TInterceptor>()
-            => AddInterceptor<TInterceptor>() as IFinalizedOverridenStateMachineWithEntityBuilder;
-
-        IOverridenStateMachineWithEntityBuilder IStateMachineUtils<IOverridenStateMachineWithEntityBuilder>.AddObserver(StateMachineObserverFactoryAsync observerFactoryAsync)
-            => AddObserver(observerFactoryAsync) as IOverridenStateMachineWithEntityBuilder;
-
-        IOverridenStateMachineWithEntityBuilder IStateMachineUtils<IOverridenStateMachineWithEntityBuilder>.AddInterceptor<TInterceptor>()
-            => AddInterceptor<TInterceptor>() as IOverridenStateMachineWithEntityBuilder;
-
-        IStateMachineWithEntityBuilder IStateMachineUtils<IStateMachineWithEntityBuilder>.AddObserver(StateMachineObserverFactoryAsync observerFactoryAsync)
-            => AddObserver(observerFactoryAsync) as IStateMachineWithEntityBuilder;
-
-        IStateMachineWithEntityBuilder IStateMachineUtils<IStateMachineWithEntityBuilder>.AddInterceptor<TInterceptor>()
-            => AddInterceptor<TInterceptor>() as IStateMachineWithEntityBuilder;
-
-        IFinalizedStateMachineWithEntityBuilder IStateMachineUtils<IFinalizedStateMachineWithEntityBuilder>.AddObserver(StateMachineObserverFactoryAsync observerFactoryAsync)
-            => AddObserver(observerFactoryAsync) as IFinalizedStateMachineWithEntityBuilder;
-
-        IFinalizedStateMachineWithEntityBuilder IStateMachineUtils<IFinalizedStateMachineWithEntityBuilder>.AddInterceptor<TInterceptor>()
-            => AddInterceptor<TInterceptor>() as IFinalizedStateMachineWithEntityBuilder;
-
-        IInitializedStateMachineWithEntityBuilder IStateMachineUtils<IInitializedStateMachineWithEntityBuilder>.AddObserver(StateMachineObserverFactoryAsync observerFactoryAsync)
-            => AddObserver(observerFactoryAsync) as IInitializedStateMachineWithEntityBuilder;
+        // IFinalizedStateMachineWithEntityBuilder IStateMachineUtils<IFinalizedStateMachineWithEntityBuilder>.AddInterceptor(StateMachineInterceptorFactoryAsync interceptorFactoryAsync)
+        //     => AddInterceptor(interceptorFactoryAsync) as IFinalizedStateMachineWithEntityBuilder;
+        //
+        // IStateMachineWithEntityBuilder IStateMachineUtils<IStateMachineWithEntityBuilder>.AddInterceptor(StateMachineInterceptorFactoryAsync interceptorFactoryAsync)
+        //     => AddInterceptor(interceptorFactoryAsync) as IStateMachineWithEntityBuilder;
+        //
+        // IOverridenStateMachineWithEntityBuilder IStateMachineUtils<IOverridenStateMachineWithEntityBuilder>.AddInterceptor(StateMachineInterceptorFactoryAsync interceptorFactoryAsync)
+        //     => AddInterceptor(interceptorFactoryAsync) as IOverridenStateMachineWithEntityBuilder;
+        //
+        // IFinalizedOverridenStateMachineWithEntityBuilder IStateMachineUtils<IFinalizedOverridenStateMachineWithEntityBuilder>.AddInterceptor(StateMachineInterceptorFactoryAsync interceptorFactoryAsync)
+        //     => AddInterceptor(interceptorFactoryAsync) as IFinalizedOverridenStateMachineWithEntityBuilder;
+        //
+        // IInitializedStateMachineWithEntityBuilder IStateMachineUtils<IInitializedStateMachineWithEntityBuilder>.AddInterceptor<TInterceptor>()
+        //     => AddInterceptor<TInterceptor>() as IInitializedStateMachineWithEntityBuilder;
+        //
+        // IFinalizedOverridenStateMachineWithEntityBuilder IStateMachineUtils<IFinalizedOverridenStateMachineWithEntityBuilder>.AddObserver(StateMachineObserverFactoryAsync observerFactoryAsync)
+        //     => AddObserver(observerFactoryAsync) as IFinalizedOverridenStateMachineWithEntityBuilder;
+        //
+        // IFinalizedOverridenStateMachineWithEntityBuilder IStateMachineUtils<IFinalizedOverridenStateMachineWithEntityBuilder>.AddInterceptor<TInterceptor>()
+        //     => AddInterceptor<TInterceptor>() as IFinalizedOverridenStateMachineWithEntityBuilder;
+        //
+        // IOverridenStateMachineWithEntityBuilder IStateMachineUtils<IOverridenStateMachineWithEntityBuilder>.AddObserver(StateMachineObserverFactoryAsync observerFactoryAsync)
+        //     => AddObserver(observerFactoryAsync) as IOverridenStateMachineWithEntityBuilder;
+        //
+        // IOverridenStateMachineWithEntityBuilder IStateMachineUtils<IOverridenStateMachineWithEntityBuilder>.AddInterceptor<TInterceptor>()
+        //     => AddInterceptor<TInterceptor>() as IOverridenStateMachineWithEntityBuilder;
+        //
+        // IStateMachineWithEntityBuilder IStateMachineUtils<IStateMachineWithEntityBuilder>.AddObserver(StateMachineObserverFactoryAsync observerFactoryAsync)
+        //     => AddObserver(observerFactoryAsync) as IStateMachineWithEntityBuilder;
+        //
+        // IStateMachineWithEntityBuilder IStateMachineUtils<IStateMachineWithEntityBuilder>.AddInterceptor<TInterceptor>()
+        //     => AddInterceptor<TInterceptor>() as IStateMachineWithEntityBuilder;
+        //
+        // IFinalizedStateMachineWithEntityBuilder IStateMachineUtils<IFinalizedStateMachineWithEntityBuilder>.AddObserver(StateMachineObserverFactoryAsync observerFactoryAsync)
+        //     => AddObserver(observerFactoryAsync) as IFinalizedStateMachineWithEntityBuilder;
+        //
+        // IFinalizedStateMachineWithEntityBuilder IStateMachineUtils<IFinalizedStateMachineWithEntityBuilder>.AddInterceptor<TInterceptor>()
+        //     => AddInterceptor<TInterceptor>() as IFinalizedStateMachineWithEntityBuilder;
+        //
+        // IInitializedStateMachineWithEntityBuilder IStateMachineUtils<IInitializedStateMachineWithEntityBuilder>.AddObserver(StateMachineObserverFactoryAsync observerFactoryAsync)
+        //     => AddObserver(observerFactoryAsync) as IInitializedStateMachineWithEntityBuilder;
 
         IFinalizedOverridenStateMachineBuilder IStateMachineUtils<IFinalizedOverridenStateMachineBuilder>.AddObserver(StateMachineObserverFactoryAsync observerFactoryAsync)
             => AddObserver(observerFactoryAsync) as IFinalizedOverridenStateMachineBuilder;
@@ -562,8 +443,8 @@ namespace Stateflows.StateMachines.Registration.Builders
         IOverridenStateMachineBuilder IStateMachineUtils<IOverridenStateMachineBuilder>.AddInterceptor(StateMachineInterceptorFactoryAsync interceptorFactoryAsync)
             => AddInterceptor(interceptorFactoryAsync) as IOverridenStateMachineBuilder;
 
-        IInitializedStateMachineWithEntityBuilder IStateMachineUtils<IInitializedStateMachineWithEntityBuilder>.AddInterceptor(StateMachineInterceptorFactoryAsync interceptorFactoryAsync)
-            => AddInterceptor(interceptorFactoryAsync) as IInitializedStateMachineWithEntityBuilder;
+        // IInitializedStateMachineWithEntityBuilder IStateMachineUtils<IInitializedStateMachineWithEntityBuilder>.AddInterceptor(StateMachineInterceptorFactoryAsync interceptorFactoryAsync)
+        //     => AddInterceptor(interceptorFactoryAsync) as IInitializedStateMachineWithEntityBuilder;
 
         IFinalizedOverridenStateMachineBuilder IStateMachineUtils<IFinalizedOverridenStateMachineBuilder>.AddInterceptor<TInterceptor>()
             => AddInterceptor<TInterceptor>() as IFinalizedOverridenStateMachineBuilder;
@@ -752,48 +633,6 @@ namespace Stateflows.StateMachines.Registration.Builders
             return this;
         }
 
-        IFinalizedOverridenStateMachineWithEntityBuilder IStateMachineOverrides<IFinalizedOverridenStateMachineWithEntityBuilder>.UseCompositeState(string compositeStateName, OverridenCompositeStateBuildAction compositeStateBuildAction)
-            => UseCompositeState(compositeStateName, compositeStateBuildAction) as IFinalizedOverridenStateMachineWithEntityBuilder;
-
-        IFinalizedOverridenStateMachineWithEntityBuilder IStateMachineOverrides<IFinalizedOverridenStateMachineWithEntityBuilder>.UseOrthogonalState(string orthogonalStateName, OverridenOrthogonalStateBuildAction orthogonalStateBuildAction)
-            => UseOrthogonalState(orthogonalStateName, orthogonalStateBuildAction) as IFinalizedOverridenStateMachineWithEntityBuilder;
-
-        IFinalizedOverridenStateMachineWithEntityBuilder IStateMachineOverrides<IFinalizedOverridenStateMachineWithEntityBuilder>.UseJunction(string junctionName, OverridenJunctionBuildAction junctionBuildAction)
-            => UseJunction(junctionName, junctionBuildAction) as IFinalizedOverridenStateMachineWithEntityBuilder;
-
-        IFinalizedOverridenStateMachineWithEntityBuilder IStateMachineOverrides<IFinalizedOverridenStateMachineWithEntityBuilder>.UseChoice(string choiceName, OverridenChoiceBuildAction choiceBuildAction)
-            => UseChoice(choiceName, choiceBuildAction) as IFinalizedOverridenStateMachineWithEntityBuilder;
-
-        IFinalizedOverridenStateMachineWithEntityBuilder IStateMachineOverrides<IFinalizedOverridenStateMachineWithEntityBuilder>.UseFork(string forkName, OverridenForkBuildAction forkBuildAction)
-            => UseFork(forkName, forkBuildAction) as IFinalizedOverridenStateMachineWithEntityBuilder;
-
-        IFinalizedOverridenStateMachineWithEntityBuilder IStateMachineOverrides<IFinalizedOverridenStateMachineWithEntityBuilder>.UseJoin(string joinName, OverridenJoinBuildAction joinBuildAction)
-            => UseJoin(joinName, joinBuildAction) as IFinalizedOverridenStateMachineWithEntityBuilder;
-
-        IFinalizedOverridenStateMachineWithEntityBuilder IStateMachineOverrides<IFinalizedOverridenStateMachineWithEntityBuilder>.UseState(string stateName, OverridenStateBuildAction stateBuildAction)
-            => UseState(stateName, stateBuildAction) as IFinalizedOverridenStateMachineWithEntityBuilder;
-
-        IOverridenStateMachineWithEntityBuilder IStateMachineOverrides<IOverridenStateMachineWithEntityBuilder>.UseCompositeState(string compositeStateName, OverridenCompositeStateBuildAction compositeStateBuildAction)
-            => UseCompositeState(compositeStateName, compositeStateBuildAction) as IOverridenStateMachineWithEntityBuilder;
-
-        IOverridenStateMachineWithEntityBuilder IStateMachineOverrides<IOverridenStateMachineWithEntityBuilder>.UseOrthogonalState(string orthogonalStateName, OverridenOrthogonalStateBuildAction orthogonalStateBuildAction)
-            => UseOrthogonalState(orthogonalStateName, orthogonalStateBuildAction) as IOverridenStateMachineWithEntityBuilder;
-
-        IOverridenStateMachineWithEntityBuilder IStateMachineOverrides<IOverridenStateMachineWithEntityBuilder>.UseJunction(string junctionName, OverridenJunctionBuildAction junctionBuildAction)
-            => UseJunction(junctionName, junctionBuildAction) as IOverridenStateMachineWithEntityBuilder;
-
-        IOverridenStateMachineWithEntityBuilder IStateMachineOverrides<IOverridenStateMachineWithEntityBuilder>.UseChoice(string choiceName, OverridenChoiceBuildAction choiceBuildAction)
-            => UseChoice(choiceName, choiceBuildAction) as IOverridenStateMachineWithEntityBuilder;
-
-        IOverridenStateMachineWithEntityBuilder IStateMachineOverrides<IOverridenStateMachineWithEntityBuilder>.UseFork(string forkName, OverridenForkBuildAction forkBuildAction)
-            => UseFork(forkName, forkBuildAction) as IOverridenStateMachineWithEntityBuilder;
-
-        IOverridenStateMachineWithEntityBuilder IStateMachineOverrides<IOverridenStateMachineWithEntityBuilder>.UseJoin(string joinName, OverridenJoinBuildAction joinBuildAction)
-            => UseJoin(joinName, joinBuildAction) as IOverridenStateMachineWithEntityBuilder;
-
-        IOverridenStateMachineWithEntityBuilder IStateMachineOverrides<IOverridenStateMachineWithEntityBuilder>.UseState(string stateName, OverridenStateBuildAction stateBuildAction)
-            => UseState(stateName, stateBuildAction) as IOverridenStateMachineWithEntityBuilder;
-
         IFinalizedOverridenStateMachineBuilder IStateMachineOverrides<IFinalizedOverridenStateMachineBuilder>.
             UseCompositeState(string compositeStateName, OverridenCompositeStateBuildAction compositeStateBuildAction)
             => UseCompositeState(compositeStateName, compositeStateBuildAction) as IFinalizedOverridenStateMachineBuilder;
@@ -912,70 +751,81 @@ namespace Stateflows.StateMachines.Registration.Builders
         }
         
         [DebuggerHidden]
-        private string GetEntityName()
-            => $"{Graph.Name}.entity";
+        private string GetEntityName(string entityName)
+            => $"{Graph.Name}.entity.{entityName}";
 
-        private StateMachineBuilder AddEntity<TTemplate>(EntityBuildAction<TTemplate>? buildAction = null)
+        private StateMachineBuilder AddEntity<TTemplate>(string entityName, EntityBuildAction<TTemplate>? buildAction = null)
             where TTemplate : class
         {
-            var entityName = GetEntityName();
+            entityName = GetEntityName(entityName);
             Graph.StateflowsBuilder.AddEntities(b => b.AddEntity<TTemplate>(entityName, buildAction), Graph.Class, Graph.Class);
-            
-            Graph.EntityName = entityName;
             
             return this;
         }
 
-        private StateMachineBuilder AddEntity<TTemplate, TEntity>(EntityBuildAction<TTemplate>? buildAction = null)
+        IStateMachineBuilder IEntityOwnerBase<IStateMachineBuilder>.AddEntity<TTemplate>(string entityName, EntityBuildAction<TTemplate>? buildAction)
+            => AddEntity<TTemplate>(entityName, buildAction);
+        
+        IStateMachineBuilder IEntityOwnerBase<IStateMachineBuilder>.AddEntity<TTemplate, TEntity>(string entityName, EntityBuildAction<TTemplate>? buildAction)
+            => AddEntity<TTemplate, TEntity>(entityName, buildAction);
+
+        IOverridenStateMachineBuilder IEntityOwnerBase<IOverridenStateMachineBuilder>.SetPropertiesProjection<TProjection>(string entityName)
+            => AddPropertiesProjection<TProjection>(entityName);
+
+        IFinalizedOverridenStateMachineBuilder IEntityOwnerBase<IFinalizedOverridenStateMachineBuilder>.SetPropertiesProjection<TProjection>(string entityName)
+            => AddPropertiesProjection<TProjection>(entityName);
+
+        IStateMachineBuilder IEntityOwnerBase<IStateMachineBuilder>.SetPropertiesProjection<TProjection>(string entityName)
+            => AddPropertiesProjection<TProjection>(entityName);
+
+        IFinalizedStateMachineBuilder IEntityOwnerBase<IFinalizedStateMachineBuilder>.SetPropertiesProjection<TProjection>(string entityName)
+            => AddPropertiesProjection<TProjection>(entityName);
+
+        IInitializedStateMachineBuilder IEntityOwnerBase<IInitializedStateMachineBuilder>.SetPropertiesProjection<TProjection>(string entityName)
+            => AddPropertiesProjection<TProjection>(entityName);
+
+        private StateMachineBuilder AddPropertiesProjection<TProjection>(string entityName)
+            where TProjection : class
+        {
+            Graph.StateflowsBuilder.ServiceCollection.TryAddScoped<IBehaviorInterceptor, PropertyProjectionInterceptor>();
+            PropertyProjectionInterceptor.AddPropertyProjection<TProjection>(Graph.Class, entityName);
+
+            return this;
+        }
+
+        IOverridenStateMachineBuilder IEntityOwnerBase<IOverridenStateMachineBuilder>.AddEntity<TTemplate, TEntity>(string entityName, EntityBuildAction<TTemplate>? buildAction)
+            => AddEntity<TTemplate, TEntity>(entityName, buildAction);
+
+        IFinalizedOverridenStateMachineBuilder IEntityOwnerBase<IFinalizedOverridenStateMachineBuilder>.AddEntity<TTemplate, TEntity>(string entityName, EntityBuildAction<TTemplate>? buildAction)
+            => AddEntity<TTemplate, TEntity>(entityName, buildAction);
+
+        IFinalizedStateMachineBuilder IEntityOwnerBase<IFinalizedStateMachineBuilder>.AddEntity<TTemplate, TEntity>(string entityName, EntityBuildAction<TTemplate>? buildAction)
+            => AddEntity<TTemplate, TEntity>(entityName, buildAction);
+
+        IInitializedStateMachineBuilder IEntityOwnerBase<IInitializedStateMachineBuilder>.AddEntity<TTemplate, TEntity>(string entityName, EntityBuildAction<TTemplate>? buildAction)
+            => AddEntity<TTemplate, TEntity>(entityName, buildAction);
+
+        IOverridenStateMachineBuilder IEntityOwnerBase<IOverridenStateMachineBuilder>.AddEntity<TTemplate>(string entityName, EntityBuildAction<TTemplate>? buildAction)
+            => AddEntity<TTemplate>(entityName, buildAction);
+
+        IFinalizedOverridenStateMachineBuilder IEntityOwnerBase<IFinalizedOverridenStateMachineBuilder>.AddEntity<TTemplate>(string entityName, EntityBuildAction<TTemplate>? buildAction)
+            => AddEntity<TTemplate>(entityName, buildAction);
+
+        IFinalizedStateMachineBuilder IEntityOwnerBase<IFinalizedStateMachineBuilder>.AddEntity<TTemplate>(string entityName, EntityBuildAction<TTemplate>? buildAction)
+            => AddEntity<TTemplate>(entityName, buildAction);
+
+        IInitializedStateMachineBuilder IEntityOwnerBase<IInitializedStateMachineBuilder>.AddEntity<TTemplate>(string entityName, EntityBuildAction<TTemplate>? buildAction)
+            => AddEntity<TTemplate>(entityName, buildAction);
+
+        private StateMachineBuilder AddEntity<TTemplate, TEntity>(string entityName, EntityBuildAction<TTemplate>? buildAction = null)
             where TTemplate : class
             where TEntity : class, IEntity<TTemplate>
         {
-            var entityName = GetEntityName();
+            entityName = GetEntityName(entityName);
             Graph.StateflowsBuilder.AddEntities(b => b.AddEntity<TTemplate, TEntity>(entityName, 1, buildAction), Graph.Class, Graph.Class);
-            
-            Graph.EntityName = entityName;
 
             return this;
         }
-
-        IInitializedStateMachineWithEntityBuilder IStateMachineEntity<IInitializedStateMachineWithEntityBuilder>.AddEntity<TTemplate>(EntityBuildAction<TTemplate>? buildAction)
-            => AddEntity<TTemplate>(buildAction);
-
-        IOverridenStateMachineWithEntityBuilder IStateMachineEntity<IOverridenStateMachineWithEntityBuilder>.AddEntity<TTemplate, TEntity>(EntityBuildAction<TTemplate>? buildAction)
-            => AddEntity<TTemplate, TEntity>(buildAction);
-
-        IOverridenStateMachineWithEntityBuilder IStateMachineEntity<IOverridenStateMachineWithEntityBuilder>.AddEntity<TTemplate>(EntityBuildAction<TTemplate>? buildAction)
-            => AddEntity<TTemplate>(buildAction);
-
-        IFinalizedOverridenStateMachineWithEntityBuilder IStateMachineEntity<IFinalizedOverridenStateMachineWithEntityBuilder>.AddEntity<TTemplate, TEntity>(EntityBuildAction<TTemplate>? buildAction)
-            => AddEntity<TTemplate, TEntity>(buildAction);
-
-        IFinalizedOverridenStateMachineWithEntityBuilder IStateMachineEntity<IFinalizedOverridenStateMachineWithEntityBuilder>.AddEntity<TTemplate>(EntityBuildAction<TTemplate>? buildAction)
-            => AddEntity<TTemplate>(buildAction);
-
-        IStateMachineWithEntityBuilder IStateMachineEntity<IStateMachineWithEntityBuilder>.AddEntity<TTemplate, TEntity>(EntityBuildAction<TTemplate>? buildAction)
-            => AddEntity<TTemplate, TEntity>(buildAction);
-
-        IStateMachineWithEntityBuilder IStateMachineEntity<IStateMachineWithEntityBuilder>.AddEntity<TTemplate>(EntityBuildAction<TTemplate>? buildAction)
-            => AddEntity<TTemplate>(buildAction);
-
-        IFinalizedStateMachineWithEntityBuilder IStateMachineEntity<IFinalizedStateMachineWithEntityBuilder>.AddEntity<TTemplate, TEntity>(EntityBuildAction<TTemplate>? buildAction)
-            => AddEntity<TTemplate, TEntity>(buildAction);
-
-        IFinalizedStateMachineWithEntityBuilder IStateMachineEntity<IFinalizedStateMachineWithEntityBuilder>.AddEntity<TTemplate>(EntityBuildAction<TTemplate>? buildAction)
-            => AddEntity<TTemplate>(buildAction);
-
-        IInitializedStateMachineWithEntityBuilder IStateMachineEntity<IInitializedStateMachineWithEntityBuilder>.AddEntity<TTemplate, TEntity>(EntityBuildAction<TTemplate>? buildAction)
-            => AddEntity<TTemplate, TEntity>(buildAction) as IInitializedStateMachineWithEntityBuilder;
-
-        IFinalizedStateMachineWithEntityBuilder IStateMachineFinal<IFinalizedStateMachineWithEntityBuilder>.AddFinalState(string finalStateName)
-            => AddFinalState(finalStateName) as IFinalizedStateMachineWithEntityBuilder;
-
-        IOverridenStateMachineWithEntityBuilder IStateMachineOverride<IOverridenStateMachineWithEntityBuilder>.UseStateMachine<TStateMachine>(OverridenStateMachineBuildAction buildAction)
-            => UseStateMachine<TStateMachine>(buildAction) as IOverridenStateMachineWithEntityBuilder;
-
-        IFinalizedOverridenStateMachineWithEntityBuilder IStateMachineFinal<IFinalizedOverridenStateMachineWithEntityBuilder>.AddFinalState(string finalStateName)
-            => AddFinalState(finalStateName) as IFinalizedOverridenStateMachineWithEntityBuilder;
     }
 }
 

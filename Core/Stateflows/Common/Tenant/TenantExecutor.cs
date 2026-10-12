@@ -48,7 +48,7 @@ namespace Stateflows.Common.Tenant
                     }
                     catch (Exception e)
                     {
-                        Logger.LogError(LogTemplates.ExceptionLogTemplate, typeof(TenantExecutor).FullName, nameof(ExecuteByTenantsAsync), e.GetType().Name, e.Message);
+                        Logger.LogError(LogTemplates.ExceptionLogTemplate, typeof(TenantExecutor).FullName, nameof(ExecuteByTenantsAsync), e);
                     }
                 }
                 finally

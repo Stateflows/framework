@@ -65,7 +65,7 @@ public static class StateBuilderExtensions
             b.SetCustomBehaviorClassType(MAFBehaviorType.AIAgent);
         });
     
-    private static TransitionBuildAction<AgenticDecision> PrepareAgenticTransition(string targetStateName, string description, DefaultTransitionBuildAction? buildAction = null)
+    private static TransitionBuildAction<AgenticTransition> PrepareAgenticTransition(string targetStateName, string description, DefaultTransitionBuildAction? buildAction = null)
         => b =>
         {
             var stateMetadata = ((IParentMetadataBuilder)b).ParentMetadata;
@@ -87,30 +87,61 @@ public static class StateBuilderExtensions
             var marker = Guid.NewGuid().ToString();
             b
                 .AddMetadata(AIAgentConstants.ExtensionMode, AIAgentConstants.AgenticTransition)
-                .AddMetadata(AIAgentConstants.TransitionName, $"go_to_{targetStateName.Split('.').Last().ToSnakeCase().Replace('<', '_').Replace('>', '_')}_{Random.Shared.Next(1000, 9999)}")
+                .AddMetadata(AIAgentConstants.TransitionName, $"transition_to_{targetStateName.Split('.').Last().ToSnakeCase().Replace('<', '_').Replace('>', '_')}_{Random.Shared.Next(1000, 9999)}")
                 .AddMetadata(AIAgentConstants.TransitionDescription, description)
                 .AddMetadata(AIAgentConstants.GuardValue, marker)
-                .AddGuard(c => c.Event.DecisionMarker == marker);
-                // .AddGuard(Guards.Global.Value(AIAgentConstants.GuardKey).IsEqualTo(marker));
+                .AddGuard(c => c.Event.TransitionMarker == marker);
+            // .AddGuard(Guards.Global.Value(AIAgentConstants.GuardKey).IsEqualTo(marker));
 
             buildAction?.Invoke(b as IDefaultTransitionBuilder);
         };
+    
+    // private static TransitionBuildAction<AgenticHandoff> PrepareAgenticHandoff(string targetStateName, string description, DefaultTransitionBuildAction? buildAction = null)
+    //     => b =>
+    //     {
+    //         var stateMetadata = ((IParentMetadataBuilder)b).ParentMetadata;
+    //         var transitionMetadata = ((IMetadataBuilder)b).Metadata;
+    //         
+    //         List<Dictionary<string, object>>? agenticTransitions;
+    //         if (!stateMetadata.TryGetValue(AIAgentConstants.Transitions, out var agenticTransitionsObj))
+    //         {
+    //             agenticTransitions = [];
+    //             stateMetadata[AIAgentConstants.Transitions] = agenticTransitions;
+    //         }
+    //         else
+    //         {
+    //             agenticTransitions = (List<Dictionary<string, object>>)agenticTransitionsObj;
+    //         }
+    //         
+    //         agenticTransitions.Add(transitionMetadata);
+    //         
+    //         var marker = Guid.NewGuid().ToString();
+    //         b
+    //             .AddMetadata(AIAgentConstants.ExtensionMode, AIAgentConstants.AgenticTransition)
+    //             .AddMetadata(AIAgentConstants.TransitionName, $"handoff_to_{targetStateName.Split('.').Last().ToSnakeCase().Replace('<', '_').Replace('>', '_')}_{Random.Shared.Next(1000, 9999)}")
+    //             .AddMetadata(AIAgentConstants.TransitionDescription, description)
+    //             .AddMetadata(AIAgentConstants.GuardValue, marker)
+    //             .AddGuard(c => c.Event.HandoffMarker == marker);
+    //         // .AddGuard(Guards.Global.Value(AIAgentConstants.GuardKey).IsEqualTo(marker));
+    //
+    //         buildAction?.Invoke(b as IDefaultTransitionBuilder);
+    //     };
 
     public static IAgenticStateBuilder AddAgenticTransition(this IAgenticStateBuilder stateBuilder, string targetStateName, string prompt, DefaultTransitionBuildAction? transitionBuildAction = null)
-        => new AgenticStateBuilder(stateBuilder.AddTransition<AgenticDecision>(targetStateName, PrepareAgenticTransition(targetStateName, prompt, transitionBuildAction)));
+        => new AgenticStateBuilder(stateBuilder.AddTransition<AgenticTransition>(targetStateName, PrepareAgenticTransition(targetStateName, prompt, transitionBuildAction)));
     
     public static IAgenticStateBuilder AddAgenticTransition<TTargetState>(this IAgenticStateBuilder stateBuilder, string prompt, DefaultTransitionBuildAction? transitionBuildAction = null)
         where TTargetState : class, IVertex
-        => new AgenticStateBuilder(stateBuilder.AddTransition<AgenticDecision, TTargetState>(PrepareAgenticTransition(State<TTargetState>.Name, prompt, transitionBuildAction)));
+        => new AgenticStateBuilder(stateBuilder.AddTransition<AgenticTransition, TTargetState>(PrepareAgenticTransition(State<TTargetState>.Name, prompt, transitionBuildAction)));
     
-    public static IAgenticStateBuilder AddAgenticHandoff<TTargetAgent>(this IAgenticStateBuilder stateBuilder, string prompt, DefaultTransitionBuildAction? transitionBuildAction = null)
-        where TTargetAgent : class, IAIAgent
-        => new AgenticStateBuilder(stateBuilder.AddTransition<AgenticDecision, AgenticState<TTargetAgent>>(PrepareAgenticTransition(State<AgenticState<TTargetAgent>>.Name, prompt, transitionBuildAction)));
+    // public static IAgenticStateBuilder AddAgenticHandoff<TTargetAgent>(this IAgenticStateBuilder stateBuilder, string prompt, DefaultTransitionBuildAction? transitionBuildAction = null)
+    //     where TTargetAgent : class, IAIAgent
+    //     => new AgenticStateBuilder(stateBuilder.AddTransition<AgenticHandoff, AgenticState<TTargetAgent>>(PrepareAgenticHandoff(State<AgenticState<TTargetAgent>>.Name, prompt, transitionBuildAction)));
 
-    public static IAgenticStateBuilder AddAgenticReaction<TEvent>(this IAgenticStateBuilder stateBuilder, Func<IEventContext<TEvent>, ChatMessage> chatMessageFactory, InternalTransitionBuildAction<TEvent>? transitionBuildAction = null)
+    public static IAgenticStateBuilder AddAgenticReaction<TEvent>(this IAgenticStateBuilder stateBuilder, Func<IEventContext<TEvent>, AgenticMessage> agenticMessageFactory, InternalTransitionBuildAction<TEvent>? transitionBuildAction = null)
         => new AgenticStateBuilder(stateBuilder.AddInternalTransition<TEvent>(b =>
         {
-            b.AddEffect(c => c.Behavior.Send(chatMessageFactory(c)));
+            b.AddEffect(c => c.Behavior.Send(agenticMessageFactory(c)));
             
             transitionBuildAction?.Invoke(b);
         }));

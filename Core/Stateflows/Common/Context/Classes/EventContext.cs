@@ -4,37 +4,33 @@ using Stateflows.Common.Context.Interfaces;
 
 namespace Stateflows.Common.Context.Classes
 {
-    internal class EventContext<TEvent> : BaseContext, IEventContext<TEvent>
+    internal class EventContext<TEvent>(
+        StateflowsContext context,
+        IServiceProvider serviceProvider,
+        EventHolder<TEvent> eventHolder)
+        : BaseContext(context, serviceProvider), IEventContext<TEvent>
     {
         IBehaviorContext IBehaviorActionContext.Behavior => Behavior;
         public bool TryGetParentBehaviorContext(out IParentBehaviorContext parentBehaviorContext)
         {
             parentBehaviorContext = Behavior.Context.ContextParentId.HasValue
                 ? Behavior
-                : null;
+                : null!;
             
-            return parentBehaviorContext != null;
+            return parentBehaviorContext != null!;
         }
         public bool TryGetOwnerBehaviorContext(out IOwnerBehaviorContext ownerBehaviorContext)
         {
             ownerBehaviorContext = Behavior.Context.ContextOwnerId.HasValue
                 ? Behavior
-                : null;
+                : null!;
             
-            return ownerBehaviorContext != null;
+            return ownerBehaviorContext != null!;
         }
 
-        public EventContext(StateflowsContext context, IServiceProvider serviceProvider, EventHolder<TEvent> eventHolder)
-            : base(context, serviceProvider)
-        {
-            Event = eventHolder.Payload;
-            EventId = eventHolder.Id;
-            Headers = eventHolder.Headers;
-        }
-
-        public TEvent Event { get; }
-        public Guid EventId { get; }
-        public IDictionary<string, EventHeader> Headers { get; }
+        public TEvent Event { get; } = eventHolder.Payload;
+        public Guid EventId { get; } = eventHolder.Id;
+        public IDictionary<string, EventHeader> Headers { get; } = eventHolder.Headers;
         public object ExecutionTrigger => Event;
         public Guid ExecutionTriggerId => EventId; 
     }

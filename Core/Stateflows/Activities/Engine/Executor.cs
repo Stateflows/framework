@@ -27,7 +27,7 @@ using Graph = Stateflows.Activities.Models.Graph;
 
 namespace Stateflows.Activities.Engine
 {    
-    internal class Executor : IDisposable, IStateflowsExecutor
+    internal class Executor : IAsyncDisposable, IStateflowsExecutor
     {
         private static readonly object lockHandle = new object();
         private static readonly object nodesLockHandle = new object();
@@ -193,11 +193,11 @@ namespace Stateflows.Activities.Engine
             await Inspector.BuildAsync();
         }
 
-        public RootContext Dehydrate()
+        public async Task<RootContext> DehydrateAsync()
         {
             Debug.Assert(Context != null, $"Context is unavailable. Is activity '{Graph.Name}' already dehydrated?");
 
-            NodeScope.Dispose();
+            await NodeScope.DisposeAsync();
 
             var result = Context;
             result.Executor = null;
@@ -1363,15 +1363,15 @@ namespace Stateflows.Activities.Engine
             return false;
         }
 
-        public void Dispose()
+        public async ValueTask DisposeAsync()
         {
-            Dispose(true);
+            await DisposeAsync(true);
             GC.SuppressFinalize(this);
         }
 
-        protected virtual void Dispose(bool disposing)
+        protected virtual async ValueTask DisposeAsync(bool disposing)
         {
-            NodeScope.Dispose();
+            await NodeScope.DisposeAsync();
         }
 
         public async Task<object> GetActivityAsync(Type activityType)

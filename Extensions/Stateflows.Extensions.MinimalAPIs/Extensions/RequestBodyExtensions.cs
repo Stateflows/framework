@@ -276,7 +276,9 @@ internal static class RequestBodyExtensions
                         ..watchedNotificationTypes
                     ]
                     : watchedNotificationTypes
-            );
+            )
+                .Distinct()
+                .ToArray();
         }
     }
 

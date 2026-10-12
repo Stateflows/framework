@@ -43,7 +43,7 @@ namespace Stateflows.StateMachines.Engine
             {
                 var result = EventStatus.Undelivered;
 
-                using var serviceScope = provider.CreateScope();
+                await using var serviceScope = provider.CreateAsyncScope();
                 
                 var serviceProvider = serviceScope.ServiceProvider;
 
@@ -75,7 +75,7 @@ namespace Stateflows.StateMachines.Engine
                     stateflowsContext.ContextParentId = embedding.ParentId;
                 }
 
-                using var executor = new Executor(register, graph, serviceProvider, stateflowsContext, eventHolder);
+                await using var executor = new Executor(register, graph, serviceProvider, stateflowsContext, eventHolder);
                 
                 await executor.HydrateAsync();
 
@@ -95,7 +95,7 @@ namespace Stateflows.StateMachines.Engine
                             }
                             finally
                             {
-                                executor.EndScope();
+                                await executor.EndScopeAsync();
                             }
                         }
                     }
@@ -162,7 +162,7 @@ namespace Stateflows.StateMachines.Engine
                 finally
                 {
                     executor.Context.ClearEvent();
-                    executor.EndScope();
+                    await executor.EndScopeAsync();
                 }
 
                 Debug.WriteLine($"Forcefully quit processing in {id.Name}");

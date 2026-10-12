@@ -19,6 +19,8 @@ using Stateflows.Activities;
 using Stateflows.Common;
 using Stateflows.Common.Utilities;
 using Stateflows.Examples.Behaviors.Activities.Test;
+using Stateflows.Examples.Behaviors.StateMachines.Document;
+using Stateflows.MAF.AIAgents;
 using Document = Stateflows.Examples.Behaviors.StateMachines.Document.Document;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -65,6 +67,10 @@ builder.Services.AddStateflows(b => b
         .AddActivity<Test>(nameof(Test))
     )
     
+    .AddAIAgents(b => b
+        .AddAIAgent<TranslatorAgent>()
+    )
+    
     // .AddDefaultInstance(new StateMachineClass("Doc"))
     .AddDefaultInstance(new ActivityClass(nameof(Test)))
     
@@ -78,7 +84,7 @@ builder.Services.AddStateflows(b => b
     // Add OpenTelemetry extension to enable tracing and logging.
     .AddOpenTelemetry()
     
-    // .AddDashboard()
+    .AddDashboard()
 
     // Uncomment, if you want to use storage:
     //
@@ -167,6 +173,6 @@ app.MapStateflowsMinimalAPIsEndpoints(b => b
     // )
 );
 
-// app.UseStateflowsDashboard();
+app.UseStateflowsDashboard();
 
 app.Run();

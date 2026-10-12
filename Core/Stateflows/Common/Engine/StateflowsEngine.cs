@@ -2,6 +2,7 @@
 using System.Linq;
 using System.Threading.Tasks;
 using System.Collections.Generic;
+using System.Diagnostics;
 using Microsoft.Extensions.DependencyInjection;
 using Stateflows.Common.Classes;
 using Stateflows.Common.Engine;
@@ -10,10 +11,10 @@ using Stateflows.Common.Registration.Builders;
 
 namespace Stateflows.Common
 {
-    internal class StateflowsEngine : IStateflowsEngine
+    internal class StateflowsEngine : IStateflowsEngine, IAsyncDisposable
     {
         internal readonly StateflowsBuilder StateflowsBuilder;
-        private readonly IServiceScope Scope;
+        private readonly AsyncServiceScope Scope;
         private IServiceProvider ServiceProvider => Scope.ServiceProvider;
         private readonly IStateflowsLock Lock;
         private readonly CommonInterceptor Interceptor;
@@ -26,7 +27,7 @@ namespace Stateflows.Common
         public StateflowsEngine(IServiceProvider serviceProvider, StateflowsBuilder stateflowsBuilder)
         {
             StateflowsBuilder = stateflowsBuilder;
-            Scope = serviceProvider.CreateScope();
+            Scope = serviceProvider.CreateAsyncScope();
             Lock = ServiceProvider.GetRequiredService<IStateflowsLock>();
             Interceptor = ServiceProvider.GetRequiredService<CommonInterceptor>();
             TenantAccessor = ServiceProvider.GetRequiredService<ITenantAccessor>();
@@ -38,7 +39,10 @@ namespace Stateflows.Common
                 .ToDictionary(p => p.BehaviorTypes, p => p.Processor);
         }
 
-        // [DebuggerHidden]
+        public ValueTask DisposeAsync()
+            => Scope.DisposeAsync();
+
+        [DebuggerHidden]
         public async Task HandleEventAsync(ExecutionToken token)
         {
             await Task.Delay(1);
@@ -71,7 +75,7 @@ namespace Stateflows.Common
             }
         }
 
-        // [DebuggerHidden]
+        [DebuggerHidden]
         async Task<EventStatus> IStateflowsEngine.ProcessEventAsync<TEvent>(BehaviorId id, EventHolder<TEvent> eventHolder, List<Exception> exceptions, Dictionary<object, EventHolder> responses)
         {
             var result = EventStatus.Undelivered;

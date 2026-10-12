@@ -4,15 +4,34 @@ using Stateflows.Entities.Attributes;
 
 namespace Stateflows.Entities
 {
-    public interface IEntity<TEntityTemplate>
-        where TEntityTemplate : class
+    public interface IEntity<TTemplate>
+        where TTemplate : class
     {
-        static abstract void Build(IEntityBuilder<TEntityTemplate> builder);
+        static abstract void Build(IEntityBuilder<TTemplate> builder);
+    }
+    
+    internal abstract class TemplatedEntity<TTemplate> : IEntity<TTemplate>
+        where TTemplate : class
+    {
+        public static void Build(IEntityBuilder<TTemplate> builder)
+        { }
     }
 
-    public static class Entity<TEntityTemplate, TEntity>
-        where TEntityTemplate : class
-        where TEntity : class, IEntity<TEntityTemplate>
+    public static class Entity<TTemplate>
+        where TTemplate : class
+    {
+        public static string Name => Entity<TTemplate, TemplatedEntity<TTemplate>>.Name;
+
+        public static BehaviorClass ToClass()
+            => new BehaviorClass(BehaviorType.Entity, Name);
+
+        public static BehaviorId ToId(string instance)
+            => new BehaviorId(ToClass(), instance);
+    }
+
+    public static class Entity<TTemplate, TEntity>
+        where TTemplate : class
+        where TEntity : class, IEntity<TTemplate>
     {
         public static string Name
         {

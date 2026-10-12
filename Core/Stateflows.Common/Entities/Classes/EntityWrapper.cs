@@ -7,18 +7,13 @@ using Stateflows.Entities;
 
 namespace Stateflows.Common.Entities.Classes
 {
-    internal class EntityWrapper : IEntityBehavior, IInjectionScope
+    internal class EntityWrapper(IBehavior consumer) : IEntityBehavior, IInjectionScope
     {
         BehaviorId IBehavior.Id => Behavior.Id;
 
         public IServiceProvider ServiceProvider => (Behavior as IInjectionScope)?.ServiceProvider;
 
-        private IBehavior Behavior { get; }
-
-        public EntityWrapper(IBehavior consumer)
-        {
-            Behavior = consumer;
-        }
+        private IBehavior Behavior { get; } = consumer;
 
         [DebuggerHidden]
         public Task<SendResult> SendAsync<TEvent>(TEvent @event, IDictionary<string, EventHeader> headers = null)

@@ -36,17 +36,17 @@ namespace Stateflows.StateMachines.Engine
                         };
                     }
                 }
-
-                // if (eventStatus == EventStatus.Consumed)
-                // {
-                //     context.Behavior.Send(new Completion());
-                // }
             }
         }
 
         public override void AfterStateEntry(IStateActionContext context)
         {
             var vertex = ((StateActionContext)context).Vertex;
+
+            // if (vertex.BehaviorType == "AIAgent")
+            // {
+            //     return;
+            // }
 
             var stateValues = ((IRootContext)context).Context.GetStateValues(vertex.Name);
 
@@ -106,6 +106,11 @@ namespace Stateflows.StateMachines.Engine
         public override void BeforeStateExit(IStateActionContext context)
         {
             var vertex = ((StateActionContext)context).Vertex;
+
+            // if (vertex.BehaviorType == "AIAgent")
+            // {
+            //     return;
+            // }
 
             if (vertex.BehaviorName != null)
             {

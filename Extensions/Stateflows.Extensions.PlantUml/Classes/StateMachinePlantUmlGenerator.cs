@@ -11,21 +11,24 @@ namespace Stateflows.Extensions.PlantUml.Classes
     {
         private static void GetPlantUml(int indentCount, IEnumerable<IStateInspection> states, StringBuilder builder)
         {
-            string indent = new string(' ', indentCount);
+            var indent = new string(' ', indentCount);
 
             foreach (var state in states)
             {
                 var stateName = state.Name.ToShortName();
+                var stateIdentifier = state.Name.ToIdentifier();
 
+                builder.AppendLine($"state \"{stateName}\" as {stateIdentifier}");
+                
                 if (state.IsInitial)
                 {
-                    builder.AppendLine($"{indent}[*] --> {stateName}");
+                    builder.AppendLine($"{indent}[*] --> {stateIdentifier}");
                 }
-                GetPlantUml(indentCount, state, stateName, builder);
+                GetPlantUml(indentCount, state, stateIdentifier, builder);
             }
         }
 
-        private static void GetPlantUml(int indentCount, IStateInspection state, string stateName, StringBuilder builder)
+        private static void GetPlantUml(int indentCount, IStateInspection state, string stateIdentifier, StringBuilder builder)
         {
             string indent = new string(' ', indentCount);
 
@@ -36,37 +39,37 @@ namespace Stateflows.Extensions.PlantUml.Classes
 
             if (state.IsChoice)
             {
-                builder.AppendLine($"{indent}state {stateName} <<choice>>");
+                builder.AppendLine($"{indent}state {stateIdentifier} <<choice>>");
             }
             else
             if (state.IsJunction)
             {
-                builder.AppendLine($"{indent}state \" \" as {stateName}_invisibleState #white;line:white {{");
-                builder.AppendLine($"{indent}    state \" \" as {stateName} <<entryPoint>>");
+                builder.AppendLine($"{indent}state \" \" as {stateIdentifier}_invisibleState #white;line:white {{");
+                builder.AppendLine($"{indent}    state \" \" as {stateIdentifier} <<entryPoint>>");
                 builder.AppendLine($"{indent}}}");
             }
             else
             if (state.IsFork)
             {
-                builder.AppendLine($"{indent}state {stateName} <<fork>>");
+                builder.AppendLine($"{indent}state {stateIdentifier} <<fork>>");
             }
             else
             if (state.IsJoin)
             {
-                builder.AppendLine($"{indent}state {stateName} <<join>>");
+                builder.AppendLine($"{indent}state {stateIdentifier} <<join>>");
             }
             else
             {
                 if (state.Active)
                 {
-                    builder.AppendLine($"{indent}state {stateName} #line.bold {{");
-                    builder.AppendLine($"{indent}  skinparam {stateName} {{");
+                    builder.AppendLine($"{indent}state {stateIdentifier} #line.bold {{");
+                    builder.AppendLine($"{indent}  skinparam {stateIdentifier} {{");
                     builder.AppendLine($"{indent}    FontStyle bold");
                     builder.AppendLine($"{indent}  }}");
                 }
                 else
                 {
-                    builder.AppendLine($"{indent}state {stateName} {{");
+                    builder.AppendLine($"{indent}state {stateIdentifier} {{");
                 }
             }
 
@@ -97,12 +100,12 @@ namespace Stateflows.Extensions.PlantUml.Classes
             {
                 if (action.Name == Constants.Entry)
                 {
-                    builder.AppendLine($"{indent}{stateName} : entry / onEntry()");
+                    builder.AppendLine($"{indent}{stateIdentifier} : entry / onEntry()");
                 }
 
                 if (action.Name == Constants.Exit)
                 {
-                    builder.AppendLine($"{indent}{stateName} : exit / onExit()");
+                    builder.AppendLine($"{indent}{stateIdentifier} : exit / onExit()");
                 }
             }
 
@@ -114,21 +117,21 @@ namespace Stateflows.Extensions.PlantUml.Classes
                 {
                     if (transition.Target == null)
                     {
-                        builder.AppendLine($"{indent}{stateName} : {trigger} / on{trigger}()");
+                        builder.AppendLine($"{indent}{stateIdentifier} : {trigger} / on{trigger}()");
                     }
                     else
                     {
                         var target = !transition.Target.IsFinal
-                            ? transition.Target.Name.ToShortName()
+                            ? transition.Target.Name.ToIdentifier()
                             : "[*]";
 
                         if (trigger == Constants.CompletionEvent)
                         {
-                            builder.AppendLine($"{indent}{stateName} --> {target} {(transition.IsElse ? ": [else]" : "")}");
+                            builder.AppendLine($"{indent}{stateIdentifier} --> {target} {(transition.IsElse ? ": [else]" : "")}");
                         }
                         else
                         {
-                            builder.AppendLine($"{indent}{stateName} --> {target} : {trigger} {(transition.IsElse ? "[else]" : "")}");
+                            builder.AppendLine($"{indent}{stateIdentifier} --> {target} : {trigger} {(transition.IsElse ? "[else]" : "")}");
                         }
                     }
                 }

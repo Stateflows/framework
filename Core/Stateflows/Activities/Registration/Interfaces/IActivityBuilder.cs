@@ -1,4 +1,6 @@
 ﻿using Stateflows.Activities.Registration.Interfaces.Base;
+using Stateflows.Common.Interfaces;
+using Stateflows.Common.Registration.Interfaces;
 
 namespace Stateflows.Activities;
 
@@ -14,6 +16,7 @@ public interface IActivityBuilder :
     IAcceptEventBase<IActivityBuilder>,
     ISendEventBase<IActivityBuilder>,
     IPublishEventBase<IActivityBuilder>,
+    IEntityOwnerBase<IActivityBuilder>,
     IActivityOverride<IOverridenActivityBuilder>;
 
 public interface IOverridenActivityBuilder :
@@ -31,5 +34,6 @@ public interface IOverridenActivityBuilder :
     ISendEventBase<IOverridenActivityBuilder>,
     ISendEventOverrides<IOverridenActivityBuilder>,
     IPublishEventBase<IOverridenActivityBuilder>,
+    IEntityOwnerBase<IOverridenActivityBuilder>,
     IPublishEventOverrides<IOverridenActivityBuilder>,
     IActivitySpecialsOverrides<IOverridenActivityBuilder>;

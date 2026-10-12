@@ -2,18 +2,18 @@ namespace Stateflows.Entities.Registration.Interfaces
 {
     public delegate void EntitiesBuildAction(IEntitiesBuilder builder);
 
-    public delegate void EntityBuildAction<TEntityTemplate>(IEntityBuilder<TEntityTemplate> builder);
+    public delegate void EntityBuildAction<TTemplate>(IEntityBuilder<TTemplate> builder);
 
-    public delegate void FieldBuildAction<TEntityTemplate, out TFieldType>(IFieldBuilder<TEntityTemplate, TFieldType> builder);
+    public delegate void FieldBuildAction<in TTemplate, out TFieldType>(IFieldBuilder<TTemplate, TFieldType> builder);
 
-    public delegate TFieldType FieldComputation<in TEntityTemplate, out TFieldType>(TEntityTemplate entity);
+    public delegate TFieldType FieldComputation<in TTemplate, out TFieldType>(TTemplate entity);
 
-    public delegate void MutationAction<in TEntityTemplate, in TMutationEvent>(IMutationContext<TEntityTemplate, TMutationEvent> context);
+    public delegate void MutationAction<in TTemplate, in TMutationEvent>(IMutationContext<TTemplate, TMutationEvent> context);
     
-    public delegate TProjectionTemplate ProjectionAction<in TEntityTemplate, out TProjectionTemplate>(TEntityTemplate entity);
+    public delegate TProjectionTemplate ProjectionAction<in TTemplate, out TProjectionTemplate>(TTemplate entity);
 
-    public delegate void DefaultInitializerAction<in TEntityTemplate>(IDefaultEntityInitializationContext<TEntityTemplate> context);
+    public delegate void DefaultInitializerAction<in TTemplate>(IDefaultEntityInitializationContext<TTemplate> context);
 
-    public delegate void InitializerAction<in TEntityTemplate, in TInitializationEvent>(IEntityInitializationContext<TEntityTemplate, TInitializationEvent> context);
+    public delegate void InitializerAction<in TTemplate, in TInitializationEvent>(IEntityInitializationContext<TTemplate, TInitializationEvent> context);
 }
 

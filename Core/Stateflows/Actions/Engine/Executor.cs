@@ -37,7 +37,7 @@ namespace Stateflows.Actions.Engine
         internal readonly ActionModel ActionModel;
         internal readonly ActionsRegister Register;
 
-        private Inspector inspector;
+        private Inspector? inspector = null;
 
         public async Task<Inspector> GetInspectorAsync()
         {
@@ -52,18 +52,18 @@ namespace Stateflows.Actions.Engine
         
         public async Task HydrateAsync(EventHolder eventHolder)
         {
-            var inspector = await GetInspectorAsync();
+            // var inspector = await GetInspectorAsync();
             
-            using var serviceScope = ServiceProvider.CreateScope();
+            await using var serviceScope = ServiceProvider.CreateAsyncScope();
             using var context = new ActionDelegateContext(StateflowsContext, this, eventHolder, serviceScope.ServiceProvider);
             // inspector.AfterHydrate(context);
         }
 
         public async Task DehydrateAsync(EventHolder eventHolder)
         {
-            var inspector = await GetInspectorAsync();
+            // var inspector = await GetInspectorAsync();
 
-            using var scope = ServiceProvider.CreateScope();
+            await using var scope = ServiceProvider.CreateAsyncScope();
             using var context = new ActionDelegateContext(StateflowsContext, this, eventHolder, scope.ServiceProvider);
             // inspector.BeforeDehydrate(context);
         }

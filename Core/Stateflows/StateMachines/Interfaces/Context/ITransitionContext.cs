@@ -6,7 +6,7 @@ namespace Stateflows.StateMachines
     {
         IStateContext Source { get; }
 
-        IStateContext Target { get; }
+        IStateContext? Target { get; }
         
         Type TriggerType { get; }
         

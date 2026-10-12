@@ -412,7 +412,7 @@ namespace Stateflows.StateMachines.Registration.Builders
         private string GetDoActivityName()
             => $"{Vertex.Graph.Name}.{Vertex.Name}.do";
         
-        private StateBuilder AddDoActivity<TActivity>(ActivityUtilsBuildAction buildAction = null)
+        internal StateBuilder AddDoActivity<TActivity>(ActivityUtilsBuildAction buildAction = null)
             where TActivity : class, IActivity
         {
             var doActivityName = GetDoActivityName();
@@ -426,7 +426,7 @@ namespace Stateflows.StateMachines.Registration.Builders
         }
 
         [DebuggerHidden]
-        private StateBuilder AddDoActivity(ReactiveActivityBuildAction activityBuildAction)
+        internal StateBuilder AddDoActivity(ReactiveActivityBuildAction activityBuildAction)
         {
             var doActivityName = GetDoActivityName();
             Vertex.Graph.StateflowsBuilder.AddActivities(b => b.AddActivity(doActivityName, activityBuildAction), Vertex.Graph.OwnerClass ?? Vertex.Graph.Class, Vertex.Graph.Class);
@@ -444,7 +444,7 @@ namespace Stateflows.StateMachines.Registration.Builders
         private string GetDoActionName()
             => $"{Vertex.Graph.Name}.{Vertex.Name}.do";
         
-        private StateBuilder AddDoAction<TAction>(ActionBuildAction<TAction> buildAction = null)
+        internal StateBuilder AddDoAction<TAction>(ActionBuildAction<TAction> buildAction = null)
             where TAction : class, IAction
         {
             var doActionName = GetDoActionName();
@@ -469,7 +469,7 @@ namespace Stateflows.StateMachines.Registration.Builders
         }
 
         [DebuggerHidden]
-        private StateBuilder AddDoAction(ActionDelegateAsync actionDelegate, ActionBuildAction buildAction = null)
+        internal StateBuilder AddDoAction(ActionDelegateAsync actionDelegate, ActionBuildAction buildAction = null)
         {
             var doActionName = GetDoActionName();
             var register = Vertex.Graph.StateflowsBuilder

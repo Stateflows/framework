@@ -68,6 +68,7 @@ namespace Stateflows.MAF.AIAgents.Registration.Builders
         public IAIAgentsBuilder AddAIAgent<TAgent>(string? agentName = null, int version = 1, AIAgentBuildAction? agentBuildAction = null)
             where TAgent : class, IAIAgent
         {
+            agentName ??= AIAgent<TAgent>.Name;
             ActionsBuilder.AddAction<AIAgentAction<TAgent>>(
                 agentName,
                 version,

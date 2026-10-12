@@ -9,6 +9,7 @@ using Microsoft.Agents.AI;
 using Microsoft.Extensions.AI;
 using Microsoft.Extensions.DependencyInjection;
 using Stateflows.Actions;
+using Stateflows.Entities;
 using Stateflows.Extensions.MicrosoftAgentFramework.Agents.Classes;
 using Stateflows.MAF.AIAgents.Events;
 
@@ -22,7 +23,7 @@ internal class AIAgentAction(
     IConfigurable<AIAgentFactoryAsync>,
     IConfigurable<AIAgentBuildAction?>,
     IConfigurable<IMetadataBuilder>,
-    // IEventConsumer<string>,
+    IEventConsumer<string>,
     // IEventConsumer<ChatMessage>,
     IEventConsumer<AgenticMessage>,
     // IEventConsumer<AgenticChatInquiry>,
@@ -72,9 +73,9 @@ internal class AIAgentAction(
                 tools.AddRange(agenticTransitions
                     .Select(agenticTransition =>
                         AIFunctionFactory.Create(
-                            () => OwnerBehaviorContext?.Send(new AgenticDecision()
+                            () => OwnerBehaviorContext?.Send(new AgenticTransition()
                             {
-                                DecisionMarker = agenticTransition.GetValueOrDefault(AIAgentConstants.GuardValue) as string
+                                TransitionMarker = agenticTransition.GetValueOrDefault(AIAgentConstants.GuardValue) as string
                             }),
                             // () => actionContext.Values.SetAsync(AIAgentConstants.GuardKey, agenticTransition.GetValueOrDefault(AIAgentConstants.GuardValue) as string),
                             new AIFunctionFactoryOptions()
@@ -112,7 +113,7 @@ internal class AIAgentAction(
         var sessionDataString = string.Empty;
         if (OwnerBehaviorContext is not null)
         {
-            (sessionLoaded, sessionDataString) = await OwnerBehaviorContext.TryGetAsync<string>(nameof(IAIAgentSessionEntity.AIAgentSessionData));
+            (sessionLoaded, sessionDataString) = await OwnerBehaviorContext.TryGetFieldAsync<string>(Entity<AIAgentSessionEntity>.Name, nameof(AIAgentSessionEntity.AIAgentSessionData));
         }
         if (!sessionLoaded)
         {
@@ -146,13 +147,13 @@ internal class AIAgentAction(
         
         // chatMessages.AddRange(actionContext.GetTokensOfType<ChatMessage>());
         
-        // chatMessages.AddRange(actionContext.GetTokensOfType<AgenticChatInquiry>().Select(t =>
-        //     new ChatMessage
-        //     {
-        //         Role = ChatRole.User,
-        //         Contents = [ new TextContent($"There is the inquiry about the statement: {GetInquiryText(t.Message)}") ]
-        //     }
-        // ));
+        chatMessages.AddRange(actionContext.GetTokensOfType<AgenticChatInquiry>().Select(t =>
+            new ChatMessage
+            {
+                Role = ChatRole.User,
+                Contents = [ new TextContent($"There is the inquiry about the statement: {GetInquiryText(t.Message)}") ]
+            }
+        ));
         
         chatMessages.AddRange(actionContext
             .GetTokensOfType<AgenticMessage>()
@@ -214,14 +215,14 @@ internal class AIAgentAction(
             }
             else
             {
-                actionContext.Publish(response);
+                behaviorContext.PublishRange(response.Messages.Select(AgenticMessage.FromChatMessage).ToArray());
             }
             
             var sessionData = await agent.SerializeSessionAsync(session, cancellationToken: cancellationToken);
             var sessionSaved = false;
             if (OwnerBehaviorContext is not null)
             {
-                sessionSaved = await OwnerBehaviorContext.TrySetAsync(nameof(IAIAgentSessionEntity.AIAgentSessionData), sessionData.GetRawText());
+                sessionSaved = await OwnerBehaviorContext.TrySetFieldAsync<AIAgentSessionEntity, string>(nameof(AIAgentSessionEntity.AIAgentSessionData), sessionData.GetRawText());
             }
 
             if (!sessionSaved)

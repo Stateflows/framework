@@ -8,7 +8,7 @@ namespace Stateflows.Common
             => value.Contains('<')
                 ? $"{value.Split('<').First().Split('.').Last()}<{value.Split('<').Last().Split('.').Last()}"
                 : value.Split('.').Last();
-
+        
         public static string ToCamelCase(this string value)
             => System.Text.Json.JsonNamingPolicy.CamelCase.ConvertName(value);
         

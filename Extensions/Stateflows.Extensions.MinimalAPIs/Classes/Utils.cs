@@ -18,7 +18,7 @@ internal static class Utils
             BehaviorType.StateMachine => "stateMachines",
             BehaviorType.Activity => "activities",
             BehaviorType.Action => "actions",
-            _ => throw new ArgumentOutOfRangeException()
+            _ => $"{behaviorType.ToCamelCase()}s"
         };
     
     internal static IEnumerable<HateoasLink> ToHateoasLinks(this BehaviorInfo behaviorInfo, string method, string path, Dictionary<string, List<(HateoasLink, BehaviorStatus[])>> hateoasLinks)
@@ -79,6 +79,11 @@ internal static class Utils
 
     internal static IDictionary<string, object> ToMetadata(this BehaviorInfo behaviorInfo)
     {
+        if (behaviorInfo is null)
+        {
+            return new Dictionary<string, object>();
+        }
+        
         var metadata = new Dictionary<string, object>
         {
             { nameof(behaviorInfo.Id).ToCamelCase(), behaviorInfo.Id },
@@ -108,6 +113,11 @@ internal static class Utils
         foreach (var metadataKeyValue in behaviorInfo.Metadata)
         {
             metadata.TryAdd(metadataKeyValue.Key, metadataKeyValue.Value);
+        }
+
+        if (behaviorInfo.Properties.Count > 0)
+        {
+            metadata["properties"] = behaviorInfo.Properties;
         }
 
         return metadata;

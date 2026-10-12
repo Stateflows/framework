@@ -29,7 +29,7 @@ namespace Stateflows.MAF.AIAgents
 
         private static IStateflowsBuilder EnsureAgentsServices(this IStateflowsBuilder stateflowsBuilder)
         {
-            stateflowsBuilder.ServiceCollection.AddMicrosoftAgentFrameworkServices();
+            stateflowsBuilder.AddAIAgents();
             
             return stateflowsBuilder;
         }

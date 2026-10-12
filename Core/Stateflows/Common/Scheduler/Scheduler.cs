@@ -10,11 +10,11 @@ using Stateflows.Common.Initializer;
 
 namespace Stateflows.Common.Scheduler
 {
-    internal class Scheduler : IHostedService
+    internal class Scheduler : IHostedService, IAsyncDisposable
     {
         private readonly CancellationTokenSource CancellationTokenSource = new();
         private readonly IStateflowsTenantExecutor Executor;
-        private readonly IServiceScope Scope;
+        private readonly AsyncServiceScope Scope;
         private readonly ILogger<Scheduler> Logger;
         private IBehaviorLocator Locator;
         private readonly IHostApplicationLifetime Lifetime;
@@ -26,7 +26,7 @@ namespace Stateflows.Common.Scheduler
 
         public Scheduler(IServiceProvider serviceProvider, IHostApplicationLifetime lifetime)
         {
-            Scope = serviceProvider.CreateScope();
+            Scope = serviceProvider.CreateAsyncScope();
             Locator = ServiceProvider.GetRequiredService<IBehaviorLocator>();
             Executor = ServiceProvider.GetRequiredService<IStateflowsTenantExecutor>();
             Logger = ServiceProvider.GetRequiredService<ILogger<Scheduler>>();
@@ -72,8 +72,10 @@ namespace Stateflows.Common.Scheduler
                     }
                     catch (Exception e)
                     {
-                        Logger.LogError(LogTemplates.ExceptionLogTemplate, typeof(Scheduler).FullName, nameof(TimingLoop), e.GetType().Name, e.Message);
+                        Logger.LogError(LogTemplates.ExceptionLogTemplate, typeof(Scheduler).FullName, nameof(TimingLoop), e);
                     }
+
+                    await StopAsync(CancellationTokenSource.Token).ConfigureAwait(false);
                 }
 
                 await Task.Delay(1000, cancellationToken).ConfigureAwait(false);
@@ -82,7 +84,7 @@ namespace Stateflows.Common.Scheduler
 
         private async Task HandleTimeEvents()
         {
-            using var scope = ServiceProvider.CreateScope();
+            await using var scope = ServiceProvider.CreateAsyncScope();
 
             try
             {
@@ -92,7 +94,7 @@ namespace Stateflows.Common.Scheduler
             }
             catch (Exception e)
             {
-                Logger.LogError(LogTemplates.ExceptionLogTemplate, typeof(Scheduler).FullName, nameof(HandleTimeEvents), e.GetType().Name, e.Message);
+                Logger.LogError(LogTemplates.ExceptionLogTemplate, typeof(Scheduler).FullName, nameof(HandleTimeEvents), e);
             }
         }
 
@@ -118,7 +120,7 @@ namespace Stateflows.Common.Scheduler
 
         private async Task HandleStartupEvents()
         {
-            using var scope = ServiceProvider.CreateScope();
+            await using var scope = ServiceProvider.CreateAsyncScope();
 
             try
             {
@@ -128,17 +130,20 @@ namespace Stateflows.Common.Scheduler
             }
             catch (Exception e)
             {
-                Logger.LogError(LogTemplates.ExceptionLogTemplate, typeof(Scheduler).FullName, nameof(HandleStartupEvents), e.GetType().Name, e.Message);
+                Logger.LogError(LogTemplates.ExceptionLogTemplate, typeof(Scheduler).FullName, nameof(HandleStartupEvents), e);
             }
         }
 
-        public Task StopAsync(CancellationToken cancellationToken)
+        public async Task StopAsync(CancellationToken cancellationToken)
         {
-            CancellationTokenSource.Cancel();
+            await CancellationTokenSource.CancelAsync();
+            await Scope.DisposeAsync();
+        }
 
-            Scope.Dispose();
-
-            return Task.CompletedTask;
+        public async ValueTask DisposeAsync()
+        {
+            await Scope.DisposeAsync();
+            CancellationTokenSource.Dispose();
         }
     }
 }

@@ -24,7 +24,7 @@ using Stateflows.StateMachines.Interfaces;
 
 namespace Stateflows.StateMachines.Engine
 {
-    internal sealed class Executor : IDisposable, IStateflowsExecutor
+    internal sealed class Executor : IAsyncDisposable, IStateflowsExecutor
     {
         public readonly Graph Graph;
 
@@ -34,7 +34,7 @@ namespace Stateflows.StateMachines.Engine
 
         public IServiceProvider ServiceProvider => ScopesStack.Peek().ServiceProvider;
         
-        private readonly Stack<IServiceScope> ScopesStack = new();
+        private readonly Stack<AsyncServiceScope> ScopesStack = new();
 
         private EventStatus EventStatus;
         private bool IsEventStatusOverriden;
@@ -43,7 +43,7 @@ namespace Stateflows.StateMachines.Engine
         public Executor(StateMachinesRegister register, Graph graph, IServiceProvider serviceProvider, StateflowsContext stateflowsContext, EventHolder @event)
         {
             Register = register;
-            ScopesStack.Push(serviceProvider.CreateScope());
+            ScopesStack.Push(serviceProvider.CreateAsyncScope());
             Graph = graph;
             Context = new RootContext(stateflowsContext, this, @event);
             
@@ -56,23 +56,23 @@ namespace Stateflows.StateMachines.Engine
             valueStorage = serviceProvider.GetRequiredService<IStateflowsValueStorage>();
         }
 
-        public void Dispose()
+        public async ValueTask DisposeAsync()
         {
             while (ScopesStack.Any())
             {
-                EndScope();
+                await EndScopeAsync();
             }
         }
 
         public void BeginScope()
         {
-            ScopesStack.Push(ServiceProvider.CreateScope());
+            ScopesStack.Push(ServiceProvider.CreateAsyncScope());
         }
 
-        public void EndScope()
+        public async Task EndScopeAsync()
         {
             var scope = ScopesStack.Pop();
-            scope.Dispose();
+            await scope.DisposeAsync();
         }
 
         public readonly RootContext Context;
@@ -566,7 +566,7 @@ namespace Stateflows.StateMachines.Engine
             }
             finally
             {
-                EndScope();
+                await EndScopeAsync();
             }
         }
 
@@ -600,7 +600,7 @@ namespace Stateflows.StateMachines.Engine
             }
             finally
             {
-                EndScope();
+                await EndScopeAsync();
             }
         }
 
@@ -653,7 +653,7 @@ namespace Stateflows.StateMachines.Engine
                 }
                 finally
                 {
-                    EndScope();
+                    await EndScopeAsync();
                 }
             }
             else
@@ -706,7 +706,7 @@ namespace Stateflows.StateMachines.Engine
             }
             finally
             {
-                EndScope();
+                await EndScopeAsync();
             }
         }
 
@@ -739,7 +739,7 @@ namespace Stateflows.StateMachines.Engine
             }
             finally
             {
-                EndScope();
+                await EndScopeAsync();
             }
         }
 
@@ -772,7 +772,7 @@ namespace Stateflows.StateMachines.Engine
             }
             finally
             {
-                EndScope();
+                await EndScopeAsync();
             }
         }
         
@@ -805,7 +805,7 @@ namespace Stateflows.StateMachines.Engine
             }
             finally
             {
-                EndScope();
+                await EndScopeAsync();
             }
         }
 
@@ -838,7 +838,7 @@ namespace Stateflows.StateMachines.Engine
             }
             finally
             {
-                EndScope();
+                await EndScopeAsync();
             }
         }
 
@@ -1204,7 +1204,7 @@ namespace Stateflows.StateMachines.Engine
         public Task<TDefaultInitializer> GetDefaultInitializerAsync<TDefaultInitializer>(IStateMachineInitializationContext context)
             where TDefaultInitializer : class, IDefaultInitializer
         {
-            var serviceProvider = ServiceProvider.CreateScope().ServiceProvider;
+            var serviceProvider = ServiceProvider.CreateAsyncScope().ServiceProvider;
             ((BaseContext)context).StateMachine.serviceProvider = serviceProvider;
 
             ContextValues.GlobalValuesHolder.Value = context.Behavior.Values;
@@ -1235,7 +1235,7 @@ namespace Stateflows.StateMachines.Engine
         public Task<TInitializer> GetInitializerAsync<TInitializer, TInitializationEvent>(IStateMachineInitializationContext<TInitializationEvent> context)
             where TInitializer : class, IInitializer<TInitializationEvent>
         {
-            var serviceProvider = ServiceProvider.CreateScope().ServiceProvider;
+            var serviceProvider = ServiceProvider.CreateAsyncScope().ServiceProvider;
             ((BaseContext)context).StateMachine.serviceProvider = serviceProvider;
             
             ContextValues.GlobalValuesHolder.Value = context.Behavior.Values;
@@ -1266,7 +1266,7 @@ namespace Stateflows.StateMachines.Engine
         public Task<TFinalizer> GetFinalizerAsync<TFinalizer>(IStateMachineActionContext context)
             where TFinalizer : class, IFinalizer
         {
-            var serviceProvider = ServiceProvider.CreateScope().ServiceProvider;
+            var serviceProvider = ServiceProvider.CreateAsyncScope().ServiceProvider;
             ((BaseContext)context).StateMachine.serviceProvider = serviceProvider;
 
             ContextValues.GlobalValuesHolder.Value = context.Behavior.Values;
@@ -1297,7 +1297,7 @@ namespace Stateflows.StateMachines.Engine
         public Task<TState> GetStateAsync<TState>(IStateActionContext context)
             where TState : class, IState
         {
-            var serviceProvider = ServiceProvider.CreateScope().ServiceProvider;
+            var serviceProvider = ServiceProvider.CreateAsyncScope().ServiceProvider;
             ((BaseContext)context).StateMachine.serviceProvider = serviceProvider;
 
             ContextValues.GlobalValuesHolder.Value = context.Behavior.Values;
@@ -1328,7 +1328,7 @@ namespace Stateflows.StateMachines.Engine
         public Task<TTransition> GetTransitionAsync<TTransition, TEvent>(ITransitionContext<TEvent> context)
             where TTransition : class, ITransition<TEvent>
         {
-            var serviceProvider = ServiceProvider.CreateScope().ServiceProvider;
+            var serviceProvider = ServiceProvider.CreateAsyncScope().ServiceProvider;
             ((BaseContext)context).StateMachine.serviceProvider = serviceProvider;
 
             ContextValues.GlobalValuesHolder.Value = context.Behavior.Values;
@@ -1359,7 +1359,7 @@ namespace Stateflows.StateMachines.Engine
         public Task<TTransitionGuard> GetTransitionGuardAsync<TTransitionGuard, TEvent>(ITransitionContext<TEvent> context)
             where TTransitionGuard : class, ITransitionGuard<TEvent>
         {
-            var serviceProvider = ServiceProvider.CreateScope().ServiceProvider;
+            var serviceProvider = ServiceProvider.CreateAsyncScope().ServiceProvider;
             ((BaseContext)context).StateMachine.serviceProvider = serviceProvider;
 
             ContextValues.GlobalValuesHolder.Value = context.Behavior.Values;
@@ -1390,7 +1390,7 @@ namespace Stateflows.StateMachines.Engine
         public Task<TTransitionGuard> GetDeferralGuardAsync<TTransitionGuard, TEvent>(IDeferralContext<TEvent> context)
             where TTransitionGuard : class, IDeferralGuard<TEvent>
         {
-            var serviceProvider = ServiceProvider.CreateScope().ServiceProvider;
+            var serviceProvider = ServiceProvider.CreateAsyncScope().ServiceProvider;
             ((BaseContext)context).StateMachine.serviceProvider = serviceProvider;
 
             ContextValues.GlobalValuesHolder.Value = context.Behavior.Values;
@@ -1418,7 +1418,7 @@ namespace Stateflows.StateMachines.Engine
         public Task<TTransitionEffect> GetTransitionEffectAsync<TTransitionEffect, TEvent>(ITransitionContext<TEvent> context)
             where TTransitionEffect : class, ITransitionEffect<TEvent>
         {
-            var serviceProvider = ServiceProvider.CreateScope().ServiceProvider;
+            var serviceProvider = ServiceProvider.CreateAsyncScope().ServiceProvider;
             ((BaseContext)context).StateMachine.serviceProvider = serviceProvider;
 
             ContextValues.GlobalValuesHolder.Value = context.Behavior.Values;
@@ -1449,7 +1449,7 @@ namespace Stateflows.StateMachines.Engine
         public Task<TDefaultTransition> GetDefaultTransitionAsync<TDefaultTransition>(ITransitionContext<Completion> context)
             where TDefaultTransition : class, IDefaultTransition
         {
-            var serviceProvider = ServiceProvider.CreateScope().ServiceProvider;
+            var serviceProvider = ServiceProvider.CreateAsyncScope().ServiceProvider;
             ((BaseContext)context).StateMachine.serviceProvider = serviceProvider;
 
             ContextValues.GlobalValuesHolder.Value = context.Behavior.Values;
@@ -1480,7 +1480,7 @@ namespace Stateflows.StateMachines.Engine
         public Task<TDefaultTransitionGuard> GetDefaultTransitionGuardAsync<TDefaultTransitionGuard>(ITransitionContext<Completion> context)
             where TDefaultTransitionGuard : class, IDefaultTransitionGuard
         {
-            var serviceProvider = ServiceProvider.CreateScope().ServiceProvider;
+            var serviceProvider = ServiceProvider.CreateAsyncScope().ServiceProvider;
             ((BaseContext)context).StateMachine.serviceProvider = serviceProvider;
 
             ContextValues.GlobalValuesHolder.Value = context.Behavior.Values;
@@ -1511,7 +1511,7 @@ namespace Stateflows.StateMachines.Engine
         public Task<TDefaultTransitionEffect> GetDefaultTransitionEffectAsync<TDefaultTransitionEffect>(ITransitionContext<Completion> context)
             where TDefaultTransitionEffect : class, IDefaultTransitionEffect
         {
-            var serviceProvider = ServiceProvider.CreateScope().ServiceProvider;
+            var serviceProvider = ServiceProvider.CreateAsyncScope().ServiceProvider;
             ((BaseContext)context).StateMachine.serviceProvider = serviceProvider;
 
             ContextValues.GlobalValuesHolder.Value = context.Behavior.Values;

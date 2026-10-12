@@ -24,7 +24,7 @@ namespace Stateflows.Activities.Classes
 
         public async ValueTask DisposeAsync()
         {
-            rootContext.Executor.Dehydrate();
+            rootContext.Executor.DehydrateAsync();
             
             await stateflowsStorage.DehydrateAsync(rootContext.Context);
             

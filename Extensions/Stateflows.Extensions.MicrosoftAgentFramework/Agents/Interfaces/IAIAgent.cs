@@ -1,6 +1,7 @@
 ﻿using System.Reflection;
 using Microsoft.Agents.AI;
 using Microsoft.Extensions.AI;
+using Stateflows.Activities;
 using Stateflows.Common.Classes;
 using Stateflows.Common.Extensions;
 using Stateflows.StateMachines;
@@ -76,8 +77,16 @@ namespace Stateflows.MAF.AIAgents
     public sealed class AgenticState<TAIAgent> : IState
         where TAIAgent : class, IAIAgent;
     
-    public static class AgenticState
-    {
-        public static string GetName(Type aiAgentType) => State.GetName(typeof(AgenticState<>).MakeGenericType(aiAgentType));
-    }
+    //public static class AgenticState
+    //{
+    //    public static string GetName(Type aiAgentType) => State.GetName(typeof(AgenticState<>).MakeGenericType(aiAgentType));
+    //}
+    
+    public sealed class AgenticActivity<TAIAgent> : IStructuredActivityNode
+        where TAIAgent : class, IAIAgent;
+    
+    //public static class AgenticActivity
+    //{
+    //    public static string GetName(Type aiAgentType) => State.GetName(typeof(AgenticActivity<>).MakeGenericType(aiAgentType));
+    //}
 }

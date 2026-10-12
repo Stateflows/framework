@@ -68,10 +68,11 @@ namespace Stateflows.Entities.Engine
                     stateflowsContext.Version = registration.Version;
                 }
 
-
-                stateflowsContext.LastExecutedAt = DateTime.Now;
-
-                await storage.DehydrateAsync(stateflowsContext);
+                if (result != EventStatus.Failed)
+                {
+                    stateflowsContext.LastExecutedAt = DateTime.Now;
+                    await storage.DehydrateAsync(stateflowsContext);
+                }
 
                 return result;
             }

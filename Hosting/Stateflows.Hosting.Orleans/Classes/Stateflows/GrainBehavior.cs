@@ -90,6 +90,16 @@ public class GrainBehavior(string tenantId, BehaviorId behaviorId, IClusterClien
         return new RequestResult<TResponseEvent>(response, result.Status, result.Validation);
     }
 
+    public Task<IEnumerable<TNotification>> GetNotificationsAsync<TNotification>(DateTime? lastNotificationsCheck = null)
+    {
+        throw new NotImplementedException();
+    }
+
+    public Task<IEnumerable<EventHolder>> GetNotificationsAsync(string[] notificationNames, DateTime? lastNotificationsCheck = null)
+    {
+        throw new NotImplementedException();
+    }
+
     public async Task<IWatcher> WatchAsync<TNotification>(Action<TNotification> handler, DateTime? replayNotificationsSince = null)
     {
         await SubscriptionsGrain.AddWatchAsync(ObserverReference, [Event<TNotification>.Name]);

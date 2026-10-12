@@ -17,5 +17,7 @@ namespace Stateflows.Common
         public IEnumerable<string> ExpectedEvents { get; set; }
 
         public Dictionary<string, object> Metadata { get; set; } = new();
+        
+        public Dictionary<string, object> Properties { get; set; } = new();
     }
 }

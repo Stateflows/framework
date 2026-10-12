@@ -34,49 +34,49 @@ namespace Stateflows.Activities.Engine
 
         public override bool OnNodeExecutionException(IActivityNodeContext context, Exception exception)
         {
-            Trace.WriteLine($"⦗→s⦘ Activity '{context.Behavior.Id.Name}:{context.Behavior.Id.Instance}': unhandled exception '{exception.GetType().Name}' thrown with message '{exception.Message}' on execution of node {context.Node.Name}");
+            Trace.WriteLine($"⦗→s⦘ Activity '{context.Behavior.Id.Name}:{context.Behavior.Id.Instance}': unhandled exception '{exception.GetType().Name}' on execution of node {context.Node.Name} - {exception}");
 
             return false;
         }
 
         public override bool OnActivityInitializationException(IActivityInitializationContext context, Exception exception)
         {            
-            Trace.WriteLine($"⦗→s⦘ Activity '{context.Behavior.Id.Name}:{context.Behavior.Id.Instance}': unhandled exception '{exception.GetType().Name}' thrown with message '{exception.Message}' on Activity initialization");
+            Trace.WriteLine($"⦗→s⦘ Activity '{context.Behavior.Id.Name}:{context.Behavior.Id.Instance}': unhandled exception '{exception.GetType().Name}' on Activity initialization - {exception}");
 
             return false;
         }
 
         public override bool OnActivityFinalizationException(IActivityFinalizationContext context, Exception exception)
         {            
-            Trace.WriteLine($"⦗→s⦘ Activity '{context.Behavior.Id.Name}:{context.Behavior.Id.Instance}': unhandled exception '{exception.GetType().Name}' thrown with message '{exception.Message}' on Activity finalization");
+            Trace.WriteLine($"⦗→s⦘ Activity '{context.Behavior.Id.Name}:{context.Behavior.Id.Instance}': unhandled exception '{exception.GetType().Name}' on Activity finalization - {exception}");
 
             return false;
         }
 
         public override bool OnNodeInitializationException(IActivityNodeContext context, Exception exception)
         {            
-            Trace.WriteLine($"⦗→s⦘ Activity '{context.Behavior.Id.Name}:{context.Behavior.Id.Instance}': unhandled exception '{exception.GetType().Name}' thrown with message '{exception.Message}' on initialization of node {context.Node.Name}");
+            Trace.WriteLine($"⦗→s⦘ Activity '{context.Behavior.Id.Name}:{context.Behavior.Id.Instance}': unhandled exception '{exception.GetType().Name}' on initialization of node {context.Node.Name} - {exception}");
 
             return false;
         }
 
         public override bool OnNodeFinalizationException(IActivityNodeContext context, Exception exception)
         {            
-            Trace.WriteLine($"⦗→s⦘ Activity '{context.Behavior.Id.Name}:{context.Behavior.Id.Instance}': unhandled exception '{exception.GetType().Name}' thrown with message '{exception.Message}' on finalization of node {context.Node.Name}");
+            Trace.WriteLine($"⦗→s⦘ Activity '{context.Behavior.Id.Name}:{context.Behavior.Id.Instance}': unhandled exception '{exception.GetType().Name}' on finalization of node {context.Node.Name} - {exception}");
 
             return false;
         }
 
         public override bool OnFlowGuardException<TToken>(IGuardContext<TToken> context, Exception exception)
         {            
-            Trace.WriteLine($"⦗→s⦘ Activity '{context.Behavior.Id.Name}:{context.Behavior.Id.Instance}': unhandled exception '{exception.GetType().Name}' thrown with message '{exception.Message}' on guard of flow from node {context.SourceNode.Name}");
+            Trace.WriteLine($"⦗→s⦘ Activity '{context.Behavior.Id.Name}:{context.Behavior.Id.Instance}': unhandled exception '{exception.GetType().Name}' on guard of flow from node {context.SourceNode.Name} - {exception}");
 
             return false;
         }
 
         public override bool OnFlowTransformationException<TToken, TTransformedToken>(ITransformationContext<TToken> context, Exception exception)
         {
-            Trace.WriteLine($"⦗→s⦘ Activity '{context.Behavior.Id.Name}:{context.Behavior.Id.Instance}': unhandled exception '{exception.GetType().Name}' thrown with message '{exception.Message}' on transformation of flow from node {context.SourceNode.Name}");
+            Trace.WriteLine($"⦗→s⦘ Activity '{context.Behavior.Id.Name}:{context.Behavior.Id.Instance}': unhandled exception '{exception.GetType().Name}' on transformation of flow from node {context.SourceNode.Name} - {exception}");
 
             return false;
         }

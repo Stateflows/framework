@@ -48,7 +48,7 @@ public static class ActivityBuilderAgenticExtensions
     
     public static IActivityBuilder AddAgenticActivity<TAIAgent>(this IActivityBuilder activityBuilder, string agenticActivityNodeName, ReactiveStructuredActivityExternalsBuildAction? buildAction = null)
         where TAIAgent : class, IAIAgent
-        => activityBuilder.AddStructuredActivity(agenticActivityNodeName, b =>
+        => activityBuilder.AddStructuredActivity<AgenticActivity<TAIAgent>>(agenticActivityNodeName, b =>
         {
             b
                 .AddInitial(b => b
@@ -79,7 +79,7 @@ public static class ActivityBuilderAgenticExtensions
 
     public static IActivityBuilder AddAgenticActivity<TAIAgent>(this IActivityBuilder activityBuilder, ReactiveStructuredActivityExternalsBuildAction? buildAction = null)
         where TAIAgent : class, IAIAgent
-        => AddAgenticActivity<TAIAgent>(activityBuilder, ActivityNode<AIAgentActionNode<TAIAgent>>.Name, buildAction);
+        => activityBuilder.AddAgenticActivity<TAIAgent>(ActivityNode<AgenticActivity<TAIAgent>>.Name, buildAction);
     
     
     

@@ -300,7 +300,7 @@ public static class DependencyInjection
                 interceptor.AfterGetInstancesEndpointDefinition(ActionClass.Type, method, route, endpointRouteBuilder);
             }
 
-            var visitor = new ActionVisitor(root, interceptor);
+            var visitor = new ActionVisitor(root, interceptor, builder.ServiceProvider.GetRequiredService<ITypeMapper>());
 
             actionsRegister.VisitActionsAsync(visitor);
         }

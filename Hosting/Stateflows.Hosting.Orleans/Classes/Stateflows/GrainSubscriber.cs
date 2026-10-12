@@ -22,19 +22,32 @@ public class GrainSubscriber(IClusterClient client, IStateflowsTenantProvider te
         var notificationsGrain = client.GetGrain<ISubscriptionsGrain>(id);
         return notificationsGrain;
     }
-    
-    public async Task PublishAsync<TNotification>(BehaviorId publisherBehaviorId, TNotification notificationEvent, StateflowsContext senderContext, IDictionary<string, EventHeader>? headers = null)
+
+    public async Task PublishRangeAsync<TNotification>(BehaviorId publisherBehaviorId, IEnumerable<TNotification> notificationEvents,
+        StateflowsContext senderContext, IDictionary<string, EventHeader>? headers = null)
     {
+        if (!notificationEvents.Any())
+        {
+            return;
+        }
+        
         var notificationType = typeof(TNotification);
         var ttlAttribute = notificationType.GetCustomAttribute<TimeToLiveAttribute>();
         var retainAttribute = notificationType.GetCustomAttribute<RetainAttribute>();
-        var notification = (OrleansEventHolder)notificationEvent.ToEventHolder(headers, senderContext.Id);
-        notification.SentAt = DateTime.Now;
-        notification.Retained = retainAttribute != null;
-        notification.TimeToLive = ttlAttribute?.SecondsToLive ?? 0;
 
+        var orleansEventHolders = notificationEvents
+            .Select(n =>
+            {
+                var notification = (OrleansEventHolder)n.ToEventHolder(headers, senderContext.Id);
+                notification.SentAt = DateTime.Now;
+                notification.Retained = retainAttribute != null;
+                notification.TimeToLive = ttlAttribute?.SecondsToLive ?? 0;
+                return notification;
+            })
+            .ToArray();
+        
         var notificationsGrain = await GetSubscriptionsGrain(senderContext.Id);
-        _ = notificationsGrain.PublishAsync([notification]);
+        _ = notificationsGrain.PublishAsync(orleansEventHolders);
     }
 
     public async Task SubscribeAsync<TNotification>(BehaviorId subscriberBehaviorId, BehaviorId subscribedBehaviorId)

@@ -65,7 +65,7 @@ namespace Stateflows.Common.Scheduler
             }
             catch (Exception e)
             {
-                Logger.LogError(LogTemplates.ExceptionLogTemplate, typeof(StartupExecutor).FullName, nameof(ExecuteAsync), e.GetType().Name, e.Message);
+                Logger.LogError(LogTemplates.ExceptionLogTemplate, typeof(StartupExecutor).FullName, nameof(ExecuteAsync), e);
             }
         }
     }

@@ -40,6 +40,9 @@ namespace Stateflows.Entities.Registration.Builders
         private static readonly MethodInfo RegisterDefaultInitializerMethod = typeof(EntitiesBuilder)
             .GetMethod(nameof(RegisterDefaultInitializer), BindingFlags.Static | BindingFlags.NonPublic)!;
 
+        private static readonly MethodInfo RegisterInitializerMethod = typeof(EntitiesBuilder)
+            .GetMethod(nameof(RegisterInitializer), BindingFlags.Static | BindingFlags.NonPublic)!;
+
         private static readonly MethodInfo AutoAnalyzeTemplateMethod = typeof(EntitiesBuilder)
             .GetMethod(nameof(AutoAnalyzeTemplate), BindingFlags.Static | BindingFlags.NonPublic)!;
 
@@ -64,6 +67,8 @@ namespace Stateflows.Entities.Registration.Builders
             public List<MethodInfo> Mutations { get; } = [];
 
             public List<MethodInfo> DefaultInitializers { get; } = [];
+
+            public List<MethodInfo> Initializers { get; } = [];
         }
 
         private static EntityBuildAction<TTemplate> AutoAnalyzeTemplate<TTemplate>(EntityBuildAction<TTemplate> buildAction)
@@ -116,6 +121,13 @@ namespace Stateflows.Entities.Registration.Builders
             {
                 RegisterDefaultInitializerMethod
                     .MakeGenericMethod(typeof(TTemplate))
+                    .Invoke(null, [builder, method]);
+            }
+
+            foreach (var method in analysis.Initializers.OrderBy(method => method.Name))
+            {
+                RegisterInitializerMethod
+                    .MakeGenericMethod(typeof(TTemplate), method.GetParameters()[0].ParameterType)
                     .Invoke(null, [builder, method]);
             }
         }
@@ -233,7 +245,8 @@ namespace Stateflows.Entities.Registration.Builders
             {
                 var hasMutationAttribute = method.GetCustomAttribute<MutationAttribute>() != null;
                 var hasDefaultInitializerAttribute = method.GetCustomAttribute<DefaultInitializerAttribute>() != null;
-                if (!hasMutationAttribute && !hasDefaultInitializerAttribute)
+                var hasInitializerAttribute = method.GetCustomAttribute<InitializerAttribute>() != null;
+                if (!hasMutationAttribute && !hasDefaultInitializerAttribute && !hasInitializerAttribute)
                 {
                     continue;
                 }
@@ -291,6 +304,43 @@ namespace Stateflows.Entities.Registration.Builders
 
                     analysis.DefaultInitializers.Add(method);
                 }
+
+                if (hasInitializerAttribute)
+                {
+                    if (method.ReturnType != typeof(void))
+                    {
+                        throw new InvalidOperationException(
+                            $"Initializer method '{templateType.FullName}.{method.Name}' must return void."
+                        );
+                    }
+
+                    var parameters = method.GetParameters();
+                    if (parameters.Length != 1 || parameters[0].ParameterType.IsByRef)
+                    {
+                        throw new InvalidOperationException(
+                            $"Initializer method '{templateType.FullName}.{method.Name}' must declare exactly one non-byref parameter (the initialization event type)."
+                        );
+                    }
+
+                    if (!DefaultInterfaceImplementationInvoker.HasDefaultImplementation(method))
+                    {
+                        throw new InvalidOperationException(
+                            $"Initializer method '{templateType.FullName}.{method.Name}' must provide a default implementation."
+                        );
+                    }
+
+                    analysis.Initializers.Add(method);
+                }
+            }
+
+            var duplicateInitializerType = analysis.Initializers
+                .GroupBy(method => method.GetParameters()[0].ParameterType)
+                .FirstOrDefault(group => group.Count() > 1);
+            if (duplicateInitializerType != null)
+            {
+                throw new InvalidOperationException(
+                    $"Initializer event type '{duplicateInitializerType.Key.FullName}' is declared multiple times on template '{templateType.FullName}'."
+                );
             }
 
             var duplicateProjectionType = analysis.Projections
@@ -369,6 +419,12 @@ namespace Stateflows.Entities.Registration.Builders
             where TTemplate : class
             => builder.AddDefaultInitializer(
                 context => DefaultInterfaceImplementationInvoker.Invoke(context.Entity, method, [])
+            );
+
+        private static void RegisterInitializer<TTemplate, TInitializationEvent>(IEntityBuilder<TTemplate> builder, MethodInfo method)
+            where TTemplate : class
+            => builder.AddInitializer<TInitializationEvent>(
+                context => DefaultInterfaceImplementationInvoker.Invoke(context.Entity, method, [context.InitializationEvent])
             );
 
         private static Expression<Func<TTemplate, TField>> CreateFieldSelector<TTemplate, TField>(PropertyInfo property)

@@ -55,7 +55,7 @@ namespace Stateflows.Common.Extensions
             where T : class
             => enumerable.RunProtected<T>(
                 action,
-                (e, t) => logger.LogError(LogTemplates.ExceptionLogTemplate, t.GetType().FullName, methodName, e.GetType().Name, e.Message)
+                (e, t) => logger.LogError(LogTemplates.ExceptionLogTemplate, t.GetType().FullName, methodName, e)
             );
 
         [DebuggerHidden]
@@ -63,7 +63,7 @@ namespace Stateflows.Common.Extensions
             where T : class
             => enumerable.RunProtected<T>(
                 action,
-                (e, t) => logger.LogError(LogTemplates.ExceptionLogTemplate, t.GetType().FullName, methodName, e.GetType().Name, e.Message),
+                (e, t) => logger.LogError(LogTemplates.ExceptionLogTemplate, t.GetType().FullName, methodName, e),
                 defaultResult
             );
     }

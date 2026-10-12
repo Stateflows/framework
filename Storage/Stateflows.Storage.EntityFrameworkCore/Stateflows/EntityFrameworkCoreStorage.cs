@@ -60,7 +60,7 @@ namespace Stateflows.Storage.EntityFrameworkCore.Stateflows
             }
             catch (Exception e)
             {
-                logger.LogError(e, LogTemplates.ExceptionLogTemplate, typeof(EntityFrameworkCoreStorage<TDbContext>).FullName, nameof(DehydrateAsync), e.GetType().Name, e.Message);
+                logger.LogError(e, LogTemplates.ExceptionLogTemplate, typeof(EntityFrameworkCoreStorage<TDbContext>).FullName, nameof(DehydrateAsync), e);
             }
         }
 
@@ -81,7 +81,7 @@ namespace Stateflows.Storage.EntityFrameworkCore.Stateflows
             }
             catch (Exception e)
             {
-                logger.LogError(e, LogTemplates.ExceptionLogTemplate, typeof(EntityFrameworkCoreStorage<TDbContext>).FullName, nameof(HydrateAsync), e.GetType().Name, e.Message);
+                logger.LogError(e, LogTemplates.ExceptionLogTemplate, typeof(EntityFrameworkCoreStorage<TDbContext>).FullName, nameof(HydrateAsync), e);
             }
 
             result ??= new StateflowsContext(behaviorId);
@@ -105,7 +105,7 @@ namespace Stateflows.Storage.EntityFrameworkCore.Stateflows
             }
             catch (Exception e)
             {
-                logger.LogError(e, LogTemplates.ExceptionLogTemplate, typeof(EntityFrameworkCoreStorage<TDbContext>).FullName, nameof(GetAllContextsAsync), e.GetType().Name, e.Message);
+                logger.LogError(e, LogTemplates.ExceptionLogTemplate, typeof(EntityFrameworkCoreStorage<TDbContext>).FullName, nameof(GetAllContextsAsync), e);
             }
 
             return result;
@@ -127,7 +127,7 @@ namespace Stateflows.Storage.EntityFrameworkCore.Stateflows
             }
             catch (Exception e)
             {
-                logger.LogError(e, LogTemplates.ExceptionLogTemplate, typeof(EntityFrameworkCoreStorage<TDbContext>).FullName, nameof(GetAllContextIdsAsync), e.GetType().Name, e.Message);
+                logger.LogError(e, LogTemplates.ExceptionLogTemplate, typeof(EntityFrameworkCoreStorage<TDbContext>).FullName, nameof(GetAllContextIdsAsync), e);
             }
 
             return result;
@@ -149,7 +149,7 @@ namespace Stateflows.Storage.EntityFrameworkCore.Stateflows
             }
             catch (Exception e)
             {
-                logger.LogError(e, LogTemplates.ExceptionLogTemplate, typeof(EntityFrameworkCoreStorage<TDbContext>).FullName, nameof(GetTimeTriggeredContextsAsync), e.GetType().Name, e.Message);
+                logger.LogError(e, LogTemplates.ExceptionLogTemplate, typeof(EntityFrameworkCoreStorage<TDbContext>).FullName, nameof(GetTimeTriggeredContextsAsync), e);
             }
 
             return result;
@@ -171,7 +171,7 @@ namespace Stateflows.Storage.EntityFrameworkCore.Stateflows
             }
             catch (Exception e)
             {
-                logger.LogError(e, LogTemplates.ExceptionLogTemplate, typeof(EntityFrameworkCoreStorage<TDbContext>).FullName, nameof(GetTimeTriggeredContextsAsync), e.GetType().Name, e.Message);
+                logger.LogError(e, LogTemplates.ExceptionLogTemplate, typeof(EntityFrameworkCoreStorage<TDbContext>).FullName, nameof(GetTimeTriggeredContextsAsync), e);
             }
 
             return result;

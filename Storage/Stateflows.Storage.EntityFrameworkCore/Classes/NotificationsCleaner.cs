@@ -42,7 +42,7 @@ public class NotificationsCleaner<TDbContext> : IHostedService
 
                 var date = DateTime.Now.AddMinutes(-1);
 
-                using var scope = ServiceProvider.CreateScope();
+                await using var scope = ServiceProvider.CreateAsyncScope();
                 var context = scope.ServiceProvider.GetRequiredService<TDbContext>();
 
                 await context.Notifications_v1.Where(n =>

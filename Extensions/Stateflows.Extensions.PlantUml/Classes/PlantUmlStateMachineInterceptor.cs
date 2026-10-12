@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Diagnostics;
-using System.Threading.Tasks;
 using Stateflows.Common;
 using Stateflows.StateMachines;
 using Stateflows.Extensions.PlantUml.Events;

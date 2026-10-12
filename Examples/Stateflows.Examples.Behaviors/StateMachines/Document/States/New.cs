@@ -10,8 +10,9 @@ public class New(
     ILogger<New> logger,
     IBehaviorContext context,
     [GlobalValue(required: false)] string? projectName,
-    [GlobalValue(Required = false)] DateTime? dueDate
-) : IStateEntry
+    [GlobalValue(Required = false)] DateTime? dueDate,
+    [FromField<Document.Entity>] string FullName
+) : IOrthogonalStateEntry
 {
     public async Task OnEntryAsync()
     {

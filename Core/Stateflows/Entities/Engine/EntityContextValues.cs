@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
@@ -38,8 +39,12 @@ internal static class EntityContextValues
             method.GetGenericArguments().Length == 1
         );
 
+    private static readonly ConcurrentDictionary<Type, MethodInfo> BehaviorPublishClosedMethods = new();
+    private static readonly ConcurrentDictionary<Type, MethodInfo> ParentPublishClosedMethods = new();
+    private static readonly ConcurrentDictionary<Type, MethodInfo> OwnerPublishClosedMethods = new();
+
     private static string GetProjectionIdentifier(Type projectionType)
-        => projectionType.AssemblyQualifiedName ?? projectionType.FullName ?? projectionType.Name;
+        => projectionType.FullName ?? projectionType.Name;
 
     internal static IReadOnlyCollection<string> GetFieldDependencies(Dictionary<string, object> values, string fieldName)
         => GetDependencies(values, fieldName.GetFieldDependenciesKey());
@@ -128,22 +133,22 @@ internal static class EntityContextValues
 
         if (publishScope.HasFlag(PublishScope.Self))
         {
-            BehaviorPublishMethod
-                .MakeGenericMethod(projectionType)
+            BehaviorPublishClosedMethods
+                .GetOrAdd(projectionType, t => BehaviorPublishMethod.MakeGenericMethod(t))
                 .Invoke(behaviorContext, [projectionValue, headers]);
         }
         
         if (publishScope.HasFlag(PublishScope.Parent) && behaviorContext.Context.ContextParentId != null)
         {
-            ParentPublishMethod
-                .MakeGenericMethod(projectionType)
+            ParentPublishClosedMethods
+                .GetOrAdd(projectionType, t => ParentPublishMethod.MakeGenericMethod(t))
                 .Invoke(behaviorContext, [projectionValue, headers]);
         }
         
         if (publishScope.HasFlag(PublishScope.Owner) && behaviorContext.Context.ContextOwnerId != null)
         {
-            OwnerPublishMethod
-                .MakeGenericMethod(projectionType)
+            OwnerPublishClosedMethods
+                .GetOrAdd(projectionType, t => OwnerPublishMethod.MakeGenericMethod(t))
                 .Invoke(behaviorContext, [projectionValue, headers]);
         }
     }

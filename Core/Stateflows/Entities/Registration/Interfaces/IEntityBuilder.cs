@@ -6,61 +6,61 @@ using Stateflows.Entities.Registration.Interfaces;
 
 namespace Stateflows.Entities
 {
-    public interface IEntityBuilder<TEntityTemplate>
+    public interface IEntityBuilder<TTemplate>
     {
-        IEntityBuilder<TEntityTemplate> AddDefaultInitializer(DefaultInitializerAction<TEntityTemplate> action);
+        IEntityBuilder<TTemplate> AddDefaultInitializer(DefaultInitializerAction<TTemplate> action);
 
-        IEntityBuilder<TEntityTemplate> AddInitializer<TInitializationEvent>(InitializerAction<TEntityTemplate, TInitializationEvent> action);
+        IEntityBuilder<TTemplate> AddInitializer<TInitializationEvent>(InitializerAction<TTemplate, TInitializationEvent> action);
 
-        IEntityBuilder<TEntityTemplate> AddField<TField>(Expression<Func<TEntityTemplate, TField>> fieldSelector, FieldBuildAction<TEntityTemplate, TField> buildAction = null);
+        IEntityBuilder<TTemplate> AddField<TField>(Expression<Func<TTemplate, TField>> fieldSelector, FieldBuildAction<TTemplate, TField> buildAction = null);
 
-        IEntityBuilder<TEntityTemplate> AddMutation<TMutationEvent>(MutationAction<TEntityTemplate, TMutationEvent> mutationAction);
+        IEntityBuilder<TTemplate> AddMutation<TMutationEvent>(MutationAction<TTemplate, TMutationEvent> mutationAction);
         
-        IEntityBuilder<TEntityTemplate> AddMutation<TMutationEvent, TMutation>()
-            where TMutation : class, IMutation<TEntityTemplate, TMutationEvent>
+        IEntityBuilder<TTemplate> AddMutation<TMutationEvent, TMutation>()
+            where TMutation : class, IMutation<TTemplate, TMutationEvent>
             => AddMutation<TMutationEvent>(c => TMutation.Mutate(c.Entity, c.MutationEvent));
         
-        IEntityBuilder<TEntityTemplate> AddProjection<TProjectionTemplate>(ProjectionAction<TEntityTemplate, TProjectionTemplate> projectionAction, PublishScope publishScope = PublishScope.None);
+        IEntityBuilder<TTemplate> AddProjection<TProjectionTemplate>(ProjectionAction<TTemplate, TProjectionTemplate> projectionAction, PublishScope publishScope = PublishScope.None);
 
-        IEntityBuilder<TEntityTemplate> AddProjection<TProjectionTemplate, TProjection>()
-            where TProjection : class, IProjection<TEntityTemplate, TProjectionTemplate>
+        IEntityBuilder<TTemplate> AddProjection<TProjectionTemplate, TProjection>()
+            where TProjection : class, IProjection<TTemplate, TProjectionTemplate>
             => AddProjection(TProjection.Project);
 
-        IEntityBuilder<TEntityTemplate> SetResourceName(string resourceName);
+        IEntityBuilder<TTemplate> SetResourceName(string resourceName);
     }
 
-    public interface IFieldBuilder<out TEntityTemplate, in TFieldType>
+    public interface IFieldBuilder<out TTemplate, in TFieldType>
     {
-        IFieldBuilder<TEntityTemplate, TFieldType> SetAccess(FieldAccess fieldAccess);
+        IFieldBuilder<TTemplate, TFieldType> SetAccess(FieldAccess fieldAccess);
         
-        void AddComputation(FieldComputation<TEntityTemplate, TFieldType> computation);
+        void AddComputation(FieldComputation<TTemplate, TFieldType> computation);
         
         void AddComputation<TComputation>()
-            where TComputation : IComputation<TEntityTemplate, TFieldType>
+            where TComputation : IComputation<TTemplate, TFieldType>
             => AddComputation(TComputation.Compute);
         
         void AddDefaultValue(TFieldType defaultValue);
     }
 
-    public interface IMutationContext<out TEntityTemplate, out TMutationEvent>
+    public interface IMutationContext<out TTemplate, out TMutationEvent>
     {
-        TEntityTemplate Entity { get; }
+        TTemplate Entity { get; }
         TMutationEvent MutationEvent { get; }
     }
 
-    public interface IProjectionContext<out TEntityTemplate>
+    public interface IProjectionContext<out TTemplate>
     {
-        TEntityTemplate Entity { get; }
+        TTemplate Entity { get; }
     }
 
-    public interface IDefaultEntityInitializationContext<out TEntityTemplate>
+    public interface IDefaultEntityInitializationContext<out TTemplate>
     {
-        TEntityTemplate Entity { get; }
+        TTemplate Entity { get; }
     }
 
-    public interface IEntityInitializationContext<out TEntityTemplate, out TInitializationEvent>
+    public interface IEntityInitializationContext<out TTemplate, out TInitializationEvent>
     {
-        TEntityTemplate Entity { get; }
+        TTemplate Entity { get; }
         TInitializationEvent InitializationEvent { get; }
     }
 }

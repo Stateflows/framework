@@ -1,4 +1,6 @@
-﻿using Stateflows.StateMachines.Registration.Interfaces.Base;
+﻿using Stateflows.Common.Interfaces;
+using Stateflows.Common.Registration.Interfaces;
+using Stateflows.StateMachines.Registration.Interfaces.Base;
 
 namespace Stateflows.StateMachines
 {
@@ -7,19 +9,19 @@ namespace Stateflows.StateMachines
         IStateMachineFinal<IFinalizedStateMachineBuilder>,
         IStateMachineUtils<IInitializedStateMachineBuilder>,
         IStateMachineEvents<IInitializedStateMachineBuilder>,
-        IStateMachineEntity<IInitializedStateMachineWithEntityBuilder>;
+        IEntityOwnerBase<IInitializedStateMachineBuilder>;
 
     public interface IFinalizedStateMachineBuilder :
         IStateMachineUtils<IFinalizedStateMachineBuilder>,
         IStateMachineEvents<IFinalizedStateMachineBuilder>,
-        IStateMachineEntity<IFinalizedStateMachineWithEntityBuilder>;
+        IEntityOwnerBase<IFinalizedStateMachineBuilder>;
 
     public interface IStateMachineBuilder :
         IStateMachineOverride<IOverridenStateMachineBuilder>,
         IStateMachineInitial<IInitializedStateMachineBuilder>,
         IStateMachineUtils<IStateMachineBuilder>,
         IStateMachineEvents<IStateMachineBuilder>,
-        IStateMachineEntity<IStateMachineWithEntityBuilder>;
+        IEntityOwnerBase<IStateMachineBuilder>;
     
     public interface IOverridenStateMachineBuilder :
         IStateMachineElements<IOverridenStateMachineBuilder>,
@@ -27,41 +29,12 @@ namespace Stateflows.StateMachines
         IStateMachineOverrides<IOverridenStateMachineBuilder>,
         IStateMachineUtils<IOverridenStateMachineBuilder>,
         IStateMachineEvents<IOverridenStateMachineBuilder>,
-        IStateMachineEntity<IOverridenStateMachineWithEntityBuilder>;
+        IEntityOwnerBase<IOverridenStateMachineBuilder>;
     
     public interface IFinalizedOverridenStateMachineBuilder :
         IStateMachineElements<IFinalizedOverridenStateMachineBuilder>,
         IStateMachineUtils<IFinalizedOverridenStateMachineBuilder>,
         IStateMachineEvents<IFinalizedOverridenStateMachineBuilder>,
         IStateMachineOverrides<IFinalizedOverridenStateMachineBuilder>,
-        IStateMachineEntity<IFinalizedOverridenStateMachineWithEntityBuilder>;
-    
-    public interface IInitializedStateMachineWithEntityBuilder :
-        IStateMachineElements<IInitializedStateMachineWithEntityBuilder>,
-        IStateMachineFinal<IFinalizedStateMachineWithEntityBuilder>,
-        IStateMachineUtils<IInitializedStateMachineWithEntityBuilder>,
-        IStateMachineEvents<IInitializedStateMachineWithEntityBuilder>;
-
-    public interface IFinalizedStateMachineWithEntityBuilder :
-        IStateMachineUtils<IFinalizedStateMachineWithEntityBuilder>,
-        IStateMachineEvents<IFinalizedStateMachineWithEntityBuilder>;
-
-    public interface IStateMachineWithEntityBuilder :
-        IStateMachineOverride<IOverridenStateMachineWithEntityBuilder>,
-        IStateMachineInitial<IInitializedStateMachineBuilder>,
-        IStateMachineUtils<IStateMachineWithEntityBuilder>,
-        IStateMachineEvents<IStateMachineWithEntityBuilder>;
-    
-    public interface IOverridenStateMachineWithEntityBuilder :
-        IStateMachineElements<IOverridenStateMachineWithEntityBuilder>,
-        IStateMachineFinal<IFinalizedOverridenStateMachineWithEntityBuilder>,
-        IStateMachineOverrides<IOverridenStateMachineWithEntityBuilder>,
-        IStateMachineUtils<IOverridenStateMachineWithEntityBuilder>,
-        IStateMachineEvents<IOverridenStateMachineWithEntityBuilder>;
-    
-    public interface IFinalizedOverridenStateMachineWithEntityBuilder :
-        IStateMachineElements<IFinalizedOverridenStateMachineWithEntityBuilder>,
-        IStateMachineUtils<IFinalizedOverridenStateMachineWithEntityBuilder>,
-        IStateMachineEvents<IFinalizedOverridenStateMachineWithEntityBuilder>,
-        IStateMachineOverrides<IFinalizedOverridenStateMachineWithEntityBuilder>;
+        IEntityOwnerBase<IFinalizedOverridenStateMachineBuilder>;
 }

@@ -20,8 +20,6 @@ namespace Stateflows.StateMachines.Models
     {
         internal string? ResourceName { get; set; } = null;
         
-        internal string? EntityName { get; set; }
-
         internal readonly List<Func<IStateMachineVisitor, Task>> VisitingTasks = new List<Func<IStateMachineVisitor, Task>>();
         
         internal readonly StateflowsBuilder StateflowsBuilder;

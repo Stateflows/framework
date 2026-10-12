@@ -395,8 +395,8 @@ namespace Entity.IntegrationTests.Tests
             Assert.AreEqual(5, length);
             Assert.AreEqual("Lorem", fieldValue);
             Assert.IsTrue(context.Values.ContainsKey("$dependencies:field:Length"));
-            Assert.IsTrue(context.Values.ContainsKey($"$dependencies:projection:{typeof(AutoTypedProjection).AssemblyQualifiedName}"));
-            Assert.IsTrue(context.Values.ContainsKey($"$projection:{typeof(AutoTypedProjection).AssemblyQualifiedName}"));
+            Assert.IsTrue(context.Values.ContainsKey($"$dependencies:projection:{typeof(AutoTypedProjection).FullName}"));
+            Assert.IsTrue(context.Values.ContainsKey($"$projection:{typeof(AutoTypedProjection).FullName}"));
         }
 
         [TestMethod]
@@ -443,8 +443,8 @@ namespace Entity.IntegrationTests.Tests
             Assert.AreEqual("Lorem", baseValue);
             Assert.AreEqual("Ipsum", suffix);
             Assert.IsTrue(context.Values.ContainsKey("$field:CombinedValue"));
-            Assert.IsTrue(context.Values.ContainsKey($"$dependencies:projection:{typeof(InheritedAutoTypedProjection).AssemblyQualifiedName}"));
-            Assert.IsTrue(context.Values.ContainsKey($"$projection:{typeof(InheritedAutoTypedProjection).AssemblyQualifiedName}"));
+            Assert.IsTrue(context.Values.ContainsKey($"$dependencies:projection:{typeof(InheritedAutoTypedProjection).FullName}"));
+            Assert.IsTrue(context.Values.ContainsKey($"$projection:{typeof(InheritedAutoTypedProjection).FullName}"));
         }
 
         [TestMethod]

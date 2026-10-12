@@ -6,12 +6,6 @@ namespace Stateflows.Common.Classes;
 
 public abstract class BehaviorInterceptor : IBehaviorInterceptor
 {
-    // public virtual Task AfterHydrateAsync(IBehaviorActionContext context)
-    //         => Task.CompletedTask;
-    //
-    // public virtual Task BeforeDehydrateAsync(IBehaviorActionContext context)
-    //     => Task.CompletedTask;
-
     public virtual bool BeforeProcessEvent<TEvent>(IEventContext<TEvent> context)
         => true;
 

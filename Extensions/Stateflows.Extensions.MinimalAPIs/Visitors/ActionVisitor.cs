@@ -3,7 +3,6 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Routing;
-using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Net.Http.Headers;
 using Stateflows.Actions;
 using Stateflows.Common;
@@ -12,16 +11,21 @@ using Stateflows.Common.Interfaces;
 
 namespace Stateflows.Extensions.MinimalAPIs;
 
-internal class ActionVisitor(IEndpointRouteBuilder routeBuilder, Interceptor interceptor)
-    : Actions.ActionVisitor, IBehaviorClassVisitor
+internal class ActionVisitor(
+    IEndpointRouteBuilder routeBuilder,
+    Interceptor interceptor,
+    ITypeMapper typeMapper
+)
+    : BehaviorVisitor(routeBuilder, typeMapper), IActionVisitor, IBehaviorClassVisitor, ITypeVisitor
 {
     public IEndpointRouteBuilder RouteBuilder => routeBuilder;
     public Dictionary<string, List<(HateoasLink, BehaviorStatus[])>> HateoasLinks { get; set; } = new();
     private BehaviorClass? OwnerClass = null;
     public bool HasDefaultInstance { get; private set; } = false;
+    private string CurrentActionName = string.Empty;
     public string BehaviorClassType { get; private set; }
     
-    public override Task ActionAddingAsync(string actionName, int actionVersion, string? behaviorClassType = null,
+    public Task ActionAddingAsync(string actionName, int actionVersion, string? behaviorClassType = null,
         BehaviorClass? ownerClass = null, BehaviorClass? parentClass = null, bool hasDefaultInstance = false)
     {
         OwnerClass = ownerClass;
@@ -30,7 +34,7 @@ internal class ActionVisitor(IEndpointRouteBuilder routeBuilder, Interceptor int
         return Task.CompletedTask;
     }
 
-    public override Task ActionAddedAsync(string actionName, int actionVersion)
+    public Task ActionAddedAsync(string actionName, int actionVersion)
     {
         if (OwnerClass != null)
         {
@@ -44,6 +48,11 @@ internal class ActionVisitor(IEndpointRouteBuilder routeBuilder, Interceptor int
             RegisterDefaultInstanceEndpoints(actionName, BehaviorClassType, routeBuilder);
         }
         return Task.CompletedTask;
+    }
+
+    Task IActionVisitor.ActionTypeAddedAsync<TAction>(string actionName, int actionVersion)
+    {
+        return ActionTypeAddedAsync<TAction>(actionName, actionVersion);
     }
 
     private static string GetEventName<TEvent>()
@@ -465,7 +474,7 @@ internal class ActionVisitor(IEndpointRouteBuilder routeBuilder, Interceptor int
         }
     }
 
-    public override Task ActionTypeAddedAsync<TAction>(string actionName, int actionVersion)
+    public Task ActionTypeAddedAsync<TAction>(string actionName, int actionVersion)
     {
         if (OwnerClass != null)
         {
@@ -482,4 +491,29 @@ internal class ActionVisitor(IEndpointRouteBuilder routeBuilder, Interceptor int
 
         return Task.CompletedTask;
     }
+
+    public Task CustomEventAddedAsync<TEvent>(string actionName, int actionVersion, BehaviorStatus[] supportedStatuses)
+    {
+        if (OwnerClass != null)
+        {
+            return Task.CompletedTask;
+        }
+
+        CurrentActionName = actionName;
+        typeMapper.VisitMappedTypes<TEvent>(this);
+        CurrentActionName = string.Empty;
+
+        return Task.CompletedTask;
+    }
+
+    public void Visit<T>()
+    {
+        RegisterEventEndpoint<T>(CurrentActionName);
+    }
+    
+    protected override void RegisterEventEndpoint<TEvent>(string activityName, IEndpointRouteBuilder activity, BehaviorStatus[]? supportedStatuses = null)
+        => activity.RegisterEventEndpoint<TEvent>(interceptor, BehaviorClassType, activityName, HateoasLinks, HasDefaultInstance, supportedStatuses);
+
+    protected override void RegisterRequestEndpoint<TRequest, TResponse>(string activityName, IEndpointRouteBuilder activity, BehaviorStatus[]? supportedStatuses = null)
+        => activity.RegisterRequestEndpoint<TRequest, TResponse>(interceptor, BehaviorClassType, activityName, HateoasLinks, HasDefaultInstance, supportedStatuses);
 }

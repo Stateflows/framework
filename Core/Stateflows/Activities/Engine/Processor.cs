@@ -41,7 +41,7 @@ namespace Stateflows.Activities.Engine
         {
             var result = EventStatus.Undelivered;
 
-            using var serviceScope = provider.CreateScope();
+            await using var serviceScope = provider.CreateAsyncScope();
             var serviceProvider = serviceScope.ServiceProvider;
             
             var stateflowsContext = eventHolder.Headers.Values.Any(h => h is ForcedReset)
@@ -66,7 +66,7 @@ namespace Stateflows.Activities.Engine
                 stateflowsContext.ContextParentId = embedding.ParentId;
             }
 
-            using var executor = new Executor(register, graph, serviceProvider);
+            await using var executor = new Executor(register, graph, serviceProvider);
 
             var context = new RootContext(stateflowsContext);
 
@@ -96,7 +96,7 @@ namespace Stateflows.Activities.Engine
 
                 exceptions.AddRange(context.Exceptions);
 
-                stateflowsContext = executor.Dehydrate().Context;
+                stateflowsContext = (await executor.DehydrateAsync()).Context;
 
                 await storage.DehydrateAsync(stateflowsContext);
             }

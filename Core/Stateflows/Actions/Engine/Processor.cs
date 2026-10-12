@@ -26,7 +26,7 @@ namespace Stateflows.Actions.Engine
         {
             var result = EventStatus.Undelivered;
 
-            using var serviceScope = provider.CreateScope();
+            await using var serviceScope = provider.CreateAsyncScope();
             
             var serviceProvider = serviceScope.ServiceProvider;
 

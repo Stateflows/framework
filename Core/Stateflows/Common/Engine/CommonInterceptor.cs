@@ -15,14 +15,8 @@ namespace Stateflows.Common.Engine
         IEnumerable<IStateflowsTenantInterceptor> tenantInterceptors,
         ILogger<CommonInterceptor> logger) : IStateflowsInterceptor
     {
-        // public Task AfterHydrateAsync(IBehaviorActionContext context)
-        //     => interceptors.RunSafeAsync(i => i.AfterHydrateAsync(context), nameof(AfterHydrateAsync), logger);
-
         public void AfterProcessEvent<TEvent>(IEventContext<TEvent> context, EventStatus eventStatus)
             => interceptors.RunSafe(i => i.AfterProcessEvent(context, eventStatus), nameof(AfterProcessEvent), logger);
-
-        // public Task BeforeDehydrateAsync(IBehaviorActionContext context)
-        //     => interceptors.RunSafeAsync(i => i.BeforeDehydrateAsync(context), nameof(BeforeDehydrateAsync), logger);
 
         public bool BeforeProcessEvent<TEvent>(IEventContext<TEvent> context)
             => interceptors.RunSafe(i => i.BeforeProcessEvent(context), nameof(BeforeProcessEvent), logger);

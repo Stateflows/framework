@@ -113,7 +113,7 @@ namespace Stateflows.Common.Extensions
             where T : class
             => enumerable.RunProtectedAsync<T>(
                 action,
-                e => logger.LogError(LogTemplates.ExceptionLogTemplate, typeof(T).DeclaringType.FullName, methodName, e.GetType().Name, e.Message)
+                e => logger.LogError(LogTemplates.ExceptionLogTemplate, typeof(T).DeclaringType.FullName, methodName, e)
             );
         
         [DebuggerHidden]
@@ -121,7 +121,7 @@ namespace Stateflows.Common.Extensions
             where T : class
             => enumerable.RunProtectedAsync<T>(
                 action,
-                e => logger.LogError(LogTemplates.ExceptionLogTemplate, typeof(T).DeclaringType.FullName, methodName, e.GetType().Name, e.Message),
+                e => logger.LogError(LogTemplates.ExceptionLogTemplate, typeof(T).DeclaringType.FullName, methodName, e),
                 defaultResult
             );
 
@@ -130,7 +130,7 @@ namespace Stateflows.Common.Extensions
             where T : class
             => enumerable.WaitProtected<T>(
                 action,
-                e => logger.LogError(LogTemplates.ExceptionLogTemplate, typeof(T).DeclaringType.FullName, methodName, e.GetType().Name, e.Message)
+                e => logger.LogError(LogTemplates.ExceptionLogTemplate, typeof(T).DeclaringType.FullName, methodName, e)
             );
 
         [DebuggerHidden]
@@ -138,7 +138,7 @@ namespace Stateflows.Common.Extensions
             where T : class
             => enumerable.WaitProtected<T>(
                 action,
-                e => logger.LogError(LogTemplates.ExceptionLogTemplate, typeof(T).DeclaringType.FullName, methodName, e.GetType().Name, e.Message),
+                e => logger.LogError(LogTemplates.ExceptionLogTemplate, typeof(T).DeclaringType.FullName, methodName, e),
                 defaultResult
             );
     }

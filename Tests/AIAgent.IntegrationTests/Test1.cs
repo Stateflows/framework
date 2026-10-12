@@ -66,7 +66,7 @@ public sealed class AIAgentActionTests : StateflowsTestClass
 
         await action.SendInputAsync(b => b.Add(new ChatMessage { Role = ChatRole.User }));
 
-        Assert.AreEqual(1, SharedTestAIAgent.Instance.RunCalls);
+        Assert.AreEqual(0, SharedTestAIAgent.Instance.RunCalls);
     }
 
     [TestMethod]

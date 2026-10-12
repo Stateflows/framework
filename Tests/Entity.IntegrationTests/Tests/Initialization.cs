@@ -88,6 +88,90 @@ namespace Entity.IntegrationTests.Tests
         }
     }
 
+    public record AttributedInitEvent(string Name, int Score);
+
+    public record AttributedInitProjection
+    {
+        public string? Name { get; set; }
+        public int Score { get; set; }
+        public int DoubleScore { get; set; }
+    }
+
+    public interface IAttributedInitializerTemplate
+    {
+        [Field(FieldAccess.Get | FieldAccess.Set)]
+        string Name { get; set; }
+
+        [Field(FieldAccess.Get | FieldAccess.Set)]
+        int Score { get; set; }
+
+        [Field(FieldAccess.Get)]
+        int DoubleScore => Score * 2;
+
+        [Projection]
+        AttributedInitProjection Snapshot => new() { Name = Name, Score = Score, DoubleScore = DoubleScore };
+
+        [Initializer]
+        void Initialize(AttributedInitEvent e)
+        {
+            Name = e.Name;
+            Score = e.Score;
+        }
+    }
+
+    public record AttributedTwoEventsInitEventA(string Tag);
+    public record AttributedTwoEventsInitEventB(int Count);
+
+    public record CombinedAttributedInitEvent(string Source);
+
+    public interface ICombinedAttributedInitTemplate
+    {
+        [Field(FieldAccess.Get | FieldAccess.Set)]
+        string InitSource { get; set; }
+
+        [DefaultInitializer]
+        void SetDefault() { InitSource = "default"; }
+
+        [Initializer]
+        void InitFromEvent(CombinedAttributedInitEvent e) { InitSource = e.Source; }
+    }
+
+    public record InheritedAttributedInitEvent(string BasePart, string DerivedPart);
+
+    public interface IInheritedAttributedInitBaseTemplate
+    {
+        [Field(FieldAccess.Get | FieldAccess.Set)]
+        string BasePart { get; set; }
+    }
+
+    public interface IInheritedAttributedInitTemplate : IInheritedAttributedInitBaseTemplate
+    {
+        [Field(FieldAccess.Get | FieldAccess.Set)]
+        string DerivedPart { get; set; }
+
+        [Initializer]
+        void Initialize(InheritedAttributedInitEvent e)
+        {
+            BasePart = e.BasePart;
+            DerivedPart = e.DerivedPart;
+        }
+    }
+
+    public interface IAttributedTwoInitializersTemplate
+    {
+        [Field(FieldAccess.Get | FieldAccess.Set)]
+        string Tag { get; set; }
+
+        [Field(FieldAccess.Get | FieldAccess.Set)]
+        int Count { get; set; }
+
+        [Initializer]
+        void InitializeA(AttributedTwoEventsInitEventA e) { Tag = e.Tag; }
+
+        [Initializer]
+        void InitializeB(AttributedTwoEventsInitEventB e) { Count = e.Count; }
+    }
+
     public record InitEntityProjection
     {
         public bool InitializerCalled { get; set; }
@@ -142,6 +226,10 @@ namespace Entity.IntegrationTests.Tests
                     })
                 )
                 .AddEntity<IInheritedAttributedDefaultInitEntityTemplate>("withInheritedAttributedDefault")
+                .AddEntity<IAttributedInitializerTemplate>("withAttributedInit")
+                .AddEntity<IAttributedTwoInitializersTemplate>("withTwoAttributedInits")
+                .AddEntity<ICombinedAttributedInitTemplate>("withCombinedAttributedInit")
+                .AddEntity<IInheritedAttributedInitTemplate>("withInheritedAttributedInit")
             );
         }
 
@@ -471,6 +559,165 @@ namespace Entity.IntegrationTests.Tests
             Assert.AreEqual(EventStatus.Initialized, status);
             Assert.AreEqual("base", baseValue);
             Assert.AreEqual("suffix", suffix);
+        }
+
+        // ── Template-defined [Initializer] attribute ─────────────────────────
+
+        [TestMethod]
+        public async Task AttributedInitializer_MatchingEvent_InitializesWithEventData()
+        {
+            var status = EventStatus.Undelivered;
+            string? name = null;
+            int score = 0;
+
+            if (TryLocateEntity("withAttributedInit", "attr-init", out var entity))
+            {
+                status = (await entity.SendAsync(new AttributedInitEvent("hero", 42))).Status;
+                var ctx = await HydrateContextAsync("withAttributedInit", "attr-init");
+                name = ctx.Values.TryGetValue("$field:Name", out var nv) ? nv as string : null;
+                score = ctx.Values.TryGetValue("$field:Score", out var sv) && sv is long l ? (int)l : 0;
+            }
+
+            Assert.AreEqual(EventStatus.Initialized, status);
+            Assert.AreEqual("hero", name);
+            Assert.AreEqual(42, score);
+        }
+
+        [TestMethod]
+        public async Task AttributedInitializer_MatchingEvent_CascadesComputedFieldsAndProjection()
+        {
+            var projSuccess = false;
+            AttributedInitProjection? snapshot = null;
+
+            if (TryLocateEntity("withAttributedInit", "attr-cascade", out var entity))
+            {
+                _ = await entity.SendAsync(new AttributedInitEvent("cascade", 5));
+                (projSuccess, snapshot) = await entity.TryGetProjectionAsync<AttributedInitProjection>();
+            }
+
+            Assert.IsTrue(projSuccess);
+            Assert.IsNotNull(snapshot);
+            Assert.AreEqual("cascade", snapshot.Name);
+            Assert.AreEqual(5, snapshot.Score);
+            Assert.AreEqual(10, snapshot.DoubleScore); // 5 * 2
+        }
+
+        [TestMethod]
+        public async Task AttributedInitializer_InitializeEvent_AlsoInitializes()
+        {
+            var status = EventStatus.Undelivered;
+
+            if (TryLocateEntity("withAttributedInit", "attr-init-default", out var entity))
+                status = (await entity.SendAsync(new Initialize())).Status;
+
+            Assert.AreEqual(EventStatus.Initialized, status);
+        }
+
+        [TestMethod]
+        public async Task AttributedInitializer_UnknownEvent_DoesNotInitialize()
+        {
+            // An event type with no matching initializer must NOT initialize the entity.
+            var status = EventStatus.Undelivered;
+
+            if (TryLocateEntity("withAttributedInit", "attr-unknown", out var entity))
+                status = (await entity.SendAsync(new object())).Status;
+
+            Assert.AreEqual(EventStatus.NotConsumed, status);
+        }
+
+        [TestMethod]
+        public async Task AttributedInitializer_SecondMatchingEvent_IsNotConsumedAfterInit()
+        {
+            var status1 = EventStatus.Undelivered;
+            var status2 = EventStatus.Undelivered;
+
+            if (TryLocateEntity("withAttributedInit", "attr-second", out var entity))
+            {
+                status1 = (await entity.SendAsync(new AttributedInitEvent("first", 1))).Status;
+                status2 = (await entity.SendAsync(new AttributedInitEvent("second", 2))).Status;
+            }
+
+            Assert.AreEqual(EventStatus.Initialized, status1);
+            Assert.AreEqual(EventStatus.NotConsumed, status2);
+        }
+
+        [TestMethod]
+        public async Task AttributedInitializer_TwoEventTypes_EachInitializesCorrectFields()
+        {
+            var statusA = EventStatus.Undelivered;
+            var statusB = EventStatus.Undelivered;
+            string? tagA = null;
+            int countB = 0;
+
+            if (TryLocateEntity("withTwoAttributedInits", "two-a", out var entityA))
+            {
+                statusA = (await entityA.SendAsync(new AttributedTwoEventsInitEventA("tagValue"))).Status;
+                var ctxA = await HydrateContextAsync("withTwoAttributedInits", "two-a");
+                tagA = ctxA.Values.TryGetValue("$field:Tag", out var tv) ? tv as string : null;
+            }
+
+            if (TryLocateEntity("withTwoAttributedInits", "two-b", out var entityB))
+            {
+                statusB = (await entityB.SendAsync(new AttributedTwoEventsInitEventB(99))).Status;
+                var ctxB = await HydrateContextAsync("withTwoAttributedInits", "two-b");
+                countB = ctxB.Values.TryGetValue("$field:Count", out var cv) && cv is long l ? (int)l : 0;
+            }
+
+            Assert.AreEqual(EventStatus.Initialized, statusA);
+            Assert.AreEqual(EventStatus.Initialized, statusB);
+            Assert.AreEqual("tagValue", tagA);
+            Assert.AreEqual(99, countB);
+        }
+
+        [TestMethod]
+        public async Task CombinedAttributedInitializers_InitializeEvent_UsesDefaultInitializer()
+        {
+            var status = EventStatus.Undelivered;
+            string? initSource = null;
+
+            if (TryLocateEntity("withCombinedAttributedInit", "combined-default", out var entity))
+            {
+                status = (await entity.SendAsync(new Initialize())).Status;
+                (_, initSource) = await entity.TryGetAsync<string>(nameof(ICombinedAttributedInitTemplate.InitSource));
+            }
+
+            Assert.AreEqual(EventStatus.Initialized, status);
+            Assert.AreEqual("default", initSource);
+        }
+
+        [TestMethod]
+        public async Task CombinedAttributedInitializers_MatchingEvent_UsesAttributedInitializer()
+        {
+            var status = EventStatus.Undelivered;
+            string? initSource = null;
+
+            if (TryLocateEntity("withCombinedAttributedInit", "combined-event", out var entity))
+            {
+                status = (await entity.SendAsync(new CombinedAttributedInitEvent("from-event"))).Status;
+                (_, initSource) = await entity.TryGetAsync<string>(nameof(ICombinedAttributedInitTemplate.InitSource));
+            }
+
+            Assert.AreEqual(EventStatus.Initialized, status);
+            Assert.AreEqual("from-event", initSource);
+        }
+
+        [TestMethod]
+        public async Task InheritedAttributedInitializer_MatchingEvent_InitializesBothFields()
+        {
+            var status = EventStatus.Undelivered;
+            string? basePart = null;
+            string? derivedPart = null;
+
+            if (TryLocateEntity("withInheritedAttributedInit", "inherited-attr", out var entity))
+            {
+                status = (await entity.SendAsync(new InheritedAttributedInitEvent("base-val", "derived-val"))).Status;
+                (_, basePart) = await entity.TryGetAsync<string>(nameof(IInheritedAttributedInitBaseTemplate.BasePart));
+                (_, derivedPart) = await entity.TryGetAsync<string>(nameof(IInheritedAttributedInitTemplate.DerivedPart));
+            }
+
+            Assert.AreEqual(EventStatus.Initialized, status);
+            Assert.AreEqual("base-val", basePart);
+            Assert.AreEqual("derived-val", derivedPart);
         }
     }
 }

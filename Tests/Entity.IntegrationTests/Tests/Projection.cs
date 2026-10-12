@@ -253,7 +253,7 @@ namespace Entity.IntegrationTests.Tests
             var context = await HydrateContextAsync("projectionEntity", "x");
             CollectionAssert.AreEquivalent(
                 new[] { nameof(IProjectionEntityTemplate.DoubleQuantity), nameof(IProjectionEntityTemplate.Name), nameof(IProjectionEntityTemplate.NameLength), nameof(IProjectionEntityTemplate.Quantity) },
-                GetStringArrayValue(context, $"$dependencies:projection:{typeof(ProjectionSnapshot).AssemblyQualifiedName}")
+                GetStringArrayValue(context, $"$dependencies:projection:{typeof(ProjectionSnapshot).FullName}")
             );
             CollectionAssert.AreEquivalent(
                 new[] { nameof(IProjectionEntityTemplate.Name) },
@@ -263,7 +263,7 @@ namespace Entity.IntegrationTests.Tests
                 new[] { nameof(IProjectionEntityTemplate.Quantity) },
                 GetStringArrayValue(context, "$dependencies:field:DoubleQuantity")
             );
-            Assert.IsTrue(context.Values.ContainsKey($"$projection:{typeof(ProjectionSnapshot).AssemblyQualifiedName}"));
+            Assert.IsTrue(context.Values.ContainsKey($"$projection:{typeof(ProjectionSnapshot).FullName}"));
         }
 
         [TestMethod]
@@ -294,7 +294,7 @@ namespace Entity.IntegrationTests.Tests
             var context = await HydrateContextAsync("projectionEntity", "x");
             Assert.AreEqual("renamed", (context.Values["$field:Name"] as string));
             Assert.AreEqual(3, context.Values["$field:Quantity"] is long longQuantity ? longQuantity : (int)context.Values["$field:Quantity"]);
-            Assert.IsTrue(context.Values.TryGetValue($"$projection:{typeof(ProjectionSnapshot).AssemblyQualifiedName}", out var cachedProjection));
+            Assert.IsTrue(context.Values.TryGetValue($"$projection:{typeof(ProjectionSnapshot).FullName}", out var cachedProjection));
             Assert.IsInstanceOfType<ProjectionSnapshot>(cachedProjection);
             var cachedSnapshot = (ProjectionSnapshot)cachedProjection;
             Assert.AreEqual("renamed", cachedSnapshot.Name);
@@ -469,7 +469,7 @@ namespace Entity.IntegrationTests.Tests
             var context = await HydrateContextAsync("multiInheritedProjectionEntity", "depends");
             CollectionAssert.AreEquivalent(
                 new[] { nameof(IMultiInheritedProjectionEntityTemplate.FirstValue), nameof(IMultiInheritedProjectionEntityTemplate.SecondValue), nameof(IMultiInheritedProjectionEntityTemplate.CombinedValue) },
-                GetStringArrayValue(context, $"$dependencies:projection:{typeof(MultiInheritedProjectionSnapshot).AssemblyQualifiedName}")
+                GetStringArrayValue(context, $"$dependencies:projection:{typeof(MultiInheritedProjectionSnapshot).FullName}")
             );
             CollectionAssert.AreEquivalent(
                 new[] { nameof(IMultiInheritedProjectionEntityTemplateFirst.FirstValue), nameof(IMultiInheritedProjectionEntityTemplateSecond.SecondValue) },

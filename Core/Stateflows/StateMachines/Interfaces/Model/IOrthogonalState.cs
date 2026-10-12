@@ -4,13 +4,13 @@ namespace Stateflows.StateMachines
 {
     public interface IOrthogonalState : ICompositeState;
 
-    public interface IOrthogonalStateEntry : ICompositeStateEntry;
+    public interface IOrthogonalStateEntry : IOrthogonalState, ICompositeStateEntry;
     
-    public interface IOrthogonalStateExit : ICompositeStateExit;
+    public interface IOrthogonalStateExit : IOrthogonalState, ICompositeStateExit;
 
-    public interface IOrthogonalStateInitialization : ICompositeStateInitialization;
+    public interface IOrthogonalStateInitialization : IOrthogonalState, ICompositeStateInitialization;
 
-    public interface IOrthogonalStateFinalization : ICompositeStateFinalization;
+    public interface IOrthogonalStateFinalization : IOrthogonalState, ICompositeStateFinalization;
 
     public interface IOrthogonalStateAction :
         ICompositeStateAction,

@@ -20,7 +20,7 @@ public class Invoicing : IActivity
                 .AddControlFlow("js")
             )
             .AddAction_ClearScript("js", "Console.WriteLine(JSON.stringify(behaviorContext.Id))")
-            // .AddAgenticActivity<ReviewerAgent>()
+            .AddAgenticActivity<ReviewerAgent>()
             .AddAction<GenerateInvoices>(b => b
                 .AddFlow<Invoice, SendMail>()
                 .AddFlow<Invoice, SendSMS>()

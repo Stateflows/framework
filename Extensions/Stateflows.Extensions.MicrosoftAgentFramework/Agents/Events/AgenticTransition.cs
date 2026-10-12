@@ -3,7 +3,7 @@ using Stateflows.Extensions.MinimalAPIs.Attributes;
 namespace Stateflows.MAF.AIAgents.Events;
 
 [NoApiMapping]
-internal sealed class AgenticDecision
+internal sealed class AgenticTransition
 {
-    public string DecisionMarker { get; set; }
+    public string TransitionMarker { get; set; }
 }

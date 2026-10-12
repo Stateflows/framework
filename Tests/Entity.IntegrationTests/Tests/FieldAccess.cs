@@ -1,6 +1,7 @@
 using Microsoft.Extensions.DependencyInjection;
 using StateMachine.IntegrationTests.Utils;
 using Stateflows.Entities.Attributes;
+using Stateflows.Entities.Enums;
 
 namespace Entity.IntegrationTests.Tests
 {
@@ -82,9 +83,33 @@ namespace Entity.IntegrationTests.Tests
         string Combined => $"{BaseReadWrite}:{DerivedReadWrite}";
     }
 
-    [TestClass]
-    public class FieldStateTests : StateflowsTestClass
+    // ── TrySetAsync projection template ──────────────────────────────────────
+
+    public record TrySetProjectionSnapshot
     {
+        public int BaseValue { get; set; }
+        public int DoubleValue { get; set; }
+    }
+
+    /// <summary>
+    /// Template used to verify that <c>TrySetAsync</c> triggers the full reactive
+    /// pipeline: stored-field write → computed-field cascade → projection refresh
+    /// → projection publish to watchers.
+    /// </summary>
+    public interface ITrySetProjectionTemplate
+    {
+        [Field(FieldAccess.Get | FieldAccess.Set)]
+        int BaseValue { get; set; }
+
+        [Field(FieldAccess.Get)]
+        int DoubleValue => BaseValue * 2;
+
+        [Projection(PublishScope = PublishScope.Self)]
+        TrySetProjectionSnapshot Snapshot => new() { BaseValue = BaseValue, DoubleValue = DoubleValue };
+    }
+
+    [TestClass]
+    public class FieldStateTests : StateflowsTestClass    {
         [TestInitialize]
         public override void Initialize() => base.Initialize();
 
@@ -119,6 +144,9 @@ namespace Entity.IntegrationTests.Tests
                             ctx.Entity.BaseNoAccess = "hidden";
                             ctx.Entity.DerivedReadWrite = "derived";
                         })
+                    )
+                    .AddEntity<ITrySetProjectionTemplate>("trySetProjectionEntity", entity => entity
+                        .AddDefaultInitializer(ctx => { ctx.Entity.BaseValue = 1; })
                     )
                 );
         }
@@ -559,6 +587,60 @@ namespace Entity.IntegrationTests.Tests
 
             Assert.IsFalse(getNoAccessSuccess);
             Assert.IsFalse(setReadOnlySuccess);
+        }
+
+        // ── TrySetAsync – projection update and publish ───────────────────────────
+
+        [TestMethod]
+        public async Task TrySetAsync_UpdatesProjection_AfterWrite()
+        {
+            var setSuccess = false;
+            var projectionSuccess = false;
+            TrySetProjectionSnapshot? snapshot = null;
+
+            if (TryLocateEntity("trySetProjectionEntity", "projection-update", out var entity))
+            {
+                setSuccess = await entity.TrySetAsync(nameof(ITrySetProjectionTemplate.BaseValue), 5);
+                (projectionSuccess, snapshot) = await entity.TryGetProjectionAsync<TrySetProjectionSnapshot>();
+            }
+
+            Assert.IsTrue(setSuccess);
+            Assert.IsTrue(projectionSuccess);
+            Assert.IsNotNull(snapshot);
+            Assert.AreEqual(5, snapshot.BaseValue);
+            Assert.AreEqual(10, snapshot.DoubleValue); // 5 * 2 — computed field must also be updated
+        }
+
+        [TestMethod]
+        public async Task TrySetAsync_PublishesProjectionToWatcher_AfterWrite()
+        {
+            TrySetProjectionSnapshot? publishedSnapshot = null;
+            var publishCount = 0;
+
+            if (TryLocateEntity("trySetProjectionEntity", "projection-publish", out var entity))
+            {
+                // Prime the projection cache so that RefreshDependentProjections has a
+                // baseline to compare against (it only publishes when the cached value changes).
+                await entity.TryGetProjectionAsync<TrySetProjectionSnapshot>();
+
+                await using var watcher = await entity.WatchAsync<TrySetProjectionSnapshot>(s =>
+                {
+                    lock (Locator)
+                    {
+                        publishedSnapshot = s;
+                        publishCount++;
+                    }
+                });
+
+                await entity.TrySetAsync(nameof(ITrySetProjectionTemplate.BaseValue), 7);
+                await Task.Delay(100);
+            }
+
+            Assert.AreEqual(1, publishCount,
+                "Exactly one publish expected – TrySetAsync must trigger RefreshDependentProjections.");
+            Assert.IsNotNull(publishedSnapshot);
+            Assert.AreEqual(7, publishedSnapshot.BaseValue);
+            Assert.AreEqual(14, publishedSnapshot.DoubleValue); // 7 * 2
         }
     }
 }

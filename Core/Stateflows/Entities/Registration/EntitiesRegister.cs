@@ -127,6 +127,7 @@ namespace Stateflows.Entities.Registration
                 OwnerClass = OwnerClass,
                 ParentClass = ParentClass,
                 Model = new EntityModel<TTemplate>(),
+                StateflowsBuilder = stateflowsBuilder
             };
 
             entityRegistration.VisitingTasks.Add(async visitor =>
