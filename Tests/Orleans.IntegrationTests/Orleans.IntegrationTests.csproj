@@ -1,0 +1,45 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <IsPackable>false</IsPackable>
+    <IsTestProject>true</IsTestProject>
+    <LangVersion>default</LangVersion>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Data.SqlClient" Version="7.1.1" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="18.11.0" />
+    <PackageReference Include="Microsoft.Orleans.Persistence.AdoNet" Version="10.4.0" />
+    <PackageReference Include="Microsoft.Orleans.Reminders.AdoNet" Version="10.4.0" />
+    <PackageReference Include="MSTest.TestAdapter" Version="4.5.1" />
+    <PackageReference Include="MSTest.TestFramework" Version="4.5.1" />
+    <PackageReference Include="OpenTelemetry.Instrumentation.AspNetCore" Version="1.20.0" />
+    <PackageReference Include="coverlet.collector" Version="10.1.0">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+    <ProjectReference Include="..\..\Hosting\Stateflows.Hosting.Orleans\Stateflows.Runtimes.Orleans.csproj" />
+    <ProjectReference Include="..\..\Extensions\Stateflows.Extensions.OpenTelemetry\Stateflows.Extensions.OpenTelemetry.csproj" />
+    <ProjectReference Include="..\..\Extensions\Stateflows.Extensions.MinimalAPIs\Stateflows.Extensions.MinimalAPIs.csproj" />
+    <ProjectReference Include="..\Orleans.IntegrationTests.SiloHost\Orleans.IntegrationTests.SiloHost.csproj" ReferenceOutputAssembly="false" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="SqlServer\*.sql" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+  <Target Name="CopyOrleansIntegrationSiloHost" AfterTargets="Build">
+    <ItemGroup>
+      <OrleansIntegrationSiloHostFiles Include="$(MSBuildThisFileDirectory)..\Orleans.IntegrationTests.SiloHost\bin\$(Configuration)\net8.0\**\*.*" />
+    </ItemGroup>
+    <Copy SourceFiles="@(OrleansIntegrationSiloHostFiles)" DestinationFiles="@(OrleansIntegrationSiloHostFiles->'$(OutDir)SiloHost\%(RecursiveDir)%(Filename)%(Extension)')" SkipUnchangedFiles="true" />
+  </Target>
+
+</Project>

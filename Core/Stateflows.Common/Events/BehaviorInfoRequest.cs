@@ -1,6 +1,6 @@
 ﻿namespace Stateflows.Common
 {
-    [NoTracing]
+    [NoTracing, NoDeduplication]
     public sealed class BehaviorInfoRequest : IRequest<BehaviorInfo>
     { }
 }

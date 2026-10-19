@@ -23,7 +23,7 @@ namespace Stateflows.Entities
             => WatchAsync(handler);
 
         public Task<IWatcher> WatchProjectionAsync<TProjection>(Func<TProjection, Task> asyncHandler)
-            => WatchProjectionAsync<TProjection>(handler: n => asyncHandler(n).GetAwaiter().GetResult());
+            => WatchAsync(asyncHandler);
 
         public async Task<bool> TrySetAsync<T>(string fieldName, T fieldValue, IDictionary<string, EventHeader> headers = null)
         {

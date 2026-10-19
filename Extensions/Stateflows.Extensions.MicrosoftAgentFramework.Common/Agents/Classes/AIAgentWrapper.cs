@@ -46,11 +46,11 @@ namespace Stateflows.MAF.AIAgents.Classes
             DateTime? lastNotificationsCheck = null)
             => Behavior.GetNotificationsAsync(notificationNames, lastNotificationsCheck);
 
-        public Task<IWatcher> WatchAsync<TNotification>(Action<TNotification> handler, DateTime? replayNotificatonsSince = null)
-            => Behavior.WatchAsync(handler, replayNotificatonsSince);
+        public Task<IWatcher> WatchAsync<TNotification>(Func<TNotification, Task> asyncHandler, DateTime? replayNotificatonsSince = null)
+            => Behavior.WatchAsync(asyncHandler, replayNotificatonsSince);
 
-        public Task<IWatcher> WatchAsync(string[] notificationNames, Action<EventHolder> handler, DateTime? replayNotificatonsSince = null)
-            => Behavior.WatchAsync(notificationNames, handler, replayNotificatonsSince);
+        public Task<IWatcher> WatchAsync(string[] notificationNames, Func<EventHolder, Task> asyncHandler, DateTime? replayNotificatonsSince = null)
+            => Behavior.WatchAsync(notificationNames, asyncHandler, replayNotificatonsSince);
 
         public void Dispose()
         {

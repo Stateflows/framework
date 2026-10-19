@@ -8,8 +8,8 @@ namespace Stateflows.Common.Tenant
     {
         private const string TenantId = "host";
 
-        public Task<string> GetCurrentTenantIdAsync()
-            => Task.FromResult(TenantId);
+        public string GetCurrentTenantId()
+            => TenantId;
 
         public Task<IEnumerable<string>> GetAllTenantsAsync()
             => Task.FromResult<IEnumerable<string>>([TenantId]);

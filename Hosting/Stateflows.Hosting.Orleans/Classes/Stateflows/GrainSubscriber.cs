@@ -1,24 +1,24 @@
 using System.Reflection;
 using Stateflows.Common;
 using Stateflows.Common.Context;
+using Stateflows.Common.Context.Classes;
 using Stateflows.Common.Interfaces;
 using Stateflows.Common.Utilities;
 using Stateflows.Interfaces;
+using Stateflows.Storage;
 
 namespace Stateflows;
 
-public class GrainSubscriber(IClusterClient client, IStateflowsTenantProvider tenantProvider) : IStateflowsSubscriber
+public class GrainSubscriber(
+    IClusterClient client,
+    IStateflowsTenantProvider tenantProvider,
+    IStateflowsInterceptor stateflowsInterceptor,
+    IServiceProvider serviceProvider
+) : IStateflowsSubscriber
 {
     private async Task<ISubscriptionsGrain> GetSubscriptionsGrain(BehaviorId behaviorId)
     {
-        var tenantId = await tenantProvider.GetCurrentTenantIdAsync();
-        var id = StateflowsJsonConverter.SerializeObject(
-            new TenantBehaviorId()
-            {
-                TenantId = tenantId ?? "host",
-                BehaviorId = behaviorId
-            }
-        );
+        var id = StateflowsGrainKeys.ForBehavior(tenantProvider.GetCurrentTenantId(), behaviorId);
         var notificationsGrain = client.GetGrain<ISubscriptionsGrain>(id);
         return notificationsGrain;
     }
@@ -35,19 +35,34 @@ public class GrainSubscriber(IClusterClient client, IStateflowsTenantProvider te
         var ttlAttribute = notificationType.GetCustomAttribute<TimeToLiveAttribute>();
         var retainAttribute = notificationType.GetCustomAttribute<RetainAttribute>();
 
-        var orleansEventHolders = notificationEvents
-            .Select(n =>
+        var orleansEventHolders = await Task.WhenAll(notificationEvents
+            .Select(async n =>
             {
-                var notification = (OrleansEventHolder)n.ToEventHolder(headers, senderContext.Id);
+                var notificationHeaders = headers?.ToDictionary() ?? new Dictionary<string, EventHeader>();
+
+                var context = new BehaviorActionContext(senderContext, serviceProvider)
+                {
+                    Headers = senderContext.ExecutionTriggerHolder!.Headers,
+                    ExecutionTrigger = senderContext.ExecutionTriggerHolder!.BoxedPayload,
+                    ExecutionTriggerId = senderContext.ExecutionTriggerHolder!.Id
+                };
+
+                await stateflowsInterceptor.NotificationPublishedAsync(context, n, notificationHeaders);
+
+                var notification = n.ToEventHolder(notificationHeaders, publisherBehaviorId);
                 notification.SentAt = DateTime.Now;
-                notification.Retained = retainAttribute != null;
-                notification.TimeToLive = ttlAttribute?.SecondsToLive ?? 0;
-                return notification;
+                notification.Retained = retainAttribute != null || notificationHeaders.Values.OfType<Retain>().FirstOrDefault() != null;
+                notification.TimeToLive = ttlAttribute?.SecondsToLive ?? notificationHeaders.Values.OfType<TimeToLive>().FirstOrDefault()?.SecondsToLive ?? 0;
+
+                return (OrleansEventHolder)notification;
             })
-            .ToArray();
+            .ToArray()
+        );
         
-        var notificationsGrain = await GetSubscriptionsGrain(senderContext.Id);
-        _ = notificationsGrain.PublishAsync(orleansEventHolders);
+        var notificationsGrain = await GetSubscriptionsGrain(publisherBehaviorId);
+        // Publish has a synchronous public API; the behavior turn awaits persistence after execution.
+        if (!GrainPublicationScope.TryEnqueue(() => notificationsGrain.PublishAsync(orleansEventHolders)))
+            await notificationsGrain.PublishAsync(orleansEventHolders);
     }
 
     public async Task SubscribeAsync<TNotification>(BehaviorId subscriberBehaviorId, BehaviorId subscribedBehaviorId)

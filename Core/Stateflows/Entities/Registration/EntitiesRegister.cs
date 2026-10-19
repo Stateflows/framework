@@ -4,6 +4,9 @@ using System.Reflection;
 using System.Diagnostics;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using Stateflows.Common;
+using Stateflows.Common.Classes;
+using Stateflows.Common.Context;
 using Stateflows.Common.Interfaces;
 using Stateflows.Common.Registration.Builders;
 using Stateflows.Entities.Models;
@@ -17,6 +20,12 @@ namespace Stateflows.Entities.Registration
         public readonly Dictionary<string, EntityRegistration> Entities = [];
 
         private readonly Dictionary<string, int> CurrentVersions = [];
+
+        public readonly List<EntityObserverFactoryAsync> GlobalObserverFactories = [];
+
+        public readonly List<EntityInterceptorFactoryAsync> GlobalInterceptorFactories = [];
+
+        public readonly List<EntityExceptionHandlerFactoryAsync> GlobalExceptionHandlerFactories = [];
 
         private readonly MethodInfo EntityTypeAddedAsyncMethod =
             typeof(IEntityVisitor).GetMethod(nameof(IEntityVisitor.EntityTypeAddedAsync));
@@ -161,6 +170,60 @@ namespace Stateflows.Entities.Registration
             where TEntity : class, IEntity<TTemplate>
             => AddEntity(entityName ?? Entity<TTemplate, TEntity>.Name, version, typeof(TEntity), buildAction);
 
+        [DebuggerHidden]
+        public void AddObserver(EntityObserverFactoryAsync observerFactoryAsync)
+            => GlobalObserverFactories.Add(observerFactoryAsync);
+
+        [DebuggerHidden]
+        public void AddObserver<TObserver>()
+            where TObserver : class, IEntityObserver
+            => GlobalObserverFactories.Add(async (serviceProvider, context) =>
+                await CreateModelElementInstanceAsync<TObserver>(serviceProvider, context, "observer")
+            );
+
+        [DebuggerHidden]
+        public void AddInterceptor(EntityInterceptorFactoryAsync interceptorFactoryAsync)
+            => GlobalInterceptorFactories.Add(interceptorFactoryAsync);
+
+        [DebuggerHidden]
+        public void AddInterceptor<TInterceptor>()
+            where TInterceptor : class, IEntityInterceptor
+            => GlobalInterceptorFactories.Add(async (serviceProvider, context) =>
+                await CreateModelElementInstanceAsync<TInterceptor>(serviceProvider, context, "interceptor")
+            );
+
+        [DebuggerHidden]
+        public void AddExceptionHandler(EntityExceptionHandlerFactoryAsync exceptionHandlerFactoryAsync)
+            => GlobalExceptionHandlerFactories.Add(exceptionHandlerFactoryAsync);
+
+        [DebuggerHidden]
+        public void AddExceptionHandler<THandler>()
+            where THandler : class, IEntityExceptionHandler
+            => GlobalExceptionHandlerFactories.Add(async (serviceProvider, context) =>
+                await CreateModelElementInstanceAsync<THandler>(serviceProvider, context, "exception handler")
+            );
+
+        internal static async Task<T> CreateModelElementInstanceAsync<T>(IServiceProvider serviceProvider, IBehaviorActionContext context, string serviceKind)
+        {
+            // AsyncLocal values set here do not leak back to the caller once this async method completes.
+            ContextValues.GlobalValuesHolder.Value = context.Behavior.Values;
+            ContextValues.StateValuesHolder.Value = null;
+            ContextValues.ParentStateValuesHolder.Value = null;
+            ContextValues.SourceStateValuesHolder.Value = null;
+            ContextValues.TargetStateValuesHolder.Value = null;
+
+            CommonContextHolder.BehaviorContext.Value = context.Behavior;
+            CommonContextHolder.ParentBehaviorContext.Value = context.TryGetParentBehaviorContext(out var parentBehaviorContext)
+                ? parentBehaviorContext
+                : null;
+            CommonContextHolder.OwnerBehaviorContext.Value = context.TryGetOwnerBehaviorContext(out var ownerBehaviorContext)
+                ? ownerBehaviorContext
+                : null;
+            CommonContextHolder.ExecutionContext.Value = context;
+
+            return await StateflowsActivator.CreateModelElementInstanceAsync<T>(serviceProvider, serviceKind);
+        }
+
         public async Task VisitEntitiesAsync(IEntityVisitor visitor)
         {
             var tasks = Entities
@@ -198,5 +261,4 @@ namespace Stateflows.Entities.Registration
         }
     }
 }
-
 

@@ -9,7 +9,6 @@ using Stateflows.Common.Initializer;
 using Stateflows.Common.Registration.Builders;
 using Stateflows.Common.Registration.Interfaces;
 using Stateflows.StateMachines.Engine;
-using Stateflows.StateMachines.Classes;
 using Stateflows.StateMachines.Context;
 using Stateflows.StateMachines.Registration;
 using Stateflows.StateMachines.EventHandlers;
@@ -91,7 +90,6 @@ namespace Stateflows.StateMachines
                         .AddScoped<IStateMachinePlugin, Engine.Exceptions>()
                         .AddSingleton(register)
                         .AddSingleton<IStateMachinesRegister>(register)
-                        .AddScoped<IStateMachineContextProvider, StateMachineContextProvider>()
                         .AddScoped<IEventProcessor, Processor>()
                         .AddTransient<IBehaviorProvider, Provider>()
                         .AddSingleton<IStateMachineEventHandler, BehaviorStatusRequestHandler>()

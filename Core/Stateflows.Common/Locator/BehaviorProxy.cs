@@ -29,15 +29,11 @@ namespace Stateflows.Common.Locator
         public async Task<SendResult> SendAsync<TEvent>(TEvent @event, IDictionary<string, EventHeader> headers = null)
         {
             SendResult result = null;
-            var eventHolder = new EventHolder<TEvent>()
-            {
-                Payload = @event,
-                Headers = headers?.ToDictionary() ?? new Dictionary<string, EventHeader>()
-            };
+            var eventHolder = @event.ToTypedEventHolder(headers);
 
             if (Interceptor.BeforeDispatchEvent(eventHolder))
             {
-                result = await Behavior.SendAsync(eventHolder.Payload, eventHolder.Headers);
+                result = await Behavior.SendAsync(eventHolder, eventHolder.Headers);
 
                 Interceptor.AfterDispatchEvent(eventHolder);
             }
@@ -82,11 +78,11 @@ namespace Stateflows.Common.Locator
             DateTime? lastNotificationsCheck = null)
             => Behavior.GetNotificationsAsync(notificationNames, lastNotificationsCheck);
 
-        public Task<IWatcher> WatchAsync<TNotification>(Action<TNotification> handler, DateTime? replayNotificationsSince = null)
-            => Behavior.WatchAsync(handler, replayNotificationsSince);
+        public Task<IWatcher> WatchAsync<TNotification>(Func<TNotification, Task> asyncHandler, DateTime? replayNotificationsSince = null)
+            => Behavior.WatchAsync(asyncHandler, replayNotificationsSince);
 
-        public Task<IWatcher> WatchAsync(string[] notificationNames, Action<EventHolder> handler, DateTime? replayNotificationsSince = null)
-            => Behavior.WatchAsync(notificationNames, handler, replayNotificationsSince);
+        public Task<IWatcher> WatchAsync(string[] notificationNames, Func<EventHolder, Task> asyncHandler, DateTime? replayNotificationsSince = null)
+            => Behavior.WatchAsync(notificationNames, asyncHandler, replayNotificationsSince);
 
         public void Dispose()
         {

@@ -492,12 +492,7 @@ namespace Stateflows.Entities.Registration.Builders
         }
 
         [DebuggerHidden]
-        public IEntitiesBuilder AddEntity<TTemplate>(string entityName, EntityBuildAction<TTemplate> buildAction = null)
-            where TTemplate : class
-            => AddEntity(entityName, 1, buildAction);
-
-        [DebuggerHidden]
-        public IEntitiesBuilder AddEntity<TTemplate>(string entityName, int version, EntityBuildAction<TTemplate> buildAction = null)
+        public IEntitiesBuilder AddEntity<TTemplate>(string entityName, int version, EntityBuildAction<TTemplate>? buildAction = null)
             where TTemplate : class
         {
             var templateType = GetEntityTemplateType(typeof(TTemplate));
@@ -544,7 +539,7 @@ namespace Stateflows.Entities.Registration.Builders
         }
 
         [DebuggerHidden]
-        public IEntitiesBuilder AddEntity<TTemplate, TEntity>(string entityName = null, int version = 1, EntityBuildAction<TTemplate> buildAction = null)
+        public IEntitiesBuilder AddEntity<TTemplate, TEntity>(string entityName, int version, EntityBuildAction<TTemplate>? buildAction = null)
             where TTemplate : class
             where TEntity : class, IEntity<TTemplate>
         {
@@ -578,10 +573,54 @@ namespace Stateflows.Entities.Registration.Builders
         }
 
         [DebuggerHidden]
-        public IEntitiesBuilder AddEntity<TTemplate, TEntity>(int version, EntityBuildAction<TTemplate> buildAction = null)
-            where TTemplate : class
-            where TEntity : class, IEntity<TTemplate>
-            => AddEntity<TTemplate, TEntity>(null, version, buildAction);
+        public IEntitiesBuilder AddObserver(EntityObserverFactoryAsync observerFactoryAsync)
+        {
+            register.AddObserver(observerFactoryAsync);
+
+            return this;
+        }
+
+        [DebuggerHidden]
+        public IEntitiesBuilder AddObserver<TObserver>()
+            where TObserver : class, IEntityObserver
+        {
+            register.AddObserver<TObserver>();
+
+            return this;
+        }
+
+        [DebuggerHidden]
+        public IEntitiesBuilder AddExceptionHandler(EntityExceptionHandlerFactoryAsync exceptionHandlerFactoryAsync)
+        {
+            register.AddExceptionHandler(exceptionHandlerFactoryAsync);
+
+            return this;
+        }
+
+        [DebuggerHidden]
+        public IEntitiesBuilder AddExceptionHandler<THandler>()
+            where THandler : class, IEntityExceptionHandler
+        {
+            register.AddExceptionHandler<THandler>();
+
+            return this;
+        }
+
+        [DebuggerHidden]
+        public IEntitiesBuilder AddInterceptor(EntityInterceptorFactoryAsync interceptorFactoryAsync)
+        {
+            register.AddInterceptor(interceptorFactoryAsync);
+
+            return this;
+        }
+
+        [DebuggerHidden]
+        public IEntitiesBuilder AddInterceptor<TInterceptor>()
+            where TInterceptor : class, IEntityInterceptor
+        {
+            register.AddInterceptor<TInterceptor>();
+
+            return this;
+        }
     }
 }
-

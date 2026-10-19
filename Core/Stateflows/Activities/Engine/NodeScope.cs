@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
@@ -34,6 +35,13 @@ namespace Stateflows.Activities.Engine
 
         public CancellationToken CancellationToken
             => CancellationTokenSource.Token;
+        
+        private readonly List<Task> PendingTasks = [];
+        
+        public void AddPendingTask(Task task)
+        {
+            PendingTasks.Add(task);
+        }
 
         public Guid ThreadId { get; set; }
 
@@ -389,6 +397,10 @@ namespace Stateflows.Activities.Engine
         
         public async ValueTask DisposeAsync()
         {
+            if (PendingTasks.Count > 0)
+            {
+                await Task.WhenAll(PendingTasks);
+            }
             await DisposeAsync(true);
             GC.SuppressFinalize(this);
         }

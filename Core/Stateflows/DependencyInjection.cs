@@ -28,25 +28,38 @@ namespace Stateflows
 {
     public static class StateflowsDependencyInjection
     {
-        internal static IStateflowsBuilder EnsureStateflowServices(this IStateflowsBuilder stateflowsBuilder)
+        public static IStateflowsBuilder AddLegacyRuntime(this IStateflowsBuilder stateflowsBuilder)
         {
             if (!stateflowsBuilder.ServiceCollection.Any(x => x.ServiceType == typeof(StateflowsEngine)))
             {
                 stateflowsBuilder
                     .ServiceCollection
-                    .AddSingleton<StateflowsEngine>(serviceProvider => new StateflowsEngine(serviceProvider, (StateflowsBuilder)stateflowsBuilder))
+                    .AddSingleton<StateflowsEngine>(serviceProvider =>
+                        new StateflowsEngine(serviceProvider, (StateflowsBuilder)stateflowsBuilder))
                     .AddSingleton<StateflowsService>()
+                    .AddTransient<IBehaviorFactory, BehaviorFactory>()
                     .AddHostedService(provider => provider.GetRequiredService<StateflowsService>())
-                    .AddSingleton<IStateflowsTelemetry>(provider => provider.GetRequiredService<StateflowsService>())
-                    .AddSingleton<INotificationsHub, NotificationsHub>()
-                    // .AddScoped<IStateflowsSubscriber, StateflowsSubscriber>()
                     .AddHostedService<Scheduler>()
                     .AddTransient<ScheduleExecutor>()
-                    .AddTransient<StartupExecutor>()
+                    .AddTransient<StartupExecutor>();
+            }
+
+            return stateflowsBuilder;
+        }
+        
+        internal static IStateflowsBuilder EnsureStateflowServices(this IStateflowsBuilder stateflowsBuilder)
+        {
+            if (!stateflowsBuilder.ServiceCollection.Any(x => x.ServiceType == typeof(StateflowsResources)))
+            {
+                stateflowsBuilder
+                    // .AddLegacyRuntime()
+                    .ServiceCollection
+                    .AddSingleton(_ => new StateflowsResources((StateflowsBuilder)stateflowsBuilder))
+                    .AddSingleton<IStateflowsResources>(provider => provider.GetRequiredService<StateflowsResources>())
+                    .AddSingleton<INotificationsHub, NotificationsHub>()
                     .AddSingleton<ITenantAccessor, TenantAccessor>()
                     .AddScoped<CommonInterceptor>()
                     .AddScoped<IStateflowsInterceptor, CommonInterceptor>()
-                    .AddScoped<IBehaviorContextProvider, BehaviorContextProvider>()
                     .AddScoped<IStateflowsTenantExecutor, TenantExecutor>()
                     .AddTransient(provider =>
                         CommonContextHolder.ExecutionContext.Value ??
@@ -79,6 +92,9 @@ namespace Stateflows
             services.AddStateflowsClient(b => { });
 
             buildAction(builder);
+
+            // A host may register no behaviors itself (e.g. an Orleans silo only routing to behaviors hosted elsewhere).
+            builder.EnsureStateflowServices();
 
             services.AddSingleton(_ => builder.TypeMapper);
 
@@ -117,15 +133,17 @@ namespace Stateflows
                 services.AddSingleton<IStateflowsEventFilter, NoOpEventFilter>();
             }
 
-            if (!services.IsServiceRegistered<IBehaviorFactory>())
-            {
-                services.AddTransient<IBehaviorFactory, BehaviorFactory>();
-            }
-
             if (!services.IsServiceRegistered<IStateflowsSubscriber>())
             {
                 services.AddScoped<IStateflowsSubscriber, StateflowsSubscriber>();
             }
+
+            // if (!services.IsServiceRegistered<IBehaviorFactory>())
+            // {
+            //     services.AddSingleton(serviceProvider => new StateflowsEngine(serviceProvider, builder));
+            //     services.AddSingleton<StateflowsService>();
+            //     services.AddTransient<IBehaviorFactory, BehaviorFactory>();
+            // }
 
             ActionsDependencyInjection.Build(builder);
             ActivitiesDependencyInjection.Build(builder);

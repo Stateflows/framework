@@ -85,7 +85,7 @@ namespace Stateflows.Common
                 return result;
             }
             
-            TenantAccessor.CurrentTenantId = await TenantProvider.GetCurrentTenantIdAsync();
+            TenantAccessor.CurrentTenantId = TenantProvider.GetCurrentTenantId();
             
             if (eventHolder.Payload is Finalize { Mode: FinalizationMode.Immediate })
             {

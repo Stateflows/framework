@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
-        <TargetFramework>net8.0</TargetFramework>
+        <TargetFramework>net10.0</TargetFramework>
         <Nullable>enable</Nullable>
         <Title>OneOf extension for Stateflows framework</Title>
         <Version>$(STATEFLOWS_VERSION)</Version>
@@ -16,7 +16,7 @@
         <PackageLicenseFile>LICENSE</PackageLicenseFile>
         <PackageOutputPath>..\..\NuGet</PackageOutputPath>
         <GenerateDocumentationFile>true</GenerateDocumentationFile>
-        <LangVersion>12</LangVersion>
+        <LangVersion>default</LangVersion>
     </PropertyGroup>
 
     <ItemGroup>
@@ -39,7 +39,7 @@
     </ItemGroup>
 
     <ItemGroup>
-      <PackageReference Include="FluentValidation" Version="11.11.0" />
+      <PackageReference Include="FluentValidation" Version="12.2.0" />
     </ItemGroup>
 
 </Project>

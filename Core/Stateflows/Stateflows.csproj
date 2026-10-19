@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net8.0</TargetFramework>
+    <TargetFramework>net10.0</TargetFramework>
     <Title>Stateflows framework core</Title>
     <Version>$(STATEFLOWS_VERSION)</Version>
     <Authors>Stateflows</Authors>
@@ -15,7 +15,7 @@
     <PackageLicenseFile>LICENSE</PackageLicenseFile>
     <PackageOutputPath>..\..\NuGet</PackageOutputPath>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
-    <LangVersion>12</LangVersion>
+    <LangVersion>default</LangVersion>
     <Nullable>enable</Nullable>
   </PropertyGroup>
 
@@ -45,7 +45,12 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="System.Threading.Channels" Version="8.0.0" />
+    <InternalsVisibleTo Include="Stateflows.Runtimes.Orleans" />
+    <InternalsVisibleTo Include="Stateflows.Extensions.MinimalAPIs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="System.Threading.Channels" Version="10.0.13" />
   </ItemGroup>
 
 </Project>

@@ -6,7 +6,7 @@ public class ValidationFilter(IEnumerable<IStateflowsValidator> validators) : II
 {
     public async Task Invoke(IIncomingGrainCallContext context)
     {
-        if (context.Grain is BehaviorGrain)
+        if (context.Grain is StateflowsBehavior)
         {
             var eventHolder = (EventHolder)context.Request.GetArgument(0)!;
             var validation = await eventHolder.ValidateAsync(validators.ToArray());

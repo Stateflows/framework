@@ -50,20 +50,21 @@ internal class WatchesManager(TimeSpan expiration, ILogger log)
 
         if ((names?.Count ?? 0) == 0)
         {
+            NotificationNames.Remove(watcher);
             Manager.Unsubscribe(watcher);
         }
     }
 
     public async Task NotifyAsync(OrleansEventHolder[] notifications)
     {
-        var notificationNames = notifications.Select(n => n.Name);
+        var notificationNames = notifications.Select(n => n.Name).ToArray();
         
         await Manager.Notify(
             w =>
             {
                 var names = NotificationNames.GetValueOrDefault(w, []);
-                notifications = notifications.Where(n => names.Contains(n.Name)).ToArray();
-                return w.NotifyAsync(notifications);
+                var filtered = notifications.Where(n => names.Contains(n.Name)).ToArray();
+                return w.NotifyAsync(filtered);
             },
             w => NotificationNames.TryGetValue(w, out var names) && names.Overlaps(notificationNames)
         );

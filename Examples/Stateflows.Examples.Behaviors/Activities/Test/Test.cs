@@ -6,6 +6,7 @@ using Stateflows.Activities.Registration.Interfaces;
 using Stateflows.Common;
 using Stateflows.Common.Classes;
 using Stateflows.Common.Utilities;
+using Stateflows.Examples.Behaviors.StateMachines.Document;
 using Stateflows.Examples.Common.Events;
 using Stateflows.Extensions.MinimalAPIs;
 using Stateflows.Extensions.MinimalAPIs.Headers;

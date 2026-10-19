@@ -95,7 +95,7 @@ namespace Stateflows.Common
             => engine.ProcessEventAsync(id, this, exceptions, responses);
 
         public override Task<SendResult> SendAsync(IBehavior behavior, IDictionary<string, EventHeader> headers = null)
-            => behavior.SendAsync(Payload, headers);
+            => behavior.SendAsync(this, headers);
 
         public override Task NotifyAsync(ITypedNotificationHandler handler)
             => handler.HandleNotificationAsync(this);

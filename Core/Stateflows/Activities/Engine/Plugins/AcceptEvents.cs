@@ -29,7 +29,7 @@ namespace Stateflows.Activities.Engine
                 }
 
                 var timeEvent = Activator.CreateInstance(eventType) as TimeEvent;
-                timeEvent.SetTriggerTime(DateTime.Now);
+                timeEvent.SetTriggerTime(DateTime.UtcNow);
                 timeEvent.ConsumerSignature = node.Identifier;
                 Context.Context.PendingTimeEvents.Add(timeEvent.Id, timeEvent);
                 Context.NodeTimeEvents[node.Identifier] = timeEvent.Id;

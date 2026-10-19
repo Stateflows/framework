@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using Stateflows.Common.Context.Classes;
 using Stateflows.Entities.Attributes;
 using Stateflows.Entities.Engine;
@@ -43,7 +44,7 @@ namespace Stateflows.Entities.Models
         
         public abstract bool IsComputed { get; }
 
-        public abstract void Compute(Dictionary<string, object> values);
+        public abstract Task ComputeAsync(Dictionary<string, object> values, EntityInspection inspection);
 
         public abstract Type ValueType { get; }
         
@@ -59,7 +60,7 @@ namespace Stateflows.Entities.Models
 
         public override bool IsComputed => Computation != null;
 
-        public override void Compute(Dictionary<string, object> values)
+        public override async Task ComputeAsync(Dictionary<string, object> values, EntityInspection inspection)
         {
             if (Computation == null)
             {
@@ -67,7 +68,11 @@ namespace Stateflows.Entities.Models
             }
 
             var (proxy, entity) = EntityProxy<TTemplate>.Create(values, EntityModel);
-            var result = Computation(entity);
+            var observedEntity = inspection.HasOperationContexts
+                ? EntityProxy<TTemplate>.Create(values, EntityModel).Item2
+                : entity;
+            var result = await inspection.ComputedFieldAsync<TTemplate, TField>(
+                observedEntity, Name, () => Task.FromResult(Computation(entity)));
             values[Name.GetFieldKey()] = result;
             EntityContextValues.SetFieldDependencies(values, Name, proxy.ReadFields.Where(fieldName => fieldName != Name));
         }
@@ -79,7 +84,7 @@ namespace Stateflows.Entities.Models
 
         public Delegate MutationAction { get; set; }
         
-        public Action<Dictionary<string, object>, BehaviorContext, object> Invoke { get; set; }
+        public Func<Dictionary<string, object>, BehaviorContext, EntityInspection, object, Task> InvokeAsync { get; set; }
     }
 
     internal class InitializerModel
@@ -97,7 +102,7 @@ namespace Stateflows.Entities.Models
 
         public Delegate ProjectionAction { get; set; }
 
-        public Func<Dictionary<string, object>, BehaviorContext, object> Invoke { get; set; }
+        public Func<Dictionary<string, object>, EntityInspection, Task<object>> InvokeAsync { get; set; }
 
         public PublishScope PublishScope { get; set; } = PublishScope.None;
     }

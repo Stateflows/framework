@@ -201,7 +201,7 @@ namespace Entity.IntegrationTests.Tests
             var storage = ServiceProvider.GetRequiredService<IStateflowsStorage>();
             var tenantAccessor = ServiceProvider.GetRequiredService<ITenantAccessor>();
             var tenantProvider = ServiceProvider.GetRequiredService<IStateflowsTenantProvider>();
-            tenantAccessor.CurrentTenantId = await tenantProvider.GetCurrentTenantIdAsync();
+            tenantAccessor.CurrentTenantId = tenantProvider.GetCurrentTenantId();
             return await storage.HydrateAsync(new EntityClass(entityName).ToId(instance));
         }
 

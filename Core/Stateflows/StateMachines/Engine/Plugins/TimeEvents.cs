@@ -207,7 +207,7 @@ namespace Stateflows.StateMachines.Engine
             foreach (var timeEventType in timeEventTypes)
             {
                 var timeEvent = Activator.CreateInstance(timeEventType) as TimeEvent;
-                timeEvent.SetTriggerTime(DateTime.Now);
+                timeEvent.SetTriggerTime(DateTime.UtcNow);
                 timeEvent.ConsumerSignature = edge.Signature;
                 Context.Context.PendingTimeEvents.Add(timeEvent.Id, timeEvent);
                 timeEventIds.Add(edge.Identifier, timeEvent.Id);

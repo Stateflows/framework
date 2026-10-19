@@ -7,6 +7,6 @@ namespace Stateflows.Common.Interfaces
     {
         Task<IEnumerable<string>> GetAllTenantsAsync();
 
-        Task<string> GetCurrentTenantIdAsync();
+        string GetCurrentTenantId();
     }
 }

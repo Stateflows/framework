@@ -55,7 +55,12 @@ namespace Stateflows.Activities.Engine
         public readonly Graph Graph;
         public readonly ActivitiesRegister Register;
         public readonly NodeScope NodeScope;
-
+        
+        public void AddPendingTask(Task task)
+        {
+            NodeScope.AddPendingTask(task);
+        }
+        
         private static readonly NodeType[] CancellableTypes =
         [
             NodeType.Action,
@@ -159,9 +164,8 @@ namespace Stateflows.Activities.Engine
         public IReadOnlyTree<string> GetNodesTree()
             => NodesTree.Translate(node => node.OwnName);
 
-        public Task<IEnumerable<Type>> GetExpectedEventsAsync()
-            => eventFilter.FilterTypesAsync(
-                BehaviorStatus switch
+        public IEnumerable<Type> GetExpectedEvents()
+            => BehaviorStatus switch
                 {
                     BehaviorStatus.Initialized => GetActiveNodes()
                         .SelectMany(node => node.ActualEventTypes)
@@ -173,11 +177,10 @@ namespace Stateflows.Activities.Engine
                         : [ typeof(Initialize) ],
                     
                     _ => []
-                }
-            );
+                };
 
-        public async Task<IEnumerable<string>> GetExpectedEventNamesAsync()
-            => (await GetExpectedEventsAsync())
+        public IEnumerable<string> GetExpectedEventNames()
+            => GetExpectedEvents()
                 .Where(type => !typeof(SystemEvent).IsAssignableFrom(type))
                 .Where(type => !typeof(Exception).IsAssignableFrom(type))
                 .Select(type => type.GetEventName())
@@ -824,6 +827,7 @@ namespace Stateflows.Activities.Engine
 
         public async Task<ExceptionHandlingResult> HandleExceptionAsync(Node node, Exception exception, ActionContext context)
         {
+            Context.Context.ExecutionExceptions.Enqueue(exception);
             Node handler = null;
             Node handlerOwner = null;
             var currentNode = node;

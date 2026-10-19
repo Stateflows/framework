@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net8.0</TargetFramework>
+    <TargetFramework>net10.0</TargetFramework>
     <Nullable>enable</Nullable>
     <Title>DistributedLock locking for Stateflows framework</Title>
     <Version>$(STATEFLOWS_VERSION)</Version>
@@ -16,7 +16,7 @@
     <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
     <PackageOutputPath>..\..\NuGet</PackageOutputPath>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
-    <LangVersion>12</LangVersion>
+    <LangVersion>default</LangVersion>
   </PropertyGroup>
 
   <ItemGroup>
@@ -35,7 +35,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="DistributedLock.Core" Version="1.0.8" />
+    <PackageReference Include="DistributedLock.Core" Version="1.0.9" />
   </ItemGroup>
 
   <ItemGroup>

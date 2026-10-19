@@ -1,28 +1,30 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net8.0</TargetFramework>
+    <TargetFramework>net10.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
 
     <IsPackable>false</IsPackable>
     <IsTestProject>true</IsTestProject>
-    <LangVersion>12</LangVersion>
+    <LangVersion>default</LangVersion>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.11.1" />
-    <PackageReference Include="MSTest.TestAdapter" Version="3.6.0" />
-    <PackageReference Include="MSTest.TestFramework" Version="3.6.0" />
-    <PackageReference Include="coverlet.collector" Version="6.0.2">
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="18.11.0" />
+    <PackageReference Include="MSTest.TestAdapter" Version="4.5.1" />
+    <PackageReference Include="MSTest.TestFramework" Version="4.5.1" />
+    <PackageReference Include="coverlet.collector" Version="10.1.0">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
   </ItemGroup>
 
   <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
     <ProjectReference Include="..\..\Core\Stateflows.Testing\Stateflows.Testing.csproj" />
     <ProjectReference Include="..\..\Core\Stateflows\Stateflows.csproj" />
+    <ProjectReference Include="..\..\Extensions\Stateflows.Extensions.MinimalAPIs\Stateflows.Extensions.MinimalAPIs.csproj" />
   </ItemGroup>
 
 </Project>

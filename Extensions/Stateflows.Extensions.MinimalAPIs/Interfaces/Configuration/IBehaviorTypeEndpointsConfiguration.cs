@@ -121,3 +121,22 @@ public interface IActionsEndpointsConfiguration : IBaseBehaviorTypeEndpointsConf
         where TAction : class, IAction
         => ConfigureAction(new ActionClass(Actions.Action<TAction>.Name), configureActionAction);
 }
+
+public interface IEntitiesEndpointsConfiguration : IBaseBehaviorTypeEndpointsConfiguration<IEntitiesEndpointsConfiguration>
+{
+    /// <summary>
+    /// Configures Entity
+    /// </summary>
+    /// <param name="entityClass">Entity Class</param>
+    /// <param name="configureEntityAction">Configuration action</param>
+    IEntitiesEndpointsConfiguration ConfigureEntity(EntityClass entityClass,
+        System.Action<IBehaviorClassEndpointsConfiguration> configureEntityAction);
+    
+    /// <summary>
+    /// Configures Entity
+    /// </summary>
+    /// <param name="entityName">Entity Class name</param>
+    /// <param name="configureEntityAction">Configuration action</param>
+    IEntitiesEndpointsConfiguration ConfigureEntity(string entityName, System.Action<IBehaviorClassEndpointsConfiguration> configureEntityAction)
+        => ConfigureEntity(new EntityClass(entityName), configureEntityAction);
+}

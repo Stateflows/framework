@@ -18,6 +18,7 @@ internal static class Utils
             BehaviorType.StateMachine => "stateMachines",
             BehaviorType.Activity => "activities",
             BehaviorType.Action => "actions",
+            BehaviorType.Entity => "entities",
             _ => $"{behaviorType.ToCamelCase()}s"
         };
     
@@ -155,9 +156,11 @@ internal static class Utils
             EventStatus.Invalid => Results.Content(jsonResult, "application/json", statusCode: 400),
             EventStatus.Deferred => Results.Content(jsonResult, "application/json", statusCode: 202), // 202 accepted
             EventStatus.Consumed => Results.Content(jsonResult, "application/json", statusCode: 200),
+            EventStatus.Duplicated => Results.Content(jsonResult, "application/json", statusCode: 200),
             EventStatus.NotConsumed => Results.Content(jsonResult, "application/json", statusCode: 409),
             EventStatus.Failed => Results.Content(jsonResult, "application/json", statusCode: 500), // 500 server error
             EventStatus.Forwarded => Results.Content(jsonResult, "application/json", statusCode: 202), // 202 accepted
+            EventStatus.Overloaded => Results.Content(jsonResult, "application/json", statusCode: 503), // 503 service unavailable, retryable
             _ => Results.Content(jsonResult, "application/json", statusCode: 500), // 500 server error
         };
 

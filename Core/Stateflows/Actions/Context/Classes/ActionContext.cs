@@ -82,7 +82,7 @@ namespace Stateflows.Actions.Context.Classes
         BehaviorId IOwnerBehaviorContext.Id => Context.ContextOwnerId!.Value;
 
         private void PublishRange<TNotification>(BehaviorId behaviorId, IEnumerable<TNotification> notifications, IDictionary<string, EventHeader>? headers = null)
-            => Subscriber.PublishRangeAsync(behaviorId, notifications, Context, headers).Wait();
+            => RootContext.Executor.PendingTasks.Add(Subscriber.PublishRangeAsync(behaviorId, notifications, Context, headers));
 
         void IPublishes<IBehaviorContext>.PublishRange<TNotification>(IEnumerable<TNotification> notifications, IDictionary<string, EventHeader>? headers)
             => PublishRange(Context.Id, notifications, headers);
@@ -218,7 +218,7 @@ namespace Stateflows.Actions.Context.Classes
                 : (false, default);
 
         private Task SubscribeAsync<TNotification>(BehaviorId subscribeeBehaviorId, BehaviorId behaviorId)
-            => _ = Subscriber.SubscribeAsync<TNotification>(subscribeeBehaviorId, behaviorId);
+            => Subscriber.SubscribeAsync<TNotification>(subscribeeBehaviorId, behaviorId);
 
         Task ISubscriptions<IBehaviorContext>.SubscribeAsync<TNotification>(BehaviorId behaviorId)
             => SubscribeAsync<TNotification>(Id, behaviorId);
@@ -230,7 +230,7 @@ namespace Stateflows.Actions.Context.Classes
             => SubscribeAsync<TNotification>(Context.ContextOwnerId!.Value, behaviorId);
 
         private Task UnsubscribeAsync<TNotification>(BehaviorId subscribeeBehaviorId, BehaviorId behaviorId)
-            => _ = Subscriber.UnsubscribeAsync<TNotification>(subscribeeBehaviorId, behaviorId);
+            => Subscriber.UnsubscribeAsync<TNotification>(subscribeeBehaviorId, behaviorId);
 
         Task ISubscriptions<IBehaviorContext>.UnsubscribeAsync<TNotification>(BehaviorId behaviorId)
             => UnsubscribeAsync<TNotification>(Id, behaviorId);

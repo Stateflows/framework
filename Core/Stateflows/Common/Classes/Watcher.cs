@@ -13,7 +13,10 @@ namespace Stateflows.Common.Classes
         }
 
         public async ValueTask DisposeAsync()
-            => await unwatcher.UnwatchAsync(this);
+        {
+            await unwatcher.UnwatchAsync(this);
+            GC.SuppressFinalize(this);
+        }
         
         public void Dispose()
         {
@@ -23,7 +26,7 @@ namespace Stateflows.Common.Classes
 
         private void Dispose(bool disposing)
         {
-            unwatcher.UnwatchAsync(this).Wait();
+            _ = unwatcher.UnwatchAsync(this);
         }
 
         ~Watcher()

@@ -2,16 +2,13 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Diagnostics;
-using System.Collections.Generic;
 using Microsoft.Extensions.Hosting;
 using Stateflows.Common.Classes;
-using Stateflows.Common.Engine.Interfaces;
 
 namespace Stateflows.Common
 {
-    internal class StateflowsService(StateflowsEngine stateflowsEngine) :
-        IHostedService,
-        IStateflowsTelemetry
+    internal class StateflowsService(StateflowsEngine stateflowsEngine, StateflowsResources resources) :
+        IHostedService
     {
         private readonly CancellationTokenSource CancellationTokenSource = new();
 
@@ -19,7 +16,7 @@ namespace Stateflows.Common
         {
             var token = new ExecutionToken(id, eventHolder, serviceProvider);
 
-            var resource = stateflowsEngine.StateflowsBuilder.ResourcesByBehaviorClass[id.BehaviorClass];
+            var resource = resources.ResourcesByName[resources.ResourcesByBehaviorClass[id.BehaviorClass].Name];
             
             await resource.WriteAsync(token);
             
@@ -37,7 +34,7 @@ namespace Stateflows.Common
         [DebuggerHidden]
         private Task ExecutionTaskAsync(CancellationToken cancellationToken)
         {
-            foreach (var resourceName in stateflowsEngine.StateflowsBuilder.ResourceNames.Values)
+            foreach (var resourceName in resources.ResourcesByName.Values)
             {
                 _ = Task.Run(
                     async () =>
@@ -75,25 +72,5 @@ namespace Stateflows.Common
 
             return Task.CompletedTask;
         }
-
-        public IEnumerable<IStateflowsResource> Resources => stateflowsEngine.StateflowsBuilder.ResourceNames.Values;
-
-        private Dictionary<BehaviorClass, IStateflowsResource> resourcesByBehaviorClass;
-        public IReadOnlyDictionary<BehaviorClass, IStateflowsResource> ResourcesByBehaviorClass
-        {
-            get
-            {
-                if (resourcesByBehaviorClass == null)
-                {
-                    resourcesByBehaviorClass = new Dictionary<BehaviorClass, IStateflowsResource>();
-                    foreach (var pair in  stateflowsEngine.StateflowsBuilder.ResourcesByBehaviorClass)
-                    {
-                        resourcesByBehaviorClass[pair.Key] = pair.Value;
-                    }
-                }
-
-                return resourcesByBehaviorClass;
-            }
-        } 
     }
 }

@@ -266,16 +266,16 @@ namespace Stateflows.StateMachines.Engine
             return global && local && plugin;
         }
 
-        public void AfterProcessEvent<TEvent>(Context.Classes.EventContext<TEvent> context, Common.Context.Classes.EventContext<TEvent> commonContext, EventStatus eventStatus)
+        public async Task AfterProcessEventAsync<TEvent>(Context.Classes.EventContext<TEvent> context, Common.Context.Classes.EventContext<TEvent> commonContext, EventStatus eventStatus)
         {
-            ReverseInterceptors.RunSafe(i => i.AfterProcessEvent(context, eventStatus), nameof(AfterProcessEvent), Logger);
+            ReverseInterceptors.RunSafe(i => i.AfterProcessEvent(context, eventStatus), nameof(IStateMachineInterceptor.AfterProcessEvent), Logger);
             GlobalInterceptor.AfterProcessEvent(commonContext, eventStatus);
-            ReversePlugins.RunSafe(i => i.AfterProcessEvent(context, eventStatus), nameof(AfterProcessEvent), Logger);
+            ReversePlugins.RunSafe(i => i.AfterProcessEvent(context, eventStatus), nameof(IStateMachinePlugin.AfterProcessEvent), Logger);
 
             if (context.Context.EventHolder.IsRespondedTo())
             {
-                GlobalInterceptor
-                    .RequestResponded(
+                await GlobalInterceptor
+                    .DoRequestRespondedAsync(
                         context,
                         context.Context.EventHolder,
                         context.Context.EventHolder.GetResponseHolder()
@@ -288,6 +288,7 @@ namespace Stateflows.StateMachines.Engine
 
         public bool OnStateMachineInitializationException(StateMachineInitializationContext context, Exception exception)
         {
+            context.Context.Context.ExecutionExceptions.Enqueue(exception);
             var handled = ExceptionHandlers.RunSafe(h => h.OnStateMachineInitializationException(context, exception), nameof(OnStateMachineInitializationException), Logger, false);
 
             if (!handled)
@@ -305,6 +306,7 @@ namespace Stateflows.StateMachines.Engine
 
         public bool OnStateMachineFinalizationException(StateMachineActionContext context, Exception exception)
         {
+            context.Context.Context.ExecutionExceptions.Enqueue(exception);
             var handled = ExceptionHandlers.RunSafe(h => h.OnStateMachineFinalizationException(context, exception), nameof(OnStateMachineFinalizationException), Logger, false);
 
             if (!handled)
@@ -322,6 +324,7 @@ namespace Stateflows.StateMachines.Engine
 
         public bool OnTransitionGuardException<TEvent>(GuardContext<TEvent> context, Exception exception)
         {
+            context.Context.Context.ExecutionExceptions.Enqueue(exception);
             var handled = ExceptionHandlers.RunSafe(h => h.OnTransitionGuardException(context, exception), nameof(OnTransitionGuardException), Logger, false);
 
             if (!handled)
@@ -339,6 +342,7 @@ namespace Stateflows.StateMachines.Engine
 
         public bool OnTransitionEffectException<TEvent>(TransitionContext<TEvent> context, Exception exception)
         {
+            context.Context.Context.ExecutionExceptions.Enqueue(exception);
             var handled = ExceptionHandlers.RunSafe(h => h.OnTransitionEffectException(context, exception), nameof(OnTransitionEffectException), Logger, false);
 
             if (!handled)
@@ -356,6 +360,7 @@ namespace Stateflows.StateMachines.Engine
 
         public bool OnStateInitializeException(StateActionContext context, Exception exception)
         {
+            context.Context.Context.ExecutionExceptions.Enqueue(exception);
             var handled = ExceptionHandlers.RunSafe(h => h.OnStateInitializationException(context, exception), nameof(OnStateInitializeException), Logger, false);
 
             if (!handled)
@@ -373,6 +378,7 @@ namespace Stateflows.StateMachines.Engine
 
         public bool OnStateFinalizeException(StateActionContext context, Exception exception)
         {
+            context.Context.Context.ExecutionExceptions.Enqueue(exception);
             var handled = ExceptionHandlers.RunSafe(h => h.OnStateFinalizationException(context, exception), nameof(OnStateFinalizeException), Logger, false);
 
             if (!handled)
@@ -390,6 +396,7 @@ namespace Stateflows.StateMachines.Engine
 
         public bool OnStateEntryException(StateActionContext context, Exception exception)
         {
+            context.Context.Context.ExecutionExceptions.Enqueue(exception);
             var handled = ExceptionHandlers.RunSafe(h => h.OnStateEntryException(context, exception), nameof(OnStateEntryException), Logger, false);
 
             if (!handled)
@@ -407,6 +414,7 @@ namespace Stateflows.StateMachines.Engine
 
         public bool OnStateExitException(StateActionContext context, Exception exception)
         {
+            context.Context.Context.ExecutionExceptions.Enqueue(exception);
             var handled = ExceptionHandlers.RunSafe(h => h.OnStateExitException(context, exception), nameof(OnStateExitException), Logger, false);
 
             if (!handled)

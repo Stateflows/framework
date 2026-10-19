@@ -16,7 +16,12 @@ namespace Stateflows.Common.Interfaces
         /// <param name="handler">Notification handler</param>
         /// <param name="replayNotificationsSince">Notifications published after the date will be replayed</param>
         /// <returns>Task that produces IDisposable unwatcher</returns>
-        Task<IWatcher> WatchAsync<TNotification>(Action<TNotification> handler, DateTime? replayNotificationsSince = null);
+        Task<IWatcher> WatchAsync<TNotification>(Action<TNotification> handler, DateTime? replayNotificationsSince = null)
+            => WatchAsync<TNotification>(asyncHandler: n =>
+            {
+                handler(n);
+                return Task.CompletedTask;
+            }, replayNotificationsSince);
 
         /// <summary>
         /// Watches for notifications from behavior.<br/>
@@ -26,8 +31,7 @@ namespace Stateflows.Common.Interfaces
         /// <param name="asyncHandler">Async notification handler</param>
         /// <param name="replayNotificationsSince">Notifications published after the date will be replayed</param>
         /// <returns>Task that produces IDisposable unwatcher</returns>
-        Task<IWatcher> WatchAsync<TNotification>(Func<TNotification, Task> asyncHandler, DateTime? replayNotificationsSince = null)
-            => WatchAsync<TNotification>(handler: n => _ = asyncHandler(n), replayNotificationsSince);
+        Task<IWatcher> WatchAsync<TNotification>(Func<TNotification, Task> asyncHandler, DateTime? replayNotificationsSince = null);
         
         /// <summary>
         /// Watches for notifications from behavior.<br/>
@@ -37,7 +41,12 @@ namespace Stateflows.Common.Interfaces
         /// <param name="handler">Notification handler</param>
         /// <param name="replayNotificationsSince">Notifications published after the date will be replayed</param>
         /// <returns>Task that produces IDisposable unwatcher</returns>
-        Task<IWatcher> WatchAsync(string[] notificationNames, Action<EventHolder> handler, DateTime? replayNotificationsSince = null);
+        Task<IWatcher> WatchAsync(string[] notificationNames, Action<EventHolder> handler, DateTime? replayNotificationsSince = null)
+            => WatchAsync(notificationNames, asyncHandler: n =>
+            {
+                handler(n);
+                return Task.CompletedTask;
+            }, replayNotificationsSince);
         
         /// <summary>
         /// Watches for notifications from behavior.<br/>
@@ -47,8 +56,7 @@ namespace Stateflows.Common.Interfaces
         /// <param name="asyncHandler">Async notification handler</param>
         /// <param name="replayNotificationsSince">Notifications published after the date will be replayed</param>
         /// <returns>Task that produces IDisposable unwatcher</returns>
-        Task<IWatcher> WatchAsync(string[] notificationNames, Func<EventHolder, Task> asyncHandler, DateTime? replayNotificationsSince = null)
-            => WatchAsync(notificationNames, handler: n => _ = asyncHandler(n), replayNotificationsSince);
+        Task<IWatcher> WatchAsync(string[] notificationNames, Func<EventHolder, Task> asyncHandler, DateTime? replayNotificationsSince = null);
 
         /// <summary>
         /// Waits for the next notification from behavior.

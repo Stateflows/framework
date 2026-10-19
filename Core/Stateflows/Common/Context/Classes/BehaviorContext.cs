@@ -43,6 +43,7 @@ namespace Stateflows.Common.Context.Classes
         public bool IsEmbedded => Context.ContextOwnerId != null;
 
         private void PublishRange<TNotification>(BehaviorId behaviorId, IEnumerable<TNotification> notifications, IDictionary<string, EventHeader>? headers = null)
+        // todo: get executor here and register this as a pending task
             => Subscriber.PublishRangeAsync(behaviorId, notifications, Context, headers).Wait();
 
         void IPublishes<IBehaviorContext>.PublishRange<TNotification>(IEnumerable<TNotification> notifications, IDictionary<string, EventHeader>? headers)
@@ -179,7 +180,7 @@ namespace Stateflows.Common.Context.Classes
                 : (false, default);
 
         private Task SubscribeAsync<TNotification>(BehaviorId subscribeeBehaviorId, BehaviorId behaviorId)
-            => _ = Subscriber.SubscribeAsync<TNotification>(subscribeeBehaviorId, behaviorId);
+            => Subscriber.SubscribeAsync<TNotification>(subscribeeBehaviorId, behaviorId);
 
         Task ISubscriptions<IBehaviorContext>.SubscribeAsync<TNotification>(BehaviorId behaviorId)
             => SubscribeAsync<TNotification>(Id, behaviorId);
@@ -191,7 +192,7 @@ namespace Stateflows.Common.Context.Classes
             => SubscribeAsync<TNotification>(Context.ContextOwnerId!.Value, behaviorId);
 
         private Task UnsubscribeAsync<TNotification>(BehaviorId subscribeeBehaviorId, BehaviorId behaviorId)
-            => _ = Subscriber.UnsubscribeAsync<TNotification>(subscribeeBehaviorId, behaviorId);
+            => Subscriber.UnsubscribeAsync<TNotification>(subscribeeBehaviorId, behaviorId);
 
         Task ISubscriptions<IBehaviorContext>.UnsubscribeAsync<TNotification>(BehaviorId behaviorId)
             => UnsubscribeAsync<TNotification>(Id, behaviorId);

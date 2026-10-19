@@ -86,16 +86,16 @@ namespace Stateflows.Activities.Engine
             return global && local && plugin;
         }
 
-        public void AfterProcessEvent<TEvent>(EventContext<TEvent> context, EventStatus eventStatus)
+        public async Task AfterProcessEventAsync<TEvent>(EventContext<TEvent> context, EventStatus eventStatus)
         {
-            ReverseInterceptors.RunSafe(i => i.AfterProcessEvent(context, eventStatus), nameof(AfterProcessEvent), Logger);
+            ReverseInterceptors.RunSafe(i => i.AfterProcessEvent(context, eventStatus), nameof(IActivityInterceptor.AfterProcessEvent), Logger);
             GlobalInterceptor.AfterProcessEvent(context, eventStatus);
-            Plugins.RunSafe(p => p.AfterProcessEvent(context, eventStatus), nameof(AfterProcessEvent), Logger);
+            Plugins.RunSafe(p => p.AfterProcessEvent(context, eventStatus), nameof(IActivityPlugin.AfterProcessEvent), Logger);
 
             if (context.Context.EventHolder.IsRespondedTo())
             {
-                GlobalInterceptor
-                    .RequestResponded(
+                await GlobalInterceptor
+                    .DoRequestRespondedAsync(
                         context,
                         context.Context.EventHolder,
                         context.Context.EventHolder.GetResponseHolder()
@@ -216,6 +216,7 @@ namespace Stateflows.Activities.Engine
 
         public bool OnActivityInitializationException<TEvent>(BaseContext context, EventHolder<TEvent> initializationEventHolder, Exception exception)
         {
+            context.Context.Context.ExecutionExceptions.Enqueue(exception);
             var exceptionContext = new ActivityInitializationContext<TEvent>(context.Context, context.NodeScope, initializationEventHolder, null);
             var handled = ExceptionHandlers.RunSafe(h => h.OnActivityInitializationException(exceptionContext, exception), nameof(OnActivityInitializationException), Logger, false);
             Plugins.RunSafe(h => h.OnActivityInitializationException(exceptionContext, exception), nameof(OnActivityInitializationException), Logger, false);
@@ -230,6 +231,7 @@ namespace Stateflows.Activities.Engine
 
         public bool OnActivityFinalizationException(ActivityActionContext context, Exception exception)
         {
+            context.Context.Context.ExecutionExceptions.Enqueue(exception);
             var handled = ExceptionHandlers.RunSafe(h => h.OnActivityFinalizationException(context, exception), nameof(OnActivityFinalizationException), Logger, false);
             Plugins.RunSafe(h => h.OnActivityFinalizationException(context, exception), nameof(OnActivityFinalizationException), Logger, false);
 
@@ -243,6 +245,7 @@ namespace Stateflows.Activities.Engine
 
         public bool OnNodeInitializationException(ActivityNodeContext context, Exception exception)
         {
+            context.Context.Context.ExecutionExceptions.Enqueue(exception);
             var handled = ExceptionHandlers.RunSafe(h => h.OnNodeInitializationException(context, exception), nameof(OnNodeInitializationException), Logger, false);
             Plugins.RunSafe(h => h.OnNodeInitializationException(context, exception), nameof(OnNodeInitializationException), Logger, false);
 
@@ -256,6 +259,7 @@ namespace Stateflows.Activities.Engine
 
         public bool OnNodeFinalizationException(ActivityNodeContext context, Exception exception)
         {
+            context.Context.Context.ExecutionExceptions.Enqueue(exception);
             var handled = ExceptionHandlers.RunSafe(h => h.OnNodeFinalizationException(context, exception), nameof(OnNodeFinalizationException), Logger, false);
             Plugins.RunSafe(h => h.OnNodeFinalizationException(context, exception), nameof(OnNodeFinalizationException), Logger, false);
 
@@ -269,6 +273,7 @@ namespace Stateflows.Activities.Engine
 
         public bool OnNodeExecutionException(ActivityNodeContext context, Exception exception)
         {
+            context.Context.Context.ExecutionExceptions.Enqueue(exception);
             var handled = ExceptionHandlers.RunSafe(h => h.OnNodeExecutionException(context, exception), nameof(OnNodeExecutionException), Logger, false);
             Plugins.RunSafe(h => h.OnNodeExecutionException(context, exception), nameof(OnNodeExecutionException), Logger, false);
 
@@ -282,6 +287,7 @@ namespace Stateflows.Activities.Engine
 
         public bool OnFlowGuardException<TToken>(IGuardContext<TToken> context, Exception exception)
         {
+            Executor.Context.Context.ExecutionExceptions.Enqueue(exception);
             var handled = ExceptionHandlers.RunSafe(h => h.OnFlowGuardException(context, exception), nameof(OnFlowGuardException), Logger, false);
             Plugins.RunSafe(h => h.OnFlowGuardException(context, exception), nameof(OnFlowGuardException), Logger, false);
 
@@ -295,6 +301,7 @@ namespace Stateflows.Activities.Engine
 
         public bool OnFlowTransformationException<TToken, TTransformedToken>(ITransformationContext<TToken> context, Exception exception)
         {
+            Executor.Context.Context.ExecutionExceptions.Enqueue(exception);
             var handled = ExceptionHandlers.RunSafe(h => h.OnFlowTransformationException<TToken, TTransformedToken>(context, exception), nameof(OnFlowTransformationException), Logger, false);
             Plugins.RunSafe(h => h.OnFlowTransformationException<TToken, TTransformedToken>(context, exception), nameof(OnFlowTransformationException), Logger, false);
 

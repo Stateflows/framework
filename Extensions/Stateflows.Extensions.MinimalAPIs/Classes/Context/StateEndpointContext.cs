@@ -1,5 +1,5 @@
 using Stateflows.Extensions.MinimalAPIs.Interfaces;
-using Stateflows.StateMachines;
+using IStateContext = Stateflows.Extensions.MinimalAPIs.Interfaces.IStateContext;
 
 namespace Stateflows.Extensions.MinimalAPIs;
 

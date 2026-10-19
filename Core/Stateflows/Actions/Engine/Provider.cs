@@ -1,43 +1,33 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
 using Stateflows.Actions.Registration;
 using Stateflows.Common;
-using Stateflows.Common.Classes;
 using Stateflows.Common.Interfaces;
 using Stateflows.Common.Utilities;
 
 namespace Stateflows.Actions.Service
 {
-    internal class Provider : IBehaviorProvider
+    internal class Provider(ActionsRegister register, IBehaviorFactory behaviorFactory) : IBehaviorProvider, IVersionedBehaviorProvider
     {
-        private readonly ActionsRegister Register;
-
-        private readonly StateflowsService Service;
-
-        private readonly IServiceProvider ServiceProvider;
+        public IReadOnlyDictionary<BehaviorClass, int[]> BehaviorVersions
+            => register.Actions.Values
+                .GroupBy(a => new BehaviorClass(a.BehaviorClassType, a.Name))
+                .ToDictionary(g => g.Key, g => g.Select(a => a.Version).Distinct().OrderBy(v => v).ToArray());
 
         public bool IsLocal => true;
-
-        public Provider(ActionsRegister register, StateflowsService service, IServiceProvider serviceProvider)
-        {
-            Register = register;
-            Service = service;
-            ServiceProvider = serviceProvider;
-        }
 
         public event ActionAsync<IBehaviorProvider> BehaviorClassesChanged;
 
         public bool TryProvideBehavior(BehaviorId id, out IBehavior behavior)
         {
-            behavior = Register.SupportedClassTypes.Contains(id.Type) && Register.Actions.ContainsKey($"{id.Name}.current")
-                ? new Behavior(Service, ServiceProvider, id)
+            behavior = register.SupportedClassTypes.Contains(id.Type) && register.Actions.ContainsKey($"{id.Name}.current")
+                ? behaviorFactory.CreateBehavior(id)
                 : null;
 
             return behavior != null;
         }
 
         public IEnumerable<BehaviorClass> BehaviorClasses
-            => Register.Actions.Values.Select(a => new BehaviorClass(a.BehaviorClassType, a.Name));
+            => register.Actions.Values.Select(a => new BehaviorClass(a.BehaviorClassType, a.Name));
     }
 }

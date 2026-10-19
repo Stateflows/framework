@@ -11,7 +11,7 @@ internal class ResponseBody(SendResult result, IEnumerable<EventHolder> notifica
     public EventValidation EventValidation { get; } = result.Validation;
     
     public bool ShouldSerializeEventValidation()
-        => !EventValidation.IsValid;
+        => !(EventValidation?.IsValid ?? true);
     
     public IEnumerable<EventHolder> Notifications { get; } = notifications;
     

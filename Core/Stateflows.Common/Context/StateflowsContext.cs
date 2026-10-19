@@ -2,6 +2,7 @@
 using System.Linq;
 using System.Collections.Generic;
 using System.Text.Json.Serialization;
+using System.Collections.Concurrent;
 
 namespace Stateflows.Common.Context
 {
@@ -32,7 +33,24 @@ namespace Stateflows.Common.Context
 
         public DateTime LastExecutedAt { get; set; }
 
-        public DateTime? TriggerTime { get; set; }
+        public bool ShouldSerializeEventReceipts()
+            => EventReceipts.Count != 0;
+
+        /// <summary>
+        /// Confirmed incoming event identifiers and their absolute UTC deduplication expiry times.
+        /// </summary>
+        public Dictionary<Guid, DateTime> EventReceipts { get; set; } = [];
+
+        private DateTime? triggerTime;
+
+        /// <summary>
+        /// Earliest pending time-event trigger time in UTC. Local values are converted; unspecified values are treated as UTC.
+        /// </summary>
+        public DateTime? TriggerTime
+        {
+            get => triggerTime;
+            set => triggerTime = Utilities.UtcTime.Normalize(value);
+        }
 
         public bool TriggerOnStartup { get; set; }
 
@@ -138,5 +156,9 @@ namespace Stateflows.Common.Context
         [Newtonsoft.Json.JsonIgnore]
         [JsonIgnore]
         public EventHolder? ExecutionTriggerHolder { get; set; } = null;
+
+        [Newtonsoft.Json.JsonIgnore]
+        [JsonIgnore]
+        public ConcurrentQueue<Exception> ExecutionExceptions { get; } = new();
     }
 }

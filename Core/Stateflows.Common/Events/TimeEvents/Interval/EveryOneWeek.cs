@@ -8,7 +8,7 @@ namespace Stateflows.Common
 
         protected override DateTime GetIntervalStart(DateTime startedAt)
         {
-            var result = new DateTime(startedAt.Year, startedAt.Month, startedAt.Day);
+            var result = new DateTime(startedAt.Year, startedAt.Month, startedAt.Day, 0, 0, 0, DateTimeKind.Utc);
 
             return result.AddDays(Day - result.DayOfWeek);
         }

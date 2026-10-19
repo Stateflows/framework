@@ -17,10 +17,10 @@ namespace Stateflows.Common.Engine
     {
         public void AfterProcessEvent<TEvent>(IEventContext<TEvent> context, EventStatus eventStatus)
             => interceptors.RunSafe(i => i.AfterProcessEvent(context, eventStatus), nameof(AfterProcessEvent), logger);
-
+        
         public bool BeforeProcessEvent<TEvent>(IEventContext<TEvent> context)
             => interceptors.RunSafe(i => i.BeforeProcessEvent(context), nameof(BeforeProcessEvent), logger);
-
+        
         public bool BeforeExecute(BehaviorId id, EventHolder eventHolder)
         {
             var result = true;
@@ -85,9 +85,9 @@ namespace Stateflows.Common.Engine
         private static readonly MethodInfo RequestRespondedAsyncMethod =
             typeof(CommonInterceptor).GetMethod(nameof(RequestRespondedAsync));
         
-        public void RequestResponded(IBehaviorActionContext context, EventHolder request, EventHolder response)
-            => ((Task)RequestRespondedAsyncMethod
+        public Task DoRequestRespondedAsync(IBehaviorActionContext context, EventHolder request, EventHolder response)
+            => (Task)RequestRespondedAsyncMethod
                 .MakeGenericMethod(request.PayloadType, response.PayloadType)
-                .Invoke(this, [context, request.BoxedPayload, response.BoxedPayload])!).Wait();
+                .Invoke(this, [context, request.BoxedPayload, response.BoxedPayload])!;
     }
 }

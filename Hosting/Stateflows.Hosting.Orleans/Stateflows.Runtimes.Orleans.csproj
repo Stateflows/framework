@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
-        <TargetFramework>net8.0</TargetFramework>
+        <TargetFramework>net10.0</TargetFramework>
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
         <Title>Orleans hosting for Stateflows framework</Title>
@@ -17,11 +17,15 @@
         <PackageLicenseFile>LICENSE</PackageLicenseFile>
         <PackageOutputPath>..\..\NuGet</PackageOutputPath>
         <GenerateDocumentationFile>true</GenerateDocumentationFile>
-        <LangVersion>12</LangVersion>
+        <LangVersion>default</LangVersion>
     </PropertyGroup>
 
     <ItemGroup>
       <ProjectReference Include="..\..\Core\Stateflows\Stateflows.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <InternalsVisibleTo Include="Orleans.IntegrationTests" />
     </ItemGroup>
 
     <ItemGroup>
@@ -40,9 +44,9 @@
     </ItemGroup>
 
     <ItemGroup>
-      <PackageReference Include="Microsoft.Orleans.Reminders" Version="10.0.1" />
-      <PackageReference Include="Microsoft.Orleans.Sdk" Version="10.0.1" />
-      <PackageReference Include="Microsoft.Orleans.Server" Version="10.0.1" />
+      <PackageReference Include="Microsoft.Orleans.Reminders" Version="10.4.0" />
+      <PackageReference Include="Microsoft.Orleans.Sdk" Version="10.4.0" />
+      <PackageReference Include="Microsoft.Orleans.Server" Version="10.4.0" />
     </ItemGroup>
 
 </Project>

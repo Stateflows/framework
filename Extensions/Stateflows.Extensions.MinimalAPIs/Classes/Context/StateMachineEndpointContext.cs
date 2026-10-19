@@ -1,11 +1,14 @@
 using Stateflows.Common;
 using Stateflows.Extensions.MinimalAPIs.Interfaces;
-using Stateflows.StateMachines;
+using IStateContext = Stateflows.Extensions.MinimalAPIs.Interfaces.IStateContext;
 
 namespace Stateflows.Extensions.MinimalAPIs;
 
 public class StateMachineEndpointContext : BehaviorEndpointContext, IStateMachineEndpointContext
 {
-    public IReadOnlyTree<IStateContext> CurrentStates => StateMachine.CurrentStates;
-    public IStateMachineContext StateMachine { get; internal set; }
+    private IReadOnlyTree<IStateContext>? currentStates;
+    public IReadOnlyTree<IStateContext> CurrentStates =>
+        currentStates ??= (ElementsTree ?? new Tree<string>())
+            .Translate<IStateContext>(name => new StateContext() { Name = name })
+            .AsReadOnly();
 }

@@ -34,7 +34,7 @@ namespace Stateflows.Common.Scheduler
 
                     foreach (var context in contexts)
                     {
-                        var timeEvents = context.PendingTimeEvents.Values.Where(timeEvent => timeEvent.TriggerTime < DateTime.Now).ToArray();
+                        var timeEvents = context.PendingTimeEvents.Values.Where(timeEvent => timeEvent.TriggerTime < DateTime.UtcNow).ToArray();
 
                         if (timeEvents.Length != 0 && behaviorLocator.TryLocateBehavior(context.Id, out var behavior))
                         {

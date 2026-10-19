@@ -24,9 +24,9 @@ namespace Stateflows.StateMachines.Engine
         IServiceProvider provider
     ) : IEventProcessor, IStateflowsProcessor
     {
-        public string[] BehaviorTypes => [ Constants.StateMachine ];
+        public string[] BehaviorTypes => [Constants.StateMachine];
 
-        [DebuggerHidden]
+        //[DebuggerHidden]
         private Task<EventStatus> TryHandleEventAsync<TEvent>(EventContext<TEvent> context)
         {
             var eventHandler = eventHandlers.FirstOrDefault(h => h.EventType.IsInstanceOfType(context.Event));
@@ -35,16 +35,15 @@ namespace Stateflows.StateMachines.Engine
                 ? eventHandler.TryHandleEventAsync<TEvent>(context)
                 : Task.FromResult(EventStatus.NotConsumed);
         }
-        
-        [DebuggerHidden]
-        public async Task<EventStatus> ProcessEventAsync<TEvent>(BehaviorId id, EventHolder<TEvent> eventHolder, List<Exception> exceptions)
-        {
-            try
+
+        //[DebuggerHidden]
+        public Task<EventStatus> ProcessEventAsync<TEvent>(BehaviorId id, EventHolder<TEvent> eventHolder, List<Exception> exceptions)
+            => ContextExecution.RunAsync(storage, id, exceptions, async execution =>
             {
                 var result = EventStatus.Undelivered;
 
                 await using var serviceScope = provider.CreateAsyncScope();
-                
+
                 var serviceProvider = serviceScope.ServiceProvider;
 
                 var forcedReset = eventHolder.Headers.Values.Any(h => h is ForcedReset);
@@ -55,7 +54,8 @@ namespace Stateflows.StateMachines.Engine
 
                 var stateflowsContext = forcedReset
                     ? new StateflowsContext(id)
-                    : await storage.HydrateAsync(id);
+                    : execution.Context;
+                execution.Context = stateflowsContext;
 
                 stateflowsContext.ExecutionTriggerHolder = eventHolder;
 
@@ -76,7 +76,7 @@ namespace Stateflows.StateMachines.Engine
                 }
 
                 await using var executor = new Executor(register, graph, serviceProvider, stateflowsContext, eventHolder);
-                
+
                 await executor.HydrateAsync();
 
                 try
@@ -107,35 +107,22 @@ namespace Stateflows.StateMachines.Engine
                 }
                 finally
                 {
+                    stateflowsContext.Status = executor.BehaviorStatus;
+
                     if (stateflowsContext.Status == BehaviorStatus.Initialized)
                     {
                         stateflowsContext.Version = graph.Version;
                     }
-
-                    stateflowsContext.Status = executor.BehaviorStatus;
-
-                    stateflowsContext.LastExecutedAt = DateTime.Now;
 
                     exceptions.AddRange(executor.Context.Exceptions);
 
                     executor.Dehydrate();
                 }
 
-                // out of try-finally to make sure that context won't be saved when execution fails
-                await storage.DehydrateAsync(executor.Context.Context);
+                execution.Context = executor.Context.Context;
 
                 return result;
-            }
-            catch (Exception e)
-            {
-                if (!(e is BehaviorExecutionException))
-                {
-                    Trace.WriteLine($"⦗→s⦘ State Machine '{id.Name}:{id.Instance}': exception '{e.GetType().FullName}' thrown with message '{e.Message}'");
-                }
-
-                return EventStatus.Failed;
-            }
-        }
+            });
 
         public Task CancelProcessingAsync(BehaviorId id)
             => Task.CompletedTask;
@@ -146,12 +133,12 @@ namespace Stateflows.StateMachines.Engine
             {
                 return false;
             }
-            
+
             var forceFinalize = await valueStorage.GetOrDefaultAsync(id, CommonValues.ForceFinalizeKey, false);
             if (forceFinalize)
             {
                 await valueStorage.RemoveAsync(id, CommonValues.ForceFinalizeKey);
-                
+
                 executor.BeginScope();
                 try
                 {
@@ -166,17 +153,17 @@ namespace Stateflows.StateMachines.Engine
                 }
 
                 Debug.WriteLine($"Forcefully quit processing in {id.Name}");
-                
+
                 return true;
             }
-            
+
             return false;
         }
 
         Task<EventStatus> IStateflowsProcessor.ExecuteBehaviorAsync<TEvent>(EventHolder<TEvent> eventHolder, EventStatus result, IStateflowsExecutor stateflowsExecutor)
             => ExecuteBehaviorAsync(eventHolder, result, stateflowsExecutor as Executor);
 
-        [DebuggerHidden]
+        //[DebuggerHidden]
         private async Task<EventStatus> ExecuteBehaviorAsync<TEvent>(
             EventHolder<TEvent> eventHolder,
             EventStatus result,
@@ -184,14 +171,14 @@ namespace Stateflows.StateMachines.Engine
         )
         {
             executor.StateHasChanged = false;
-            
+
             var eventContext = new EventContext<TEvent>(executor.Context);
             var commonEventContext = new Common.Context.Classes.EventContext<TEvent>(
                 eventContext.Context.Context,
                 executor.ServiceProvider,
                 eventHolder
             );
-            
+
             if (executor.Inspector.BeforeProcessEvent(eventContext, commonEventContext))
             {
                 try
@@ -199,7 +186,7 @@ namespace Stateflows.StateMachines.Engine
                     var noImplicitInitialization =
                         eventHolder.PayloadType.GetCustomAttributes<NoImplicitInitializationAttribute>().Any() ||
                         eventHolder.Headers.Values.Any(h => h is NoImplicitInitialization);
-                    
+
                     if (!executor.Initialized && !typeof(Exception).IsAssignableFrom(eventHolder.PayloadType))
                     {
                         result = await executor.InitializeAsync(eventHolder, noImplicitInitialization);
@@ -213,7 +200,7 @@ namespace Stateflows.StateMachines.Engine
                         {
                             if (
                                 handlingResult != EventStatus.Consumed &&
-                                handlingResult != EventStatus.Rejected && 
+                                handlingResult != EventStatus.Rejected &&
                                 handlingResult != EventStatus.NotInitialized
                             )
                             {
@@ -240,9 +227,11 @@ namespace Stateflows.StateMachines.Engine
                     {
                         result = EventStatus.Failed;
                     }
-                    
-                    executor.Inspector.AfterProcessEvent(eventContext, commonEventContext, result);
+
+                    await executor.Inspector.AfterProcessEventAsync(eventContext, commonEventContext, result);
                 }
+
+                // await Task.WhenAll(executor.PendingTasks);
             }
             else
             {

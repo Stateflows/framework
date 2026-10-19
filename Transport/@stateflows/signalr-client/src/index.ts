@@ -1,1 +1,0 @@
-export { UseSignalR } from "./classes/signalr-transport-factory";

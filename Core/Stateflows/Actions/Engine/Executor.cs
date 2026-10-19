@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
@@ -38,6 +39,8 @@ namespace Stateflows.Actions.Engine
         internal readonly ActionsRegister Register;
 
         private Inspector? inspector = null;
+        
+        public readonly List<Task> PendingTasks = [];
 
         public async Task<Inspector> GetInspectorAsync()
         {
@@ -205,8 +208,10 @@ namespace Stateflows.Actions.Engine
                     result = EventStatus.Failed;
                 }
                 
-                inspector.AfterProcessEvent(eventContext, result);
+                await inspector.AfterProcessEventAsync(eventContext, result);
             }
+                
+            await Task.WhenAll(PendingTasks);
             
             Trace.WriteLine($"⦗→s⦘ {StateflowsContext.Id.Type} '{StateflowsContext.Id.Name}:{StateflowsContext.Id.Instance}': processed event '{Event.GetName(eventHolder.PayloadType)}' with result '{result}'");
 
@@ -290,6 +295,7 @@ namespace Stateflows.Actions.Engine
             }
             catch (Exception e)
             {
+                StateflowsContext.ExecutionExceptions.Enqueue(e);
                 Trace.WriteLine($"⦗→s⦘ {StateflowsContext.Id.Type} '{StateflowsContext.Id.Name}:{StateflowsContext.Id.Instance}': exception '{e.GetType().FullName}' thrown with message '{e.Message}'");
                 if (!inspector.OnActionException(context, e))
                 {

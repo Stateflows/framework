@@ -22,13 +22,5 @@ public struct OrleansBehaviorId
         };
     
     public static implicit operator BehaviorId(OrleansBehaviorId behaviorId)
-        => new BehaviorId
-        {
-            BehaviorClass = new BehaviorClass()
-            {
-                Type = behaviorId.Type,
-                Name = behaviorId.Name
-            },
-            Instance = behaviorId.Instance
-        };
+        => new BehaviorId(new BehaviorClass(behaviorId.Type, behaviorId.Name), behaviorId.Instance);
 }

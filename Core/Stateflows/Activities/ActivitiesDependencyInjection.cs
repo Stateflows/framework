@@ -3,7 +3,6 @@ using System.Diagnostics;
 using System.Collections.Generic;
 using System.Linq;
 using Microsoft.Extensions.DependencyInjection;
-using Stateflows.Activities.Classes;
 using Stateflows.Common.Extensions;
 using Stateflows.Common.Interfaces;
 using Stateflows.Common.Initializer;
@@ -74,7 +73,6 @@ namespace Stateflows.Activities
                         .AddScoped<IActivityPlugin, Behaviors>()
                         .AddSingleton(register)
                         .AddSingleton<IActivitiesRegister>(register)
-                        .AddScoped<IActivityContextProvider, ActivityContextProvider>()
                         .AddScoped<IEventProcessor, Processor>()
                         .AddTransient<IBehaviorProvider, Provider>()
                         .AddSingleton<IActivityEventHandler, BehaviorStatusHandler>()

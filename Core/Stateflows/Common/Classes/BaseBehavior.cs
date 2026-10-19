@@ -17,8 +17,8 @@ namespace Stateflows.Common.Classes
         private readonly INotificationsHub notificationsHub;
         private readonly IStateflowsTenantProvider tenantProvider;
         private readonly ITenantAccessor tenantAccessor;
-        private readonly Dictionary<string, List<Action<EventHolder>>> handlers = new();
-        private readonly Dictionary<IWatcher, Action<EventHolder>> handlersByWatcher = new();
+        private readonly Dictionary<string, List<Func<EventHolder, Task>>> handlers = new();
+        private readonly Dictionary<IWatcher, Func<EventHolder, Task>> handlersByWatcher = new();
 
         public BaseBehavior(IServiceProvider serviceProvider, BehaviorId id, INotificationsHub notificationsHub)
         {
@@ -94,7 +94,7 @@ namespace Stateflows.Common.Classes
             return result;
         }
         
-        public async Task<IWatcher> WatchAsync<TNotification>(Action<TNotification> handler, DateTime? replayNotificationsSince = null)
+        public async Task<IWatcher> WatchAsync<TNotification>(Func<TNotification, Task> asyncHandler, DateTime? replayNotificationsSince = null)
         {
             var watcher = new Watcher(this);
             lock (handlers)
@@ -102,16 +102,16 @@ namespace Stateflows.Common.Classes
                 var notificationName = typeof(TNotification).GetEventName();
                 if (!handlers.TryGetValue(notificationName, out var notificationHandlers))
                 {
-                    notificationHandlers = new List<Action<EventHolder>>();
+                    notificationHandlers = [];
                     handlers.Add(notificationName, notificationHandlers);
                 }
 
-                Action<EventHolder> notificationHandler = eventHolder => handler(((EventHolder<TNotification>)eventHolder).Payload);
+                Func<EventHolder, Task> notificationHandler = eventHolder => asyncHandler(((EventHolder<TNotification>)eventHolder).Payload);
                 notificationHandlers.Add(notificationHandler);
                 handlersByWatcher[watcher] = notificationHandler;
             }
 
-            tenantAccessor.CurrentTenantId = await tenantProvider.GetCurrentTenantIdAsync();
+            tenantAccessor.CurrentTenantId = tenantProvider.GetCurrentTenantId();
             var lastNotificationCheck = replayNotificationsSince ?? DateTime.Now;
             var pendingNotifications = await notificationsHub.GetNotificationsAsync<TNotification>(
                 Id,
@@ -120,13 +120,13 @@ namespace Stateflows.Common.Classes
             
             foreach (var pendingNotification in pendingNotifications)
             {
-                handler(pendingNotification);
+                asyncHandler(pendingNotification);
             }
 
             return watcher;
         }
 
-        public async Task<IWatcher> WatchAsync(string[] notificationNames, Action<EventHolder> handler, DateTime? replayNotificationsSince = null)
+        public async Task<IWatcher> WatchAsync(string[] notificationNames, Func<EventHolder, Task> asyncHandler, DateTime? replayNotificationsSince = null)
         {
             var watcher = new Watcher(this);
             lock (handlers)
@@ -135,17 +135,17 @@ namespace Stateflows.Common.Classes
                 {
                     if (!handlers.TryGetValue(notificationName, out var notificationHandlers))
                     {
-                        notificationHandlers = new List<Action<EventHolder>>();
+                        notificationHandlers = [];
                         handlers.Add(notificationName, notificationHandlers);
                     }
 
-                    notificationHandlers.Add(handler);
+                    notificationHandlers.Add(asyncHandler);
                 }
                 
-                handlersByWatcher[watcher] = handler;
+                handlersByWatcher[watcher] = asyncHandler;
             }
 
-            tenantAccessor.CurrentTenantId = await tenantProvider.GetCurrentTenantIdAsync();
+            tenantAccessor.CurrentTenantId = tenantProvider.GetCurrentTenantId();
             var lastNotificationCheck = replayNotificationsSince ?? DateTime.Now;
             var pendingNotifications = await notificationsHub.GetNotificationsAsync(
                 Id,
@@ -155,7 +155,7 @@ namespace Stateflows.Common.Classes
             
             foreach (var pendingNotification in pendingNotifications)
             {
-                handler(pendingNotification);
+                asyncHandler(pendingNotification);
             }
 
             return watcher;
@@ -188,7 +188,7 @@ namespace Stateflows.Common.Classes
         public async Task<IEnumerable<TNotification>> GetNotificationsAsync<TNotification>(
             DateTime? lastNotificationsCheck = null)
         {
-            tenantAccessor.CurrentTenantId = await tenantProvider.GetCurrentTenantIdAsync();
+            tenantAccessor.CurrentTenantId = tenantProvider.GetCurrentTenantId();
             return await notificationsHub.GetNotificationsAsync<TNotification>(
                 Id,
                 lastNotificationsCheck
@@ -199,7 +199,7 @@ namespace Stateflows.Common.Classes
         public async Task<IEnumerable<EventHolder>> GetNotificationsAsync(string[] notificationNames,
             DateTime? lastNotificationsCheck = null)
         {
-            tenantAccessor.CurrentTenantId = await tenantProvider.GetCurrentTenantIdAsync();
+            tenantAccessor.CurrentTenantId = tenantProvider.GetCurrentTenantId();
             return await notificationsHub.GetNotificationsAsync(
                 Id,
                 notificationNames,

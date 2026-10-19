@@ -20,7 +20,17 @@ namespace Stateflows.Entities
     public static class Entity<TTemplate>
         where TTemplate : class
     {
-        public static string Name => Entity<TTemplate, TemplatedEntity<TTemplate>>.Name;
+        public static string Name
+        {
+            get
+            {
+                var entityType = typeof(TTemplate);
+                var attribute = entityType.GetCustomAttribute<EntityBehaviorAttribute>();
+                return attribute != null && attribute.Name != null
+                    ? attribute.Name
+                    : entityType.GetReadableName(TypedElements.Entities);
+            }
+        }
 
         public static BehaviorClass ToClass()
             => new BehaviorClass(BehaviorType.Entity, Name);

@@ -11,16 +11,9 @@ using Stateflows.Common.Registration.Interfaces;
 
 namespace Stateflows.Extensions.OpenTelemetry;
 
-public class MetricsInterceptor : BehaviorInterceptor
+public class MetricsInterceptor(StateflowsMeter meter) : BehaviorInterceptor
 {
     private Stopwatch _stopwatch;
-    private static double _lastDuration;
-
-    // public override Task AfterHydrateAsync(IBehaviorActionContext context)
-    //     => Task.CompletedTask;
-    //
-    // public override Task BeforeDehydrateAsync(IBehaviorActionContext context)
-    //     => Task.CompletedTask;
 
     public override bool BeforeProcessEvent<TEvent>(IEventContext<TEvent> context)
     {
@@ -43,27 +36,25 @@ public class MetricsInterceptor : BehaviorInterceptor
         }
 
         var eventName = Event.GetName(context.Event.GetType());
-        var resourceName = StateflowsMeter.ResourcesByBehaviorClass[context.Behavior.Id.BehaviorClass].Name;
+        var resourceName = meter.ResourcesByBehaviorClass[context.Behavior.Id.BehaviorClass].Name;
         
-        if (StateflowsMeter.ExecutionDurations.TryGetValue(resourceName, out var histogram))
+        if (meter.ExecutionDurations.TryGetValue(resourceName, out var histogram))
         {
             histogram.Record(
                 _stopwatch.Elapsed.TotalMilliseconds,
-                new KeyValuePair<string, object?>("behavior.class", context.Behavior.Id.BehaviorClass),
-                new KeyValuePair<string, object?>("behavior.id", context.Behavior.Id),
-                new KeyValuePair<string, object?>("behavior.id.instance", context.Behavior.Id.Instance),
+                // Behavior instance ids are intentionally not tags: they would make metric cardinality unbounded.
+                new KeyValuePair<string, object?>("behavior.class", context.Behavior.Id.BehaviorClass.ToString()),
                 new KeyValuePair<string, object?>("event.name", eventName),
                 new KeyValuePair<string, object?>("event.status", Enum.GetName(eventStatus))
             );
         }
 
-        if (StateflowsMeter.ExecutionCounters.TryGetValue(resourceName, out var counter))
+        if (meter.ExecutionCounters.TryGetValue(resourceName, out var counter))
         {
             counter.Add(
                 1,
-                new KeyValuePair<string, object?>("behavior.class", context.Behavior.Id.BehaviorClass),
-                new KeyValuePair<string, object?>("behavior.id", context.Behavior.Id),
-                new KeyValuePair<string, object?>("behavior.id.instance", context.Behavior.Id.Instance),
+                // Behavior instance ids are intentionally not tags: they would make metric cardinality unbounded.
+                new KeyValuePair<string, object?>("behavior.class", context.Behavior.Id.BehaviorClass.ToString()),
                 new KeyValuePair<string, object?>("event.name", eventName),
                 new KeyValuePair<string, object?>("event.status", Enum.GetName(eventStatus))
             );

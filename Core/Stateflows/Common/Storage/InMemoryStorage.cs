@@ -101,7 +101,7 @@ namespace Stateflows.Common.Storage
             => (await GetAllContextsAsync(behaviorClasses))
                 .Where(context =>
                     context.TriggerTime != null &&
-                    context.TriggerTime < DateTime.Now
+                    context.TriggerTime < DateTime.UtcNow
                 )
                 .ToArray();
 

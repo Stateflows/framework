@@ -3,6 +3,7 @@ using Stateflows.Common;
 using Stateflows.Common.Exceptions;
 using Stateflows.Extensions.MinimalAPIs.Interfaces;
 using Stateflows.StateMachines;
+using IBehaviorContext = Stateflows.Extensions.MinimalAPIs.Interfaces.IBehaviorContext;
 
 namespace Stateflows.Extensions.MinimalAPIs;
 
@@ -16,7 +17,8 @@ public class BehaviorEndpointContext : IBehaviorEndpointContext
     internal BehaviorStatus Status { get; set; }
     internal Dictionary<string, List<(HateoasLink, BehaviorStatus[])>> HateoasLinks { get; set; }
     internal IReadOnlyTree<string> ElementsTree { get; set; }
-    public IBehaviorContext Behavior { get; internal set; }
+    IBehaviorContext IBehaviorEndpointContext.Behavior => Behavior;
+    internal BehaviorContext Behavior { get; set; }
 
     protected BehaviorInfo GetBehaviorInfo()
     {

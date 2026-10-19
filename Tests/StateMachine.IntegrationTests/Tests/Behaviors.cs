@@ -34,6 +34,7 @@ namespace StateMachine.IntegrationTests.Tests
         public static bool EventConsumed { get; private set; } = false;
         public async Task ExecuteAsync(OtherEvent @event, CancellationToken cancellationToken)
         {
+            await Task.Delay(100);
             EventConsumed = true;
         }
     }

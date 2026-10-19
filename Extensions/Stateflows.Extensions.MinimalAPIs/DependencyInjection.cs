@@ -1,10 +1,11 @@
-﻿using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
 using Stateflows.Actions;
 using Stateflows.Common.Interfaces;
 using Stateflows.Common.Registration;
+using Stateflows.Entities;
 using Stateflows.Activities;
 using Stateflows.Activities.Registration.Interfaces;
 using Stateflows.Activities.Registration.Interfaces.Base;
@@ -158,6 +159,8 @@ public static class DependencyInjection
         RegisterActivitiesApi(builder, Interceptor, root);
 
         RegisterStateMachinesApi(builder, Interceptor, root);
+
+        RegisterEntitiesApi(builder, Interceptor, root);
     }
 
     private static IEnumerable<IEndpointDefinitionInterceptor> GetInterceptors(IEndpointRouteBuilder builder, System.Action<IMinimalAPIsBuilder>? minimalAPIsBuilderAction)
@@ -184,6 +187,13 @@ public static class DependencyInjection
         {
             var visitor = new StateMachineConfigurationVisitor(minimalAPIsBuilder);
             stateMachinesRegister.VisitStateMachinesAsync(visitor);
+        }
+
+        var entitiesRegister = builder.ServiceProvider.GetService<IEntitiesRegister>();
+        if (entitiesRegister != null)
+        {
+            var visitor = new EntityConfigurationVisitor(minimalAPIsBuilder);
+            entitiesRegister.VisitEntitiesAsync(visitor).GetAwaiter().GetResult();
         }
 
         return minimalAPIsBuilder.GetInterceptors();
@@ -367,5 +377,62 @@ public static class DependencyInjection
                 action(visitor);
             }
         }
+    }
+
+    private static void RegisterEntitiesApi(IEndpointRouteBuilder builder, Interceptor interceptor,
+        IEndpointRouteBuilder root)
+    {
+        var entitiesRegister = builder.ServiceProvider.GetService<IEntitiesRegister>();
+        if (entitiesRegister == null)
+        {
+            return;
+        }
+
+        var route = "/classes/entities";
+        var method = HttpMethods.Get;
+        if (interceptor.BeforeGetClassesEndpointDefinition(BehaviorType.Entity, ref method, ref route))
+        {
+            var endpointRouteBuilder = root.MapMethods(
+                    route,
+                    [method],
+                    (IBehaviorClassesProvider provider) =>
+                    {
+                        var result = interceptor.FilterBehaviorClasses(provider.AllBehaviorClasses.Where(behaviorClass =>
+                            behaviorClass.Type == EntityClass.Type)).ToArray();
+                        return result.Length != 0
+                            ? Results.Ok(result)
+                            : Results.NotFound();
+                    }
+                )
+                .WithTags(nameof(Stateflows));
+
+            interceptor.AfterGetClassesEndpointDefinition(BehaviorType.Entity, method, route, endpointRouteBuilder);
+        }
+
+        var instancesRoute = "/entities";
+        var instancesMethod = HttpMethods.Get;
+        if (interceptor.BeforeGetInstancesEndpointDefinition(EntityClass.Type, ref instancesMethod, ref instancesRoute))
+        {
+            var endpointRouteBuilder = root.MapMethods(
+                    instancesRoute,
+                    [instancesMethod],
+                    async (IBehaviorClassesProvider provider, IStateflowsStorage storage, ITenantAccessor tenantAccessor) =>
+                    {
+                        tenantAccessor.CurrentTenantId ??= "host";
+                        var entityClasses = interceptor.FilterBehaviorClasses(provider.AllBehaviorClasses
+                                .Where(c => c.Type == EntityClass.Type))
+                            .ToArray();
+                        var contextIds = await storage.GetAllContextIdsAsync(entityClasses);
+                        return Results.Ok(contextIds.Select(id => new { Id = id }));
+                    }
+                )
+                .WithTags(nameof(Stateflows));
+
+            interceptor.AfterGetInstancesEndpointDefinition(EntityClass.Type, instancesMethod, instancesRoute, endpointRouteBuilder);
+        }
+
+        var visitor = new EntityVisitor(root, interceptor);
+        entitiesRegister.VisitEntitiesAsync(visitor).GetAwaiter().GetResult();
+        visitor.RegisterEndpoints();
     }
 }

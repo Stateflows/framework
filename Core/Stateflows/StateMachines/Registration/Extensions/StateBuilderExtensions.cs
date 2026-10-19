@@ -158,7 +158,7 @@ public static class StateBuilderExtensions
             var behaviorId = GetBehaviorId(context, scope);
             if (behaviorId.HasValue)
             {
-                context.Behavior.SubscribeAsync<TProjectionTemplate>(GetEntityId(behaviorId.Value, entityName)).GetAwaiter().GetResult();
+                _ = context.Behavior.SubscribeAsync<TProjectionTemplate>(GetEntityId(behaviorId.Value, entityName));
             }
         }
     }

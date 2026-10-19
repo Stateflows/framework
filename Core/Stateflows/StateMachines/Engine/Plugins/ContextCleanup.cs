@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using Stateflows.StateMachines.Models;
 using Stateflows.StateMachines.Context.Classes;
 using Stateflows.StateMachines.Context.Interfaces;
+using Stateflows.StateMachines.Extensions;
 
 namespace Stateflows.StateMachines.Engine
 {
@@ -31,7 +32,7 @@ namespace Stateflows.StateMachines.Engine
                     {
                         if (context.TryGetStateContext(vertexName, out var stateContext))
                         {
-                            stateContext.Values.ClearAsync().GetAwaiter().GetResult();
+                            context.Behavior.GetExecutor().AddPendingTask(stateContext.Values.ClearAsync());
                         }
                     }
                 }

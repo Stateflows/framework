@@ -37,7 +37,8 @@ builder.Services.AddScoped<IServ, Serv>();
 
 // In order to host Stateflows behaviors, Stateflows framework must be registered in the app.
 builder.Services.AddStateflows(b => b
-            
+    .AddLegacyRuntime()
+    
     .UseFullNamesFor(TypedElements.None)
             
     .AddResource("heavy-work", b => b

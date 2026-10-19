@@ -1,5 +1,6 @@
 using System;
 using System.Diagnostics;
+using System.Threading.Tasks;
 using Stateflows.Activities.Context.Classes;
 using Stateflows.Common;
 using Stateflows.Activities.Extensions;
@@ -20,7 +21,7 @@ namespace Stateflows.Activities.Engine
                 Id = executor.Context.Id,
                 BehaviorStatus = executor.BehaviorStatus,
                 ActiveNodes = executor.GetNodesTree(),
-                ExpectedEvents = executor.GetExpectedEventNamesAsync().GetAwaiter().GetResult(),
+                ExpectedEvents = executor.GetExpectedEventNames(),
             };
 
             context.Behavior.Publish(notification);
@@ -92,7 +93,7 @@ namespace Stateflows.Activities.Engine
             
             var stateflowsContext = ((BaseContext)context).Context.Context;
             
-            valueStorage.RemoveAsync(stateflowsContext.Id, CommonValues.ForceFinalizeKey).GetAwaiter().GetResult();
+            context.Behavior.GetExecutor().AddPendingTask(valueStorage.RemoveAsync(stateflowsContext.Id, CommonValues.ForceFinalizeKey));
         }
     }
 }

@@ -47,7 +47,7 @@ namespace Stateflows.StateMachines.Engine
             {
                 Id = executor.Context.Id,
                 BehaviorStatus = BehaviorStatus.Initialized,
-                ExpectedEvents = executor.GetExpectedEventNamesAsync().GetAwaiter().GetResult()
+                ExpectedEvents = executor.GetExpectedEventNames()
             };
 
             context.Behavior.Publish(notification);
@@ -57,7 +57,7 @@ namespace Stateflows.StateMachines.Engine
         {
             var stateflowsContext = ((BaseContext)context).Context.Context;
             
-            valueStorage.RemoveAsync(stateflowsContext.Id, CommonValues.ForceFinalizeKey).GetAwaiter().GetResult();
+            context.Behavior.GetExecutor().AddPendingTask(valueStorage.RemoveAsync(stateflowsContext.Id, CommonValues.ForceFinalizeKey));
             
             Trace.WriteLine($"⦗→s⦘ State Machine '{stateflowsContext.Id.Name}:{stateflowsContext.Id.Instance}': finalized");
 
@@ -150,7 +150,7 @@ namespace Stateflows.StateMachines.Engine
                 Id = executor.Context.Id,
                 BehaviorStatus = executor.BehaviorStatus,
                 CurrentStates = executor.GetStatesTree(),
-                ExpectedEvents = executor.GetExpectedEventNamesAsync().GetAwaiter().GetResult(),
+                ExpectedEvents = executor.GetExpectedEventNames(),
             };
 
             context.Behavior.Publish(notification);

@@ -1,6 +1,5 @@
 using Stateflows.Common;
 using Stateflows.Extensions.MinimalAPIs.Interfaces;
-using Stateflows.Activities;
 using IActivityNodeContext = Stateflows.Extensions.MinimalAPIs.Interfaces.IActivityNodeContext;
 
 namespace Stateflows.Extensions.MinimalAPIs;
@@ -9,7 +8,11 @@ public class ActivityEndpointContext : BehaviorEndpointContext, IActivityEndpoin
 {
     private IReadOnlyTree<IActivityNodeContext>? activeNodes;
     public IReadOnlyTree<IActivityNodeContext> ActiveNodes =>
-        activeNodes ??= Activity.ActiveNodes.Translate<IActivityNodeContext>(n => new ActivityNodeContext() { Name = n.Name, NodeType = n.NodeType }).AsReadOnly();
-    
-    public IActivityContext Activity { get; internal set; }
+        activeNodes ??= (ElementsTree ?? new Tree<string>())
+            .Translate<IActivityNodeContext>(name => new ActivityNodeContext()
+            {
+                Name = name,
+                NodeType = ActivityVisitor.GetNodeType(Behavior.Id.Name, name)
+            })
+            .AsReadOnly();
 }

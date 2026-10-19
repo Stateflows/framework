@@ -1,4 +1,5 @@
 using System.Threading.Tasks;
+using Stateflows.Entities.Attributes;
 using Stateflows.Entities.Enums;
 
 namespace Stateflows.Entities
@@ -15,7 +16,10 @@ namespace Stateflows.Entities
             where TTemplate : class
             where TEntity : class, IEntity<TTemplate>;
         
-        Task FieldAddedAsync<TTemplate, TField>(string entityName, int entityVersion, string fieldName, TField defaultValue, bool computed)
+        Task FieldAddedAsync<TTemplate, TField>(string entityName, int entityVersion, string fieldName, TField defaultValue, bool computed, FieldAccess access)
+            where TTemplate : class;
+        
+        Task InitializerAddedAsync<TTemplate, TInitializationEvent>(string entityName, int entityVersion)
             where TTemplate : class;
         
         Task MutationAddedAsync<TTemplate, TMutationEvent>(string entityName, int entityVersion)

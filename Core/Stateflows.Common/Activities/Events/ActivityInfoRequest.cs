@@ -2,7 +2,7 @@
 
 namespace Stateflows.Activities
 {
-    [NoTracing]
+    [NoTracing, NoDeduplication]
     public sealed class ActivityInfoRequest : IRequest<ActivityInfo>
     { }
 }

@@ -2,7 +2,7 @@
 
 namespace Stateflows.StateMachines
 {
-    [NoTracing]
+    [NoTracing, NoDeduplication]
     public sealed class StateMachineInfoRequest : IRequest<StateMachineInfo>
     { }
 }

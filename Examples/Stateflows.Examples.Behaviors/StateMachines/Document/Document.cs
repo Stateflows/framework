@@ -22,6 +22,7 @@ using Stateflows.Entities;
 using Stateflows.Entities.Attributes;
 using Stateflows.Entities.Enums;
 using Stateflows.Extensions.MicrosoftAgentFramework.Agents.Enums;
+using Stateflows.Extensions.MinimalAPIs;
 using Stateflows.MAF;
 using Stateflows.MAF.AIAgents;
 using Stateflows.MAF.AIAgents.Extensions;
@@ -124,8 +125,10 @@ public class BaseDocument : IStateMachine
                 .AddAgenticReaction<string>(c => new AgenticMessage() { Role = AgenticRole.User, Contents = [ new AgenticContent() {Type = AgenticContentType.Text, Payload = c.Event} ] })
             )
             .AddTransition<Review, ApprovalPending>(b => b
-                .AddEffect(async c => c.Event.Respond(new ReviewResponse()
-                    { Summary = $"{c.Event.Content}: {c.Event.Rating}" }))
+                .AddEffect(async c =>
+                {
+                    c.Event.Respond(new ReviewResponse() { Summary = $"{c.Event.Content}: {c.Event.Rating}" });
+                })
             )
         
             .AddTransition<AfterOneMinute, ReportAutorejection, Rejected>()
@@ -189,7 +192,7 @@ public class Document : IStateMachine
             => new PatientIdsCompleted() { Completed = PatientIdsComplete };
     }
     
-    internal interface Entity : AIAgentSessionEntity, PatientIdsEntity
+    public interface Entity : AIAgentSessionEntity, PatientIdsEntity
     {
         [Field, DefaultValue(42)] int ProcessId { get; set; }
         [Field] string FirstName { get; set; }
@@ -224,7 +227,9 @@ public class Document : IStateMachine
         //     .AddTransition<AfterOneMinute, ReportAutorejection, Rejected>()
         // )
         .AddState<ApprovalPending>(b => b
-            .AddTransition<Approve, Approved>()
+            .AddTransition<Approve, Approved>(b => b
+                .AddEffect(c => c.Behavior.PublishRetained(new BehaviorInfo() { ExpectedEvents = ["Fake"] }))
+            )
             .AddTransition<Reject, ReportRejection, Rejected>()
         )
         .AddCompositeState<Approved>(b => b
@@ -245,6 +250,10 @@ public class Document : IStateMachine
             )
             .AddState<InvoiceGenerated>(b => b
                 .AddTransition<PaymentBooked, VerifyPayment, Paid>()
+            
+                .AddEndpoints(b => b
+                    .AddGet("/xxx", () => Results.Ok("Hello world"))
+                )
             )
         )
         .AddState<Paid>(b => b

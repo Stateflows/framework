@@ -1,4 +1,5 @@
 using System.Linq;
+using System.Reflection;
 using Stateflows.Common;
 using Stateflows.Activities.Context.Interfaces;
 
@@ -16,12 +17,16 @@ internal class Behaviors : ActivityPlugin
                     .Where(p => p.Value is not BehaviorEmbedding)
                     .ToDictionary();
                 
-                headers[nameof(NoForwarding)] = new NoForwarding();
-
-                if (context.TryGetParentBehaviorContext(out var parentBehaviorContext))
+                var noBubblingAttribute = context.Event.GetType().GetCustomAttribute<NoBubblingAttribute>();
+                if (!headers.Values.Any(h => h is NoBubbling) && noBubblingAttribute == null)
                 {
-                    parentBehaviorContext.Send(context.Event, headers);
-                };
+                    headers[nameof(NoForwarding)] = new NoForwarding();
+
+                    if (context.TryGetParentBehaviorContext(out var parentBehaviorContext))
+                    {
+                        parentBehaviorContext.Send(context.Event, headers);
+                    }
+                }
             }
         }
     }

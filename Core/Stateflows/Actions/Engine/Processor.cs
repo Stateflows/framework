@@ -9,6 +9,7 @@ using Stateflows.Common;
 using Stateflows.Common.Interfaces;
 using Stateflows.Actions.Registration;
 using Stateflows.Common.Context;
+using Stateflows.Common.Engine;
 
 namespace Stateflows.Actions.Engine
 {
@@ -22,108 +23,113 @@ namespace Stateflows.Actions.Engine
     {
         public string[] BehaviorTypes => register.SupportedClassTypes;
 
+        internal bool IsStateful(BehaviorId id, int version)
+            => register.Actions.TryGetValue(version != 0 ? $"{id.Name}.{version}" : $"{id.Name}.current", out var action)
+                && !action.IsStateless;
+
         public async Task<EventStatus> ProcessEventAsync<TEvent>(BehaviorId id, EventHolder<TEvent> eventHolder, List<Exception> exceptions)
         {
-            var result = EventStatus.Undelivered;
-
-            await using var serviceScope = provider.CreateAsyncScope();
-            
-            var serviceProvider = serviceScope.ServiceProvider;
-
-            var stateflowsContext = await storage.HydrateAsync(id);
-            
-            var key = stateflowsContext.Version != 0
-                ? $"{id.Name}.{stateflowsContext.Version}"
-                : $"{id.Name}.current";
-
-            if (!register.Actions.TryGetValue(key, out var action))
-            {
-                return result;
-            }
-
             try
             {
+                var result = EventStatus.Undelivered;
+
+                var stateflowsContext = await storage.HydrateAsync(id);
+
+                var key = stateflowsContext.Version != 0
+                    ? $"{id.Name}.{stateflowsContext.Version}"
+                    : $"{id.Name}.current";
+
+                if (!register.Actions.TryGetValue(key, out var action))
+                {
+                    return result;
+                }
+
                 await using var lockHandle = await (
                     action.IsStateless
                         ? stateflowsLock.AquireNoLockAsync(id)
                         : stateflowsLock.AquireLockAsync(id)
                 );
 
-                var forcedReset = eventHolder.Headers.Values.Any(h => h is ForcedReset);
-                if (forcedReset)
+                return await ContextExecution.RunAsync(storage, id, exceptions, async execution =>
                 {
-                    await valueStorage.ClearAsync(id);
-                }
-                
-                stateflowsContext = action.IsStateless || forcedReset
-                    ? new StateflowsContext(id)
-                    : await storage.HydrateAsync(id);
+                    await using var serviceScope = provider.CreateAsyncScope();
+                    var serviceProvider = serviceScope.ServiceProvider;
+                    stateflowsContext = execution.Context;
+                    key = stateflowsContext.Version != 0
+                        ? $"{id.Name}.{stateflowsContext.Version}"
+                        : $"{id.Name}.current";
+                    if (!register.Actions.TryGetValue(key, out action))
+                    {
+                        return EventStatus.Undelivered;
+                    }
+                    execution.Persist = !action.IsStateless;
+                    var forcedReset = eventHolder.Headers.Values.Any(h => h is ForcedReset);
+                    if (forcedReset)
+                    {
+                        await valueStorage.ClearAsync(id);
+                    }
 
-                stateflowsContext.ExecutionTriggerHolder = eventHolder;
+                    stateflowsContext = action.IsStateless || forcedReset
+                        ? new StateflowsContext(id)
+                        : execution.Context;
+                    execution.Context = stateflowsContext;
 
-                if (stateflowsContext.Status == BehaviorStatus.Unknown)
-                {
-                    stateflowsContext.Status = BehaviorStatus.NotInitialized;
-                }
+                    stateflowsContext.ExecutionTriggerHolder = eventHolder;
 
-                var embedding = (BehaviorEmbedding?)eventHolder.Headers.Values.FirstOrDefault(h => h is BehaviorEmbedding);
-                if (embedding != null)
-                {
-                    stateflowsContext.ContextOwnerId = embedding.OwnerId;
-                    stateflowsContext.ContextParentId = embedding.ParentId;
-                }
+                    if (stateflowsContext.Status == BehaviorStatus.Unknown)
+                    {
+                        stateflowsContext.Status = BehaviorStatus.NotInitialized;
+                    }
 
-                var executor = new Executor(register, stateflowsContext, serviceProvider, action);
-                
-                await executor.HydrateAsync(eventHolder);
-                
-                var noImplicitInitialization =
-                    eventHolder.PayloadType.GetCustomAttributes<NoImplicitInitializationAttribute>().Any() ||
-                    eventHolder.Headers.Values.Any(h => h is NoImplicitInitialization);
-                
-                if (stateflowsContext.Status is BehaviorStatus.NotInitialized or BehaviorStatus.Unknown && !noImplicitInitialization)
-                {
-                    stateflowsContext.Status = BehaviorStatus.Initialized;
+                    var embedding = (BehaviorEmbedding?)eventHolder.Headers.Values.FirstOrDefault(h => h is BehaviorEmbedding);
+                    if (embedding != null)
+                    {
+                        stateflowsContext.ContextOwnerId = embedding.OwnerId;
+                        stateflowsContext.ContextParentId = embedding.ParentId;
+                    }
 
-                    var context = new ActionDelegateContext(stateflowsContext, executor, eventHolder, serviceProvider);
-                    var inspector = await executor.GetInspectorAsync();
-                    inspector.BeforeActionInitialize(context);
-                    inspector.AfterActionInitialize(context);
-                }
+                    var executor = new Executor(register, stateflowsContext, serviceProvider, action);
 
-                if (
-                    stateflowsContext.Status == BehaviorStatus.Initialized ||
-                    eventHolder is EventHolder<BehaviorInfoRequest> ||
-                    eventHolder is EventHolder<Finalize> ||
-                    eventHolder is EventHolder<Reset>
-                )
-                {
-                    result = await ExecuteBehaviorAsync(eventHolder, result, executor);
-                }
+                    await executor.HydrateAsync(eventHolder);
 
-                await executor.DehydrateAsync(eventHolder);
+                    var noImplicitInitialization =
+                        eventHolder.PayloadType.GetCustomAttributes<NoImplicitInitializationAttribute>().Any() ||
+                        eventHolder.Headers.Values.Any(h => h is NoImplicitInitialization);
+
+                    if (stateflowsContext.Status is BehaviorStatus.NotInitialized or BehaviorStatus.Unknown && !noImplicitInitialization)
+                    {
+                        stateflowsContext.Status = BehaviorStatus.Initialized;
+
+                        using var context = new ActionDelegateContext(stateflowsContext, executor, eventHolder, serviceProvider);
+                        var inspector = await executor.GetInspectorAsync();
+                        inspector.BeforeActionInitialize(context);
+                        inspector.AfterActionInitialize(context);
+                    }
+
+                    if (
+                        stateflowsContext.Status == BehaviorStatus.Initialized ||
+                        eventHolder is EventHolder<BehaviorInfoRequest> ||
+                        eventHolder is EventHolder<Finalize> ||
+                        eventHolder is EventHolder<Reset>
+                    )
+                    {
+                        result = await ExecuteBehaviorAsync(eventHolder, result, executor);
+                    }
+
+                    await executor.DehydrateAsync(eventHolder);
+                    if (stateflowsContext.Status == BehaviorStatus.Initialized)
+                    {
+                        stateflowsContext.Version = action.Version;
+                    }
+
+                    return result;
+                });
             }
-            catch (Exception ex)
+            catch (Exception exception)
             {
-                exceptions.Add(ex);
-                result = EventStatus.Failed;
+                exceptions.Add(exception);
+                return EventStatus.Failed;
             }
-            finally
-            {
-                if (stateflowsContext.Status == BehaviorStatus.Initialized)
-                {
-                    stateflowsContext.Version = action.Version;
-                }
-
-                stateflowsContext.LastExecutedAt = DateTime.Now;
-                
-                if (!action.IsStateless)
-                {
-                    await storage.DehydrateAsync(stateflowsContext);
-                }
-            }
-
-            return result;
         }
 
         public Task CancelProcessingAsync(BehaviorId id)
@@ -138,7 +144,7 @@ namespace Stateflows.Actions.Engine
                     }
                 }
             }
-            
+
             return Task.CompletedTask;
         }
 

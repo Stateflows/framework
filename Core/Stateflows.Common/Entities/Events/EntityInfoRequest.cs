@@ -2,7 +2,7 @@
 
 namespace Stateflows.Entities
 {
-    [NoTracing]
+    [NoTracing, NoDeduplication]
     public sealed class EntityInfoRequest : IRequest<EntityInfo>
     { }
 }

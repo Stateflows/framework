@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using Stateflows.Common.Registration.Builders;
 using Stateflows.Entities.Models;
+using Stateflows.Entities.Registration.Interfaces;
 
 namespace Stateflows.Entities.Registration
 {
@@ -23,5 +24,11 @@ namespace Stateflows.Entities.Registration
         public StateflowsBuilder StateflowsBuilder { get; init; }
 
         public List<Func<IEntityVisitor, Task>> VisitingTasks { get; set; } = [];
+
+        public List<EntityObserverFactoryAsync> ObserverFactories { get; } = [];
+
+        public List<EntityInterceptorFactoryAsync> InterceptorFactories { get; } = [];
+
+        public List<EntityExceptionHandlerFactoryAsync> ExceptionHandlerFactories { get; } = [];
     }
 }

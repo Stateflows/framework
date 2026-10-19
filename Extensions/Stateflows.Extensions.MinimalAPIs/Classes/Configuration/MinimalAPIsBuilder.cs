@@ -12,6 +12,7 @@ internal class MinimalAPIsBuilder(IServiceProvider serviceProvider) :
     IStateMachinesEndpointsConfiguration,
     IActivitiesEndpointsConfiguration,
     IActionsEndpointsConfiguration,
+    IEntitiesEndpointsConfiguration,
     IBehaviorInstanceEndpointsConfiguration
 {
     private readonly List<Func<IServiceProvider, IEndpointDefinitionInterceptor>> interceptorFactories = [];
@@ -421,6 +422,42 @@ internal class MinimalAPIsBuilder(IServiceProvider serviceProvider) :
 
     public IActionsEndpointsConfiguration ConfigureAction(ActionClass actionClass, Action<IBehaviorClassEndpointsConfiguration> configureBehaviorClassAction)
         => ConfigureBehaviorClass(actionClass, configureBehaviorClassAction);
+
+    public IEntitiesEndpointsConfiguration ConfigureEntity(EntityClass entityClass, Action<IBehaviorClassEndpointsConfiguration> configureBehaviorClassAction)
+        => ConfigureBehaviorClass(entityClass, configureBehaviorClassAction);
+
+    public IMinimalAPIsBuilder ConfigureEntities(Action<IEntitiesEndpointsConfiguration> configureBehaviorClassAction)
+    {
+        CurrentKind = EndpointKind.All;
+        CurrentType = BehaviorType.Entity;
+        CurrentClass = null;
+        CurrentEvent = null;
+        CurrentIsDefaultInstance = null;
+
+        configureBehaviorClassAction.Invoke(this);
+
+        CurrentClass = null;
+
+        return this;
+    }
+
+    IEntitiesEndpointsConfiguration IBaseBehaviorTypeEndpointsConfiguration<IEntitiesEndpointsConfiguration>.ConfigureAllEndpoints(Action<IEndpointConfiguration> configureEndpointAction)
+        => ConfigureAllEndpoints(BehaviorType.Entity, configureEndpointAction);
+
+    IEntitiesEndpointsConfiguration IBaseBehaviorTypeEndpointsConfiguration<IEntitiesEndpointsConfiguration>.ConfigureGetInstancesEndpoint(Action<IEndpointConfiguration> configureEndpointAction)
+        => ConfigureGetInstancesEndpoint(BehaviorType.Entity, configureEndpointAction);
+
+    IEntitiesEndpointsConfiguration IBaseBehaviorTypeEndpointsConfiguration<IEntitiesEndpointsConfiguration>.ConfigureGetClassesEndpoint(Action<IEndpointConfiguration> configureEndpointAction)
+        => ConfigureGetClassesEndpoint(BehaviorType.Entity, configureEndpointAction);
+
+    IEntitiesEndpointsConfiguration IBaseBehaviorTypeEndpointsConfiguration<IEntitiesEndpointsConfiguration>.ConfigureCustomEndpoints(Action<IEndpointConfiguration> configureEndpointAction)
+        => ConfigureCustomEndpoints(configureEndpointAction);
+
+    IEntitiesEndpointsConfiguration IEventsConfiguration<IEntitiesEndpointsConfiguration>.ConfigureEventEndpoint<TEvent>(Action<IEndpointConfiguration> configureEndpointAction)
+        => ConfigureEventEndpoint<TEvent>(BehaviorType.Entity, configureEndpointAction);
+
+    IEntitiesEndpointsConfiguration IEventsConfiguration<IEntitiesEndpointsConfiguration>.ConfigureAllEventEndpoints(Action<IEndpointConfiguration> configureEndpointAction)
+        => ConfigureAllEventEndpoints(configureEndpointAction);
 
     public IBehaviorClassEndpointsConfiguration ConfigureDefaultInstance(Action<IBehaviorInstanceEndpointsConfiguration> configureInstanceAction)
     {

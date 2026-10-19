@@ -1,5 +1,5 @@
 ﻿using System;
-using System.Threading.Tasks;
+using System.Linq;
 using System.Collections.Generic;
 using Stateflows.Common.Engine;
 using Stateflows.Common.Interfaces;
@@ -14,49 +14,31 @@ namespace Stateflows.Common.Locator
 
         public IServiceProvider ServiceProvider { get; }
 
-        private IDictionary<BehaviorClass, IBehaviorProvider> ProvidersByClasses { get; } = new Dictionary<BehaviorClass, IBehaviorProvider>();
+        // Local providers take precedence over remote ones. Providers are queried on each lookup (instead of caching
+        // their classes and subscribing to changes), so a scoped locator holds no references from singleton providers.
+        private readonly IBehaviorProvider[] orderedProviders;
 
         public BehaviorLocator(IEnumerable<IBehaviorProvider> providers, ClientInterceptor interceptor, IServiceProvider serviceProvider)
         {
             Providers = providers;
             Interceptor = interceptor;
             ServiceProvider = serviceProvider;
-
-            foreach (var provider in Providers)
-            {
-                provider.BehaviorClassesChanged += changedProvider => RegisterProviderClasses(changedProvider);
-
-                RegisterProviderClasses(provider);
-            }
-        }
-
-        private Task RegisterProviderClasses(IBehaviorProvider provider)
-        {
-            foreach (var behaviorClass in provider.BehaviorClasses)
-            {
-                if (!ProvidersByClasses.ContainsKey(behaviorClass) || provider.IsLocal)
-                {
-                    ProvidersByClasses[behaviorClass] = provider;
-                }
-            }
-
-            return Task.CompletedTask;
+            orderedProviders = providers.OrderBy(provider => provider.IsLocal ? 0 : 1).ToArray();
         }
 
         public bool TryLocateBehavior(BehaviorId id, out IBehavior behavior)
         {
-            behavior = null;
-
-            var result = false;
-
-            if (ProvidersByClasses.TryGetValue(id.BehaviorClass, out var provider) && provider.TryProvideBehavior(id, out behavior))
+            foreach (var provider in orderedProviders)
             {
-                behavior = new BehaviorProxy(behavior, Interceptor, ServiceProvider);
-
-                result = true;
+                if (provider.TryProvideBehavior(id, out var providedBehavior))
+                {
+                    behavior = new BehaviorProxy(providedBehavior, Interceptor, ServiceProvider);
+                    return true;
+                }
             }
 
-            return result;
+            behavior = null;
+            return false;
         }
     }
 }

@@ -64,7 +64,16 @@ internal class ActivityVisitor(
 
     Task IActivityVisitor.NodeAddedAsync(string activityName, int activityVersion, string nodeName, NodeType nodeType,
         string parentNodeName)
-        => Task.CompletedTask;
+    {
+        NodeTypes[(activityName, nodeName)] = nodeType;
+        return Task.CompletedTask;
+    }
+
+    // Node types are taken from the model, so endpoint contexts don't need to hydrate behavior state.
+    private static readonly System.Collections.Concurrent.ConcurrentDictionary<(string ActivityName, string NodeName), NodeType> NodeTypes = new();
+
+    internal static NodeType GetNodeType(string activityName, string nodeName)
+        => NodeTypes.TryGetValue((activityName, nodeName), out var nodeType) ? nodeType : default;
 
     Task IActivityVisitor.NodeTypeAddedAsync<TNode>(string activityName, int activityVersion, string nodeName)
     {

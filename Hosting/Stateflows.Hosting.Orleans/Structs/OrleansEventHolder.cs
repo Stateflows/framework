@@ -29,6 +29,7 @@ public struct OrleansEventHolder
     public DateTime SentAt { get; set; }
 
     [Id(7)]
+    [Newtonsoft.Json.JsonProperty(TypeNameHandling = Newtonsoft.Json.TypeNameHandling.None)]
     public OrleansBehaviorId? SenderId { get; set; }
     
     public static implicit operator EventHolder(OrleansEventHolder orleansEventHolder)
@@ -84,6 +85,7 @@ public struct OrleansEventHolder<TEvent>
     public DateTime SentAt { get; set; }
 
     [Id(6)]
+    [Newtonsoft.Json.JsonProperty(TypeNameHandling = Newtonsoft.Json.TypeNameHandling.None)]
     public OrleansBehaviorId? SenderId { get; set; }
     
     public static implicit operator EventHolder<TEvent>(OrleansEventHolder<TEvent> orleansEventHolder)

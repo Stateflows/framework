@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
-        <TargetFramework>net8.0</TargetFramework>
+        <TargetFramework>net10.0</TargetFramework>
         <Nullable>enable</Nullable>
         <Title>Open Telemetry extension for Stateflows framework</Title>
         <Version>$(STATEFLOWS_VERSION)</Version>
@@ -11,12 +11,12 @@
         <PackageProjectUrl>https://www.stateflows.net</PackageProjectUrl>
         <RepositoryUrl>https://github.com/Stateflows/framework</RepositoryUrl>
         <RepositoryType>git</RepositoryType>
-        <PackageTags>Stateflows;state-machine;activity;workflow;OpenTelemetry;open-telemetry;log;trace</PackageTags>
+        <PackageTags>Stateflows;state-machine;activity;action;entity;workflow;OpenTelemetry;open-telemetry;log;trace</PackageTags>
         <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
         <PackageLicenseFile>LICENSE</PackageLicenseFile>
         <PackageOutputPath>..\..\NuGet</PackageOutputPath>
         <GenerateDocumentationFile>true</GenerateDocumentationFile>
-        <LangVersion>12</LangVersion>
+        <LangVersion>default</LangVersion>
     </PropertyGroup>
 
     <ItemGroup>
@@ -39,8 +39,8 @@
     </ItemGroup>
 
     <ItemGroup>
-      <PackageReference Include="OpenTelemetry.Extensions.Hosting" Version="1.9.0" />
-      <PackageReference Include="System.Diagnostics.DiagnosticSource" Version="9.0.8" />
+      <PackageReference Include="OpenTelemetry.Extensions.Hosting" Version="1.20.0" />
+      <PackageReference Include="System.Diagnostics.DiagnosticSource" Version="10.0.13" />
     </ItemGroup>
 
 </Project>

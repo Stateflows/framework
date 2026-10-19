@@ -10,26 +10,33 @@ namespace Stateflows.StateMachines.EventHandlers
     {
         public Type EventType => typeof(StateMachineInfoRequest);
 
-        public async Task<EventStatus> TryHandleEventAsync<TEvent>(IEventContext<TEvent> context)
+        public Task<EventStatus> TryHandleEventAsync<TEvent>(IEventContext<TEvent> context)
         {
-            if (context.Event is StateMachineInfoRequest request)
+            try
             {
-                var executor = context.Behavior.GetExecutor();
-
-                var response = new StateMachineInfo()
+                if (context.Event is StateMachineInfoRequest request)
                 {
-                    Id = executor.Context.Id,
-                    CurrentStates = executor.GetStatesTree(),
-                    ExpectedEvents = await executor.GetExpectedEventNamesAsync(),
-                    BehaviorStatus = executor.BehaviorStatus
-                };
+                    var executor = context.Behavior.GetExecutor();
 
-                request.Respond(response);
+                    var response = new StateMachineInfo()
+                    {
+                        Id = executor.Context.Id,
+                        CurrentStates = executor.GetStatesTree(),
+                        ExpectedEvents = executor.GetExpectedEventNames(),
+                        BehaviorStatus = executor.BehaviorStatus
+                    };
 
-                return EventStatus.Consumed;
+                    request.Respond(response);
+
+                    return Task.FromResult(EventStatus.Consumed);
+                }
+
+                return Task.FromResult(EventStatus.NotConsumed);
             }
-
-            return EventStatus.NotConsumed;
+            catch (Exception exception)
+            {
+                return Task.FromException<EventStatus>(exception);
+            }
         }
     }
 }

@@ -3,7 +3,6 @@ using System.Diagnostics;
 using System.Collections.Generic;
 using System.Linq;
 using Microsoft.Extensions.DependencyInjection;
-using Stateflows.Actions.Classes;
 using Stateflows.Actions.Context;
 using Stateflows.Actions.Engine;
 using Stateflows.Actions.Service;
@@ -67,7 +66,6 @@ namespace Stateflows.Actions
                         .ServiceCollection
                         .AddSingleton(register)
                         .AddSingleton<IActionsRegister>(register)
-                        .AddScoped<IActionContextProvider, ActionContextProvider>()
                         .AddScoped<IEventProcessor, Processor>()
                         .AddTransient<IBehaviorProvider, Provider>()
                         

@@ -3,6 +3,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using System.Threading.Tasks;
 using Stateflows.Common;
 using Stateflows.Common.Context.Classes;
 using Stateflows.Common.Interfaces;
@@ -78,23 +79,23 @@ internal static class EntityContextValues
     internal static void SetProjectionValue(Dictionary<string, object> values, Type projectionType, object? projection)
         => values[GetProjectionValueKey(projectionType)] = projection ?? NullProjectionValue;
 
-    internal static IReadOnlyCollection<string> StabilizeComputedFields(EntityModel model, Dictionary<string, object> values, IEnumerable<string> changedFieldNames)
+    internal static Task<IReadOnlyCollection<string>> StabilizeComputedFieldsAsync(EntityModel model, Dictionary<string, object> values, EntityInspection inspection, IEnumerable<string> changedFieldNames)
     {
         var computedFields = model.Fields.Values
             .Where(field => field.IsComputed)
             .ToDictionary(field => field.Name, StringComparer.Ordinal);
 
-        return DependencyStabilizer.Stabilize(
+        return DependencyStabilizer.StabilizeAsync(
             changedFieldNames,
             computedFields.Keys.ToArray(),
             fieldName => GetFieldDependencies(values, fieldName),
-            fieldName =>
+            async fieldName =>
             {
                 var computedField = computedFields[fieldName];
                 var fieldValueKey = fieldName.GetFieldKey();
                 var hadOldValue = values.TryGetValue(fieldValueKey, out var oldValue);
 
-                computedField.Compute(values);
+                await computedField.ComputeAsync(values, inspection);
 
                 var hasNewValue = values.TryGetValue(fieldValueKey, out var newValue);
                 return hadOldValue != hasNewValue || !Equals(oldValue, newValue);
@@ -103,16 +104,16 @@ internal static class EntityContextValues
         );
     }
 
-    internal static void RefreshDependentProjections(EntityModel model, Dictionary<string, object> values, BehaviorContext behaviorContext, IEnumerable<string> changedFieldNames)
+    internal static async Task RefreshDependentProjectionsAsync(EntityModel model, Dictionary<string, object> values, BehaviorContext behaviorContext, EntityInspection inspection, IEnumerable<string> changedFieldNames)
     {
-        var pendingPublishes = DependencyRefreshPlanner.CollectChangedNodes(
+        var pendingPublishes = await DependencyRefreshPlanner.CollectChangedNodesAsync(
             changedFieldNames,
             model.Projections.Values,
             projection => GetProjectionDependencies(values, projection.ProjectionType),
-            projection =>
+            async projection =>
             {
                 var hadCachedProjection = TryGetProjectionValue(values, projection.ProjectionType, out var cachedProjection);
-                var newProjection = projection.Invoke(values, behaviorContext);
+                var newProjection = await projection.InvokeAsync(values, inspection);
 
                 return
                     projection.PublishScope != PublishScope.None &&
@@ -171,4 +172,3 @@ internal static class EntityContextValues
             .OrderBy(fieldName => fieldName, StringComparer.Ordinal)
             .ToArray();
 }
-

@@ -62,4 +62,10 @@ public interface IMinimalAPIsBuilder : IEventsConfiguration<IMinimalAPIsBuilder>
     /// <param name="configureActionsAction"></param>
     /// <returns></returns>
     IMinimalAPIsBuilder ConfigureActions(Action<IActionsEndpointsConfiguration> configureActionsAction);
+    
+    /// <summary>
+    /// Configures Entities endpoints
+    /// </summary>
+    /// <param name="configureEntitiesAction">Configuration action</param>
+    IMinimalAPIsBuilder ConfigureEntities(Action<IEntitiesEndpointsConfiguration> configureEntitiesAction);
 }

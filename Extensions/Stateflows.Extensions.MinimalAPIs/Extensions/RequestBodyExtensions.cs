@@ -8,6 +8,8 @@ using Stateflows.Activities;
 using Stateflows.Common;
 using Stateflows.Common.Classes;
 using Stateflows.Common.Extensions;
+using Stateflows.Common.Utilities;
+using Stateflows.Entities;
 using Stateflows.Extensions.MinimalAPIs.Attributes;
 using Stateflows.Extensions.MinimalAPIs.Headers;
 using Stateflows.StateMachines;
@@ -16,12 +18,13 @@ namespace Stateflows.Extensions.MinimalAPIs;
 
 internal static class RequestBodyExtensions
 {
-    private static async Task<BehaviorInfo> GetBehaviorInfo(this IBehavior behavior)
+    internal static async Task<BehaviorInfo> GetBehaviorInfo(this IBehavior behavior)
     {
         var behaviorInfo = behavior.Id.Type switch
         {
             BehaviorType.StateMachine => (await behavior.RequestAsync(new StateMachineInfoRequest(), new Dictionary<string, EventHeader>() { { nameof(NoImplicitInitialization), new NoImplicitInitialization() } })).Response,
             BehaviorType.Activity => (await behavior.RequestAsync(new ActivityInfoRequest(), new Dictionary<string, EventHeader>() { { nameof(NoImplicitInitialization), new NoImplicitInitialization() } })).Response,
+            BehaviorType.Entity => (await behavior.RequestAsync(new EntityInfoRequest(), new Dictionary<string, EventHeader>() { { nameof(NoImplicitInitialization), new NoImplicitInitialization() } })).Response,
             _ => (await behavior.GetStatusAsync(new Dictionary<string, EventHeader>() { { nameof(NoImplicitInitialization), new NoImplicitInitialization() } })).Response
         };
         return behaviorInfo;
@@ -553,14 +556,17 @@ internal static class RequestBodyExtensions
         await processingTask;
     }
 
-    private static async Task<IResult?> SendEndpointAsync<TEvent>(this RequestBody payload, string method, string path, TEvent @event, IBehavior behavior,
+    internal static async Task<IResult?> SendEndpointAsync<TEvent>(this RequestBody payload, string method, string path, TEvent @event, IBehavior behavior,
         bool implicitInitialization, Dictionary<string, List<(HateoasLink, BehaviorStatus[])>> customHateoasLinks, HttpContext context)
     {
         var notifications = new List<EventHolder>();
-        await behavior.WatchAsync(
-            payload.RequestedNotifications,
-            notifications.Add
-        );
+        var notificationNames = payload.RequestedNotifications?.Where(n => !string.IsNullOrEmpty(n)).ToArray() ?? [];
+        IAsyncDisposable? watcher = notificationNames.Any()
+            ? await behavior.WatchAsync(
+                notificationNames,
+                notifications.Add
+            )
+            : null;
 
         if (EqualityComparer<TEvent>.Default.Equals(@event, default))
         {
@@ -597,15 +603,18 @@ internal static class RequestBodyExtensions
         }
     }
 
-    private static async Task<IResult> RequestEndpointAsync<TRequest, TResponse>(this RequestBody payload, string method, string path, TRequest request, IBehavior behavior,
+    internal static async Task<IResult> RequestEndpointAsync<TRequest, TResponse>(this RequestBody payload, string method, string path, TRequest request, IBehavior behavior,
         bool implicitInitialization, Dictionary<string, List<(HateoasLink, BehaviorStatus[])>> customHateoasLinks, HttpContext context)
         where TRequest : IRequest<TResponse>
     {
         var notifications = new List<EventHolder>();
-        await behavior.WatchAsync(
-            payload.RequestedNotifications,
-            notifications.Add
-        );
+        var notificationNames = payload.RequestedNotifications?.Where(n => !string.IsNullOrEmpty(n)).ToArray() ?? [];
+        IAsyncDisposable? watcher = notificationNames.Any()
+            ? await behavior.WatchAsync(
+                notificationNames,
+                notifications.Add
+            )
+            : null;
 
         if (EqualityComparer<TRequest>.Default.Equals(request, default))
         {

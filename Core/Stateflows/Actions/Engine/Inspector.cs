@@ -71,15 +71,15 @@ namespace Stateflows.Actions.Engine
             return global && local;
         }
 
-        public void AfterProcessEvent<TEvent>(EventContext<TEvent> context, EventStatus eventStatus)
+        public async Task AfterProcessEventAsync<TEvent>(EventContext<TEvent> context, EventStatus eventStatus)
         {
-            ReverseInterceptors.RunSafe(i => i.AfterProcessEvent(context, eventStatus), nameof(AfterProcessEvent), Logger);
+            ReverseInterceptors.RunSafe(i => i.AfterProcessEvent(context, eventStatus), nameof(IActionInterceptor.AfterProcessEvent), Logger);
             GlobalInterceptor.AfterProcessEvent(context, eventStatus);
 
             if (context.RootContext.EventHolder.IsRespondedTo())
             {
-                GlobalInterceptor
-                    .RequestResponded(
+                await GlobalInterceptor
+                    .DoRequestRespondedAsync(
                         context,
                         context.RootContext.EventHolder,
                         context.RootContext.EventHolder.GetResponseHolder()

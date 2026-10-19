@@ -5,7 +5,7 @@ namespace Stateflows.Common
     public class AfterOneHour : DelayEvent
     {
         protected sealed override DateTime GetDelayStart(DateTime startedAt)
-            => new DateTime(startedAt.Year, startedAt.Month, startedAt.Day, startedAt.Hour, 0, 0);
+            => new DateTime(startedAt.Year, startedAt.Month, startedAt.Day, startedAt.Hour, 0, 0, DateTimeKind.Utc);
 
         protected virtual int Hours => 1;
 
