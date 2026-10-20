@@ -45,6 +45,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <InternalsVisibleTo Include="StateMachine.IntegrationTests" />
     <InternalsVisibleTo Include="Stateflows.Runtimes.Orleans" />
     <InternalsVisibleTo Include="Stateflows.Extensions.MinimalAPIs" />
   </ItemGroup>

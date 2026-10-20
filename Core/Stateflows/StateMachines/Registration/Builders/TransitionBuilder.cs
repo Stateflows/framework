@@ -163,9 +163,6 @@ namespace Stateflows.StateMachines.Registration.Builders
         IElseTransitionBuilder<TEvent> ITargetedTransitionUtils<IElseTransitionBuilder<TEvent>>.SetIsLocal(bool isLocal)
             => SetIsLocal(isLocal) as IElseTransitionBuilder<TEvent>;
 
-        IElseInternalTransitionBuilder<TEvent> ITargetedTransitionUtils<IElseInternalTransitionBuilder<TEvent>>.SetIsLocal(bool isLocal)
-            => SetIsLocal(isLocal) as IElseInternalTransitionBuilder<TEvent>;
-
         IDefaultTransitionBuilder ITargetedTransitionUtils<IDefaultTransitionBuilder>.SetIsLocal(bool isLocal)
             => SetIsLocal(isLocal) as IDefaultTransitionBuilder;
 
@@ -202,10 +199,6 @@ namespace Stateflows.StateMachines.Registration.Builders
         IOverridenInternalTransitionBuilder<TEvent> IBaseGuard<TEvent, IOverridenInternalTransitionBuilder<TEvent>>.
             AddGuards(params Func<ITransitionContext<TEvent>, Task<bool>>[] guardsAsync)
             => AddGuards(guardsAsync) as IOverridenInternalTransitionBuilder<TEvent>;
-
-        IOverridenElseInternalTransitionBuilder<TEvent>
-            ITargetedTransitionUtils<IOverridenElseInternalTransitionBuilder<TEvent>>.SetIsLocal(bool isLocal)
-            => SetIsLocal(isLocal) as IOverridenElseInternalTransitionBuilder<TEvent>;
 
         IOverridenElseInternalTransitionBuilder<TEvent> IEffect<TEvent, IOverridenElseInternalTransitionBuilder<TEvent>>.AddEffect(params Func<ITransitionContext<TEvent>, Task>[] effectsAsync)
             => AddEffect(effectsAsync) as IOverridenElseInternalTransitionBuilder<TEvent>;

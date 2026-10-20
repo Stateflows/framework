@@ -1,4 +1,5 @@
 using System.Reflection;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -83,8 +84,14 @@ internal class EntityVisitor(
     {
         if (IsCurrent(entityName, entityVersion))
         {
+            var methods = new[] { typeof(TTemplate) }.Concat(typeof(TTemplate).GetInterfaces())
+                .SelectMany(type => type.GetMethods())
+                .Where(method => method.IsDefined(typeof(MutationAttribute)) &&
+                    method.GetParameters() is [var parameter] && parameter.ParameterType == typeof(TMutationEvent))
+                .Distinct();
+            var authorization = GetAccessorAuthorization(methods);
             current!.Mutations[typeof(TMutationEvent)] = () =>
-                RegisterEventEndpoint<TMutationEvent>(entityName, [BehaviorStatus.Initialized]);
+                RegisterEventEndpoint<TMutationEvent>(entityName, [BehaviorStatus.Initialized], authorization);
         }
 
         return Task.CompletedTask;
@@ -94,8 +101,15 @@ internal class EntityVisitor(
     {
         if (IsCurrent(entityName, entityVersion))
         {
+            var getters = new[] { typeof(TTemplate) }.Concat(typeof(TTemplate).GetInterfaces())
+                .SelectMany(type => type.GetProperties())
+                .Where(property => property.PropertyType == typeof(TProjectionTemplate) &&
+                    property.IsDefined(typeof(ProjectionAttribute)))
+                .Select(property => property.GetMethod)
+                .Distinct();
+            var authorization = GetAccessorAuthorization(getters);
             current!.Projections[typeof(TProjectionTemplate)] = () =>
-                RegisterProjectionEndpoint<TProjectionTemplate>(entityName, publishScope.HasFlag(PublishScope.Self));
+                RegisterProjectionEndpoint<TProjectionTemplate>(entityName, publishScope.HasFlag(PublishScope.Self), authorization);
         }
 
         return Task.CompletedTask;
@@ -106,22 +120,43 @@ internal class EntityVisitor(
     {
         if (IsCurrent(entityName, entityVersion))
         {
+            var properties = new[] { typeof(TTemplate) }.Concat(typeof(TTemplate).GetInterfaces())
+                .SelectMany(type => type.GetProperties())
+                .Where(property => property.Name == fieldName && property.PropertyType == typeof(TField))
+                .Distinct()
+                .ToArray();
+            if (properties.Any(property => property.IsDefined(typeof(NoApiMappingAttribute), inherit: true)))
+            {
+                return Task.CompletedTask;
+            }
+            var mapGetter = !properties.Any(property =>
+                property.GetMethod?.IsDefined(typeof(NoApiMappingAttribute), inherit: true) == true);
+            var mapSetter = !properties.Any(property =>
+                property.SetMethod?.IsDefined(typeof(NoApiMappingAttribute), inherit: true) == true);
+            var getterAuthorization = GetAccessorAuthorization(properties.Select(property => property.GetMethod));
+            var setterAuthorization = GetAccessorAuthorization(properties.Select(property => property.SetMethod));
+
             current!.Fields[fieldName] = () =>
             {
-                if (access.HasFlag(FieldAccess.Get))
+                if (mapGetter && access.HasFlag(FieldAccess.Get))
                 {
-                    RegisterFieldGetEndpoint<TField>(entityName, fieldName);
+                    RegisterFieldGetEndpoint<TField>(entityName, fieldName, getterAuthorization);
                 }
 
-                if (access.HasFlag(FieldAccess.Set))
+                if (mapSetter && access.HasFlag(FieldAccess.Set))
                 {
-                    RegisterFieldSetEndpoint<TField>(entityName, fieldName);
+                    RegisterFieldSetEndpoint<TField>(entityName, fieldName, setterAuthorization);
                 }
             };
         }
 
         return Task.CompletedTask;
     }
+
+    private static IAuthorizeData[] GetAccessorAuthorization(IEnumerable<MethodInfo?> accessors)
+        => accessors.OfType<MethodInfo>()
+            .SelectMany(accessor => accessor.GetCustomAttributes(inherit: true).OfType<IAuthorizeData>())
+            .ToArray();
 
     private bool IsCurrent(string entityName, int entityVersion)
         => current != null && current.Name == entityName && current.Version == entityVersion;
@@ -172,7 +207,8 @@ internal class EntityVisitor(
             eventType.IsAssignableTo(typeof(Exception))
         );
 
-    private void RegisterEventEndpoint<TEvent>(string entityName, BehaviorStatus[] supportedStatuses)
+    private void RegisterEventEndpoint<TEvent>(string entityName, BehaviorStatus[] supportedStatuses,
+        IAuthorizeData[]? authorization = null)
     {
         if (!IsMappable(typeof(TEvent)))
         {
@@ -180,7 +216,7 @@ internal class EntityVisitor(
         }
 
         routeBuilder.RegisterEventEndpoint<TEvent>(entityInterceptor, BehaviorType.Entity, entityName, HateoasLinks,
-            hasDefaultInstance: false, supportedStatuses);
+            hasDefaultInstance: false, supportedStatuses, authorization);
     }
 
     private void RegisterStandardEndpoints(string entityName)
@@ -346,7 +382,7 @@ internal class EntityVisitor(
         }
     }
 
-    private void RegisterProjectionEndpoint<TProjection>(string entityName, bool streamable)
+    private void RegisterProjectionEndpoint<TProjection>(string entityName, bool streamable, IAuthorizeData[] authorization)
     {
         var projectionType = typeof(TProjection);
         if (!IsMappable(projectionType))
@@ -409,6 +445,8 @@ internal class EntityVisitor(
             );
 
         routeHandlerBuilder.WithTags($"{BehaviorType.Entity} {entityName}");
+        if (authorization.Length > 0)
+            routeHandlerBuilder.RequireAuthorization(authorization);
 
         entityInterceptor.AfterEventEndpointDefinition<ProjectionRequest<TProjection>>(behaviorClass, isDefaultInstance: false, method, route, routeHandlerBuilder);
 
@@ -465,7 +503,7 @@ internal class EntityVisitor(
         return Results.Empty;
     }
 
-    private void RegisterFieldGetEndpoint<TField>(string entityName, string fieldName)
+    private void RegisterFieldGetEndpoint<TField>(string entityName, string fieldName, IAuthorizeData[] authorization)
     {
         var behaviorClass = new EntityClass(entityName).BehaviorClass;
         var method = HttpMethods.Get;
@@ -496,6 +534,11 @@ internal class EntityVisitor(
             )
             .WithTags($"{BehaviorType.Entity} {entityName}");
 
+        if (authorization.Length > 0)
+        {
+            routeHandlerBuilder.RequireAuthorization(authorization);
+        }
+
         entityInterceptor.AfterEventEndpointDefinition<FieldStateRequest<TField>>(behaviorClass, isDefaultInstance: false, method, route, routeHandlerBuilder);
 
         HateoasLinks.AddLink(
@@ -505,7 +548,7 @@ internal class EntityVisitor(
         );
     }
 
-    private void RegisterFieldSetEndpoint<TField>(string entityName, string fieldName)
+    private void RegisterFieldSetEndpoint<TField>(string entityName, string fieldName, IAuthorizeData[] authorization)
     {
         var behaviorClass = new EntityClass(entityName).BehaviorClass;
         var method = HttpMethods.Put;
@@ -536,6 +579,11 @@ internal class EntityVisitor(
                 }
             )
             .WithTags($"{BehaviorType.Entity} {entityName}");
+
+        if (authorization.Length > 0)
+        {
+            routeHandlerBuilder.RequireAuthorization(authorization);
+        }
 
         entityInterceptor.AfterEventEndpointDefinition<FieldState<TField>>(behaviorClass, isDefaultInstance: false, method, route, routeHandlerBuilder);
 

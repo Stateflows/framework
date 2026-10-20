@@ -81,7 +81,7 @@ namespace Stateflows.Entities.Registration.Builders
             if (Registration.Model.Fields.ContainsKey(fieldName))
                 throw new InvalidOperationException($"Field '{fieldName}' is already registered in entity '{Registration.Name}'");
 
-            var fieldModel = new FieldModel<TTemplate, TField>(Registration.Model, fieldName, FieldAccess.None);
+            var fieldModel = new FieldModel<TTemplate, TField>(Registration.Model, fieldName, FieldAccess.None, memberExpression.Member);
             
             Registration.Model.Fields.Add(fieldName, fieldModel);
             

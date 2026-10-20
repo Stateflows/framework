@@ -427,7 +427,18 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         [DebuggerHidden]
         public TReturn AddInternalTransition<TEvent, TTransition>(InternalTransitionBuildAction<TEvent> transitionBuildAction = null)
             where TTransition : class, ITransition<TEvent>
-            => AddTransition<TEvent, TTransition>(Constants.DefaultTransitionTarget, b => transitionBuildAction?.Invoke(b as IInternalTransitionBuilder<TEvent>));
+        {
+            var result = AddInternalTransition<TEvent>(b =>
+            {
+                ((ITransitionBuilder<TEvent>)b).AddTransitionEvents<TTransition, TEvent>();
+                transitionBuildAction?.Invoke(b);
+            });
+            var sourceName = ((IStateBuilderInfo)this).Name;
+            var graph = ((IGraphBuilder)this).Graph;
+            graph.VisitingTasks.Add(visitor => visitor.TransitionTypeAddedAsync<TEvent, TTransition>(
+                graph.Name, graph.Version, sourceName, Constants.DefaultTransitionTarget, false));
+            return result;
+        }
         #endregion
 
         #region AddElseTransition
@@ -703,7 +714,18 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         [DebuggerHidden]
         public TReturn AddElseInternalTransition<TEvent, TElseTransition>(ElseInternalTransitionBuildAction<TEvent> transitionBuildAction = null)
             where TElseTransition : class, ITransitionEffect<TEvent>
-            => AddElseTransition<TEvent, TElseTransition>(Constants.DefaultTransitionTarget, b => transitionBuildAction?.Invoke(b as IElseInternalTransitionBuilder<TEvent>));
+        {
+            var result = AddElseInternalTransition<TEvent>(b =>
+            {
+                ((IElseTransitionBuilder<TEvent>)b).AddElseTransitionEvents<TElseTransition, TEvent>();
+                transitionBuildAction?.Invoke(b);
+            });
+            var sourceName = ((IStateBuilderInfo)this).Name;
+            var graph = ((IGraphBuilder)this).Graph;
+            graph.VisitingTasks.Add(visitor => visitor.TransitionTypeAddedAsync<TEvent, TElseTransition>(
+                graph.Name, graph.Version, sourceName, Constants.DefaultTransitionTarget, true));
+            return result;
+        }
         #endregion
     }
 }

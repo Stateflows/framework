@@ -126,7 +126,7 @@ namespace Stateflows.StateMachines.Registration.Builders
         {
             stateName.ThrowIfNullOrEmpty(nameof(stateName));
 
-            if (Graph.Vertices.ContainsKey(stateName))
+            if (Graph.AllVertices.ContainsKey(stateName))
                 throw new StateDefinitionException(stateName, $"State '{stateName}' is already registered", Graph.Class);
 
             var vertex = new Vertex()
@@ -138,6 +138,8 @@ namespace Stateflows.StateMachines.Registration.Builders
 
             vertexBuildAction?.Invoke(vertex);
 
+            if (Graph.AllVertices.ContainsKey(vertex.Name))
+                throw new StateDefinitionException(vertex.Name, $"State '{vertex.Name}' is already registered", Graph.Class);
             Graph.Vertices.Add(vertex.Name, vertex);
             Graph.AllVertices.Add(vertex.Identifier, vertex);
             
@@ -150,23 +152,23 @@ namespace Stateflows.StateMachines.Registration.Builders
         public IInitializedStateMachineBuilder AddState(string stateName, StateBuildAction stateBuildAction = null)
             => AddVertex(stateName, VertexType.State, vertex => stateBuildAction?.Invoke(new StateBuilder(vertex)));
 
-        IFinalizedOverridenStateMachineBuilder IStateMachineElements<IFinalizedOverridenStateMachineBuilder>.AddCompositeState(
-            string compositeStateName,
-            CompositeStateBuildAction compositeStateBuildAction)
-            => AddCompositeState(compositeStateName, compositeStateBuildAction) as
-                IFinalizedOverridenStateMachineBuilder;
-
-        IFinalizedOverridenStateMachineBuilder IStateMachineElements<IFinalizedOverridenStateMachineBuilder>.AddOrthogonalState(
-            string orthogonalStateName,
-            OrthogonalStateBuildAction orthogonalStateBuildAction)
-            => AddOrthogonalState(orthogonalStateName, orthogonalStateBuildAction) as
-                IFinalizedOverridenStateMachineBuilder;
-
-        IFinalizedOverridenStateMachineBuilder IStateMachineElements<IFinalizedOverridenStateMachineBuilder>.AddJunction(string junctionName, JunctionBuildAction junctionBuildAction)
-            => AddJunction(junctionName, junctionBuildAction) as IFinalizedOverridenStateMachineBuilder;
-
-        IFinalizedOverridenStateMachineBuilder IStateMachineElements<IFinalizedOverridenStateMachineBuilder>.AddChoice(string choiceName, ChoiceBuildAction choiceBuildAction)
-            => AddChoice(choiceName, choiceBuildAction) as IFinalizedOverridenStateMachineBuilder;
+        // IFinalizedOverridenStateMachineBuilder IStateMachineElements<IFinalizedOverridenStateMachineBuilder>.AddCompositeState(
+        //     string compositeStateName,
+        //     CompositeStateBuildAction compositeStateBuildAction)
+        //     => AddCompositeState(compositeStateName, compositeStateBuildAction) as
+        //         IFinalizedOverridenStateMachineBuilder;
+        //
+        // IFinalizedOverridenStateMachineBuilder IStateMachineElements<IFinalizedOverridenStateMachineBuilder>.AddOrthogonalState(
+        //     string orthogonalStateName,
+        //     OrthogonalStateBuildAction orthogonalStateBuildAction)
+        //     => AddOrthogonalState(orthogonalStateName, orthogonalStateBuildAction) as
+        //         IFinalizedOverridenStateMachineBuilder;
+        //
+        // IFinalizedOverridenStateMachineBuilder IStateMachineElements<IFinalizedOverridenStateMachineBuilder>.AddJunction(string junctionName, JunctionBuildAction junctionBuildAction)
+        //     => AddJunction(junctionName, junctionBuildAction) as IFinalizedOverridenStateMachineBuilder;
+        //
+        // IFinalizedOverridenStateMachineBuilder IStateMachineElements<IFinalizedOverridenStateMachineBuilder>.AddChoice(string choiceName, ChoiceBuildAction choiceBuildAction)
+        //     => AddChoice(choiceName, choiceBuildAction) as IFinalizedOverridenStateMachineBuilder;
 
         IOverridenStateMachineBuilder IStateMachineElements<IOverridenStateMachineBuilder>.AddFork(string forkName, ForkBuildAction forkBuildAction)
             => AddFork(forkName, forkBuildAction) as IOverridenStateMachineBuilder;
@@ -174,11 +176,11 @@ namespace Stateflows.StateMachines.Registration.Builders
         IOverridenStateMachineBuilder IStateMachineElements<IOverridenStateMachineBuilder>.AddJoin(string joinName, JoinBuildAction joinBuildAction)
             => AddJoin(joinName, joinBuildAction) as IOverridenStateMachineBuilder;
 
-        IFinalizedOverridenStateMachineBuilder IStateMachineElements<IFinalizedOverridenStateMachineBuilder>.AddFork(string forkName, ForkBuildAction forkBuildAction)
-            => AddFork(forkName, forkBuildAction) as IFinalizedOverridenStateMachineBuilder;
-
-        IFinalizedOverridenStateMachineBuilder IStateMachineElements<IFinalizedOverridenStateMachineBuilder>.AddJoin(string joinName, JoinBuildAction joinBuildAction)
-            => AddJoin(joinName, joinBuildAction) as IFinalizedOverridenStateMachineBuilder;
+        // IFinalizedOverridenStateMachineBuilder IStateMachineElements<IFinalizedOverridenStateMachineBuilder>.AddFork(string forkName, ForkBuildAction forkBuildAction)
+        //     => AddFork(forkName, forkBuildAction) as IFinalizedOverridenStateMachineBuilder;
+        //
+        // IFinalizedOverridenStateMachineBuilder IStateMachineElements<IFinalizedOverridenStateMachineBuilder>.AddJoin(string joinName, JoinBuildAction joinBuildAction)
+        //     => AddJoin(joinName, joinBuildAction) as IFinalizedOverridenStateMachineBuilder;
 
         public IInitializedStateMachineBuilder AddFork(string forkName, ForkBuildAction forkBuildAction)
             => AddVertex(forkName, VertexType.Fork, vertex => forkBuildAction?.Invoke(new StateBuilder(vertex)));
@@ -186,8 +188,8 @@ namespace Stateflows.StateMachines.Registration.Builders
         public IInitializedStateMachineBuilder AddJoin(string joinName, JoinBuildAction joinBuildAction)
             => AddVertex(joinName, VertexType.Join, vertex => joinBuildAction?.Invoke(new StateBuilder(vertex)));
 
-        IFinalizedOverridenStateMachineBuilder IStateMachineElements<IFinalizedOverridenStateMachineBuilder>.AddState(string stateName, StateBuildAction stateBuildAction)
-            => AddState(stateName, stateBuildAction) as IFinalizedOverridenStateMachineBuilder;
+        // IFinalizedOverridenStateMachineBuilder IStateMachineElements<IFinalizedOverridenStateMachineBuilder>.AddState(string stateName, StateBuildAction stateBuildAction)
+        //     => AddState(stateName, stateBuildAction) as IFinalizedOverridenStateMachineBuilder;
 
         IOverridenStateMachineBuilder IStateMachineElements<IOverridenStateMachineBuilder>.AddState(string stateName, StateBuildAction stateBuildAction)
             => AddState(stateName, stateBuildAction) as IOverridenStateMachineBuilder;
@@ -828,4 +830,3 @@ namespace Stateflows.StateMachines.Registration.Builders
         }
     }
 }
-

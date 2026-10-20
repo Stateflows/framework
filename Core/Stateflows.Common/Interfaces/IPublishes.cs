@@ -5,7 +5,9 @@ namespace Stateflows.Common.Interfaces;
 public interface IPublishes<TReturn>
 {
     /// <summary>
-    /// Publishes a notification to all subscribers and watchers of current behavior
+    /// Publishes a notification to all subscribers and watchers of current behavior after state commits.
+    /// Use ImmediateDispatchAttribute on the notification type or an ImmediateDispatch header for progress
+    /// notifications that must dispatch during execution and remain visible even if the turn fails.
     /// </summary>
     /// <typeparam name="TNotification">Type of notification</typeparam>
     /// <param name="notification">Notification event instance</param>

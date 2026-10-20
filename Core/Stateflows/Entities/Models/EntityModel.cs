@@ -1,8 +1,10 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using System.Threading.Tasks;
 using Stateflows.Common.Context.Classes;
+using Stateflows.Common;
 using Stateflows.Entities.Attributes;
 using Stateflows.Entities.Engine;
 using Stateflows.Entities.Enums;
@@ -47,16 +49,21 @@ namespace Stateflows.Entities.Models
         public abstract Task ComputeAsync(Dictionary<string, object> values, EntityInspection inspection);
 
         public abstract Type ValueType { get; }
+
+        public abstract Task<EventValidation> ValidateAsync(object? value, Dictionary<string, object> values, IServiceProvider services);
         
         public FieldAccess Access { get; set; } = access;
     }
 
-    internal class FieldModel<TTemplate, TField>(EntityModel entityModel, string name, FieldAccess access) : FieldModel(entityModel, name, access)
+    internal class FieldModel<TTemplate, TField>(EntityModel entityModel, string name, FieldAccess access, MemberInfo member) : FieldModel(entityModel, name, access)
         where TTemplate : class
     {
         public FieldComputation<TTemplate, TField>? Computation { get; set; }
 
         public override Type ValueType => typeof(TField);
+
+        public override Task<EventValidation> ValidateAsync(object? value, Dictionary<string, object> values, IServiceProvider services)
+            => FieldValidation.ValidateAsync((TField)value!, member, EntityProxy<TTemplate>.Create(values, EntityModel).Item2, services);
 
         public override bool IsComputed => Computation != null;
 

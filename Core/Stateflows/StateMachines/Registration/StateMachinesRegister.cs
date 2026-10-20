@@ -38,18 +38,26 @@ namespace Stateflows.StateMachines.Registration
 
         private static void RegisterStateMachine(Type stateMachineType, StateMachineBuilder stateMachineBuilder)
         {
-            // Try to invoke a static RegisterEndpoints(EndpointsBuilder) on the concrete type
-            var staticBuildMethod = stateMachineType.GetMethod(
-                nameof(IStateMachine.Build),
-                BindingFlags.Public | BindingFlags.Static,
-                binder: null,
-                types: [typeof(StateMachineBuilder)],
-                modifiers: null
-            );
+            if (stateMachineType == null || !stateMachineType.IsClass ||
+                !typeof(IStateMachine).IsAssignableFrom(stateMachineType) || stateMachineType.ContainsGenericParameters)
+                throw new StateMachineDefinitionException("State machine CLR type must be a closed class implementing IStateMachine.", stateMachineBuilder.Graph.Class);
 
-            // static method found -> invoke without creating an instance
-            staticBuildMethod.Invoke(null, [stateMachineBuilder]);
+            var staticBuildMethod = typeof(StateMachinesRegister).GetMethod(
+                nameof(BuildStateMachine), BindingFlags.NonPublic | BindingFlags.Static)!.MakeGenericMethod(stateMachineType);
+            try
+            {
+                staticBuildMethod.Invoke(null, [stateMachineBuilder]);
+            }
+            catch (TargetInvocationException exception) when (exception.InnerException != null)
+            {
+                System.Runtime.ExceptionServices.ExceptionDispatchInfo.Capture(exception.InnerException).Throw();
+                throw;
+            }
         }
+
+        private static void BuildStateMachine<TStateMachine>(StateMachineBuilder builder)
+            where TStateMachine : class, IStateMachine
+            => TStateMachine.Build(builder);
 
         private bool IsNewestVersion(string stateMachineName, int version)
         {
@@ -75,6 +83,7 @@ namespace Stateflows.StateMachines.Registration
         [DebuggerHidden]
         public void AddStateMachine(string stateMachineName, int version, StateMachineBuildAction buildAction)
         {
+            ValidateName(stateMachineName);
             var key = $"{stateMachineName}.{version}";
             var currentKey = $"{stateMachineName}.current";
 
@@ -113,6 +122,7 @@ namespace Stateflows.StateMachines.Registration
         [DebuggerHidden]
         public void AddStateMachine(string stateMachineName, int version, Type stateMachineType, StateMachineUtilsBuildAction buildAction = null)
         {
+            ValidateName(stateMachineName);
             var key = $"{stateMachineName}.{version}";
             var currentKey = $"{stateMachineName}.current";
 
@@ -142,8 +152,8 @@ namespace Stateflows.StateMachines.Registration
             });
             
             RegisterStateMachine(stateMachineType, builder);
-            builder.Graph.Build();
             buildAction?.Invoke(new StateMachineUtilsBuilder(builder.Graph));
+            builder.Graph.Build();
 
             var method = StateMachineTypeAddedAsyncMethod.MakeGenericMethod(stateMachineType);
 
@@ -164,6 +174,12 @@ namespace Stateflows.StateMachines.Registration
         public void AddStateMachine<TStateMachine>(string stateMachineName = null, int version = 1, StateMachineUtilsBuildAction buildAction = null)
             where TStateMachine : class, IStateMachine
             => AddStateMachine(stateMachineName ?? StateMachine<TStateMachine>.Name, version, typeof(TStateMachine), buildAction);
+
+        private static void ValidateName(string name)
+        {
+            if (string.IsNullOrEmpty(name))
+                throw new ArgumentException("State machine name must not be empty.", nameof(name));
+        }
 
         [DebuggerHidden]
         public void AddInterceptor(StateMachineInterceptorFactory interceptorFactory)

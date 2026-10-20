@@ -1,4 +1,5 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Orleans.Placement;
@@ -16,8 +17,15 @@ namespace Stateflows;
 
 public static class DependencyInjection
 {
-    public static ISiloBuilder AddStateflowsRuntime(this ISiloBuilder builder)
+    public static ISiloBuilder AddStateflowsRuntime(this ISiloBuilder builder,
+        System.Action<StateflowsRuntimeOptions>? configure = null)
     {
+        var options = builder.Services.AddOptions<StateflowsRuntimeOptions>();
+        if (configure != null)
+            options.Configure(configure);
+        builder.Services.TryAddSingleton<IAttributeToFactoryMapper<StateflowsPersistentStateAttribute>, StateflowsPersistentStateMapper>();
+        builder.Services.TryAddEnumerable(
+            ServiceDescriptor.Singleton<IConfigurationValidator, RuntimeConfigurationValidator>());
         builder
             .Services
             .AddScoped<IStateflowsStorage, GrainStorageBridge>()

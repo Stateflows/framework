@@ -1,6 +1,5 @@
-﻿using System;
+using System;
 using System.Linq;
-using System.Diagnostics;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Stateflows.Actions;
@@ -8,6 +7,7 @@ using Stateflows.Activities;
 using Stateflows.Common;
 using Stateflows.Common.Models;
 using Stateflows.Common.Registration.Builders;
+using Stateflows.Common.Validation;
 using Stateflows.StateMachines.Exceptions;
 using Stateflows.StateMachines.Interfaces;
 using Stateflows.StateMachines.Registration;
@@ -16,12 +16,12 @@ using Stateflows.StateMachines.Registration.Interfaces;
 
 namespace Stateflows.StateMachines.Models
 {
-    internal class Graph
+    internal partial class Graph
     {
         internal string? ResourceName { get; set; } = null;
-        
+
         internal readonly List<Func<IStateMachineVisitor, Task>> VisitingTasks = new List<Func<IStateMachineVisitor, Task>>();
-        
+
         internal readonly StateflowsBuilder StateflowsBuilder;
 
         public Dictionary<string, int> InitCounter = new Dictionary<string, int>();
@@ -86,232 +86,80 @@ namespace Stateflows.StateMachines.Models
 
         public List<BehaviorClass> RequiredBehaviors = new();
 
-        //[DebuggerHidden]
         public void Validate(IEnumerable<BehaviorClass> behaviorClasses)
         {
-            var missingBehaviorClasses = RequiredBehaviors.Where(bc => !behaviorClasses.Contains(bc)).ToList();
-            if (missingBehaviorClasses.Any())
+            var path = $"StateMachine[{Name}]";
+            var report = new ModelValidationReport();
+            foreach (var diagnostic in ValidationReport.Diagnostics.Where(d => d.RuleId != "SM-041" || d.ElementPath != path))
+                report.Add(diagnostic.RuleId, diagnostic.ElementPath, diagnostic.Message, diagnostic.Severity);
+            ValidationReport = report;
+            var registered = behaviorClasses.ToHashSet();
+            var required = RequiredBehaviors.Concat(AllVertices.Values
+                .Where(vertex => vertex != null && !string.IsNullOrEmpty(vertex.BehaviorName) && !string.IsNullOrEmpty(vertex.BehaviorType))
+                .Select(vertex => new BehaviorClass(vertex.BehaviorType, vertex.BehaviorName)));
+            foreach (var missing in required.Distinct().Where(bc => !registered.Contains(bc)))
             {
-                var missingBehaviorClass = missingBehaviorClasses.First();
-                throw new StateMachineDefinitionException($"{missingBehaviorClass.Type} '{missingBehaviorClass.Name}' required by state machine '{Name}' is not registered", Class);
+                var message = $"{missing.Type} '{missing.Name}' required by state machine '{Name}' is not registered.";
+                if (!ValidationReport.Diagnostics.Any(d => d.RuleId == "SM-041" && d.Message == message))
+                    ValidationReport.Add("SM-041", path, message);
             }
+            if (ValidationReport.HasErrors)
+                throw new StateMachineValidationException(ValidationReport, Class);
         }
 
-        //[DebuggerHidden]
         public void Build()
         {
-            if (StateflowsBuilder.ResourceNames.TryGetValue(ResourceName ?? string.Empty, out var resourceName))
+            ValidateDefinition();
+
+            if (!StateflowsBuilder.ResourceNames.TryGetValue(ResourceName ?? string.Empty, out var resourceName))
             {
-                StateflowsBuilder.ResourcesByBehaviorClass[Class] = resourceName;
-            }
-            else
-            {
+                ValidationReport.Add("SM-045", $"StateMachine[{Name}]", $"Resource group '{ResourceName}' does not exist.");
+                // Preserve the existing resource-registration exception contract.
                 throw new InvalidOperationException($"Resource group {ResourceName ?? string.Empty} does not exist");
             }
 
-            Debug.Assert(InitialVertexName != null, $"Initial vertex name not assigned. Is state machine '{Name}' built properly?");
-
-            if (Vertices.TryGetValue(InitialVertexName, out var initialVertex))
-            {
-                InitialVertex = initialVertex;
-            }
-            else
-            {
-                throw new StateMachineDefinitionException($"Initial state '{InitialVertexName}' is not registered in state machine '{Name}'", Class);
-            }
-
-            foreach (var edge in AllEdges)
-            {
-                if (edge.TriggerType != null)
-                {
-                    edge.ActualTriggerTypes = StateflowsBuilder.TypeMapper.GetMappedTypes(edge.TriggerType).ToHashSet();
-                    edge.TimeTriggerTypes = edge.ActualTriggerTypes.Where(type => type.IsSubclassOf(typeof(TimeEvent))).ToHashSet();
-                    edge.RecurringTypes = edge.ActualTriggerTypes.Where(type => type.IsSubclassOf(typeof(RecurringEvent))).ToHashSet();
-                    edge.ActualTriggers = edge.ActualTriggerTypes.Select(type => Event.GetName(type)).ToHashSet();
-                    edge.Signature = $"{edge.Source.Identifier}-{edge.Trigger}->";
-
-                    var triggerDescriptor = edge.IsElse
-                        ? $"{edge.Trigger}|else"
-                        : edge.Trigger;
-
-                    edge.Identifier = edge.Target != null
-                        ? $"{edge.Source.Identifier}-{triggerDescriptor}->{edge.Target.Identifier}"
-                        : $"{edge.Source.Identifier}-{triggerDescriptor}";
-                }
-            }
-
+            InitialVertex = Vertices[InitialVertexName];
             foreach (var vertex in AllVertices.Values)
             {
                 foreach (var region in vertex.Regions)
-                {
-                    if (!string.IsNullOrEmpty(region.InitialVertexName))
-                    {
-                        if (region.Vertices.TryGetValue(region.InitialVertexName, out initialVertex))
-                        {
-                            region.InitialVertex = initialVertex;
-                        }
-                        else
-                        {
-                            throw new StateMachineDefinitionException($"Initial state '{region.InitialVertexName}' is not registered in {(vertex.Type == VertexType.CompositeState ? "composite" : "orthogonal")} state '{vertex.Name}' in state machine '{Name}'", Class);
-                        }
-                    }
-                }
-                
-                var vertexTriggers = vertex.Edges.Values
-                    .Where(edge => edge.ActualTriggers.All(trigger => !string.IsNullOrEmpty(trigger)))
-                    .SelectMany(edge => edge.ActualTriggers);
+                    region.InitialVertex = string.IsNullOrEmpty(region.InitialVertexName) ? null : region.Vertices[region.InitialVertexName];
 
-                var deferredEvents = vertex.Deferrals.Where(deferral => !deferral.Value.Any && vertexTriggers.Contains(deferral.Key));
-                if (deferredEvents.Any())
+                vertex.BehaviorEventTypes.Clear();
+                if (string.IsNullOrEmpty(vertex.BehaviorName)) continue;
+                switch (vertex.BehaviorType)
                 {
-                    throw new DeferralDefinitionException(deferredEvents.First().Key, $"Event '{deferredEvents.First()}' triggers a transition outgoing from state '{vertex.Name}' in state machine '{Name}' and cannot be deferred unconditionally by that state in state machine '{Name}'", Class);
-                }
+                    case BehaviorType.Activity:
+                        var activityVisitor = new DoActivityVisitor(StateflowsBuilder.TypeMapper);
+                        StateflowsBuilder.EnsureActivitiesServices().VisitActivityAsync(vertex.BehaviorName, 1, activityVisitor).GetAwaiter().GetResult();
+                        vertex.BehaviorEventTypes.AddRange(activityVisitor.EventTypes);
+                        break;
 
-                if (vertex.Type == VertexType.Choice && vertex.Edges.Values.Count(edge => edge.IsElse) != 1)
-                {
-                    throw new StateMachineDefinitionException($"Choice pseudostate '{vertex.Name}' in state machine '{Name}' must have exactly one else transition in state machine '{Name}'", Class);
-                }
+                    case BehaviorType.StateMachine:
+                        var machineVisitor = new SubmachineVisitor(StateflowsBuilder.TypeMapper);
+                        StateflowsBuilder.EnsureStateMachinesServices().VisitStateMachineAsync(vertex.BehaviorName, 1, machineVisitor).GetAwaiter().GetResult();
+                        vertex.BehaviorEventTypes.AddRange(machineVisitor.EventTypes);
+                        break;
 
-                if (!string.IsNullOrEmpty(vertex.BehaviorName))
-                {
-                    switch (vertex.BehaviorType)
-                    {
-                        // case BehaviorType.Action:
-                        //     break;
-                        
-                        case BehaviorType.Activity:
-                            var activitiesRegister = StateflowsBuilder.EnsureActivitiesServices();
-                            var doActivityVisitor = new DoActivityVisitor(StateflowsBuilder.TypeMapper);
-                            activitiesRegister.VisitActivityAsync(vertex.BehaviorName, 1, doActivityVisitor).Wait();
-                            vertex.BehaviorEventTypes.AddRange(doActivityVisitor.EventTypes);
-
-                            break;
-                        
-                        case BehaviorType.StateMachine:
-                            var stateMachinesRegister = StateflowsBuilder.EnsureStateMachinesServices();
-                            var submachineVisitor = new SubmachineVisitor(StateflowsBuilder.TypeMapper);
-                            stateMachinesRegister.VisitStateMachineAsync(vertex.BehaviorName, 1, submachineVisitor).Wait();
-                            vertex.BehaviorEventTypes.AddRange(submachineVisitor.EventTypes);
-                            
-                            break;
-                        
-                        default:
-                            var actionsRegister = StateflowsBuilder.EnsureActionsServices();
-                            var doActionVisitor = new DoActionVisitor(StateflowsBuilder.TypeMapper);
-                            actionsRegister.VisitActionAsync(vertex.BehaviorName, 1, doActionVisitor).Wait();
-                            vertex.BehaviorEventTypes.AddRange(doActionVisitor.EventTypes);
-                            
-                            break;
-                    }
+                    default:
+                        var actionVisitor = new DoActionVisitor(StateflowsBuilder.TypeMapper);
+                        StateflowsBuilder.EnsureActionsServices().VisitActionAsync(vertex.BehaviorName, 1, actionVisitor).GetAwaiter().GetResult();
+                        vertex.BehaviorEventTypes.AddRange(actionVisitor.EventTypes);
+                        break;
                 }
             }
 
             foreach (var edge in AllEdges)
             {
-                if (!string.IsNullOrEmpty(edge.TargetName) && string.Compare(edge.TargetName, Constants.DefaultTransitionTarget) != 0)
-                {
-                    if (AllVertices.TryGetValue(edge.TargetName, out var target))
-                    {
-                        edge.Target = target;
-                    }
-                    else
-                    {
-                        throw new TransitionDefinitionException($"Transition target '{edge.TargetName}' is not registered in state machine '{Name}'", Class);
-                    }
-                }
-
-                if (edge.Target is { Type: VertexType.Join })
-                {
-                    if (edge.Trigger != Event<Completion>.Name)
-                    {
-                        throw new TransitionDefinitionException(
-                            $"Transition incoming to join '{edge.TargetName}' must be default one in state machine '{Name}'",
-                            Class
-                        );
-                    }
-                    
-                    if (edge.Guards.Any)
-                    {
-                        throw new TransitionDefinitionException(
-                            $"Transition incoming to join '{edge.TargetName}' cannot have guards in state machine '{Name}'",
-                            Class
-                        );
-                    }
-
-                    if (!StateVertexTypes.Contains(edge.Source.Type))
-                    {
-                        throw new TransitionDefinitionException(
-                            $"Transition incoming to join '{edge.TargetName}' must always originate from a state in state machine '{Name}'",
-                            Class
-                        );
-                    }
-                }
-
-                if (edge.Source is { Type: VertexType.Fork })
-                {
-                    if (!ForkTargetableVertexTypes.Contains(edge.Target.Type))
-                    {
-                        throw new TransitionDefinitionException(
-                            $"Transition outgoing from fork '{edge.SourceName}' must always target a state or a history entrypoint in state machine '{Name}'",
-                            Class
-                        );
-                    }
-                }
-
-                if (edge.Source is { Type: VertexType.History })
-                {
-                    if (!StateVertexTypes.Contains(edge.Target.Type))
-                    {
-                        throw new TransitionDefinitionException(
-                            $"Transition outgoing from history '{edge.SourceName}' must always target a state in state machine '{Name}'",
-                            Class
-                        );
-                    }
-                    
-                    if (!edge.Target.IsChildOf(edge.Source.ParentRegion.ParentVertex))
-                    {
-                        throw new TransitionDefinitionException(
-                            $"Transition outgoing from history '{edge.SourceName}' must always target a state within its parent region in state machine '{Name}'",
-                            Class
-                        );
-                    }
-                }
-
-                if (edge.Target != null && edge.Source.IsOrthogonalTo(edge.Target))
-                {
-                    throw new TransitionDefinitionException(
-                        $"Can't register transition from '{edge.SourceName}' to '{edge.TargetName}': no transition can go between orthogonal regions in state machine '{Name}'",
-                        Class
-                    );
-                }
-
-                if (edge.IsElse)
-                {
-                    var siblings = edge.Source.Edges.Values.Any(e =>
-                        !e.IsElse &&
-                        edge.ActualTriggers.All(trigger => e.ActualTriggers.Contains(trigger))
-                    );
-
-                    if (!siblings)
-                    {
-                        throw new TransitionDefinitionException(
-                            $"Can't register else transition outgoing from '{edge.SourceName}': there are no other transitions coming out from this vertex with same type and trigger in state machine '{Name}'",
-                            Class
-                        );
-                    }
-                }
-            }
-
-            foreach (var edge in AllEdges)
-            {
-                var triggerDescriptor = edge.IsElse
-                    ? $"{edge.Trigger}|else"
-                    : edge.Trigger;
-
+                edge.Target = edge.TargetName == Constants.DefaultTransitionTarget ? null : AllVertices[edge.TargetName];
+                edge.TimeTriggerTypes = edge.ActualTriggerTypes.Where(type => type.IsSubclassOf(typeof(TimeEvent))).ToHashSet();
+                edge.RecurringTypes = edge.ActualTriggerTypes.Where(type => type.IsSubclassOf(typeof(RecurringEvent))).ToHashSet();
+                edge.Signature = $"{edge.Source.Identifier}-{edge.Trigger}->";
+                var triggerDescriptor = edge.IsElse ? $"{edge.Trigger}|else" : edge.Trigger;
                 edge.Identifier = edge.Target != null
                     ? $"{edge.Source.Identifier}-{triggerDescriptor}->{edge.Target.Identifier}"
                     : $"{edge.Source.Identifier}-{triggerDescriptor}";
             }
+            StateflowsBuilder.ResourcesByBehaviorClass[Class] = resourceName;
         }
     }
 }

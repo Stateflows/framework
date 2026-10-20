@@ -1,6 +1,7 @@
-﻿using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging;
 using Stateflows.Common.Utilities;
 using Stateflows.Interfaces;
+using Stateflows.Storage;
 
 namespace Stateflows;
 
@@ -10,11 +11,11 @@ namespace Stateflows;
 /// (one per publisher/subscriber pair) and confirmed back, so this grain never awaits behavior processing.
 /// </summary>
 internal class StateflowsSubscriptions(
-    [PersistentState("notifications", "stateflows")]
+    [StateflowsPersistentState(StateflowsStateNames.Notifications)]
     IPersistentState<NotificationsState> notificationsState,
-    [PersistentState(nameof(retainedNotificationsState), "stateflows")]
+    [StateflowsPersistentState(StateflowsStateNames.RetainedNotifications)]
     IPersistentState<Dictionary<string, OrleansEventHolder>> retainedNotificationsState,
-    [PersistentState(nameof(subscriptionsState), "stateflows")]
+    [StateflowsPersistentState(StateflowsStateNames.Subscriptions)]
     IPersistentState<Dictionary<string, HashSet<string>>> subscriptionsState,
     IGrainFactory grainFactory,
     ILogger<StateflowsSubscriptions> logger
@@ -135,6 +136,7 @@ internal class StateflowsSubscriptions(
         state.Subscriptions ??= [];
         state.Pending ??= [];
         state.LatestRetained ??= [];
+        state.PublicationWatermarks ??= [];
     }
 
     private string GetBehaviorGrainKey(OrleansBehaviorId behaviorId)
@@ -153,7 +155,7 @@ internal class StateflowsSubscriptions(
         }
         catch
         {
-            StateflowsOrleansDiagnostics.PersistenceFailed("notifications");
+            StateflowsOrleansDiagnostics.PersistenceFailed("Stateflows.Notifications");
             notificationsState.State = previous;
             // The provider may have committed before reporting failure; reload on next activation
             DeactivateOnIdle();
@@ -163,8 +165,23 @@ internal class StateflowsSubscriptions(
 
     #region Publication
 
-    public async Task PublishAsync(OrleansEventHolder[] notifications)
+    public Task PublishAsync(OrleansEventHolder[] notifications)
+        => PublishCoreAsync(notifications);
+
+    public Task PublishOutboxAsync(string sourceKey, long sequence, OrleansEventHolder[] notifications)
     {
+        ArgumentException.ThrowIfNullOrEmpty(sourceKey);
+        if (sequence <= 0 || notifications == null || notifications.Length == 0 ||
+            notifications.Any(notification => string.IsNullOrEmpty(notification.Name)))
+            throw new ArgumentException("An outbox publication requires a positive sequence and named notifications.");
+        return PublishCoreAsync(notifications, sourceKey, sequence);
+    }
+
+    private async Task PublishCoreAsync(OrleansEventHolder[] notifications, string? sourceKey = null, long sequence = 0)
+    {
+        if (sourceKey != null && State.PublicationWatermarks.TryGetValue(sourceKey, out var accepted) && accepted >= sequence)
+            return;
+
         if (notifications == null || notifications.Length == 0)
         {
             return;
@@ -216,6 +233,8 @@ internal class StateflowsSubscriptions(
         }
 
         PruneExpired(next, nowUtc);
+        if (sourceKey != null)
+            next.PublicationWatermarks[sourceKey] = sequence;
 
         // Register first: an orphan reminder is harmless, committed deliveries without a reminder are not
         await EnsureReminderAsync(next);

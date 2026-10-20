@@ -358,7 +358,7 @@ public sealed class ResourceBudgetTests
             .ConfigureLogging(logging => logging.SetMinimumLevel(LogLevel.Error))
             .UseOrleans(silo => silo
                 .UseLocalhostClustering(ports[0], ports[1], primary, clusterId, clusterId)
-                .AddMemoryGrainStorage("stateflows")
+                .AddMemoryGrainStorageAsDefault()
                 .UseInMemoryReminderService()
                 .AddStateflowsRuntime())
             .Build();

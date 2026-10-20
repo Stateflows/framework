@@ -57,6 +57,34 @@ namespace Stateflows.Entities.Engine
 
         public BehaviorStatus BehaviorStatus => context.Status;
 
+        public async Task<bool> ValidateFieldWriteAsync<TEvent>(EventHolder<TEvent> eventHolder)
+        {
+            var type = eventHolder.PayloadType;
+            if (!type.IsGenericType || type.GetGenericTypeDefinition() != typeof(FieldState<>))
+            {
+                return true;
+            }
+
+            var (nameProperty, valueProperty) = FieldStateReadAccessors.GetOrAdd(type, t => (
+                t.GetProperty(nameof(FieldState<object>.Name))!,
+                t.GetProperty(nameof(FieldState<object>.Value))!));
+            var name = (string)nameProperty.GetValue(eventHolder.BoxedPayload)!;
+            var field = registration.Model.Fields.Values
+                .FirstOrDefault(field => field.Name == name && field.ValueType == type.GenericTypeArguments[0]);
+            if (field == null || !field.Access.HasFlag(FieldAccess.Set))
+            {
+                return true;
+            }
+
+            var validation = await field.ValidateAsync(valueProperty.GetValue(eventHolder.BoxedPayload), context.Values, serviceProvider);
+            if (!validation.IsValid)
+            {
+                eventHolder.Validation = validation;
+                Trace.WriteLine($"Entity '{context.Id.Name}:{context.Id.Instance}': invalid field '{name}': {string.Join("; ", validation.ValidationResults.Select(result => result.ErrorMessage))}");
+            }
+            return validation.IsValid;
+        }
+
         private Dictionary<string, object?> GetTrackedFieldValuesSnapshot()
             => registration.Model.Fields.Values.ToDictionary(
                 field => field.Name,

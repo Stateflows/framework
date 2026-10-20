@@ -278,7 +278,7 @@ public sealed class EntityTracingTests
                 ))
             .UseOrleans(silo => silo
                 .UseLocalhostClustering(ports[0], ports[1], null, cluster, cluster)
-                .AddMemoryGrainStorage("stateflows")
+                .AddMemoryGrainStorageAsDefault()
                 .UseInMemoryReminderService()
                 .AddStateflowsRuntime())
             .Build();

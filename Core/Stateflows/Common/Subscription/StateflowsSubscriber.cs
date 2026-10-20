@@ -3,10 +3,13 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Reflection;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Stateflows.Common.Context;
 using Stateflows.Common.Context.Classes;
 using Stateflows.Common.Engine;
 using Stateflows.Common.Interfaces;
+using Stateflows.Common.Utilities;
 
 namespace Stateflows.Common.Subscription
 {
@@ -14,7 +17,9 @@ namespace Stateflows.Common.Subscription
         IBehaviorLocator behaviorLocator,
         INotificationsHub notificationsHub,
         CommonInterceptor commonInterceptor,
-        IServiceProvider serviceProvider
+        IServiceProvider serviceProvider,
+        IServiceScopeFactory scopeFactory,
+        ILogger<StateflowsSubscriber> logger
     ) : IStateflowsSubscriber
     {
         public async Task PublishRangeAsync<TNotification>(BehaviorId publisherBehaviorId, IEnumerable<TNotification> notificationEvents, StateflowsContext senderContext,
@@ -49,17 +54,46 @@ namespace Stateflows.Common.Subscription
 
                 await commonInterceptor.NotificationPublishedAsync(context, notificationEvent, notificationHeaders);
 
-                if (senderContext.Subscribers.TryGetValue(Event<TNotification>.Name, out var behaviorIds))
+                var immediately = Attribute.IsDefined(eventHolder.PayloadType, typeof(ImmediatePublishAttribute)) ||
+                    notificationHeaders.Values.Any(header => header is ImmediatePublish);
+                var snapshot = StateflowsJsonConverter.Clone(eventHolder);
+                var subscribers = senderContext.Subscribers.TryGetValue(Event<TNotification>.Name, out var behaviorIds)
+                    ? behaviorIds.ToArray()
+                    : [];
+                async Task DispatchAsync()
                 {
-                    _ = Task.WhenAll(
-                        behaviorIds.Select(id => behaviorLocator.TryLocateBehavior(id, out var behavior)
-                            ? behavior.SendAsync(notificationEvent)
-                            : Task.CompletedTask
-                        )
-                    );
+                    // Delivery is queued, not awaited: a subscriber may send an event back to its publisher.
+                    foreach (var id in subscribers)
+                    {
+                        _ = DeliverAsync(id, snapshot);
+                    }
+                    await notificationsHub.PublishAsync(snapshot);
                 }
 
-                await notificationsHub.PublishAsync(eventHolder);
+                if (!PublicationScope.TryDispatch(DispatchAsync, immediately))
+                    await DispatchAsync();
+            }
+        }
+
+        private async Task DeliverAsync<TNotification>(BehaviorId id, EventHolder<TNotification> notification)
+        {
+            try
+            {
+                await using var scope = scopeFactory.CreateAsyncScope();
+                var locator = scope.ServiceProvider.GetRequiredService<IBehaviorLocator>();
+                if (locator.TryLocateBehavior(id, out var behavior))
+                {
+                    using (behavior)
+                        await behavior.SendAsync(notification.Payload, notification.Headers);
+                }
+                else
+                {
+                    logger.LogWarning("Cannot deliver notification {NotificationName} to behavior {BehaviorId}.", notification.Name, id);
+                }
+            }
+            catch (Exception exception)
+            {
+                logger.LogError(exception, "Failed to deliver notification {NotificationName} to behavior {BehaviorId}.", notification.Name, id);
             }
         }
 

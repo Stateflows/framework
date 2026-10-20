@@ -15,6 +15,7 @@ using Stateflows.Common.Interfaces;
 using Stateflows.Common.Registration.Interfaces;
 using Stateflows.Entities;
 using Stateflows.Entities.Attributes;
+using Stateflows.Interfaces;
 using Stateflows.StateMachines;
 
 namespace Orleans.IntegrationTests;
@@ -123,7 +124,7 @@ public sealed class SqlServerStorageTests
         Assert.AreEqual("idle", await cluster.CurrentStateAsync(host, machineId));
 
         // Another writer (e.g. a split-brain activation) commits behind the active activation's back.
-        Assert.AreEqual(1, await SqlServerTestDatabase.BumpVersionAsync(cluster.ServiceId, "stateflows-context",
+        Assert.AreEqual(1, await SqlServerTestDatabase.BumpVersionAsync(cluster.ServiceId, "Stateflows.BehaviorContext",
                 StateflowsGrainKeys.ForBehavior("host", machineId)),
             "Exactly one SQL row must hold this behavior's context. Rows: " + string.Join("; ",
                 (await SqlServerTestDatabase.GetStorageRowsAsync(cluster.ServiceId)).Select(r =>
@@ -355,6 +356,46 @@ public sealed class SqlServerStorageTests
             => await Payloads.Reader.ReadAsync().AsTask().WaitAsync(TimeSpan.FromSeconds(1));
     }
 
+    [TestMethod]
+    [Timeout(180_000)]
+    public async Task PublisherOutboxRecoversFromSqlReminderAfterFullClusterRestart()
+    {
+        await using var cluster = new SqlCluster();
+        var instance = cluster.NewInstance();
+        var publisherId = new BehaviorId(BehaviorType.StateMachine, Publisher, instance);
+        var subscriberId = new BehaviorId(BehaviorType.StateMachine, Subscriber, instance);
+        var first = await cluster.StartHostAsync(new RejectOutboxFilter());
+        Assert.AreEqual(EventStatus.Initialized, (await cluster.SendAsync(first, subscriberId, new Initialize())).Status);
+        Assert.AreEqual(EventStatus.Consumed, (await cluster.SendAsync(first, subscriberId, new SubscribeTo { Instance = instance })).Status);
+        Assert.AreEqual(EventStatus.Consumed, (await cluster.SendAsync(first, publisherId, new PublishValue { Value = 37 })).Status);
+        Assert.IsFalse(cluster.Probe.Contains($"received:{instance}"), "Acceptance is blocked before any delivery.");
+        Assert.IsTrue((await SqlServerTestDatabase.GetReminderRowsAsync(cluster.ServiceId))
+            .Any(r => r.ReminderName == StateflowsBehavior.OutboxReminderName));
+        await cluster.StopHostAsync(first);
+
+        var second = await cluster.StartHostAsync();
+        // No call to the publisher: only the persisted outbox reminder can initiate recovery.
+        Assert.AreEqual(37, await cluster.Probe.ReadAsync($"received:{instance}", Timeout));
+        using var publisher = second.Services.GetRequiredService<IBehaviorFactory>().CreateBehavior(publisherId);
+        var history = (await publisher.GetNotificationsAsync<ValueNotification>(DateTime.MinValue)).ToArray();
+        CollectionAssert.AreEqual(new[] { 37 }, history.Select(n => n.Value).ToArray());
+        await WaitUntilAsync(async () => !(await SqlServerTestDatabase.GetReminderRowsAsync(cluster.ServiceId))
+            .Any(r => r.ReminderName == StateflowsBehavior.OutboxReminderName), "Recovered outboxes must remove their SQL reminders.");
+        await Task.Delay(ReminderPeriod + ReminderPeriod);
+        Assert.IsFalse(cluster.Probe.Contains($"received:{instance}"), "Recovery must not duplicate subscriber execution.");
+    }
+
+    private sealed class RejectOutboxFilter : IIncomingGrainCallFilter
+    {
+        public Task Invoke(IIncomingGrainCallContext context)
+        {
+            if (context.Grain is ISubscriptionsGrain &&
+                context.InterfaceMethod.Name == nameof(ISubscriptionsGrain.PublishOutboxAsync))
+                throw new InvalidOperationException("Injected outage before durable subscription acceptance.");
+            return context.Invoke();
+        }
+    }
+
     private sealed class SqlCluster : IAsyncDisposable
     {
         private readonly List<IHost> hosts = [];
@@ -364,7 +405,7 @@ public sealed class SqlServerStorageTests
 
         public string NewInstance() => Guid.NewGuid().ToString("N");
 
-        public async Task<IHost> StartHostAsync()
+        public async Task<IHost> StartHostAsync(IIncomingGrainCallFilter? filter = null)
         {
             var ports = GetFreeTcpPorts(2);
             var host = Host.CreateDefaultBuilder()
@@ -372,7 +413,11 @@ public sealed class SqlServerStorageTests
                 .ConfigureLogging(logging => logging.SetMinimumLevel(LogLevel.Error))
                 .UseOrleans(silo => silo
                     .UseLocalhostClustering(ports[0], ports[1], null, ServiceId, clusterId)
-                    .AddAdoNetGrainStorage("stateflows", options =>
+                    .ConfigureServices(services =>
+                    {
+                        if (filter != null) services.AddSingleton(filter);
+                    })
+                    .AddAdoNetGrainStorage("Default", options =>
                     {
                         options.Invariant = SqlServerTestDatabase.Invariant;
                         options.ConnectionString = SqlServerTestDatabase.ConnectionString;

@@ -65,7 +65,7 @@ namespace Stateflows.StateMachines.Registration.Builders
                 throw new StateDefinitionException(stateName, $"State name cannot be empty", Region.Graph.Class);
             }
             
-            if (Region.Vertices.ContainsKey(stateName))
+            if (Graph.AllVertices.ContainsKey(stateName))
             {
                 throw new StateDefinitionException(stateName, $"Vertex '{stateName}' is already registered", Graph.Class);
             }
@@ -80,6 +80,8 @@ namespace Stateflows.StateMachines.Registration.Builders
 
             vertexBuildAction?.Invoke(vertex);
 
+            if (Graph.AllVertices.ContainsKey(vertex.Name))
+                throw new StateDefinitionException(vertex.Name, $"Vertex '{vertex.Name}' is already registered", Graph.Class);
             Region.Vertices.Add(vertex.Name, vertex);
             Region.Graph.AllVertices.Add(vertex.Identifier, vertex);
 
@@ -444,11 +446,17 @@ namespace Stateflows.StateMachines.Registration.Builders
 
         [DebuggerHidden]
         private CompositeStateBuilder AddInternalTransition<TEvent>(InternalTransitionBuildAction<TEvent> transitionBuildAction)
-            => AddTransition<TEvent>(Constants.DefaultTransitionTarget, builder => transitionBuildAction?.Invoke(builder as IInternalTransitionBuilder<TEvent>));
+        {
+            Builder.AddInternalTransition(transitionBuildAction);
+            return this;
+        }
 
         [DebuggerHidden]
         private CompositeStateBuilder AddElseInternalTransition<TEvent>(ElseInternalTransitionBuildAction<TEvent> transitionBuildAction)
-            => AddElseTransition<TEvent>(Constants.DefaultTransitionTarget, builder => transitionBuildAction?.Invoke(builder as IElseInternalTransitionBuilder<TEvent>));
+        {
+            Builder.AddElseInternalTransition(transitionBuildAction);
+            return this;
+        }
         #endregion
 
         #region AddState

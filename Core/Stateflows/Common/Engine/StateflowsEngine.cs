@@ -62,7 +62,8 @@ namespace Stateflows.Common
                     status = await token.EventHolder.ProcessEventAsync(this, token.TargetId, token.Exceptions, token.Responses);
                 }
 
-                token.Status = token.Validation.IsValid
+                token.Validation = token.EventHolder.Validation;
+                token.Status = status == EventStatus.Failed || token.Validation.IsValid
                     ? status
                     : EventStatus.Invalid;
 

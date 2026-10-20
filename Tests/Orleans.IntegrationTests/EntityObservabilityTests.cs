@@ -30,7 +30,7 @@ public sealed partial class BehaviorNotificationTests
             .ConfigureLogging(logging => logging.SetMinimumLevel(LogLevel.Error))
             .UseOrleans(silo => silo
                 .UseLocalhostClustering(ports[0], ports[1], null, cluster, cluster)
-                .AddMemoryGrainStorage("stateflows")
+                .AddMemoryGrainStorageAsDefault()
                 .UseInMemoryReminderService()
                 .AddStateflowsRuntime())
             .Build();
@@ -91,7 +91,7 @@ public sealed partial class BehaviorNotificationTests
             .ConfigureLogging(logging => logging.SetMinimumLevel(LogLevel.Error))
             .UseOrleans(silo => silo
                 .UseLocalhostClustering(ports[0], ports[1], null, cluster, cluster)
-                .AddMemoryGrainStorage("stateflows")
+                .AddMemoryGrainStorageAsDefault()
                 .UseInMemoryReminderService()
                 .AddStateflowsRuntime())
             .Build();

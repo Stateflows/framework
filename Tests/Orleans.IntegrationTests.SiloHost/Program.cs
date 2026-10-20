@@ -66,7 +66,7 @@ builder.Host.UseOrleans(silo =>
         : null;
 
     silo.UseLocalhostClustering(siloPort, gatewayPort, primarySiloEndpoint, serviceId, clusterId)
-        .AddMemoryGrainStorage("stateflows")
+        .AddMemoryGrainStorageAsDefault()
         .UseInMemoryReminderService()
         .AddStateflowsRuntime();
 });

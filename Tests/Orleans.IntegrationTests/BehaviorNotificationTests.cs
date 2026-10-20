@@ -79,7 +79,7 @@ public sealed partial class BehaviorNotificationTests
                 {
                     if (filter != null) services.AddSingleton(filter);
                 })
-                .AddMemoryGrainStorage("stateflows")
+                .AddMemoryGrainStorageAsDefault()
                 .UseInMemoryReminderService()
                 .AddStateflowsRuntime())
             .Build();

@@ -83,7 +83,7 @@ public sealed class BehaviorStartupTests
             .ConfigureLogging(logging => logging.SetMinimumLevel(LogLevel.Warning))
             .UseOrleans(silo => silo
                 .UseLocalhostClustering(siloPort, gatewayPort, primary, clusterId, clusterId)
-                .AddMemoryGrainStorage("stateflows")
+                .AddMemoryGrainStorageAsDefault()
                 .UseInMemoryReminderService()
                 .AddStateflowsRuntime())
             .Build();

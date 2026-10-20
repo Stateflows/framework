@@ -175,7 +175,7 @@ public sealed class BehaviorTracingTests
             )
             .UseOrleans(silo => silo
                 .UseLocalhostClustering(ports[0], ports[1], null, clusterId, clusterId)
-                .AddMemoryGrainStorage("stateflows")
+                .AddMemoryGrainStorageAsDefault()
                 .UseInMemoryReminderService()
                 .AddStateflowsRuntime());
     }

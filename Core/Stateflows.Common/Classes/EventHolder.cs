@@ -25,6 +25,12 @@ namespace Stateflows.Common
 
         public BehaviorId? SenderId { get; set; }
 
+        /// <summary>
+        /// Validation of the current delivery, including validation performed by its behavior processor.
+        /// </summary>
+        [JsonIgnore]
+        public EventValidation Validation { get; set; } = new EventValidation(true);
+
         private object boxedPayload;
 
         [JsonIgnore]
@@ -52,7 +58,7 @@ namespace Stateflows.Common
             var validationResults = new List<ValidationResult>();
             var isValid = true;
             
-            if (!PayloadType.IsClass) return new EventValidation(true, validationResults);
+            if (!PayloadType.IsClass) return Validation = new EventValidation(true, validationResults);
             
             foreach (var validator in validators)
             {
@@ -62,7 +68,7 @@ namespace Stateflows.Common
                 }
             }
 
-            return new EventValidation(isValid, validationResults);
+            return Validation = new EventValidation(isValid, validationResults);
         }
     }
 

@@ -55,6 +55,12 @@ namespace Stateflows.Entities.Engine
 
                 var result = await inspection.ProcessEventAsync(eventHolder, async () =>
                 {
+                    if (!await executor.ValidateFieldWriteAsync(eventHolder))
+                    {
+                        execution.Persist = false;
+                        return EventStatus.Invalid;
+                    }
+
                     var status = await executor.TryInitializeAsync(eventHolder.Payload);
                     if (status == EventStatus.Failed)
                     {

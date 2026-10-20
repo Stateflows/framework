@@ -58,9 +58,9 @@ public class ActivityBubbling : StateflowsTestClass
 
     private async Task AssertBubblingAsync<TEvent>(TEvent @event, string expectedState)
     {
-        Assert.IsTrue(StateMachineLocator.TryLocateStateMachine(new StateMachineId("bubbling", "x"), out var machine));
+        Assert.IsTrue(StateMachineLocator.TryLocateStateMachine(new StateMachineId("bubbling", "y"), out var machine));
         Assert.AreEqual(EventStatus.Initialized, (await machine.SendAsync(new Initialize())).Status);
-        Assert.IsTrue(ActivityLocator.TryLocateActivity(new ActivityId("bubbling.active.do", "x"), out var activity));
+        Assert.IsTrue(ActivityLocator.TryLocateActivity(new ActivityId("bubbling.active.do", "y"), out var activity));
         Assert.AreEqual(EventStatus.NotConsumed, (await activity.SendAsync(@event)).Status);
 
         string? state;

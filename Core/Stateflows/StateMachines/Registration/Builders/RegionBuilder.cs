@@ -1,17 +1,11 @@
 ﻿using System;
 using System.Diagnostics;
-using Stateflows.Actions;
-using Stateflows.Actions.Registration.Interfaces;
-using Stateflows.Activities;
-using Stateflows.Activities.Registration.Interfaces;
 using Stateflows.Common.Registration;
 using Stateflows.StateMachines.Models;
 using Stateflows.StateMachines.Exceptions;
 using Stateflows.StateMachines.Registration.Interfaces;
 using Stateflows.StateMachines.Registration.Interfaces.Base;
 using Stateflows.StateMachines.Registration.Interfaces.Internal;
-using ActionBuildAction = Stateflows.Actions.Registration.Interfaces.ActionBuildAction;
-using ActionDelegateAsync = Stateflows.Actions.Registration.ActionDelegateAsync;
 using ForkBuildAction = Stateflows.StateMachines.Registration.Interfaces.ForkBuildAction;
 using JoinBuildAction = Stateflows.StateMachines.Registration.Interfaces.JoinBuildAction;
 using OverridenForkBuildAction = Stateflows.StateMachines.Registration.Interfaces.OverridenForkBuildAction;
@@ -44,10 +38,7 @@ namespace Stateflows.StateMachines.Registration.Builders
         public RegionBuilder(Region region)
         {
             Region = region;
-            Builder = new StateBuilder(Region.ParentVertex);
         }
-
-        private StateBuilder Builder { get; set; }
 
         [DebuggerHidden]
         private RegionBuilder AddVertex(string stateName, VertexType type, System.Action<Vertex> vertexBuildAction = null)
@@ -57,7 +48,7 @@ namespace Stateflows.StateMachines.Registration.Builders
                 throw new StateDefinitionException(stateName, $"State name cannot be empty", Region.Graph.Class);
             }
 
-            if (Region.Vertices.ContainsKey(stateName))
+            if (Region.Graph.AllVertices.ContainsKey(stateName))
             {
                 throw new StateDefinitionException(stateName, $"State '{stateName}' is already registered", Region.Graph.Class);
             }
@@ -72,6 +63,8 @@ namespace Stateflows.StateMachines.Registration.Builders
 
             vertexBuildAction?.Invoke(vertex);
 
+            if (Region.Graph.AllVertices.ContainsKey(vertex.Name))
+                throw new StateDefinitionException(vertex.Name, $"State '{vertex.Name}' is already registered", Region.Graph.Class);
             Region.Vertices.Add(vertex.Name, vertex);
             Region.Graph.AllVertices.Add(vertex.Identifier, vertex);
             
@@ -456,93 +449,6 @@ namespace Stateflows.StateMachines.Registration.Builders
         IRegionBuilder IStateHistory<IRegionBuilder>.AddHistory(string historyEntrypointName, HistoryBuildAction buildAction)
             => AddHistory(historyEntrypointName, buildAction);
         
-        private RegionBuilder AddDoActivity<TActivity>(ActivityUtilsBuildAction buildAction)
-            where TActivity : class, IActivity
-        {
-            Builder.AddDoActivity<TActivity>(buildAction);
-            return this;
-        }
-
-        private RegionBuilder AddDoActivity(ReactiveActivityBuildAction activityBuildAction)
-        {
-            Builder.AddDoActivity(activityBuildAction);
-            return this;
-        }
-
-        IBehaviorRegionBuilder IStateDoActivity<IBehaviorRegionBuilder>.AddDoActivity<TActivity>(ActivityUtilsBuildAction buildAction)
-            => AddDoActivity<TActivity>(buildAction);
-
-        IBehaviorOverridenRegionBuilder IStateDoActivity<IBehaviorOverridenRegionBuilder>.AddDoActivity(ReactiveActivityBuildAction activityBuildAction)
-            => AddDoActivity(activityBuildAction);
-
-        IBehaviorOverridenRegionBuilder IStateDoActivity<IBehaviorOverridenRegionBuilder>.AddDoActivity<TActivity>(ActivityUtilsBuildAction buildAction)
-            => AddDoActivity<TActivity>(buildAction);
-
-        IBehaviorFinalizedOverridenRegionBuilder IStateDoActivity<IBehaviorFinalizedOverridenRegionBuilder>.AddDoActivity(ReactiveActivityBuildAction activityBuildAction)
-            => AddDoActivity(activityBuildAction);
-
-        IBehaviorFinalizedOverridenRegionBuilder IStateDoActivity<IBehaviorFinalizedOverridenRegionBuilder>.AddDoActivity<TActivity>(ActivityUtilsBuildAction buildAction)
-            => AddDoActivity<TActivity>(buildAction);
-
-        IBehaviorFinalizedRegionBuilder IStateDoActivity<IBehaviorFinalizedRegionBuilder>.AddDoActivity(ReactiveActivityBuildAction activityBuildAction)
-            => AddDoActivity(activityBuildAction);
-
-        IBehaviorFinalizedRegionBuilder IStateDoActivity<IBehaviorFinalizedRegionBuilder>.AddDoActivity<TActivity>(ActivityUtilsBuildAction buildAction)
-            => AddDoActivity<TActivity>(buildAction);
-
-        IBehaviorInitializedRegionBuilder IStateDoActivity<IBehaviorInitializedRegionBuilder>.AddDoActivity(ReactiveActivityBuildAction activityBuildAction)
-            => AddDoActivity(activityBuildAction);
-
-        IBehaviorInitializedRegionBuilder IStateDoActivity<IBehaviorInitializedRegionBuilder>.AddDoActivity<TActivity>(ActivityUtilsBuildAction buildAction)
-            => AddDoActivity<TActivity>(buildAction);
-
-        IBehaviorRegionBuilder IStateDoActivity<IBehaviorRegionBuilder>.AddDoActivity(ReactiveActivityBuildAction activityBuildAction)
-            => AddDoActivity(activityBuildAction);
-        
-        private RegionBuilder AddDoAction<TAction>(ActionBuildAction<TAction> buildAction)
-            where TAction : class, IAction
-        {
-            Builder.AddDoAction<TAction>(buildAction);
-            return this;
-        }
-
-        private RegionBuilder AddDoAction(ActionDelegateAsync actionDelegate, ActionBuildAction buildAction)
-        {
-            Builder.AddDoAction(actionDelegate, buildAction);
-            return this;
-        }
-
-        IBehaviorRegionBuilder IStateDoAction<IBehaviorRegionBuilder>.AddDoAction<TAction>(ActionBuildAction<TAction> buildAction)
-            => AddDoAction<TAction>(buildAction);
-
-        IBehaviorOverridenRegionBuilder IStateDoAction<IBehaviorOverridenRegionBuilder>.AddDoAction(ActionDelegateAsync actionDelegate, ActionBuildAction buildAction)
-            => AddDoAction(actionDelegate, buildAction);
-
-        IBehaviorOverridenRegionBuilder IStateDoAction<IBehaviorOverridenRegionBuilder>.AddDoAction<TAction>(ActionBuildAction<TAction> buildAction)
-            => AddDoAction<TAction>(buildAction);
-
-        IBehaviorFinalizedOverridenRegionBuilder IStateDoAction<IBehaviorFinalizedOverridenRegionBuilder>.AddDoAction(ActionDelegateAsync actionDelegate,
-            ActionBuildAction buildAction)
-            => AddDoAction(actionDelegate, buildAction);
-
-        IBehaviorFinalizedOverridenRegionBuilder IStateDoAction<IBehaviorFinalizedOverridenRegionBuilder>.AddDoAction<TAction>(ActionBuildAction<TAction> buildAction)
-            => AddDoAction<TAction>(buildAction);
-
-        IBehaviorFinalizedRegionBuilder IStateDoAction<IBehaviorFinalizedRegionBuilder>.AddDoAction(ActionDelegateAsync actionDelegate, ActionBuildAction buildAction)
-            => AddDoAction(actionDelegate, buildAction);
-
-        IBehaviorFinalizedRegionBuilder IStateDoAction<IBehaviorFinalizedRegionBuilder>.AddDoAction<TAction>(ActionBuildAction<TAction> buildAction)
-            => AddDoAction<TAction>(buildAction);
-
-        IBehaviorInitializedRegionBuilder IStateDoAction<IBehaviorInitializedRegionBuilder>.AddDoAction(ActionDelegateAsync actionDelegate, ActionBuildAction buildAction)
-            => AddDoAction(actionDelegate, buildAction);
-
-        IBehaviorInitializedRegionBuilder IStateDoAction<IBehaviorInitializedRegionBuilder>.AddDoAction<TAction>(ActionBuildAction<TAction> buildAction)
-            => AddDoAction<TAction>(buildAction);
-
-        IBehaviorRegionBuilder IStateDoAction<IBehaviorRegionBuilder>.AddDoAction(ActionDelegateAsync actionDelegate, ActionBuildAction buildAction)
-            => AddDoAction(actionDelegate, buildAction);
-
         IInitializedRegionBuilder IStateMachineInitial<IInitializedRegionBuilder>.AddInitialState(string stateName, StateBuildAction stateBuildAction)
             => AddInitialState(stateName, stateBuildAction);
 

@@ -2,6 +2,10 @@
 using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
+using Stateflows.Actions;
+using Stateflows.Actions.Registration.Interfaces;
+using Stateflows.Activities;
+using Stateflows.Activities.Registration.Interfaces;
 using Stateflows.Common;
 using Stateflows.Common.Registration;
 using Stateflows.Common.Utilities;
@@ -11,12 +15,16 @@ using Stateflows.StateMachines.Context.Classes;
 using Stateflows.StateMachines.Registration.Interfaces;
 using Stateflows.StateMachines.Registration.Interfaces.Base;
 using Stateflows.StateMachines.Registration.Interfaces.Internal;
+using ActionBuildAction = Stateflows.Actions.Registration.Interfaces.ActionBuildAction;
+using ActionDelegateAsync = Stateflows.Actions.Registration.ActionDelegateAsync;
 
 namespace Stateflows.StateMachines.Registration.Builders
 {
     internal class OrthogonalStateBuilder :
         IOrthogonalStateBuilder,
         IOverridenOrthogonalStateBuilder,
+        IBehaviorOrthogonalStateBuilder,
+        IBehaviorOverridenOrthogonalStateBuilder,
         IStateBuilderInfo,
         IGraphBuilder,
         IVertexBuilder,
@@ -34,6 +42,150 @@ namespace Stateflows.StateMachines.Registration.Builders
         {
             Vertex = vertex;
         }
+
+        IBehaviorOrthogonalStateBuilder IStateDoActivity<IBehaviorOrthogonalStateBuilder>.AddDoActivity<TActivity>(ActivityUtilsBuildAction buildAction)
+        {
+            new StateBuilder(Vertex).AddDoActivity<TActivity>(buildAction);
+            return this;
+        }
+
+        IBehaviorOrthogonalStateBuilder IStateDoActivity<IBehaviorOrthogonalStateBuilder>.AddDoActivity(ReactiveActivityBuildAction activityBuildAction)
+        {
+            new StateBuilder(Vertex).AddDoActivity(activityBuildAction);
+            return this;
+        }
+
+        IBehaviorOrthogonalStateBuilder IStateDoAction<IBehaviorOrthogonalStateBuilder>.AddDoAction<TAction>(ActionBuildAction<TAction> buildAction)
+        {
+            new StateBuilder(Vertex).AddDoAction<TAction>(buildAction);
+            return this;
+        }
+
+        IBehaviorOrthogonalStateBuilder IStateDoAction<IBehaviorOrthogonalStateBuilder>.AddDoAction(ActionDelegateAsync actionDelegate, ActionBuildAction buildAction)
+        {
+            new StateBuilder(Vertex).AddDoAction(actionDelegate, buildAction);
+            return this;
+        }
+
+        IBehaviorOverridenOrthogonalStateBuilder IStateDoActivity<IBehaviorOverridenOrthogonalStateBuilder>.AddDoActivity<TActivity>(ActivityUtilsBuildAction buildAction)
+        {
+            new StateBuilder(Vertex).AddDoActivity<TActivity>(buildAction);
+            return this;
+        }
+
+        IBehaviorOverridenOrthogonalStateBuilder IStateDoActivity<IBehaviorOverridenOrthogonalStateBuilder>.AddDoActivity(ReactiveActivityBuildAction activityBuildAction)
+        {
+            new StateBuilder(Vertex).AddDoActivity(activityBuildAction);
+            return this;
+        }
+
+        IBehaviorOverridenOrthogonalStateBuilder IStateDoAction<IBehaviorOverridenOrthogonalStateBuilder>.AddDoAction<TAction>(ActionBuildAction<TAction> buildAction)
+        {
+            new StateBuilder(Vertex).AddDoAction<TAction>(buildAction);
+            return this;
+        }
+
+        IBehaviorOverridenOrthogonalStateBuilder IStateDoAction<IBehaviorOverridenOrthogonalStateBuilder>.AddDoAction(ActionDelegateAsync actionDelegate, ActionBuildAction buildAction)
+        {
+            new StateBuilder(Vertex).AddDoAction(actionDelegate, buildAction);
+            return this;
+        }
+
+        IBehaviorOrthogonalStateBuilder IStateEntry<IBehaviorOrthogonalStateBuilder>.AddOnEntry(params Func<IStateActionContext, Task>[] actionsAsync)
+            => (IBehaviorOrthogonalStateBuilder)AddOnEntry(actionsAsync);
+
+        IBehaviorOrthogonalStateBuilder IStateExit<IBehaviorOrthogonalStateBuilder>.AddOnExit(params Func<IStateActionContext, Task>[] actionsAsync)
+            => (IBehaviorOrthogonalStateBuilder)AddOnExit(actionsAsync);
+
+        IBehaviorOrthogonalStateBuilder ICompositeStateInitialization<IBehaviorOrthogonalStateBuilder>.AddOnInitialize(params Func<IStateActionContext, Task>[] actionsAsync)
+            => (IBehaviorOrthogonalStateBuilder)AddOnInitialize(actionsAsync);
+
+        IBehaviorOrthogonalStateBuilder ICompositeStateFinalization<IBehaviorOrthogonalStateBuilder>.AddOnFinalize(params Func<IStateActionContext, Task>[] actionsAsync)
+            => (IBehaviorOrthogonalStateBuilder)AddOnFinalize(actionsAsync);
+
+        IBehaviorOrthogonalStateBuilder IStateUtils<IBehaviorOrthogonalStateBuilder>.AddDeferredEvent<TEvent>(DeferralBuildAction<TEvent> buildAction)
+            => (IBehaviorOrthogonalStateBuilder)AddDeferredEvent(buildAction);
+
+        IBehaviorOrthogonalStateBuilder IRegions<IBehaviorOrthogonalStateBuilder>.AddRegion(RegionBuildAction buildAction)
+            => (IBehaviorOrthogonalStateBuilder)AddRegion(buildAction);
+
+        IBehaviorOrthogonalStateBuilder IStateTransitions<IBehaviorOrthogonalStateBuilder>.AddTransition<TEvent>(string targetStateName, TransitionBuildAction<TEvent> transitionBuildAction)
+            => (IBehaviorOrthogonalStateBuilder)AddTransition(targetStateName, transitionBuildAction);
+
+        IBehaviorOrthogonalStateBuilder IStateTransitions<IBehaviorOrthogonalStateBuilder>.AddDefaultTransition(string targetStateName, DefaultTransitionBuildAction transitionBuildAction)
+            => (IBehaviorOrthogonalStateBuilder)AddDefaultTransition(targetStateName, transitionBuildAction);
+
+        IBehaviorOrthogonalStateBuilder IStateTransitions<IBehaviorOrthogonalStateBuilder>.AddInternalTransition<TEvent>(InternalTransitionBuildAction<TEvent> transitionBuildAction)
+            => (IBehaviorOrthogonalStateBuilder)AddInternalTransition(transitionBuildAction);
+
+        IBehaviorOrthogonalStateBuilder IStateTransitions<IBehaviorOrthogonalStateBuilder>.AddElseTransition<TEvent>(string targetStateName, ElseTransitionBuildAction<TEvent> transitionBuildAction)
+            => (IBehaviorOrthogonalStateBuilder)AddElseTransition(targetStateName, transitionBuildAction);
+
+        IBehaviorOrthogonalStateBuilder IStateTransitions<IBehaviorOrthogonalStateBuilder>.AddElseDefaultTransition(string targetStateName, ElseDefaultTransitionBuildAction transitionBuildAction)
+            => (IBehaviorOrthogonalStateBuilder)AddElseDefaultTransition(targetStateName, transitionBuildAction);
+
+        IBehaviorOrthogonalStateBuilder IStateTransitions<IBehaviorOrthogonalStateBuilder>.AddElseInternalTransition<TEvent>(ElseInternalTransitionBuildAction<TEvent> transitionBuildAction)
+            => (IBehaviorOrthogonalStateBuilder)AddElseInternalTransition(transitionBuildAction);
+
+        IBehaviorOverridenOrthogonalStateBuilder IStateEntry<IBehaviorOverridenOrthogonalStateBuilder>.AddOnEntry(params Func<IStateActionContext, Task>[] actionsAsync)
+            => (IBehaviorOverridenOrthogonalStateBuilder)AddOnEntry(actionsAsync);
+
+        IBehaviorOverridenOrthogonalStateBuilder IStateExit<IBehaviorOverridenOrthogonalStateBuilder>.AddOnExit(params Func<IStateActionContext, Task>[] actionsAsync)
+            => (IBehaviorOverridenOrthogonalStateBuilder)AddOnExit(actionsAsync);
+
+        IBehaviorOverridenOrthogonalStateBuilder ICompositeStateInitialization<IBehaviorOverridenOrthogonalStateBuilder>.AddOnInitialize(params Func<IStateActionContext, Task>[] actionsAsync)
+            => (IBehaviorOverridenOrthogonalStateBuilder)AddOnInitialize(actionsAsync);
+
+        IBehaviorOverridenOrthogonalStateBuilder ICompositeStateFinalization<IBehaviorOverridenOrthogonalStateBuilder>.AddOnFinalize(params Func<IStateActionContext, Task>[] actionsAsync)
+            => (IBehaviorOverridenOrthogonalStateBuilder)AddOnFinalize(actionsAsync);
+
+        IBehaviorOverridenOrthogonalStateBuilder IStateUtils<IBehaviorOverridenOrthogonalStateBuilder>.AddDeferredEvent<TEvent>(DeferralBuildAction<TEvent> buildAction)
+            => (IBehaviorOverridenOrthogonalStateBuilder)AddDeferredEvent(buildAction);
+
+        IBehaviorOverridenOrthogonalStateBuilder IStateUtilsOverrides<IBehaviorOverridenOrthogonalStateBuilder>.UseDeferredEvent<TEvent>(OverridenDeferralBuildAction<TEvent> buildAction)
+            => (IBehaviorOverridenOrthogonalStateBuilder)UseDeferredEvent(buildAction);
+
+        IBehaviorOverridenOrthogonalStateBuilder IRegions<IBehaviorOverridenOrthogonalStateBuilder>.AddRegion(RegionBuildAction buildAction)
+            => (IBehaviorOverridenOrthogonalStateBuilder)AddRegion(buildAction);
+
+        IBehaviorOverridenOrthogonalStateBuilder IRegionsOverrides<IBehaviorOverridenOrthogonalStateBuilder>.UseRegion(int index, OverridenRegionBuildAction buildAction)
+            => (IBehaviorOverridenOrthogonalStateBuilder)((IRegionsOverrides<IOverridenOrthogonalStateBuilder>)this).UseRegion(index, buildAction);
+
+        IBehaviorOverridenOrthogonalStateBuilder IStateTransitions<IBehaviorOverridenOrthogonalStateBuilder>.AddTransition<TEvent>(string targetStateName, TransitionBuildAction<TEvent> transitionBuildAction)
+            => (IBehaviorOverridenOrthogonalStateBuilder)AddTransition(targetStateName, transitionBuildAction);
+
+        IBehaviorOverridenOrthogonalStateBuilder IStateTransitions<IBehaviorOverridenOrthogonalStateBuilder>.AddDefaultTransition(string targetStateName, DefaultTransitionBuildAction transitionBuildAction)
+            => (IBehaviorOverridenOrthogonalStateBuilder)AddDefaultTransition(targetStateName, transitionBuildAction);
+
+        IBehaviorOverridenOrthogonalStateBuilder IStateTransitions<IBehaviorOverridenOrthogonalStateBuilder>.AddInternalTransition<TEvent>(InternalTransitionBuildAction<TEvent> transitionBuildAction)
+            => (IBehaviorOverridenOrthogonalStateBuilder)AddInternalTransition(transitionBuildAction);
+
+        IBehaviorOverridenOrthogonalStateBuilder IStateTransitions<IBehaviorOverridenOrthogonalStateBuilder>.AddElseTransition<TEvent>(string targetStateName, ElseTransitionBuildAction<TEvent> transitionBuildAction)
+            => (IBehaviorOverridenOrthogonalStateBuilder)AddElseTransition(targetStateName, transitionBuildAction);
+
+        IBehaviorOverridenOrthogonalStateBuilder IStateTransitions<IBehaviorOverridenOrthogonalStateBuilder>.AddElseDefaultTransition(string targetStateName, ElseDefaultTransitionBuildAction transitionBuildAction)
+            => (IBehaviorOverridenOrthogonalStateBuilder)AddElseDefaultTransition(targetStateName, transitionBuildAction);
+
+        IBehaviorOverridenOrthogonalStateBuilder IStateTransitions<IBehaviorOverridenOrthogonalStateBuilder>.AddElseInternalTransition<TEvent>(ElseInternalTransitionBuildAction<TEvent> transitionBuildAction)
+            => (IBehaviorOverridenOrthogonalStateBuilder)AddElseInternalTransition(transitionBuildAction);
+
+        IBehaviorOverridenOrthogonalStateBuilder IStateTransitionsOverrides<IBehaviorOverridenOrthogonalStateBuilder>.UseTransition<TEvent>(string targetStateName, OverridenTransitionBuildAction<TEvent> transitionBuildAction)
+            => (IBehaviorOverridenOrthogonalStateBuilder)UseTransition(targetStateName, transitionBuildAction);
+
+        IBehaviorOverridenOrthogonalStateBuilder IStateTransitionsOverrides<IBehaviorOverridenOrthogonalStateBuilder>.UseDefaultTransition(string targetStateName, OverridenDefaultTransitionBuildAction transitionBuildAction)
+            => (IBehaviorOverridenOrthogonalStateBuilder)UseDefaultTransition(targetStateName, transitionBuildAction);
+
+        IBehaviorOverridenOrthogonalStateBuilder IStateTransitionsOverrides<IBehaviorOverridenOrthogonalStateBuilder>.UseInternalTransition<TEvent>(OverridenInternalTransitionBuildAction<TEvent> transitionBuildAction)
+            => (IBehaviorOverridenOrthogonalStateBuilder)UseInternalTransition(transitionBuildAction);
+
+        IBehaviorOverridenOrthogonalStateBuilder IStateTransitionsOverrides<IBehaviorOverridenOrthogonalStateBuilder>.UseElseTransition<TEvent>(string targetStateName, OverridenElseTransitionBuildAction<TEvent> transitionBuildAction)
+            => (IBehaviorOverridenOrthogonalStateBuilder)UseElseTransition(targetStateName, transitionBuildAction);
+
+        IBehaviorOverridenOrthogonalStateBuilder IStateTransitionsOverrides<IBehaviorOverridenOrthogonalStateBuilder>.UseElseDefaultTransition(string targetStateName, OverridenElseDefaultTransitionBuildAction transitionBuildAction)
+            => (IBehaviorOverridenOrthogonalStateBuilder)UseElseDefaultTransition(targetStateName, transitionBuildAction);
+
+        IBehaviorOverridenOrthogonalStateBuilder IStateTransitionsOverrides<IBehaviorOverridenOrthogonalStateBuilder>.UseElseInternalTransition<TEvent>(OverridenElseInternalTransitionBuildAction<TEvent> transitionBuildAction)
+            => (IBehaviorOverridenOrthogonalStateBuilder)UseElseInternalTransition(transitionBuildAction);
 
         #region Events
         [DebuggerHidden]
@@ -125,7 +277,10 @@ namespace Stateflows.StateMachines.Registration.Builders
             var builder = new DeferralBuilder<TEvent>(Vertex);
             buildAction?.Invoke(builder);
 
-            Vertex.Deferrals.Add(typeof(TEvent).GetEventName(), builder.Logic);
+            var eventName = typeof(TEvent).GetEventName();
+            if (!Vertex.Deferrals.TryAdd(eventName, builder.Logic))
+                throw new DeferralDefinitionException(eventName, $"Event '{eventName}' is already deferred by '{Vertex.Name}'.", Vertex.Graph.Class);
+            Vertex.DeferralTypes.Add(eventName, typeof(TEvent));
 
             return this;
         }
@@ -181,7 +336,10 @@ namespace Stateflows.StateMachines.Registration.Builders
 
         [DebuggerHidden]
         public IOrthogonalStateBuilder AddTransition<TEvent>(string targetStateName, TransitionBuildAction<TEvent> transitionBuildAction = null)
-            => AddTransitionInternal(targetStateName, false, transitionBuildAction);
+        {
+            targetStateName.ThrowIfNullOrEmpty(nameof(targetStateName));
+            return AddTransitionInternal(targetStateName, false, transitionBuildAction);
+        }
 
         [DebuggerHidden]
         IOverridenOrthogonalStateBuilder IStateTransitions<IOverridenOrthogonalStateBuilder>.AddDefaultTransition(string targetStateName,
@@ -208,7 +366,10 @@ namespace Stateflows.StateMachines.Registration.Builders
 
         [DebuggerHidden]
         public IOrthogonalStateBuilder AddElseTransition<TEvent>(string targetStateName, ElseTransitionBuildAction<TEvent> transitionBuildAction = null)
-            => AddTransitionInternal<TEvent>(targetStateName, true, builder => transitionBuildAction?.Invoke(builder as IElseTransitionBuilder<TEvent>));
+        {
+            targetStateName.ThrowIfNullOrEmpty(nameof(targetStateName));
+            return AddTransitionInternal<TEvent>(targetStateName, true, builder => transitionBuildAction?.Invoke(builder as IElseTransitionBuilder<TEvent>));
+        }
 
         [DebuggerHidden]
         IOverridenOrthogonalStateBuilder IStateTransitions<IOverridenOrthogonalStateBuilder>.AddTransition<TEvent>(string targetStateName, TransitionBuildAction<TEvent> transitionBuildAction)
@@ -224,11 +385,11 @@ namespace Stateflows.StateMachines.Registration.Builders
 
         [DebuggerHidden]
         public IOrthogonalStateBuilder AddInternalTransition<TEvent>(InternalTransitionBuildAction<TEvent> transitionBuildAction)
-            => AddTransition<TEvent>(Constants.DefaultTransitionTarget, builder => transitionBuildAction?.Invoke(builder as IInternalTransitionBuilder<TEvent>));
+            => AddTransitionInternal<TEvent>(Constants.DefaultTransitionTarget, false, builder => transitionBuildAction?.Invoke(builder as IInternalTransitionBuilder<TEvent>));
 
         [DebuggerHidden]
         public IOrthogonalStateBuilder AddElseInternalTransition<TEvent>(ElseInternalTransitionBuildAction<TEvent> transitionBuildAction)
-            => AddElseTransition<TEvent>(Constants.DefaultTransitionTarget, builder => transitionBuildAction?.Invoke(builder as IElseInternalTransitionBuilder<TEvent>));
+            => AddTransitionInternal<TEvent>(Constants.DefaultTransitionTarget, true, builder => transitionBuildAction?.Invoke(builder as IElseInternalTransitionBuilder<TEvent>));
         #endregion
 
         [DebuggerHidden]

@@ -3,6 +3,6 @@
 namespace Stateflows.StateMachines.Registration.Interfaces
 {
     public interface IHistoryBuilder :
-        IPseudostateTransitions<IHistoryBuilder>
+        IPseudostateElseTransitions<IHistoryBuilder>
     { }
 }

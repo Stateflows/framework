@@ -11,6 +11,9 @@ internal interface ISubscriptionsGrain : IGrainWithStringKey, IRemindable
     [Alias("PublishAsync")]
     Task PublishAsync(OrleansEventHolder[] notifications);
 
+    [Alias("PublishOutboxAsync")]
+    Task PublishOutboxAsync(string sourceKey, long sequence, OrleansEventHolder[] notifications);
+
     /// <summary>
     /// Returns latest non-expired retained notifications for given names unioned with non-expired notifications sent since given moment.
     /// </summary>

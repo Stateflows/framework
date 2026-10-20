@@ -60,8 +60,8 @@ builder.Services.AddStateflows(b => b
 );
 
 builder.Host.UseOrleans(static b => b
-    .UseLocalhostClustering()
-    .AddMemoryGrainStorage("stateflows")
+    .UseLocalhostClustering(11_111, 30_003)
+    .AddMemoryGrainStorageAsDefault()
     .UseInMemoryReminderService()
     .AddDashboard()
     

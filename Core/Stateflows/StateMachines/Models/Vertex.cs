@@ -33,6 +33,7 @@ namespace Stateflows.StateMachines.Models
         public IEnumerable<Edge> OrderedEdges => Edges.Values.OrderBy(edge => edge.IsElse);
         public IEnumerable<Edge> IncomingEdges => Graph.AllEdges.Where(edge => edge.Target == this);
         public Dictionary<string, Logic<StateMachinePredicateAsync>> Deferrals { get; set; } = new();
+        public Dictionary<string, Type> DeferralTypes { get; } = new();
         public List<Region> Regions { get; set; } = [];
         public Region DefaultRegion
         {

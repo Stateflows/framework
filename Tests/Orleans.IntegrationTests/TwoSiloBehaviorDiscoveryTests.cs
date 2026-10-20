@@ -176,7 +176,7 @@ public sealed class TwoSiloBehaviorDiscoveryTests
             .ConfigureLogging(logging => logging.SetMinimumLevel(LogLevel.Warning))
             .UseOrleans(silo => silo
                 .UseLocalhostClustering(siloPort, gatewayPort, primarySiloEndpoint, serviceId, clusterId)
-                .AddMemoryGrainStorage("stateflows")
+                .AddMemoryGrainStorageAsDefault()
                 .UseInMemoryReminderService()
                 .AddStateflowsRuntime())
             .Build();

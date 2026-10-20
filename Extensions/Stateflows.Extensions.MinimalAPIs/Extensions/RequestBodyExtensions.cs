@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -37,7 +38,8 @@ internal static class RequestBodyExtensions
         string behaviorName,
         Dictionary<string, List<(HateoasLink, BehaviorStatus[])>> customHateoasLinks,
         bool hasDefaultInstance = false,
-        BehaviorStatus[]? supportedStatuses = null
+        BehaviorStatus[]? supportedStatuses = null,
+        IAuthorizeData[]? authorization = null
     )
     {
         var eventType = typeof(TEvent);
@@ -137,6 +139,8 @@ internal static class RequestBodyExtensions
                 );
 
             routeHandlerBuilder.WithTags($"{behaviorClass.Type} {behaviorClass.Name}");
+            if (authorization is { Length: > 0 })
+                routeHandlerBuilder.RequireAuthorization(authorization);
 
             interceptor.AfterEventEndpointDefinition<TEvent>(behaviorClass, isDefaultInstance: false, method, route, routeHandlerBuilder);
 
@@ -251,6 +255,8 @@ internal static class RequestBodyExtensions
 
             routeHandlerBuilder.WithTags($"{behaviorClass.Type} {behaviorClass.Name}");
 
+            if (authorization is { Length: > 0 })
+                routeHandlerBuilder.RequireAuthorization(authorization);
             interceptor.AfterEventEndpointDefinition<TEvent>(behaviorClass, isDefaultInstance: true, method, defaultInstanceRoute, routeHandlerBuilder);
 
             customHateoasLinks.AddLink(

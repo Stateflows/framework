@@ -114,7 +114,7 @@ public sealed class FailedExecutionTests
             .UseOrleans(silo => silo
                 .UseLocalhostClustering(ports[0], ports[1], clusterId: cluster, serviceId: cluster)
                 .ConfigureServices(s => s
-                    .AddKeyedSingleton<IGrainStorage>("stateflows",
+                    .AddKeyedSingleton<IGrainStorage>("Default",
                         (provider, _) => storage.Attach(provider.GetRequiredService<IGrainStorageSerializer>()))
                     .AddSingleton<IStateflowsExecutionInterceptor>(probe))
                 .UseInMemoryReminderService()

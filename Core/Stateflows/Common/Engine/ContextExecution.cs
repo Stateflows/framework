@@ -25,6 +25,7 @@ namespace Stateflows.Common.Engine
         {
             var exceptionCount = exceptions.Count;
             ContextExecution? execution = null;
+            using var publications = PublicationScope.IsRuntimeOwned ? null : new PublicationScope();
             try
             {
                 var stored = await storage.HydrateAsync(id);
@@ -34,6 +35,9 @@ namespace Stateflows.Common.Engine
                 working.Deleted = stored.Deleted;
                 execution = new ContextExecution(working);
                 var result = await executeAsync(execution);
+
+                if (publications != null)
+                    await publications.WaitForImmediateAsync();
 
                 if (result == EventStatus.Failed ||
                     exceptions.Count != exceptionCount ||
@@ -48,6 +52,9 @@ namespace Stateflows.Common.Engine
                     await storage.DehydrateAsync(execution.Context);
                 }
 
+                if (publications != null)
+                    await publications.FlushAsync();
+
                 return result;
             }
             catch (Exception exception)
@@ -57,6 +64,18 @@ namespace Stateflows.Common.Engine
             }
             finally
             {
+                if (publications != null)
+                {
+                    try
+                    {
+                        await publications.WaitForImmediateAsync();
+                    }
+                    catch (Exception exception)
+                    {
+                        if (!exceptions.Contains(exception))
+                            exceptions.Add(exception);
+                    }
+                }
                 if (execution != null)
                 {
                     foreach (var exception in execution.Context.ExecutionExceptions)

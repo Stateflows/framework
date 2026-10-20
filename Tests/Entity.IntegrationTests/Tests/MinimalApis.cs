@@ -9,6 +9,9 @@ using Microsoft.Extensions.Logging;
 using Stateflows.Entities.Attributes;
 using Stateflows.Entities.Enums;
 using Stateflows.Extensions.MinimalAPIs;
+using Stateflows.Extensions.MinimalAPIs.Attributes;
+using Stateflows.Common;
+using Stateflows.Common.Interfaces;
 
 namespace Entity.IntegrationTests.Tests
 {
@@ -67,6 +70,71 @@ namespace Entity.IntegrationTests.Tests
         string Status { get; set; }
     }
 
+    [NoApiMapping]
+    public record HiddenApiMutation(int Amount);
+
+    [NoApiMapping]
+    public record struct HiddenApiStructMutation(int Amount);
+
+    [NoApiMapping]
+    public class HiddenApiProjection
+    {
+        public int Count { get; set; }
+    }
+
+    public interface IExcludedApiBase
+    {
+        [Field(FieldAccess.Get | FieldAccess.Set), NoApiMapping]
+        int HiddenProperty { get; set; }
+
+        [Field(FieldAccess.Get | FieldAccess.Set)]
+        int HiddenGetter
+        {
+            [NoApiMapping]
+            get;
+            set;
+        }
+    }
+
+    public interface IExcludedApiTemplate : IExcludedApiBase
+    {
+        [Field(FieldAccess.Get | FieldAccess.Set)]
+        int Visible { get; set; }
+
+        [Field(FieldAccess.Get | FieldAccess.Set)]
+        int HiddenSetter
+        {
+            get;
+            [NoApiMapping]
+            set;
+        }
+
+        [Field(FieldAccess.Get | FieldAccess.Set)]
+        int HiddenAccessors
+        {
+            [NoApiMapping]
+            get;
+            [NoApiMapping]
+            set;
+        }
+
+        [Field(FieldAccess.Get)]
+        int HiddenComputed
+        {
+            [NoApiMapping]
+            get => Visible * 2;
+        }
+
+        [Projection(PublishScope.Self)]
+        HiddenApiProjection View => new() { Count = Visible };
+
+        [Mutation]
+        void HiddenMutation(HiddenApiMutation mutation) { Visible += mutation.Amount; }
+
+        [Mutation]
+        void HiddenStructMutation(HiddenApiStructMutation mutation) { Visible += mutation.Amount; }
+    }
+
     [TestClass]
     public class MinimalApis
     {
@@ -84,6 +152,7 @@ namespace Entity.IntegrationTests.Tests
                 .AddLegacyRuntime()
                 .AddEntities(entities => entities
                     .AddEntity<ICounterApiTemplate>("counter")
+                    .AddEntity<IExcludedApiTemplate>("excluded")
                     .AddEntity<IAccountApiTemplate>("account", entity => entity
                         .AddInitializer<AccountOpen>(context => context.Entity.Owner = context.InitializationEvent.Owner)
                     )
@@ -130,6 +199,51 @@ namespace Entity.IntegrationTests.Tests
 
         private static string GetStatusText(JsonElement body)
             => body.GetProperty("metadata").GetProperty("behaviorStatusText").GetString()!;
+
+        [TestMethod]
+        public async Task NoApiMappingExcludesElementsAndAccessorRoutesWithoutChangingBehavior()
+        {
+            const string root = "/stateflows/entities/excluded/a";
+            Assert.AreEqual(HttpStatusCode.Created,
+                (await http.PostAsync(root + "/initialize", Body(new { }))).StatusCode);
+
+            foreach (var field in new[] { "hiddenProperty", "hiddenAccessors", "hiddenComputed" })
+            {
+                Assert.AreEqual(HttpStatusCode.NotFound, (await http.GetAsync(root + "/" + field)).StatusCode);
+                Assert.AreEqual(HttpStatusCode.NotFound, (await http.PutAsync(root + "/" + field, Body(1))).StatusCode);
+            }
+            Assert.AreEqual(HttpStatusCode.MethodNotAllowed, (await http.GetAsync(root + "/hiddenGetter")).StatusCode);
+            Assert.AreEqual(HttpStatusCode.OK, (await http.PutAsync(root + "/hiddenGetter", Body(4))).StatusCode);
+            Assert.AreEqual(HttpStatusCode.OK, (await http.GetAsync(root + "/hiddenSetter")).StatusCode);
+            Assert.AreEqual(HttpStatusCode.MethodNotAllowed, (await http.PutAsync(root + "/hiddenSetter", Body(5))).StatusCode);
+            Assert.AreEqual(HttpStatusCode.NotFound,
+                (await http.PostAsync(root + "/hiddenApiMutation", Body(new { amount = 1 }))).StatusCode);
+            Assert.AreEqual(HttpStatusCode.NotFound,
+                (await http.PostAsync(root + "/hiddenApiStructMutation", Body(new { amount = 1 }))).StatusCode);
+            Assert.AreEqual(HttpStatusCode.NotFound, (await http.GetAsync(root + "/hiddenApiProjection")).StatusCode);
+            Assert.AreEqual(HttpStatusCode.NotFound, (await http.GetAsync(root + "/hiddenApiProjection?stream=true")).StatusCode);
+
+            var links = GetLinks(await ReadJsonAsync(await http.GetAsync(root + "/status")));
+            CollectionAssert.Contains(links, "PUT hiddenGetter");
+            CollectionAssert.Contains(links, "GET hiddenSetter");
+            CollectionAssert.Contains(links, "GET visible");
+            CollectionAssert.Contains(links, "PUT visible");
+            foreach (var excluded in new[]
+            {
+                "GET hiddenGetter", "PUT hiddenSetter", "GET hiddenProperty", "PUT hiddenProperty",
+                "GET hiddenAccessors", "PUT hiddenAccessors", "GET hiddenComputed",
+                "POST hiddenApiMutation", "POST hiddenApiStructMutation", "GET hiddenApiProjection"
+            })
+                CollectionAssert.DoesNotContain(links, excluded);
+
+            using var scope = app!.Services.CreateScope();
+            using var behavior = scope.ServiceProvider.GetRequiredService<IBehaviorFactory>()
+                .CreateBehavior(new EntityId("excluded", "a"));
+            Assert.AreEqual(EventStatus.Consumed, (await behavior.SendAsync(new HiddenApiMutation(2))).Status);
+            Assert.AreEqual(EventStatus.Consumed, (await behavior.SendAsync(new HiddenApiStructMutation(3))).Status);
+            var projection = await behavior.RequestAsync(new ProjectionRequest<HiddenApiProjection>());
+            Assert.AreEqual(5, projection.Response.Count, "NoApiMapping must only affect HTTP mapping.");
+        }
 
         [TestMethod]
         public async Task ClassesAndInstancesAreListed()

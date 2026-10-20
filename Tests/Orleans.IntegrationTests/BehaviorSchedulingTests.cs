@@ -586,7 +586,7 @@ public sealed class BehaviorSchedulingTests
                     .ConfigureServices(services => services
                         .AddSingleton<IReminderTable>(Reminders)
                         .AddSingleton(new SiloMarker(marker))
-                        .AddKeyedSingleton<IGrainStorage>("stateflows",
+                        .AddKeyedSingleton<IGrainStorage>("Default",
                             (provider, _) => Storage.Attach(provider.GetRequiredService<IGrainStorageSerializer>())))
                     .AddStateflowsRuntime())
                 .Build();
@@ -748,7 +748,7 @@ public sealed class BehaviorSchedulingTests
             lock (sync)
             {
                 return states
-                    .Where(s => s.Key.Item1 == "stateflows-context")
+                    .Where(s => s.Key.Item1 == "Stateflows.BehaviorContext")
                     .Select(s => serializer.Deserialize<BehaviorContextState>(s.Value.Data)!.Payload)
                     .Select(StateflowsJsonConverter.DeserializeObject<StateflowsContext>)
                     .SingleOrDefault(c => c != null && c.Id == id);

@@ -32,7 +32,6 @@ namespace Stateflows.StateMachines
         IEntityOwnerBase<IOverridenStateMachineBuilder>;
     
     public interface IFinalizedOverridenStateMachineBuilder :
-        IStateMachineElements<IFinalizedOverridenStateMachineBuilder>,
         IStateMachineUtils<IFinalizedOverridenStateMachineBuilder>,
         IStateMachineEvents<IFinalizedOverridenStateMachineBuilder>,
         IStateMachineOverrides<IFinalizedOverridenStateMachineBuilder>,

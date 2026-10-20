@@ -245,10 +245,16 @@ public sealed partial class BehaviorNotificationTests
             var grain = host.Services.GetRequiredService<IGrainFactory>().GetGrain<IBehaviorGrain>(GetBehaviorGrainKey(id));
             var notification = CreateNotification(new RetainedCustomNotification { Value = 42 }, CreatePublisherId("source"));
             Assert.AreEqual(EventStatus.Consumed, (await grain.ProcessEventAsync(notification, default)).Status);
-            Assert.AreEqual(1, storage.ContextWrites, "The state and receipt must use a single atomic storage write.");
+            var firstCommit = storage.ContextCommits.First();
+            Assert.IsTrue(StateflowsJsonConverter.DeserializeObject<Stateflows.Common.Context.StateflowsContext>(firstCommit.Payload)!
+                .EventReceipts.ContainsKey(notification.Id), "The first commit must include the incoming receipt.");
+            Assert.IsTrue(firstCommit.Outbox.Count > 0, "Notifications must be included in that same commit.");
+            Assert.AreEqual(1 + firstCommit.Outbox.Count, storage.ContextWrites,
+                "Only outbox acknowledgment writes may follow the atomic state/receipt/outbox commit.");
+            var writes = storage.ContextWrites;
             Assert.AreEqual(42, await values.Reader.ReadAsync().AsTask().WaitAsync(DeliveryTimeout));
             Assert.AreEqual(EventStatus.Duplicated, (await grain.ProcessEventAsync(notification, default)).Status);
-            Assert.AreEqual(1, storage.ContextWrites);
+            Assert.AreEqual(writes, storage.ContextWrites);
             Assert.IsFalse(values.Reader.TryRead(out _));
 
             var management = host.Services.GetRequiredService<IGrainFactory>().GetGrain<IManagementGrain>(0);

@@ -387,29 +387,39 @@ public sealed class OperationalReadinessTests
         var timedClass = new BehaviorClass(BehaviorType.StateMachine, TestEnvironment.Timed);
         var publisherClass = new BehaviorClass(BehaviorType.StateMachine, TestEnvironment.Publisher);
 
-        env.Storage.FailWrites("stateflows-context", 1);
+        env.Storage.FailWrites("Stateflows.BehaviorContext", 1);
         Assert.AreEqual(EventStatus.Failed, (await env.Send(host, new BehaviorId(machineClass, "persistence"), new Initialize())).Status);
-        Assert.AreEqual(1L, counters.Sum("stateflows.orleans.persistence.failures", ("state", "stateflows-context"), ("behavior.class", machineClass.ToString())));
+        Assert.AreEqual(1L, counters.Sum("stateflows.orleans.persistence.failures", ("state", "Stateflows.BehaviorContext"), ("behavior.class", machineClass.ToString())));
 
         env.Reminders.FailUpserts(1);
         Assert.AreEqual(EventStatus.Failed, (await env.Send(host, new BehaviorId(timedClass, "reminder"), new Initialize())).Status);
         Assert.AreEqual(1L, counters.Sum("stateflows.orleans.reminder.failures", ("operation", "register"), ("behavior.class", timedClass.ToString())));
 
-        env.Storage.FailWrites("instances", 1);
+        env.Storage.FailWrites("Stateflows.BehaviorInstances", 1);
         Assert.AreEqual(EventStatus.Failed, (await env.Send(host, new BehaviorId(machineClass, "index"), new Initialize())).Status);
         Assert.AreEqual(1L, counters.Sum("stateflows.orleans.index.failures", ("operation", "add"), ("behavior.class", machineClass.ToString())));
-        Assert.IsTrue(counters.Sum("stateflows.orleans.persistence.failures", ("state", "instances")) >= 1);
+        Assert.IsTrue(counters.Sum("stateflows.orleans.persistence.failures", ("state", "Stateflows.BehaviorInstances")) >= 1);
 
-        env.Storage.FailWrites("notifications", 1);
-        Assert.AreEqual(EventStatus.Failed, (await env.Send(host, new BehaviorId(publisherClass, "publication"), new Initialize())).Status);
-        Assert.IsTrue(counters.Sum("stateflows.orleans.publication.failures", ("operation", "publish")) >= 1);
-        Assert.IsTrue(counters.Sum("stateflows.orleans.persistence.failures", ("state", "notifications")) >= 1);
+        var outboxReminderId = new BehaviorId(publisherClass, "outbox-reminder");
+        env.Reminders.FailUpserts(1);
+        Assert.AreEqual(EventStatus.Failed, (await env.Send(host, outboxReminderId, new Initialize())).Status);
+        Assert.IsNull(env.Storage.GetContext(outboxReminderId),
+            "Outbox wakeup registration must succeed before publisher state and publications commit.");
+        Assert.AreEqual(1L, counters.Sum("stateflows.orleans.reminder.failures", ("operation", "outbox-register"),
+            ("behavior.class", publisherClass.ToString())));
 
-        foreach (var (behaviorClass, instance) in new[] { (machineClass, "persistence"), (timedClass, "reminder"), (machineClass, "index"), (publisherClass, "publication") })
+        env.Storage.FailWrites("Stateflows.Notifications", 1);
+        Assert.AreEqual(EventStatus.Initialized, (await env.Send(host, new BehaviorId(publisherClass, "publication"), new Initialize())).Status);
+        Assert.IsTrue(counters.Sum("stateflows.orleans.publication.failures", ("operation", "outbox")) >= 1);
+        Assert.IsTrue(counters.Sum("stateflows.orleans.persistence.failures", ("state", "Stateflows.Notifications")) >= 1);
+
+        foreach (var (behaviorClass, instance) in new[] { (machineClass, "persistence"), (timedClass, "reminder"), (machineClass, "index") })
         {
             Assert.AreEqual(EventStatus.Initialized, (await env.Send(host, new BehaviorId(behaviorClass, instance), new Initialize())).Status,
                 $"{behaviorClass.Name}/{instance} must succeed when retried.");
         }
+        Assert.AreEqual(BehaviorStatus.Initialized, env.Storage.GetContext(new BehaviorId(publisherClass, "publication"))!.Status,
+            "Publication failure happens after the publisher's commit and cannot undo it.");
     }
 
     #endregion
@@ -516,7 +526,7 @@ public sealed class OperationalReadinessTests
         var host = await env.StartHostAsync();
         var id = new BehaviorId(BehaviorType.StateMachine, TestEnvironment.Machine, "index-failure");
 
-        env.Storage.FailWrites("instances", 1);
+        env.Storage.FailWrites("Stateflows.BehaviorInstances", 1);
         Assert.AreEqual(EventStatus.Failed, (await env.Send(host, id, new Initialize())).Status);
         Assert.IsNull(env.Storage.GetContext(id), "State must not be committed without its index entry.");
         Assert.AreEqual(0, (await env.ListAsync(host, id.BehaviorClass)).Length);
@@ -613,7 +623,7 @@ public sealed class OperationalReadinessTests
                             }))
                         .AddState("done")))
                 )
-                .AddKeyedSingleton<IGrainStorage>("stateflows", (provider, _) => storage.Attach(provider.GetRequiredService<IGrainStorageSerializer>()))
+                .AddKeyedSingleton<IGrainStorage>("Default", (provider, _) => storage.Attach(provider.GetRequiredService<IGrainStorageSerializer>()))
             )
             .AddStateflowsRuntime()
         );
@@ -682,7 +692,7 @@ public sealed class OperationalReadinessTests
             .UseInMemoryReminderService()
             .ConfigureServices(services => services
                 .AddStateflows(sf => sf.AddEntities(e => e.AddEntity<IApiCounter>("api-counter")))
-                .AddKeyedSingleton<IGrainStorage>("stateflows", (provider, _) => storage.Attach(provider.GetRequiredService<IGrainStorageSerializer>()))
+                .AddKeyedSingleton<IGrainStorage>("Default", (provider, _) => storage.Attach(provider.GetRequiredService<IGrainStorageSerializer>()))
             )
             .AddStateflowsRuntime());
         await using var app = builder.Build();
@@ -700,6 +710,12 @@ public sealed class OperationalReadinessTests
             Assert.AreEqual("NotInitialized", status.GetProperty("metadata").GetProperty("behaviorStatusText").GetString());
             // Assert.AreEqual(0, storage.Writes, "Status of an uninitialized entity must not write state.");
 
+            Assert.AreEqual(HttpStatusCode.BadRequest,
+                (await http.PutAsync("/stateflows/entities/api-counter/x/count", Body(-1))).StatusCode);
+            status = await Json(await http.GetAsync("/stateflows/entities/api-counter/x/status"));
+            Assert.AreEqual("NotInitialized", status.GetProperty("metadata").GetProperty("behaviorStatusText").GetString(),
+                "Invalid field writes must not initialize the entity.");
+
             var mutationRoute = $"/stateflows/entities/api-counter/x/{Event<ApiIncrement>.Name.ToShortName().ToCamelCase()}";
             var projectionRoute = $"/stateflows/entities/api-counter/x/{Event<ApiCounterView>.Name.ToShortName().ToCamelCase()}";
             var increment = await http.PostAsync(mutationRoute, Body(new { amount = 2 }));
@@ -708,6 +724,22 @@ public sealed class OperationalReadinessTests
             Assert.AreEqual(HttpStatusCode.OK, (await http.PutAsync("/stateflows/entities/api-counter/x/count", Body(5))).StatusCode);
             var count = await Json(await http.GetAsync("/stateflows/entities/api-counter/x/count"));
             Assert.AreEqual(5, count.GetProperty("response").GetProperty("value").GetInt32());
+
+            Assert.AreEqual(HttpStatusCode.BadRequest,
+                (await http.PutAsync("/stateflows/entities/api-counter/x/count", Body(11))).StatusCode);
+            using (var behavior = app.Services.GetRequiredService<IBehaviorFactory>()
+                       .CreateBehavior(new EntityId("api-counter", "x")))
+            {
+                var invalid = await behavior.SendAsync(new FieldState<int> { Name = "Count", Value = -1 });
+                Assert.AreEqual(EventStatus.Invalid, invalid.Status);
+                Assert.IsFalse(invalid.Validation.IsValid);
+                Assert.IsTrue(invalid.Validation.ValidationResults.Any());
+            }
+            await app.Services.GetRequiredService<IGrainFactory>().GetGrain<IManagementGrain>(0)
+                .ForceActivationCollection(TimeSpan.Zero);
+            count = await Json(await http.GetAsync("/stateflows/entities/api-counter/x/count"));
+            Assert.AreEqual(5, count.GetProperty("response").GetProperty("value").GetInt32(),
+                "Neither REST nor direct invalid writes may alter persisted state.");
 
             using var timeout = new CancellationTokenSource(Timeout);
             using var request = new HttpRequestMessage(HttpMethod.Get, $"{projectionRoute}?stream=true");
@@ -754,6 +786,7 @@ public sealed class OperationalReadinessTests
     public interface IApiCounter
     {
         [Stateflows.Entities.Attributes.Field(Stateflows.Entities.Attributes.FieldAccess.Get | Stateflows.Entities.Attributes.FieldAccess.Set)]
+        [System.ComponentModel.DataAnnotations.Range(0, 10)]
         int Count { get; set; }
 
         [Stateflows.Entities.Attributes.Projection(Stateflows.Entities.Enums.PublishScope.Self)]
@@ -837,7 +870,7 @@ public sealed class OperationalReadinessTests
                                             }))))
                                 )
                                 .AddSingleton<IReminderTable>(Reminders)
-                                .AddKeyedSingleton<IGrainStorage>("stateflows",
+                                .AddKeyedSingleton<IGrainStorage>("Default",
                                     (provider, _) => Storage.Attach(provider.GetRequiredService<IGrainStorageSerializer>()));
                             if (useAmbientTenant)
                             {

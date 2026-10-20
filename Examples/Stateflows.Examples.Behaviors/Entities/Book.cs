@@ -1,6 +1,9 @@
+using System.ComponentModel.DataAnnotations;
+using Microsoft.AspNetCore.Authorization;
 using Stateflows.Entities.Attributes;
 using Stateflows.Entities.Enums;
 using Stateflows.Examples.Behaviors.Entities.Events;
+using Stateflows.Extensions.MinimalAPIs.Attributes;
 
 namespace Stateflows.Examples.Behaviors.Entities;
 
@@ -14,7 +17,7 @@ public interface Book
         ISBN = initializeBook.ISBN;
     }
     
-    [Field(FieldAccess.Set | FieldAccess.Get)] string? Author { get; set; }
+    [Required, MinLength(8), Field(FieldAccess.Set | FieldAccess.Get)] string? Author { get; [NoApiMapping] set; }
     [Field(FieldAccess.Set)] string? Title { get; set; }
     [Field(FieldAccess.Get)] string? ISBN { get; set; }
     [Field] string? Comment { get; set; }

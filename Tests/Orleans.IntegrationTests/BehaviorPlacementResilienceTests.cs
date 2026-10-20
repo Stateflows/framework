@@ -490,7 +490,7 @@ public sealed class BehaviorPlacementResilienceTests
                         // Random placement makes eligibility violations observable (resource-optimized placement may hide them).
                         .AddSingleton<PlacementStrategy, RandomPlacement>()
                         .AddSingleton<IReminderTable>(Reminders)
-                        .AddKeyedSingleton<IGrainStorage>("stateflows",
+                        .AddKeyedSingleton<IGrainStorage>("Default",
                             (provider, _) => Storage.Attach(provider.GetRequiredService<IGrainStorageSerializer>())))
                     .AddStateflowsRuntime()
                     .ConfigureServices(services => configure?.Invoke(services)))

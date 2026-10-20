@@ -184,26 +184,10 @@ internal static class Utils
 
     internal static async Task<(bool Success, IResult? Result)> AuthorizeEventAsync(Type eventType, IServiceProvider serviceProvider, HttpContext context)
     {
-        var authorizeAttributes = eventType.GetCustomAttributes<AuthorizeAttribute>().ToArray();
+        var authorizeAttributes = eventType.GetCustomAttributes().OfType<IAuthorizeData>().ToArray();
         if (authorizeAttributes.Any())
         {
-            try
-            {
-                var authorizationService = serviceProvider.GetRequiredService<IAuthorizationService>();
-                            
-                foreach (var authorizeAttribute in authorizeAttributes)
-                {
-                    if (!await AuthorizationHelper.IsAuthorizedAsync(authorizeAttribute, context.User,
-                            authorizationService))
-                    {
-                        return (false, Results.Unauthorized());
-                    }
-                }
-            }
-            catch (Exception e)
-            {
-                return (false, Results.Problem(e.Message));
-            }
+            return await AuthorizationHelper.AuthorizeAsync(authorizeAttributes, serviceProvider, context);
         }
 
         return (true, null);

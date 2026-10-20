@@ -13,7 +13,6 @@
         <PackageReference Include="Microsoft.Orleans.Dashboard" Version="10.4.0" />
         <PackageReference Include="Microsoft.Orleans.Reminders" Version="10.4.0" />
         <PackageReference Include="Microsoft.Orleans.Server" Version="10.4.0" />
-        <PackageReference Include="Microsoft.Orleans.Streaming" Version="10.4.0" />
         <PackageReference Include="Scalar.AspNetCore" Version="2.18.0" />
     </ItemGroup>
 

@@ -13,7 +13,7 @@ namespace Stateflows;
 
 [BehaviorPlacementFilter]
 internal class StateflowsBehavior( 
-    [PersistentState("stateflows-context", "stateflows")]
+    [StateflowsPersistentState(StateflowsStateNames.BehaviorContext)]
     IPersistentState<BehaviorContextState> contextState,
     IStateflowsInterceptor interceptor,
     IEnumerable<IStateflowsValidator> validators,
@@ -41,7 +41,7 @@ internal class StateflowsBehavior(
         .SelectMany(p => p.BehaviorTypes.Select(type => new { Type = type, Processor = p }))
         .ToDictionary(p => p.Type, p => p.Processor);
     private readonly IStateflowsValidator[] Validators = validators.ToArray();
-    public override Task OnActivateAsync(CancellationToken cancellationToken)
+    public override async Task OnActivateAsync(CancellationToken cancellationToken)
     {
         try
         {
@@ -56,6 +56,7 @@ internal class StateflowsBehavior(
             committedContext = contextState.RecordExists && !string.IsNullOrEmpty(contextState.State?.Payload)
                 ? StateflowsJsonConverter.DeserializeObject<StateflowsContext>(contextState.State.Payload)
                 : null;
+            contextState.State.Outbox ??= [];
 
             indexed = committedContext != null && contextState.State?.Tombstone != true;
 
@@ -78,7 +79,9 @@ internal class StateflowsBehavior(
             throw;
         }
         
-        return base.OnActivateAsync(cancellationToken);
+        await base.OnActivateAsync(cancellationToken);
+        if (contextState.State.Outbox.Count > 0)
+            await DrainOutboxAsync();
     }
 
     public async Task CancelAsync()
@@ -95,6 +98,9 @@ internal class StateflowsBehavior(
     public async Task<OrleansRequestResult> ProcessEventAsync(
         OrleansEventHolder orleansEventHolder, CancellationToken cancellationToken)
     {
+        if (commitOutcomeUnknown)
+            throw new InvalidOperationException("The previous state write has an unknown outcome; retry on a fresh activation.");
+
         if (!resources.ResourcesByBehaviorClass.TryGetValue(BehaviorId.BehaviorClass, out var resource))
         {
             throw new InvalidOperationException($"No resource is registered for Stateflows behavior '{BehaviorId.BehaviorClass}'.");
@@ -161,7 +167,7 @@ internal class StateflowsBehavior(
                 }
             });
 
-            return new RequestResult(eventHolder.GetResponseHolder(), status, validation);
+            return new RequestResult(eventHolder.GetResponseHolder(), status, eventHolder.Validation);
         }
         finally
         {
@@ -182,7 +188,8 @@ internal class StateflowsBehavior(
             
             var exceptions = new List<Exception>();
             StateflowsContext? pendingContext = null;
-            using var publications = new GrainPublicationScope();
+            using var publications = new Stateflows.Common.Engine.PublicationScope(runtimeOwned: true);
+            using var outbox = new OutboxPublicationScope();
 
             using var storageScope = GrainStorageBridge.EnterScope(
                 hydrateAsync: () =>
@@ -206,29 +213,39 @@ internal class StateflowsBehavior(
             }
             finally
             {
-                var response = eventHolder.GetResponseHolder();
-                if (response != null)
+                try
                 {
-                    response.SenderId = BehaviorId;
-                    response.SentAt = DateTime.Now;
+                    await publications.WaitForImmediateAsync();
                 }
-                interceptor.AfterExecute(BehaviorId, eventHolder);
+                finally
+                {
+                    var response = eventHolder.GetResponseHolder();
+                    if (response != null)
+                    {
+                        response.SenderId = BehaviorId;
+                        response.SentAt = DateTime.Now;
+                    }
+                    interceptor.AfterExecute(BehaviorId, eventHolder);
+                }
             }
 
             if (result != EventStatus.Failed && exceptions.Count == 0)
             {
-                await publications.FlushAsync();
+                var staged = outbox.GetPublications();
                 if (incomingEvent.HasValue && NotificationDeliveryStatuses.IsAcknowledged(result))
                 {
                     pendingContext ??= CloneCommittedContext();
                     RecordEventReceipt(pendingContext);
-                    await CommitAsync(pendingContext);
+                    await CommitAsync(pendingContext, staged);
                 }
-                else if (pendingContext != null && HasChanged(pendingContext))
+                else if (staged.Length > 0 || (pendingContext != null && HasChanged(pendingContext)))
                 {
                     // Executions that change nothing (e.g. status requests) are not persisted.
-                    await CommitAsync(pendingContext);
+                    await CommitAsync(pendingContext ?? CloneCommittedContext(), staged);
                 }
+                if (contextState.State.Outbox.Count > 0)
+                    await DrainOutboxAsync();
+                await publications.FlushAsync();
             }
 
             return result;
@@ -314,7 +331,7 @@ internal class StateflowsBehavior(
             : DateTime.UtcNow.AddHours(1);
     }
 
-    private async Task CommitContextAsync(StateflowsContext context)
+    private async Task CommitContextAsync(StateflowsContext context, OutboxPublication[]? publications = null)
     {
         var committed = committedContext;
         var committedState = contextState.State;
@@ -331,8 +348,15 @@ internal class StateflowsBehavior(
                 context.EventReceipts.Remove(id);
 
             // Deleted is intentionally not serialized. Persist a metadata-only tombstone, never deleted behavior data.
-            var live = IsLive(context);
-            var tombstone = !live && context.EventReceipts.Count > 0;
+            var outbox = new List<OutboxPublication>(committedState.Outbox);
+            var sequence = committedState.LastPublicationSequence;
+            foreach (var publication in publications ?? [])
+            {
+                publication.Sequence = checked(++sequence);
+                outbox.Add(publication);
+            }
+            var live = !IsStatelessAction() && IsLive(context);
+            var tombstone = !live && (context.EventReceipts.Count > 0 || sequence > 0);
             if (tombstone)
             {
                 context = new StateflowsContext(BehaviorId) { EventReceipts = context.EventReceipts };
@@ -347,7 +371,9 @@ internal class StateflowsBehavior(
                 contextState.State = new BehaviorContextState
                 {
                     Payload = StateflowsJsonConverter.SerializePolymorphicObject(context),
-                    Tombstone = tombstone
+                    Tombstone = tombstone,
+                    Outbox = outbox,
+                    LastPublicationSequence = sequence
                 };
                 await contextState.WriteStateAsync();
                 committedContext = context;
@@ -357,7 +383,7 @@ internal class StateflowsBehavior(
         {
             contextState.State = committedState;
             commitOutcomeUnknown = true;
-            StateflowsOrleansDiagnostics.PersistenceFailed("stateflows-context", BehaviorId.BehaviorClass);
+            StateflowsOrleansDiagnostics.PersistenceFailed("Stateflows.BehaviorContext", BehaviorId.BehaviorClass);
             logger.LogError(exception, "Failed to persist state of Stateflows behavior {BehaviorId}; the event fails and the activation reloads its state.", BehaviorId);
             // A provider may have committed before reporting failure; reload on the next activation.
             DeactivateOnIdle();
@@ -366,6 +392,7 @@ internal class StateflowsBehavior(
     }
 
     public const string TimeTriggerReminderName = "Stateflows.TimeTrigger";
+    public const string OutboxReminderName = "Stateflows.Outbox";
 
     // A reminder keeps ticking with this period until the schedule changes, so failed or interrupted callbacks are retried.
     private TimeSpan ReminderPeriod
@@ -376,11 +403,11 @@ internal class StateflowsBehavior(
     private static DateTime? GetScheduledTrigger(StateflowsContext? context)
         => context is { Deleted: false } ? context.TriggerTime : null;
 
-    private async Task CommitAsync(StateflowsContext context)
+    private async Task CommitAsync(StateflowsContext context, OutboxPublication[]? publications = null)
     {
         var previousTrigger = GetScheduledTrigger(committedContext);
         var trigger = GetScheduledTrigger(context);
-        var live = IsLive(context);
+        var live = !IsStatelessAction() && IsLive(context);
 
         // Indexed before commit, so a committed instance is never missing from listings. A failure fails the event.
         if (live && !indexed)
@@ -396,7 +423,20 @@ internal class StateflowsBehavior(
 
         try
         {
-            await CommitContextAsync(context);
+            // Persist the wakeup before its obligations: orphan reminders are safe, lost wakeups are not.
+            if (publications is { Length: > 0 })
+            {
+                try
+                {
+                    await this.RegisterOrUpdateReminder(OutboxReminderName, ReminderPeriod, ReminderPeriod);
+                }
+                catch
+                {
+                    StateflowsOrleansDiagnostics.ReminderFailed("outbox-register", BehaviorId.BehaviorClass);
+                    throw;
+                }
+            }
+            await CommitContextAsync(context, publications);
         }
         catch
         {
@@ -414,6 +454,52 @@ internal class StateflowsBehavior(
         {
             // Best effort: a stale entry is pruned when this instance is next deactivated without state.
             await TryRemoveFromIndexAsync();
+        }
+    }
+
+    private async Task DrainOutboxAsync()
+    {
+        if (commitOutcomeUnknown)
+            return;
+
+        try
+        {
+            while (contextState.State.Outbox.Count > 0)
+            {
+                var publication = contextState.State.Outbox[0];
+                await GrainFactory.GetGrain<ISubscriptionsGrain>(publication.PublisherKey)
+                    .PublishOutboxAsync(this.GetPrimaryKeyString(), publication.Sequence, publication.Notifications);
+
+                var previous = contextState.State;
+                contextState.State = new BehaviorContextState
+                {
+                    Payload = previous.Payload,
+                    Tombstone = previous.Tombstone,
+                    LastPublicationSequence = previous.LastPublicationSequence,
+                    Outbox = previous.Outbox.Skip(1).ToList()
+                };
+                try
+                {
+                    await contextState.WriteStateAsync();
+                }
+                catch
+                {
+                    contextState.State = previous;
+                    commitOutcomeUnknown = true;
+                    StateflowsOrleansDiagnostics.PersistenceFailed("Stateflows.BehaviorContext", BehaviorId.BehaviorClass);
+                    DeactivateOnIdle();
+                    throw;
+                }
+            }
+
+            var reminder = await this.GetReminder(OutboxReminderName);
+            if (reminder != null)
+                await this.UnregisterReminder(reminder);
+        }
+        catch (Exception exception)
+        {
+            StateflowsOrleansDiagnostics.PublicationFailed("outbox");
+            logger.LogError(exception, "Failed to drain notification outbox of {BehaviorId}; committed publications will be retried.", BehaviorId);
         }
     }
 
@@ -533,6 +619,12 @@ internal class StateflowsBehavior(
 
     public async Task ReceiveReminder(string reminderName, TickStatus status)
     {
+        if (reminderName == OutboxReminderName)
+        {
+            await DrainOutboxAsync();
+            return;
+        }
+
         if (reminderName != TimeTriggerReminderName)
         {
             return;

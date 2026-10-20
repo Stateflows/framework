@@ -50,6 +50,10 @@ internal sealed class NotificationsState
     [Id(6)]
     public Dictionary<string, long> LatestRetained { get; set; } = [];
 
+    // One watermark per source behavior, independent of history TTL/pruning.
+    [Id(7)]
+    public Dictionary<string, long> PublicationWatermarks { get; set; } = [];
+
     public NotificationsState Clone()
         => new()
         {
@@ -61,6 +65,7 @@ internal sealed class NotificationsState
             Pending = Pending.ToDictionary(p => p.Key, p => new List<PendingDelivery>(p.Value)),
             LegacyMigrated = LegacyMigrated,
             LatestRetained = new Dictionary<string, long>(LatestRetained),
+            PublicationWatermarks = new Dictionary<string, long>(PublicationWatermarks),
         };
 }
 

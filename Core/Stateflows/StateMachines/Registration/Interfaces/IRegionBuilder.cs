@@ -5,33 +5,23 @@ namespace Stateflows.StateMachines.Registration.Interfaces
     public interface IInitializedRegionBuilder :
         IStateMachineElements<IInitializedRegionBuilder>,
         IStateHistory<IInitializedRegionBuilder>,
-        IStateMachineFinal<IFinalizedRegionBuilder>,
-        IStateDoActivity<IBehaviorInitializedRegionBuilder>,
-        IStateDoAction<IBehaviorInitializedRegionBuilder>;
+        IStateMachineFinal<IFinalizedRegionBuilder>;
 
-    public interface IFinalizedRegionBuilder :
-        IStateDoActivity<IBehaviorFinalizedRegionBuilder>,
-        IStateDoAction<IBehaviorFinalizedRegionBuilder>;
+    public interface IFinalizedRegionBuilder;
 
     public interface IRegionBuilder :
         IStateMachineInitial<IInitializedRegionBuilder>,
         IStateMachineElements<IInitializedRegionBuilder>,
-        IStateHistory<IRegionBuilder>,
-        IStateDoActivity<IBehaviorRegionBuilder>,
-        IStateDoAction<IBehaviorRegionBuilder>;
+        IStateHistory<IRegionBuilder>;
 
     public interface IFinalizedOverridenRegionBuilder :
-        IStateMachineOverrides<IFinalizedOverridenRegionBuilder>,
-        IStateDoActivity<IBehaviorFinalizedOverridenRegionBuilder>,
-        IStateDoAction<IBehaviorFinalizedOverridenRegionBuilder>;
+        IStateMachineOverrides<IFinalizedOverridenRegionBuilder>;
 
     public interface IOverridenRegionBuilder :
         IStateMachineElements<IOverridenRegionBuilder>,
         IStateHistory<IOverridenRegionBuilder>,
         IStateMachineOverrides<IOverridenRegionBuilder>,
-        IStateMachineFinal<IFinalizedOverridenRegionBuilder>,
-        IStateDoActivity<IBehaviorOverridenRegionBuilder>,
-        IStateDoAction<IBehaviorOverridenRegionBuilder>;
+        IStateMachineFinal<IFinalizedOverridenRegionBuilder>;
     
     
     

@@ -12,8 +12,29 @@ internal sealed class BehaviorContextState
     public string Payload { get; set; } = string.Empty;
 
     /// <summary>
-    /// Set when the payload only keeps event receipts of a deleted behavior instance.
+    /// Set when the record only keeps receipts/outbox infrastructure, not live behavior state.
     /// </summary>
     [Id(1)]
     public bool Tombstone { get; set; }
+
+    [Id(2)]
+    public List<OutboxPublication> Outbox { get; set; } = [];
+
+    // Retained even after reset/drain: acceptance watermarks must never see a reused sequence.
+    [Id(3)]
+    public long LastPublicationSequence { get; set; }
+}
+
+[GenerateSerializer]
+[Alias("Stateflows.OutboxPublication")]
+internal sealed class OutboxPublication
+{
+    [Id(0)]
+    public long Sequence { get; set; }
+
+    [Id(1)]
+    public string PublisherKey { get; set; } = string.Empty;
+
+    [Id(2)]
+    public OrleansEventHolder[] Notifications { get; set; } = [];
 }

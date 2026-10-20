@@ -1,10 +1,11 @@
 using Stateflows.Common.Utilities;
 using Stateflows.Interfaces;
+using Stateflows.Storage;
 
 namespace Stateflows;
 
 internal class StateflowsInstances(
-    [PersistentState("instances", "stateflows")]
+    [StateflowsPersistentState(StateflowsStateNames.BehaviorInstances)]
     IPersistentState<HashSet<string>> instancesState
 ) : Grain, IInstancesGrain
 {
@@ -39,7 +40,7 @@ internal class StateflowsInstances(
         }
         catch
         {
-            StateflowsOrleansDiagnostics.PersistenceFailed("instances");
+            StateflowsOrleansDiagnostics.PersistenceFailed("Stateflows.BehaviorInstances");
             rollback();
             // The provider may have committed before failing; reload on the next activation.
             DeactivateOnIdle();
