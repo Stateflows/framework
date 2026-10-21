@@ -46,8 +46,10 @@
 
   <ItemGroup>
     <InternalsVisibleTo Include="StateMachine.IntegrationTests" />
+    <InternalsVisibleTo Include="Activity.IntegrationTests" />
     <InternalsVisibleTo Include="Stateflows.Runtimes.Orleans" />
     <InternalsVisibleTo Include="Stateflows.Extensions.MinimalAPIs" />
+    <InternalsVisibleTo Include="Stateflows.Extensions.Json" />
   </ItemGroup>
 
   <ItemGroup>

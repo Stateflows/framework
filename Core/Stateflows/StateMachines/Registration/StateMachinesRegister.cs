@@ -20,6 +20,8 @@ namespace Stateflows.StateMachines.Registration
 {
     internal class StateMachinesRegister(StateflowsBuilder stateflowsBuilder) : IStateMachinesRegister, IOwnedRegistration
     {
+        internal StateflowsBuilder Builder => stateflowsBuilder;
+
         public readonly List<StateMachineExceptionHandlerFactoryAsync> GlobalExceptionHandlerFactories = [];
 
         public readonly List<StateMachineInterceptorFactoryAsync> GlobalInterceptorFactories = [];

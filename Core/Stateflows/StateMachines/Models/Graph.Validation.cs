@@ -20,12 +20,12 @@ namespace Stateflows.StateMachines.Models
         private static bool IsRegional(Vertex v) => v.Type is VertexType.CompositeState
             or VertexType.InitialCompositeState or VertexType.OrthogonalState or VertexType.InitialOrthogonalState;
 
-        private void ValidateDefinition()
+        internal void ValidateDefinition()
         {
             ValidationReport = new ModelValidationReport();
-            var rootPath = $"StateMachine[{Name ?? "<unnamed>"}]";
+            var rootPath = SourcePath ?? $"StateMachine[{Name ?? "<unnamed>"}]";
             void Error(string rule, string path, string message) => ValidationReport.Add(rule, path, message);
-            string Path(Vertex? v) => $"{rootPath}/Vertex[{v?.Name ?? "<unnamed>"}]";
+            string Path(Vertex? v) => v?.SourcePath ?? $"{rootPath}/Vertex[{v?.Name ?? "<unnamed>"}]";
             if (string.IsNullOrEmpty(Name)) Error("SM-001", rootPath, "State machine name must not be empty.");
             if (!StateflowsBuilder.ResourceNames.ContainsKey(ResourceName ?? string.Empty))
                 Error("SM-045", rootPath, $"Resource group '{ResourceName}' does not exist.");
@@ -121,7 +121,7 @@ namespace Stateflows.StateMachines.Models
                 Error("SM-013", rootPath, "Resolved root initial vertex disagrees with its selection.");
             foreach (var region in regions)
             {
-                var path = $"{Path(region.ParentVertex)}/Region[{region.ParentVertex?.Regions?.IndexOf(region)}]";
+                var path = region.SourcePath ?? $"{Path(region.ParentVertex)}/Region[{region.ParentVertex?.Regions?.IndexOf(region)}]";
                 if (region.Vertices == null) continue;
                 ValidateInitial(region.Vertices, region.InitialVertexName, path, false);
                 if (region.InitialVertex != null && (string.IsNullOrEmpty(region.InitialVertexName) ||
@@ -164,7 +164,7 @@ namespace Stateflows.StateMachines.Models
             var invalidLogic = new HashSet<Edge>();
             foreach (var edge in allEdges)
             {
-                var path = $"{rootPath}/Transition[{edge.SourceName}-{edge.Trigger}->{edge.TargetName}]";
+                var path = edge.SourcePath ?? $"{rootPath}/Transition[{edge.SourceName}-{edge.Trigger}->{edge.TargetName}]";
                 var owners = vertices.Where(v => v.Edges?.Values.Contains(edge) == true).ToArray();
                 if (!AllEdges.Contains(edge) || owners.Length != 1)
                     Error("SM-007", path, "Source edge dictionary and AllEdges must contain the same edge exactly once.");
@@ -200,7 +200,7 @@ namespace Stateflows.StateMachines.Models
                     Error("SM-018", path, "Internal transitions cannot specify a destination.");
                 if (internalTarget && !edge.IsLocal)
                     Error("SM-024", path, "Internal transitions cannot be configured as external targeted transitions.");
-                if (edge.TriggerType == null || edge.Trigger != Event.GetName(edge.TriggerType) ||
+                if (edge.TriggerType == null || (edge.DeclaredTriggerTypes == null && edge.Trigger != Event.GetName(edge.TriggerType)) ||
                     (edge.Type == EdgeType.DefaultTransition && edge.TriggerType != typeof(Completion)) ||
                     (edge.Type == EdgeType.Transition && edge.TriggerType == typeof(Completion)))
                     Error("SM-019", path, "Transition kind and declared trigger must agree.");
@@ -210,7 +210,11 @@ namespace Stateflows.StateMachines.Models
                 edge.ActualTriggers = [];
                 if (edge.TriggerType != null)
                 {
-                    var mapped = StateflowsBuilder.TypeMapper.GetMappedTypes(edge.TriggerType)?.ToArray();
+                    var declared = edge.DeclaredTriggerTypes ?? [edge.TriggerType];
+                    var mapped = declared.SelectMany(type => StateflowsBuilder.TypeMapper.GetMappedTypes(type) ?? []).ToArray();
+                    if (declared.Count == 0 || declared.Distinct().Count() != declared.Count ||
+                        (declared.Contains(typeof(Completion)) && declared.Count != 1))
+                        Error("SM-019", path, "Declared trigger sets must be nonempty, distinct and cannot mix Completion with other triggers.");
                     if (mapped == null || mapped.Length == 0 || mapped.Any(t => t == null || t.ContainsGenericParameters || t == typeof(void) || t.IsByRef || t.IsPointer))
                         Error("SM-038", path, "Mapped triggers must contain usable closed CLR event types.");
                     else
@@ -261,15 +265,16 @@ namespace Stateflows.StateMachines.Models
                 if (!state && vertex.Deferrals.Count > 0) Error("SM-034", path, "Only states may defer events.");
                 foreach (var deferral in vertex.Deferrals)
                 {
+                    var deferralPath = vertex.DeferralPaths.GetValueOrDefault(deferral.Key) ?? path;
                     if (!vertex.DeferralTypes.TryGetValue(deferral.Key, out var type) || type == null ||
                         Event.GetName(type) != deferral.Key)
-                        Error("SM-038", path, $"Deferred event '{deferral.Key}' requires matching CLR type information.");
+                        Error("SM-038", deferralPath, $"Deferred event '{deferral.Key}' requires matching CLR type information.");
                     else if (type == typeof(Completion) || type == typeof(Finalize) || type.IsSubclassOf(typeof(TimeEvent)))
-                        Error("SM-036", path, $"Event '{deferral.Key}' cannot be deferred.");
+                        Error("SM-036", deferralPath, $"Event '{deferral.Key}' cannot be deferred.");
                     if (deferral.Value?.Actions == null || deferral.Value.Actions.Any(action => action == null))
-                        Error("SM-038", path, "Deferral guard logic must contain non-null CLR delegates.");
+                        Error("SM-038", deferralPath, "Deferral guard logic must contain non-null CLR delegates.");
                     else if (!deferral.Value.Any && edges.Any(e => e.ActualTriggers?.Contains(deferral.Key) == true))
-                        Error("SM-037", path, $"Event '{deferral.Key}' triggers an outgoing transition and cannot be deferred unconditionally.");
+                        Error("SM-037", deferralPath, $"Event '{deferral.Key}' triggers an outgoing transition and cannot be deferred unconditionally.");
                 }
                 foreach (var duplicate in edges.GroupBy(e => (e.SourceName, e.Trigger, e.TargetName, e.IsElse)).Where(g => g.Count() > 1))
                     Error("SM-020", path, $"Duplicate transition declaration '{duplicate.First().Name}'.");

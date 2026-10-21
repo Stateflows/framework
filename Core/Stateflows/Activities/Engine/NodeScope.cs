@@ -297,7 +297,7 @@ namespace Stateflows.Activities.Engine
         }
 
         [DebuggerHidden]
-        public Task<TStructuredActivity> GetStructuredActivityAsync<TStructuredActivity>(IActionContext context)
+        public Task<TStructuredActivity> GetStructuredActivityAsync<TStructuredActivity>(IActivityNodeContext context)
             where TStructuredActivity : class, IStructuredActivityNode
         {
             ContextValues.GlobalValuesHolder.Value = context.Behavior.Values;

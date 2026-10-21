@@ -1,0 +1,388 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:stateflows:activity:1.0",
+  "title": "Stateflows activity definition",
+  "description": "Declarative activity model. CLR capability binding and Graph.Build validation are required in addition to this schema.",
+  "type": "object",
+  "required": ["formatVersion", "name", "nodes"],
+  "properties": {
+    "$schema": { "type": "string" },
+    "formatVersion": { "const": "1.0" },
+    "name": { "type": "string", "minLength": 1 },
+    "version": { "type": "integer", "minimum": 1, "maximum": 2147483647, "default": 1 },
+    "resource": { "type": "string" },
+    "definitions": { "$ref": "#/$defs/bindings" },
+    "nodes": { "$ref": "#/$defs/nodes" },
+    "initializers": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["eventType", "handler"],
+        "properties": {
+          "eventType": { "type": "string", "minLength": 1 },
+          "handler": { "$ref": "#/$defs/binding" }
+        },
+        "additionalProperties": false
+      }
+    },
+    "defaultInitializers": { "$ref": "#/$defs/bindings" },
+    "finalizers": { "$ref": "#/$defs/bindings" },
+    "observers": { "$ref": "#/$defs/bindings" },
+    "interceptors": { "$ref": "#/$defs/bindings" },
+    "exceptionHandlers": { "$ref": "#/$defs/bindings" }
+  },
+  "additionalProperties": false,
+  "$defs": {
+    "binding": {
+      "type": "object",
+      "required": ["clrType"],
+      "properties": {
+        "clrType": { "type": "string", "minLength": 1 },
+        "configurationType": { "type": "string", "minLength": 1 },
+        "configuration": {}
+      },
+      "dependentRequired": { "configurationType": ["configuration"] },
+      "additionalProperties": false
+    },
+    "bindings": { "type": "array", "items": { "$ref": "#/$defs/binding" } },
+    "flowPipeline": {
+      "type": "array",
+      "items": {
+        "oneOf": [
+          {
+            "type": "object",
+            "required": ["kind", "handler"],
+            "properties": {
+              "kind": { "const": "guard" },
+              "handler": { "$ref": "#/$defs/binding" }
+            },
+            "additionalProperties": false
+          },
+          { "$ref": "#/$defs/transformStage" }
+        ]
+      }
+    },
+    "transformStage": {
+      "type": "object",
+      "required": ["kind", "handler", "outputTokenType"],
+      "properties": {
+        "kind": { "const": "transform" },
+        "handler": { "$ref": "#/$defs/binding" },
+        "outputTokenType": { "type": "string", "minLength": 1 }
+      },
+      "additionalProperties": false
+    },
+    "controlGuardPipeline": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["kind", "handler"],
+        "properties": {
+          "kind": { "const": "guard" },
+          "handler": { "$ref": "#/$defs/binding" }
+        },
+        "additionalProperties": false
+      }
+    },
+    "transformPipeline": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/transformStage" }
+    },
+    "controlFlow": {
+      "type": "object",
+      "required": ["kind", "target"],
+      "properties": {
+        "kind": { "const": "control" },
+        "target": { "type": "string", "minLength": 1 },
+        "weight": { "type": "integer", "minimum": 0, "default": 1 },
+        "pipeline": { "$ref": "#/$defs/controlGuardPipeline" }
+      },
+      "additionalProperties": false
+    },
+    "elseControlFlow": {
+      "type": "object",
+      "required": ["kind", "target"],
+      "properties": {
+        "kind": { "const": "elseControl" },
+        "target": { "type": "string", "minLength": 1 },
+        "weight": { "type": "integer", "minimum": 0, "default": 1 }
+      },
+      "additionalProperties": false
+    },
+    "objectFlow": {
+      "type": "object",
+      "required": ["kind", "target", "tokenType"],
+      "properties": {
+        "kind": { "const": "object" },
+        "target": { "type": "string", "minLength": 1 },
+        "tokenType": { "type": "string", "minLength": 1 },
+        "weight": { "type": "integer", "minimum": 0, "default": 1 },
+        "pipeline": { "$ref": "#/$defs/flowPipeline" }
+      },
+      "additionalProperties": false
+    },
+    "elseObjectFlow": {
+      "type": "object",
+      "required": ["kind", "target", "tokenType"],
+      "properties": {
+        "kind": { "const": "elseObject" },
+        "target": { "type": "string", "minLength": 1 },
+        "tokenType": { "type": "string", "minLength": 1 },
+        "weight": { "type": "integer", "minimum": 0, "default": 1 },
+        "pipeline": { "$ref": "#/$defs/transformPipeline" }
+      },
+      "additionalProperties": false
+    },
+    "flow": {
+      "oneOf": [
+        { "$ref": "#/$defs/controlFlow" },
+        { "$ref": "#/$defs/elseControlFlow" },
+        { "$ref": "#/$defs/objectFlow" },
+        { "$ref": "#/$defs/elseObjectFlow" }
+      ]
+    },
+    "flows": { "type": "array", "items": { "$ref": "#/$defs/flow" } },
+    "exceptionHandler": {
+      "type": "object",
+      "required": ["exceptionType", "handler"],
+      "properties": {
+        "exceptionType": { "type": "string", "minLength": 1 },
+        "handler": { "$ref": "#/$defs/binding" }
+      },
+      "additionalProperties": false
+    },
+    "exceptions": { "type": "array", "items": { "$ref": "#/$defs/exceptionHandler" } },
+    "nodeBase": {
+      "type": "object",
+      "properties": {
+        "name": { "type": "string", "minLength": 1 },
+        "flows": { "$ref": "#/$defs/flows" },
+        "exceptionHandlers": { "$ref": "#/$defs/exceptions" },
+        "options": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": { "enum": ["implicitJoin", "implicitFork"] }
+        }
+      }
+    },
+    "nodes": { "type": "array", "items": { "$ref": "#/$defs/node" } },
+    "node": {
+      "oneOf": [
+        {
+          "allOf": [
+            { "$ref": "#/$defs/nodeBase" },
+            {
+              "type": "object",
+              "required": ["kind"],
+              "properties": { "kind": { "const": "initial" } },
+              "not": { "anyOf": [{ "required": ["options"] }, { "required": ["exceptionHandlers"] }] }
+            }
+          ],
+          "unevaluatedProperties": false
+        },
+        {
+          "allOf": [
+            { "$ref": "#/$defs/nodeBase" },
+            {
+              "type": "object",
+              "required": ["kind"],
+              "properties": { "kind": { "const": "input" } },
+              "not": { "anyOf": [{ "required": ["options"] }, { "required": ["exceptionHandlers"] }] }
+            }
+          ],
+          "unevaluatedProperties": false
+        },
+        {
+          "allOf": [
+            { "$ref": "#/$defs/nodeBase" },
+            {
+              "type": "object",
+              "required": ["kind"],
+              "properties": { "kind": { "const": "output" } },
+              "not": {
+                "anyOf": [
+                  { "required": ["flows"] },
+                  { "required": ["options"] },
+                  { "required": ["exceptionHandlers"] }
+                ]
+              }
+            }
+          ],
+          "unevaluatedProperties": false
+        },
+        {
+          "allOf": [
+            { "$ref": "#/$defs/nodeBase" },
+            {
+              "type": "object",
+              "required": ["kind"],
+              "properties": { "kind": { "const": "final" } },
+              "not": {
+                "anyOf": [
+                  { "required": ["flows"] },
+                  { "required": ["options"] },
+                  { "required": ["exceptionHandlers"] }
+                ]
+              }
+            }
+          ],
+          "unevaluatedProperties": false
+        },
+        {
+          "allOf": [
+            { "$ref": "#/$defs/nodeBase" },
+            {
+              "type": "object",
+              "required": ["kind", "name", "implementation"],
+              "properties": {
+                "kind": { "const": "action" },
+                "implementation": { "$ref": "#/$defs/binding" }
+              }
+            }
+          ],
+          "unevaluatedProperties": false
+        },
+        {
+          "allOf": [
+            { "$ref": "#/$defs/nodeBase" },
+            {
+              "type": "object",
+              "required": ["kind", "name", "mode"],
+              "properties": {
+                "kind": { "const": "decision" },
+                "mode": { "enum": ["control", "object"] },
+                "tokenType": { "type": "string", "minLength": 1 }
+              },
+              "if": { "properties": { "mode": { "const": "object" } } },
+              "then": { "required": ["tokenType"] },
+              "else": { "not": { "required": ["tokenType"] } },
+              "not": { "anyOf": [{ "required": ["options"] }, { "required": ["exceptionHandlers"] }] }
+            }
+          ],
+          "unevaluatedProperties": false
+        },
+        {
+          "allOf": [
+            { "$ref": "#/$defs/nodeBase" },
+            {
+              "type": "object",
+              "required": ["kind", "name"],
+              "properties": { "kind": { "enum": ["fork", "join", "merge"] } },
+              "not": { "anyOf": [{ "required": ["options"] }, { "required": ["exceptionHandlers"] }] }
+            }
+          ],
+          "unevaluatedProperties": false
+        },
+        {
+          "allOf": [
+            { "$ref": "#/$defs/nodeBase" },
+            {
+              "type": "object",
+              "required": ["kind", "name"],
+              "properties": { "kind": { "const": "dataStore" } },
+              "not": { "anyOf": [{ "required": ["options"] }, { "required": ["exceptionHandlers"] }] }
+            }
+          ],
+          "unevaluatedProperties": false
+        },
+        {
+          "allOf": [
+            { "$ref": "#/$defs/nodeBase" },
+            {
+              "type": "object",
+              "required": ["kind", "name", "eventType", "implementation"],
+              "properties": {
+                "kind": { "const": "acceptEvent" },
+                "eventType": { "type": "string", "minLength": 1 },
+                "implementation": { "$ref": "#/$defs/binding" }
+              }
+            }
+          ],
+          "unevaluatedProperties": false
+        },
+        {
+          "allOf": [
+            { "$ref": "#/$defs/nodeBase" },
+            {
+              "type": "object",
+              "required": ["kind", "name", "eventType", "implementation"],
+              "properties": {
+                "kind": { "const": "timeEvent" },
+                "eventType": { "type": "string", "minLength": 1 },
+                "implementation": { "$ref": "#/$defs/binding" }
+              }
+            }
+          ],
+          "unevaluatedProperties": false
+        },
+        {
+          "allOf": [
+            { "$ref": "#/$defs/nodeBase" },
+            {
+              "type": "object",
+              "required": ["kind", "name", "eventType", "implementation"],
+              "properties": {
+                "kind": { "const": "sendEvent" },
+                "eventType": { "type": "string", "minLength": 1 },
+                "implementation": { "$ref": "#/$defs/binding" }
+              },
+              "not": { "anyOf": [{ "required": ["options"] }, { "required": ["exceptionHandlers"] }] }
+            }
+          ],
+          "unevaluatedProperties": false
+        },
+        {
+          "allOf": [
+            { "$ref": "#/$defs/nodeBase" },
+            {
+              "type": "object",
+              "required": ["kind", "name", "eventType", "implementation"],
+              "properties": {
+                "kind": { "const": "publishEvent" },
+                "eventType": { "type": "string", "minLength": 1 },
+                "implementation": { "$ref": "#/$defs/binding" }
+              },
+              "not": { "anyOf": [{ "required": ["options"] }, { "required": ["exceptionHandlers"] }] }
+            }
+          ],
+          "unevaluatedProperties": false
+        },
+        {
+          "allOf": [
+            { "$ref": "#/$defs/nodeBase" },
+            {
+              "type": "object",
+              "required": ["kind", "name", "nodes"],
+              "properties": {
+                "kind": { "const": "structured" },
+                "nodes": { "$ref": "#/$defs/nodes" },
+                "definitions": { "$ref": "#/$defs/bindings" },
+                "reactive": { "type": "boolean", "default": false },
+                "onInitialize": { "$ref": "#/$defs/binding" },
+                "onFinalize": { "$ref": "#/$defs/binding" }
+              }
+            }
+          ],
+          "unevaluatedProperties": false
+        },
+        {
+          "allOf": [
+            { "$ref": "#/$defs/nodeBase" },
+            {
+              "type": "object",
+              "required": ["kind", "name", "nodes", "iterationTokenType"],
+              "properties": {
+                "kind": { "enum": ["parallel", "iterative"] },
+                "nodes": { "$ref": "#/$defs/nodes" },
+                "definitions": { "$ref": "#/$defs/bindings" },
+                "iterationTokenType": { "type": "string", "minLength": 1 },
+                "chunkSize": { "type": "integer", "minimum": 1, "default": 1 }
+              }
+            }
+          ],
+          "unevaluatedProperties": false
+        }
+      ]
+    }
+  }
+}

@@ -4,6 +4,8 @@ namespace Stateflows.StateMachines.Models
 {
     internal class Region
     {
+        internal string? SourcePath { get; set; }
+
         public Graph Graph { get; set; }
         public Vertex ParentVertex { get; set; }
         public string OriginStateMachineName { get; set; } = null;

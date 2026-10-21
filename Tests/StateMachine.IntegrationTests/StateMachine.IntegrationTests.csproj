@@ -27,6 +27,7 @@
     <ProjectReference Include="..\..\Extensions\Stateflows.Extensions.FluentValidation\Stateflows.Extensions.FluentValidation.csproj" />
     <ProjectReference Include="..\..\Extensions\Stateflows.Extensions.OneOf\Stateflows.Extensions.OneOf.csproj" />
     <ProjectReference Include="..\..\Extensions\Stateflows.Extensions.ClearScript\Stateflows.Extensions.ClearScript.csproj" />
+    <ProjectReference Include="..\..\Extensions\Stateflows.Extensions.Json\Stateflows.Extensions.Json.csproj" />
   </ItemGroup>
 
 </Project>

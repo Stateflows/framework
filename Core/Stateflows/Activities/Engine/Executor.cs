@@ -34,6 +34,7 @@ namespace Stateflows.Activities.Engine
         private readonly Dictionary<Node, object> nodeLockHandles = new Dictionary<Node, object>();
         private readonly IStateflowsEventFilter eventFilter;
         private readonly IStateflowsValueStorage valueStorage;
+        private readonly ILogger<Executor> logger;
         
         public bool StateHasChanged { get; set; }
         
@@ -104,7 +105,7 @@ namespace Stateflows.Activities.Engine
             NodeScope = new NodeScope(serviceProvider, graph, null, Guid.NewGuid());
             Graph = graph;
 
-            var logger = serviceProvider.GetRequiredService<ILogger<Executor>>();
+            logger = serviceProvider.GetRequiredService<ILogger<Executor>>();
             Inspector = new Inspector(this, logger);
             ActivitiesContextHolder.Inspection.Value = new ActivityInspection(this, Inspector);
 
@@ -1160,7 +1161,7 @@ namespace Stateflows.Activities.Engine
             }
         }
 
-        private static void ReportNodeAttemptedExecution(Node node, Edge upstreamEdge, IEnumerable<Stream> streams, RootContext context)
+        private void ReportNodeAttemptedExecution(Node node, Edge upstreamEdge, IEnumerable<Stream> streams, RootContext context)
         {
             if (/*Debugger.IsAttached && */!SystemTypes.Contains(node.Type))
             {
@@ -1175,6 +1176,27 @@ namespace Stateflows.Activities.Engine
                     var activatedFlows = streams.Select(s => s.EdgeIdentifier).ToArray();
                     var missingFlows = node.IncomingEdges.Where(e => !activatedFlows.Contains(e.Identifier));
                     ReportMissingFlows(missingFlows);
+
+                    var inputTokens = streams.SelectMany(stream => stream.Tokens).ToArray();
+                    var missingRequiredTypes = node.InputTokenTypes
+                        .Where(requiredType => !inputTokens.Any(token =>
+                            requiredType.IsAssignableFrom(token.GetEffectivePayloadType())))
+                        .Distinct()
+                        .ToArray();
+                    if (missingRequiredTypes.Length > 0)
+                    {
+                        var missingTypeNames = missingRequiredTypes
+                            .Select(type => type.FullName ?? type.Name)
+                            .ToArray();
+                        logger.LogWarning(
+                            "Activity {ActivityName}:{ActivityInstance} skipped node {NodeName}; required input token types were not delivered: {MissingTokenTypes}.",
+                            node.Graph.Name,
+                            context.Id.Instance,
+                            node.Name,
+                            string.Join(", ", missingTypeNames));
+                        Trace.WriteLine(
+                            $"WARNING: Activity '{node.Graph.Name}:{context.Id.Instance}' skipped node '{node.Name}' because required input token types were not delivered: {string.Join(", ", missingTypeNames)}.");
+                    }
                 }
             }
         }

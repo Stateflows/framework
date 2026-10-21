@@ -10,6 +10,9 @@ namespace Stateflows.StateMachines.Models
 {
     internal class Vertex
     {
+        internal string? SourcePath { get; set; }
+        internal Dictionary<string, string> DeferralPaths { get; } = [];
+
         public Graph Graph { get; set; }
         public Region ParentRegion { get; set; }
         public string Name { get; set; }

@@ -15,7 +15,7 @@ namespace Stateflows.Activities.Extensions
             {
                 builder.AddOnInitialize(async c =>
                 {
-                    var node = await ((BaseContext)c).NodeScope.GetStructuredActivityAsync<TStructuredActivity>(c as Context.Interfaces.IActionContext);
+                    var node = await ((BaseContext)c).NodeScope.GetStructuredActivityAsync<TStructuredActivity>(c);
 
                     if (node != null)
                     {
@@ -30,7 +30,7 @@ namespace Stateflows.Activities.Extensions
             {
                 builder.AddOnFinalize(async c =>
                 {
-                    var node = await ((BaseContext)c).NodeScope.GetStructuredActivityAsync<TStructuredActivity>(c as Context.Interfaces.IActionContext);
+                    var node = await ((BaseContext)c).NodeScope.GetStructuredActivityAsync<TStructuredActivity>(c);
 
                     if (node != null)
                     {

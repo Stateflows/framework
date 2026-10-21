@@ -8,11 +8,19 @@
 
     <ItemGroup>
       <ProjectReference Include="..\..\Core\Stateflows\Stateflows.csproj" />
+      <ProjectReference Include="..\..\Extensions\Stateflows.Extensions.Json\Stateflows.Extensions.Json.csproj" />
       <ProjectReference Include="..\..\Extensions\Stateflows.Extensions.ClearScript\Stateflows.Extensions.ClearScript.csproj" />
       <ProjectReference Include="..\..\Extensions\Stateflows.Extensions.MicrosoftAgentFramework\Stateflows.Extensions.MicrosoftAgentFramework.csproj" />
       <ProjectReference Include="..\..\Extensions\Stateflows.Extensions.MinimalAPIs\Stateflows.Extensions.MinimalAPIs.csproj" />
       <ProjectReference Include="..\..\Extensions\Stateflows.Extensions.Scheduling\Stateflows.Extensions.Scheduling.csproj" />
       <ProjectReference Include="..\Stateflows.Examples.Common\Stateflows.Examples.Common.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <EmbeddedResource Include="Activities\JsonPurchaseProcessing\model.json"
+                        LogicalName="Stateflows.Examples.Behaviors.Activities.JsonPurchaseProcessing.model.json" />
+      <EmbeddedResource Include="StateMachines\JsonPurchaseFlow\model.json"
+                        LogicalName="Stateflows.Examples.Behaviors.StateMachines.JsonPurchaseFlow.model.json" />
     </ItemGroup>
 
     <ItemGroup>

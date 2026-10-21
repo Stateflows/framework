@@ -81,6 +81,12 @@ namespace Stateflows.Activities.Registration
                 Graph.Interactive = true;
             }
 
+            var identifier = $"{type}:{Node.Name}:{nodeName}";
+            if (Node.Nodes.ContainsKey(identifier))
+            {
+                throw new NodeDefinitionException(nodeName, $"Node '{nodeName}' is already registered in this scope", Graph.Class);
+            }
+
             var node = new Node()
             {
                 Type = type,
@@ -90,9 +96,7 @@ namespace Stateflows.Activities.Registration
                 Graph = Graph,
                 Level = Node.Level + 1,
                 Anchored = type != NodeType.ParallelActivity && Node.Anchored,
-                Identifier = !(Node is null)
-                    ? $"{type}:{Node.Name}:{nodeName}"
-                    : $"{type}:{nodeName}",
+                Identifier = identifier,
                 EventType = exceptionOrEventType
             };
 

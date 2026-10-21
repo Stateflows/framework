@@ -22,7 +22,9 @@ namespace Stateflows.StateMachines.Extensions
                 ? eventHolder.BoxedPayload is TimeEvent timeEvent1
                     ? timeEvent1.ConsumerSignature == edge.Signature
                     : edge.ActualTriggerTypes.Any(type => type.IsAssignableFrom(eventHolder.PayloadType))
-                : edge.ActualTriggerTypes.Contains(eventHolder.PayloadType) &&
+                : (edge.ActualTriggerTypes.Contains(eventHolder.PayloadType) ||
+                   edge.DeclaredTriggerTypes?.Any(type => typeof(Exception).IsAssignableFrom(type) &&
+                       type.IsAssignableFrom(eventHolder.PayloadType)) == true) &&
                   (
                       !(eventHolder.BoxedPayload is TimeEvent timeEvent2) ||
                       timeEvent2.ConsumerSignature == edge.Signature

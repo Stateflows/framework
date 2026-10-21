@@ -12,6 +12,8 @@ namespace Stateflows.StateMachines.Registration.Builders
 {
     internal class StateMachinesBuilder(IStateMachinesRegister register, BehaviorClass? ownerClass = null, BehaviorClass? parentClass = null) : IStateMachinesBuilder
     {
+        internal Stateflows.Common.Registration.Builders.StateflowsBuilder StateflowsBuilder
+            => ((StateMachinesRegister)register).Builder;
 
         [DebuggerHidden]
         public IStateMachinesBuilder AddFromAssembly(Assembly assembly)
@@ -65,10 +67,15 @@ namespace Stateflows.StateMachines.Registration.Builders
                 registration.OwnerClass = ownerClass;
                 registration.ParentClass = parentClass;
 
-                register.AddStateMachine(stateMachineName, version, buildAction);
-                
-                registration.OwnerClass = originalOwnerClass;
-                registration.ParentClass = originalParentClass;
+                try
+                {
+                    register.AddStateMachine(stateMachineName, version, buildAction);
+                }
+                finally
+                {
+                    registration.OwnerClass = originalOwnerClass;
+                    registration.ParentClass = originalParentClass;
+                }
 
                 return this;
             }
@@ -90,10 +97,15 @@ namespace Stateflows.StateMachines.Registration.Builders
                 registration.OwnerClass = ownerClass;
                 registration.ParentClass = parentClass;
 
-                register.AddStateMachine<TStateMachine>(stateMachineName ?? StateMachine<TStateMachine>.Name, version, buildAction);
-                
-                registration.OwnerClass = originalOwnerClass;
-                registration.ParentClass = originalParentClass;
+                try
+                {
+                    register.AddStateMachine<TStateMachine>(stateMachineName ?? StateMachine<TStateMachine>.Name, version, buildAction);
+                }
+                finally
+                {
+                    registration.OwnerClass = originalOwnerClass;
+                    registration.ParentClass = originalParentClass;
+                }
 
                 return this;
             }
@@ -186,4 +198,3 @@ namespace Stateflows.StateMachines.Registration.Builders
         #endregion
     }
 }
-

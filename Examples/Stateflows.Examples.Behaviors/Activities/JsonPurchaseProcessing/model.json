@@ -1,0 +1,41 @@
+{
+  "$schema": "urn:stateflows:activity:1.0",
+  "formatVersion": "1.0",
+  "name": "JsonPurchaseProcessing",
+  "version": 1,
+  "nodes": [
+    {
+      "kind": "acceptEvent",
+      "name": "ReceivePurchase",
+      "eventType": "purchase.request",
+      "implementation": { "clrType": "purchase.receive" },
+      "flows": [
+        {
+          "kind": "object",
+          "tokenType": "purchase.request",
+          "target": "RecordReceipt",
+          "pipeline": [
+            {
+              "kind": "transform",
+              "outputTokenType": "purchase.receipt",
+              "handler": {
+                "clrType": "purchase.createReceipt",
+                "configuration": "JSON-"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "kind": "action",
+      "name": "RecordReceipt",
+      "implementation": {
+        "clrType": "purchase.recordReceipt",
+        "configuration": "JSON activity recorded purchase receipt."
+      },
+      "flows": [{ "kind": "control", "target": "Completed" }]
+    },
+    { "kind": "final", "name": "Completed" }
+  ]
+}

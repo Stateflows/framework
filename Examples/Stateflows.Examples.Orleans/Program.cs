@@ -13,6 +13,8 @@ using Stateflows.Common;
 using Stateflows.Common.Utilities;
 using Stateflows.Entities;
 using Stateflows.Examples.Behaviors.Entities;
+using Stateflows.Examples.Behaviors.Activities.JsonPurchaseProcessing;
+using Stateflows.Examples.Behaviors.StateMachines.JsonPurchaseFlow;
 using Stateflows.Examples.Behaviors.StateMachines.Document.Interceptors;
 using Stateflows.Extensions.MinimalAPIs;
 using Stateflows.Extensions.OpenTelemetry;
@@ -43,12 +45,15 @@ builder.Services.AddStateflows(b => b
     )
 
     // Register each behavior kind explicitly; instances execute through Orleans.
-    .AddStateMachines(b => b
-
+    .AddStateMachines(b =>
+    {
         // Single State Machine, defined in separate C# class, is registered here under the name "Doc".
         // If no name is provided, full name of class would be used as a behavior class name.
-        .AddStateMachine<Document>("Doc")
-    )
+        b.AddStateMachine<Document>("Doc");
+        b.AddJsonPurchaseFlow();
+    })
+
+    .AddActivities(b => b.AddJsonPurchaseProcessing())
 
     .AddInterceptor<InfoEnhanceInterceptor>()
 

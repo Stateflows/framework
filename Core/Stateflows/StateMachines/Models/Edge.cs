@@ -18,6 +18,9 @@ namespace Stateflows.StateMachines.Models
 
     internal class Edge
     {
+        internal string? SourcePath { get; set; }
+        internal IReadOnlyList<Type>? DeclaredTriggerTypes { get; set; }
+
         public string OriginStateMachineName { get; set; } = null;
         
         public string Name { get; set; }
@@ -82,7 +85,7 @@ namespace Stateflows.StateMachines.Models
 
         private Edge MergeWith(Edge edge)
         {
-            var actualTriggerTypes = Graph.StateflowsBuilder.TypeMapper.GetMappedTypes(TriggerType).ToHashSet();
+            var actualTriggerTypes = ActualTriggerTypes.ToHashSet();
 
             var triggerDescriptor = edge.IsElse
                 ? $"{Trigger}|else"
@@ -97,6 +100,8 @@ namespace Stateflows.StateMachines.Models
                 Graph = Graph,
                 Trigger = Trigger,
                 TriggerType = TriggerType,
+                DeclaredTriggerTypes = DeclaredTriggerTypes,
+                SourcePath = SourcePath,
                 ActualTriggerTypes = actualTriggerTypes,
                 TimeTriggerTypes = actualTriggerTypes.Where(type => type.IsSubclassOf(typeof(TimeEvent))).ToHashSet(),
                 RecurringTypes = actualTriggerTypes.Where(type => type.IsSubclassOf(typeof(RecurringEvent))).ToHashSet(),

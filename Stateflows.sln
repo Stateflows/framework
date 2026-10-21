@@ -88,6 +88,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Stateflows.Runtimes.Beehavi
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Beehaviors.Tests", "..\Beehaviors\Beehaviors.Tests\Beehaviors.Tests.csproj", "{05C2D3B6-2D76-4FB2-B384-F838CB538301}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Stateflows.Extensions.Json", "Extensions\Stateflows.Extensions.Json\Stateflows.Extensions.Json.csproj", "{B17523A0-9BA4-44CF-AE1B-FF1D2B12FE45}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -222,6 +224,10 @@ Global
 		{05C2D3B6-2D76-4FB2-B384-F838CB538301}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{05C2D3B6-2D76-4FB2-B384-F838CB538301}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{05C2D3B6-2D76-4FB2-B384-F838CB538301}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B17523A0-9BA4-44CF-AE1B-FF1D2B12FE45}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B17523A0-9BA4-44CF-AE1B-FF1D2B12FE45}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B17523A0-9BA4-44CF-AE1B-FF1D2B12FE45}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B17523A0-9BA4-44CF-AE1B-FF1D2B12FE45}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -259,6 +265,7 @@ Global
 		{25B400BD-D988-4C30-9A1C-BAAD8167FDD7} = {D7666921-590A-4CF6-A84E-586FAA4C8A2D}
 		{2C6D1A61-A394-4CC7-957E-FE6E2A93027B} = {D7666921-590A-4CF6-A84E-586FAA4C8A2D}
 		{05C2D3B6-2D76-4FB2-B384-F838CB538301} = {D7666921-590A-4CF6-A84E-586FAA4C8A2D}
+		{B17523A0-9BA4-44CF-AE1B-FF1D2B12FE45} = {580A6B03-79AD-430C-AEF6-80EC6A02FA61}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {602A9FD6-5053-42E4-AEAE-2813DF169A3C}

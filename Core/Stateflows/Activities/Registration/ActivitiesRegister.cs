@@ -17,6 +17,8 @@ namespace Stateflows.Activities.Registration
 {
     internal class ActivitiesRegister(StateflowsBuilder stateflowsBuilder) : IActivitiesRegister, IOwnedRegistration
     {
+        internal StateflowsBuilder StateflowsBuilder => stateflowsBuilder;
+
         public List<ActivityExceptionHandlerFactoryAsync> GlobalExceptionHandlerFactories = [];
 
         public List<ActivityInterceptorFactoryAsync> GlobalInterceptorFactories = [];
