@@ -1,3 +1,5 @@
+using System;
+using System.Threading.Tasks;
 using System.Collections.Concurrent;
 using Microsoft.Extensions.DependencyInjection;
 using Newtonsoft.Json.Linq;
@@ -487,17 +489,27 @@ public class JsonExecutionTests : StateflowsTestClass
     public sealed class Observer(Trace trace) : ActivityObserver, IConfigurable<string>
     {
         public string Configuration { private get; set; } = "";
-        public override void AfterActivityInitialize(IActivityInitializationContext context, bool implicitInitialization, bool initialized)
-            => trace.Entries.Enqueue("observer:" + Configuration);
+        public override async Task OnActivityInitializeAsync(IActivityInitializationContext context, bool implicitInitialization, Func<Task<bool>> next)
+        {
+            await next();
+            trace.Entries.Enqueue("observer:" + Configuration);
+        }
     }
 
     public sealed class Interceptor(Trace trace) : ActivityInterceptor, IConfigurable<string>
     {
         public string Configuration { private get; set; } = "";
-        public override bool BeforeProcessEvent<TEvent>(IEventContext<TEvent> context)
+        public override async Task<EventStatus> ProcessEventAsync<TEvent>(IEventContext<TEvent> context, Func<Task<EventStatus>> next)
         {
-            trace.Entries.Enqueue("interceptor:" + Configuration);
-            return true;
+            if (!Before(context)) return EventStatus.Rejected;
+
+            return await next();
+
+            bool Before(IEventContext<TEvent> context)
+            {
+                trace.Entries.Enqueue("interceptor:" + Configuration);
+                return true;
+            }
         }
     }
 

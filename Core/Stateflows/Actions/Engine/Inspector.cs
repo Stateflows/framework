@@ -31,20 +31,18 @@ namespace Stateflows.Actions.Engine
             ExceptionHandlerFactories.AddRange(Executor.ActionModel.ExceptionHandlerFactories);
             ExceptionHandlerFactories.AddRange(Executor.Register.GlobalExceptionHandlerFactories);
 
-            InterceptorFactories.AddRange(Executor.ActionModel.InterceptorFactories);
             InterceptorFactories.AddRange(Executor.Register.GlobalInterceptorFactories);
+            InterceptorFactories.AddRange(Executor.ActionModel.InterceptorFactories);
 
-            ObserverFactories.AddRange(Executor.ActionModel.ObserverFactories);
             ObserverFactories.AddRange(Executor.Register.GlobalObserverFactories);
+            ObserverFactories.AddRange(Executor.ActionModel.ObserverFactories);
         }
 
         public async Task BuildAsync()
         {
             Observers = await Task.WhenAll(ObserverFactories.Select(t => t(Executor.ServiceProvider)));
-            ReverseObservers = Observers.Reverse().ToArray();
             
             Interceptors = await Task.WhenAll(InterceptorFactories.Select(t => t(Executor.ServiceProvider)));
-            ReverseInterceptors = Interceptors.Reverse().ToArray();
 
             ExceptionHandlers = await Task.WhenAll(ExceptionHandlerFactories.Select(t => t(Executor.ServiceProvider)));
         }
@@ -56,50 +54,39 @@ namespace Stateflows.Actions.Engine
         private readonly List<ActionObserverFactoryAsync> ObserverFactories = [];
         
         private IActionInterceptor[] Interceptors;
-        private IActionInterceptor[] ReverseInterceptors;
         
         private IActionObserver[] Observers;
-        private IActionObserver[] ReverseObservers;
 
         private IActionExceptionHandler[] ExceptionHandlers;
 
-        public bool BeforeProcessEvent<TEvent>(EventContext<TEvent> context)
+        public async Task<EventStatus> ProcessEventAsync<TEvent>(EventContext<TEvent> context, Func<Task<EventStatus>> next)
         {
-            var global = GlobalInterceptor.BeforeProcessEvent(context);
-            var local = Interceptors.RunSafe(i => i.BeforeProcessEvent(context), nameof(BeforeProcessEvent), Logger);
-
-            return global && local;
-        }
-
-        public async Task AfterProcessEventAsync<TEvent>(EventContext<TEvent> context, EventStatus eventStatus)
-        {
-            ReverseInterceptors.RunSafe(i => i.AfterProcessEvent(context, eventStatus), nameof(IActionInterceptor.AfterProcessEvent), Logger);
-            GlobalInterceptor.AfterProcessEvent(context, eventStatus);
-
-            if (context.RootContext.EventHolder.IsRespondedTo())
+            try
             {
-                await GlobalInterceptor
-                    .DoRequestRespondedAsync(
+                return await GlobalInterceptor.ProcessEventAsync(context, () =>
+                    InterceptorPipeline.RunAsync(Interceptors, next, (interceptor, inner) => interceptor.ProcessEventAsync(context, inner)));
+            }
+            finally
+            {
+                if (context.RootContext.EventHolder.IsRespondedTo())
+                {
+                    await GlobalInterceptor.DoRequestRespondedAsync(
                         context,
                         context.RootContext.EventHolder,
-                        context.RootContext.EventHolder.GetResponseHolder()
-                    );
+                        context.RootContext.EventHolder.GetResponseHolder());
+                }
             }
         }
-        
-        public bool OnActionException(ActionDelegateContext context, Exception exception)
-            => ExceptionHandlers.RunSafe(h => h.OnActionException(context, exception), nameof(OnActionException), Logger, false);
 
-        public void BeforeActionInitialize(IActionDelegateContext context)
-            => Observers.RunSafe(i => i.BeforeActionInitialize(context), nameof(BeforeActionInitialize), Logger);
+        public Task<bool> OnActionExceptionAsync(ActionDelegateContext context, Exception exception)
+            => ExecutionExceptionHandling.HandleAsync(
+                context.Context, ExceptionHandlers,
+                h => h.OnActionExceptionAsync(context, exception), nameof(OnActionExceptionAsync), Logger);
 
-        public void AfterActionInitialize(IActionDelegateContext context)
-            => ReverseObservers.RunSafe(i => i.AfterActionInitialize(context), nameof(AfterActionInitialize), Logger);
+        public Task OnActionInitializeAsync(IActionDelegateContext context, Func<Task> next)
+            => ObserverPipeline.RunAsync(Observers, next, (observer, inner) => observer.OnActionInitializeAsync(context, inner));
 
-        public void BeforeActionFinalize(IActionDelegateContext context)
-            => Observers.RunSafe(i => i.BeforeActionFinalize(context), nameof(BeforeActionFinalize), Logger);
-
-        public void AfterActionFinalize(IActionDelegateContext context)
-            => ReverseObservers.RunSafe(i => i.AfterActionFinalize(context), nameof(AfterActionFinalize), Logger);
+        public Task OnActionFinalizeAsync(IActionDelegateContext context, Func<Task> next)
+            => ObserverPipeline.RunAsync(Observers, next, (observer, inner) => observer.OnActionFinalizeAsync(context, inner));
     }
 }

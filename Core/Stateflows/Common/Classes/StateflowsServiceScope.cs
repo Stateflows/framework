@@ -1,27 +1,33 @@
 using System;
-using System.Collections.Generic;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
+using Stateflows.Common.Engine;
 
 namespace Stateflows.Common.Classes;
 
 public class StateflowsServiceScope(AsyncServiceScope serviceScope) : IAsyncDisposable
 {
-    private readonly List<Task> PendingTasks = [];
+    private readonly bool executionOwned = PendingTasksScope.Current != null;
+    private readonly PendingTasks pendingTasks = PendingTasksScope.Current ?? new PendingTasks();
     
     public async ValueTask DisposeAsync()
     {
-        if (PendingTasks.Count > 0)
+        try
         {
-            await Task.WhenAll(PendingTasks);
+            await pendingTasks.DrainAsync();
         }
-        
-        await serviceScope.DisposeAsync();
+        finally
+        {
+            await serviceScope.DisposeAsync();
+        }
+
+        if (!executionOwned)
+            pendingTasks.ThrowIfFailed();
     }
     
     public void AddPendingTask(Task task)
     {
-        PendingTasks.Add(task);
+        pendingTasks.Add(task);
     }
     
     public IServiceProvider ServiceProvider => serviceScope.ServiceProvider;

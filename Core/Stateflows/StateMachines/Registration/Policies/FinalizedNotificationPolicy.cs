@@ -1,11 +1,14 @@
-﻿using Stateflows.StateMachines.Context.Interfaces;
+﻿using System;
+using System.Threading.Tasks;
+using Stateflows.StateMachines.Context.Interfaces;
 
 namespace Stateflows.StateMachines;
 
 internal class FinalizedNotification : StateMachineObserver
 {
-    public override void AfterStateMachineFinalize(IStateMachineActionContext context)
+    public override async Task OnStateMachineFinalizeAsync(IStateMachineActionContext context, Func<Task> next)
     {
+        await next();
         var stateflowsContext = ((IRootContext)context).Context.Context;
         if (stateflowsContext.ContextParentId != null)
         {

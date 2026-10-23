@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using Microsoft.Extensions.DependencyInjection;
 using Stateflows.Common.Classes;
 using Stateflows.Common.Interfaces;
+using Stateflows.Common.Engine;
 using Stateflows.Entities;
 
 namespace Stateflows.Common.Context.Classes
@@ -22,6 +23,7 @@ namespace Stateflows.Common.Context.Classes
         private BehaviorId Id => Context.Id;
         
         private IStateflowsSubscriber? subscriber;
+        private readonly PendingTasks pendingTasks = PendingTasksScope.RequireCurrent();
 
         private IStateflowsSubscriber Subscriber
             => subscriber ??= ServiceProvider.GetRequiredService<IStateflowsSubscriber>();
@@ -43,8 +45,7 @@ namespace Stateflows.Common.Context.Classes
         public bool IsEmbedded => Context.ContextOwnerId != null;
 
         private void PublishRange<TNotification>(BehaviorId behaviorId, IEnumerable<TNotification> notifications, IDictionary<string, EventHeader>? headers = null)
-        // todo: get executor here and register this as a pending task
-            => Subscriber.PublishRangeAsync(behaviorId, notifications, Context, headers).Wait();
+            => pendingTasks.Add(Subscriber.PublishRangeAsync(behaviorId, notifications, Context, headers));
 
         void IPublishes<IBehaviorContext>.PublishRange<TNotification>(IEnumerable<TNotification> notifications, IDictionary<string, EventHeader>? headers)
             => PublishRange(Id, notifications, headers);

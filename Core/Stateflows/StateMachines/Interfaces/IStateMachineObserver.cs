@@ -1,39 +1,35 @@
-﻿using Stateflows.StateMachines.Context.Interfaces;
+﻿using System;
+using System.Threading.Tasks;
+using Stateflows.StateMachines.Context.Interfaces;
 
 namespace Stateflows.StateMachines
 {
+    /// <summary>
+    /// Observes state-machine operations. Global observers wrap local observers,
+    /// in registration order within each group.
+    /// </summary>
+    /// <remarks>
+    /// Call and await next exactly once. Results are exposed for inspection, not
+    /// replacement. Observers must not change state or suppress continuation failures.
+    /// Use try/finally for cleanup that must run on failure. Missing, repeated, or
+    /// unfinished continuation calls fail execution.
+    /// </remarks>
     public interface IStateMachineObserver
     {
-        void BeforeStateMachineInitialize(IStateMachineInitializationContext context, bool implicitInitialization);
+        Task OnStateMachineInitializeAsync(IStateMachineInitializationContext context, bool implicitInitialization, Func<Task<bool>> next);
 
-        void AfterStateMachineInitialize(IStateMachineInitializationContext context, bool implicitInitialization, bool initialized);
+        Task OnStateMachineFinalizeAsync(IStateMachineActionContext context, Func<Task> next);
 
-        void BeforeStateMachineFinalize(IStateMachineActionContext context);
+        Task OnStateInitializeAsync(IStateActionContext context, Func<Task> next);
 
-        void AfterStateMachineFinalize(IStateMachineActionContext context);
+        Task OnStateFinalizeAsync(IStateActionContext context, Func<Task> next);
 
-        void BeforeStateInitialize(IStateActionContext context);
+        Task OnStateEntryAsync(IStateActionContext context, Func<Task> next);
 
-        void AfterStateInitialize(IStateActionContext context);
+        Task OnStateExitAsync(IStateActionContext context, Func<Task> next);
 
-        void BeforeStateFinalize(IStateActionContext context);
+        Task OnTransitionGuardAsync<TEvent>(ITransitionContext<TEvent> context, Func<Task<bool>> next);
 
-        void AfterStateFinalize(IStateActionContext context);
-
-        void BeforeStateEntry(IStateActionContext context);
-
-        void AfterStateEntry(IStateActionContext context);
-
-        void BeforeStateExit(IStateActionContext context);
-
-        void AfterStateExit(IStateActionContext context);
-
-        void BeforeTransitionGuard<TEvent>(ITransitionContext<TEvent> context);
-
-        void AfterTransitionGuard<TEvent>(ITransitionContext<TEvent> context, bool guardResult);
-
-        void BeforeTransitionEffect<TEvent>(ITransitionContext<TEvent> context);
-
-        void AfterTransitionEffect<TEvent>(ITransitionContext<TEvent> context);
+        Task OnTransitionEffectAsync<TEvent>(ITransitionContext<TEvent> context, Func<Task> next);
     }
 }

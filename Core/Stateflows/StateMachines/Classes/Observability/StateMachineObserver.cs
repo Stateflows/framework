@@ -1,3 +1,4 @@
+using System;
 using System.Threading.Tasks;
 using Stateflows.StateMachines.Context.Interfaces;
 
@@ -5,52 +6,28 @@ namespace Stateflows.StateMachines
 {
     public abstract class StateMachineObserver : IStateMachineObserver
     {
-        public virtual void BeforeStateMachineInitialize(IStateMachineInitializationContext context, bool implicitInitialization)
-        { }
+        public virtual Task OnStateMachineInitializeAsync(IStateMachineInitializationContext context, bool implicitInitialization, Func<Task<bool>> next)
+            => next();
 
-        public virtual void AfterStateMachineInitialize(IStateMachineInitializationContext context, bool implicitInitialization, bool initialized)
-        { }
+        public virtual Task OnStateMachineFinalizeAsync(IStateMachineActionContext context, Func<Task> next)
+            => next();
 
-        public virtual void BeforeStateMachineFinalize(IStateMachineActionContext context)
-        { }
+        public virtual Task OnStateInitializeAsync(IStateActionContext context, Func<Task> next)
+            => next();
 
-        public virtual void AfterStateMachineFinalize(IStateMachineActionContext context)
-        { }
+        public virtual Task OnStateFinalizeAsync(IStateActionContext context, Func<Task> next)
+            => next();
 
-        public virtual void BeforeStateInitialize(IStateActionContext context)
-        { }
+        public virtual Task OnStateEntryAsync(IStateActionContext context, Func<Task> next)
+            => next();
 
-        public virtual void AfterStateInitialize(IStateActionContext context)
-        { }
+        public virtual Task OnStateExitAsync(IStateActionContext context, Func<Task> next)
+            => next();
 
-        public virtual void BeforeStateFinalize(IStateActionContext context)
-        { }
+        public virtual Task OnTransitionGuardAsync<TEvent>(ITransitionContext<TEvent> context, Func<Task<bool>> next)
+            => next();
 
-        public virtual void AfterStateFinalize(IStateActionContext context)
-        { }
-
-        public virtual void BeforeStateEntry(IStateActionContext context)
-        { }
-
-        public virtual void AfterStateEntry(IStateActionContext context)
-        { }
-
-        public virtual void BeforeStateExit(IStateActionContext context)
-        { }
-
-        public virtual void AfterStateExit(IStateActionContext context)
-        { }
-
-        public virtual void BeforeTransitionGuard<TEvent>(ITransitionContext<TEvent> context)
-        { }
-
-        public virtual void AfterTransitionGuard<TEvent>(ITransitionContext<TEvent> context, bool guardResult)
-        { }
-
-        public virtual void BeforeTransitionEffect<TEvent>(ITransitionContext<TEvent> context)
-        { }
-
-        public virtual void AfterTransitionEffect<TEvent>(ITransitionContext<TEvent> context)
-        { }
+        public virtual Task OnTransitionEffectAsync<TEvent>(ITransitionContext<TEvent> context, Func<Task> next)
+            => next();
     }
 }

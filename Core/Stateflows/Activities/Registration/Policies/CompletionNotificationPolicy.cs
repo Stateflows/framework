@@ -1,4 +1,6 @@
-﻿using Stateflows.Activities.Context.Interfaces;
+﻿using System;
+using System.Threading.Tasks;
+using Stateflows.Activities.Context.Interfaces;
 using Stateflows.Common;
 using Stateflows.StateMachines;
 
@@ -6,24 +8,33 @@ namespace Stateflows.Activities;
 
 internal class CompletionNotification : ActivityInterceptor
 {
-    public override void AfterProcessEvent<TEvent>(IEventContext<TEvent> context, EventStatus eventStatus)
+    public override async Task<EventStatus> ProcessEventAsync<TEvent>(IEventContext<TEvent> context, Func<Task<EventStatus>> next)
     {
-        if (
-            eventStatus is EventStatus.Consumed or EventStatus.Initialized &&
-            context.TryGetParentBehaviorContext(out var parentBehaviorContext) &&
-            parentBehaviorContext.Id.Type == BehaviorType.StateMachine
-        )
+        var status = EventStatus.Failed;
+        try
         {
-            parentBehaviorContext.Send(new Completion());
-        // }
-        // var stateflowsContext = ((IRootContext)context).Context.Context;
-        // if (
-        //     stateflowsContext.ContextParentId != null &&
-        //     stateflowsContext.ContextParentId.Value.Type == BehaviorType.StateMachine &&
-        //     eventStatus is EventStatus.Consumed or EventStatus.Initialized
-        // )
-        // {
+            return status = await next();
         }
+        finally
+        {
+            if (
+                status is EventStatus.Consumed or EventStatus.Initialized &&
+                context.TryGetParentBehaviorContext(out var parentBehaviorContext) &&
+                parentBehaviorContext.Id.Type == BehaviorType.StateMachine
+            )
+            {
+                parentBehaviorContext.Send(new Completion());
+            // }
+            // var stateflowsContext = ((IRootContext)context).Context.Context;
+            // if (
+            //     stateflowsContext.ContextParentId != null &&
+            //     stateflowsContext.ContextParentId.Value.Type == BehaviorType.StateMachine &&
+            //     status is EventStatus.Consumed or EventStatus.Initialized
+            // )
+            // {
+            }
+        }
+
     }
 }
 

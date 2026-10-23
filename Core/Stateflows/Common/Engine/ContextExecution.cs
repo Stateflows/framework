@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using Stateflows.Common.Context;
 using Stateflows.Common.Interfaces;
@@ -25,6 +26,7 @@ namespace Stateflows.Common.Engine
         {
             var exceptionCount = exceptions.Count;
             ContextExecution? execution = null;
+            using var pendingTasks = new PendingTasksScope();
             using var publications = PublicationScope.IsRuntimeOwned ? null : new PublicationScope();
             try
             {
@@ -35,6 +37,9 @@ namespace Stateflows.Common.Engine
                 working.Deleted = stored.Deleted;
                 execution = new ContextExecution(working);
                 var result = await executeAsync(execution);
+
+                await pendingTasks.Tasks.DrainAsync();
+                pendingTasks.Tasks.ThrowIfFailed();
 
                 if (publications != null)
                     await publications.WaitForImmediateAsync();
@@ -64,6 +69,12 @@ namespace Stateflows.Common.Engine
             }
             finally
             {
+                await pendingTasks.Tasks.DrainAsync();
+                foreach (var exception in pendingTasks.Tasks.Exceptions)
+                {
+                    if (!exceptions.Any(existing => ReferenceEquals(existing, exception)))
+                        exceptions.Add(exception);
+                }
                 if (publications != null)
                 {
                     try
@@ -72,7 +83,7 @@ namespace Stateflows.Common.Engine
                     }
                     catch (Exception exception)
                     {
-                        if (!exceptions.Contains(exception))
+                        if (!exceptions.Any(existing => ReferenceEquals(existing, exception)))
                             exceptions.Add(exception);
                     }
                 }
@@ -80,7 +91,7 @@ namespace Stateflows.Common.Engine
                 {
                     foreach (var exception in execution.Context.ExecutionExceptions)
                     {
-                        if (!exceptions.Contains(exception))
+                        if (!exceptions.Any(existing => ReferenceEquals(existing, exception)))
                         {
                             exceptions.Add(exception);
                         }

@@ -22,43 +22,51 @@ namespace Stateflows.Testing.StateMachines.Sequence
             builder.ValidateWith(SequenceBuilder);
         }
 
-        public override void AfterStateEntry(IStateActionContext context)
+        public override async Task OnStateEntryAsync(IStateActionContext context, Func<Task> next)
         {
+            await next();
             SequenceBuilder.StateEntry(context.State.Name);
         }
 
-        public override void AfterStateExit(IStateActionContext context)
+        public override async Task OnStateExitAsync(IStateActionContext context, Func<Task> next)
         {
+            await next();
             SequenceBuilder.StateExit(context.State.Name);
         }
 
-        public override void AfterStateInitialize(IStateActionContext context)
+        public override async Task OnStateInitializeAsync(IStateActionContext context, Func<Task> next)
         {
+            await next();
             SequenceBuilder.StateInitialize(context.State.Name);
         }
 
-        public override void AfterStateFinalize(IStateActionContext context)
+        public override async Task OnStateFinalizeAsync(IStateActionContext context, Func<Task> next)
         {
+            await next();
             SequenceBuilder.StateFinalize(context.State.Name);
         }
 
-        public override void AfterStateMachineInitialize(IStateMachineInitializationContext context, bool implicitInitialization, bool initialized)
+        public override async Task OnStateMachineInitializeAsync(IStateMachineInitializationContext context, bool implicitInitialization, Func<Task<bool>> next)
         {
+            await next();
             SequenceBuilder.StateMachineInitialize();
         }
 
-        public override void AfterStateMachineFinalize(IStateMachineActionContext context)
+        public override async Task OnStateMachineFinalizeAsync(IStateMachineActionContext context, Func<Task> next)
         {
+            await next();
             SequenceBuilder.StateMachineFinalize();
         }
 
-        public override void AfterTransitionEffect<TEvent>(ITransitionContext<TEvent> context)
+        public override async Task OnTransitionEffectAsync<TEvent>(ITransitionContext<TEvent> context, Func<Task> next)
         {
+            await next();
             SequenceBuilder.TransitionEffect(Event.GetName(context.Event.GetType()), context.Source.Name, context.Target?.Name);
         }
 
-        public override void AfterTransitionGuard<TEvent>(ITransitionContext<TEvent> context, bool guardResult)
+        public override async Task OnTransitionGuardAsync<TEvent>(ITransitionContext<TEvent> context, Func<Task<bool>> next)
         {
+            await next();
             SequenceBuilder.TransitionGuard(Event.GetName(context.Event.GetType()), context.Source.Name, context.Target?.Name);
         }
     }

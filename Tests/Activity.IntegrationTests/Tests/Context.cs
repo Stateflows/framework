@@ -1,3 +1,5 @@
+using System;
+using System.Threading.Tasks;
 using System.ComponentModel;
 using Activity.IntegrationTests.Classes.Events;
 using Stateflows.Common;
@@ -8,7 +10,7 @@ namespace Activity.IntegrationTests.Tests
 {
     public class FlowObserver : ActivityObserver
     {
-        public override void BeforeNodeActivate(IActivityNodeContext context, bool activated)
+        public override async Task OnNodeActivateAsync(IActivityNodeContext context, bool activated, Func<Task> next)
         {
             if (context.Node.Name.EndsWith("action3"))
             {
@@ -16,6 +18,7 @@ namespace Activity.IntegrationTests.Tests
                 Context.Activated1 = context.Node.IncomingFlows.First().Activated;
                 Context.Activated2 = context.Node.IncomingFlows.Last().Activated;
             }
+            await next();
         }
     }
 

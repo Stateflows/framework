@@ -1,4 +1,6 @@
-﻿using Stateflows.Common.Context.Classes;
+﻿using System;
+using System.Threading.Tasks;
+using Stateflows.Common.Context.Classes;
 using Stateflows.Actions;
 using Stateflows.Actions.Context.Interfaces;
 using Stateflows.Actions.Registration.Interfaces;
@@ -8,8 +10,9 @@ namespace Stateflows.Action;
 
 internal class FinalizedNotification : ActionObserver
 {
-    public override void AfterActionFinalize(IActionDelegateContext context)
+    public override async Task OnActionFinalizeAsync(IActionDelegateContext context, Func<Task> next)
     {
+        await next();
         var stateflowsContext = ((BaseContext)context).Context;
         if (
             stateflowsContext.ContextParentId != null &&

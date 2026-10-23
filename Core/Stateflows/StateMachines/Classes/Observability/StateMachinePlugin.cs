@@ -1,4 +1,5 @@
 using System;
+using System.Threading.Tasks;
 using Stateflows.Common;
 using Stateflows.StateMachines.Context.Interfaces;
 
@@ -6,82 +7,55 @@ namespace Stateflows.StateMachines
 {
     internal abstract class StateMachinePlugin : IStateMachinePlugin
     {
-        public virtual bool BeforeProcessEvent<TEvent>(IEventContext<TEvent> context)
-            => true;
+        public virtual Task<EventStatus> ProcessEventAsync<TEvent>(IEventContext<TEvent> context, Func<Task<EventStatus>> next)
+            => next();
 
-        public virtual void AfterProcessEvent<TEvent>(IEventContext<TEvent> context, EventStatus eventStatus)
-        { }
+        public virtual Task OnStateMachineInitializeAsync(IStateMachineInitializationContext context, bool implicitInitialization, Func<Task<bool>> next)
+            => next();
 
-        public virtual void BeforeStateMachineInitialize(IStateMachineInitializationContext context, bool implicitInitialization)
-        { }
+        public virtual Task OnStateMachineFinalizeAsync(IStateMachineActionContext context, Func<Task> next)
+            => next();
 
-        public virtual void AfterStateMachineInitialize(IStateMachineInitializationContext context, bool implicitInitialization, bool initialized)
-        { }
+        public virtual Task OnStateInitializeAsync(IStateActionContext context, Func<Task> next)
+            => next();
 
-        public virtual void BeforeStateMachineFinalize(IStateMachineActionContext context)
-        { }
+        public virtual Task OnStateFinalizeAsync(IStateActionContext context, Func<Task> next)
+            => next();
 
-        public virtual void AfterStateMachineFinalize(IStateMachineActionContext context)
-        { }
+        public virtual Task OnStateEntryAsync(IStateActionContext context, Func<Task> next)
+            => next();
 
-        public virtual void BeforeStateInitialize(IStateActionContext context)
-        { }
+        public virtual Task OnStateExitAsync(IStateActionContext context, Func<Task> next)
+            => next();
 
-        public virtual void AfterStateInitialize(IStateActionContext context)
-        { }
+        public virtual Task OnTransitionGuardAsync<TEvent>(ITransitionContext<TEvent> context, Func<Task<bool>> next)
+            => next();
 
-        public virtual void BeforeStateFinalize(IStateActionContext context)
-        { }
+        public virtual Task OnTransitionEffectAsync<TEvent>(ITransitionContext<TEvent> context, Func<Task> next)
+            => next();
 
-        public virtual void AfterStateFinalize(IStateActionContext context)
-        { }
+        public virtual Task<bool> OnStateMachineInitializationExceptionAsync(IStateMachineInitializationContext context, Exception exception)
+            => Task.FromResult(false);
 
-        public virtual void BeforeStateEntry(IStateActionContext context)
-        { }
+        public virtual Task<bool> OnStateMachineFinalizationExceptionAsync(IStateMachineActionContext context, Exception exception)
+            => Task.FromResult(false);
 
-        public virtual void AfterStateEntry(IStateActionContext context)
-        { }
+        public virtual Task<bool> OnTransitionGuardExceptionAsync<TEvent>(ITransitionContext<TEvent> context, Exception exception)
+            => Task.FromResult(false);
 
-        public virtual void BeforeStateExit(IStateActionContext context)
-        { }
+        public virtual Task<bool> OnTransitionEffectExceptionAsync<TEvent>(ITransitionContext<TEvent> context, Exception exception)
+            => Task.FromResult(false);
 
-        public virtual void AfterStateExit(IStateActionContext context)
-        { }
+        public virtual Task<bool> OnStateInitializationExceptionAsync(IStateActionContext context, Exception exception)
+            => Task.FromResult(false);
 
-        public virtual void BeforeTransitionGuard<TEvent>(ITransitionContext<TEvent> context)
-        { }
+        public virtual Task<bool> OnStateFinalizationExceptionAsync(IStateActionContext context, Exception exception)
+            => Task.FromResult(false);
 
-        public virtual void AfterTransitionGuard<TEvent>(ITransitionContext<TEvent> context, bool guardResult)
-        { }
+        public virtual Task<bool> OnStateEntryExceptionAsync(IStateActionContext context, Exception exception)
+            => Task.FromResult(false);
 
-        public virtual void BeforeTransitionEffect<TEvent>(ITransitionContext<TEvent> context)
-        { }
-
-        public virtual void AfterTransitionEffect<TEvent>(ITransitionContext<TEvent> context)
-        { }
-
-        public virtual bool OnStateMachineInitializationException(IStateMachineInitializationContext context, Exception exception)
-            => false;
-
-        public virtual bool OnStateMachineFinalizationException(IStateMachineActionContext context, Exception exception)
-            => false;
-
-        public virtual bool OnTransitionGuardException<TEvent>(ITransitionContext<TEvent> context, Exception exception)
-            => false;
-
-        public virtual bool OnTransitionEffectException<TEvent>(ITransitionContext<TEvent> context, Exception exception)
-            => false;
-
-        public virtual bool OnStateInitializationException(IStateActionContext context, Exception exception)
-            => false;
-
-        public virtual bool OnStateFinalizationException(IStateActionContext context, Exception exception)
-            => false;
-
-        public virtual bool OnStateEntryException(IStateActionContext context, Exception exception)
-            => false;
-
-        public virtual bool OnStateExitException(IStateActionContext context, Exception exception)
-            => false;
+        public virtual Task<bool> OnStateExitExceptionAsync(IStateActionContext context, Exception exception)
+            => Task.FromResult(false);
     }
 }

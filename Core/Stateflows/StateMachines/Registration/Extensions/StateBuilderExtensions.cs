@@ -1,3 +1,4 @@
+using System;
 using System.Threading.Tasks;
 using Stateflows.Common.Attributes;
 using Stateflows.Entities;
@@ -153,13 +154,14 @@ public static class StateBuilderExtensions
 
     private class SubscriptionsObserver<TProjectionTemplate>(string entityName, EntityScope scope) : StateMachineObserver
     {
-        public override void BeforeStateMachineInitialize(IStateMachineInitializationContext context, bool implicitInitialization)
+        public override async Task OnStateMachineInitializeAsync(IStateMachineInitializationContext context, bool implicitInitialization, Func<Task<bool>> next)
         {
             var behaviorId = GetBehaviorId(context, scope);
             if (behaviorId.HasValue)
             {
                 _ = context.Behavior.SubscribeAsync<TProjectionTemplate>(GetEntityId(behaviorId.Value, entityName));
             }
+            await next();
         }
     }
     

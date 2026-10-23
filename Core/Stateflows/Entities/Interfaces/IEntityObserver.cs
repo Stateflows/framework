@@ -7,6 +7,7 @@ namespace Stateflows.Entities
     /// Observes execution of entity mutations, computed fields, and projections.
     /// </summary>
     /// <remarks>
+    /// Global observers wrap local observers, in registration order within each group.
     /// Each hook must call and await its continuation exactly once, propagate its
     /// exception, and leave entity state and returned values unchanged.
     /// Continuation results are exposed for inspection, not replacement.

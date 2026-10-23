@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using System.Collections.Generic;
 using Microsoft.Extensions.DependencyInjection;
 using Stateflows.Common;
+using Stateflows.Common.Classes;
 using Stateflows.Common.Interfaces;
 using Stateflows.Activities.Registration;
 using Stateflows.Activities.Context.Classes;
@@ -42,7 +43,7 @@ namespace Stateflows.Activities.Engine
         {
             var result = EventStatus.Undelivered;
 
-            await using var serviceScope = provider.CreateAsyncScope();
+            await using var serviceScope = new StateflowsServiceScope(provider.CreateAsyncScope());
             var serviceProvider = serviceScope.ServiceProvider;
 
             var stateflowsContext = eventHolder.Headers.Values.Any(h => h is ForcedReset)
@@ -162,72 +163,53 @@ namespace Stateflows.Activities.Engine
 
             var eventContext = new EventContext<TEvent>(executor.Context, executor.NodeScope);
 
-            if (executor.Inspector.BeforeProcessEvent(eventContext))
+            return await executor.Inspector.ProcessEventAsync(eventContext, async () =>
             {
-                try
+                var noImplicitInitialization =
+                    eventHolder.PayloadType.GetCustomAttributes<NoImplicitInitializationAttribute>().Any() ||
+                    eventHolder.Headers.Values.Any(h => h is NoImplicitInitialization);
+
+                if (!executor.Initialized && !noImplicitInitialization)
                 {
-                    var noImplicitInitialization =
-                        eventHolder.PayloadType.GetCustomAttributes<NoImplicitInitializationAttribute>().Any() ||
-                        eventHolder.Headers.Values.Any(h => h is NoImplicitInitialization);
+                    result = await executor.InitializeAsync(
+                        eventHolder,
+                        eventHolder.Payload is TokensInputEvent tokensEvent
+                            ? tokensEvent.Tokens
+                            : null
+                    );
+                }
 
-                    if (!executor.Initialized && !noImplicitInitialization)
+                if (result != EventStatus.Initialized)
+                {
+                    var handlingResult = await TryHandleEventAsync(eventContext);
+
+                    if (executor.Initialized)
                     {
-                        result = await executor.InitializeAsync(
-                            eventHolder,
-                            eventHolder.Payload is TokensInputEvent tokensEvent
-                                ? tokensEvent.Tokens
-                                : null
-                        );
-                    }
-
-                    if (result != EventStatus.Initialized)
-                    {
-                        var handlingResult = await TryHandleEventAsync(eventContext);
-
-                        if (executor.Initialized)
+                        if (
+                            handlingResult != EventStatus.Consumed &&
+                            handlingResult != EventStatus.Rejected &&
+                            handlingResult != EventStatus.NotInitialized
+                        )
                         {
-                            if (
-                                handlingResult != EventStatus.Consumed &&
-                                handlingResult != EventStatus.Rejected &&
-                                handlingResult != EventStatus.NotInitialized
-                            )
-                            {
-                                result = await executor.ProcessAsync(eventHolder);
-                            }
-                            else
-                            {
-                                result = handlingResult;
-                            }
+                            result = await executor.ProcessAsync(eventHolder);
                         }
                         else
                         {
-                            result = result == EventStatus.NotInitialized
-                                ? EventStatus.NotInitialized
-                                : noImplicitInitialization
-                                    ? handlingResult
-                                    : EventStatus.Rejected;
+                            result = handlingResult;
                         }
                     }
-                }
-                finally
-                {
-                    if (result == EventStatus.Undelivered)
+                    else
                     {
-                        result = EventStatus.Failed;
+                        result = result == EventStatus.NotInitialized
+                            ? EventStatus.NotInitialized
+                            : noImplicitInitialization
+                                ? handlingResult
+                                : EventStatus.Rejected;
                     }
-
-                    await executor.Inspector.AfterProcessEventAsync(eventContext, result);
                 }
-            }
-            else
-            {
-                if (executor.Context.ForceConsumed)
-                {
-                    result = EventStatus.Consumed;
-                }
-            }
 
-            return result;
+                return result == EventStatus.Undelivered ? EventStatus.Failed : result;
+            });
         }
     }
 }

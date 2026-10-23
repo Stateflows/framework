@@ -1,3 +1,5 @@
+using System.Threading.Tasks;
+using System;
 using StateMachine.IntegrationTests.Utils;
 using Stateflows.Actions;
 using Stateflows.Actions.Context.Interfaces;
@@ -6,38 +8,54 @@ namespace Action.IntegrationTests.Tests
 {
     public class Observer : ActionObserver
     {
-        public override void BeforeActionInitialize(IActionDelegateContext context)
+        public override async Task OnActionInitializeAsync(IActionDelegateContext context, Func<Task> next)
         {
-            if (Finalization.InitializationCounter == 0)
+            Before(context);
+            await next();
+            After(context);
+
+            void Before(IActionDelegateContext context)
             {
-                Finalization.InitializationCounter++;   
+                if (Finalization.InitializationCounter == 0)
+                {
+                    Finalization.InitializationCounter++;
+                }
+            }
+
+            void After(IActionDelegateContext context)
+            {
+                if (Finalization.InitializationCounter == 1)
+                {
+                    Finalization.InitializationCounter++;
+                }
             }
         }
 
-        public override void AfterActionInitialize(IActionDelegateContext context)
+        public override async Task OnActionFinalizeAsync(IActionDelegateContext context, Func<Task> next)
         {
-            if (Finalization.InitializationCounter == 1)
+            Before(context);
+            await next();
+            After(context);
+
+            void Before(IActionDelegateContext context)
             {
-                Finalization.InitializationCounter++;
+                if (Finalization.FinalizationCounter == 0)
+                {
+                    Finalization.FinalizationCounter++;
+                }
             }
-        }
-        public override void BeforeActionFinalize(IActionDelegateContext context)
-        {
-            if (Finalization.FinalizationCounter == 0)
+
+            void After(IActionDelegateContext context)
             {
-                Finalization.FinalizationCounter++;   
+                if (Finalization.FinalizationCounter == 1)
+                {
+                    Finalization.FinalizationCounter++;
+                }
             }
         }
 
-        public override void AfterActionFinalize(IActionDelegateContext context)
-        {
-            if (Finalization.FinalizationCounter == 1)
-            {
-                Finalization.FinalizationCounter++;
-            }
-        }
     }
-    
+
     [TestClass]
     public class Finalization : StateflowsTestClass
     {
@@ -45,7 +63,7 @@ namespace Action.IntegrationTests.Tests
         public static bool Action2Executed = false;
         public static int InitializationCounter = 0;
         public static int FinalizationCounter = 0;
-        
+
         [TestInitialize]
         public override void Initialize()
             => base.Initialize();
@@ -62,14 +80,14 @@ namespace Action.IntegrationTests.Tests
                     .AddAction("finalization", async c =>
                     {
                         Action1Executed = true;
-                        
+
                         await Task.Delay(200);
-                        
+
                         if (c.CancellationToken.IsCancellationRequested)
                         {
                             return;
                         }
-                        
+
                         Action2Executed = true;
                     })
                 )
@@ -82,12 +100,12 @@ namespace Action.IntegrationTests.Tests
             if (ActionLocator.TryLocateAction(new ActionId("finalization", "x"), out var a))
             {
                 _ = a.ExecuteAsync();
-                
+
                 await Task.Delay(100);
-                
+
                 await a.FinalizeAsync();
             }
-            
+
             Assert.IsTrue(Action1Executed);
             Assert.IsFalse(Action2Executed);
             Assert.AreEqual(2, InitializationCounter);

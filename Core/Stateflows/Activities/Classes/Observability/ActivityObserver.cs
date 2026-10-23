@@ -1,37 +1,36 @@
-﻿using System.Threading.Tasks;
+﻿using System;
+using System.Threading.Tasks;
 using Stateflows.Activities.Context.Interfaces;
 
 namespace Stateflows.Activities
 {
     public abstract class ActivityObserver : IActivityObserver
     {
-        public virtual void BeforeActivityInitialize(IActivityInitializationContext context, bool implicitInitialization) {}
-        public virtual void AfterActivityInitialize(IActivityInitializationContext context, bool implicitInitialization, bool initialized) {}
+        public virtual Task OnActivityInitializeAsync(IActivityInitializationContext context, bool implicitInitialization, Func<Task<bool>> next)
+            => next();
 
-        public virtual void BeforeActivityFinalize(IActivityFinalizationContext context) {}
-        public virtual void AfterActivityFinalize(IActivityFinalizationContext context) {}
+        public virtual Task OnActivityFinalizeAsync(IActivityFinalizationContext context, Func<Task> next)
+            => next();
 
-        public virtual void BeforeNodeInitialize(IActivityNodeContext context) {}
-        public virtual void AfterNodeInitialize(IActivityNodeContext context) {}
+        public virtual Task OnNodeInitializeAsync(IActivityNodeContext context, Func<Task> next)
+            => next();
 
-        public virtual void BeforeNodeFinalize(IActivityNodeContext context) {}
-        public virtual void AfterNodeFinalize(IActivityNodeContext context) {}
+        public virtual Task OnNodeFinalizeAsync(IActivityNodeContext context, Func<Task> next)
+            => next();
 
-        public virtual void BeforeNodeActivate(IActivityNodeContext context, bool activated) {}
-        public virtual void AfterNodeActivate(IActivityNodeContext context) {}
+        public virtual Task OnNodeActivateAsync(IActivityNodeContext context, bool activated, Func<Task> next)
+            => next();
 
-        public virtual void BeforeNodeExecute(IActivityNodeContext context) {}
-        public virtual void AfterNodeExecute(IActivityNodeContext context) {}
+        public virtual Task OnNodeExecuteAsync(IActivityNodeContext context, Func<Task> next)
+            => next();
 
-        public virtual void BeforeFlowActivate(IActivityBeforeFlowContext context) {}
-        public virtual void AfterFlowActivate(IActivityAfterFlowContext context, bool activated) {}
+        public virtual Task OnFlowActivateAsync(IActivityBeforeFlowContext context, Func<Task<IActivityAfterFlowContext>> next)
+            => next();
 
-        public virtual void BeforeFlowGuard<TToken>(IGuardContext<TToken> context) {}
+        public virtual Task OnFlowGuardAsync<TToken>(IGuardContext<TToken> context, Func<Task<bool>> next)
+            => next();
 
-        public virtual void AfterFlowGuard<TToken>(IGuardContext<TToken> context, bool guardResult) {}
-
-        public virtual void BeforeFlowTransform<TToken, TTransformedToken>(ITransformationContext<TToken> context) {}
-        
-        public virtual void AfterFlowTransform<TToken, TTransformedToken>(ITransformationContext<TToken, TTransformedToken> context) {}
+        public virtual Task OnFlowTransformAsync<TToken, TTransformedToken>(ITransformationContext<TToken> context, Func<Task<TTransformedToken>> next)
+            => next();
     }
 }

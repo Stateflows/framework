@@ -1,21 +1,32 @@
-﻿using Stateflows.Common;
+﻿using System;
+using System.Threading.Tasks;
+using Stateflows.Common;
 using Stateflows.StateMachines.Context.Interfaces;
 
 namespace Stateflows.StateMachines;
 
 internal class CompletionNotification : StateMachineInterceptor
 {
-    public override void AfterProcessEvent<TEvent>(IEventContext<TEvent> context, EventStatus eventStatus)
+    public override async Task<EventStatus> ProcessEventAsync<TEvent>(IEventContext<TEvent> context, Func<Task<EventStatus>> next)
     {
-        var stateflowsContext = ((IRootContext)context).Context.Context;
-        if (
-            stateflowsContext.ContextParentId != null &&
-            stateflowsContext.ContextParentId.Value.Type == BehaviorType.StateMachine &&
-            eventStatus is EventStatus.Consumed or EventStatus.Initialized
-        )
+        var status = EventStatus.Failed;
+        try
         {
-            context.Behavior.Send(new Completion());
+            return status = await next();
         }
+        finally
+        {
+            var stateflowsContext = ((IRootContext)context).Context.Context;
+            if (
+                stateflowsContext.ContextParentId != null &&
+                stateflowsContext.ContextParentId.Value.Type == BehaviorType.StateMachine &&
+                status is EventStatus.Consumed or EventStatus.Initialized
+            )
+            {
+                context.Behavior.Send(new Completion());
+            }
+        }
+
     }
 }
 

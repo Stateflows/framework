@@ -21,14 +21,16 @@ namespace Stateflows.StateMachines.Engine
 
         private RootContext Context { get; set; }
 
-        public override void AfterStateEntry(IStateActionContext context)
+        public override async Task OnStateEntryAsync(IStateActionContext context, Func<Task> next)
         {
+            await next();
             var vertex = (context as StateActionContext).Vertex;
             EnteredStates.Add(vertex);
         }
 
-        public override void AfterStateExit(IStateActionContext context)
+        public override async Task OnStateExitAsync(IStateActionContext context, Func<Task> next)
         {
+            await next();
             var vertex = (context as StateActionContext).Vertex;
             var stateValues = Context.GetStateValues(vertex.Name);
 
@@ -41,96 +43,111 @@ namespace Stateflows.StateMachines.Engine
             StartupEventIdsToClear.AddRange(startupEventIds);
         }
 
-        public override bool BeforeProcessEvent<TEvent>(IEventContext<TEvent> context)
+        public override async Task<EventStatus> ProcessEventAsync<TEvent>(IEventContext<TEvent> context, Func<Task<EventStatus>> next)
         {
-            var result = true;
+            if (!Before(context)) return EventStatus.Undelivered;
 
-            Context = (context as BaseContext).Context;
-
-            if (context.Event is Reset)
+            var status = EventStatus.Failed;
+            try
             {
-                Context.Context.PendingTimeEvents.Clear();
+                return status = await next();
+            }
+            finally
+            {
+                After(context, status);
             }
 
-            if (context.Event is TimeEvent timeEvent)
+            bool Before(IEventContext<TEvent> context)
             {
-                result = Context.Context.PendingTimeEvents.ContainsKey(timeEvent.Id);
-            }
+                var result = true;
 
-            return result;
-        }
+                Context = (context as BaseContext).Context;
 
-        public override void AfterProcessEvent<TEvent>(IEventContext<TEvent> context, EventStatus eventStatus)
-        {
-            // fallback: removing time events removed from structure, but still scheduled
-            if (ConsumedInTransition == null)
-            {
+                if (context.Event is Reset)
+                {
+                    Context.Context.PendingTimeEvents.Clear();
+                }
+
                 if (context.Event is TimeEvent timeEvent)
                 {
-                    TimeEventIdsToClear.Add(timeEvent.Id);
+                    result = Context.Context.PendingTimeEvents.ContainsKey(timeEvent.Id);
                 }
 
-                if (context.Event is Startup startup)
+                return result;
+            }
+
+            void After(IEventContext<TEvent> context, EventStatus eventStatus)
+            {
+                // fallback: removing time events removed from structure, but still scheduled
+                if (ConsumedInTransition == null)
                 {
-                    StartupEventIdsToClear.Add(startup.Id);
+                    if (context.Event is TimeEvent timeEvent)
+                    {
+                        TimeEventIdsToClear.Add(timeEvent.Id);
+                    }
+
+                    if (context.Event is Startup startup)
+                    {
+                        StartupEventIdsToClear.Add(startup.Id);
+                    }
                 }
+
+                ClearTimeEvents(TimeEventIdsToClear);
+                ClearStartupEvents(StartupEventIdsToClear);
+
+                if (
+                    ConsumedInTransition != null &&
+                    Context.TryGetStateValues(ConsumedInTransition.Source.Name, out var stateValues) &&
+                    stateValues.TimeEventIds.TryGetValue(ConsumedInTransition.Identifier, out var timeEventId)
+                )
+                {
+                    ClearTimeEvent(timeEventId);
+
+                    stateValues.TimeEventIds.Remove(ConsumedInTransition.Identifier);
+                }
+
+                var currentStack = ((BaseContext)context).Context.Executor.VerticesTree.GetAllNodes().Select(node => node.Value).ToArray();
+
+                var enteredStack = currentStack
+                    .Where(vertex => EnteredStates.Contains(vertex))
+                    .ToArray();
+
+                RegisterTimeEvents(enteredStack);
+                // fallback: registering startup events in whole stack, not only entered part
+                // because some Startup events may be newly added to the structure
+                RegisterStartupEvents(currentStack);
+
+                if (
+                    context.Event.GetType().IsSubclassOf(typeof(RecurringEvent)) &&
+                    ConsumedInTransition != null &&
+                    currentStack.Contains(ConsumedInTransition.Source) &&
+                    !enteredStack.Contains(ConsumedInTransition.Source)
+                )
+                {
+                    RegisterTimeEvent(ConsumedInTransition);
+                }
+
+                // fallback: registering recurring events newly added to the structure
+                // non-recurring time events are not registered here
+                RegisterRecurringTimeEvents(currentStack);
+
+                if (Context.Context.PendingTimeEvents.Any())
+                {
+                    Context.Context.TriggerTime = Context.Context.PendingTimeEvents.Values
+                        .OrderBy(timeEvent => timeEvent.TriggerTime)
+                        .First()
+                        .TriggerTime;
+                }
+                else
+                {
+                    Context.Context.TriggerTime = null;
+                }
+
+                Context.Context.TriggerOnStartup = Context.Context.PendingStartupEvents.Any();
             }
-
-            ClearTimeEvents(TimeEventIdsToClear);
-            ClearStartupEvents(StartupEventIdsToClear);
-
-            if (
-                ConsumedInTransition != null && 
-                Context.TryGetStateValues(ConsumedInTransition.Source.Name, out var stateValues) &&
-                stateValues.TimeEventIds.TryGetValue(ConsumedInTransition.Identifier, out var timeEventId)
-            )
-            {
-                ClearTimeEvent(timeEventId);
-
-                stateValues.TimeEventIds.Remove(ConsumedInTransition.Identifier);
-            }
-
-            var currentStack = ((BaseContext)context).Context.Executor.VerticesTree.GetAllNodes().Select(node => node.Value).ToArray();
-
-            var enteredStack = currentStack
-                .Where(vertex => EnteredStates.Contains(vertex))
-                .ToArray();
-
-            RegisterTimeEvents(enteredStack);
-            // fallback: registering startup events in whole stack, not only entered part
-            // because some Startup events may be newly added to the structure
-            RegisterStartupEvents(currentStack);
-
-            if (
-                context.Event.GetType().IsSubclassOf(typeof(RecurringEvent)) &&
-                ConsumedInTransition != null &&
-                currentStack.Contains(ConsumedInTransition.Source) &&
-                !enteredStack.Contains(ConsumedInTransition.Source)
-            )
-            {
-                RegisterTimeEvent(ConsumedInTransition);
-            }
-
-            // fallback: registering recurring events newly added to the structure
-            // non-recurring time events are not registered here
-            RegisterRecurringTimeEvents(currentStack);
-
-            if (Context.Context.PendingTimeEvents.Any())
-            {
-                Context.Context.TriggerTime = Context.Context.PendingTimeEvents.Values
-                    .OrderBy(timeEvent => timeEvent.TriggerTime)
-                    .First()
-                    .TriggerTime;
-            }
-            else
-            {
-                Context.Context.TriggerTime = null;
-            }
-
-            Context.Context.TriggerOnStartup = Context.Context.PendingStartupEvents.Any();
         }
 
-        public override void BeforeTransitionGuard<TEvent>(ITransitionContext<TEvent> context)
+        public override async Task OnTransitionGuardAsync<TEvent>(ITransitionContext<TEvent> context, Func<Task<bool>> next)
         {
             if (
                 ConsumedInTransition == null &&
@@ -139,6 +156,7 @@ namespace Stateflows.StateMachines.Engine
             {
                 ConsumedInTransition = (context as IEdgeContext).Edge;
             }
+            await next();
         }
 
         private void RegisterStartupEvent(Edge edge)

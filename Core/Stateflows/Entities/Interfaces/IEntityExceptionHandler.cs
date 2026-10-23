@@ -13,6 +13,9 @@ namespace Stateflows.Entities
     /// and is rolled back. The original exception remains available to observers and
     /// in the execution result. Failures during initialization also invoke the
     /// initialization hook, in addition to the failing operation's hook.
+    /// A true result acknowledges the exception. IDE break-on-thrown settings control
+    /// debugger stops independently of acknowledgement; a stop at the original throw
+    /// occurs before these handlers run.
     /// </remarks>
     public interface IEntityExceptionHandler
     {

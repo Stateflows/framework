@@ -12,87 +12,102 @@ namespace Stateflows.Activities.Engine
 {
     internal class Notifications(IStateflowsValueStorage valueStorage) : ActivityPlugin
     {
-        public override void AfterProcessEvent<TEvent>(IEventContext<TEvent> context, EventStatus eventStatus)
+        public override async Task<EventStatus> ProcessEventAsync<TEvent>(IEventContext<TEvent> context, Func<Task<EventStatus>> next)
         {
-            var executor = context.Behavior.GetExecutor();
-            if (!executor.StateHasChanged) return;
-            var notification = new ActivityInfo()
+            var status = EventStatus.Failed;
+            try
             {
-                Id = executor.Context.Id,
-                BehaviorStatus = executor.BehaviorStatus,
-                ActiveNodes = executor.GetNodesTree(),
-                ExpectedEvents = executor.GetExpectedEventNames(),
-            };
+                return status = await next();
+            }
+            finally
+            {
+                After(context, status);
+            }
 
-            context.Behavior.Publish(notification);
-            context.Behavior.Publish<BehaviorInfo>(notification);
-            
-            foreach (var flowIdentifier in executor.Context.ActivatedFlows)
+            void After(IEventContext<TEvent> context, EventStatus eventStatus)
             {
-                executor.Context.FlowTokensCount.Remove(flowIdentifier);
+                var executor = context.Behavior.GetExecutor();
+                if (!executor.StateHasChanged) return;
+                var notification = new ActivityInfo()
+                {
+                    Id = executor.Context.Id,
+                    BehaviorStatus = executor.BehaviorStatus,
+                    ActiveNodes = executor.GetNodesTree(),
+                    ExpectedEvents = executor.GetExpectedEventNames(),
+                };
+
+                context.Behavior.Publish(notification);
+                context.Behavior.Publish<BehaviorInfo>(notification);
+
+                foreach (var flowIdentifier in executor.Context.ActivatedFlows)
+                {
+                    executor.Context.FlowTokensCount.Remove(flowIdentifier);
+                }
             }
         }
 
-        public override bool OnNodeExecutionException(IActivityNodeContext context, Exception exception)
+        public override Task<bool> OnNodeExecutionExceptionAsync(IActivityNodeContext context, Exception exception)
         {
             Trace.WriteLine($"⦗→s⦘ Activity '{context.Behavior.Id.Name}:{context.Behavior.Id.Instance}': unhandled exception '{exception.GetType().Name}' on execution of node {context.Node.Name} - {exception}");
 
-            return false;
+            return Task.FromResult(false);
         }
 
-        public override bool OnActivityInitializationException(IActivityInitializationContext context, Exception exception)
+        public override Task<bool> OnActivityInitializationExceptionAsync(IActivityInitializationContext context, Exception exception)
         {            
             Trace.WriteLine($"⦗→s⦘ Activity '{context.Behavior.Id.Name}:{context.Behavior.Id.Instance}': unhandled exception '{exception.GetType().Name}' on Activity initialization - {exception}");
 
-            return false;
+            return Task.FromResult(false);
         }
 
-        public override bool OnActivityFinalizationException(IActivityFinalizationContext context, Exception exception)
+        public override Task<bool> OnActivityFinalizationExceptionAsync(IActivityFinalizationContext context, Exception exception)
         {            
             Trace.WriteLine($"⦗→s⦘ Activity '{context.Behavior.Id.Name}:{context.Behavior.Id.Instance}': unhandled exception '{exception.GetType().Name}' on Activity finalization - {exception}");
 
-            return false;
+            return Task.FromResult(false);
         }
 
-        public override bool OnNodeInitializationException(IActivityNodeContext context, Exception exception)
+        public override Task<bool> OnNodeInitializationExceptionAsync(IActivityNodeContext context, Exception exception)
         {            
             Trace.WriteLine($"⦗→s⦘ Activity '{context.Behavior.Id.Name}:{context.Behavior.Id.Instance}': unhandled exception '{exception.GetType().Name}' on initialization of node {context.Node.Name} - {exception}");
 
-            return false;
+            return Task.FromResult(false);
         }
 
-        public override bool OnNodeFinalizationException(IActivityNodeContext context, Exception exception)
+        public override Task<bool> OnNodeFinalizationExceptionAsync(IActivityNodeContext context, Exception exception)
         {            
             Trace.WriteLine($"⦗→s⦘ Activity '{context.Behavior.Id.Name}:{context.Behavior.Id.Instance}': unhandled exception '{exception.GetType().Name}' on finalization of node {context.Node.Name} - {exception}");
 
-            return false;
+            return Task.FromResult(false);
         }
 
-        public override bool OnFlowGuardException<TToken>(IGuardContext<TToken> context, Exception exception)
+        public override Task<bool> OnFlowGuardExceptionAsync<TToken>(IGuardContext<TToken> context, Exception exception)
         {            
             Trace.WriteLine($"⦗→s⦘ Activity '{context.Behavior.Id.Name}:{context.Behavior.Id.Instance}': unhandled exception '{exception.GetType().Name}' on guard of flow from node {context.SourceNode.Name} - {exception}");
 
-            return false;
+            return Task.FromResult(false);
         }
 
-        public override bool OnFlowTransformationException<TToken, TTransformedToken>(ITransformationContext<TToken> context, Exception exception)
+        public override Task<bool> OnFlowTransformationExceptionAsync<TToken, TTransformedToken>(ITransformationContext<TToken> context, Exception exception)
         {
             Trace.WriteLine($"⦗→s⦘ Activity '{context.Behavior.Id.Name}:{context.Behavior.Id.Instance}': unhandled exception '{exception.GetType().Name}' on transformation of flow from node {context.SourceNode.Name} - {exception}");
 
-            return false;
+            return Task.FromResult(false);
         }
 
-        public override void AfterActivityInitialize(IActivityInitializationContext context, bool implicitInitialization, bool initialized)
+        public override async Task OnActivityInitializeAsync(IActivityInitializationContext context, bool implicitInitialization, Func<Task<bool>> next)
         {
-            Trace.WriteLine($"⦗→s⦘ Activity '{context.Behavior.Id.Name}:{context.Behavior.Id.Instance}': {(initialized ? "" : "not ")}initialized{(implicitInitialization ? " implicitly" : "")}");
+            var result = await next();
+            Trace.WriteLine($"⦗→s⦘ Activity '{context.Behavior.Id.Name}:{context.Behavior.Id.Instance}': {(result ? "" : "not ")}initialized{(implicitInitialization ? " implicitly" : "")}");
         }
 
-        public override void AfterActivityFinalize(IActivityFinalizationContext context)
+        public override async Task OnActivityFinalizeAsync(IActivityFinalizationContext context, Func<Task> next)
         {
+            await next();
             Trace.WriteLine($"⦗→s⦘ Activity '{context.Behavior.Id.Name}:{context.Behavior.Id.Instance}': finalized");
-            
+
             var stateflowsContext = ((BaseContext)context).Context.Context;
-            
+
             context.Behavior.GetExecutor().AddPendingTask(valueStorage.RemoveAsync(stateflowsContext.Id, CommonValues.ForceFinalizeKey));
         }
     }

@@ -221,13 +221,21 @@ namespace Stateflows.Activities.Models
                 .Select(e => e.Target)
                 .Where(n => n.Type == NodeType.ExceptionHandler);
 
+        public Node? FindExceptionHandler(Exception exception)
+        {
+            var exceptionType = exception.GetType();
+            var handlers = ExceptionHandlers.Where(node => node.ExceptionType.IsAssignableFrom(exceptionType));
+            return handlers.FirstOrDefault(node => node.ExceptionType == exceptionType) ?? handlers.FirstOrDefault();
+        }
+
         public async Task<bool> HandleExceptionAsync(Exception exception, BaseContext context)
         {
+            context.Context.Context.ExecutionExceptions.Enqueue(exception);
             Node handler = null;
             var currentNode = this;
             while (currentNode != null)
             {
-                handler = currentNode.ExceptionHandlers.FirstOrDefault(n => exception.GetType().IsAssignableFrom(n.ExceptionType));
+                handler = currentNode.FindExceptionHandler(exception);
 
                 if (handler != null)
                 {

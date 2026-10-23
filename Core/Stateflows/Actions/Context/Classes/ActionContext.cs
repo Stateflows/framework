@@ -82,7 +82,7 @@ namespace Stateflows.Actions.Context.Classes
         BehaviorId IOwnerBehaviorContext.Id => Context.ContextOwnerId!.Value;
 
         private void PublishRange<TNotification>(BehaviorId behaviorId, IEnumerable<TNotification> notifications, IDictionary<string, EventHeader>? headers = null)
-            => RootContext.Executor.PendingTasks.Add(Subscriber.PublishRangeAsync(behaviorId, notifications, Context, headers));
+            => RootContext.Executor.AddPendingTask(Subscriber.PublishRangeAsync(behaviorId, notifications, Context, headers));
 
         void IPublishes<IBehaviorContext>.PublishRange<TNotification>(IEnumerable<TNotification> notifications, IDictionary<string, EventHeader>? headers)
             => PublishRange(Context.Id, notifications, headers);

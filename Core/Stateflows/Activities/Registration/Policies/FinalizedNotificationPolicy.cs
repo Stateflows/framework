@@ -1,12 +1,15 @@
-﻿using Stateflows.Activities.Context.Interfaces;
+﻿using System;
+using System.Threading.Tasks;
+using Stateflows.Activities.Context.Interfaces;
 using Stateflows.StateMachines;
 
 namespace Stateflows.Activities;
 
 internal class FinalizedNotification : ActivityObserver
 {
-    public override void AfterActivityFinalize(IActivityFinalizationContext context)
+    public override async Task OnActivityFinalizeAsync(IActivityFinalizationContext context, Func<Task> next)
     {
+        await next();
         if (context.TryGetParentBehaviorContext(out var parentBehaviorContext))
         {
             parentBehaviorContext.Send(new DoActivityFinalized());

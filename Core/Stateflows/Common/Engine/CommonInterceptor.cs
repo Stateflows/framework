@@ -1,4 +1,5 @@
-﻿using System.Linq;
+﻿using System;
+using System.Linq;
 using System.Collections.Generic;
 using System.Reflection;
 using System.Threading.Tasks;
@@ -15,11 +16,9 @@ namespace Stateflows.Common.Engine
         IEnumerable<IStateflowsTenantInterceptor> tenantInterceptors,
         ILogger<CommonInterceptor> logger) : IStateflowsInterceptor
     {
-        public void AfterProcessEvent<TEvent>(IEventContext<TEvent> context, EventStatus eventStatus)
-            => interceptors.RunSafe(i => i.AfterProcessEvent(context, eventStatus), nameof(AfterProcessEvent), logger);
-        
-        public bool BeforeProcessEvent<TEvent>(IEventContext<TEvent> context)
-            => interceptors.RunSafe(i => i.BeforeProcessEvent(context), nameof(BeforeProcessEvent), logger);
+        public Task<EventStatus> ProcessEventAsync<TEvent>(IEventContext<TEvent> context, Func<Task<EventStatus>> next)
+            => InterceptorPipeline.RunAsync(interceptors.ToArray(), next,
+                (interceptor, inner) => interceptor.ProcessEventAsync(context, inner));
         
         public bool BeforeExecute(BehaviorId id, EventHolder eventHolder)
         {

@@ -6,7 +6,6 @@ using Stateflows.Common;
 using Stateflows.Common.Models;
 using Stateflows.Common.Classes;
 using Stateflows.Common.Utilities;
-using Stateflows.Common.Exceptions;
 using Stateflows.Common.Registration;
 using Stateflows.Common.Registration.Builders;
 using Stateflows.Activities.Models;
@@ -92,29 +91,7 @@ namespace Stateflows.Activities.Registration.Builders
                     (c as ActivityInitializationContext)?.InputTokens
                 );
 
-                try
-                {
-                    result = await actionAsync(context);
-                }
-                catch (Exception e)
-                {
-                    if (e is StateflowsDefinitionException)
-                    {
-                        throw;
-                    }
-                    else
-                    {
-                        Trace.WriteLine($"⦗→s⦘ Activity '{c.Context.Id.Name}:{c.Context.Id.Instance}': exception '{e.GetType().FullName}' thrown with message '{e.Message}'");
-                        if (!c.Context.Executor.Inspector.OnActivityInitializationException(context, context.InitializationEventHolder, e))
-                        {
-                            throw;
-                        }
-                        else
-                        {
-                            throw new BehaviorExecutionException(e);
-                        }
-                    }
-                }
+                result = await actionAsync(context);
 
                 return result;
             });

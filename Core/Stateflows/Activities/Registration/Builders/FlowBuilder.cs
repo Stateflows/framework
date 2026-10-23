@@ -47,13 +47,8 @@ namespace Stateflows.Activities.Registration.Builders
                     
                     try
                     {
-                        inspector.BeforeFlowGuard(flowContext);
-
-                        var result = await guardAsync(flowContext)
-                            ? tokenHolder
-                            : default;
-
-                        inspector.AfterFlowGuard(flowContext, result != default);
+                        var passed = await inspector.OnFlowGuardAsync(flowContext, () => guardAsync(flowContext));
+                        var result = passed ? tokenHolder : default;
                         
                         return result;
                     }
@@ -68,13 +63,9 @@ namespace Stateflows.Activities.Registration.Builders
                             Trace.WriteLine($"⦗→s⦘ Activity '{context.Context.Id.Name}:{context.Context.Id.Instance}': exception '{e.GetType().FullName}' thrown with message '{e.Message}'");
                             if (!(Edge.Source != null && await Edge.Source.HandleExceptionAsync(e, context)))
                             {
-                                inspector.OnFlowGuardException(flowContext, e);
-                                throw;
+                                await inspector.OnFlowGuardExceptionAsync(flowContext, e);
                             }
-                            else
-                            {
-                                throw new BehaviorExecutionException(e);
-                            }
+                            throw;
                         }
                     }
                 });
@@ -99,12 +90,9 @@ namespace Stateflows.Activities.Registration.Builders
                 
                 try
                 {
-                    inspector.BeforeFlowTransform<TToken, TTransformedToken>(flowContext);
-                        
-                    var transformedToken = (await transformationAsync(flowContext))
-                        .ToTokenHolder();
-                    
-                    inspector.AfterFlowTransform(new TokenFlowContext<TToken, TTransformedToken>(context, token, transformedToken.Payload));
+                    var transformed = await inspector.OnFlowTransformAsync<TToken, TTransformedToken>(
+                        flowContext, () => transformationAsync(flowContext));
+                    var transformedToken = transformed.ToTokenHolder();
 
                     return transformedToken;
                 }
@@ -119,13 +107,9 @@ namespace Stateflows.Activities.Registration.Builders
                         Trace.WriteLine($"⦗→s⦘ Activity '{context.Context.Id.Name}:{context.Context.Id.Instance}': exception '{e.GetType().FullName}' thrown with message '{e.Message}'");
                         if (!(Edge.Source != null && await Edge.Source.HandleExceptionAsync(e, context)))
                         {
-                            inspector.OnFlowTransformationException<TToken, TTransformedToken>(flowContext, e);
-                            throw;
+                            await inspector.OnFlowTransformationExceptionAsync<TToken, TTransformedToken>(flowContext, e);
                         }
-                        else
-                        {
-                            throw new BehaviorExecutionException(e);
-                        }
+                        throw;
                     }
                 }
             });

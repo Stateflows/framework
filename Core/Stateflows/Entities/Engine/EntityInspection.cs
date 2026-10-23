@@ -1,14 +1,12 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Runtime.ExceptionServices;
-using System.Threading;
-using Volatile = System.Threading.Volatile;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Stateflows.Common;
 using Stateflows.Common.Context.Classes;
+using Stateflows.Common.Engine;
 using Stateflows.Entities.Context.Classes;
 using Stateflows.Entities.Enums;
 using Stateflows.Entities.Registration;
@@ -105,15 +103,8 @@ namespace Stateflows.Entities.Engine
             }
 
             var context = new EntityEventContext<TEvent>(actionContext, eventHolder);
-            var pipeline = next;
-            for (var i = interceptors.Length - 1; i >= 0; i--)
-            {
-                var interceptor = interceptors[i];
-                var inner = pipeline;
-                pipeline = () => InterceptAsync(interceptor, context, inner);
-            }
-
-            return pipeline();
+            return InterceptorPipeline.RunAsync(interceptors, next,
+                (interceptor, inner) => interceptor.ProcessEventAsync(context, inner));
         }
 
         /// <summary>Runs a mutation through registered observers (exactly-once continuation enforced).</summary>
@@ -187,32 +178,17 @@ namespace Stateflows.Entities.Engine
             Func<IEntityExceptionHandler, Exception, Task<bool>> handle,
             string methodName)
         {
-            if (exceptionHandlers.Length == 0)
-            {
-                return await next();
-            }
-
             try
             {
                 return await next();
             }
             catch (Exception exception)
             {
-                var handled = false;
                 var logger = actionContext.BehaviorContext.ServiceProvider.GetRequiredService<ILogger<EntityInspection>>();
-                foreach (var handler in exceptionHandlers)
-                {
-                    try
-                    {
-                        handled |= await handle(handler, exception);
-                    }
-                    catch (Exception handlerException)
-                    {
-                        actionContext.BehaviorContext.Context.ExecutionExceptions.Enqueue(handlerException);
-                        logger.LogError(handlerException, "Entity exception handler {HandlerType}.{Method} failed for {BehaviorId}.",
-                            handler.GetType().FullName, methodName, actionContext.Behavior.Id);
-                    }
-                }
+                var handled = await ExecutionExceptionHandling.HandleAsync(
+                    actionContext.BehaviorContext.Context, exceptionHandlers,
+                    handler => handle(handler, exception), methodName, logger);
+                actionContext.BehaviorContext.Context.ExecutionExceptions.Enqueue(exception);
 
                 logger.LogDebug("Entity exception in {Method} for {BehaviorId}; handled: {Handled}. Execution will be rolled back.",
                     methodName, actionContext.Behavior.Id, handled);
@@ -221,168 +197,11 @@ namespace Stateflows.Entities.Engine
         }
 
         /// <remarks>
-        /// Interceptors may call the continuation at most once and must await it before returning.
-        /// Skipping it (short-circuit) is allowed; exceptions handled by the interceptor stay handled.
-        /// </remarks>
-        private static async Task<EventStatus> InterceptAsync<TEvent>(
-            IEntityInterceptor interceptor,
-            EntityEventContext<TEvent> context,
-            Func<Task<EventStatus>> next)
-        {
-            var continuation = new Continuation<EventStatus>(next, interceptor, "Interceptor");
-
-            EventStatus status;
-            try
-            {
-                status = await interceptor.ProcessEventAsync(context, continuation.InvokeAsync);
-            }
-            catch
-            {
-                await continuation.DrainAsync();
-                throw;
-            }
-
-            await continuation.VerifyAsync(required: false);
-
-            return status;
-        }
-
-        /// <remarks>
         /// Observers must call and await the continuation exactly once. Violations raise
         /// <see cref="InvalidOperationException"/>; a continuation failure swallowed by an observer
         /// is rethrown with its original stack trace, and its result is never replaced.
         /// </remarks>
         private Task<TResult> Observe<TResult>(Func<Task<TResult>> next, Func<IEntityObserver, Func<Task<TResult>>, Task> observe)
-        {
-            var pipeline = next;
-            for (var i = observers.Length - 1; i >= 0; i--)
-            {
-                var observer = observers[i];
-                var inner = pipeline;
-                pipeline = async () =>
-                {
-                    var continuation = new Continuation<TResult>(inner, observer, "Observer");
-
-                    try
-                    {
-                        await observe(observer, continuation.InvokeAsync);
-                    }
-                    catch
-                    {
-                        await continuation.DrainAsync();
-                        throw;
-                    }
-
-                    await continuation.VerifyAsync(required: true);
-                    continuation.RethrowSwallowedFailure();
-
-                    return continuation.Result;
-                };
-            }
-
-            return pipeline();
-        }
-
-        private sealed class Continuation<TResult>(Func<Task<TResult>> next, object owner, string ownerKind)
-        {
-            private int invocationCount;
-
-            private Task<TResult>? inFlight;
-
-            private bool invokedMoreThanOnce => Volatile.Read(ref invocationCount) > 1;
-
-            private ExceptionDispatchInfo? failure;
-
-            public TResult Result { get; private set; } = default!;
-
-            private string OwnerDescription => $"{ownerKind} '{owner.GetType().FullName}'";
-
-            public Task<TResult> InvokeAsync()
-            {
-                // Counted before execution so re-entrant or concurrent calls are rejected deterministically.
-                if (Interlocked.Increment(ref invocationCount) != 1)
-                {
-                    throw new InvalidOperationException($"{OwnerDescription} invoked its continuation more than once.");
-                }
-
-                var task = RunAsync();
-                Volatile.Write(ref inFlight, task);
-
-                return task;
-            }
-
-            private async Task<TResult> RunAsync()
-            {
-                try
-                {
-                    return Result = await next();
-                }
-                catch (Exception exception)
-                {
-                    failure = ExceptionDispatchInfo.Capture(exception);
-                    throw;
-                }
-            }
-
-            public async Task DrainAsync()
-            {
-                var task = Volatile.Read(ref inFlight);
-                if (task != null && !task.IsCompleted)
-                {
-                    try
-                    {
-                        await task;
-                    }
-                    catch
-                    {
-                        // Failure is either already propagating through the hook or captured in 'failure'.
-                    }
-                }
-            }
-
-            public async Task VerifyAsync(bool required)
-            {
-                if (invokedMoreThanOnce)
-                {
-                    await DrainAsync();
-                    throw new InvalidOperationException($"{OwnerDescription} invoked its continuation more than once.");
-                }
-
-                if (Volatile.Read(ref invocationCount) == 0)
-                {
-                    if (required)
-                    {
-                        throw new InvalidOperationException($"{OwnerDescription} completed without invoking its continuation.");
-                    }
-
-                    return;
-                }
-
-                var task = Volatile.Read(ref inFlight);
-                if (task == null || !task.IsCompleted)
-                {
-                    Exception? innerException = null;
-                    try
-                    {
-                        if (task != null)
-                        {
-                            await task;
-                        }
-                    }
-                    catch (Exception exception)
-                    {
-                        innerException = exception;
-                    }
-
-                    throw new InvalidOperationException(
-                        $"{OwnerDescription} completed before its continuation finished; the continuation must be awaited.",
-                        innerException
-                    );
-                }
-            }
-
-            public void RethrowSwallowedFailure()
-                => failure?.Throw();
-        }
+            => ObserverPipeline.RunAsync(observers, next, observe);
     }
 }

@@ -1,3 +1,4 @@
+using Microsoft.Extensions.DependencyInjection;
 using System;
 using System.Linq;
 using System.Threading.Tasks;
@@ -20,7 +21,7 @@ namespace Stateflows.Entities.Engine
     {
         public string[] BehaviorTypes => [BehaviorType.Entity];
 
-        // [DebuggerHidden]
+        [DebuggerHidden]
         public Task<EventStatus> ProcessEventAsync<TEvent>(BehaviorId id, EventHolder<TEvent> eventHolder, List<Exception> exceptions)
             => ContextExecution.RunAsync(storage, id, exceptions, async execution =>
             {
@@ -53,34 +54,49 @@ namespace Stateflows.Entities.Engine
                     eventHolder.PayloadType.GetCustomAttributes<NoImplicitInitializationAttribute>().Any() ||
                     eventHolder.Headers.Values.Any(h => h is NoImplicitInitialization);
 
-                var result = await inspection.ProcessEventAsync(eventHolder, async () =>
+                var commonInterceptor = serviceProvider.GetRequiredService<CommonInterceptor>();
+                using var commonEventContext = new EventContext<TEvent>(stateflowsContext, serviceProvider, eventHolder);
+                EventStatus result;
+                try
                 {
-                    if (!await executor.ValidateFieldWriteAsync(eventHolder))
+                    result = await commonInterceptor.ProcessEventAsync(commonEventContext,
+                        () => inspection.ProcessEventAsync(eventHolder, async () =>
                     {
-                        execution.Persist = false;
-                        return EventStatus.Invalid;
-                    }
-
-                    var status = await executor.TryInitializeAsync(eventHolder.Payload);
-                    if (status == EventStatus.Failed)
-                    {
-                        return status;
-                    }
-
-                    if (status != EventStatus.Initialized)
-                    {
-                        if (!executor.Initialized && !noImplicitInitialization)
+                        if (!await executor.ValidateFieldWriteAsync(eventHolder))
                         {
-                            await executor.EnsureInitializedAsync();
+                            execution.Persist = false;
+                            return EventStatus.Invalid;
                         }
 
-                        status = executor.Initialized || Executor.IsProcessedWhenNotInitialized(eventHolder)
-                            ? await executor.DoProcessAsync(eventHolder)
-                            : EventStatus.NotInitialized;
-                    }
+                        var status = await executor.TryInitializeAsync(eventHolder.Payload);
+                        if (status == EventStatus.Failed)
+                        {
+                            return status;
+                        }
 
-                    return status;
-                });
+                        if (status != EventStatus.Initialized)
+                        {
+                            if (!executor.Initialized && !noImplicitInitialization)
+                            {
+                                await executor.EnsureInitializedAsync();
+                            }
+
+                            status = executor.Initialized || Executor.IsProcessedWhenNotInitialized(eventHolder)
+                                ? await executor.DoProcessAsync(eventHolder)
+                                : EventStatus.NotInitialized;
+                        }
+
+                        return status;
+                    }));
+                }
+                finally
+                {
+                    if (eventHolder.IsRespondedTo())
+                    {
+                        await commonInterceptor.DoRequestRespondedAsync(
+                            commonEventContext, eventHolder, eventHolder.GetResponseHolder());
+                    }
+                }
 
                 if (stateflowsContext.Status == BehaviorStatus.Initialized)
                 {

@@ -1,3 +1,4 @@
+using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -416,10 +417,10 @@ public sealed class FailedExecutionTests
 
     private sealed class HandledMachineException(FailureProbe probe) : StateMachineExceptionHandler
     {
-        public override bool OnStateEntryException(IStateActionContext context, Exception exception)
+        public override Task<bool> OnStateEntryExceptionAsync(IStateActionContext context, Exception exception)
         {
             probe.Handled = true;
-            return true;
+            return Task.FromResult(true);
         }
     }
 

@@ -1,3 +1,5 @@
+using System;
+using System.Threading.Tasks;
 using System.Linq;
 using System.Reflection;
 using Stateflows.Common;
@@ -7,27 +9,36 @@ namespace Stateflows.Activities.Engine;
 
 internal class Behaviors : ActivityPlugin
 {
-    public override void AfterProcessEvent<TEvent>(IEventContext<TEvent> context, EventStatus eventStatus)
+    public override async Task<EventStatus> ProcessEventAsync<TEvent>(IEventContext<TEvent> context, Func<Task<EventStatus>> next)
     {
-        if (context.Behavior.IsEmbedded)
+        var status = EventStatus.Failed;
+        try
         {
-            if (eventStatus == EventStatus.NotConsumed)
+            return status = await next();
+        }
+        finally
+        {
+            if (context.Behavior.IsEmbedded)
             {
-                var headers = context.Headers
-                    .Where(p => p.Value is not BehaviorEmbedding)
-                    .ToDictionary();
-                
-                var noBubblingAttribute = context.Event.GetType().GetCustomAttribute<NoBubblingAttribute>();
-                if (!headers.Values.Any(h => h is NoBubbling) && noBubblingAttribute == null)
+                if (status == EventStatus.NotConsumed)
                 {
-                    headers[nameof(NoForwarding)] = new NoForwarding();
+                    var headers = context.Headers
+                        .Where(p => p.Value is not BehaviorEmbedding)
+                        .ToDictionary();
 
-                    if (context.TryGetParentBehaviorContext(out var parentBehaviorContext))
+                    var noBubblingAttribute = context.Event.GetType().GetCustomAttribute<NoBubblingAttribute>();
+                    if (!headers.Values.Any(h => h is NoBubbling) && noBubblingAttribute == null)
                     {
-                        parentBehaviorContext.Send(context.Event, headers);
+                        headers[nameof(NoForwarding)] = new NoForwarding();
+
+                        if (context.TryGetParentBehaviorContext(out var parentBehaviorContext))
+                        {
+                            parentBehaviorContext.Send(context.Event, headers);
+                        }
                     }
                 }
             }
         }
+
     }
 }

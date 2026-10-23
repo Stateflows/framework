@@ -1,3 +1,4 @@
+using System.Threading.Tasks;
 using Stateflows.Common;
 using Stateflows.Common.Attributes;
 using StateMachine.IntegrationTests.Classes.Events;
@@ -14,9 +15,9 @@ namespace StateMachine.IntegrationTests.Tests
         
         private readonly IValue<int> counter;
         
-        public override bool OnStateEntryException(IStateActionContext context, Exception exception)
+        public override async Task<bool> OnStateEntryExceptionAsync(IStateActionContext context, Exception exception)
         {
-            var (success, counterValue) = counter.TryGetAsync().GetAwaiter().GetResult();
+            var (success, counterValue) = await counter.TryGetAsync();
             Exceptions.ExceptionHandled = success && counterValue == 42;
             return true;
         }

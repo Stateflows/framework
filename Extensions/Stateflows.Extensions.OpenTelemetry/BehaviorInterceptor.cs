@@ -13,51 +13,57 @@ namespace Stateflows.Extensions.OpenTelemetry;
 
 public class MetricsInterceptor(StateflowsMeter meter) : BehaviorInterceptor
 {
-    private Stopwatch _stopwatch;
-
-    public override bool BeforeProcessEvent<TEvent>(IEventContext<TEvent> context)
+    public override async Task<EventStatus> ProcessEventAsync<TEvent>(IEventContext<TEvent> context, Func<Task<EventStatus>> next)
     {
-        _stopwatch = Stopwatch.StartNew();
-        
-        return true;
+        var stopwatch = Stopwatch.StartNew();
+        var status = EventStatus.Failed;
+        try
+        {
+            return status = await next();
+        }
+        finally
+        {
+            Record(status);
+        }
+
+        void Record(EventStatus eventStatus)
+        {
+            stopwatch.Stop();
+
+            var noTracing =
+                context.Event!.GetType().GetCustomAttributes<NoTracingAttribute>().Any() ||
+                context.Headers.Values.Any(h => h is NoTracing);
+
+            if (noTracing)
+            {
+                return;
+            }
+
+            var eventName = Event.GetName(context.Event.GetType());
+            var resourceName = meter.ResourcesByBehaviorClass[context.Behavior.Id.BehaviorClass].Name;
+
+            if (meter.ExecutionDurations.TryGetValue(resourceName, out var histogram))
+            {
+                histogram.Record(
+                    stopwatch.Elapsed.TotalMilliseconds,
+                    // Behavior instance ids are intentionally not tags: they would make metric cardinality unbounded.
+                    new KeyValuePair<string, object?>("behavior.class", context.Behavior.Id.BehaviorClass.ToString()),
+                    new KeyValuePair<string, object?>("event.name", eventName),
+                    new KeyValuePair<string, object?>("event.status", Enum.GetName(eventStatus))
+                );
+            }
+
+            if (meter.ExecutionCounters.TryGetValue(resourceName, out var counter))
+            {
+                counter.Add(
+                    1,
+                    // Behavior instance ids are intentionally not tags: they would make metric cardinality unbounded.
+                    new KeyValuePair<string, object?>("behavior.class", context.Behavior.Id.BehaviorClass.ToString()),
+                    new KeyValuePair<string, object?>("event.name", eventName),
+                    new KeyValuePair<string, object?>("event.status", Enum.GetName(eventStatus))
+                );
+            }
+        }
     }
 
-    public override void AfterProcessEvent<TEvent>(IEventContext<TEvent> context, EventStatus eventStatus)
-    {
-        _stopwatch.Stop();
-        
-        var noTracing =
-            context.Event!.GetType().GetCustomAttributes<NoTracingAttribute>().Any() ||
-            context.Headers.Values.Any(h => h is NoTracing);
-
-        if (noTracing)
-        {
-            return;
-        }
-
-        var eventName = Event.GetName(context.Event.GetType());
-        var resourceName = meter.ResourcesByBehaviorClass[context.Behavior.Id.BehaviorClass].Name;
-        
-        if (meter.ExecutionDurations.TryGetValue(resourceName, out var histogram))
-        {
-            histogram.Record(
-                _stopwatch.Elapsed.TotalMilliseconds,
-                // Behavior instance ids are intentionally not tags: they would make metric cardinality unbounded.
-                new KeyValuePair<string, object?>("behavior.class", context.Behavior.Id.BehaviorClass.ToString()),
-                new KeyValuePair<string, object?>("event.name", eventName),
-                new KeyValuePair<string, object?>("event.status", Enum.GetName(eventStatus))
-            );
-        }
-
-        if (meter.ExecutionCounters.TryGetValue(resourceName, out var counter))
-        {
-            counter.Add(
-                1,
-                // Behavior instance ids are intentionally not tags: they would make metric cardinality unbounded.
-                new KeyValuePair<string, object?>("behavior.class", context.Behavior.Id.BehaviorClass.ToString()),
-                new KeyValuePair<string, object?>("event.name", eventName),
-                new KeyValuePair<string, object?>("event.status", Enum.GetName(eventStatus))
-            );
-        }
-    }
 }

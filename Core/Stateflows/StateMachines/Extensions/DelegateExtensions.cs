@@ -1,5 +1,7 @@
 using System;
 using System.Linq;
+using System.Reflection;
+using System.Runtime.ExceptionServices;
 using System.Threading.Tasks;
 using Stateflows.Common.Classes;
 using Stateflows.StateMachines.Context.Interfaces;
@@ -15,13 +17,14 @@ internal static class DelegateExtensions
         {
             var args = valueFactories
                 .Select(f => f())
-                .Select(x => x.Result)
+                .Select(x => x.GetAwaiter().GetResult())
                 .ToArray();
             invocationResult = @delegate.DynamicInvoke(args: args);
         }
-        catch (Exception e)
+        catch (TargetInvocationException e) when (e.InnerException != null)
         {
-            throw e.InnerException!;
+            ExceptionDispatchInfo.Capture(e.InnerException).Throw();
+            throw;
         }
 
         return invocationResult;

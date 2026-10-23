@@ -14,8 +14,11 @@ using Orleans.Hosting;
 using OpenTelemetry;
 using OpenTelemetry.Trace;
 using Stateflows;
+using Stateflows.Actions;
 using Stateflows.Activities;
 using Stateflows.Common;
+using Stateflows.Entities;
+using Stateflows.Entities.Attributes;
 using Stateflows.StateMachines;
 
 namespace Orleans.IntegrationTests;
@@ -23,6 +26,80 @@ namespace Orleans.IntegrationTests;
 [TestClass]
 public sealed class BehaviorTracingTests
 {
+    [TestMethod]
+    [DataRow(BehaviorType.Action)]
+    [DataRow(BehaviorType.Activity)]
+    [DataRow(BehaviorType.StateMachine)]
+    [DataRow(BehaviorType.Entity)]
+    public async Task InterceptorFailuresCloseTheEventSpan(string type)
+    {
+        var instance = Guid.NewGuid().ToString("N");
+        var spans = new ConcurrentQueue<Activity>();
+        var interceptor = new FailingInterceptor();
+        using var host = Host.CreateDefaultBuilder()
+            .ConfigureLogging(logging => logging.SetMinimumLevel(LogLevel.None))
+            .ConfigureServices(services =>
+            {
+                services.AddStateflows(builder => builder.AddLegacyRuntime().AddOpenTelemetry()
+                    .AddActions(actions => actions.AddAction("failure", _ => Task.CompletedTask,
+                        action => action.AddInterceptor(_ => interceptor)))
+                    .AddActivities(activities => activities.AddActivity("failure", activity => activity
+                        .AddInterceptor(_ => interceptor)
+                        .AddInitial(initial => initial.AddControlFlow<FinalNode>())
+                        .AddFinal()))
+                    .AddStateMachines(machines => machines.AddStateMachine("failure", machine => machine
+                        .AddInterceptor((_, _) => interceptor)
+                        .AddInitialState("ready")))
+                    .AddEntities(entities => entities.AddEntity<ITracingTemplate>("failure",
+                        entity => entity.AddInterceptor((_, _) => interceptor))));
+                services.AddOpenTelemetry().WithTracing(tracing =>
+                    tracing.AddProcessor(new CapturingProcessor(spans, instance)));
+            }).Build();
+        await host.StartAsync();
+        try
+        {
+            var locator = host.Services.GetRequiredService<IBehaviorLocator>();
+            Assert.IsTrue(locator.TryLocateBehavior(new BehaviorId(type, "failure", instance), out var behavior));
+            using (behavior)
+                Assert.AreEqual(EventStatus.Failed, (await behavior.SendAsync(new Initialize())).Status);
+
+            var prefix = type == BehaviorType.StateMachine ? "State Machine" : type;
+            var root = spans.Single(span => span.DisplayName.StartsWith(prefix + " '"));
+            Assert.AreEqual(ActivityStatusCode.Error, root.Status);
+            Assert.AreEqual(nameof(EventStatus.Failed), root.GetTagItem("EventStatus")?.ToString());
+            Assert.IsTrue(root.Duration > TimeSpan.Zero);
+        }
+        finally
+        {
+            await host.StopAsync();
+        }
+    }
+
+    public interface ITracingTemplate
+    {
+        [Field]
+        int Value { get; set; }
+    }
+
+    private sealed class FailingInterceptor : IActionInterceptor, IActivityInterceptor, IStateMachineInterceptor, IEntityInterceptor
+    {
+        public Task<EventStatus> ProcessEventAsync<TEvent>(
+            Stateflows.Actions.Context.Interfaces.IEventContext<TEvent> context, Func<Task<EventStatus>> next)
+            => Task.FromException<EventStatus>(new InvalidOperationException("interceptor failure"));
+
+        public Task<EventStatus> ProcessEventAsync<TEvent>(
+            Stateflows.Activities.Context.Interfaces.IEventContext<TEvent> context, Func<Task<EventStatus>> next)
+            => Task.FromException<EventStatus>(new InvalidOperationException("interceptor failure"));
+
+        public Task<EventStatus> ProcessEventAsync<TEvent>(
+            Stateflows.StateMachines.Context.Interfaces.IEventContext<TEvent> context, Func<Task<EventStatus>> next)
+            => Task.FromException<EventStatus>(new InvalidOperationException("interceptor failure"));
+
+        public Task<EventStatus> ProcessEventAsync<TEvent>(
+            Stateflows.Common.Context.Interfaces.IEventContext<TEvent> context, Func<Task<EventStatus>> next)
+            => Task.FromException<EventStatus>(new InvalidOperationException("interceptor failure"));
+    }
+
     [TestMethod]
     [DataRow(null)]
     [DataRow(true)]

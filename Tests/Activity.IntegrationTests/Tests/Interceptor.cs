@@ -1,3 +1,5 @@
+using System;
+using System.Threading.Tasks;
 using Activity.IntegrationTests.Classes.Events;
 using Stateflows.Activities.Context.Interfaces;
 using Stateflows.Common;
@@ -33,9 +35,16 @@ namespace Activity.IntegrationTests.Tests
 
         public class Interceptor : ActivityInterceptor
         {
-            public override void AfterProcessEvent<TEvent>(IEventContext<TEvent> context, EventStatus eventStatus)
+            public override async Task<EventStatus> ProcessEventAsync<TEvent>(IEventContext<TEvent> context, Func<Task<EventStatus>> next)
             {
-                Intercepted = true;
+                try
+                {
+                    return await next();
+                }
+                finally
+                {
+                    Intercepted = true;
+                }
             }
         }
 

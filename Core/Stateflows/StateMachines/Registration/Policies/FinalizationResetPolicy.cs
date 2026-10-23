@@ -1,4 +1,6 @@
-﻿using Stateflows.Common;
+﻿using System;
+using System.Threading.Tasks;
+using Stateflows.Common;
 using Stateflows.StateMachines.Context.Interfaces;
 
 namespace Stateflows.StateMachines;
@@ -12,8 +14,9 @@ internal class ResetObserver : StateMachineObserver
         this.resetMode = resetMode;
     }
 
-    public override void AfterStateMachineFinalize(IStateMachineActionContext context)
+    public override async Task OnStateMachineFinalizeAsync(IStateMachineActionContext context, Func<Task> next)
     {
+        await next();
         var stateflowsContext = (context as IRootContext).Context.Context;
         if (stateflowsContext.Stored)
         {

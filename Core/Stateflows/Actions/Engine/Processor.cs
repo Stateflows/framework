@@ -6,6 +6,7 @@ using System.Reflection;
 using Microsoft.Extensions.DependencyInjection;
 using Stateflows.Actions.Context.Classes;
 using Stateflows.Common;
+using Stateflows.Common.Classes;
 using Stateflows.Common.Interfaces;
 using Stateflows.Actions.Registration;
 using Stateflows.Common.Context;
@@ -52,7 +53,7 @@ namespace Stateflows.Actions.Engine
 
                 return await ContextExecution.RunAsync(storage, id, exceptions, async execution =>
                 {
-                    await using var serviceScope = provider.CreateAsyncScope();
+                    await using var serviceScope = new StateflowsServiceScope(provider.CreateAsyncScope());
                     var serviceProvider = serviceScope.ServiceProvider;
                     stateflowsContext = execution.Context;
                     key = stateflowsContext.Version != 0
@@ -92,29 +93,35 @@ namespace Stateflows.Actions.Engine
 
                     await executor.HydrateAsync(eventHolder);
 
-                    var noImplicitInitialization =
-                        eventHolder.PayloadType.GetCustomAttributes<NoImplicitInitializationAttribute>().Any() ||
-                        eventHolder.Headers.Values.Any(h => h is NoImplicitInitialization);
-
-                    if (stateflowsContext.Status is BehaviorStatus.NotInitialized or BehaviorStatus.Unknown && !noImplicitInitialization)
+                    var inspector = await executor.GetInspectorAsync();
+                    using var eventContext = new EventContext<TEvent>(stateflowsContext, executor, eventHolder, serviceProvider);
+                    result = await inspector.ProcessEventAsync(eventContext, async () =>
                     {
-                        stateflowsContext.Status = BehaviorStatus.Initialized;
+                        var noImplicitInitialization =
+                            eventHolder.PayloadType.GetCustomAttributes<NoImplicitInitializationAttribute>().Any() ||
+                            eventHolder.Headers.Values.Any(h => h is NoImplicitInitialization);
 
-                        using var context = new ActionDelegateContext(stateflowsContext, executor, eventHolder, serviceProvider);
-                        var inspector = await executor.GetInspectorAsync();
-                        inspector.BeforeActionInitialize(context);
-                        inspector.AfterActionInitialize(context);
-                    }
+                        if (stateflowsContext.Status is BehaviorStatus.NotInitialized or BehaviorStatus.Unknown && !noImplicitInitialization)
+                        {
+                            using var context = new ActionDelegateContext(stateflowsContext, executor, eventHolder, serviceProvider);
+                            await inspector.OnActionInitializeAsync(context, () =>
+                            {
+                                stateflowsContext.Status = BehaviorStatus.Initialized;
+                                return Task.CompletedTask;
+                            });
+                        }
 
-                    if (
-                        stateflowsContext.Status == BehaviorStatus.Initialized ||
-                        eventHolder is EventHolder<BehaviorInfoRequest> ||
-                        eventHolder is EventHolder<Finalize> ||
-                        eventHolder is EventHolder<Reset>
-                    )
-                    {
-                        result = await ExecuteBehaviorAsync(eventHolder, result, executor);
-                    }
+                        if (
+                            stateflowsContext.Status == BehaviorStatus.Initialized ||
+                            eventHolder is EventHolder<BehaviorInfoRequest> ||
+                            eventHolder is EventHolder<Finalize> ||
+                            eventHolder is EventHolder<Reset>
+                        )
+                        {
+                            result = await ExecuteBehaviorAsync(eventHolder, result, executor);
+                        }
+                        return result;
+                    });
 
                     await executor.DehydrateAsync(eventHolder);
                     if (stateflowsContext.Status == BehaviorStatus.Initialized)

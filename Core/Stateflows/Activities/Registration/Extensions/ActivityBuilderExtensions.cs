@@ -1,3 +1,4 @@
+using System;
 using System.Threading.Tasks;
 using Stateflows.Activities.Context.Interfaces;
 using Stateflows.Activities.Registration.Builders;
@@ -26,10 +27,11 @@ public static class ActivityBuilderExtensions
     
     private class SubscriptionObserver<TProjectionTemplate>(EntityScope scope) : ActivityObserver
     {
-        public override void AfterActivityInitialize(IActivityInitializationContext context, bool implicitInitialization, bool initialized)
+        public override async Task OnActivityInitializeAsync(IActivityInitializationContext context, bool implicitInitialization, Func<Task<bool>> next)
         {
-            if (!initialized) return;
-            
+            var result = await next();
+            if (!result) return;
+
             var behaviorId = GetBehaviorId(context, scope);
             if (behaviorId.HasValue)
             {

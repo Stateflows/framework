@@ -1,4 +1,5 @@
 using System;
+using System.Threading.Tasks;
 using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
@@ -23,54 +24,77 @@ namespace Stateflows.Extensions.OpenTelemetry
         // public void BeforeDehydrate(IActionDelegateContext context)
         // { }
         
-        public bool BeforeProcessEvent<TEvent>(IEventContext<TEvent> context)
+        public async Task<EventStatus> ProcessEventAsync<TEvent>(IEventContext<TEvent> context, Func<Task<EventStatus>> next)
         {
-            var noTracing =
-                context.Event!.GetType().GetCustomAttributes<NoTracingAttribute>().Any() ||
-                context.Headers.Values.Any(h => h is NoTracing);
-            
-            Skip = noTracing;
-            
-            if (!noTracing)
+            Before(context);
+
+            var status = EventStatus.Failed;
+            try
             {
-                var header = context.Headers.Values.FirstOrDefault(h => h is ActivityHeader);
-                if (header is ActivityHeader activityHeader)
+                return status = await next();
+            }
+            catch (Exception exception)
+            {
+                if (!Skip && EventProcessingActivity != null)
                 {
-                    EventProcessingActivity = StateMachineTracer.Source.StartActivity(
-                        $"Action '{context.Behavior.Id.Name.ToShortName()}:{context.Behavior.Id.InstanceText}' processing '{context.Event.GetType().GetEventName().ToShortName()}'",
-                        ActivityKind.Internal,
-                        parentContext: activityHeader.ActivityContext
+                    EventProcessingActivity.SetTag("EventStatus", EventStatus.Failed);
+                    StopProcessingAction(context, EventStatus.Failed, exception);
+                }
+                throw;
+            }
+            finally
+            {
+                After(context, status);
+            }
+
+            void Before(IEventContext<TEvent> context)
+            {
+                var noTracing =
+                    context.Event!.GetType().GetCustomAttributes<NoTracingAttribute>().Any() ||
+                    context.Headers.Values.Any(h => h is NoTracing);
+
+                Skip = noTracing;
+
+                if (!noTracing)
+                {
+                    var header = context.Headers.Values.FirstOrDefault(h => h is ActivityHeader);
+                    if (header is ActivityHeader activityHeader)
+                    {
+                        EventProcessingActivity = StateMachineTracer.Source.StartActivity(
+                            $"Action '{context.Behavior.Id.Name.ToShortName()}:{context.Behavior.Id.InstanceText}' processing '{context.Event.GetType().GetEventName().ToShortName()}'",
+                            ActivityKind.Internal,
+                            parentContext: activityHeader.ActivityContext
+                        );
+                    }
+
+                    EventProcessingActivity ??= StateMachineTracer.Source.StartActivity(
+                        $"Action '{context.Behavior.Id.Name.ToShortName()}:{context.Behavior.Id.InstanceText}' processing '{context.Event.GetType().GetEventName().ToShortName()}'"
+                    );
+
+                    EventProcessingActivity?.AddTag("ActionId", $"{context.Behavior.Id.Name.ToShortName()}:{context.Behavior.Id.InstanceText}");
+                    EventProcessingActivity?.AddTag("Event", context.Event.GetType().GetEventName().ToShortName());
+
+                    logger.LogTrace(
+                        message: "Action '{ActionId}' received event '{Event}', processing",
+                        $"{context.Behavior.Id.Name.ToShortName()}:{context.Behavior.Id.InstanceText}",
+                        context.Event.GetType().GetEventName().ToShortName()
                     );
                 }
-                
-                EventProcessingActivity ??= StateMachineTracer.Source.StartActivity(
-                    $"Action '{context.Behavior.Id.Name.ToShortName()}:{context.Behavior.Id.InstanceText}' processing '{context.Event.GetType().GetEventName().ToShortName()}'"
-                );
-                
-                EventProcessingActivity.AddTag("ActionId", $"{context.Behavior.Id.Name.ToShortName()}:{context.Behavior.Id.InstanceText}");
-                EventProcessingActivity.AddTag("Event", context.Event.GetType().GetEventName().ToShortName());
 
-                logger.LogTrace(
-                    message: "Action '{ActionId}' received event '{Event}', processing",
-                    $"{context.Behavior.Id.Name.ToShortName()}:{context.Behavior.Id.InstanceText}",
-                    context.Event.GetType().GetEventName().ToShortName()
-                );
             }
-            
-            return true;
-        }
 
-        public void AfterProcessEvent<TEvent>(IEventContext<TEvent> context, EventStatus eventStatus)
-        {
-            if (!Skip)
+            void After(IEventContext<TEvent> context, EventStatus eventStatus)
             {
-                if (eventStatus != EventStatus.Failed)
+                if (!Skip)
                 {
-                    StopProcessingAction(context, eventStatus);
+                    if (eventStatus != EventStatus.Failed)
+                    {
+                        StopProcessingAction(context, eventStatus);
+                    }
                 }
+
+                EventProcessingActivity?.AddTag("EventStatus", eventStatus);
             }
-            
-            EventProcessingActivity?.AddTag("EventStatus", eventStatus);
         }
 
         private void StopProcessingAction<TEvent>(IEventContext<TEvent> context, EventStatus eventStatus, Exception exception = null!)
@@ -107,14 +131,14 @@ namespace Stateflows.Extensions.OpenTelemetry
             }
         }
 
-        public bool OnActionException(IActionDelegateContext context, Exception exception)
+        public Task<bool> OnActionExceptionAsync(IActionDelegateContext context, Exception exception)
         {
-            if (Skip) return false;
+            if (Skip) return Task.FromResult(false);
 
             StopProcessingActivity(context, EventStatus.Failed, exception);
             EventProcessingActivity?.SetStatus(ActivityStatusCode.Error);
 
-            return false;
+            return Task.FromResult(false);
         }
 
         private void StopProcessingActivity(IActionDelegateContext context, EventStatus eventStatus, Exception exception = null!)

@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using Stateflows.Common;
 using Stateflows.Common.Classes;
+using Stateflows.Common.Engine;
 using Stateflows.Activities.Models;
 using Stateflows.Activities.Context;
 using Stateflows.Activities.Context.Interfaces;
@@ -36,11 +37,11 @@ namespace Stateflows.Activities.Engine
         public CancellationToken CancellationToken
             => CancellationTokenSource.Token;
         
-        private readonly List<Task> PendingTasks = [];
+        private readonly PendingTasks pendingTasks = PendingTasksScope.RequireCurrent();
         
         public void AddPendingTask(Task task)
         {
-            PendingTasks.Add(task);
+            pendingTasks.Add(task);
         }
 
         public Guid ThreadId { get; set; }
@@ -397,12 +398,15 @@ namespace Stateflows.Activities.Engine
         
         public async ValueTask DisposeAsync()
         {
-            if (PendingTasks.Count > 0)
+            try
             {
-                await Task.WhenAll(PendingTasks);
+                await pendingTasks.DrainAsync();
             }
-            await DisposeAsync(true);
-            GC.SuppressFinalize(this);
+            finally
+            {
+                await DisposeAsync(true);
+                GC.SuppressFinalize(this);
+            }
         }
 
         protected virtual async ValueTask DisposeAsync(bool disposing)

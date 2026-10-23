@@ -132,13 +132,12 @@ namespace Stateflows.Activities.Registration
                 try
                 {
                     var inspector = c.Behavior.GetExecutor().Inspector;
-                    inspector.BeforeNodeExecute(context);
-                    await actionAsync(c);
-                    inspector.AfterNodeExecute(context);
+                    await inspector.OnNodeExecuteAsync(context, () => actionAsync(c));
                 }
                 catch (Exception e)
                 {
-                    if (e is StateflowsException)
+                    if (e is StateflowsException ||
+                        context.Context.Context.ExecutionExceptions.Any(exception => ReferenceEquals(exception, e)))
                     {
                         throw;
                     }
@@ -415,14 +414,8 @@ namespace Stateflows.Activities.Registration
                         var inspector = c.Context.Executor.Inspector;
 
                         Trace.WriteLine($"⦗→s⦘ Activity '{c.Context.Id.Name}:{c.Context.Id.Instance}': exception '{e.GetType().FullName}' thrown with message '{e.Message}'");
-                        if (!inspector.OnNodeFinalizationException(context, e))
-                        {
-                            throw;
-                        }
-                        else
-                        {
-                            throw new BehaviorExecutionException(e);
-                        }
+                        await inspector.OnNodeFinalizationExceptionAsync(context, e);
+                        throw;
                     }
                 }
             });
@@ -452,14 +445,8 @@ namespace Stateflows.Activities.Registration
                         var inspector = c.Context.Executor.Inspector;
 
                         Trace.WriteLine($"⦗→s⦘ Activity '{c.Context.Id.Name}:{c.Context.Id.Instance}': exception '{e.GetType().FullName}' thrown with message '{e.Message}'");
-                        if (!inspector.OnNodeInitializationException(context, e))
-                        {
-                            throw;
-                        }
-                        else
-                        {
-                            throw new BehaviorExecutionException(e);
-                        }
+                        await inspector.OnNodeInitializationExceptionAsync(context, e);
+                        throw;
                     }
                 }
             });
