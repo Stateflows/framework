@@ -200,7 +200,7 @@ namespace Stateflows.StateMachines.Models
                     Error("SM-018", path, "Internal transitions cannot specify a destination.");
                 if (internalTarget && !edge.IsLocal)
                     Error("SM-024", path, "Internal transitions cannot be configured as external targeted transitions.");
-                if (edge.TriggerType == null || (edge.DeclaredTriggerTypes == null && edge.Trigger != Event.GetName(edge.TriggerType)) ||
+                if (edge.TriggerType == null || (edge.StructuralEventName == null && edge.DeclaredTriggerTypes == null && edge.Trigger != Event.GetName(edge.TriggerType)) ||
                     (edge.Type == EdgeType.DefaultTransition && edge.TriggerType != typeof(Completion)) ||
                     (edge.Type == EdgeType.Transition && edge.TriggerType == typeof(Completion)))
                     Error("SM-019", path, "Transition kind and declared trigger must agree.");
@@ -220,7 +220,11 @@ namespace Stateflows.StateMachines.Models
                     else
                     {
                         edge.ActualTriggerTypes = mapped.ToHashSet();
-                        edge.ActualTriggers = mapped.Select(Event.GetName).ToHashSet();
+                        edge.ActualTriggers = edge.StructuralEventName == null
+                            ? mapped.Select(Event.GetName).ToHashSet()
+                            : new HashSet<string> { StateflowsBuilder.Events.GetEvent(edge.StructuralEventName).Name };
+                        if (edge.StructuralEventName == null)
+                            foreach (var type in mapped) StateflowsBuilder.Events.RegisterClr(type);
                     }
                 }
                 if (edge.IsElse && edge.Guards.Any) Error("SM-032", path, "Else transitions cannot have user guards.");
@@ -266,11 +270,15 @@ namespace Stateflows.StateMachines.Models
                 foreach (var deferral in vertex.Deferrals)
                 {
                     var deferralPath = vertex.DeferralPaths.GetValueOrDefault(deferral.Key) ?? path;
+                    if (vertex.StructuralDeferrals.Contains(deferral.Key))
+                        StateflowsBuilder.Events.GetEvent(deferral.Key);
                     if (!vertex.DeferralTypes.TryGetValue(deferral.Key, out var type) || type == null ||
-                        Event.GetName(type) != deferral.Key)
+                        (!vertex.StructuralDeferrals.Contains(deferral.Key) && Event.GetName(type) != deferral.Key))
                         Error("SM-038", deferralPath, $"Deferred event '{deferral.Key}' requires matching CLR type information.");
                     else if (type == typeof(Completion) || type == typeof(Finalize) || type.IsSubclassOf(typeof(TimeEvent)))
                         Error("SM-036", deferralPath, $"Event '{deferral.Key}' cannot be deferred.");
+                    else if (!vertex.StructuralDeferrals.Contains(deferral.Key))
+                        StateflowsBuilder.Events.RegisterClr(type);
                     if (deferral.Value?.Actions == null || deferral.Value.Actions.Any(action => action == null))
                         Error("SM-038", deferralPath, "Deferral guard logic must contain non-null CLR delegates.");
                     else if (!deferral.Value.Any && edges.Any(e => e.ActualTriggers?.Contains(deferral.Key) == true))

@@ -1,5 +1,6 @@
 namespace Stateflows.Common
 {
+    /// <summary>Locates behavior handles using their class and instance identifiers.</summary>
     public interface IBehaviorLocator
     {
         /// <summary>

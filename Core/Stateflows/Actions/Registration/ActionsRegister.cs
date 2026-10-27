@@ -27,7 +27,10 @@ namespace Stateflows.Actions.Registration
 
         private readonly MethodInfo ActionTypeAddedAsyncMethod = typeof(IActionVisitor).GetMethod(nameof(IActionVisitor.ActionTypeAddedAsync));
 
-        private readonly MethodInfo CustomEventAddedAsyncMethod = typeof(IActionVisitor).GetMethod(nameof(IActionVisitor.CustomEventAddedAsync));
+        private readonly MethodInfo CustomEventAddedAsyncMethod = typeof(IActionVisitor).GetMethods()
+            .Single(m => m.Name == nameof(IActionVisitor.CustomEventAddedAsync) && m.IsGenericMethodDefinition);
+
+        internal Stateflows.Events.EventsRegister EventsRegister { get; set; }
 
         public readonly Dictionary<string, ActionModel> Actions = new();
 
@@ -84,6 +87,7 @@ namespace Stateflows.Actions.Registration
                 {
                     await (Task)method.Invoke(v, [actionName, version, new[] { BehaviorStatus.Initialized }]);
                 }
+                await VisitConsumedEventNamesAsync(v, actionModel);
             };
 
             actionModel = new ActionModel()
@@ -156,6 +160,7 @@ namespace Stateflows.Actions.Registration
                 {
                     await (Task)method.Invoke(v, [actionName, version, new[] { BehaviorStatus.Initialized }]);
                 }
+                await VisitConsumedEventNamesAsync(v, actionModel);
             };
 
             actionModel = new ActionModel()
@@ -210,6 +215,24 @@ namespace Stateflows.Actions.Registration
             if (IsNewestVersion(actionName, version))
             {
                 Actions[currentKey] = actionModel;
+            }
+        }
+
+        private async Task VisitConsumedEventNamesAsync(IActionVisitor visitor, ActionModel actionModel)
+        {
+            if (actionModel.ConsumedEventNames.Count == 0)
+            {
+                return;
+            }
+
+            if (EventsRegister == null)
+            {
+                throw new InvalidOperationException("Structural events register is not available.");
+            }
+
+            foreach (var eventName in actionModel.ConsumedEventNames)
+            {
+                await visitor.CustomEventAddedAsync(EventsRegister.GetEvent(eventName), actionModel.Name, actionModel.Version, [BehaviorStatus.Initialized]);
             }
         }
 

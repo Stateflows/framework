@@ -2,6 +2,8 @@
 
 namespace Stateflows.Activities.Registration.Interfaces
 {
+    /// <summary>Configures a nested structured activity's input and output flows.</summary>
+    /// <seealso href="https://github.com/Stateflows/framework/wiki/activity-structured-activity-node" />
     public interface IStructuredActivityBuilder :
         IObjectFlowBase<IStructuredActivityBuilder>,
         IControlFlowBase<IStructuredActivityBuilder>,
@@ -16,6 +18,9 @@ namespace Stateflows.Activities.Registration.Interfaces
         IStructuredActivityEvents<IStructuredActivityBuilder>,
         ISendEventBase<IStructuredActivityBuilder>;
 
+    /// <summary>Provides fluent APIs for extending elements inherited from a reusable Activity definition.</summary>
+    /// <seealso href="https://github.com/Stateflows/framework/wiki/activity-structured-activity-node" />
+    /// <seealso href="https://github.com/Stateflows/framework/wiki/behaviors#definition-reuse-and-versions" />
     public interface IOverridenStructuredActivityBuilder :
         IObjectFlowBase<IOverridenStructuredActivityBuilder>,
         IControlFlowBase<IOverridenStructuredActivityBuilder>,

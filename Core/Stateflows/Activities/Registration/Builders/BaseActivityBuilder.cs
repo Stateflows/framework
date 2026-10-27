@@ -238,22 +238,30 @@ namespace Stateflows.Activities.Registration
         internal BaseActivityBuilder AddAcceptEventAction<TEvent>(
             string actionNodeName,
             AcceptEventActionDelegateAsync<TEvent> actionAsync,
-            AcceptEventActionBuildAction<TEvent> buildAction = null
+            AcceptEventActionBuildAction<TEvent> buildAction = null,
+            string structuralEventName = null
         )
         {
             var result = AddNode(
                 NodeType.AcceptEventAction,
                 actionNodeName,
                 c => actionAsync(new AcceptEventActionContext<TEvent>(c as ActionContext)),
-                b => buildAction?.Invoke(new AcceptEventNodeBuilder<TEvent>(b.Node, b.ActivityBuilder)),
+                b =>
+                {
+                    b.Node.StructuralEventName = structuralEventName;
+                    buildAction?.Invoke(new AcceptEventNodeBuilder<TEvent>(b.Node, b.ActivityBuilder));
+                },
                 typeof(TEvent)
             );
 
-            var node = result.Node.Nodes.Values.FirstOrDefault(n => n.Name == actionNodeName);
+            var node = result.Node.Nodes.Values.FirstOrDefault(n => n.OwnName == actionNodeName);
             if (node is not null)
             {
                 var graph = ((IGraphBuilder)this).Graph;
-                node.VisitingTask = visitor => visitor.AcceptEventNodeAddedAsync<TEvent>(graph.Name, graph.Version, actionNodeName);
+                node.VisitingTask = structuralEventName != null
+                    ? visitor => visitor.AcceptEventNodeAddedAsync(graph.StateflowsBuilder.Events.GetEvent(structuralEventName),
+                        graph.Name, graph.Version, actionNodeName)
+                    : visitor => visitor.AcceptEventNodeAddedAsync<TEvent>(graph.Name, graph.Version, actionNodeName);
                 graph.VisitingTasks.Add(node.VisitingTask);
             }
 

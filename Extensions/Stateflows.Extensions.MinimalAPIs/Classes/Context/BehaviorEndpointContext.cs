@@ -7,8 +7,10 @@ using IBehaviorContext = Stateflows.Extensions.MinimalAPIs.Interfaces.IBehaviorC
 
 namespace Stateflows.Extensions.MinimalAPIs;
 
+/// <summary>Builds custom endpoint responses using the behavior configuration supplied by the endpoint filter.</summary>
 public class BehaviorEndpointContext : IBehaviorEndpointContext
 {
+    /// <inheritdoc/>
     public bool TryLocateBehavior(BehaviorId id, out IBehavior behavior)
         => Locator.TryLocateBehavior(id, out behavior);
     
@@ -20,6 +22,9 @@ public class BehaviorEndpointContext : IBehaviorEndpointContext
     IBehaviorContext IBehaviorEndpointContext.Behavior => Behavior;
     internal BehaviorContext Behavior { get; set; }
 
+    /// <summary>Builds a status snapshot from the endpoint filter's behavior metadata.</summary>
+    /// <returns>A State Machine, Activity, or general Action status snapshot.</returns>
+    /// <exception cref="StateflowsRuntimeException">The behavior family is not supported by this context.</exception>
     protected BehaviorInfo GetBehaviorInfo()
     {
         return Behavior.Id.Type switch
@@ -48,6 +53,7 @@ public class BehaviorEndpointContext : IBehaviorEndpointContext
         };
     }
 
+    /// <inheritdoc/>
     public EndpointResponse Response()
     {
         var behaviorInfo = GetBehaviorInfo();
@@ -56,6 +62,7 @@ public class BehaviorEndpointContext : IBehaviorEndpointContext
         return new EndpointResponse(behaviorInfo.ToHateoasLinks("", "", HateoasLinks), metadata);
     }
 
+    /// <inheritdoc/>
     public EndpointResponse<T> Response<T>(T result)
     {
         var behaviorInfo = GetBehaviorInfo();

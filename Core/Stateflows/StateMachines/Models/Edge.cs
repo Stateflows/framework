@@ -32,6 +32,7 @@ namespace Stateflows.StateMachines.Models
         public Graph Graph { get; set; }
 
         public Type TriggerType { get; set; }
+        public string StructuralEventName { get; set; }
 
         private bool polymorphicTriggers = false;
         private bool polymorphicTriggersSet = false;
@@ -100,12 +101,13 @@ namespace Stateflows.StateMachines.Models
                 Graph = Graph,
                 Trigger = Trigger,
                 TriggerType = TriggerType,
+                StructuralEventName = StructuralEventName,
                 DeclaredTriggerTypes = DeclaredTriggerTypes,
                 SourcePath = SourcePath,
                 ActualTriggerTypes = actualTriggerTypes,
                 TimeTriggerTypes = actualTriggerTypes.Where(type => type.IsSubclassOf(typeof(TimeEvent))).ToHashSet(),
                 RecurringTypes = actualTriggerTypes.Where(type => type.IsSubclassOf(typeof(RecurringEvent))).ToHashSet(),
-                ActualTriggers = actualTriggerTypes.Select(Event.GetName).ToHashSet(),
+                ActualTriggers = ActualTriggers.ToHashSet(),
                 Type = Type,
                 IsElse = edge.IsElse,
                 SourceName = SourceName,

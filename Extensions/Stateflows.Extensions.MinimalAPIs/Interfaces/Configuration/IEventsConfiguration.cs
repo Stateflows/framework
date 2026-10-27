@@ -1,11 +1,14 @@
 namespace Stateflows.Extensions.MinimalAPIs.Interfaces;
 
+/// <summary>Selects event-delivery endpoints within the current API mapping scope.</summary>
+/// <typeparam name="TReturn">Enclosing configuration returned for fluent chaining.</typeparam>
 public interface IEventsConfiguration<out TReturn>
 {
     /// <summary>
     /// Configures all endpoints that are sending Events to Behaviors
     /// </summary>
     /// <param name="configureEndpointAction">Configuration action</param>
+    /// <returns>The enclosing configuration.</returns>
     TReturn ConfigureAllEventEndpoints(Action<IEndpointConfiguration> configureEndpointAction);
     
     /// <summary>
@@ -13,7 +16,17 @@ public interface IEventsConfiguration<out TReturn>
     /// </summary>
     /// <param name="configureEndpointAction">Configuration action</param>
     /// <typeparam name="TEvent">Type of event</typeparam>
+    /// <returns>The enclosing configuration.</returns>
     TReturn ConfigureEventEndpoint<TEvent>(Action<IEndpointConfiguration> configureEndpointAction);
+
+    /// <summary>
+    /// Configures an endpoint that sends a structural (runtime-defined) Event to Behavior.
+    /// Rules registered with this method also apply to CLR events with matching event name.
+    /// </summary>
+    /// <param name="eventName">Name of the event (as registered in <see cref="Stateflows.Common.IEventsRegister"/>)</param>
+    /// <param name="configureEndpointAction">Configuration action</param>
+    /// <returns>The enclosing configuration.</returns>
+    TReturn ConfigureEventEndpoint(string eventName, Action<IEndpointConfiguration> configureEndpointAction);
     
     /// <summary>
     /// Configures endpoints that are sending Events to Behavior
@@ -21,6 +34,7 @@ public interface IEventsConfiguration<out TReturn>
     /// <param name="configureEndpointAction">Configuration action</param>
     /// <typeparam name="TEvent1">Type of event</typeparam>
     /// <typeparam name="TEvent2">Type of event</typeparam>
+    /// <returns>The enclosing configuration after applying the callback to each event type.</returns>
     TReturn ConfigureEventEndpoints<TEvent1, TEvent2>(Action<IEndpointConfiguration> configureEndpointAction)
     {
         ConfigureEventEndpoint<TEvent1>(configureEndpointAction);
@@ -34,6 +48,7 @@ public interface IEventsConfiguration<out TReturn>
     /// <typeparam name="TEvent1">Type of event</typeparam>
     /// <typeparam name="TEvent2">Type of event</typeparam>
     /// <typeparam name="TEvent3">Type of event</typeparam>
+    /// <returns>The enclosing configuration after applying the callback to each event type.</returns>
     TReturn ConfigureEventEndpoints<TEvent1, TEvent2, TEvent3>(Action<IEndpointConfiguration> configureEndpointAction)
     {
         ConfigureEventEndpoints<TEvent1, TEvent2>(configureEndpointAction);
@@ -48,6 +63,7 @@ public interface IEventsConfiguration<out TReturn>
     /// <typeparam name="TEvent2">Type of event</typeparam>
     /// <typeparam name="TEvent3">Type of event</typeparam>
     /// <typeparam name="TEvent4">Type of event</typeparam>
+    /// <returns>The enclosing configuration after applying the callback to each event type.</returns>
     TReturn ConfigureEventEndpoints<TEvent1, TEvent2, TEvent3, TEvent4>(Action<IEndpointConfiguration> configureEndpointAction)
     {
         ConfigureEventEndpoints<TEvent1, TEvent2, TEvent3>(configureEndpointAction);
@@ -63,6 +79,7 @@ public interface IEventsConfiguration<out TReturn>
     /// <typeparam name="TEvent3">Type of event</typeparam>
     /// <typeparam name="TEvent4">Type of event</typeparam>
     /// <typeparam name="TEvent5">Type of event</typeparam>
+    /// <returns>The enclosing configuration after applying the callback to each event type.</returns>
     TReturn ConfigureEventEndpoints<TEvent1, TEvent2, TEvent3, TEvent4, TEvent5>(Action<IEndpointConfiguration> configureEndpointAction)
     {
         ConfigureEventEndpoints<TEvent1, TEvent2, TEvent3, TEvent4>(configureEndpointAction);
@@ -79,6 +96,7 @@ public interface IEventsConfiguration<out TReturn>
     /// <typeparam name="TEvent4">Type of event</typeparam>
     /// <typeparam name="TEvent5">Type of event</typeparam>
     /// <typeparam name="TEvent6">Type of event</typeparam>
+    /// <returns>The enclosing configuration after applying the callback to each event type.</returns>
     TReturn ConfigureEventEndpoints<TEvent1, TEvent2, TEvent3, TEvent4, TEvent5, TEvent6>(Action<IEndpointConfiguration> configureEndpointAction)
     {
         ConfigureEventEndpoints<TEvent1, TEvent2, TEvent3, TEvent4, TEvent5>(configureEndpointAction);
@@ -96,6 +114,7 @@ public interface IEventsConfiguration<out TReturn>
     /// <typeparam name="TEvent5">Type of event</typeparam>
     /// <typeparam name="TEvent6">Type of event</typeparam>
     /// <typeparam name="TEvent7">Type of event</typeparam>
+    /// <returns>The enclosing configuration after applying the callback to each event type.</returns>
     TReturn ConfigureEventEndpoints<TEvent1, TEvent2, TEvent3, TEvent4, TEvent5, TEvent6, TEvent7>(Action<IEndpointConfiguration> configureEndpointAction)
     {
         ConfigureEventEndpoints<TEvent1, TEvent2, TEvent3, TEvent4, TEvent5, TEvent6>(configureEndpointAction);
@@ -114,6 +133,7 @@ public interface IEventsConfiguration<out TReturn>
     /// <typeparam name="TEvent6">Type of event</typeparam>
     /// <typeparam name="TEvent7">Type of event</typeparam>
     /// <typeparam name="TEvent8">Type of event</typeparam>
+    /// <returns>The enclosing configuration after applying the callback to each event type.</returns>
     TReturn ConfigureEventEndpoints<TEvent1, TEvent2, TEvent3, TEvent4, TEvent5, TEvent6, TEvent7, TEvent8>(Action<IEndpointConfiguration> configureEndpointAction)
     {
         ConfigureEventEndpoints<TEvent1, TEvent2, TEvent3, TEvent4, TEvent5, TEvent6, TEvent7>(configureEndpointAction);
@@ -133,6 +153,7 @@ public interface IEventsConfiguration<out TReturn>
     /// <typeparam name="TEvent7">Type of event</typeparam>
     /// <typeparam name="TEvent8">Type of event</typeparam>
     /// <typeparam name="TEvent9">Type of event</typeparam>
+    /// <returns>The enclosing configuration after applying the callback to each event type.</returns>
     TReturn ConfigureEventEndpoints<TEvent1, TEvent2, TEvent3, TEvent4, TEvent5, TEvent6, TEvent7, TEvent8, TEvent9>(Action<IEndpointConfiguration> configureEndpointAction)
     {
         ConfigureEventEndpoints<TEvent1, TEvent2, TEvent3, TEvent4, TEvent5, TEvent6, TEvent7, TEvent8>(configureEndpointAction);
@@ -153,6 +174,7 @@ public interface IEventsConfiguration<out TReturn>
     /// <typeparam name="TEvent8">Type of event</typeparam>
     /// <typeparam name="TEvent9">Type of event</typeparam>
     /// <typeparam name="TEvent10">Type of event</typeparam>
+    /// <returns>The enclosing configuration after applying the callback to each event type.</returns>
     TReturn ConfigureEventEndpoints<TEvent1, TEvent2, TEvent3, TEvent4, TEvent5, TEvent6, TEvent7, TEvent8, TEvent9, TEvent10>(Action<IEndpointConfiguration> configureEndpointAction)
     {
         ConfigureEventEndpoints<TEvent1, TEvent2, TEvent3, TEvent4, TEvent5, TEvent6, TEvent7, TEvent8, TEvent9>(configureEndpointAction);

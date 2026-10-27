@@ -135,18 +135,18 @@ internal static class Utils
     public static IResult ToResult<TResponse>(this RequestResult<TResponse> result, string method, string path, IEnumerable<EventHolder> notifications, BehaviorInfo behaviorInfo, Dictionary<string, List<(HateoasLink, BehaviorStatus[])>> customHateoasLinks)
     {
         var response = new ResponseBody<TResponse>(result, notifications, behaviorInfo.ToHateoasLinks(method, path, customHateoasLinks), behaviorInfo.ToMetadata());
-        var jsonResult = StateflowsJsonConverter.SerializeObject(response, true);
+        var jsonResult = StructuralJson.SerializeObject(response);
         return jsonResult.ToResult(result.Status);
     }
     
     public static IResult ToResult(this SendResult result, string method, string path, IEnumerable<EventHolder> notifications, BehaviorInfo behaviorInfo, Dictionary<string, List<(HateoasLink, BehaviorStatus[])>> customHateoasLinks)
     {
         var response = new ResponseBody(result, notifications, behaviorInfo.ToHateoasLinks(method, path, customHateoasLinks), behaviorInfo.ToMetadata());
-        var jsonResult = StateflowsJsonConverter.SerializeObject(response, true);
+        var jsonResult = StructuralJson.SerializeObject(response);
         return jsonResult.ToResult(result.Status);
     }
 
-    private static IResult ToResult(this string jsonResult, EventStatus eventStatus)
+    internal static IResult ToResult(this string jsonResult, EventStatus eventStatus)
         => eventStatus switch
         {
             EventStatus.Initialized => Results.Content(jsonResult, "application/json", statusCode: 201), // 201 created

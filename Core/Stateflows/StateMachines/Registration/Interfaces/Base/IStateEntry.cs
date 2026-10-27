@@ -15,24 +15,29 @@ using ActionDelegateAsync = Stateflows.Actions.Registration.ActionDelegateAsync;
 
 namespace Stateflows.StateMachines.Registration.Interfaces.Base
 {
+    /// <summary>Registers actions awaited when the current state is entered, including embedded one-shot behaviors.
+    /// </summary>
+    /// <typeparam name="TReturn">The fluent state builder returned after registration.</typeparam>
+    /// <remarks>Entry and initialization are distinct operations: initialization establishes nested state
+    /// configuration.</remarks>
+    /// <seealso href="https://github.com/Stateflows/framework/wiki/state-machine-state" />
     public interface IStateEntry<out TReturn>
     {
-        /// <summary>
-        /// Adds entry handler to current state.<br/>
-        /// Use the following pattern to implement handler:
-        /// <code>async c => {
-        ///     // handler logic here; action context is available via c parameter
-        /// }</code>
-        /// </summary>
-        /// <param name="actionsAsync">Action handlers</param>
+        /// <summary>Registers handlers for the state's entry operation.</summary>
+        /// <param name="actionsAsync">Asynchronous handlers receiving the state action context during entry. Each returned
+        /// task is awaited.</param>
+        /// <returns>The current state builder for continued configuration.</returns>
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/state-machine-state" />
         TReturn AddOnEntry(params Func<IStateActionContext, Task>[] actionsAsync);
 
         #region AddOnEntryActivity
-        /// <summary>
-        /// Registers activity behavior that will be started when current state enters
-        /// </summary>
-       
-        /// <typeparam name="TActivity">Activity behavior type</typeparam>
+        /// <summary>Runs a new embedded Activity for each execution of the state's entry operation.</summary>
+        /// <param name="buildAction">Optional callback configuring the typed embedded Activity's utilities and middleware
+        /// without redefining its graph.</param>
+        /// <typeparam name="TActivity">Embedded behavior implementation of <see cref="IActivity" />. Its definition is
+        /// registered for this embedding site.</typeparam>
+        /// <returns>The current state builder for continued configuration.</returns>
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/behavioral-groups" />
         [DebuggerHidden]
         public TReturn AddOnEntryActivity<TActivity>(ActivityUtilsBuildAction buildAction = null)
             where TActivity : class, IActivity
@@ -43,10 +48,11 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
             return AddOnEntry(c => StateMachineActivityExtensions.RunStateActivityAsync(Constants.Entry, c, activityName));
         }
 
-        /// <summary>
-        /// Registers activity behavior that will be started when current state enters
-        /// </summary>
-        /// <param name="activityBuildAction">Activity build action</param>
+        /// <summary>Runs a new embedded Activity for each execution of the state's entry operation.</summary>
+        /// <param name="activityBuildAction">Callback configuring the embedded Activity's nodes, flows, and lifecycle.
+        /// </param>
+        /// <returns>The current state builder for continued configuration.</returns>
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/behavioral-groups" />
         public TReturn AddOnEntryActivity(ReactiveActivityBuildAction activityBuildAction)
         {
             var vertex = ((IVertexBuilder)this).Vertex;
@@ -57,11 +63,13 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         #endregion
         
         #region AddOnEntryAction
-        /// <summary>
-        /// Registers action behavior that will be started when current state enters
-        /// </summary>
-        /// <typeparam name="TAction">Action behavior type</typeparam>
-        /// <param name="buildAction">Build action</param>
+        /// <summary>Runs a new embedded Action for each execution of the state's entry operation.</summary>
+        /// <typeparam name="TAction">Embedded behavior implementation of <see cref="IAction" />. Its definition is
+        /// registered for this embedding site.</typeparam>
+        /// <param name="buildAction">Optional callback configuring the embedded Action's execution and middleware options.
+        /// </param>
+        /// <returns>The current state builder for continued configuration.</returns>
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/behavioral-groups" />
         [DebuggerHidden]
         public TReturn AddOnEntryAction<TAction>(ActionBuildAction<TAction> buildAction = null)
             where TAction : class, IAction
@@ -72,11 +80,13 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
             return AddOnEntry(c => StateMachineActionExtensions.RunStateActionAsync(Constants.Entry, c, actionName));
         }
         
-        /// <summary>
-        /// Registers action behavior that will be started when current state enters
-        /// </summary>
-        /// <param name="actionDelegateAsync">Action delegate</param>
-        /// <param name="buildAction">Build action</param>
+        /// <summary>Runs a new embedded Action for each execution of the state's entry operation.</summary>
+        /// <param name="actionDelegateAsync">Asynchronous implementation receiving the embedded Action's execution context.
+        /// </param>
+        /// <param name="buildAction">Optional callback configuring the embedded Action's execution and middleware options.
+        /// </param>
+        /// <returns>The current state builder for continued configuration.</returns>
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/behavioral-groups" />
         public TReturn AddOnEntryAction(ActionDelegateAsync actionDelegateAsync, ActionBuildAction buildAction = null)
         {
             var vertex = ((IVertexBuilder)this).Vertex;
@@ -86,22 +96,20 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         }
         #endregion
         
-        /// <summary>
-        /// Adds synchronous entry handler coming from current state.<br/>
-        /// Use the following pattern to implement handler:
-        /// <code>c => {
-        ///     // handler logic here; action context is available via c parameter
-        /// }</code>
-        /// </summary>
-        /// <param name="actions">Synchronous action handlers</param>
+        /// <summary>Registers handlers for the state's entry operation.</summary>
+        /// <param name="actions">Synchronous handlers receiving the state action context during entry.</param>
+        /// <returns>The current state builder for continued configuration.</returns>
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/state-machine-state" />
         [DebuggerHidden]
         public TReturn AddOnEntry(params System.Action<IStateActionContext>[] actions)
             => AddOnEntry(actions.Select(action => action.ToAsync()).ToArray());
 
-        /// <summary>
-        /// Adds multiple typed entry handlers to the current state.
-        /// </summary>
-        /// <typeparam name="TStateEntry">The type of the first state entry handler.</typeparam>
+        /// <summary>Registers typed handlers for the state's entry operation.</summary>
+        /// <typeparam name="TStateEntry">Typed state-entry handler implementing <see cref="IStateEntry" />.</typeparam>
+        /// <param name="buildAction">Optional callback configuring the activated typed handler before its handler method is
+        /// invoked.</param>
+        /// <returns>The current state builder for continued configuration.</returns>
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/state-machine-state" />
         TReturn AddOnEntry<TStateEntry>(ElementBuildAction<TStateEntry> buildAction = null)
             where TStateEntry : class, IStateEntry
             => AddOnEntry(async c =>
@@ -111,11 +119,11 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
                 await state.OnEntryAsync();
             });
 
-        /// <summary>
-        /// Adds multiple typed entry handlers to the current state.
-        /// </summary>
-        /// <typeparam name="TStateEntry1">The type of the first state entry handler.</typeparam>
-        /// <typeparam name="TStateEntry2">The type of the second state entry handler.</typeparam>
+        /// <summary>Registers typed handlers for the state's entry operation.</summary>
+        /// <typeparam name="TStateEntry1">Typed state-entry handler implementing <see cref="IStateEntry" />.</typeparam>
+        /// <typeparam name="TStateEntry2">Typed state-entry handler implementing <see cref="IStateEntry" />.</typeparam>
+        /// <returns>The current state builder for continued configuration.</returns>
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/state-machine-state" />
         TReturn AddOnEntry<TStateEntry1, TStateEntry2>()
             where TStateEntry1 : class, IStateEntry
             where TStateEntry2 : class, IStateEntry
@@ -124,12 +132,12 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
             return AddOnEntry<TStateEntry2>();
         }
 
-        /// <summary>
-        /// Adds multiple typed entry handlers to the current state.
-        /// </summary>
-        /// <typeparam name="TStateEntry1">The type of the first state entry handler.</typeparam>
-        /// <typeparam name="TStateEntry2">The type of the second state entry handler.</typeparam>
-        /// <typeparam name="TStateEntry3">The type of the third state entry handler.</typeparam>
+        /// <summary>Registers typed handlers for the state's entry operation.</summary>
+        /// <typeparam name="TStateEntry1">Typed state-entry handler implementing <see cref="IStateEntry" />.</typeparam>
+        /// <typeparam name="TStateEntry2">Typed state-entry handler implementing <see cref="IStateEntry" />.</typeparam>
+        /// <typeparam name="TStateEntry3">Typed state-entry handler implementing <see cref="IStateEntry" />.</typeparam>
+        /// <returns>The current state builder for continued configuration.</returns>
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/state-machine-state" />
         TReturn AddOnEntry<TStateEntry1, TStateEntry2, TStateEntry3>()
             where TStateEntry1 : class, IStateEntry
             where TStateEntry2 : class, IStateEntry
@@ -139,13 +147,13 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
             return AddOnEntry<TStateEntry3>();
         }
 
-        /// <summary>
-        /// Adds multiple typed entry handlers to the current state.
-        /// </summary>
-        /// <typeparam name="TStateEntry1">The type of the first state entry handler.</typeparam>
-        /// <typeparam name="TStateEntry2">The type of the second state entry handler.</typeparam>
-        /// <typeparam name="TStateEntry3">The type of the third state entry handler.</typeparam>
-        /// <typeparam name="TStateEntry4">The type of the fourth state entry handler.</typeparam>
+        /// <summary>Registers typed handlers for the state's entry operation.</summary>
+        /// <typeparam name="TStateEntry1">Typed state-entry handler implementing <see cref="IStateEntry" />.</typeparam>
+        /// <typeparam name="TStateEntry2">Typed state-entry handler implementing <see cref="IStateEntry" />.</typeparam>
+        /// <typeparam name="TStateEntry3">Typed state-entry handler implementing <see cref="IStateEntry" />.</typeparam>
+        /// <typeparam name="TStateEntry4">Typed state-entry handler implementing <see cref="IStateEntry" />.</typeparam>
+        /// <returns>The current state builder for continued configuration.</returns>
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/state-machine-state" />
         TReturn AddOnEntry<TStateEntry1, TStateEntry2, TStateEntry3, TStateEntry4>()
             where TStateEntry1 : class, IStateEntry
             where TStateEntry2 : class, IStateEntry
@@ -156,14 +164,14 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
             return AddOnEntry<TStateEntry4>();
         }
 
-        /// <summary>
-        /// Adds multiple typed entry handlers to the current state.
-        /// </summary>
-        /// <typeparam name="TStateEntry1">The type of the first state entry handler.</typeparam>
-        /// <typeparam name="TStateEntry2">The type of the second state entry handler.</typeparam>
-        /// <typeparam name="TStateEntry3">The type of the third state entry handler.</typeparam>
-        /// <typeparam name="TStateEntry4">The type of the fourth state entry handler.</typeparam>
-        /// <typeparam name="TStateEntry5">The type of the fifth state entry handler.</typeparam>
+        /// <summary>Registers typed handlers for the state's entry operation.</summary>
+        /// <typeparam name="TStateEntry1">Typed state-entry handler implementing <see cref="IStateEntry" />.</typeparam>
+        /// <typeparam name="TStateEntry2">Typed state-entry handler implementing <see cref="IStateEntry" />.</typeparam>
+        /// <typeparam name="TStateEntry3">Typed state-entry handler implementing <see cref="IStateEntry" />.</typeparam>
+        /// <typeparam name="TStateEntry4">Typed state-entry handler implementing <see cref="IStateEntry" />.</typeparam>
+        /// <typeparam name="TStateEntry5">Typed state-entry handler implementing <see cref="IStateEntry" />.</typeparam>
+        /// <returns>The current state builder for continued configuration.</returns>
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/state-machine-state" />
         TReturn AddOnEntry<TStateEntry1, TStateEntry2, TStateEntry3, TStateEntry4, TStateEntry5>()
             where TStateEntry1 : class, IStateEntry
             where TStateEntry2 : class, IStateEntry

@@ -14,6 +14,7 @@
         <RepositoryType>git</RepositoryType>
         <PackageTags>Stateflows;state-machine;activity;workflow;MinimalAPI;minimal-api;http;rest</PackageTags>
         <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
+        <GenerateDocumentationFile>true</GenerateDocumentationFile>
         <PackageLicenseFile>LICENSE</PackageLicenseFile>
         <PackageOutputPath>..\..\NuGet</PackageOutputPath>
         <LangVersion>default</LangVersion>

@@ -22,6 +22,8 @@ namespace Stateflows.Entities
         /// <summary>
         /// Handles a failure of explicit or implicit entity initialization.
         /// </summary>
+        /// <param name="context">The entity behavior and initialization-failure context.</param>
+        /// <param name="exception">The exception thrown during initialization.</param>
         /// <returns>True if the exception was handled; otherwise, false.</returns>
         Task<bool> OnEntityInitializationExceptionAsync(
             IEntityInitializationExceptionContext context,
@@ -30,6 +32,10 @@ namespace Stateflows.Entities
         /// <summary>
         /// Handles an exception thrown while executing a registered mutation.
         /// </summary>
+        /// <typeparam name="TTemplate">The entity template type.</typeparam>
+        /// <typeparam name="TMutationEvent">The mutation event type.</typeparam>
+        /// <param name="context">The entity, mutation event, and behavior context.</param>
+        /// <param name="exception">The exception thrown by the mutation operation.</param>
         /// <returns>True if the exception was handled; otherwise, false.</returns>
         Task<bool> OnMutationExceptionAsync<TTemplate, TMutationEvent>(
             IMutationObservationContext<TTemplate, TMutationEvent> context,
@@ -38,6 +44,10 @@ namespace Stateflows.Entities
         /// <summary>
         /// Handles an exception thrown while evaluating a computed field.
         /// </summary>
+        /// <typeparam name="TTemplate">The entity template type.</typeparam>
+        /// <typeparam name="TField">The computed field value type.</typeparam>
+        /// <param name="context">The entity, field name, and behavior context.</param>
+        /// <param name="exception">The exception thrown by the field computation.</param>
         /// <returns>True if the exception was handled; otherwise, false.</returns>
         Task<bool> OnComputedFieldExceptionAsync<TTemplate, TField>(
             IComputedFieldObservationContext<TTemplate> context,
@@ -46,6 +56,10 @@ namespace Stateflows.Entities
         /// <summary>
         /// Handles an exception thrown while evaluating a projection.
         /// </summary>
+        /// <typeparam name="TTemplate">The entity template type.</typeparam>
+        /// <typeparam name="TProjection">The projection value type.</typeparam>
+        /// <param name="context">The entity, publication scope, and behavior context.</param>
+        /// <param name="exception">The exception thrown by the projection operation.</param>
         /// <returns>True if the exception was handled; otherwise, false.</returns>
         Task<bool> OnProjectionExceptionAsync<TTemplate, TProjection>(
             IProjectionObservationContext<TTemplate> context,

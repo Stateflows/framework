@@ -5,6 +5,9 @@ namespace Stateflows.Extensions.MinimalAPIs;
 
 internal class Interceptor(IEnumerable<IEndpointDefinitionInterceptor> interceptors) : EndpointDefinitionInterceptor
 {
+    internal IReadOnlyDictionary<Type, Action<System.ComponentModel.DataAnnotations.ValidationAttribute, Microsoft.OpenApi.OpenApiSchema>> ValidationSchemaMappers { get; init; }
+        = new Dictionary<Type, Action<System.ComponentModel.DataAnnotations.ValidationAttribute, Microsoft.OpenApi.OpenApiSchema>>();
+
     public override IEnumerable<BehaviorClass> FilterBehaviorClasses(IEnumerable<BehaviorClass> behaviorClasses)
         => interceptors.Aggregate(behaviorClasses, (current, interceptor) => interceptor.FilterBehaviorClasses(current));
 
@@ -26,6 +29,27 @@ internal class Interceptor(IEnumerable<IEndpointDefinitionInterceptor> intercept
         foreach (var interceptor in interceptors.Reverse())
         {
             interceptor.AfterEventEndpointDefinition<TEvent>(behaviorClass, isDefaultInstance, method, route, routeHandlerBuilder);
+        }
+    }
+
+    public override bool BeforeStructuralEventEndpointDefinition(BehaviorClass behaviorClass, EventDefinition eventDefinition, bool isDefaultInstance, ref string method, ref string route)
+    {
+        foreach (var interceptor in interceptors)
+        {
+            if (!interceptor.BeforeStructuralEventEndpointDefinition(behaviorClass, eventDefinition, isDefaultInstance, ref method, ref route))
+            {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    public override void AfterStructuralEventEndpointDefinition(BehaviorClass behaviorClass, EventDefinition eventDefinition, bool isDefaultInstance, string method, string route, IEndpointConventionBuilder routeHandlerBuilder)
+    {
+        foreach (var interceptor in interceptors.Reverse())
+        {
+            interceptor.AfterStructuralEventEndpointDefinition(behaviorClass, eventDefinition, isDefaultInstance, method, route, routeHandlerBuilder);
         }
     }
 

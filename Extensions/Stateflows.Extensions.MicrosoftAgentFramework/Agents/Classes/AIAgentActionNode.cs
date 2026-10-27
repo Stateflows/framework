@@ -10,6 +10,11 @@ using Stateflows.MAF.AIAgents.Registration;
 
 namespace Stateflows.MAF.AIAgents.Classes;
 
+/// <summary>Runs a framework agent within an activity action node and emits its response as an output token.</summary>
+/// <param name="activityContext">The activity context used to resolve services and access the current behavior.</param>
+/// <param name="agentResponses">The output-token sink for generated agent responses.</param>
+/// <param name="chatMessages">The incoming chat message tokens supplied to the agent.</param>
+/// <param name="stringMessages">The incoming string tokens converted to user chat messages.</param>
 public class AIAgentActionNode(
     IActivityContext activityContext,
     IOutputTokens<AgentResponse> agentResponses,
@@ -19,6 +24,9 @@ public class AIAgentActionNode(
     IConfigurable<AIAgentFactoryAsync>,
     IConfigurable<AIAgentBuildAction?>
 {
+    /// <summary>Creates an agent, runs it with the available chat or string inputs, and adds its response token.</summary>
+    /// <param name="cancellationToken">A token that can cancel action execution.</param>
+    /// <returns>A task that completes after the response is added to the output token stream.</returns>
     public async Task ExecuteAsync(CancellationToken cancellationToken = default)
     {
         // const string agentThreadKey = "system::agentThread";
@@ -51,6 +59,7 @@ public class AIAgentActionNode(
         // await activityContext.Values.SetAsync(agentThreadKey, agentThread);
     }
 
+    /// <summary>Gets the factory used to create the framework agent for this action node.</summary>
     protected virtual AIAgentFactoryAsync AIAgentFactoryAsync { get; private set; } = null!;
 
     // protected virtual AgentThreadFactoryAsync AgentThreadFactoryAsync { get; private set; } =
@@ -61,6 +70,7 @@ public class AIAgentActionNode(
         set => AIAgentFactoryAsync = value;
     }
 
+    /// <summary>Gets the optional configuration action supplied during agent registration.</summary>
     protected virtual AIAgentBuildAction? AgentBuildAction { get; private set; }
     AIAgentBuildAction? IConfigurable<AIAgentBuildAction?>.Configuration
     {
@@ -68,6 +78,14 @@ public class AIAgentActionNode(
     }
 }
 
+/// <summary>Creates a typed Stateflows agent behavior and runs it within an activity action node.</summary>
+/// <typeparam name="TAgent">The Stateflows agent implementation type.</typeparam>
+/// <param name="activityContext">The activity context used to resolve services and access the current behavior.</param>
+/// <param name="agentResponses">The output-token sink for generated agent responses.</param>
+/// <param name="chatMessages">The incoming chat message tokens supplied to the agent.</param>
+/// <param name="stringMessages">The incoming string tokens converted to user chat messages.</param>
+/// <param name="input">The activity input used to provide agent-consumed tokens.</param>
+/// <param name="output">The activity output used to publish agent outputs.</param>
 public class AIAgentActionNode<TAgent>(
     IActivityContext activityContext, 
     IOutputTokens<AgentResponse> agentResponses,
@@ -81,6 +99,7 @@ public class AIAgentActionNode<TAgent>(
     ITokenConsumer<ChatMessage>
     where TAgent : class, IAIAgent
 {
+    /// <summary>Creates the typed agent behavior, builds its framework agent, and supplies the available activity tools.</summary>
     protected override AIAgentFactoryAsync AIAgentFactoryAsync
         => async (_, tools) =>
         {

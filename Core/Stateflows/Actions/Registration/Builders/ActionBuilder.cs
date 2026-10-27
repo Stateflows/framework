@@ -104,6 +104,17 @@ internal class ActionBuilder(ActionModel model) : IActionBuilder
         return this;
     }
 
+    public IActionBuilder AddConsumedEvent(string eventName)
+    {
+        System.ArgumentException.ThrowIfNullOrWhiteSpace(eventName);
+        if (!Model.ConsumedEventNames.Contains(eventName))
+        {
+            Model.ConsumedEventNames.Add(eventName);
+        }
+
+        return this;
+    }
+
     public IActionBuilder AddProducedEvent<TEvent>()
     {
         Model.ProducedEventTypes.Add(typeof(TEvent));
@@ -161,6 +172,9 @@ internal class ActionBuilder<TAction>(ActionModel model) : ActionBuilder(model),
 
     IActionBuilder<TAction> IActionUtils<IActionBuilder<TAction>>.AddConsumedEvent<TEvent>()
         => AddConsumedEvent<TEvent>() as IActionBuilder<TAction>;
+
+    IActionBuilder<TAction> IActionUtils<IActionBuilder<TAction>>.AddConsumedEvent(string eventName)
+        => AddConsumedEvent(eventName) as IActionBuilder<TAction>;
 
     IActionBuilder<TAction> IActionUtils<IActionBuilder<TAction>>.AddProducedEvent<TEvent>()
         => AddProducedEvent<TEvent>() as IActionBuilder<TAction>;

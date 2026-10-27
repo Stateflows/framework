@@ -6,8 +6,12 @@ using Stateflows.StateMachines;
 
 namespace Stateflows
 {
+    /// <summary>Registers the built-in event scheduling behavior.</summary>
     public static class SchedulingDependencyInjection
     {
+        /// <summary>Adds cron validation, trigger-type mapping, and the scheduler state machine.</summary>
+        /// <param name="stateflowsBuilder">The Stateflows builder to configure.</param>
+        /// <returns>The same builder, for further Stateflows configuration.</returns>
         [DebuggerHidden]
         public static IStateflowsBuilder AddScheduling(this IStateflowsBuilder stateflowsBuilder)
         {

@@ -26,8 +26,13 @@ using IExecutionContext = Stateflows.Common.IExecutionContext;
 
 namespace Stateflows
 {
+    /// <summary>Provides dependency-injection registration for Stateflows hosts and clients.</summary>
+    /// <remarks>See the <see href="https://github.com/Stateflows/framework/wiki/behaviors">behavior hosting guide</see>.</remarks>
     public static class StateflowsDependencyInjection
     {
+        /// <summary>Enables the legacy hosted runtime, including startup and scheduling services.</summary>
+        /// <param name="stateflowsBuilder">The Stateflows registration builder.</param>
+        /// <returns>The same builder for fluent configuration.</returns>
         public static IStateflowsBuilder AddLegacyRuntime(this IStateflowsBuilder stateflowsBuilder)
         {
             if (!stateflowsBuilder.ServiceCollection.Any(x => x.ServiceType == typeof(StateflowsEngine)))
@@ -83,6 +88,10 @@ namespace Stateflows
             return stateflowsBuilder;
         }
 
+        /// <summary>Registers Stateflows services, behavior providers, default storage, locks, and configured behavior kinds.</summary>
+        /// <param name="services">The host service collection.</param>
+        /// <param name="buildAction">Configures behaviors, resources, and shared services before the registrations are finalized.</param>
+        /// <returns>The service collection for further dependency-injection configuration.</returns>
         public static IServiceCollection AddStateflows(this IServiceCollection services, System.Action<IStateflowsBuilder> buildAction)
         {
             buildAction.ThrowIfNull(nameof(buildAction));
@@ -149,6 +158,7 @@ namespace Stateflows
             ActivitiesDependencyInjection.Build(builder);
             EntitiesDependencyInjection.Build(builder);
             StateMachinesDependencyInjection.Build(builder);
+            builder.Events.Build();
 
             return services;
         }
@@ -162,6 +172,7 @@ namespace Stateflows
         /// <param name="initializationRequestFactoryAsync">
         /// Factory that generates custom initialization event for default instance of a behavior.
         /// </param>
+        /// <returns>The same builder for fluent configuration.</returns>
         public static IStateflowsBuilder AddDefaultInstance(this IStateflowsBuilder stateflowsBuilder, BehaviorClass behaviorClass, DefaultInstanceInitializationRequestFactoryAsync initializationRequestFactoryAsync = null)
         {
             BehaviorClassesInitializations.Instance.AddDefaultInstanceInitialization(behaviorClass, initializationRequestFactoryAsync);
@@ -174,6 +185,7 @@ namespace Stateflows
         /// </summary>
         /// <typeparam name="TInterceptor">Interceptor class to be registered</typeparam>
         /// <param name="stateflowsBuilder">Extended builder</param>
+        /// <returns>The same builder for fluent configuration.</returns>
         public static IStateflowsBuilder AddInterceptor<TInterceptor>(this IStateflowsBuilder stateflowsBuilder)
             where TInterceptor : class, IBehaviorInterceptor
         {
@@ -187,6 +199,7 @@ namespace Stateflows
         /// </summary>
         /// <param name="stateflowsBuilder">Extended builder</param>
         /// <param name="interceptorFactory">Factory method which returns an instance of interceptor to register</param>
+        /// <returns>The same builder for fluent configuration.</returns>
         public static IStateflowsBuilder AddInterceptor(this IStateflowsBuilder stateflowsBuilder, BehaviorInterceptorFactory interceptorFactory)
         {
             stateflowsBuilder.ServiceCollection.AddScoped(s => interceptorFactory(s));
@@ -199,6 +212,7 @@ namespace Stateflows
         /// </summary>
         /// <typeparam name="TClientInterceptor">Interceptor class to be registered</typeparam>
         /// <param name="stateflowsBuilder">Extended builder</param>
+        /// <returns>The same builder for fluent configuration.</returns>
         public static IStateflowsBuilder AddClientInterceptor<TClientInterceptor>(this IStateflowsBuilder stateflowsBuilder)
             where TClientInterceptor : class, IStateflowsClientInterceptor
         {
@@ -212,6 +226,7 @@ namespace Stateflows
         /// </summary>
         /// <param name="clientInterceptorFactory">Factory method which returns an instance of interceptor to register</param>
         /// <param name="stateflowsBuilder">Extended builder</param>
+        /// <returns>The same builder for fluent configuration.</returns>
         public static IStateflowsBuilder AddClientInterceptor(this IStateflowsBuilder stateflowsBuilder, ClientInterceptorFactory clientInterceptorFactory)
         {
             stateflowsBuilder.ServiceCollection.AddScoped(s => clientInterceptorFactory(s));
@@ -224,6 +239,7 @@ namespace Stateflows
         /// </summary>
         /// <typeparam name="TValidator">Validator class to be registered</typeparam>
         /// <param name="stateflowsBuilder">Extended builder</param>
+        /// <returns>The same builder for fluent configuration.</returns>
         public static IStateflowsBuilder AddValidator<TValidator>(this IStateflowsBuilder stateflowsBuilder)
             where TValidator : class, IStateflowsValidator
         {
@@ -237,6 +253,7 @@ namespace Stateflows
         /// </summary>
         /// <param name="stateflowsBuilder">Extended builder</param>
         /// <param name="validatorFactory">Factory method which returns an instance of validator to register</param>
+        /// <returns>The same builder for fluent configuration.</returns>
         public static IStateflowsBuilder AddValidator(this IStateflowsBuilder stateflowsBuilder, ValidatorFactory validatorFactory)
         {
             (stateflowsBuilder as IStateflowsClientBuilder).AddValidator(validatorFactory);

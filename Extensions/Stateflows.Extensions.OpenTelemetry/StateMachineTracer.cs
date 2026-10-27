@@ -12,6 +12,8 @@ using Stateflows.StateMachines.Context.Interfaces;
 
 namespace Stateflows.Extensions.OpenTelemetry
 {
+    /// <summary>Creates diagnostic activities for state-machine event processing, lifecycle hooks, and transitions.</summary>
+    /// <param name="logger">The logger used to report state-machine processing outcomes.</param>
     public class StateMachineTracer(ILogger<StateMachineTracer> logger)
         : IStateMachineObserver, IStateMachineInterceptor, IStateMachineExceptionHandler
     {
@@ -20,6 +22,7 @@ namespace Stateflows.Extensions.OpenTelemetry
         internal static readonly ActivitySource Source = new(nameof(Stateflows));
 
         private Activity? EventProcessingActivity;
+        /// <inheritdoc/>
         public async Task<EventStatus> ProcessEventAsync<TEvent>(IEventContext<TEvent> context, Func<Task<EventStatus>> next)
         {
             Before(context);
@@ -57,7 +60,7 @@ namespace Stateflows.Extensions.OpenTelemetry
                     {
                         var eventName = context.Event is Completion
                             ? "Completion"
-                            : context.Event.GetType().GetEventName().ToShortName();
+                            : Event.GetName(context.Event).ToShortName();
 
                         var header = context.Headers.Values.FirstOrDefault(h => h is ActivityHeader);
                         if (header is ActivityHeader activityHeader)
@@ -121,6 +124,7 @@ namespace Stateflows.Extensions.OpenTelemetry
 
         private Activity? GuardActivity;
         private Activity? DefaultGuardActivity;
+        /// <inheritdoc/>
         public async Task OnTransitionGuardAsync<TEvent>(ITransitionContext<TEvent> context, Func<Task<bool>> next)
         {
             Before(context);
@@ -133,8 +137,10 @@ namespace Stateflows.Extensions.OpenTelemetry
                 {
                     if (Skip && !ImplicitInitialization) return;
 
-                    var eventName = context.Event!.GetType().GetEventName().ToShortName();
-                    var triggerEventName = context.TriggerType.GetEventName().ToShortName();
+                    var eventName = Event.GetName(context.Event!).ToShortName();
+                    var triggerEventName = context.Event is StructuralEvent structural
+                        ? structural.Name.ToShortName()
+                        : context.TriggerType.GetEventName().ToShortName();
                     if (eventName != Event<Completion>.Name.ToShortName())
                     {
                         if (DefaultGuardActivity != null)
@@ -201,7 +207,7 @@ namespace Stateflows.Extensions.OpenTelemetry
                 {
                     if (Skip && !ImplicitInitialization) return;
 
-                    var eventName = context.Event!.GetType().GetEventName().ToShortName();
+                    var eventName = Event.GetName(context.Event!).ToShortName();
                     if (eventName != Event<Completion>.Name.ToShortName())
                     {
                         if (guardResult || GuardActivity == null) return;
@@ -225,6 +231,7 @@ namespace Stateflows.Extensions.OpenTelemetry
         }
 
         private Activity? EffectActivity;
+        /// <inheritdoc/>
         public async Task OnTransitionEffectAsync<TEvent>(ITransitionContext<TEvent> context, Func<Task> next)
         {
             Before(context);
@@ -242,7 +249,7 @@ namespace Stateflows.Extensions.OpenTelemetry
                         EventProcessingActivity?.Context ??
                         default(ActivityContext);
 
-                    var eventName = context.Event!.GetType().GetEventName().ToShortName();
+                    var eventName = Event.GetName(context.Event!).ToShortName();
                     var traceName = context.Target == null
                         ? $"Internal transition effect"
                         : eventName == Event<Completion>.Name.ToShortName()
@@ -280,6 +287,7 @@ namespace Stateflows.Extensions.OpenTelemetry
 
         private Activity? InitializerActivity;
         private bool ImplicitInitialization;
+        /// <inheritdoc/>
         public async Task OnStateMachineInitializeAsync(IStateMachineInitializationContext context, bool implicitInitialization, Func<Task<bool>> next)
         {
             Before(context, implicitInitialization);
@@ -347,6 +355,7 @@ namespace Stateflows.Extensions.OpenTelemetry
         }
 
         private Activity? FinalizerActivity;
+        /// <inheritdoc/>
         public async Task OnStateMachineFinalizeAsync(IStateMachineActionContext context, Func<Task> next)
         {
             Before(context);
@@ -382,13 +391,16 @@ namespace Stateflows.Extensions.OpenTelemetry
             }
         }
 
+        /// <inheritdoc/>
         public Task OnStateInitializeAsync(IStateActionContext context, Func<Task> next)
             => next();
 
+        /// <inheritdoc/>
         public Task OnStateFinalizeAsync(IStateActionContext context, Func<Task> next)
             => next();
 
         private Activity? StateEntryActivity;
+        /// <inheritdoc/>
         public async Task OnStateEntryAsync(IStateActionContext context, Func<Task> next)
         {
             Before(context);
@@ -434,6 +446,7 @@ namespace Stateflows.Extensions.OpenTelemetry
         }
 
         private Activity? StateExitActivity;
+        /// <inheritdoc/>
         public async Task OnStateExitAsync(IStateActionContext context, Func<Task> next)
         {
             Before(context);
@@ -474,6 +487,7 @@ namespace Stateflows.Extensions.OpenTelemetry
             }
         }
 
+        /// <inheritdoc/>
         public Task<bool> OnStateMachineInitializationExceptionAsync(IStateMachineInitializationContext context, Exception exception)
         {
             try
@@ -499,6 +513,7 @@ namespace Stateflows.Extensions.OpenTelemetry
             return Task.FromResult(false);
         }
 
+        /// <inheritdoc/>
         public Task<bool> OnStateMachineFinalizationExceptionAsync(IStateMachineActionContext context, Exception exception)
         {
             try
@@ -524,6 +539,7 @@ namespace Stateflows.Extensions.OpenTelemetry
             return Task.FromResult(false);
         }
 
+        /// <inheritdoc/>
         public Task<bool> OnTransitionGuardExceptionAsync<TEvent>(ITransitionContext<TEvent> context, Exception exception)
         {
             try
@@ -550,6 +566,7 @@ namespace Stateflows.Extensions.OpenTelemetry
             return Task.FromResult(false);
         }
 
+        /// <inheritdoc/>
         public Task<bool> OnTransitionEffectExceptionAsync<TEvent>(ITransitionContext<TEvent> context, Exception exception)
         {
             try
@@ -575,6 +592,7 @@ namespace Stateflows.Extensions.OpenTelemetry
             return Task.FromResult(false);
         }
 
+        /// <inheritdoc/>
         public Task<bool> OnStateInitializationExceptionAsync(IStateActionContext context, Exception exception)
         {
             if (Skip && !ImplicitInitialization) return Task.FromResult(false);
@@ -582,6 +600,7 @@ namespace Stateflows.Extensions.OpenTelemetry
             return Task.FromResult(false);
         }
 
+        /// <inheritdoc/>
         public Task<bool> OnStateFinalizationExceptionAsync(IStateActionContext context, Exception exception)
         {
             if (Skip && !ImplicitInitialization) return Task.FromResult(false);
@@ -589,6 +608,7 @@ namespace Stateflows.Extensions.OpenTelemetry
             return Task.FromResult(false);
         }
 
+        /// <inheritdoc/>
         public Task<bool> OnStateEntryExceptionAsync(IStateActionContext context, Exception exception)
         {
             try
@@ -614,6 +634,7 @@ namespace Stateflows.Extensions.OpenTelemetry
             return Task.FromResult(false);
         }
 
+        /// <inheritdoc/>
         public Task<bool> OnStateExitExceptionAsync(IStateActionContext context, Exception exception)
         {
             try
@@ -641,7 +662,7 @@ namespace Stateflows.Extensions.OpenTelemetry
         {
             var eventName = context.ExecutionTrigger is Completion
                 ? "Completion"
-                : context.ExecutionTrigger.GetType().GetEventName().ToShortName();
+                : Event.GetName(context.ExecutionTrigger).ToShortName();
 
             if (exception == null!)
             {

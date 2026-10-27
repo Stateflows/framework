@@ -100,7 +100,8 @@ namespace Stateflows.Actions.Registration.Builders
             
             if (consumedEvents.Any())
             {
-                var customEventAddedAsyncMethod = typeof(IActionUtils<IActionBuilder<TAction>>).GetMethod(nameof(IActionUtils<IActionBuilder<TAction>>.AddConsumedEvent))!;
+                var customEventAddedAsyncMethod = typeof(IActionUtils<IActionBuilder<TAction>>).GetMethods()
+                    .Single(m => m.Name == nameof(IActionUtils<IActionBuilder<TAction>>.AddConsumedEvent) && m.IsGenericMethodDefinition);
                 var originalBuildAction = buildAction;
                 buildAction = b =>
                 {

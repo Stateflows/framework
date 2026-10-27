@@ -7,7 +7,7 @@
 //     {
 //         /// <summary>
 //         /// Adds default transition coming from current pseudostate.<br/>
-//         /// <a href="https://github.com/Stateflows/framework/wiki/Default-Transition">Default transitions</a> are triggered automatically after every State Machine execution and are changing its state.
+//         /// <a href="https://github.com/Stateflows/framework/wiki/state-machine-default-transition">Default transitions</a> are triggered automatically after every State Machine execution and are changing its state.
 //         /// <list type="number">
 //         /// <item>
 //         /// <term>Target</term>
@@ -30,7 +30,7 @@
 //
 //         /// <summary>
 //         /// Adds default transition coming from current state.<br/>
-//         /// <a href="https://github.com/Stateflows/framework/wiki/Default-Transition">Default transitions</a> are triggered automatically after every State Machine execution and are changing its state.
+//         /// <a href="https://github.com/Stateflows/framework/wiki/state-machine-default-transition">Default transitions</a> are triggered automatically after every State Machine execution and are changing its state.
 //         /// <list type="number">
 //         /// <item>
 //         /// <term>Definition</term>
@@ -83,7 +83,7 @@
 //
 //         /// <summary>
 //         /// Adds default transition coming from current state.<br/>
-//         /// <a href="https://github.com/Stateflows/framework/wiki/Default-Transition">Default transitions</a> are triggered automatically after every State Machine execution and are changing its state.
+//         /// <a href="https://github.com/Stateflows/framework/wiki/state-machine-default-transition">Default transitions</a> are triggered automatically after every State Machine execution and are changing its state.
 //         /// <list type="number">
 //         /// <item>
 //         /// <term>Definition</term>
@@ -126,7 +126,7 @@
 //
 //         /// <summary>
 //         /// Adds default transition coming from current state.<br/>
-//         /// <a href="https://github.com/Stateflows/framework/wiki/Default-Transition">Default transitions</a> are triggered automatically after every State Machine execution and are changing its state.
+//         /// <a href="https://github.com/Stateflows/framework/wiki/state-machine-default-transition">Default transitions</a> are triggered automatically after every State Machine execution and are changing its state.
 //         /// <list type="number">
 //         /// <item>
 //         /// <term>Target</term>

@@ -6,6 +6,7 @@ namespace Stateflows.Entities
     /// <summary>
     /// Provides the entity, configured publication scope, and executing behavior to an observer.
     /// </summary>
+    /// <typeparam name="TTemplate">The entity template type.</typeparam>
     public interface IProjectionObservationContext<out TTemplate> :
         IProjectionContext<TTemplate>,
         IBehaviorActionContext

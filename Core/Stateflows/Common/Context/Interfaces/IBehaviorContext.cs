@@ -2,6 +2,8 @@
 
 namespace Stateflows.Common
 {
+    /// <summary>Exposes the current behavior instance's messaging, values, and nested entity operations.</summary>
+    /// <remarks>The context is valid only during the behavior execution that supplies it.</remarks>
     public interface IBehaviorContext :
         ISends<IBehaviorContext>,
         IPublishes<IBehaviorContext>,
@@ -10,15 +12,16 @@ namespace Stateflows.Common
         IEntityOperations<IBehaviorContext>
     {
         /// <summary>
-        /// Represents identifier of current behavior
+        /// Identifies the current behavior instance.
         /// </summary>
         BehaviorId Id { get; }
 
         /// <summary>
-        /// Provides access to global context values of current behavior
+        /// Provides access to the current behavior's persistent value store.
         /// </summary>
         IContextValues Values { get; }
         
+        /// <summary>Gets whether this behavior is embedded in another behavior.</summary>
         bool IsEmbedded { get; }
     }
 }

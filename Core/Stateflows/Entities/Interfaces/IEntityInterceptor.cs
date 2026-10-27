@@ -22,6 +22,10 @@ namespace Stateflows.Entities
         /// Repeated continuation calls are rejected. An unfinished continuation is
         /// awaited and reported as an invalid hook implementation before processing completes.
         /// </remarks>
+        /// <typeparam name="TEvent">The incoming event payload type.</typeparam>
+        /// <param name="context">The incoming event and its behavior execution context.</param>
+        /// <param name="next">The continuation that processes the event.</param>
+        /// <returns>The resulting event status.</returns>
         Task<EventStatus> ProcessEventAsync<TEvent>(
             IEventContext<TEvent> context,
             Func<Task<EventStatus>> next);

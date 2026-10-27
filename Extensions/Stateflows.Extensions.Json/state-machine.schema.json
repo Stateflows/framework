@@ -63,6 +63,21 @@
       "minItems": 1,
       "items": { "$ref": "#/$defs/typeReference" }
     },
+    "eventTriggers": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "oneOf": [
+          { "$ref": "#/$defs/typeReference" },
+          {
+            "type": "object",
+            "required": ["eventName"],
+            "properties": { "eventName": { "type": "string", "minLength": 1 } },
+            "additionalProperties": false
+          }
+        ]
+      }
+    },
     "behaviorClass": {
       "type": "object",
       "required": ["type", "name"],
@@ -133,7 +148,7 @@
       "required": ["kind"],
       "properties": {
         "kind": { "enum": ["event", "default", "internal"] },
-        "triggers": { "$ref": "#/$defs/triggers" },
+        "triggers": { "$ref": "#/$defs/eventTriggers" },
         "target": { "$ref": "#/$defs/name" },
         "local": { "type": "boolean", "default": true },
         "else": { "type": "boolean", "default": false },

@@ -15,24 +15,26 @@ using ActionDelegateAsync = Stateflows.Actions.Registration.ActionDelegateAsync;
 
 namespace Stateflows.StateMachines.Registration.Interfaces.Base
 {
+    /// <summary>Registers callbacks awaited when a composite or orthogonal state's nested configuration is finalized.
+    /// </summary>
+    /// <typeparam name="TReturn">The fluent state builder returned after registration.</typeparam>
+    /// <seealso href="https://github.com/Stateflows/framework/wiki/state-machine-composite-state" />
     public interface ICompositeStateFinalization<out TReturn>
     {
-        /// <summary>
-        /// Adds finalization handler to current state.<br/>
-        /// Use the following pattern to implement handler:
-        /// <code>async c => {
-        ///     // handler logic here; action context is available via c parameter
-        /// }</code>
-        /// </summary>
-        /// <param name="actionsAsync">Action handlers</param>
+        /// <summary>Registers handlers for the state's nested-state finalization operation.</summary>
+        /// <param name="actionsAsync">Asynchronous handlers receiving the state action context during nested-state
+        /// finalization. Each returned task is awaited.</param>
+        /// <returns>The current state builder for continued configuration.</returns>
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/state-machine-composite-state" />
         TReturn AddOnFinalize(params Func<IStateActionContext, Task>[] actionsAsync);
         
         #region AddOnFinalizeActivity
-        /// <summary>
-        /// Registers activity behavior that will be started when current state finalizes
+        /// <summary>Runs a new embedded Activity for each execution of the state's nested-state finalization operation.
         /// </summary>
-       
-        /// <typeparam name="TActivity">Activity behavior type</typeparam>
+        /// <typeparam name="TActivity">Embedded behavior implementation of <see cref="IActivity" />. Its definition is
+        /// registered for this embedding site.</typeparam>
+        /// <returns>The current state builder for continued configuration.</returns>
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/behavioral-groups" />
         [DebuggerHidden]
         public TReturn AddOnFinalizeActivity<TActivity>()
             where TActivity : class, IActivity
@@ -43,10 +45,12 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
             return AddOnFinalize(c => StateMachineActivityExtensions.RunStateActivityAsync(Constants.Finalization, c, activityName));
         }
 
-        /// <summary>
-        /// Registers activity behavior that will be started when current state finalizes
+        /// <summary>Runs a new embedded Activity for each execution of the state's nested-state finalization operation.
         /// </summary>
-        /// <param name="activityBuildAction">Activity build action</param>
+        /// <param name="activityBuildAction">Callback configuring the embedded Activity's nodes, flows, and lifecycle.
+        /// </param>
+        /// <returns>The current state builder for continued configuration.</returns>
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/behavioral-groups" />
         public TReturn AddOnFinalizeActivity(ReactiveActivityBuildAction activityBuildAction)
         {
             var vertex = ((IVertexBuilder)this).Vertex;
@@ -57,11 +61,14 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         #endregion
         
         #region AddOnFinalizeAction
-        /// <summary>
-        /// Registers action behavior that will be started when current state finalizes
+        /// <summary>Runs a new embedded Action for each execution of the state's nested-state finalization operation.
         /// </summary>
-        /// <param name="buildAction">Build action</param>
-        /// <typeparam name="TAction">Action behavior type</typeparam>
+        /// <param name="buildAction">Optional callback configuring the embedded Action's execution and middleware options.
+        /// </param>
+        /// <typeparam name="TAction">Embedded behavior implementation of <see cref="IAction" />. Its definition is
+        /// registered for this embedding site.</typeparam>
+        /// <returns>The current state builder for continued configuration.</returns>
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/behavioral-groups" />
         [DebuggerHidden]
         public TReturn AddOnFinalizeAction<TAction>(ActionBuildAction<TAction> buildAction = null)
             where TAction : class, IAction
@@ -72,11 +79,14 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
             return AddOnFinalize(c => StateMachineActionExtensions.RunStateActionAsync(Constants.Finalization, c, actionName));
         }
         
-        /// <summary>
-        /// Registers action behavior that will be started when current state finalizes
+        /// <summary>Runs a new embedded Action for each execution of the state's nested-state finalization operation.
         /// </summary>
-        /// <param name="actionDelegateAsync">Action delegate</param>
-        /// <param name="buildAction">Build action</param>
+        /// <param name="actionDelegateAsync">Asynchronous implementation receiving the embedded Action's execution context.
+        /// </param>
+        /// <param name="buildAction">Optional callback configuring the embedded Action's execution and middleware options.
+        /// </param>
+        /// <returns>The current state builder for continued configuration.</returns>
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/behavioral-groups" />
         public TReturn AddOnFinalizeAction(ActionDelegateAsync actionDelegateAsync, ActionBuildAction buildAction = null)
         {
             var vertex = ((IVertexBuilder)this).Vertex;
@@ -86,22 +96,22 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         }
         #endregion
         
-        /// <summary>
-        /// Adds synchronous finalization handler coming from current state.<br/>
-        /// Use the following pattern to implement handler:
-        /// <code>c => {
-        ///     // handler logic here; action context is available via c parameter
-        /// }</code>
-        /// </summary>
-        /// <param name="actions">Synchronous action handlers</param>
+        /// <summary>Registers handlers for the state's nested-state finalization operation.</summary>
+        /// <param name="actions">Synchronous handlers receiving the state action context during nested-state finalization.
+        /// </param>
+        /// <returns>The current state builder for continued configuration.</returns>
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/state-machine-composite-state" />
         [DebuggerHidden]
         public TReturn AddOnFinalize(params System.Action<IStateActionContext>[] actions)
             => AddOnFinalize(actions.Select(action => action.ToAsync()).ToArray());
 
-        /// <summary>
-        /// Adds multiple typed finalization handlers to the current state.
-        /// </summary>
-        /// <typeparam name="TStateFinalization">The type of the first state finalization handler.</typeparam>
+        /// <summary>Registers typed handlers for the state's nested-state finalization operation.</summary>
+        /// <typeparam name="TStateFinalization">Typed nested-state finalization handler implementing
+        /// <see cref="ICompositeStateFinalization" />.</typeparam>
+        /// <param name="buildAction">Optional callback configuring the activated typed handler before its handler method is
+        /// invoked.</param>
+        /// <returns>The current state builder for continued configuration.</returns>
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/state-machine-composite-state" />
         TReturn AddOnFinalize<TStateFinalization>(ElementBuildAction<TStateFinalization> buildAction = null)
             where TStateFinalization : class, ICompositeStateFinalization
             => AddOnFinalize(async c => 
@@ -111,11 +121,13 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
                 await state.OnFinalizeAsync();
             });
 
-        /// <summary>
-        /// Adds multiple typed finalization handlers to the current state.
-        /// </summary>
-        /// <typeparam name="TStateFinalization1">The type of the first state finalization handler.</typeparam>
-        /// <typeparam name="TStateFinalization2">The type of the second state finalization handler.</typeparam>
+        /// <summary>Registers typed handlers for the state's nested-state finalization operation.</summary>
+        /// <typeparam name="TStateFinalization1">Typed nested-state finalization handler implementing
+        /// <see cref="ICompositeStateFinalization" />.</typeparam>
+        /// <typeparam name="TStateFinalization2">Typed nested-state finalization handler implementing
+        /// <see cref="ICompositeStateFinalization" />.</typeparam>
+        /// <returns>The current state builder for continued configuration.</returns>
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/state-machine-composite-state" />
         TReturn AddOnFinalize<TStateFinalization1, TStateFinalization2>()
             where TStateFinalization1 : class, ICompositeStateFinalization
             where TStateFinalization2 : class, ICompositeStateFinalization
@@ -124,12 +136,15 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
             return AddOnFinalize<TStateFinalization2>();
         }
 
-        /// <summary>
-        /// Adds multiple typed finalization handlers to the current state.
-        /// </summary>
-        /// <typeparam name="TStateFinalization1">The type of the first state finalization handler.</typeparam>
-        /// <typeparam name="TStateFinalization2">The type of the second state finalization handler.</typeparam>
-        /// <typeparam name="TStateFinalization3">The type of the third state finalization handler.</typeparam>
+        /// <summary>Registers typed handlers for the state's nested-state finalization operation.</summary>
+        /// <typeparam name="TStateFinalization1">Typed nested-state finalization handler implementing
+        /// <see cref="ICompositeStateFinalization" />.</typeparam>
+        /// <typeparam name="TStateFinalization2">Typed nested-state finalization handler implementing
+        /// <see cref="ICompositeStateFinalization" />.</typeparam>
+        /// <typeparam name="TStateFinalization3">Typed nested-state finalization handler implementing
+        /// <see cref="ICompositeStateFinalization" />.</typeparam>
+        /// <returns>The current state builder for continued configuration.</returns>
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/state-machine-composite-state" />
         TReturn AddOnFinalize<TStateFinalization1, TStateFinalization2, TStateFinalization3>()
             where TStateFinalization1 : class, ICompositeStateFinalization
             where TStateFinalization2 : class, ICompositeStateFinalization
@@ -139,13 +154,17 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
             return AddOnFinalize<TStateFinalization3>();
         }
 
-        /// <summary>
-        /// Adds multiple typed finalization handlers to the current state.
-        /// </summary>
-        /// <typeparam name="TStateFinalization1">The type of the first state finalization handler.</typeparam>
-        /// <typeparam name="TStateFinalization2">The type of the second state finalization handler.</typeparam>
-        /// <typeparam name="TStateFinalization3">The type of the third state finalization handler.</typeparam>
-        /// <typeparam name="TStateFinalization4">The type of the fourth state finalization handler.</typeparam>
+        /// <summary>Registers typed handlers for the state's nested-state finalization operation.</summary>
+        /// <typeparam name="TStateFinalization1">Typed nested-state finalization handler implementing
+        /// <see cref="ICompositeStateFinalization" />.</typeparam>
+        /// <typeparam name="TStateFinalization2">Typed nested-state finalization handler implementing
+        /// <see cref="ICompositeStateFinalization" />.</typeparam>
+        /// <typeparam name="TStateFinalization3">Typed nested-state finalization handler implementing
+        /// <see cref="ICompositeStateFinalization" />.</typeparam>
+        /// <typeparam name="TStateFinalization4">Typed nested-state finalization handler implementing
+        /// <see cref="ICompositeStateFinalization" />.</typeparam>
+        /// <returns>The current state builder for continued configuration.</returns>
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/state-machine-composite-state" />
         TReturn AddOnFinalize<TStateFinalization1, TStateFinalization2, TStateFinalization3, TStateFinalization4>()
             where TStateFinalization1 : class, ICompositeStateFinalization
             where TStateFinalization2 : class, ICompositeStateFinalization
@@ -156,14 +175,19 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
             return AddOnFinalize<TStateFinalization4>();
         }
 
-        /// <summary>
-        /// Adds multiple typed finalization handlers to the current state.
-        /// </summary>
-        /// <typeparam name="TStateFinalization1">The type of the first state finalization handler.</typeparam>
-        /// <typeparam name="TStateFinalization2">The type of the second state finalization handler.</typeparam>
-        /// <typeparam name="TStateFinalization3">The type of the third state finalization handler.</typeparam>
-        /// <typeparam name="TStateFinalization4">The type of the fourth state finalization handler.</typeparam>
-        /// <typeparam name="TStateFinalization5">The type of the fifth state finalization handler.</typeparam>
+        /// <summary>Registers typed handlers for the state's nested-state finalization operation.</summary>
+        /// <typeparam name="TStateFinalization1">Typed nested-state finalization handler implementing
+        /// <see cref="ICompositeStateFinalization" />.</typeparam>
+        /// <typeparam name="TStateFinalization2">Typed nested-state finalization handler implementing
+        /// <see cref="ICompositeStateFinalization" />.</typeparam>
+        /// <typeparam name="TStateFinalization3">Typed nested-state finalization handler implementing
+        /// <see cref="ICompositeStateFinalization" />.</typeparam>
+        /// <typeparam name="TStateFinalization4">Typed nested-state finalization handler implementing
+        /// <see cref="ICompositeStateFinalization" />.</typeparam>
+        /// <typeparam name="TStateFinalization5">Typed nested-state finalization handler implementing
+        /// <see cref="ICompositeStateFinalization" />.</typeparam>
+        /// <returns>The current state builder for continued configuration.</returns>
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/state-machine-composite-state" />
         TReturn AddOnFinalize<TStateFinalization1, TStateFinalization2, TStateFinalization3, TStateFinalization4, TStateFinalization5>()
             where TStateFinalization1 : class, ICompositeStateFinalization
             where TStateFinalization2 : class, ICompositeStateFinalization

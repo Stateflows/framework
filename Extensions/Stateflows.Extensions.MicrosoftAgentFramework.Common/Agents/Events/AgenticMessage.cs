@@ -4,18 +4,26 @@ using Stateflows.Extensions.MinimalAPIs.Attributes;
 
 namespace Stateflows.MAF;
 
+/// <summary>A serializable chat message envelope used by Stateflows agent notifications and activity inputs.</summary>
 public class AgenticContent
 {
+    /// <summary>Gets or sets the framework content kind represented by <see cref="Payload"/>.</summary>
     public AgenticContentType Type { get; set; }
+    /// <summary>Gets or sets the serialized or textual representation of the content value.</summary>
     public string Payload { get; set; }
 }
 
+/// <summary>Stores the role and flattened content payloads of a Microsoft Agent Framework chat message.</summary>
 [NotificationWatch<AgenticMessage>]
 public class AgenticMessage
 {
+    /// <summary>Gets or sets the serialized role of the message.</summary>
     public AgenticRole Role { get; set; }
+    /// <summary>Gets or sets the message contents encoded as kind/payload pairs.</summary>
     public AgenticContent[] Contents { get; set; }
     
+    /// <summary>Converts this envelope to a framework chat message.</summary>
+    /// <returns>The reconstructed chat message. Content kinds without a dedicated reconstruction path fall back to text content.</returns>
     public ChatMessage ToChatMessage()
         => new ChatMessage(
             Role switch
@@ -55,6 +63,9 @@ public class AgenticMessage
             }).ToArray()
         );
     
+    /// <summary>Flattens a framework chat message into the serializable role/content envelope.</summary>
+    /// <param name="chatMessage">The framework chat message to convert.</param>
+    /// <returns>An envelope containing a mapped role and each content item's kind and payload.</returns>
     public static AgenticMessage FromChatMessage(ChatMessage chatMessage)
         => new AgenticMessage
         {

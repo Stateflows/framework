@@ -1,8 +1,10 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using Stateflows.Common.Registration.Builders;
 using Stateflows.Actions.Registration;
+using Stateflows.Actions.Exceptions;
 
 namespace Stateflows.Actions.Models
 {
@@ -29,6 +31,7 @@ namespace Stateflows.Actions.Models
         public List<ActionObserverFactoryAsync> ObserverFactories { get; set; } = [];
 
         public List<Type> ConsumedEventTypes { get; } = [];
+        public List<string> ConsumedEventNames { get; } = [];
         public List<Type> ProducedEventTypes { get; } = [];
         public List<Type> ConsumedTokenTypes { get; } = [];
         public List<Type> ProducedTokenTypes { get; } = [];
@@ -42,6 +45,23 @@ namespace Stateflows.Actions.Models
             else
             {
                 throw new InvalidOperationException($"Resource group {ResourceName ?? string.Empty} does not exist");
+            }
+
+            foreach (var eventType in ConsumedEventTypes.Concat(ProducedEventTypes))
+            {
+                stateflowsBuilder.Events.RegisterClr(eventType);
+            }
+
+            foreach (var eventName in ConsumedEventNames)
+            {
+                try
+                {
+                    stateflowsBuilder.Events.GetEvent(eventName);
+                }
+                catch (ArgumentException e)
+                {
+                    throw new ActionDefinitionException($"Action '{Name}' consumes event '{eventName}' which is not registered.", new ActionClass(Name), e);
+                }
             }
         }
     }

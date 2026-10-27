@@ -5,6 +5,7 @@ using Stateflows.StateMachines.Registration.Interfaces;
 
 namespace Stateflows.MAF.AIAgents.Extensions;
 
+/// <summary>Contains internal transition formatting helpers for agentic guards and effects.</summary>
 public static class TransitionBuilderExtensions
 {
     internal static ITransitionBuilder<TEvent> AddAgenticEffect<TEvent>(this ITransitionBuilder<TEvent> transitionBuilder,

@@ -3,95 +3,43 @@ using Stateflows.StateMachines.Extensions;
 
 namespace Stateflows.StateMachines.Registration.Interfaces.Base
 {
+    /// <summary>Adds unguarded completion paths from a fork into distinct regions of an orthogonal state.</summary>
+    /// <typeparam name="TReturn">The fork builder returned after each path is added.</typeparam>
+    /// <seealso href="https://github.com/Stateflows/framework/wiki/state-machine-transition" />
     public interface IForkTransitions<out TReturn>
     {
-        /// <summary>
-        /// Adds default transition coming from current fork pseudostate.<br/>
-        /// <a href="https://github.com/Stateflows/framework/wiki/Default-Transition">Default transitions</a> are triggered automatically after every State Machine execution and are changing its state.
-        /// <list type="number">
-        /// <item>
-        /// <term>Target</term>
-        /// <description>State that transition is coming into - <b>first parameter</b>.</description>
-        /// </item>
-        /// </list>
-        /// </summary>
-        /// <param name="targetStateName">Target state name</param>
-        /// <param name="transitionBuildAction">Transition build action</param>
+        /// <summary>Adds an outgoing completion path from the fork to an orthogonal region.</summary>
+        /// <param name="targetStateName">Registered name of the target vertex. The target must be defined in the machine;
+        /// this method does not create it.</param>
+        /// <param name="transitionBuildAction">Optional callback configuring the transition's effects.</param>
+        /// <returns>The source fork builder for adding further regional paths.</returns>
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/state-machine-transition" />
         TReturn AddTransition(string targetStateName, DefaultTransitionEffectBuildAction transitionBuildAction = null);
 
-        /// <summary>
-        /// Adds default transition coming from current state.<br/>
-        /// <a href="https://github.com/Stateflows/framework/wiki/Default-Transition">Default transitions</a> are triggered automatically after every State Machine execution and are changing its state.
-        /// <list type="number">
-        /// <item>
-        /// <term>Definition</term>
-        /// <description>Class that defines transition actions (guard and/or effect) - <b>first type parameter</b>.</description>
-        /// </item>
-        /// <item>
-        /// <term>Target</term>
-        /// <description>State that transition is coming into - <b>second type parameter</b>,</description>
-        /// </item>
-        /// <item>
-        /// <term>Effect</term>
-        /// <description>Transition actions can be defined using build action - <b>first parameter</b>.</description>
-        /// </item>
-        /// </list>
-        /// </summary>
-        /// <typeparam name="TTransition">Transition class; must implement at least one of the following interfaces:
-        /// <list type="bullet">
-        /// <item><see cref="IDefaultTransitionGuard"/></item>
-        /// <item><see cref="IDefaultTransitionEffect"/></item>
-        /// </list>
-        /// </typeparam>
-        /// <typeparam name="TTargetState">Target state class; must implement at least one of the following interfaces:
-        /// <list type="bullet">
-        /// <item><see cref="IState"/></item>
-        /// <item><see cref="IStateEntry"/></item>
-        /// <item><see cref="IStateExit"/></item>
-        /// <item><see cref="ICompositeState"/></item>
-        /// <item><see cref="ICompositeStateEntry"/></item>
-        /// <item><see cref="ICompositeStateExit"/></item>
-        /// <item><see cref="ICompositeStateInitialization"/></item>
-        /// <item><see cref="ICompositeStateFinalization"/></item>
-        /// <item><see cref="IOrthogonalState"/></item>
-        /// <item><see cref="IOrthogonalStateEntry"/></item>
-        /// <item><see cref="IOrthogonalStateExit"/></item>
-        /// <item><see cref="IOrthogonalStateInitialization"/></item>
-        /// <item><see cref="IOrthogonalStateFinalization"/></item>
-        /// </list>
-        /// </typeparam>
+        /// <summary>Adds an outgoing completion path from the fork to an orthogonal region.</summary>
+        /// <typeparam name="TTransition">Typed transition implementation of <see cref="IDefaultTransition" /> whose
+        /// supported definition, guard, and effect hooks are applied before the configuration callback.</typeparam>
+        /// <typeparam name="TTargetState">Target vertex type. Its resolved state name identifies an already registered
+        /// vertex; this overload does not register the target.</typeparam>
+        /// <param name="transitionBuildAction">Optional callback configuring the transition's effects. Runs after the typed
+        /// transition's hooks have been registered.</param>
+        /// <returns>The source fork builder for adding further regional paths.</returns>
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/state-machine-transition" />
         [DebuggerHidden]
         public TReturn AddTransition<TTransition, TTargetState>(DefaultTransitionEffectBuildAction transitionBuildAction = null)
             where TTransition : class, IDefaultTransition
             where TTargetState : class, IVertex
             => AddTransition<TTransition>(State<TTargetState>.Name, transitionBuildAction);
 
-        /// <summary>
-        /// Adds default transition coming from current state.<br/>
-        /// <a href="https://github.com/Stateflows/framework/wiki/Default-Transition">Default transitions</a> are triggered automatically after every State Machine execution and are changing its state.
-        /// <list type="number">
-        /// <item>
-        /// <term>Definition</term>
-        /// <description>Class that defines transition actions (guard and/or effect) - <b>first type parameter</b>.</description>
-        /// </item>
-        /// <item>
-        /// <term>Target</term>
-        /// <description>Name of the state that transition is coming into - <b>first parameter</b>,</description>
-        /// </item>
-        /// <item>
-        /// <term>Effect</term>
-        /// <description>Transition actions can be defined using build action - <b>second parameter</b>.</description>
-        /// </item>
-        /// </list>
-        /// </summary>
-        /// <typeparam name="TTransition">Transition class; must implement at least one of the following interfaces:
-        /// <list type="bullet">
-        /// <item><see cref="IDefaultTransitionGuard"/></item>
-        /// <item><see cref="IDefaultTransitionEffect"/></item>
-        /// </list>
-        /// </typeparam>
-        /// <param name="targetStateName">Target state name</param>
-        /// <param name="transitionBuildAction">Transition build action</param>
+        /// <summary>Adds an outgoing completion path from the fork to an orthogonal region.</summary>
+        /// <typeparam name="TTransition">Typed transition implementation of <see cref="IDefaultTransition" /> whose
+        /// supported definition, guard, and effect hooks are applied before the configuration callback.</typeparam>
+        /// <param name="targetStateName">Registered name of the target vertex. The target must be defined in the machine;
+        /// this method does not create it.</param>
+        /// <param name="transitionBuildAction">Optional callback configuring the transition's effects. Runs after the typed
+        /// transition's hooks have been registered.</param>
+        /// <returns>The source fork builder for adding further regional paths.</returns>
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/state-machine-transition" />
         [DebuggerHidden]
         public TReturn AddTransition<TTransition>(string targetStateName, DefaultTransitionEffectBuildAction transitionBuildAction = null)
             where TTransition : class, IDefaultTransition
@@ -104,38 +52,12 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
                 }
             );
 
-        /// <summary>
-        /// Adds default transition coming from current state.<br/>
-        /// <a href="https://github.com/Stateflows/framework/wiki/Default-Transition">Default transitions</a> are triggered automatically after every State Machine execution and are changing its state.
-        /// <list type="number">
-        /// <item>
-        /// <term>Target</term>
-        /// <description>State that transition is coming into - <b>first type parameter</b>,</description>
-        /// </item>
-        /// <item>
-        /// <term>Effect</term>
-        /// <description>Transition actions can be defined using build action - <b>first parameter</b>.</description>
-        /// </item>
-        /// </list>
-        /// </summary>
-        /// <typeparam name="TTargetState">Target state class; must implement at least one of the following interfaces:
-        /// <list type="bullet">
-        /// <item><see cref="IState"/></item>
-        /// <item><see cref="IStateEntry"/></item>
-        /// <item><see cref="IStateExit"/></item>
-        /// <item><see cref="ICompositeState"/></item>
-        /// <item><see cref="ICompositeStateEntry"/></item>
-        /// <item><see cref="ICompositeStateExit"/></item>
-        /// <item><see cref="ICompositeStateInitialization"/></item>
-        /// <item><see cref="ICompositeStateFinalization"/></item>
-        /// <item><see cref="IOrthogonalState"/></item>
-        /// <item><see cref="IOrthogonalStateEntry"/></item>
-        /// <item><see cref="IOrthogonalStateExit"/></item>
-        /// <item><see cref="IOrthogonalStateInitialization"/></item>
-        /// <item><see cref="IOrthogonalStateFinalization"/></item>
-        /// </list>
-        /// </typeparam>
-        /// <param name="transitionBuildAction">Transition build action</param>
+        /// <summary>Adds an outgoing completion path from the fork to an orthogonal region.</summary>
+        /// <typeparam name="TTargetState">Target vertex type. Its resolved state name identifies an already registered
+        /// vertex; this overload does not register the target.</typeparam>
+        /// <param name="transitionBuildAction">Optional callback configuring the transition's effects.</param>
+        /// <returns>The source fork builder for adding further regional paths.</returns>
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/state-machine-transition" />
         [DebuggerHidden]
         public TReturn AddTransition<TTargetState>(DefaultTransitionEffectBuildAction transitionBuildAction = null)
             where TTargetState : class, IVertex

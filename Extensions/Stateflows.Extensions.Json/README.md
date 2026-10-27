@@ -1,4 +1,214 @@
-# JSON state machines and activities
+# JSON state machines, activities and structural events
+
+## Structural events and requests
+
+Use `Stateflows.Events.Json.JsonEventDefinition.Parse(json, options).Register(eventsBuilder)`
+inside `stateflows.AddEvents(...)`. Registration uses the core event builders, not a separate
+JSON-specific event registry. `Parse` binds the complete definition before registration;
+invalid definitions throw `System.Text.Json.JsonException`. Core registration errors remain
+core exceptions. The standalone Draft 2020-12 [event schema](event.schema.json),
+`urn:stateflows:event:1.0`, describes this format and is embedded, copied to the output
+directory, and included in the package's `schemas` directory alongside the behavior schemas.
+Associate it with event definition files through your editor's schema configuration.
+The strict event parser does not accept a `$schema` property inside the definition.
+
+The schema checks document shapes, field types, collection and enum rules, response
+reference exclusivity, and built-in validator options. Parsing and core registration
+remain authoritative for distinct sibling field names, `Compare` targets, validator
+compatibility, ordered/representable limits, .NET regex syntax, and host-owned aliases
+and custom validator options. Duplicate JSON properties are checked during parsing.
+
+```csharp
+using Stateflows.Common.Json;
+using Stateflows.Events;
+using Stateflows.Events.Json;
+
+var options = new JsonOptions()
+    .AddType<Receipt>("responses.receipt")
+    .AddValidator("positive", configuration =>
+        new System.ComponentModel.DataAnnotations.RangeAttribute(
+            configuration.GetProperty("minimum").GetInt32(), int.MaxValue));
+
+services.AddStateflows(stateflows => stateflows.AddEvents(events =>
+    JsonEventDefinition.Parse(File.ReadAllText("order-event.json"), options).Register(events)));
+
+// Resolve IEventFactory from DI. The default factory also implements IEventsRegister.
+var payload = eventFactory.CreateFromJson("OrderSubmitted",
+    """{"quantity":2,"address":{"city":"Paris","ignored":true},"tags":["new"]}""");
+```
+
+```json
+{
+  "formatVersion": "1.0",
+  "name": "OrderSubmitted",
+  "response": { "clrType": "responses.receipt" },
+  "fields": [
+    {
+      "name": "quantity",
+      "type": "Int32",
+      "validation": [
+        { "type": "Required" },
+        { "type": "Custom", "alias": "positive", "options": { "minimum": 1 } }
+      ]
+    },
+    {
+      "name": "address",
+      "fields": [{ "name": "city", "type": "String" }]
+    },
+    {
+      "name": "tags",
+      "type": "String",
+      "isCollection": true,
+      "itemValidation": [
+        { "type": "StringLength", "options": { "maximumLength": 20 } }
+      ]
+    },
+    {
+      "name": "status",
+      "type": "Enum",
+      "enumValues": ["new", "paid"]
+    }
+  ]
+}
+```
+
+The root requires `formatVersion: "1.0"`, a nonblank `name` and a `fields` array (possibly
+empty). Omit `response` for an event; use exactly one of `response.eventName` for a
+structural response or `response.clrType` for a host-registered `JsonOptions.AddType` alias.
+Structural response names are resolved by the core when configuration completes.
+CLR names, assembly names and arbitrary type loading are never accepted in place of aliases.
+
+Every field requires a distinct, nonblank `name`. A missing or null `type` denotes an object
+and requires nested `fields`. Scalar fields cannot declare `fields`. `isCollection: true`
+creates a scalar or object collection. `enumValues` is required only for `Enum` and contains
+distinct, nonblank, case-sensitive strings. `validation` applies to the whole field;
+`itemValidation` is supported only on scalar collections (the core object-collection builder
+has no item-validation API). Nested fields can have their own validation.
+
+Definitions reject unknown properties at every DTO level, unknown field/validator types,
+invalid option shapes, duplicate field names and duplicate JSON properties at any depth.
+JSON property names and type names are case-sensitive. Comments, trailing commas, additional
+root values and nesting beyond 64 levels are rejected for both definitions and payloads.
+
+### Validation allowlist
+
+Each validator has `type`, optional `options` (an object, default `{}`), and optional
+`errorMessage`. Only `Custom` additionally accepts `alias`. Built-in options are strictly
+allowlisted; unrecognized options are rejected:
+
+| `type` | `options` |
+| --- | --- |
+| `Required` | `allowEmptyStrings` (boolean, default false) |
+| `StringLength` | required `maximumLength`, optional `minimumLength` (default 0), nonnegative integers |
+| `MinLength`, `MaxLength` | required nonnegative integer `length` |
+| `Range` | required `operandType` (`Int32`, `Int64`, `Decimal`, `Double`), numeric `minimum` and `maximum` |
+| `RegularExpression` | required nonempty `pattern`, optional positive `matchTimeoutInMilliseconds` (default 2000) |
+| `Compare` | required `otherProperty`, naming a declared sibling field |
+| `EmailAddress`, `Url`, `Phone`, `CreditCard` | no options |
+| `Custom` | host-defined object passed to the explicitly registered factory |
+
+Range limits are checked against the selected numeric type and ordered; range conversion
+uses invariant culture. Regex syntax and timeout are checked during parsing. No arbitrary
+attribute constructors, property setters, resource types or CLR validators can be selected
+by documents. Custom factories are trusted host code and must validate their own untrusted
+options; their errors propagate. Factories run during `Parse`, and their returned attribute
+instances are used during registration. Custom validators do not imply any generated
+OpenAPI constraint support.
+
+`CreateFromJson` performs shape/type decoding and delegates construction to
+`IEventFactory.Create(name, fields)`. It does **not** run DataAnnotations: the normal core
+event validation pipeline does that. Missing fields stay missing; explicit null is accepted
+for every field and collection item, leaving `Required` to enforce presence/non-null.
+
+### Payload decoding
+
+Only declared fields are decoded; unknown fields are discarded recursively, including inside
+object arrays. Duplicate JSON properties are still rejected even in discarded data.
+Objects become core `StructuralValue` instances, and arrays become core collections.
+There is no `$type` or other CLR metadata interpretation.
+
+| Field types | JSON representation |
+| --- | --- |
+| `String`, `Enum` | string; enums must exactly match a declared value |
+| `Boolean` | JSON boolean only |
+| `Int32`, `Int64` | JSON integer token, checked against the corresponding CLR bounds |
+| `Decimal`, `Double` | JSON number, decoded as the declared CLR type; out-of-range values and nonfinite doubles rejected |
+| `Guid` | string in hyphenated `D` format |
+| `DateTime`, `DateTimeOffset` | ISO 8601 string supported by `System.Text.Json`, preserving its normal kind/offset semantics |
+| `TimeSpan` | invariant `c` format string, e.g. `"1.02:03:04"` |
+| `DateOnly` | invariant `"yyyy-MM-dd"` string |
+| `TimeOnly` | invariant `"HH:mm:ss"` with optional fractional seconds (up to seven digits) |
+| `Binary` | canonical padded base64 string, no whitespace |
+| object / collection | JSON object / array respectively |
+
+Strings never coerce to numbers or booleans. Invalid payloads throw
+`System.Text.Json.JsonException` with the field path for conversion failures.
+The three-argument extension requires the factory to implement `IEventsRegister`, as the
+default core implementation does. A custom factory with a separate registry can use
+`factory.CreateFromJson(name, json, register)`.
+
+### Referencing structural events from JSON behaviors
+
+Register structural event definitions with `AddEvents` **before** registering behaviors that
+reference them. Names are resolved against the host's event registry during behavior
+registration; missing names produce `JSON-003` diagnostics at the `eventName` reference.
+Documents cannot implicitly declare events by referring to them.
+
+State-machine event/internal transitions accept either a CLR alias or a structural name
+in each trigger reference, never both:
+
+```json
+{
+  "kind": "event",
+  "triggers": [
+    { "eventName": "orderSubmitted" },
+    { "clrType": "events.cancelOrder" }
+  ],
+  "target": "processed",
+  "guard": { "clrType": "handlers.orderGuard" },
+  "effects": [{ "clrType": "handlers.orderEffect" }]
+}
+```
+
+Existing `clrType` formats are unchanged. A mixed list retains every declared trigger:
+the CLR subset keeps its multi-trigger edge and each structural name receives a separate
+name-routed edge with the same target, guards, effects, metadata and else/local settings.
+Structural events with other names do not match these named edges. Duplicate named
+triggers, mixing Completion with named triggers, or combining a CLR `StructuralEvent` /
+`StructuralRequest` wildcard with named triggers are rejected.
+An `else` transition containing a structural reference must declare exactly one trigger:
+the core allows only one else edge per vertex. Mixed/multiple named else triggers fail
+binding rather than silently dropping triggers.
+
+Guards/effects for named triggers implement `ITransitionGuard<StructuralEvent>` /
+`ITransitionEffect<StructuralEvent>`. In a mixed list the handler must also satisfy the
+existing CLR trigger contracts; the loader checks the full list before constructing any
+edges. Transition definitions must expose one contract covering the complete trigger set,
+as before, and are applied to each expanded edge. Named transition visitors receive the
+registered `EventDefinition`, not a CLR wildcard. This named JSON syntax applies to
+transitions only: initializer and deferral trigger declarations still use `clrType`.
+
+Activity accept-event nodes use exactly one of `eventType` (the existing CLR alias) or
+`eventName` (the registered structural name), keeping the existing implementation binding:
+
+```json
+{
+  "kind": "acceptEvent",
+  "name": "receiveOrder",
+  "eventName": "orderSubmitted",
+  "implementation": { "clrType": "handlers.receiveOrder" },
+  "flows": [{ "kind": "control", "target": "done" }]
+}
+```
+
+`handlers.receiveOrder` must implement `IAcceptEventActionNode<StructuralEvent>`. Its
+`ExecuteAsync(StructuralEvent, CancellationToken)` receives the decoded structural payload;
+normal host DI and `IConfigurable<T>` binding still apply. The loader calls the core named
+accept-event builder overload, so routing and visitor descriptors use the registered
+event's name and definition. Time/send/publish nodes and activity initializers retain
+their existing CLR-only `eventType` syntax.
+
+## Behavior definitions
 
 `Stateflows.Extensions.Json` loads declarative state machines and activities without bypassing their
 fluent builder APIs. Standalone Draft 2020-12 schemas are embedded in the assembly and included in

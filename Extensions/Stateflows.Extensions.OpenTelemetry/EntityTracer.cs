@@ -14,11 +14,13 @@ namespace Stateflows.Extensions.OpenTelemetry
     /// <summary>
     /// Traces entity event processing, mutations, computed fields, projections, and failures.
     /// </summary>
+    /// <param name="logger">The logger used to report entity processing failures.</param>
     public class EntityTracer(ILogger<EntityTracer> logger) :
         IEntityObserver, IEntityInterceptor, IEntityExceptionHandler
     {
         private readonly AsyncLocal<Activity?> processingActivity = new();
 
+        /// <inheritdoc/>
         public async Task<EventStatus> ProcessEventAsync<TEvent>(
             IEventContext<TEvent> context, Func<Task<EventStatus>> next)
         {
@@ -65,21 +67,25 @@ namespace Stateflows.Extensions.OpenTelemetry
             }
         }
 
+        /// <inheritdoc/>
         public Task OnMutationAsync<TTemplate, TMutationEvent>(
             IMutationObservationContext<TTemplate, TMutationEvent> context, Func<Task> next)
             => ObserveAsync(context, $"Mutation '{Event.GetName(typeof(TMutationEvent)).ToShortName()}'",
                 "Mutation", Event.GetName(typeof(TMutationEvent)), next);
 
+        /// <inheritdoc/>
         public Task OnComputedFieldAsync<TTemplate, TField>(
             IComputedFieldObservationContext<TTemplate> context, Func<Task<TField>> next)
             => ObserveAsync(context, $"Computed field '{context.FieldName}'", "Field", context.FieldName,
                 async () => { await next(); });
 
+        /// <inheritdoc/>
         public Task OnProjectionAsync<TTemplate, TProjection>(
             IProjectionObservationContext<TTemplate> context, Func<Task<TProjection>> next)
             => ObserveAsync(context, $"Projection '{Event.GetName(typeof(TProjection)).ToShortName()}'",
                 "Projection", Event.GetName(typeof(TProjection)), async () => { await next(); });
 
+        /// <inheritdoc/>
         public Task<bool> OnEntityInitializationExceptionAsync(
             IEntityInitializationExceptionContext context, Exception exception)
         {
@@ -87,14 +93,17 @@ namespace Stateflows.Extensions.OpenTelemetry
             return HandleExceptionAsync(context, exception, "initialization");
         }
 
+        /// <inheritdoc/>
         public Task<bool> OnMutationExceptionAsync<TTemplate, TMutationEvent>(
             IMutationObservationContext<TTemplate, TMutationEvent> context, Exception exception)
             => HandleExceptionAsync(context, exception, $"mutation '{Event.GetName(typeof(TMutationEvent)).ToShortName()}'");
 
+        /// <inheritdoc/>
         public Task<bool> OnComputedFieldExceptionAsync<TTemplate, TField>(
             IComputedFieldObservationContext<TTemplate> context, Exception exception)
             => HandleExceptionAsync(context, exception, $"computed field '{context.FieldName}'");
 
+        /// <inheritdoc/>
         public Task<bool> OnProjectionExceptionAsync<TTemplate, TProjection>(
             IProjectionObservationContext<TTemplate> context, Exception exception)
             => HandleExceptionAsync(context, exception, $"projection '{Event.GetName(typeof(TProjection)).ToShortName()}'");

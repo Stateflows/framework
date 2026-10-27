@@ -77,6 +77,10 @@ namespace Stateflows.Activities.Models
             foreach (var node in AllNodes.Values.Where(node => node != null))
             {
                 node.IncomingEdges?.Clear();
+                if (node.StructuralEventName != null)
+                    StateflowsBuilder.Events.GetEvent(node.StructuralEventName);
+                else if (node.EventType != null && node.Type is NodeType.AcceptEventAction or NodeType.TimeEventAction or NodeType.SendEventAction or NodeType.PublishEventAction)
+                    StateflowsBuilder.Events.RegisterClr(node.EventType);
             }
             foreach (var edge in AllEdgesList.Where(edge => edge != null))
             {

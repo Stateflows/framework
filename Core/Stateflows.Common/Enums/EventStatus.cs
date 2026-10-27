@@ -1,5 +1,6 @@
 ﻿namespace Stateflows.Common
 {
+    /// <summary>Describes the outcome of processing an event for a behavior.</summary>
     public enum EventStatus
     {
         /// <summary>

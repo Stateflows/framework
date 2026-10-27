@@ -4,6 +4,7 @@ using Stateflows.Activities.Models;
 using Stateflows.Activities.Registration.Interfaces;
 using Stateflows.Activities.Registration.Interfaces.Base;
 using Stateflows.Common.Interfaces;
+using Stateflows.Common;
 
 namespace Stateflows.Activities.Registration.Builders
 {
@@ -36,10 +37,29 @@ namespace Stateflows.Activities.Registration.Builders
         IOverridenAcceptEventActionBuilder<TEvent> IOverridenControlFlowBase<IOverridenAcceptEventActionBuilder<TEvent>>.UseControlFlow(string targetNodeName, ControlFlowBuildAction buildAction)
             => UseControlFlow(targetNodeName, buildAction) as IOverridenAcceptEventActionBuilder<TEvent>;
 
+        public IOverridenAcceptEventActionBuilder<StructuralEvent> ChangeAcceptedEvent(string eventName)
+        {
+            ArgumentException.ThrowIfNullOrWhiteSpace(eventName);
+            if (!typeof(TEvent).IsAssignableFrom(typeof(StructuralEvent)))
+                throw new InvalidOperationException("A CLR-typed accept-event node cannot be changed to an incompatible structural event.");
+            var definition = Graph.StateflowsBuilder.Events.GetEvent(eventName);
+            Node.EventType = typeof(StructuralEvent);
+            Node.StructuralEventName = eventName;
+            Node.ActualEventTypes = [typeof(StructuralEvent)];
+            if (Node.VisitingTask != null)
+            {
+                var index = Graph.VisitingTasks.IndexOf(Node.VisitingTask);
+                Node.VisitingTask = visitor => visitor.AcceptEventNodeAddedAsync(definition, Graph.Name, Graph.Version, Node.OwnName);
+                Graph.VisitingTasks[index] = Node.VisitingTask;
+            }
+            return new AcceptEventNodeBuilder<StructuralEvent>(Node, activityBuilder);
+        }
+
         public IOverridenAcceptEventActionBuilder<TAcceptedEvent> ChangeAcceptedEvent<TAcceptedEvent>()
             where TAcceptedEvent : TEvent
         {
             Node.EventType = typeof(TAcceptedEvent);
+            Node.StructuralEventName = null;
             Node.ActualEventTypes = Graph.StateflowsBuilder.TypeMapper.GetMappedTypes(Node.EventType).ToHashSet();
 
             var result = new AcceptEventNodeBuilder<TAcceptedEvent>(Node, activityBuilder);
@@ -106,6 +126,7 @@ namespace Stateflows.Activities.Registration.Builders
             where TAcceptedEvent : TEvent
         {
             Node.EventType = typeof(TAcceptedEvent);
+            Node.StructuralEventName = null;
             Node.ActualEventTypes = Graph.StateflowsBuilder.TypeMapper.GetMappedTypes(Node.EventType).ToHashSet();
 
             var result = new AcceptEventNodeBuilder<TAcceptedEvent>(Node, activityBuilder);

@@ -3,9 +3,10 @@
     <TargetFramework>net10.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <Version>$(STATEFLOWS_VERSION)</Version>
     <Authors>Stateflows</Authors>
-    <Description>JSON state-machine and activity definitions for Stateflows.</Description>
+    <Description>JSON state-machine, activity and structural event definitions for Stateflows.</Description>
     <PackageReadmeFile>README.md</PackageReadmeFile>
   </PropertyGroup>
   <ItemGroup>
@@ -15,8 +16,10 @@
   <ItemGroup>
     <EmbeddedResource Include="state-machine.schema.json" />
     <EmbeddedResource Include="activity.schema.json" />
+    <EmbeddedResource Include="event.schema.json" />
     <None Update="state-machine.schema.json" Pack="true" PackagePath="schemas" CopyToOutputDirectory="PreserveNewest" />
     <None Update="activity.schema.json" Pack="true" PackagePath="schemas" CopyToOutputDirectory="PreserveNewest" />
+    <None Update="event.schema.json" Pack="true" PackagePath="schemas" CopyToOutputDirectory="PreserveNewest" />
     <None Update="README.md" Pack="true" PackagePath="\" />
     <InternalsVisibleTo Include="StateMachine.IntegrationTests" />
   </ItemGroup>

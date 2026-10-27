@@ -637,7 +637,7 @@ namespace Stateflows.StateMachines.Registration.Builders
         private CompositeStateBuilder AddInitialOrthogonalState(string orthogonalStateName, OrthogonalStateBuildAction orthogonalStateBuildAction)
         {
             Region.InitialVertexName = orthogonalStateName;
-            return AddVertex(orthogonalStateName, VertexType.InitialCompositeState, vertex => orthogonalStateBuildAction?.Invoke(new OrthogonalStateBuilder(vertex)));
+            return AddVertex(orthogonalStateName, VertexType.InitialOrthogonalState, vertex => orthogonalStateBuildAction?.Invoke(new OrthogonalStateBuilder(vertex)));
         }
         #endregion
 
@@ -1422,7 +1422,7 @@ namespace Stateflows.StateMachines.Registration.Builders
                 throw new StateMachineOverrideException($"Deferral of event '{Event<TEvent>.Name}' not found in overriden state '{Vertex.Name}'", Vertex.Graph.Class);
             }
             
-            var builder = new DeferralBuilder<TEvent>(Vertex, deferralLogic);
+            var builder = new EventDeferralBuilder<TEvent>(Vertex, deferralLogic);
             
             buildAction?.Invoke(builder);
 

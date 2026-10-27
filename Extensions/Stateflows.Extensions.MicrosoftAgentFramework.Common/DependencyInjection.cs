@@ -5,8 +5,12 @@ using Stateflows.MAF.AIAgents.Classes;
 
 namespace Stateflows.Extensions.MicrosoftAgentFramework;
 
+/// <summary>Registers shared Microsoft Agent Framework services for Stateflows clients.</summary>
 public static class DependencyInjection
 {
+    /// <summary>Adds the AI-agent locator service to the Stateflows client service collection.</summary>
+    /// <param name="builder">The Stateflows client builder to configure.</param>
+    /// <returns>The same client builder, for further configuration.</returns>
     public static IStateflowsClientBuilder AddAIAgents(this IStateflowsClientBuilder builder)
     {
         builder.ServiceCollection.AddMicrosoftAgentFrameworkServices();

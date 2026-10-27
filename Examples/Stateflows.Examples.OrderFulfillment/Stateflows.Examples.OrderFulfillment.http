@@ -1,0 +1,69 @@
+@host = http://localhost:5155
+@order = demo-001
+@root = {{host}}/stateflows/stateMachines/OrderFulfillment/{{order}}
+
+### Submit once per unique order ID; choose a scenario from README.md.
+POST {{root}}/submitOrder
+Content-Type: application/json
+
+{
+  "event": {
+    "customerEmail": "buyer@example.test",
+    "lines": [
+      { "sku": "BOOK", "quantity": 2, "unitPrice": 12.50 },
+      { "sku": "PEN", "quantity": 3, "unitPrice": 2.00 }
+    ],
+    "scenario": "HappyPath",
+    "callbackDelayMilliseconds": 2000
+  }
+}
+
+### Active states and available events.
+GET {{root}}/status
+
+### Shared Entity projection.
+GET {{root}}/summary
+
+### Accepted only before dispatch. Completion is asynchronous.
+POST {{root}}/cancelOrder
+Content-Type: application/json
+
+{ "event": { "reason": "Customer requested cancellation." } }
+
+### For DeliveryNeedsAttention, wait for NeedsAttention first.
+POST {{root}}/retryDelivery
+Content-Type: application/json
+
+{}
+
+### For CompensationNeedsAttention, wait for that state first.
+POST {{root}}/retryCompensation
+Content-Type: application/json
+
+{}
+
+### PlantUML source only; no request to a public renderer.
+GET {{root}}/diagram
+
+### Activity must have started.
+GET {{root}}/diagrams/reservation
+
+### Activity must have started.
+GET {{root}}/diagrams/preparation
+
+### Live projection notifications (keeps the connection open).
+GET {{root}}/notifications?names=OrderSnapshot&stream=true
+Accept: text/event-stream
+
+### Invalid payload: expect 400, with no background work started.
+POST {{host}}/stateflows/stateMachines/OrderFulfillment/invalid-001/submitOrder
+Content-Type: application/json
+
+{
+  "event": {
+    "customerEmail": "not-an-email",
+    "lines": [{ "sku": "BOOK", "quantity": 0, "unitPrice": -1 }],
+    "scenario": "HappyPath",
+    "callbackDelayMilliseconds": 500
+  }
+}

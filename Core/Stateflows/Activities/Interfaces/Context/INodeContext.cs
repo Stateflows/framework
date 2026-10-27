@@ -3,6 +3,7 @@ using Stateflows.Activities.Context.Interfaces;
 
 namespace Stateflows.Activities
 {
+    /// <summary>Describes an activity node and the flows connected to it.</summary>
     public interface INodeContext
     {
         /// <summary>
@@ -33,8 +34,12 @@ namespace Stateflows.Activities
         bool TryGetParentNode(out INodeContext parentNodeContext);
     }
 
+    /// <summary>Node context for the node currently executing or evaluating a flow.</summary>
     public interface ICurrentNodeContext : INodeContext
     {
+        /// <summary>Attempts to retrieve the incoming flow currently being processed.</summary>
+        /// <param name="flowContext">Receives the current incoming flow when one is active.</param>
+        /// <returns><see langword="true"/> if a current flow is available; otherwise, <see langword="false"/>.</returns>
         bool TryGetCurrentFlow(out IIncomingFlowContext flowContext);
     }
 }

@@ -30,11 +30,20 @@ internal class CompletionNotification : StateMachineInterceptor
     }
 }
 
+/// <summary>Notifies an enclosing state machine after the embedded machine consumes an event or initializes.</summary>
+/// <remarks>The policy queues a completion event for a parent whose behavior kind is a state machine.
+/// See <see href="https://github.com/Stateflows/framework/wiki/behavioral-groups">behavioral groups</see>.</remarks>
 public static class CompletionNotificationPolicy
 {
+    /// <summary>Adds parent completion notification to a fluent machine definition.</summary>
+    /// <param name="builder">The machine builder receiving the interceptor.</param>
+    /// <returns>The original machine builder.</returns>
     public static IStateMachineBuilder AddCompletionNotificationPolicy(this IStateMachineBuilder builder)
         => builder.AddInterceptor((_, _) => new CompletionNotification());
     
+    /// <summary>Adds parent completion notification to an already defined machine.</summary>
+    /// <param name="builder">The machine utilities builder receiving the interceptor.</param>
+    /// <returns>The original utilities builder.</returns>
     public static IStateMachineUtilsBuilder AddCompletionNotificationPolicy(this IStateMachineUtilsBuilder builder)
         => builder.AddInterceptor((_, _) => new CompletionNotification());
 }

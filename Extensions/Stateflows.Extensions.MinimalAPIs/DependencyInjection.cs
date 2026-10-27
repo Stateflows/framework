@@ -16,6 +16,8 @@ using Stateflows.StateMachines.Registration.Interfaces.Base;
 
 namespace Stateflows.Extensions.MinimalAPIs;
    
+/// <summary>Registers custom behavior endpoints and maps Stateflows' generated HTTP API.</summary>
+/// <remarks>See <see href="https://github.com/Stateflows/framework/wiki/extension-minimal-apis"/>.</remarks>
 public static class DependencyInjection
 {
     internal static readonly List<System.Action<StateMachineVisitor>> StateMachineEndpointBuilders = [];
@@ -27,10 +29,13 @@ public static class DependencyInjection
     internal static Interceptor Interceptor { get; private set; }
     
     /// <summary>
-    /// Allows to define <a href="https://learn.microsoft.com/en-us/aspnet/core/fundamentals/minimal-apis/overview">Minimal API</a> endpoints in State Machine REST route group.
-    /// <remarks>All endpoints defined here are <a href="https://learn.microsoft.com/en-us/aspnet/core/fundamentals/minimal-apis/min-api-filters">filtered</a> to be available only when containing state is active.</remarks>
+    /// Registers custom Minimal API endpoints scoped to a State Machine state.
     /// </summary>
-    /// <param name="endpointsBuilder">Endpoints builder</param>
+    /// <remarks>Endpoints are available only while the containing state is active.</remarks>
+    /// <typeparam name="TReturn">Fluent state builder returned after registration.</typeparam>
+    /// <param name="stateBuilder">State whose active configuration controls endpoint availability.</param>
+    /// <param name="endpointsBuilder">Callback defining the custom routes and handlers.</param>
+    /// <returns>The original state builder.</returns>
     public static TReturn AddEndpoints<TReturn>(this IStateEvents<TReturn> stateBuilder,
         System.Action<IEndpointsBuilder> endpointsBuilder)
     {
@@ -46,9 +51,12 @@ public static class DependencyInjection
     }
 
     /// <summary>
-    /// Allows to define <a href="https://learn.microsoft.com/en-us/aspnet/core/fundamentals/minimal-apis/overview">Minimal API</a> endpoints in State Machine REST route group.
+    /// Registers custom Minimal API endpoints for a State Machine class.
     /// </summary>
-    /// <param name="endpointsBuilder">Endpoints builder</param>
+    /// <typeparam name="TReturn">Fluent State Machine builder returned after registration.</typeparam>
+    /// <param name="stateMachineBuilder">Definition receiving the endpoints.</param>
+    /// <param name="endpointsBuilder">Callback defining the custom routes and handlers.</param>
+    /// <returns>The original State Machine builder.</returns>
     public static TReturn AddEndpoints<TReturn>(this IStateMachineEvents<TReturn> stateMachineBuilder,
         System.Action<IEndpointsBuilder> endpointsBuilder)
     {
@@ -63,9 +71,12 @@ public static class DependencyInjection
     }
 
     /// <summary>
-    /// Allows to define <a href="https://learn.microsoft.com/en-us/aspnet/core/fundamentals/minimal-apis/overview">Minimal API</a> endpoints in Activity REST route group.
+    /// Registers custom Minimal API endpoints for an Activity class.
     /// </summary>
-    /// <param name="endpointsBuilder">Endpoints builder</param>
+    /// <typeparam name="TReturn">Fluent Activity builder returned after registration.</typeparam>
+    /// <param name="activityBuilder">Definition receiving the endpoints.</param>
+    /// <param name="endpointsBuilder">Callback defining the custom routes and handlers.</param>
+    /// <returns>The original Activity builder.</returns>
     public static TReturn AddEndpoints<TReturn>(this IActivityEvents<TReturn> activityBuilder,
         System.Action<IEndpointsBuilder> endpointsBuilder)
     {
@@ -80,10 +91,13 @@ public static class DependencyInjection
     }
 
     /// <summary>
-    /// Allows to define <a href="https://learn.microsoft.com/en-us/aspnet/core/fundamentals/minimal-apis/overview">Minimal API</a> endpoints in Activity REST route group.
-    /// <remarks>All endpoints defined here are <a href="https://learn.microsoft.com/en-us/aspnet/core/fundamentals/minimal-apis/min-api-filters">filtered</a> to be available only when containing node is active.</remarks>
+    /// Registers custom Minimal API endpoints scoped to a structured Activity node.
     /// </summary>
-    /// <param name="endpointsBuilder">Endpoints builder</param>
+    /// <remarks>Endpoints are available only while the containing node is active.</remarks>
+    /// <typeparam name="TReturn">Fluent structured-node builder returned after registration.</typeparam>
+    /// <param name="structuredActivityBuilder">Node whose active configuration controls endpoint availability.</param>
+    /// <param name="endpointsBuilder">Callback defining the custom routes and handlers.</param>
+    /// <returns>The original structured-node builder.</returns>
     public static TReturn AddEndpoints<TReturn>(this IStructuredActivityEvents<TReturn> structuredActivityBuilder,
         System.Action<IEndpointsBuilder> endpointsBuilder)
     {
@@ -99,16 +113,25 @@ public static class DependencyInjection
     }
 
     /// <summary>
-    /// Registers <a href="https://learn.microsoft.com/en-us/aspnet/core/fundamentals/minimal-apis/overview">Minimal API</a>-based REST interface for Stateflows behaviors
+    /// Maps discovery, event, and custom endpoints for registered Stateflows behavior definitions.
     /// </summary>
-    /// <param name="minimalAPIsBuilderAction">Configuration action</param>
+    /// <param name="builder">Application or route group on which to map the API.</param>
+    /// <param name="minimalAPIsBuilderAction">Optional callback configuring route prefixes, endpoint rules, interceptors, and validation schemas.</param>
+    /// <remarks>
+    /// The default prefix is <c>/stateflows</c>. Behavior definitions must be registered before mapping:
+    /// mapping visits the registered definitions to discover events and custom endpoints.
+    /// Endpoint conventions, including authorization, must be configured for the application's needs.
+    /// </remarks>
     public static void MapStateflowsMinimalAPIsEndpoints(this IEndpointRouteBuilder builder, System.Action<IMinimalAPIsBuilder>? minimalAPIsBuilderAction = null)
     {
         ApiRoutePrefix = "stateflows";
 
-        var interceptors = GetInterceptors(builder, minimalAPIsBuilderAction);
+        var interceptors = GetInterceptors(builder, minimalAPIsBuilderAction, out var minimalAPIsBuilder);
 
-        Interceptor = new Interceptor(interceptors);
+        Interceptor = new Interceptor(interceptors)
+        {
+            ValidationSchemaMappers = new Dictionary<Type, System.Action<System.ComponentModel.DataAnnotations.ValidationAttribute, Microsoft.OpenApi.OpenApiSchema>>(minimalAPIsBuilder.ValidationSchemaMappers)
+        };
         
         var root = string.IsNullOrEmpty(ApiRoutePrefix)
             ? builder
@@ -163,30 +186,30 @@ public static class DependencyInjection
         RegisterEntitiesApi(builder, Interceptor, root);
     }
 
-    private static IEnumerable<IEndpointDefinitionInterceptor> GetInterceptors(IEndpointRouteBuilder builder, System.Action<IMinimalAPIsBuilder>? minimalAPIsBuilderAction)
+    private static IEnumerable<IEndpointDefinitionInterceptor> GetInterceptors(IEndpointRouteBuilder builder, System.Action<IMinimalAPIsBuilder>? minimalAPIsBuilderAction, out MinimalAPIsBuilder minimalAPIsBuilder)
     {
-        var minimalAPIsBuilder = new MinimalAPIsBuilder(builder.ServiceProvider);
+        minimalAPIsBuilder = new MinimalAPIsBuilder(builder.ServiceProvider);
         minimalAPIsBuilderAction?.Invoke(minimalAPIsBuilder);
         
         var actionsRegister = builder.ServiceProvider.GetService<IActionsRegister>();
         if (actionsRegister != null)
         {
             var visitor = new ActionConfigurationVisitor(minimalAPIsBuilder);
-            actionsRegister.VisitActionsAsync(visitor);
+            actionsRegister.VisitActionsAsync(visitor).GetAwaiter().GetResult();
         }
         
         var activitiesRegister = builder.ServiceProvider.GetService<IActivitiesRegister>();
         if (activitiesRegister != null)
         {
             var visitor = new ActivityConfigurationVisitor(minimalAPIsBuilder);
-            activitiesRegister.VisitActivitiesAsync(visitor);
+            activitiesRegister.VisitActivitiesAsync(visitor).GetAwaiter().GetResult();
         }
         
         var stateMachinesRegister = builder.ServiceProvider.GetService<IStateMachinesRegister>();
         if (stateMachinesRegister != null)
         {
             var visitor = new StateMachineConfigurationVisitor(minimalAPIsBuilder);
-            stateMachinesRegister.VisitStateMachinesAsync(visitor);
+            stateMachinesRegister.VisitStateMachinesAsync(visitor).GetAwaiter().GetResult();
         }
 
         var entitiesRegister = builder.ServiceProvider.GetService<IEntitiesRegister>();
@@ -253,7 +276,7 @@ public static class DependencyInjection
                 builder.ServiceProvider.GetRequiredService<ITypeMapper>()
             );
 
-            activitiesRegister.VisitActivitiesAsync(visitor);
+            activitiesRegister.VisitActivitiesAsync(visitor).GetAwaiter().GetResult();
 
             foreach (var action in ActivityEndpointBuilders)
             {
@@ -312,7 +335,7 @@ public static class DependencyInjection
 
             var visitor = new ActionVisitor(root, interceptor, builder.ServiceProvider.GetRequiredService<ITypeMapper>());
 
-            actionsRegister.VisitActionsAsync(visitor);
+            actionsRegister.VisitActionsAsync(visitor).GetAwaiter().GetResult();
         }
     }
 
@@ -370,7 +393,7 @@ public static class DependencyInjection
                 builder.ServiceProvider.GetRequiredService<ITypeMapper>()
             );
             
-            stateMachinesRegister.VisitStateMachinesAsync(visitor);
+            stateMachinesRegister.VisitStateMachinesAsync(visitor).GetAwaiter().GetResult();
 
             foreach (var action in StateMachineEndpointBuilders)
             {

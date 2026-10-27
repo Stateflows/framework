@@ -1,4 +1,4 @@
-﻿using System.Reflection;
+using System.Reflection;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -22,6 +22,7 @@ internal class StateMachineVisitor(
     public Interceptor Interceptor => interceptor;
     private readonly Dictionary<string, bool> Initializers = new();
     private readonly Dictionary<string, List<Type>> Triggers = new();
+    private readonly HashSet<(string BehaviorName, string EventName)> StructuralTriggers = new();
     private static readonly MethodInfo RegisterRequestMethod = typeof(StateMachineVisitor).GetMethod(
         nameof(RegisterRequestEndpoint),
         BindingFlags.Instance | BindingFlags.NonPublic
@@ -67,6 +68,23 @@ internal class StateMachineVisitor(
         return Task.CompletedTask;
     }
 
+    public override Task TransitionAddedAsync(EventDefinition definition, string stateMachineName, int stateMachineVersion,
+        string sourceVertexName, string targetVertexName = null, bool isElse = false)
+    {
+        if (!StructuralTriggers.Add((stateMachineName, definition.Name)))
+        {
+            return Task.CompletedTask;
+        }
+
+        routeBuilder.RegisterStructuralEventEndpoint(interceptor, BehaviorType.StateMachine, stateMachineName, definition,
+            HateoasLinks, HasDefaultInstance, [BehaviorStatus.Initialized]);
+
+        return Task.CompletedTask;
+    }
+
+    public override Task DoBehaviorAddedAsync(EventDefinition definition, string stateMachineName, int stateMachineVersion,
+        string stateName, string behaviorName, string behaviorType)
+        => TransitionAddedAsync(definition, stateMachineName, stateMachineVersion, stateName);
     public override Task StateMachineAddingAsync(string stateMachineName, int stateMachineVersion, bool hasDefaultInstance = false)
     {
         HasDefaultInstance = hasDefaultInstance;
@@ -93,6 +111,7 @@ internal class StateMachineVisitor(
         if (
             eventType.GetCustomAttributes<NoApiMappingAttribute>().Any() ||
             eventType.IsAssignableTo(typeof(SystemEvent)) ||
+            eventType.IsAssignableTo(typeof(StructuralEvent)) ||
             eventType.IsAssignableTo(typeof(Exception))
         )
         {

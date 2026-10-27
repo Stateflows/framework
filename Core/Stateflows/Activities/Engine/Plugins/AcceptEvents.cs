@@ -164,7 +164,7 @@ namespace Stateflows.Activities.Engine
 
                 if (result)
                 {
-                    Trace.WriteLine($"⦗→s⦘ Activity '{context.Behavior.Id.Name}:{context.Behavior.Id.Instance}': received event '{Event.GetName(context.Event.GetType())}', processing");
+                    Trace.WriteLine($"⦗→s⦘ Activity '{context.Behavior.Id.Name}:{context.Behavior.Id.Instance}': received event '{Event.GetName(context.Event)}', processing");
                 }
 
                 return result;
@@ -172,7 +172,7 @@ namespace Stateflows.Activities.Engine
 
             void After(IEventContext<TEvent> context, EventStatus eventStatus)
             {
-                Trace.WriteLine($"⦗→s⦘ Activity '{context.Behavior.Id.Name}:{context.Behavior.Id.Instance}': processed event '{Event.GetName(context.Event.GetType())}' with result '{eventStatus}'");
+                Trace.WriteLine($"⦗→s⦘ Activity '{context.Behavior.Id.Name}:{context.Behavior.Id.Instance}': processed event '{Event.GetName(context.Event)}' with result '{eventStatus}'");
 
                 Context = ((BaseContext)context).Context;
 

@@ -220,30 +220,56 @@ internal sealed partial class BoundDocument
     private void ConstructTransition(JToken node, string path, Vertex vertex)
     {
         var declared = triggers[path];
+        if (structuralTriggers.TryGetValue(path, out var structural) && structural.Length != 0)
+        {
+            var clr = declared.Where(type => type != typeof(StructuralEvent)).ToArray();
+            if (clr.Length != 0) ConstructTransition(node, path, vertex, clr, null);
+            foreach (var name in structural)
+                ConstructTransition(node, path, vertex, [typeof(StructuralEvent)], name);
+        }
+        else ConstructTransition(node, path, vertex, declared, null);
+    }
+
+    private void ConstructTransition(JToken node, string path, Vertex vertex, Type[] declared, string? structuralName)
+    {
         var actual = declared.SelectMany(Mapped).Distinct().ToArray();
         var completion = actual.Length == 1 && actual[0] == typeof(Completion);
         if (completion && node.Value<string>("kind") == "event")
             Error(path + "/kind", "Completion-triggered targeted transitions must use kind 'default'.", "SM-019");
         var triggerType = completion ? typeof(Completion) : declared.Length == 1 ? declared[0] : typeof(object);
-        var trigger = declared.Length == 1 ? Event.GetName(triggerType)
-            : System.Text.Json.JsonSerializer.Serialize(actual.Select(Event.GetName).Order(StringComparer.Ordinal));
+        var trigger = structuralName ?? (declared.Length == 1 ? Event.GetName(triggerType)
+            : System.Text.Json.JsonSerializer.Serialize(actual.Select(Event.GetName).Order(StringComparer.Ordinal)));
         var target = node.Value<string>("kind") == "internal" ? "" : names[path + "/target"];
         var otherwise = node.Value<bool?>("else") == true;
-        var edge = new Edge
+        Edge edge;
+        if (structuralName != null)
         {
-            Graph = vertex.Graph, Source = vertex, SourceName = vertex.Name, SourcePath = path,
-            TriggerType = triggerType, DeclaredTriggerTypes = declared, Trigger = trigger,
-            TargetName = target, IsElse = otherwise, IsLocal = node.Value<bool?>("local") ?? true,
-            Type = completion ? EdgeType.DefaultTransition : target == "" ? EdgeType.InternalTransition : EdgeType.Transition,
-            Name = $"{vertex.Name}-{trigger}{(otherwise ? "|else" : "")}->{target}"
-        };
-        if (declared.All(t => typeof(Exception).IsAssignableFrom(t))) edge.PolymorphicTriggers = true;
-        if (!vertex.Edges.TryAdd(edge.Name, edge))
-        {
-            Error(path, "Duplicate transition declaration.", "SM-020");
-            return;
+            Edge? namedEdge = null;
+            new StateBuilder(vertex).AddTransitionInternal<StructuralEvent>(target, otherwise,
+                builder => namedEdge = ((TransitionBuilder<StructuralEvent>)builder).Edge, structuralName);
+            edge = namedEdge!;
+            edge.SourcePath = path;
+            edge.DeclaredTriggerTypes = declared;
+            edge.IsLocal = node.Value<bool?>("local") ?? true;
         }
-        vertex.Graph.AllEdges.Add(edge);
+        else
+        {
+            edge = new Edge
+            {
+                Graph = vertex.Graph, Source = vertex, SourceName = vertex.Name, SourcePath = path,
+                TriggerType = triggerType, DeclaredTriggerTypes = declared, Trigger = trigger,
+                TargetName = target, IsElse = otherwise, IsLocal = node.Value<bool?>("local") ?? true,
+                Type = completion ? EdgeType.DefaultTransition : target == "" ? EdgeType.InternalTransition : EdgeType.Transition,
+                Name = $"{vertex.Name}-{trigger}{(otherwise ? "|else" : "")}->{target}"
+            };
+            if (declared.All(t => typeof(Exception).IsAssignableFrom(t))) edge.PolymorphicTriggers = true;
+            if (!vertex.Edges.TryAdd(edge.Name, edge))
+            {
+                Error(path, "Duplicate transition declaration.", "SM-020");
+                return;
+            }
+            vertex.Graph.AllEdges.Add(edge);
+        }
         foreach (var (_, bindingPath) in Items(node, path, "definitions"))
         {
             var binding = bindings[bindingPath];
@@ -252,7 +278,8 @@ internal sealed partial class BoundDocument
         }
         if (node.Value<bool?>("local") is { } local && local != edge.IsLocal)
             Error(path + "/local", "A transition definition changed the explicitly declared local/external setting.", "JSON-005");
-        if (edge.TriggerType != triggerType || edge.Trigger != trigger || edge.DeclaredTriggerTypes != declared)
+        if (edge.TriggerType != triggerType || edge.Trigger != trigger || edge.DeclaredTriggerTypes != declared ||
+            edge.StructuralEventName != structuralName)
             Error(path + "/triggers", "A transition definition changed the explicitly declared trigger set.", "JSON-005");
         var transitionBuilder = new TransitionBuilder<object>(edge);
         if (node["guard"] is { } guard)
@@ -273,12 +300,15 @@ internal sealed partial class BoundDocument
                 });
             }
         ApplyMetadata(node, path, edge.Metadata);
-        var visits = declared.Select(type => (Func<IStateMachineVisitor, Task>)Invoke("TransitionVisit", [type], edge)!).ToArray();
-        edge.VisitingTask = async visitor =>
+        if (structuralName == null)
         {
-            foreach (var visit in visits) await visit(visitor);
-        };
-        vertex.Graph.VisitingTasks.Add(edge.VisitingTask);
+            var visits = declared.Select(type => (Func<IStateMachineVisitor, Task>)Invoke("TransitionVisit", [type], edge)!).ToArray();
+            edge.VisitingTask = async visitor =>
+            {
+                foreach (var visit in visits) await visit(visitor);
+            };
+            vertex.Graph.VisitingTasks.Add(edge.VisitingTask);
+        }
     }
 
     private Dictionary<Type, T> EventDispatch<T>(string path, string method) where T : Delegate

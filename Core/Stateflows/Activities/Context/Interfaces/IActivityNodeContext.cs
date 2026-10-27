@@ -2,6 +2,7 @@
 
 namespace Stateflows.Activities
 {
+    /// <summary>Provides the current activity node, cancellation, and activity-level action context.</summary>
     public interface IActivityNodeContext : IActivityActionContext
     {
         /// <summary>

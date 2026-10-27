@@ -24,6 +24,7 @@ public sealed class JsonActivityDefinition
     private readonly JObject document;
     private readonly IReadOnlyDictionary<string, Type> types;
 
+    /// <summary>Gets the most recent model-validation diagnostics produced while registering this definition.</summary>
     public ModelValidationReport ValidationReport { get; private set; } = new();
 
     private JsonActivityDefinition(JObject document, IReadOnlyDictionary<string, Type> types)
@@ -32,7 +33,12 @@ public sealed class JsonActivityDefinition
         this.types = types;
     }
 
-    /// <summary>Parses strict JSON and evaluates the embedded Draft 2020-12 activity schema.</summary>
+    /// <summary>Parses strict JSON and validates it against the embedded activity schema.</summary>
+    /// <param name="json">The activity definition document.</param>
+    /// <param name="options">Host-owned CLR type and validator aliases available to the document.</param>
+    /// <returns>A parsed definition ready to bind and register.</returns>
+    /// <exception cref="JsonActivityException">The JSON is malformed, contains duplicate properties, or violates the activity schema.</exception>
+    /// <exception cref="ArgumentNullException"><paramref name="json"/> or <paramref name="options"/> is <see langword="null"/>.</exception>
     public static JsonActivityDefinition Parse(string json, JsonOptions options)
     {
         ArgumentNullException.ThrowIfNull(json);
@@ -103,7 +109,12 @@ public sealed class JsonActivityDefinition
         if (report.HasErrors) throw new JsonActivityException(report, name);
     }
 
-    /// <summary>Binds CLR capabilities, builds through activity builders, validates, and registers the activity.</summary>
+    /// <summary>Binds the document to host capabilities, validates it, and registers the activity.</summary>
+    /// <param name="builder">The Stateflows activity registration builder.</param>
+    /// <returns>The model validation report collected during binding and registration.</returns>
+    /// <exception cref="JsonActivityException">Binding or activity graph validation fails; inspect <see cref="ValidationReport"/> for diagnostics.</exception>
+    /// <exception cref="ArgumentNullException"><paramref name="builder"/> is <see langword="null"/>.</exception>
+    /// <exception cref="ArgumentException"><paramref name="builder"/> is not the Stateflows activity builder implementation.</exception>
     public ModelValidationReport Register(IActivitiesBuilder builder)
     {
         ArgumentNullException.ThrowIfNull(builder);
@@ -137,9 +148,15 @@ public sealed class JsonActivityDefinition
     }
 }
 
+/// <summary>Convenience extensions for registering JSON-authored activities.</summary>
 public static class JsonActivityExtensions
 {
-    /// <summary>Loads and registers a JSON activity. Use Parse/Register to retain its diagnostic report.</summary>
+    /// <summary>Parses, validates, and registers an activity from JSON.</summary>
+    /// <param name="builder">The Stateflows activity registration builder.</param>
+    /// <param name="json">The activity definition document.</param>
+    /// <param name="options">Host-owned CLR type and validator aliases available to the document.</param>
+    /// <returns>The same activity builder, for further registrations.</returns>
+    /// <remarks>Use <see cref="JsonActivityDefinition.Parse(string, JsonOptions)"/> and <see cref="JsonActivityDefinition.Register(IActivitiesBuilder)"/> when the resulting validation report must be retained.</remarks>
     public static IActivitiesBuilder AddActivityJson(this IActivitiesBuilder builder, string json, JsonOptions options)
     {
         JsonActivityDefinition.Parse(json, options).Register(builder);

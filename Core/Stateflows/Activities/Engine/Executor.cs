@@ -21,6 +21,7 @@ using Stateflows.Activities.Context.Classes;
 using Stateflows.Activities.Context.Interfaces;
 using Stateflows.Activities.Inspection.Classes;
 using Stateflows.Common.Engine;
+using Stateflows.Common.Extensions;
 using Stateflows.StateMachines.Extensions;
 using Stateflows.StateMachines.Models;
 using Edge = Stateflows.Activities.Models.Edge;
@@ -186,7 +187,12 @@ namespace Stateflows.Activities.Engine
             => GetExpectedEvents()
                 .Where(type => !typeof(SystemEvent).IsAssignableFrom(type))
                 .Where(type => !typeof(Exception).IsAssignableFrom(type))
+                .Where(type => !typeof(StructuralEvent).IsAssignableFrom(type))
                 .Select(type => type.GetEventName())
+                .Concat(BehaviorStatus == BehaviorStatus.Initialized
+                    ? GetActiveNodes().Where(node => node.StructuralEventName != null).Select(node => node.StructuralEventName)
+                    : [])
+                .Distinct()
                 .ToArray();
 
         public async Task HydrateAsync(RootContext context)
@@ -496,44 +502,8 @@ namespace Stateflows.Activities.Engine
         {
             if (output.Any())
             {
-                var tokensOutput = new TokensOutput() { Tokens = output.ToList() };
-                var tokensOutputHolder = tokensOutput.ToEventHolder(Context.Id);
-
-                var tokenTypes = output.Select(t => t.GetEffectivePayloadType()).Distinct();
-                var tokensOutputType = typeof(TokensOutput<>);
-                var tokensOutputs = tokenTypes
-                    .SelectMany(type =>
-                    {
-                        // Walk the inheritance chain so subscribers to base types also receive the notification
-                        var types = new List<Type>();
-                        var t = type;
-                        while (t != null && t != typeof(object))
-                        {
-                            types.Add(t);
-                            t = t.BaseType;
-                        }
-                        foreach (var iface in type.GetInterfaces())
-                        {
-                            types.Add(iface);
-                        }
-                        return types.Distinct();
-                    })
-                    .Distinct()
-                    .Select(type =>
-                    {
-                        var tokensOutputGenericType = tokensOutputType.MakeGenericType(type);
-                        var typedTokensOutput = (TokensTransferEvent)Activator.CreateInstance(tokensOutputGenericType);
-                        typedTokensOutput.Tokens = output.Where(t => type.IsAssignableFrom(t.GetEffectivePayloadType())).ToList();
-
-                        return typedTokensOutput.ToTypedEventHolder(Context.Id);
-                    })
-                    .ToList();
-
-                tokensOutputs.Add(tokensOutputHolder);
-
                 var notificationsHub = NodeScope.ServiceProvider.GetRequiredService<INotificationsHub>();
-
-                await notificationsHub.PublishRangeAsync(tokensOutputs);
+                await notificationsHub.PublishRangeAsync(output.ToOutputNotifications(Context.Id));
             }
         }
 

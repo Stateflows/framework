@@ -20,6 +20,7 @@ internal class MinimalAPIsBuilder(IServiceProvider serviceProvider) :
     public string? CurrentType = null;
     public BehaviorClass? CurrentClass = null;
     public Type? CurrentEvent = null;
+    public string? CurrentEventName = null;
     public EndpointKind CurrentKind = EndpointKind.All;
     public bool? CurrentIsDefaultInstance = null;
 
@@ -37,8 +38,23 @@ internal class MinimalAPIsBuilder(IServiceProvider serviceProvider) :
         }
     }
 
+    internal readonly Dictionary<Type, Action<System.ComponentModel.DataAnnotations.ValidationAttribute, Microsoft.OpenApi.OpenApiSchema>> ValidationSchemaMappers = new();
+
     internal IEnumerable<IEndpointDefinitionInterceptor> GetInterceptors()
         => interceptorFactories.Select(t => t(serviceProvider));
+
+    public IMinimalAPIsBuilder MapValidationSchema<TAttribute>(Action<TAttribute, Microsoft.OpenApi.OpenApiSchema> schemaMapper)
+        where TAttribute : System.ComponentModel.DataAnnotations.ValidationAttribute
+    {
+        ArgumentNullException.ThrowIfNull(schemaMapper);
+        if (typeof(TAttribute) == typeof(System.ComponentModel.DataAnnotations.ValidationAttribute))
+        {
+            throw new ArgumentException("Register mapper for a specific validation attribute type, not ValidationAttribute itself.", nameof(TAttribute));
+        }
+
+        ValidationSchemaMappers[typeof(TAttribute)] = (attribute, schema) => schemaMapper((TAttribute)attribute, schema);
+        return this;
+    }
 
     public IMinimalAPIsBuilder SetApiRoutePrefix(string apiRoutePrefix)
     {
@@ -148,6 +164,7 @@ internal class MinimalAPIsBuilder(IServiceProvider serviceProvider) :
                 BehaviorType = CurrentType,
                 BehaviorClass = CurrentClass,
                 Event = CurrentEvent,
+                EventName = CurrentEventName,
                 Disable = true,
                 IsDefaultInstance = CurrentIsDefaultInstance,
             }
@@ -163,6 +180,7 @@ internal class MinimalAPIsBuilder(IServiceProvider serviceProvider) :
                 BehaviorType = CurrentType,
                 BehaviorClass = CurrentClass,
                 Event = CurrentEvent,
+                EventName = CurrentEventName,
                 RouteUpdater = routeUpdater,
                 IsDefaultInstance = CurrentIsDefaultInstance,
             }
@@ -180,6 +198,7 @@ internal class MinimalAPIsBuilder(IServiceProvider serviceProvider) :
                 BehaviorType = CurrentType,
                 BehaviorClass = CurrentClass,
                 Event = CurrentEvent,
+                EventName = CurrentEventName,
                 EndpointConfigurator = routeHandlerBuilderAction,
                 IsDefaultInstance = CurrentIsDefaultInstance,
             }
@@ -395,6 +414,54 @@ internal class MinimalAPIsBuilder(IServiceProvider serviceProvider) :
         configureEndpointAction.Invoke(this);
 
         CurrentEvent = null;
+
+        return this;
+    }
+
+    public IMinimalAPIsBuilder ConfigureEventEndpoint(string eventName, Action<IEndpointConfiguration> configureEndpointAction)
+        => ConfigureEventEndpoint(null, eventName, configureEndpointAction);
+
+    IStateMachinesEndpointsConfiguration IEventsConfiguration<IStateMachinesEndpointsConfiguration>.ConfigureEventEndpoint(string eventName, Action<IEndpointConfiguration> configureEndpointAction)
+        => ConfigureEventEndpoint(BehaviorType.StateMachine, eventName, configureEndpointAction);
+
+    IActivitiesEndpointsConfiguration IEventsConfiguration<IActivitiesEndpointsConfiguration>.ConfigureEventEndpoint(string eventName, Action<IEndpointConfiguration> configureEndpointAction)
+        => ConfigureEventEndpoint(BehaviorType.Activity, eventName, configureEndpointAction);
+
+    IActionsEndpointsConfiguration IEventsConfiguration<IActionsEndpointsConfiguration>.ConfigureEventEndpoint(string eventName, Action<IEndpointConfiguration> configureEndpointAction)
+        => ConfigureEventEndpoint(BehaviorType.Action, eventName, configureEndpointAction);
+
+    IEntitiesEndpointsConfiguration IEventsConfiguration<IEntitiesEndpointsConfiguration>.ConfigureEventEndpoint(string eventName, Action<IEndpointConfiguration> configureEndpointAction)
+        => ConfigureEventEndpoint(BehaviorType.Entity, eventName, configureEndpointAction);
+
+    IBehaviorClassEndpointsConfiguration IEventsConfiguration<IBehaviorClassEndpointsConfiguration>.ConfigureEventEndpoint(string eventName, Action<IEndpointConfiguration> configureEndpointAction)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(eventName);
+
+        CurrentKind = EndpointKind.Event;
+        CurrentEvent = null;
+        CurrentEventName = eventName;
+
+        configureEndpointAction.Invoke(this);
+
+        CurrentEventName = null;
+
+        return this;
+    }
+
+    private MinimalAPIsBuilder ConfigureEventEndpoint(string? behaviorType, string eventName, Action<IEndpointConfiguration> configureEndpointAction)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(eventName);
+
+        CurrentKind = EndpointKind.Event;
+        CurrentType = behaviorType;
+        CurrentClass = null;
+        CurrentEvent = null;
+        CurrentEventName = eventName;
+        CurrentIsDefaultInstance = null;
+
+        configureEndpointAction.Invoke(this);
+
+        CurrentEventName = null;
 
         return this;
     }

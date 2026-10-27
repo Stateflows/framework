@@ -151,7 +151,7 @@ namespace Stateflows.StateMachines.Engine
         {
             if (
                 ConsumedInTransition == null &&
-                (context as IEdgeContext).Edge.ActualTriggers.Contains(Event.GetName(context.ExecutionTrigger.GetType()))
+                (context as IEdgeContext).Edge.ActualTriggers.Contains(Event.GetName(context.ExecutionTrigger))
             )
             {
                 ConsumedInTransition = (context as IEdgeContext).Edge;

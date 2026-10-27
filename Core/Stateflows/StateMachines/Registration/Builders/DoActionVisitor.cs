@@ -7,8 +7,21 @@ using Stateflows.Common.Interfaces;
 
 namespace Stateflows.StateMachines.Registration.Builders;
 
+/// <summary>Collects event definitions and mapped CLR event types exposed by an embedded do action.</summary>
+/// <param name="typeMapper">Resolves mapped event types accepted by the action.</param>
 public class DoActionVisitor(ITypeMapper typeMapper) : ActionVisitor
 {
+    /// <summary>The distinct event definitions collected by registered event name.</summary>
+    public List<EventDefinition> EventDefinitions { get; } = [];
+    /// <inheritdoc/>
+    public override Task CustomEventAddedAsync(EventDefinition definition, string actionName, int actionVersion,
+        BehaviorStatus[] supportedStatuses)
+    {
+        if (!EventDefinitions.Exists(e => e.Name == definition.Name)) EventDefinitions.Add(definition);
+        return Task.CompletedTask;
+    }
+
+    /// <inheritdoc/>
     public override Task CustomEventAddedAsync<TEvent>(string actionName, int actionVersion, BehaviorStatus[] supportedStatuses)
     {
         var eventTypes = typeMapper.GetMappedTypes(typeof(TEvent));
@@ -38,5 +51,6 @@ public class DoActionVisitor(ITypeMapper typeMapper) : ActionVisitor
     //     return Task.CompletedTask;
     // }
 
+    /// <summary>The distinct mapped CLR payload types collected from the action's custom events.</summary>
     public List<Type> EventTypes { get; } = [];
 }

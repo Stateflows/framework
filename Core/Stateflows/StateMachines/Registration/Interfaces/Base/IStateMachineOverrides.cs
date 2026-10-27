@@ -2,39 +2,28 @@
 
 namespace Stateflows.StateMachines.Registration.Interfaces.Base
 {
+    /// <summary>Locates inherited states and pseudostates and extends them without creating duplicate elements.
+    /// </summary>
+    /// <typeparam name="TReturn">The enclosing override builder returned after extension.</typeparam>
+    /// <seealso href="https://github.com/Stateflows/framework/wiki/behaviors#definition-reuse-and-versions" />
     public interface IStateMachineOverrides<out TReturn>
     {
         #region UseState
-        /// <summary>
-        /// Uses a state of the overridden state machine.<br/>
-        /// <a href="https://github.com/Stateflows/framework/wiki/State">States</a> represent a stable configuration of a <a href="https://github.com/Stateflows/framework/wiki/Behaviors">Behavior</a>.
-        /// </summary>
-        /// <param name="stateName">State name</param>
-        /// <param name="stateBuildAction">State build action<br/>
-        /// Use the following pattern to implement build action:
-        /// <code>
-        /// b => b
-        ///     . // Use . to see available builder methods
-        /// </code></param>
+        /// <summary>Extends an inherited state without adding a new vertex.</summary>
+        /// <param name="stateName">Registered name of the inherited regular state to extend.</param>
+        /// <param name="stateBuildAction">Callback configuring the state's lifecycle handlers and outgoing transitions. Its
+        /// builder is scoped to the element, not the enclosing machine or region.</param>
+        /// <returns>The enclosing override builder, not the inherited state's callback builder.</returns>
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/behaviors#definition-reuse-and-versions" />
         TReturn UseState(string stateName, OverridenStateBuildAction stateBuildAction);
 
-        /// <summary>
-        /// Uses a state of the overridden state machine.<br/>
-        /// <a href="https://github.com/Stateflows/framework/wiki/State">States</a> represent a stable configuration of a <a href="https://github.com/Stateflows/framework/wiki/Behaviors">Behavior</a>.
-        /// </summary>
-        /// <typeparam name="TState">State class; must implement at least one of the following interfaces:
-        /// <list type="bullet">
-        /// <item><see cref="IState"/></item>
-        /// <item><see cref="IStateEntry"/></item>
-        /// <item><see cref="IStateExit"/></item>
-        /// </list>
-        /// </typeparam>
-        /// <param name="stateBuildAction">State build action<br/>
-        /// Use the following pattern to implement build action:
-        /// <code>
-        /// b => b
-        ///     . // Use . to see available builder methods
-        /// </code></param>
+        /// <summary>Extends an inherited state without adding a new vertex.</summary>
+        /// <typeparam name="TState">Typed state implementation of <see cref="IState" />. Its resolved state name identifies
+        /// the inherited vertex to extend.</typeparam>
+        /// <param name="stateBuildAction">Callback configuring the state's lifecycle handlers and outgoing transitions. Its
+        /// builder is scoped to the element, not the enclosing machine or region.</param>
+        /// <returns>The enclosing override builder for continued configuration.</returns>
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/behaviors#definition-reuse-and-versions" />
         [DebuggerHidden]
         public TReturn UseState<TState>(OverridenStateBuildAction stateBuildAction)
             where TState : class, IState
@@ -42,38 +31,21 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         #endregion
 
         #region UseCompositeState
-        /// <summary>
-        /// Uses a composite state of the overridden state machine.<br/>
-        /// <a href="https://github.com/Stateflows/framework/wiki/Composite-State">Composite states</a> represent a stable configuration of a <a href="https://github.com/Stateflows/framework/wiki/Behaviors">Behavior</a>, which is a parent for a set of substates.
-        /// </summary>
-        /// <param name="compositeStateName">Composite state name</param>
-        /// <param name="compositeStateBuildAction">Composite state build action<br/>
-        /// Use the following pattern to implement build action:
-        /// <code>
-        /// b => b
-        ///     . // Use . to see available builder methods
-        /// </code></param>
+        /// <summary>Extends an inherited composite state without adding a new vertex.</summary>
+        /// <param name="compositeStateName">Registered name of the inherited composite state to extend.</param>
+        /// <param name="compositeStateBuildAction">Callback configuring the composite state's lifecycle, nested states, and
+        /// outgoing transitions. Its builder is scoped to the element, not the enclosing machine or region.</param>
+        /// <returns>The enclosing override builder for continued configuration.</returns>
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/behaviors#definition-reuse-and-versions" />
         TReturn UseCompositeState(string compositeStateName, OverridenCompositeStateBuildAction compositeStateBuildAction);
 
-        /// <summary>
-        /// Uses a composite state of the overridden state machine.<br/>
-        /// <a href="https://github.com/Stateflows/framework/wiki/Composite-State">Composite states</a> represent a stable configuration of a <a href="https://github.com/Stateflows/framework/wiki/Behaviors">Behavior</a>, which is a parent for a set of substates.
-        /// </summary>
-        /// <typeparam name="TCompositeState">Composite state class; must implement at least one of the following interfaces:
-        /// <list type="bullet">
-        /// <item><see cref="ICompositeState"/></item>
-        /// <item><see cref="ICompositeStateEntry"/></item>
-        /// <item><see cref="ICompositeStateExit"/></item>
-        /// <item><see cref="ICompositeStateInitialization"/></item>
-        /// <item><see cref="ICompositeStateFinalization"/></item>
-        /// </list>
-        /// </typeparam>
-        /// <param name="compositeStateBuildAction">Composite state build action<br/>
-        /// Use the following pattern to implement build action:
-        /// <code>
-        /// b => b
-        ///     . // Use . to see available builder methods
-        /// </code></param>
+        /// <summary>Extends an inherited composite state without adding a new vertex.</summary>
+        /// <typeparam name="TCompositeState">Typed state implementation of <see cref="ICompositeState" />. Its resolved
+        /// state name identifies the inherited vertex to extend.</typeparam>
+        /// <param name="compositeStateBuildAction">Callback configuring the composite state's lifecycle, nested states, and
+        /// outgoing transitions. Its builder is scoped to the element, not the enclosing machine or region.</param>
+        /// <returns>The enclosing override builder for continued configuration.</returns>
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/behaviors#definition-reuse-and-versions" />
         [DebuggerHidden]
         public TReturn UseCompositeState<TCompositeState>(OverridenCompositeStateBuildAction compositeStateBuildAction)
             where TCompositeState : class, ICompositeState
@@ -81,38 +53,21 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         #endregion
 
         #region UseOrthogonalState
-        /// <summary>
-        /// Uses an orthogonal state of the overridden state machine.<br/>
-        /// <a href="https://github.com/Stateflows/framework/wiki/Orthogonal-State">Orthogonal states</a> represent a stable configuration of a <a href="https://github.com/Stateflows/framework/wiki/Behaviors">Behavior</a>, which is a parent for a set of orthogonal (parallel) <a href="https://github.com/Stateflows/framework/wiki/Regions">regions</a>.
-        /// </summary>
-        /// <param name="orthogonalStateName">Orthogonal state name</param>
-        /// <param name="orthogonalStateBuildAction">Orthogonal state build action<br/>
-        /// Use the following pattern to implement build action:
-        /// <code>
-        /// b => b
-        ///     . // Use . to see available builder methods
-        /// </code></param>
+        /// <summary>Extends an inherited orthogonal state without adding a new vertex.</summary>
+        /// <param name="orthogonalStateName">Registered name of the inherited orthogonal state to extend.</param>
+        /// <param name="orthogonalStateBuildAction">Callback configuring the orthogonal state's lifecycle, regions, and
+        /// outgoing transitions. Its builder is scoped to the element, not the enclosing machine or region.</param>
+        /// <returns>The enclosing override builder for continued configuration.</returns>
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/behaviors#definition-reuse-and-versions" />
         TReturn UseOrthogonalState(string orthogonalStateName, OverridenOrthogonalStateBuildAction orthogonalStateBuildAction);
 
-        /// <summary>
-        /// Uses an orthogonal state of the overridden state machine.<br/>
-        /// <a href="https://github.com/Stateflows/framework/wiki/Orthogonal-State">Orthogonal states</a> represent a stable configuration of a <a href="https://github.com/Stateflows/framework/wiki/Behaviors">Behavior</a>, which is a parent for a set of orthogonal (parallel) <a href="https://github.com/Stateflows/framework/wiki/Regions">regions</a>.
-        /// </summary>
-        /// <typeparam name="TOrthogonalState">Orthogonal state class; must implement at least one of the following interfaces:
-        /// <list type="bullet">
-        /// <item><see cref="IOrthogonalState"/></item>
-        /// <item><see cref="IOrthogonalStateEntry"/></item>
-        /// <item><see cref="IOrthogonalStateExit"/></item>
-        /// <item><see cref="IOrthogonalStateInitialization"/></item>
-        /// <item><see cref="IOrthogonalStateFinalization"/></item>
-        /// </list>
-        /// </typeparam>
-        /// <param name="orthogonalStateBuildAction">Orthogonal state build action<br/>
-        /// Use the following pattern to implement build action:
-        /// <code>
-        /// b => b
-        ///     . // Use . to see available builder methods
-        /// </code></param>
+        /// <summary>Extends an inherited orthogonal state without adding a new vertex.</summary>
+        /// <typeparam name="TOrthogonalState">Typed state implementation of <see cref="IOrthogonalState" />. Its resolved
+        /// state name identifies the inherited vertex to extend.</typeparam>
+        /// <param name="orthogonalStateBuildAction">Callback configuring the orthogonal state's lifecycle, regions, and
+        /// outgoing transitions. Its builder is scoped to the element, not the enclosing machine or region.</param>
+        /// <returns>The enclosing override builder for continued configuration.</returns>
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/behaviors#definition-reuse-and-versions" />
         [DebuggerHidden]
         public TReturn UseOrthogonalState<TOrthogonalState>(OverridenOrthogonalStateBuildAction orthogonalStateBuildAction)
             where TOrthogonalState : class, IOrthogonalState
@@ -120,115 +75,73 @@ namespace Stateflows.StateMachines.Registration.Interfaces.Base
         #endregion
 
         #region UseJunction
-        /// <summary>
-        /// Uses a junction pseudostate of the overridden state machine.<br/>
-        /// <a href="https://github.com/Stateflows/framework/wiki/Junction">Junctions</a> are pseudostates used to statically combine multiple transition guards; guards of transitions incoming to Junction and outgoing from Junction are evaluated together, <i>before</i> any transition happens.
-        /// </summary>
-        /// <param name="junctionName">Junction name</param>
-        /// <param name="junctionBuildAction">Junction build action<br/>
-        /// Use the following pattern to implement build action:
-        /// <code>
-        /// b => b
-        ///     . // Use . to see available builder methods
-        /// </code></param>
+        /// <summary>Extends an inherited junction pseudostate without adding a new vertex.</summary>
+        /// <param name="junctionName">Registered name of the inherited junction pseudostate to extend.</param>
+        /// <param name="junctionBuildAction">Callback configuring the junction's guarded branches and fallback branch. Its
+        /// builder is scoped to the element, not the enclosing machine or region.</param>
+        /// <returns>The enclosing override builder for continued configuration.</returns>
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/behaviors#definition-reuse-and-versions" />
         TReturn UseJunction(string junctionName, OverridenJunctionBuildAction junctionBuildAction);
 
-        /// <summary>
-        /// Uses a junction pseudostate of the overridden state machine with a default name.<br/>
-        /// <a href="https://github.com/Stateflows/framework/wiki/Junction">Junctions</a> are pseudostates used to statically combine multiple transition guards; guards of transitions incoming to Junction and outgoing from Junction are evaluated together, <i>before</i> any transition happens.
-        /// </summary>
-        /// <param name="junctionBuildAction">Junction build action<br/>
-        /// Use the following pattern to implement build action:
-        /// <code>
-        /// b => b
-        ///     . // Use . to see available builder methods
-        /// </code></param>
+        /// <summary>Extends an inherited junction pseudostate without adding a new vertex.</summary>
+        /// <param name="junctionBuildAction">Callback configuring the junction's guarded branches and fallback branch. Its
+        /// builder is scoped to the element, not the enclosing machine or region.</param>
+        /// <returns>The enclosing override builder for continued configuration.</returns>
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/behaviors#definition-reuse-and-versions" />
         TReturn UseJunction(OverridenJunctionBuildAction junctionBuildAction)
             => UseJunction(State<Junction>.Name, junctionBuildAction);
         #endregion
 
         #region UseChoice
-        /// <summary>
-        /// Uses a choice pseudostate of the overridden state machine.<br/>
-        /// <a href="https://github.com/Stateflows/framework/wiki/Choice">Choices</a> are pseudostates used to dynamically combine multiple transition guards; guards of transitions outgoing from Choice are evaluated <i>after</i> incoming transition happens.<br/>
-        /// It is mandatory for a Choice to define exactly one else transition to make sure that there is always an available target.
-        /// </summary>
-        /// <param name="choiceName">Choice name</param>
-        /// <param name="choiceBuildAction">Choice build action<br/>
-        /// Use the following pattern to implement build action:
-        /// <code>
-        /// b => b
-        ///     . // Use . to see available builder methods
-        /// </code></param>
+        /// <summary>Extends an inherited choice pseudostate without adding a new vertex.</summary>
+        /// <param name="choiceName">Registered name of the inherited choice pseudostate to extend.</param>
+        /// <param name="choiceBuildAction">Callback configuring the choice's guarded branches and fallback branch. Its
+        /// builder is scoped to the element, not the enclosing machine or region.</param>
+        /// <returns>The enclosing override builder for continued configuration.</returns>
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/behaviors#definition-reuse-and-versions" />
         TReturn UseChoice(string choiceName, OverridenChoiceBuildAction choiceBuildAction);
 
-        /// <summary>
-        /// Uses a choice pseudostate of the overridden state machine with a default name.<br/>
-        /// <a href="https://github.com/Stateflows/framework/wiki/Choice">Choices</a> are pseudostates used to dynamically combine multiple transition guards; guards of transitions outgoing from Choice are evaluated <i>after</i> incoming transition happens.<br/>
-        /// It is mandatory for a Choice to define exactly one else transition to make sure that there is always an available target.
-        /// </summary>
-        /// <param name="choiceBuildAction">Choice build action<br/>
-        /// Use the following pattern to implement build action:
-        /// <code>
-        /// b => b
-        ///     . // Use . to see available builder methods
-        /// </code></param>
+        /// <summary>Extends an inherited choice pseudostate without adding a new vertex.</summary>
+        /// <param name="choiceBuildAction">Callback configuring the choice's guarded branches and fallback branch. Its
+        /// builder is scoped to the element, not the enclosing machine or region.</param>
+        /// <returns>The enclosing override builder for continued configuration.</returns>
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/behaviors#definition-reuse-and-versions" />
         TReturn UseChoice(OverridenChoiceBuildAction choiceBuildAction)
             => UseChoice(State<Choice>.Name, choiceBuildAction);
         #endregion
 
         #region UseFork
-        /// <summary>
-        /// Uses a fork pseudostate of the overridden state machine.<br/>
-        /// <a href="https://github.com/Stateflows/framework/wiki/Fork">Forks</a> are pseudostates used to split a single transition into multiple concurrent transitions.
-        /// </summary>
-        /// <param name="forkName">Fork name</param>
-        /// <param name="forkBuildAction">Fork build action<br/>
-        /// Use the following pattern to implement build action:
-        /// <code>
-        /// b => b
-        ///     . // Use . to see available builder methods
-        /// </code></param>
+        /// <summary>Extends an inherited fork pseudostate without adding a new vertex.</summary>
+        /// <param name="forkName">Registered name of the inherited fork pseudostate to extend.</param>
+        /// <param name="forkBuildAction">Callback configuring the fork's outgoing paths into separate orthogonal regions.
+        /// Its builder is scoped to the element, not the enclosing machine or region.</param>
+        /// <returns>The enclosing override builder for continued configuration.</returns>
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/behaviors#definition-reuse-and-versions" />
         TReturn UseFork(string forkName, OverridenForkBuildAction forkBuildAction);
 
-        /// <summary>
-        /// Uses a fork pseudostate of the overridden state machine with a default name.<br/>
-        /// <a href="https://github.com/Stateflows/framework/wiki/Fork">Forks</a> are pseudostates used to split a single transition into multiple concurrent transitions.
-        /// </summary>
-        /// <param name="forkBuildAction">Fork build action<br/>
-        /// Use the following pattern to implement build action:
-        /// <code>
-        /// b => b
-        ///     . // Use . to see available builder methods
-        /// </code></param>
+        /// <summary>Extends an inherited fork pseudostate without adding a new vertex.</summary>
+        /// <param name="forkBuildAction">Callback configuring the fork's outgoing paths into separate orthogonal regions.
+        /// Its builder is scoped to the element, not the enclosing machine or region.</param>
+        /// <returns>The enclosing override builder for continued configuration.</returns>
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/behaviors#definition-reuse-and-versions" />
         TReturn UseFork(OverridenForkBuildAction forkBuildAction)
             => UseFork(State<Fork>.Name, forkBuildAction);
         #endregion
 
         #region UseJoin
-        /// <summary>
-        /// Uses a join pseudostate of the overridden state machine.<br/>
-        /// <a href="https://github.com/Stateflows/framework/wiki/Join">Joins</a> are pseudostates used to merge multiple concurrent transitions into a single transition.
-        /// </summary>
-        /// <param name="joinName">Join name</param>
-        /// <param name="joinBuildAction">Join build action<br/>
-        /// Use the following pattern to implement build action:
-        /// <code>
-        /// b => b
-        ///     . // Use . to see available builder methods
-        /// </code></param>
+        /// <summary>Extends an inherited join pseudostate without adding a new vertex.</summary>
+        /// <param name="joinName">Registered name of the inherited join pseudostate to extend.</param>
+        /// <param name="joinBuildAction">Callback configuring the join's outgoing continuation. Its builder is scoped to
+        /// the element, not the enclosing machine or region.</param>
+        /// <returns>The enclosing override builder for continued configuration.</returns>
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/behaviors#definition-reuse-and-versions" />
         TReturn UseJoin(string joinName, OverridenJoinBuildAction joinBuildAction);
 
-        /// <summary>
-        /// Uses a join pseudostate of the overridden state machine with a default name.<br/>
-        /// <a href="https://github.com/Stateflows/framework/wiki/Join">Joins</a> are pseudostates used to merge multiple concurrent transitions into a single transition.
-        /// </summary>
-        /// <param name="joinBuildAction">Join build action<br/>
-        /// Use the following pattern to implement build action:
-        /// <code>
-        /// b => b
-        ///     . // Use . to see available builder methods
-        /// </code></param>
+        /// <summary>Extends an inherited join pseudostate without adding a new vertex.</summary>
+        /// <param name="joinBuildAction">Callback configuring the join's outgoing continuation. Its builder is scoped to
+        /// the element, not the enclosing machine or region.</param>
+        /// <returns>The enclosing override builder for continued configuration.</returns>
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/behaviors#definition-reuse-and-versions" />
         TReturn UseJoin(OverridenJoinBuildAction joinBuildAction)
             => UseJoin(State<Join>.Name, joinBuildAction);
         #endregion

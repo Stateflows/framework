@@ -8,8 +8,12 @@ using Stateflows.Entities;
 
 namespace Stateflows
 {
+    /// <summary>Registers Stateflows tracing and metrics instrumentation with OpenTelemetry.</summary>
     public static class DependencyInjection
     {
+        /// <summary>Adds Stateflows behavior tracers, client interception, and execution metrics.</summary>
+        /// <param name="builder">The Stateflows builder whose behaviors and services will be instrumented.</param>
+        /// <returns>The same builder, for further Stateflows configuration.</returns>
         public static IStateflowsBuilder AddOpenTelemetry(this IStateflowsBuilder builder)
         {
             var result = builder

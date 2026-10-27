@@ -59,32 +59,67 @@ namespace Stateflows.Common.Registration.Interfaces
             => InterceptBehaviorInfo(context, response);
     }
     
+    /// <summary>Provides fluent operations for registering entities owned by a behavior.</summary>
+    /// <typeparam name="TReturn">The owner builder type returned for continued configuration.</typeparam>
     public interface IEntityOwnerBase<out TReturn>
     {
+        /// <summary>Registers an entity template under an explicit entity name.</summary>
+        /// <typeparam name="TTemplate">The entity data template type.</typeparam>
+        /// <param name="entityName">The entity name used to identify this registration.</param>
+        /// <param name="buildAction">Optional callback that configures the entity.</param>
+        /// <returns>The owner builder for fluent registration.</returns>
         TReturn AddEntity<TTemplate>(string entityName, EntityBuildAction<TTemplate>? buildAction = null)
             where TTemplate : class;
 
+        /// <summary>Registers an entity template under its default entity name.</summary>
+        /// <typeparam name="TTemplate">The entity data template type.</typeparam>
+        /// <param name="buildAction">Optional callback that configures the entity.</param>
+        /// <returns>The owner builder for fluent registration.</returns>
         TReturn AddEntity<TTemplate>(EntityBuildAction<TTemplate>? buildAction = null)
             where TTemplate : class
             => AddEntity<TTemplate>(Entity<TTemplate>.Name, buildAction);
 
+        /// <summary>Registers a custom entity implementation under an explicit entity name.</summary>
+        /// <typeparam name="TTemplate">The entity data template type.</typeparam>
+        /// <typeparam name="TEntity">The entity implementation type.</typeparam>
+        /// <param name="entityName">The entity name used to identify this registration.</param>
+        /// <param name="buildAction">Optional callback that configures the entity.</param>
+        /// <returns>The owner builder for fluent registration.</returns>
         TReturn AddEntity<TTemplate, TEntity>(string entityName, EntityBuildAction<TTemplate>? buildAction = null)
             where TTemplate : class
             where TEntity : class, IEntity<TTemplate>;
 
+        /// <summary>Registers a custom entity implementation under its default entity name.</summary>
+        /// <typeparam name="TTemplate">The entity data template type.</typeparam>
+        /// <typeparam name="TEntity">The entity implementation type.</typeparam>
+        /// <param name="buildAction">Optional callback that configures the entity.</param>
+        /// <returns>The owner builder for fluent registration.</returns>
         TReturn AddEntity<TTemplate, TEntity>(EntityBuildAction<TTemplate>? buildAction = null)
             where TTemplate : class
             where TEntity : class, IEntity<TTemplate>
             => AddEntity<TTemplate, TEntity>(Entity<TTemplate, TEntity>.Name, buildAction);
         
+        /// <summary>Uses a projection's public members as properties in behavior information.</summary>
+        /// <typeparam name="TProjection">The projection type.</typeparam>
+        /// <param name="entityName">The entity whose projection is exposed.</param>
+        /// <returns>The owner builder for fluent registration.</returns>
         TReturn SetPropertiesProjection<TProjection>(string entityName)
             where TProjection : class;
         
+        /// <summary>Uses a template's default entity projection as behavior information properties.</summary>
+        /// <typeparam name="TTemplate">The entity data template type.</typeparam>
+        /// <typeparam name="TProjection">The projection type.</typeparam>
+        /// <returns>The owner builder for fluent registration.</returns>
         TReturn SetPropertiesProjection<TTemplate, TProjection>()
             where TTemplate : class
             where TProjection : class
             => SetPropertiesProjection<TProjection>(Entity<TTemplate>.Name);
         
+        /// <summary>Uses the custom entity's default projection as behavior information properties.</summary>
+        /// <typeparam name="TTemplate">The entity data template type.</typeparam>
+        /// <typeparam name="TEntity">The entity implementation type.</typeparam>
+        /// <typeparam name="TProjection">The projection type.</typeparam>
+        /// <returns>The owner builder for fluent registration.</returns>
         TReturn SetPropertiesProjection<TTemplate, TEntity, TProjection>()
             where TTemplate : class
             where TEntity : class, IEntity<TTemplate>

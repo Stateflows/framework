@@ -2,6 +2,9 @@
 
 namespace Stateflows.StateMachines.Registration.Interfaces
 {
+    /// <summary>Defines an orthogonal state's independently active regions, lifecycle actions, transitions, and
+    /// optional do behavior.</summary>
+    /// <seealso href="https://github.com/Stateflows/framework/wiki/state-machine-orthogonal-state" />
     public interface IOrthogonalStateBuilder :
         IOrthogonalStateExtension<IOrthogonalStateBuilder>,
         IStateEvents<IOrthogonalStateBuilder>,
@@ -12,6 +15,9 @@ namespace Stateflows.StateMachines.Registration.Interfaces
         IStateDoActivity<IBehaviorOrthogonalStateBuilder>,
         IStateDoAction<IBehaviorOrthogonalStateBuilder>;
 
+    /// <summary>Extends an inherited orthogonal state and its existing or additional regions.</summary>
+    /// <seealso href="https://github.com/Stateflows/framework/wiki/state-machine-orthogonal-state" />
+    /// <seealso href="https://github.com/Stateflows/framework/wiki/behaviors#definition-reuse-and-versions" />
     public interface IOverridenOrthogonalStateBuilder :
         IOrthogonalStateExtension<IOverridenOrthogonalStateBuilder>,
         IStateEvents<IOverridenOrthogonalStateBuilder>,
@@ -25,6 +31,8 @@ namespace Stateflows.StateMachines.Registration.Interfaces
         IStateDoActivity<IBehaviorOverridenOrthogonalStateBuilder>,
         IStateDoAction<IBehaviorOverridenOrthogonalStateBuilder>;
 
+    /// <summary>Continues configuring an orthogonal state after assigning its single embedded do behavior.</summary>
+    /// <seealso href="https://github.com/Stateflows/framework/wiki/state-machine-orthogonal-state" />
     public interface IBehaviorOrthogonalStateBuilder :
         IOrthogonalStateExtension<IBehaviorOrthogonalStateBuilder>,
         IStateEvents<IBehaviorOrthogonalStateBuilder>,
@@ -33,6 +41,9 @@ namespace Stateflows.StateMachines.Registration.Interfaces
         IRegions<IBehaviorOrthogonalStateBuilder>,
         IStateTransitions<IBehaviorOrthogonalStateBuilder>;
 
+    /// <summary>Extends an inherited orthogonal state whose embedded do behavior is assigned.</summary>
+    /// <seealso href="https://github.com/Stateflows/framework/wiki/state-machine-orthogonal-state" />
+    /// <seealso href="https://github.com/Stateflows/framework/wiki/behaviors#definition-reuse-and-versions" />
     public interface IBehaviorOverridenOrthogonalStateBuilder :
         IOrthogonalStateExtension<IBehaviorOverridenOrthogonalStateBuilder>,
         IStateEvents<IBehaviorOverridenOrthogonalStateBuilder>,

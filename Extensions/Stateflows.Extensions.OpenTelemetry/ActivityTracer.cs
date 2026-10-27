@@ -13,11 +13,14 @@ using Stateflows.Extensions.OpenTelemetry.Headers;
 
 namespace Stateflows.Extensions.OpenTelemetry
 {
+    /// <summary>Creates diagnostic activities for activity, node, and flow execution callbacks.</summary>
+    /// <param name="logger">The logger used to report activity processing outcomes.</param>
     public class ActivityTracer(ILogger<ActivityTracer> logger) : IActivityObserver, IActivityInterceptor, IActivityExceptionHandler
     {
         private bool Skip = false;
 
         private TracingActivity? EventProcessingActivity;
+        /// <inheritdoc/>
         public async Task<EventStatus> ProcessEventAsync<TEvent>(IEventContext<TEvent> context, Func<Task<EventStatus>> next)
         {
             Before(context);
@@ -55,23 +58,23 @@ namespace Stateflows.Extensions.OpenTelemetry
                     if (header is ActivityHeader activityHeader)
                     {
                         EventProcessingActivity = StateMachineTracer.Source.StartActivity(
-                            $"Activity '{context.Behavior.Id.Name.ToShortName()}:{context.Behavior.Id.InstanceText}' processing '{context.Event.GetType().GetEventName().ToShortName()}'",
+                            $"Activity '{context.Behavior.Id.Name.ToShortName()}:{context.Behavior.Id.InstanceText}' processing '{Event.GetName(context.Event).ToShortName()}'",
                             ActivityKind.Internal,
                             parentContext: activityHeader.ActivityContext
                         );
                     }
 
                     EventProcessingActivity ??= StateMachineTracer.Source.StartActivity(
-                        $"Activity '{context.Behavior.Id.Name.ToShortName()}:{context.Behavior.Id.InstanceText}' processing '{context.Event.GetType().GetEventName().ToShortName()}'"
+                        $"Activity '{context.Behavior.Id.Name.ToShortName()}:{context.Behavior.Id.InstanceText}' processing '{Event.GetName(context.Event).ToShortName()}'"
                     );
 
                     EventProcessingActivity?.AddTag("ActivityId", $"{context.Behavior.Id.Name.ToShortName()}:{context.Behavior.Id.InstanceText}");
-                    EventProcessingActivity?.AddTag("Event", context.Event.GetType().GetEventName().ToShortName());
+                    EventProcessingActivity?.AddTag("Event", Event.GetName(context.Event).ToShortName());
 
                     logger.LogTrace(
                         message: "Activity '{ActivityId}' received event '{Event}', processing",
                         $"{context.Behavior.Id.Name.ToShortName()}:{context.Behavior.Id.InstanceText}",
-                        context.Event.GetType().GetEventName().ToShortName()
+                        Event.GetName(context.Event).ToShortName()
                     );
                 }
 
@@ -109,7 +112,7 @@ namespace Stateflows.Extensions.OpenTelemetry
                 logger.LogTrace(
                     message: "Activity '{ActivityId}' processed event '{Event}' with result '{EventStatus}'",
                     $"{context.Behavior.Id.Name.ToShortName()}:{context.Behavior.Id.InstanceText}",
-                    context.ExecutionTrigger.GetType().GetEventName().ToShortName(),
+                    Event.GetName(context.ExecutionTrigger).ToShortName(),
                     eventStatus
                 );
             }
@@ -121,7 +124,7 @@ namespace Stateflows.Extensions.OpenTelemetry
                     args: new object[]
                     {
                         $"{context.Behavior.Id.Name.ToShortName()}:{context.Behavior.Id.InstanceText}",
-                        context.ExecutionTrigger.GetType().GetEventName().ToShortName()
+                        Event.GetName(context.ExecutionTrigger).ToShortName()
                     }
                 );
 
@@ -138,6 +141,7 @@ namespace Stateflows.Extensions.OpenTelemetry
 
         private Activity? InitializerActivity;
         private bool ImplicitInitialization;
+        /// <inheritdoc/>
         public async Task OnActivityInitializeAsync(IActivityInitializationContext context, bool implicitInitialization, Func<Task<bool>> next)
         {
             Before(context, implicitInitialization);
@@ -192,6 +196,7 @@ namespace Stateflows.Extensions.OpenTelemetry
         }
 
         private Activity? FinalizerActivity;
+        /// <inheritdoc/>
         public async Task OnActivityFinalizeAsync(IActivityFinalizationContext context, Func<Task> next)
         {
             Before(context);
@@ -229,6 +234,7 @@ namespace Stateflows.Extensions.OpenTelemetry
         }
 
         private readonly Dictionary<string, TracingActivity> InitializationActivities = new Dictionary<string, TracingActivity>();
+        /// <inheritdoc/>
         public async Task OnNodeInitializeAsync(IActivityNodeContext context, Func<Task> next)
         {
             Before(context);
@@ -260,6 +266,7 @@ namespace Stateflows.Extensions.OpenTelemetry
         }
 
         private readonly Dictionary<string, TracingActivity> FinalizationActivities = new Dictionary<string, TracingActivity>();
+        /// <inheritdoc/>
         public async Task OnNodeFinalizeAsync(IActivityNodeContext context, Func<Task> next)
         {
             Before(context);
@@ -304,6 +311,7 @@ namespace Stateflows.Extensions.OpenTelemetry
 
         private readonly Dictionary<string, TracingActivity> ActivationActivities = new Dictionary<string, TracingActivity>();
         private readonly List<string> ActivatedEventAcceptNodes = new List<string>();
+        /// <inheritdoc/>
         public async Task OnNodeActivateAsync(IActivityNodeContext context, bool activated, Func<Task> next)
         {
             Before(context, activated);
@@ -467,6 +475,7 @@ namespace Stateflows.Extensions.OpenTelemetry
         }
 
         private readonly Dictionary<string, TracingActivity> ExecutionActivities = new Dictionary<string, TracingActivity>();
+        /// <inheritdoc/>
         public async Task OnNodeExecuteAsync(IActivityNodeContext context, Func<Task> next)
         {
             Before(context);
@@ -559,6 +568,7 @@ namespace Stateflows.Extensions.OpenTelemetry
         }
 
         private readonly Dictionary<string, TracingActivity> FlowActivationActivities = new Dictionary<string, TracingActivity>();
+        /// <inheritdoc/>
         public async Task OnFlowActivateAsync(IActivityBeforeFlowContext context, Func<Task<IActivityAfterFlowContext>> next)
         {
             Before(context);
@@ -649,9 +659,11 @@ namespace Stateflows.Extensions.OpenTelemetry
             }
         }
 
+        /// <inheritdoc/>
         public Task OnFlowGuardAsync<TToken>(IGuardContext<TToken> context, Func<Task<bool>> next)
             => next();
 
+        /// <inheritdoc/>
         public Task OnFlowTransformAsync<TToken, TTransformedToken>(ITransformationContext<TToken> context, Func<Task<TTransformedToken>> next)
             => next();
 
@@ -661,6 +673,7 @@ namespace Stateflows.Extensions.OpenTelemetry
         // public void BeforeDehydrate(IActivityActionContext context)
         // { }
 
+        /// <inheritdoc/>
         public Task<bool> OnActivityInitializationExceptionAsync(IActivityInitializationContext context, Exception exception)
         {
             if (Skip && !ImplicitInitialization) return Task.FromResult(false);
@@ -678,21 +691,27 @@ namespace Stateflows.Extensions.OpenTelemetry
             return Task.FromResult(false);
         }
 
+        /// <inheritdoc/>
         public Task<bool> OnActivityFinalizationExceptionAsync(IActivityFinalizationContext context, Exception exception)
             => Task.FromResult(false);
 
+        /// <inheritdoc/>
         public Task<bool> OnNodeInitializationExceptionAsync(IActivityNodeContext context, Exception exception)
             => Task.FromResult(false);
 
+        /// <inheritdoc/>
         public Task<bool> OnNodeFinalizationExceptionAsync(IActivityNodeContext context, Exception exception)
             => Task.FromResult(false);
 
+        /// <inheritdoc/>
         public Task<bool> OnNodeExecutionExceptionAsync(IActivityNodeContext context, Exception exception)
             => Task.FromResult(false);
 
+        /// <inheritdoc/>
         public Task<bool> OnFlowGuardExceptionAsync<TToken>(IGuardContext<TToken> context, Exception exception)
             => Task.FromResult(false);
 
+        /// <inheritdoc/>
         public Task<bool> OnFlowTransformationExceptionAsync<TToken, TTransformedToken>(ITransformationContext<TToken> context, Exception exception)
             => Task.FromResult(false);
     }

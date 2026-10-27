@@ -6,8 +6,15 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Stateflows.Extensions.MinimalAPIs;
 
+/// <summary>Provides authorization-attribute evaluation for HTTP integration.</summary>
 public static class AuthorizationHelper
 {
+    /// <summary>Checks authentication, a named policy, any specified role, and specified authentication schemes.</summary>
+    /// <param name="attribute">Authorization requirements to evaluate.</param>
+    /// <param name="user">Principal making the request.</param>
+    /// <param name="authorizationService">Service used to evaluate a named policy.</param>
+    /// <returns>True if the principal is authenticated and all specified requirement categories pass.</returns>
+    /// <remarks>This helper evaluates one attribute; it does not combine endpoint policies or issue HTTP challenges.</remarks>
     public static async Task<bool> IsAuthorizedAsync(
         AuthorizeAttribute attribute,
         ClaimsPrincipal user,

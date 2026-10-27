@@ -19,6 +19,7 @@ using Stateflows.Activities.Registration.Interfaces;
 
 namespace Stateflows.Activities
 {
+    /// <summary>Registers activity services, activity behaviors, and default activity instances with dependency injection.</summary>
     public static class ActivitiesDependencyInjection
     {
         private static readonly Dictionary<IStateflowsBuilder, ActivitiesRegister> Registers = new();
@@ -35,6 +36,12 @@ namespace Stateflows.Activities
             }
         }
 
+        /// <summary>Adds activity services and registers activities in a Stateflows builder.</summary>
+        /// <param name="stateflowsBuilder">The Stateflows service and behavior builder.</param>
+        /// <param name="buildAction">Callback that declares activity registrations.</param>
+        /// <returns>The Stateflows builder for further configuration.</returns>
+        /// <remarks>Call during application configuration before the Stateflows builder is built.</remarks>
+        /// <seealso href="https://github.com/Stateflows/framework/wiki/activities">Activities documentation</seealso>
         [DebuggerHidden]
         public static IStateflowsBuilder AddActivities(this IStateflowsBuilder stateflowsBuilder,
             ActivitiesBuildAction buildAction = null)
@@ -49,6 +56,11 @@ namespace Stateflows.Activities
             return stateflowsBuilder;
         }
 
+        /// <summary>Registers a default instance of a typed activity behavior.</summary>
+        /// <typeparam name="TActivity">The activity implementation type.</typeparam>
+        /// <param name="stateflowsBuilder">The Stateflows builder.</param>
+        /// <param name="initializationRequestFactoryAsync">Optional factory for the default instance's initialization request.</param>
+        /// <returns>The Stateflows builder for further configuration.</returns>
         [DebuggerHidden]
         public static IStateflowsBuilder AddDefaultInstance<TActivity>(this IStateflowsBuilder stateflowsBuilder, DefaultInstanceInitializationRequestFactoryAsync initializationRequestFactoryAsync = null)
             where TActivity : class, IActivity

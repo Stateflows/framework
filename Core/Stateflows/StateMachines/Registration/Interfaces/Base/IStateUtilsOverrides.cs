@@ -1,12 +1,16 @@
 ﻿namespace Stateflows.StateMachines.Registration.Interfaces.Base;
 
+/// <summary>Locates and extends event deferral rules inherited from a reused state definition.</summary>
+/// <typeparam name="TReturn">The fluent state builder returned after extension.</typeparam>
+/// <seealso href="https://github.com/Stateflows/framework/wiki/state-machine-deferring-events" />
 public interface IStateUtilsOverrides<out TReturn>
 {
-    /// <summary>
-    /// Adds a <a href="https://github.com/Stateflows/framework/wiki/States#Deferred-Events">deferred event</a> to the current state.<br/><br/>
-    /// When a state that defers event is active, a deferred event is not processed when received.
-    /// Instead, it is stored to be handled later, as soon as state machine reaches the configuration which does not defer this event.
-    /// </summary>
-    /// <typeparam name="TEvent">The type of the event to be deferred.</typeparam>
+    /// <summary>Extends an inherited event-deferral rule on the current state.</summary>
+    /// <typeparam name="TEvent">Deferred event payload type.</typeparam>
+    /// <returns>The current state builder after extending the inherited deferral rule.</returns>
+    /// <param name="buildAction">Optional callback configuring the inherited deferral guard. Without a guard, matching
+    /// events are deferred unconditionally while the state is active.</param>
+    /// <seealso href="https://github.com/Stateflows/framework/wiki/state-machine-deferring-events" />
+    /// <seealso href="https://github.com/Stateflows/framework/wiki/behaviors#definition-reuse-and-versions" />
     TReturn UseDeferredEvent<TEvent>(OverridenDeferralBuildAction<TEvent> buildAction = null);
 }

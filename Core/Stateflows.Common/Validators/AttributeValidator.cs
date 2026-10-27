@@ -4,8 +4,10 @@ using System.ComponentModel.DataAnnotations;
 
 namespace Stateflows.Common.Validators
 {
+    /// <summary>Validates event payloads using .NET data-annotation attributes.</summary>
     public class AttributeValidator : IStateflowsValidator
     {
+        /// <inheritdoc />
         public Task<bool> ValidateAsync<TEvent>(TEvent @event, List<ValidationResult> validationResults)
         {
             object value = @event;

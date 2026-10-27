@@ -32,6 +32,7 @@ internal class AIAgentAction(
 {
     public Dictionary<Type, ChatMessageConverterHolder> EventFormatters { get; } = new();
     public Dictionary<Type, ChatMessageConverterHolder> TokenFormatters { get; } = new();
+    public Dictionary<string, ChatMessageConverterHolder> StructuralEventFormatters { get; } = new(StringComparer.Ordinal);
     public string? Name { get; set; }
     public string? Description { get; set; }
     public string? InitialPrompt { get; set; }
@@ -159,6 +160,15 @@ internal class AIAgentAction(
             .GetTokensOfType<AgenticMessage>()
             .Select(t => t.ToChatMessage())
         );
+
+        if (StructuralEventFormatters.Count != 0)
+        {
+            var agentContext = new AIAgentContext(actionContext, actionContext, actionContext);
+            foreach (var formatter in StructuralEventFormatters.Values)
+            {
+                chatMessages.AddRange(await formatter.ConvertAsync(agentContext, cancellationToken));
+            }
+        }
 
         if (InitialPrompt != null && actionContext.HasTokensOfType<Initialize>())
         {

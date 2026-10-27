@@ -3,6 +3,12 @@ using Stateflows.Common;
 
 namespace Stateflows.StateMachines;
 
+/// <summary>Transition base that evaluates overridable ClearScript effect and guard source.</summary>
+/// <param name="serviceProvider">The provider used to resolve the registered script engine factory.</param>
+/// <param name="behaviorContext">The active behavior context exposed to scripts.</param>
+/// <param name="commonExecutionContext">The common execution context used to create the script engine.</param>
+/// <param name="transitionContext">The active transition context exposed to scripts.</param>
+/// <param name="executionContext">The transition execution context exposed to scripts.</param>
 public class ClearScriptTransition(
     IServiceProvider serviceProvider,
     IBehaviorContext behaviorContext,
@@ -13,16 +19,22 @@ public class ClearScriptTransition(
     ITransitionEffect,
     ITransitionGuard
 {
+    /// <summary>Gets the source executed when the transition effect runs.</summary>
     protected virtual string EffectScript => "";
     
+    /// <summary>Executes <see cref="EffectScript"/> when the transition effect runs.</summary>
+    /// <returns>A task that completes when the effect script finishes.</returns>
     public async Task EffectAsync()
     {
         using var engine = await GetEngineAsync();
         engine.Execute(EffectScript);
     }
 
+    /// <summary>Gets the expression body evaluated when the transition guard runs.</summary>
     protected virtual string GuardScript => "";
     
+    /// <summary>Evaluates <see cref="GuardScript"/> and accepts the transition only when it returns Boolean <see langword="true"/>.</summary>
+    /// <returns>A task containing the guard result.</returns>
     public async Task<bool> GuardAsync()
     {
         var functionScript = $"(function() {{ {(GuardScript.Contains("return") ? "" : "return")} {GuardScript} }})";

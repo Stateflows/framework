@@ -5,6 +5,7 @@ namespace Stateflows.Entities
     /// <summary>
     /// Provides the entity, computed field name, and executing behavior to an observer.
     /// </summary>
+    /// <typeparam name="TTemplate">The entity template type.</typeparam>
     public interface IComputedFieldObservationContext<out TTemplate> : IBehaviorActionContext
     {
         /// <summary>

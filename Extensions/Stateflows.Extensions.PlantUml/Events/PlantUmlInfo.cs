@@ -3,11 +3,13 @@ using Stateflows.Extensions.PlantUml.Classes;
 
 namespace Stateflows.Extensions.PlantUml.Events
 {
+    /// <summary>Contains PlantUML source and image-server URLs for a registered behavior's diagram.</summary>
     [Event(nameof(PlantUmlInfo)), Retain, StrictOwnership]
     public sealed class PlantUmlInfo
     {
         private string plantUml;
 
+        /// <summary>Gets or sets the PlantUML source; assigning it refreshes the generated image URLs.</summary>
         public string PlantUml
         {
             get
@@ -23,7 +25,9 @@ namespace Stateflows.Extensions.PlantUml.Events
                 SVGUrl = GetUrl(FileType.SVG);
             }
         }
+        /// <summary>Gets or sets the URL of the PlantUML server's PNG rendering.</summary>
         public string PNGUrl { get; set; }
+        /// <summary>Gets or sets the URL of the PlantUML server's SVG rendering.</summary>
         public string SVGUrl { get; set; }
 
         private string GetUrl(FileType fileType = FileType.PNG)

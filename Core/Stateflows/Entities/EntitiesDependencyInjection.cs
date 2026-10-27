@@ -14,6 +14,7 @@ using Stateflows.StateMachines;
 
 namespace Stateflows.Entities
 {
+    /// <summary>Provides dependency-injection registration for entity behaviors.</summary>
     public static class EntitiesDependencyInjection
     {
         private static readonly Dictionary<IStateflowsBuilder, EntitiesRegister> Registers = new();
@@ -51,6 +52,10 @@ namespace Stateflows.Entities
             }
         }
 
+        /// <summary>Registers entity behaviors and their definitions with a Stateflows host.</summary>
+        /// <param name="stateflowsBuilder">The host builder to configure.</param>
+        /// <param name="buildAction">Configures entity registrations.</param>
+        /// <returns>The same builder for fluent registration.</returns>
         [DebuggerHidden]
         public static IStateflowsBuilder AddEntities(this IStateflowsBuilder stateflowsBuilder,
             EntitiesBuildAction buildAction = null)
@@ -91,5 +96,3 @@ namespace Stateflows.Entities
         }
     }
 }
-
-

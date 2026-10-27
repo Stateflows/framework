@@ -2,11 +2,15 @@
 
 namespace Stateflows.Activities;
 
+/// <summary>Configures external object flows for a reactive structured activity.</summary>
+/// <seealso href="https://github.com/Stateflows/framework/wiki/activity-structured-activity-node" />
 public interface IReactiveStructuredActivityExternalsBuilder :
     IObjectFlowBase<IReactiveStructuredActivityBuilder>,
     IControlFlowBase<IReactiveStructuredActivityBuilder>,
     INodeOptions<IReactiveStructuredActivityBuilder>;
 
+/// <summary>Configures a reactive structured activity's graph and external flows.</summary>
+/// <seealso href="https://github.com/Stateflows/framework/wiki/activity-structured-activity-node" />
 public interface IReactiveStructuredActivityBuilder :
     IReactiveStructuredActivityExternalsBuilder,
     // IObjectFlowBase<IReactiveStructuredActivityBuilder>,
@@ -24,11 +28,17 @@ public interface IReactiveStructuredActivityBuilder :
     IPublishEventBase<IReactiveStructuredActivityBuilder>,
     IAcceptEventBase<IReactiveStructuredActivityBuilder>;
 
+/// <summary>Provides fluent APIs for extending elements inherited from a reusable Activity definition.</summary>
+/// <seealso href="https://github.com/Stateflows/framework/wiki/activity-structured-activity-node" />
+/// <seealso href="https://github.com/Stateflows/framework/wiki/behaviors#definition-reuse-and-versions" />
 public interface IOverridenReactiveStructuredActivityExternalsBuilder :
     IObjectFlowBase<IOverridenReactiveStructuredActivityBuilder>,
     IControlFlowBase<IOverridenReactiveStructuredActivityBuilder>,
     INodeOptions<IOverridenReactiveStructuredActivityBuilder>;
 
+/// <summary>Provides fluent APIs for extending elements inherited from a reusable Activity definition.</summary>
+/// <seealso href="https://github.com/Stateflows/framework/wiki/activity-structured-activity-node" />
+/// <seealso href="https://github.com/Stateflows/framework/wiki/behaviors#definition-reuse-and-versions" />
 public interface IOverridenReactiveStructuredActivityBuilder :
     IOverridenReactiveStructuredActivityExternalsBuilder,
     // IObjectFlowBase<IOverridenReactiveStructuredActivityBuilder>,

@@ -4,16 +4,20 @@ using Stateflows.Common;
 
 namespace Stateflows.Extensions.OpenTelemetry.Headers
 {
+    /// <summary>Carries W3C trace context in event headers across Stateflows dispatch and serialized transports.</summary>
     public class ActivityHeader : EventHeader
     {
         // ActivityTraceId and ActivitySpanId expose no serializable members, so the context
         // is carried in W3C Trace Context form to survive serialized transports (e.g. Orleans).
+        /// <summary>Gets or sets the W3C <c>traceparent</c> value used to restore a remote trace context.</summary>
         public string? TraceParent { get; set; }
 
+        /// <summary>Gets or sets the W3C <c>tracestate</c> value associated with <see cref="TraceParent"/>.</summary>
         public string? TraceState { get; set; }
 
         private ActivityContext? localContext;
 
+        /// <summary>Gets or sets the parsed activity context; setting it updates the W3C header fields.</summary>
         [JsonIgnore]
         public ActivityContext ActivityContext
         {

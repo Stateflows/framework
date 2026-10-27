@@ -17,6 +17,8 @@ namespace Stateflows.StateMachines.Extensions
             {
                 return false;
             }
+            if (edge.StructuralEventName != null)
+                return eventHolder.BoxedPayload is StructuralEvent && eventHolder.Name == edge.StructuralEventName;
             
             return edge.PolymorphicTriggers
                 ? eventHolder.BoxedPayload is TimeEvent timeEvent1
@@ -32,7 +34,9 @@ namespace Stateflows.StateMachines.Extensions
         }
 
         public static bool IsAcceptedBy(this EventHolder eventHolder, Node node)
-            => node.ActualEventTypes.Any(type => type.IsAssignableFrom(eventHolder.PayloadType));
+            => node.StructuralEventName != null
+                ? eventHolder.BoxedPayload is StructuralEvent && eventHolder.Name == node.StructuralEventName
+                : node.ActualEventTypes.Any(type => type.IsAssignableFrom(eventHolder.PayloadType));
         
         public static bool IsAcceptedBy(this EventHolder eventHolder, Node node, Dictionary<string, Guid> nodeTimeEvents)
             => eventHolder.BoxedPayload is TimeEvent timeEvent
@@ -40,6 +44,6 @@ namespace Stateflows.StateMachines.Extensions
                     nodeTimeEvents.TryGetValue(node.Identifier, out var timeEventId) &&
                     timeEvent.Id == timeEventId
                 )
-                : node.ActualEventTypes.Any(type => type.IsAssignableFrom(eventHolder.PayloadType));
+                : eventHolder.IsAcceptedBy(node);
     }
 }

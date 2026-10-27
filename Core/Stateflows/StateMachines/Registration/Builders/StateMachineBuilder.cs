@@ -80,6 +80,7 @@ namespace Stateflows.StateMachines.Registration.Builders
         public IInitializedStateMachineBuilder AddInitializer<TInitializationEvent>(Func<IStateMachineInitializationContext<TInitializationEvent>, Task<bool>> actionAsync)
         {
             actionAsync.ThrowIfNull(nameof(actionAsync));
+            Graph.StateflowsBuilder.Events.RegisterClr(typeof(TInitializationEvent));
             
             var initializerName = Event<TInitializationEvent>.Name;
             

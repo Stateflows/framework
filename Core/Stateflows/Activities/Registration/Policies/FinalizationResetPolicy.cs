@@ -29,11 +29,21 @@ namespace Stateflows.Activities
         }
     }
 
+    /// <summary>Provides the activity finalization-reset registration policy.</summary>
     public static class FinalizationResetPolicy
     {
+        /// <summary>Resets a stored activity instance after finalization, or deletes its transient context.</summary>
+        /// <param name="builder">The activity graph builder.</param>
+        /// <param name="resetMode">The reset mode used for a stored instance.</param>
+        /// <returns>The activity builder for further configuration.</returns>
+        /// <remarks>Reset is requested after the activity-finalization observer continuation completes successfully.</remarks>
         public static IActivityBuilder AddFinalizationResetPolicy(this IActivityBuilder builder, ResetMode resetMode = ResetMode.Full)
             => builder.AddObserver(_ => new ResetObserver(resetMode));
         
+        /// <summary>Enables activity finalization reset behavior through activity-wide utilities.</summary>
+        /// <param name="builder">The activity utility builder.</param>
+        /// <param name="resetMode">The reset mode used for a stored instance.</param>
+        /// <returns>The activity utility builder for further configuration.</returns>
         public static IActivityUtilsBuilder AddFinalizationResetPolicy(this IActivityUtilsBuilder builder, ResetMode resetMode = ResetMode.Full)
             => builder.AddObserver(_ => new ResetObserver(resetMode));
     }

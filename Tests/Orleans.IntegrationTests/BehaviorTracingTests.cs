@@ -58,7 +58,8 @@ public sealed class BehaviorTracingTests
         await host.StartAsync();
         try
         {
-            var locator = host.Services.GetRequiredService<IBehaviorLocator>();
+            await using var scope = host.Services.CreateAsyncScope();
+            var locator = scope.ServiceProvider.GetRequiredService<IBehaviorLocator>();
             Assert.IsTrue(locator.TryLocateBehavior(new BehaviorId(type, "failure", instance), out var behavior));
             using (behavior)
                 Assert.AreEqual(EventStatus.Failed, (await behavior.SendAsync(new Initialize())).Status);

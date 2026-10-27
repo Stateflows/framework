@@ -1,4 +1,4 @@
-﻿using System.Text.Json;
+using System.Text.Json;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -91,6 +91,20 @@ internal class ActivityVisitor(
         CurrentActivityName = activityName;
         typeMapper.VisitMappedTypes<TEvent>(this);
         CurrentActivityName = string.Empty;
+
+        return Task.CompletedTask;
+    }
+
+    public Task AcceptEventNodeAddedAsync(EventDefinition definition, string activityName, int activityVersion, string nodeName,
+        string? parentNodeName = null)
+    {
+        if (OwnerClass != null || !StructuralTriggers.Add((activityName, definition.Name)))
+        {
+            return Task.CompletedTask;
+        }
+
+        RouteBuilder.RegisterStructuralEventEndpoint(Interceptor, BehaviorType.Activity, activityName, definition,
+            HateoasLinks, HasDefaultInstance);
 
         return Task.CompletedTask;
     }

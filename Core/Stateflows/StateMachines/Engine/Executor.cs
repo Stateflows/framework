@@ -274,7 +274,13 @@ namespace Stateflows.StateMachines.Engine
             => GetExpectedEvents()
                 .Where(type => !typeof(SystemEvent).IsAssignableFrom(type))
                 .Where(type => !typeof(Exception).IsAssignableFrom(type))
+                .Where(type => !typeof(StructuralEvent).IsAssignableFrom(type))
                 .Select(type => type.GetEventName())
+                .Concat(BehaviorStatus == BehaviorStatus.Initialized
+                    ? VerticesTree.GetAllNodes_FromTheTop().SelectMany(node => node.Value.Edges.Values)
+                        .Where(edge => edge.StructuralEventName != null).Select(edge => edge.StructuralEventName)
+                    : [])
+                .Distinct()
                 .ToArray();
 
         private IEnumerable<Type> GetExpectedEvents()
@@ -393,7 +399,8 @@ namespace Stateflows.StateMachines.Engine
                 foreach (var vertex in currentStack)
                 {
                     if (
-                        vertex.BehaviorEventTypes.Contains(eventHolder.PayloadType) &&
+                        (vertex.BehaviorEventTypes.Contains(eventHolder.PayloadType) ||
+                         vertex.BehaviorStructuralEvents.Contains(eventHolder.Name)) &&
                         !eventHolder.Headers.Values.Any(h => h is NoForwarding) &&
                         !eventHolder.PayloadType.GetCustomAttributes<NoForwardingAttribute>().Any()
                     )

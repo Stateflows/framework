@@ -11,8 +11,15 @@ using Stateflows.Common.Registration.Interfaces;
 
 namespace Stateflows.Extensions.OpenTelemetry;
 
+/// <summary>Records behavior event execution counts and durations as metrics.</summary>
+/// <param name="meter">The registered meter holding per-resource execution instruments.</param>
 public class MetricsInterceptor(StateflowsMeter meter) : BehaviorInterceptor
 {
+    /// <summary>Runs the downstream behavior pipeline and records its duration and resulting status.</summary>
+    /// <typeparam name="TEvent">The event type being processed.</typeparam>
+    /// <param name="context">The behavior event context used to select instruments and metric tags.</param>
+    /// <param name="next">The remaining event-processing pipeline.</param>
+    /// <returns>A task containing the downstream event status.</returns>
     public override async Task<EventStatus> ProcessEventAsync<TEvent>(IEventContext<TEvent> context, Func<Task<EventStatus>> next)
     {
         var stopwatch = Stopwatch.StartNew();
@@ -39,7 +46,7 @@ public class MetricsInterceptor(StateflowsMeter meter) : BehaviorInterceptor
                 return;
             }
 
-            var eventName = Event.GetName(context.Event.GetType());
+            var eventName = Event.GetName(context.Event);
             var resourceName = meter.ResourcesByBehaviorClass[context.Behavior.Id.BehaviorClass].Name;
 
             if (meter.ExecutionDurations.TryGetValue(resourceName, out var histogram))

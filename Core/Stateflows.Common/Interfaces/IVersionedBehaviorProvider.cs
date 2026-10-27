@@ -2,6 +2,7 @@ using System.Collections.Generic;
 
 namespace Stateflows.Common.Interfaces
 {
+    /// <summary>Exposes definition-version information for provided behavior classes.</summary>
     public interface IVersionedBehaviorProvider
     {
         /// <summary>

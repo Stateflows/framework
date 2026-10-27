@@ -6,10 +6,13 @@ using Stateflows.StateMachines.Context.Interfaces;
 
 namespace Stateflows.StateMachines
 {
+    /// <summary>Builds deferred actions that mutate one machine-global context value.</summary>
     public struct StateActionGlobalValueExpression
     {
         private readonly string ValueName;
 
+        /// <summary>Selects a machine-global value without reading or changing it immediately.</summary>
+        /// <param name="valueName">The context value key.</param>
         public StateActionGlobalValueExpression(string valueName)
         {
             ValueName = valueName;
@@ -54,10 +57,13 @@ namespace Stateflows.StateMachines
         }
     }
 
+    /// <summary>Builds actions addressing machine-global values under a dot-separated prefix.</summary>
     public struct StateActionGlobalNamespaceExpression
     {
         private readonly string NamespaceName;
 
+        /// <summary>Selects a machine-global value namespace.</summary>
+        /// <param name="namespaceName">The prefix to which a dot and value name are appended.</param>
         public StateActionGlobalNamespaceExpression(string namespaceName)
         {
             NamespaceName = namespaceName;
@@ -88,10 +94,13 @@ namespace Stateflows.StateMachines
         }
     }
     
+    /// <summary>Builds deferred actions that mutate one value scoped to the executing state.</summary>
     public struct StateActionStateValueExpression
     {
         private readonly string ValueName;
 
+        /// <summary>Selects a state-local value without reading or changing it immediately.</summary>
+        /// <param name="valueName">The state-local context value key.</param>
         public StateActionStateValueExpression(string valueName)
         {
             ValueName = valueName;
@@ -136,10 +145,14 @@ namespace Stateflows.StateMachines
         }
     }
 
+    /// <summary>Builds state-local value mutations using a dot-separated namespace prefix.</summary>
+    /// <remarks>The Clear callback currently removes matching machine-global values, unlike Set, Update, and Remove.</remarks>
     public struct StateActionStateNamespaceExpression
     {
         private readonly string NamespaceName;
 
+        /// <summary>Selects a state-value namespace for later callbacks.</summary>
+        /// <param name="namespaceName">The prefix to which a dot and value name are appended.</param>
         public StateActionStateNamespaceExpression(string namespaceName)
         {
             NamespaceName = namespaceName;
@@ -176,6 +189,7 @@ namespace Stateflows.StateMachines
         /// Declares an action that removes the specified state value.
         /// </summary>
         /// <returns>State action function.</returns>
+        /// <param name="valueName">The value name relative to the selected state-local namespace.</param>
         public Func<IStateActionContext, Task> Remove(string valueName)
         {
             var self = this;
@@ -183,8 +197,9 @@ namespace Stateflows.StateMachines
         }
 
         /// <summary>
-        /// Declares an action that clears all values in the specified state value set.
+        /// Declares an action that removes machine-global values having this namespace prefix.
         /// </summary>
+        /// <remarks>This callback uses the behavior value store rather than the executing state's value store.</remarks>
         /// <returns>State action function.</returns>
         public Func<IStateActionContext, Task> Clear
         {
@@ -197,32 +212,34 @@ namespace Stateflows.StateMachines
     }
 
     
+    /// <summary>Selects machine-global values or namespaces for declarative state actions.</summary>
     public struct StateActionGlobalSelector
     {
         /// <summary>
-        /// Provides declarative guards based on the global value with given name.
+        /// Selects a machine-global value for declarative mutation actions.
         /// </summary>
-        /// <param name="valueName">Name of the global value used in guard.</param>
-        /// <returns>Declarative guards.</returns>
+        /// <param name="valueName">The machine-global value key.</param>
+        /// <returns>An expression that creates mutation callbacks for this value.</returns>
         public StateActionGlobalValueExpression Value(string valueName)
             => new StateActionGlobalValueExpression(valueName);
         
         /// <summary>
-        /// Provides declarative guards based on the global value set with given name.
+        /// Selects a machine-global value namespace for declarative mutation actions.
         /// </summary>
-        /// <param name="namespaceName">Name of the global value set used in guard.</param>
-        /// <returns>Declarative guards.</returns>
+        /// <param name="namespaceName">The dot-separated value prefix.</param>
+        /// <returns>An expression for values under the namespace.</returns>
         public StateActionGlobalNamespaceExpression Namespace(string namespaceName)
             => new StateActionGlobalNamespaceExpression(namespaceName);
     }
 
+    /// <summary>Selects state-local values or namespaces for declarative state actions.</summary>
     public struct StateActionStateSelector
     {
         /// <summary>
-        /// Provides declarative guards based on the state's value with given name.
+        /// Selects a state-local value for declarative mutation actions.
         /// </summary>
-        /// <param name="valueName">Name of the state's value used in guard.</param>
-        /// <returns>Declarative guards.</returns>
+        /// <param name="valueName">The executing state's value key.</param>
+        /// <returns>An expression that creates mutation callbacks for this value.</returns>
         public StateActionStateValueExpression Value(string valueName)
         {
             var self = this;
@@ -230,10 +247,10 @@ namespace Stateflows.StateMachines
         }
         
         /// <summary>
-        /// Provides declarative guards based on the state's value set with given name.
+        /// Selects a namespace prefix for declarative state-value mutation actions.
         /// </summary>
-        /// <param name="namespaceName">Name of the state's value set used in guard.</param>
-        /// <returns>Declarative guards.</returns>
+        /// <param name="namespaceName">The dot-separated value prefix.</param>
+        /// <returns>An expression for values under the namespace.</returns>
         public StateActionStateNamespaceExpression Namespace(string namespaceName)
         {
             var self = this;
@@ -241,11 +258,15 @@ namespace Stateflows.StateMachines
         }
     }
     
+    /// <summary>Provides reusable state-action callbacks and deferred value-mutation expressions.</summary>
+    /// <remarks>Constructing an expression does not mutate values; changes occur when its returned callback is executed.</remarks>
     public static class Actions
     {
         /// <summary>
         /// Declares an empty action that does nothing.
         /// </summary>
+        /// <param name="_">The execution context, intentionally unused.</param>
+        /// <returns>An already completed task.</returns>
         public static Task Empty(IStateMachineActionContext _)
             => Task.CompletedTask;
 

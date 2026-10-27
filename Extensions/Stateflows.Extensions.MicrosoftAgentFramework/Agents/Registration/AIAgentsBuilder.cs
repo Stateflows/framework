@@ -56,10 +56,13 @@ namespace Stateflows.MAF.AIAgents.Registration.Builders
         [DebuggerHidden]
         public IAIAgentsBuilder AddAIAgent(string agentName, int version, AIAgentFactoryAsync aiAgentFactoryAsync, AIAgentBuildAction? agentBuildAction = null)
         {
-            ActionsBuilder.AddAction<AIAgentAction>(agentName, version, b => b
-                .AddConfiguration(aiAgentFactoryAsync)
-                .AddConfiguration(agentBuildAction)
-            );
+            ActionsBuilder.AddAction<AIAgentAction>(agentName, version, b =>
+            {
+                b
+                    .AddConfiguration(aiAgentFactoryAsync)
+                    .AddConfiguration(agentBuildAction);
+                agentBuildAction?.Invoke(new AIAgentBuilder(b));
+            });
 
             return this;
         }
@@ -72,9 +75,13 @@ namespace Stateflows.MAF.AIAgents.Registration.Builders
             ActionsBuilder.AddAction<AIAgentAction<TAgent>>(
                 agentName,
                 version,
-                b => b
-                    .AddConfiguration(agentBuildAction)
-                    .SetCustomBehaviorClassType(MAFBehaviorType.AIAgent)
+                b =>
+                {
+                    b
+                        .AddConfiguration(agentBuildAction)
+                        .SetCustomBehaviorClassType(MAFBehaviorType.AIAgent);
+                    agentBuildAction?.Invoke(new AIAgentBuilder(b));
+                }
             );
 
             return this;

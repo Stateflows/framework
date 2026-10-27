@@ -3,22 +3,25 @@ using Stateflows.Common;
 
 namespace Stateflows.Extensions.MinimalAPIs.Interfaces;
 
+/// <summary>Configures the endpoints selected by the enclosing mapping rule.</summary>
 public interface IEndpointConfiguration
 {
     /// <summary>
-    /// Disables endpoint mapping
+    /// Disables the selected endpoints.
     /// </summary>
     void Disable();
     
     /// <summary>
-    /// Updates endpoint route
+    /// Transforms the selected endpoint routes during mapping.
     /// </summary>
-    /// <param name="routeUpdater">Action that returns updated route</param>
+    /// <param name="routeUpdater">Function receiving the current route and returning its replacement.</param>
+    /// <returns>This configuration for further endpoint rules.</returns>
     IEndpointConfiguration UpdateRoute(Func<string, string> routeUpdater);
     
     /// <summary>
-    /// Configures endpoint handler
+    /// Applies ASP.NET Core endpoint conventions to the selected endpoints.
     /// </summary>
-    /// <param name="routeHandlerBuilderAction">Action that configures endpoint handler</param>
+    /// <param name="routeHandlerBuilderAction">Callback applying metadata, authorization, or other endpoint conventions.</param>
+    /// <returns>This configuration for further endpoint rules.</returns>
     IEndpointConfiguration ConfigureHandler(Action<IEndpointConventionBuilder> routeHandlerBuilderAction);
 }

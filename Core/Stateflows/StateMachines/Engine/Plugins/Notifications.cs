@@ -79,7 +79,7 @@ namespace Stateflows.StateMachines.Engine
         public override async Task OnTransitionEffectAsync<TEvent>(ITransitionContext<TEvent> context, Func<Task> next)
         {
             var stateflowsContext = ((BaseContext)context).Context.Context;
-            var eventName = Event.GetName(context.Event.GetType());
+            var eventName = Event.GetName(context.Event);
             if (context.Target != null)
             {
                 Trace.WriteLine(string.IsNullOrEmpty(eventName)
@@ -102,7 +102,7 @@ namespace Stateflows.StateMachines.Engine
                 return;
             }
 
-            var eventName = Event.GetName(context.Event.GetType());
+            var eventName = Event.GetName(context.Event);
 
             var transitionContext = (TransitionContext<TEvent>)context;
             var guardDelegations = context.Headers.Values.OfType<TransitionGuardDelegation>();
@@ -151,14 +151,14 @@ namespace Stateflows.StateMachines.Engine
             void Before(IEventContext<TEvent> context)
             {
                 var stateflowsContext = ((BaseContext)context).Context.Context;
-                Trace.WriteLine($"⦗→s⦘ State Machine '{stateflowsContext.Id.Name}:{stateflowsContext.Id.Instance}': received event '{Event.GetName(context.Event.GetType())}', processing");
+                Trace.WriteLine($"⦗→s⦘ State Machine '{stateflowsContext.Id.Name}:{stateflowsContext.Id.Instance}': received event '{Event.GetName(context.Event)}', processing");
 
             }
 
             void After(IEventContext<TEvent> context, EventStatus eventStatus)
             {
                 var stateflowsContext = ((BaseContext)context).Context.Context;
-                Trace.WriteLine($"⦗→s⦘ State Machine '{stateflowsContext.Id.Name}:{stateflowsContext.Id.Instance}': processed event '{Event.GetName(context.Event.GetType())}' with result '{eventStatus}'");
+                Trace.WriteLine($"⦗→s⦘ State Machine '{stateflowsContext.Id.Name}:{stateflowsContext.Id.Instance}': processed event '{Event.GetName(context.Event)}' with result '{eventStatus}'");
 
                 var executor = context.Behavior.GetExecutor();
                 if (!executor.StateHasChanged)

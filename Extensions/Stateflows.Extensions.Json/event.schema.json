@@ -1,0 +1,230 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:stateflows:event:1.0",
+  "title": "Stateflows structural event definition",
+  "description": "Structural event or request definition. JsonEventDefinition.Parse and core registration additionally validate distinct sibling field names, Compare targets, validator compatibility, ordered and representable range limits, .NET regex syntax, and host-owned response and validator aliases.",
+  "type": "object",
+  "required": ["formatVersion", "name", "fields"],
+  "properties": {
+    "formatVersion": { "const": "1.0" },
+    "name": { "$ref": "#/$defs/name" },
+    "fields": { "$ref": "#/$defs/fields" },
+    "response": {
+      "description": "Omit or use null for an ordinary event; specify one response reference for a request.",
+      "oneOf": [
+        { "type": "null" },
+        {
+          "type": "object",
+          "properties": {
+            "eventName": { "oneOf": [{ "$ref": "#/$defs/name" }, { "type": "null" }] },
+            "clrType": { "type": ["string", "null"], "description": "Host-registered JsonOptions.AddType alias, not an assembly-qualified CLR name." }
+          },
+          "oneOf": [
+            {
+              "required": ["eventName"],
+              "properties": { "eventName": { "$ref": "#/$defs/name" }, "clrType": { "type": "null" } }
+            },
+            {
+              "required": ["clrType"],
+              "properties": { "clrType": { "type": "string" }, "eventName": { "type": "null" } }
+            }
+          ],
+          "additionalProperties": false
+        }
+      ]
+    }
+  },
+  "additionalProperties": false,
+  "$defs": {
+    "name": { "type": "string", "pattern": "\\S" },
+    "int32Nonnegative": { "type": "integer", "minimum": 0, "maximum": 2147483647 },
+    "fields": { "type": "array", "items": { "$ref": "#/$defs/field" } },
+    "validations": {
+      "type": ["array", "null"],
+      "items": { "$ref": "#/$defs/validation" }
+    },
+    "field": {
+      "type": "object",
+      "required": ["name"],
+      "properties": {
+        "name": { "$ref": "#/$defs/name" },
+        "type": {
+          "enum": [
+            null, "String", "Boolean", "Int32", "Int64", "Decimal", "Double",
+            "Guid", "DateTime", "DateTimeOffset", "TimeSpan", "DateOnly", "TimeOnly", "Binary", "Enum"
+          ],
+          "description": "Omitted or null denotes a structural object with nested fields."
+        },
+        "isCollection": { "type": "boolean", "default": false },
+        "fields": { "type": ["array", "null"], "items": { "$ref": "#/$defs/field" } },
+        "enumValues": {
+          "type": ["array", "null"],
+          "items": { "$ref": "#/$defs/name" },
+          "uniqueItems": true
+        },
+        "validation": { "$ref": "#/$defs/validations" },
+        "itemValidation": { "$ref": "#/$defs/validations" }
+      },
+      "allOf": [
+        {
+          "if": { "properties": { "type": { "type": "null" } } },
+          "then": {
+            "required": ["fields"],
+            "properties": {
+              "fields": { "type": "array" },
+              "itemValidation": { "type": "null" }
+            }
+          },
+          "else": {
+            "properties": { "fields": { "type": "null" } },
+            "if": { "properties": { "isCollection": { "const": true } }, "required": ["isCollection"] },
+            "else": { "properties": { "itemValidation": { "type": "null" } } }
+          }
+        },
+        {
+          "if": { "properties": { "type": { "const": "Enum" } }, "required": ["type"] },
+          "then": {
+            "required": ["enumValues"],
+            "properties": { "enumValues": { "type": "array", "minItems": 1 } }
+          },
+          "else": { "properties": { "enumValues": { "type": "null" } } }
+        }
+      ],
+      "additionalProperties": false
+    },
+    "validation": {
+      "type": "object",
+      "required": ["type"],
+      "properties": {
+        "type": {
+          "enum": [
+            "Required", "StringLength", "MinLength", "MaxLength", "Range",
+            "RegularExpression", "Compare", "EmailAddress", "Url", "Phone", "CreditCard", "Custom"
+          ]
+        },
+        "alias": { "type": ["string", "null"] },
+        "options": { "type": "object" },
+        "errorMessage": { "type": ["string", "null"] }
+      },
+      "allOf": [
+        {
+          "if": { "properties": { "type": { "const": "Custom" } } },
+          "then": {
+            "required": ["alias"],
+            "properties": { "alias": { "type": "string", "description": "Host-registered JsonOptions.AddValidator alias. Its factory validates options." } }
+          },
+          "else": { "properties": { "alias": { "type": "null" } } }
+        },
+        {
+          "if": { "properties": { "type": { "const": "Required" } } },
+          "then": { "properties": { "options": { "$ref": "#/$defs/requiredOptions" } } }
+        },
+        {
+          "if": { "properties": { "type": { "const": "StringLength" } } },
+          "then": {
+            "required": ["options"],
+            "properties": { "options": { "$ref": "#/$defs/stringLengthOptions" } }
+          }
+        },
+        {
+          "if": { "properties": { "type": { "enum": ["MinLength", "MaxLength"] } } },
+          "then": {
+            "required": ["options"],
+            "properties": { "options": { "$ref": "#/$defs/lengthOptions" } }
+          }
+        },
+        {
+          "if": { "properties": { "type": { "const": "Range" } } },
+          "then": {
+            "required": ["options"],
+            "properties": { "options": { "$ref": "#/$defs/rangeOptions" } }
+          }
+        },
+        {
+          "if": { "properties": { "type": { "const": "RegularExpression" } } },
+          "then": {
+            "required": ["options"],
+            "properties": { "options": { "$ref": "#/$defs/regexOptions" } }
+          }
+        },
+        {
+          "if": { "properties": { "type": { "const": "Compare" } } },
+          "then": {
+            "required": ["options"],
+            "properties": { "options": { "$ref": "#/$defs/compareOptions" } }
+          }
+        },
+        {
+          "if": { "properties": { "type": { "enum": ["EmailAddress", "Url", "Phone", "CreditCard"] } } },
+          "then": { "properties": { "options": { "type": "object", "additionalProperties": false } } }
+        }
+      ],
+      "additionalProperties": false
+    },
+    "requiredOptions": {
+      "type": "object",
+      "properties": { "allowEmptyStrings": { "type": "boolean", "default": false } },
+      "additionalProperties": false
+    },
+    "stringLengthOptions": {
+      "type": "object",
+      "required": ["maximumLength"],
+      "properties": {
+        "maximumLength": { "$ref": "#/$defs/int32Nonnegative" },
+        "minimumLength": { "$ref": "#/$defs/int32Nonnegative", "default": 0 }
+      },
+      "additionalProperties": false
+    },
+    "lengthOptions": {
+      "type": "object",
+      "required": ["length"],
+      "properties": { "length": { "$ref": "#/$defs/int32Nonnegative" } },
+      "additionalProperties": false
+    },
+    "rangeOptions": {
+      "type": "object",
+      "required": ["operandType", "minimum", "maximum"],
+      "properties": {
+        "operandType": { "enum": ["Int32", "Int64", "Decimal", "Double"] },
+        "minimum": { "type": "number" },
+        "maximum": { "type": "number" }
+      },
+      "allOf": [
+        {
+          "if": { "properties": { "operandType": { "const": "Int32" } } },
+          "then": {
+            "properties": {
+              "minimum": { "type": "integer", "minimum": -2147483648, "maximum": 2147483647 },
+              "maximum": { "type": "integer", "minimum": -2147483648, "maximum": 2147483647 }
+            }
+          }
+        },
+        {
+          "if": { "properties": { "operandType": { "const": "Int64" } } },
+          "then": {
+            "properties": {
+              "minimum": { "type": "integer", "minimum": -9223372036854775808, "maximum": 9223372036854775807 },
+              "maximum": { "type": "integer", "minimum": -9223372036854775808, "maximum": 9223372036854775807 }
+            }
+          }
+        }
+      ],
+      "additionalProperties": false
+    },
+    "regexOptions": {
+      "type": "object",
+      "required": ["pattern"],
+      "properties": {
+        "pattern": { "type": "string", "minLength": 1, "description": ".NET regular expression, checked by the parser." },
+        "matchTimeoutInMilliseconds": { "type": "integer", "minimum": 1, "maximum": 2147483647, "default": 2000 }
+      },
+      "additionalProperties": false
+    },
+    "compareOptions": {
+      "type": "object",
+      "required": ["otherProperty"],
+      "properties": { "otherProperty": { "$ref": "#/$defs/name" } },
+      "additionalProperties": false
+    }
+  }
+}

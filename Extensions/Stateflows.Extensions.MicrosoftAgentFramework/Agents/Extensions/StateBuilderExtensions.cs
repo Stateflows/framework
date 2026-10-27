@@ -14,6 +14,7 @@ using Stateflows.StateMachines.Registration.Interfaces;
 
 namespace Stateflows.MAF.AIAgents.Extensions;
 
+/// <summary>Provides agent and agentic-transition operations for state-machine state builders.</summary>
 public static class StateBuilderExtensions
 {
     internal static IBehaviorStateBuilder AddDoAIAgent(this IStateBuilder stateBuilder, AIAgentFactory aiAgentFactory, AIAgentBuildAction? buildAction = null)
@@ -127,9 +128,21 @@ public static class StateBuilderExtensions
     //         buildAction?.Invoke(b as IDefaultTransitionBuilder);
     //     };
 
+    /// <summary>Adds a transition that asks the agent whether the configured target should be selected.</summary>
+    /// <param name="stateBuilder">The agentic state builder receiving the transition.</param>
+    /// <param name="targetStateName">The target state to enter when the transition inquiry is accepted.</param>
+    /// <param name="prompt">The prompt presented to the agent to evaluate this transition.</param>
+    /// <param name="transitionBuildAction">Optional configuration for the generated default transition.</param>
+    /// <returns>The agentic state builder for further configuration.</returns>
     public static IAgenticStateBuilder AddAgenticTransition(this IAgenticStateBuilder stateBuilder, string targetStateName, string prompt, DefaultTransitionBuildAction? transitionBuildAction = null)
         => new AgenticStateBuilder(stateBuilder.AddTransition<AgenticTransition>(targetStateName, PrepareAgenticTransition(targetStateName, prompt, transitionBuildAction)));
     
+    /// <summary>Adds a transition that asks the agent whether the typed target state should be selected.</summary>
+    /// <typeparam name="TTargetState">The target state vertex type.</typeparam>
+    /// <param name="stateBuilder">The agentic state builder receiving the transition.</param>
+    /// <param name="prompt">The prompt presented to the agent to evaluate this transition.</param>
+    /// <param name="transitionBuildAction">Optional configuration for the generated default transition.</param>
+    /// <returns>The agentic state builder for further configuration.</returns>
     public static IAgenticStateBuilder AddAgenticTransition<TTargetState>(this IAgenticStateBuilder stateBuilder, string prompt, DefaultTransitionBuildAction? transitionBuildAction = null)
         where TTargetState : class, IVertex
         => new AgenticStateBuilder(stateBuilder.AddTransition<AgenticTransition, TTargetState>(PrepareAgenticTransition(State<TTargetState>.Name, prompt, transitionBuildAction)));
@@ -138,6 +151,12 @@ public static class StateBuilderExtensions
     //     where TTargetAgent : class, IAIAgent
     //     => new AgenticStateBuilder(stateBuilder.AddTransition<AgenticHandoff, AgenticState<TTargetAgent>>(PrepareAgenticHandoff(State<AgenticState<TTargetAgent>>.Name, prompt, transitionBuildAction)));
 
+    /// <summary>Adds an internal transition that sends a message generated from an event to the current agent behavior.</summary>
+    /// <typeparam name="TEvent">The event type that triggers the internal transition.</typeparam>
+    /// <param name="stateBuilder">The agentic state builder receiving the transition.</param>
+    /// <param name="agenticMessageFactory">Creates the message sent to the agent from the transition event context.</param>
+    /// <param name="transitionBuildAction">Optional configuration for the internal transition.</param>
+    /// <returns>The agentic state builder for further configuration.</returns>
     public static IAgenticStateBuilder AddAgenticReaction<TEvent>(this IAgenticStateBuilder stateBuilder, Func<IEventContext<TEvent>, AgenticMessage> agenticMessageFactory, InternalTransitionBuildAction<TEvent>? transitionBuildAction = null)
         => new AgenticStateBuilder(stateBuilder.AddInternalTransition<TEvent>(b =>
         {

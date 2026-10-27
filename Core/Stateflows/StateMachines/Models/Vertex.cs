@@ -37,6 +37,7 @@ namespace Stateflows.StateMachines.Models
         public IEnumerable<Edge> IncomingEdges => Graph.AllEdges.Where(edge => edge.Target == this);
         public Dictionary<string, Logic<StateMachinePredicateAsync>> Deferrals { get; set; } = new();
         public Dictionary<string, Type> DeferralTypes { get; } = new();
+        public HashSet<string> StructuralDeferrals { get; } = new(StringComparer.Ordinal);
         public List<Region> Regions { get; set; } = [];
         public Region DefaultRegion
         {
@@ -64,6 +65,7 @@ namespace Stateflows.StateMachines.Models
         public string BehaviorName { get; set; }
         public string BehaviorType { get; set; }
         public List<Type> BehaviorEventTypes { get; set; } = [];
+        public HashSet<string> BehaviorStructuralEvents { get; } = new(StringComparer.Ordinal);
 
         public Dictionary<string, object> Metadata { get; } = [];
 

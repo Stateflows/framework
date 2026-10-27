@@ -274,7 +274,7 @@ namespace Stateflows.StateMachines.Registration.Builders
             if (typeof(TEvent).IsSubclassOf(typeof(TimeEvent)))
                 throw new DeferralDefinitionException(typeof(TEvent).GetEventName(), "Time events cannot be deferred.", Vertex.Graph.Class);
 
-            var builder = new DeferralBuilder<TEvent>(Vertex);
+            var builder = new EventDeferralBuilder<TEvent>(Vertex);
             buildAction?.Invoke(builder);
 
             var eventName = typeof(TEvent).GetEventName();
@@ -581,7 +581,7 @@ namespace Stateflows.StateMachines.Registration.Builders
                 throw new StateMachineOverrideException($"Deferral of event '{Event<TEvent>.Name}' not found in overriden state '{Vertex.Name}'", Vertex.Graph.Class);
             }
             
-            var builder = new DeferralBuilder<TEvent>(Vertex, deferralLogic);
+            var builder = new EventDeferralBuilder<TEvent>(Vertex, deferralLogic);
             
             buildAction?.Invoke(builder);
 

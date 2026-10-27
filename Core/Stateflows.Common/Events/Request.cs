@@ -69,5 +69,7 @@ namespace Stateflows.Common
         }
     }
 
+    /// <summary>Marks an event as a request that expects a response of the specified type.</summary>
+    /// <typeparam name="TResponse">The expected response payload type.</typeparam>
     public interface IRequest<in TResponse>;
 }

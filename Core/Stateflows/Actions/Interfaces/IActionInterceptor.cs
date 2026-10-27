@@ -5,6 +5,8 @@ using Stateflows.Actions.Context.Interfaces;
 
 namespace Stateflows.Actions
 {
+    /// <summary>Intercepts action event processing to implement cross-cutting behavior.</summary>
+    /// <remarks>Interceptors wrap event processing, including initialization; global interceptors wrap local ones in registration order.</remarks>
     public interface IActionInterceptor
     {
         /// <summary>
@@ -15,6 +17,10 @@ namespace Stateflows.Actions
         /// The returned status may be replaced and continuation exceptions explicitly handled.
         /// Repeated or unfinished continuation calls are rejected.
         /// </remarks>
+        /// <typeparam name="TEvent">The event type being processed.</typeparam>
+        /// <param name="context">The event and action context.</param>
+        /// <param name="next">The continuation representing the remaining pipeline and event processing.</param>
+        /// <returns>The event processing status, which an interceptor may replace when short-circuiting.</returns>
         Task<EventStatus> ProcessEventAsync<TEvent>(IEventContext<TEvent> context, Func<Task<EventStatus>> next);
     }
 }

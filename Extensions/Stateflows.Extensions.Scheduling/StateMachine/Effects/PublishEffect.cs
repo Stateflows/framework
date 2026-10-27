@@ -9,12 +9,18 @@ using Stateflows.StateMachines;
 
 namespace Stateflows.Scheduler.StateMachine.Effects
 {
+    /// <summary>Publishes the events of schedules whose trigger time has arrived.</summary>
+    /// <remarks>Removes schedules that expired before the last check and sends each due event to its configured recipients.</remarks>
     public class PublishEffect : ITransitionEffect
     {
         private readonly IValue<List<Entry>> Schedules;
         private readonly IValue<DateTime> LastCheck;
         private readonly IBehaviorLocator BehaviorLocator;
         
+        /// <summary>Creates the scheduler's due-event publication effect.</summary>
+        /// <param name="schedules">The optional global value containing persisted schedule entries.</param>
+        /// <param name="lastCheck">The optional global value recording the previous publication check.</param>
+        /// <param name="behaviorLocator">The locator used to resolve each scheduled recipient.</param>
         public PublishEffect(
             [GlobalValue(required: false)] IValue<List<Entry>> schedules,
             [GlobalValue(required: false)] IValue<DateTime> lastCheck,
@@ -26,6 +32,8 @@ namespace Stateflows.Scheduler.StateMachine.Effects
             BehaviorLocator = behaviorLocator;
         }
         
+        /// <summary>Removes expired schedules and sends events for schedules that are due.</summary>
+        /// <returns>A task that completes after due events have been submitted to their recipients.</returns>
         public async Task EffectAsync()
         {
             var now = DateTime.Now;

@@ -14,6 +14,7 @@ using Stateflows.Actions.Registration;
 using Stateflows.Activities;
 using Stateflows.Common.Utilities;
 using Stateflows.Common.Engine;
+using Stateflows.Common.Extensions;
 using Stateflows.Common.Classes;
 using Stateflows.StateMachines.Models;
 
@@ -85,9 +86,9 @@ namespace Stateflows.Actions.Engine
 
             using var eventContext = new EventContext<TEvent>(StateflowsContext, this, eventHolder, ServiceProvider);
 
-            if (eventHolder is EventHolder<TokensInput> tokensInputHolder)
+            if (eventHolder.Payload is TokensInputEvent tokensInput)
             {
-                using var context = new ActionDelegateContext(StateflowsContext, this, eventHolder, ServiceProvider, tokensInputHolder.Payload.Tokens);
+                using var context = new ActionDelegateContext(StateflowsContext, this, eventHolder, ServiceProvider, tokensInput.Tokens);
                 try
                 {
                     InputTokens.TokensHolder.Value = context.InputTokens.ToList();
@@ -103,7 +104,10 @@ namespace Stateflows.Actions.Engine
                         Tokens = context.OutputTokens.ToList()
                     };
 
-                    tokensInputHolder.Respond(tokensOutput.ToEventHolder(context.Behavior.Id));
+                    if (eventHolder.Payload is IRequest<TokensOutput> request)
+                    {
+                        ResponseHolder.Respond(request, tokensOutput.ToEventHolder(context.Behavior.Id));
+                    }
                 }
                 finally
                 {
@@ -293,6 +297,8 @@ namespace Stateflows.Actions.Engine
                 await inspector.OnActionExceptionAsync(context, e);
                 throw;
             }
+
+            await Hub.PublishRangeAsync(context.OutputTokens.ToOutputNotifications(context.Behavior.Id));
         }
 
 

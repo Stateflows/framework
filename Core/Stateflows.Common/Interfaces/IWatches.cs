@@ -6,6 +6,8 @@ using Stateflows.Common.Utilities;
 
 namespace Stateflows.Common.Interfaces
 {
+    /// <summary>Creates transient notification subscriptions and provides wait and stream helpers.</summary>
+    /// <remarks>Watchers are not durable and remain active only while their handle is retained and undisposed.</remarks>
     public interface IWatches
     {
         /// <summary>

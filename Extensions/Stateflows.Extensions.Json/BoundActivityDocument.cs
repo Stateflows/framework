@@ -112,7 +112,14 @@ internal sealed partial class BoundActivityDocument(
 
     private Type? BindEventNode(JToken node, string path, string kind)
     {
-        var eventType = BindType(node.Value<string>("eventType")!, path + "/eventType");
+        Type? eventType;
+        if (kind == "acceptEvent" && node.Value<string>("eventName") is { } eventName)
+        {
+            try { services.Events.GetEvent(eventName); }
+            catch (ArgumentException exception) { Error(path + "/eventName", exception.Message); }
+            resolvedTypes[path + "/eventType"] = eventType = typeof(StructuralEvent);
+        }
+        else eventType = BindType(node.Value<string>("eventType")!, path + "/eventType");
         if (eventType == null) return null;
         if (services.TypeMapper.GetMappedTypes(eventType).Any() != true)
             Error(path + "/eventType", $"Event type '{eventType}' has no mapped event types.");
@@ -449,8 +456,12 @@ internal sealed partial class BoundActivityDocument(
                 var eventAction = CreateBoundDelegate(
                     typeof(AcceptEventActionDelegateAsync<>).MakeGenericType(eventType),
                     nameof(HandleAcceptedEvent), eventType, binding.Type, binding);
-                CallGenericInterface(parent, typeof(IAcceptEventBase<>), "AddAcceptEventAction",
-                    [eventType], [name!, eventAction, actionCallback], methodParameterCount: 3);
+                if (node.Value<string>("eventName") is { } eventName)
+                    CallGenericInterface(parent, typeof(IAcceptEventBase<>), "AddAcceptEventAction",
+                        [], [eventName, name!, eventAction, actionCallback], methodParameterCount: 4);
+                else
+                    CallGenericInterface(parent, typeof(IAcceptEventBase<>), "AddAcceptEventAction",
+                        [eventType], [name!, eventAction, actionCallback], methodParameterCount: 3);
                 break;
             }
             case "timeEvent":

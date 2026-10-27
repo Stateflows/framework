@@ -21,8 +21,13 @@ using Stateflows.Common.Utilities;
 
 namespace Stateflows
 {
+    /// <summary>Registers services used by Stateflows clients and configures client-side policies.</summary>
     public static class StateflowsCommonDependencyInjection
     {
+        /// <summary>Adds behavior locators, client interceptors, validators, and behavior-class discovery to a service collection.</summary>
+        /// <param name="services">The service collection to extend.</param>
+        /// <param name="buildAction">Configures client-side interceptors and validators.</param>
+        /// <returns>The service collection for further dependency-injection configuration.</returns>
         public static IServiceCollection AddStateflowsClient(this IServiceCollection services, Action<IStateflowsClientBuilder> buildAction)
         {
             buildAction.ThrowIfNull(nameof(buildAction));
@@ -48,6 +53,10 @@ namespace Stateflows
             return services;
         }
 
+        /// <summary>Registers a client interceptor implementation.</summary>
+        /// <typeparam name="TClientInterceptor">The interceptor implementation type.</typeparam>
+        /// <param name="stateflowsBuilder">The client builder.</param>
+        /// <returns>The builder for fluent configuration.</returns>
         public static IStateflowsClientBuilder AddClientInterceptor<TClientInterceptor>(this IStateflowsClientBuilder stateflowsBuilder)
             where TClientInterceptor : class, IStateflowsClientInterceptor
         {
@@ -56,6 +65,10 @@ namespace Stateflows
             return stateflowsBuilder;
         }
 
+        /// <summary>Registers a client interceptor factory.</summary>
+        /// <param name="stateflowsBuilder">The client builder.</param>
+        /// <param name="clientInterceptorFactory">Creates an interceptor from the current service provider.</param>
+        /// <returns>The builder for fluent configuration.</returns>
         public static IStateflowsClientBuilder AddClientInterceptor(this IStateflowsClientBuilder stateflowsBuilder, ClientInterceptorFactory clientInterceptorFactory)
         {
             stateflowsBuilder.ServiceCollection.AddScoped(s => clientInterceptorFactory(s));
@@ -63,6 +76,10 @@ namespace Stateflows
             return stateflowsBuilder;
         }
 
+        /// <summary>Registers a validator implementation for incoming event payloads.</summary>
+        /// <typeparam name="TValidator">The validator implementation type.</typeparam>
+        /// <param name="stateflowsBuilder">The client builder.</param>
+        /// <returns>The builder for fluent configuration.</returns>
         public static IStateflowsClientBuilder AddValidator<TValidator>(this IStateflowsClientBuilder stateflowsBuilder)
             where TValidator : class, IStateflowsValidator
         {
@@ -71,6 +88,10 @@ namespace Stateflows
             return stateflowsBuilder;
         }
         
+        /// <summary>Registers a validator factory for incoming event payloads.</summary>
+        /// <param name="stateflowsBuilder">The client builder.</param>
+        /// <param name="validatorFactory">Creates a validator from the current service provider.</param>
+        /// <returns>The builder for fluent configuration.</returns>
         public static IStateflowsClientBuilder AddValidator(this IStateflowsClientBuilder stateflowsBuilder, ValidatorFactory validatorFactory)
         {
             stateflowsBuilder.ServiceCollection.AddScoped(s => validatorFactory(s));

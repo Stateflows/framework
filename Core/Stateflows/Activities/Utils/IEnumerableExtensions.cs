@@ -5,8 +5,15 @@ using Stateflows.Common;
 
 namespace Stateflows.Utils
 {
+    /// <summary>Provides sequence-related helpers used by Stateflows APIs.</summary>
     public static class IEnumerableExtensions
     {
+        /// <summary>Partitions a sequence into consecutive batches of the specified maximum size.</summary>
+        /// <typeparam name="T">The element type.</typeparam>
+        /// <param name="sequence">The source sequence to partition.</param>
+        /// <param name="size">The maximum number of elements in each batch.</param>
+        /// <returns>A deferred sequence of batches, with a final batch containing any remaining elements.</returns>
+        /// <remarks>The source is enumerated as the returned sequence is consumed; a final batch may contain fewer than <paramref name="size"/> elements.</remarks>
         public static IEnumerable<IEnumerable<T>> Partition<T>(this IEnumerable<T> sequence, int size)
         {
             List<T> partition = new List<T>(size);

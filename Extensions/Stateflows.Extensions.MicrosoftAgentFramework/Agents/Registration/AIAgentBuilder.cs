@@ -1,4 +1,5 @@
 using Microsoft.Extensions.AI;
+using Stateflows.Common;
 using Stateflows.Actions.Registration.Interfaces;
 using Stateflows.Extensions.MicrosoftAgentFramework.Agents.Classes;
 using Stateflows.MAF.AIAgents.Classes;
@@ -29,6 +30,15 @@ internal class AIAgentBuilder(IActionBuilder<AIAgentAction> actionBuilder) : IAI
     {
         actionBuilder.Configure(f => f.EventFormatters[typeof(TEvent)] = new ChatMessageConverterHolder<TEvent>(new DelegateChatMessageConverter<TEvent>(eventFormatterAsync)));
         actionBuilder.AddConsumedEvent<TEvent>();
+        return this;
+    }
+
+    public IAIAgentBuilder AddConsumedEvent(string eventName, Func<IAIAgentContext, StructuralEvent, Task<ChatMessage>> eventFormatterAsync)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(eventName);
+        ArgumentNullException.ThrowIfNull(eventFormatterAsync);
+        actionBuilder.Configure(f => f.StructuralEventFormatters[eventName] = new StructuralChatMessageConverterHolder(eventName, new DelegateChatMessageConverter<StructuralEvent>(eventFormatterAsync)));
+        actionBuilder.AddConsumedEvent(eventName);
         return this;
     }
 

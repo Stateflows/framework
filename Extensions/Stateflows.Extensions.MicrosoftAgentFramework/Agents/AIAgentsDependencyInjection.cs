@@ -9,8 +9,13 @@ using Stateflows.MAF.AIAgents.Registration.Builders;
 
 namespace Stateflows.MAF.AIAgents
 {
+    /// <summary>Provides registration methods for Microsoft Agent Framework agents.</summary>
     public static class AIAgentsDependencyInjection
     {
+        /// <summary>Registers agent actions and applies the supplied agent registrations.</summary>
+        /// <param name="stateflowsBuilder">The Stateflows builder to configure.</param>
+        /// <param name="buildAction">Registers agents using the agent collection builder.</param>
+        /// <returns>The same Stateflows builder, for further configuration.</returns>
         [DebuggerHidden]
         public static IStateflowsBuilder AddAIAgents(this IStateflowsBuilder stateflowsBuilder,
             AgentsBuildAction buildAction)
@@ -22,6 +27,11 @@ namespace Stateflows.MAF.AIAgents
                 .EnsureAgentsServices()
                 .AddActions(b => buildAction.Invoke(new AIAgentsBuilder(b, systemRegistrations)));
 
+        /// <summary>Registers a default instance of a typed Microsoft Agent Framework agent for startup initialization.</summary>
+        /// <typeparam name="TAgent">The agent behavior type whose default instance is initialized.</typeparam>
+        /// <param name="stateflowsBuilder">The Stateflows builder to configure.</param>
+        /// <param name="initializationRequestFactoryAsync">Optionally creates the initialization request for the default instance.</param>
+        /// <returns>The same Stateflows builder, for further configuration.</returns>
         [DebuggerHidden]
         public static IStateflowsBuilder AddDefaultInstance<TAgent>(this IStateflowsBuilder stateflowsBuilder, DefaultInstanceInitializationRequestFactoryAsync initializationRequestFactoryAsync = null)
             where TAgent : class, IAIAgent

@@ -22,6 +22,7 @@ internal sealed partial class BoundDocument(
     private readonly Dictionary<string, ClrBinding> bindings = new(StringComparer.Ordinal);
     private readonly Dictionary<string, string> names = new(StringComparer.Ordinal);
     private readonly Dictionary<string, Type[]> triggers = new(StringComparer.Ordinal);
+    private readonly Dictionary<string, string[]> structuralTriggers = new(StringComparer.Ordinal);
     private readonly Dictionary<string, object?> metadata = new(StringComparer.Ordinal);
     private readonly Dictionary<string, BehaviorClass> behaviors = new(StringComparer.Ordinal);
     private readonly Dictionary<string, Dictionary<Type, Type>> eventBindings = new(StringComparer.Ordinal);
@@ -135,8 +136,17 @@ internal sealed partial class BoundDocument(
         if (completion) return triggers[path] = [typeof(Completion)];
         var declared = new List<Type>();
         var covered = new HashSet<Type>();
+        var structural = new HashSet<string>(StringComparer.Ordinal);
         foreach (var (node, itemPath) in Items(parent, path, "triggers"))
         {
+            if (node.Value<string>("eventName") is { } eventName)
+            {
+                if (!structural.Add(eventName))
+                    Error(itemPath + "/eventName", $"Structural event '{eventName}' is duplicated.");
+                try { services.Events.GetEvent(eventName); }
+                catch (ArgumentException exception) { Error(itemPath + "/eventName", exception.Message); }
+                continue;
+            }
             var type = Resolve(node.Value<string>("clrType")!, itemPath + "/clrType");
             if (type == null) continue;
             var actual = Mapped(type);
@@ -152,8 +162,17 @@ internal sealed partial class BoundDocument(
         }
         if (covered.GroupBy(Event.GetName).Any(g => g.Count() > 1))
             Error(path + "/triggers", "Different trigger types resolve to the same event name.");
-        if (covered.Contains(typeof(Completion)) && covered.Count != 1)
+        if (covered.Contains(typeof(Completion)) && (covered.Count != 1 || structural.Count != 0))
             Error(path + "/triggers", "Completion cannot be combined with other triggers.");
+        if (parent.Value<bool?>("else") == true && structural.Count != 0 && structural.Count + covered.Count > 1)
+            Error(path + "/triggers", "A named else transition must declare exactly one trigger; the core permits only one else edge per vertex.");
+        structuralTriggers[path] = structural.ToArray();
+        if (structural.Count != 0)
+        {
+            if (covered.Contains(typeof(StructuralEvent)) || covered.Contains(typeof(StructuralRequest)))
+                Error(path + "/triggers", "A CLR structural-event wildcard cannot be combined with named structural triggers.");
+            declared.Add(typeof(StructuralEvent));
+        }
         return triggers[path] = declared.ToArray();
     }
 

@@ -21,6 +21,10 @@ namespace Stateflows.Entities
         /// <summary>
         /// Wraps execution of a registered mutation.
         /// </summary>
+        /// <typeparam name="TTemplate">The entity template type.</typeparam>
+        /// <typeparam name="TMutationEvent">The mutation event type.</typeparam>
+        /// <param name="context">The entity, triggering event, behavior, and delivery context.</param>
+        /// <param name="next">The continuation that executes the mutation and must be called exactly once.</param>
         Task OnMutationAsync<TTemplate, TMutationEvent>(
             IMutationObservationContext<TTemplate, TMutationEvent> context,
             Func<Task> next);
@@ -29,6 +33,10 @@ namespace Stateflows.Entities
         /// Wraps each evaluation of a computed field, including initialization
         /// and dependency-driven recalculation.
         /// </summary>
+        /// <typeparam name="TTemplate">The entity template type.</typeparam>
+        /// <typeparam name="TField">The computed field value type.</typeparam>
+        /// <param name="context">The entity, field name, behavior, and delivery context.</param>
+        /// <param name="next">The continuation that calculates the field value and must be called exactly once.</param>
         Task OnComputedFieldAsync<TTemplate, TField>(
             IComputedFieldObservationContext<TTemplate> context,
             Func<Task<TField>> next);
@@ -37,6 +45,10 @@ namespace Stateflows.Entities
         /// Wraps each evaluation of a projection, including initialization
         /// and dependency-driven recalculation, but not reads of cached values.
         /// </summary>
+        /// <typeparam name="TTemplate">The entity template type.</typeparam>
+        /// <typeparam name="TProjection">The projection value type.</typeparam>
+        /// <param name="context">The entity, publication scope, behavior, and delivery context.</param>
+        /// <param name="next">The continuation that calculates the projection and must be called exactly once.</param>
         Task OnProjectionAsync<TTemplate, TProjection>(
             IProjectionObservationContext<TTemplate> context,
             Func<Task<TProjection>> next);

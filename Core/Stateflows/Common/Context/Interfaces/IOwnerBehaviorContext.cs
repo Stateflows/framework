@@ -2,6 +2,7 @@
 
 namespace Stateflows.Common
 {
+    /// <summary>Provides messaging and entity operations for the behavior that owns the current behavior.</summary>
     public interface IOwnerBehaviorContext : 
         ISends<IOwnerBehaviorContext>,
         IPublishes<IOwnerBehaviorContext>,
@@ -9,7 +10,7 @@ namespace Stateflows.Common
         IEntityOperations<IOwnerBehaviorContext>
     {
         /// <summary>
-        /// Represents identifier of owner behavior
+        /// Identifies the owning behavior instance.
         /// </summary>
         BehaviorId Id { get; }
     }

@@ -25,6 +25,7 @@ namespace Stateflows.Activities.Models
         public Type ExceptionType { get; set; }
 
         public Type EventType { get; set; }
+        public string StructuralEventName { get; set; }
 
         public IEnumerable<Type> ActualEventTypes { get; set; }
 

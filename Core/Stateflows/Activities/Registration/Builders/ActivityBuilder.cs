@@ -79,6 +79,7 @@ namespace Stateflows.Activities.Registration.Builders
 
                 Graph.Initializers.Add(initializerName, initializer);
                 Graph.InitializerTypes.Add(typeof(TInitializationEvent));
+                Graph.StateflowsBuilder.Events.RegisterClr(typeof(TInitializationEvent));
             }
 
             initializer.Actions.Add(async c =>

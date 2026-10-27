@@ -24,6 +24,7 @@ public sealed class JsonStateMachineDefinition
     private readonly JObject document;
     private readonly IReadOnlyDictionary<string, Type> types;
 
+    /// <summary>Gets the most recent document, binding, and model-validation diagnostics.</summary>
     public ModelValidationReport ValidationReport { get; private set; } = new();
 
     private JsonStateMachineDefinition(JObject document, IReadOnlyDictionary<string, Type> types)
@@ -32,7 +33,12 @@ public sealed class JsonStateMachineDefinition
         this.types = types;
     }
 
-    /// <summary>Parses strict JSON, rejecting duplicate properties, and evaluates the embedded Draft 2020-12 schema.</summary>
+    /// <summary>Parses strict JSON and validates it against the embedded state-machine schema.</summary>
+    /// <param name="json">The state-machine definition document.</param>
+    /// <param name="options">Host-owned CLR type and validator aliases available to the document.</param>
+    /// <returns>A parsed definition ready to bind and register.</returns>
+    /// <exception cref="JsonStateMachineException">The JSON is malformed, contains duplicate properties, or violates the state-machine schema.</exception>
+    /// <exception cref="ArgumentNullException"><paramref name="json"/> or <paramref name="options"/> is <see langword="null"/>.</exception>
     public static JsonStateMachineDefinition Parse(string json, JsonOptions options)
     {
         ArgumentNullException.ThrowIfNull(json);
@@ -103,7 +109,12 @@ public sealed class JsonStateMachineDefinition
         if (report.HasErrors) throw new JsonStateMachineException(report, name);
     }
 
-    /// <summary>Binds all authored CLR capabilities, expands definitions, validates, then registers the model.</summary>
+    /// <summary>Binds host capabilities, expands and validates the model, then registers the state machine.</summary>
+    /// <param name="builder">The Stateflows state-machine registration builder.</param>
+    /// <returns>The model validation report collected during binding and graph construction.</returns>
+    /// <exception cref="JsonStateMachineException">Binding or graph validation fails; inspect <see cref="ValidationReport"/> for diagnostics.</exception>
+    /// <exception cref="ArgumentNullException"><paramref name="builder"/> is <see langword="null"/>.</exception>
+    /// <exception cref="ArgumentException"><paramref name="builder"/> is not the Stateflows state-machine builder implementation.</exception>
     public ModelValidationReport Register(IStateMachinesBuilder builder)
     {
         ArgumentNullException.ThrowIfNull(builder);
@@ -152,9 +163,15 @@ public sealed class JsonStateMachineDefinition
     }
 }
 
+/// <summary>Convenience extensions for registering JSON-authored state machines.</summary>
 public static class JsonStateMachineExtensions
 {
-    /// <summary>Loads and registers a JSON state machine. Use Parse/Register to retain its warning report.</summary>
+    /// <summary>Parses, validates, and registers a state machine from JSON.</summary>
+    /// <param name="builder">The Stateflows state-machine registration builder.</param>
+    /// <param name="json">The state-machine definition document.</param>
+    /// <param name="options">Host-owned CLR type and validator aliases available to the document.</param>
+    /// <returns>The same state-machine builder, for further registrations.</returns>
+    /// <remarks>Use <see cref="JsonStateMachineDefinition.Parse(string, JsonOptions)"/> and <see cref="JsonStateMachineDefinition.Register(IStateMachinesBuilder)"/> when the validation report must be retained.</remarks>
     public static IStateMachinesBuilder AddStateMachineJson(this IStateMachinesBuilder builder, string json,
         JsonOptions options)
     {

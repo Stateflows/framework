@@ -51,6 +51,7 @@ internal static class RequestBodyExtensions
         var behaviorClass = new BehaviorClass(behaviorType, behaviorName);
         if (interceptor.BeforeEventEndpointDefinition<TEvent>(behaviorClass, isDefaultInstance: false, ref method, ref route))
         {
+            EndpointRouteRegistry.EnsureUnique(routeBuilder, method, route, Event<TEvent>.Name, isStructural: false);
             var routeHandlerBuilder = Utils.IsEventEmpty(eventType)
                 ? routeBuilder.MapMethods(
                     route,
@@ -171,6 +172,7 @@ internal static class RequestBodyExtensions
         var defaultInstanceRoute = $"/{behaviorType.ToResource()}/{behaviorName}/{eventName}";
         if (interceptor.BeforeEventEndpointDefinition<TEvent>(behaviorClass, isDefaultInstance: true, ref method, ref defaultInstanceRoute))
         {
+            EndpointRouteRegistry.EnsureUnique(routeBuilder, method, defaultInstanceRoute, Event<TEvent>.Name, isStructural: false);
             var routeHandlerBuilder = Utils.IsEventEmpty(eventType)
                 ? routeBuilder.MapMethods(
                     defaultInstanceRoute,
@@ -327,6 +329,7 @@ internal static class RequestBodyExtensions
         var behaviorClass = new BehaviorClass(behaviorType, behaviorName);
         if (interceptor.BeforeEventEndpointDefinition<TRequest>(behaviorClass, isDefaultInstance: false, ref method, ref route))
         {
+            EndpointRouteRegistry.EnsureUnique(routeBuilder, method, route, Event<TRequest>.Name, isStructural: false);
             var routeHandlerBuilder = Utils.IsEventEmpty(eventType)
                 ? routeBuilder.MapMethods(
                     route,
@@ -441,6 +444,8 @@ internal static class RequestBodyExtensions
         {
             var defaultInstanceRoute = $"/{behaviorType.ToResource()}/{behaviorName}/{Utils.GetEventName<TRequest>()}";
 
+            EndpointRouteRegistry.EnsureUnique(routeBuilder, method, defaultInstanceRoute, Event<TRequest>.Name, isStructural: false);
+
             var routeHandlerBuilder = Utils.IsEventEmpty(eventType)
                 ? routeBuilder.MapMethods(
                     defaultInstanceRoute,
@@ -540,7 +545,7 @@ internal static class RequestBodyExtensions
         }
     }
 
-    private static async Task SSENotificationsWatchAsync(HttpContext httpContext, IBehavior behavior, RequestBody payload, Func<Task> processingAction)
+    internal static async Task SSENotificationsWatchAsync(HttpContext httpContext, IBehavior behavior, RequestBody payload, Func<Task> processingAction)
     {
         httpContext.Response.Headers.Append(HeaderNames.ContentType, "text/event-stream");
 

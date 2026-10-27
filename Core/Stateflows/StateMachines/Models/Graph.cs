@@ -127,6 +127,7 @@ namespace Stateflows.StateMachines.Models
                     region.InitialVertex = string.IsNullOrEmpty(region.InitialVertexName) ? null : region.Vertices[region.InitialVertexName];
 
                 vertex.BehaviorEventTypes.Clear();
+                vertex.BehaviorStructuralEvents.Clear();
                 if (string.IsNullOrEmpty(vertex.BehaviorName)) continue;
                 switch (vertex.BehaviorType)
                 {
@@ -134,18 +135,21 @@ namespace Stateflows.StateMachines.Models
                         var activityVisitor = new DoActivityVisitor(StateflowsBuilder.TypeMapper);
                         StateflowsBuilder.EnsureActivitiesServices().VisitActivityAsync(vertex.BehaviorName, 1, activityVisitor).GetAwaiter().GetResult();
                         vertex.BehaviorEventTypes.AddRange(activityVisitor.EventTypes);
+                        vertex.BehaviorStructuralEvents.UnionWith(activityVisitor.EventDefinitions.Select(e => e.Name));
                         break;
 
                     case BehaviorType.StateMachine:
                         var machineVisitor = new SubmachineVisitor(StateflowsBuilder.TypeMapper);
                         StateflowsBuilder.EnsureStateMachinesServices().VisitStateMachineAsync(vertex.BehaviorName, 1, machineVisitor).GetAwaiter().GetResult();
                         vertex.BehaviorEventTypes.AddRange(machineVisitor.EventTypes);
+                        vertex.BehaviorStructuralEvents.UnionWith(machineVisitor.EventDefinitions.Select(e => e.Name));
                         break;
 
                     default:
                         var actionVisitor = new DoActionVisitor(StateflowsBuilder.TypeMapper);
                         StateflowsBuilder.EnsureActionsServices().VisitActionAsync(vertex.BehaviorName, 1, actionVisitor).GetAwaiter().GetResult();
                         vertex.BehaviorEventTypes.AddRange(actionVisitor.EventTypes);
+                        vertex.BehaviorStructuralEvents.UnionWith(actionVisitor.EventDefinitions.Select(e => e.Name));
                         break;
                 }
             }

@@ -290,10 +290,15 @@
             { "$ref": "#/$defs/nodeBase" },
             {
               "type": "object",
-              "required": ["kind", "name", "eventType", "implementation"],
+              "required": ["kind", "name", "implementation"],
+              "oneOf": [
+                { "required": ["eventType"], "not": { "required": ["eventName"] } },
+                { "required": ["eventName"], "not": { "required": ["eventType"] } }
+              ],
               "properties": {
                 "kind": { "const": "acceptEvent" },
                 "eventType": { "type": "string", "minLength": 1 },
+                "eventName": { "type": "string", "minLength": 1 },
                 "implementation": { "$ref": "#/$defs/binding" }
               }
             }

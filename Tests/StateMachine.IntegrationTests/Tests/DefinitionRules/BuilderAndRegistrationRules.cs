@@ -370,7 +370,7 @@ public class BuilderAndRegistrationRules
     public void OverrideTriggerNarrowingEnforcesClrAssignability()
     {
         var method = typeof(IOverridenTransitionBuilder<Ping>).GetMethods()
-            .Single(m => m.Name == "ChangeTrigger");
+            .Single(m => m.Name == "ChangeTrigger" && m.IsGenericMethodDefinition);
         Assert.Throws<ArgumentException>(() => method.MakeGenericMethod(typeof(Pong)));
         var model = new DefinitionModel(initialize: false);
         model.Builder.UseStateMachine<BaseMachine>(b => b.UseState("initial", s =>
