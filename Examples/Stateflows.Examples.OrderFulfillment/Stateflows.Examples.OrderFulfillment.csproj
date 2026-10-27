@@ -17,5 +17,6 @@
     <ProjectReference Include="..\..\Extensions\Stateflows.Extensions.MinimalAPIs\Stateflows.Extensions.MinimalAPIs.csproj" />
     <ProjectReference Include="..\..\Extensions\Stateflows.Extensions.OpenTelemetry\Stateflows.Extensions.OpenTelemetry.csproj" />
     <ProjectReference Include="..\..\Extensions\Stateflows.Extensions.PlantUml\Stateflows.Extensions.PlantUml.csproj" />
+    <ProjectReference Include="..\..\Runtimes\Stateflows.Runtimes.Orleans\Stateflows.Runtimes.Orleans.csproj" />
   </ItemGroup>
 </Project>
